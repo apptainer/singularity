@@ -19,7 +19,7 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"path"
+	"path/filepath"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -105,52 +105,52 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	}
 
 	if pidNS {
-		sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
-		_, err = rpcOps.Mount("proc", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
+		sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
+		_, err = rpcOps.Mount("proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
 		if err != nil {
 			return fmt.Errorf("mount proc failed: %s", err)
 		}
 	} else {
-		sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
-		_, err = rpcOps.Mount("/proc", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+		sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
+		_, err = rpcOps.Mount("/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
 			return fmt.Errorf("mount proc failed: %s", err)
 		}
 	}
 	if !userNS {
-		sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
-		_, err = rpcOps.Mount("sysfs", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
+		sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
+		_, err = rpcOps.Mount("sysfs", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 		if err != nil {
 			return fmt.Errorf("mount sys failed: %s", err)
 		}
 	} else {
-		sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
-		_, err = rpcOps.Mount("/sys", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+		sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
+		_, err = rpcOps.Mount("/sys", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 		if err != nil {
 			return fmt.Errorf("mount sys failed: %s", err)
 		}
 	}
 
-	sylog.Debugf("Mounting home at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "home"))
-	_, err = rpcOps.Mount("/home", path.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"))
+	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
 	if err != nil {
 		return fmt.Errorf("mount /home failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting dev at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
-	_, err = rpcOps.Mount("/dev", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
+	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/passwd at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"))
-	_, err = rpcOps.Mount("/etc/passwd", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Mounting /etc/passwd at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"))
+	_, err = rpcOps.Mount("/etc/passwd", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), "", syscall.MS_BIND, "")
 	if err != nil {
 		return fmt.Errorf("mount /etc/passwd failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/group at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"))
-	_, err = rpcOps.Mount("/etc/group", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Mounting /etc/group at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"))
+	_, err = rpcOps.Mount("/etc/group", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), "", syscall.MS_BIND, "")
 	if err != nil {
 		return fmt.Errorf("mount /etc/group failed: %s", err)
 	}

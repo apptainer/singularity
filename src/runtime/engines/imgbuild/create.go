@@ -19,7 +19,7 @@ import (
 	"net"
 	"net/rpc"
 	"os"
-	"path"
+	"path/filepath"
 	"syscall"
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
@@ -41,7 +41,7 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	rootfs := engine.EngineConfig.Path
+	rootfs := engine.EngineConfig.Rootfs()
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
@@ -64,38 +64,38 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 	}
 
-	sylog.Debugf("Mounting proc at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
-	_, err = rpcOps.Mount("/proc", path.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
+	_, err = rpcOps.Mount("/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting sysfs at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
-	_, err = rpcOps.Mount("sysfs", path.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
+	sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
+	_, err = rpcOps.Mount("sysfs", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 	if err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting home at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "home"))
-	_, err = rpcOps.Mount("/home", path.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"))
+	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
 	if err != nil {
 		return fmt.Errorf("mount /home failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting dev at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
-	_, err = rpcOps.Mount("/dev", path.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
+	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/resolv.conf"))
-	_, err = rpcOps.Mount("/etc/resolv.conf", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/resolv.conf"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/resolv.conf"))
+	_, err = rpcOps.Mount("/etc/resolv.conf", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/resolv.conf"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/hosts at %s\n", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/hosts"))
-	_, err = rpcOps.Mount("/etc/hosts", path.Join(buildcfg.CONTAINER_FINALDIR, "etc/hosts"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting /etc/hosts at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/hosts"))
+	_, err = rpcOps.Mount("/etc/hosts", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/hosts"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}

@@ -8,7 +8,7 @@ package config
 import (
 	"encoding/json"
 
-	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 )
 
 // Common provides the basis for all engine configs. Anything that can not be
@@ -17,7 +17,7 @@ type Common struct {
 	EngineName  string `json:"engineName"`
 	ContainerID string `json:"containerID"`
 	// OciConfig is the oci configuration structure
-	OciConfig *oci.RuntimeOciConfig `json:"ociConfig"`
+	OciConfig *oci.Config `json:"ociConfig"`
 	// EngineConfig is the raw JSON representation of the Engine's underlying config
 	EngineConfig EngineConfig `json:"engineConfig"`
 }

@@ -125,4 +125,5 @@ func init() {
 	// register singularity rpcmethods
 	methods := new(singularityRpcServer.Methods)
 	registerEngineRPCMethods(methods, singularity.Name)
+	registerEngineRPCMethods(methods, imgbuild.Name)
 }
