@@ -48,6 +48,8 @@ type FileConfig struct {
 	AllowRootCapabilities   bool     `default:"yes" authorized:"yes,no" directive:"allow root capabilities"`
 	AllowUserCapabilities   bool     `default:"no" authorized:"yes,no" directive:"allow user capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
+	CniConfPath             string   `directive:"cni configuration path"`
+	CniPluginPath           string   `directive:"cni plugin path"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
@@ -75,6 +77,9 @@ type JSONConfig struct {
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
 	Home             string   `json:"home,omitempty"`
+	Network          string   `json:"network,omitempty"`
+	NetworkArgs      []string `json:"networkArgs,omitempty"`
+	DNS              string   `json:"dns,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -308,17 +313,17 @@ func (e *EngineConfig) GetKeepPrivs() bool {
 	return e.JSON.KeepPrivs
 }
 
-// SetNoPrivs set no-privs flag to force root user to lose all privileges.
+// SetNoPrivs sets no-privs flag to force root user to lose all privileges.
 func (e *EngineConfig) SetNoPrivs(nopriv bool) {
 	e.JSON.NoPrivs = nopriv
 }
 
-// GetNoPrivs return if no-privs flag is set or not
+// GetNoPrivs returns if no-privs flag is set or not
 func (e *EngineConfig) GetNoPrivs() bool {
 	return e.JSON.NoPrivs
 }
 
-// SetHome set user home directory
+// SetHome sets user home directory
 func (e *EngineConfig) SetHome(home string) {
 	e.JSON.Home = home
 }
@@ -326,4 +331,34 @@ func (e *EngineConfig) SetHome(home string) {
 // GetHome retrieves user home directory
 func (e *EngineConfig) GetHome() string {
 	return e.JSON.Home
+}
+
+// SetNetwork sets a list of commas separated networks to configure inside container
+func (e *EngineConfig) SetNetwork(network string) {
+	e.JSON.Network = network
+}
+
+// GetNetwork retrieves a list of commas separated networks configured in container
+func (e *EngineConfig) GetNetwork() string {
+	return e.JSON.Network
+}
+
+// SetNetworkArgs sets network arguments to pass to CNI plugins
+func (e *EngineConfig) SetNetworkArgs(args []string) {
+	e.JSON.NetworkArgs = args
+}
+
+// GetNetworkArgs retrieves network arguments passed to CNI plugins
+func (e *EngineConfig) GetNetworkArgs() []string {
+	return e.JSON.NetworkArgs
+}
+
+// SetDNS sets a commas separated list of DNS servers to add in resolv.conf
+func (e *EngineConfig) SetDNS(dns string) {
+	e.JSON.DNS = dns
+}
+
+// GetDNS retrieves list of DNS servers
+func (e *EngineConfig) GetDNS() string {
+	return e.JSON.DNS
 }

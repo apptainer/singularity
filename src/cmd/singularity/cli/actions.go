@@ -39,6 +39,9 @@ func init() {
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("home"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("ipc"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("net"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("network"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("network-args"))
+		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("dns"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("nv"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("overlay"))
 		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pid"))
@@ -123,6 +126,9 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetNetwork(Network)
+	engineConfig.SetDNS(DNS)
+	engineConfig.SetNetworkArgs(NetworkArgs)
 
 	if NetNamespace {
 		generator.AddOrReplaceLinuxNamespace("network", "")
