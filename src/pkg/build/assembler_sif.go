@@ -26,12 +26,19 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 	}
 
 	f, err := ioutil.TempFile("", "squashfs-")
-	squashfsPath := f.Name() + ".img"
+	squashfsPathRoot := f.Name() + ".img"
 	f.Close()
 	os.Remove(f.Name())
-	os.Remove(squashfsPath)
+	os.Remove(squashfsPathRoot)
 
-	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
+	f, err = ioutil.TempFile("", "squashfs-")
+	squashfsPathSingularityD := f.Name() + ".img"
+	f.Close()
+	os.Remove(f.Name())
+	os.Remove(squashfsPathSingularityD)
+
+	//squashfs for rootfs
+	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPathRoot, "-noappend")
 	mksquashfsCmd.Stdin = os.Stdin
 	mksquashfsCmd.Stdout = os.Stdout
 	mksquashfsCmd.Stderr = os.Stderr
@@ -40,7 +47,17 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		return err
 	}
 
-	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", path)
+	//squashfs for .singularity.d
+	mksquashfsCmd = exec.Command(mksquashfs, b.Path+"/"+b.FSObjects[".singularity.d"], squashfsPathSingularityD, "-noappend")
+	mksquashfsCmd.Stdin = os.Stdin
+	mksquashfsCmd.Stdout = os.Stdout
+	mksquashfsCmd.Stderr = os.Stderr
+	err = mksquashfsCmd.Run()
+	if err != nil {
+		return err
+	}
+
+	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPathRoot, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", "-P", squashfsPathSingularityD, "-f", "SQUASHFS", "-p", "DATA", "-c", "SINGULARITY.D", path)
 	sifCmd.Stdin = os.Stdin
 	sifCmd.Stdout = os.Stdout
 	sifCmd.Stderr = os.Stderr

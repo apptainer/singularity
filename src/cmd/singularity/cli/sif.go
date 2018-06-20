@@ -56,16 +56,16 @@ var SifCmd = &cobra.Command{
 	Long:  docs.SifLong,
 	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		sif := exec.Command(sif, args)
+		sif := exec.Command(sif, args...)
 
 		sif.Stdout = os.Stdout
 		sif.Stderr = os.Stderr
 		sif.Stdin = os.Stdin
 
-		if err := SifCmd.Start(); err != nil {
+		if err := sif.Start(); err != nil {
 			sylog.Fatalf("failed to start sif: %v\n", err)
 		}
-		if err := SifCmd.Wait(); err != nil {
+		if err := sif.Wait(); err != nil {
 			sylog.Fatalf("sif failed: %v\n", err)
 		}
 

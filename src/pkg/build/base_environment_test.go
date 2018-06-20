@@ -36,11 +36,6 @@ func TestMakeDirs(t *testing.T) {
 	testWithBadDir(t, makeDirs)
 }
 
-// func TestMakeSymlinks(t *testing.T) {
-// 	testWithGoodDir(t, makeSymlinks)
-// 	testWithBadDir(t, makeSymlinks)
-// }
-
 func TestMakeFiles(t *testing.T) {
 	testWithGoodDir(t, func(d, d2 string) error {
 		if err := makeDirs(d, d2); err != nil {
