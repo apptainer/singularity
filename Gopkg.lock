@@ -301,6 +301,12 @@
   version = "v1.5.1"
 
 [[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
@@ -320,6 +326,12 @@
   packages = ["."]
   revision = "e57e3eeb33f795204c1ca35f56c44f83227c6e66"
   version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/sylabs/sif"
+  packages = ["pkg/sif"]
+  revision = "39ed13a08e76807ee049630e54b0d291a67325d4"
 
 [[projects]]
   branch = "master"
@@ -397,6 +409,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6663a6d49c0ba133f4900dcdd5c78ae3231e56f3da9d3a1f06dadc7eb826671b"
+  inputs-digest = "6d8ac76904ba04bdf868c079fe896d3a66b7ad973f002b8aa18fd7a72f65fd2f"
   solver-name = "gps-cdcl"
   solver-version = 1

@@ -27,6 +27,10 @@
 
 [[constraint]]
   branch = "master"
+  name = "github.com/sylabs/sif"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/containers/image"
 
 [[constraint]]
