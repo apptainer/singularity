@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	syKeysAddr = "example.org:11371"
+	syKeysAddr = "keys.sylabs.io:11371"
 )
 
 func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {

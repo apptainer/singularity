@@ -24,7 +24,7 @@ const pullTimeout = 1800
 // saving it into the specified file
 func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool, authToken string) error {
 
-	if !isLibraryPullRef(libraryRef) {
+	if !IsLibraryPullRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
 	}
 
@@ -85,7 +85,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	sylog.Debugf("OK response received, beginning body download\n")
 
 	// Perms are 777 *prior* to umask
-	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 777)
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 	if err != nil {
 		return err
 	}
