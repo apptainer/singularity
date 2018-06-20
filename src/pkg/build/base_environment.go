@@ -247,7 +247,6 @@ echo "There is no runscript defined for this container\n";
 )
 
 func makeDirs(rootPath, singPath string) (err error) {
-	fmt.Println("MakeDirs", rootPath, singPath)
 	if err = os.MkdirAll(filepath.Join(singPath, "libs"), 0755); err != nil {
 		return
 	}
@@ -321,7 +320,6 @@ func makeFile(name string, perm os.FileMode, s string) (err error) {
 }
 
 func makeFiles(rootPath, singPath string) (err error) {
-	fmt.Println("MakeFiles", rootPath, singPath)
 	if err = makeFile(filepath.Join(rootPath, "etc", "hosts"), 0644, ""); err != nil {
 		return
 	}
