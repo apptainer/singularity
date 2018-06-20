@@ -28,6 +28,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/containers/image/docker"
@@ -35,6 +36,7 @@ import (
 	"github.com/containers/image/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
+	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
 )
 
 type shubAPIResponse struct {
@@ -225,8 +227,6 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 
 	rootfs := cp.tmpfile
-	//rootfs = `/home/ian/sq/ubuntu.simg`
-	trimfile, err := ioutil.TempFile(cp.tmpfs, "trim.squashfs")
 
 	//leverage C code to properly mount squashfs image
 	C.singularity_config_init()
@@ -240,17 +240,34 @@ func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 		//squashfs
 		info.Offset = uint64(C.uint(imageObject.offset))
 		info.SizeLimit = uint64(C.uint(imageObject.size))
+		err = cp.unpackSquashfs(b, info, rootfs)
+		if err != nil {
+			sylog.Fatalf("unpackSquashfs Failed", err.Error())
+			return err
+		}
 	case 2:
-		sylog.Fatalf("ext3 images from shub are not supported")
+		//ext3
+		info.Offset = uint64(C.uint(imageObject.offset))
+		info.SizeLimit = uint64(C.uint(imageObject.size))
+		err = cp.unpackExt3(b, info, rootfs)
+		if err != nil {
+			sylog.Fatalf("unpackExt3 Failed", err.Error())
+			return err
+		}
 	default:
 		sylog.Fatalf("Invalid image format from shub")
 	}
 
+	return err
+}
+
+func (cp *ShubConveyorPacker) unpackSquashfs(b *Bundle, info *loop.Info64, rootfs string) (err error) {
+	trimfile, err := ioutil.TempFile(cp.tmpfs, "trim.squashfs")
 	//trim header
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
 	err = cmd.Run()
 	if err != nil {
-		sylog.Fatalf("dd Failed", err.Error())
+		sylog.Errorf("dd Failed", err.Error())
 		return err
 	}
 
@@ -258,9 +275,60 @@ func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())
 	err = cmd.Run()
 	if err != nil {
-		sylog.Fatalf("unsquashfs Failed", err.Error())
+		sylog.Errorf("unsquashfs Failed", err.Error())
 		return err
 	}
 
 	return err
+}
+
+func (cp *ShubConveyorPacker) unpackExt3(b *Bundle, info *loop.Info64, rootfs string) (err error) {
+	tmpmnt, err := ioutil.TempDir(cp.tmpfs, "mnt")
+
+	var number int
+	info.Flags = loop.FlagsAutoClear
+	arguments := &args.LoopArgs{
+		Image: rootfs,
+		Mode:  os.O_RDONLY,
+		Info:  *info,
+	}
+	err = getLoopDevice(arguments)
+	if err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("/dev/loop%d", number)
+	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
+	err = syscall.Mount(path, tmpmnt, "ext3", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
+	if err != nil {
+		sylog.Errorf("Mount Failed", err.Error())
+		return err
+	}
+	defer syscall.Unmount(tmpmnt, 0)
+
+	//copy filesystem into bundle rootfs
+	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
+	err = cmd.Run()
+	if err != nil {
+		sylog.Errorf("cp Failed", err.Error())
+		return err
+	}
+
+	return err
+}
+
+// getLoopDevice attaches a loop device with the specified arguments
+func getLoopDevice(arguments *args.LoopArgs) error {
+	var reply int
+	reply = 1
+	loopdev := new(loop.Device)
+
+	if err := loopdev.Attach(arguments.Image, arguments.Mode, &reply); err != nil {
+		return err
+	}
+
+	if err := loopdev.SetStatus(&arguments.Info); err != nil {
+		return err
+	}
+	return nil
 }
