@@ -6,30 +6,25 @@
 package image
 
 import (
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"os"
 )
 
-// EXT3 represents an EXT3 image
-type EXT3 struct {
+// EXT3 defines constants for ext3 format
+const EXT3 = 2
+
+type ext3Format struct {
+	file *os.File
 }
 
-// Ext3FromSandbox converts the sandbox, s, to a EXT3 file
-func Ext3FromSandbox(s *Sandbox) *EXT3 {
-	return &EXT3{}
-}
-
-// Ext3FromPath returns a ext3 object of the file located at path
-func Ext3FromPath(path string) *EXT3 {
-	return &EXT3{}
-}
-
-// Root returns the root specification.
-func (i *EXT3) Root() *specs.Root {
-	return &specs.Root{}
-}
-
-// isExt3 checks the "magic" of the given file and
-// determines if the file is of the ext3 type
-func isExt3(path string) bool {
+func (f *ext3Format) Validate(file *os.File) bool {
+	f.file = file
 	return false
+}
+
+func (f *ext3Format) Init(img *Image) error {
+	return nil
+}
+
+func init() {
+	registerFormat(&ext3Format{})
 }

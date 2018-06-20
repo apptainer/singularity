@@ -6,54 +6,55 @@
 package image
 
 import (
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"fmt"
+	"os"
 )
 
-// Image describes the interface that an image type must implement.
-type Image interface {
-	RuntimeImage
-	BuildtimeImage
-	// Crypto related functions
-	//Sign()   bool
-	//Verify() bool
+var registeredFormats = make([]format, 0)
+
+// Image ...
+type Image struct {
+	Path     string
+	Name     string
+	Type     string
+	File     *os.File
+	Offset   uint64
+	Writable bool
 }
 
-// RuntimeImage describes the interface that a runtime image type must implement.
-type RuntimeImage interface {
-	Root() *specs.Root
+func registerFormat(f format) {
+	registeredFormats = append(registeredFormats, f)
 }
 
-// BuildtimeImage describes the interface that a build-time image type must implement.
-type BuildtimeImage interface {
-	Rootfs() string
+// format describes the interface that an image format type must implement.
+type format interface {
+	Validate(*os.File) bool
+	Init(*Image) error
 }
 
-/*
-func GetImage(r *specs.Root) Image {
-	rtype := CheckType(r.Path)
-	switch rtype {
-	case "sif":
-		return NewSIF()
-	case "squashfs":
-		return NewSquashFS()
-	case "sandbox":
-		return NewSandbox()
-	default:
-		return NewSandbox()
-		//Do-Some-Error-Something
+// Init ...
+func Init(path string, writable bool) (*Image, error) {
+	flags := os.O_RDONLY
+	if writable {
+		flags = os.O_RDWR
 	}
-
-}
-
-func CheckType(path string) string {
-	if isSIF(path) {
-		return "sif"
-	} else if isSquashFS(path) {
-		return "squashfs"
-	} else if isSandbox(path) {
-		return "sandbox"
-	} else {
-		return "default"
+	file, err := os.OpenFile(path, flags, 0)
+	if err != nil {
+		return nil, fmt.Errorf("Error while opening image %s: %s", path, err)
 	}
+	for _, f := range registeredFormats {
+		if f.Validate(file) {
+			img := &Image{
+				Path:     path,
+				Name:     file.Name(),
+				File:     file,
+				Writable: writable,
+			}
+			if err := f.Init(img); err != nil {
+				return nil, err
+			}
+			return img, nil
+		}
+	}
+	return nil, fmt.Errorf("image format not recognized")
 }
-*/

@@ -9,22 +9,19 @@ import (
 	"os"
 )
 
-// SQUASHFS defines constants for squashfs format
-const SQUASHFS = 1
-
-type squashfsFormat struct {
+type sifFormat struct {
 	file *os.File
 }
 
-func (f *squashfsFormat) Validate(file *os.File) bool {
+func (f *sifFormat) Validate(file *os.File) bool {
 	f.file = file
 	return false
 }
 
-func (f *squashfsFormat) Init(img *Image) error {
+func (f *sifFormat) Init(img *Image) error {
 	return nil
 }
 
 func init() {
-	registerFormat(&squashfsFormat{})
+	registerFormat(&sifFormat{})
 }
