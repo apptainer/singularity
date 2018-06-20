@@ -20,7 +20,7 @@ const (
 
 var registeredFormats = make(map[string]format, 0)
 
-// Image ...
+// Image describes an image object
 type Image struct {
 	Path     string
 	Name     string
@@ -39,7 +39,7 @@ type format interface {
 	initializer(*Image, os.FileInfo) error
 }
 
-// Init ...
+// Init initilizes an image object based on given path
 func Init(filepath string, writable bool) (*Image, error) {
 	sylog.Debugf("Entering image format intializer")
 	flags := os.O_RDONLY

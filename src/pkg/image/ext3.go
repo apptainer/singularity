@@ -13,7 +13,7 @@ import (
 	"unsafe"
 )
 
-// EXT3 defines constants for ext3 format
+// EXT3 defines constant for ext3 format
 const EXT3 = 2
 
 const (

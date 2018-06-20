@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-// SANDBOX defines constants for directory format
+// SANDBOX defines constant for directory format
 const SANDBOX = 3
 
 type sandboxFormat struct{}

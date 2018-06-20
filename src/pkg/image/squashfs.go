@@ -15,7 +15,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// SQUASHFS defines constants for squashfs format
+// SQUASHFS defines constant for squashfs format
 const SQUASHFS = 1
 
 const (
