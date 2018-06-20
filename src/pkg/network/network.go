@@ -42,7 +42,10 @@ type portMap struct {
 	protocol      string
 }
 
+// DefaultCNIConfPath is the default path to CNI network configuration files
 var DefaultCNIConfPath = path.Join(buildcfg.SYSCONFDIR, "singularity/network")
+
+// DefaultCNIPluginPath is the default path to CNI plugins executables
 var DefaultCNIPluginPath = path.Join(buildcfg.LIBEXECDIR, "singularity/cni")
 
 // AvailableNetworks ...
