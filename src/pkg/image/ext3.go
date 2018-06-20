@@ -17,10 +17,8 @@ import (
 const EXT3 = 2
 
 const (
-	bufferSize          = 2048
-	magicOffset         = 1080
-	launchString        = "singularity"
-	magic               = "\123\357"
+	extMagicOffset      = 1080
+	extMagic            = "\x53\xEF"
 	compatHasJournal    = 0x4
 	incompatFileType    = 0x2
 	incompatRecover     = 0x4
@@ -51,7 +49,7 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
 		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
 	}
-	offset := magicOffset
+	offset := extMagicOffset
 	o := bytes.Index(b, []byte(launchString))
 	if o > 0 {
 		offset += o + len(launchString) + 1
@@ -66,7 +64,7 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	if err := binary.Read(buffer, binary.LittleEndian, einfo); err != nil {
 		return fmt.Errorf("can't read the top of the image")
 	}
-	if bytes.Compare(einfo.Magic[:], []byte(magic)) != 0 {
+	if bytes.Compare(einfo.Magic[:], []byte(extMagic)) != 0 {
 		return fmt.Errorf(notValidExt3ImageMessage)
 	}
 	if einfo.Compat&compatHasJournal == 0 {
@@ -79,7 +77,7 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 		return fmt.Errorf(notValidExt3ImageMessage)
 	}
 	img.Type = EXT3
-	img.Offset = uint64(offset - magicOffset)
+	img.Offset = uint64(offset - extMagicOffset)
 	return nil
 }
 
