@@ -6,25 +6,24 @@
 package image
 
 import (
+	"fmt"
 	"os"
 )
 
 // SANDBOX defines constants for directory format
 const SANDBOX = 3
 
-type sandboxFormat struct {
-	file *os.File
-}
+type sandboxFormat struct{}
 
-func (f *sandboxFormat) Validate(file *os.File) bool {
-	f.file = file
-	return false
-}
-
-func (f *sandboxFormat) Init(img *Image) error {
+func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
+	if fileinfo.IsDir() {
+		img.Type = SANDBOX
+	} else {
+		return fmt.Errorf("not a directory based image")
+	}
 	return nil
 }
 
 func init() {
-	registerFormat(&sandboxFormat{})
+	registerFormat("sandbox", &sandboxFormat{})
 }

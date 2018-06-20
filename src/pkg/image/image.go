@@ -8,53 +8,58 @@ package image
 import (
 	"fmt"
 	"os"
+	"path"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-var registeredFormats = make([]format, 0)
+var registeredFormats = make(map[string]format, 0)
 
 // Image ...
 type Image struct {
 	Path     string
 	Name     string
-	Type     string
+	Type     int
 	File     *os.File
 	Offset   uint64
 	Writable bool
 }
 
-func registerFormat(f format) {
-	registeredFormats = append(registeredFormats, f)
+func registerFormat(name string, f format) {
+	registeredFormats[name] = f
 }
 
 // format describes the interface that an image format type must implement.
 type format interface {
-	Validate(*os.File) bool
-	Init(*Image) error
+	initializer(*Image, os.FileInfo) error
 }
 
 // Init ...
-func Init(path string, writable bool) (*Image, error) {
+func Init(filepath string, writable bool) (*Image, error) {
+	sylog.Debugf("Entering image format intializer")
 	flags := os.O_RDONLY
 	if writable {
 		flags = os.O_RDWR
 	}
-	file, err := os.OpenFile(path, flags, 0)
+	file, err := os.OpenFile(filepath, flags, 0)
 	if err != nil {
-		return nil, fmt.Errorf("Error while opening image %s: %s", path, err)
+		return nil, fmt.Errorf("Error while opening image %s: %s", filepath, err)
 	}
-	for _, f := range registeredFormats {
-		if f.Validate(file) {
-			img := &Image{
-				Path:     path,
-				Name:     file.Name(),
-				File:     file,
-				Writable: writable,
-			}
-			if err := f.Init(img); err != nil {
-				return nil, err
-			}
+	img := &Image{
+		Path:     filepath,
+		Name:     path.Base(filepath),
+		File:     file,
+		Writable: writable,
+	}
+	fileinfo, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	for name, f := range registeredFormats {
+		if err := f.initializer(img, fileinfo); err == nil {
 			return img, nil
 		}
+		sylog.Debugf("%s format initializer returns: %s", name, err)
 	}
 	return nil, fmt.Errorf("image format not recognized")
 }

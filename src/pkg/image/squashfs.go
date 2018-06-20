@@ -6,25 +6,22 @@
 package image
 
 import (
+	"fmt"
 	"os"
 )
 
 // SQUASHFS defines constants for squashfs format
 const SQUASHFS = 1
 
-type squashfsFormat struct {
-	file *os.File
-}
+type squashfsFormat struct{}
 
-func (f *squashfsFormat) Validate(file *os.File) bool {
-	f.file = file
-	return false
-}
-
-func (f *squashfsFormat) Init(img *Image) error {
+func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
+	if fileinfo.IsDir() {
+		return fmt.Errorf("not a squashfs image")
+	}
 	return nil
 }
 
 func init() {
-	registerFormat(&squashfsFormat{})
+	registerFormat("squashfs", &squashfsFormat{})
 }

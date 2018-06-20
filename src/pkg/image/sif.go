@@ -6,22 +6,19 @@
 package image
 
 import (
+	"fmt"
 	"os"
 )
 
-type sifFormat struct {
-	file *os.File
-}
+type sifFormat struct{}
 
-func (f *sifFormat) Validate(file *os.File) bool {
-	f.file = file
-	return false
-}
-
-func (f *sifFormat) Init(img *Image) error {
+func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
+	if fileinfo.IsDir() {
+		return fmt.Errorf("not a SIF file image")
+	}
 	return nil
 }
 
 func init() {
-	registerFormat(&sifFormat{})
+	registerFormat("sif", &sifFormat{})
 }

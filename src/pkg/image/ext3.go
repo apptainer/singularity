@@ -6,25 +6,22 @@
 package image
 
 import (
+	"fmt"
 	"os"
 )
 
 // EXT3 defines constants for ext3 format
 const EXT3 = 2
 
-type ext3Format struct {
-	file *os.File
-}
+type ext3Format struct{}
 
-func (f *ext3Format) Validate(file *os.File) bool {
-	f.file = file
-	return false
-}
-
-func (f *ext3Format) Init(img *Image) error {
+func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
+	if fileinfo.IsDir() {
+		return fmt.Errorf("not an ext3 image")
+	}
 	return nil
 }
 
 func init() {
-	registerFormat(&ext3Format{})
+	registerFormat("ext3", &ext3Format{})
 }
