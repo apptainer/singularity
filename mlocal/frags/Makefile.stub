@@ -33,11 +33,37 @@ go_TAG = "containers_image_openpgp singularity_sif"
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
-INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+vendor := $(SOURCEDIR)/vendor
+
+cni_plugins_INSTALL := $(PREFIX)/libexec/singularity/cni
+cni_plugins_REPO := github.com/containernetworking/plugins
+cni_plugins_VENDOR := $(vendor)/$(cni_plugins_REPO)
+cni_plugins_DIR := $(sort $(dir $(wildcard $(cni_plugins_VENDOR)/plugins/*/*/*)))
+cni_plugins_LIST := $(shell basename -a $(cni_plugins_DIR))
+cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
+cni_config_INSTALL := $(PREFIX)/etc/singularity/network
+
+INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL)
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
+all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $(cni_plugins_LIST)
+
+$(cni_plugins_LIST):
+	@echo " CNI PLUGIN" $@
+	@mkdir -p gopath
+	@ln -sfn $(vendor) gopath/src
+	$(V)GOPATH=$(shell pwd)/gopath go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $@))
+
+$(cni_plugins_INSTALL): $(cni_plugins_LIST)
+	@echo " INSTALL CNI PLUGINS"
+	@mkdir -p $@
+	@for f in $(cni_plugins_LIST); do cp -a $$f $@/$$f; done
+
+$(cni_config_INSTALL): $(cni_config_LIST)
+	@echo " INSTALL NETWORK CONFIGURATION FILE"
+	$(V)install -d $(cni_config_INSTALL)
+	@cp -f $(cni_config_LIST) $@
 
 $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
