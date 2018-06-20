@@ -41,7 +41,7 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	rootfs := engine.EngineConfig.Rootfs
+	rootfs := engine.EngineConfig.Path
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
