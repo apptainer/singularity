@@ -109,6 +109,12 @@ func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
 		return
 	}
 
+	err = cp.setBindPoints(b)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	b.Recipe = cp.recipe
 
 	return b, nil
@@ -258,4 +264,17 @@ func (cp *DockerConveyorPacker) insertEnv(b *Bundle) (err error) {
 	}
 
 	return nil
+}
+
+func (cp *DockerConveyorPacker) setBindPoints(b *Bundle) (err error) {
+	//add bind points for engine
+	b.BindPath = append(b.BindPath, b.Rootfs()+":/")
+	b.BindPath = append(b.BindPath, b.Path+"/"+b.FSObjects[".singularity.d"]+"/runscript:/singularity")
+	b.BindPath = append(b.BindPath, b.Path+"/"+b.FSObjects[".singularity.d"]+"/actions/run:/.run")
+	b.BindPath = append(b.BindPath, b.Path+"/"+b.FSObjects[".singularity.d"]+"/actions/exec:/.exec")
+	b.BindPath = append(b.BindPath, b.Path+"/"+b.FSObjects[".singularity.d"]+"/actions/test:/.test")
+	b.BindPath = append(b.BindPath, b.Path+"/"+b.FSObjects[".singularity.d"]+"/actions/shell:/.shell")
+	b.BindPath = append(b.BindPath, b.Path+"/"+b.FSObjects[".singularity.d"]+"/env/environment.sh:/environment")
+
+	return
 }

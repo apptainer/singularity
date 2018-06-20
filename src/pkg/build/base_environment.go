@@ -287,27 +287,27 @@ func makeDirs(rootPath, singPath string) (err error) {
 	return
 }
 
-func makeSymlinks(rootPath string) (err error) {
-	if err = os.Symlink(".singularity.d/runscript", filepath.Join(rootPath, "singularity")); err != nil {
-		return
-	}
-	if err = os.Symlink(".singularity.d/actions/run", filepath.Join(rootPath, ".run")); err != nil {
-		return
-	}
-	if err = os.Symlink(".singularity.d/actions/exec", filepath.Join(rootPath, ".exec")); err != nil {
-		return
-	}
-	if err = os.Symlink(".singularity.d/actions/test", filepath.Join(rootPath, ".test")); err != nil {
-		return
-	}
-	if err = os.Symlink(".singularity.d/actions/shell", filepath.Join(rootPath, ".shell")); err != nil {
-		return
-	}
-	if err = os.Symlink(".singularity.d/env/90-environment.sh", filepath.Join(rootPath, "environment")); err != nil {
-		return
-	}
-	return
-}
+// func makeSymlinks(rootPath string) (err error) {
+// 	if err = os.Symlink(".singularity.d/runscript", filepath.Join(rootPath, "singularity")); err != nil {
+// 		return
+// 	}
+// 	if err = os.Symlink(".singularity.d/actions/run", filepath.Join(rootPath, ".run")); err != nil {
+// 		return
+// 	}
+// 	if err = os.Symlink(".singularity.d/actions/exec", filepath.Join(rootPath, ".exec")); err != nil {
+// 		return
+// 	}
+// 	if err = os.Symlink(".singularity.d/actions/test", filepath.Join(rootPath, ".test")); err != nil {
+// 		return
+// 	}
+// 	if err = os.Symlink(".singularity.d/actions/shell", filepath.Join(rootPath, ".shell")); err != nil {
+// 		return
+// 	}
+// 	if err = os.Symlink(".singularity.d/env/90-environment.sh", filepath.Join(rootPath, "environment")); err != nil {
+// 		return
+// 	}
+// 	return
+// }
 
 func makeFile(name string, perm os.FileMode, s string) (err error) {
 	f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
@@ -326,6 +326,24 @@ func makeFiles(rootPath, singPath string) (err error) {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, "etc", "resolv.conf"), 0644, ""); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, "singularity"), 0755, ""); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, ".run"), 0755, ""); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, ".exec"), 0755, ""); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, ".test"), 0755, ""); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, ".shell"), 0755, ""); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, "environment"), 0755, ""); err != nil {
 		return
 	}
 	if err = makeFile(filepath.Join(singPath, "actions", "exec"), 0755, execFileContent); err != nil {
