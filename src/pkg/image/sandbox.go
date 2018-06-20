@@ -19,7 +19,7 @@ func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
 		img.Type = SANDBOX
 	} else {
-		return fmt.Errorf("not a directory based image")
+		return fmt.Errorf("not a directory image")
 	}
 	return nil
 }

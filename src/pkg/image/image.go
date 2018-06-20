@@ -56,10 +56,14 @@ func Init(filepath string, writable bool) (*Image, error) {
 		return nil, err
 	}
 	for name, f := range registeredFormats {
+		if offset, err := img.File.Seek(0, os.SEEK_SET); err != nil || offset != 0 {
+			return nil, err
+		}
 		if err := f.initializer(img, fileinfo); err == nil {
 			return img, nil
 		}
 		sylog.Debugf("%s format initializer returns: %s", name, err)
 	}
+	file.Close()
 	return nil, fmt.Errorf("image format not recognized")
 }
