@@ -28,6 +28,7 @@
 [[projects]]
   name = "github.com/containernetworking/cni"
   packages = [
+    "libcni",
     "pkg/invoke",
     "pkg/skel",
     "pkg/types",
@@ -503,6 +504,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c684c67feeb3ba2c3d69c9468d01af25a18d5493eb32b36329ddbccf6823233e"
+  inputs-digest = "c4a9a3af8e0bd87b7b6ae723a884e645192bc6bb29ab8e052b0dadd5c0e8fae4"
   solver-name = "gps-cdcl"
   solver-version = 1

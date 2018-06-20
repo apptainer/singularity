@@ -13,6 +13,7 @@ package main
 import "C"
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -22,6 +23,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/singularityware/singularity/src/pkg/network"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
@@ -42,20 +44,48 @@ func runAsInstance(conn *os.File) {
 func handleChild(pid int, signal chan os.Signal, engine *engines.Engine) {
 	var status syscall.WaitStatus
 
-	select {
-	case _ = <-signal:
-		syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
+	time.Sleep(200 * time.Millisecond)
+	/* hold a reference to container network namespace for cleanup */
+	f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+	if err != nil {
+		sylog.Fatalf("can't open network namespace: %s\n", err)
+	}
+	nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+	list, err := network.NewNetworkList([]string{"bridge"}, strconv.Itoa(pid), nspath, nil)
+	if err != nil {
+		sylog.Fatalf("%s", err)
+	}
+	if err := list.AddNetworkArgs([]string{"bridge:portmap=8080:80/tcp"}); err != nil {
+		sylog.Errorf("%s", err)
+	}
+	os.Setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin")
+	if err := list.SetupNetworks(); err != nil {
+		sylog.Fatalf("%s", err)
+	}
 
-		if err := engine.CleanupContainer(); err != nil {
-			sylog.Errorf("container cleanup failed: %s", err)
-		}
+	for {
+		select {
+		case _ = <-signal:
+			wpid, _ := syscall.Wait4(pid, &status, syscall.WNOHANG, nil)
+			if wpid != pid {
+				continue
+			}
 
-		if status.Exited() {
-			sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-			os.Exit(status.ExitStatus())
-		} else if status.Signaled() {
-			sylog.Debugf("Child exited due to signal %d", status.Signal())
-			syscall.Kill(os.Getpid(), status.Signal())
+			sylog.Debugf("Cleanup container")
+			if err := engine.CleanupContainer(); err != nil {
+				sylog.Errorf("container cleanup failed: %s", err)
+			}
+			if err := list.CleanupNetworks(); err != nil {
+				sylog.Errorf("%s", err)
+			}
+
+			if status.Exited() {
+				sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
+				os.Exit(status.ExitStatus())
+			} else if status.Signaled() {
+				sylog.Debugf("Child exited due to signal %d", status.Signal())
+				syscall.Kill(os.Getpid(), status.Signal())
+			}
 		}
 	}
 }
@@ -72,12 +102,6 @@ func SMaster(socket C.int, config *C.struct_cConfig, jsonC *C.char) {
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
 
 	comm := os.NewFile(uintptr(socket), "socket")
-
-	/* hold a reference to container network namespace for cleanup */
-	_, err := os.Open("/proc/" + strconv.Itoa(containerPid) + "/ns/net")
-	if err != nil {
-		sylog.Fatalf("can't open network namespace: %s\n", err)
-	}
 
 	engine, err := engines.NewEngine(jsonBytes)
 
