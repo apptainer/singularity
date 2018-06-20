@@ -96,7 +96,7 @@ var BuildCmd = &cobra.Command{
 
 			err = a.Assemble(bundle, args[0])
 			if err != nil {
-				sylog.Fatalf("Assembler failed to assemble:", err)
+				sylog.Fatalf("Assembler failed to assemble: %v", err)
 			}
 		}
 
@@ -155,12 +155,12 @@ func makeBundle(def build.Definition) *build.Bundle {
 	}
 
 	if err = cp.Get(def); err != nil {
-		sylog.Fatalf("Conveyor failed to get:", err)
+		sylog.Fatalf("Conveyor failed to get: %v", err)
 	}
 
 	bundle, err := cp.Pack()
 	if err != nil {
-		sylog.Fatalf("Packer failed to pack:", err)
+		sylog.Fatalf("Packer failed to pack: %v", err)
 	}
 
 	return bundle
