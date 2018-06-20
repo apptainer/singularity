@@ -41,7 +41,7 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	rootfs := engine.EngineConfig.Rootfs
+	rootfs := engine.EngineConfig.Path
 
 	st, err := os.Stat(rootfs)
 	if err != nil {
@@ -50,7 +50,7 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 
 	C.singularity_config_init()
 
-	_ := C.singularity_image_init(C.CString(rootfs), 0)
+	_ = C.singularity_image_init(C.CString(rootfs), 0)
 
 	if st.IsDir() == false {
 		return fmt.Errorf("%s is not a directory", rootfs)

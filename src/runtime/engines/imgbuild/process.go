@@ -21,7 +21,7 @@ func (e *EngineOperations) PrestartProcess() error {
 func (e *EngineOperations) StartProcess() error {
 	// Run %post script here
 
-	post := exec.Command("/bin/sh", "-c", e.EngineConfig.Def.BuildData.Post)
+	post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
 
 	_, err := post.Output()
 
