@@ -6,19 +6,19 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
@@ -130,7 +130,6 @@ func doSections(b *build.Bundle, fullPath string) {
 		Bundle: *b,
 	}
 	ociConfig := &oci.Config{}
-	generator := generate.NewFromSpec(&ociConfig.Spec)
 
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
@@ -144,8 +143,21 @@ func doSections(b *build.Bundle, fullPath string) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, progname, env, configData); err != nil {
-		sylog.Fatalf("Unable to execute imgbuild engine: %v\n", err)
+	// Create os/exec.Command to run wrapper and return control once finished
+	wrapperCmd := &exec.Cmd{
+		Path:   wrapper,
+		Args:   progname,
+		Env:    env,
+		Stdin:  bytes.NewReader(configData),
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	if err := wrapperCmd.Start(); err != nil {
+		sylog.Fatalf("Unable to start wrapper proc: %v\n", err)
+	}
+	if err := wrapperCmd.Wait(); err != nil {
+		sylog.Fatalf("wrapper proc: %v\n", err)
 	}
 }
 

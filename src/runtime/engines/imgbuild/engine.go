@@ -28,6 +28,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 
 // CheckConfig validates EngineConfig setup
 func (e *EngineOperations) CheckConfig() error {
+	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	return nil
 }
 
