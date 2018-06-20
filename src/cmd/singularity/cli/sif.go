@@ -28,8 +28,8 @@ func init() {
 	SifCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(SifCmd)
 	// Create
-	SifCmd.AddCommand(SifCreate)
-	SifCreate.Flags().StringVarP(&deffile, "deffile", "D", "", "include definitions file 'deffile'")
+	//SifCmd.AddCommand(SifCreate)
+	/*SifCreate.Flags().StringVarP(&deffile, "deffile", "D", "", "include definitions file 'deffile'")
 	SifCreate.Flags().StringVarP(&partfile, "partfile", "P", "", "include file system partition `partfile'")
 	SifCreate.Flags().StringVarP(&content, "CONTENT", "c", "", "freeform partition content string")
 	SifCreate.Flags().StringVarP(&fstype, "FSTYPE", "f", "", "filesystem type: EXT3, SQUASHFS")
@@ -44,7 +44,7 @@ func init() {
 	// Info
 	SifCmd.AddCommand(SifInfo)
 	// Del
-	SifCmd.AddCommand(SifDel)
+	SifCmd.AddCommand(SifDel)*/
 }
 
 var sif = buildcfg.SBINDIR + "/sif"
@@ -55,10 +55,25 @@ var SifCmd = &cobra.Command{
 	Short: docs.SifShort,
 	Long:  docs.SifLong,
 	Args:  cobra.MinimumNArgs(1),
-	Run:   nil,
+	Run: func(cmd *cobra.Command, args []string) {
+		sif := exec.Command(sif, args)
+
+		sif.Stdout = os.Stdout
+		sif.Stderr = os.Stderr
+		sif.Stdin = os.Stdin
+
+		if err := SifCmd.Start(); err != nil {
+			sylog.Fatalf("failed to start sif: %v\n", err)
+		}
+		if err := SifCmd.Wait(); err != nil {
+			sylog.Fatalf("sif failed: %v\n", err)
+		}
+
+	},
+	DisableFlagParsing: true,
 }
 
-// SifCreate sif create cmd
+/*// SifCreate sif create cmd
 var SifCreate = &cobra.Command{
 	Use:     docs.SifCreateUse,
 	Short:   docs.SifCreateShort,
@@ -87,12 +102,6 @@ var SifCreate = &cobra.Command{
 		SifCmd.Stdout = os.Stdout
 		SifCmd.Stderr = os.Stderr
 
-		if err := SifCmd.Start(); err != nil {
-			sylog.Fatalf("%v", err)
-		}
-		if err := SifCmd.Wait(); err != nil {
-			sylog.Fatalf("%v", err)
-		}
 	},
 }
 
@@ -203,3 +212,4 @@ var SifHeader = &cobra.Command{
 		}
 	},
 }
+*/
