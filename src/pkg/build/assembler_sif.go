@@ -37,6 +37,7 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 	os.Remove(f.Name())
 	os.Remove(squashfsPathSingularityD)
 
+	//squashfs for rootfs
 	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPathRoot, "-noappend")
 	mksquashfsCmd.Stdin = os.Stdin
 	mksquashfsCmd.Stdout = os.Stdout
@@ -46,6 +47,7 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		return err
 	}
 
+	//squashfs for .singularity.d
 	mksquashfsCmd = exec.Command(mksquashfs, b.Path+"/"+b.FSObjects[".singularity.d"], squashfsPathSingularityD, "-noappend")
 	mksquashfsCmd.Stdin = os.Stdin
 	mksquashfsCmd.Stdout = os.Stdout
