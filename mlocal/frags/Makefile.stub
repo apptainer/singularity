@@ -51,9 +51,9 @@ all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $
 
 $(cni_plugins_LIST):
 	@echo " CNI PLUGIN" $@
-	@mkdir -p gopath
-	@ln -sfn $(vendor) gopath/src
-	$(V)GOPATH=$(shell pwd)/gopath go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $@))
+	@mkdir -p cnigopath
+	@ln -sfn $(vendor) cnigopath/src
+	$(V)GOPATH="$(shell pwd)/cnigopath" go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $@))
 
 $(cni_plugins_INSTALL): $(cni_plugins_LIST)
 	@echo " INSTALL CNI PLUGINS"
