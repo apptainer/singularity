@@ -16,7 +16,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
 		return fmt.Errorf("not a SIF file image")
 	}
-	return nil
+	return fmt.Errorf("not implemented")
 }
 
 func init() {
