@@ -9,6 +9,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/alexflint/go-filemutex"
+  packages = ["."]
+  revision = "d358565f3c3f5334209f1e80693e4f621650c489"
+
+[[projects]]
+  branch = "master"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
@@ -18,6 +24,49 @@
   packages = ["."]
   revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
   version = "v3.5.1"
+
+[[projects]]
+  name = "github.com/containernetworking/cni"
+  packages = [
+    "pkg/invoke",
+    "pkg/skel",
+    "pkg/types",
+    "pkg/types/020",
+    "pkg/types/current",
+    "pkg/version"
+  ]
+  revision = "a7885cb6f8ab03fba07852ded351e4f5e7a112bf"
+  version = "v0.6.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/containernetworking/plugins"
+  packages = [
+    "pkg/ip",
+    "pkg/ipam",
+    "pkg/ns",
+    "pkg/utils",
+    "pkg/utils/hwaddr",
+    "pkg/utils/sysctl",
+    "plugins/ipam/dhcp",
+    "plugins/ipam/host-local",
+    "plugins/ipam/host-local/backend",
+    "plugins/ipam/host-local/backend/allocator",
+    "plugins/ipam/host-local/backend/disk",
+    "plugins/ipam/static",
+    "plugins/main/bridge",
+    "plugins/main/host-device",
+    "plugins/main/ipvlan",
+    "plugins/main/loopback",
+    "plugins/main/macvlan",
+    "plugins/main/ptp",
+    "plugins/main/vlan",
+    "plugins/meta/bandwidth",
+    "plugins/meta/flannel",
+    "plugins/meta/portmap",
+    "plugins/meta/tuning"
+  ]
+  revision = "2b8b1ac0af4568e928d96ccc5f47b075416eeabd"
 
 [[projects]]
   branch = "master"
@@ -56,10 +105,34 @@
   revision = "aaa10cba3c246a9186e2160f4e12b21d8cf77c94"
 
 [[projects]]
+  name = "github.com/coreos/go-iptables"
+  packages = ["iptables"]
+  revision = "b5b1876b170881a8259f036445ee89c8669db386"
+  version = "v0.3.0"
+
+[[projects]]
+  name = "github.com/coreos/go-systemd"
+  packages = ["activation"]
+  revision = "39ca1b05acc7ad1220e09f133283b8859a8b71ab"
+  version = "v17"
+
+[[projects]]
   name = "github.com/cpuguy83/go-md2man"
   packages = ["md2man"]
   revision = "20f5889cbdc3c73dbd2862796665e7c465ade7d1"
   version = "v1.0.8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/d2g/dhcp4"
+  packages = ["."]
+  revision = "a1d1b6c41b1ce8a71a5121a9cee31809c4707d9c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/d2g/dhcp4client"
+  packages = ["."]
+  revision = "e612998962035b93ba16cfd1ad2f3221985c1b8c"
 
 [[projects]]
   branch = "master"
@@ -188,10 +261,22 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/j-keck/arping"
+  packages = ["."]
+  revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
+
+[[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
   version = "v0.0.2"
+
+[[projects]]
+  name = "github.com/mattn/go-shellwords"
+  packages = ["."]
+  revision = "02e3cf038dcea8290e44424da473dd12be796a8a"
+  version = "v1.0.3"
 
 [[projects]]
   name = "github.com/matttproud/golang_protobuf_extensions"
@@ -301,6 +386,12 @@
   version = "v1.5.1"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/safchain/ethtool"
+  packages = ["."]
+  revision = "6e3f4faa84e1d8d48afec75ed064cf3611d3f8bf"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
@@ -326,6 +417,21 @@
   name = "github.com/syndtr/gocapability"
   packages = ["capability"]
   revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
+
+[[projects]]
+  name = "github.com/vishvananda/netlink"
+  packages = [
+    ".",
+    "nl"
+  ]
+  revision = "a2ad57a690f3caf3015351d2d6e1c0b95c349752"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/vishvananda/netns"
+  packages = ["."]
+  revision = "be1fbeda19366dea804f00efff2dd73a1642fdcc"
 
 [[projects]]
   branch = "master"
@@ -397,6 +503,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6663a6d49c0ba133f4900dcdd5c78ae3231e56f3da9d3a1f06dadc7eb826671b"
+  inputs-digest = "c684c67feeb3ba2c3d69c9468d01af25a18d5493eb32b36329ddbccf6823233e"
   solver-name = "gps-cdcl"
   solver-version = 1
