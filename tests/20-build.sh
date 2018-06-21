@@ -147,6 +147,18 @@ sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
 container_check
 
+# test runscript with different shebang
+sudo rm "$CONTAINER"
+cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
+Bootstrap: docker
+From: ubuntu
+
+%runscript
+    #!/bin/bash
+    readlink /proc/$$/exe
+EOF
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+stest 0 singularity run "${CONTAINER}" | grep -qx /bin/bash 
 
 stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"
