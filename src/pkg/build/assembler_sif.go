@@ -6,6 +6,7 @@
 package build
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -25,13 +26,13 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		return err
 	}
 
-	f, err := ioutil.TempFile("", "squashfs-")
+	f, err := ioutil.TempFile(b.Path, "squashfs-")
 	squashfsPathRoot := f.Name() + ".img"
 	f.Close()
 	os.Remove(f.Name())
 	os.Remove(squashfsPathRoot)
 
-	f, err = ioutil.TempFile("", "squashfs-")
+	f, err = ioutil.TempFile(b.Path, "squashfs-")
 	squashfsPathSingularityD := f.Name() + ".img"
 	f.Close()
 	os.Remove(f.Name())
@@ -57,7 +58,21 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		return err
 	}
 
-	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPathRoot, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", "-P", squashfsPathSingularityD, "-f", "SQUASHFS", "-p", "DATA", "-c", "SINGULARITY.D", path)
+	partitionMap := map[int]string{
+		2: "/.singularity.d",
+	}
+
+	data, err := json.Marshal(partitionMap)
+
+	f, err = ioutil.TempFile(b.Path, "json-")
+	JSONPath := f.Name() + ".json"
+	f.Close()
+	os.Remove(f.Name())
+	os.Remove(JSONPath)
+
+	err = ioutil.WriteFile(JSONPath, data, 0755)
+
+	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPathRoot, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", "-P", squashfsPathSingularityD, "-f", "SQUASHFS", "-p", "DATA", "-c", "SINGULARITY.D", "-L", JSONPath, path)
 	sifCmd.Stdin = os.Stdin
 	sifCmd.Stdout = os.Stdout
 	sifCmd.Stderr = os.Stderr
