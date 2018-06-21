@@ -133,6 +133,19 @@ sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
 container_check
 
+# test runscript with different shebang
+sudo rm "$CONTAINER"
+cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
+Bootstrap: docker
+From: ubuntu
+
+%runscript
+    #!/bin/bash
+    readlink /proc/$$/exe
+EOF
+stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+stest 0 singularity run "${CONTAINER}" | grep -qx /bin/bash 
+
 # isolated: from shub to squashfs (via def file)
 sudo rm "$CONTAINER"
 stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/shub/Singularity"
@@ -166,6 +179,7 @@ sudo rm -rf "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity -x build --isolated --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
 stest 0 sudo singularity build --isolated "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 container_check
+
 
 stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"

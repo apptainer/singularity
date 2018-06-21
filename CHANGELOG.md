@@ -6,7 +6,7 @@ and **Merged pull requests**. All closed issued and bug fixes should be
 represented by the pull requests that fixed them. This log originated with Singularity 2.4
 and changes prior to that are (unfortunately) done retrospectively. Critical items to know are:
 
- - renamed, deprecaed, or removed commands
+ - renamed, deprecated, or removed commands
  - defaults that are changed
  - backward incompatible changes (recipe file format? image file format?)
  - migration guidance (how to convert images?)
@@ -64,6 +64,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Check of overlay upper/work images are symlinks
 
 ### Implemented enhancements
+ - Users can specify custom shebang in first line of runscript or startscript
  - This changelog was added.
  - Addition of APP[app]_[LABELS,ENV,RUNSCRIPT,META] so apps can internally find one another.
  - Exposing labels for SCI-F in environment
