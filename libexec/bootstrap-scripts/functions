@@ -101,7 +101,7 @@ get_section() {
             else
                 # We already found it, still in section
                 if [[ "$FOUND" == "yes" ]]; then
-                    echo $line
+                    printf "%s\n" "$line"
                 fi            
             fi
         fi
