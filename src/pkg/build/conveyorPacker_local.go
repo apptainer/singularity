@@ -15,8 +15,8 @@ package build
 // #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
 import "C"
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
@@ -50,19 +50,15 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 
 	b, err = NewBundle()
 
-	err = cp.unpackTmpfs(b)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	// err = cp.unpackTmpfs(b)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// 	return
+	// }
 
-	b.Recipe = Definition{}
-
-	return b, nil
-}
-
-func (cp *LocalConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 	var p Packer
+
+	fmt.Println("Info Inside local packer", cp.src, cp.tmpfs)
 
 	rootfs := cp.src
 
@@ -100,5 +96,51 @@ func (cp *LocalConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 
 	b, err = p.Pack()
 
-	return err
+	b.Recipe = Definition{}
+
+	return b, nil
 }
+
+// func (cp *LocalConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
+// 	var p Packer
+
+// 	fmt.Println("Info passed to unpackTmpfs", cp.src, cp.tmpfs)
+
+// 	rootfs := cp.src
+
+// 	//leverage C code to properly mount squashfs image
+// 	C.singularity_config_init()
+
+// 	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
+
+// 	info := new(loop.Info64)
+
+// 	switch C.singularity_image_type(&imageObject) {
+// 	case 1:
+// 		//squashfs
+// 		info.Offset = uint64(C.uint(imageObject.offset))
+// 		info.SizeLimit = uint64(C.uint(imageObject.size))
+
+// 		p = &SquashfsPacker{
+// 			srcfile: rootfs,
+// 			tmpfs:   cp.tmpfs,
+// 			info:    info,
+// 		}
+// 	case 2:
+// 		//ext3
+// 		info.Offset = uint64(C.uint(imageObject.offset))
+// 		info.SizeLimit = uint64(C.uint(imageObject.size))
+
+// 		p = &Ext3Packer{
+// 			srcfile: rootfs,
+// 			tmpfs:   cp.tmpfs,
+// 			info:    info,
+// 		}
+// 	default:
+// 		sylog.Fatalf("Invalid image format from shub")
+// 	}
+
+// 	b, err = p.Pack()
+
+// 	return err
+// }
