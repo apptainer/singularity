@@ -125,8 +125,7 @@ func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
 	fmt.Println("Info passed to LocalPacker", cp.tmpfile, cp.tmpfs)
 
 	p := &LocalConveyorPacker{
-		LocalConveyor: LocalConveyor{cp.tmpfile},
-		tmpfs:         cp.tmpfs,
+		LocalConveyor: LocalConveyor{cp.tmpfile, cp.tmpfs},
 	}
 
 	return p.Pack()

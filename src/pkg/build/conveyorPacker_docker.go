@@ -81,7 +81,7 @@ func (c *DockerConveyor) Get(recipe Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
-	b, err = NewBundle()
+	b, err = NewBundle(cp.tmpfs)
 	if err != nil {
 		return
 	}
