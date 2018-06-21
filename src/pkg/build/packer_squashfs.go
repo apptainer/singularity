@@ -6,15 +6,6 @@
 
 package build
 
-/*
-#include <unistd.h>
-#include "image/image.h"
-#include "util/config_parser.h"
-*/
-// #cgo CFLAGS: -I../../runtime/c/lib
-// #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
-import "C"
-
 import (
 	"io/ioutil"
 	"os/exec"

@@ -84,6 +84,15 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 			tmpfs:   cp.tmpfs,
 			info:    info,
 		}
+	case 3:
+		//sandbox
+		p = &SandboxPacker{
+			srcdir: rootfs,
+			tmpfs:  cp.tmpfs,
+		}
+	case 4:
+		//SIF
+		sylog.Fatalf("Building from SIF not yet supported")
 	default:
 		sylog.Fatalf("Invalid image format from shub")
 	}
