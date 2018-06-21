@@ -185,6 +185,7 @@ func (p *Points) Import(points []specs.Mount) error {
 	for _, point := range points {
 		var err error
 		var offset uint64
+		var sizelimit uint64
 
 		flags, options := ConvertOptions(point.Options)
 		// check if this is a mount point to remount
@@ -203,10 +204,12 @@ func (p *Points) Import(points []specs.Mount) error {
 		for _, option := range options {
 			if strings.HasPrefix(option, "offset=") {
 				fmt.Sscanf(option, "offset=%d", &offset)
-				break
+			}
+			if strings.HasPrefix(option, "sizelimit=") {
+				fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 			}
 		}
-		if err = p.AddImage(point.Source, point.Destination, point.Type, flags, offset); err == nil {
+		if err = p.AddImage(point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
 			continue
 		}
 		// check if this is a filesystem or overlay mount point
@@ -238,7 +241,7 @@ func (p *Points) Import(points []specs.Mount) error {
 }
 
 // AddImage adds an image mount point
-func (p *Points) AddImage(source string, dest string, fstype string, flags uintptr, offset uint64) error {
+func (p *Points) AddImage(source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
 	}
@@ -251,7 +254,10 @@ func (p *Points) AddImage(source string, dest string, fstype string, flags uintp
 	if _, ok := authorizedImage[fstype]; !ok {
 		return fmt.Errorf("mount %s image is not authorized", fstype)
 	}
-	options := fmt.Sprintf("loop,offset=%d,errors=remount-ro", offset)
+	if sizelimit == 0 {
+		return fmt.Errorf("invalid image size, zero length")
+	}
+	options := fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
 	return p.add(source, dest, fstype, flags, options)
 }
 

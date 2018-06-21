@@ -15,61 +15,70 @@ import (
 func TestImage(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddImage("", "/fake", "ext3", 0, 0); err == nil {
+	if err := points.AddImage("", "/fake", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage("/fake", "", "ext3", 0, 0); err == nil {
+	if err := points.AddImage("/fake", "", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
 
-	if err := points.AddImage("fake", "/", "ext3", 0, 0); err == nil {
+	if err := points.AddImage("fake", "/", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed as source is not an absolute path")
 	}
-	if err := points.AddImage("/", "fake", "ext3", 0, 0); err == nil {
+	if err := points.AddImage("/", "fake", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
-	if err := points.AddImage("", "/", "ext3", 0, 0); err == nil {
+	if err := points.AddImage("", "/", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage("/fake", "/", "xfs", 0, 0); err == nil {
+	if err := points.AddImage("/fake", "/", "xfs", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with bad filesystem type")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_BIND, 0); err == nil {
+	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_BIND, 0, 10); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REMOUNT, 0); err == nil {
+	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REC, 0); err == nil {
+	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REC, 0, 10); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", 0, 0); err != nil {
+	if err := points.AddImage("/fake", "/", "ext3", 0, 0, 10); err != nil {
 		t.Errorf("should have passed with ext3 filesystem")
 	}
-	if err := points.AddImage("/fake", "/", "squashfs", 0, 0); err != nil {
-		t.Errorf("should have failed with squashfs filesystem")
+	if err := points.AddImage("/fake", "/", "squashfs", 0, 0, 10); err != nil {
+		t.Errorf("should have passed with squashfs filesystem")
+	}
+	if err := points.AddImage("/fake", "/", "squashfs", 0, 0, 0); err == nil {
+		t.Errorf("should have failed with 0 size limit")
 	}
 	points.RemoveAll()
 
-	if err := points.AddImage("/fake", "/", "squashfs", syscall.MS_NOSUID, 31); err != nil {
-		t.Fatalf("should have failed with squashfs filesystem")
+	if err := points.AddImage("/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10); err != nil {
+		t.Fatalf("should have passed with squashfs filesystem")
 	}
 	images := points.GetAllImages()
 	if len(images) != 1 {
 		t.Fatalf("should get only one registered image")
 	}
 	correctOffset := false
+	correctSize := false
 	hasNoSuid := false
 	for _, option := range images[0].Options {
 		if option == "offset=31" {
 			correctOffset = true
 		} else if option == "nosuid" {
 			hasNoSuid = true
+		} else if option == "sizelimit=10" {
+			correctSize = true
 		}
 	}
 	if !correctOffset {
 		t.Errorf("offset option wasn't found or is invalid")
+	}
+	if !correctSize {
+		t.Errorf("sizelimit option wasn't found or is invalid")
 	}
 	if !hasNoSuid {
 		t.Errorf("nosuid option wasn't applied")
@@ -302,7 +311,7 @@ func TestImport(t *testing.T) {
 			Source:      "/image.simg",
 			Destination: "/tmp/image",
 			Type:        "squashfs",
-			Options:     []string{"nosuid", "nodev", "offset=31"},
+			Options:     []string{"nosuid", "nodev", "offset=31", "sizelimit=10"},
 		},
 	}
 	if err := points.Import(validImport); err != nil {
