@@ -154,8 +154,8 @@ func (p *Points) GetAll() []specs.Mount {
 	return p.points
 }
 
-// Get returns registered mount points with the matched destination
-func (p *Points) Get(dest string) []specs.Mount {
+// GetByDest returns registered mount points with the matched destination
+func (p *Points) GetByDest(dest string) []specs.Mount {
 	mounts := []specs.Mount{}
 	for _, point := range p.points {
 		if point.Destination == dest {
@@ -166,10 +166,31 @@ func (p *Points) Get(dest string) []specs.Mount {
 	return mounts
 }
 
-// Remove removes mount points identified by destination
-func (p *Points) Remove(dest string) {
+// GetBySource returns registered mount points with the matched source
+func (p *Points) GetBySource(source string) []specs.Mount {
+	mounts := []specs.Mount{}
+	for _, point := range p.points {
+		if point.Source == source {
+			mounts = append(mounts, point)
+			break
+		}
+	}
+	return mounts
+}
+
+// RemoveByDest removes mount points identified by destination
+func (p *Points) RemoveByDest(dest string) {
 	for i := len(p.points) - 1; i >= 0; i-- {
 		if p.points[i].Destination == dest {
+			p.points = append(p.points[:i], p.points[i+1:]...)
+		}
+	}
+}
+
+// RemoveBySource removes mount points identified by source
+func (p *Points) RemoveBySource(source string) {
+	for i := len(p.points) - 1; i >= 0; i-- {
+		if p.points[i].Source == source {
 			p.points = append(p.points[:i], p.points[i+1:]...)
 		}
 	}

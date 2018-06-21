@@ -83,7 +83,7 @@ func TestImage(t *testing.T) {
 	if !hasNoSuid {
 		t.Errorf("nosuid option wasn't applied")
 	}
-	points.Remove("/")
+	points.RemoveByDest("/")
 	if len(points.GetAllImages()) != 0 {
 		t.Errorf("failed to remove image from mount point")
 	}
@@ -137,7 +137,7 @@ func TestOverlay(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 
-	overlay := points.Get("/mnt")
+	overlay := points.GetByDest("/mnt")
 	if len(overlay) != 1 {
 		t.Fatalf("one filesystem mount points should be returned")
 	}
@@ -188,7 +188,7 @@ func TestFS(t *testing.T) {
 		t.Fatalf("%s", err)
 	}
 
-	fs = points.Get("/mnt")
+	fs = points.GetByDest("/mnt")
 	if len(fs) != 1 {
 		t.Fatalf("one filesystem mount points should be returned")
 	}
@@ -221,7 +221,7 @@ func TestBind(t *testing.T) {
 	if err := points.AddBind("/", "/mnt", syscall.MS_BIND); err != nil {
 		t.Fatalf("%s", err)
 	}
-	bind := points.Get("/mnt")
+	bind := points.GetByDest("/mnt")
 	if len(bind) != 1 {
 		t.Fatalf("more than one mount point for /mnt has been returned")
 	}
@@ -239,9 +239,13 @@ func TestBind(t *testing.T) {
 	if err := points.AddBind("/", "/mnt", syscall.MS_BIND|syscall.MS_REC); err != nil {
 		t.Fatalf("%s", err)
 	}
-	bind = points.Get("/mnt")
+	bind = points.GetByDest("/mnt")
 	if len(bind) != 1 {
 		t.Fatalf("more than one mount point for /mnt has been returned")
+	}
+	bind = points.GetBySource("/")
+	if len(bind) != 1 {
+		t.Fatalf("more than one mount point for / has been returned")
 	}
 	hasBind = false
 	for _, option := range bind[0].Options {
@@ -337,28 +341,28 @@ func TestImport(t *testing.T) {
 	if len(fs) != 3 {
 		t.Errorf("wrong number of filesystem mount point found")
 	}
-	points.Remove("/mnt")
+	points.RemoveByDest("/mnt")
 	all = points.GetAll()
 	if len(all) != 5 {
 		t.Errorf("returned a wrong number of mount points %d instead of 5", len(all))
 	}
-	points.Remove("/tmp")
+	points.RemoveByDest("/tmp")
 	all = points.GetAll()
 	if len(all) != 4 {
 		t.Errorf("returned a wrong number of mount points %d instead of 4", len(all))
 	}
-	points.Remove("/opt")
+	points.RemoveByDest("/opt")
 	all = points.GetAll()
 	if len(all) != 3 {
 		t.Errorf("returned a wrong number of mount points %d instead of 3", len(all))
 	}
-	points.Remove("/tmp/image")
+	points.RemoveBySource("/image.simg")
 	all = points.GetAll()
 	if len(all) != 2 {
 		t.Errorf("returned a wrong number of mount points %d instead of 2", len(all))
 	}
 
-	proc := points.Get("/proc")
+	proc := points.GetByDest("/proc")
 	if len(proc) != 1 {
 		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(proc))
 	}
@@ -367,9 +371,9 @@ func TestImport(t *testing.T) {
 			t.Errorf("context should not be set for proc filesystem")
 		}
 	}
-	points.Remove("/proc")
+	points.RemoveByDest("/proc")
 
-	sys := points.Get("/sys")
+	sys := points.GetByDest("/sys")
 	if len(sys) != 1 {
 		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(sys))
 	}
@@ -378,7 +382,7 @@ func TestImport(t *testing.T) {
 			t.Errorf("context should not be set for sysfs filesystem")
 		}
 	}
-	points.Remove("/sys")
+	points.RemoveByDest("/sys")
 
 	all = points.GetAll()
 	if len(all) != 0 {
@@ -416,7 +420,7 @@ func TestImport(t *testing.T) {
 	if err := points.Import(validForceContextImport); err != nil {
 		t.Fatalf("%s", err)
 	}
-	tmp := points.Get("/tmp")
+	tmp := points.GetByDest("/tmp")
 	if len(tmp) != 1 {
 		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(tmp))
 	}
@@ -442,7 +446,7 @@ func TestImport(t *testing.T) {
 	if err := points.Import(validContextImport); err != nil {
 		t.Fatalf("%s", err)
 	}
-	tmp = points.Get("/tmp")
+	tmp = points.GetByDest("/tmp")
 	if len(tmp) != 1 {
 		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(tmp))
 	}
