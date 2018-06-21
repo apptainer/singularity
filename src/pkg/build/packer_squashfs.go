@@ -35,7 +35,7 @@ type SquashfsPacker struct {
 func (p *SquashfsPacker) Pack() (b *Bundle, err error) {
 	rootfs := p.srcfile
 
-	b, err = NewBundle()
+	b, err = NewBundle(p.tmpfs)
 	if err != nil {
 		return
 	}

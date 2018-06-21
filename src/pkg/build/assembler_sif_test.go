@@ -68,5 +68,5 @@ func TestAssemblerShub(t *testing.T) {
 		t.Fatalf("failed to assemble from %s: %v\n", assemblerShubURI, err)
 	}
 
-	//defer os.Remove(assemblerShubDest)
+	defer os.Remove(assemblerShubDest)
 }
