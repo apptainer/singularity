@@ -20,6 +20,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/capabilities"
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
@@ -54,14 +55,17 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
 		cconf.noNewPrivs = C.uchar(bool2int(engine.OciConfig.Process.NoNewPrivileges))
 
-		cconf.uidMapping[0].containerID = C.uid_t(os.Getuid())
-		cconf.uidMapping[0].hostID = C.uid_t(os.Getuid())
-		cconf.uidMapping[0].size = 1
-		cconf.gidMapping[0].containerID = C.gid_t(os.Getgid())
-		cconf.gidMapping[0].hostID = C.gid_t(os.Getgid())
-		cconf.gidMapping[0].size = 1
-
 		if engine.OciConfig.Linux != nil {
+			for i, uid := range engine.OciConfig.Linux.UIDMappings {
+				cconf.uidMapping[i].containerID = C.uid_t(uid.ContainerID)
+				cconf.uidMapping[i].hostID = C.uid_t(uid.HostID)
+				cconf.uidMapping[i].size = C.uint(uid.Size)
+			}
+			for i, gid := range engine.OciConfig.Linux.UIDMappings {
+				cconf.gidMapping[i].containerID = C.gid_t(gid.ContainerID)
+				cconf.gidMapping[i].hostID = C.gid_t(gid.HostID)
+				cconf.gidMapping[i].size = C.uint(gid.Size)
+			}
 			for _, namespace := range engine.OciConfig.Linux.Namespaces {
 				switch namespace.Type {
 				case specs.UserNamespace:
@@ -76,9 +80,44 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 					cconf.nsFlags |= syscall.CLONE_NEWNET
 				case specs.MountNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWNS
+				case specs.CgroupNamespace:
+					cconf.nsFlags |= 0x2000000
 				}
 			}
 		}
+		if engine.OciConfig.Process != nil && engine.OciConfig.Process.Capabilities != nil {
+			var caps uint64
+
+			for _, v := range engine.OciConfig.Process.Capabilities.Permitted {
+				caps |= (1 << capabilities.Map[v].Value)
+			}
+			cconf.capPermitted = C.ulonglong(caps)
+
+			caps = 0
+			for _, v := range engine.OciConfig.Process.Capabilities.Effective {
+				caps |= (1 << capabilities.Map[v].Value)
+			}
+			cconf.capEffective = C.ulonglong(caps)
+
+			caps = 0
+			for _, v := range engine.OciConfig.Process.Capabilities.Inheritable {
+				caps |= (1 << capabilities.Map[v].Value)
+			}
+			cconf.capInheritable = C.ulonglong(caps)
+
+			caps = 0
+			for _, v := range engine.OciConfig.Process.Capabilities.Bounding {
+				caps |= (1 << capabilities.Map[v].Value)
+			}
+			cconf.capBounding = C.ulonglong(caps)
+
+			caps = 0
+			for _, v := range engine.OciConfig.Process.Capabilities.Ambient {
+				caps |= (1 << capabilities.Map[v].Value)
+			}
+			cconf.capAmbient = C.ulonglong(caps)
+		}
+
 		jsonConf, _ := json.Marshal(engine.Common)
 		cconf.jsonConfSize = C.uint(len(jsonConf))
 		sylog.Debugf("jsonConfSize = %v\n", cconf.jsonConfSize)
