@@ -39,7 +39,31 @@ $ sudo make install
 </pre>
 
 note: The `sudo` is very important for the `make install`. Failure to do this
-will result in a non-functioning or semi-functioning installation.
+will result in a non-functioning or semi-functioning installation. This is required
+due to Singularity requiring the `SUID` bit to be set, even if the user installs
+into a directory in which she has full priviledges.
+
+
+### Using nixpkgs to build
+
+If you happen to be using [Nix](https://nixos.org/nix/), you can typically install the latest
+version of Singularity in the usual way. For instance `nix-env -i singularity` to put it in your
+user environment, or just `nix-shell -p singularity` to try it out in a shell.
+
+But if you want to test a custom version of Singularity or hack on it, you can pull in all build dependencies 
+specified in the 
+[Singularity derivation](https://github.com/NixOS/nixpkgs/blob/master/pkgs/applications/virtualization/singularity/default.nix) 
+by doing:
+
+```
+nix-shell '<nixpkgs>' -A singularity --pure
+```
+
+(Note the `--pure` is optional and only recommended  if you want to perform the build in isolation of your
+environment, which *is* recommended before doing a pull request, for example.)
+
+Now you can follow the standard build instructions above in the shell that has been launched.
+
 
 ## To build an RPM of Singularity from a Git clone:
 Here, the version of Singularity that you want to install is given in <b>&lt;version&gt;</b>.  Please substitute as necessary.  
