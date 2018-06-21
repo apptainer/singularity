@@ -12,7 +12,13 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2)
+## [v2.6.0]
+    
+### Implemented enhancements
+  - Allow admin to specify a non-standard location for mksquashfs binary at 
+    build time with --with-mksquashfs option
+
+## [v2.5.2]
 
 ### Bug fixes
   - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
