@@ -24,19 +24,13 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
-	"os/exec"
-	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/containers/image/docker"
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
 )
 
 type shubAPIResponse struct {
@@ -81,6 +75,7 @@ type ShubConveyor struct {
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ShubConveyorPacker struct {
 	ShubConveyor
+	Packer
 }
 
 // Get downloads container information from Singularityhub
@@ -124,20 +119,15 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
+// After image is local, we can use the local packer
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
-	defer os.RemoveAll(cp.tmpfs)
 
-	b, err = NewBundle()
-
-	err = cp.unpackTmpfs(b)
-	if err != nil {
-		log.Fatal(err)
-		return
+	p := &LocalConveyorPacker{
+		LocalConveyor: LocalConveyor{cp.tmpfile},
+		tmpfs:         cp.tmpfs,
 	}
 
-	b.Recipe = cp.recipe
-
-	return b, nil
+	return p.Pack()
 }
 
 // Download an image from Singularity Hub, writing as we download instead
@@ -222,113 +212,4 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 
 	return manifest, err
 
-}
-
-func (cp *ShubConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
-
-	rootfs := cp.tmpfile
-
-	//leverage C code to properly mount squashfs image
-	C.singularity_config_init()
-
-	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
-
-	info := new(loop.Info64)
-
-	switch C.singularity_image_type(&imageObject) {
-	case 1:
-		//squashfs
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
-		err = cp.unpackSquashfs(b, info, rootfs)
-		if err != nil {
-			sylog.Fatalf("unpackSquashfs Failed", err.Error())
-			return err
-		}
-	case 2:
-		//ext3
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
-		err = cp.unpackExt3(b, info, rootfs)
-		if err != nil {
-			sylog.Fatalf("unpackExt3 Failed", err.Error())
-			return err
-		}
-	default:
-		sylog.Fatalf("Invalid image format from shub")
-	}
-
-	return err
-}
-
-func (cp *ShubConveyorPacker) unpackSquashfs(b *Bundle, info *loop.Info64, rootfs string) (err error) {
-	trimfile, err := ioutil.TempFile(cp.tmpfs, "trim.squashfs")
-	//trim header
-	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("dd Failed", err.Error())
-		return err
-	}
-
-	//copy filesystem into bundle rootfs
-	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("unsquashfs Failed", err.Error())
-		return err
-	}
-
-	return err
-}
-
-func (cp *ShubConveyorPacker) unpackExt3(b *Bundle, info *loop.Info64, rootfs string) (err error) {
-	tmpmnt, err := ioutil.TempDir(cp.tmpfs, "mnt")
-
-	var number int
-	info.Flags = loop.FlagsAutoClear
-	arguments := &args.LoopArgs{
-		Image: rootfs,
-		Mode:  os.O_RDONLY,
-		Info:  *info,
-	}
-	err = getLoopDevice(arguments)
-	if err != nil {
-		return err
-	}
-
-	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
-	err = syscall.Mount(path, tmpmnt, "ext3", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
-	if err != nil {
-		sylog.Errorf("Mount Failed", err.Error())
-		return err
-	}
-	defer syscall.Unmount(tmpmnt, 0)
-
-	//copy filesystem into bundle rootfs
-	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("cp Failed", err.Error())
-		return err
-	}
-
-	return err
-}
-
-// getLoopDevice attaches a loop device with the specified arguments
-func getLoopDevice(arguments *args.LoopArgs) error {
-	var reply int
-	reply = 1
-	loopdev := new(loop.Device)
-
-	if err := loopdev.Attach(arguments.Image, arguments.Mode, &reply); err != nil {
-		return err
-	}
-
-	if err := loopdev.SetStatus(&arguments.Info); err != nil {
-		return err
-	}
-	return nil
 }

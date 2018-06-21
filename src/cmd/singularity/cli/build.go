@@ -134,9 +134,20 @@ func makeDefinition(source string, isJSON bool) build.Definition {
 		if err != nil {
 			sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
 		}
+	} else if st, err := os.Stat(source); !st.IsDir() && err == nil {
+		//image
+		//define source as local and follow uri format for defs
+		source = "local://" + source
+		def, err = build.NewDefinitionFromURI(source)
+		if err != nil {
+			sylog.Fatalf("unable to parse URI %s: %v\n", source, err)
+		}
+	} else if st.IsDir() && err == nil {
+		//sandbox
+		sylog.Fatalf("Source %s detected as a Sandbox. Building from Sandbox not supported\n", source)
 
 	} else {
-		sylog.Fatalf("unable to parse %s: %v\n", source, err)
+		sylog.Fatalf("unable to build from %s: %v\n", source, err)
 	}
 
 	return def
@@ -152,6 +163,8 @@ func makeBundle(def build.Definition) *build.Bundle {
 		cp = &build.DockerConveyorPacker{}
 	case "shub":
 		cp = &build.ShubConveyorPacker{}
+	case "local":
+		cp = &build.LocalConveyorPacker{}
 	default:
 		sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
 	}
