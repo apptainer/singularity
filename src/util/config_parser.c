@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -38,6 +39,7 @@
 #include "util/util.h"
 #include "util/message.h"
 #include "util/file.h"
+#include "util/registry.h"
 #include "config_parser.h"
 
 #define MAX_LINE_LEN (PATH_MAX + 128)
@@ -119,7 +121,14 @@ int singularity_config_parse(char *config_path) {
     singularity_message(VERBOSE, "Initialize configuration file: %s\n", config_path);
     if ( is_file(config_path) != 0 ) {
         singularity_message(ERROR, "Specified configuration file %s does not appear to be a normal file.\n", config_path);
+        return -1;
     }
+#ifndef DISABLE_SUID
+    if ( is_owner(config_path, 0) != 0 ) {
+        singularity_message(ERROR, "Specified configuration file %s is not owned by root\n", config_path);
+        return -1;
+    }
+#endif
     FILE *config_fp = fopen(config_path, "r");
     if ( config_fp == NULL ) { // Flawfinder: ignore (we have to open the file...)
         singularity_message(ERROR, "Could not open configuration file %s: %s\n", config_path, strerror(errno));
@@ -201,11 +210,19 @@ int singularity_config_parse(char *config_path) {
  *
  * Returns non-zero on error.
  */
-int singularity_config_init(char *config_path) {
+int singularity_config_init(void) {
+    char *config_path;
+
     if (config_initialized) {
         return 0;
     }
     config_initialized = 1;
+
+    if ( getuid() == 0 && singularity_registry_get("CONFIG_FILE") != NULL ) {
+        config_path = singularity_registry_get("CONFIG_FILE");
+    } else {
+        config_path = joinpath(SYSCONFDIR, "/singularity/singularity.conf");
+    }
 
     hcreate_r(60, &config_table);
     int retval = singularity_config_parse(config_path);
@@ -259,7 +276,7 @@ const char **_singularity_config_get_value_multi_impl(const char *key, const cha
         singularity_message(ERROR, "Called singularity_config_get_value on uninitialized config subsystem\n");
         ABORT(255);
     }
-    _default_entry[1] = '\0';
+    _default_entry[1] = "\0";
     _default_entry[0] = default_value;
 
     ENTRY search_item;

@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -24,7 +25,9 @@
 #ifndef __SINGULARITY_SUID_H_
 #define __SINGULARITY_SUID_H_
 
-extern int singularity_suid_init(char **argv);
+extern int singularity_suid_init(void);
 extern int singularity_suid_enabled(void);
+extern int singularity_allow_container_setuid(void);
+extern int singularity_suid_allowed(void);
 
 #endif /* __SINGULARITY_SUID_H_ */

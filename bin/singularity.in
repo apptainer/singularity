@@ -1,5 +1,6 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -83,6 +84,16 @@ while true; do
             message 4 "Enabling shell debugging\n"
             shift
         ;;
+        -c|--conf)
+            shift
+            if [ $(id -ru) != 0 ]; then
+                message ERROR "Only root can set a custom configuration file\n"
+                exit 1
+            else
+                export SINGULARITY_CONFIG_FILE="${1:-}"
+            fi
+            shift
+        ;;
         -v|--verbose)
             SINGULARITY_MESSAGELEVEL=`expr $SINGULARITY_MESSAGELEVEL + 1`
             message 2 "Increasing verbosity level ($SINGULARITY_MESSAGELEVEL)\n"
@@ -137,3 +148,4 @@ fi
 
 # We should never get here...
 exit 255
+

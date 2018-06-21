@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -82,8 +83,8 @@ if [ -n "${1:-}" ]; then
 fi
 
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    exec "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    exec "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
     exec "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/image.sh" "$@"
 

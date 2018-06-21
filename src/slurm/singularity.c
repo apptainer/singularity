@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -178,7 +179,7 @@ static int setup_container(spank_t spank)
     singularity_message(VERBOSE, "Running SLURM/Singularity integration "
                         "plugin\n");
 
-    if ((rc = singularity_config_init(joinpath(SYSCONFDIR, "/singularity/singularity.conf"))) != 0) {
+    if ((rc = singularity_config_init()) != 0) {
          return rc;
     }
 

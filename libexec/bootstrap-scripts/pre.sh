@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -43,12 +44,5 @@ umask 0002
 install -d -m 0755 "$SINGULARITY_ROOTFS"
 install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity.d"
 install -d -m 0755 "$SINGULARITY_ROOTFS/.singularity.d/env"
-
-if [ -f "$SINGULARITY_BUILDDEF" ]; then
-    ARGS=`singularity_section_args "pre" "$SINGULARITY_BUILDDEF"`
-    singularity_section_get "pre" "$SINGULARITY_BUILDDEF" | /bin/sh -e -x $ARGS || ABORT 255
-fi
-
-
 
 exit 0

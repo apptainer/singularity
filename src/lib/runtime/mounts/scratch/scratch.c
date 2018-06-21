@@ -1,23 +1,24 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
- * 
+ *
  * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
- * 
+ *
  * This software is licensed under a customized 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
  * the U.S. Government has been granted for itself and others acting on its
  * behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
  * to reproduce, distribute copies to the public, prepare derivative works, and
- * perform publicly and display publicly, and to permit other to do so. 
- * 
+ * perform publicly and display publicly, and to permit other to do so.
+ *
 */
 
 #include <errno.h>
@@ -40,8 +41,8 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 
 
@@ -67,7 +68,7 @@ int _singularity_runtime_mount_scratch(void) {
 #ifndef SINGULARITY_NO_NEW_PRIVS
     singularity_message(WARNING, "Not mounting scratch: host does not support PR_SET_NO_NEW_PRIVS\n");
     return(0);
-#endif  
+#endif
 
     singularity_message(DEBUG, "Checking SINGULARITY_WORKDIR from environment\n");
     if ( ( tmpdir_path = singularity_registry_get("WORKDIR") ) == NULL ) {
@@ -114,13 +115,11 @@ int _singularity_runtime_mount_scratch(void) {
             }
         }
 
-        singularity_priv_escalate();
         singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", full_sourcedir_path, container_dir, current);
-        r = mount(full_sourcedir_path, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
+        r = singularity_mount(full_sourcedir_path, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
         if ( singularity_priv_userns_enabled() != 1 ) {
-            r += mount(NULL, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
+            r += singularity_mount(NULL, joinpath(container_dir, current), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
         }
-        singularity_priv_drop();
         if ( r < 0 ) {
             singularity_message(WARNING, "Could not bind scratch directory into container %s: %s\n", full_sourcedir_path, strerror(errno));
             ABORT(255);
@@ -138,4 +137,3 @@ int _singularity_runtime_mount_scratch(void) {
     }
     return(0);
 }
-

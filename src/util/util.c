@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -23,12 +24,15 @@
 
 #define _XOPEN_SOURCE 500 // For nftw
 #define _GNU_SOURCE
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+
+#include <sys/mman.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <errno.h> 
 #include <string.h>
 #include <fcntl.h>  
@@ -42,6 +46,7 @@
 
 #include "config.h"
 #include "util/util.h"
+#include "util/file.h"
 #include "util/message.h"
 #include "util/privilege.h"
 #include "util/registry.h"
@@ -261,8 +266,10 @@ void chomp(char *str) {
 
 void chomp_comments(char *str) {
     if (!str) {return;}
-    char *rest = str;
-    str = strtok_r(str, "#", &rest);
+    char* comment = strchr(str, '#');
+    if (comment) {
+        *comment = '\0'; // terminate string at comment
+    }
     chomp(str);
 }
 
@@ -340,11 +347,42 @@ int envclean(void) {
 
         key = strtok_r(envclone[i], "=", &tok);
 
-        singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
-        unsetenv(key);
+        if ( (strcasecmp(key, "http_proxy")  == 0) ||
+             (strcasecmp(key, "https_proxy") == 0) ||
+             (strcasecmp(key, "no_proxy")    == 0) ||
+             (strcasecmp(key, "all_proxy")   == 0)
+           ) {
+            singularity_message(DEBUG, "Leaving environment variable set: %s\n", key);
+        } else {
+            singularity_message(DEBUG, "Unsetting environment variable: %s\n", key);
+            unsetenv(key);
+        }
     }
 
     return(retval);
+}
+
+
+void *mmap_file(off_t offset, size_t size, int fd) {
+    void *map;
+
+    map = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, offset);
+    if ( map == MAP_FAILED ) {
+        singularity_message(ERROR, "Could not mmap file: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    return map;
+}
+
+void munmap_file(void *map, size_t size) {
+    int retval;
+
+    retval  = munmap(map, size);
+    if ( retval < 0 ) {
+        singularity_message(ERROR, "Could not teardown memory map for file cleanly\n");
+        ABORT(255);
+    }
 }
 
 
@@ -416,4 +454,37 @@ struct tempfile *make_logfile(char *label) {
     singularity_message(DEBUG, "Logging container's %s at: %s\n", label, tf->filename);
     
     return(tf);
+}
+
+// close all file descriptors pointing to a directory
+void fd_cleanup(void) {
+    char *fd_path = (char *)malloc(PATH_MAX);
+    int i;
+
+    singularity_message(DEBUG, "Cleanup file descriptor table\n");
+
+    if ( fd_path == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    for ( i = 0; i <= sysconf(_SC_OPEN_MAX); i++ ) {
+        int length;
+        length = snprintf(fd_path, PATH_MAX-1, "/proc/self/fd/%d", i);
+        if ( length < 0 ) {
+            singularity_message(ERROR, "Failed to determine file descriptor path\n");
+            ABORT(255);
+        }
+        if ( length > PATH_MAX-1 ) {
+            length = PATH_MAX-1;
+        }
+        fd_path[length] = '\0';
+
+        if ( is_dir(fd_path) < 0 ) {
+            continue;
+        }
+        close(i);
+    }
+
+    free(fd_path);
 }

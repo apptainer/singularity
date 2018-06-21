@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -46,6 +47,7 @@ if ! DEBOOTSTRAP_PATH=`singularity_which debootstrap`; then
     exit 1
 fi
 
+ARCH="${SINGULARITY_DEFFILE_ARCH:-}"
 if [ -n "${ARCH:-}" ]; then
     ARCH=`echo ${ARCH:-} | sed -e 's/\s//g'`
 else
@@ -64,23 +66,26 @@ else
     fi
 fi
 
-
+MIRRORURL="${SINGULARITY_DEFFILE_MIRRORURL:-}"
 if [ -z "${MIRRORURL:-}" ]; then
     message ERROR "No 'MirrorURL' defined in bootstrap definition\n"
     ABORT 1
 fi
 
+OSVERSION="${SINGULARITY_DEFFILE_OSVERSION:-}"
 if [ -z "${OSVERSION:-}" ]; then
     message ERROR "No 'OSVersion' defined in bootstrap definition\n"
     ABORT 1
 fi
 
-REQUIRES=`echo "${INCLUDE:-}" | sed -e 's/\s/,/g'`
+REQUIRES=`echo "${SINGULARITY_DEFFILE_INCLUDE:-}" | sed -e 's/\s/,/g'`
 
 # The excludes save 25M or so with jessie.  (Excluding udev avoids
 # systemd, for instance.)  There are a few more we could exclude
 # to save a few MB.  I see 182M cleaned with this, v. 241M with
 # the default debootstrap.
-if ! eval "$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRRORURL'"; then
+
+$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH "$OSVERSION" "$SINGULARITY_ROOTFS" "$MIRRORURL"
+if [ $? != 0 ]; then
     ABORT 255
 fi

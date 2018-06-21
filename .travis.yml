@@ -6,6 +6,9 @@ addons:
       - flawfinder
       - python-pip
       - squashfs-tools
+      - uuid-dev
+      - libssl-dev
+      - libarchive-dev
 
 env:
   global:
@@ -21,9 +24,6 @@ matrix:
       env: OS_TYPE=centos OS_VERSION=6
     - os: linux
       env: OS_TYPE=centos OS_VERSION=7
-
-services:
-  - docker
 
 before_install:
   - .travis/before_install

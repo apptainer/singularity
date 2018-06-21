@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -38,8 +39,8 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
+#include "util/mount.h"
 
-#include "../mount-util.h"
 #include "../../runtime.h"
 
 static int bind_dev(char *tmpdir, char *dev);
@@ -84,7 +85,7 @@ int _singularity_runtime_mount_dev(void) {
 
         if ( singularity_config_get_bool_char(MOUNT_DEVPTS) > 0 ) {
             struct stat multi_instance_devpts;
-            
+
             if( stat("/dev/pts/ptmx", &multi_instance_devpts) < 0 ) {
                 singularity_message(ERROR, "Multiple devpts instances unsupported and \"%s\" configured\n", MOUNT_DEVPTS);
                 ABORT(255);
@@ -102,9 +103,8 @@ int _singularity_runtime_mount_dev(void) {
         bind_dev(sessiondir, "/dev/random");
         bind_dev(sessiondir, "/dev/urandom");
 
-        singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
-        if ( mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {
+        if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {
             singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
             ABORT(255);
         }
@@ -143,7 +143,7 @@ int _singularity_runtime_mount_dev(void) {
             snprintf(devpts_opts, max_sz-1, "%s%d", devpts_opts_base, ttygid->gr_gid);
 
             singularity_message(DEBUG, "Mounting devpts for staged /dev/pts\n");
-            if ( mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
+            if ( singularity_mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
                 if (errno == EINVAL) {
                     // This is the error when unprivileged on RHEL7.4
                     singularity_message(VERBOSE, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
@@ -162,14 +162,12 @@ int _singularity_runtime_mount_dev(void) {
         }
 
         singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
-        if ( mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
-            singularity_priv_drop();
+        if ( singularity_mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
             singularity_message(WARNING, "Could not stage dev tree: '%s' -> '%s': %s\n", devdir, joinpath(container_dir, "/dev"), strerror(errno));
             free(sessiondir);
             free(devdir);
             return(-1);
         }
-        singularity_priv_drop();
 
         free(sessiondir);
         free(devdir);
@@ -180,13 +178,11 @@ int _singularity_runtime_mount_dev(void) {
     singularity_message(DEBUG, "Checking configuration file for 'mount dev'\n");
     if ( singularity_config_get_bool_char(MOUNT_DEV) > 0 ) {
         if ( is_dir(joinpath(container_dir, "/dev")) == 0 ) {
-                singularity_priv_escalate();
                 singularity_message(VERBOSE, "Bind mounting /dev\n");
-                if ( mount("/dev", joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
+                if ( singularity_mount("/dev", joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_NOSUID|MS_REC, NULL) < 0 ) {
                     singularity_message(ERROR, "Could not bind mount container's /dev: %s\n", strerror(errno));
                     ABORT(255);
                 }
-                singularity_priv_drop();
         } else {
             singularity_message(WARNING, "Not mounting /dev, container has no bind directory\n");
         }
@@ -221,15 +217,12 @@ static int bind_dev(char *tmpdir, char *dev) {
         return(-1);
     }
 
-    singularity_priv_escalate();
     singularity_message(DEBUG, "Mounting device %s at %s\n", dev, path);
-    if ( mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
-        singularity_priv_drop();
+    if ( singularity_mount(dev, path, NULL, MS_BIND, NULL) < 0 ) {
         singularity_message(WARNING, "Could not mount %s: %s\n", dev, strerror(errno));
         free(path);
         return(-1);
     }
-    singularity_priv_drop();
 
     free(path);
 

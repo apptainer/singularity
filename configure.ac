@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.4],[gmkurtzer@lbl.gov])
+AC_INIT([singularity],[2.4.2],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -27,7 +27,7 @@ AC_SUBST(SINGULARITY_ARCH)
 # https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
 #AM_INIT_AUTOMAKE([foreign subdir-objects])
 
-AM_INIT_AUTOMAKE([foreign subdir-objects]) ## SEE ABOVE BEFORE CHANGING
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-pax]) ## SEE ABOVE BEFORE CHANGING
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
@@ -42,7 +42,7 @@ AC_PROG_LIBTOOL(libtool)
 
 # Setting rpath if necessary
 if test "$libdir" = "\${exec_prefix}/lib"; then
-    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir)"
+    LDFLAGS="$LDFLAGS -Wl,-rpath -Wl,\$(libdir) -Wl,-z,relro,-z,now"
 fi
 
 AC_MSG_CHECKING([for namespace: CLONE_NEWPID])
@@ -149,6 +149,19 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
                       ]
                   )
 
+AC_MSG_CHECKING([for namespace: CLONE_NEWUTS])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _GNU_SOURCE
+                                     #include <sched.h>
+                                   ]],
+                                   [[unshare(CLONE_NEWUTS);]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DNS_CLONE_NEWUTS"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
 AC_MSG_CHECKING([for feature: NO_NEW_PRIVS])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                                      #include <sys/prctl.h>
@@ -223,6 +236,30 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
                       ]
                   )
 
+AC_MSG_CHECKING([for user capabilities])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+                                     #include <sys/prctl.h>
+                                   ]],
+                                   [[#ifndef PR_CAP_AMBIENT
+                                     #error failed
+                                     #endif
+                                   ]])],
+                      [
+                          AC_MSG_RESULT([yes])
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DUSER_CAPABILITIES"
+                      ], [
+                          AC_MSG_RESULT([no])
+                      ]
+                  )
+
+AC_CHECK_HEADER([linux/securebits.h], [
+                    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SECUREBITS"
+                ])
+
+
+AC_CHECK_HEADER([linux/capability.h], [], [
+                    AC_MSG_ERROR([linux/capability.h header not found, requires kernel headers installation.])
+                ])
 
 
 AC_ARG_WITH([userns],
@@ -237,41 +274,21 @@ AC_SUBST(USER_NS)
 
 AC_CHECK_FUNCS(setns, [
                       ], [
-                          NO_SETNS="-DNO_SETNS"
+                          SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_NO_SETNS"
+                          AC_MSG_CHECKING([for setns kernel support])
+                          if test -d "/proc/self/ns"; then
+                              SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
+                              AC_MSG_RESULT([yes])
+                          else
+                              WARN_SETNS=1
+                              AC_MSG_RESULT([no])
+                          fi
                       ]
                   )
-AC_SUBST(NO_SETNS)
 
 
-AC_MSG_CHECKING([for setns syscall support])
-if test -d "/proc/self/ns"; then
-    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DSINGULARITY_SETNS_SYSCALL"
-    SETNS_SYSCALL=1
-    AC_MSG_RESULT([yes])
-else
-    SETNS_SYSCALL=0
-    AC_MSG_RESULT([no])
-fi
-AC_SUBST(SETNS_SYSCALL)
 
-
-AC_MSG_CHECKING([for overlayfs])
-KVERS=`uname -r`
-if test -f "/lib/modules/$KVERS/modules.dep"; then
-    if grep -q 'overlay.ko' "/lib/modules/$KVERS/modules.dep"; then
-        AC_MSG_RESULT([yes])
-        ENABLE_OVERLAY_CONFIG_DEFAULT="yes"
-        OVERLAY_FS=1 # this adds it to testing
-    else
-        AC_MSG_RESULT([no])
-        ENABLE_OVERLAY_CONFIG_DEFAULT="no"
-    fi
-else
-    AC_MSG_RESULT([maybe])
-    ENABLE_OVERLAY_CONFIG_DEFAULT="try"
-fi
-AC_SUBST(ENABLE_OVERLAY_CONFIG_DEFAULT)
-
+AC_SUBST(SINGULARITY_DEFINES)
 
 # ---------------------------------------------------------------------
 # PYTHON
@@ -298,9 +315,6 @@ else
 
 fi
 
-AC_SUBST(OVERLAY_FS)
-AC_SUBST(SINGULARITY_DEFINES)
-
 AC_MSG_CHECKING([--with-slurm])
 AC_ARG_WITH([slurm],
             AS_HELP_STRING([--with-slurm], [This feature will no longer be part of Singularity proper]),
@@ -325,10 +339,11 @@ AC_ARG_ENABLE([suid],
 
 AS_IF([test "x$enable_suid" != "xno"], [
     AC_MSG_RESULT([yes])
-    BUILD_SUID="action-suid start-suid mount-suid"
+    BUILD_SUID="wrapper-suid"
 ], [
     AC_MSG_RESULT([no])
     BUILD_SUID=""
+    SINGULARITY_DEFINES="$SINGULARITY_DEFINES -DDISABLE_SUID"
 ])
 
 AC_SUBST(BUILD_SUID)
@@ -357,11 +372,40 @@ AC_SUBST(CONTAINER_FINALDIR, "$localstatedir/singularity/mnt/final")
 AC_SUBST(CONTAINER_OVERLAY, "$localstatedir/singularity/mnt/overlay")
 AC_SUBST(SESSIONDIR, "$localstatedir/singularity/mnt/session")
 
+# check for libuuid needed by SIF
+AC_CHECK_HEADERS([uuid/uuid.h],
+        [uuid_header_found=yes; break;])
+AS_IF([test "x$uuid_header_found" != "xyes"],
+	[AC_MSG_ERROR([Unable to find the uuid headers, need package libuuid-devel (uuid-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([uuid_generate], [uuid], [], [
+	AC_MSG_ERROR([unable to find the uuid_generate(), need package libuuid-devel (uuid-dev on Debian/Ubuntu)])
+])
+
+# check for openssl needed by signing
+AC_CHECK_HEADERS([openssl/sha.h],
+	[ssl_header_found=yes; break;])
+AS_IF([test "x$ssl_header_found" != "xyes"],
+	[AC_MSG_ERROR([Unable to find the ssl headers, need package openssl-devel (libssl-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([SHA1], [crypto], [], [
+	AC_MSG_ERROR([unable to find the SHA1(), need package openssl-devel (libssl-dev on Debian/Ubuntu)])
+])
+
+# check for libarchive needed by docker-extract
+AC_CHECK_HEADERS([archive.h],
+[archive_header_found=yes; break;])
+AS_IF([test "x$archive_header_found" != "xyes"],
+[AC_MSG_ERROR([Unable to find the libarchive headers, need package libarchive-devel (libarchive-dev on Debian/Ubuntu)])])
+AC_SEARCH_LIBS([archive_read_new], [archive], [], [
+AC_MSG_ERROR([unable to find libarchive, need package libarchive-devel (libarchive-de on Debian/Ubuntu)])
+])
+
+CFLAGS="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
 
 AC_CONFIG_FILES([
    Makefile
    singularity.spec
    test.sh
+   secbuildimg.sh
    src/Makefile
    src/lib/Makefile
    src/lib/runtime/Makefile
@@ -370,11 +414,14 @@ AC_CONFIG_FILES([
    src/lib/runtime/ns/mnt/Makefile
    src/lib/runtime/ns/net/Makefile
    src/lib/runtime/ns/pid/Makefile
+   src/lib/runtime/ns/uts/Makefile
+   src/lib/runtime/ns/user/Makefile
    src/lib/runtime/files/Makefile
    src/lib/runtime/files/group/Makefile
    src/lib/runtime/files/passwd/Makefile
    src/lib/runtime/files/resolvconf/Makefile
    src/lib/runtime/files/libs/Makefile
+   src/lib/runtime/files/hostname/Makefile
    src/lib/runtime/mounts/Makefile
    src/lib/runtime/mounts/cwd/Makefile
    src/lib/runtime/mounts/dev/Makefile
@@ -394,6 +441,9 @@ AC_CONFIG_FILES([
    src/lib/image/squashfs/Makefile
    src/lib/image/dir/Makefile
    src/lib/image/ext3/Makefile
+   src/lib/image/sif/Makefile
+   src/lib/sif/Makefile
+   src/lib/signing/Makefile
    src/action-lib/Makefile
    src/bootstrap-lib/Makefile
    src/util/Makefile
@@ -420,7 +470,7 @@ AC_CONFIG_FILES([
 
 AC_OUTPUT
 
-if test "$SETNS_SYSCALL" = "0"; then
+if test -n "$WARN_SETNS"; then
     echo
     echo "WARNING: instance feature is disabled due to lack of kernel support"
     echo

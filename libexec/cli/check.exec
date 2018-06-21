@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 #
@@ -96,8 +97,8 @@ export SINGULARITY_IMAGE SINGULARITY_MOUNTPOINT SINGULARITY_CHECKLEVEL SINGULARI
 shift
 
 
-if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/mount-suid" ]; then
-    eval "$SINGULARITY_libexecdir/singularity/bin/mount-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
+if [ -z "${SINGULARITY_NOSUID:-}" -a -u "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" ]; then
+    eval "$SINGULARITY_libexecdir/singularity/bin/wrapper-suid" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/check.sh"
     RETVAL=$?
 elif [ -x "$SINGULARITY_libexecdir/singularity/bin/mount" ]; then
     eval "$SINGULARITY_libexecdir/singularity/bin/mount" /bin/bash "$SINGULARITY_libexecdir/singularity/helpers/check.sh"

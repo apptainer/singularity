@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * Copyright (c) 2016, Brian Bockelman. All rights reserved.
  *
@@ -38,6 +39,7 @@
 #include "util/privilege.h"
 #include "util/message.h"
 #include "util/util.h"
+#include "util/suid.h"
 
 int generic_signal_rpipe = -1;
 int generic_signal_wpipe = -1;
@@ -213,12 +215,14 @@ static int wait_child() {
         }
     } while( child_ok );
 
-    /* Catch the exit status of the child process */
-    retval = 0;
+    /* Catch the exit status or kill signal of the child process */
     waitpid(child_pid, &tmpstatus, 0);
-    retval = WEXITSTATUS(tmpstatus);
-    
-    return(retval);
+    if (WIFEXITED(tmpstatus)) {
+        return(WEXITSTATUS(tmpstatus));
+    } else if (WIFSIGNALED(tmpstatus)) {
+        kill(getpid(), WTERMSIG(tmpstatus));
+    }
+    return(-1);
 }
 
 /* */
@@ -379,7 +383,7 @@ pid_t singularity_fork(unsigned int flags) {
         fds[1].revents = 0;
 
         /* Drop privs if we're SUID */
-        if ( singularity_priv_is_suid() == 0 ) {
+        if ( singularity_suid_enabled() ) {
             singularity_message(DEBUG, "Dropping permissions\n");
             singularity_priv_drop();
         }

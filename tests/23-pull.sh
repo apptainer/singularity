@@ -1,5 +1,6 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # 
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -21,7 +22,7 @@ test_init "Pull tests"
 cd "$SINGULARITY_TESTDIR"
 
 stest 0 sudo singularity pull --size 10 docker://busybox
-CONTAINER=busybox.img
+CONTAINER=busybox.simg
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/runscript

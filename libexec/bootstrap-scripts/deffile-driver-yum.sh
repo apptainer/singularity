@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -81,6 +82,7 @@ if [ "$RPM_DBPATH" != '%{_var}/lib/rpm' ]; then
     ABORT 1
 fi
 
+OSVERSION="${SINGULARITY_DEFFILE_OSVERSION:-}"
 if [ -z "${OSVERSION:-}" ]; then
     if [ -f "/etc/redhat-release" ]; then
         OSVERSION=`rpm -qf --qf '%{VERSION}' /etc/redhat-release`
@@ -89,15 +91,15 @@ if [ -z "${OSVERSION:-}" ]; then
     fi
 fi
 
-MIRROR=`echo "${MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-MIRROR_META=`echo "${METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR=`echo "${SINGULARITY_DEFFILE_MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_META=`echo "${SINGULARITY_DEFFILE_METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -z "${MIRROR:-}" ] && [ -z "${MIRROR_META:-}" ]; then
     message ERROR "No 'MirrorURL' or 'MetaLink' defined in bootstrap definition\n"
     ABORT 1
  fi
 
-MIRROR_UPDATES=`echo "${UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-MIRROR_UPDATES_META=`echo "${UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES=`echo "${SINGULARITY_DEFFILE_UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES_META=`echo "${SINGULARITY_DEFFILE_UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -n "${MIRROR_UPDATES:-}" ] || [ -n "${MIRROR_UPDATES_META:-}" ]; then
     message 1 "'UpdateURL' or 'UpdateMetaLink' defined in bootstrap definition\n"
 fi
@@ -116,8 +118,6 @@ mkdir -m 0755 -p "$SINGULARITY_ROOTFS/$YUM_CONF_DIRNAME"
 echo "[main]" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 if [ -n "${http_proxy:-}" ]; then
     echo "proxy=$http_proxy" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
-elif [ -n "${HTTP_PROXY:-}" ]; then
-    echo "proxy=$HTTP_PROXY" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo 'cachedir=/var/cache/yum-bootstrap' >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 echo "keepcache=0" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
@@ -145,6 +145,8 @@ if [ -n "${MIRROR_META:-}" ]; then
     echo "metalink=$MIRROR_META" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 fi
 echo "enabled=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
+
+GPG="${SINGULARITY_DEFFILE_GPG:-}"
 if [ -n "${GPG:-}" ]; then
 	echo "gpgcheck=1" >> "$SINGULARITY_ROOTFS/$YUM_CONF"
 else
@@ -207,7 +209,10 @@ else
 fi
 
 # Do the install!
-if ! eval "$INSTALL_CMD --noplugins -c $SINGULARITY_ROOTFS/$YUM_CONF --installroot $SINGULARITY_ROOTFS --releasever=${OSVERSION} -y install /etc/redhat-release coreutils ${INCLUDE:-}"; then
+INCLUDE="${SINGULARITY_DEFFILE_INCLUDE:-}"
+$INSTALL_CMD --noplugins -c "$SINGULARITY_ROOTFS/$YUM_CONF" --installroot $SINGULARITY_ROOTFS --releasever="${OSVERSION}" -y install /etc/redhat-release coreutils ${INCLUDE:-}
+
+if [ $? != 0 ]; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

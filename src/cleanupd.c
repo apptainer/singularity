@@ -1,23 +1,24 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
- * 
+ *
  * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
- * 
+ *
  * This software is licensed under a customized 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
  * the U.S. Government has been granted for itself and others acting on its
  * behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
  * to reproduce, distribute copies to the public, prepare derivative works, and
- * perform publicly and display publicly, and to permit other to do so. 
- * 
+ * perform publicly and display publicly, and to permit other to do so.
+ *
  */
 
 
@@ -77,6 +78,8 @@ int main(int argc, char **argv) {
     singularity_message(DEBUG, "Waiting for exclusive flock() on trigger file descriptor: %d\n", trigger_fd);
     if ( flock(trigger_fd, LOCK_EX) == 0 ) {
         singularity_message(VERBOSE, "Cleaning directory: %s\n", cleanup_dir);
+        /* remove directory after 50ms delay (issue #1255) */
+        usleep(50000);
         if ( s_rmdir(cleanup_dir) < 0 ) {
             unlink(trigger);
             singularity_message(ERROR, "Could not remove directory %s: %s\n", cleanup_dir, strerror(errno));

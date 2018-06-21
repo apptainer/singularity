@@ -21,6 +21,7 @@ MirrorURL: http://ftp.us.debian.org/debian/
 %post
     apt-get update
     apt-get -y install vim python-pip python-dev
+    apt-get clean
     pip install --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.10.0-cp27-none-linux_x86_64.whl
 
 

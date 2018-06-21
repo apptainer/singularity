@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -24,7 +25,7 @@
 #define __SINGULARITY_RUNTIME_NS_PID_H_
 
 extern int _singularity_runtime_ns_pid(void);
-extern int _singularity_runtime_ns_pid_join(void);
+extern int _singularity_runtime_ns_pid_join(int ns_fd);
 
 #endif /* __SINGULARITY_RUNTIME_NS_PID_H */
 

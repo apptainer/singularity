@@ -1,5 +1,6 @@
 #!/bin/bash
 # 
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # This software is licensed under a 3-clause BSD license.  Please
@@ -34,7 +35,8 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
-KILL_VAL="15"
+# kill instances with SIGINT by default, for init systems it's equal to Ctrl+Alt+Del
+KILL_VAL="SIGINT"
 KILL_WAIT="10"
 
 while true; do

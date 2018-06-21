@@ -1,23 +1,24 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
- * 
+ *
  * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
  * required approvals from the U.S. Dept. of Energy).  All rights reserved.
- * 
+ *
  * This software is licensed under a customized 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  * NOTICE.  This Software was developed under funding from the U.S. Department of
  * Energy and the U.S. Government consequently retains certain rights. As such,
  * the U.S. Government has been granted for itself and others acting on its
  * behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
  * to reproduce, distribute copies to the public, prepare derivative works, and
- * perform publicly and display publicly, and to permit other to do so. 
- * 
+ * perform publicly and display publicly, and to permit other to do so.
+ *
 */
 
 #define _GNU_SOURCE
@@ -40,6 +41,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 
 
@@ -75,19 +77,23 @@ int _singularity_runtime_ns_ipc(void) {
     return(0);
 }
 
-int _singularity_runtime_ns_ipc_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_ipc_join(int ns_fd) {
     int ipc_fd;
 
     /* Attempt to open /proc/[PID]/ns/pid */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_own_namespace("ipc") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     ipc_fd = openat(ns_fd, "ipc", O_RDONLY);
 
     if( ipc_fd == -1 ) {
         singularity_message(ERROR, "Could not open IPC NS fd: %s\n", strerror(errno));
         ABORT(255);
     }
-    
+
     singularity_message(DEBUG, "Attempting to join IPC namespace\n");
     if ( setns(ipc_fd, CLONE_NEWIPC) < 0 ) {
         singularity_message(ERROR, "Could not join IPC namespace: %s\n", strerror(errno));

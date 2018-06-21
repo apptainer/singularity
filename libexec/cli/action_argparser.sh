@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -16,6 +17,14 @@
 # file found in the top-level directory of this distribution and at
 # https://github.com/singularityware/singularity/blob/master/LICENSE-LBNL.md.
 
+## Load capabilities
+if [ -f "$SINGULARITY_libexecdir/singularity/capabilities" ]; then
+    . "$SINGULARITY_libexecdir/singularity/capabilities"
+    singularity_get_env_capabilities
+else
+    echo "Error loading capabilities: $SINGULARITY_libexecdir/singularity/capabilities"
+    exit 1
+fi
 
 message 2 "Evaluating args: '$*'\n"
 
@@ -114,6 +123,18 @@ while true; do
             SINGULARITY_UNSHARE_NET=1
             export SINGULARITY_UNSHARE_NET
         ;;
+        --uts)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            export SINGULARITY_UNSHARE_UTS
+        ;;
+        --hostname)
+            shift
+            SINGULARITY_UNSHARE_UTS=1
+            SINGULARITY_HOSTNAME="$1"
+            export SINGULARITY_UNSHARE_UTS SINGULARITY_HOSTNAME
+            shift
+        ;;
         --pwd)
             shift
             SINGULARITY_TARGET_PWD="$1"
@@ -122,34 +143,59 @@ while true; do
         ;;
         --nv)
             shift
-            SINGULARITY_NVLIBLIST=`mktemp ${TMPDIR:-/tmp}/.singularity-nvliblist.XXXXXXXX`
-            cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" > $SINGULARITY_NVLIBLIST
-            for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
-                if [ -f "$i" ]; then
-                    message 2 "Found NV library: $i\n"
-                    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
-                        SINGULARITY_CONTAINLIBS="$i"
-                     else
-                        SINGULARITY_CONTAINLIBS="$SINGULARITY_CONTAINLIBS,$i"
-                    fi
+            SINGULARITY_NV=1
+        ;;
+        -f|--fakeroot)
+            shift
+            SINGULARITY_NOSUID=1
+            SINGULARITY_USERNS_UID=0
+            SINGULARITY_USERNS_GID=0
+            export SINGULARITY_USERNS_UID SINGULARITY_USERNS_GID SINGULARITY_NOSUID
+        ;;
+        --keep-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                    message ERROR "keep-privs is disabled when allow root capabilities directive is set to no\n"
+                    exit 1
                 fi
-            done
-            rm $SINGULARITY_NVLIBLIST
-            if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
-                message WARN "Could not find any Nvidia libraries on this host!\n";
+                SINGULARITY_KEEP_PRIVS=1
+                export SINGULARITY_KEEP_PRIVS
+                message 4 "Requesting keep privileges\n"
             else
-                export SINGULARITY_CONTAINLIBS
+                message WARNING "Keeping privileges is for root only\n"
             fi
-            if NVIDIA_SMI=$(which nvidia-smi); then
-                if [ -n "${SINGULARITY_BINDPATH:-}" ]; then
-                    SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH},${NVIDIA_SMI}"
-                else
-                    SINGULARITY_BINDPATH="${NVIDIA_SMI}"
-                fi
-                export SINGULARITY_BINDPATH
-            else
-                message WARN "Could not find the Nvidia SMI binary to bind into container\n"
+            shift
+        ;;
+        --no-privs)
+            if [ "$(id -ru)" = "0" ]; then
+                SINGULARITY_NO_PRIVS=1
+                export SINGULARITY_NO_PRIVS
+                message 4 "Requesting no privileges\n"
             fi
+            shift
+        ;;
+        --add-caps)
+            shift
+            singularity_add_capabilities "$1"
+            shift
+        ;;
+        --drop-caps)
+            shift
+            singularity_drop_capabilities "$1"
+            shift
+        ;;
+        --allow-setuid)
+            shift
+            if [ "$(id -ru)" != "0" ]; then
+                message ERROR "allow-setuid is for root only\n"
+                exit 1
+            fi
+            if [ "$(singularity_config_value 'allow root capabilities')" != "yes" ]; then
+                message ERROR "allow-setuid is disabled when allow root capabilities directive is set to no\n"
+                exit 1
+            fi
+            SINGULARITY_ALLOW_SETUID=1
+            export SINGULARITY_ALLOW_SETUID
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -160,3 +206,17 @@ while true; do
         ;;
     esac
 done
+
+if [ -z "${SINGULARITY_NV_OFF:-}" ]; then # this is a "kill switch" provided for user
+    # if singularity.conf specifies --nv
+    if [ `$SINGULARITY_libexecdir/singularity/bin/get-configvals "always use nv"` == "yes" ]; then 
+        message 2 "'always use nv = yes' found in singularity.conf\n"
+        message 2 "binding nvidia files into container\n"
+        bind_nvidia_files
+    # or if the user asked for --nv    
+    elif [ -n "${SINGULARITY_NV:-}" ]; then
+        bind_nvidia_files
+    fi
+fi 
+
+

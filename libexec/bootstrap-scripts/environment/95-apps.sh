@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -18,9 +19,9 @@ if test -n "${SINGULARITY_APPNAME:-}"; then
     export SINGULARITY_APPNAME
 
     if test -d "/scif/apps/${SINGULARITY_APPNAME:-}/"; then
-        SINGULARITY_APPS="/scif/apps"
-        SINGULARITY_APPROOT="/scif/apps/${SINGULARITY_APPNAME:-}"
-        export SINGULARITY_APPROOT SINGULARITY_APPS
+        SCIF_APPS="/scif/apps"
+        SCIF_APPROOT="/scif/apps/${SINGULARITY_APPNAME:-}"
+        export SCIF_APPROOT SCIF_APPS
         PATH="/scif/apps/${SINGULARITY_APPNAME:-}:$PATH"
 
         # Automatically add application bin to path

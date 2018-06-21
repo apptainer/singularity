@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -52,9 +53,7 @@ SINGULARITY_MESSAGELEVEL=5
 
 
 SUID_FILES="
-    $SINGULARITY_libexecdir/singularity/bin/action-suid
-    $SINGULARITY_libexecdir/singularity/bin/mount-suid
-    $SINGULARITY_libexecdir/singularity/bin/start-suid
+    $SINGULARITY_libexecdir/singularity/bin/wrapper-suid
 "
 
 stest 0 sh -c "test -f $SINGULARITY_sysconfdir/singularity/singularity.conf"

@@ -1,22 +1,15 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
- *
- * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
  * 
- * Copyright (c) 2016-2017, The Regents of the University of California,
- * through Lawrence Berkeley National Laboratory (subject to receipt of any
- * required approvals from the U.S. Dept. of Energy).  All rights reserved.
+ * See the COPYRIGHT.md file at the top-level directory of this distribution and at
+ * https://github.com/singularityware/singularity/blob/master/COPYRIGHT.md.
  * 
- * This software is licensed under a customized 3-clause BSD license.  Please
- * consult LICENSE file distributed with the sources of this project regarding
- * your rights to use or distribute this software.
- * 
- * NOTICE.  This Software was developed under funding from the U.S. Department of
- * Energy and the U.S. Government consequently retains certain rights. As such,
- * the U.S. Government has been granted for itself and others acting on its
- * behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
- * to reproduce, distribute copies to the public, prepare derivative works, and
- * perform publicly and display publicly, and to permit other to do so. 
+ * This file is part of the Singularity Linux container project. It is subject to the license
+ * terms in the LICENSE.md file found in the top-level directory of this distribution and
+ * at https://github.com/singularityware/singularity/blob/master/LICENSE.md. No part
+ * of Singularity, including this file, may be copied, modified, propagated, or distributed
+ * except according to the terms contained in the LICENSE.md file.
  * 
 */
 
@@ -25,6 +18,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
+#include <sys/fsuid.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -33,10 +28,37 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
-
-#include "../runtime.h"
+#include "util/privilege.h"
 
 #define MAX_LINE_LEN 2048
+
+int singularity_mount(const char *source, const char *target,
+                      const char *filesystemtype, unsigned long mountflags,
+                      const void *data) {
+    int ret;
+    uid_t fsuid = 0;
+
+    if ( ( mountflags & MS_BIND ) ) {
+        fsuid = singularity_priv_getuid();
+    }
+
+    /* don't modify user groups */
+    if ( singularity_priv_userns_enabled() == 0 ) {
+        if ( seteuid(0) < 0 ) {
+            singularity_message(ERROR, "Failed to escalate privileges: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        /* NFS root_squash option set uid 0 to nobody, force use of real user ID */
+        setfsuid(fsuid);
+    }
+    ret = mount(source, target, filesystemtype, mountflags, data);
+    if ( singularity_priv_userns_enabled() == 0 && seteuid(singularity_priv_getuid()) < 0 ) {
+        singularity_message(ERROR, "Failed to drop privileges: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    return ret;
+}
 
 int check_mounted(char *mountpoint) {
     int retval = -1;
@@ -92,3 +114,4 @@ int check_mounted(char *mountpoint) {
 
     return(retval);
 }
+

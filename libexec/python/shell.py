@@ -59,7 +59,8 @@ def get_image_uri(image, quiet=False):
 
 
 def remove_image_uri(image, image_uri=None, quiet=False):
-    '''remove_image_uri will return just the image name
+    '''remove_image_uri will return just the image name.
+    ::note this will also remove all spaces from the uri.
     '''
     if image_uri is None:
         image_uri = get_image_uri(image, quiet=quiet)
@@ -70,24 +71,111 @@ def remove_image_uri(image, image_uri=None, quiet=False):
         image = image.replace(image_uri, '')
     return image
 
+# Quick python regex syntax reference for referring back to matched groups:
+# (?:stuff) matches stuff, just like (stuff) but won't appear in m.groups()
+# (?P<name>stuff) matches stuff, and can be retrieved by m.group('name')
+
+# Regular expression used to parse docker:// uris, which have slightly
+# different rules than shub://, namely:
+# - registry must include :port or a . in the name (e.g. docker.io)
+# - namespace is completely optional
+_docker_uri_re = re.compile(
+    # Optionally match a registry if it contains a '.' or a ':',
+    # may contain any character but '/' or '@', and terminated by '/'
+    # Note the use of (?:) to make sure the group "registry" does
+    # not contain the / at the end. Also, registry includes the port
+    "(?:(?P<registry>[^/@]+[.:][^/@]*)/)?"
+    # Optionally match a namespace, matched as any characters but
+    # ':' or '/', followed by '/'. Note the match will include the final /
+    "(?P<namespace>(?:[^:@/]+/)+)?"
+    # Match a repo name, mandatory. Any character but ':' or '/'
+    "(?P<repo>[^:@/]+)"
+    # Match :tag (optional)
+    "(?::(?P<tag>[^:@]+))?"
+    # Match @digest (optional)
+    "(?:@(?P<version>.+))?"
+    # we need to match the whole string, make sure there's no leftover
+    "$"
+    )
+
+
+# Reduced regex, matches registry:port/repo or registry.com/repo
+# (registry must include : or .) with optional tag or version.
+# Also matches repo only, e.g. reponame[:tag|@version].
+# This is tried before _default_uri_re, so that namespace/repo takes
+# precedence over registry/repo.
+_reduced_uri_no_ns_re = re.compile(
+    # match a registry, optional, may include a : or ., but not a @
+    "(?:(?P<registry>[^/@]+[.:][^/@]*)/)?"
+    # Match a repo name, mandatory. Any character but ':' or '/'
+    "(?P<repo>[^:@/]+)"
+    # Match :tag (optional)
+    "(?::(?P<tag>[^:@]+))?"
+    # Match @digest (optional)
+    "(?:@(?P<version>.+))?"
+    # we need to match the whole string, make sure there's no leftover
+    "$"
+    # dummy group that will never match, but will add a 'namespace' entry
+    "(?P<namespace>.)?"
+    )
+
+# Regular expression used to parse other images and uris (e.g. shub://)
+# This version expects a namespace, and won't match otherwise
+# but the registry is optional. In cases like a/b/c, the first component
+# is taken to be the registry in this regex.
+_default_uri_re = re.compile(
+    # must be either registry[:port]/namespace[/more/namespaces]/repo
+    # or namespace/repo, at least one namespace is required
+    # Match registry, if specified
+    "(?:(?P<registry>[^/@]+)/)?"
+    # Match a namespace, matched as any characters but
+    # ':' or '@', ended by a '/'. Note the match will include the final /
+    "(?P<namespace>(?:[^:@/]+/)+)"
+    # Match a repo name, mandatory. Any character but ':' or '/'
+    "(?P<repo>[^:@/]+)"
+    # Match :tag (optional)
+    "(?::(?P<tag>[^:@]+))?"
+    # Match @digest (optional)
+    "(?:@(?P<version>.+))?"
+    # we need to match the whole string, make sure there's no leftover
+    "$"
+    )
+
 def parse_image_uri(image,
                     uri=None,
                     quiet=False,
                     default_registry=None,
                     default_namespace=None,
                     default_tag=None):
+    '''parse_image_uri will parse a docker or shub uri and return
+    a json structure with a registry, repo name, tag, namespace and version.
+    Tag and version are optional, namespace is optional for docker:// uris.
+    URIs are of this general form:
+        myuri://[registry.com:port/][namespace/nested/]repo[:tag][@version]
+    (parts in [] are optional)
+    Parsing rules are slightly different if the uri is a docker:// uri:
+    - registry must include a :port or a . in its name, else will be parsed
+      as a namespace. For non-docker uris, instead, if there are three or
+      more parts separated by /, the first one is taken to be the registry
+    - namespace can be empty if a registry is specified, else default
+      namespace will be used (e.g. docker://registry.com/repo:tag).
+      For non-docker uris, namespace cannot be empty and default will be used
 
-    '''parse_image_uri will return a json structure with a registry,
-    repo name, tag, and namespace, intended for Docker.
     :param image: the string provided on command line for
-                  the image name, eg: ubuntu:latest
-    :param uri: the uri (eg, docker:// to remove), default uses ""
+                  the image name, eg: ubuntu:latest or
+                  docker://local.registry/busybox@12345
+    :param uri: the uri type (eg, docker://), default autodetects
     ::note uri is maintained as variable so we have some control over allowed
+    :param quiet: If True, don't show verbose messages with the parsed values
+    :default_registry: Which registry to use if image doesn't contain one.
+                       if None, use defaults.REGISTRY
+    :default_namespace: Which namespace to use if image doesn't contain one.
+                       if None, use defaults.NAMESPACE. Also, check out the
+                       note above about docker:// and empty namespaces.
+    :default_tag: Which tag to use if image doesn't contain one.
+                       if None, use defaults.REPO_TAG
     :returns parsed: a json structure with repo_name, repo_tag, and namespace
     '''
-
-    if uri is None:
-        uri = ""
 
     # Default to most common use case, Docker
     if default_registry is None:
@@ -99,63 +187,66 @@ def parse_image_uri(image,
     if default_tag is None:
         default_tag = TAG
 
-    # Be absolutely sure there are not comments
+    # if user gave custom registry / namespace, make them the default
+    if CUSTOM_NAMESPACE is not None:
+        default_namespace = CUSTOM_NAMESPACE
+
+    if CUSTOM_REGISTRY is not None:
+        default_registry = CUSTOM_REGISTRY
+
+    # candidate regex for matching, in order of preference
+    uri_regexes = [ _reduced_uri_no_ns_re,
+                    _default_uri_re ]
+
+    # Be absolutely sure there are no comments
     image = image.split('#')[0]
 
-    # Get rid of any uri, and split the tag
-    image = image.replace(uri, '')
+    if not uri:
+        uri = get_image_uri(image, quiet=True)
 
-    # Does the uri have a digest or Github tag (version)?
-    image = image.split('@')
-    version = None
-    if len(image) == 2:
-        version = image[1]
+    # docker images require slightly different rules
+    if uri == "docker://":
+        uri_regexes = [ _docker_uri_re ]
 
-    image = image[0]
-    image = image.split(':')
+    image = remove_image_uri(image, uri)
 
-    # If there are three parts, we have port and tag
-    if len(image) == 3:
-        repo_tag = image[2]
-        image = "%s:%s" % (image[0], image[1])
+    for r in uri_regexes:
+        match = r.match(image)
+        if match:
+            break
 
-    # If there are two parts, we have port or tag
-    elif len(image) == 2:
-        # If there isn't a slash in second part, we have a tag
-        if image[1].find("/") == -1:
-            repo_tag = image[1]
-            image = image[0]
-        # Otherwise we have a port and we merge the path
+    if not match:
+        bot.error('Could not parse image "%s"! Exiting.' % image)
+        sys.exit(1)
+
+    registry = match.group('registry')
+    namespace = match.group('namespace')
+    repo_name = match.group('repo')
+    repo_tag = match.group('tag')
+    version = match.group('version')
+
+    if namespace:
+        # strip trailing /
+        namespace = namespace.rstrip('/')
+
+    # repo_name is required and enforced by the re (in theory)
+    # if not provided, re should not match
+    assert(repo_name)
+
+    # replace empty fields with defaults
+    if not namespace:
+        # for docker, if a registry was specified, don't
+        # inject a namespace in between
+        if registry and uri == "docker://":
+            namespace = ""
         else:
-            image = "%s:%s" % (image[0], image[1])
-            repo_tag = default_tag
-    else:
-        image = image[0]
+            namespace = default_namespace
+    if not registry:
+        registry = default_registry
+    if not repo_tag:
         repo_tag = default_tag
+    # version is not mandatory, don't check that
 
-    # Now look for registry, namespace, repo
-    image = image.split('/')
-
-    if len(image) > 2:
-        registry = image[0]
-        namespace = "/".join(image[1:-1])
-        repo_name = image[-1]
-
-    elif len(image) == 2:
-        registry = default_registry
-        namespace = image[0]
-        repo_name = image[1]
-
-    else:
-        registry = default_registry
-        namespace = default_namespace
-        repo_name = image[0]
-
-    # if user gave custom registry / namespace, use
-    if CUSTOM_NAMESPACE is not None:
-        namespace = CUSTOM_NAMESPACE
-    if CUSTOM_REGISTRY is not None:
-        registry = CUSTOM_REGISTRY
 
     if not quiet:
         bot.verbose("Registry: %s" % registry)
@@ -167,15 +258,7 @@ def parse_image_uri(image,
     parsed = {'registry': registry,
               'namespace': namespace,
               'repo_name': repo_name,
-              'repo_tag': repo_tag}
-
-    # No field should be empty
-    for fieldname, value in parsed.items():
-        if len(value) == 0:
-            bot.error("%s found empty, check uri! Exiting." % value)
-            sys.exit(1)
-
-    # Version is not required
-    parsed['version'] = version
+              'repo_tag': repo_tag,
+              'version': version }
 
     return parsed

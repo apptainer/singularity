@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -78,6 +79,7 @@ if [ "$RPM_DBPATH" != '%{_var}/lib/rpm' ]; then
     ABORT 1
 fi
 
+OSVERSION="${SINGULARITY_DEFFILE_OSVERSION:-}"
 if [ -z "${OSVERSION:-}" ]; then
     if [ -f "/etc/os-release" ]; then
         OSVERSION=`rpm -qf --qf '%{VERSION}' /etc/os-release`
@@ -86,15 +88,15 @@ if [ -z "${OSVERSION:-}" ]; then
     fi
 fi
 
-MIRROR=`echo "${MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-MIRROR_META=`echo "${METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR=`echo "${SINGULARITY_DEFFILE_MIRRORURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_META=`echo "${SINGULARITY_DEFFILE_METALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -z "${MIRROR:-}" ] && [ -z "${MIRROR_META:-}" ]; then
     message ERROR "No 'MirrorURL' or 'MetaLink' defined in bootstrap definition\n"
     ABORT 1
  fi
 
-MIRROR_UPDATES=`echo "${UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
-MIRROR_UPDATES_META=`echo "${UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES=`echo "${SINGULARITY_DEFFILE_UPDATEURL:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
+MIRROR_UPDATES_META=`echo "${SINGULARITY_DEFFILE_UPDATEMETALINK:-}" | sed -r "s/%\{?OSVERSION\}?/$OSVERSION/gi"`
 if [ -n "${MIRROR_UPDATES:-}" ] || [ -n "${MIRROR_UPDATES_META:-}" ]; then
     message 1 "'UpdateURL' or 'UpdateMetaLink' defined in bootstrap definition\n"
 fi
@@ -118,7 +120,9 @@ $INSTALL_CMD --root $SINGULARITY_ROOTFS ar $MIRROR repo-oss
 $INSTALL_CMD --root $SINGULARITY_ROOTFS --gpg-auto-import-keys refresh
 
 # Do the install!
-if ! eval "$INSTALL_CMD -c $SINGULARITY_ROOTFS/$ZYPP_CONF --root $SINGULARITY_ROOTFS --releasever=${OSVERSION} -n install --auto-agree-with-licenses aaa_base ${INCLUDE:-}"; then
+INCLUDE="${SINGULARITY_DEFFILE_INCLUDE:-}"
+$INSTALL_CMD -c "$SINGULARITY_ROOTFS/$ZYPP_CONF" --root $SINGULARITY_ROOTFS --releasever="${OSVERSION}" -n install --auto-agree-with-licenses aaa_base ${INCLUDE:-}
+if [ $? != 0 ]; then
     message ERROR "Bootstrap failed... exiting\n"
     ABORT 255
 fi

@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 # Copyright (c) 2017, Vanessa Sochat. All rights reserved.
 #
@@ -45,6 +46,7 @@ fi
 
 
 # By default, we clone from root unless specified otherwise
+FROM="${SINGULARITY_DEFFILE_FROM:-}"
 
 if [ -z "${FROM:-}" ]; then
     FROM='/'
@@ -57,10 +59,11 @@ export SINGULARITY_DUMP
 
 # The user can specify custom exclusions
 
-if [ -z "${EXCLUDE:-}" ]; then
+if [ -z "${SINGULARITY_DEFFILE_EXCLUDE:-}" ]; then
     EXCLUDE=''
 else
-    message 1 "Custom exclusions: $EXCLUDE\n"
+    message 1 "Custom exclusions: $SINGULARITY_DEFFILE_EXCLUDE\n"
+    EXCLUDE="${SINGULARITY_DEFFILE_EXCLUDE:-}"
 fi
 CUSTOM_EXCLUSIONS=$(echo "$EXCLUDE" | sed 's/[^ ]* */--exclude &/g')
 

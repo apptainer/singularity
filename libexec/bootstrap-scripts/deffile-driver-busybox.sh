@@ -1,5 +1,6 @@
 #!/bin/bash
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
@@ -39,6 +40,7 @@ fi
 
 ########## BEGIN BOOTSTRAP SCRIPT ##########
 
+MIRRORURL="${SINGULARITY_DEFFILE_MIRRORURL:-}"
 
 if [ -z "${MIRRORURL:-}" ]; then
     MIRRORURL="https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64"

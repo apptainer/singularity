@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  * 
  * This software is licensed under a 3-clause BSD license.  Please
@@ -11,7 +12,7 @@
 #define __SINGULARITY_RUNTIME_NS_NET_H_
 
 extern int _singularity_runtime_ns_net(void);
-extern int _singularity_runtime_ns_net_join(void);
+extern int _singularity_runtime_ns_net_join(int ns_fd);
 
 #endif /* __SINGULARITY_RUNTIME_NS_NET_H */
 

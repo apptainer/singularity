@@ -1,10 +1,11 @@
-/* 
+/*
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
- * 
+ *
  * This software is licensed under a 3-clause BSD license.  Please
  * consult LICENSE file distributed with the sources of this project regarding
  * your rights to use or distribute this software.
- * 
+ *
  */
 
 #define _GNU_SOURCE
@@ -29,6 +30,7 @@
 #include "util/privilege.h"
 #include "util/fork.h"
 #include "util/registry.h"
+#include "util/daemon.h"
 #include "util/setns.h"
 
 
@@ -37,7 +39,7 @@ static int enabled = -1;
 int _singularity_runtime_ns_net(void) {
     int sockfd;
     struct ifreq req;
-    
+
     if ( singularity_registry_get("UNSHARE_NET") == NULL ) {
         singularity_message(VERBOSE2, "Not virtualizing network namespace on user request\n");
         return(0);
@@ -65,7 +67,7 @@ int _singularity_runtime_ns_net(void) {
         singularity_message(ERROR, "Unable to open AF_INET socket: %s\n", strerror(errno));
         ABORT(255);
     }
-    
+
     memset(&req, 0, sizeof(req));
     strncpy(req.ifr_name, "lo", IFNAMSIZ);
 
@@ -78,23 +80,27 @@ int _singularity_runtime_ns_net(void) {
         ABORT(255);
     }
     singularity_priv_drop();
-    
+
     return(0);
 }
 
-int _singularity_runtime_ns_net_join(void) {
-    int ns_fd = atoi(singularity_registry_get("DAEMON_NS_FD"));
+int _singularity_runtime_ns_net_join(int ns_fd) {
     int net_fd;
 
     /* Attempt to open /proc/[PID]/ns/net */
     singularity_priv_escalate();
+    if ( ! singularity_daemon_own_namespace("net") ) {
+        singularity_priv_drop();
+        return(0);
+    }
+
     net_fd = openat(ns_fd, "net", O_RDONLY);
 
     if( net_fd == -1 ) {
         singularity_message(ERROR, "Could not open NET NS fd: %s\n", strerror(errno));
         ABORT(255);
     }
-    
+
     singularity_message(DEBUG, "Attempting to join NET namespace\n");
     if ( setns(net_fd, CLONE_NEWNET) < 0 ) {
         singularity_message(ERROR, "Could not join NET namespace: %s\n", strerror(errno));

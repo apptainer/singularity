@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -59,6 +60,6 @@ int _singularity_config_get_bool_char_impl(const char *key, const char *value);
 
 // Initialize the configuration table
 //
-int singularity_config_init(char *config_path);
+int singularity_config_init(void);
 
 #endif /* __SINGULARITY_CONFIG_H_ */

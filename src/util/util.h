@@ -1,4 +1,5 @@
 /* 
+ * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
  * Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
  *
  * Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -19,7 +20,6 @@
  * perform publicly and display publicly, and to permit other to do so. 
  * 
  */
-
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -54,9 +54,12 @@ void chomp(char *str);
 int strlength(const char *string, int max_len);
 int envclean(void);
 char *random_string(int length);
+void *mmap_file(off_t offset, size_t size, int fd);
+void munmap_file(void *map, size_t size);
 void free_tempfile(struct tempfile *tf);
 struct tempfile *make_tempfile(void);
 struct tempfile *make_logfile(char *label);
+void fd_cleanup(void);
 
 // Given a const char * string containing a base-10 integer,
 // try to convert to an C integer.
