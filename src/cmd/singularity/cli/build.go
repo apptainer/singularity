@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -72,6 +73,11 @@ var BuildCmd = &cobra.Command{
 			fmt.Println("Sandbox!")
 		}
 
+		//check if target collides with existing file
+		if ok := checkBuildTargetCollision(args[0], force); !ok {
+			return
+		}
+
 		def := makeDefinition(args[1], isJSON)
 
 		if remote || builderURL != defbuilderURL {
@@ -89,7 +95,7 @@ var BuildCmd = &cobra.Command{
 			bundle := makeBundle(def)
 
 			if sandbox {
-				sylog.Fatalf("Cannot build to sandbox... yet")
+				a = &build.SandboxAssembler{}
 			} else {
 				a = &build.SIFAssembler{}
 			}
@@ -102,6 +108,30 @@ var BuildCmd = &cobra.Command{
 
 	},
 	TraverseChildren: true,
+}
+
+// checkTargetCollision makes sure output target doesnt exist, or is ok to overwrite
+func checkBuildTargetCollision(path string, force bool) bool {
+	if _, err := os.Stat(path); err == nil {
+		//exists
+		if force {
+			os.RemoveAll(path)
+		} else {
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
+			input, err := reader.ReadString('\n')
+			if err != nil {
+				sylog.Fatalf("Error parsing input:", err)
+			}
+			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
+				os.RemoveAll(path)
+			} else {
+				fmt.Println("Stopping build.")
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // getDefinition creates definition object from various input sources
@@ -134,7 +164,7 @@ func makeDefinition(source string, isJSON bool) build.Definition {
 		if err != nil {
 			sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
 		}
-	} else if st, err := os.Stat(source); err == nil {
+	} else if _, err := os.Stat(source); err == nil {
 		//local image or sandbox
 		//define source as local and follow uri format for defs
 		source = "local://" + source

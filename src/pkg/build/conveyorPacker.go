@@ -36,11 +36,7 @@ type ConveyorPacker interface {
 // IsValidURI returns whether or not the given source is valid
 func IsValidURI(source string) (valid bool, err error) {
 
-	fmt.Println(source)
-
 	u := strings.SplitN(source, ":", 2)
-
-	fmt.Println(u, len(u))
 
 	if len(u) != 2 {
 		return false, fmt.Errorf("Invalid URI %s", source)
