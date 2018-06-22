@@ -6,11 +6,12 @@
 package build
 
 import (
-	"encoding/json"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 
+	"github.com/singularityware/singularity/src/pkg/sif"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -62,17 +63,18 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		2: "/.singularity.d",
 	}
 
-	data, err := json.Marshal(partitionMap)
+	partitionMounts, err := sif.NewJSONMarshaler("sifPartitionMounts", partitionMap)
+	if err != nil {
+		return err
+	}
 
-	f, err = ioutil.TempFile(b.Path, "json-")
-	JSONPath := f.Name() + ".json"
-	f.Close()
-	os.Remove(f.Name())
-	os.Remove(JSONPath)
+	jsonPath := filepath.Join(b.Path, "jsonPartitionMounts")
 
-	err = ioutil.WriteFile(JSONPath, data, 0755)
+	if err := partitionMounts.ToFile(jsonPath, 0755); err != nil {
+		return err
+	}
 
-	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPathRoot, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", "-P", squashfsPathSingularityD, "-f", "SQUASHFS", "-p", "DATA", "-c", "SINGULARITY.D", "-L", JSONPath, path)
+	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPathRoot, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", "-P", squashfsPathSingularityD, "-f", "SQUASHFS", "-p", "DATA", "-c", "SINGULARITY.D", "-L", jsonPath, path)
 	sifCmd.Stdin = os.Stdin
 	sifCmd.Stdout = os.Stdout
 	sifCmd.Stderr = os.Stderr

@@ -47,11 +47,14 @@ import (
 	"net/rpc"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 )
@@ -78,12 +81,10 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	st, err := os.Stat(engine.EngineConfig.GetImage())
+	_, err := os.Stat(engine.EngineConfig.GetImage())
 	if err != nil {
 		return fmt.Errorf("stat on %s failed", engine.EngineConfig.GetImage())
 	}
-
-	rootfs := engine.EngineConfig.GetImage()
 
 	userNS := false
 	pidNS := false
@@ -101,111 +102,69 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 
 	C.singularity_config_init()
 
-	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
-
-	info := new(loop.Info64)
-	mountType := ""
-
-	switch C.singularity_image_type(&imageObject) {
-	case 1:
-		mountType = "squashfs"
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
-	case 2:
-		mountType = "ext3"
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
+	p := &mount.Points{}
+	if err := engine.addRootfs(p); err != nil {
+		return err
 	}
 
-	// Mount SIF default system partition
-	if st.IsDir() == false && !userNS {
-		var number int
-		info.Flags = loop.FlagsAutoClear
-		number, err = rpcOps.LoopDevice(rootfs, os.O_RDONLY, *info)
-		if err != nil {
-			return err
-		}
-
-		path := fmt.Sprintf("/dev/loop%d", number)
-		sylog.Debugf("Mounting loop device %s\n", path)
-		_, err = rpcOps.Mount(path, buildcfg.CONTAINER_FINALDIR, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
-		if err != nil {
-			return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
-		}
-	} else {
-		sylog.Debugf("Mounting image directory %s\n", rootfs)
-		_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
-		if err != nil {
-			return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
-		}
-	}
-
+	sylog.Debugf("Adding proc to mount list\n")
 	if pidNS {
-		sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
-		_, err = rpcOps.Mount("proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
-		if err != nil {
-			return fmt.Errorf("mount proc failed: %s", err)
-		}
+		err = p.AddFS("proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
 	} else {
-		sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
-		_, err = rpcOps.Mount("/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
-		if err != nil {
-			return fmt.Errorf("mount proc failed: %s", err)
-		}
+		err = p.AddBind("proc", "/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	}
+	if err != nil {
+		return fmt.Errorf("unable to add proc to mount list: %s", err)
+	}
+
+	sylog.Debugf("Adding sysfs to mount list\n")
 	if !userNS {
-		sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
-		_, err = rpcOps.Mount("sysfs", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
-		if err != nil {
-			return fmt.Errorf("mount sys failed: %s", err)
-		}
+		err = p.AddFS("sysfs", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 	} else {
-		sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
-		_, err = rpcOps.Mount("/sys", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
-		if err != nil {
-			return fmt.Errorf("mount sys failed: %s", err)
-		}
+		err = p.AddBind("sysfs", "/sys", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	}
-
-	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"))
-	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
 	if err != nil {
-		return fmt.Errorf("mount /home failed: %s", err)
+		return fmt.Errorf("unable to add sys to mount list: %s", err)
 	}
 
-	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
-	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Adding home to mount list\n")
+	err = p.AddBind("home", "/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), syscall.MS_BIND)
 	if err != nil {
-		return fmt.Errorf("mount /dev failed: %s", err)
+		return fmt.Errorf("unable to add home to mount list: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/passwd at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"))
-	_, err = rpcOps.Mount("/etc/passwd", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Adding dev to mount list\n")
+	err = p.AddBind("dev", "/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	if err != nil {
-		return fmt.Errorf("mount /etc/passwd failed: %s", err)
+		return fmt.Errorf("unable to add dev to mount list: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/group at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"))
-	_, err = rpcOps.Mount("/etc/group", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Adding /etc/passwd to mount list\n")
+	err = p.AddBind("passwd", "/etc/passwd", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), syscall.MS_BIND)
 	if err != nil {
-		return fmt.Errorf("mount /etc/group failed: %s", err)
+		return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
 	}
 
-	// Mount SINGULARITY.D partition
-	id, err := loopSifPartition(rpcOps, rootfs, imageObject, 2)
+	sylog.Debugf("Adding /etc/group to mount list\n")
+	err = p.AddBind("group", "/etc/group", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), syscall.MS_BIND)
 	if err != nil {
-		return fmt.Errorf("mount filesystem failed: %v", err)
+		return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
 	}
 
-	loopDevices[id] = ".singularity.d"
-	if err := mountLoops(rpcOps, loopDevices); err != nil {
-		return fmt.Errorf("loop mounts failed: %v", err)
-	}
-
-	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR)
-	_, err = rpcOps.Mount(buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
+	sylog.Debugf("Adding user binds to mount list\n")
+	err = p.Import(engine.CommonConfig.OciConfig.Spec.Mounts)
 	if err != nil {
-		return fmt.Errorf("mount staging directory failed: %s", err)
+		return fmt.Errorf("unable to add user bind mounts to mount list: %s", err)
+	}
+
+	sylog.Debugf("Adding staging dir -> final dir to mount list\n")
+	err = p.AddBind("final", buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, syscall.MS_BIND|syscall.MS_REC)
+	if err != nil {
+		return fmt.Errorf("unable to add final staging dir to mount list: %s", err)
+	}
+
+	if err := mountAll(rpcOps, p); err != nil {
+		return err
 	}
 
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
@@ -232,48 +191,169 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	return nil
 }
 
-/* Most of the following work will be able to be replace by PR #1625 once that's merged */
-
-// loopSifPartition opens a loop device and mounts the partition described
-// by id of the SIF file at imageObject->path [c struct]
-func loopSifPartition(rpcOps *client.RPC, rootfs string, imageObject C.struct_image_object, id int) (int, error) {
-	info := new(loop.Info64)
-
+// func add* are specific for engine to store rootfs info (could be extended to generic helper).
+// these funcs create mount.Points struct full for later mount
+func (engine *EngineOperations) addSifPartition(p *mount.Points, imageObject C.struct_image_object, id int, dest string, flags uintptr) error {
 	// get sif common struct from sif[id] partition
 	sifCommon := C.sif_getpart(&imageObject, C.int(id))
 
-	info.Offset = uint64(C.uint(sifCommon.fileoff))
-	info.SizeLimit = uint64(C.uint(sifCommon.filelen))
-	info.Flags = loop.FlagsAutoClear
+	partitionOffset := uint64(C.uint(sifCommon.fileoff))
+	partitionSizelimit := uint64(C.uint(sifCommon.filelen))
 
-	// ask RPC server to open loop device
-	return rpcOps.LoopDevice(rootfs, os.O_RDONLY, *info)
-}
-
-// mountSifLoop takes a loop dev, destination path (in img), mount type, and flags; and
-// performs the mount operation
-func mountSifLoop(rpcOps *client.RPC, id int, rdest, mountType string, flags uintptr) error {
-	path := fmt.Sprintf("/dev/loop%d", id)
-	sylog.Debugf("Mounting loop device %s\n", path)
-
-	dest := filepath.Join(buildcfg.CONTAINER_FINALDIR, rdest)
-
-	_, err := rpcOps.Mount(path, dest, mountType, flags, "errors=remount-ro")
+	idString := strconv.Itoa(id)
+	err := p.AddImage(idString, engine.EngineConfig.GetImage(), dest, "squashfs", flags, partitionOffset, partitionSizelimit)
 	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
+		return err
 	}
 
 	return nil
 }
 
-// mountLoops takes the map of loop devices and mounts at their respective destinations
-func mountLoops(rpcOps *client.RPC, loops map[int]string) error {
-	mountType := "squashfs" //assuming squashfs partition for now
-	var mountFlags uintptr = syscall.MS_NOSUID | syscall.MS_RDONLY | syscall.MS_NODEV
-	for id, dest := range loops {
-		if err := mountSifLoop(rpcOps, id, dest, mountType, mountFlags); err != nil {
+func (engine *EngineOperations) addRootfs(p *mount.Points) error {
+	imagePath := engine.EngineConfig.GetImage()
+	imageObject := C.singularity_image_init(C.CString(imagePath), 0)
+	var flags uintptr = syscall.MS_NOSUID | syscall.MS_RDONLY | syscall.MS_NODEV
+
+	sylog.Debugf("img type: %v\n", C.singularity_image_type(&imageObject))
+
+	switch C.singularity_image_type(&imageObject) {
+	case 1:
+		mountType := "squashfs"
+		rootfsOffset := uint64(C.uint(imageObject.offset))
+		rootfsFilelen := uint64(C.uint(imageObject.size))
+
+		sylog.Debugf("Add squashfs as rootfs\n")
+		err := p.AddImage("rootfs", imagePath, buildcfg.CONTAINER_FINALDIR, mountType, flags, rootfsOffset, rootfsFilelen)
+		if err != nil {
 			return err
 		}
+	case 2:
+		mountType := "ext3"
+		rootfsOffset := uint64(C.uint(imageObject.offset))
+		rootfsFilelen := uint64(C.uint(imageObject.size))
+
+		sylog.Debugf("Add ext3 as rootfs\n")
+		err := p.AddImage("rootfs", imagePath, buildcfg.CONTAINER_FINALDIR, mountType, flags, rootfsOffset, rootfsFilelen)
+		if err != nil {
+			return err
+		}
+	case 3:
+		sylog.Debugf("Add dir as rootfs\n")
+		// Add directory rootfs as bind. Can directly return because a dir will not have multiple sif partition
+		return p.AddBind("rootfs", imagePath, buildcfg.CONTAINER_FINALDIR, syscall.MS_BIND|flags)
+	}
+
+	sylog.Debugf("Adding SIF partition 2 to mount list at .singularity.d\n")
+	err := engine.addSifPartition(p, imageObject, 2, filepath.Join(buildcfg.CONTAINER_FINALDIR, ".singularity.d"), flags)
+	if err != nil {
+		return fmt.Errorf("unable to add .singularity.d partition to mount list: %s", err)
+	}
+
+	return nil
+}
+
+func (engine *EngineOperations) addUserBinds(p *mount.Points) error {
+	newMounts := []specs.Mount{}
+	for _, mnt := range engine.CommonConfig.OciConfig.Spec.Mounts {
+		if !strings.Contains(mnt.Destination, buildcfg.CONTAINER_FINALDIR) {
+			mnt.Destination = filepath.Join(buildcfg.CONTAINER_FINALDIR, mnt.Destination)
+		}
+
+		newMounts = append(newMounts, mnt)
+	}
+
+	return p.Import(newMounts)
+}
+
+func mountAll(rpcOps *client.RPC, p *mount.Points) error {
+	// first mount rootfs
+	if err := mountRootfs(rpcOps, p); err != nil {
+		return err
+	}
+
+	for _, mnt := range p.GetAll()[1:] { // rootfs is always idx=0, so skip that
+		_, _, iopts := mount.ConvertOptions(mnt.Options)
+
+		// if GetOffset succeeds, image needs a loop device
+		if _, err := mount.GetOffset(iopts); err == nil {
+			if err := mountImage(rpcOps, mnt); err != nil {
+				return err
+			}
+
+			continue
+		}
+
+		if err := mountGeneric(rpcOps, mnt); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// mount rootfs partition
+func mountRootfs(rpcOps *client.RPC, p *mount.Points) error {
+	mnts := p.GetByName("rootfs")
+	sylog.Debugf("len rootfs: %v\n", len(mnts))
+	mnt := mnts[0]
+	flags, _, _ := mount.ConvertOptions(mnt.Options)
+
+	if flags&syscall.MS_BIND != 0 { // if bind mount, the rootfs is a directory
+		return mountGeneric(rpcOps, mnt)
+	}
+
+	// rootfs is an image
+	return mountImage(rpcOps, mnt)
+}
+
+// mount any generic mount (not loop dev)
+func mountGeneric(rpcOps *client.RPC, mnt specs.Mount) error {
+	flags, opts, _ := mount.ConvertOptions(mnt.Options)
+	optsString := ""
+	for _, opt := range opts {
+		optsString = optsString + "," + opt
+	}
+
+	sylog.Debugf("Mounting %s to %s\n", mnt.Source, mnt.Destination)
+	_, err := rpcOps.Mount(mnt.Source, mnt.Destination, mnt.Type, flags, optsString)
+	return err
+}
+
+// mount image via loop
+func mountImage(rpcOps *client.RPC, mnt specs.Mount) error {
+	flags, opts, iopts := mount.ConvertOptions(mnt.Options)
+
+	optsString := ""
+	for _, opt := range opts {
+		optsString = optsString + "," + opt
+	}
+
+	offset, err := mount.GetOffset(iopts)
+	if err != nil {
+		return err
+	}
+
+	sizelimit, err := mount.GetSizeLimit(iopts)
+	if err != nil {
+		return err
+	}
+
+	info := &loop.Info64{
+		Offset:    offset,
+		SizeLimit: sizelimit,
+		Flags:     loop.FlagsAutoClear,
+	}
+
+	number, err := rpcOps.LoopDevice(mnt.Source, os.O_RDONLY, *info)
+	if err != nil {
+		return err
+	}
+
+	path := fmt.Sprintf("/dev/loop%d", number)
+	sylog.Debugf("Mounting loop device %s to %s\n", path, mnt.Destination)
+	_, err = rpcOps.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
+	if err != nil {
+		return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
 	}
 
 	return nil
