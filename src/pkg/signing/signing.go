@@ -47,17 +47,13 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 		return err
 	}
 
-	// data we need to create a system partition descriptor
+	// data we need to create a signature descriptor
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
 		Groupid:  sif.DescrDefaultGroup,
 		Link:     part.ID,
-		Size:     0,
 		Fname:    "part-signature",
-		Fp:       nil,
 		Data:     signature,
-		Image:    nil,
-		Descr:    nil,
 	}
 	siginput.Size = int64(binary.Size(siginput.Data))
 
@@ -119,7 +115,7 @@ func Sign(cpath string) error {
 	}
 	sypgp.DecryptKey(en)
 
-	// load the test container
+	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
 	if err != nil {
 		sylog.Errorf("error loading sif file %s: %s\n", cpath, err)
@@ -162,7 +158,7 @@ func Sign(cpath string) error {
 func Verify(cpath string) error {
 	var el openpgp.EntityList
 
-	// load the test container
+	// load the container
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		sylog.Errorf("error loading sif file %s: %s\n", cpath, err)
@@ -202,19 +198,20 @@ func Verify(cpath string) error {
 		return err
 	}
 
-	/* try to verify with local PGP store */
-	fingerprint, err := sig.GetEntity()
+	// get the entity fingerprint for the found signature block
+	fingerprint, err := sig.GetEntityString()
 	if err != nil {
 		return err
 	}
-	fprintstr := fmt.Sprintf("%0X", fingerprint[:20])
 
+	// try to verify with local PGP store first
 	var signer *openpgp.Entity
 	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
 		sylog.Errorf("failed to check signature: %s\n", err)
-		/* verification with local keyring failed, try to fetch from key server */
-		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", fprintstr)
-		syel, err := sypgp.FetchPubkey(fprintstr, syKeysAddr)
+
+		// verification with local keyring failed, try to fetch from key server
+		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", fingerprint)
+		syel, err := sypgp.FetchPubkey(fingerprint, syKeysAddr)
 		if err != nil {
 			return err
 		}
