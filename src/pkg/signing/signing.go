@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	keyserverURI = "http://keys.sylabs.io:11371"
+	keyserverURI = "https://keys.sylabs.io:11371"
 )
 
 func sifDataObjectHash(sinfo *sif.Info) (*bytes.Buffer, error) {
