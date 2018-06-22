@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"net/rpc"
+	"syscall"
 
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
@@ -37,13 +38,13 @@ type EngineOperations interface {
 	IsRunAsInstance() bool
 	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
-	CreateContainer(rpcConn net.Conn) error
+	CreateContainer(int, net.Conn) error
 	// StartProcess is called in stage2 after waiting on RPC server exit. It is
 	// responsible for exec'ing the payload proc in the container
 	StartProcess() error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
 	// will typically block until the container proc exists
-	MonitorContainer() error
+	MonitorContainer(int) (syscall.WaitStatus, error)
 	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
 	// for ensuring that the container has been properly torn down
 	CleanupContainer() error
