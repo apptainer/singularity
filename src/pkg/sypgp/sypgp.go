@@ -337,17 +337,19 @@ func SelectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 }
 
 // FetchPubkey connects to a key server and requests a specific key
-func FetchPubkey(fingerprint, sykeysAddr, authToken string) (openpgp.EntityList, error) {
+func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityList, error) {
 	v := url.Values{}
 	v.Set("op", "get")
 	v.Set("options", "mr")
 	v.Set("search", "0x"+fingerprint)
-	u := url.URL{
-		Scheme:   "http",
-		Host:     sykeysAddr,
-		Path:     "pks/lookup",
-		RawQuery: v.Encode(),
+
+	u, err := url.Parse(keyserverURI)
+	if err != nil {
+		sylog.Errorf("failed to parse keyserver URI: %v", err)
+		return nil, err
 	}
+	u.Path = "pks/lookup"
+	u.RawQuery = v.Encode()
 
 	r, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -390,7 +392,7 @@ func FetchPubkey(fingerprint, sykeysAddr, authToken string) (openpgp.EntityList,
 }
 
 // PushPubkey pushes a public key to a key server
-func PushPubkey(entity *openpgp.Entity, sykeysAddr, authToken string) error {
+func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	w := bytes.NewBuffer(nil)
 	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)
 	if err != nil {
@@ -406,12 +408,14 @@ func PushPubkey(entity *openpgp.Entity, sykeysAddr, authToken string) error {
 
 	v := url.Values{}
 	v.Set("keytext", w.String())
-	u := url.URL{
-		Scheme:   "http",
-		Host:     sykeysAddr,
-		Path:     "pks/add",
-		RawQuery: v.Encode(),
+
+	u, err := url.Parse(keyserverURI)
+	if err != nil {
+		sylog.Errorf("failed to parse keyserver URI: %v", err)
+		return err
 	}
+	u.Path = "pks/add"
+	u.RawQuery = v.Encode()
 
 	r, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(v.Encode()))
 	if err != nil {

@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	syKeysAddr = "keys.sylabs.io:11371"
+	keyserverURI = "http://keys.sylabs.io:11371"
 )
 
 func sifDataObjectHash(sinfo *sif.Info) (*bytes.Buffer, error) {
@@ -82,8 +82,8 @@ func Sign(cpath, authToken string) error {
 		if el, err = sypgp.LoadPrivKeyring(); err != nil || el == nil {
 			return err
 		}
-		fmt.Printf("Sending PGP public key material: %0X => %s.\n", el[0].PrimaryKey.Fingerprint, syKeysAddr)
-		err = sypgp.PushPubkey(el[0], syKeysAddr, authToken)
+		fmt.Printf("Sending PGP public key material: %0X => %s.\n", el[0].PrimaryKey.Fingerprint, keyserverURI)
+		err = sypgp.PushPubkey(el[0], keyserverURI, authToken)
 		if err != nil {
 			return err
 		}
@@ -185,7 +185,7 @@ func Verify(cpath, authToken string) error {
 		sylog.Errorf("failed to check signature: %s\n", err)
 		/* verification with local keyring failed, try to fetch from key server */
 		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", sig.GetEntity())
-		syel, err := sypgp.FetchPubkey(sig.GetEntity(), syKeysAddr, authToken)
+		syel, err := sypgp.FetchPubkey(sig.GetEntity(), keyserverURI, authToken)
 		if err != nil {
 			return err
 		}
