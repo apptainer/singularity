@@ -15,47 +15,47 @@ import (
 func TestImage(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddImage("", "/fake", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "", "/fake", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage("/fake", "", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "/fake", "", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
 
-	if err := points.AddImage("fake", "/", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "fake", "/", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed as source is not an absolute path")
 	}
-	if err := points.AddImage("/", "fake", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "/", "fake", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
-	if err := points.AddImage("", "/", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "", "/", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage("/fake", "/", "xfs", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "/fake", "/", "xfs", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with bad filesystem type")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_BIND, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "/fake", "/", "ext3", syscall.MS_BIND, 0, 10); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REC, 0, 10, ""); err == nil {
+	if err := points.AddImage("", "/fake", "/", "ext3", syscall.MS_REC, 0, 10); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", 0, 0, 10, ""); err != nil {
+	if err := points.AddImage("", "/fake", "/", "ext3", 0, 0, 10); err != nil {
 		t.Errorf("should have passed with ext3 filesystem")
 	}
-	if err := points.AddImage("/fake", "/", "squashfs", 0, 0, 10, ""); err != nil {
+	if err := points.AddImage("", "/fake", "/", "squashfs", 0, 0, 10); err != nil {
 		t.Errorf("should have passed with squashfs filesystem")
 	}
-	if err := points.AddImage("/fake", "/", "squashfs", 0, 0, 0, ""); err == nil {
+	if err := points.AddImage("", "/fake", "/", "squashfs", 0, 0, 0); err == nil {
 		t.Errorf("should have failed with 0 size limit")
 	}
 	points.RemoveAll()
 
-	if err := points.AddImage("/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10, ""); err != nil {
+	if err := points.AddImage("", "/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10); err != nil {
 		t.Fatalf("should have passed with squashfs filesystem")
 	}
 	images := points.GetAllImages()
@@ -200,19 +200,19 @@ func TestFS(t *testing.T) {
 func TestBind(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddBind("/", "", 0, "rootfs"); err == nil {
+	if err := points.AddBind("rootfs", "/", "", 0); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
 
-	if err := points.AddBind("fake", "/", 0, "rootfs"); err == nil {
+	if err := points.AddBind("rootfs", "fake", "/", 0); err == nil {
 		t.Errorf("should have failed as source is not an absolute path")
 	}
-	if err := points.AddBind("/", "fake", 0, "rootfs"); err == nil {
+	if err := points.AddBind("rootfs", "/", "fake", 0); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 	points.RemoveAll()
 
-	if err := points.AddBind("/", "/mnt", syscall.MS_BIND, "rootfs"); err != nil {
+	if err := points.AddBind("rootfs", "/", "/mnt", syscall.MS_BIND); err != nil {
 		t.Fatalf("%s", err)
 	}
 	bind := points.GetByDest("/mnt")
@@ -230,7 +230,7 @@ func TestBind(t *testing.T) {
 	}
 	points.RemoveAll()
 
-	if err := points.AddBind("/", "/mnt", syscall.MS_BIND|syscall.MS_REC, "rootfs"); err != nil {
+	if err := points.AddBind("rootfs", "/", "/mnt", syscall.MS_BIND|syscall.MS_REC); err != nil {
 		t.Fatalf("%s", err)
 	}
 	bind = points.GetByDest("/mnt")

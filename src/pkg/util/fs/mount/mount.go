@@ -267,12 +267,12 @@ func (p *Points) Import(points []specs.Mount) error {
 		}
 		// check if this is a bind mount point
 		if flags&syscall.MS_BIND != 0 {
-			if err = p.AddBind(point.Source, point.Destination, flags, name); err == nil {
+			if err = p.AddBind(name, point.Source, point.Destination, flags); err == nil {
 				continue
 			}
 		}
 		// check if this is an image mount point
-		if err = p.AddImage(point.Source, point.Destination, point.Type, flags, offset, sizelimit, name); err == nil {
+		if err = p.AddImage(name, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
 			continue
 		}
 		// check if this is a filesystem or overlay mount point
@@ -304,7 +304,7 @@ func (p *Points) Import(points []specs.Mount) error {
 }
 
 // AddImage adds an image mount point
-func (p *Points) AddImage(source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64, name string) error {
+func (p *Points) AddImage(name string, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
 	options := ""
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
@@ -364,7 +364,7 @@ func (p *Points) GetByName(name string) []specs.Mount {
 }
 
 // AddBind adds a bind mount point
-func (p *Points) AddBind(source string, dest string, flags uintptr, name string) error {
+func (p *Points) AddBind(name string, source string, dest string, flags uintptr) error {
 	bindFlags := flags | syscall.MS_BIND
 	options := ""
 
