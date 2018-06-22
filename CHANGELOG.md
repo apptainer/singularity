@@ -15,8 +15,12 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 ## [v2.6.0]
     
 ### Implemented enhancements
-  - Allow admin to specify a non-standard location for mksquashfs binary at 
-    build time with --with-mksquashfs option
+ - Allow admin to specify a non-standard location for mksquashfs binary at 
+   build time with --with-mksquashfs option
+ - --nv option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed
+ - [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries
+ - --nv can be made default with all action commands in singularity.conf
+ - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
 
 ## [v2.5.2]
 
