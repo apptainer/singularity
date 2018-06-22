@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	syKeysAddr = "keys.sylabs.io:11371"
+	keyserverURI = "https://keys.sylabs.io:11371"
 )
 
 func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
@@ -83,7 +83,7 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 // configuration options. In its current form, Sign also pushes public material
 // to a key server if enabled. This should be a separate step in the next round
 // of development.
-func Sign(cpath string) error {
+func Sign(cpath, authToken string) error {
 	var el openpgp.EntityList
 	var en *openpgp.Entity
 	var err error
@@ -99,8 +99,8 @@ func Sign(cpath string) error {
 		if el, err = sypgp.LoadPrivKeyring(); err != nil || el == nil {
 			return err
 		}
-		fmt.Printf("Sending PGP public key material: %0X => %s.\n", el[0].PrimaryKey.Fingerprint, syKeysAddr)
-		err = sypgp.PushPubkey(el[0], syKeysAddr)
+		fmt.Printf("Sending PGP public key material: %0X => %s.\n", el[0].PrimaryKey.Fingerprint, keyserverURI)
+		err = sypgp.PushPubkey(el[0], keyserverURI, authToken)
 		if err != nil {
 			return err
 		}
@@ -155,7 +155,7 @@ func Sign(cpath string) error {
 // partition hash against the signer's version. Verify takes care of looking
 // for PGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath string) error {
+func Verify(cpath, authToken string) error {
 	var el openpgp.EntityList
 
 	// load the container
@@ -208,10 +208,9 @@ func Verify(cpath string) error {
 	var signer *openpgp.Entity
 	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
 		sylog.Errorf("failed to check signature: %s\n", err)
-
 		// verification with local keyring failed, try to fetch from key server
 		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", fingerprint)
-		syel, err := sypgp.FetchPubkey(fingerprint, syKeysAddr)
+		syel, err := sypgp.FetchPubkey(fingerprint, keyserverURI, authToken)
 		if err != nil {
 			return err
 		}
