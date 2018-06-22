@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
@@ -106,7 +107,13 @@ func printSignatures(entity *openpgp.Entity) error {
 
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
-	return filepath.Join(os.Getenv("HOME"), ".sypgp")
+	user, err := user.GetPwUID(uint32(os.Getuid()))
+	if err != nil {
+		sylog.Errorf("could lookup user's real home folder %s\n", err)
+		return ""
+	}
+
+	return filepath.Join(user.Dir, ".singularity/sypgp")
 }
 
 // SecretPath returns a string describing the path to the private keys store
