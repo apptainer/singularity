@@ -52,6 +52,8 @@ var mountFlags = []struct {
 	{"sync", 0},
 }
 
+var internalOptions = []string{"name", "loop", "offset", "sizelimit"}
+
 type fsContext struct {
 	context bool
 }
@@ -72,9 +74,11 @@ var authorizedFS = map[string]fsContext{
 }
 
 // ConvertOptions converts an options string into a pair of mount flags and mount options
-func ConvertOptions(options []string) (uintptr, []string) {
+// plus internal options
+func ConvertOptions(options []string) (uintptr, []string, []string) {
 	var flags uintptr
-	finalOptions := []string{}
+	finalOpt := []string{}
+	internalOpt := []string{}
 	isFlag := false
 
 	for _, option := range options {
@@ -87,11 +91,45 @@ func ConvertOptions(options []string) (uintptr, []string) {
 			}
 		}
 		if !isFlag {
-			finalOptions = append(finalOptions, optionTrim)
+			isInternal := false
+			for _, opt := range internalOptions {
+				if strings.HasPrefix(optionTrim, opt+"=") {
+					internalOpt = append(internalOpt, optionTrim)
+					isInternal = true
+					break
+				}
+			}
+			if !isInternal {
+				finalOpt = append(finalOpt, optionTrim)
+			}
 		}
 		isFlag = false
 	}
-	return flags, finalOptions
+	return flags, finalOpt, internalOpt
+}
+
+// GetOffset return offset value for image options
+func GetOffset(options []string) (uint64, error) {
+	var offset uint64
+	for _, opt := range options {
+		if strings.HasPrefix(opt, "offset=") {
+			fmt.Sscanf(opt, "offset=%d", &offset)
+			return offset, nil
+		}
+	}
+	return 0, fmt.Errorf("offset option not found")
+}
+
+// GetSizeLimit returns sizelimit value for image options
+func GetSizeLimit(options []string) (uint64, error) {
+	var size uint64
+	for _, opt := range options {
+		if strings.HasPrefix(opt, "sizelimit=") {
+			fmt.Sscanf(opt, "sizelimit=%d", &size)
+			return size, nil
+		}
+	}
+	return 0, fmt.Errorf("sizelimit option not found")
 }
 
 // Points defines and stores a set of mount points
@@ -207,35 +245,39 @@ func (p *Points) Import(points []specs.Mount) error {
 		var err error
 		var offset uint64
 		var sizelimit uint64
+		var name string
 
-		flags, options := ConvertOptions(point.Options)
+		flags, options, internal := ConvertOptions(point.Options)
 		// check if this is a mount point to remount
 		if flags&syscall.MS_REMOUNT != 0 {
 			if err = p.AddRemount(point.Destination, flags); err == nil {
 				continue
 			}
 		}
-		// check if this is a bind mount point
-		if flags&syscall.MS_BIND != 0 {
-			if err = p.AddBind(point.Source, point.Destination, flags); err == nil {
-				continue
-			}
-		}
-		// check if this is an image mount point
-		for _, option := range options {
+		for _, option := range internal {
 			if strings.HasPrefix(option, "offset=") {
 				fmt.Sscanf(option, "offset=%d", &offset)
 			}
 			if strings.HasPrefix(option, "sizelimit=") {
 				fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 			}
+			if strings.HasPrefix(option, "name=") {
+				fmt.Sscanf(option, "name=%s", &name)
+			}
 		}
-		if err = p.AddImage(point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
+		// check if this is a bind mount point
+		if flags&syscall.MS_BIND != 0 {
+			if err = p.AddBind(point.Source, point.Destination, flags, name); err == nil {
+				continue
+			}
+		}
+		// check if this is an image mount point
+		if err = p.AddImage(point.Source, point.Destination, point.Type, flags, offset, sizelimit, name); err == nil {
 			continue
 		}
 		// check if this is a filesystem or overlay mount point
 		if point.Type != "overlay" {
-			if err = p.AddFS(point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
+			if err = p.AddFS(point.Source, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
 				continue
 			}
 		} else {
@@ -251,7 +293,7 @@ func (p *Points) Import(points []specs.Mount) error {
 					fmt.Sscanf(option, "workdir=%s", &workdir)
 				}
 			}
-			if err = p.AddOverlay(point.Destination, flags, lowerdir, upperdir, workdir); err == nil {
+			if err = p.AddOverlay(point.Source, point.Destination, flags, lowerdir, upperdir, workdir); err == nil {
 				continue
 			}
 		}
@@ -262,7 +304,8 @@ func (p *Points) Import(points []specs.Mount) error {
 }
 
 // AddImage adds an image mount point
-func (p *Points) AddImage(source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
+func (p *Points) AddImage(source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64, name string) error {
+	options := ""
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
 	}
@@ -278,7 +321,11 @@ func (p *Points) AddImage(source string, dest string, fstype string, flags uintp
 	if sizelimit == 0 {
 		return fmt.Errorf("invalid image size, zero length")
 	}
-	options := fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
+	if name == "" {
+		options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
+	} else {
+		options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,name=%s,errors=remount-ro", offset, sizelimit, name)
+	}
 	return p.add(source, dest, fstype, flags, options)
 }
 
@@ -286,19 +333,40 @@ func (p *Points) AddImage(source string, dest string, fstype string, flags uintp
 func (p *Points) GetAllImages() []specs.Mount {
 	images := []specs.Mount{}
 	for _, point := range p.points {
-		for fs := range authorizedImage {
-			if fs == point.Type {
-				images = append(images, point)
-				break
-			}
+		if _, ok := authorizedImage[point.Type]; ok {
+			images = append(images, point)
 		}
 	}
 	return images
 }
 
+// GetByName returns mount point identified by name
+func (p *Points) GetByName(name string) []specs.Mount {
+	mountPoints := []specs.Mount{}
+	for _, point := range p.points {
+		if _, ok := authorizedFS[point.Type]; ok {
+			if point.Source == name {
+				mountPoints = append(mountPoints, point)
+			}
+		}
+		for _, opt := range point.Options {
+			if strings.HasPrefix(opt, "name=") {
+				n := ""
+				fmt.Sscanf(opt, "name=%s", &n)
+				if name == n {
+					mountPoints = append(mountPoints, point)
+				}
+			}
+		}
+
+	}
+	return mountPoints
+}
+
 // AddBind adds a bind mount point
-func (p *Points) AddBind(source string, dest string, flags uintptr) error {
+func (p *Points) AddBind(source string, dest string, flags uintptr, name string) error {
 	bindFlags := flags | syscall.MS_BIND
+	options := ""
 
 	if source == "" {
 		return fmt.Errorf("a bind mount point must contain a source")
@@ -306,7 +374,10 @@ func (p *Points) AddBind(source string, dest string, flags uintptr) error {
 	if !strings.HasPrefix(source, "/") {
 		return fmt.Errorf("source must be an absolute path")
 	}
-	if err := p.add(source, dest, "", bindFlags, ""); err != nil {
+	if name != "" {
+		options = fmt.Sprintf("name=%s", name)
+	}
+	if err := p.add(source, dest, "", bindFlags, options); err != nil {
 		return err
 	}
 	return nil
@@ -327,7 +398,7 @@ func (p *Points) GetAllBinds() []specs.Mount {
 }
 
 // AddOverlay adds an overlay mount point
-func (p *Points) AddOverlay(dest string, flags uintptr, lowerdir string, upperdir string, workdir string) error {
+func (p *Points) AddOverlay(name string, dest string, flags uintptr, lowerdir string, upperdir string, workdir string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for overlay mount points")
 	}
@@ -352,7 +423,10 @@ func (p *Points) AddOverlay(dest string, flags uintptr, lowerdir string, upperdi
 	} else {
 		options = fmt.Sprintf("lowerdir=%s", lowerdir)
 	}
-	return p.add("overlay", dest, "overlay", flags, options)
+	if name == "" {
+		return p.add("overlay", dest, "overlay", flags, options)
+	}
+	return p.add(name, dest, "overlay", flags, options)
 }
 
 // GetAllOverlays returns a list of all registered overlay mount points
@@ -367,14 +441,17 @@ func (p *Points) GetAllOverlays() []specs.Mount {
 }
 
 // AddFS adds a filesystem mount point
-func (p *Points) AddFS(dest string, fstype string, flags uintptr, options string) error {
+func (p *Points) AddFS(name string, dest string, fstype string, flags uintptr, options string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for FS mount points")
 	}
 	if _, ok := authorizedFS[fstype]; !ok {
 		return fmt.Errorf("mount %s file system is not authorized", fstype)
 	}
-	return p.add(fstype, dest, fstype, flags, options)
+	if name == "" {
+		return p.add(fstype, dest, fstype, flags, options)
+	}
+	return p.add(name, dest, fstype, flags, options)
 }
 
 // GetAllFS returns a list of all registered filesystem mount points
