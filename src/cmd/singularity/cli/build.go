@@ -152,7 +152,7 @@ func makeDefinition(source string, isJSON bool) build.Definition {
 			sylog.Fatalf("unable to parse URI %s: %v\n", source, err)
 		}
 
-	} else if !ok && err == nil {
+	} else if ok, err := build.IsValidDefinition(source); ok && err == nil {
 		// Non-URI passed as arg[1]
 		defFile, err := os.Open(source)
 		if err != nil {
@@ -186,6 +186,7 @@ func makeBundle(def build.Definition) *build.Bundle {
 
 	switch def.Header["bootstrap"] {
 	case "docker":
+
 		cp = &build.DockerConveyorPacker{}
 	case "shub":
 		cp = &build.ShubConveyorPacker{}
