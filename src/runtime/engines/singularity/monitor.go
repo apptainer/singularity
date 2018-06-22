@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,16 +15,24 @@ import (
 )
 
 // MonitorContainer monitors a container
-func (engine *EngineOperations) MonitorContainer() error {
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGCHLD)
+func (engine *EngineOperations) MonitorContainer(pid int) (syscall.WaitStatus, error) {
+	var status syscall.WaitStatus
 
-	s := <-signals
-	switch s {
-	case syscall.SIGCHLD:
-		var status syscall.WaitStatus
-		syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
-		sylog.Debugf("received from monitor")
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
+
+	for {
+		s := <-signals
+		switch s {
+		case syscall.SIGCHLD:
+			if wpid, err := syscall.Wait4(pid, &status, syscall.WNOHANG, nil); err != nil {
+				sylog.Fatalf("error while waiting child: %s", err)
+			} else if wpid != pid {
+				continue
+			}
+			return status, nil
+		default:
+			return status, fmt.Errorf("interrupted by signal %s", s.String())
+		}
 	}
-	return nil
 }

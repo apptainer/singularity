@@ -30,7 +30,7 @@ import (
 )
 
 // CreateContainer creates a container
-func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
+func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	if engine.CommonConfig.EngineName != Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
@@ -177,9 +177,6 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	err = syscall.Chdir("/")
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
-	}
-	if err := rpcOps.Client.Close(); err != nil {
-		return fmt.Errorf("can't close connection with rpc server: %s", err)
 	}
 
 	return nil

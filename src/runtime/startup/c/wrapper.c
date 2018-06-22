@@ -700,7 +700,7 @@ __attribute__((constructor)) static void init(void) {
                 exit(1);
             }
         } else {
-            setup_userns(&config.uidMapping, &config.gidMapping);
+            setup_userns(&config.uidMapping[0], &config.gidMapping[0]);
         }
     }
 
@@ -878,29 +878,12 @@ __attribute__((constructor)) static void init(void) {
 
         if ( syncfd >= 0 ) {
             unsigned long long counter;
-            char *buffer;
 
             if ( read(syncfd, &counter, sizeof(counter)) != sizeof(counter) ) {
                 singularity_message(ERROR, "Failed to receive sync signal from child: %s\n", strerror(errno));
                 exit(1);
             }
 
-            if ( config.nsFlags & CLONE_NEWNET ) {
-                /* hold a reference to container network namespace for cleanup */
-                buffer = (char *)malloc(PATH_MAX);
-                if ( buffer == NULL ) {
-                    singularity_message(ERROR, "Failed to allocate memory: %s\n", strerror(errno));
-                    exit(1);
-                }
-                buffer[PATH_MAX-1] = '\0';
-                snprintf(buffer, PATH_MAX-1, "/proc/%d/ns/net", stage_pid);
-                netfd = open(buffer, O_RDONLY);
-                if ( netfd < 0 ) {
-                    singularity_message(ERROR, "Failed to hold reference to container network namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-                free(buffer);
-            }
             close(syncfd);
         }
 
