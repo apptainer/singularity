@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -71,6 +70,7 @@ type ShubConveyorPacker struct {
 
 // Get downloads container information from Singularityhub
 func (c *ShubConveyor) Get(recipe Definition) (err error) {
+	sylog.Debugf("Getting container from Shub")
 
 	c.recipe = recipe
 
@@ -102,7 +102,7 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 	// retrieve the image
 	c.tmpfile, err = c.fetch(manifest.Image)
 	if err != nil {
-		log.Fatal(err)
+		sylog.Fatalf("Failed to get image from SHub: %v", err)
 		return
 	}
 
@@ -112,8 +112,6 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 // Pack puts relevant objects in a Bundle!
 // After image is local, we can use the local packer
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
-
-	fmt.Println("Info passed to LocalPacker", cp.tmpfile, cp.tmpfs)
 
 	p := &LocalConveyorPacker{
 		LocalConveyor: LocalConveyor{cp.tmpfile, cp.tmpfs},

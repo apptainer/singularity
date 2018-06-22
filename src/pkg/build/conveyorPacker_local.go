@@ -15,7 +15,6 @@ package build
 // #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
 import "C"
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -52,11 +51,9 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 
 	var p Packer
 
-	fmt.Println("Info Inside local packer", cp.src, cp.tmpfs)
-
 	rootfs := cp.src
 
-	//leverage C code to properly mount squashfs image
+	//leverage C code to properly get image information
 	C.singularity_config_init()
 
 	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
@@ -66,6 +63,8 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 	switch C.singularity_image_type(&imageObject) {
 	case 1:
 		//squashfs
+		sylog.Debugf("Packing from Squashfs")
+
 		info.Offset = uint64(C.uint(imageObject.offset))
 		info.SizeLimit = uint64(C.uint(imageObject.size))
 
@@ -76,6 +75,8 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 		}
 	case 2:
 		//ext3
+		sylog.Debugf("Packing from Ext3")
+
 		info.Offset = uint64(C.uint(imageObject.offset))
 		info.SizeLimit = uint64(C.uint(imageObject.size))
 
@@ -86,6 +87,7 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 		}
 	case 3:
 		//sandbox
+		sylog.Debugf("Packing from Sandbox")
 		p = &SandboxPacker{
 			srcdir: rootfs,
 			tmpfs:  cp.tmpfs,
