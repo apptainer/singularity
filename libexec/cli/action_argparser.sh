@@ -129,6 +129,7 @@ while true; do
         --nv)
             shift
             SINGULARITY_NV=1
+            export SINGULARITY_NV
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
