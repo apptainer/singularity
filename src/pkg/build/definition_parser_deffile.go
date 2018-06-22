@@ -199,6 +199,30 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	return
 }
 
+func canGetHeader(r io.Reader) (ok bool, err error) {
+	var d Definition
+
+	s := bufio.NewScanner(r)
+	s.Split(scanDefinitionFile)
+
+	for s.Scan() && s.Text() == "" && s.Err() == nil {
+	}
+
+	if s.Err() != nil {
+		log.Println(s.Err())
+		return false, s.Err()
+	} else if s.Text() == "" {
+		return false, errors.New("Empty definition file")
+	}
+
+	if err = doHeader(s.Text(), &d); err != nil {
+		//sylog.Warningf("failed to parse DefFile header: %v\n", err)
+		return
+	}
+
+	return true, nil
+}
+
 func writeSectionIfExists(w io.Writer, ident string, s string) {
 	if len(s) > 0 {
 		w.Write([]byte("%"))
