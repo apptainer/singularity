@@ -124,10 +124,6 @@ int _singularity_runtime_mount_dev(void) {
             closedir(dir);
         }
 
-        if ( strcmp("tmpfs", singularity_config_get_value(MEMORY_FS_TYPE)) != 0 ) {
-            memcpy(memfs_type, "ramfs", 5);
-        }
-
         if ( symlink("/proc/self/fd", joinpath(devdir, "/fd")) < 0 ) {
             singularity_message(ERROR, "Failed create symlink /dev/fd: %s\n", strerror(errno));
             ABORT(255);
