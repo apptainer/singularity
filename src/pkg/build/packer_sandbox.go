@@ -28,6 +28,7 @@ func (p *SandboxPacker) Pack() (b *Bundle, err error) {
 	}
 
 	//copy filesystem into bundle rootfs
+	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, b.Rootfs())
 	cmd := exec.Command("cp", "-r", rootfs+`/.`, b.Rootfs())
 	err = cmd.Run()
 	if err != nil {

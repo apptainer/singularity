@@ -42,15 +42,18 @@ func (p *SquashfsPacker) Pack() (b *Bundle, err error) {
 // unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
 func (p *SquashfsPacker) unpackSquashfs(b *Bundle, info *loop.Info64, rootfs string) (err error) {
 	trimfile, err := ioutil.TempFile(p.tmpfs, "trim.squashfs")
+
 	//trim header
+	sylog.Debugf("Creating copy of %s without header at %s\n", rootfs, trimfile.Name())
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
 	err = cmd.Run()
 	if err != nil {
-		sylog.Errorf("dd Failed", err.Error())
+		sylog.Errorf("Trimming header Failed", err.Error())
 		return err
 	}
 
 	//copy filesystem into bundle rootfs
+	sylog.Debugf("Unsquashing %s to %s in Bundle\n", trimfile.Name(), b.Rootfs())
 	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())
 	err = cmd.Run()
 	if err != nil {
