@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"golang.org/x/crypto/openpgp"
@@ -336,7 +337,7 @@ func SelectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 }
 
 // FetchPubkey connects to a key server and requests a specific key
-func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, error) {
+func FetchPubkey(fingerprint, sykeysAddr, authToken string) (openpgp.EntityList, error) {
 	v := url.Values{}
 	v.Set("op", "get")
 	v.Set("options", "mr")
@@ -347,10 +348,16 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 		Path:     "pks/lookup",
 		RawQuery: v.Encode(),
 	}
-	urlStr := u.String()
 
-	sylog.Infof("url: %s\n", urlStr)
-	resp, err := http.Get(urlStr)
+	r, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	if authToken != "" {
+		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
+	}
+
+	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
 		sylog.Errorf("error in http.Get: %s\n", err)
 		return nil, err
@@ -383,7 +390,7 @@ func FetchPubkey(fingerprint string, sykeysAddr string) (openpgp.EntityList, err
 }
 
 // PushPubkey pushes a public key to a key server
-func PushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
+func PushPubkey(entity *openpgp.Entity, sykeysAddr, authToken string) error {
 	w := bytes.NewBuffer(nil)
 	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)
 	if err != nil {
@@ -393,7 +400,7 @@ func PushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
 	err = entity.Serialize(wr)
 	if err != nil {
 		sylog.Errorf("can't serialize public key: %s\n", err)
-		return
+		return err
 	}
 	wr.Close()
 
@@ -405,20 +412,28 @@ func PushPubkey(entity *openpgp.Entity, sykeysAddr string) (err error) {
 		Path:     "pks/add",
 		RawQuery: v.Encode(),
 	}
-	urlStr := u.String()
 
-	resp, err := http.PostForm(urlStr, v)
+	r, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(v.Encode()))
+	if err != nil {
+		return err
+	}
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if authToken != "" {
+		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
+	}
+
+	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
 		sylog.Errorf("error in http.PostForm(): %s\n", err)
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("Key server did not accept PGP key")
 		sylog.Errorf("%s\n", err)
-		return
+		return err
 	}
 
-	return
+	return nil
 }
