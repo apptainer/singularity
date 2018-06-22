@@ -51,7 +51,7 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
 		Groupid:  sif.DescrDefaultGroup,
-		Link:     part.Link,
+		Link:     part.ID,
 		Size:     0,
 		Fname:    "part-signature",
 		Fp:       nil,
@@ -207,14 +207,14 @@ func Verify(cpath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%0X\n", fingerprint)
+	fprintstr := fmt.Sprintf("%0X", fingerprint[:20])
 
 	var signer *openpgp.Entity
 	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
 		sylog.Errorf("failed to check signature: %s\n", err)
 		/* verification with local keyring failed, try to fetch from key server */
-		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", "DUMMY")
-		syel, err := sypgp.FetchPubkey("DUMMY", syKeysAddr)
+		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", fprintstr)
+		syel, err := sypgp.FetchPubkey(fprintstr, syKeysAddr)
 		if err != nil {
 			return err
 		}
