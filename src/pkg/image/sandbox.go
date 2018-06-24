@@ -23,7 +23,3 @@ func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 	return nil
 }
-
-func init() {
-	registerFormat("sandbox", &sandboxFormat{})
-}

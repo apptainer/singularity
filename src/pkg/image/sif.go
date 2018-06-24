@@ -18,7 +18,3 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 	return fmt.Errorf("not implemented")
 }
-
-func init() {
-	registerFormat("sif", &sifFormat{})
-}

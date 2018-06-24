@@ -81,7 +81,3 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
 }
-
-func init() {
-	registerFormat("ext3", &ext3Format{})
-}
