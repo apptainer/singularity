@@ -10,8 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // MonitorContainer monitors a container
@@ -26,7 +24,7 @@ func (engine *EngineOperations) MonitorContainer(pid int) (syscall.WaitStatus, e
 		switch s {
 		case syscall.SIGCHLD:
 			if wpid, err := syscall.Wait4(pid, &status, syscall.WNOHANG, nil); err != nil {
-				sylog.Fatalf("error while waiting child: %s", err)
+				return status, fmt.Errorf("error while waiting child: %s", err)
 			} else if wpid != pid {
 				continue
 			}
