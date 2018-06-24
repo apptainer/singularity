@@ -82,6 +82,7 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 	img.Type = SQUASHFS
 	img.Offset = uint64(offset)
+	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
 }
 

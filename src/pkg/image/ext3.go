@@ -78,6 +78,7 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	}
 	img.Type = EXT3
 	img.Offset = uint64(offset - extMagicOffset)
+	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
 }
 
