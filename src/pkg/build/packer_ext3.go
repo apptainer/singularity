@@ -36,11 +36,11 @@ func (p *Ext3Packer) Pack() (b *Bundle, err error) {
 
 	err = p.unpackExt3(b, p.info, rootfs)
 	if err != nil {
-		sylog.Fatalf("unpackExt3 Failed", err.Error())
+		sylog.Errorf("unpackExt3 Failed", err.Error())
 		return nil, err
 	}
 
-	return
+	return b, nil
 }
 
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle

@@ -36,5 +36,5 @@ func (p *SandboxPacker) Pack() (b *Bundle, err error) {
 		return nil, err
 	}
 
-	return
+	return b, nil
 }
