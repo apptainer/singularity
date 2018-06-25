@@ -5,15 +5,6 @@
 
 package imgbuild
 
-/*
-#include <unistd.h>
-#include "image/image.h"
-#include "util/config_parser.h"
-*/
-// #cgo CFLAGS: -I../../c/lib
-// #cgo LDFLAGS: -L../../../../builddir/lib -lruntime -luuid
-import "C"
-
 import (
 	"fmt"
 	"net"
@@ -48,10 +39,6 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	if err != nil {
 		return fmt.Errorf("stat on %s failed", rootfs)
 	}
-
-	C.singularity_config_init()
-
-	_ = C.singularity_image_init(C.CString(rootfs), 0)
 
 	if st.IsDir() == false {
 		return fmt.Errorf("%s is not a directory", rootfs)
