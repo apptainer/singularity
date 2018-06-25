@@ -112,7 +112,7 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 // Pack puts relevant objects in a Bundle!
 // After image is local, we can use a local packer
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
-	cp.lp = LocalPacker{cp.src, cp.tmpfs}
+	cp.lp = LocalPacker{cp.tmpfile, cp.tmpfs}
 
 	b, err = cp.lp.Pack()
 	if err != nil {
