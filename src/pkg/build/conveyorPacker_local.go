@@ -88,6 +88,7 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 	case 3:
 		//sandbox
 		sylog.Debugf("Packing from Sandbox")
+
 		p = &SandboxPacker{
 			srcdir: rootfs,
 			tmpfs:  cp.tmpfs,
