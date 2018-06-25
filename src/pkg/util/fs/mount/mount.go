@@ -52,10 +52,67 @@ var mountFlags = []struct {
 	{"sync", 0},
 }
 
-var internalOptions = []string{"name", "loop", "offset", "sizelimit"}
+var internalOptions = []string{"loop", "offset", "sizelimit"}
 
 type fsContext struct {
 	context bool
+}
+
+const (
+	// SessionTag defines tag for session directory
+	SessionTag = "sessiondir"
+	// RootfsTag defines tag for container root filesystem
+	RootfsTag = "rootfs"
+	// OverlayLowerDirTag defines tag for overlay lower directories
+	OverlayLowerDirTag = "overlay-lowerdir"
+	// OverlayTag defines tag for overlay mount point
+	OverlayTag = "overlay"
+	// UnderlayTag defines tag for underlay mount points
+	UnderlayTag = "underlay"
+	// HostfsTag defines tag for host filesystem mount point
+	HostfsTag = "hostfs"
+	// BindsTag defines tag for bind path
+	BindsTag = "binds"
+	// KernelTag defines tag for kernel related mount point (proc, sysfs)
+	KernelTag = "kernel"
+	// DevTag defines tag for dev related mount point
+	DevTag = "dev"
+	// HomeTag defines tag for home directory mount point
+	HomeTag = "home"
+	// UserbindsTag defines tag for user bind mount points
+	UserbindsTag = "userbinds"
+	// TmpTag defines tag for temporary filesystem mount points (/tmp, /var/tmp)
+	TmpTag = "tmp"
+	// ScratchTag defines tag for scratch mount points
+	ScratchTag = "scratch"
+	// CwdTag defines tag for current working directory mount point
+	CwdTag = "cwd"
+	// FilesTag defines tag for file mount points (passwd, group ...)
+	FilesTag = "files"
+	// CustomTag defines tag for custom mount points
+	CustomTag = "custom"
+)
+
+var authorizedTags = []struct {
+	name      string
+	multiDest bool
+}{
+	{SessionTag, false},
+	{RootfsTag, false},
+	{OverlayLowerDirTag, true},
+	{OverlayTag, false},
+	{UnderlayTag, true},
+	{HostfsTag, true},
+	{BindsTag, true},
+	{KernelTag, true},
+	{DevTag, true},
+	{HomeTag, false},
+	{UserbindsTag, true},
+	{TmpTag, true},
+	{ScratchTag, true},
+	{CwdTag, false},
+	{FilesTag, true},
+	{CustomTag, true},
 }
 
 var authorizedImage = map[string]fsContext{
@@ -134,7 +191,8 @@ func GetSizeLimit(options []string) (uint64, error) {
 
 // Points defines and stores a set of mount points
 type Points struct {
-	Context string
+	context string
+	tags    map[string][]string
 	points  []specs.Mount
 }
 
@@ -148,6 +206,9 @@ func (p *Points) add(source string, dest string, fstype string, flags uintptr, o
 	}
 	if !strings.HasPrefix(dest, "/") {
 		return fmt.Errorf("destination must be an absolute path")
+	}
+	if p.hasDest(dest) && (flags&syscall.MS_REMOUNT) == 0 {
+		return fmt.Errorf("destination %s is already in the mount point list", dest)
 	}
 	for i := len(mountFlags) - 1; i >= 0; i-- {
 		flag := mountFlags[i].flag
@@ -175,7 +236,7 @@ func (p *Points) add(source string, dest string, fstype string, flags uintptr, o
 		setContext = authorizedFS[fstype].context
 	}
 	if setContext {
-		context := fmt.Sprintf("context=%s", p.Context)
+		context := fmt.Sprintf("context=%s", p.context)
 		mountOptions = append(mountOptions, context)
 	}
 	p.points = append(p.points, specs.Mount{
@@ -185,6 +246,20 @@ func (p *Points) add(source string, dest string, fstype string, flags uintptr, o
 		Options:     mountOptions,
 	})
 	return nil
+}
+
+func (p *Points) hasDest(dest string) bool {
+	for _, point := range p.points {
+		if point.Destination == dest {
+			return true
+		}
+	}
+	return false
+}
+
+// GetTags returns all registered tags and associated mount point
+func (p *Points) GetTags() map[string][]string {
+	return p.tags
 }
 
 // GetAll returns all registered mount points
@@ -216,10 +291,55 @@ func (p *Points) GetBySource(source string) []specs.Mount {
 	return mounts
 }
 
+// Tag sets a tag on destination mount point
+func (p *Points) Tag(dest string, tag string) error {
+	if !p.hasDest(dest) {
+		return fmt.Errorf("no destination %s found", dest)
+	}
+	for _, t := range authorizedTags {
+		for _, d := range p.tags[t.name] {
+			if d == dest {
+				return fmt.Errorf("tag %s already contains destination %s", t.name, dest)
+			}
+		}
+		if tag == t.name {
+			if !t.multiDest && len(p.tags[tag]) == 1 {
+				return fmt.Errorf("tag %s can't have more than one destination", tag)
+			}
+			p.tags[tag] = append(p.tags[tag], dest)
+			return nil
+		}
+	}
+	return fmt.Errorf("tag %s is not a recognized tag", tag)
+}
+
+// GetByTag returns mount points attached to a tag
+func (p *Points) GetByTag(tag string) []specs.Mount {
+	mounts := []specs.Mount{}
+	for _, dest := range p.tags[tag] {
+		mounts = append(mounts, p.GetByDest(dest)...)
+	}
+	return mounts
+}
+
+// RemoveByTag removes mount points attached to a tag
+func (p *Points) RemoveByTag(tag string) {
+	for _, dest := range p.tags[tag] {
+		p.RemoveByDest(dest)
+	}
+}
+
 // RemoveByDest removes mount points identified by destination
 func (p *Points) RemoveByDest(dest string) {
 	for i := len(p.points) - 1; i >= 0; i-- {
 		if p.points[i].Destination == dest {
+			for _, t := range authorizedTags {
+				for d := len(p.tags[t.name]) - 1; d >= 0; d-- {
+					if p.tags[t.name][d] == dest {
+						p.tags[t.name] = append(p.tags[t.name][:d], p.tags[t.name][d+1:]...)
+					}
+				}
+			}
 			p.points = append(p.points[:i], p.points[i+1:]...)
 		}
 	}
@@ -229,6 +349,13 @@ func (p *Points) RemoveByDest(dest string) {
 func (p *Points) RemoveBySource(source string) {
 	for i := len(p.points) - 1; i >= 0; i-- {
 		if p.points[i].Source == source {
+			for _, t := range authorizedTags {
+				for d := len(p.tags[t.name]) - 1; d >= 0; d-- {
+					if p.tags[t.name][d] == p.points[i].Destination {
+						p.tags[t.name] = append(p.tags[t.name][:d], p.tags[t.name][d+1:]...)
+					}
+				}
+			}
 			p.points = append(p.points[:i], p.points[i+1:]...)
 		}
 	}
@@ -245,7 +372,6 @@ func (p *Points) Import(points []specs.Mount) error {
 		var err error
 		var offset uint64
 		var sizelimit uint64
-		var name string
 
 		flags, options, internal := ConvertOptions(point.Options)
 		// check if this is a mount point to remount
@@ -261,23 +387,20 @@ func (p *Points) Import(points []specs.Mount) error {
 			if strings.HasPrefix(option, "sizelimit=") {
 				fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 			}
-			if strings.HasPrefix(option, "name=") {
-				fmt.Sscanf(option, "name=%s", &name)
-			}
 		}
 		// check if this is a bind mount point
 		if flags&syscall.MS_BIND != 0 {
-			if err = p.AddBind(name, point.Source, point.Destination, flags); err == nil {
+			if err = p.AddBind(point.Source, point.Destination, flags); err == nil {
 				continue
 			}
 		}
 		// check if this is an image mount point
-		if err = p.AddImage(name, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
+		if err = p.AddImage(point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
 			continue
 		}
 		// check if this is a filesystem or overlay mount point
 		if point.Type != "overlay" {
-			if err = p.AddFS(point.Source, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
+			if err = p.AddFS(point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
 				continue
 			}
 		} else {
@@ -293,7 +416,7 @@ func (p *Points) Import(points []specs.Mount) error {
 					fmt.Sscanf(option, "workdir=%s", &workdir)
 				}
 			}
-			if err = p.AddOverlay(point.Source, point.Destination, flags, lowerdir, upperdir, workdir); err == nil {
+			if err = p.AddOverlay(point.Destination, flags, lowerdir, upperdir, workdir); err == nil {
 				continue
 			}
 		}
@@ -303,8 +426,20 @@ func (p *Points) Import(points []specs.Mount) error {
 	return nil
 }
 
+// ImportTags imports a tag list with associated destination mount point
+func (p *Points) ImportTags(tags map[string][]string) error {
+	for tag, dests := range tags {
+		for _, dest := range dests {
+			if err := p.Tag(dest, tag); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // AddImage adds an image mount point
-func (p *Points) AddImage(name string, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
+func (p *Points) AddImage(source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
 	options := ""
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
@@ -321,11 +456,7 @@ func (p *Points) AddImage(name string, source string, dest string, fstype string
 	if sizelimit == 0 {
 		return fmt.Errorf("invalid image size, zero length")
 	}
-	if name == "" {
-		options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
-	} else {
-		options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,name=%s,errors=remount-ro", offset, sizelimit, name)
-	}
+	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
 	return p.add(source, dest, fstype, flags, options)
 }
 
@@ -340,31 +471,8 @@ func (p *Points) GetAllImages() []specs.Mount {
 	return images
 }
 
-// GetByName returns mount point identified by name
-func (p *Points) GetByName(name string) []specs.Mount {
-	mountPoints := []specs.Mount{}
-	for _, point := range p.points {
-		if _, ok := authorizedFS[point.Type]; ok {
-			if point.Source == name {
-				mountPoints = append(mountPoints, point)
-			}
-		}
-		for _, opt := range point.Options {
-			if strings.HasPrefix(opt, "name=") {
-				n := ""
-				fmt.Sscanf(opt, "name=%s", &n)
-				if name == n {
-					mountPoints = append(mountPoints, point)
-				}
-			}
-		}
-
-	}
-	return mountPoints
-}
-
 // AddBind adds a bind mount point
-func (p *Points) AddBind(name string, source string, dest string, flags uintptr) error {
+func (p *Points) AddBind(source string, dest string, flags uintptr) error {
 	bindFlags := flags | syscall.MS_BIND
 	options := ""
 
@@ -373,9 +481,6 @@ func (p *Points) AddBind(name string, source string, dest string, flags uintptr)
 	}
 	if !strings.HasPrefix(source, "/") {
 		return fmt.Errorf("source must be an absolute path")
-	}
-	if name != "" {
-		options = fmt.Sprintf("name=%s", name)
 	}
 	if err := p.add(source, dest, "", bindFlags, options); err != nil {
 		return err
@@ -398,7 +503,7 @@ func (p *Points) GetAllBinds() []specs.Mount {
 }
 
 // AddOverlay adds an overlay mount point
-func (p *Points) AddOverlay(name string, dest string, flags uintptr, lowerdir string, upperdir string, workdir string) error {
+func (p *Points) AddOverlay(dest string, flags uintptr, lowerdir string, upperdir string, workdir string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for overlay mount points")
 	}
@@ -423,10 +528,7 @@ func (p *Points) AddOverlay(name string, dest string, flags uintptr, lowerdir st
 	} else {
 		options = fmt.Sprintf("lowerdir=%s", lowerdir)
 	}
-	if name == "" {
-		return p.add("overlay", dest, "overlay", flags, options)
-	}
-	return p.add(name, dest, "overlay", flags, options)
+	return p.add("overlay", dest, "overlay", flags, options)
 }
 
 // GetAllOverlays returns a list of all registered overlay mount points
@@ -441,17 +543,14 @@ func (p *Points) GetAllOverlays() []specs.Mount {
 }
 
 // AddFS adds a filesystem mount point
-func (p *Points) AddFS(name string, dest string, fstype string, flags uintptr, options string) error {
+func (p *Points) AddFS(dest string, fstype string, flags uintptr, options string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for FS mount points")
 	}
 	if _, ok := authorizedFS[fstype]; !ok {
 		return fmt.Errorf("mount %s file system is not authorized", fstype)
 	}
-	if name == "" {
-		return p.add(fstype, dest, fstype, flags, options)
-	}
-	return p.add(name, dest, fstype, flags, options)
+	return p.add(fstype, dest, fstype, flags, options)
 }
 
 // GetAllFS returns a list of all registered filesystem mount points
@@ -471,4 +570,18 @@ func (p *Points) GetAllFS() []specs.Mount {
 func (p *Points) AddRemount(dest string, flags uintptr) error {
 	remountFlags := flags | syscall.MS_REMOUNT
 	return p.add("", dest, "", remountFlags, "")
+}
+
+// SetContext sets SELinux mount context, once set it can't be modified
+func (p *Points) SetContext(context string) error {
+	if p.context == "" {
+		p.context = context
+		return nil
+	}
+	return fmt.Errorf("mount context has already been set")
+}
+
+// GetContext returns SELinux mount context
+func (p *Points) GetContext() string {
+	return p.context
 }
