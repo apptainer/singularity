@@ -581,7 +581,7 @@ __attribute__((constructor)) static void init(void) {
          */
         if ( config.isSuid || geteuid() == 0 ) {
             priv_escalate();
-            prepare_scontainer_stage(1);
+            prepare_scontainer_stage(SCONTAINER_STAGE1);
         }
 
         return;
@@ -860,7 +860,7 @@ __attribute__((constructor)) static void init(void) {
             execute = RPC_SERVER;
         } else {
             singularity_message(VERBOSE, "Don't execute RPC server, joining instance\n");
-            prepare_scontainer_stage(2);
+            prepare_scontainer_stage(SCONTAINER_STAGE2);
         }
         return;
     } else if ( stage_pid > 0 ) {
@@ -919,6 +919,10 @@ int main(int argc, char **argv) {
         singularity_message(VERBOSE, "Execute scontainer stage 1\n");
         SContainer(SCONTAINER_STAGE1, &config, json_stdin);
         break;
+    case SCONTAINER_STAGE2:
+        singularity_message(VERBOSE, "Execute scontainer stage 2\n");
+        SContainer(SCONTAINER_STAGE2, &config, json_stdin);
+        break;
     case SMASTER:
         singularity_message(VERBOSE, "Execute smaster process\n");
         SMaster(rpc_socket[0], instance_socket[0], &config, json_stdin);
@@ -928,7 +932,7 @@ int main(int argc, char **argv) {
         RPCServer(rpc_socket[1], sruntime);
 
         singularity_message(VERBOSE, "Execute scontainer stage 2\n");
-        prepare_scontainer_stage(2);
+        prepare_scontainer_stage(SCONTAINER_STAGE2);
         SContainer(SCONTAINER_STAGE2, &config, json_stdin);
         break;
     }
