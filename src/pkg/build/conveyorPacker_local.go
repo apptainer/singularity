@@ -27,9 +27,16 @@ type LocalConveyor struct {
 	tmpfs string
 }
 
+// LocalPacker only needs to hold the data needed to pack
+type LocalPacker struct {
+	src   string
+	tmpfs string
+}
+
 // LocalConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type LocalConveyorPacker struct {
 	LocalConveyor
+	lp LocalPacker
 }
 
 // Get just stores the source
@@ -45,9 +52,8 @@ func (c *LocalConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
+func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 	var p Packer
-
 	rootfs := cp.src
 
 	//leverage C code to properly get image information
@@ -98,6 +104,22 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 	}
 
 	b, err = p.Pack()
+	if err != nil {
+		sylog.Errorf("Local Pack failed", err.Error())
+		return nil, err
+	}
+
+	b.Recipe = Definition{}
+
+	return b, nil
+}
+
+// Pack puts relevant objects in a Bundle!
+func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
+
+	cp.lp = LocalPacker{cp.src, cp.tmpfs}
+
+	b, err = cp.lp.Pack()
 	if err != nil {
 		sylog.Errorf("Local Pack failed", err.Error())
 		return nil, err
