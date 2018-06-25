@@ -21,7 +21,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	oci "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/spf13/cobra"
 )
@@ -159,7 +159,7 @@ func doSections(b *build.Bundle, fullPath string) {
 	engineConfig := &imgbuild.EngineConfig{
 		Bundle: *b,
 	}
-	ociConfig := &oci.RuntimeOciConfig{}
+	ociConfig := &oci.Config{}
 
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
