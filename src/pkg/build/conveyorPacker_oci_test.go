@@ -123,7 +123,7 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	// Don't want to implement untar routines here, so use system tar
 	dir, err := ioutil.TempDir("", "oci-test")
 	if err != nil {
-		t.Fatalf("Could not create remporary directory: %v", err)
+		t.Fatalf("Could not create temporary directory: %v", err)
 	}
 	defer os.RemoveAll(dir)
 	cmd := exec.Command("tar", "-C", dir, "-xf", archive)
