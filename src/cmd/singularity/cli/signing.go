@@ -22,12 +22,13 @@ func init() {
 // SignCmd singularity sign
 var SignCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.ExactArgs(1),
+	Args:   cobra.ExactArgs(1),
+	PreRun: sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		if err := signing.Sign(args[0]); err != nil {
+		if err := signing.Sign(args[0], authToken); err != nil {
 			os.Exit(2)
 		}
 	},

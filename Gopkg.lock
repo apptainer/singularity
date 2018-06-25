@@ -14,6 +14,12 @@
   revision = "4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9"
 
 [[projects]]
+  name = "github.com/blang/semver"
+  packages = ["."]
+  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
+  version = "v3.5.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/containers/image"
   packages = [
@@ -164,6 +170,18 @@
   version = "v1.2.0"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/errwrap"
+  packages = ["."]
+  revision = "7554cd9344cec97297fa6649b055a8c98c2a1e55"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/hashicorp/go-multierror"
+  packages = ["."]
+  revision = "b7773ae218740a7be65057fc60b366a49b538a44"
+
+[[projects]]
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
@@ -220,6 +238,19 @@
   packages = ["specs-go"]
   revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
   version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/opencontainers/runtime-tools"
+  packages = [
+    "error",
+    "filepath",
+    "generate",
+    "generate/seccomp",
+    "specerror",
+    "validate"
+  ]
+  revision = "1c243a8a8eb44d491790798afc9b634c6f6a6380"
+  version = "v0.6.0"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -298,6 +329,12 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/syndtr/gocapability"
+  packages = ["capability"]
+  revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
+
+[[projects]]
+  branch = "master"
   name = "github.com/xeipuuv/gojsonpointer"
   packages = ["."]
   revision = "4e3ac2762d5f479393488629ee9370b50873b3a6"
@@ -366,6 +403,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "321be02b9805346efee78aa87600913d3e3e4290a4674ca5b83fb95760cdbf85"
+  inputs-digest = "f7e24ed002047d7dffa8403fa2443c198043b44a7d85d323c6219dfc52d05ab1"
   solver-name = "gps-cdcl"
   solver-version = 1

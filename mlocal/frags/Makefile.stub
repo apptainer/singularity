@@ -147,6 +147,7 @@ collect:
 dep:
 	@printf " GO DEPS\n"
 	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
+	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
 
 .PHONY: test
 test:
@@ -164,7 +165,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 60s ./...
+		cd $(SOURCEDIR) && go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
 	@echo "       PASS"
 
 .PHONY: cscope

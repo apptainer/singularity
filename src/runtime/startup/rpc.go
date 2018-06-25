@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/workflows/rpc"
+	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
 // RPCServer serves runtime engine requests
@@ -28,6 +28,6 @@ func RPCServer(socket C.int, sruntime *C.char) {
 	}
 	comm.Close()
 
-	rpc.ServeRuntimeEngineRequests(runtime, conn)
+	engines.ServeRuntimeEngineRequests(runtime, conn)
 	os.Exit(0)
 }
