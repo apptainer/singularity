@@ -234,7 +234,7 @@ func (c *OCIConveyor) extractArchive(src string, dst string) error {
 			continue
 		}
 
-		// ZipSlip protection - don't excape dst
+		// ZipSlip protection - don't escape from dst
 		target := filepath.Join(dst, header.Name)
 		if !strings.HasPrefix(target, filepath.Clean(dst)+string(os.PathSeparator)) {
 			return fmt.Errorf("%s: illegal extraction path", target)
