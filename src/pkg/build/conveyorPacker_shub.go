@@ -65,7 +65,7 @@ type ShubConveyor struct {
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ShubConveyorPacker struct {
 	ShubConveyor
-	Packer
+	lp LocalPacker
 }
 
 // Get downloads container information from Singularityhub
@@ -110,20 +110,17 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-// After image is local, we can use the local packer
+// After image is local, we can use a local packer
 func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
+	cp.lp = LocalPacker{cp.src, cp.tmpfs}
 
-	p := &LocalConveyorPacker{
-		LocalConveyor: LocalConveyor{cp.tmpfile, cp.tmpfs},
-	}
-
-	b, err = p.Pack()
+	b, err = cp.lp.Pack()
 	if err != nil {
-		sylog.Errorf("Shub Pack failed", err.Error())
+		sylog.Errorf("Local Pack failed", err.Error())
 		return nil, err
 	}
 
-	b.Recipe = cp.recipe
+	b.Recipe = Definition{}
 
 	return b, nil
 }
