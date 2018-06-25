@@ -22,11 +22,11 @@ func TestGroup(t *testing.T) {
 }
 
 func TestPasswd(t *testing.T) {
-	_, err := Passwd("/fake")
+	_, err := Passwd("/fake", "")
 	if err == nil {
 		t.Errorf("should have failed with bad passwd file")
 	}
-	_, err = Passwd("/etc/passwd")
+	_, err = Passwd("/etc/passwd", "")
 	if err != nil {
 		t.Errorf("should have passed with correct passwd file")
 	}

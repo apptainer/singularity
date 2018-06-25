@@ -17,7 +17,7 @@ import (
 
 // Passwd creates a passwd template based on content of file provided in path,
 // updates content with current user information and returns content
-func Passwd(path string) (content []byte, err error) {
+func Passwd(path string, home string) (content []byte, err error) {
 	sylog.Verbosef("Checking for template passwd file: %s\n", path)
 	if fs.IsFile(path) == false {
 		return content, fmt.Errorf("passwd file doesn't exist in container, not updating")
@@ -40,8 +40,11 @@ func Passwd(path string) (content []byte, err error) {
 		return content, err
 	}
 
-	// TODO: consider using value from SINGULARITY_HOME once we get something ala singularity_registry
-	userInfo := fmt.Sprintf("%s:x:%d:%d:%s:%s:%s\n", pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, pwInfo.Dir, pwInfo.Shell)
+	homeDir := pwInfo.Dir
+	if home != "" {
+		homeDir = home
+	}
+	userInfo := fmt.Sprintf("%s:x:%d:%d:%s:%s:%s\n", pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, pwInfo.Shell)
 
 	if content[len(content)-1] != '\n' {
 		content = append(content, byte('\n'))
