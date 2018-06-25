@@ -6,11 +6,17 @@
 package build
 
 import (
+	"archive/tar"
+	"bufio"
+	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/containers/image/copy"
@@ -63,7 +69,30 @@ func (c *OCIConveyor) Get(recipe Definition) (err error) {
 	case "oci":
 		c.srcRef, err = oci.ParseReference(recipe.Header["from"])
 	case "oci-archive":
-		c.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
+		if os.Geteuid() == 0 {
+			// As root, the direct oci-archive handling will work
+			c.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
+		} else {
+			// As non-root we need to do a dumb tar extraction first
+			tmpDir, err := ioutil.TempDir("", "temp-oci-")
+			if err != nil {
+				return fmt.Errorf("could not create temporary oci directory: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
+			refParts := strings.SplitN(recipe.Header["from"], ":", 2)
+			err = c.extractArchive(refParts[0], tmpDir)
+			if err != nil {
+				return fmt.Errorf("error extracting the OCI archive file: %v", err)
+			}
+			// We may or may not have had a ':tag' in the source to handle
+			if len(refParts) == 2 {
+				c.srcRef, err = oci.ParseReference(tmpDir + ":" + refParts[1])
+			} else {
+				c.srcRef, err = oci.ParseReference(tmpDir)
+			}
+		}
+
 	default:
 		return fmt.Errorf("OCI ConveyerPacker does not support %s", recipe.Header["bootstrap"])
 	}
@@ -157,6 +186,83 @@ func (c *OCIConveyor) getConfig() (imgspecv1.ImageConfig, error) {
 	}
 
 	return imgSpec.Config, nil
+}
+
+// Perform a dumb tar(gz) extraction with no chown, id remapping etc.
+// This is needed for non-root handling of `oci-archive` as the extraction
+// by containers/archive is failing when uid/gid don't match local machine
+// and we're not root
+func (c *OCIConveyor) extractArchive(src string, dst string) error {
+	f, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	header, err := r.Peek(10) //read a few bytes without consuming
+	if err != nil {
+		return err
+	}
+	gzipped := strings.Contains(http.DetectContentType(header), "x-gzip")
+
+	if gzipped {
+		r, err := gzip.NewReader(f)
+		if err != nil {
+			return err
+		}
+		defer r.Close()
+	}
+
+	tr := tar.NewReader(r)
+
+	for {
+		header, err := tr.Next()
+
+		switch {
+
+		// if no more files are found return
+		case err == io.EOF:
+			return nil
+
+		// return any other error
+		case err != nil:
+			return err
+
+		// if the header is nil, just skip it (not sure how this happens)
+		case header == nil:
+			continue
+		}
+
+		// ZipSlip protection - don't excape dst
+		target := filepath.Join(dst, header.Name)
+		if !strings.HasPrefix(target, filepath.Clean(dst)+string(os.PathSeparator)) {
+			return fmt.Errorf("%s: illegal extraction path", target)
+		}
+
+		// check the file type
+		switch header.Typeflag {
+		// if its a dir and it doesn't exist create it
+		case tar.TypeDir:
+			if _, err := os.Stat(target); err != nil {
+				if err := os.MkdirAll(target, 0755); err != nil {
+					return err
+				}
+			}
+		// if it's a file create it
+		case tar.TypeReg:
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			// copy over contents
+			if _, err := io.Copy(f, tr); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 func (cp *OCIConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
