@@ -6,8 +6,16 @@
 package image
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+)
+
+// SIF defines constant for sif format
+const SIF = 4
+
+const (
+	sifMagic = "\x53\x49\x46\x5f\x4d\x41\x47\x49\x43"
 )
 
 type sifFormat struct{}
@@ -16,5 +24,13 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
 		return fmt.Errorf("not a SIF file image")
 	}
-	return fmt.Errorf("not implemented")
+	b := make([]byte, bufferSize)
+	if n, err := img.File.Read(b); err != nil || n != bufferSize {
+		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
+	}
+	if bytes.Index(b, []byte(sifMagic)) == -1 {
+		return fmt.Errorf("SIF magic not found")
+	}
+	img.Type = SIF
+	return nil
 }

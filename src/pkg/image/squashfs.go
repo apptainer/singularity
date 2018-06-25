@@ -38,32 +38,28 @@ type squashfsInfo struct {
 
 type squashfsFormat struct{}
 
-func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
-	if fileinfo.IsDir() {
-		return fmt.Errorf("not a squashfs image")
-	}
-	b := make([]byte, bufferSize)
-	if n, err := img.File.Read(b); err != nil || n != bufferSize {
-		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
-	}
-	offset := 0
+// CheckSquashfsHeader checks if byte content contains a valid squashfs header
+// and returns offset where squashfs partition start
+func CheckSquashfsHeader(b []byte) (uint64, error) {
+	var offset uint64
+
 	o := bytes.Index(b, []byte(launchString))
 	if o > 0 {
-		offset += o + len(launchString) + 1
+		offset += uint64(o + len(launchString) + 1)
 	}
 	sinfo := &squashfsInfo{}
 
-	if uintptr(offset)+unsafe.Sizeof(sinfo) > bufferSize {
-		return fmt.Errorf("can't find squashfs information header")
+	if uintptr(offset)+unsafe.Sizeof(sinfo) >= uintptr(len(b)) {
+		return offset, fmt.Errorf("can't find squashfs information header")
 	}
 
 	buffer := bytes.NewReader(b[offset:])
 
 	if err := binary.Read(buffer, binary.LittleEndian, sinfo); err != nil {
-		return fmt.Errorf("can't read the top of the image")
+		return offset, fmt.Errorf("can't read the top of the image")
 	}
 	if bytes.Compare(sinfo.Magic[:], []byte(squashfsMagic)) != 0 {
-		return fmt.Errorf("not a valid squashfs image")
+		return offset, fmt.Errorf("not a valid squashfs image")
 	}
 
 	if sinfo.Compression != squashfsZlib {
@@ -80,8 +76,23 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		}
 		sylog.Infof("squashfs image was compressed with %s, if it failed to run, please contact image's author", compressionType)
 	}
+	return offset, nil
+}
+
+func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
+	if fileinfo.IsDir() {
+		return fmt.Errorf("not a squashfs image")
+	}
+	b := make([]byte, bufferSize)
+	if n, err := img.File.Read(b); err != nil || n != bufferSize {
+		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
+	}
+	offset, err := CheckSquashfsHeader(b)
+	if err != nil {
+		return err
+	}
 	img.Type = SQUASHFS
-	img.Offset = uint64(offset)
+	img.Offset = offset
 	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
 }

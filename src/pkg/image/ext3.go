@@ -41,6 +41,41 @@ type extFSInfo struct {
 
 type ext3Format struct{}
 
+// CheckExt3Header checks if byte content contains a valid ext3 header
+// and returns offset where ext3 partition begin
+func CheckExt3Header(b []byte) (uint64, error) {
+	var offset uint64 = extMagicOffset
+
+	o := bytes.Index(b, []byte(launchString))
+	if o > 0 {
+		offset += uint64(o + len(launchString) + 1)
+	}
+	einfo := &extFSInfo{}
+
+	if uintptr(offset)+unsafe.Sizeof(einfo) >= uintptr(len(b)) {
+		return offset, fmt.Errorf("can't find ext3 information header")
+	}
+	buffer := bytes.NewReader(b[offset:])
+
+	if err := binary.Read(buffer, binary.LittleEndian, einfo); err != nil {
+		return offset, fmt.Errorf("can't read the top of the image")
+	}
+	if bytes.Compare(einfo.Magic[:], []byte(extMagic)) != 0 {
+		return offset, fmt.Errorf(notValidExt3ImageMessage)
+	}
+	if einfo.Compat&compatHasJournal == 0 {
+		return offset, fmt.Errorf(notValidExt3ImageMessage)
+	}
+	if einfo.Incompat&^(incompatFileType|incompatRecover|incompatMetabg) == 1 {
+		return offset, fmt.Errorf(notValidExt3ImageMessage)
+	}
+	if einfo.Rocompat&^(rocompatSparseSuper|rocompatLargeFile|rocompatBtreeDir) == 1 {
+		return offset, fmt.Errorf(notValidExt3ImageMessage)
+	}
+	offset -= extMagicOffset
+	return offset, nil
+}
+
 func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
 		return fmt.Errorf("not an ext3 image")
@@ -49,35 +84,12 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
 		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
 	}
-	offset := extMagicOffset
-	o := bytes.Index(b, []byte(launchString))
-	if o > 0 {
-		offset += o + len(launchString) + 1
-	}
-	einfo := &extFSInfo{}
-
-	if uintptr(offset)+unsafe.Sizeof(einfo) > bufferSize {
-		return fmt.Errorf("can't find ext3 information header")
-	}
-	buffer := bytes.NewReader(b[offset:])
-
-	if err := binary.Read(buffer, binary.LittleEndian, einfo); err != nil {
-		return fmt.Errorf("can't read the top of the image")
-	}
-	if bytes.Compare(einfo.Magic[:], []byte(extMagic)) != 0 {
-		return fmt.Errorf(notValidExt3ImageMessage)
-	}
-	if einfo.Compat&compatHasJournal == 0 {
-		return fmt.Errorf(notValidExt3ImageMessage)
-	}
-	if einfo.Incompat&^(incompatFileType|incompatRecover|incompatMetabg) == 1 {
-		return fmt.Errorf(notValidExt3ImageMessage)
-	}
-	if einfo.Rocompat&^(rocompatSparseSuper|rocompatLargeFile|rocompatBtreeDir) == 1 {
-		return fmt.Errorf(notValidExt3ImageMessage)
+	offset, err := CheckExt3Header(b)
+	if err != nil {
+		return err
 	}
 	img.Type = EXT3
-	img.Offset = uint64(offset - extMagicOffset)
+	img.Offset = offset
 	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
 }

@@ -20,10 +20,14 @@ const (
 	bufferSize   = 2048
 )
 
-var registeredFormats = make(map[string]format, 0)
-
-func registerFormat(name string, f format) {
-	registeredFormats[name] = f
+var registeredFormats = []struct {
+	name   string
+	format format
+}{
+	{"sif", &sifFormat{}},
+	{"sandbox", &sandboxFormat{}},
+	{"squashfs", &squashfsFormat{}},
+	{"ext3", &ext3Format{}},
 }
 
 // format describes the interface that an image format type must implement.
@@ -118,9 +122,11 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 	procPath, err := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", file.Fd()))
 	if err != nil {
+		file.Close()
 		return nil, fmt.Errorf("failed to readlink of path file descriptor: %s", err)
 	}
 	if procPath != resolvedPath {
+		file.Close()
 		return nil, fmt.Errorf("path doesn't match %s != %s", resolvedPath, procPath)
 	}
 	img := &Image{
@@ -131,28 +137,27 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 	fileinfo, err := file.Stat()
 	if err != nil {
+		file.Close()
 		return nil, err
 	}
 	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, file.Fd(), syscall.F_SETFD, syscall.O_CLOEXEC); err != 0 {
 		sylog.Warningf("failed to set O_CLOEXEC flags on image")
 	}
-	for name, f := range registeredFormats {
-		if offset, err := img.File.Seek(0, os.SEEK_SET); err != nil || offset != 0 {
+	for _, rf := range registeredFormats {
+		if offset, err := file.Seek(0, os.SEEK_SET); err != nil || offset != 0 {
+			file.Close()
 			return nil, err
 		}
-		err := f.initializer(img, fileinfo)
+		err := rf.format.initializer(img, fileinfo)
 		if err == nil {
+			if offset, err := file.Seek(0, os.SEEK_SET); err != nil || offset != 0 {
+				file.Close()
+				return nil, err
+			}
 			return img, nil
 		}
-		sylog.Debugf("%s format initializer returns: %s", name, err)
+		sylog.Debugf("%s format initializer returns: %s", rf.name, err)
 	}
 	file.Close()
 	return nil, fmt.Errorf("image format not recognized")
-}
-
-func init() {
-	registerFormat("ext3", &ext3Format{})
-	registerFormat("sandbox", &sandboxFormat{})
-	registerFormat("sif", &sifFormat{})
-	registerFormat("squashfs", &squashfsFormat{})
 }
