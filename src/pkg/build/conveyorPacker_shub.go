@@ -117,7 +117,15 @@ func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
 		LocalConveyor: LocalConveyor{cp.tmpfile, cp.tmpfs},
 	}
 
-	return p.Pack()
+	b, err = p.Pack()
+	if err != nil {
+		sylog.Errorf("Shub Pack failed", err.Error())
+		return nil, err
+	}
+
+	b.Recipe = cp.recipe
+
+	return b, nil
 }
 
 // Download an image from Singularity Hub, writing as we download instead

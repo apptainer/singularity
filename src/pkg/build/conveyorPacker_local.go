@@ -46,9 +46,6 @@ func (c *LocalConveyor) Get(recipe Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
-
-	b, err = NewBundle(cp.tmpfs)
-
 	var p Packer
 
 	rootfs := cp.src
@@ -101,6 +98,10 @@ func (cp *LocalConveyorPacker) Pack() (b *Bundle, err error) {
 	}
 
 	b, err = p.Pack()
+	if err != nil {
+		sylog.Errorf("Local Pack failed", err.Error())
+		return nil, err
+	}
 
 	b.Recipe = Definition{}
 

@@ -32,11 +32,11 @@ func (p *SquashfsPacker) Pack() (b *Bundle, err error) {
 	}
 	err = p.unpackSquashfs(b, p.info, rootfs)
 	if err != nil {
-		sylog.Fatalf("unpackSquashfs Failed", err.Error())
+		sylog.Errorf("unpackSquashfs Failed", err.Error())
 		return nil, err
 	}
 
-	return
+	return b, nil
 }
 
 // unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
