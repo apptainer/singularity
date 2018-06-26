@@ -12,7 +12,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// SandboxPacker holds the source to copy from and the
+// SandboxPacker holds the locations of where to pack from and to
+// Ext3Packer holds the locations of where to back from and to, aswell as image offset info
 type SandboxPacker struct {
 	srcdir string
 	tmpfs  string
