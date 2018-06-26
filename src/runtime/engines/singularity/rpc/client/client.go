@@ -53,11 +53,11 @@ func (t *RPC) Chroot(root string) (int, error) {
 }
 
 // LoopDevice calls the loop device RPC using the supplied arguments
-func (t *RPC) LoopDevice(image string, mode int, info loop.Info64) (int, error) {
+func (t *RPC) LoopDevice(image string, info loop.Info64, maxDevices uint) (int, error) {
 	arguments := &args.LoopArgs{
-		Image: image,
-		Mode:  mode,
-		Info:  info,
+		Image:      image,
+		MaxDevices: maxDevices,
+		Info:       info,
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".LoopDevice", arguments, &reply)

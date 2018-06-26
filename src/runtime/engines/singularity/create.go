@@ -85,7 +85,8 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	if st.IsDir() == false && !userNS {
 		var number int
 		info.Flags = loop.FlagsAutoClear
-		number, err = rpcOps.LoopDevice(rootfs, os.O_RDONLY, *info)
+		info.Flags |= loop.FlagsReadOnly
+		number, err = rpcOps.LoopDevice(rootfs, *info, engine.EngineConfig.File.MaxLoopDevices)
 		if err != nil {
 			return err
 		}

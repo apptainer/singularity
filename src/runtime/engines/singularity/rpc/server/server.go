@@ -58,12 +58,9 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 
 // LoopDevice attaches a loop device with the specified arguments
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
-	loopdev := new(loop.Device)
+	loopdev := &loop.Device{MaxLoopDevices: arguments.MaxDevices}
 
-	if err := loopdev.Attach(arguments.Image, arguments.Mode, reply); err != nil {
-		return err
-	}
-	if err := loopdev.SetStatus(&arguments.Info); err != nil {
+	if err := loopdev.Attach(arguments.Image, &arguments.Info, reply); err != nil {
 		return err
 	}
 	return nil
