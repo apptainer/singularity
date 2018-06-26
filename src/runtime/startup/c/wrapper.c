@@ -599,7 +599,7 @@ __attribute__((constructor)) static void init(void) {
     singularity_message(DEBUG, "Wait C and JSON runtime configuration from scontainer stage 1\n");
 
     while ( poll(&fds, 1, -1) >= 0 ) {
-        if ( fds.revents == POLLIN ) {
+        if ( fds.revents & POLLIN ) {
             int ret;
             singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
             if ( (ret = read(output[0], &config, sizeof(config))) != sizeof(config) ) {
