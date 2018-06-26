@@ -12,21 +12,31 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2)
+## [v2.5.2-rc1](https://github.com/singularityware/singularity/releases/tag/2.5.2)
 
 ### Bug fixes
-  - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
-    mount or when specifying -c/-C/--contain option
-  - fixed * expansion during app runscript creation #1486
+ - fix an error in malloc allocation #1620
+ - fixed the way that * expands during runscript #1486
+ - honor debug flag when pulling from docker hub #1556
+ - fix a bug with passwd abort #1580
+ - allow user to override singularity.conf "mount home = no" with --home option
+   #1496
+ - Improve debugging output #1535
+ - Fix some bugs in bind mounting #1525
+ - Define PR_(S|G)ET_NO_NEW_PRIVS in user space so that these features will 
+   work with kernels that implement them (like Cray systems) #1506
+ - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
+   mount or when specifying -c/-C/--contain option #1420
+ - fixed * expansion during app runscript creation #1486
 
 ## [v2.5.1](https://github.com/singularityware/singularity/releases/tag/2.5.1) (2018-05-03)
 
 ### Bug fixes
-  - Corrected a permissions error when attempting to run Singularity from a 
-    directory on NFS with root_squash enabled  
-  - Fixed a bug that closed a socket early, preventing correct container 
-    execution on hosts using identity services like SSSD
-  - Fixed a regression that broke the debootstrap agent
+ - Corrected a permissions error when attempting to run Singularity from a 
+   directory on NFS with root_squash enabled  
+ - Fixed a bug that closed a socket early, preventing correct container 
+   execution on hosts using identity services like SSSD
+ - Fixed a regression that broke the debootstrap agent
 
 ## [v2.5.0](https://github.com/singularityware/singularity/releases/tag/2.5.0) (2018-04-27)
 
