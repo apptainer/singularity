@@ -54,7 +54,14 @@ type Scripts struct {
 
 // NewDefinitionFromURI crafts a new Definition given a URI
 func NewDefinitionFromURI(uri string) (d Definition, err error) {
-	u := strings.SplitN(uri, "://", 2)
+	var u []string
+	if strings.Contains(uri, "://") {
+		u = strings.SplitN(uri, "://", 2)
+	} else if strings.Contains(uri, ":") {
+		u = strings.SplitN(uri, ":", 2)
+	} else {
+		return d, fmt.Errorf("build URI must start with prefix:// or prefix: ")
+	}
 
 	d = Definition{
 		Header: map[string]string{
