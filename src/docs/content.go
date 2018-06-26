@@ -363,7 +363,7 @@ Enterprise Performance Computing (EPC)`
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PullUse   string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
-	PullShort string = `Pull a contianer from a URI`
+	PullShort string = `Pull a container from a URI`
 	PullLong  string = `
   SUPPORTED URIs:
   
