@@ -18,7 +18,6 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-	//"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -110,6 +109,12 @@ func (cp *DockerConveyorPacker) Pack() (b *Bundle, err error) {
 		return
 	}
 
+	err = cp.setBindPoints(b)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
 	b.Recipe = cp.recipe
 
 	return b, nil
@@ -148,14 +153,14 @@ func (cp *DockerConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
 }
 
 func (cp *DockerConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
-	if err = makeBaseEnv(b.Rootfs()); err != nil {
+	if err = makeBaseEnv(b.Rootfs(), b.Path+"/"+b.FSObjects[".singularity.d"]); err != nil {
 		sylog.Errorf("%v", err)
 	}
 	return
 }
 
 func (cp *DockerConveyorPacker) insertRunScript(b *Bundle) (err error) {
-	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
+	f, err := os.Create(b.Path + "/" + b.FSObjects[".singularity.d"] + "/runscript")
 	if err != nil {
 		return
 	}
@@ -222,7 +227,7 @@ exec $SINGULARITY_OCI_RUN
 
 	f.Sync()
 
-	err = os.Chmod(b.Rootfs()+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(b.Path+"/"+b.FSObjects[".singularity.d"]+"/runscript", 0755)
 	if err != nil {
 		return
 	}
@@ -231,7 +236,7 @@ exec $SINGULARITY_OCI_RUN
 }
 
 func (cp *DockerConveyorPacker) insertEnv(b *Bundle) (err error) {
-	f, err := os.Create(b.Rootfs() + "/.singularity.d/env/10-docker2singularity.sh")
+	f, err := os.Create(b.Path + "/" + b.FSObjects[".singularity.d"] + "/env/10-docker2singularity.sh")
 	if err != nil {
 		return
 	}
@@ -253,10 +258,17 @@ func (cp *DockerConveyorPacker) insertEnv(b *Bundle) (err error) {
 
 	f.Sync()
 
-	err = os.Chmod(b.Rootfs()+"/.singularity.d/env/10-docker2singularity.sh", 0755)
+	err = os.Chmod(b.Path+"/"+b.FSObjects[".singularity.d"]+"/env/10-docker2singularity.sh", 0755)
 	if err != nil {
 		return
 	}
 
 	return nil
+}
+
+func (cp *DockerConveyorPacker) setBindPoints(b *Bundle) (err error) {
+	//add bind points for engine
+	b.BindPath = append(b.BindPath, b.Rootfs()+":/")
+
+	return
 }

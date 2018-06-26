@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 	"text/template"
 
 	"github.com/singularityware/singularity/src/docs"
@@ -54,7 +54,7 @@ func init() {
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
-	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
+	defaultTokenFile = filepath.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
 	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 	VersionCmd.Flags().SetInterspersed(false)

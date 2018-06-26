@@ -9,7 +9,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 
+	"github.com/singularityware/singularity/src/pkg/sif"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -25,13 +27,20 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		return err
 	}
 
-	f, err := ioutil.TempFile("", "squashfs-")
-	squashfsPath := f.Name() + ".img"
+	f, err := ioutil.TempFile(b.Path, "squashfs-")
+	squashfsPathRoot := f.Name() + ".img"
 	f.Close()
 	os.Remove(f.Name())
-	os.Remove(squashfsPath)
+	os.Remove(squashfsPathRoot)
 
-	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
+	f, err = ioutil.TempFile(b.Path, "squashfs-")
+	squashfsPathSingularityD := f.Name() + ".img"
+	f.Close()
+	os.Remove(f.Name())
+	os.Remove(squashfsPathSingularityD)
+
+	//squashfs for rootfs
+	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPathRoot, "-noappend")
 	mksquashfsCmd.Stdin = os.Stdin
 	mksquashfsCmd.Stdout = os.Stdout
 	mksquashfsCmd.Stderr = os.Stderr
@@ -40,7 +49,32 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 		return err
 	}
 
-	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPath, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", path)
+	//squashfs for .singularity.d
+	mksquashfsCmd = exec.Command(mksquashfs, b.Path+"/"+b.FSObjects[".singularity.d"], squashfsPathSingularityD, "-noappend")
+	mksquashfsCmd.Stdin = os.Stdin
+	mksquashfsCmd.Stdout = os.Stdout
+	mksquashfsCmd.Stderr = os.Stderr
+	err = mksquashfsCmd.Run()
+	if err != nil {
+		return err
+	}
+
+	partitionMap := map[int]string{
+		2: "/.singularity.d",
+	}
+
+	partitionMounts, err := sif.NewJSONMarshaler("sifPartitionMounts", partitionMap)
+	if err != nil {
+		return err
+	}
+
+	jsonPath := filepath.Join(b.Path, "jsonPartitionMounts")
+
+	if err := partitionMounts.ToFile(jsonPath, 0755); err != nil {
+		return err
+	}
+
+	sifCmd := exec.Command("singularity", "sif", "create", "-P", squashfsPathRoot, "-f", "SQUASHFS", "-p", "SYSTEM", "-c", "LINUX", "-P", squashfsPathSingularityD, "-f", "SQUASHFS", "-p", "DATA", "-c", "SINGULARITY.D", "-L", jsonPath, path)
 	sifCmd.Stdin = os.Stdin
 	sifCmd.Stdout = os.Stdout
 	sifCmd.Stderr = os.Stderr

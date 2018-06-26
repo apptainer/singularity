@@ -22,8 +22,8 @@ const (
 	error
 	warn
 	log
-	_
 	info
+	_
 	verbose
 	verbose2
 	verbose3

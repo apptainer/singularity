@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package config
+package oci
 
 import (
 	"encoding/json"
@@ -12,21 +12,21 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 )
 
-// RuntimeOciConfig is the OCI runtime configuration.
-type RuntimeOciConfig struct {
+// Config is the OCI runtime configuration.
+type Config struct {
 	generate.Generator
 	specs.Spec
 }
 
 // MarshalJSON is for json.Marshaler
-func (c *RuntimeOciConfig) MarshalJSON() ([]byte, error) {
+func (c *Config) MarshalJSON() ([]byte, error) {
 	b, err := json.Marshal(&c.Spec)
 
 	return b, err
 }
 
 // UnmarshalJSON is for json.Unmarshaler
-func (c *RuntimeOciConfig) UnmarshalJSON(b []byte) error {
+func (c *Config) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &c.Spec); err != nil {
 		return err
 	}

@@ -6,14 +6,22 @@
 package cli
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/spf13/cobra"
 )
 
@@ -87,9 +95,10 @@ var BuildCmd = &cobra.Command{
 		} else {
 			//local build
 			bundle := makeBundle(def)
+			doSections(bundle, args[0])
 
 			if sandbox {
-				sylog.Fatalf("Cannot build to sandbox... yet")
+				sylog.Fatalf("Cannot build to sandbox... yet\n")
 			} else {
 				a = &build.SIFAssembler{}
 			}
@@ -102,6 +111,54 @@ var BuildCmd = &cobra.Command{
 
 	},
 	TraverseChildren: true,
+}
+
+func doSections(b *build.Bundle, fullPath string) {
+	lvl := "0"
+	if verbose {
+		lvl = "2"
+	}
+	if debug {
+		lvl = "5"
+	}
+
+	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
+	progname := []string{"singularity image-build"}
+	env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=imgbuild"}
+
+	engineConfig := &imgbuild.EngineConfig{
+		Bundle: *b,
+	}
+	ociConfig := &oci.Config{}
+
+	config := &config.Common{
+		EngineName:   imgbuild.Name,
+		ContainerID:  filepath.Base(fullPath),
+		OciConfig:    ociConfig,
+		EngineConfig: engineConfig,
+	}
+
+	configData, err := json.Marshal(config)
+	if err != nil {
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	// Create os/exec.Command to run wrapper and return control once finished
+	wrapperCmd := &exec.Cmd{
+		Path:   wrapper,
+		Args:   progname,
+		Env:    env,
+		Stdin:  bytes.NewReader(configData),
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	if err := wrapperCmd.Start(); err != nil {
+		sylog.Fatalf("Unable to start wrapper proc: %v\n", err)
+	}
+	if err := wrapperCmd.Wait(); err != nil {
+		sylog.Fatalf("wrapper proc: %v\n", err)
+	}
 }
 
 // getDefinition creates definition object from various input sources
