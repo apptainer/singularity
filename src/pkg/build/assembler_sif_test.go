@@ -24,13 +24,13 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
 	}
 
-	dcp := &DockerConveyorPacker{}
+	ocp := &OCIConveyorPacker{}
 
-	if err := dcp.Get(def); err != nil {
+	if err := ocp.Get(def); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	b, err := dcp.Pack()
+	b, err := ocp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}

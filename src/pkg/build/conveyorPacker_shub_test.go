@@ -13,7 +13,7 @@ const (
 	shubURI = "shub://truatpasteurdotfr/singularity-alpine"
 )
 
-// TestPull tests if we can pull an ubuntu image from dockerhub
+// TestShubConveyor tests if we can pull an image from singularity hub
 func TestShubConveyor(t *testing.T) {
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
@@ -28,7 +28,7 @@ func TestShubConveyor(t *testing.T) {
 
 }
 
-// TestFurnish checks if we can create a Kitchen
+// TestShubPacker checks if we can create a Bundle from the pulled image
 func TestShubPacker(t *testing.T) {
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
