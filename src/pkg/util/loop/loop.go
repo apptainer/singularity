@@ -90,7 +90,6 @@ func (d *Device) Attach(image string, info *Info64, number *int) error {
 		if status.Inode != imgIno || status.Device != imgDev ||
 			status.Flags&FlagsReadOnly != info.Flags&FlagsReadOnly {
 			if err := d.SetFd(img.Fd()); err == nil {
-				defer d.loop.Close()
 				if err := d.SetStatus(info); err != nil {
 					return err
 				}
