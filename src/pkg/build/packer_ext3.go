@@ -18,7 +18,7 @@ import (
 	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
 )
 
-// Ext3Packer only needs to hold the conveyor to have the needed data to pack
+// Ext3Packer holds the locations of where to back from and to, aswell as image offset info
 type Ext3Packer struct {
 	srcfile string
 	tmpfs   string

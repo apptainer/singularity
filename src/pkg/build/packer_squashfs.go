@@ -15,7 +15,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 )
 
-// SquashfsPacker only needs to hold the conveyor to have the needed data to pack
+// SquashfsPacker holds the locations of where to pack from and to, aswell as image offset info
 type SquashfsPacker struct {
 	srcfile string
 	tmpfs   string
