@@ -63,10 +63,10 @@ func TestSIFAssemblerShub(t *testing.T) {
 
 	a := &SIFAssembler{}
 
-	err = a.Assemble(b, assemblerShubDest)
+	err = a.Assemble(b, assemblerDockerDest)
 	if err != nil {
-		t.Fatalf("failed to assemble from %s: %v\n", assemblerShubURI, err)
+		t.Fatalf("failed to assemble from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	defer os.Remove(assemblerShubDest)
+	defer os.Remove(assemblerDockerDest)
 }
