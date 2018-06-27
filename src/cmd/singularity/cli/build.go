@@ -56,8 +56,11 @@ var BuildCmd = &cobra.Command{
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		var def build.Definition
-		var b build.Builder
 		var err error
+
+		var bundle *build.Bundle
+		var cp build.ConveyorPacker
+		var a build.Assembler
 
 		if silent {
 			fmt.Println("Silent!")
@@ -68,10 +71,11 @@ var BuildCmd = &cobra.Command{
 		}
 
 		if isJSON {
-			b, err = build.NewSIFBuilderJSON(args[0], strings.NewReader(args[1]))
+			def, err = build.NewDefinitionFromJSON(strings.NewReader(args[1]))
 			if err != nil {
 				sylog.Fatalf("Unable to parse JSON: %v\n", err)
 			}
+			sylog.Fatalf("Build from JSON not implemented")
 		} else {
 			if ok, err := build.IsValidURI(args[1]); ok && err == nil {
 				// URI passed as arg[1]
@@ -79,6 +83,7 @@ var BuildCmd = &cobra.Command{
 				if err != nil {
 					sylog.Fatalf("unable to parse URI %s: %v\n", args[1], err)
 				}
+
 			} else if !ok && err == nil {
 				// Non-URI passed as arg[1]
 				defFile, err := os.Open(args[1])
@@ -91,28 +96,52 @@ var BuildCmd = &cobra.Command{
 				if err != nil {
 					sylog.Fatalf("failed to parse definition file %s: %v\n", args[1], err)
 				}
+
 			} else {
 				sylog.Fatalf("unable to parse %s: %v\n", args[1], err)
 			}
+		}
 
-			if remote {
-				// Submiting a remote build requires a valid authToken
-				if authToken != "" {
-					b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
-				} else {
-					sylog.Fatalf("Unable to submit build job: %v", authWarning)
-				}
+		if remote {
+			// Submiting a remote build requires a valid authToken
+			var b *build.RemoteBuilder
+			if authToken != "" {
+				b = build.NewRemoteBuilder(args[0], "", def, false, remoteURL, authToken)
 			} else {
-				b, err = build.NewSIFBuilder(args[0], def)
-				if err != nil {
-					sylog.Fatalf("failed to create SifBuilder object: %v\n", err)
-				}
+				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
+			b.Build(context.TODO())
+		} else {
+			//build locally
+			switch def.Header["bootstrap"] {
+			case "docker":
+				cp = &build.DockerConveyorPacker{}
+			default:
+				sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
+			}
+
+			if err = cp.Get(&def); err != nil {
+				sylog.Fatalf("Conveyor failed to get:", err)
+			}
+
+			bundle, err = cp.Pack()
+			if err != nil {
+				sylog.Fatalf("Packer failed to pack:", err)
+			}
+
+			if sandbox {
+				sylog.Fatalf("Cannot build to sandbox... yet", err)
+			} else {
+				a = &build.SIFAssembler{}
+			}
+
+			err = a.Assemble(bundle, args[0])
+			if err != nil {
+				sylog.Fatalf("Assembler failed to assemble:", err)
+			}
+
 		}
 
-		if err := b.Build(context.TODO()); err != nil {
-			sylog.Fatalf("failed to build image: %v\n", err)
-		}
 	},
 	TraverseChildren: true,
 }
