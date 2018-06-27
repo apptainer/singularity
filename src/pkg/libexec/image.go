@@ -11,18 +11,18 @@ import (
 )
 
 // ImageCreate creates an image.
-func ImageCreate() image.Image {
-	return image.SandboxFromPath("/path/to/sandbox")
+func ImageCreate() *image.Image {
+	return nil
 }
 
 // ImageBuild builds an image.
-func ImageBuild() image.Image {
-	return image.SandboxFromPath("/path/to/sandbox")
+func ImageBuild() *image.Image {
+	return nil
 }
 
 // ImageExpand expands an image.
-func ImageExpand() image.Image {
-	return image.SandboxFromPath("/path/to/sandbox")
+func ImageExpand() *image.Image {
+	return nil
 }
 
 // ImageImport imports an image.
