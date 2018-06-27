@@ -128,7 +128,7 @@ func (c *OCIConveyor) Get(recipe Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *OCIConveyorPacker) Pack() (b *Bundle, err error) {
-	b, err = NewBundle()
+	b, err = NewBundle("")
 	if err != nil {
 		return
 	}
