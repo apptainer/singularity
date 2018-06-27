@@ -11,18 +11,18 @@ import (
 )
 
 // Exclusive applies an exclusive lock on path
-func Exclusive(path string) (dev int, err error) {
+func Exclusive(path string) (fd int, err error) {
 	f, err := os.OpenFile(path, os.O_RDONLY, 0)
 	if err != nil {
-		return dev, err
+		return fd, err
 	}
-	dev = int(f.Fd())
-	err = syscall.Flock(dev, syscall.LOCK_EX)
+	fd = int(f.Fd())
+	err = syscall.Flock(fd, syscall.LOCK_EX)
 	if err != nil {
 		f.Close()
-		return dev, err
+		return fd, err
 	}
-	return dev, nil
+	return fd, nil
 }
 
 // Release removes a lock on path referenced by fd
