@@ -12,7 +12,11 @@ import (
 
 // validURIs contains a list of known uris
 var validURIs = map[string]bool{
-	"docker": true,
+	"docker":         true,
+	"docker-archive": true,
+	"docker-daemon":  true,
+	"oci":            true,
+	"oci-archive":    true,
 }
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
