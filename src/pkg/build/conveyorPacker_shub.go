@@ -148,9 +148,13 @@ func (c *ShubConveyor) fetch(url string) (image string, err error) {
 	defer resp.Body.Close()
 
 	// Write the body to file
-	_, err = io.Copy(tmpfile, resp.Body)
+	bytesWritten, err := io.Copy(tmpfile, resp.Body)
 	if err != nil {
 		return "", err
+	}
+	//Simple check to make sure image received is the correct size
+	if bytesWritten != resp.ContentLength {
+		return "", fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	return tmpfile.Name(), err
