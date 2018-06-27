@@ -360,6 +360,12 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/seccomp/libseccomp-golang"
+  packages = ["."]
+  revision = "e3496e3a417d1dc9ecdceca5af2513271fed37a0"
+  version = "v0.9.0"
+
+[[projects]]
   name = "github.com/sirupsen/logrus"
   packages = ["."]
   revision = "c155da19408a8799da419ed3eeb0cb5db0ad5dbc"
@@ -467,6 +473,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a9b7c3b5fdb65ff4d24bc528a9be34bcbf91ce0dc348dffd46c656f5ec8a555a"
+  inputs-digest = "604eab989a4ed61574a47d95fed40cbb791b4a6386e8dfd2ffc751ce98065968"
   solver-name = "gps-cdcl"
   solver-version = 1
