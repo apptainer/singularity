@@ -19,15 +19,6 @@
 #include "util/registry.h"
 #include "util/util.h"
 
-// get available space on a possible filesystem (any mounted path that supports call)
-long get_available_space_fs(char *path) {
-    struct statvfs stat;
-
-    if (statvfs(path, &stat) != 0)
-	return -1;
-    return stat.f_bsize * stat.f_bavail;
-}
-
 /* apply_opaque
  *  Given opq_marker as a path to a whiteout opaque marker
  *    e.g. usr/share/doc/test/.wh..wh..opq
@@ -258,7 +249,7 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     char *orig_dir;
     const char *pathname;
     int pathtype;
-
+    
     orig_dir = get_current_dir_name();
 
     /* Select which attributes we want to restore. */
@@ -385,7 +376,8 @@ int main(int argc, char **argv) {
     char *rootfs_dir = singularity_registry_get("ROOTFS");
     char *rootfs_realpath;
     char *tarfile = NULL;
-    long exploded_tar_size;
+    long exploded_tar_size, fs_avail_space;
+    struct statvfs stat;
 
     // Set UTF8 locale so that libarchive doesn't produce warnings for UTF8
     // names - en_US.UTF-8 is most likely to be available
@@ -440,22 +432,32 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    // following logic is to make sure we have enough space on filesystem to explode layers of image
     if (!exploded_tar_size)
 	singularity_message(WARNING, "Unable to estimate expanded size of archive %s or size is zero.\n", tarfile);
     
     singularity_message(DEBUG, "Estimated to-be-exploded archive size to %lu bytes\n", exploded_tar_size);
+
+    char *layer_target_fs = singularity_registry_get("ROOTFS");
+    if (layer_target_fs == NULL)
+	layer_target_fs = "/tmp";
     
-    long available_space_tmp = get_available_space_fs("/tmp");
-    if (available_space_tmp == -1)
-	singularity_message(WARNING, "Unable to obtain free space on /tmp\n");
+    if (statvfs(layer_target_fs, &stat) != 0)
+	 fs_avail_space = -1;
+    else
+	fs_avail_space = stat.f_bsize * stat.f_bavail;
 
-    singularity_message(DEBUG, "Available /tmp space %lu bytes\n", available_space_tmp);
+    if (fs_avail_space == -1)
+	singularity_message(WARNING, "Unable to obtain free space on %s\n", layer_target_fs);
 
-    if (exploded_tar_size && (exploded_tar_size > available_space_tmp)) {
+    singularity_message(DEBUG, "Available /tmp space %lu bytes\n", fs_avail_space);
+
+    if (exploded_tar_size && (exploded_tar_size > fs_avail_space)) {
 	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
 	ABORT(255);
     }
-
+    // finish available space on file system logic
+    
     singularity_message(DEBUG, "Extracting docker tar file %s\n", tarfile);
     retval = extract_tar(tarfile, rootfs_realpath);
 
