@@ -440,7 +440,7 @@ int main(int argc, char **argv) {
 
     char *layer_target_fs = singularity_registry_get("ROOTFS");
     if (layer_target_fs == NULL)
-	layer_target_fs = "/tmp";
+	layer_target_fs = "/";
     
     if (statvfs(layer_target_fs, &stat) != 0)
 	 fs_avail_space = -1;
@@ -456,7 +456,7 @@ int main(int argc, char **argv) {
 	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
 	ABORT(255);
     }
-    // finish available space on file system logic
+    // end available space on file system logic
     
     singularity_message(DEBUG, "Extracting docker tar file %s\n", tarfile);
     retval = extract_tar(tarfile, rootfs_realpath);
