@@ -99,6 +99,9 @@ func (d *Device) Attach(image string, info *Info64, number *int) error {
 				continue
 			}
 		}
+		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, d.loop.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+			return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
+		}
 		*number = device
 		return nil
 	}
