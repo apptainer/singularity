@@ -23,6 +23,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
+const shubHTTPAddr string = `www.singularity-hub.org/api/container`
+
 type shubAPIResponse struct {
 	Image   string `json:"image"`
 	Name    string `json:"name"`
@@ -165,7 +167,7 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 	uri := strings.Split(c.srcRef.StringWithinTransport(), ":")[0]
 
 	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("www.singularity-hub.org/api/container%s/", uri)
+	httpAddr := fmt.Sprintf("%s%s/", shubHTTPAddr, uri)
 	sylog.Infof("%v\n", httpAddr)
 
 	// Create the request, add headers context
