@@ -19,39 +19,7 @@
 #include "util/registry.h"
 #include "util/util.h"
 
-// estimate the unpacked size of an archive
-long get_tar_archive_size(char *tarfile) {
-    struct archive *a;
-    struct archive_entry *entry;
-    int r;
-    long total_size=0;
-
-    a = archive_read_new();
-    archive_read_support_format_all(a);
-#if ARCHIVE_VERSION_NUMBER <= 3000000
-    archive_read_support_compression_all(a);
-#else
-    archive_read_support_filter_all(a);
-#endif
-
-    if ((r = archive_read_open_filename(a, tarfile, 10240))) {
-	singularity_message(ERROR,"archive_read_open_filename() fails\n");
-	return(-1);
-    }
-    for (;;) {
-	r = archive_read_next_header(a, &entry);
-	if (r == ARCHIVE_EOF)
-	    break;
-	if (r != ARCHIVE_OK) {
-	    singularity_message(ERROR,"archive_read_next_header() fails!\n");
-	    return(-1);
-	}
-	
-    }
-		
-    return total_size;	
-}
-
+// get available space on a possible filesystem (any mounted path that supports call)
 long get_available_space_fs(char *path) {
     struct statvfs stat;
 
@@ -418,7 +386,7 @@ int main(int argc, char **argv) {
     char *rootfs_dir = singularity_registry_get("ROOTFS");
     char *rootfs_realpath;
     char *tarfile = NULL;
-    long *exploded_tar_size;
+    long exploded_tar_size;
 
     // Set UTF8 locale so that libarchive doesn't produce warnings for UTF8
     // names - en_US.UTF-8 is most likely to be available
@@ -474,13 +442,17 @@ int main(int argc, char **argv) {
     }
 
     if (!exploded_tar_size)
-	singularity_message(WARNING, "Unable to estimate expanded size of archive %s\n", tarfile);
-
+	singularity_message(WARNING, "Unable to estimate expanded size of archive %s or size is zero.\n", tarfile);
+    
+    singularity_message(DEBUG, "Estimated to-be-exploded archive size to %lu bytes\n", exploded_tar_size);
+    
     long available_space_tmp = get_available_space_fs("/tmp");
     if (available_space_tmp == -1)
 	singularity_message(WARNING, "Unable to obtain free space on /tmp\n");
 
-    if (exploded_tar_size && (tar_file_size > available_space_tmp)) {
+    singularity_message(DEBUG, "Available /tmp space %lu bytes\n", available_space_tmp);
+
+    if (exploded_tar_size && (exploded_tar_size > available_space_tmp)) {
 	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
 	ABORT(255);
     }
