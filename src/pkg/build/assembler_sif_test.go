@@ -13,7 +13,7 @@ import (
 const (
 	assemblerDockerURI  = "docker://alpine"
 	assemblerDockerDest = "/tmp/docker_alpine_assemble_test.sif"
-	assemblerShubURI    = "shub://truatpasteurdotfr/singularity-alpine"
+	assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
 	assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
 )
 

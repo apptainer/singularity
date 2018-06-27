@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	shubURI = "shub://truatpasteurdotfr/singularity-alpine"
+	shubURI = "shub://ikaneshiro/singularityhub:latest"
 )
 
 // TestShubConveyor tests if we can pull an image from singularity hub
