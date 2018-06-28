@@ -40,21 +40,6 @@ type shubClient struct {
 	HTTPAddr string
 }
 
-// NewshubClient creates a RemoteBuilder with the specified details.
-func newshubClient(uri string) (sc *shubClient) {
-
-	sylog.Infof("%v\n", uri)
-	sc = &shubClient{
-		Client: http.Client{
-			Timeout: 30 * time.Second,
-		},
-		HTTPAddr: "www.singularity-hub.org",
-		ImageURI: uri,
-	}
-
-	return
-}
-
 // ShubConveyor holds data to be packed into a bundle.
 type ShubConveyor struct {
 	recipe   Definition
@@ -90,15 +75,10 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 
 	//use custom parser to make sure we have a valid shub URI
 	c.srcURI, err = shubParseReference(recipe.Header["from"])
-
-	// //prepending slashes to src for ParseReference expected string format
-	// src := "//" + recipe.Header["from"]
-
-	// // Shub URI largely follows same namespace convention
-	// c.srcRef, err = docker.ParseReference(src)
-	// if err != nil {
-	// 	return
-	// }
+	if err != nil {
+		sylog.Fatalf("Invalid shub URI: %v", err)
+		return
+	}
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-shub-")
 	if err != nil {
@@ -112,9 +92,6 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 
 	// Get the image manifest
 	manifest, err := c.getManifest()
-
-	// The full Google Storage download media link
-	sylog.Infof("%v\n", manifest.Image)
 
 	// retrieve the image
 	c.tmpfile, err = c.fetch(manifest.Image)
@@ -149,7 +126,7 @@ func (c *ShubConveyor) fetch(url string) (image string, err error) {
 
 	// Create temporary download name
 	tmpfile, err := ioutil.TempFile(c.tmpfs, "shub-container")
-	sylog.Infof("\nCreating temporary image file %v\n", tmpfile.Name())
+	sylog.Debugf("\nCreating temporary image file %v\n", tmpfile.Name())
 	if err != nil {
 		return "", err
 	}
@@ -180,36 +157,33 @@ func (c *ShubConveyor) fetch(url string) (image string, err error) {
 func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 
 	// Create a new Singularity Hub client
-	sc := &shubClient{}
+	sc := http.Client{
+		Timeout: 30 * time.Second,
+	}
 
 	//if we are using a non default registry error out for now
 	if !c.srcURI.defaultReg {
 		return nil, err
 	}
 
-	// TODO: need to parse the tag / digest and send along too
-	uri := c.srcURI.String()
-
 	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("www.%s", uri)
-	sylog.Infof("%v\n", httpAddr)
+	httpAddr := fmt.Sprintf("www.%s", c.srcURI.String())
 
 	// Create the request, add headers context
 	url := url.URL{
 		Scheme: "https",
-		Host:   sc.HTTPAddr,
-		Path:   httpAddr,
+		Host:   "",
+		Path:   httpAddr, //path contains host
 	}
 
-	sylog.Infof("%v\n", url)
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	// Do the request, if status isn't success, return error
-	res, err := sc.Client.Do(req)
-	sylog.Infof("response: %v\n", res)
+	res, err := sc.Do(req)
+	sylog.Debugf("response: %v\n", res)
 
 	if err != nil {
 		return nil, err
@@ -227,7 +201,7 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 	}
 
 	err = json.Unmarshal(body, &manifest)
-	sylog.Infof("manifest: %v\n", manifest.Image)
+	sylog.Debugf("manifest: %v\n", manifest.Image)
 	if err != nil {
 		return nil, err
 	}
