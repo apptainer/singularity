@@ -146,12 +146,18 @@ collect:
 .PHONY: dep
 dep:
 	@printf " GO DEPS\n"
-	$(V)(dep ensure -vendor-only >/dev/null 2>&1)
+	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+		dep ensure -vendor-only >/dev/null 2>&1 && \
+			touch $(BUILDDIR)/.dep-done; \
+	fi
 
 .PHONY: patch
 patch: dep
 	@printf " PATCH VENDOR\n"
-	$(V)(patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch)
+	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+			touch $(BUILDDIR)/.patch-done; \
+	fi
 
 .PHONY: test
 test:

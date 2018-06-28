@@ -26,9 +26,8 @@ before_install:
 
 install:
   - ./mconfig -p /usr/local
-  - cd builddir
-  - make -j `nproc 2>/dev/null || echo 1`
-  - sudo make install
+  - make -j `nproc 2>/dev/null || echo 1` -C ./builddir
+  - sudo make -C ./builddir install
 
 script:
-  - make test
+  - make -C ./builddir test
