@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/network"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 )
@@ -84,8 +85,9 @@ type JSONConfig struct {
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON *JSONConfig `json:"jsonConfig"`
-	File *FileConfig `json:"-"`
+	JSON    *JSONConfig    `json:"jsonConfig"`
+	File    *FileConfig    `json:"-"`
+	Network *network.Setup `json:"-"`
 }
 
 // MarshalJSON is for json.Marshaler

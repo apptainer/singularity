@@ -20,12 +20,16 @@ import (
 	"net/rpc"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/network"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
+	"github.com/singularityware/singularity/src/pkg/util/priv"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
@@ -52,6 +56,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	userNS := false
 	pidNS := false
+	netNS := false
 
 	if engine.CommonConfig.OciConfig.Linux != nil {
 		for _, namespace := range engine.CommonConfig.OciConfig.Linux.Namespaces {
@@ -60,6 +65,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 				userNS = true
 			case specs.PIDNamespace:
 				pidNS = true
+			case specs.NetworkNamespace:
+				netNS = true
 			}
 		}
 	}
@@ -177,6 +184,41 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	err = syscall.Chdir("/")
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
+	}
+
+	if netNS && !userNS {
+		if err := priv.Escalate(); err != nil {
+			return fmt.Errorf("failed to escalate privileges: %s", err)
+		}
+		defer priv.Drop()
+
+		/* hold a reference to container network namespace for cleanup */
+		f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+		if err != nil {
+			return fmt.Errorf("can't open network namespace: %s", err)
+		}
+		nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+		networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
+
+		cniPath := &network.CNIPath{
+			Conf:   engine.EngineConfig.File.CniConfPath,
+			Plugin: engine.EngineConfig.File.CniPluginPath,
+		}
+
+		setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+		if err != nil {
+			return fmt.Errorf("%s", err)
+		}
+		netargs := engine.EngineConfig.GetNetworkArgs()
+		if err := setup.SetArgs(netargs); err != nil {
+			return fmt.Errorf("%s", err)
+		}
+
+		if err := setup.AddNetworks(); err != nil {
+			return fmt.Errorf("%s", err)
+		}
+
+		engine.EngineConfig.Network = setup
 	}
 
 	return nil

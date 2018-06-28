@@ -9,46 +9,51 @@ import (
 	"strings"
 
 	"github.com/containernetworking/cni/libcni"
+	"github.com/containernetworking/cni/pkg/types"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/util/env"
 )
 
-// CNIPath ...
+// CNIPath contains path to CNI configuration directory and path to executable
+// CNI plugins directory
 type CNIPath struct {
 	Conf   string
 	Plugin string
 }
 
-// List ...
-type List struct {
-	networks      []networkList
-	cniConfPath   string
-	cniPluginPath string
-	containerID   string
-	netNS         string
-	ifIndex       uint16
+// Setup contains network installation setup
+type Setup struct {
+	configs         []config
+	networkConfList []*libcni.NetworkConfigList
+	runtimeConf     []*libcni.RuntimeConf
+	result          []types.Result
+	cniPath         *CNIPath
+	containerID     string
+	netNS           string
 }
 
-// networkList ...
-type networkList struct {
+// config describes a runtime network configuration
+type config struct {
 	name    string
 	portMap []portMap
 	args    [][2]string
 }
 
-// portMap ...
+// portMap describes a port mapping between host and container
 type portMap struct {
 	hostPort      uint16
 	containerPort uint16
 	protocol      string
 }
 
-// DefaultCNIConfPath is the default path to CNI network configuration files
+// DefaultCNIConfPath is the default directory to CNI network configuration files
 var DefaultCNIConfPath = path.Join(buildcfg.SYSCONFDIR, "singularity/network")
 
-// DefaultCNIPluginPath is the default path to CNI plugins executables
+// DefaultCNIPluginPath is the default directory to CNI plugins executables
 var DefaultCNIPluginPath = path.Join(buildcfg.LIBEXECDIR, "singularity/cni")
 
-// AvailableNetworks ...
+// AvailableNetworks lists configured networks in configuration path directory
+// provided by cniPath
 func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 	networks := make([]string, 0)
 	cniConfPath := DefaultCNIConfPath
@@ -83,11 +88,14 @@ func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 	return networks, nil
 }
 
-// NewNetworkList ...
-func NewNetworkList(networks []string, containerID string, netNS string, cniPath *CNIPath) (*List, error) {
-	nlist := make([]networkList, 0)
-	cniConfPath := DefaultCNIConfPath
-	cniPluginPath := DefaultCNIPluginPath
+// NewSetup creates and returns a network setup to configure, add and remove
+// network interfaces in container
+func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIPath) (*Setup, error) {
+	nlist := make([]config, 0)
+	finalCNIPath := &CNIPath{
+		Conf:   DefaultCNIConfPath,
+		Plugin: DefaultCNIPluginPath,
+	}
 	id := containerID
 
 	if id == "" {
@@ -95,8 +103,12 @@ func NewNetworkList(networks []string, containerID string, netNS string, cniPath
 	}
 
 	if cniPath != nil {
-		cniConfPath = cniPath.Conf
-		cniPluginPath = cniPath.Plugin
+		if cniPath.Conf != "" {
+			finalCNIPath.Conf = cniPath.Conf
+		}
+		if cniPath.Plugin != "" {
+			finalCNIPath.Plugin = cniPath.Plugin
+		}
 	}
 	hasNone := false
 	for _, network := range networks {
@@ -104,7 +116,7 @@ func NewNetworkList(networks []string, containerID string, netNS string, cniPath
 			hasNone = true
 			break
 		}
-		nlist = append(nlist, networkList{
+		nlist = append(nlist, config{
 			name:    network,
 			portMap: make([]portMap, 0),
 			args:    make([][2]string, 0),
@@ -114,15 +126,13 @@ func NewNetworkList(networks []string, containerID string, netNS string, cniPath
 		if len(networks) > 1 {
 			return nil, fmt.Errorf("none network can't be specified with another network")
 		}
-		return &List{networks: []networkList{}}, nil
+		return &Setup{configs: []config{}}, nil
 	}
-	return &List{
-			networks:      nlist,
-			cniConfPath:   cniConfPath,
-			cniPluginPath: cniPluginPath,
-			netNS:         netNS,
-			containerID:   id,
-			ifIndex:       0,
+	return &Setup{
+			configs:     nlist,
+			cniPath:     finalCNIPath,
+			netNS:       netNS,
+			containerID: id,
 		},
 		nil
 }
@@ -141,38 +151,44 @@ func parseArg(arg string) ([][2]string, error) {
 	return argList, nil
 }
 
-// AddNetworkArgs ...
-func (l *List) AddNetworkArgs(args []string) error {
+// SetArgs affects arguments to corresponding network plugins
+func (m *Setup) SetArgs(args []string) error {
 	var hostPort uint16
 	var containerPort uint16
 
-	if len(l.networks) < 1 {
+	if len(m.configs) < 1 {
 		return fmt.Errorf("there is no configured network in list")
 	}
 
 	for _, arg := range args {
+		var splitted []string
 		networkName := ""
 
-		splitted := strings.SplitN(arg, ":", 2)
+		if strings.IndexByte(arg, ':') > strings.IndexByte(arg, '=') {
+			splitted = []string{m.configs[0].name, arg}
+		} else {
+			splitted = strings.SplitN(arg, ":", 2)
+		}
 		if len(splitted) < 1 && len(splitted) > 2 {
 			return fmt.Errorf("argument must be of form '<network>:KEY1=value1;KEY2=value1' or 'KEY1=value1;KEY2=value1'")
 		}
-		if len(splitted) == 1 {
-			networkName = l.networks[0].name
+		n := len(splitted) - 1
+		if n == 0 {
+			networkName = m.configs[0].name
 		} else {
 			networkName = splitted[0]
 		}
 		hasNetwork := false
-		for _, network := range l.networks {
+		for _, network := range m.configs {
 			if network.name == networkName {
 				hasNetwork = true
 				break
 			}
 		}
 		if !hasNetwork {
-			return fmt.Errorf("network %s not found", networkName)
+			return fmt.Errorf("network %s wasn't specified in --network option", networkName)
 		}
-		argList, err := parseArg(splitted[1])
+		argList, err := parseArg(splitted[n])
 		if err != nil {
 			return err
 		}
@@ -212,9 +228,9 @@ func (l *List) AddNetworkArgs(args []string) error {
 				} else {
 					containerPort = hostPort
 				}
-				for i := range l.networks {
-					if l.networks[i].name == networkName {
-						l.networks[i].portMap = append(l.networks[i].portMap, portMap{
+				for i := range m.configs {
+					if m.configs[i].name == networkName {
+						m.configs[i].portMap = append(m.configs[i].portMap, portMap{
 							containerPort: containerPort,
 							hostPort:      hostPort,
 							protocol:      protocol,
@@ -222,9 +238,9 @@ func (l *List) AddNetworkArgs(args []string) error {
 					}
 				}
 			} else {
-				for i := range l.networks {
-					if l.networks[i].name == networkName {
-						l.networks[i].args = append(l.networks[i].args, kv)
+				for i := range m.configs {
+					if m.configs[i].name == networkName {
+						m.configs[i].args = append(m.configs[i].args, kv)
 					}
 				}
 			}
@@ -233,68 +249,78 @@ func (l *List) AddNetworkArgs(args []string) error {
 	return nil
 }
 
-// SetupNetworks ...
-func (l *List) SetupNetworks() error {
-	return l.command("ADD")
+// AddNetworks brings up networks interface in container
+func (m *Setup) AddNetworks() error {
+	return m.command("ADD")
 }
 
-// CleanupNetworks ...
-func (l *List) CleanupNetworks() error {
-	return l.command("DEL")
+// DelNetworks tears down networks interface in container
+func (m *Setup) DelNetworks() error {
+	return m.command("DEL")
 }
 
-// NetworkList create network interface in container
-func (l *List) command(command string) error {
-	networkConfList := make([]*libcni.NetworkConfigList, 0)
-	runtimeConf := make([]*libcni.RuntimeConf, 0)
-	config := &libcni.CNIConfig{Path: []string{l.cniPluginPath}}
+func (m *Setup) command(command string) error {
+	ifIndex := 0
+	backupEnv := os.Environ()
+	os.Clearenv()
+	os.Setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin")
+	defer env.SetFromList(backupEnv)
 
-	for _, network := range l.networks {
-		capabilityArgs := make(map[string]interface{}, 0)
-		portMappings := make([]map[string]interface{}, 0)
-
-		nlist, err := libcni.LoadConfList(l.cniConfPath, network.name)
-		if err != nil {
-			return err
-		}
-		networkConfList = append(networkConfList, nlist)
-		ifName := fmt.Sprintf("eth%d", l.ifIndex)
-
-		for _, portMap := range network.portMap {
-			portMappings = append(portMappings, map[string]interface{}{
-				"hostPort":      portMap.hostPort,
-				"containerPort": portMap.containerPort,
-				"protocol":      portMap.protocol,
-			})
-		}
-
-		if len(portMappings) > 0 {
-			capabilityArgs["portMappings"] = portMappings
-		}
-		rt := &libcni.RuntimeConf{
-			ContainerID:    l.containerID,
-			NetNS:          l.netNS,
-			IfName:         ifName,
-			CapabilityArgs: capabilityArgs,
-			Args:           network.args,
-		}
-		runtimeConf = append(runtimeConf, rt)
-		l.ifIndex++
+	if m.networkConfList == nil {
+		m.networkConfList = make([]*libcni.NetworkConfigList, 0)
 	}
-	l.ifIndex = 0
-	for i := 0; i < len(networkConfList); i++ {
-		switch command {
-		case "ADD":
-			if _, err := config.AddNetworkList(networkConfList[i], runtimeConf[i]); err != nil {
+	if m.runtimeConf == nil {
+		m.runtimeConf = make([]*libcni.RuntimeConf, 0)
+	}
+	config := &libcni.CNIConfig{Path: []string{m.cniPath.Plugin}}
+
+	if command == "ADD" {
+		for _, config := range m.configs {
+			capabilityArgs := make(map[string]interface{}, 0)
+			portMappings := make([]map[string]interface{}, 0)
+
+			nlist, err := libcni.LoadConfList(m.cniPath.Conf, config.name)
+			if err != nil {
+				return err
+			}
+			m.networkConfList = append(m.networkConfList, nlist)
+			ifName := fmt.Sprintf("eth%d", ifIndex)
+
+			for _, portMap := range config.portMap {
+				portMappings = append(portMappings, map[string]interface{}{
+					"hostPort":      portMap.hostPort,
+					"containerPort": portMap.containerPort,
+					"protocol":      portMap.protocol,
+				})
+			}
+
+			if len(portMappings) > 0 {
+				capabilityArgs["portMappings"] = portMappings
+			}
+			rt := &libcni.RuntimeConf{
+				ContainerID:    m.containerID,
+				NetNS:          m.netNS,
+				IfName:         ifName,
+				CapabilityArgs: capabilityArgs,
+				Args:           config.args,
+			}
+			m.runtimeConf = append(m.runtimeConf, rt)
+		}
+		m.result = make([]types.Result, len(m.networkConfList))
+		for i := 0; i < len(m.networkConfList); i++ {
+			var err error
+			if m.result[i], err = config.AddNetworkList(m.networkConfList[i], m.runtimeConf[i]); err != nil {
 				for j := i - 1; j >= 0; j-- {
-					if err := config.DelNetworkList(networkConfList[j], runtimeConf[j]); err != nil {
+					if err := config.DelNetworkList(m.networkConfList[j], m.runtimeConf[j]); err != nil {
 						return err
 					}
 				}
 				return err
 			}
-		case "DEL":
-			if err := config.DelNetworkList(networkConfList[i], runtimeConf[i]); err != nil {
+		}
+	} else if command == "DEL" {
+		for i := 0; i < len(m.networkConfList); i++ {
+			if err := config.DelNetworkList(m.networkConfList[i], m.runtimeConf[i]); err != nil {
 				return err
 			}
 		}
