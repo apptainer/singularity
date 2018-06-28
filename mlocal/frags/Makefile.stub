@@ -61,8 +61,8 @@ $(cni_plugins_LIST):
 
 $(cni_plugins_INSTALL):
 	@echo " INSTALL CNI PLUGIN" $(shell basename -a $@)
-	@mkdir -p $@
-	@for f in $(cni_plugins_LIST); do cp -a $$f $@/$$f; done
+	@mkdir -p $(shell dirname $@)
+	$(V)cp -a $(shell basename -a $@) $@
 
 $(cni_config_INSTALL): $(cni_config_LIST)
 	@echo " INSTALL NETWORK CONFIGURATION FILE"
