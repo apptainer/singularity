@@ -39,12 +39,12 @@ stest 0 grep busybox:latest ../examples/docker/Singularity
 stest 0 cp ../examples/docker/Singularity "$DEFFILE"
 stest 0 sudo singularity build "$CONTAINER" "$DEFFILE"
 
-stest 0 sed -i -e 's@busybox:latest@ubuntu:latest@' "$DEFFILE"
+stest 0 sed -i -e 's@busybox:latest@ubuntu:16.04@' "$DEFFILE"
 stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sed -i -e 's@ubuntu:latest@centos:latest@' "$DEFFILE"
+stest 0 sed -i -e 's@ubuntu:16.04@centos:latest@' "$DEFFILE"
 stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
