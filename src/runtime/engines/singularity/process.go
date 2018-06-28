@@ -11,12 +11,6 @@ import (
 	"syscall"
 )
 
-// PrestartProcess runs pre-start tasks
-func (engine *EngineOperations) PrestartProcess() error {
-	/* seccomp setup goes here */
-	return nil
-}
-
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess() error {
 	os.Setenv("PS1", "shell> ")
