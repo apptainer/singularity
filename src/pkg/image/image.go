@@ -112,7 +112,9 @@ func Init(path string, writable bool) (*Image, error) {
 	if writable {
 		flags = os.O_RDWR
 	}
-	resolvedPath, err := filepath.EvalSymlinks(path)
+
+	abspath, _ := filepath.Abs(path)
+	resolvedPath, err := filepath.EvalSymlinks(abspath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieved path for %s: %s", path, err)
 	}

@@ -5,14 +5,6 @@
 
 package singularity
 
-/*
-#include <unistd.h>
-#include "util/config_parser.h"
-*/
-// #cgo CFLAGS: -I../../c/lib
-// #cgo LDFLAGS: -L../../../../builddir/lib -lruntime -luuid
-import "C"
-
 import (
 	"fmt"
 	"net"
@@ -27,6 +19,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 // CreateContainer creates a container
@@ -64,8 +57,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	C.singularity_config_init()
-
 	imageObject, err := image.Init(rootfs, false)
 	if err != nil {
 		return err
@@ -75,6 +66,46 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	mountType := ""
 
 	switch imageObject.Type {
+	case image.SIF:
+		// Load the SIF file
+		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
+		if err != nil {
+			return err
+		}
+
+		// Get the default system partition image
+		part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+		if err != nil {
+			return err
+		}
+
+		// Check that this is a system partition
+		parttype, err := part.GetPartType()
+		if err != nil {
+			return err
+		}
+		if parttype != sif.PartSystem {
+			return fmt.Errorf("found partition is not system")
+		}
+
+		// record the fs type
+		fstype, err := part.GetFsType()
+		if err != nil {
+			return err
+		}
+		if fstype == sif.FsSquash {
+			mountType = "squashfs"
+		} else if fstype == sif.FsExt3 {
+			mountType = "ext3"
+		} else {
+			return fmt.Errorf("unknown file system type")
+		}
+
+		imageObject.Offset = uint64(part.Fileoff)
+		imageObject.Size = uint64(part.Filelen)
+		info.Offset = imageObject.Offset
+		info.SizeLimit = imageObject.Size
+		fmt.Println(imageObject)
 	case image.SQUASHFS:
 		mountType = "squashfs"
 		info.Offset = imageObject.Offset
