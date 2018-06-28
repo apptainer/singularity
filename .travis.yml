@@ -23,12 +23,12 @@ before_install:
   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - go get -u golang.org/x/lint/golint
   - export PATH="${GOPATH}/bin:${PATH}"
-  - dep ensure -vendor-only
 
 install:
   - ./mconfig -p /usr/local
-  - make -j `nproc 2>/dev/null || echo 1` -C ./builddir
-  - sudo make -C ./builddir install
+  - cd builddir
+  - make -j `nproc 2>/dev/null || echo 1`
+  - sudo make install
 
 script:
-  - make -C ./builddir test
+  - make test
