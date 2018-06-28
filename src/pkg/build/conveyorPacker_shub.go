@@ -23,7 +23,6 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-const shubHTTPAddr string = `www.singularity-hub.org/api/container`
 const defaultRegistry string = `singularity-hub.org/api/container/`
 
 type shubAPIResponse struct {
@@ -172,8 +171,8 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 	// Create the request, add headers context
 	url := url.URL{
 		Scheme: "https",
-		Host:   "",
-		Path:   httpAddr, //path contains host
+		Host:   strings.Split(httpAddr, `/`)[0],     //split url to match format, first half
+		Path:   strings.SplitN(httpAddr, `/`, 2)[1], //second half
 	}
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
