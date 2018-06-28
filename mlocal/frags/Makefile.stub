@@ -41,7 +41,7 @@ INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wr
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
-all: cscope collect dep $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
+all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
 
 $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
@@ -83,7 +83,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): dep $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
