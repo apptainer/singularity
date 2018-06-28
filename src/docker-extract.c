@@ -249,7 +249,7 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     char *orig_dir;
     const char *pathname;
     int pathtype;
-    
+ 
     orig_dir = get_current_dir_name();
 
     /* Select which attributes we want to restore. */
@@ -434,27 +434,27 @@ int main(int argc, char **argv) {
 
     // following logic is to make sure we have enough space on filesystem to explode layers of image
     if (!exploded_tar_size)
-	singularity_message(WARNING, "Unable to estimate expanded size of archive %s or size is zero.\n", tarfile);
+        singularity_message(WARNING, "Unable to estimate expanded size of archive %s or size is zero.\n", tarfile);
     
     singularity_message(DEBUG, "Estimated to-be-exploded archive size to %lu bytes\n", exploded_tar_size);
 
     char *layer_target_fs = singularity_registry_get("ROOTFS");
     if (layer_target_fs == NULL)
-	layer_target_fs = "/";
+        layer_target_fs = "/";
     
     if (statvfs(layer_target_fs, &stat) != 0)
-	 fs_avail_space = -1;
+        fs_avail_space = -1;
     else
-	fs_avail_space = stat.f_bsize * stat.f_bavail;
+        fs_avail_space = stat.f_bsize * stat.f_bavail;
 
     if (fs_avail_space == -1)
-	singularity_message(WARNING, "Unable to obtain free space on %s\n", layer_target_fs);
+        singularity_message(WARNING, "Unable to obtain free space on %s\n", layer_target_fs);
 
     singularity_message(DEBUG, "Available space on %s is %lu bytes\n", layer_target_fs, fs_avail_space);
 
     if (exploded_tar_size && (exploded_tar_size > fs_avail_space)) {
         singularity_message(ERROR, "Not enough space on %s for %s\n", layer_target_fs, tarfile);
-	ABORT(255);
+        ABORT(255);
     }
     // end available space on file system logic
     
