@@ -14,16 +14,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/containers/image/docker"
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 const shubHTTPAddr string = `www.singularity-hub.org/api/container`
+const defaultRegistry string = `singularity-hub.org/api/container/`
 
 type shubAPIResponse struct {
 	Image   string `json:"image"`
@@ -59,6 +60,7 @@ type ShubConveyor struct {
 	recipe   Definition
 	src      string
 	srcRef   types.ImageReference
+	srcURI   ShubURI
 	tmpfs    string
 	tmpfsRef types.ImageReference
 	tmpfile  string
@@ -70,20 +72,33 @@ type ShubConveyorPacker struct {
 	lp LocalPacker
 }
 
+// ShubURI stores the various components of a singularityhub URI
+type ShubURI struct {
+	registry   string
+	user       string
+	container  string
+	tag        string
+	digest     string
+	defaultReg bool
+}
+
 // Get downloads container from Singularityhub
 func (c *ShubConveyor) Get(recipe Definition) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
 	c.recipe = recipe
 
-	//prepending slashes to src for ParseReference expected string format
-	src := "//" + recipe.Header["from"]
+	//use custom parser to make sure we have a valid shub URI
+	c.srcURI, err = shubParseReference(recipe.Header["from"])
 
-	// Shub URI largely follows same namespace convention
-	c.srcRef, err = docker.ParseReference(src)
-	if err != nil {
-		return
-	}
+	// //prepending slashes to src for ParseReference expected string format
+	// src := "//" + recipe.Header["from"]
+
+	// // Shub URI largely follows same namespace convention
+	// c.srcRef, err = docker.ParseReference(src)
+	// if err != nil {
+	// 	return
+	// }
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-shub-")
 	if err != nil {
@@ -167,11 +182,16 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 	// Create a new Singularity Hub client
 	sc := &shubClient{}
 
+	//if we are using a non default registry error out for now
+	if !c.srcURI.defaultReg {
+		return nil, err
+	}
+
 	// TODO: need to parse the tag / digest and send along too
-	uri := strings.Split(c.srcRef.StringWithinTransport(), ":")[0]
+	uri := c.srcURI.String()
 
 	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("%s%s/", shubHTTPAddr, uri)
+	httpAddr := fmt.Sprintf("www.%s", uri)
 	sylog.Infof("%v\n", httpAddr)
 
 	// Create the request, add headers context
@@ -214,4 +234,64 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 
 	return manifest, err
 
+}
+
+func shubParseReference(src string) (uri ShubURI, err error) {
+
+	//define regex for each URI component
+	registryRegexp := `([-a-zA-Z0-9/]{1,64}\/)?` //target is very open, outside registry
+	nameRegexp := `([-a-zA-Z0-9]{1,39}\/)`       //target valid github usernames
+	containerRegexp := `([-_.a-zA-Z0-9]{1,64})`  //target valid github repo names
+	tagRegexp := `(:[-_.a-zA-Z0-9]{1,64})?`      //target is very open, file extensions or branch names
+	digestRegexp := `(\@[a-f0-9]{32})?`          //target md5 sum hash
+
+	shubRegex, err := regexp.Compile(registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp)
+	if err != nil {
+		return uri, err
+	}
+
+	found := shubRegex.FindString(src)
+
+	//if found string is not equal to the input, input isn't a valid URI
+	if strings.Compare(src, found) != 0 {
+		return uri, fmt.Errorf("Source string is not a valid URI")
+	}
+
+	pieces := strings.SplitAfterN(src, `/`, -1)
+	if l := len(pieces); l > 2 {
+		//more than two pieces indicates a custom registry
+		uri.defaultReg = false
+		uri.registry = strings.Join(pieces[:l-2], "")
+		uri.user = pieces[l-2]
+		src = pieces[l-1]
+	} else if l == 2 {
+		//two pieces means default registry
+		uri.defaultReg = true
+		uri.registry = defaultRegistry
+		uri.user = pieces[l-2]
+		src = pieces[l-1]
+	}
+
+	//look for an @ and split if it exists
+	if strings.Contains(src, `@`) {
+		pieces = strings.Split(src, `@`)
+		uri.digest = `@` + pieces[1]
+		src = pieces[0]
+	}
+
+	//look for a : and split if it exists
+	if strings.Contains(src, `:`) {
+		pieces = strings.Split(src, `:`)
+		uri.tag = `:` + pieces[1]
+		src = pieces[0]
+	}
+
+	//container name is left over after other parts are split from it
+	uri.container = src
+
+	return uri, nil
+}
+
+func (s *ShubURI) String() string {
+	return s.registry + s.user + s.container + s.tag + s.digest
 }
