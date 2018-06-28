@@ -124,6 +124,23 @@ int _singularity_runtime_mount_dev(void) {
             closedir(dir);
         }
 
+        if ( symlink("/proc/self/fd", joinpath(devdir, "/fd")) < 0 ) {
+            singularity_message(ERROR, "Failed create symlink /dev/fd: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        if ( symlink("/proc/self/fd/0", joinpath(devdir, "/stdin")) < 0 ) {
+            singularity_message(ERROR, "Failed creating symlink /dev/stdin: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        if ( symlink("/proc/self/fd/1", joinpath(devdir, "/stdout")) < 0 ) {
+            singularity_message(ERROR, "Failed create symlink /dev/stdout: %s\n", strerror(errno));
+            ABORT(255);
+        }
+        if ( symlink("/proc/self/fd/2", joinpath(devdir, "/stderr")) < 0 ) {
+            singularity_message(ERROR, "Failed create symlink /dev/stderr: %s\n", strerror(errno));
+            ABORT(255);
+        }
+
         singularity_message(DEBUG, "Mounting tmpfs for staged /dev/shm\n");
         if ( singularity_mount("/dev/shm", joinpath(devdir, "/shm"), "tmpfs", MS_NOSUID, "") < 0 ) {
             singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/shm"), strerror(errno));
