@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <limits.h>
 #include <locale.h>
 #include <archive.h>
@@ -17,6 +18,48 @@
 #include "util/message.h"
 #include "util/registry.h"
 #include "util/util.h"
+
+// estimate the unpacked size of an archive
+long get_tar_archive_size(char *tarfile) {
+    struct archive *a;
+    struct archive_entry *entry;
+    int r;
+    long total_size=0;
+
+    a = archive_read_new();
+    archive_read_support_format_all(a);
+#if ARCHIVE_VERSION_NUMBER <= 3000000
+    archive_read_support_compression_all(a);
+#else
+    archive_read_support_filter_all(a);
+#endif
+
+    if ((r = archive_read_open_filename(a, tarfile, 10240))) {
+	singularity_message(ERROR,"archive_read_open_filename() fails\n");
+	return(-1);
+    }
+    for (;;) {
+	r = archive_read_next_header(a, &entry);
+	if (r == ARCHIVE_EOF)
+	    break;
+	if (r != ARCHIVE_OK) {
+	    singularity_message(ERROR,"archive_read_next_header() fails!\n");
+	    return(-1);
+	}
+	total_size+=archive_entry_stat(entry)->st_size;
+    }
+		
+    return total_size;	
+}
+
+long get_available_space_fs(char *path) {
+    struct statvfs stat;
+
+    // we are ignoring asking whether path is a moint point or not
+    if (statvfs(path, &stat) != 0)
+	return -1;
+    return stat.f_bsize * stat.f_bavail;
+}
 
 /* apply_opaque
  *  Given opq_marker as a path to a whiteout opaque marker
@@ -244,6 +287,7 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     const char *pathname;
     int pathtype;
 
+    printf("EXTRACT TAR NAME: %s\n", tarfile);
     orig_dir = get_current_dir_name();
 
     /* Select which attributes we want to restore. */
@@ -414,6 +458,23 @@ int main(int argc, char **argv) {
     if (is_file(tarfile) < 0) {
         singularity_message(ERROR, "tar file does not exist: %s\n", tarfile);
         ABORT(255);
+    }
+
+    long tar_file_size = get_tar_archive_size(tarfile);
+    if (tar_file_size == -1) {
+	singularity_message(ERROR, "Unable to estimate expanded size of archive %s\n", tarfile);
+	ABORT(255);
+    }
+
+    long available_space_tmp = get_available_space_fs("/tmp");
+    if (available_space_tmp == -1) {
+	singularity_message(ERROR, "Unable to obtain free space on /tmp\n");
+	ABORT(255);
+    }
+
+    if (tar_file_size > available_space_tmp) {
+	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
+	ABORT(255);
     }
 
     singularity_message(DEBUG, "Applying whiteouts for tar file %s\n", tarfile);
