@@ -73,7 +73,6 @@ Now you are ready to build Singularity:
 $ cd $GOPATH/src/github.com/singularityware/singularity
 $ ./mconfig
 $ cd ./builddir
-$ make dep
 $ make
 $ sudo make install
 ```
