@@ -151,7 +151,7 @@ dep:
 .PHONY: patch
 patch: dep
 	@printf " PATCH VENDOR\n"
-	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
+	$(V)(patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch)
 
 .PHONY: test
 test:
