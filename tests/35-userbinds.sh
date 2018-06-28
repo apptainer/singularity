@@ -35,7 +35,7 @@ stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 stest 0 touch /tmp/hello_world_test
 stest 0 singularity exec -B /tmp:/var/tmp "$CONTAINER" test -f /var/tmp/hello_world_test
 
-if [ "$SINGULARITY_OVERLAY_FS" = "1" ]; then
+if [ "x${SINGULARITY_OVERLAY_FS}" = "x1" ]; then
     stest 0 singularity exec -B /tmp:/nonexistent "$CONTAINER" test -f /nonexistent/hello_world_test
 fi
 
