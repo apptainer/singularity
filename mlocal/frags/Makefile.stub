@@ -83,7 +83,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): dep $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): patch $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -147,6 +147,10 @@ collect:
 dep:
 	@printf " GO DEPS\n"
 	$(V)(dep ensure -vendor-only >/dev/null 2>&1)
+
+.PHONY: patch
+patch: dep
+	@printf " PATCH VENDOR\n"
 	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
 
 .PHONY: test
