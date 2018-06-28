@@ -113,6 +113,7 @@
 # the container. The file or directory must exist within the container on
 # which to attach to. you can specify a different source and destination
 # path (respectively) with a colon; otherwise source and dest are the same.
+# NOTE: these are ignored if singularity is invoked with --contain.
 #bind path = /etc/singularity/default-nsswitch.conf:/etc/nsswitch.conf
 #bind path = /opt
 #bind path = /scratch
@@ -204,3 +205,11 @@ bind path = /etc/hosts
 # use tmpfs, so on affected version it's recommended to set this value to ramfs to avoid
 # kernel panic
 @MEMORY_FS_TYPE@ = @MEMORY_FS_TYPE_DEFAULT@
+
+
+# ALWAYS USE NV ${TYPE}: [BOOL]
+# DEFAULT: no
+# This feature allows an administrator to determine that every action command
+# should be executed implicitely with the --nv option (useful for GPU only 
+# environments). 
+@ALWAYS_USE_NV@ = @ALWAYS_USE_NV_DEFAULT@  

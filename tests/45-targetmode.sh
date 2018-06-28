@@ -23,6 +23,11 @@
 
 . ./functions
 
+if [ `id -g` -lt 1000 ]; then
+    echo -e "\nGID less than 1000 ... skipping 45-targetmode\n"
+    exit 0
+fi
+
 test_init "Checking target UID/GID mode"
 
 

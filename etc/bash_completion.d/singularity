@@ -233,7 +233,7 @@ _singularity() {
 
         instance.list)
             if [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W " --user --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W " --user --json --help" -- ${cur}) )
             else
                 _filedir
             fi

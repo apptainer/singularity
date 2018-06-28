@@ -108,6 +108,7 @@ rm -rf $RPM_BUILD_ROOT
 # Binaries
 %{_libexecdir}/singularity/bin/builddef
 %{_libexecdir}/singularity/bin/cleanupd
+%{_libexecdir}/singularity/bin/get-configvals
 %{_libexecdir}/singularity/bin/get-section
 %{_libexecdir}/singularity/bin/mount
 %{_libexecdir}/singularity/bin/image-type

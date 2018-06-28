@@ -47,7 +47,7 @@ fi
 umask 0002
 
 message 1 "Exporting contents of ${FROM} to ${SINGULARITY_IMAGE}\n"
-if ! eval "${SINGULARITY_bindir}"/singularity image.export "${FROM}" | tar xBf - -C "${SINGULARITY_ROOTFS}"; then
+if ! eval "${SINGULARITY_bindir}"/singularity image.export "${FROM}" | tar xf - -C "${SINGULARITY_ROOTFS}"; then
     message ERROR "Failed to export contents of ${FROM} to ${SINGULARITY_ROOTFS}\n"
     ABORT 255
 fi

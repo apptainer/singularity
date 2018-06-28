@@ -12,6 +12,23 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.6.0]
+    
+### Implemented enhancements
+ - Allow admin to specify a non-standard location for mksquashfs binary at 
+   build time with --with-mksquashfs option
+ - --nv option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed
+ - [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries
+ - --nv can be made default with all action commands in singularity.conf
+ - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
+
+## [v2.5.2]
+
+### Bug fixes
+  - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
+    mount or when specifying -c/-C/--contain option
+  - fixed * expansion during app runscript creation #1486
+
 ## [v2.5.1](https://github.com/singularityware/singularity/releases/tag/2.5.1) (2018-05-03)
 
 ### Bug fixes
@@ -107,6 +124,7 @@ of the following actions:
  - This fixed an issue for support of older distributions and kernels with regards to `setns()`
    functionality.
  - Fixed autofs bug path (lost during merge)
+ - Added json format to instance.list with flag --json
 
 ## [v2.4.1](https://github.com/singularityware/singularity/releases/tag/2.4.1) (2017-11-22)
 
@@ -118,6 +136,7 @@ of the following actions:
  - Check of overlay upper/work images are symlinks
 
 ### Implemented enhancements
+ - Users can specify custom shebang in first line of runscript or startscript
  - This changelog was added.
  - Addition of APP[app]_[LABELS,ENV,RUNSCRIPT,META] so apps can internally find one another.
  - Exposing labels for SCI-F in environment

@@ -53,7 +53,7 @@ static struct hsearch_data config_table;
 // By default, each hash bucket can have 7 values.  We set currently-empty
 // entries
 static ENTRY *new_hash_entry(char *key, char *value) {
-    char **hash_value = (char**) malloc(sizeof(char*) * MAX_CONFIG_ENTRIES+1);
+    char **hash_value = (char**) malloc(sizeof(char*) * (MAX_CONFIG_ENTRIES+1));
     int idx;
     hash_value[0] = value;
     for (idx=1; idx < MAX_CONFIG_ENTRIES; idx++) {hash_value[idx] = (char*)1;}

@@ -30,6 +30,7 @@
     void singularity_priv_escalate(void);
     void singularity_priv_drop(void);
     void singularity_priv_drop_perm(void);
+    int singularity_priv_dropped_perm(void);
     uid_t singularity_priv_getuid(void);
     gid_t singularity_priv_getgid(void);
     const gid_t *singularity_priv_getgids();

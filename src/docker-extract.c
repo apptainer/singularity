@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <limits.h>
 #include <locale.h>
+#include <libgen.h>
 #include <archive.h>
 #include <archive_entry.h>
 
@@ -116,20 +117,94 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
 
     // Target may not exist - that's ok
     if (stat(target, &statbuf) < 0){
+        singularity_message(DEBUG, "Whiteout target doesn't exist, at: %s\n",
+                            target);
+
         return 0;
     }
 
-    target_real = realpath(target, NULL);  // Flawfinder: ignore
+    // If the whiteout target is a link, we need to remove that link (source)
+    // itself and not resolve through it
+    if(is_link(target) == 0) {
+        char *target_copy1, *target_copy2, *parent, *link, *parent_real;
 
-    if(target_real == NULL) {
-        singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
-        ABORT(255);
+        target_copy1 = strdup(target);
+        if(target_copy1 == NULL) {
+            singularity_message(ERROR, "Error allocating memory for path - aborting.\n");
+            ABORT(255);
+        }
+
+        target_copy2 = strdup(target);
+        if(target_copy2 == NULL) {
+            singularity_message(ERROR, "Error allocating memory for path - aborting.\n");
+            ABORT(255);
+        }
+
+        parent = dirname(target_copy1);
+        link = basename(target_copy2);
+
+        singularity_message(DEBUG, "Whiteout target is a symlink with parent dir: %s Link: %s\n",
+                            parent, link);
+
+
+        // First check fully resolved *parent dir* does not escape the ROOTFS
+        parent_real = realpath(parent, NULL);   // Flawfinder: ignore
+        if(parent_real == NULL) {
+            singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
+            ABORT(255);
+        }
+
+
+        singularity_message(DEBUG, "Link parent dir resolves to: %s\n",
+                            parent_real);
+
+
+        if(strncmp(rootfs_dir, parent_real, strlen(rootfs_dir)) != 0) {
+            singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", parent_real);
+            ABORT(255);
+        }
+
+        // And the link cannot be called '..' (not sure if this is possible, but
+        // maybe a tar can be created like that maliciously)
+        if(strncmp(link, "..", sizeof(link) -1) == 0){
+            singularity_message(ERROR, "Whiteout target has '..' as last component: %s - aborting.\n", target);
+            ABORT(255);
+        }
+
+        // Now our real target path is the resolved parent, plus the link
+        // basename of the link
+        target_real = malloc(PATH_MAX + 1);
+        retval = snprintf(target_real, PATH_MAX - 1, "%s/%s", parent_real, link );
+        if (retval == -1 || retval >= PATH_MAX - 1) {
+            singularity_message(ERROR, "Error with pathname too long\n");
+            ABORT(255);
+        }
+
+        singularity_message(DEBUG, "Whiteout target resolves to symlink at: %s\n",
+                            target_real);
+
+        free(target_copy1);
+        free(target_copy2);
+        free(parent_real);
+
+    }else{
+
+        target_real = realpath(target, NULL);  // Flawfinder: ignore
+
+        if(target_real == NULL) {
+            singularity_message(ERROR, "Error canonicalizing whiteout path %s - aborting.\n", target);
+            ABORT(255);
+        }
+
+        if(strncmp(rootfs_dir, target_real, strlen(rootfs_dir)) != 0) {
+            singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", target_real);
+            ABORT(255);
+        }
+
+        singularity_message(DEBUG, "Whiteout target is a regular file/dir, at: %s\n",
+                            target_real);
     }
- 
-    if(strncmp(rootfs_dir, target_real, strlen(rootfs_dir)) != 0) {
-        singularity_message(ERROR, "Attempt to whiteout outside of rootfs %s - aborting.\n", target_real);
-        ABORT(255);
-    }
+
 
     if (is_dir(target_real) == 0) {
         retval = s_rmdir(target_real);

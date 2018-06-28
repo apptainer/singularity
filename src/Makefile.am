@@ -9,7 +9,7 @@ AM_CPPFLAGS = -DBINDIR=\"$(bindir)\" -DSYSCONFDIR=\"$(sysconfdir)\" -DLOCALSTATE
 
 lexecdir = $(libexecdir)/singularity/bin
 
-lexec_PROGRAMS = action builddef cleanupd docker-extract get-section image-type mount prepheader start $(BUILD_SUID)
+lexec_PROGRAMS = action builddef cleanupd docker-extract get-section get-configvals image-type mount prepheader start $(BUILD_SUID)
 EXTRA_PROGRAMS = action-suid mount-suid start-suid
 
 cleanupd_SOURCES = cleanupd.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
@@ -43,6 +43,9 @@ prepheader_CPPFLAGS = $(AM_CPPFLAGS)
 
 get_section_SOURCES = get-section.c util/util.c util/file.c util/message.c util/privilege.c util/config_parser.c util/registry.c
 get_section_CPPFLAGS = $(AM_CPPFLAGS)
+
+get_configvals_SOURCES = get-configvals.c util/util.c util/config_parser.c util/message.c util/registry.c util/file.c util/privilege.c util/suid.c
+get_configvals_CPPFLAGS = $(AM_CPPFLAGS)
 
 image_type_SOURCES = image-type.c util/util.c util/message.c util/config_parser.c util/file.c
 image_type_LDADD = lib/image/libsingularity-image.la
