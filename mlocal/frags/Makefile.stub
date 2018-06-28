@@ -39,11 +39,11 @@ cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
 vendor := $(SOURCEDIR)/vendor
 
-cni_plugins_INSTALL := $(PREFIX)/libexec/singularity/cni
 cni_plugins_REPO := github.com/containernetworking/plugins
 cni_plugins_VENDOR := $(vendor)/$(cni_plugins_REPO)
 cni_plugins_DIR := $(sort $(dir $(wildcard $(cni_plugins_VENDOR)/plugins/*/*/*)))
 cni_plugins_LIST := $(shell basename -a $(cni_plugins_DIR))
+cni_plugins_INSTALL := $(foreach plugin,$(cni_plugins_LIST),$(PREFIX)/libexec/singularity/cni/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 
@@ -59,8 +59,8 @@ $(cni_plugins_LIST):
 	@ln -sfn $(vendor) cnigopath/src
 	$(V)GOPATH="$(shell pwd)/cnigopath" go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $@))
 
-$(cni_plugins_INSTALL): $(cni_plugins_LIST)
-	@echo " INSTALL CNI PLUGINS"
+$(cni_plugins_INSTALL):
+	@echo " INSTALL CNI PLUGIN" $(shell basename -a $@)
 	@mkdir -p $@
 	@for f in $(cni_plugins_LIST); do cp -a $$f $@/$$f; done
 
