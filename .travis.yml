@@ -23,7 +23,6 @@ before_install:
   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - go get -u golang.org/x/lint/golint
   - export PATH="${GOPATH}/bin:${PATH}"
-  - dep ensure -vendor-only
 
 install:
   - ./mconfig -p /usr/local

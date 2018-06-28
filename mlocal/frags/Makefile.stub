@@ -83,7 +83,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -102,6 +102,19 @@ $(sif_INSTALL): $(sif)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(sif) $(sif_INSTALL)
+
+# generate the vendor folder with dep and patch when necessary
+$(BUILDDIR)/vendors-done:
+	@echo " VENDORS"
+	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+		dep ensure -vendor-only >/dev/null 2>&1 && \
+			touch $(BUILDDIR)/.dep-done; \
+	fi
+	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+			touch $(BUILDDIR)/.patch-done; \
+	fi
+	$(V)touch $@
 
 #TODO: generate real config file and install, currently is just blank
 $(config):
@@ -142,12 +155,6 @@ collect:
 			print path "/" $$0; next }{ print }' < $$i	\
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
-
-.PHONY: dep
-dep:
-	@printf " GO DEPS\n"
-	$(V)(dep ensure -vendor-only >/dev/null 2>&1)
-	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
 
 .PHONY: test
 test:
