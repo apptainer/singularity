@@ -70,8 +70,6 @@ func NewDefinitionFromURI(uri string) (d Definition, err error) {
 		},
 	}
 
-	fmt.Println(u)
-
 	return d, nil
 }
 
