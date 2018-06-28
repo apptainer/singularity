@@ -22,7 +22,7 @@ type SIF struct {
 }
 
 // FromSandbox converts the sandbox, s, to a SIF file.
-func FromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
+func FromSandbox(sandbox *image.Image, imagePath string) (*SIF, error) {
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		glog.Error("mksquashfs is not installed on this system")
@@ -34,7 +34,7 @@ func FromSandbox(sandbox *image.Sandbox, imagePath string) (*SIF, error) {
 	f.Close()
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Rootfs(), squashfsPath, "-noappend")
+	mksquashfsCmd := exec.Command(mksquashfs, sandbox.Path, squashfsPath, "-noappend")
 	mksquashfsCmd.Stdin = os.Stdin
 	mksquashfsCmd.Stdout = os.Stdout
 	mksquashfsCmd.Stderr = os.Stderr
