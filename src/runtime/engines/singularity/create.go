@@ -7,7 +7,6 @@ package singularity
 
 /*
 #include <unistd.h>
-#include "image/image.h"
 #include "util/config_parser.h"
 */
 // #cgo CFLAGS: -I../../c/lib
@@ -24,6 +23,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
@@ -66,20 +66,23 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	C.singularity_config_init()
 
-	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
+	imageObject, err := image.Init(rootfs, false)
+	if err != nil {
+		return err
+	}
 
 	info := new(loop.Info64)
 	mountType := ""
 
-	switch C.singularity_image_type(&imageObject) {
-	case 1:
+	switch imageObject.Type {
+	case image.SQUASHFS:
 		mountType = "squashfs"
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
-	case 2:
+		info.Offset = imageObject.Offset
+		info.SizeLimit = imageObject.Size
+	case image.EXT3:
 		mountType = "ext3"
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
+		info.Offset = imageObject.Offset
+		info.SizeLimit = imageObject.Size
 	}
 
 	if st.IsDir() == false && !userNS {
