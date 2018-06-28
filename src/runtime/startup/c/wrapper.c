@@ -31,12 +31,21 @@
 #include <sys/socket.h>
 #include <setjmp.h>
 #include <sys/syscall.h>
+#include <sys/eventfd.h>
 
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
 #else
 #  include "c/lib/util/securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
+
+#ifndef PR_SET_NO_NEW_PRIVS
+#define PR_SET_NO_NEW_PRIVS 38
+#endif
+
+#ifndef PR_GET_NO_NEW_PRIVS
+#define PR_GET_NO_NEW_PRIVS 39
+#endif
 
 #include "c/lib/util/capability.h"
 #include "c/lib/util/message.h"
@@ -57,12 +66,11 @@ struct cConfig config;
 char *json_stdin;
 
 /* Socket process communication */
-int rpc_socket[2];
-int stage_socket[2];
+int rpc_socket[2] = {-1, -1};
+int instance_socket[2] = {-1, -1};
 
 #define SCONTAINER_STAGE1   1
 #define SCONTAINER_STAGE2   2
-#define SCONTAINER_STAGE3   3
 #define SMASTER             4
 #define RPC_SERVER          5
 
@@ -124,24 +132,7 @@ static void prepare_scontainer_stage(int stage) {
 
     singularity_message(DEBUG, "Entering in scontainer stage %d\n", stage);
 
-    if ( stage == 2 ) {
-        execute = SCONTAINER_STAGE2;
-        if ( config.mntPid == 0 ) {
-            stage_pid = fork();
-            if ( stage_pid == 0 ) {
-                execute = SCONTAINER_STAGE3;
-            }
-        }
-    }
-
-    if ( stage_pid < 0 ) {
-        singularity_message(ERROR, "Failed to spawn child: %s\n", strerror(errno));
-        exit(1);
-    }
-
-    if ( config.nsFlags & CLONE_NEWUSER || config.isSuid == 0 ) {
-        return;
-    }
+    execute = stage;
 
     header.version = LINUX_CAPABILITY_VERSION;
     header.pid = 0;
@@ -151,31 +142,12 @@ static void prepare_scontainer_stage(int stage) {
         exit(1);
     }
 
-    if ( stage_pid > 0 ) {
-        data[1].inheritable = (__u32)(config.capInheritable >> 32);
-        data[0].inheritable = (__u32)(config.capInheritable & 0xFFFFFFFF);
-        data[1].permitted = (__u32)(config.capPermitted >> 32);
-        data[0].permitted = (__u32)(config.capPermitted & 0xFFFFFFFF);
-        data[1].effective = (__u32)(config.capEffective >> 32);
-        data[0].effective = (__u32)(config.capEffective & 0xFFFFFFFF);
-    } else {
-        data[1].inheritable = data[1].permitted = data[1].effective = 0;
-        data[0].inheritable = data[0].permitted = data[0].effective = 0;
-        config.capBounding = 0;
-        config.capAmbient = 0;
-    }
-
-    if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
-        singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
-        exit(1);
-    }
-
-    if ( setresuid(uid, uid, uid) < 0 ) {
-        singularity_message(ERROR, "Faile to drop privileges: %s\n", strerror(errno));
-        exit(1);
-    }
-
-    set_parent_death_signal(SIGKILL);
+    data[1].inheritable = (__u32)(config.capInheritable >> 32);
+    data[0].inheritable = (__u32)(config.capInheritable & 0xFFFFFFFF);
+    data[1].permitted = (__u32)(config.capPermitted >> 32);
+    data[0].permitted = (__u32)(config.capPermitted & 0xFFFFFFFF);
+    data[1].effective = (__u32)(config.capEffective >> 32);
+    data[0].effective = (__u32)(config.capEffective & 0xFFFFFFFF);
 
     int last_cap;
     for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
@@ -194,14 +166,30 @@ static void prepare_scontainer_stage(int stage) {
         }
     }
 
-#ifdef SINGULARITY_NO_NEW_PRIVS
+    if ( execute == SCONTAINER_STAGE2 && !(config.nsFlags & CLONE_NEWUSER) ) {
+        if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
+            singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
+            exit(1);
+        }
+
+        if ( setresuid(uid, uid, uid) < 0 ) {
+            singularity_message(ERROR, "Faile to drop privileges: %s\n", strerror(errno));
+            exit(1);
+        }
+
+        set_parent_death_signal(SIGKILL);
+    }
+
     if ( config.noNewPrivs ) {
         if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 ) {
             singularity_message(ERROR, "Failed to set no new privs flag: %s\n", strerror(errno));
             exit(1);
         }
+        if ( prctl(PR_GET_NO_NEW_PRIVS, 0, 0 ,0, 0) != 1 ) {
+            singularity_message(ERROR, "Aborting, failed to set no new privs flag: %s\n", strerror(errno));
+            exit(1);
+        }
     }
-#endif
 
     if ( capset(&header, data) < 0 ) {
         singularity_message(ERROR, "Failed to set process capabilities\n");
@@ -471,9 +459,11 @@ static unsigned char is_suid(void) {
     return suid;
 }
 
-void do_nothing(int sig) {
-    (void)sig;
-    return;
+void do_exit(int sig) {
+    if ( sig == SIGUSR1 ) {
+        exit(0);
+    }
+    exit(1);
 }
 
 __attribute__((constructor)) static void init(void) {
@@ -484,6 +474,14 @@ __attribute__((constructor)) static void init(void) {
     char *loglevel;
     char *runtime;
     int output[2];
+    int status;
+    struct pollfd fds;
+    int syncfd = -1;
+
+#ifndef SINGULARITY_NO_NEW_PRIVS
+    singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
+    exit(1);
+#endif
 
     loglevel = getenv("SINGULARITY_MESSAGELEVEL");
     if ( loglevel != NULL ) {
@@ -523,14 +521,6 @@ __attribute__((constructor)) static void init(void) {
         free(loglevel);
     }
 
-#ifdef SINGULARITY_NO_NEW_PRIVS
-    singularity_message(DEBUG, "PR_SET_NO_NEW_PRIVS supported\n");
-    config.hasNoNewPrivs = 1;
-#else
-    singularity_message(DEBUG, "PR_SET_NO_NEW_PRIVS not supported\n");
-    config.hasNoNewPrivs = 0;
-#endif
-
     /* read json configuration from stdin */
     singularity_message(DEBUG, "Read json configuration from stdin\n");
     int std = open("/proc/self/fd/1", O_RDONLY);
@@ -556,8 +546,6 @@ __attribute__((constructor)) static void init(void) {
         }
     }
     close(std);
-
-    fd_cleanup();
 
     /* block SIGCHLD signal handled later by scontainer/smaster */
     singularity_message(DEBUG, "Set child signal mask\n");
@@ -591,324 +579,335 @@ __attribute__((constructor)) static void init(void) {
          *  stage1 is responsible for singularity configuration file parsing, handle user input,
          *  read capabilities, check what namespaces is required.
          */
-        if ( config.isSuid ) {
+        if ( config.isSuid || geteuid() == 0 ) {
             priv_escalate();
+            prepare_scontainer_stage(SCONTAINER_STAGE1);
         }
 
-        prepare_scontainer_stage(1);
         return;
-    } else if ( stage_pid > 0 ) {
-        pid_t parent = getpid();
-        int status;
-        struct pollfd fds;
+    } else if ( stage_pid < 0 ) {
+        singularity_message(ERROR, "Failed to spawn scontainer stage 1\n");
+        exit(1);
+    }
 
-        close(output[1]);
+    close(output[1]);
 
-        fds.fd = output[0];
-        fds.events = POLLIN;
-        fds.revents = 0;
+    fds.fd = output[0];
+    fds.events = POLLIN;
+    fds.revents = 0;
 
-        singularity_message(DEBUG, "Wait C and JSON runtime configuration from scontainer stage 1\n");
+    singularity_message(DEBUG, "Wait C and JSON runtime configuration from scontainer stage 1\n");
 
-        while ( poll(&fds, 1, -1) >= 0 ) {
-            if ( fds.revents == POLLIN ) {
-                int ret;
-                singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
-                if ( (ret = read(output[0], &config, sizeof(config))) != sizeof(config) ) {
-                    singularity_message(ERROR, "Failed to read C configuration stdout pipe: %s\n", strerror(errno));
-                    exit(1);
-                }
-                if ( config.jsonConfSize >= MAX_JSON_SIZE) {
-                    singularity_message(ERROR, "JSON configuration too big\n");
-                    exit(1);
-                }
-                if ( (ret = read(output[0], json_stdin, config.jsonConfSize)) != config.jsonConfSize ) {
-                    singularity_message(ERROR, "Failed to read JSON configuration from stdout pipe: %s\n", strerror(errno));
-                    exit(1);
-                }
-                json_stdin[config.jsonConfSize] = '\0';
-            }
-            break;
-        }
-
-        close(output[0]);
-
-        singularity_message(DEBUG, "Wait completion of scontainer stage1\n");
-        if ( wait(&status) != stage_pid ) {
-            singularity_message(ERROR, "Can't wait child\n");
-            exit(1);
-        }
-
-        if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
-            if ( WEXITSTATUS(status) != 0 ) {
-                singularity_message(ERROR, "Child exit with status %d\n", WEXITSTATUS(status));
-                exit(WEXITSTATUS(status));
-            }
-        }
-
-        if ( config.isInstance ) {
-            singularity_message(VERBOSE, "Run as instance\n");
-            int forked = fork();
-            if ( forked == 0 ) {
-                int i;
-                if ( chdir("/") < 0 ) {
-                    singularity_message(ERROR, "Can't change directory to /: %s\n", strerror(errno));
-                    exit(1);
-                }
-                if ( setsid() < 0 ) {
-                    singularity_message(ERROR, "Can't set session leader: %s\n", strerror(errno));
-                    exit(1);
-                }
-                umask(0);
-
-                singularity_message(DEBUG, "Close all file descriptor\n");
-                for( i = sysconf(_SC_OPEN_MAX); i > 2; i-- ) {
-                    close(i);
-                }
-            } else {
-                int status;
-
-                singularity_message(DEBUG, "Wait child process signaling SIGSTOP\n");
-                waitpid(forked, &status, WUNTRACED);
-                if ( WIFSTOPPED(status) ) {
-                    singularity_message(DEBUG, "Send SIGCONT to child process\n");
-                    kill(forked, SIGCONT);
-                    exit(0);
-                }
-                if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
-                    singularity_message(VERBOSE, "Child process exited with status %d\n", WEXITSTATUS(status));
-                    exit(WEXITSTATUS(status));
-                }
+    while ( poll(&fds, 1, -1) >= 0 ) {
+        if ( fds.revents & POLLIN ) {
+            int ret;
+            singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
+            if ( (ret = read(output[0], &config, sizeof(config))) != sizeof(config) ) {
+                singularity_message(ERROR, "Failed to read C configuration stdout pipe: %s\n", strerror(errno));
                 exit(1);
             }
-        }
-
-        if ( (config.nsFlags & CLONE_NEWUSER) == 0 ) {
-            priv_escalate();
-        } else {
-            if ( config.isSuid ) {
-                singularity_message(ERROR, "Running setuid workflow with user namespace is not allowed\n");
+            if ( config.jsonConfSize >= MAX_JSON_SIZE) {
+                singularity_message(ERROR, "JSON configuration too big\n");
                 exit(1);
             }
-            if ( config.userPid ) {
-                if ( enter_namespace(config.userPid, CLONE_NEWUSER) < 0 ) {
-                    singularity_message(ERROR, "Failed to enter in user namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-            } else {
-                setup_userns(&config.uidMapping[0], &config.gidMapping[0]);
+            if ( (ret = read(output[0], json_stdin, config.jsonConfSize)) != config.jsonConfSize ) {
+                singularity_message(ERROR, "Failed to read JSON configuration from stdout pipe: %s\n", strerror(errno));
+                exit(1);
             }
+            json_stdin[config.jsonConfSize] = '\0';
         }
+        break;
+    }
 
-        singularity_message(DEBUG, "Create socketpair communication between smaster and scontainer\n");
-        if ( socketpair(AF_UNIX, SOCK_STREAM, 0, stage_socket) < 0 ) {
-            singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
-            exit(1);
+    close(output[0]);
+
+    singularity_message(DEBUG, "Wait completion of scontainer stage1\n");
+    if ( wait(&status) != stage_pid ) {
+        singularity_message(ERROR, "Can't wait child\n");
+        exit(1);
+    }
+
+    if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
+        if ( WEXITSTATUS(status) != 0 ) {
+            singularity_message(ERROR, "Child exit with status %d\n", WEXITSTATUS(status));
+            exit(WEXITSTATUS(status));
         }
+    }
 
-        /* enforce PID namespace if NO_NEW_PRIVS not supported  */
-        if ( config.hasNoNewPrivs == 0 ) {
-            singularity_message(VERBOSE, "No PR_SET_NO_NEW_PRIVS support, enforcing PID namespace\n");
-            config.nsFlags |= CLONE_NEWPID;
-        }
+    if ( config.isInstance ) {
+        singularity_message(VERBOSE, "Run as instance\n");
+        int forked = fork();
+        if ( forked == 0 ) {
+            if ( chdir("/") < 0 ) {
+                singularity_message(ERROR, "Can't change directory to /: %s\n", strerror(errno));
+                exit(1);
+            }
+            if ( setsid() < 0 ) {
+                singularity_message(ERROR, "Can't set session leader: %s\n", strerror(errno));
+                exit(1);
+            }
+            umask(0);
 
-        if ( config.mntPid ) {
-            if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
-                singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
+            singularity_message(DEBUG, "Create instance socketpair to notify smaster\n");
+            if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, instance_socket) < 0 ) {
+                singularity_message(ERROR, "Failed to create instance communication socket: %s\n", strerror(errno));
                 exit(1);
             }
         } else {
-            singularity_message(VERBOSE, "Unshare filesystem and create mount namespace\n");
-            if ( unshare(CLONE_FS) < 0 ) {
-                singularity_message(ERROR, "Failed to unshare filesystem: %s\n", strerror(errno));
+            sigset_t usrmask;
+            static struct sigaction action;
+
+            action.sa_sigaction = (void *)&do_exit;
+            action.sa_flags = SA_SIGINFO|SA_RESTART;
+
+            sigemptyset(&usrmask);
+            sigaddset(&usrmask, SIGUSR1);
+            sigaddset(&usrmask, SIGUSR2);
+
+            if (sigprocmask(SIG_SETMASK, &usrmask, NULL) == -1) {
+                singularity_message(ERROR, "Blocked signals error: %s\n", strerror(errno));
                 exit(1);
             }
+            if (sigaction(SIGUSR2, &action, NULL) < 0) {
+		        singularity_message(ERROR, "Failed to install signal handler for SIGUSR2\n");
+                exit(1);
+            }
+            if (sigaction(SIGUSR1, &action, NULL) < 0) {
+		        singularity_message(ERROR, "Failed to install signal handler for SIGUSR1\n");
+                exit(1);
+            }
+            if (sigprocmask(SIG_UNBLOCK, &usrmask, NULL) == -1) {
+                singularity_message(ERROR, "Unblock signals error: %s\n", strerror(errno));
+                exit(1);
+            }
+            pause();
+        }
+    }
+
+    if ( (config.nsFlags & CLONE_NEWUSER) == 0 ) {
+        priv_escalate();
+    } else {
+        if ( config.isSuid ) {
+            singularity_message(ERROR, "Running setuid workflow with user namespace is not allowed\n");
+            exit(1);
+        }
+        if ( config.userPid ) {
+            if ( enter_namespace(config.userPid, CLONE_NEWUSER) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in user namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+        } else {
+            setup_userns(&config.uidMapping[0], &config.gidMapping[0]);
+        }
+    }
+
+    if ( config.mntPid ) {
+        if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
+            singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
+            exit(1);
+        }
+    } else {
+        if ( unshare(CLONE_FS) < 0 ) {
+            singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
+            exit(1);
+        }
+        if ( create_namespace(CLONE_NEWNS) < 0 ) {
+            singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+            exit(1);
+        }
+        if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
+            singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+        }
+        if ( create_namespace(CLONE_NEWNS) < 0 ) {
+            singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+            exit(1);
+        }
+        if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+            singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+        }
+        /* sync smaster and near child with an eventfd */
+        syncfd = eventfd(0, 0);
+        if ( syncfd < 0 ) {
+            singularity_message(ERROR, "Failed to create sync pipe between smaster and child: %s\n", strerror(errno));
+            exit(1);
+        }
+    }
+    singularity_message(DEBUG, "Create RPC socketpair for communication between scontainer and RPC server\n");
+    if ( socketpair(AF_UNIX, SOCK_STREAM, 0, rpc_socket) < 0 ) {
+        singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
+        exit(1);
+    }
+    /* Use setfsuid to address issue about root_squash filesystems option */
+    if ( config.isSuid ) {
+        if ( setfsuid(uid) != 0 ) {
+            singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
+            exit(1);
+        }
+        if ( setfsuid(-1) != uid ) {
+            singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
+            exit(1);
+        }
+    }
+    if ( config.pidPid ) {
+        if ( enter_namespace(config.pidPid, CLONE_NEWPID) < 0 ) {
+            singularity_message(ERROR, "Failed to enter in pid namespace: %s\n", strerror(errno));
+            exit(1);
+        }
+        stage_pid = fork();
+    } else {
+        if ( config.nsFlags & CLONE_NEWPID ) {
+#ifdef NS_CLONE_NEWPID
+            singularity_message(VERBOSE, "Create pid namespace\n");
+            stage_pid = fork_ns(CLONE_NEWPID);
+#else
+            singularity_message(WARNING, "Skipping pid namespace creation, support not available on host\n");
+            stage_pid = fork();
+#endif /* NS_CLONE_NEWPID */
+        } else {
+            stage_pid = fork();
+        }
+    }
+
+    if ( stage_pid == 0 ) {
+        /* at this stage we are PID 1 if PID namespace requested */
+
+        set_parent_death_signal(SIGKILL);
+
+        if ( instance_socket[0] != -1 ) {
+            close(instance_socket[0]);
+        }
+
+        singularity_message(VERBOSE, "Spawn scontainer stage 2\n");
+
+        if ( config.netPid ) {
+            if ( enter_namespace(config.netPid, CLONE_NEWNET) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in network namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+        } else {
+            if ( config.nsFlags & CLONE_NEWNET ) {
+                if ( create_namespace(CLONE_NEWNET) < 0 ) {
+                    singularity_message(ERROR, "Failed to create network namespace: %s\n", strerror(errno));
+                    exit(1);
+                }
+            }
+        }
+        if ( config.mntPid == 0 ) {
             if ( create_namespace(CLONE_NEWNS) < 0 ) {
                 singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
                 exit(1);
             }
 
-            if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
-                singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+            if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
+            }
+
+            if ( syncfd >= 0 ) {
+                unsigned long long counter = 1;
+                if ( write(syncfd, &counter, sizeof(counter)) != sizeof(counter) ) {
+                    singularity_message(ERROR, "Failed to synchronize with smaster: %s\n", strerror(errno));
+                    exit(1);
+                }
+                close(syncfd);
             }
         }
-        if ( config.pidPid ) {
-            if ( enter_namespace(config.pidPid, CLONE_NEWPID) < 0 ) {
-                singularity_message(ERROR, "Failed to enter in pid namespace: %s\n", strerror(errno));
+        if ( config.utsPid ) {
+            if ( enter_namespace(config.utsPid, CLONE_NEWUTS) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in uts namespace: %s\n", strerror(errno));
                 exit(1);
             }
-            stage_pid = fork();
         } else {
-            if ( config.nsFlags & CLONE_NEWPID ) {
-#ifdef NS_CLONE_NEWPID
-                singularity_message(VERBOSE, "Create pid namespace\n");
-                stage_pid = fork_ns(CLONE_NEWPID);
-#else
-                if ( config.hasNoNewPrivs == 0 ) {
-                    singularity_message(ERROR, "There is no PR_SET_NO_NEW_PRIVS support and can't create PID namespace\n");
+            if ( config.nsFlags & CLONE_NEWUTS ) {
+                if ( create_namespace(CLONE_NEWUTS) < 0 ) {
+                    singularity_message(ERROR, "Failed to create uts namespace: %s\n", strerror(errno));
                     exit(1);
                 }
-                singularity_message(WARNING, "Skipping pid namespace creation, support not available on host\n");
-                stage_pid = fork();
-#endif /* NS_CLONE_NEWPID */
-            } else {
-                stage_pid = fork();
             }
         }
-
-        if ( stage_pid == 0 ) {
-            /* at this stage we are PID 1 if PID namespace requested */
-            pid_t child;
-
-            set_parent_death_signal(SIGKILL);
-
-            singularity_message(VERBOSE, "Spawn scontainer stage 2\n");
-
-            if ( config.netPid ) {
-                if ( enter_namespace(config.netPid, CLONE_NEWNET) < 0 ) {
-                    singularity_message(ERROR, "Failed to enter in network namespace: %s\n", strerror(errno));
+        if ( config.ipcPid ) {
+            if ( enter_namespace(config.ipcPid, CLONE_NEWIPC) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in ipc namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+        } else {
+            if ( config.nsFlags & CLONE_NEWIPC ) {
+                if ( create_namespace(CLONE_NEWIPC) < 0 ) {
+                    singularity_message(ERROR, "Failed to create ipc namespace: %s\n", strerror(errno));
                     exit(1);
                 }
-            } else {
-                if ( config.nsFlags & CLONE_NEWNET ) {
-                    if ( create_namespace(CLONE_NEWNET) < 0 ) {
-                        singularity_message(ERROR, "Failed to create network namespace: %s\n", strerror(errno));
-                        exit(1);
-                    }
-                }
             }
-            if ( config.utsPid ) {
-                if ( enter_namespace(config.utsPid, CLONE_NEWUTS) < 0 ) {
-                    singularity_message(ERROR, "Failed to enter in uts namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-            } else {
-                if ( config.nsFlags & CLONE_NEWUTS ) {
-                    if ( create_namespace(CLONE_NEWUTS) < 0 ) {
-                        singularity_message(ERROR, "Failed to create uts namespace: %s\n", strerror(errno));
-                        exit(1);
-                    }
-                }
-            }
-            if ( config.ipcPid ) {
-                if ( enter_namespace(config.ipcPid, CLONE_NEWIPC) < 0 ) {
-                    singularity_message(ERROR, "Failed to enter in ipc namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-            } else {
-                if ( config.nsFlags & CLONE_NEWIPC ) {
-                    if ( create_namespace(CLONE_NEWIPC) < 0 ) {
-                        singularity_message(ERROR, "Failed to create ipc namespace: %s\n", strerror(errno));
-                        exit(1);
-                    }
-                }
-            }
+        }
 #ifdef NS_CLONE_NEWCGROUP
-            if ( config.cgroupPid ) {
-                if ( enter_namespace(config.cgroupPid, CLONE_NEWCGROUP) < 0 ) {
-                    singularity_message(ERROR, "Failed to enter in cgroup namespace: %s\n", strerror(errno));
+        if ( config.cgroupPid ) {
+            if ( enter_namespace(config.cgroupPid, CLONE_NEWCGROUP) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in cgroup namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+        } else {
+            if ( config.nsFlags & CLONE_NEWCGROUP ) {
+                if ( create_namespace(CLONE_NEWCGROUP) < 0 ) {
+                    singularity_message(ERROR, "Failed to create cgroup namespace: %s\n", strerror(errno));
                     exit(1);
                 }
-            } else {
-                if ( config.nsFlags & CLONE_NEWCGROUP ) {
-                    if ( create_namespace(CLONE_NEWCGROUP) < 0 ) {
-                        singularity_message(ERROR, "Failed to create cgroup namespace: %s\n", strerror(errno));
-                        exit(1);
-                    }
-                }
             }
+        }
 #endif /* NS_CLONE_NEWCGROUP */
 
-            singularity_message(DEBUG, "Create RPC socketpair for communication between scontainer and RPC server\n");
-            if ( socketpair(AF_UNIX, SOCK_STREAM, 0, rpc_socket) < 0 ) {
-                singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
-                exit(1);
-            }
+        close(rpc_socket[0]);
 
-            close(stage_socket[0]);
-
-            if ( config.mntPid == 0 ) {
-                child = fork();
-            } else {
-                singularity_message(VERBOSE, "Don't execute RPC server, joining instance\n");
-                child = 1;
-            }
-            if ( child == 0 ) {
-                singularity_message(VERBOSE, "Spawn RPC server\n");
-
-                close(stage_socket[1]);
-                close(rpc_socket[0]);
-
-                if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
-                }
-
-                /* return to host network namespace for network setup */
-                singularity_message(DEBUG, "Return to host network namespace\n");
-                if ( config.nsFlags & CLONE_NEWNET && (config.nsFlags & CLONE_NEWUSER) == 0 ) {
-                    if ( enter_namespace(parent, CLONE_NEWNET) < 0 ) {
-                        singularity_message(ERROR, "Failed to return to host network namespace: %s\n", strerror(errno));
-                        exit(1);
-                    }
-                }
-
-                /* Use setfsuid to address issue about root_squash filesystems option */
-                if ( config.isSuid ) {
-                    if ( setfsuid(uid) != 0 ) {
-                        singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
-                        exit(1);
-                    }
-                    if ( setfsuid(-1) != uid ) {
-                        singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
-                        exit(1);
-                    }
-                }
-
-                free(json_stdin);
-
-                execute = RPC_SERVER;
-                return;
-            } else if ( child > 0 ) {
-                close(rpc_socket[1]);
-                prepare_scontainer_stage(2);
-                return;
-            }
-            singularity_message(ERROR, "Failed to execute container\n");
-            exit(1);
-        } else if ( stage_pid > 0 ) {
-            config.containerPid = stage_pid;
-
-            singularity_message(VERBOSE, "Spawn smaster process\n");
-
-            close(stage_socket[1]);
-
-            if ( config.mntPid != 0 ) {
-                int status;
-
-                singularity_message(DEBUG, "Wait scontainer stage 2 child process\n");
-                waitpid(stage_pid, &status, 0);
-                if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
-                    singularity_message(VERBOSE, "scontainer stage 2 exited with status %d\n", WEXITSTATUS(status));
-                    exit(WEXITSTATUS(status));
-                }
-                singularity_message(ERROR, "Child exit with unknown status\n");
-                exit(1);
-            } else {
-                singularity_message(VERBOSE, "Create smaster mount namespace\n");
-                if ( create_namespace(CLONE_NEWNS) < 0 ) {
-                    singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
-                    exit(1);
-                }
-                if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Failed to propagate / mount as SLAVE: %s\n", strerror(errno));
-                }
-                execute = SMASTER;
-                return;
-            }
+        if ( config.mntPid == 0 ) {
+            singularity_message(VERBOSE, "Spawn RPC server\n");
+            execute = RPC_SERVER;
+        } else {
+            singularity_message(VERBOSE, "Don't execute RPC server, joining instance\n");
+            prepare_scontainer_stage(SCONTAINER_STAGE2);
         }
-        singularity_message(ERROR, "Failed to create container namespaces\n");
-        exit(1);
+        return;
+    } else if ( stage_pid > 0 ) {
+        config.containerPid = stage_pid;
+
+        singularity_message(VERBOSE, "Spawn smaster process\n");
+
+        if ( instance_socket[1] != -1 ) {
+            close(instance_socket[1]);
+        }
+        close(rpc_socket[1]);
+
+        if ( syncfd >= 0 ) {
+            unsigned long long counter;
+
+            if ( read(syncfd, &counter, sizeof(counter)) != sizeof(counter) ) {
+                singularity_message(ERROR, "Failed to receive sync signal from child: %s\n", strerror(errno));
+                exit(1);
+            }
+
+            close(syncfd);
+        }
+
+        if ( config.mntPid != 0 ) {
+            if ( config.isSuid && setresuid(uid, uid, uid) < 0 ) {
+                singularity_message(ERROR, "Failed to drop privileges permanently\n");
+                exit(1);
+            }
+            singularity_message(DEBUG, "Wait scontainer stage 2 child process\n");
+            waitpid(stage_pid, &status, 0);
+            if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
+                singularity_message(VERBOSE, "scontainer stage 2 exited with status %d\n", WEXITSTATUS(status));
+                exit(WEXITSTATUS(status));
+            }
+            singularity_message(ERROR, "Child exit with unknown status\n");
+            exit(1);
+        } else {
+            if ( config.isSuid && setresuid(uid, uid, 0) < 0 ) {
+                singularity_message(ERROR, "Failed to drop privileges\n");
+                exit(1);
+            }
+            execute = SMASTER;
+            return;
+        }
     }
+    singularity_message(ERROR, "Failed to create container namespaces\n");
+    exit(1);
 }
 
 int main(int argc, char **argv) {
@@ -918,23 +917,23 @@ int main(int argc, char **argv) {
     switch(execute) {
     case SCONTAINER_STAGE1:
         singularity_message(VERBOSE, "Execute scontainer stage 1\n");
-        SContainer(1, 0, 0, &config, json_stdin);
+        SContainer(SCONTAINER_STAGE1, &config, json_stdin);
         break;
     case SCONTAINER_STAGE2:
         singularity_message(VERBOSE, "Execute scontainer stage 2\n");
-        SContainer(2, stage_socket[1], rpc_socket[0], &config, json_stdin);
-        break;
-    case SCONTAINER_STAGE3:
-        singularity_message(VERBOSE, "Execute scontainer stage 3\n");
-        SContainer(3, stage_socket[1], rpc_socket[0], &config, json_stdin);
+        SContainer(SCONTAINER_STAGE2, &config, json_stdin);
         break;
     case SMASTER:
         singularity_message(VERBOSE, "Execute smaster process\n");
-        SMaster(stage_socket[0], &config, json_stdin);
+        SMaster(rpc_socket[0], instance_socket[0], &config, json_stdin);
         break;
     case RPC_SERVER:
         singularity_message(VERBOSE, "Serve RPC requests\n");
         RPCServer(rpc_socket[1], sruntime);
+
+        singularity_message(VERBOSE, "Execute scontainer stage 2\n");
+        prepare_scontainer_stage(SCONTAINER_STAGE2);
+        SContainer(SCONTAINER_STAGE2, &config, json_stdin);
         break;
     }
     singularity_message(ERROR, "You should not be there\n");

@@ -7,7 +7,7 @@ package capabilities
 
 type capability struct {
 	Name        string
-	Value       int
+	Value       uint
 	Description string
 }
 
