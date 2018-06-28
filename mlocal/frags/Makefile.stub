@@ -41,7 +41,7 @@ INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wr
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
+all: cscope collect dep $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
 
 $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 	@echo " AR" $@
