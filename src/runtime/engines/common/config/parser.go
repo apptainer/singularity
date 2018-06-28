@@ -18,8 +18,14 @@ import (
 // Parser parses configuration found in the file with the specified path.
 func Parser(filepath string, f interface{}) error {
 	directives := make(map[string][]string)
-	c, _ := os.Open(filepath)
-	b, _ := ioutil.ReadAll(c)
+	c, err := os.Open(filepath)
+	if err != nil {
+		return err
+	}
+	b, err := ioutil.ReadAll(c)
+	if err != nil {
+		return err
+	}
 
 	r, err := regexp.Compile(`(?m)^\s*([a-zA-Z _]+)\s*=\s*(.*)$`)
 	if err != nil {

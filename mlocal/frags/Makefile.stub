@@ -1,3 +1,7 @@
+# include may contain conditional variables set in mlocal/checks/project.mk
+# like go_TAG / WRAPPER_LIBS
+include Makefile.cond
+
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
 libstartup := $(BUILDDIR)/lib/libstartup.a
@@ -28,7 +32,7 @@ go_BIN := $(singularity) $(sbuild)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL)
 
-go_TAG = "containers_image_openpgp singularity_sif"
+go_TAG += containers_image_openpgp singularity_sif
 
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
@@ -48,7 +52,7 @@ $(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
 $(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
 	@echo " AR" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -ldflags="-s -w" -buildmode=c-archive -o $@ \
+		go build -tags "$(go_TAG)" -ldflags="-s -w" -buildmode=c-archive -o $@ \
 		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
 		$(SOURCEDIR)/src/runtime/startup/smaster.go \
 		$(SOURCEDIR)/src/runtime/startup/rpc.go
@@ -65,21 +69,21 @@ $(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
 $(wrapper): $(wrapper_OBJ) $(libstartup)
 	@echo " LD" $@
 	@mkdir -p $(@D)
-	$(V)$(CC) $(LDFLAGS)  -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread
+	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread $(WRAPPER_LIBS)
 	$(V)($(SIZE) $@ 2>/dev/null || true)
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags $(go_TAG) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+		go build -tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -98,6 +102,19 @@ $(sif_INSTALL): $(sif)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(sif) $(sif_INSTALL)
+
+# generate the vendor folder with dep and patch when necessary
+$(BUILDDIR)/vendors-done:
+	@echo " VENDORS"
+	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+		dep ensure -vendor-only >/dev/null 2>&1 && \
+			touch $(BUILDDIR)/.dep-done; \
+	fi
+	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+			touch $(BUILDDIR)/.patch-done; \
+	fi
+	$(V)touch $@
 
 #TODO: generate real config file and install, currently is just blank
 $(config):
@@ -126,7 +143,7 @@ $(sessiondir):
 
 .PHONY: man
 man:
-	$(V)go run -tags $(go_TAG) $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
+	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
 
 .PHONY: collect
 collect:
@@ -139,12 +156,6 @@ collect:
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
 
-.PHONY: dep
-dep:
-	@printf " GO DEPS\n"
-	$(V)(dep ensure -vendor-only >/dev/null 2>&1 || true)
-	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
-
 .PHONY: test
 test:
 	@echo " TEST go fmt"
@@ -153,7 +164,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go vet -tags $(go_TAG) -all ./...
+		cd $(SOURCEDIR) && go vet -tags "$(go_TAG)" -all ./...
 	@echo "       PASS"
 	@echo " TEST go lint"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
@@ -161,7 +172,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags $(go_TAG) -cover -race -timeout 120s ./...
+		cd $(SOURCEDIR) && go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
 	@echo "       PASS"
 
 .PHONY: cscope
