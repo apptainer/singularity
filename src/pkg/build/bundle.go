@@ -38,15 +38,17 @@ type Bundle struct {
 
 // NewBundle creates a Bundle environment
 // TODO: choose appropriate location for TempDir, currently using /tmp
-func NewBundle() (b *Bundle, err error) {
+func NewBundle(rootfs string) (b *Bundle, err error) {
 	b = &Bundle{}
 
-	dir, err := ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
-	if err != nil {
-		return nil, err
+	if rootfs == "" {
+		b.path, err = ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		b.path = rootfs
 	}
-
-	b.path = dir
 
 	b.FSObjects = map[string]string{
 		"rootfs": "fs",
