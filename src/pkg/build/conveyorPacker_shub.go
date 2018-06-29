@@ -218,13 +218,15 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 	tagRegexp := `(:[-_.a-zA-Z0-9]{1,64})?`      //target is very open, file extensions or branch names
 	digestRegexp := `(\@[a-f0-9]{32})?`          //target md5 sum hash
 
-	shubRegex, err := regexp.Compile(registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp)
+	//expression is anchored
+	shubRegex, err := regexp.Compile(`^` + registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp + `$`)
 	if err != nil {
 		return uri, err
 	}
 
 	found := shubRegex.FindString(src)
 
+	//sanity check
 	//if found string is not equal to the input, input isn't a valid URI
 	if strings.Compare(src, found) != 0 {
 		return uri, fmt.Errorf("Source string is not a valid URI")
