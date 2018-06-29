@@ -16,7 +16,6 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ### Bug fixes
  - fix an error in malloc allocation #1620
- - fixed the way that * expands during runscript #1486
  - honor debug flag when pulling from docker hub #1556
  - fix a bug with passwd abort #1580
  - allow user to override singularity.conf "mount home = no" with --home option
