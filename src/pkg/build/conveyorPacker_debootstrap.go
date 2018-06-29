@@ -44,33 +44,33 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 	}
 
 	//get mirrorURL, OSVerison, and Includes components to definition
-	MirrorURL, ok := recipe.Header["MirrorURL"]
+	mirrorurl, ok := recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
 	}
 
-	OSVersion, ok := recipe.Header["OSVersion"]
+	osversion, ok := recipe.Header["osversion"]
 	if !ok {
 		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
 	}
 
-	Requires, _ := recipe.Header["Include"]
+	include, _ := recipe.Header["include"]
 
 	//check for include environment variable and add it to requires string
-	Requires += ` ` + os.Getenv("INCLUDE")
+	include += ` ` + os.Getenv("INCLUDE")
 
 	//trim leading and trailing whitespace
-	Requires = strings.TrimSpace(Requires)
+	include = strings.TrimSpace(include)
 
 	//convert Requires string to comma separated list
-	Requires = strings.Replace(Requires, ` `, `,`, -1)
+	include = strings.Replace(include, ` `, `,`, -1)
 
 	if os.Getuid() != 0 {
 		return fmt.Errorf("You must be root to build with debootstrap")
 	}
 
 	//run debootstrap command
-	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+Requires, `--arch=`+runtime.GOARCH, OSVersion, c.tmpfs, MirrorURL)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+include, `--arch=`+runtime.GOARCH, osversion, c.tmpfs, mirrorurl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
