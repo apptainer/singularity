@@ -31,7 +31,6 @@
 #include <syslog.h>
 #include <libgen.h>
 
-#include "util/util.h"
 #include "util/message.h"
 
 extern const char *__progname;

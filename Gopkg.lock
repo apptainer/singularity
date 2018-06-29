@@ -446,6 +446,12 @@
   revision = "6e3f4faa84e1d8d48afec75ed064cf3611d3f8bf"
 
 [[projects]]
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/seccomp/libseccomp-golang"
   packages = ["."]
   revision = "e3496e3a417d1dc9ecdceca5af2513271fed37a0"
@@ -471,6 +477,11 @@
   packages = ["."]
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/sylabs/sif"
+  packages = ["pkg/sif"]
+  revision = "b9d67677ad65d5287f646d9e6721b09b1a172852"
 
 [[projects]]
   branch = "master"
@@ -568,6 +579,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e5b94179809f0e1454c154409e1ac985fd7b788d9bca8fda8efa4e04397b7f9a"
+  inputs-digest = "a15e42d9e65cb432b16b04e35428651905d65c4974e2eb1af4be604190df27cf"
   solver-name = "gps-cdcl"
   solver-version = 1

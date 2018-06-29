@@ -18,8 +18,6 @@ wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
-sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
-
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
@@ -28,11 +26,11 @@ finaldir := $(PREFIX)/var/singularity/mnt/final
 overlaydir := $(PREFIX)/var/singularity/mnt/overlay
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
-go_BIN := $(singularity) $(sbuild)
+go_BIN := $(singularity)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
-go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL)
+go_INSTALL := $(singularity_INSTALL)
 
-go_TAG += containers_image_openpgp singularity_sif
+go_TAG += containers_image_openpgp
 
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
@@ -51,9 +49,9 @@ cni_plugins_EXECUTABLES := $(foreach plugin,$(cni_plugins_LIST),$(cni_builddir_p
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 
-INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL)
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER) $(cni_plugins_EXECUTABLES)
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER) $(cni_plugins_EXECUTABLES)
 
 all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $(cni_plugins_EXECUTABLES)
 
@@ -73,10 +71,10 @@ $(cni_config_INSTALL): $(cni_config_LIST)
 	$(V)install -d $(cni_config_INSTALL)
 	$(V)install -m 0755 $(cni_config_LIST) $@
 
-$(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+$(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
-	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
 # libstartup
 $(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
@@ -126,12 +124,6 @@ $(wrapper_suid_INSTALL): $(wrapper)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
 	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
-
-# sif install
-$(sif_INSTALL): $(sif)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(sif) $(sif_INSTALL)
 
 # generate the vendor folder with dep and patch when necessary
 $(BUILDDIR)/vendors-done:

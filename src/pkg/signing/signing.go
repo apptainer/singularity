@@ -8,11 +8,14 @@ package signing
 import (
 	"bytes"
 	"crypto/sha512"
+	"encoding/binary"
 	"fmt"
 
-	"github.com/singularityware/singularity/src/pkg/sif"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/sypgp"
+
+	"github.com/sylabs/sif/pkg/sif"
+
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
 )
@@ -21,42 +24,56 @@ const (
 	keyserverURI = "https://keys.sylabs.io:11371"
 )
 
-func sifDataObjectHash(sinfo *sif.Info) (*bytes.Buffer, error) {
+func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	part, err := sif.GetPartition(sinfo, sif.DefaultGroup)
+	part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 
-	data, err := sif.CByteRange(sinfo.Mapstart(), part.FileOff(), part.FileLen())
-	if err != nil {
-		sylog.Errorf("%s\n", err)
-		return nil, err
-	}
-	sum := sha512.Sum384(data)
+	sum := sha512.Sum384(fimg.Filedata[part.Fileoff : part.Fileoff+part.Filelen])
 
 	fmt.Fprintf(msg, "SIFHASH:\n%x", sum)
 
 	return msg, nil
 }
 
-func sifAddSignature(fingerprint [20]byte, sinfo *sif.Info, signature []byte) error {
-	var e sif.Eleminfo
-
-	part, err := sif.GetPartition(sinfo, sif.DefaultGroup)
+func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte) error {
+	part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 	if err != nil {
 		sylog.Errorf("%s\n", err)
 		return err
 	}
 
-	e.InitSignature(fingerprint, signature, part)
-
-	if err := sif.PutDataObj(&e, sinfo); err != nil {
-		sylog.Errorf("%s\n", err)
-		return err
+	// data we need to create a signature descriptor
+	siginput := sif.DescriptorInput{
+		Datatype: sif.DataSignature,
+		Groupid:  sif.DescrDefaultGroup,
+		Link:     part.ID,
+		Fname:    "part-signature",
+		Data:     signature,
 	}
+	siginput.Size = int64(binary.Size(siginput.Data))
+
+	// extra data needed for the creation of a signature descriptor
+	siginfo := sif.Signature{
+		Hashtype: sif.HashSHA384,
+		Entity:   [sif.DescrEntityLen]byte{},
+	}
+	copy(siginfo.Entity[:], fingerprint[:])
+
+	// serialize the signature data for integration with the base descriptor input
+	if err := binary.Write(&siginput.Extra, binary.LittleEndian, siginfo); err != nil {
+		return fmt.Errorf("binary encoding siginput.Extra: %s", err)
+	}
+
+	// add new signature data object to SIF file
+	if err = fimg.AddObject(siginput); err != nil {
+		return fmt.Errorf("adding new signature to SIF file: %s", err)
+	}
+
 	return nil
 }
 
@@ -98,14 +115,15 @@ func Sign(cpath, authToken string) error {
 	}
 	sypgp.DecryptKey(en)
 
-	var sinfo sif.Info
-	if err = sif.Load(cpath, &sinfo, 0); err != nil {
+	// load the container
+	fimg, err := sif.LoadContainer(cpath, false)
+	if err != nil {
 		sylog.Errorf("error loading sif file %s: %s\n", cpath, err)
 		return err
 	}
-	defer sif.Unload(&sinfo)
+	defer fimg.UnloadContainer()
 
-	msg, err := sifDataObjectHash(&sinfo)
+	msg, err := sifDataObjectHash(&fimg)
 	if err != nil {
 		return err
 	}
@@ -125,7 +143,7 @@ func Sign(cpath, authToken string) error {
 		return err
 	}
 
-	if err = sifAddSignature(en.PrimaryKey.Fingerprint, &sinfo, signedmsg.Bytes()); err != nil {
+	if err = sifAddSignature(en.PrimaryKey.Fingerprint, &fimg, signedmsg.Bytes()); err != nil {
 		return err
 	}
 
@@ -139,30 +157,31 @@ func Sign(cpath, authToken string) error {
 // if access is enabled.
 func Verify(cpath, authToken string) error {
 	var el openpgp.EntityList
-	var sinfo sif.Info
 
-	if err := sif.Load(cpath, &sinfo, 0); err != nil {
-		sylog.Errorf("%s\n", err)
+	// load the container
+	fimg, err := sif.LoadContainer(cpath, true)
+	if err != nil {
+		sylog.Errorf("error loading sif file %s: %s\n", cpath, err)
 		return err
 	}
-	defer sif.Unload(&sinfo)
+	defer fimg.UnloadContainer()
 
-	msg, err := sifDataObjectHash(&sinfo)
+	msg, err := sifDataObjectHash(&fimg)
 	if err != nil {
 		return err
 	}
 
-	sig, err := sif.GetSignature(&sinfo)
+	part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 	if err != nil {
-		sylog.Errorf("%s\n", err)
-		return err
+		return fmt.Errorf("no system partition found: %s", err)
 	}
 
-	data, err := sif.CByteRange(sinfo.Mapstart(), sig.FileOff(), sig.FileLen())
+	sig, _, err := fimg.GetFromLinkedDescr(part.ID)
 	if err != nil {
-		sylog.Errorf("%s\n", err)
-		return err
+		return fmt.Errorf("no signature found for system partition: %s", err)
 	}
+
+	data := fimg.Filedata[sig.Fileoff : sig.Fileoff+sig.Filelen]
 
 	block, _ := clearsign.Decode(data)
 	if block == nil {
@@ -179,13 +198,19 @@ func Verify(cpath, authToken string) error {
 		return err
 	}
 
-	/* try to verify with local PGP store */
+	// get the entity fingerprint for the found signature block
+	fingerprint, err := sig.GetEntityString()
+	if err != nil {
+		return err
+	}
+
+	// try to verify with local PGP store first
 	var signer *openpgp.Entity
 	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
 		sylog.Errorf("failed to check signature: %s\n", err)
-		/* verification with local keyring failed, try to fetch from key server */
-		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", sig.GetEntity())
-		syel, err := sypgp.FetchPubkey(sig.GetEntity(), keyserverURI, authToken)
+		// verification with local keyring failed, try to fetch from key server
+		sylog.Infof("Contacting sykeys PGP key management services for: %s\n", fingerprint)
+		syel, err := sypgp.FetchPubkey(fingerprint, keyserverURI, authToken)
 		if err != nil {
 			return err
 		}
