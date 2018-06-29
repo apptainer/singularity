@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 //"github.com/singularityware/singularity/src/pkg/image"
@@ -84,7 +86,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
-	b, err = NewBundle()
+	b, err = NewBundle("")
 	if err != nil {
 		return
 	}
@@ -98,5 +100,49 @@ func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
 		return nil, fmt.Errorf("Failed to move rootfs into bundles rootfs: %v", err)
 	}
 
+	err = cp.insertBaseEnv(b)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to insert base env: %v", err)
+	}
+
+	err = cp.insertRunScript(b)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to insert default runscript: %v", err)
+	}
+
 	return b, nil
+}
+
+func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
+	if err = makeBaseEnv(b.Rootfs()); err != nil {
+		sylog.Errorf("%v", err)
+	}
+	return
+}
+
+func (cp *DebootstrapConveyorPacker) insertRunScript(b *Bundle) (err error) {
+	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
+	if err != nil {
+		return
+	}
+
+	defer f.Close()
+
+	_, err = f.WriteString("#!/bin/sh\n")
+	if err != nil {
+		return
+	}
+
+	if err != nil {
+		return
+	}
+
+	f.Sync()
+
+	err = os.Chmod(b.Rootfs()+"/.singularity.d/runscript", 0755)
+	if err != nil {
+		return
+	}
+
+	return nil
 }
