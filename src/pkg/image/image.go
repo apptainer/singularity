@@ -113,7 +113,10 @@ func Init(path string, writable bool) (*Image, error) {
 		flags = os.O_RDWR
 	}
 
-	abspath, _ := filepath.Abs(path)
+	abspath, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path: %s", err)
+	}
 	resolvedPath, err := filepath.EvalSymlinks(abspath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieved path for %s: %s", path, err)

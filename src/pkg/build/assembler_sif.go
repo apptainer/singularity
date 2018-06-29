@@ -92,10 +92,10 @@ func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
 	mksquashfsCmd.Stdout = os.Stdout
 	mksquashfsCmd.Stderr = os.Stderr
 	err = mksquashfsCmd.Run()
+	defer os.Remove(squashfsPath)
 	if err != nil {
 		return
 	}
-	defer os.Remove(squashfsPath)
 
 	err = createSIFSinglePart(path, squashfsPath)
 	if err != nil {
