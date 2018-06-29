@@ -9,7 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // Definition describes how to build an image.
@@ -108,4 +111,21 @@ var validHeaders = map[string]bool{
 	"mirrorurl":  true,
 	"osversion":  true,
 	"include":    true,
+}
+
+// IsValidDefinition returns whether or not the given file is a valid definition
+func IsValidDefinition(source string) (valid bool, err error) {
+
+	defFile, err := os.Open(source)
+	if err != nil {
+		sylog.Fatalf("unable to open file %s: %v\n", source, err)
+	}
+	defer defFile.Close()
+
+	ok, err := canGetHeader(defFile)
+	if err != nil {
+		//sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
+	}
+
+	return ok, nil
 }
