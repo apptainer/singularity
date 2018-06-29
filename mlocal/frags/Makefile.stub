@@ -37,7 +37,8 @@ go_TAG += containers_image_openpgp singularity_sif
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
-resolved_builddir = $(abspath $(BUILDDIR))
+cni_builddir := $(abspath $(BUILDDIR))/cni
+cni_builddir_plugins := $(cni_builddir)/plugins
 vendor := $(SOURCEDIR)/vendor
 
 cni_plugins_REPO := github.com/containernetworking/plugins
@@ -45,7 +46,7 @@ cni_plugins_VENDOR := $(vendor)/$(cni_plugins_REPO)
 cni_plugins_DIR := $(abspath $(sort $(dir $(wildcard $(cni_plugins_VENDOR)/plugins/*/*/*))))
 cni_plugins_LIST := $(notdir $(cni_plugins_DIR))
 cni_plugins_INSTALL := $(foreach plugin,$(cni_plugins_LIST),$(PREFIX)/libexec/singularity/cni/$(plugin))
-cni_plugins_EXECUTABLES := $(foreach plugin,$(cni_plugins_LIST),$(resolved_builddir)/$(plugin))
+cni_plugins_EXECUTABLES := $(foreach plugin,$(cni_plugins_LIST),$(cni_builddir_plugins)/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 
@@ -55,16 +56,16 @@ CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(
 
 all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $(cni_plugins_EXECUTABLES)
 
-$(cni_plugins_EXECUTABLES):
+$(cni_plugins_EXECUTABLES): $(cni_plugins_DIR)
 	@echo " CNI PLUGIN" $(@F)
-	@install -d cnigopath
-	@ln -sfn $(vendor) cnigopath/src
-	$(V)GOPATH="$(resolved_builddir)/cnigopath" go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $(@F)))
+	@install -d $(cni_builddir)/cnigopath
+	@ln -sfn $(vendor) $(cni_builddir)/cnigopath/src
+	$(V)GOPATH="$(cni_builddir)/cnigopath" go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $(@F)))
 
 $(cni_plugins_INSTALL): $(cni_plugins_EXECUTABLES)
 	@echo " INSTALL CNI PLUGIN" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(@F) $@
+	$(V)install -m 0755 $(cni_builddir_plugins)/$(@F) $@
 
 $(cni_config_INSTALL): $(cni_config_LIST)
 	@echo " INSTALL CNI CONFIGURATION FILES"
