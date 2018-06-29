@@ -11,14 +11,12 @@ import (
 )
 
 const (
-	assemblerDockerURI  = "docker://alpine"
-	assemblerDockerDest = "/tmp/docker_alpine_assemble_test.sif"
-	assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
-	assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
+	assemblerDockerDestDir = "/tmp/docker_alpine_assemble_test"
+	assemblerShubDestDir   = "/tmp/shub_alpine_assemble_test"
 )
 
 // TestAssembler sees if we can build a SIF image from a docke based kitchen to /tmp
-func TestSIFAssemblerDocker(t *testing.T) {
+func TestSandboxAssemblerDocker(t *testing.T) {
 	def, err := NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
@@ -35,16 +33,16 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	a := &SIFAssembler{}
+	a := &SandboxAssembler{}
 
-	err = a.Assemble(b, assemblerDockerDest)
+	err = a.Assemble(b, assemblerDockerDestDir)
 	if err != nil {
 		t.Fatalf("failed to assemble from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	defer os.Remove(assemblerDockerDest)
+	defer os.RemoveAll(assemblerDockerDestDir)
 }
-func TestSIFAssemblerShub(t *testing.T) {
+func TestSandboxAssemblerShub(t *testing.T) {
 	def, err := NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerShubURI, err)
@@ -63,10 +61,10 @@ func TestSIFAssemblerShub(t *testing.T) {
 
 	a := &SIFAssembler{}
 
-	err = a.Assemble(b, assemblerShubDest)
+	err = a.Assemble(b, assemblerShubDestDir)
 	if err != nil {
 		t.Fatalf("failed to assemble from %s: %v\n", assemblerShubURI, err)
 	}
 
-	defer os.Remove(assemblerShubDest)
+	defer os.RemoveAll(assemblerShubDestDir)
 }

@@ -32,8 +32,12 @@ func TestOCIConveyorDocker(t *testing.T) {
 	oc := &OCIConveyor{}
 
 	if err := oc.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(oc.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
 	}
+	//clean up tmpfs since assembler isnt called
+	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyorDockerArchive tests if we can use a docker save archive
@@ -54,8 +58,12 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	oc := &OCIConveyor{}
 
 	if err := oc.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(oc.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
 	}
+	//clean up tmpfs since assembler isnt called
+	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyerDockerDaemon tests if we can use an oci laytout dir
@@ -84,8 +92,12 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 	oc := &OCIConveyor{}
 
 	if err := oc.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(oc.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", daemonURI, err)
 	}
+	//clean up tmpfs since assembler isnt called
+	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyorOCIArchive tests if we can use an oci archive
@@ -106,8 +118,12 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	oc := &OCIConveyor{}
 
 	if err := oc.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(oc.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
 	}
+	//clean up tmpfs since assembler isnt called
+	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyerOCILayout tests if we can use an oci layout dir
@@ -141,8 +157,12 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	oc := &OCIConveyor{}
 
 	if err := oc.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(oc.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", layoutURI, err)
 	}
+	//clean up tmpfs since assembler isnt called
+	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIPacker checks if we can create a Kitchen
@@ -155,8 +175,12 @@ func TestOCIPacker(t *testing.T) {
 	ocp := &OCIConveyorPacker{}
 
 	if err := ocp.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(ocp.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
 	}
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(ocp.tmpfs)
 
 	_, err = ocp.Pack()
 
