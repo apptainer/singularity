@@ -57,7 +57,10 @@ CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(
 
 all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $(cni_plugins_EXECUTABLES)
 
-$(cni_plugins_EXECUTABLES):
+.PHONY: test
+test: ;
+
+$(cni_plugins_EXECUTABLES): test
 	@echo " CNI PLUGIN" $(@F)
 	@install -d $(cni_builddir)/cnigopath
 	@ln -sfn $(vendor) $(cni_builddir)/cnigopath/src
