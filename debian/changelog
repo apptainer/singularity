@@ -1,4 +1,4 @@
-singularity-container (2.5.2-rc1) unstable; urgency=high
+singularity-container (2.5.2-rc2) unstable; urgency=high
 
   * fix an error in malloc allocation #1620
   * fixed the way that * expands during runscript #1486
