@@ -27,7 +27,7 @@
 
 [[constraint]]
   name = "github.com/sylabs/sif"
-  revision = "436226bd7aac60ec11612514b100c408598cba61"
+  revision = "b9d67677ad65d5287f646d9e6721b09b1a172852"
 
 [[constraint]]
   branch = "master"

@@ -389,7 +389,7 @@
 [[projects]]
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
-  revision = "436226bd7aac60ec11612514b100c408598cba61"
+  revision = "b9d67677ad65d5287f646d9e6721b09b1a172852"
 
 [[projects]]
   branch = "master"
@@ -472,6 +472,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2e9f36c6fa112a2c54be6bd7c3bf786e07ea803df4198ca0323dbcf7f62c61a6"
+  inputs-digest = "b57f9818ad24fa0b74244debde1c1c91b770f7c2c839b8ed50b193c2ce957876"
   solver-name = "gps-cdcl"
   solver-version = 1
