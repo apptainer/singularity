@@ -8,8 +8,10 @@ package build
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"runtime"
+	"strings"
 )
 
 //"github.com/singularityware/singularity/src/pkg/image"
@@ -30,17 +32,6 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 
 	c.recipe = recipe
 
-	//get mirrorURL and OSVerison components to definition
-	OSVersion, ok := recipe.Header["MirrorURL"]
-	if ok != false {
-		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
-	}
-
-	MirrorURL, ok := recipe.Header["OSVersion"]
-	if ok != false {
-		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
-	}
-
 	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
 	if err != nil {
@@ -52,13 +43,36 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 		return
 	}
 
-	//Dont know what this does...
-	//REQUIRES=`echo "${INCLUDE:-}" | sed -e 's/\s/,/g'`
-	requires := ""
+	//get mirrorURL, OSVerison, and Includes components to definition
+	MirrorURL, ok := recipe.Header["MirrorURL"]
+	if !ok {
+		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
+	}
+
+	OSVersion, ok := recipe.Header["OSVersion"]
+	if !ok {
+		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
+	}
+
+	Requires, _ := recipe.Header["Include"]
+
+	//check for include environment variable and add it to requires string
+	Requires += ` ` + os.Getenv("INCLUDE")
+
+	//trim leading and trailing whitespace
+	Requires = strings.TrimSpace(Requires)
+
+	//convert Requires string to comma separated list
+	Requires = strings.Replace(Requires, ` `, `,`, -1)
+
+	if os.Getuid() != 0 {
+		return fmt.Errorf("You must be root to build with debootstrap")
+	}
 
 	//run debootstrap command
-	//$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRRORURL'
-	cmd := exec.Command(debootstrapPath, `--variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+requires, `--arch=`+runtime.GOARCH, OSVersion, c.tmpfs, MirrorURL)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+Requires, `--arch=`+runtime.GOARCH, OSVersion, c.tmpfs, MirrorURL)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
@@ -73,6 +87,15 @@ func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
 	b, err = NewBundle()
 	if err != nil {
 		return
+	}
+
+	//remove old rootfs
+	os.RemoveAll(b.Rootfs())
+
+	//move downloaded files from tmpdir to bundle
+	err = os.Rename(cp.tmpfs, b.Rootfs())
+	if err != nil {
+		return nil, fmt.Errorf("Failed to move rootfs into bundles rootfs: %v", err)
 	}
 
 	return b, nil
