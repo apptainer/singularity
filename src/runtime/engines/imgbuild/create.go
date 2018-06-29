@@ -20,7 +20,7 @@ import (
 )
 
 // CreateContainer creates a container
-func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
+func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
 	if engine.CommonConfig.EngineName != Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
@@ -45,6 +45,18 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 	}
 
 	// Run %pre script here
+	pre := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Pre)
+	pre.Stdout = os.Stdout
+	pre.Stderr = os.Stderr
+
+	sylog.Infof("Running %%pre script\n")
+	if err := pre.Start(); err != nil {
+		sylog.Fatalf("failed to start %%pre proc: %v\n", err)
+	}
+	if err := pre.Wait(); err != nil {
+		sylog.Fatalf("pre proc: %v\n", err)
+	}
+	sylog.Infof("Finished running %%pre script. exit status 0\n")
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
 	_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, "errors=remount-ro")
@@ -103,7 +115,7 @@ func (engine *EngineOperations) CreateContainer(rpcConn net.Conn) error {
 
 	sylog.Infof("Running %%setup script\n")
 	if err := setup.Start(); err != nil {
-		sylog.Fatalf("failed to start setup proc: %v\n", err)
+		sylog.Fatalf("failed to start %%setup proc: %v\n", err)
 	}
 	if err := setup.Wait(); err != nil {
 		sylog.Fatalf("setup proc: %v\n", err)
