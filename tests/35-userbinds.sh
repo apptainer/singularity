@@ -33,9 +33,9 @@ CONTAINER="$SINGULARITY_TESTDIR/container.img"
 stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 
 stest 0 touch /tmp/hello_world_test
-stest 0 singularity exec -B /tmp:/opt "$CONTAINER" test -f /opt/hello_world_test
+stest 0 singularity exec -B /tmp:/var/tmp "$CONTAINER" test -f /var/tmp/hello_world_test
 
-if [ -n "$SINGULARITY_OVERLAY_FS" ]; then
+if [ "x${SINGULARITY_OVERLAY_FS}" = "x1" ]; then
     stest 0 singularity exec -B /tmp:/nonexistent "$CONTAINER" test -f /nonexistent/hello_world_test
 fi
 

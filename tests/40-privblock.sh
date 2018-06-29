@@ -34,9 +34,12 @@ stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 # Checking no new privs with capabilities
-stest 0 sudo singularity exec "$CONTAINER" chsh -s /bin/sh
-stest 1 singularity exec "$CONTAINER" chsh -s /bin/sh
+stest 0 sudo singularity exec "$CONTAINER" ping -c 1 127.0.0.1
+stest 1 singularity exec "$CONTAINER" ping -c 1 127.0.0.1
 
+# Checking no new privs with setuid root
+stest 0 sudo singularity exec "$CONTAINER" /usr/sbin/pam_timestamp_check -k root
+stest 1 singularity exec "$CONTAINER" /usr/sbin/pam_timestamp_check -k root
 
 test_cleanup
 
