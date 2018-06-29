@@ -7,6 +7,7 @@ package build
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os/exec"
 	"runtime"
 )
@@ -16,6 +17,7 @@ import (
 // DebootstrapConveyor holds stuff that needs to be packed into the bundle
 type DebootstrapConveyor struct {
 	recipe Definition
+	tmpfs  string
 }
 
 // DebootstrapConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -45,13 +47,18 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it?%v", debootstrapPath)
 	}
 
+	c.tmpfs, err = ioutil.TempDir("", "temp-debootstrap-")
+	if err != nil {
+		return
+	}
+
 	//Dont know what this does...
 	//REQUIRES=`echo "${INCLUDE:-}" | sed -e 's/\s/,/g'`
 	requires := ""
 
 	//run debootstrap command
 	//$DEBOOTSTRAP_PATH --variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs --include=apt,$REQUIRES --arch=$ARCH '$OSVERSION' '$SINGULARITY_ROOTFS' '$MIRRORURL'
-	cmd := exec.Command(debootstrapPath, `--variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+requires, `--arch=`+runtime.GOARCH, OSVersion, MirrorURL)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase --exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+requires, `--arch=`+runtime.GOARCH, OSVersion, c.tmpfs, MirrorURL)
 
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
