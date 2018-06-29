@@ -7,6 +7,7 @@ package build
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -24,9 +25,12 @@ func TestShubConveyor(t *testing.T) {
 	sc := &ShubConveyor{}
 
 	if err := sc.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(sc.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
-
+	//clean up tmpfs since assembler isnt called
+	os.RemoveAll(sc.tmpfs)
 }
 
 // TestShubPacker checks if we can create a Bundle from the pulled image
@@ -39,8 +43,13 @@ func TestShubPacker(t *testing.T) {
 	scp := &ShubConveyorPacker{}
 
 	if err := scp.Get(def); err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(scp.tmpfs)
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
+
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(scp.tmpfs)
 
 	_, err = scp.Pack()
 	if err != nil {
