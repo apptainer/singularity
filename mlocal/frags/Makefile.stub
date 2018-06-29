@@ -13,6 +13,7 @@ libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
+singularity_REPO := github.com/singularityware/singularity
 
 wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
@@ -40,12 +41,10 @@ vendor := $(SOURCEDIR)/vendor
 cni_builddir := $(abspath $(BUILDDIR))/cni
 cni_builddir_plugins := $(cni_builddir)/plugins
 
-cni_plugins_REPO := github.com/containernetworking/plugins
+cni_plugins_REPO := github.com/containernetworking/plugins/plugins
 cni_plugins_VENDOR := $(vendor)/$(cni_plugins_REPO)
-cni_plugins_DIR := $(abspath $(sort $(dir $(wildcard $(cni_plugins_VENDOR)/plugins/*/*/*))))
-cni_plugins_LIST := $(notdir $(cni_plugins_DIR))
-cni_plugins_INSTALL := $(foreach plugin,$(cni_plugins_LIST),$(PREFIX)/libexec/singularity/cni/$(plugin))
-cni_plugins_EXECUTABLES := $(foreach plugin,$(cni_plugins_LIST),$(cni_builddir_plugins)/$(plugin))
+cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir_plugins)/*)
+cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(PREFIX)/libexec/singularity/cni/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 
@@ -53,13 +52,18 @@ INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER) $(cni_plugins_EXECUTABLES)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $(cni_plugins_EXECUTABLES)
+all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) cniplugins
 
-$(cni_plugins_EXECUTABLES):
-	@echo " CNI PLUGIN" $(@F)
+.PHONY: cniplugins
+cniplugins: $(BUILDDIR)/vendors-done
 	@install -d $(cni_builddir)/cnigopath
 	@ln -sfn $(vendor) $(cni_builddir)/cnigopath/src
-	$(V)GOPATH="$(cni_builddir)/cnigopath" go build -o $@ $(subst $(vendor)/,,$(shell find $(cni_plugins_VENDOR) -name $(@F)))
+	@for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
+		if [ ! -f $(cni_builddir_plugins)/`basename $$p` ]; then \
+			echo " CNI PLUGIN" `basename $$p`; \
+			GOPATH="$(cni_builddir)/cnigopath" go build -o $(cni_builddir_plugins)/`basename $$p` $${p#$(singularity_REPO)/vendor/}; \
+		fi \
+	done
 
 $(cni_plugins_INSTALL): $(cni_plugins_EXECUTABLES)
 	@echo " INSTALL CNI PLUGIN" $@

@@ -260,7 +260,6 @@ func (m *Setup) DelNetworks() error {
 }
 
 func (m *Setup) command(command string) error {
-	ifIndex := 0
 	backupEnv := os.Environ()
 	os.Clearenv()
 	os.Setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin")
@@ -275,6 +274,7 @@ func (m *Setup) command(command string) error {
 	config := &libcni.CNIConfig{Path: []string{m.cniPath.Plugin}}
 
 	if command == "ADD" {
+		ifIndex := 0
 		for _, config := range m.configs {
 			capabilityArgs := make(map[string]interface{}, 0)
 			portMappings := make([]map[string]interface{}, 0)
@@ -305,6 +305,7 @@ func (m *Setup) command(command string) error {
 				Args:           config.args,
 			}
 			m.runtimeConf = append(m.runtimeConf, rt)
+			ifIndex++
 		}
 		m.result = make([]types.Result, len(m.networkConfList))
 		for i := 0; i < len(m.networkConfList); i++ {
