@@ -55,12 +55,12 @@ INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wr
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER) $(cni_plugins_EXECUTABLES)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) $(cni_plugins_EXECUTABLES)
+all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) cniplugins
 
-.PHONY: testcni
-testcni: ;
+.PHONY: cniplugins
+cniplugins: $(cni_plugins_EXECUTABLES)
 
-$(cni_plugins_EXECUTABLES): testcni
+$(cni_plugins_EXECUTABLES):
 	@echo " CNI PLUGIN" $(@F)
 	@install -d $(cni_builddir)/cnigopath
 	@ln -sfn $(vendor) $(cni_builddir)/cnigopath/src
