@@ -1,7 +1,6 @@
-singularity-container (2.5.2-rc1) unstable; urgency=high
+singularity-container (2.5.2-rc2) unstable; urgency=high
 
   * fix an error in malloc allocation #1620
-  * fixed the way that * expands during runscript #1486
   * honor debug flag when pulling from docker hub #1556
   * fix a bug with passwd abort #1580
   * allow user to override singularity.conf "mount home = no" with --home option
@@ -49,7 +48,7 @@ singularity-container (2.5.0) unstable; urgency=high
   * Close socket file descriptors in fd_cleanup
   * Fix conflict between `--nv` and `--contain` options
   * Throw errors at build and runtime if NO_NEW_PRIVS is not present and working
-  * Reset umask to 0022 at start to corrrect several errors
+   Reset umask to 0022 at start to corrrect several errors
   * Verify docker layers after download with sha256 checksum
   * Do not make excessive requests for auth tokens to docker registries
   * Fixed stripping whitespaces and empty new lines for the app commands (fix by 

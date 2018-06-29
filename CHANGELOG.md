@@ -12,11 +12,10 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.5.2-rc1](https://github.com/singularityware/singularity/releases/tag/2.5.2-rc1)
+## [v2.5.2-rc2](https://github.com/singularityware/singularity/releases/tag/2.5.2-rc1)
 
 ### Bug fixes
  - fix an error in malloc allocation #1620
- - fixed the way that * expands during runscript #1486
  - honor debug flag when pulling from docker hub #1556
  - fix a bug with passwd abort #1580
  - allow user to override singularity.conf "mount home = no" with --home option

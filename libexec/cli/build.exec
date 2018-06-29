@@ -382,6 +382,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
         else
             OPTS=""
         fi
+
         if ! mksquashfs "$SINGULARITY_ROOTFS/" "$SINGULARITY_CONTAINER_OUTPUT" -noappend $OPTS > /dev/null; then
             message ERROR "Failed squashing image, left template directory at: $SINGULARITY_ROOTFS\n"
             exit 1
@@ -393,7 +394,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
 	exit 1
     fi
 
-    chmod a+x "$SINGULARITY_CONTAINER_OUTPUT"
+    chmod a+rx "$SINGULARITY_CONTAINER_OUTPUT"
 fi
 
 message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"

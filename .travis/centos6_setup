@@ -1,0 +1,8 @@
+#!/bin/bash -ex
+mkdir /run
+mkdir /tmp/yum-download
+yum -y --downloadonly --downloaddir /tmp/yum-download install util-linux-ng
+cd /tmp/yum-download
+rpm2cpio util-linux-ng*.rpm | cpio -idmv
+mv bin/mount /bin/mount
+
