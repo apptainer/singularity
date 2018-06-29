@@ -105,7 +105,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		imageObject.Size = uint64(part.Filelen)
 		info.Offset = imageObject.Offset
 		info.SizeLimit = imageObject.Size
-		fmt.Println(imageObject)
 	case image.SQUASHFS:
 		mountType = "squashfs"
 		info.Offset = imageObject.Offset
