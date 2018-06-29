@@ -5,17 +5,10 @@
 
 package build
 
-/*
-#include <unistd.h>
-#include "image/image.h"
-#include "util/config_parser.h"
-*/
-// #cgo CFLAGS: -I../../runtime/c/lib
-// #cgo LDFLAGS: -L../../../builddir/lib -lruntime -luuid
-import "C"
 import (
 	"io/ioutil"
 
+	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 )
@@ -55,49 +48,51 @@ func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 	var p Packer
 	rootfs := cp.src
 
-	//leverage C code to properly get image information
-	C.singularity_config_init()
-
-	imageObject := C.singularity_image_init(C.CString(rootfs), 0)
+	imageObject, err := image.Init(rootfs, false)
+	if err != nil {
+		return nil, err
+	}
 
 	info := new(loop.Info64)
 
-	switch C.singularity_image_type(&imageObject) {
-	case 1:
-		//squashfs
+	switch imageObject.Type {
+	case image.SIF:
+		sylog.Fatalf("Building from SIF not yet supported")
+
+		// Not yet implemented
+		// imageObject.Offset = uint64(part.Fileoff)
+		// imageObject.Size = uint64(part.Filelen)
+		// info.Offset = imageObject.Offset
+		// info.SizeLimit = imageObject.Size
+	case image.SQUASHFS:
 		sylog.Debugf("Packing from Squashfs")
 
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
+		info.Offset = imageObject.Offset
+		info.SizeLimit = imageObject.Size
 
 		p = &SquashfsPacker{
 			srcfile: rootfs,
 			tmpfs:   cp.tmpfs,
 			info:    info,
 		}
-	case 2:
-		//ext3
+	case image.EXT3:
 		sylog.Debugf("Packing from Ext3")
 
-		info.Offset = uint64(C.uint(imageObject.offset))
-		info.SizeLimit = uint64(C.uint(imageObject.size))
+		info.Offset = imageObject.Offset
+		info.SizeLimit = imageObject.Size
 
 		p = &Ext3Packer{
 			srcfile: rootfs,
 			tmpfs:   cp.tmpfs,
 			info:    info,
 		}
-	case 3:
-		//sandbox
+	case image.SANDBOX:
 		sylog.Debugf("Packing from Sandbox")
 
 		p = &SandboxPacker{
 			srcdir: rootfs,
 			tmpfs:  cp.tmpfs,
 		}
-	case 4:
-		//SIF
-		sylog.Fatalf("Building from SIF not yet supported")
 	default:
 		sylog.Fatalf("Invalid image format from shub")
 	}
