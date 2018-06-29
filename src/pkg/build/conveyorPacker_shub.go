@@ -72,8 +72,10 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 
 	c.recipe = recipe
 
+	src := `//` + recipe.Header["from"]
+
 	//use custom parser to make sure we have a valid shub URI
-	c.srcURI, err = shubParseReference(recipe.Header["from"])
+	c.srcURI, err = shubParseReference(src)
 	if err != nil {
 		sylog.Fatalf("Invalid shub URI: %v", err)
 		return
@@ -219,7 +221,7 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 	digestRegexp := `(\@[a-f0-9]{32})?`          //target md5 sum hash
 
 	//expression is anchored
-	shubRegex, err := regexp.Compile(`^` + registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp + `$`)
+	shubRegex, err := regexp.Compile(`^\/\/` + registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp + `$`)
 	if err != nil {
 		return uri, err
 	}
@@ -229,8 +231,11 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 	//sanity check
 	//if found string is not equal to the input, input isn't a valid URI
 	if strings.Compare(src, found) != 0 {
-		return uri, fmt.Errorf("Source string is not a valid URI")
+		return uri, fmt.Errorf("Source string is not a valid URI: %s", src)
 	}
+
+	//strip `//` from start of src
+	src = src[2:]
 
 	pieces := strings.SplitAfterN(src, `/`, -1)
 	if l := len(pieces); l > 2 {
