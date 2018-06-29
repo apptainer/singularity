@@ -1,25 +1,35 @@
 #!/bin/bash -ex
 
-# This script starts docker and (on el7) systemd and runs a test
-
-if [ "$OS_VERSION" = "6" ]; then
-    sudo docker run --privileged --rm=true -v `pwd`:/build:rw centos:${OS_VERSION} /bin/bash -exc "cd /build;.travis/rpmbuild_test $OS_VERSION"
-    exit
-fi
+# This script starts docker and systemd and runs a test
 
 # Mount /var/run/docker.sock and set --network=host so we can call docker from inside
 # cause some tests need it. Cannot mount to /var/run/docker.sock inside cause CentOS
 # /usr/sbin/init mounts another overlayfs on top of it
-docker run --privileged -d -ti -e "container=docker" -v /var/run/docker.sock:/docker.sock --network=host \
-       -v /sys/fs/cgroup:/sys/fs/cgroup -v `pwd`:/build:rw  centos:${OS_VERSION}   /usr/sbin/init
-DOCKER_CONTAINER_ID=$(docker ps | grep centos | awk '{print $1}')
-docker logs $DOCKER_CONTAINER_ID
-docker exec -ti $DOCKER_CONTAINER_ID /bin/bash -exc "
+
+DOCKER_CONTAINER_NAME="test_centos_${OS_VERSION}"
+
+if [ "$OS_VERSION" = "6" ]; then
+    docker run --privileged -ti -e "container=docker" -v /var/run/docker.sock:/docker.sock \
+      --network=host -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
+      "centos:${OS_VERSION}" /bin/bash -exc "
+    export DOCKER_HOST=unix:///docker.sock
+    chmod o+rw /docker.sock &&
+    cd /build &&
+    .travis/centos6_setup &&
+    .travis/rpmbuild_test $OS_VERSION
+"
+else
+    docker run --privileged -d -ti -e "container=docker" -v /var/run/docker.sock:/docker.sock \
+      --network=host -v /sys/fs/cgroup:/sys/fs/cgroup -v "$(pwd):/build:rw"  --name $DOCKER_CONTAINER_NAME \
+      centos:${OS_VERSION} /usr/sbin/init
+    docker exec -ti "$DOCKER_CONTAINER_NAME" /bin/bash -exc "
     export DOCKER_HOST=unix:///docker.sock
     chmod o+rw /docker.sock &&
     cd /build &&
     .travis/rpmbuild_test $OS_VERSION
 "
+fi
+
 docker ps -a
-docker stop $DOCKER_CONTAINER_ID
-docker rm -v $DOCKER_CONTAINER_ID
+docker stop $DOCKER_CONTAINER_NAME
+docker rm -v $DOCKER_CONTAINER_NAME

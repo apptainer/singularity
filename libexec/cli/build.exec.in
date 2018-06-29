@@ -395,7 +395,7 @@ if [ -z "${SINGULARITY_SANDBOX:-}" ]; then
 	exit 1
     fi
 
-    chmod a+x "$SINGULARITY_CONTAINER_OUTPUT"
+    chmod a+rx "$SINGULARITY_CONTAINER_OUTPUT"
 fi
 
 message 1 "Singularity container built: $SINGULARITY_CONTAINER_OUTPUT\n"
