@@ -2,8 +2,4 @@ name := libutil
 lib := util
 csrc :=	src/runtime/c/lib/util/capability.c
 	src/runtime/c/lib/util/message.c
-	src/runtime/c/lib/util/registry.c
-	src/runtime/c/lib/util/file.c
-	src/runtime/c/lib/util/config_parser.c
 	src/runtime/c/lib/util/setns.c
-	src/runtime/c/lib/util/util.c

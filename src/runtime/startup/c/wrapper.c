@@ -49,7 +49,6 @@
 
 #include "c/lib/util/capability.h"
 #include "c/lib/util/message.h"
-#include "c/lib/util/util.h"
 
 #include "startup/c/wrapper.h"
 
