@@ -15,6 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
@@ -101,7 +102,12 @@ var BuildCmd = &cobra.Command{
 		} else {
 			//local build
 			bundle := makeBundle(def)
-			doSections(bundle, args[0])
+
+			if syscall.Getuid() == 0 {
+				doSections(bundle, args[0])
+			} else if hasSections(def) {
+				sylog.Warningf("Skipping definition scripts, not running as root [uid=%v]\n", syscall.Getuid())
+			}
 
 			if sandbox {
 				a = &build.SandboxAssembler{}
@@ -143,6 +149,12 @@ func checkBuildTargetCollision(path string, force bool) bool {
 	return true
 }
 
+// hasSections returns true if build definition is requesting to run scripts in image
+func hasSections(def build.Definition) bool {
+	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
+}
+
+// doSections invokes the imgbuild engine through wrapper
 func doSections(b *build.Bundle, fullPath string) {
 	lvl := "0"
 	if verbose {

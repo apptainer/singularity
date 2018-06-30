@@ -6,6 +6,10 @@
 package imgbuild
 
 import (
+	"os"
+	"syscall"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 )
 
@@ -29,6 +33,12 @@ func (e *EngineOperations) Config() config.EngineConfig {
 // CheckConfig validates EngineConfig setup
 func (e *EngineOperations) CheckConfig() error {
 	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
+
+	if syscall.Getuid() != 0 {
+		sylog.Fatalf("Unable to run imgbuild engine as non-root user\n")
+		os.Exit(1)
+	}
+
 	return nil
 }
 
