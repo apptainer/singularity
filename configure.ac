@@ -27,7 +27,7 @@ AC_SUBST(SINGULARITY_ARCH)
 # https://www.mail-archive.com/debian-bugs-dist@lists.debian.org/msg1232579.html
 #AM_INIT_AUTOMAKE([foreign subdir-objects])
 
-AM_INIT_AUTOMAKE([foreign subdir-objects]) ## SEE ABOVE BEFORE CHANGING
+AM_INIT_AUTOMAKE([foreign subdir-objects tar-pax]) ## SEE ABOVE BEFORE CHANGING
 AC_CONFIG_SRCDIR([src])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_MACRO_DIR([m4])
