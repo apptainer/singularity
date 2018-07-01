@@ -2,25 +2,33 @@
 
 # this script runs as root under docker
 
+deps_file=".travis/deps/${OS_TYPE}_deps"
+
+if [[ -e "${deps_file}" ]]; then
+    source "${deps_file}"
+else
+    echo "${OS_TYPE} not supported yet, please create ${deps_file}!"
+    exit 1
+fi
+
 # build and install
-yum install -y libtool rpm-build make yum-utils squashfs-tools libarchive-devel
+install_autogen_deps
 ./autogen.sh
+
+install_configure_deps
 ./configure
 make dist
 rpmbuild -ta *.tar.gz
-rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+
+install_rpms
 
 if [ "$OS_VERSION" = 6 ]; then
     echo "the python tests have not yet been ported to centos6 python, and will be skipped."
-else
-    # Install python 3 and pylint
-    yum install -y epel-release
-    yum install -y python34 python34-pip python34-setuptools docker
-    yum install -y pylint
 fi
 
+install_test_deps
+
 # run the test suite
-yum install -y libtool sudo which e2fsprogs
 sed -i 's,^prefix=.*,prefix=/usr,' test.sh
 sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
 sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh

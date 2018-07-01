@@ -1,0 +1,7 @@
+#!/bin/bash -ex
+
+# this file contains amendments for centos 7
+
+test_deps+=(epel-release
+            python34 python34-pip python34-setuptools docker
+            pylint)

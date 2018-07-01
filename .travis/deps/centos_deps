@@ -1,0 +1,30 @@
+#!/bin/bash -ex
+
+# this file contains commands that are shared between CENTOS versions
+
+rpms_dir='/root/rpmbuild/RPMS'
+
+auto_deps=(libtool rpm-build make yum-utils)
+test_deps=(sudo which e2fsprogs)
+
+install_autogen_deps () {
+    yum install -y ${auto_deps[*]}
+}
+
+install_configure_deps () {
+    yum-builddep -y singularity.spec
+}
+
+install_rpms () {
+    yum install -y "$rpms_dir"/*/*.rpm
+}
+
+install_test_deps () {
+    yum install -y ${test_deps[*]}
+}
+
+# source amendments for specific centos release
+amends_file=".travis/deps/centos_${OS_VERSION}_deps"
+if [[ -e "$amends_file" ]]; then
+    source "$amends_file"
+fi
