@@ -181,3 +181,17 @@ http://dx.doi.org/10.5281/zenodo.60736
 
 # Webpage
 We have full documentation at [http://singularity.lbl.gov/](http://singularity.lbl.gov/), and [welcome contributions](http://www.github.com/singularityware/singularityware.github.io).
+
+# Licensing
+Singularity is licensed under the BSD 3-Clause by SyLabs, SingularityWare,
+LLC, Gregory M. Kurtzer, and The Regents of the University of California
+(subject to receipt of any required approvals from the U.S. Dept. of Energy).
+Please see the LICENSE file for more information.
+
+NOTICE.  This Software was developed under funding from the U.S.  Department
+of Energy and the U.S. Government consequently retains certain rights. As
+such, the U.S. Government has been granted for itself and others acting on
+its behalf a paid-up, nonexclusive, irrevocable, worldwide license in the
+Software to reproduce, distribute copies to the public, prepare derivative
+works, and perform publicly and display publicly, and to permit other to do
+so.
