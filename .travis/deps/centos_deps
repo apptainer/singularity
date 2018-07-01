@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 
-# this file contains commands that are shared between CENTOS versions
+# this file contains commands that are shared between centos versions
 
 rpms_dir='/root/rpmbuild/RPMS'
 
