@@ -6,7 +6,11 @@
 # cause some tests need it. Cannot mount to /var/run/docker.sock inside cause CentOS
 # /usr/sbin/init mounts another overlayfs on top of it
 
-DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+if [[ "$OS_TYPE" = "opensuse" ]]; then
+    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
+else
+    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+fi
 DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
 
 if [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "6" ]]; then
