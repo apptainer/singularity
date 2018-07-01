@@ -6,17 +6,9 @@
 package build
 
 import (
-	"fmt"
 	"os"
-	"runtime"
 	"testing"
 )
-
-func TestARCH(t *testing.T) {
-	fmt.Println(runtime.GOARCH)
-
-	t.Fatal("")
-}
 
 func TestDebootstrapConveyor(t *testing.T) {
 
@@ -40,8 +32,6 @@ func TestDebootstrapConveyor(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
-
-	t.Fatal("")
 }
 
 func TestDebootstrapPacker(t *testing.T) {
@@ -71,6 +61,4 @@ func TestDebootstrapPacker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Debootstrap Pack failed: %v", err)
 	}
-
-	t.Fatal("")
 }

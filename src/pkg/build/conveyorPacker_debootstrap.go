@@ -76,6 +76,8 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
+	fmt.Println(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+include, `--arch=`+runtime.GOARCH, osversion, c.tmpfs, mirrorurl)
+
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("Debootstrap failed with error: %v", err)
@@ -98,6 +100,11 @@ func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
 	err = os.Rename(cp.tmpfs, b.Rootfs())
 	if err != nil {
 		return nil, fmt.Errorf("Failed to move rootfs into bundles rootfs: %v", err)
+	}
+
+	//change root directory permissions to 0755
+	if err := os.Chmod(b.Rootfs(), 0755); err != nil {
+		return nil, fmt.Errorf("Failed to change file permissions of rootfs: %v", err)
 	}
 
 	err = cp.insertBaseEnv(b)
