@@ -2,8 +2,6 @@
 
 # this script runs as root under docker
 
-OS_VERSION="$1"
-
 # build and install
 yum install -y libtool rpm-build make yum-utils squashfs-tools libarchive-devel
 ./autogen.sh
