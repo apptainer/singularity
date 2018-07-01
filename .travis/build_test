@@ -5,5 +5,6 @@ export OS_VERSION="$2"
 
 case $OS_TYPE in
     centos) .travis/rpmbuild_test ;;
+    debian) .travis/debuild_test ;;
     *) echo "$OS_TYPE" not supported; exit 1 ;;
 esac
