@@ -15,6 +15,10 @@ fi
 install_autogen_deps
 ./autogen.sh
 
+# the final spec file is only created after configure, but we need it before to
+# parse it for build dependencies.
+sed 's/@PACKAGE_VERSION@/0/' < singularity.spec.in > singularity_tmp.spec
+
 install_configure_deps
 ./configure
 make dist

@@ -12,7 +12,7 @@ install_autogen_deps () {
 }
 
 install_configure_deps () {
-    yum-builddep -y singularity.spec
+    yum-builddep -y singularity_tmp.spec
 }
 
 install_rpms () {
