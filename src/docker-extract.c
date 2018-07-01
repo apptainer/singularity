@@ -46,7 +46,7 @@ long get_tar_archive_size(char *tarfile) {
 	    singularity_message(ERROR,"archive_read_next_header() fails!\n");
 	    return(-1);
 	}
-	total_size+=archive_entry_stat(entry)->st_size;
+	
     }
 		
     return total_size;	
@@ -55,7 +55,6 @@ long get_tar_archive_size(char *tarfile) {
 long get_available_space_fs(char *path) {
     struct statvfs stat;
 
-    // we are ignoring asking whether path is a moint point or not
     if (statvfs(path, &stat) != 0)
 	return -1;
     return stat.f_bsize * stat.f_bavail;
@@ -190,11 +189,13 @@ int apply_whiteout(const char *wh_marker, char *rootfs_dir) {
 /* apply_whiteouts
  *  Process tarfile and apply any aufs opaque/whiteouts on rootfs_dir
  */
-int apply_whiteouts(char *tarfile, char *rootfs_dir) {
+int apply_whiteouts_and_get_tar_size(char *tarfile, char *rootfs_dir, long *tarsize) {
     int retval = 0;
     int errcode = 0;
     struct archive *a;
     struct archive_entry *entry;
+
+    *tarsize = 0;
 
     a = archive_read_new();
 #if ARCHIVE_VERSION_NUMBER <= 3000000
@@ -216,6 +217,9 @@ int apply_whiteouts(char *tarfile, char *rootfs_dir) {
             singularity_message(ERROR, "Archive contains absolute paths %s - aborting.\n", pathname);
             ABORT(255);
         }
+
+	// add to the size of the exploded tar
+	*tarsize += archive_entry_stat(entry)->st_size;
 
         if (strstr(pathname, "/.wh..wh..opq")) {
             singularity_message(DEBUG, "Opaque Marker %s\n", pathname);
@@ -414,6 +418,7 @@ int main(int argc, char **argv) {
     char *rootfs_dir = singularity_registry_get("ROOTFS");
     char *rootfs_realpath;
     char *tarfile = NULL;
+    long *exploded_tar_size;
 
     // Set UTF8 locale so that libarchive doesn't produce warnings for UTF8
     // names - en_US.UTF-8 is most likely to be available
@@ -460,29 +465,24 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
-    long tar_file_size = get_tar_archive_size(tarfile);
-    if (tar_file_size == -1) {
-	singularity_message(ERROR, "Unable to estimate expanded size of archive %s\n", tarfile);
-	ABORT(255);
-    }
-
-    long available_space_tmp = get_available_space_fs("/tmp");
-    if (available_space_tmp == -1) {
-	singularity_message(ERROR, "Unable to obtain free space on /tmp\n");
-	ABORT(255);
-    }
-
-    if (tar_file_size > available_space_tmp) {
-	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
-	ABORT(255);
-    }
-
     singularity_message(DEBUG, "Applying whiteouts for tar file %s\n", tarfile);
-    retval = apply_whiteouts(tarfile, rootfs_realpath);
+    retval = apply_whiteouts_and_get_tar_size(tarfile, rootfs_realpath, &exploded_tar_size);
 
     if (retval != 0) {
         singularity_message(ERROR, "Error applying layer whiteouts\n");
         ABORT(255);
+    }
+
+    if (!exploded_tar_size)
+	singularity_message(WARNING, "Unable to estimate expanded size of archive %s\n", tarfile);
+
+    long available_space_tmp = get_available_space_fs("/tmp");
+    if (available_space_tmp == -1)
+	singularity_message(WARNING, "Unable to obtain free space on /tmp\n");
+
+    if (exploded_tar_size && (tar_file_size > available_space_tmp)) {
+	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
+	ABORT(255);
     }
 
     singularity_message(DEBUG, "Extracting docker tar file %s\n", tarfile);
