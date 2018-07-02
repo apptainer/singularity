@@ -75,13 +75,16 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
+
+	defer os.RemoveAll(b.path)
+
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		sylog.Errorf("mksquashfs is not installed on this system")
 		return
 	}
 
-	f, err := ioutil.TempFile("", "squashfs-")
+	f, err := ioutil.TempFile(b.path, "squashfs-")
 	squashfsPath := f.Name() + ".img"
 	f.Close()
 	os.Remove(f.Name())
