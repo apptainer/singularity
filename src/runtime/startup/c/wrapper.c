@@ -740,7 +740,7 @@ __attribute__((constructor)) static void init(void) {
         }
     }
     singularity_message(DEBUG, "Create RPC socketpair for communication between scontainer and RPC server\n");
-    if ( socketpair(AF_UNIX, SOCK_STREAM, 0, rpc_socket) < 0 ) {
+    if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
         singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
         exit(1);
     }
