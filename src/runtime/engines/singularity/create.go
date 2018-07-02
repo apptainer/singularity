@@ -262,10 +262,7 @@ func mountRootfs(rpcOps *client.RPC, p *mount.Points) error {
 // mount any generic mount (not loop dev)
 func mountGeneric(rpcOps *client.RPC, mnt specs.Mount) error {
 	flags, opts, _ := mount.ConvertOptions(mnt.Options)
-	optsString := ""
-	for _, opt := range opts {
-		optsString = optsString + "," + opt
-	}
+	optsString := strings.Join(opts, ",")
 
 	sylog.Debugf("Mounting %s to %s\n", mnt.Source, mnt.Destination)
 	_, err := rpcOps.Mount(mnt.Source, mnt.Destination, mnt.Type, flags, optsString)
@@ -275,11 +272,7 @@ func mountGeneric(rpcOps *client.RPC, mnt specs.Mount) error {
 // mount image via loop
 func mountImage(rpcOps *client.RPC, mnt specs.Mount) error {
 	flags, opts, iopts := mount.ConvertOptions(mnt.Options)
-
-	optsString := ""
-	for _, opt := range opts {
-		optsString = optsString + "," + opt
-	}
+	optsString := strings.Join(opts, ",")
 
 	offset, err := mount.GetOffset(iopts)
 	if err != nil {
