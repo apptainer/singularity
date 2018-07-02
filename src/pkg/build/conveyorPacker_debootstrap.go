@@ -16,8 +16,6 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-//"github.com/singularityware/singularity/src/pkg/image"
-
 // DebootstrapConveyor holds stuff that needs to be packed into the bundle
 type DebootstrapConveyor struct {
 	recipe Definition
@@ -37,7 +35,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
 	if err != nil {
-		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it?%v", debootstrapPath)
+		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it? Error: %v", err)
 	}
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-debootstrap-")
