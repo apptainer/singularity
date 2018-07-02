@@ -78,7 +78,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("Debootstrap failed with error: %v", err)
+		return fmt.Errorf("debootstrap is not in PATH, perhaps 'apt-get install' it: %s", err)
 	}
 
 	return nil
