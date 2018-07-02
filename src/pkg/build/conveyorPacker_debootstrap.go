@@ -76,7 +76,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	fmt.Println(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+include, `--arch=`+runtime.GOARCH, osversion, c.tmpfs, mirrorurl)
+	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, include, runtime.GOARCH, osversion, mirrorurl)
 
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
