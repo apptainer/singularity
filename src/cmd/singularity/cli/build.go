@@ -7,14 +7,23 @@ package cli
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/spf13/cobra"
 )
 
@@ -94,6 +103,12 @@ var BuildCmd = &cobra.Command{
 			//local build
 			bundle := makeBundle(def)
 
+			if syscall.Getuid() == 0 {
+				doSections(bundle, args[0])
+			} else if hasSections(def) {
+				sylog.Warningf("Skipping definition scripts, not running as root [uid=%v]\n", syscall.Getuid())
+			}
+
 			if sandbox {
 				a = &build.SandboxAssembler{}
 			} else {
@@ -132,6 +147,60 @@ func checkBuildTargetCollision(path string, force bool) bool {
 		}
 	}
 	return true
+}
+
+// hasSections returns true if build definition is requesting to run scripts in image
+func hasSections(def build.Definition) bool {
+	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
+}
+
+// doSections invokes the imgbuild engine through wrapper
+func doSections(b *build.Bundle, fullPath string) {
+	lvl := "0"
+	if verbose {
+		lvl = "2"
+	}
+	if debug {
+		lvl = "5"
+	}
+
+	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
+	progname := []string{"singularity image-build"}
+	env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=imgbuild"}
+
+	engineConfig := &imgbuild.EngineConfig{
+		Bundle: *b,
+	}
+	ociConfig := &oci.Config{}
+
+	config := &config.Common{
+		EngineName:   imgbuild.Name,
+		ContainerID:  filepath.Base(fullPath),
+		OciConfig:    ociConfig,
+		EngineConfig: engineConfig,
+	}
+
+	configData, err := json.Marshal(config)
+	if err != nil {
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	// Create os/exec.Command to run wrapper and return control once finished
+	wrapperCmd := &exec.Cmd{
+		Path:   wrapper,
+		Args:   progname,
+		Env:    env,
+		Stdin:  bytes.NewReader(configData),
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	if err := wrapperCmd.Start(); err != nil {
+		sylog.Fatalf("Unable to start wrapper proc: %v\n", err)
+	}
+	if err := wrapperCmd.Wait(); err != nil {
+		sylog.Fatalf("wrapper proc: %v\n", err)
+	}
 }
 
 // getDefinition creates definition object from various input sources

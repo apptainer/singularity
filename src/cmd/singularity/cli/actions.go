@@ -17,7 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	ociConfig "github.com/singularityware/singularity/src/runtime/engines/common/oci/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
@@ -116,8 +116,8 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	engineConfig := singularity.NewConfig()
 
-	oci := &ociConfig.RuntimeOciConfig{}
-	generator := generate.NewFromSpec(&oci.Spec)
+	ociConfig := &oci.Config{}
+	generator := generate.NewFromSpec(&ociConfig.Spec)
 
 	generator.SetProcessArgs(args)
 
@@ -171,7 +171,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
 		ContainerID:  "new",
-		OciConfig:    oci,
+		OciConfig:    ociConfig,
 		EngineConfig: engineConfig,
 	}
 
