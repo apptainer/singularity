@@ -259,7 +259,6 @@ int extract_tar(const char *tarfile, const char *rootfs_dir) {
     const char *pathname;
     int pathtype;
 
-    printf("EXTRACT TAR NAME: %s\n", tarfile);
     orig_dir = get_current_dir_name();
 
     /* Select which attributes we want to restore. */
