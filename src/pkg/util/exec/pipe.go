@@ -15,7 +15,7 @@ import (
 	"unsafe"
 )
 
-// Pipe execute a command with arguments and pass data over stdin
+// Pipe execute a command with arguments and pass data over pipe
 func Pipe(command string, args []string, env []string, data []byte) error {
 	r, w, err := os.Pipe()
 
@@ -23,14 +23,11 @@ func Pipe(command string, args []string, env []string, data []byte) error {
 		return fmt.Errorf("failed to create pipe: %s", err)
 	}
 
-	if err := syscall.Close(0); err != nil {
-		return fmt.Errorf("failed to close stdin: %s", err)
-	}
-
 	rfd := r.Fd()
 	wfd := w.Fd()
 
-	if err := syscall.Dup2(*(*int)(unsafe.Pointer(&rfd)), 0); err != nil {
+	pipeFd, err := syscall.Dup(*(*int)(unsafe.Pointer(&rfd)))
+	if err != nil {
 		return fmt.Errorf("failed to duplicate pipe file descriptor: %s", err)
 	}
 
@@ -45,6 +42,8 @@ func Pipe(command string, args []string, env []string, data []byte) error {
 	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, wfd, syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
 		return fmt.Errorf("failed to set close-on-exec on write pipe: %s", err.Error())
 	}
+
+	env = append(env, fmt.Sprintf("PIPE_EXEC_FD=%d", pipeFd))
 
 	err = syscall.Exec(command, args, env)
 	if err != nil {
