@@ -35,7 +35,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
 	if err != nil {
-		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it? Error: %v", err)
+		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it: %v", err)
 	}
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-debootstrap-")
@@ -78,7 +78,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("debootstrap is not in PATH, perhaps 'apt-get install' it: %s", err)
+		return fmt.Errorf("While debootstrapping: %v", err)
 	}
 
 	return nil
@@ -97,22 +97,22 @@ func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
 	//move downloaded files from tmpdir to bundle
 	err = os.Rename(cp.tmpfs, b.Rootfs())
 	if err != nil {
-		return nil, fmt.Errorf("Failed to move rootfs into bundles rootfs: %v", err)
+		return nil, fmt.Errorf("While renaming bundle rootfs: %v", err)
 	}
 
 	//change root directory permissions to 0755
 	if err := os.Chmod(b.Rootfs(), 0755); err != nil {
-		return nil, fmt.Errorf("Failed to change file permissions of rootfs: %v", err)
+		return nil, fmt.Errorf("While changing bundle rootfs perms: %v", err)
 	}
 
 	err = cp.insertBaseEnv(b)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to insert base env: %v", err)
+		return nil, fmt.Errorf("While inserting base environtment: %v", err)
 	}
 
 	err = cp.insertRunScript(b)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to insert default runscript: %v", err)
+		return nil, fmt.Errorf("While inserting runscript: %v", err)
 	}
 
 	return b, nil
@@ -120,9 +120,9 @@ func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
 
 func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
 	if err = makeBaseEnv(b.Rootfs()); err != nil {
-		sylog.Errorf("%v", err)
+		return
 	}
-	return
+	return nil
 }
 
 func (cp *DebootstrapConveyorPacker) insertRunScript(b *Bundle) (err error) {
