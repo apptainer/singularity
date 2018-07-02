@@ -39,6 +39,7 @@ func (e *EngineOperations) CheckConfig() error {
 		os.Exit(1)
 	}
 
+	e.CommonConfig.OciConfig.SetupPrivileged(true)
 	return nil
 }
 
