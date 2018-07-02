@@ -45,7 +45,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// Run %pre scripts here
-	runScriptSections("pre", engine.EngineConfig.Recipe.BuildData.Pre)
+	runAllScripts("pre", engine.EngineConfig.Recipe.BuildData.Pre)
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
 	_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, "errors=remount-ro")
@@ -98,7 +98,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// Run %setup scripts here
-	runScriptSections("setup", engine.EngineConfig.Recipe.BuildData.Setup)
+	runAllScripts("setup", engine.EngineConfig.Recipe.BuildData.Setup)
 
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
 	err = syscall.Chdir(buildcfg.SESSIONDIR)
@@ -124,36 +124,27 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	return nil
 }
 
-func runScriptSections(section string, script []string) {
-	if l := len(script); l == 1 {
-		// Run %pre scripts here
-		pre := exec.Command("/bin/sh", "-c", script[0])
-		pre.Stdout = os.Stdout
-		pre.Stderr = os.Stderr
+func runScript(label, content string) {
+	cmd := exec.Command("/bin/sh", "-c", content)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-		sylog.Infof("Running %%pre script\n")
-		if err := pre.Start(); err != nil {
-			sylog.Fatalf("failed to start %%pre proc: %v\n", err)
-		}
-		if err := pre.Wait(); err != nil {
-			sylog.Fatalf("pre proc: %v\n", err)
-		}
-		sylog.Infof("Finished running %%pre script. exit status 0\n")
+	sylog.Infof("Running %%%s script\n", label)
+	if err := cmd.Start(); err != nil {
+		sylog.Fatalf("failed to start %%%s proc: %v\n", label, err)
+	}
+	if err := cmd.Wait(); err != nil {
+		sylog.Fatalf("%%%s proc: %v\n", label, err)
+	}
+	sylog.Infof("Finished running %%%s script. exit status 0\n", label)
+}
+
+func runAllScripts(section string, script []string) {
+	if l := len(script); l == 1 {
+		runScript(section, script[0])
 	} else if l > 1 {
 		for i, s := range script {
-			// Run %pre scripts here
-			pre := exec.Command("/bin/sh", "-c", s)
-			pre.Stdout = os.Stdout
-			pre.Stderr = os.Stderr
-
-			sylog.Infof("Running %%%s %d script\n", section, i)
-			if err := pre.Start(); err != nil {
-				sylog.Fatalf("failed to start %%%s %d proc: %v\n", section, i, err)
-			}
-			if err := pre.Wait(); err != nil {
-				sylog.Fatalf("%%%s %d proc: %v\n", section, i, err)
-			}
-			sylog.Infof("Finished running  %%%s %d script. exit status 0\n", section, i)
+			runScript(fmt.Sprintf("%v-%v", section, i), s)
 		}
 	}
 }

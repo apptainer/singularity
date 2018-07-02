@@ -21,7 +21,7 @@ func (e *EngineOperations) PrestartProcess() error {
 func (e *EngineOperations) StartProcess() error {
 
 	// Run %post scripts here
-	runScriptSections("post", e.EngineConfig.Recipe.BuildData.Post)
+	runAllScripts("post", e.EngineConfig.Recipe.BuildData.Post)
 
 	os.Exit(0)
 	return nil
