@@ -20,6 +20,16 @@ import (
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
 // that designated by a line starting with %
+//
+// Scanner behavior:
+//     1. The *first* time `s.Text()` is non-nil (which can be after infinitely many calls to
+//        `s.Scan()`), that text is *guaranteed* to be the header
+//     2. The next `n` times that `s.Text()` is non-nil (again, each could take many calls to
+//        `s.Scan()`), that text is guaranteed to be one specific section of the definition file.
+//     3. Once the input buffer is completely scanned, `s.Text()` will either be nil or non-nil
+//        (in which case `s.Text()` contains the last section found of the input buffer) *and*
+//        `s.Err()` will be non-nil with an `bufio.ErrFinalToken` returned. This is where scanning can completely halt.
+//
 // If there are any Golang devs reading this, please improve your documentation for this. It's awful.
 func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	inSection := false
