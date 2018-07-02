@@ -101,6 +101,7 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	sections := make(map[string]string)
+	scriptSections := make(map[string][]string)
 
 	for s.Scan() {
 		if err = s.Err(); err != nil {
@@ -110,7 +111,11 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		b := s.Bytes()
 		for i := 0; i < len(b); i++ {
 			if b[i] == '\n' {
-				sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
+				if validScriptSections[string(b[:i])] {
+					scriptSections[string(b[:i])] = append(scriptSections[string(b[:i])], strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace))
+				} else {
+					sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
+				}
 				break
 			}
 		}
@@ -152,9 +157,9 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	}
 	d.BuildData.Files = files
 	d.BuildData.Scripts = Scripts{
-		Pre:   sections["pre"],
-		Setup: sections["setup"],
-		Post:  sections["post"],
+		Pre:   scriptSections["pre"],
+		Setup: scriptSections["setup"],
+		Post:  scriptSections["post"],
 	}
 
 	return
@@ -243,6 +248,18 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 	}
 }
 
+func writeScriptSectionIfExists(w io.Writer, ident string, s []string) {
+	if len(s) > 0 {
+		w.Write([]byte("%"))
+		w.Write([]byte(ident))
+		w.Write([]byte("\n"))
+		for _, str := range s {
+			w.Write([]byte(str))
+		}
+		w.Write([]byte("\n"))
+	}
+}
+
 // WriteDefinitionFile is a helper func to output a Definition struct
 // into a definition file.
 func (d *Definition) WriteDefinitionFile(w io.Writer) {
@@ -257,7 +274,7 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 	writeSectionIfExists(w, "environment", d.ImageData.Environment)
 	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
 	writeSectionIfExists(w, "test", d.ImageData.Test)
-	writeSectionIfExists(w, "pre", d.BuildData.Pre)
-	writeSectionIfExists(w, "setup", d.BuildData.Setup)
-	writeSectionIfExists(w, "post", d.BuildData.Post)
+	writeScriptSectionIfExists(w, "pre", d.BuildData.Pre)
+	writeScriptSectionIfExists(w, "setup", d.BuildData.Setup)
+	writeScriptSectionIfExists(w, "post", d.BuildData.Post)
 }

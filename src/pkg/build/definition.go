@@ -47,9 +47,9 @@ type Data struct {
 
 // Scripts defines scripts that are used at build time.
 type Scripts struct {
-	Pre   string `json:"pre"`
-	Setup string `json:"setup"`
-	Post  string `json:"post"`
+	Pre   []string `json:"pre"`
+	Setup []string `json:"setup"`
+	Post  []string `json:"post"`
 }
 
 // NewDefinitionFromURI crafts a new Definition given a URI
@@ -111,6 +111,14 @@ var validHeaders = map[string]bool{
 	"mirrorurl":  true,
 	"osversion":  true,
 	"include":    true,
+}
+
+// validScriptSections just contains a list of all the sections that can have multiple
+//appearances in a definition file could contain. If any others are found, an error will generate
+var validScriptSections = map[string]bool{
+	"setup": true,
+	"pre":   true,
+	"post":  true,
 }
 
 // IsValidDefinition returns whether or not the given file is a valid definition

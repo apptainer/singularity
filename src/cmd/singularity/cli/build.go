@@ -151,7 +151,7 @@ func checkBuildTargetCollision(path string, force bool) bool {
 
 // hasSections returns true if build definition is requesting to run scripts in image
 func hasSections(def build.Definition) bool {
-	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
+	return len(def.BuildData.Post) != 0 || len(def.BuildData.Pre) != 0 || len(def.BuildData.Setup) != 0
 }
 
 // doSections invokes the imgbuild engine through wrapper
