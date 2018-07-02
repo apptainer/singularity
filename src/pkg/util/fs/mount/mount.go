@@ -93,7 +93,7 @@ func ConvertOptions(options []string) (uintptr, []string, []string) {
 		if !isFlag {
 			isInternal := false
 			for _, opt := range internalOptions {
-				if strings.HasPrefix(optionTrim, opt+"=") {
+				if strings.HasPrefix(optionTrim, opt+"=") || opt == optionTrim {
 					internalOpt = append(internalOpt, optionTrim)
 					isInternal = true
 					break
