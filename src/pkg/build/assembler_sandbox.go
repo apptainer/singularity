@@ -18,8 +18,7 @@ type SandboxAssembler struct {
 
 // Assemble creates a Sandbox image from a Bundle
 func (a *SandboxAssembler) Assemble(b *Bundle, path string) (err error) {
-
-	defer os.RemoveAll(b.path)
+	defer os.RemoveAll(b.Path)
 
 	//make sandbox dir
 	if err := os.MkdirAll(path, 0755); err != nil {
