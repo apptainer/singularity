@@ -7,7 +7,6 @@ package cli
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,6 +20,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
@@ -185,12 +185,19 @@ func doSections(b *build.Bundle, fullPath string) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
+	// Set PIPE_EXEC_FD
+	pipefd, err := syexec.SetPipe(configData)
+	if err != nil {
+		sylog.Fatalf("Failed to set PIPE_EXEC_FD: %v\n", err)
+	}
+
+	env = append(env, pipefd)
+
 	// Create os/exec.Command to run wrapper and return control once finished
 	wrapperCmd := &exec.Cmd{
 		Path:   wrapper,
 		Args:   progname,
 		Env:    env,
-		Stdin:  bytes.NewReader(configData),
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 	}
