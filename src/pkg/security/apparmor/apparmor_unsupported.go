@@ -3,12 +3,15 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package main
+// +build !linux OR !apparmor
 
-import "github.com/singularityware/singularity/src/cmd/singularity/cli"
+package apparmor
 
-func main() {
+import (
+	"fmt"
+)
 
-	// In cli/singularity.go
-	cli.ExecuteSingularity()
+// LoadProfile returns error for unsupported platform
+func LoadProfile(profile string) error {
+	return fmt.Errorf("apparmor is not supported by OS")
 }

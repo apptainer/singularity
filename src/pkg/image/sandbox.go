@@ -6,51 +6,20 @@
 package image
 
 import (
-	"io/ioutil"
-
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"fmt"
+	"os"
 )
 
-// Sandbox represents a sandbox image.
-type Sandbox struct {
-	rootfs string
-}
+// SANDBOX defines constant for directory format
+const SANDBOX = 3
 
-// TempSandbox creates a temporary sandbox at the supplied path.
-func TempSandbox(name string) (i *Sandbox, err error) {
-	i = &Sandbox{}
+type sandboxFormat struct{}
 
-	i.rootfs, err = ioutil.TempDir("", name)
-	if err != nil {
-		return i, err
+func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
+	if fileinfo.IsDir() {
+		img.Type = SANDBOX
+	} else {
+		return fmt.Errorf("not a directory image")
 	}
-
-	return i, nil
-}
-
-// SandboxFromPath returns a sandbox object of the directory located at path
-func SandboxFromPath(path string) *Sandbox {
-	return &Sandbox{
-		rootfs: path,
-	}
-}
-
-/* RuntimeImage Interface Methods */
-
-// Root returns the OCI specs.Root data type
-func (i *Sandbox) Root() *specs.Root {
-	return &specs.Root{}
-}
-
-/* BuildtimeImage Interface Methods */
-
-// Rootfs returns the path of the rootfs of the sandbox
-func (i *Sandbox) Rootfs() string {
-	return i.rootfs
-}
-
-// isSandbox checks the "magic" of the given file and
-// determines if the file is of sandbox type
-func isSandbox(path string) bool {
-	return false
+	return nil
 }

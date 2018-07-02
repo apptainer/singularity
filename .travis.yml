@@ -17,12 +17,12 @@ addons:
       - libssl1.0.0
       - libarchive-dev
       - libgpgme11-dev
+      - libseccomp-dev
 
 before_install:
   - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
   - go get -u golang.org/x/lint/golint
   - export PATH="${GOPATH}/bin:${PATH}"
-  - dep ensure -vendor-only
 
 install:
   - ./mconfig -p /usr/local
