@@ -60,7 +60,7 @@ func (c *BusyBoxConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("While inserting busybox: %v", err)
 	}
 
-	cmd := exec.Command(busyBoxPath, `--install`, filepath.Join(c.b.Rootfs(), "bin"))
+	cmd := exec.Command(busyBoxPath, `--install`, filepath.Join(c.b.Rootfs(), "/bin"))
 
 	sylog.Debugf("\n\tBusyBox Path: %s\n\tMirrorURL: %s\n", busyBoxPath, mirrorurl)
 
@@ -85,7 +85,7 @@ func (cp *BusyBoxConveyorPacker) Pack() (b *Bundle, err error) {
 
 func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 
-	fp, err := os.Create(filepath.Join(c.b.Rootfs(), "etc", "passwd"))
+	fp, err := os.Create(filepath.Join(c.b.Rootfs(), "/etc/passwd"))
 	if err != nil {
 		return
 	}
@@ -101,7 +101,7 @@ func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 		return
 	}
 
-	fg, err := os.Create(filepath.Join(c.b.Rootfs(), "etc", "group"))
+	fg, err := os.Create(filepath.Join(c.b.Rootfs(), "/etc/group"))
 	if err != nil {
 		return
 	}
@@ -117,7 +117,7 @@ func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 		return
 	}
 
-	fh, err := os.Create(filepath.Join(c.b.Rootfs(), "etc", "hosts"))
+	fh, err := os.Create(filepath.Join(c.b.Rootfs(), "/etc/hosts"))
 	if err != nil {
 		return
 	}
@@ -138,7 +138,7 @@ func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
 
-	os.Mkdir(filepath.Join(c.b.Rootfs(), "bin"), 0755)
+	os.Mkdir(filepath.Join(c.b.Rootfs(), "/bin"), 0755)
 
 	resp, err := http.Get(mirrorurl)
 	if err != nil {
@@ -146,7 +146,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 	}
 	defer resp.Body.Close()
 
-	f, err := os.Create(filepath.Join(c.b.Rootfs(), "bin", "busybox"))
+	f, err := os.Create(filepath.Join(c.b.Rootfs(), "/bin/busybox"))
 	if err != nil {
 		return
 	}
@@ -167,7 +167,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 		return
 	}
 
-	return filepath.Join(c.b.Rootfs(), "bin", "busybox"), nil
+	return filepath.Join(c.b.Rootfs(), "/bin/busybox"), nil
 }
 
 func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
