@@ -1,4 +1,4 @@
-singularity-container (2.5.2-rc3) unstable; urgency=high
+singularity-container (2.5.2) unstable; urgency=high
 
   * fix an error in malloc allocation #1620
   * honor debug flag when pulling from docker hub #1556
