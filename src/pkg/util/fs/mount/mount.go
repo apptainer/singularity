@@ -92,8 +92,8 @@ const (
 	FilesTag = "files"
 	// OtherTag defines tag for other mount points that can't be classified
 	OtherTag = "other"
-	// RemountTag defines tag for mount points to remount at the end of mount process
-	RemountTag = "remount"
+	// FinalTag defines tag for mount points to mount/remount at the end of mount process
+	FinalTag = "final"
 )
 
 var authorizedTags = map[AuthorizedTag]struct {
@@ -116,7 +116,7 @@ var authorizedTags = map[AuthorizedTag]struct {
 	CwdTag:             {false, 13},
 	FilesTag:           {true, 14},
 	OtherTag:           {true, 15},
-	RemountTag:         {true, 16},
+	FinalTag:           {true, 16},
 }
 
 var authorizedImage = map[string]fsContext{
