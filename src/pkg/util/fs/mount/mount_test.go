@@ -15,50 +15,51 @@ import (
 func TestImage(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddImage("", "/fake", "ext3", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "", "/fake", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage("/fake", "", "ext3", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
 
-	if err := points.AddImage("fake", "/", "ext3", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "fake", "/", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed as source is not an absolute path")
 	}
-	if err := points.AddImage("/", "fake", "ext3", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/", "fake", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
-	if err := points.AddImage("", "/", "ext3", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "", "/", "ext3", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage("/fake", "/", "xfs", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "xfs", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with bad filesystem type")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_BIND, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_BIND, 0, 10); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddImage("/fake", "/", "ext3", syscall.MS_REC, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_REC, 0, 10); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
-	if err := points.AddImage("/fake", "/ext3", "ext3", 0, 0, 10); err != nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/ext3", "ext3", 0, 0, 10); err != nil {
 		t.Errorf("should have passed with ext3 filesystem")
 	}
-	if err := points.AddImage("/fake", "/squash", "squashfs", 0, 0, 10); err != nil {
+	points.RemoveAll()
+	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10); err != nil {
 		t.Errorf("should have passed with squashfs filesystem")
 	}
-	if err := points.AddImage("/fake", "/", "squashfs", 0, 0, 0); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", 0, 0, 0); err == nil {
 		t.Errorf("should have failed with 0 size limit")
 	}
-	if err := points.AddImage("/fake", "/squash", "squashfs", 0, 0, 10); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10); err == nil {
 		t.Errorf("should have failed with destination already in list")
 	}
 	points.RemoveAll()
 
-	if err := points.AddImage("/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10); err != nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10); err != nil {
 		t.Fatalf("should have passed with squashfs filesystem")
 	}
 	images := points.GetAllImages()
@@ -71,11 +72,17 @@ func TestImage(t *testing.T) {
 			hasNoSuid = true
 		}
 	}
-	if offset, err := GetOffset(images[0].Options); err != nil || offset != 31 {
+	if offset, err := GetOffset(images[0].InternalOptions); err != nil || offset != 31 {
 		t.Errorf("offset option wasn't found or is invalid")
 	}
-	if size, err := GetSizeLimit(images[0].Options); err != nil || size != 10 {
+	if size, err := GetSizeLimit(images[0].InternalOptions); err != nil || size != 10 {
 		t.Errorf("sizelimit option wasn't found or is invalid")
+	}
+	if _, err := GetOffset([]string{}); err == nil {
+		t.Errorf("should have failed, offset not provided")
+	}
+	if _, err := GetSizeLimit([]string{}); err == nil {
+		t.Errorf("should have failed, sizelimit not provided")
 	}
 	if !hasNoSuid {
 		t.Errorf("nosuid option wasn't applied")
@@ -89,48 +96,48 @@ func TestImage(t *testing.T) {
 func TestOverlay(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddOverlay("", 0, "/", "", ""); err == nil {
+	if err := points.AddOverlay(OverlayTag, "", 0, "/", "", ""); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
-	if err := points.AddOverlay("/fake", 0, "", "/upper", "/work"); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", 0, "", "/upper", "/work"); err == nil {
 		t.Errorf("should have failed with empty lowerdir")
 	}
-	if err := points.AddOverlay("/fake", 0, "/lower", "/upper", ""); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "/upper", ""); err == nil {
 		t.Errorf("should have failed with empty workdir")
 	}
 
-	if err := points.AddOverlay("/", 0, "lower", "", ""); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/", 0, "lower", "", ""); err == nil {
 		t.Errorf("should have failed as lowerdir is not an absolute path")
 	}
-	if err := points.AddOverlay("/", 0, "/lower", "upper", "/work"); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/", 0, "/lower", "upper", "/work"); err == nil {
 		t.Errorf("should have failed as upperdir is not an absolute path")
 	}
-	if err := points.AddOverlay("/", 0, "/lower", "/upper", "work"); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/", 0, "/lower", "/upper", "work"); err == nil {
 		t.Errorf("should have failed as workdir is not an absolute path")
 	}
 
-	if err := points.AddOverlay("/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddOverlay("/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddOverlay("/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay("/fake", 0, "/lower", "", ""); err != nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "", ""); err != nil {
 		t.Errorf("%s", err)
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay("/fake", 0, "/lower", "/upper", "/work"); err != nil {
+	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "/upper", "/work"); err != nil {
 		t.Errorf("%s", err)
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay("/mnt", syscall.MS_NOSUID, "/lower", "/upper", "/work"); err != nil {
+	if err := points.AddOverlay(OverlayTag, "/mnt", syscall.MS_NOSUID, "/lower", "/upper", "/work"); err != nil {
 		t.Fatalf("%s", err)
 	}
 
@@ -152,26 +159,26 @@ func TestOverlay(t *testing.T) {
 func TestFS(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddFS("", "tmpfs", 0, ""); err == nil {
+	if err := points.AddFS(SessionTag, "", "tmpfs", 0, ""); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
-	if err := points.AddFS("fake", "tmpfs", 0, ""); err == nil {
+	if err := points.AddFS(SessionTag, "fake", "tmpfs", 0, ""); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
-	if err := points.AddFS("fake", "tmpfs", syscall.MS_BIND, ""); err == nil {
+	if err := points.AddFS(SessionTag, "fake", "tmpfs", syscall.MS_BIND, ""); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddFS("fake", "tmpfs", syscall.MS_REMOUNT, ""); err == nil {
+	if err := points.AddFS(SessionTag, "fake", "tmpfs", syscall.MS_REMOUNT, ""); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddFS("fake", "tmpfs", syscall.MS_REC, ""); err == nil {
+	if err := points.AddFS(SessionTag, "fake", "tmpfs", syscall.MS_REC, ""); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
 
 	points.RemoveAll()
 
-	if err := points.AddFS("/fields/of", "cows", 0, ""); err == nil {
+	if err := points.AddFS(SessionTag, "/fields/of", "cows", 0, ""); err == nil {
 		t.Errorf("should have failed as filesystem is not authorized")
 	}
 
@@ -181,7 +188,7 @@ func TestFS(t *testing.T) {
 	}
 	points.RemoveAll()
 
-	if err := points.AddFS("/mnt", "tmpfs", syscall.MS_NOSUID, ""); err != nil {
+	if err := points.AddFS(SessionTag, "/mnt", "tmpfs", syscall.MS_NOSUID, ""); err != nil {
 		t.Fatalf("%s", err)
 	}
 
@@ -203,19 +210,19 @@ func TestFS(t *testing.T) {
 func TestBind(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddBind("/", "", 0); err == nil {
+	if err := points.AddBind(UserbindsTag, "/", "", 0); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
 
-	if err := points.AddBind("fake", "/", 0); err == nil {
+	if err := points.AddBind(UserbindsTag, "fake", "/", 0); err == nil {
 		t.Errorf("should have failed as source is not an absolute path")
 	}
-	if err := points.AddBind("/", "fake", 0); err == nil {
+	if err := points.AddBind(UserbindsTag, "/", "fake", 0); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 	points.RemoveAll()
 
-	if err := points.AddBind("/", "/mnt", syscall.MS_BIND); err != nil {
+	if err := points.AddBind(UserbindsTag, "/", "/mnt", syscall.MS_BIND); err != nil {
 		t.Fatalf("%s", err)
 	}
 	bind := points.GetByDest("/mnt")
@@ -233,7 +240,7 @@ func TestBind(t *testing.T) {
 	}
 	points.RemoveAll()
 
-	if err := points.AddBind("/", "/mnt", syscall.MS_BIND|syscall.MS_REC); err != nil {
+	if err := points.AddBind(UserbindsTag, "/", "/mnt", syscall.MS_BIND|syscall.MS_REC); err != nil {
 		t.Fatalf("%s", err)
 	}
 	bind = points.GetByDest("/mnt")
@@ -258,10 +265,10 @@ func TestBind(t *testing.T) {
 func TestRemount(t *testing.T) {
 	points := &Points{}
 
-	if err := points.AddRemount("", 0); err == nil {
+	if err := points.AddRemount(UserbindsTag, "", 0); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
-	if err := points.AddRemount("fake", 0); err == nil {
+	if err := points.AddRemount(UserbindsTag, "fake", 0); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 	points.RemoveAll()
@@ -281,56 +288,80 @@ func TestImport(t *testing.T) {
 		t.Fatalf("%s != %s", mountLabel, points.GetContext())
 	}
 
-	validImport := []specs.Mount{
-		{
-			Source:      "/",
-			Destination: "/mnt",
-			Type:        "",
-			Options:     []string{"rbind"},
+	validImport := map[AuthorizedTag][]Point{
+		UserbindsTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "/",
+					Destination: "/mnt",
+					Type:        "",
+					Options:     []string{"rbind"},
+				},
+			},
+			Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: "/mnt",
+					Type:        "",
+					Options:     []string{"rbind", "nosuid", "remount"},
+				},
+			},
 		},
-		{
-			Source:      "",
-			Destination: "/mnt",
-			Type:        "",
-			Options:     []string{"rbind", "nosuid", "remount"},
+		KernelTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "proc",
+					Destination: "/proc",
+					Type:        "proc",
+					Options:     []string{"nosuid", "nodev"},
+				},
+			},
+			Point{
+				Mount: specs.Mount{
+					Source:      "sysfs",
+					Destination: "/sys",
+					Type:        "sysfs",
+					Options:     []string{"nosuid", "nodev"},
+				},
+			},
 		},
-		{
-			Source:      "proc",
-			Destination: "/proc",
-			Type:        "proc",
-			Options:     []string{"nosuid", "nodev"},
+		SessionTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: "/tmp",
+					Type:        "tmpfs",
+					Options:     []string{"nosuid", "nodev", "mode=1777"},
+				},
+			},
 		},
-		{
-			Source:      "sysfs",
-			Destination: "/sys",
-			Type:        "sysfs",
-			Options:     []string{"nosuid", "nodev"},
+		OverlayTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: "/opt",
+					Type:        "overlay",
+					Options:     []string{"nosuid", "nodev", "lowerdir=/", "upperdir=/upper", "workdir=/work"},
+				},
+			},
 		},
-		{
-			Source:      "",
-			Destination: "/tmp",
-			Type:        "tmpfs",
-			Options:     []string{"nosuid", "nodev", "mode=1777"},
-		},
-		{
-			Source:      "",
-			Destination: "/opt",
-			Type:        "overlay",
-			Options:     []string{"nosuid", "nodev", "lowerdir=/", "upperdir=/upper", "workdir=/work"},
-		},
-		{
-			Source:      "/image.simg",
-			Destination: "/tmp/image",
-			Type:        "squashfs",
-			Options:     []string{"nosuid", "nodev", "offset=31", "sizelimit=10", "name=rootfs"},
+		RootfsTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "/image.simg",
+					Destination: "/tmp/image",
+					Type:        "squashfs",
+					Options:     []string{"nosuid", "nodev"},
+				},
+				InternalOptions: []string{"offset=31", "sizelimit=10"},
+			},
 		},
 	}
 	if err := points.Import(validImport); err != nil {
 		t.Fatalf("%s", err)
 	}
-	all := points.GetAll()
-	if len(all) != len(validImport) {
-		t.Errorf("returned a wrong number of mount points %d instead of %d", len(all), len(validImport))
+	if len(points.GetAll()) != len(validImport) {
+		t.Errorf("returned a wrong number of mount points %d instead of %d", len(points.GetAll()), len(validImport))
 	}
 	image := points.GetAllImages()
 	if len(image) != 1 {
@@ -349,24 +380,24 @@ func TestImport(t *testing.T) {
 		t.Errorf("wrong number of filesystem mount point found")
 	}
 	points.RemoveByDest("/mnt")
-	all = points.GetAll()
-	if len(all) != 5 {
-		t.Errorf("returned a wrong number of mount points %d instead of 5", len(all))
+	all := points.GetByTag(UserbindsTag)
+	if len(all) != 0 {
+		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveByDest("/tmp")
-	all = points.GetAll()
-	if len(all) != 4 {
-		t.Errorf("returned a wrong number of mount points %d instead of 4", len(all))
+	all = points.GetByTag(SessionTag)
+	if len(all) != 0 {
+		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveByDest("/opt")
-	all = points.GetAll()
-	if len(all) != 3 {
-		t.Errorf("returned a wrong number of mount points %d instead of 3", len(all))
+	all = points.GetByTag(OverlayTag)
+	if len(all) != 0 {
+		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveBySource("/image.simg")
-	all = points.GetAll()
-	if len(all) != 2 {
-		t.Errorf("returned a wrong number of mount points %d instead of 2", len(all))
+	all = points.GetByTag(RootfsTag)
+	if len(all) != 0 {
+		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 
 	proc := points.GetByDest("/proc")
@@ -391,36 +422,46 @@ func TestImport(t *testing.T) {
 	}
 	points.RemoveByDest("/sys")
 
-	all = points.GetAll()
+	all = points.GetByTag(KernelTag)
 	if len(all) != 0 {
 		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveAll()
 
-	invalidImport := []specs.Mount{
-		{
-			Source:      "/",
-			Destination: "/mnt",
-			Type:        "",
-			Options:     []string{"rbind"},
-		},
-		{
-			Source:      "",
-			Destination: "/mnt",
-			Type:        "",
-			Options:     []string{"rbind", "nosuid"},
+	invalidImport := map[AuthorizedTag][]Point{
+		UserbindsTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "/",
+					Destination: "/mnt",
+					Type:        "",
+					Options:     []string{"rbind"},
+				},
+			},
+			Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: "/mnt",
+					Type:        "",
+					Options:     []string{"rbind", "nosuid"},
+				},
+			},
 		},
 	}
 	if err := points.Import(invalidImport); err == nil {
-		t.Errorf("import should failed")
+		t.Errorf("import should failed: %s", err)
 	}
 
-	validForceContextImport := []specs.Mount{
-		{
-			Source:      "/",
-			Destination: "/tmp",
-			Type:        "tmpfs",
-			Options:     []string{"nosuid", "nodev", "mode=1777"},
+	validForceContextImport := map[AuthorizedTag][]Point{
+		SessionTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "/",
+					Destination: "/tmp",
+					Type:        "tmpfs",
+					Options:     []string{"nosuid", "nodev", "mode=1777"},
+				},
+			},
 		},
 	}
 
@@ -442,14 +483,19 @@ func TestImport(t *testing.T) {
 	}
 	points.RemoveAll()
 
-	validContextImport := []specs.Mount{
-		{
-			Source:      "/",
-			Destination: "/tmp",
-			Type:        "tmpfs",
-			Options:     []string{"nosuid", "nodev", "mode=1777", "context=" + mountLabel},
+	validContextImport := map[AuthorizedTag][]Point{
+		SessionTag: []Point{
+			Point{
+				Mount: specs.Mount{
+					Source:      "/",
+					Destination: "/tmp",
+					Type:        "tmpfs",
+					Options:     []string{"nosuid", "nodev", "mode=1777", "context=" + mountLabel},
+				},
+			},
 		},
 	}
+
 	if err := points.Import(validContextImport); err != nil {
 		t.Fatalf("%s", err)
 	}
@@ -467,4 +513,24 @@ func TestImport(t *testing.T) {
 		t.Errorf("context option is set %d times for /tmp mount point %s", numContext, tmp[0])
 	}
 	points.RemoveAll()
+}
+
+func TestTag(t *testing.T) {
+	points := &Points{}
+
+	if err := points.AddBind(AuthorizedTag("unknown"), "/", "/mnt", syscall.MS_NOSUID); err == nil {
+		t.Errorf("should have failed with a not recognized tag")
+	}
+	if err := points.AddFS(SessionTag, "/mnt", "tmpfs", syscall.MS_NOSUID, ""); err != nil {
+		t.Errorf("%s", err)
+	}
+	if err := points.AddFS(SessionTag, "/mnt2", "tmpfs", syscall.MS_NOSUID, ""); err == nil {
+		t.Errorf("should have failed, %s allow only a single mount point", SessionTag)
+	}
+	for _, tag := range GetTagList() {
+		points.RemoveByTag(tag)
+		if len(points.GetByTag(tag)) != 0 {
+			t.Fatalf("removing mount point entries by tag failed")
+		}
+	}
 }
