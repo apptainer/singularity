@@ -80,7 +80,7 @@ func (cp *BusyBoxConveyorPacker) Pack() (b *Bundle, err error) {
 		return nil, fmt.Errorf("While inserting base environment: %v", err)
 	}
 
-	b.Recipe = cp.recipe
+	cp.b.Recipe = cp.recipe
 
 	return cp.b, nil
 }
