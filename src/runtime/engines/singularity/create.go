@@ -64,9 +64,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	sylog.Debugf("Adding proc to mount list\n")
 	if pidNS {
-		err = p.AddFS("proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
+		err = p.AddFS(mount.KernelTag, filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "proc", syscall.MS_NOSUID, "")
 	} else {
-		err = p.AddBind("proc", "/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		err = p.AddBind(mount.KernelTag, "/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	}
 	if err != nil {
 		return fmt.Errorf("unable to add proc to mount list: %s", err)
@@ -74,46 +74,45 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	sylog.Debugf("Adding sysfs to mount list\n")
 	if !userNS {
-		err = p.AddFS("sysfs", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
+		err = p.AddFS(mount.KernelTag, filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 	} else {
-		err = p.AddBind("sysfs", "/sys", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		err = p.AddBind(mount.KernelTag, "/sys", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	}
 	if err != nil {
 		return fmt.Errorf("unable to add sys to mount list: %s", err)
 	}
 
 	sylog.Debugf("Adding home to mount list\n")
-	err = p.AddBind("home", "/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), syscall.MS_BIND)
+	err = p.AddBind(mount.HomeTag, "/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), syscall.MS_BIND)
 	if err != nil {
 		return fmt.Errorf("unable to add home to mount list: %s", err)
 	}
 
 	sylog.Debugf("Adding dev to mount list\n")
-	err = p.AddBind("dev", "/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+	err = p.AddBind(mount.DevTag, "/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	if err != nil {
 		return fmt.Errorf("unable to add dev to mount list: %s", err)
 	}
 
 	sylog.Debugf("Adding /etc/passwd to mount list\n")
-	err = p.AddBind("passwd", "/etc/passwd", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), syscall.MS_BIND)
+	err = p.AddBind(mount.FilesTag, "/etc/passwd", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/passwd"), syscall.MS_BIND)
 	if err != nil {
 		return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
 	}
 
 	sylog.Debugf("Adding /etc/group to mount list\n")
-	err = p.AddBind("group", "/etc/group", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), syscall.MS_BIND)
+	err = p.AddBind(mount.FilesTag, "/etc/group", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/group"), syscall.MS_BIND)
 	if err != nil {
 		return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
 	}
 
 	sylog.Debugf("Adding user binds to mount list\n")
-	err = p.Import(engine.CommonConfig.OciConfig.Spec.Mounts)
-	if err != nil {
-		return fmt.Errorf("unable to add user bind mounts to mount list: %s", err)
+	if err := engine.addUserBinds(p); err != nil {
+		return err
 	}
 
 	sylog.Debugf("Adding staging dir -> final dir to mount list\n")
-	err = p.AddBind("final", buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, syscall.MS_BIND|syscall.MS_REC)
+	err = p.AddBind(mount.FinalTag, buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, syscall.MS_BIND|syscall.MS_REC)
 	if err != nil {
 		return fmt.Errorf("unable to add final staging dir to mount list: %s", err)
 	}
@@ -198,70 +197,47 @@ func (engine *EngineOperations) addRootfs(p *mount.Points) error {
 		mountType = "ext3"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
-		return p.AddBind("rootfs", rootfs, buildcfg.CONTAINER_FINALDIR, syscall.MS_BIND|flags)
+		return p.AddBind(mount.RootfsTag, rootfs, buildcfg.CONTAINER_FINALDIR, syscall.MS_BIND|flags)
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return p.AddImage("rootfs", rootfs, buildcfg.CONTAINER_FINALDIR, mountType, flags, imageObject.Offset, imageObject.Size)
+	return p.AddImage(mount.RootfsTag, rootfs, buildcfg.CONTAINER_FINALDIR, mountType, flags, imageObject.Offset, imageObject.Size)
 }
 
 func (engine *EngineOperations) addUserBinds(p *mount.Points) error {
-	newMounts := []specs.Mount{}
 	for _, mnt := range engine.CommonConfig.OciConfig.Spec.Mounts {
 		if !strings.Contains(mnt.Destination, buildcfg.CONTAINER_FINALDIR) {
 			mnt.Destination = filepath.Join(buildcfg.CONTAINER_FINALDIR, mnt.Destination)
 		}
-
 		sylog.Debugf("Adding user bind request %s : %s to mount list\n")
-		newMounts = append(newMounts, mnt)
-	}
-
-	return p.Import(newMounts)
-}
-
-func mountAll(rpcOps *client.RPC, p *mount.Points) error {
-	// first mount rootfs
-	if err := mountRootfs(rpcOps, p); err != nil {
-		return err
-	}
-
-	for _, mnt := range p.GetAll()[1:] { // rootfs is always idx=0, so skip that
-		_, _, iopts := mount.ConvertOptions(mnt.Options)
-
-		// if GetOffset succeeds, image needs a loop device
-		if _, err := mount.GetOffset(iopts); err == nil {
-			if err := mountImage(rpcOps, mnt); err != nil {
-				return err
-			}
-
-			continue
-		}
-
-		if err := mountGeneric(rpcOps, mnt); err != nil {
+		flags, _ := mount.ConvertOptions(mnt.Options)
+		if err := p.AddBind(mount.UserbindsTag, mnt.Source, mnt.Destination, flags); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
 
-// mount rootfs partition
-func mountRootfs(rpcOps *client.RPC, p *mount.Points) error {
-	sylog.Debugf("Adding rootfs to mount list\n")
-	mnt := p.GetByName("rootfs")[0]
-	flags, _, _ := mount.ConvertOptions(mnt.Options)
-
-	if flags&syscall.MS_BIND != 0 { // if bind mount, the rootfs is a directory
-		return mountGeneric(rpcOps, mnt)
+func mountAll(rpcOps *client.RPC, p *mount.Points) error {
+	for _, tag := range mount.GetTagList() {
+		for _, point := range p.GetByTag(tag) {
+			if _, err := mount.GetOffset(point.InternalOptions); err == nil {
+				if err := mountImage(rpcOps, &point); err != nil {
+					return err
+				}
+			} else {
+				if err := mountGeneric(rpcOps, &point); err != nil {
+					return err
+				}
+			}
+		}
 	}
-
-	// rootfs is an image
-	return mountImage(rpcOps, mnt)
+	return nil
 }
 
 // mount any generic mount (not loop dev)
-func mountGeneric(rpcOps *client.RPC, mnt specs.Mount) error {
-	flags, opts, _ := mount.ConvertOptions(mnt.Options)
+func mountGeneric(rpcOps *client.RPC, mnt *mount.Point) error {
+	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 
 	sylog.Debugf("Mounting %s to %s\n", mnt.Source, mnt.Destination)
@@ -270,16 +246,16 @@ func mountGeneric(rpcOps *client.RPC, mnt specs.Mount) error {
 }
 
 // mount image via loop
-func mountImage(rpcOps *client.RPC, mnt specs.Mount) error {
-	flags, opts, iopts := mount.ConvertOptions(mnt.Options)
+func mountImage(rpcOps *client.RPC, mnt *mount.Point) error {
+	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 
-	offset, err := mount.GetOffset(iopts)
+	offset, err := mount.GetOffset(mnt.InternalOptions)
 	if err != nil {
 		return err
 	}
 
-	sizelimit, err := mount.GetSizeLimit(iopts)
+	sizelimit, err := mount.GetSizeLimit(mnt.InternalOptions)
 	if err != nil {
 		return err
 	}
