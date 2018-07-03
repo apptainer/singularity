@@ -45,6 +45,11 @@ func (c *BusyBoxConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("Invalid busybox header, no MirrurURL specified")
 	}
 
+	err = c.insertBaseEnv()
+	if err != nil {
+		return fmt.Errorf("While inserting base environment: %v", err)
+	}
+
 	err = c.insertBaseFiles()
 	if err != nil {
 		return fmt.Errorf("While inserting files: %v", err)
@@ -69,13 +74,16 @@ func (c *BusyBoxConveyor) Get(recipe Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *BusyBoxConveyorPacker) Pack() (b *Bundle, err error) {
+
+	err = cp.insertRunScript()
+	if err != nil {
+		return nil, fmt.Errorf("While inserting base environment: %v", err)
+	}
+
 	return cp.b, nil
 }
 
 func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
-
-	os.Mkdir(filepath.Join(c.b.Rootfs(), "bin"), 0755)
-	os.Mkdir(filepath.Join(c.b.Rootfs(), "etc"), 0755)
 
 	fp, err := os.Create(filepath.Join(c.b.Rootfs(), "etc", "passwd"))
 	if err != nil {
@@ -109,7 +117,7 @@ func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 		return
 	}
 
-	fh, err := os.Create(filepath.Join(c.b.Rootfs(), "etc", "host"))
+	fh, err := os.Create(filepath.Join(c.b.Rootfs(), "etc", "hosts"))
 	if err != nil {
 		return
 	}
@@ -129,6 +137,8 @@ func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
+
+	os.Mkdir(filepath.Join(c.b.Rootfs(), "bin"), 0755)
 
 	resp, err := http.Get(mirrorurl)
 	if err != nil {
@@ -158,4 +168,38 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 	}
 
 	return filepath.Join(c.b.Rootfs(), "bin", "busybox"), nil
+}
+
+func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
+	if err = makeBaseEnv(c.b.Rootfs()); err != nil {
+		return
+	}
+	return nil
+}
+
+func (cp *BusyBoxConveyorPacker) insertRunScript() (err error) {
+	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
+	if err != nil {
+		return
+	}
+
+	defer f.Close()
+
+	_, err = f.WriteString("#!/bin/sh\n")
+	if err != nil {
+		return
+	}
+
+	if err != nil {
+		return
+	}
+
+	f.Sync()
+
+	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/runscript", 0755)
+	if err != nil {
+		return
+	}
+
+	return nil
 }
