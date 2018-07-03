@@ -450,10 +450,10 @@ int main(int argc, char **argv) {
     if (fs_avail_space == -1)
 	singularity_message(WARNING, "Unable to obtain free space on %s\n", layer_target_fs);
 
-    singularity_message(DEBUG, "Available /tmp space %lu bytes\n", fs_avail_space);
+    singularity_message(DEBUG, "Available space on %s is %lu bytes\n", layer_target_fs, fs_avail_space);
 
     if (exploded_tar_size && (exploded_tar_size > fs_avail_space)) {
-	singularity_message(ERROR, "Not enough space on /tmp for %s\n", tarfile);
+        singularity_message(ERROR, "Not enough space on %s for %s\n", layer_target_fs, tarfile);
 	ABORT(255);
     }
     // end available space on file system logic
