@@ -14,11 +14,19 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2) (2018-07-03)
 
+### [Security related fixes](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2018-12021)
+ - Removed the option to use overlay images with `singularity mount`.  This 
+   flaw could allow a malicious user accessing the host system to access
+   sensitive information when coupled with persistent ext3 overlay.
+ - Fixed a race condition that might allow a malicious user to bypass directory 
+   image restrictions, like mounting the host root filesystem as a container 
+   image
+
 ### Bug fixes
- - fix an error in malloc allocation #1620
- - honor debug flag when pulling from docker hub #1556
- - fix a bug with passwd abort #1580
- - allow user to override singularity.conf "mount home = no" with --home option
+ - Fix an error in malloc allocation #1620
+ - Honor debug flag when pulling from docker hub #1556
+ - Fix a bug with passwd abort #1580
+ - Allow user to override singularity.conf "mount home = no" with --home option
    #1496
  - Improve debugging output #1535
  - Fix some bugs in bind mounting #1525
@@ -26,7 +34,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    work with kernels that implement them (like Cray systems) #1506
  - Create /dev/fd and standard streams symlinks in /dev when using minimal dev
    mount or when specifying -c/-C/--contain option #1420
- - fixed * expansion during app runscript creation #1486
+ - Fixed * expansion during app runscript creation #1486
 
 ## [v2.5.1](https://github.com/singularityware/singularity/releases/tag/2.5.1) (2018-05-03)
 
