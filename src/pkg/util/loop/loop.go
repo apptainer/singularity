@@ -21,6 +21,7 @@ import (
 type Device struct {
 	loop           *os.File
 	MaxLoopDevices uint
+	Shared         bool
 }
 
 // Attach finds a free loop device, opens it, and stores file descriptor
@@ -28,6 +29,8 @@ func (d *Device) Attach(image string, info *Info64, number *int) error {
 	var path string
 	var imgIno uint64
 	var imgDev uint64
+	matchedDevice := -1
+	freeDevice := -1
 
 	if d.MaxLoopDevices > 256 {
 		d.MaxLoopDevices = 256
@@ -66,7 +69,6 @@ func (d *Device) Attach(image string, info *Info64, number *int) error {
 
 	for device := 0; device < int(d.MaxLoopDevices); device++ {
 		path = fmt.Sprintf("/dev/loop%d", device)
-		sylog.Debugf("Opening loop device %s", path)
 		d.loop, err = os.OpenFile(path, mode, 0)
 		if err != nil {
 			dev := int((7 << 8) | device)
@@ -87,23 +89,45 @@ func (d *Device) Attach(image string, info *Info64, number *int) error {
 			d.loop.Close()
 			return err
 		}
-		if status.Inode != imgIno || status.Device != imgDev ||
-			status.Flags&FlagsReadOnly != info.Flags&FlagsReadOnly ||
-			status.Offset != info.Offset || status.SizeLimit != info.SizeLimit {
-			if err := d.SetFd(img.Fd()); err == nil {
-				if err := d.SetStatus(info); err != nil {
-					return err
-				}
-			} else {
-				sylog.Debugf("Could not associate image to loop: %s", err)
+		if freeDevice == -1 && status.Inode == 0 {
+			freeDevice = device
+			if !d.Shared {
 				d.loop.Close()
-				continue
+				break
 			}
+		}
+		if d.Shared && status.Inode == imgIno && status.Device == imgDev &&
+			status.Flags&FlagsReadOnly == info.Flags&FlagsReadOnly &&
+			status.Offset == info.Offset && status.SizeLimit == info.SizeLimit {
+			matchedDevice = device
+			break
+		}
+		d.loop.Close()
+	}
+
+	if matchedDevice != -1 {
+		sylog.Debugf("Found shared loop device /dev/loop%d", freeDevice)
+		*number = matchedDevice
+		return nil
+	} else if freeDevice != -1 {
+		path = fmt.Sprintf("/dev/loop%d", freeDevice)
+		sylog.Debugf("Opening loop device %s", path)
+		d.loop, err = os.OpenFile(path, mode, 0)
+		if err != nil {
+			return err
+		}
+		if err := d.SetFd(img.Fd()); err == nil {
+			if err := d.SetStatus(info); err != nil {
+				return err
+			}
+		} else {
+			sylog.Debugf("Could not associate image to loop: %s", err)
+			d.loop.Close()
 		}
 		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, d.loop.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
 			return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
 		}
-		*number = device
+		*number = freeDevice
 		return nil
 	}
 

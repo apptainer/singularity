@@ -16,6 +16,7 @@ type MkdirArgs struct {
 type LoopArgs struct {
 	Image      string
 	MaxDevices uint
+	Shared     bool
 	Info       loop.Info64
 }
 

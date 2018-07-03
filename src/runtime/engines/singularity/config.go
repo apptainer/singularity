@@ -20,6 +20,7 @@ const Name = "singularity"
 type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
+	SharedLoopDevices       bool     `default:"yes" authorized:"yes,no" directive:"shared loop devices"`
 	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
 	ConfigPasswd            bool     `default:"yes" authorized:"yes,no" directive:"config passwd"`
 	ConfigGroup             bool     `default:"yes" authorized:"yes,no" directive:"config group"`

@@ -86,7 +86,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		var number int
 		info.Flags = loop.FlagsAutoClear
 		info.Flags |= loop.FlagsReadOnly
-		number, err = rpcOps.LoopDevice(rootfs, *info, engine.EngineConfig.File.MaxLoopDevices)
+		number, err = rpcOps.LoopDevice(rootfs, *info, engine.EngineConfig.File.SharedLoopDevices, engine.EngineConfig.File.MaxLoopDevices)
 		if err != nil {
 			return err
 		}
