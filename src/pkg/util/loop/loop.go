@@ -88,7 +88,8 @@ func (d *Device) Attach(image string, info *Info64, number *int) error {
 			return err
 		}
 		if status.Inode != imgIno || status.Device != imgDev ||
-			status.Flags&FlagsReadOnly != info.Flags&FlagsReadOnly {
+			status.Flags&FlagsReadOnly != info.Flags&FlagsReadOnly ||
+			status.Offset != info.Offset || status.SizeLimit != info.SizeLimit {
 			if err := d.SetFd(img.Fd()); err == nil {
 				if err := d.SetStatus(info); err != nil {
 					return err
