@@ -278,7 +278,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 	if fstype != "" && setContext {
 		setContext = authorizedFS[fstype].context
 	}
-	if setContext {
+	if setContext && p.context != "" {
 		context := fmt.Sprintf("context=%s", p.context)
 		mountOpts = append(mountOpts, context)
 	}
