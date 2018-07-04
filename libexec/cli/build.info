@@ -164,7 +164,7 @@ EXAMPLES:
 
     Build a base sandbox from DockerHub, make changes to it, then build image
         $ singularity build --sandbox /tmp/debian docker://debian:latest
-        $ singularity exec --writable /tmp/debian apt-get install python
+        $ sudo singularity exec --writable /tmp/debian apt-get install python
         $ singularity build /tmp/debian2.simg /tmp/debian
 
 
