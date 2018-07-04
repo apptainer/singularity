@@ -45,3 +45,4 @@
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Peter Steinbach <steinbach@scionics.de>
