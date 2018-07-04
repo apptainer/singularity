@@ -189,7 +189,9 @@ static int do_mounts(struct mountlist *mountlist, int overlay) {
         target = joinpath(container_dir, point->target);
 
         if ( check_mounted(point->target) >= 0 ) {
-            singularity_message(WARNING, "Not mounting %s (already mounted in container)\n", point->target);
+            // make the message only information if ML_ONLY_IF_POINT_PRESENT
+            int msglevel = ( point->mountlistflags & ML_ONLY_IF_POINT_PRESENT ) ? VERBOSE : WARNING;
+            singularity_message(msglevel, "Not mounting %s (already mounted in container)\n", point->target);
             continue;
         }
 
