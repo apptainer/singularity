@@ -70,9 +70,6 @@ int _singularity_runtime_mount_cwd(struct mountlist *mountlist) {
         return(0);
     }
 
-    // Note that the cwd_path could be under a directory already on the mount
-    // list, in which case the bind mount won't help, but it won't hurt either.
-
     singularity_message(DEBUG, "Checking if cwd is in an operating system directory\n");
     if ( ( strcmp(cwd_path, "/") == 0 ) ||
          ( strcmp(cwd_path, "/bin") == 0 ) ||
