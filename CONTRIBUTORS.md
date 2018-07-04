@@ -37,6 +37,7 @@
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
+    - Peter Steinbach <steinbach@scionics.de>
     - Petr Votava <votava.petr@gene.com>
     - Rafal Gumienny <rafal.gumienny@gmail.com>
     - Ralph Castain <rhc@open-mpi.org>
@@ -45,4 +46,3 @@
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Peter Steinbach <steinbach@scionics.de>
