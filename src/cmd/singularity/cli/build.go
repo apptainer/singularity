@@ -6,14 +6,24 @@
 package cli
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/spf13/cobra"
 )
 
@@ -72,6 +82,11 @@ var BuildCmd = &cobra.Command{
 			fmt.Println("Sandbox!")
 		}
 
+		//check if target collides with existing file
+		if ok := checkBuildTargetCollision(args[0], force); !ok {
+			return
+		}
+
 		def := makeDefinition(args[1], isJSON)
 
 		if remote || builderURL != defbuilderURL {
@@ -88,8 +103,14 @@ var BuildCmd = &cobra.Command{
 			//local build
 			bundle := makeBundle(def)
 
+			if syscall.Getuid() == 0 {
+				doSections(bundle, args[0])
+			} else if hasSections(def) {
+				sylog.Warningf("Skipping definition scripts, not running as root [uid=%v]\n", syscall.Getuid())
+			}
+
 			if sandbox {
-				sylog.Fatalf("Cannot build to sandbox... yet")
+				a = &build.SandboxAssembler{}
 			} else {
 				a = &build.SIFAssembler{}
 			}
@@ -102,6 +123,91 @@ var BuildCmd = &cobra.Command{
 
 	},
 	TraverseChildren: true,
+}
+
+// checkTargetCollision makes sure output target doesnt exist, or is ok to overwrite
+func checkBuildTargetCollision(path string, force bool) bool {
+	if _, err := os.Stat(path); err == nil {
+		//exists
+		if force {
+			os.RemoveAll(path)
+		} else {
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
+			input, err := reader.ReadString('\n')
+			if err != nil {
+				sylog.Fatalf("Error parsing input:", err)
+			}
+			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
+				os.RemoveAll(path)
+			} else {
+				fmt.Println("Stopping build.")
+				return false
+			}
+		}
+	}
+	return true
+}
+
+// hasSections returns true if build definition is requesting to run scripts in image
+func hasSections(def build.Definition) bool {
+	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
+}
+
+// doSections invokes the imgbuild engine through wrapper
+func doSections(b *build.Bundle, fullPath string) {
+	lvl := "0"
+	if verbose {
+		lvl = "2"
+	}
+	if debug {
+		lvl = "5"
+	}
+
+	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
+	progname := []string{"singularity image-build"}
+	env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=imgbuild"}
+
+	engineConfig := &imgbuild.EngineConfig{
+		Bundle: *b,
+	}
+	ociConfig := &oci.Config{}
+
+	config := &config.Common{
+		EngineName:   imgbuild.Name,
+		ContainerID:  filepath.Base(fullPath),
+		OciConfig:    ociConfig,
+		EngineConfig: engineConfig,
+	}
+
+	configData, err := json.Marshal(config)
+	if err != nil {
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	// Set PIPE_EXEC_FD
+	pipefd, err := syexec.SetPipe(configData)
+	if err != nil {
+		sylog.Fatalf("Failed to set PIPE_EXEC_FD: %v\n", err)
+	}
+
+	env = append(env, pipefd)
+
+	// Create os/exec.Command to run wrapper and return control once finished
+	wrapperCmd := &exec.Cmd{
+		Path:   wrapper,
+		Args:   progname,
+		Env:    env,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+	}
+
+	if err := wrapperCmd.Start(); err != nil {
+		sylog.Fatalf("Unable to start wrapper proc: %v\n", err)
+	}
+	if err := wrapperCmd.Wait(); err != nil {
+		sylog.Fatalf("wrapper proc: %v\n", err)
+	}
 }
 
 // getDefinition creates definition object from various input sources
@@ -122,7 +228,7 @@ func makeDefinition(source string, isJSON bool) build.Definition {
 			sylog.Fatalf("unable to parse URI %s: %v\n", source, err)
 		}
 
-	} else if !ok && err == nil {
+	} else if ok, err := build.IsValidDefinition(source); ok && err == nil {
 		// Non-URI passed as arg[1]
 		defFile, err := os.Open(source)
 		if err != nil {
@@ -134,9 +240,16 @@ func makeDefinition(source string, isJSON bool) build.Definition {
 		if err != nil {
 			sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
 		}
-
+	} else if _, err := os.Stat(source); err == nil {
+		//local image or sandbox
+		//define source as local and follow uri format for defs
+		source = "local://" + source
+		def, err = build.NewDefinitionFromURI(source)
+		if err != nil {
+			sylog.Fatalf("unable to parse URI %s: %v\n", source, err)
+		}
 	} else {
-		sylog.Fatalf("unable to parse %s: %v\n", source, err)
+		sylog.Fatalf("unable to build from %s: %v\n", source, err)
 	}
 
 	return def
@@ -148,6 +261,10 @@ func makeBundle(def build.Definition) *build.Bundle {
 	var cp build.ConveyorPacker
 
 	switch def.Header["bootstrap"] {
+	case "shub":
+		cp = &build.ShubConveyorPacker{}
+	case "local":
+		cp = &build.LocalConveyorPacker{}
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
 		cp = &build.OCIConveyorPacker{}
 	default:

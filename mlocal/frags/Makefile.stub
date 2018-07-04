@@ -18,8 +18,6 @@ wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
 wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 
-sif_INSTALL := $(PREFIX)/libexec/singularity/bin/sif
-
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
@@ -28,25 +26,25 @@ finaldir := $(PREFIX)/var/singularity/mnt/final
 overlaydir := $(PREFIX)/var/singularity/mnt/overlay
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
-go_BIN := $(singularity) $(sbuild)
+go_BIN := $(singularity)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
-go_INSTALL := $(singularity_INSTALL) $(sbuild_INSTALL)
+go_INSTALL := $(singularity_INSTALL)
 
-go_TAG += containers_image_openpgp singularity_sif
+go_TAG += containers_image_openpgp
 
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
 
-INSTALLFILES := $(singularity_INSTALL) $(sbuild_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sif_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(sbuild) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
 
 all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
 
-$(libruntime): $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+$(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
-	$(V)$(AR) rcs $@ $(libutil_OBJ) $(libimage_OBJ) $(libruntime_OBJ) $(libsif_OBJ)
+	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
 # libstartup
 $(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
@@ -69,7 +67,7 @@ $(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
 $(wrapper): $(wrapper_OBJ) $(libstartup)
 	@echo " LD" $@
 	@mkdir -p $(@D)
-	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread $(WRAPPER_LIBS)
+	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread -lgpgme $(WRAPPER_LIBS)
 	$(V)($(SIZE) $@ 2>/dev/null || true)
 
 # singularity
@@ -83,7 +81,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -97,11 +95,18 @@ $(wrapper_suid_INSTALL): $(wrapper)
 	$(V)install -d $(@D)
 	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
 
-# sif install
-$(sif_INSTALL): $(sif)
-	@echo " INSTALL" $@
-	$(V)install -d $(@D)
-	$(V)install -m 0755 $(sif) $(sif_INSTALL)
+# generate the vendor folder with dep and patch when necessary
+$(BUILDDIR)/vendors-done:
+	@echo " VENDORS"
+	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+		dep ensure -vendor-only >/dev/null 2>&1 && \
+			touch $(BUILDDIR)/.dep-done; \
+	fi
+	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+			touch $(BUILDDIR)/.patch-done; \
+	fi
+	$(V)touch $@
 
 #TODO: generate real config file and install, currently is just blank
 $(config):
@@ -142,12 +147,6 @@ collect:
 			print path "/" $$0; next }{ print }' < $$i	\
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
-
-.PHONY: dep
-dep:
-	@printf " GO DEPS\n"
-	$(V)(dep ensure -vendor-only >/dev/null 2>&1)
-	$(V)(patch --silent ../vendor/github.com/opencontainers/image-tools/image/manifest.go ../patches/image_tools_manifest.go.patch)
 
 .PHONY: test
 test:

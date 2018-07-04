@@ -49,7 +49,6 @@
 
 #include "c/lib/util/capability.h"
 #include "c/lib/util/message.h"
-#include "c/lib/util/util.h"
 
 #include "startup/c/wrapper.h"
 
@@ -473,10 +472,12 @@ __attribute__((constructor)) static void init(void) {
     sigset_t mask;
     char *loglevel;
     char *runtime;
+    char *pipe_fd_env;
     int output[2];
     int status;
     struct pollfd fds;
     int syncfd = -1;
+    int pipe_fd = -1;
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
     singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
@@ -496,6 +497,22 @@ __attribute__((constructor)) static void init(void) {
         sruntime = strdup(runtime);
     } else {
         singularity_message(ERROR, "SRUNTIME environment variable isn't set\n");
+        exit(1);
+    }
+
+    pipe_fd_env = getenv("PIPE_EXEC_FD");
+    if ( pipe_fd_env != NULL ) {
+        if ( sscanf(pipe_fd_env, "%d", &pipe_fd) != 1 ) {
+            singularity_message(ERROR, "Failed to parse PIPE_EXEC_FD environment variable: %s\n", strerror(errno));
+            exit(1);
+        }
+        singularity_message(DEBUG, "PIPE_EXEC_FD value: %d\n", pipe_fd);
+        if ( pipe_fd < 0 || pipe_fd >= sysconf(_SC_OPEN_MAX) ) {
+            singularity_message(ERROR, "Bad PIPE_EXEC_FD file descriptor value\n");
+            exit(1);
+        }
+    } else {
+        singularity_message(ERROR, "PIPE_EXEC_FD environment variable isn't set\n");
         exit(1);
     }
 
@@ -522,8 +539,7 @@ __attribute__((constructor)) static void init(void) {
     }
 
     /* read json configuration from stdin */
-    singularity_message(DEBUG, "Read json configuration from stdin\n");
-    int std = open("/proc/self/fd/1", O_RDONLY);
+    singularity_message(DEBUG, "Read json configuration from pipe\n");
 
     json_stdin = (char *)malloc(MAX_JSON_SIZE);
     if ( json_stdin == NULL ) {
@@ -532,20 +548,11 @@ __attribute__((constructor)) static void init(void) {
     }
 
     memset(json_stdin, 0, MAX_JSON_SIZE);
-    if ( ( config.jsonConfSize = read(STDIN_FILENO, json_stdin, MAX_JSON_SIZE - 1) ) <= 0 ) {
-        singularity_message(ERROR, "Read JSON configuration from stdin failed: %s\n", strerror(errno));
+    if ( ( config.jsonConfSize = read(pipe_fd, json_stdin, MAX_JSON_SIZE - 1) ) <= 0 ) {
+        singularity_message(ERROR, "Read JSON configuration from pipe failed: %s\n", strerror(errno));
         exit(1);
     }
-
-    /* back to terminal stdin */
-    if ( isatty(std) ) {
-        singularity_message(DEBUG, "Run in terminal, restore stdin\n");
-        if ( dup2(std, STDIN_FILENO) < 0 ) {
-            singularity_message(ERROR, "Failed to restore terminal stdin: %s\n", strerror(errno));
-            exit(1);
-        }
-    }
-    close(std);
+    close(pipe_fd);
 
     /* block SIGCHLD signal handled later by scontainer/smaster */
     singularity_message(DEBUG, "Set child signal mask\n");
@@ -733,7 +740,7 @@ __attribute__((constructor)) static void init(void) {
         }
     }
     singularity_message(DEBUG, "Create RPC socketpair for communication between scontainer and RPC server\n");
-    if ( socketpair(AF_UNIX, SOCK_STREAM, 0, rpc_socket) < 0 ) {
+    if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
         singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
         exit(1);
     }
