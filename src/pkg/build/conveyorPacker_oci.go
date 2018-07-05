@@ -338,7 +338,7 @@ else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-eval $SINGULARITY_OCI_RUN
+eval ${SINGULARITY_OCI_RUN}
 
 `)
 	if err != nil {
@@ -369,11 +369,19 @@ func (cp *OCIConveyorPacker) insertEnv(b *Bundle) (err error) {
 	}
 
 	for _, element := range cp.imgConfig.Env {
-		_, err = f.WriteString("export " + shell.Escape(element) + "\n")
-		if err != nil {
-			return
-		}
 
+		envParts := strings.SplitN(element, "=", 2)
+		if len(envParts) == 1 {
+			_, err = f.WriteString("export " + shell.Escape(element) + "\n")
+			if err != nil {
+				return
+			}
+		} else {
+			_, err = f.WriteString("export " + envParts[0] + "=\"" + shell.Escape(envParts[1]) + "\"\n")
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	f.Sync()
