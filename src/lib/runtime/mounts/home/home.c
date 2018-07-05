@@ -106,8 +106,9 @@ int _singularity_runtime_mount_home(struct mountlist *mountlist) {
         singularity_message(VERBOSE, "Using sessiondir for home directory\n");
     }
 
-    singularity_message(DEBUG, "Checking if overlay is enabled\n");
-    if ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) {
+    singularity_message(DEBUG, "Checking if overlay or underlay is enabled\n");
+    if ( ( singularity_registry_get("OVERLAYFS_ENABLED") == NULL ) &&
+            ( singularity_registry_get("UNDERLAY_ENABLED") == NULL ) ) {
         char *homedir_base;
 
         singularity_message(DEBUG, "Staging home directory base\n");

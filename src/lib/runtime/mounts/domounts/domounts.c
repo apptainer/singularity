@@ -42,6 +42,18 @@
 #include "util/mount.h"
 #include "util/mountlist.h"
 
+void singularity_runtime_domounts_init() {
+    singularity_registry_set("UNDERLAY_ENABLED", NULL);
+    if ( ( singularity_config_get_bool_char(ENABLE_UNDERLAY) > 0 ) ) {
+        if ( singularity_registry_get("DISABLE_UNDERLAY") != NULL ) {
+            singularity_message(VERBOSE3, "Not enabling underlay via environment\n");
+        } else {
+            singularity_message(VERBOSE3, "Enabling underlay\n");
+            singularity_registry_set("UNDERLAY_ENABLED", "1");
+        }
+    }
+}
+
 static void bind_image_final(char *source, char *sub_path) {
     char *target = joinpath(CONTAINER_FINALDIR, sub_path);
     singularity_message(VERBOSE3, "Binding %s to %s\n", source, target);
@@ -394,14 +406,8 @@ int _singularity_runtime_domounts(struct mountlist *mountlist) {
     if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL )
         return(do_mounts(mountlist, 1));
 
-    if ( ( singularity_config_get_bool_char(ENABLE_UNDERLAY) > 0 ) ) {
-        if ( singularity_registry_get("DISABLE_UNDERLAY") != NULL ) {
-            singularity_message(VERBOSE3, "Not enabling underlay via environment\n");
-        } else {
-            singularity_message(VERBOSE3, "Enabling underlay\n");
-            return(underlay_mounts(mountlist));
-        }
-    }
+    if ( singularity_registry_get("UNDERLAY_ENABLED") != NULL )
+        return(underlay_mounts(mountlist));
 
     return(do_mounts(mountlist, 0));
 }
