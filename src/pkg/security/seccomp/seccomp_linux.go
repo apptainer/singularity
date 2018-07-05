@@ -65,6 +65,11 @@ func hasConditionSupport() bool {
 	return (major > 2) || (major == 2 && minor >= 2) || (major == 2 && minor == 2 && micro >= 1)
 }
 
+// Enabled returns wether seccomp is enabled or not
+func Enabled() bool {
+	return true
+}
+
 // LoadSeccompConfig loads seccomp configuration filter for the current process
 func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 	supportCondition := true

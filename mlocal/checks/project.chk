@@ -5,7 +5,7 @@
 set -e
 
 makecond="$builddir/Makefile.cond"
-echo "" > $makecond
+echo "go_TAG += $BUILDTAG" > $makecond
 
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
@@ -335,9 +335,13 @@ if ! printf "#include <seccomp.h>\nint main() { }" | \
     tgtstatic=0
     echo "no"
 else
-    echo "yes"
-    echo "WRAPPER_LIBS += -lseccomp" >> $makecond
-    echo "go_TAG += seccomp" >> $makecond
+    case "${BUILDTAG}" in
+        *seccomp*)
+            echo "yes"
+            echo "WRAPPER_LIBS += -lseccomp" >> $makecond ;;
+        *)
+            echo "yes (not configured)" ;;
+    esac
 fi
 
 echo "INFO: userns and disable_suid are disabled. (mchecks/base.chk)"

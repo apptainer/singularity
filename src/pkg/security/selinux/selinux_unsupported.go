@@ -3,20 +3,16 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !linux OR !apparmor
+// +build !selinux OR !linux
 
-package apparmor
+package selinux
 
-import (
-	"fmt"
-)
-
-// Enabled returns if apparmor is whether enabled/supported or not
+// Enabled checks if SELinux is enabled or not
 func Enabled() bool {
 	return false
 }
 
-// LoadProfile returns error for unsupported platform
-func LoadProfile(profile string) error {
-	return fmt.Errorf("apparmor is not supported by OS")
+// SetExecLabel sets the SELinux label for current process
+func SetExecLabel(label string) error {
+	return nil
 }

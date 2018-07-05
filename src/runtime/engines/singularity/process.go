@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+
+	"github.com/singularityware/singularity/src/pkg/security"
 )
 
 // StartProcess starts the process
@@ -16,6 +18,10 @@ func (engine *EngineOperations) StartProcess() error {
 	os.Setenv("PS1", "shell> ")
 
 	os.Chdir("/")
+
+	if err := security.Configure(&engine.CommonConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
+	}
 
 	args := engine.CommonConfig.OciConfig.Process.Args
 	env := engine.CommonConfig.OciConfig.Process.Env

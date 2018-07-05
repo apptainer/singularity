@@ -297,6 +297,12 @@
   version = "v0.6.0"
 
 [[projects]]
+  name = "github.com/opencontainers/selinux"
+  packages = ["go-selinux"]
+  revision = "ba1aefe8057f1d0cfb8e88d0ec1dc85925ef987d"
+  version = "v1.0.0-rc1"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -472,6 +478,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a4bb4f7e4d8fa5993f8d45caaafd0f7c2c09fad9dadc30e17bdaf5d2e4a89dc9"
+  inputs-digest = "b74e900752ece34fbaeb02ea2adf3a7c0de62caff5dedf977ef5907f5310220b"
   solver-name = "gps-cdcl"
   solver-version = 1
