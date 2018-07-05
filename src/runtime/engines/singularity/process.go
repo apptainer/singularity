@@ -8,6 +8,7 @@ package singularity
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"syscall"
 
 	"github.com/singularityware/singularity/src/pkg/security"
@@ -18,6 +19,9 @@ func (engine *EngineOperations) StartProcess() error {
 	os.Setenv("PS1", "shell> ")
 
 	os.Chdir("/")
+
+	// lock the current thread to apply security configuration
+	runtime.LockOSThread()
 
 	if err := security.Configure(&engine.CommonConfig.OciConfig.Spec); err != nil {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
