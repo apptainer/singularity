@@ -9,8 +9,8 @@ import (
 	"fmt"
 )
 
-// CheckConfig checks the runtime engine config
-func (engine *EngineOperations) CheckConfig() error {
+// PrepareConfig checks and prepares the runtime engine config
+func (engine *EngineOperations) PrepareConfig() error {
 	if engine.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
 	}

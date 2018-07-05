@@ -31,3 +31,8 @@ func (e *EngineOperations) Config() config.EngineConfig {
 func (e *EngineOperations) IsRunAsInstance() bool {
 	return e.EngineConfig.GetInstance()
 }
+
+// IsAllowSUID always returns true to allow SUID workflow
+func (e *EngineOperations) IsAllowSUID() bool {
+	return true
+}

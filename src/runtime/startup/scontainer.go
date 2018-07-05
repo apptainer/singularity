@@ -48,7 +48,11 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 	if stage == 1 {
 		sylog.Debugf("Entering scontainer stage 1\n")
 
-		if err := engine.CheckConfig(); err != nil {
+		if cconf.isSuid == 1 && engine.IsAllowSUID() == false {
+			sylog.Fatalf("runtime engine %s doesn't allow SUID workflow", engine.EngineName)
+		}
+
+		if err := engine.PrepareConfig(); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
 
