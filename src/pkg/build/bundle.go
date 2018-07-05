@@ -30,10 +30,11 @@ type Bundle struct {
 	//   * rootfs -> root file system
 	//   * .singularity.d -> .singularity.d directory (includes image exec scripts)
 	//   * data -> directory containing data files
-	FSObjects   map[string]string
-	JSONObjects map[string][]byte
-	Recipe      Definition
-	path        string
+	FSObjects   map[string]string `json:"fsObjects"`
+	JSONObjects map[string][]byte `json:"jsonObjects"`
+	Recipe      Definition        `json:"rawDeffile"`
+	BindPath    []string          `json:"bindPath"`
+	Path        string            `json:"bundlePath"`
 }
 
 // NewBundle creates a Bundle environment
@@ -42,20 +43,22 @@ func NewBundle(rootfs string) (b *Bundle, err error) {
 	b = &Bundle{}
 
 	if rootfs == "" {
-		b.path, err = ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
+		b.Path, err = ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		b.path = rootfs
+		b.Path = rootfs
 	}
 
 	b.FSObjects = map[string]string{
 		"rootfs": "fs",
 	}
 
-	if err = os.MkdirAll(filepath.Join(b.path, b.FSObjects["rootfs"]), 0755); err != nil {
-		return
+	for _, fso := range b.FSObjects {
+		if err = os.MkdirAll(filepath.Join(b.Path, fso), 0755); err != nil {
+			return
+		}
 	}
 
 	return b, nil
@@ -63,5 +66,5 @@ func NewBundle(rootfs string) (b *Bundle, err error) {
 
 // Rootfs give the path to the root filesystem in the Bundle
 func (b *Bundle) Rootfs() string {
-	return filepath.Join(b.path, b.FSObjects["rootfs"])
+	return filepath.Join(b.Path, b.FSObjects["rootfs"])
 }

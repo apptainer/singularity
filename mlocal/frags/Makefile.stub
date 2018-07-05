@@ -101,7 +101,7 @@ $(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
 $(wrapper): $(wrapper_OBJ) $(libstartup)
 	@echo " LD" $@
 	@mkdir -p $(@D)
-	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread $(WRAPPER_LIBS)
+	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread -lgpgme $(WRAPPER_LIBS)
 	$(V)($(SIZE) $@ 2>/dev/null || true)
 
 # singularity

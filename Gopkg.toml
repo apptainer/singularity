@@ -43,7 +43,7 @@ required = [
 
 [[constraint]]
   name = "github.com/sylabs/sif"
-  revision = "b9d67677ad65d5287f646d9e6721b09b1a172852"
+  revision = "23238c2ac7d1f06f1fb21b0413a27426a3f4bc64"
 
 [[constraint]]
   branch = "master"
