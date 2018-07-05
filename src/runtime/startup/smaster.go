@@ -13,6 +13,7 @@ package main
 import "C"
 
 import (
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -28,14 +29,13 @@ import (
 // SMaster initializes a runtime engine and runs it
 //export SMaster
 func SMaster(socket C.int, instanceSocket C.int, config *C.struct_cConfig, jsonC *C.char) {
+	var fatal error
+
 	containerPid := int(config.containerPid)
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
 
 	engine, err := engines.NewEngine(jsonBytes)
 	if err != nil {
-		if err := engine.CleanupContainer(); err != nil {
-			sylog.Errorf("container cleanup failed: %s", err)
-		}
 		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
 
@@ -43,14 +43,18 @@ func SMaster(socket C.int, instanceSocket C.int, config *C.struct_cConfig, jsonC
 		comm := os.NewFile(uintptr(socket), "socket")
 		conn, err := net.FileConn(comm)
 		if err != nil {
-			sylog.Fatalf("Failed to copy unix socket descriptor")
+			fatal = fmt.Errorf("failed to copy unix socket descriptor: %s", err)
+			syscall.Kill(containerPid, syscall.SIGTERM)
+			return
 		}
 		comm.Close()
 
 		runtime.LockOSThread()
-		defer conn.Close()
 		if err := engine.CreateContainer(containerPid, conn); err != nil {
-			sylog.Errorf("container creation failed: %s", err)
+			fatal = fmt.Errorf("container creation failed: %s", err)
+			syscall.Kill(containerPid, syscall.SIGTERM)
+		} else {
+			conn.Close()
 		}
 		runtime.Goexit()
 	}()
@@ -78,8 +82,14 @@ func SMaster(socket C.int, instanceSocket C.int, config *C.struct_cConfig, jsonC
 		sylog.Errorf("%s", err)
 	}
 
+	runtime.LockOSThread()
 	if err := engine.CleanupContainer(); err != nil {
 		sylog.Errorf("container cleanup failed: %s", err)
+	}
+	runtime.UnlockOSThread()
+
+	if fatal != nil {
+		sylog.Fatalf("%s", fatal)
 	}
 
 	if status.Exited() {
@@ -94,6 +104,7 @@ func SMaster(socket C.int, instanceSocket C.int, config *C.struct_cConfig, jsonC
 	} else if status.Signaled() {
 		sylog.Debugf("Child exited due to signal %d", status.Signal())
 		syscall.Kill(os.Getpid(), status.Signal())
+		os.Exit(1)
 	}
 }
 
