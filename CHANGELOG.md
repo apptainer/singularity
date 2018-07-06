@@ -22,6 +22,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - --nv can be made default with all action commands in singularity.conf
  - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
 
+### Bug fixes
+  - Fix 404 when using Arch Linux bootstrap #1731
+
 ## [v2.5.2]
 
 ### Bug fixes
