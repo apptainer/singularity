@@ -26,7 +26,7 @@
 
 struct mountlist;
 
-extern int _singularity_runtime_domounts_init();
+extern int _singularity_runtime_domounts_init(struct mountlist *mountlist);
 extern int _singularity_runtime_domounts(struct mountlist *mountlist);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_DOMOUNTS_H */

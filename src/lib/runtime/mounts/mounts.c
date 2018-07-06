@@ -51,9 +51,8 @@
 int _singularity_runtime_mounts(void) {
     int retval = 0;
     struct mountlist mountlist;
-    memset(&mountlist, 0, sizeof(mountlist));
 
-    singularity_runtime_domounts_init();
+    singularity_runtime_domounts_init(&mountlist);
 
     singularity_message(VERBOSE, "Running all mount components\n");
     retval += _singularity_runtime_mount_dev(&mountlist);
