@@ -22,6 +22,10 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - --nv can be made default with all action commands in singularity.conf
  - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
 
+### Misc
+ - Refactored travis build and packaging tests
+ - Added build and packaging tests for Debian 8/9 and openSUSE 42.3/15.0
+
 ## [v2.5.2]
 
 ### Bug fixes
