@@ -7,7 +7,8 @@ rpms_dir='/usr/src/packages/RPMS'
 auto_deps=(libtool rpm-build)
 test_deps=(python3 python3-pip python3-setuptools docker
            sudo which e2fsprogs
-           curl tar ncurses-utils)
+           curl tar ncurses-utils
+           timezone)
 
 install_autogen_deps () {
     zypper install -y --no-recommends ${auto_deps[*]}
