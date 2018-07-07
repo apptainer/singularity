@@ -35,7 +35,7 @@ go_TAG += containers_image_openpgp
 abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
-cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime -lgpgme
+cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
 
