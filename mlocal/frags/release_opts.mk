@@ -1,2 +1,2 @@
-CFLAGS += -O2 -fPIC
+CFLAGS += -O2
 LDFLAGS += -s
