@@ -6,10 +6,8 @@
 package main
 
 /*
-#include <sys/types.h>
-#include "startup/c/wrapper.h"
+#include "c/wrapper.c"
 */
-// #cgo CFLAGS: -I..
 import "C"
 
 import (
@@ -27,7 +25,6 @@ import (
 )
 
 // SMaster initializes a runtime engine and runs it
-//export SMaster
 func SMaster(socket C.int, instanceSocket C.int, config *C.struct_cConfig, jsonC *C.char) {
 	var fatal error
 
@@ -108,4 +105,24 @@ func SMaster(socket C.int, instanceSocket C.int, config *C.struct_cConfig, jsonC
 	}
 }
 
-func main() {}
+func main() {
+	switch C.execute {
+	case C.SCONTAINER_STAGE1:
+		sylog.Verbosef("Execute scontainer stage 1\n")
+		SContainer(C.SCONTAINER_STAGE1, &C.config, C.json_stdin)
+	case C.SCONTAINER_STAGE2:
+		sylog.Verbosef("Execute scontainer stage 2\n")
+		SContainer(C.SCONTAINER_STAGE2, &C.config, C.json_stdin)
+	case C.SMASTER:
+		sylog.Verbosef("Execute smaster process\n")
+		SMaster(C.rpc_socket[0], C.instance_socket[0], &C.config, C.json_stdin)
+	case C.RPC_SERVER:
+		sylog.Verbosef("Serve RPC requests\n")
+		RPCServer(C.rpc_socket[1], C.sruntime)
+
+		sylog.Verbosef("Execute scontainer stage 2\n")
+		C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
+		SContainer(C.SCONTAINER_STAGE2, &C.config, C.json_stdin)
+	}
+	sylog.Fatalf("You should not be there\n")
+}
