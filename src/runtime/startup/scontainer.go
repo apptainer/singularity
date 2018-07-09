@@ -32,7 +32,6 @@ func bool2int(b bool) uint8 {
 }
 
 // SContainer performs container startup
-//export SContainer
 func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 	cconf := config
 
