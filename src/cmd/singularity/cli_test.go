@@ -12,9 +12,21 @@ import (
 	"testing"
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 var cmdPath string
+
+func TestSelfTest(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	cmd := exec.Command(cmdPath, "selftest")
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure running selftest: %v", err)
+	}
+}
 
 func run(m *testing.M) int {
 
