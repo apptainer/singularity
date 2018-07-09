@@ -1,15 +1,13 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package fs
 
 import (
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -65,4 +63,20 @@ func IsSuid(name string) bool {
 		return false
 	}
 	return (info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0)
+}
+
+// RootDir returns the root directory of path (rootdir of /my/path is /my).
+// Returns "." if path is empty
+func RootDir(path string) string {
+	if path == "" {
+		return "."
+	}
+
+	iter := filepath.Dir(path)
+	for iter != "/" && iter != "." {
+		path = iter
+		iter = filepath.Dir(path)
+	}
+
+	return path
 }
