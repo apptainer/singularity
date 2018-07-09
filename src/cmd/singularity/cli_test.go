@@ -16,6 +16,14 @@ import (
 
 var cmdPath string
 
+func TestSelfTest(t *testing.T) {
+	cmd := exec.Command(cmdPath, "selftest")
+	if b, err := cmd.CombinedOutput(); err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure running selftest: %v", err)
+	}
+}
+
 func TestMain(m *testing.M) {
 
 	// Sanity checks for sudo
