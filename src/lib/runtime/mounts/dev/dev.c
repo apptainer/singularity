@@ -151,7 +151,6 @@ int _singularity_runtime_mount_dev(void) {
             singularity_message(ERROR, "Failed to mount %s/shm: %s\n", devdir, strerror(errno));
             ABORT(255);
         }
-        singularity_priv_drop();
 
         if ( strcmp("tmpfs", memfs_type) != 0 ) {
             singularity_priv_escalate();
@@ -199,27 +198,21 @@ int _singularity_runtime_mount_dev(void) {
                 snprintf(devpts_opts, max_sz-1, "%s%s%d", devpts_opts_base, devpts_opts_gid, ttygid->gr_gid);
             }
             else {
-                singularity_message(DEBUG, "Setuid not allowed - not setting /dev/pts filesystem gid\n");
+                singularity_message(DEBUG, "Not setting /dev/pts filesystem gid: user namespace enabled\n");
                 devpts_opts=devpts_opts_base;
             }
 
-            singularity_priv_escalate();
             singularity_message(DEBUG, "Mounting devpts for staged /dev/pts\n");
             if ( singularity_mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
-                singularity_priv_drop();
-
                 if (errno == EINVAL) {
-                    // This is the error when unprivileged on RHEL7.4 
+                    // This is the error when unprivileged on RHEL7.4
                     singularity_message(WARNING, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
                 } else {
                     singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
                     ABORT(255);
                 }
             }
-            else
-            {
-                singularity_priv_drop();
-
+            else {
                 bind_dev(sessiondir, "/dev/tty");
 
                 singularity_message(DEBUG, "Creating staged /dev/ptmx symlink\n");
@@ -234,7 +227,6 @@ int _singularity_runtime_mount_dev(void) {
                 free(devpts_opts);
         }
 
-        singularity_priv_escalate();
         singularity_message(DEBUG, "Mounting minimal staged /dev into container\n");
         if ( singularity_mount(devdir, joinpath(container_dir, "/dev"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
             singularity_message(WARNING, "Could not stage dev tree: '%s' -> '%s': %s\n", devdir, joinpath(container_dir, "/dev"), strerror(errno));
