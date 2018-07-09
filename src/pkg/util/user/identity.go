@@ -13,6 +13,14 @@ package user
 #include <sys/types.h>
 #include <pwd.h>
 #include <grp.h>
+
+#ifndef uid_t
+typedef uid_t __uid_t;
+#endif
+
+#ifndef gid_t
+typedef gid_t __gid_t;
+#endif
 */
 import "C"
 import "fmt"
