@@ -462,7 +462,7 @@ bind_nvidia_files() {
     fi
 
     # check to see if nvidia-container-cli is producing plausible output
-    if ! singularity_which nvidia-container-cli > /dev/null 2>&1 || ! SINGULARITY_NV_FILES=`nvidia-container-cli list -cguv`; then
+    if ! singularity_which nvidia-container-cli > /dev/null 2>&1 || ! SINGULARITY_NV_FILES=`nvidia-container-cli list --binaries --ipcs --libraries`; then
         message 2 "nvidia-container-cli not installed or not working\n"
         SINGULARITY_USE_NVLIBLIST_CONF=1
     else
