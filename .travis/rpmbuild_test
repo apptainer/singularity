@@ -26,6 +26,10 @@ rpmbuild -ta *.tar.gz
 
 install_rpms
 
+if [ "$OS_VERSION" = 6 ]; then
+    echo "the python tests have not yet been ported to centos6 python, and will be skipped."
+fi
+
 install_test_deps
 
 # correct test.sh for the ./configure arguments from the %configure macro
