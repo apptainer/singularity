@@ -7,6 +7,7 @@ package imgbuild
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -15,13 +16,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// PrestartProcess _
-func (e *EngineOperations) PrestartProcess() error {
-	return nil
-}
-
 // StartProcess runs the %post script
-func (e *EngineOperations) StartProcess() error {
+func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// Run %post script here
 
 	post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
