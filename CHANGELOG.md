@@ -21,6 +21,8 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries
  - --nv can be made default with all action commands in singularity.conf
  - --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
+ - Refactored travis build and packaging tests
+ - Added build and packaging tests for Debian 8/9 and openSUSE 42.3/15.0
 
 ### Bug fixes
   - Fix 404 when using Arch Linux bootstrap #1731

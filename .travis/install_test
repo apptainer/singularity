@@ -1,6 +1,11 @@
 #!/bin/bash -ex
 
 ./autogen.sh
+
+# Test that distclean target works fine:
+./configure --prefix=/usr/local
+make distclean
+
 ./configure --prefix=/usr/local
 sudo make install
 make test
