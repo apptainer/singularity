@@ -1,4 +1,4 @@
-singularity-container (2.5.1) unstable; urgency=high
+singularity-container (2.5.1-1) unstable; urgency=high
 
   * Corrected a permissions error when attempting to run Singularity from a
   * directory on NFS with root_squash enabled
@@ -6,7 +6,9 @@ singularity-container (2.5.1) unstable; urgency=high
   * execution on hosts using identity services like SSSD
   * Fixed a regression that broke the debootstrap agent
 
-singularity-container (2.5.0) unstable; urgency=high
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 19 Feb 2018 14:12:13 -0700
+
+singularity-container (2.5.0-1) unstable; urgency=high
 
   * Prevent a user from creating world writable files in root-owned directories 
     on the host system by manipulating symbolic links and bind mounts 
@@ -41,15 +43,21 @@ singularity-container (2.5.0) unstable; urgency=high
   * Improved the way that working directory is mounted 
   * Fixed an out of bounds array in src/lib/image/ext3/init.c
 
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 19 Feb 2018 14:12:13 -0700
+
 singularity-container (2.4.6-1) unstable; urgency=high
 
   * Fix for check_mounted() to check parent directories #1436
   * Free strdupped temporary variable in joinpath #1438
 
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 19 Feb 2018 14:12:13 -0700
+
 singularity-container (2.4.5-1) unstable; urgency=high
 
   * Strip authorization header on http redirect to different domain when
     interacting with docker registries.
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Mon, 19 Feb 2018 14:12:13 -0700
 
 singularity-container (2.4.4-1) unstable; urgency=high
 
