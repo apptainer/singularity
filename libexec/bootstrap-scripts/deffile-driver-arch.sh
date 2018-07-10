@@ -57,7 +57,7 @@ if [ "$ARCHITECTURE" != 'x86_64' -a "$ARCHITECTURE" != 'i686' ]; then
     ABORT 1
 fi
 
-PACMAN_CONF_URL="https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf.${ARCHITECTURE}?h=packages/pacman"
+PACMAN_CONF_URL="https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf?h=packages/pacman"
 
 # `pacstrap' installs the whole "base" package group, unless told otherwise.
 # $BASE_TO_SKIP are "base" packages that won't be normally needed on a
