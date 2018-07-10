@@ -481,7 +481,7 @@ __attribute__((constructor)) static void init(void) {
     exit(1);
 #endif
 
-    loglevel = getenv("SINGULARITY_MESSAGELEVEL");
+    loglevel = getenv("SINGULARITY_MESSAGELEVEL"); /* Flawfinder: ignore */
     if ( loglevel != NULL ) {
         loglevel = strdup(loglevel);
     } else {
@@ -489,7 +489,7 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
-    runtime = getenv("SRUNTIME");
+    runtime = getenv("SRUNTIME"); /* Flawfinder: ignore */
     if ( runtime != NULL ) {
         sruntime = strdup(runtime);
     } else {
@@ -497,7 +497,7 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
-    pipe_fd_env = getenv("PIPE_EXEC_FD");
+    pipe_fd_env = getenv("PIPE_EXEC_FD"); /* Flawfinder: ignore */
     if ( pipe_fd_env != NULL ) {
         if ( sscanf(pipe_fd_env, "%d", &pipe_fd) != 1 ) {
             singularity_message(ERROR, "Failed to parse PIPE_EXEC_FD environment variable: %s\n", strerror(errno));
