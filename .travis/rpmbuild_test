@@ -42,6 +42,9 @@ s@^localstatedir=.*@localstatedir=$(rpm -E '%{_localstatedir}')@
 " test.sh
 
 # run the test suite
+sed -i 's,^prefix=.*,prefix=/usr,' test.sh
+sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
+sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
 useradd -u 1000 --create-home testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers

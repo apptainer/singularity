@@ -1,3 +1,28 @@
+singularity-container (2.5.2-1) unstable; urgency=high
+
+  * Removed the option to use overlay images with `singularity mount`.  This
+  * flaw could allow a malicious user accessing the host system to access
+  * sensitive information when coupled with persistent ext3 overlay.
+  * Fixed a race condition that might allow a malicious user to bypass 
+    directory
+  * image restrictions, like mounting the host root filesystem as a container
+  * image
+  * Fix an error in malloc allocation #1620
+  * Honor debug flag when pulling from docker hub #1556
+  * Fix a bug with passwd abort #1580
+  * Allow user to override singularity.conf "mount home = no" with --home 
+    option
+  * #1496
+  * Improve debugging output #1535
+  * Fix some bugs in bind mounting #1525
+  * Define PR_(S|G)ET_NO_NEW_PRIVS in user space so that these features will
+  * work with kernels that implement them (like Cray systems) #1506
+  * Create /dev/fd and standard streams symlinks in /dev when using minimal dev
+  * mount or when specifying -c/-C/--contain option #1420
+  * Fixed * expansion during app runscript creation #1486
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Tue, 03 Jul 2018 11:37:00 -0700
+
 singularity-container (2.5.1-1) unstable; urgency=high
 
   * Corrected a permissions error when attempting to run Singularity from a
