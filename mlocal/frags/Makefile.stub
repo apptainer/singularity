@@ -137,6 +137,16 @@ collect:
 
 .PHONY: test
 test:
+	@echo " TEST flawfinder"
+	$(V)if which flawfinder >/dev/null; then \
+		flawfinder -SQ --minlevel=3 $(SOURCEDIR) > "$(BUILDDIR)/ff.out"; \
+		if ! grep -q 'No hits found.' "$(BUILDDIR)/ff.out"; then \
+		    cat "$(BUILDDIR)/ff.out" && false; \
+		fi \
+	else \
+		echo "flawfinder not installed, skipping..."; \
+	fi
+	@echo "       PASS"
 	@echo " TEST go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && test -z $(go fmt ./...)
