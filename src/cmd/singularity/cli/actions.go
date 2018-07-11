@@ -16,6 +16,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/pkg/util/fs/mount/home"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
@@ -123,6 +124,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetHomeDir(HomePath)
 
 	if NetNamespace {
 		generator.AddOrReplaceLinuxNamespace("network", "")
@@ -157,6 +159,12 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 			}
 			generator.AddProcessEnv(e[0], e[1])
 		}
+	}
+
+	if e, err := home.EnvVar(HomePath); err == nil {
+		generator.AddProcessEnv(e[0], e[1])
+	} else {
+		sylog.Fatalf("Unable to set $HOME variable: %v\n", err)
 	}
 
 	if pwd, err := os.Getwd(); err == nil {
