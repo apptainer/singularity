@@ -6,7 +6,6 @@ singularity-*.tar.gz
 *.m4
 *.pyc
 *.swp
-singularity
 generate_docs
 
 .vscode

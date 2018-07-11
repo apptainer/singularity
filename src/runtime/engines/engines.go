@@ -33,10 +33,12 @@ type EngineOperations interface {
 	// InitConfig is responsible for storing the parse config.Common inside
 	// the EngineOperations implementation.
 	InitConfig(*config.Common)
-	// CheckConfig is called in stage1 to validate the values of the configuration
-	CheckConfig() error
+	// PrepareConfig is called in stage1 to validate and prepare container configuration
+	PrepareConfig() error
 	// IsRunAsInstance returns whether or not the container is an instance or batch
 	IsRunAsInstance() bool
+	// IsAllowSUID returns whether or not the engine allow SUID workflow
+	IsAllowSUID() bool
 	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
 	CreateContainer(int, net.Conn) error
