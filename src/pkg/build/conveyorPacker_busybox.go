@@ -148,25 +148,8 @@ func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
 }
 
 func (cp *BusyBoxConveyorPacker) insertRunScript() (err error) {
-	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
-	if err != nil {
-		return
-	}
 
-	defer f.Close()
-
-	_, err = f.WriteString("#!/bin/sh\n")
-	if err != nil {
-		return
-	}
-
-	if err != nil {
-		return
-	}
-
-	f.Sync()
-
-	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/runscript", 0755)
+	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
