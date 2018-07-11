@@ -11,18 +11,17 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os/exec"
-	"runtime"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-
 const (
 	pacmanConfURL = "https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf?h=packages/pacman"
 )
-
 
 // `pacstrap' installs the whole "base" package group, unless told otherwise.
 // baseToSkip are "base" packages that won't be normally needed on a
@@ -102,10 +101,10 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("While getting pacman config: %v", err)
 	}
 
-	args := []string{"-C", pacConf, "-c","-d","-G", "-M", c.b.Rootfs(), "haveged"}
+	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", c.b.Rootfs(), "haveged"}
 	args = append(args, instList...)
 
-	pacCmd := exec.Command(pacstrapPath,args...)
+	pacCmd := exec.Command(pacstrapPath, args...)
 	pacCmd.Stdout = os.Stdout
 	pacCmd.Stderr = os.Stderr
 	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, c.b.Rootfs(), instList)
@@ -138,12 +137,12 @@ func (cp *ArchConveyorPacker) Pack() (b *Bundle, err error) {
 
 	err = cp.insertBaseEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v\n", err)
+		return nil, fmt.Errorf("While inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v\n", err)
+		return nil, fmt.Errorf("While inserting runscript: %v", err)
 	}
 
 	cp.b.Recipe = cp.recipe
@@ -153,18 +152,18 @@ func (cp *ArchConveyorPacker) Pack() (b *Bundle, err error) {
 
 func (c *ArchConveyor) getInstList() (instList []string, err error) {
 
-	r,w,err := os.Pipe()
+	r, w, err := os.Pipe()
 	if err != nil {
 		return
 	}
 
-	//feed output command into pipe while scanner reads from the other end
+	//feed command output(base packages list) into pipe while scanner reads from the other end
 	go func() {
 		cmd := exec.Command("pacman", "-Sgq", "base")
 		cmd.Stdout = w
 		defer w.Close()
 		if err = cmd.Run(); err != nil {
-			return 
+			return
 		}
 	}()
 
@@ -215,25 +214,8 @@ func (cp *ArchConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *ArchConveyorPacker) insertRunScript() (err error) {
-	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
-	if err != nil {
-		return
-	}
 
-	defer f.Close()
-
-	_, err = f.WriteString("#!/bin/sh\n")
-	if err != nil {
-		return
-	}
-
-	if err != nil {
-		return
-	}
-
-	f.Sync()
-
-	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/runscript", 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
