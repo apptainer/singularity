@@ -1,15 +1,19 @@
 singularity-container (2.6.0-rc1) unstable; urgency=high
 
   * Allow admin to specify a non-standard location for mksquashfs binary at
-  * build time with --with-mksquashfs option
-  * --nv option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed
-  * [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries
+    build time with --with-mksquashfs option
+  * --nv option will use nvidia-container-cli if installed
+  * nvliblist.conf now has a section for binaries
   * --nv can be made default with all action commands in singularity.conf
-  * --nv can be controlled by env vars `$SINGULARITY_NV` and `$SINGULARITY_NV_OFF`
+  * --nv can be controlled by env vars `$SINGULARITY_NV` and
+    `$SINGULARITY_NV_OFF`
   * Refactored travis build and packaging tests
   * Added build and packaging tests for Debian 8/9 and openSUSE 42.3/15.0
-  * 
-  * Fix 404 when using Arch Linux bootstrap #1731
+  * Restore shim init process for proper signal handling and child reaping when
+    container is initiated in its own PID namespace
+  * Fix 404 when using Arch Linux bootstrap
+  * Bind `/dev/nvidia*` into the container when the `--nv` flag is used in
+    conjuction with the `--contain` flag
 
  -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Tue, 10 Jul 2018 18:01:00 -0700
 
