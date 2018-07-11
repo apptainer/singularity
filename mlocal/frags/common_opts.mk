@@ -10,7 +10,7 @@ CFLAGS += -Woverlength-strings -Wframe-larger-than=2047
 CFLAGS += -Wno-sign-compare -Wclobbered -Wempty-body -Wmissing-parameter-type
 CFLAGS += -Wtype-limits -Wunused-parameter -Wunused-but-set-parameter
 CFLAGS += -Wno-discarded-qualifiers -Wno-incompatible-pointer-types
-CFLAGS += -pipe -fmessage-length=0
+CFLAGS += -pipe -fmessage-length=0 -fPIC
 CFLAGS += -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4
 
 LDFLAGS += -Wl,-z,relro,-z,now
