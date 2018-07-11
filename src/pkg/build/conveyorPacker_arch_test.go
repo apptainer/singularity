@@ -14,6 +14,11 @@ const archDef = "./testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
 
+	//test must be run as root
+	if os.Getuid() != 0 {
+		return
+	}
+
 	defFile, err := os.Open(archDef)
 	if err != nil {
 		t.Fatalf("unable to open file %s: %v\n", archDef, err)
@@ -38,6 +43,11 @@ func TestArchConveyor(t *testing.T) {
 
 func TestArchPacker(t *testing.T) {
 
+	//test must be run as root
+	if os.Getuid() != 0 {
+		return
+	}
+
 	defFile, err := os.Open(archDef)
 	if err != nil {
 		t.Fatalf("unable to open file %s: %v\n", archDef, err)
@@ -59,7 +69,7 @@ func TestArchPacker(t *testing.T) {
 	//clean up tmpfs since assembler isnt called
 	os.RemoveAll(acp.tmpfs)
 
-	_,err = acp.Pack()
+	_, err = acp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", archDef, err)
 	}
