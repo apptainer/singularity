@@ -19,6 +19,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
+	"github.com/singularityware/singularity/src/pkg/util/fs/mount/home"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/sif/pkg/sif"
@@ -82,8 +83,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("unable to add sys to mount list: %s", err)
 	}
 
-	sylog.Debugf("Adding home to mount list\n")
-	err = p.AddBind(mount.HomeTag, "/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), syscall.MS_BIND)
+	sylog.Verbosef("Adding home directory mount\n")
+	err = home.AddCustom(p, buildcfg.CONTAINER_FINALDIR, engine.EngineConfig.GetHomeDir())
 	if err != nil {
 		return fmt.Errorf("unable to add home to mount list: %s", err)
 	}

@@ -9,13 +9,23 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/fs"
 )
 
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess() error {
 	os.Setenv("PS1", "shell> ")
 
-	os.Chdir("/")
+	cwd := engine.CommonConfig.OciConfig.Process.Cwd
+	sylog.Debugf("Changing directory to: %v\n", cwd)
+
+	if !fs.IsDir(cwd) {
+		sylog.Warningf("Requested cwd (%v) does not exist in container, using \"/\" instead", cwd)
+		cwd = "/"
+	}
+	os.Chdir(cwd)
 
 	args := engine.CommonConfig.OciConfig.Process.Args
 	env := engine.CommonConfig.OciConfig.Process.Env

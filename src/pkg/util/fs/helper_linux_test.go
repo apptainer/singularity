@@ -8,7 +8,9 @@
 
 package fs
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestIsFile(t *testing.T) {
 	if IsFile("/etc/passwd") != true {
@@ -43,5 +45,25 @@ func TestIsExec(t *testing.T) {
 func TestIsSuid(t *testing.T) {
 	if IsSuid("/bin/su") != true {
 		t.Errorf("IsSuid returns false for /bin/su setuid bit")
+	}
+}
+
+func TestRootDir(t *testing.T) {
+	var tests = []struct {
+		path     string
+		expected string
+	}{
+		{"/path/to/something", "/path"},
+		{"relative/path", "relative"},
+		{"/path/to/something/", "/path"},
+		{"relative/path/", "relative"},
+		{"/path", "/path"},
+		{"/path/", "/path"},
+	}
+
+	for _, test := range tests {
+		if rootpath := RootDir(test.path); rootpath != test.expected {
+			t.Errorf("RootDir(%v) != \"%v\" (function returned %v)", test.path, test.expected, rootpath)
+		}
 	}
 }
