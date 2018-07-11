@@ -1,4 +1,4 @@
-singularity-container (2.6.0-rc1-1) unstable; urgency=high
+singularity-container (2.6.0-rc1) unstable; urgency=high
 
   * Allow admin to specify a non-standard location for mksquashfs binary at
   * build time with --with-mksquashfs option
