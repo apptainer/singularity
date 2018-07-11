@@ -1,19 +1,15 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/singularityware/singularity/src/cmd/singularity/cli"
-	// "github.com/spf13/cobra"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra/doc"
 	"golang.org/x/sys/unix"
 )
@@ -24,8 +20,7 @@ func main() {
 	dir := "/tmp" // place to save man pages
 
 	if argc > 2 {
-		fmt.Printf("ERROR: Too many arguments to %s\n", argv[1])
-		return
+		sylog.Fatalf("Too many arguments to %s\n", argv[1])
 	}
 
 	// if the user supplied a directory argument try to save man pages there
@@ -38,11 +33,10 @@ func main() {
 	}
 
 	if err := unix.Access(dir, unix.W_OK); err != nil {
-		fmt.Printf("ERROR: Given directory does not exist or is not writable by calling user.")
-		return
+		sylog.Fatalf("Given directory does not exist or is not writable by calling user.")
 	}
 
-	fmt.Printf("Creating Singularity man pages at %s\n", dir)
+	sylog.Infof("Creating Singularity man pages at %s\n", dir)
 
 	header := &doc.GenManHeader{
 		Title:   "singularity",
@@ -51,6 +45,6 @@ func main() {
 
 	// works recursively on all sub-commands (thanks bauerm97)
 	if err := doc.GenManTree(cli.SingularityCmd, header, dir); err != nil {
-		fmt.Printf("ERROR: Failed to create man page for singularity\n")
+		sylog.Fatalf("Failed to create man page for singularity\n")
 	}
 }
