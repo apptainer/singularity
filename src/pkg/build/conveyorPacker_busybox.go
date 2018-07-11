@@ -8,6 +8,7 @@ package build
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -87,50 +88,17 @@ func (cp *BusyBoxConveyorPacker) Pack() (b *Bundle, err error) {
 
 func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 
-	fp, err := os.Create(filepath.Join(c.b.Rootfs(), "/etc/passwd"))
-	if err != nil {
-		return
-	}
-	defer fp.Close()
-
-	_, err = fp.WriteString("root:!:0:0:root:/root:/bin/sh")
+	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0664)
 	if err != nil {
 		return
 	}
 
-	err = os.Chmod(fp.Name(), 0664)
+	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/group"), []byte(" root:x:0:"), 0664)
 	if err != nil {
 		return
 	}
 
-	fg, err := os.Create(filepath.Join(c.b.Rootfs(), "/etc/group"))
-	if err != nil {
-		return
-	}
-	defer fg.Close()
-
-	_, err = fg.WriteString(" root:x:0:")
-	if err != nil {
-		return
-	}
-
-	err = os.Chmod(fg.Name(), 0664)
-	if err != nil {
-		return
-	}
-
-	fh, err := os.Create(filepath.Join(c.b.Rootfs(), "/etc/hosts"))
-	if err != nil {
-		return
-	}
-	defer fh.Close()
-
-	_, err = fh.WriteString("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4")
-	if err != nil {
-		return
-	}
-
-	err = os.Chmod(fh.Name(), 0664)
+	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0664)
 	if err != nil {
 		return
 	}

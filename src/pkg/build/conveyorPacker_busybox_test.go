@@ -58,7 +58,7 @@ func TestBusyBoxPacker(t *testing.T) {
 	}
 
 	//clean up tmpfs since assembler isnt called
-	//defer os.RemoveAll(bcp.tmpfs)
+	defer os.RemoveAll(bcp.tmpfs)
 
 	_, err = bcp.Pack()
 	if err != nil {
