@@ -204,13 +204,7 @@ int _singularity_runtime_mount_dev(void) {
 
             singularity_message(DEBUG, "Mounting devpts for staged /dev/pts\n");
             if ( singularity_mount("devpts", joinpath(devdir, "/pts"), "devpts", MS_NOSUID|MS_NOEXEC, devpts_opts) < 0 ) {
-                if (errno == EINVAL) {
-                    // This is the error when unprivileged on RHEL7.4
-                    singularity_message(WARNING, "Couldn't mount %s, continuing\n", joinpath(devdir, "/pts"));
-                } else {
-                    singularity_message(ERROR, "Failed to mount %s: %s\n", joinpath(devdir, "/pts"), strerror(errno));
-                    ABORT(255);
-                }
+                singularity_message(VERBOSE, "Couldn't mount devpts filesystem, continuing with PTY functionality disabled.\n");
             }
             else {
                 bind_dev(sessiondir, "/dev/tty");
