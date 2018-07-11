@@ -57,6 +57,14 @@ func getHomeDir() string {
 	return user.Dir
 }
 
+func defaultPwd() string {
+	if pwd, err := os.Getwd(); err == nil {
+		return pwd
+	}
+
+	return ""
+}
+
 func init() {
 	initPathVars()
 	initBoolVars()
@@ -91,7 +99,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("shell", "argtag", []string{"<path>"})
 
 	// --pwd
-	actionFlags.StringVar(&PwdPath, "pwd", "", "Initial working directory for payload process inside the container")
+	actionFlags.StringVar(&PwdPath, "pwd", defaultPwd(), "Initial working directory for payload process inside the container")
 	actionFlags.SetAnnotation("pwd", "argtag", []string{"<path>"})
 
 	// --hostname

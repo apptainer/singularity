@@ -121,6 +121,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	generator := generate.NewFromSpec(&ociConfig.Spec)
 
 	generator.SetProcessArgs(args)
+	generator.SetProcessCwd(PwdPath)
 
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
@@ -165,12 +166,6 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		generator.AddProcessEnv(e[0], e[1])
 	} else {
 		sylog.Fatalf("Unable to set $HOME variable: %v\n", err)
-	}
-
-	if pwd, err := os.Getwd(); err == nil {
-		generator.SetProcessCwd(pwd)
-	} else {
-		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
 	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
