@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/singularityware/singularity/src/pkg/util/fs"
 )
@@ -43,6 +44,8 @@ type symlink struct {
 
 // Manager manages a filesystem layout in a given path
 type Manager struct {
+	DirMode  os.FileMode
+	FileMode os.FileMode
 	rootPath string
 	entries  map[string]interface{}
 	dirs     []*dir
@@ -80,7 +83,7 @@ func (m *Manager) createParentDir(path string) {
 		p += "/" + s
 		if s != "" {
 			if _, ok := m.entries[p]; !ok {
-				d := &dir{mode: dirMode, uid: uid, gid: gid}
+				d := &dir{mode: m.DirMode, uid: uid, gid: gid}
 				m.entries[p] = d
 				m.dirs = append(m.dirs, d)
 			}
@@ -102,7 +105,13 @@ func (m *Manager) SetRootPath(path string) error {
 	if m.dirs == nil {
 		m.dirs = make([]*dir, 0)
 	}
-	d := &dir{mode: dirMode, uid: os.Getuid(), gid: os.Getgid()}
+	if m.DirMode == 0000 {
+		m.DirMode = dirMode
+	}
+	if m.FileMode == 0000 {
+		m.FileMode = fileMode
+	}
+	d := &dir{mode: m.DirMode, uid: os.Getuid(), gid: os.Getgid()}
 	m.entries["/"] = d
 	m.dirs = append(m.dirs, d)
 	return nil
@@ -127,7 +136,7 @@ func (m *Manager) AddFile(path string, content []byte) error {
 		return err
 	}
 	m.createParentDir(filepath.Dir(p))
-	m.entries[p] = &file{mode: fileMode, uid: os.Getuid(), gid: os.Getgid(), content: content}
+	m.entries[p] = &file{mode: m.FileMode, uid: os.Getuid(), gid: os.Getgid(), content: content}
 	return nil
 }
 
@@ -205,6 +214,9 @@ func (m *Manager) sync() error {
 		return fmt.Errorf("root path is not set")
 	}
 
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
 	for _, d := range m.dirs[1:] {
 		if d.created {
 			continue
@@ -216,12 +228,12 @@ func (m *Manager) sync() error {
 				break
 			}
 		}
-		if d.mode != dirMode {
+		if d.mode != m.DirMode {
 			if err := os.Mkdir(path, d.mode); err != nil {
 				return fmt.Errorf("failed to create %s directory: %s", path, err)
 			}
 		} else {
-			if err := os.Mkdir(path, dirMode); err != nil {
+			if err := os.Mkdir(path, m.DirMode); err != nil {
 				return fmt.Errorf("failed to create %s directory: %s", path, err)
 			}
 		}
