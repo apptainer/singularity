@@ -513,6 +513,66 @@ func TestImport(t *testing.T) {
 		t.Errorf("context option is set %d times for /tmp mount point %s", numContext, tmp[0])
 	}
 	points.RemoveAll()
+
+	points = &Points{}
+
+	validSpecs := []specs.Mount{
+		{
+			Source:      "/",
+			Destination: "/mnt",
+			Type:        "",
+			Options:     []string{"rbind"},
+		},
+		{
+			Source:      "",
+			Destination: "/mnt",
+			Type:        "",
+			Options:     []string{"rbind", "nosuid", "remount"},
+		},
+		{
+			Source:      "",
+			Destination: "/opt",
+			Type:        "overlay",
+			Options:     []string{"nosuid", "nodev", "lowerdir=/", "upperdir=/upper", "workdir=/work"},
+		},
+		{
+			Source:      "",
+			Destination: "/tmp",
+			Type:        "tmpfs",
+			Options:     []string{"nosuid", "nodev", "mode=1777"},
+		},
+		{
+			Source:      "sysfs",
+			Destination: "/sys",
+			Type:        "sysfs",
+			Options:     []string{"nosuid", "nodev"},
+		},
+		{
+			Source:      "",
+			Destination: "/dev/pts",
+			Type:        "devpts",
+			Options:     []string{"nosuid"},
+		},
+	}
+	if err := points.ImportFromSpec(validSpecs); err != nil {
+		t.Error(err)
+	}
+	if len(points.GetAll()) != 5 {
+		t.Errorf("returned a wrong number of mount points %d instead of 5", len(points.GetAll()))
+	}
+	points.RemoveAll()
+
+	invalidSpecs := []specs.Mount{
+		{
+			Source:      "/image.simg",
+			Destination: "/tmp/image",
+			Type:        "squashfs",
+			Options:     []string{"nosuid", "nodev"},
+		},
+	}
+	if err := points.ImportFromSpec(invalidSpecs); err == nil {
+		t.Errorf("should have failed with non authorized filesystem type")
+	}
 }
 
 func TestTag(t *testing.T) {
@@ -532,5 +592,54 @@ func TestTag(t *testing.T) {
 		if len(points.GetByTag(tag)) != 0 {
 			t.Fatalf("removing mount point entries by tag failed")
 		}
+	}
+}
+
+func TestPaths(t *testing.T) {
+	points := &Points{}
+	maskedPaths := []string{
+		"/proc/kcore",
+		"/proc/latency_stats",
+	}
+	roPaths := []string{
+		"/proc/asound",
+		"/proc/bus",
+	}
+	if err := points.AddMaskedPaths(maskedPaths); err != nil {
+		t.Error(err)
+	}
+	l := len(points.GetAll())
+	if l != 1 {
+		t.Errorf("returned a wrong number of mount points %d instead of 1", l)
+	}
+	l = len(points.GetByTag(OtherTag))
+	if l != 2 {
+		t.Errorf("returned a wrong number of mount points %d instead of 2", l)
+	}
+	points.RemoveAll()
+	if err := points.AddReadonlyPaths(roPaths); err != nil {
+		t.Error(err)
+	}
+	l = len(points.GetAll())
+	if l != 1 {
+		t.Errorf("returned a wrong number of mount points %d instead of 1", l)
+	}
+	l = len(points.GetByTag(OtherTag))
+	if l != 4 {
+		t.Errorf("returned a wrong number of mount points %d instead of 4", l)
+	}
+	maskedPaths = []string{
+		"/proc/kcore",
+		"/proc/kcore",
+	}
+	if err := points.AddMaskedPaths(maskedPaths); err == nil {
+		t.Errorf("should have failed with duplicated mount point")
+	}
+	roPaths = []string{
+		"/proc/asound",
+		"/proc/asound",
+	}
+	if err := points.AddReadonlyPaths(roPaths); err == nil {
+		t.Errorf("should have failed with duplicated mount point")
 	}
 }
