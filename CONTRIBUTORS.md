@@ -22,6 +22,7 @@
     - Bernard Li <bernardli@lbl.gov>
     - Brian Bockelman <bbockelm@cse.unl.edu>
     - Chris Hollowell <hollowec@bnl.gov>
+    - Christian Neyers <foss@neyers.org>
     - Daniele Tamino <daniele.tamino@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
     - Diana Langenbach <dcl@dcl.sh>
@@ -45,3 +46,4 @@
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Michael Herzberg <michael@mherzberg.de>

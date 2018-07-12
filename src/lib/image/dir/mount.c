@@ -43,33 +43,62 @@
 
 
 int _singularity_image_dir_mount(struct image_object *image, char *mount_point) {
+    int ret = 0;
     int mntflags = MS_BIND | MS_NOSUID | MS_REC;
-
-    if ( strcmp(image->path, "/") == 0 ) {
-        singularity_message(ERROR, "Naughty naughty naughty...\n");
-        ABORT(255);
-    }
+    char *current = (char *)malloc(PATH_MAX);
+    char *realdir;
 
     if ( singularity_priv_getuid() != 0 ) {
         mntflags |= MS_NODEV;
     }
 
+    if ( current == NULL ) {
+        singularity_message(ERROR, "Failed to allocate memory\n");
+        ABORT(255);
+    }
+
+    if ( getcwd(current, PATH_MAX) == NULL ) {
+        singularity_message(ERROR, "Failed to get current working directory: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    if ( chdir(image->path) < 0 ) {
+        singularity_message(ERROR, "Failed to go into directory %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
+    }
+
+    realdir = realpath(".", NULL); // Flawfinder: ignore
+    if ( realdir == NULL ) {
+        singularity_message(ERROR, "Failed to resolve path for directory %s: %s\n", image->path, strerror(errno));
+        ABORT(255);
+    }
+
+    if ( strcmp(realdir, "/") == 0 ) {
+        singularity_message(ERROR, "Naughty naughty naughty...\n");
+        ABORT(255);
+    }
+
     singularity_message(DEBUG, "Mounting container directory %s->%s\n", image->path, mount_point);
-    if ( singularity_mount(image->path, mount_point, NULL, mntflags, NULL) < 0 ) {
+    if ( singularity_mount(".", mount_point, NULL, mntflags, NULL) < 0 ) {
         singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
-        return 1;
+        ret = 1;
+    } else {
+        if ( singularity_priv_userns_enabled() != 1 ) {
+            if ( image->writable == 0 ) {
+                mntflags |= MS_RDONLY;
+            }
+            if ( singularity_mount(NULL, mount_point, NULL, MS_REMOUNT | mntflags, NULL) < 0 ) {
+                singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
+                ret = 1;
+            }
+        }
     }
 
-    if ( singularity_priv_userns_enabled() != 1 ) {
-        if ( image->writable == 0 ) {
-            mntflags |= MS_RDONLY;
-        }
-        if ( singularity_mount(NULL, mount_point, NULL, MS_REMOUNT | mntflags, NULL) < 0 ) {
-            singularity_message(ERROR, "Could not mount container directory %s->%s: %s\n", image->path, mount_point, strerror(errno));
-            return 1;
-        }
+    if ( chdir(current) < 0 ) {
+        singularity_message(WARNING, "Failed to go back into current directory %s: %s\n", current, strerror(errno));
     }
-
-    return(0);
+    free(realdir);
+    free(current);
+    return ret;
 }
 

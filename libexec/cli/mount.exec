@@ -43,17 +43,6 @@ while true; do
             export SINGULARITY_WRITABLE
             shift
         ;;
-        -o|--overlay)
-            shift
-            SINGULARITY_OVERLAYIMAGE="${1:-}"
-            export SINGULARITY_OVERLAYIMAGE
-            shift
-
-            if [ ! -e "${SINGULARITY_OVERLAYIMAGE:-}" ]; then
-                message ERROR "Overlay image must be a file or directory!\n"
-                ABORT 255
-            fi
-        ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
             exit 1
