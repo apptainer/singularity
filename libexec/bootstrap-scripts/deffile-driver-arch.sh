@@ -83,7 +83,7 @@ fi
 # having to wait for ages until entropy accumulates. See
 # https://wiki.archlinux.org/index.php/Install_from_Existing_Linux,
 # https://wiki.archlinux.org/index.php/Pacman/Package_signing.
-if ! eval "'$PACSTRAP' -C '$PACMAN_CONF' -c -d -G -M '$SINGULARITY_ROOTFS' haveged $BASE_TO_INST"; then
+if ! eval "'$PACSTRAP' -C '$PACMAN_CONF' -c -d -G -M '$SINGULARITY_ROOTFS' haveged pacman-contrib $BASE_TO_INST"; then
     rm -f "$PACMAN_CONF"
     message ERROR "\`$PACSTRAP' failed.\n"
     ABORT 255
