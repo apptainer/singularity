@@ -77,7 +77,7 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 	}
 
 	//make sure architecture is supported
-	if arch := runtime.GOARCH; arch != `amd64` && arch != `i686` {
+	if arch := runtime.GOARCH; arch != `amd64` {
 		return fmt.Errorf("%v architecture is not supported", arch)
 	}
 
