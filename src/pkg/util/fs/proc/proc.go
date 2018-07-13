@@ -44,8 +44,8 @@ func ParseMountInfo(path string) (map[string][]string, error) {
 
 	scanner := bufio.NewScanner(p)
 	for scanner.Scan() {
-		splitted := strings.Split(scanner.Text(), " ")
-		mountlist[splitted[0]] = splitted
+		fields := strings.Fields(scanner.Text())
+		mountlist[fields[0]] = fields
 	}
 	for k := range mountlist {
 		if i, ok := mountlist[mountlist[k][1]]; ok {
