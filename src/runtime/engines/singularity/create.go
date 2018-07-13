@@ -42,7 +42,7 @@ func (m *mountTest) localMount(point *mount.Point) error {
 			return err
 		}
 	} else {
-		if err := mountGeneric(nil, point); err != nil {
+		if err := mountGeneric(nil, point, m.session); err != nil {
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func (m *mountTest) localMount(point *mount.Point) error {
 }
 
 func (m *mountTest) rpcMount(point *mount.Point) error {
-	if err := mountGeneric(m.rpcOps, point); err != nil {
+	if err := mountGeneric(m.rpcOps, point, m.session); err != nil {
 		return err
 	}
 	return nil
@@ -64,8 +64,8 @@ func (m *mountTest) createSessionLayout(system *mount.System) error {
 
 	m.overlay = overlay
 
-	lowerdir := fmt.Sprintf("%s:%s", overlay.Path(), buildcfg.CONTAINER_MOUNTDIR)
-	err = system.Points.AddOverlay(mount.OverlayLowerDirTag, buildcfg.CONTAINER_FINALDIR, syscall.MS_NOSUID|syscall.MS_NODEV, lowerdir, "", "")
+	lowerdir := fmt.Sprintf("%s:%s", overlay.Path(), m.session.ContainerPath())
+	err = system.Points.AddOverlay(mount.OverlayLowerDirTag, m.session.FinalPath(), syscall.MS_NOSUID|syscall.MS_NODEV, lowerdir, "", "")
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	if err := engine.addRootfs(p); err != nil {
+	if err := engine.addRootfs(p, session); err != nil {
 		return err
 	}
 
@@ -212,14 +212,14 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	sylog.Debugf("Chdir into %s\n", buildcfg.CONTAINER_FINALDIR)
-	err = syscall.Chdir(buildcfg.CONTAINER_FINALDIR)
+	sylog.Debugf("Chdir into %s\n", session.FinalPath())
+	err = syscall.Chdir(session.FinalPath())
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
 	}
 
-	sylog.Debugf("Chroot into %s\n", buildcfg.CONTAINER_FINALDIR)
-	_, err = rpcOps.Chroot(buildcfg.CONTAINER_FINALDIR)
+	sylog.Debugf("Chroot into %s\n", session.FinalPath())
+	_, err = rpcOps.Chroot(session.FinalPath())
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
 	}
@@ -233,7 +233,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	return nil
 }
 
-func (engine *EngineOperations) addRootfs(p *mount.Points) error {
+func (engine *EngineOperations) addRootfs(p *mount.Points, session *layout.Session) error {
 	var flags uintptr = syscall.MS_NOSUID | syscall.MS_RDONLY | syscall.MS_NODEV
 	rootfs := engine.EngineConfig.GetImage()
 
@@ -288,21 +288,22 @@ func (engine *EngineOperations) addRootfs(p *mount.Points) error {
 		mountType = "ext3"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
-		return p.AddBind(mount.RootfsTag, rootfs, buildcfg.CONTAINER_MOUNTDIR, syscall.MS_BIND|flags)
+		return p.AddBind(mount.RootfsTag, rootfs, session.ContainerPath(), syscall.MS_BIND|flags)
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return p.AddImage(mount.RootfsTag, rootfs, buildcfg.CONTAINER_MOUNTDIR, mountType, flags, imageObject.Offset, imageObject.Size)
+	return p.AddImage(mount.RootfsTag, rootfs, session.ContainerPath(), mountType, flags, imageObject.Offset, imageObject.Size)
 }
 
 // mount any generic mount (not loop dev)
-func mountGeneric(rpcOps *client.RPC, mnt *mount.Point) (err error) {
+func mountGeneric(rpcOps *client.RPC, mnt *mount.Point, session *layout.Session) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
+	sessionPath, _ := session.GetPath("/")
 
 	dest := ""
-	if mnt.Destination != buildcfg.CONTAINER_FINALDIR && mnt.Destination != buildcfg.CONTAINER_MOUNTDIR && mnt.Destination != buildcfg.SESSIONDIR {
-		dest = buildcfg.CONTAINER_FINALDIR + mnt.Destination
+	if !strings.HasPrefix(mnt.Destination, sessionPath) {
+		dest = session.FinalPath() + mnt.Destination
 	} else {
 		dest = mnt.Destination
 	}
