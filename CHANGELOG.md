@@ -26,6 +26,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Added build and packaging tests for Debian 8/9 and openSUSE 42.3/15.0 #1713
  - Restore shim init process for proper signal handling and child reaping when
    container is initiated in its own PID namespace #1221
+ - Add -i option to image.create to specify the inode ratio. #1759
 
 ### Bug fixes
   - Fix 404 when using Arch Linux bootstrap #1731

@@ -255,7 +255,7 @@ _singularity() {
             if [[ ${cur} == -s || ${cur} == --size ]]; then
                 _filedir
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--size --force --help -i" -- ${cur}) )
             else
                 _filedir 
             fi
