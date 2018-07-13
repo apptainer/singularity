@@ -56,6 +56,10 @@ int _singularity_runtime_mount_home(void) {
     }
 
     singularity_message(DEBUG, "Checking if home directories are being influenced by user\n");
+    if ( singularity_registry_get("NOHOME") != NULL ) {
+        singularity_message(VERBOSE, "Skipping home directory mount by user request.\n");
+        return(0);
+    }
     if ( singularity_registry_get("HOME") != NULL ) {
         singularity_message(DEBUG, "Checking if user bind control is allowed\n");
         if ( singularity_config_get_bool(USER_BIND_CONTROL) <= 0 ) {
@@ -65,10 +69,7 @@ int _singularity_runtime_mount_home(void) {
     } else if ( singularity_config_get_bool(MOUNT_HOME) <= 0 ) {
         singularity_message(VERBOSE, "Skipping home dir mounting (per config)\n");
         return(0);
-    } else if ( singularity_registry_get("NOHOME") == 1 ) {
-        singularity_message(VERBOSE, "Skipping home directory mount by user request.\n");
-        return(0);
-    } 
+    }
 
     singularity_message(DEBUG, "Checking ownership of home directory source: %s\n", home_source);
     if ( is_owner(home_source, singularity_priv_getuid()) != 0 ) {
