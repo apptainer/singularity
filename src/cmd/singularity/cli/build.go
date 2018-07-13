@@ -267,6 +267,8 @@ func makeBundle(def build.Definition) *build.Bundle {
 		cp = &build.LocalConveyorPacker{}
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
 		cp = &build.OCIConveyorPacker{}
+	case "debootstrap":
+		cp = &build.DebootstrapConveyorPacker{}
 	case "arch":
 		cp = &build.ArchConveyorPacker{}
 	default:
