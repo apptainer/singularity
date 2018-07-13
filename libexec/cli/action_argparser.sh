@@ -58,6 +58,11 @@ while true; do
             export SINGULARITY_HOME
             shift
         ;;
+        --no-home)
+            shift
+            SINGULARITY_NOHOME=1
+            export SINGULARITY_NOHOME
+        ;;
         -W|--wdir|--workdir|--workingdir)
             shift
             SINGULARITY_WORKDIR="$1"
