@@ -16,7 +16,6 @@ import (
 )
 
 // RPCServer serves runtime engine requests
-//export RPCServer
 func RPCServer(socket C.int, sruntime *C.char) {
 	runtime := C.GoString(sruntime)
 
