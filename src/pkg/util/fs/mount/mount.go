@@ -171,6 +171,41 @@ func ConvertOptions(options []string) (uintptr, []string) {
 	return flags, finalOpt
 }
 
+// ConvertSpec converts an OCI Mount spec into an importable mount points list
+func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
+	var tag AuthorizedTag
+	points := make(map[AuthorizedTag][]Point)
+	for _, m := range mounts {
+		tag = ""
+		if m.Type != "" {
+			if _, ok := authorizedFS[m.Type]; !ok {
+				return points, fmt.Errorf("%s filesystem type is not authorized", m.Type)
+			}
+			switch m.Type {
+			case "overlay":
+				tag = OverlayTag
+			case "proc", "sysfs":
+				tag = KernelTag
+			case "devpts", "mqueue":
+				tag = DevTag
+			default:
+				tag = OtherTag
+			}
+		} else {
+			tag = BindsTag
+		}
+		points[tag] = append(points[tag], Point{
+			Mount: specs.Mount{
+				Source:      m.Source,
+				Destination: m.Destination,
+				Type:        m.Type,
+				Options:     m.Options,
+			},
+		})
+	}
+	return points, nil
+}
+
 // GetTagList returns authorized tags in right order
 func GetTagList() []AuthorizedTag {
 	tagList := make([]AuthorizedTag, len(authorizedTags))
@@ -434,6 +469,16 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 	return nil
 }
 
+// ImportFromSpec converts an OCI Mount spec into a mount point list
+// and imports it
+func (p *Points) ImportFromSpec(mounts []specs.Mount) error {
+	points, err := ConvertSpec(mounts)
+	if err != nil {
+		return err
+	}
+	return p.Import(points)
+}
+
 // AddImage adds an image mount point
 func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
 	options := ""
@@ -592,4 +637,27 @@ func (p *Points) SetContext(context string) error {
 // GetContext returns SELinux mount context
 func (p *Points) GetContext() string {
 	return p.context
+}
+
+// AddMaskedPaths adds mount points that will masked will /dev/null
+func (p *Points) AddMaskedPaths(paths []string) error {
+	for _, path := range paths {
+		if err := p.AddBind(OtherTag, "/dev/null", path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// AddReadonlyPaths adds bind mount points that will be mounted in read-only mode
+func (p *Points) AddReadonlyPaths(paths []string) error {
+	for _, path := range paths {
+		if err := p.AddBind(OtherTag, path, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+		if err := p.AddRemount(OtherTag, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+	}
+	return nil
 }
