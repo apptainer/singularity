@@ -60,6 +60,9 @@ func (o *Overlay) CreateLayout(rootFsPath string, points *mount.Points) error {
 			if err := syscall.Stat(p, st); err == nil {
 				continue
 			}
+			if err := syscall.Stat(point.Source, st); err != nil {
+				return err
+			}
 			// don't exist create it in overlay
 			switch st.Mode & syscall.S_IFMT {
 			case syscall.S_IFDIR:
