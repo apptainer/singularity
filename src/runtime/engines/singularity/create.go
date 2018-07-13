@@ -139,7 +139,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err := system.RunAfterTag(mount.RootfsTag, mt.switchMount); err != nil {
 		return err
 	}
-	if err := system.RunAfterTag(mount.OverlayTag, mt.createOverlayTmp); err != nil {
+	if err := system.RunBeforeTag(mount.OverlayLowerDirTag, mt.createOverlayTmp); err != nil {
 		return err
 	}
 
