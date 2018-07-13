@@ -26,6 +26,8 @@ SHELL OPTIONS:
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
                         overrides the home directory within the container
+    --no-home           Do NOT mount users home directory if home is not the
+                        current working directory.
     -i|--ipc            Run container in a new IPC namespace
     -j|--join           Join a running named instance of the given container 
                         image
