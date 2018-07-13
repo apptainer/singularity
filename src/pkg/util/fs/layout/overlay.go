@@ -21,7 +21,7 @@ type Overlay struct {
 // NewOverlay creates and returns an overlay directory layout manager
 func NewOverlay(slayout *Session) (overlay *Overlay, err error) {
 	manager := &Manager{}
-	overlay = &Overlay{Manager: manager}
+	overlay = &Overlay{Manager: manager, session: slayout}
 
 	if err = slayout.AddDir("/overlay-lowerdir"); err != nil {
 		return
