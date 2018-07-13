@@ -7,12 +7,13 @@ package singularity
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"syscall"
 )
 
 // StartProcess starts the process
-func (engine *EngineOperations) StartProcess() error {
+func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	os.Setenv("PS1", "shell> ")
 
 	os.Chdir("/")
