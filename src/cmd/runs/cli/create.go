@@ -6,18 +6,13 @@
 package cli
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/oci"
 
 	"github.com/spf13/cobra"
 )
-
-var bundlePath string
 
 func init() {
 	CreateCmd.Flags().SetInterspersed(false)
@@ -35,13 +30,7 @@ func init() {
 var CreateCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println(args[0])
-		spec, err := oci.LoadConfigSpec(args[0])
-		if err != nil {
-			sylog.Errorf("%v", err)
-		}
-		enc := json.NewEncoder(os.Stdout)
-		enc.Encode(spec)
+
 	},
 	DisableFlagsInUseLine: true,
 

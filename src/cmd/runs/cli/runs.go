@@ -21,10 +21,11 @@ import (
 
 // Global variables for singularity CLI
 var (
-	debug   bool
-	silent  bool
-	verbose bool
-	quiet   bool
+	debug      bool
+	silent     bool
+	verbose    bool
+	quiet      bool
+	bundlePath string
 )
 
 var (
