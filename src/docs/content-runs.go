@@ -39,4 +39,16 @@ your host.`
 
 	The specification file includes an args parameter. The args parameter is used
 	to specify command(s) that get run when the container is started.`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Runs - Spec
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	RunsSpecUse   string = `spec sif`
+	RunsSpecShort string = `inspect a config.json inside a SIF`
+	RunsSpecLong  string = `
+	The create command creates an instance of a container from a SIF bundle. The bundle
+	is a SIF with a specification file named "config.json" as a SIF data objet and a root
+	filesystem.
+
+	The specification file includes an args parameter. The args parameter is used
+	to specify command(s) that get run when the container is started.`
 )
