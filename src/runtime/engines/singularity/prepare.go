@@ -7,10 +7,11 @@ package singularity
 
 import (
 	"fmt"
+	"net"
 )
 
 // PrepareConfig checks and prepares the runtime engine config
-func (engine *EngineOperations) PrepareConfig() error {
+func (engine *EngineOperations) PrepareConfig(masterConn net.Conn) error {
 	if engine.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
 	}

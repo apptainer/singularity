@@ -47,6 +47,14 @@
 #define PR_GET_NO_NEW_PRIVS 39
 #endif
 
+#ifndef CLONE_NEWUSER
+#define CLONE_NEWUSER       0x10000000
+#endif
+
+#ifndef CLONE_NEWCGROUP
+#define CLONE_NEWCGROUP     0x02000000
+#endif
+
 #include "c/lib/util/capability.h"
 #include "c/lib/util/message.h"
 
@@ -63,7 +71,7 @@ char *json_stdin;
 
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
-int instance_socket[2] = {-1, -1};
+int master_socket[2] = {-1, -1};
 
 #define SCONTAINER_STAGE1   1
 #define SCONTAINER_STAGE2   2
@@ -472,7 +480,7 @@ __attribute__((constructor)) static void init(void) {
     char *pipe_fd_env;
     int output[2];
     int status;
-    struct pollfd fds;
+    struct pollfd fds[2];
     int syncfd = -1;
     int pipe_fd = -1;
 
@@ -519,6 +527,17 @@ __attribute__((constructor)) static void init(void) {
 
     config.isSuid = is_suid();
 
+    if ( config.isSuid || geteuid() == 0 ) {
+        /* force kernel to load overlay module to ease detection later */
+        if ( mount("none", "/", "overlay", MS_SILENT, "") < 0 ) {
+            if ( errno != EINVAL ) {
+                singularity_message(DEBUG, "Overlay seems not supported by kernel\n");
+            } else {
+                singularity_message(DEBUG, "Overlay seems supported by kernel\n");
+            }
+        }
+    }
+
     if ( config.isSuid ) {
         singularity_message(DEBUG, "Drop privileges\n");
         if ( setegid(gid) < 0 || seteuid(uid) < 0 ) {
@@ -528,7 +547,7 @@ __attribute__((constructor)) static void init(void) {
     }
 
     /* reset environment variables */
-    environ = env;
+    clearenv();
 
     if ( loglevel != NULL ) {
         setenv("SINGULARITY_MESSAGELEVEL", loglevel, 1);
@@ -565,11 +584,18 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
+    singularity_message(DEBUG, "Create socketpair for smaster communication channel\n");
+    if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, master_socket) < 0 ) {
+        singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
+        exit(1);
+    }
+
     stage_pid = fork();
     if ( stage_pid == 0 ) {
         set_parent_death_signal(SIGKILL);
 
         close(output[0]);
+        close(master_socket[0]);
 
         if ( dup2(output[1], STDOUT_FILENO) < 0 ) {
             singularity_message(ERROR, "Failed to create stdout pipe: %s\n", strerror(errno));
@@ -596,17 +622,21 @@ __attribute__((constructor)) static void init(void) {
 
     close(output[1]);
 
-    fds.fd = output[0];
-    fds.events = POLLIN;
-    fds.revents = 0;
+    fds[0].fd = output[0];
+    fds[0].events = POLLIN;
+    fds[0].revents = 0;
+
+    fds[1].fd = master_socket[0];
+    fds[1].events = POLLIN;
+    fds[1].revents = 0;
 
     singularity_message(DEBUG, "Wait C and JSON runtime configuration from scontainer stage 1\n");
 
-    while ( poll(&fds, 1, -1) >= 0 ) {
-        if ( fds.revents & POLLIN ) {
+    while ( poll(fds, 2, -1) >= 0 ) {
+        if ( fds[0].revents & POLLIN ) {
             int ret;
             singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
-            if ( (ret = read(output[0], &config, sizeof(config))) != sizeof(config) ) {
+            if ( (ret = read(fds[0].fd, &config, sizeof(config))) != sizeof(config) ) {
                 singularity_message(ERROR, "Failed to read C configuration stdout pipe: %s\n", strerror(errno));
                 exit(1);
             }
@@ -614,13 +644,17 @@ __attribute__((constructor)) static void init(void) {
                 singularity_message(ERROR, "JSON configuration too big\n");
                 exit(1);
             }
-            if ( (ret = read(output[0], json_stdin, config.jsonConfSize)) != config.jsonConfSize ) {
+            if ( (ret = read(fds[0].fd, json_stdin, config.jsonConfSize)) != config.jsonConfSize ) {
                 singularity_message(ERROR, "Failed to read JSON configuration from stdout pipe: %s\n", strerror(errno));
                 exit(1);
             }
             json_stdin[config.jsonConfSize] = '\0';
+            break;
         }
-        break;
+        /* TODO: pass file descriptors from stage 1 over unix socket */
+        if ( fds[1].revents & POLLIN ) {
+            continue;
+        }
     }
 
     close(output[0]);
@@ -651,12 +685,6 @@ __attribute__((constructor)) static void init(void) {
                 exit(1);
             }
             umask(0);
-
-            singularity_message(DEBUG, "Create instance socketpair to notify smaster\n");
-            if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, instance_socket) < 0 ) {
-                singularity_message(ERROR, "Failed to create instance communication socket: %s\n", strerror(errno));
-                exit(1);
-            }
         } else {
             sigset_t usrmask;
             static struct sigaction action;
@@ -760,13 +788,8 @@ __attribute__((constructor)) static void init(void) {
         stage_pid = fork();
     } else {
         if ( config.nsFlags & CLONE_NEWPID ) {
-#ifdef NS_CLONE_NEWPID
             singularity_message(VERBOSE, "Create pid namespace\n");
             stage_pid = fork_ns(CLONE_NEWPID);
-#else
-            singularity_message(WARNING, "Skipping pid namespace creation, support not available on host\n");
-            stage_pid = fork();
-#endif /* NS_CLONE_NEWPID */
         } else {
             stage_pid = fork();
         }
@@ -777,9 +800,7 @@ __attribute__((constructor)) static void init(void) {
 
         set_parent_death_signal(SIGKILL);
 
-        if ( instance_socket[0] != -1 ) {
-            close(instance_socket[0]);
-        }
+        close(master_socket[0]);
 
         singularity_message(VERBOSE, "Spawn scontainer stage 2\n");
 
@@ -841,7 +862,6 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-#ifdef NS_CLONE_NEWCGROUP
         if ( config.cgroupPid ) {
             if ( enter_namespace(config.cgroupPid, CLONE_NEWCGROUP) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in cgroup namespace: %s\n", strerror(errno));
@@ -855,7 +875,6 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-#endif /* NS_CLONE_NEWCGROUP */
 
         close(rpc_socket[0]);
 
@@ -872,9 +891,7 @@ __attribute__((constructor)) static void init(void) {
 
         singularity_message(VERBOSE, "Spawn smaster process\n");
 
-        if ( instance_socket[1] != -1 ) {
-            close(instance_socket[1]);
-        }
+        close(master_socket[1]);
         close(rpc_socket[1]);
 
         if ( syncfd >= 0 ) {

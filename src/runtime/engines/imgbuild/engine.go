@@ -6,6 +6,7 @@
 package imgbuild
 
 import (
+	"net"
 	"os"
 	"syscall"
 
@@ -31,7 +32,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 }
 
 // PrepareConfig validates/prepares EngineConfig setup
-func (e *EngineOperations) PrepareConfig() error {
+func (e *EngineOperations) PrepareConfig(masterConn net.Conn) error {
 	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
 	if syscall.Getuid() != 0 {

@@ -34,7 +34,7 @@ type EngineOperations interface {
 	// the EngineOperations implementation.
 	InitConfig(*config.Common)
 	// PrepareConfig is called in stage1 to validate and prepare container configuration
-	PrepareConfig() error
+	PrepareConfig(net.Conn) error
 	// IsRunAsInstance returns whether or not the container is an instance or batch
 	IsRunAsInstance() bool
 	// IsAllowSUID returns whether or not the engine allow SUID workflow
@@ -44,7 +44,7 @@ type EngineOperations interface {
 	CreateContainer(int, net.Conn) error
 	// StartProcess is called in stage2 after waiting on RPC server exit. It is
 	// responsible for exec'ing the payload proc in the container
-	StartProcess() error
+	StartProcess(net.Conn) error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
 	// will typically block until the container proc exists
 	MonitorContainer(int) (syscall.WaitStatus, error)
