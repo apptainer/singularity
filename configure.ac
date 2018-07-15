@@ -299,23 +299,32 @@ AM_COND_IF([FOUND_MKSQUASHFS],,[AC_MSG_WARN([mksquashfs not found - needed at ru
 # PYTHON
 # ---------------------------------------------------------------------
 
-AC_CHECK_PROG(PYTHON_CHECK,python,yes)
-if test x"$PYTHON_CHECK" != x"yes" ; then
-    AC_MSG_ERROR([Please install python before installing.])
+_PYTHON_EXEC=""
+AC_CHECK_PROG(PYTHON_CHECK,python3,yes)
+if test x"$PYTHON_CHECK" = x"yes" ; then
+    _PYTHON_EXEC=python3
 else
+    AC_CHECK_PROG(PYTHON_CHECK,python,yes)
+    if test x"$PYTHON_CHECK" = x"yes" ; then
+        _PYTHON_EXEC=python
+    else
+        AC_MSG_ERROR([Please install python before installing.])
+    fi
+fi
 
+if test x"$_PYTHON_EXEC" != ""; then
     PYTHON_MODULES="base64 datetime glob hashlib io itertools json math multiprocessing pickle pwd re shutil signal subprocess stat sys tarfile tempfile time"
     for PYTHON_MODULE in $PYTHON_MODULES; do
         AC_MSG_CHECKING([for the $PYTHON_MODULE python module])
-	    python_module_result=`python -c "import $PYTHON_MODULE" 2>&1`
-	    if test -z "$python_module_result"; then
-		AC_MSG_RESULT([yes])
-	    else
-		AC_MSG_RESULT([no])
-		AC_MSG_ERROR([cannot import Python module $PYTHON_MODULE.
+            python_module_result=`$_PYTHON_EXEC -c "import $PYTHON_MODULE" 2>&1`
+            if test -z "$python_module_result"; then
+                AC_MSG_RESULT([yes])
+            else
+                AC_MSG_RESULT([no])
+                AC_MSG_ERROR([cannot import Python module $PYTHON_MODULE.
                               Please check your Python installation. The error was:
                               $python_module_result])
-	    fi
+            fi
     done
 
 fi

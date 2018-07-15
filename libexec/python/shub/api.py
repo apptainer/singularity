@@ -1,4 +1,12 @@
-#!/usr/bin/env python
+#!/bin/bash
+# the following line is the start of a comment to python and a no-op to bash
+''':'
+if type python3 >/dev/null 2>&1; then
+    exec python3 "$0" "$@"
+fi
+exec python "$0" "$@"
+'''
+
 
 '''
 
