@@ -385,38 +385,52 @@ func (c *container) addLibsMount(system *mount.System) error {
 func (c *container) addFilesMount(system *mount.System) error {
 	rootfs := c.session.RootFsPath()
 
-	passwd := filepath.Join(rootfs, "/etc/passwd")
-	content, err := files.Passwd(passwd, "")
-	if err != nil {
-		sylog.Warningf("%s", err)
-	} else {
-		if err := c.session.AddFile("/etc/passwd", content); err != nil {
-			sylog.Warningf("failed to add passwd session file: %s", err)
-		}
-		passwd, _ = c.session.GetPath("/etc/passwd")
-
-		sylog.Debugf("Adding /etc/passwd to mount list\n")
-		err = system.Points.AddBind(mount.FilesTag, passwd, "/etc/passwd", syscall.MS_BIND)
-		if err != nil {
-			return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
-		}
+	if os.Geteuid() == 0 {
+		sylog.Verbosef("Not updating passwd/group files, running as root!")
+		return nil
 	}
 
-	group := filepath.Join(rootfs, "/etc/group")
-	content, err = files.Group(group)
-	if err != nil {
-		sylog.Warningf("%s", err)
-	} else {
-		if err := c.session.AddFile("/etc/group", content); err != nil {
-			sylog.Warningf("failed to add group session file: %s", err)
-		}
-		group, _ = c.session.GetPath("/etc/group")
-
-		sylog.Debugf("Adding /etc/group to mount list\n")
-		err = system.Points.AddBind(mount.FilesTag, group, "/etc/group", syscall.MS_BIND)
+	if c.engine.EngineConfig.File.ConfigPasswd {
+		passwd := filepath.Join(rootfs, "/etc/passwd")
+		content, err := files.Passwd(passwd, "")
 		if err != nil {
-			return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
+			sylog.Warningf("%s", err)
+		} else {
+			if err := c.session.AddFile("/etc/passwd", content); err != nil {
+				sylog.Warningf("failed to add passwd session file: %s", err)
+			}
+			passwd, _ = c.session.GetPath("/etc/passwd")
+
+			sylog.Debugf("Adding /etc/passwd to mount list\n")
+			err = system.Points.AddBind(mount.FilesTag, passwd, "/etc/passwd", syscall.MS_BIND)
+			if err != nil {
+				return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
+			}
 		}
+	} else {
+		sylog.Verbosef("Skipping bind of the host's /etc/passwd")
 	}
+
+	if c.engine.EngineConfig.File.ConfigGroup {
+		group := filepath.Join(rootfs, "/etc/group")
+		content, err := files.Group(group)
+		if err != nil {
+			sylog.Warningf("%s", err)
+		} else {
+			if err := c.session.AddFile("/etc/group", content); err != nil {
+				sylog.Warningf("failed to add group session file: %s", err)
+			}
+			group, _ = c.session.GetPath("/etc/group")
+
+			sylog.Debugf("Adding /etc/group to mount list\n")
+			err = system.Points.AddBind(mount.FilesTag, group, "/etc/group", syscall.MS_BIND)
+			if err != nil {
+				return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
+			}
+		}
+	} else {
+		sylog.Verbosef("Skipping bind of the host's /etc/group")
+	}
+
 	return nil
 }
