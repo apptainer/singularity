@@ -254,8 +254,10 @@ _singularity() {
         image.create)
             if [[ ${cur} == -s || ${cur} == --size ]]; then
                 _filedir
+            if [[ ${cur} == -i || ${cur} == --bytes-per-inode ]]; then
+                return 0
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--size --force --help -i" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--size --force --help --bytes-per-inode" -- ${cur}) )
             else
                 _filedir 
             fi

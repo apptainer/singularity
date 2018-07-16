@@ -11,7 +11,8 @@ CREATE OPTIONS:
     -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
                 (default 768MiB)
     -F|--force  Overwrite an image file if it exists
-    -i          Specify a size for the inode ratio in Bytes. Default is
+    -i|--bytes-per-inode
+                Specify a size for the inode ratio in Bytes. Default is
                 the host system value.
 
 EXAMPLES:

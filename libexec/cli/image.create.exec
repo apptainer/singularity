@@ -46,7 +46,7 @@ while true; do
             export SINGULARITY_IMAGESIZE
             shift
         ;;
-        -i)
+        -i|--bytes-per-inode)
             shift
             SINGULARITY_INODESIZE="${1:-}"
             export SINGULARITY_INODESIZE
