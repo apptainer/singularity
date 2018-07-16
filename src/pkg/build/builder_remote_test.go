@@ -20,6 +20,7 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -119,6 +120,9 @@ func (m *mockService) ServeWebsocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestBuild(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	// Craft an expired context
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now())
 	defer cancel()
@@ -171,22 +175,22 @@ func TestBuild(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			rb := NewRemoteBuilder(test.imagePath, "", Definition{}, test.isDetached, s.Listener.Addr().String(), authToken)
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
+			rb := NewRemoteBuilder(tt.imagePath, "", Definition{}, tt.isDetached, s.Listener.Addr().String(), authToken)
 			rb.Force = true
 
 			// Set the response codes for each stage of the build
-			m.buildResponseCode = test.buildResponseCode
-			m.wsResponseCode = test.wsResponseCode
-			m.wsCloseCode = test.wsCloseCode
-			m.statusResponseCode = test.statusResponseCode
-			m.imageResponseCode = test.imageResponseCode
+			m.buildResponseCode = tt.buildResponseCode
+			m.wsResponseCode = tt.wsResponseCode
+			m.wsCloseCode = tt.wsCloseCode
+			m.statusResponseCode = tt.statusResponseCode
+			m.imageResponseCode = tt.imageResponseCode
 
 			// Do it!
-			err := rb.Build(test.ctx)
+			err := rb.Build(tt.ctx)
 
-			if test.expectSuccess {
+			if tt.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
 				if err != nil {
 					t.Fatalf("unexpected failure: %v", err)
@@ -197,7 +201,7 @@ func TestBuild(t *testing.T) {
 					t.Fatalf("unexpected success")
 				}
 			}
-		})
+		}))
 	}
 }
 
@@ -232,14 +236,14 @@ func TestDoBuildRequest(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			m.buildResponseCode = test.responseCode
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
+			m.buildResponseCode = tt.responseCode
 
 			// Call the handler
-			rd, err := rb.doBuildRequest(test.ctx, Definition{}, test.libraryRef)
+			rd, err := rb.doBuildRequest(tt.ctx, Definition{}, tt.libraryRef)
 
-			if test.expectSuccess {
+			if tt.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
 				if err != nil {
 					t.Fatalf("unexpected failure: %v", err)
@@ -262,7 +266,7 @@ func TestDoBuildRequest(t *testing.T) {
 					t.Fatalf("unexpected success")
 				}
 			}
-		})
+		}))
 	}
 }
 
@@ -297,14 +301,14 @@ func TestDoStatusRequest(t *testing.T) {
 	id := bson.NewObjectId()
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
-			m.statusResponseCode = test.responseCode
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
+			m.statusResponseCode = tt.responseCode
 
 			// Call the handler
-			rd, err := rb.doStatusRequest(test.ctx, id)
+			rd, err := rb.doStatusRequest(tt.ctx, id)
 
-			if test.expectSuccess {
+			if tt.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
 				if err != nil {
 					t.Fatalf("unexpected failure: %v", err)
@@ -327,6 +331,6 @@ func TestDoStatusRequest(t *testing.T) {
 					t.Fatalf("unexpected success")
 				}
 			}
-		})
+		}))
 	}
 }
