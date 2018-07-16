@@ -6,7 +6,9 @@
 package main
 
 import (
+	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"testing"
 
@@ -71,4 +73,42 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 	cmd := exec.Command(cmdPath, argv...)
 	cmd.Env = opts.env
 	return cmd.CombinedOutput()
+}
+
+func TestBuild(t *testing.T) {
+	tests := []struct {
+		name       string
+		dependency string
+		buildSpec  string
+		sandbox    bool
+		writable   bool
+	}{
+		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false},
+		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false},
+		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			if tt.dependency != "" {
+				if _, err := exec.LookPath(tt.dependency); err != nil {
+					t.Skipf("%v not found in path", tt.dependency)
+				}
+			}
+
+			opts := buildOpts{
+				sandbox:  tt.sandbox,
+				writable: tt.writable,
+			}
+
+			imagePath := path.Join(testDir, "container")
+			defer os.RemoveAll(imagePath)
+
+			if b, err := imageBuild(opts, imagePath, tt.buildSpec); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			}
+			imageVerify(t, imagePath, false)
+		}))
+	}
 }

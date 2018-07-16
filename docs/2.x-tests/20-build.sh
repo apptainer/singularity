@@ -38,9 +38,9 @@ stest 0 singularity exec \"$CONTAINER\" test -L /environment ;
 stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 
 
-# from definition file to squashfs
-stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
-container_check
+# # from definition file to squashfs
+# stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
+# container_check
 
 # from debootstrap example to squashfs
 if which debootstrap > /dev/null 2>&1; then
@@ -56,10 +56,10 @@ if which yum > /dev/null 2>&1; then
     container_check
 fi
 
-# from definition file to sandbox
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
-container_check
+# # from definition file to sandbox
+# sudo rm "$CONTAINER"
+# stest 0 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
+# container_check
 
 # from ridicolus to squashfs
 stest 1 sudo singularity build "$CONTAINER" "/some/dumb/path"
@@ -69,10 +69,10 @@ sudo mv "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
 container_check
 
-# from definition file to image 
-rm -rf "$CONTAINER"
-stest 0 sudo singularity build --writable "$CONTAINER" "../examples/busybox/Singularity"
-container_check
+# # from definition file to image
+# rm -rf "$CONTAINER"
+# stest 0 sudo singularity build --writable "$CONTAINER" "../examples/busybox/Singularity"
+# container_check
 
 # from image to squasfs
 sudo mv "$CONTAINER" "$CONTAINER2"
