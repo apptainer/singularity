@@ -204,7 +204,7 @@ _singularity() {
             elif [[ ${cur} == -H || ${cur} == --hash ]]; then
                 _filedir
             elif [[ ${cur} == -s || ${cur} == --size ]]; then
-                _filedir
+                return 0
             elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--name --commit --hash --size --force --help" -- ${cur}) )
             else
@@ -253,8 +253,8 @@ _singularity() {
 
         image.create)
             if [[ ${cur} == -s || ${cur} == --size ]]; then
-                _filedir
-            if [[ ${cur} == -i || ${cur} == --bytes-per-inode ]]; then
+                return 0
+            elif [[ ${cur} == -i || ${cur} == --bytes-per-inode ]]; then
                 return 0
             elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--size --force --help --bytes-per-inode" -- ${cur}) )
@@ -275,7 +275,7 @@ _singularity() {
 
         image.expand)
             if [[ ${cur} == -s || ${cur} == --size ]]; then
-                _filedir
+                return 0
             elif [[ ${cur} == -* ]] ; then
                 COMPREPLY=( $(compgen -W "--size --help" -- ${cur}) )
             else
@@ -371,7 +371,7 @@ _singularity() {
 
                 create)
                     if [[ ${cur} == -s || ${cur} == --size ]]; then
-                        _filedir
+                        return 0
                     elif [[ ${cur} == -* ]] ; then
                         COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
                     else
@@ -402,7 +402,7 @@ _singularity() {
 
                 expand)
                     if [[ ${cur} == -s || ${cur} == --size ]]; then
-                        _filedir
+                        return 0
                     elif [[ ${cur} == -* ]] ; then
                         COMPREPLY=( $(compgen -W "--size --help" -- ${cur}) )
                     else
