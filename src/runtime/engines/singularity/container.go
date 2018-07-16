@@ -39,6 +39,11 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	var err error
 	var session *layout.Session
 	sessionFsType := engine.EngineConfig.File.MemoryFSType
+	sessionSize := -1
+
+	if os.Geteuid() != 0 {
+		sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
+	}
 
 	c := &container{engine: engine, rpcOps: rpcOps}
 
@@ -48,18 +53,18 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	if enabled, _ := proc.HasFilesystem("overlay"); enabled {
 		switch engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
-			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, system, overlay.New()); err != nil {
+			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, overlay.New()); err != nil {
 				return err
 			}
 		}
 	}
 	if session == nil {
 		if engine.EngineConfig.File.EnableUnderlay {
-			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, system, underlay.New()); err != nil {
+			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, underlay.New()); err != nil {
 				return err
 			}
 		} else {
-			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, system, nil); err != nil {
+			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, nil); err != nil {
 				return err
 			}
 		}
@@ -298,12 +303,16 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 func (c *container) addKernelMount(system *mount.System) error {
 	var err error
+	bindFlags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
 	sylog.Debugf("Adding proc to mount list\n")
 	if c.pidNS {
-		err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", syscall.MS_NOSUID, "")
+		err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 	} else {
-		err = system.Points.AddBind(mount.KernelTag, "/proc", "/proc", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		err = system.Points.AddBind(mount.KernelTag, "/proc", "/proc", bindFlags)
+		if err == nil {
+			system.Points.AddRemount(mount.KernelTag, "/proc", bindFlags)
+		}
 	}
 	if err != nil {
 		return fmt.Errorf("unable to add proc to mount list: %s", err)
@@ -311,9 +320,12 @@ func (c *container) addKernelMount(system *mount.System) error {
 
 	sylog.Debugf("Adding sysfs to mount list\n")
 	if !c.userNS {
-		err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", syscall.MS_NOSUID, "")
+		err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 	} else {
-		err = system.Points.AddBind(mount.KernelTag, "/sys", "/sys", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		err = system.Points.AddBind(mount.KernelTag, "/sys", "/sys", bindFlags)
+		if err == nil {
+			system.Points.AddRemount(mount.KernelTag, "/sys", bindFlags)
+		}
 	}
 	if err != nil {
 		return fmt.Errorf("unable to add sys to mount list: %s", err)

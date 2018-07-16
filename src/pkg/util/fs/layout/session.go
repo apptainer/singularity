@@ -27,7 +27,7 @@ type layer interface {
 }
 
 // NewSession creates and returns a session directory layout manager
-func NewSession(path string, fstype string, system *mount.System, layer layer) (*Session, error) {
+func NewSession(path string, fstype string, size int, system *mount.System, layer layer) (*Session, error) {
 	manager := &Manager{}
 	session := &Session{Manager: manager}
 
@@ -40,7 +40,11 @@ func NewSession(path string, fstype string, system *mount.System, layer layer) (
 	if err := manager.AddDir(finalDir); err != nil {
 		return nil, err
 	}
-	err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID|syscall.MS_NODEV, "mode=1777")
+	options := "mode=1777"
+	if size >= 0 {
+		options = fmt.Sprintf("mode=1777,size=%dm", size)
+	}
+	err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID|syscall.MS_NODEV, options)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +58,12 @@ func NewSession(path string, fstype string, system *mount.System, layer layer) (
 		session.layer = layer
 	}
 	return session, nil
+}
+
+// Path returns the full path of session directory
+func (s *Session) Path() string {
+	path, _ := s.GetPath("/")
+	return path
 }
 
 // FinalPath returns the full path to session final directory
