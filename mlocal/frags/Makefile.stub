@@ -149,9 +149,9 @@ test:
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
-	@echo " TEST go test"
+	@echo " TEST sudo go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
+		cd $(SOURCEDIR) && sudo -E go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
 	@echo "       PASS"
 
 .PHONY: cscope
