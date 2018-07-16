@@ -11,6 +11,8 @@ import (
 	"os/exec"
 	"syscall"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 var singularity string
@@ -33,8 +35,8 @@ func TestMain(m *testing.M) {
 }
 
 func Test_ImageBuild(t *testing.T) {
-	t.Run("Docker", docker)
-	t.Run("Exec", sExec)
+	t.Run("Docker", test.WithPrivilege(docker))
+	t.Run("Exec", test.WithPrivilege(sExec))
 }
 
 func docker(t *testing.T) {
