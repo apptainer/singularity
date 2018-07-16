@@ -24,7 +24,7 @@ install_rpms () {
 
 install_test_deps () {
     zypper install -y --no-recommends ${test_deps[*]}
-    pip3 install pylint
+    pip3 install pylint==1.9.2
 }
 
 # source amendments for specific centos release
