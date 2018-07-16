@@ -8,9 +8,16 @@
 
 package user
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
+)
 
 func TestGetPwUID(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	user, err := GetPwUID(0)
 	if err != nil {
 		t.Fatalf("Failed to retrieve information for UID 0")
@@ -21,6 +28,9 @@ func TestGetPwUID(t *testing.T) {
 }
 
 func TestGetPwNam(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	user, err := GetPwNam("root")
 	if err != nil {
 		t.Fatalf("Failed to retrieve information for root user")
@@ -31,6 +41,9 @@ func TestGetPwNam(t *testing.T) {
 }
 
 func TestGetGrGID(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	group, err := GetGrGID(0)
 	if err != nil {
 		t.Fatalf("Failed to retrieve information for GID 0")
@@ -41,6 +54,9 @@ func TestGetGrGID(t *testing.T) {
 }
 
 func TestGetGrNam(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	group, err := GetGrNam("root")
 	if err != nil {
 		t.Fatalf("Failed to retrieve information for root group")
