@@ -43,7 +43,7 @@
 #include "util/mountlist.h"
 
 void singularity_runtime_domounts_init(struct mountlist *mountlist) {
-    memset(&mountlist, 0, sizeof(mountlist));
+    memset(mountlist, 0, sizeof(*mountlist));
 
     singularity_registry_set("UNDERLAY_ENABLED", NULL);
     if ( ( singularity_config_get_bool_char(ENABLE_UNDERLAY) > 0 ) ) {
