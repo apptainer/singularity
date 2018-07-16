@@ -8,9 +8,14 @@ package files
 import (
 	"bytes"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestGroup(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	_, err := Group("/fake")
 	if err == nil {
 		t.Errorf("should have failed with bad group file")
@@ -22,6 +27,9 @@ func TestGroup(t *testing.T) {
 }
 
 func TestPasswd(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	_, err := Passwd("/fake", "")
 	if err == nil {
 		t.Errorf("should have failed with bad passwd file")
@@ -33,6 +41,9 @@ func TestPasswd(t *testing.T) {
 }
 
 func TestHostname(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	content, err := Hostname("")
 	if err == nil {
 		t.Errorf("should have failed with empty hostname")
@@ -51,6 +62,9 @@ func TestHostname(t *testing.T) {
 }
 
 func TestResolvConf(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	content, err := ResolvConf([]string{})
 	if err == nil {
 		t.Errorf("should have failed with empty dns")
