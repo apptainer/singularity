@@ -23,8 +23,7 @@ type Session struct {
 
 // Layer describes a layer interface added on top of session layout
 type layer interface {
-	Add(*Session) error
-	Prepare(*mount.System) error
+	Add(*Session, *mount.System) error
 }
 
 // NewSession creates and returns a session directory layout manager
@@ -41,22 +40,20 @@ func NewSession(path string, fstype string, system *mount.System, layer layer) (
 	if err := manager.AddDir(finalDir); err != nil {
 		return nil, err
 	}
+	err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID|syscall.MS_NODEV, "mode=1777")
+	if err != nil {
+		return nil, err
+	}
+	if err := system.RunAfterTag(mount.SessionTag, session.createLayout); err != nil {
+		return nil, err
+	}
 	if layer != nil {
-		if err := layer.Add(session); err != nil {
+		if err := layer.Add(session, system); err != nil {
 			return nil, fmt.Errorf("failed to init layer: %s", err)
 		}
 		session.layer = layer
 	}
-	if err := session.prepare(system, fstype); err != nil {
-		return nil, err
-	}
 	return session, nil
-}
-
-// Path returns the full path of session directory
-func (s *Session) Path() string {
-	path, _ := s.GetPath("/")
-	return path
 }
 
 // FinalPath returns the full path to session final directory
@@ -72,22 +69,6 @@ func (s *Session) FinalPath() string {
 func (s *Session) RootFsPath() string {
 	path, _ := s.GetPath(rootFsDir)
 	return path
-}
-
-func (s *Session) prepare(system *mount.System, fstype string) error {
-	err := system.Points.AddFS(mount.SessionTag, s.Path(), fstype, syscall.MS_NOSUID|syscall.MS_NODEV, "mode=1777")
-	if err != nil {
-		return err
-	}
-	if err := system.RunAfterTag(mount.SessionTag, s.createLayout); err != nil {
-		return err
-	}
-	if s.layer != nil {
-		if err := s.layer.Prepare(system); err != nil {
-			return fmt.Errorf("failed to call layer Prepare: %s", err)
-		}
-	}
-	return nil
 }
 
 func (s *Session) createLayout(system *mount.System) error {

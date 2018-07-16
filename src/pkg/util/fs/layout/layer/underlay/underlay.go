@@ -38,16 +38,11 @@ func New() *Underlay {
 }
 
 // Add adds required directory in session layout
-func (u *Underlay) Add(session *layout.Session) error {
+func (u *Underlay) Add(session *layout.Session, system *mount.System) error {
 	u.session = session
 	if err := u.session.AddDir(underlayDir); err != nil {
 		return err
 	}
-	return nil
-}
-
-// Prepare registers hook function to be executed during mount phase
-func (u *Underlay) Prepare(system *mount.System) error {
 	if err := system.RunBeforeTag(mount.PreLayerTag, u.createUnderlay); err != nil {
 		return err
 	}

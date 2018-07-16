@@ -28,7 +28,7 @@ func New() *Overlay {
 }
 
 // Add adds required directory in session layout
-func (o *Overlay) Add(session *layout.Session) error {
+func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 	o.session = session
 	if err := o.session.AddDir(lowerDir); err != nil {
 		return err
@@ -38,11 +38,7 @@ func (o *Overlay) Add(session *layout.Session) error {
 	}
 	path, _ := o.session.GetPath(lowerDir)
 	o.lowerDirs = append(o.lowerDirs, path)
-	return nil
-}
 
-// Prepare registers hook function to be executed during mount phase
-func (o *Overlay) Prepare(system *mount.System) error {
 	if err := system.RunBeforeTag(mount.PreLayerTag, o.createOverlay); err != nil {
 		return err
 	}
