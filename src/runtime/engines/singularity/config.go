@@ -35,6 +35,7 @@ type FileConfig struct {
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
 	UserBindControl         bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
+	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
 	LimitContainerOwners    []string `directive:"limit container owners"`
