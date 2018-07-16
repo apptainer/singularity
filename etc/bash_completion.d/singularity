@@ -100,7 +100,7 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                opts="--app --bind --contain --containall --cleanenv --home --ipc --net --nv --overlay --pid --pwd --scratch --user --workdir --writable --help "
+                opts="--app --bind --contain --containall --cleanenv --home --ipc --net --no-home --nv --overlay --pid --pwd --scratch --user --workdir --writable --help "
                 case "${cmd}" in
                     shell)
                         opts="$opts --shell"
@@ -224,7 +224,7 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--bind --contain --home --net --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--bind --contain --home --net --no-home --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
             else
                 _filedir 
             fi
@@ -322,7 +322,7 @@ _singularity() {
                     elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                         COMPREPLY=( $(compgen -f -- ${cur}) )
                     elif [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W "--bind --contain --home --net --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
+                        COMPREPLY=( $(compgen -W "--bind --contain --home --net --no-home --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
                     else
                         _filedir 
                     fi

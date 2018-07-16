@@ -61,5 +61,10 @@ stest 0 sh -c "echo 'cd; test -f testfile' | singularity exec --home '$TESTDIR' 
 stest 1 singularity exec --home "/tmp" "$CONTAINER" true
 stest 1 singularity exec --home "/tmp:/home" "$CONTAINER" true
 
+# Teting --no-home
+_CWD=$(pwd)
+cd /tmp
+stest 1 singularity exec --no-home "$CONTAINER" ls -ld $HOME
+cd ${_CWD}
 
 test_cleanup
