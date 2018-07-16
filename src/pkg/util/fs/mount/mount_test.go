@@ -10,9 +10,13 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestImage(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddImage(RootfsTag, "", "/fake", "ext3", 0, 0, 10); err == nil {
@@ -94,6 +98,9 @@ func TestImage(t *testing.T) {
 }
 
 func TestOverlay(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddOverlay(OverlayTag, "", 0, "/", "", ""); err == nil {
@@ -157,6 +164,9 @@ func TestOverlay(t *testing.T) {
 }
 
 func TestFS(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddFS(SessionTag, "", "tmpfs", 0, ""); err == nil {
@@ -208,6 +218,9 @@ func TestFS(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddBind(UserbindsTag, "/", "", 0); err == nil {
@@ -263,6 +276,9 @@ func TestBind(t *testing.T) {
 }
 
 func TestRemount(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddRemount(UserbindsTag, "", 0); err == nil {
@@ -275,6 +291,9 @@ func TestRemount(t *testing.T) {
 }
 
 func TestImport(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	mountLabel := "system_u:object_r:removable_t"
 	points := &Points{}
 
@@ -576,6 +595,9 @@ func TestImport(t *testing.T) {
 }
 
 func TestTag(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddBind(AuthorizedTag("unknown"), "/", "/mnt", syscall.MS_NOSUID); err == nil {
@@ -596,6 +618,9 @@ func TestTag(t *testing.T) {
 }
 
 func TestPaths(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 	maskedPaths := []string{
 		"/proc/kcore",
