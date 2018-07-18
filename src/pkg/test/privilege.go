@@ -15,7 +15,7 @@ import (
 	"testing"
 )
 
-var unprivUID, unprivGID int
+var origUID, origGID, unprivUID, unprivGID int
 
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
@@ -35,12 +35,12 @@ func DropPrivilege(t *testing.T) {
 	runtime.LockOSThread()
 
 	if os.Getgid() == 0 {
-		if err := syscall.Setregid(unprivGID, unprivGID); err != nil {
+		if err := syscall.Setregid(0, unprivGID); err != nil {
 			t.Fatalf("failed to set group identity: %v", err)
 		}
 	}
 	if os.Getuid() == 0 {
-		if err := syscall.Setreuid(unprivUID, unprivUID); err != nil {
+		if err := syscall.Setreuid(0, unprivUID); err != nil {
 			t.Fatalf("failed to set user identity: %v", err)
 		}
 	}
@@ -48,12 +48,10 @@ func DropPrivilege(t *testing.T) {
 
 // ResetPrivilege returns effective privilege to the original user.
 func ResetPrivilege(t *testing.T) {
-	uid := os.Getuid()
-	if err := syscall.Setreuid(uid, uid); err != nil {
+	if err := syscall.Setreuid(origUID, origUID); err != nil {
 		t.Fatalf("failed to reset user identity: %v", err)
 	}
-	gid := os.Getgid()
-	if err := syscall.Setregid(gid, gid); err != nil {
+	if err := syscall.Setregid(origGID, origGID); err != nil {
 		t.Fatalf("failed to reset group identity: %v", err)
 	}
 	runtime.UnlockOSThread()
@@ -123,5 +121,7 @@ func getUnprivIDs(pid int) (uid int, gid int) {
 }
 
 func init() {
+	origUID = os.Getuid()
+	origGID = os.Getgid()
 	unprivUID, unprivGID = getUnprivIDs(os.Getpid())
 }
