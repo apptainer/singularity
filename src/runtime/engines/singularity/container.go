@@ -37,7 +37,7 @@ type container struct {
 
 func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	var err error
-	var session *layout.Session
+
 	sessionFsType := engine.EngineConfig.File.MemoryFSType
 	sessionSize := -1
 
@@ -53,28 +53,32 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	if enabled, _ := proc.HasFilesystem("overlay"); enabled {
 		switch engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
-			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, overlay.New()); err != nil {
+			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, overlay.New()); err != nil {
+				return err
+			}
+			if err := c.addOverlayMount(system); err != nil {
+				return err
+			}
+			if err := system.RunAfterTag(mount.LayerTag, c.switchMount); err != nil {
 				return err
 			}
 		}
 	}
-	if session == nil {
+	if c.session == nil {
 		if engine.EngineConfig.File.EnableUnderlay {
-			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, underlay.New()); err != nil {
+			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, underlay.New()); err != nil {
 				return err
 			}
 		} else {
-			if session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, nil); err != nil {
+			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, nil); err != nil {
 				return err
 			}
 		}
+		if err := system.RunAfterTag(mount.RootfsTag, c.switchMount); err != nil {
+			return err
+		}
 	}
 
-	c.session = session
-
-	if err := system.RunAfterTag(mount.PreLayerTag, c.switchMount); err != nil {
-		return err
-	}
 	if err := system.RunAfterTag(mount.RootfsTag, c.addFilesMount); err != nil {
 		return err
 	}
@@ -147,7 +151,9 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 func (c *container) localMount(point *mount.Point) error {
 	uid := os.Getuid()
 
-	syscall.Setresuid(uid, 0, uid)
+	if err := syscall.Setresuid(uid, 0, uid); err != nil {
+		return fmt.Errorf("failed to elevate privileges")
+	}
 	defer syscall.Setresuid(uid, uid, 0)
 
 	if _, err := mount.GetOffset(point.InternalOptions); err == nil {
@@ -182,13 +188,30 @@ func (c *container) mountGeneric(mnt *mount.Point, local bool) (err error) {
 	optsString := strings.Join(opts, ",")
 	sessionPath, _ := c.session.GetPath("/")
 
+	if flags&syscall.MS_BIND != 0 && flags&syscall.MS_REMOUNT == 0 {
+		if _, err := os.Stat(mnt.Source); os.IsNotExist(err) {
+			sylog.Debugf("Skipping mount, host source %s doesn't exist", mnt.Source)
+			return nil
+		}
+	}
+
 	dest := ""
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
 		dest = c.session.FinalPath() + mnt.Destination
+		if _, err := os.Stat(dest); os.IsNotExist(err) {
+			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
+			return nil
+		}
 	} else {
 		dest = mnt.Destination
+		if _, err := os.Stat(dest); os.IsNotExist(err) {
+			return fmt.Errorf("destination %s doesn't exist", dest)
+		}
 	}
-	sylog.Debugf("Mounting %s to %s\n", mnt.Source, dest)
+
+	if mnt.Source != "" {
+		sylog.Debugf("Mounting %s to %s\n", mnt.Source, dest)
+	}
 	if !local {
 		_, err = c.rpcOps.Mount(mnt.Source, dest, mnt.Type, flags, optsString)
 	} else {
@@ -212,17 +235,25 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		return err
 	}
 
+	attachFlag := os.O_RDWR
+	loopFlags := uint32(loop.FlagsAutoClear)
+
+	if flags&syscall.MS_RDONLY == 1 {
+		loopFlags |= loop.FlagsReadOnly
+		attachFlag = os.O_RDONLY
+	}
+
 	info := &loop.Info64{
 		Offset:    offset,
 		SizeLimit: sizelimit,
-		Flags:     loop.FlagsAutoClear,
+		Flags:     loopFlags,
 	}
 
 	loopdev := new(loop.Device)
 
 	number := 0
 
-	if err := loopdev.Attach(mnt.Source, os.O_RDONLY, &number); err != nil {
+	if err := loopdev.Attach(mnt.Source, attachFlag, &number); err != nil {
 		return err
 	}
 	if err := loopdev.SetStatus(info); err != nil {
@@ -297,8 +328,64 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		return system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), syscall.MS_BIND|flags)
 	}
 
+	src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return system.Points.AddImage(mount.RootfsTag, rootfs, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+	return system.Points.AddImage(mount.RootfsTag, src, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+}
+
+func (c *container) addOverlayMount(system *mount.System) error {
+	nb := 0
+	writable := true
+
+	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
+		imageObject, err := image.Init(img, writable)
+		if err != nil {
+			writable = !writable
+		}
+		if !writable {
+			imageObject, err = image.Init(img, writable)
+		}
+		sessionDest := fmt.Sprintf("/overlay-images/%d", nb)
+		if err := c.session.AddDir(sessionDest); err != nil {
+			return fmt.Errorf("failed to create session directory for overlay: %s", err)
+		}
+		dst, _ := c.session.GetPath(sessionDest)
+		nb++
+
+		src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
+		switch imageObject.Type {
+		case image.EXT3:
+			if !writable {
+				return fmt.Errorf("you don't have write permission for %s", img)
+			}
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, imageObject.Offset, imageObject.Size)
+			if err != nil {
+				return err
+			}
+		case image.SQUASHFS:
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_RDONLY | syscall.MS_NODEV)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
+			if err != nil {
+				return err
+			}
+		case image.SANDBOX:
+			if os.Geteuid() != 0 {
+				return fmt.Errorf("only root user can use sandbox as overlay")
+			}
+			if !writable {
+				return fmt.Errorf("you don't have write permission for %s", img)
+			}
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			err = system.Points.AddBind(mount.PreLayerTag, src, dst, flags)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("unkown image format")
+		}
+	}
+	return nil
 }
 
 func (c *container) addKernelMount(system *mount.System) error {
@@ -343,10 +430,44 @@ func (c *container) addDevMount(system *mount.System) error {
 }
 
 func (c *container) addHostMount(system *mount.System) error {
+	info, err := proc.ParseMountInfo("/proc/self/mountinfo")
+	if err != nil {
+		return err
+	}
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+	for _, child := range info["/"] {
+		switch child {
+		case "/proc", "/sys", "/dev", "/run":
+			continue
+		default:
+			sylog.Debugf("Adding %s to mount list\n", child)
+			if err := system.Points.AddBind(mount.HostfsTag, child, child, flags); err != nil {
+				return fmt.Errorf("unable to add %s to mount list: %s", child, err)
+			}
+			system.Points.AddRemount(mount.HostfsTag, child, flags)
+		}
+	}
 	return nil
 }
 
 func (c *container) addBindsMount(system *mount.System) error {
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+
+	for _, bindpath := range c.engine.EngineConfig.File.BindPath {
+		splitted := strings.Split(bindpath, ":")
+		src := ""
+		dst := splitted[0]
+		if len(splitted) > 1 {
+			src = splitted[1]
+		} else {
+			src = dst
+		}
+		err := system.Points.AddBind(mount.BindsTag, src, dst, flags)
+		if err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
+		}
+	}
+
 	return nil
 }
 
@@ -360,20 +481,29 @@ func (c *container) addHomeMount(system *mount.System) error {
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
 		splitted := strings.Split(b, ":")
-		l := len(splitted)
-		if l == 1 {
-			sylog.Debugf("Adding %s to mount list\n", splitted[0])
-			if err := system.Points.AddBind(mount.UserbindsTag, splitted[0], splitted[0], syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC); err != nil {
-				return fmt.Errorf("unabled to %s to mount list: %s", splitted[0], err)
-			}
-		} else {
-			sylog.Debugf("Adding %s to mount list\n", splitted[0])
-			if err := system.Points.AddBind(mount.UserbindsTag, splitted[0], splitted[1], syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC); err != nil {
-				return fmt.Errorf("unabled to %s to mount list: %s", splitted[0], err)
+
+		src := splitted[0]
+		dst := src
+		if len(splitted) > 1 {
+			dst = splitted[1]
+		}
+		if len(splitted) > 2 {
+			if splitted[2] == "ro" {
+				flags |= syscall.MS_RDONLY
+			} else if splitted[2] != "rw" {
+				sylog.Warningf("Not mounting requested %s bind point, invalid mount option %s", src, splitted[2])
 			}
 		}
+
+		sylog.Debugf("Adding %s to mount list\n", src)
+		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
+			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
+		}
+		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 	}
 	return nil
 }

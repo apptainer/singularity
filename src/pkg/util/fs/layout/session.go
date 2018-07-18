@@ -18,7 +18,7 @@ const finalDir = "/final"
 // Session directory layout manager
 type Session struct {
 	*Manager
-	layer layer
+	Layer layer
 }
 
 // Layer describes a layer interface added on top of session layout
@@ -55,7 +55,7 @@ func NewSession(path string, fstype string, size int, system *mount.System, laye
 		if err := layer.Add(session, system); err != nil {
 			return nil, fmt.Errorf("failed to init layer: %s", err)
 		}
-		session.layer = layer
+		session.Layer = layer
 	}
 	return session, nil
 }
@@ -68,7 +68,7 @@ func (s *Session) Path() string {
 
 // FinalPath returns the full path to session final directory
 func (s *Session) FinalPath() string {
-	if s.layer != nil {
+	if s.Layer != nil {
 		path, _ := s.GetPath(finalDir)
 		return path
 	}

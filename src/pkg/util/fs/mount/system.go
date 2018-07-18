@@ -64,19 +64,19 @@ func (b *System) MountAll() error {
 	for _, tag := range GetTagList() {
 		for _, fn := range b.beforeTagHooks[tag] {
 			if err := fn(b); err != nil {
-				return err
+				return fmt.Errorf("hook function for tag %s returns error: %s", tag, err)
 			}
 		}
 		for _, point := range b.Points.GetByTag(tag) {
 			if b.Mount != nil {
 				if err := b.Mount(&point); err != nil {
-					return err
+					return fmt.Errorf("mount error: %s", err)
 				}
 			}
 		}
 		for _, fn := range b.afterTagHooks[tag] {
 			if err := fn(b); err != nil {
-				return err
+				return fmt.Errorf("hook function for tag %s returns error: %s", tag, err)
 			}
 		}
 	}

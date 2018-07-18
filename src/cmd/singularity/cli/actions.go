@@ -123,6 +123,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetOverlayImage(OverlayPath)
 
 	if NetNamespace {
 		generator.AddOrReplaceLinuxNamespace("network", "")

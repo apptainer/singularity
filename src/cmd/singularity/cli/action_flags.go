@@ -17,7 +17,7 @@ import (
 var (
 	BindPaths   []string
 	HomePath    string
-	OverlayPath string
+	OverlayPath []string
 	ScratchPath []string
 	WorkdirPath string
 	PwdPath     string
@@ -75,7 +75,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("home", "argtag", []string{"<spec>"})
 
 	// -o|--overlay
-	actionFlags.StringVarP(&OverlayPath, "overlay", "o", "", "Use a persistent overlayFS via a writable image.")
+	actionFlags.StringSliceVarP(&OverlayPath, "overlay", "o", []string{}, "Use an overlayFS image for persistent data storage or as read-only layer of container.")
 	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
 
 	// -S|--scratch

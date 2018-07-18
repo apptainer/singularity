@@ -7,9 +7,11 @@ package overlay
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
 	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
 )
@@ -20,6 +22,8 @@ const lowerDir = "/overlay-lowerdir"
 type Overlay struct {
 	session   *layout.Session
 	lowerDirs []string
+	upperDir  string
+	workDir   string
 }
 
 // New creates and returns an overlay layer manager
@@ -39,15 +43,49 @@ func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 	path, _ := o.session.GetPath(lowerDir)
 	o.lowerDirs = append(o.lowerDirs, path)
 
-	if err := system.RunBeforeTag(mount.PreLayerTag, o.createOverlay); err != nil {
+	if err := system.RunBeforeTag(mount.LayerTag, o.createOverlay); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (o *Overlay) createOverlay(system *mount.System) error {
-	lowerdir := fmt.Sprintf("%s:%s", strings.Join(o.lowerDirs, ":"), o.session.RootFsPath())
-	err := system.Points.AddOverlay(mount.PreLayerTag, o.session.FinalPath(), 0, lowerdir, "", "")
+	for _, point := range system.Points.GetByTag(mount.PreLayerTag) {
+		switch point.Type {
+		case "ext3":
+			if o.upperDir != "" {
+				return fmt.Errorf("there is already a writable overlay image")
+			}
+			u := point.Destination + "/upper"
+			w := point.Destination + "/work"
+			if fs.IsLink(u) {
+				return fmt.Errorf("symlink detected, upper overlay %s must be a directory", u)
+			}
+			if fs.IsLink(w) {
+				return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
+			}
+			if !fs.IsDir(u) {
+				if err := os.Mkdir(u, 0755); err != nil {
+					return fmt.Errorf("failed to create %s directory: %s", u, err)
+				}
+			}
+			if !fs.IsDir(w) {
+				if err := os.Mkdir(w, 0755); err != nil {
+					return fmt.Errorf("failed to create %s directory: %s", w, err)
+				}
+			}
+			o.upperDir = u
+			o.workDir = w
+		case "squashfs":
+			o.AddLowerDir(point.Destination)
+		default:
+			o.AddLowerDir(point.Destination)
+		}
+	}
+	o.lowerDirs = append(o.lowerDirs, o.session.RootFsPath())
+
+	lowerdir := strings.Join(o.lowerDirs, ":")
+	err := system.Points.AddOverlay(mount.LayerTag, o.session.FinalPath(), 0, lowerdir, o.upperDir, o.workDir)
 	if err != nil {
 		return err
 	}
@@ -57,6 +95,30 @@ func (o *Overlay) createOverlay(system *mount.System) error {
 		return fmt.Errorf("no root fs image found")
 	}
 	return o.createLayer(points[0].Destination, system)
+}
+
+// AddLowerDir adds a lower directory to overlay mount
+func (o *Overlay) AddLowerDir(path string) error {
+	o.lowerDirs = append([]string{path}, o.lowerDirs...)
+	return nil
+}
+
+// AddUpperDir adds upper directory to overlay mount
+func (o *Overlay) AddUpperDir(path string) error {
+	if o.upperDir != "" {
+		return fmt.Errorf("upper directory was already set")
+	}
+	o.upperDir = path
+	return nil
+}
+
+// AddWorkDir adds work directory to overlay mount
+func (o *Overlay) AddWorkDir(path string) error {
+	if o.workDir != "" {
+		return fmt.Errorf("upper directory was already set")
+	}
+	o.workDir = path
+	return nil
 }
 
 // createLayer creates overlay layer based on content of root filesystem
@@ -70,15 +132,19 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 	}
 	for _, tag := range mount.GetTagList() {
 		for _, point := range system.Points.GetByTag(tag) {
+			flags, _ := mount.ConvertOptions(point.Options)
+			if flags&syscall.MS_REMOUNT != 0 {
+				continue
+			}
 			if strings.HasPrefix(point.Destination, sessionDir) {
 				continue
 			}
 			p := rootFsPath + point.Destination
-			if err := syscall.Stat(p, st); err == nil {
+			if syscall.Stat(p, st) == nil {
 				continue
 			}
-			if err := syscall.Stat(point.Source, st); err != nil {
-				return err
+			if err := syscall.Stat(point.Source, st); os.IsNotExist(err) {
+				return fmt.Errorf("stat failed for %s: %s", point.Source, err)
 			}
 			dest := lowerDir + point.Destination
 			// don't exist create it in overlay

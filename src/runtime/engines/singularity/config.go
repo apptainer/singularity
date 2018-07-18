@@ -56,7 +56,7 @@ type FileConfig struct {
 type JSONConfig struct {
 	Image            string   `json:"image"`
 	WritableImage    bool     `json:"writableImage,omitempty"`
-	OverlayImage     string   `json:"overlayImage,omitempty"`
+	OverlayImage     []string `json:"overlayImage,omitempty"`
 	OverlayFsEnabled bool     `json:"overlayFsEnabled,omitempty"`
 	Contain          bool     `json:"container,omitempty"`
 	Nv               bool     `json:"nv,omitempty"`
@@ -132,12 +132,12 @@ func (e *EngineConfig) GetWritableImage() bool {
 }
 
 // SetOverlayImage sets the overlay image path to be used on top of container image.
-func (e *EngineConfig) SetOverlayImage(name string) {
-	e.JSON.OverlayImage = name
+func (e *EngineConfig) SetOverlayImage(paths []string) {
+	e.JSON.OverlayImage = paths
 }
 
 // GetOverlayImage retrieves the overlay image path.
-func (e *EngineConfig) GetOverlayImage() string {
+func (e *EngineConfig) GetOverlayImage() []string {
 	return e.JSON.OverlayImage
 }
 
