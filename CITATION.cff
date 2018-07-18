@@ -1,0 +1,17 @@
+# YAML 1.2
+# Metadata for citation of this software according to the CFF format (https://citation-file-format.github.io/)
+cff-version: 1.0.3
+message: If you use this software, please cite it as below.
+# FIXME title as repository name might not be the best name, please make human readable
+title: Singularity 2.5.2 - Linux application and environment containers for science
+doi: 10.5281/zenodo.1308868
+# FIXME splitting of full names is error prone, please check if given/family name are correct
+authors:
+- given-names: Gregory
+  family-names: Kurtzer
+  name-particle: M et. al.
+  affiliation: Sylabs Inc.
+version: 2.5.2
+date-released: 2018-07-03
+repository-code: 10.5281/zenodo.1308867
+license: BSD-3-Clause
