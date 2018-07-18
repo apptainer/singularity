@@ -7,17 +7,21 @@ package build
 
 import (
 	"os"
+	"os/exec"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const archDef = "./testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
 
-	//test must be run as root
-	if os.Getuid() != 0 {
-		return
+	if _, err := exec.LookPath("pacstrap"); err != nil {
+		t.Skip("skipping test, pacstrap not installed")
 	}
+
+	test.EnsurePrivilege(t)
 
 	defFile, err := os.Open(archDef)
 	if err != nil {
@@ -43,10 +47,11 @@ func TestArchConveyor(t *testing.T) {
 
 func TestArchPacker(t *testing.T) {
 
-	//test must be run as root
-	if os.Getuid() != 0 {
-		return
+	if _, err := exec.LookPath("pacstrap"); err != nil {
+		t.Skip("skipping test, pacstrap not installed")
 	}
+
+	test.EnsurePrivilege(t)
 
 	defFile, err := os.Open(archDef)
 	if err != nil {

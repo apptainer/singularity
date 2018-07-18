@@ -8,6 +8,8 @@ package build
 import (
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -19,6 +21,9 @@ const (
 
 // TestAssembler sees if we can build a SIF image from a docke based kitchen to /tmp
 func TestSIFAssemblerDocker(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
@@ -45,6 +50,9 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	defer os.Remove(assemblerDockerDest)
 }
 func TestSIFAssemblerShub(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerShubURI, err)
