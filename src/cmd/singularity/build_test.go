@@ -112,3 +112,15 @@ func TestBuild(t *testing.T) {
 		}))
 	}
 }
+
+func TestBadPath(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	imagePath := path.Join(testDir, "container")
+	defer os.RemoveAll(imagePath)
+
+	if b, err := imageBuild(buildOpts{}, imagePath, "/some/dumb/path"); err == nil {
+		t.Log(string(b))
+		t.Fatal("unexpected success")
+	}
+}
