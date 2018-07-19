@@ -31,26 +31,32 @@ test_init "Docker bootstrap tests"
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 DEFFILE="$SINGULARITY_TESTDIR/example.def"
 
+KERNEL_MAJOR=$(uname -r | cut -f1 -d.)
+
 # Make sure the examples/docker/Singularity is pointing to busybox:latest (nobody mess with the examples! LOL)
 stest 0 grep busybox:latest ../examples/docker/Singularity
 
 stest 0 cp ../examples/docker/Singularity "$DEFFILE"
 stest 0 sudo singularity build "$CONTAINER" "$DEFFILE"
 
-stest 0 sed -i -e 's@busybox:latest@ubuntu:latest@' "$DEFFILE"
+stest 0 sed -i -e 's@busybox:latest@ubuntu:16.04@' "$DEFFILE"
 stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sed -i -e 's@ubuntu:latest@centos:latest@' "$DEFFILE"
+stest 0 sed -i -e 's@ubuntu:16.04@centos:latest@' "$DEFFILE"
 stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sed -i -e 's@centos:latest@dock0/arch:latest@' "$DEFFILE"
-stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+if [ "$KERNEL_MAJOR" = "2" ]; then
+    echo "Skipping Arch Linux tests - requires host with >=3.x kernel"
+else
+    stest 0 sed -i -e 's@centos:latest@dock0/arch:latest@' "$DEFFILE"
+    stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+    stest 0 singularity exec "$CONTAINER" true
+    stest 1 singularity exec "$CONTAINER" false
+fi
 
 stest 0 sudo singularity build -F "$CONTAINER" docker://busybox
 stest 0 singularity exec "$CONTAINER" true
@@ -70,6 +76,10 @@ stest 1 singularity exec "$CONTAINER" ls /test/*/.wh*
 stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-userperms
 stest 0 singularity exec "$CONTAINER" ls /testdir/
 stest 1 singularity exec "$CONTAINER" ls /testdir/testfile
+
+# Check whiteout of symbolic links #1592 #1576
+stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-linkwh
+stest 0 singularity exec "$CONTAINER" true
 
 if singularity_which docker >/dev/null 2>&1; then
 # make sure local test does not exist, ignore errors
