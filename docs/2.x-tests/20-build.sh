@@ -89,20 +89,20 @@ sudo mv "$CONTAINER" "$CONTAINER2"
 stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
 container_check
 
-# from shub to squashfs 
-sudo rm "$CONTAINER"
-stest 0 singularity build "$CONTAINER" "shub://GodloveD/busybox"
-container_check
+# # from shub to squashfs
+# sudo rm "$CONTAINER"
+# stest 0 singularity build "$CONTAINER" "shub://GodloveD/busybox"
+# container_check
 
 # # from docker to squashfs (via def file)
 # sudo rm "$CONTAINER"
 # stest 0 sudo singularity build "$CONTAINER" "../examples/docker/Singularity"
 # container_check
 
-# from shub to squashfs (via def file)
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "../examples/shub/Singularity"
-container_check
+# # from shub to squashfs (via def file)
+# sudo rm "$CONTAINER"
+# stest 0 sudo singularity build "$CONTAINER" "../examples/shub/Singularity"
+# container_check
 
 # from squashfs to squashfs (via def file)
 cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF

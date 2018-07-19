@@ -88,6 +88,8 @@ func TestBuild(t *testing.T) {
 		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true},
 		{"DockerURI", "", "docker://busybox", false, false},
 		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false},
+		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
+		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false},
 	}
 
 	for _, tt := range tests {
