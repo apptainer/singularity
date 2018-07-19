@@ -372,8 +372,10 @@ _singularity() {
                 create)
                     if [[ ${cur} == -s || ${cur} == --size ]]; then
                         return 0
+                    if [[ ${cur} == -i || ${cur} == --bytes-per-inode ]]; then
+                        return 0
                     elif [[ ${cur} == -* ]] ; then
-                        COMPREPLY=( $(compgen -W "--size --force --help" -- ${cur}) )
+                        COMPREPLY=( $(compgen -W "--size --force --help --bytes-per-inode" -- ${cur}) )
                     else
                         _filedir 
                     fi

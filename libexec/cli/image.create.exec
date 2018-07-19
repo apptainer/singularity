@@ -109,8 +109,7 @@ if [ -n "${SINGULARITY_INODESIZE:-}" ]; then
     INODE="-i ${SINGULARITY_INODESIZE}"
 
     if [ $(expr ${SINGULARITY_INODESIZE} % 1024) -ne 0 ]; then
-        message ERROR "Given inode size of ${SINGULARITY_INODESIZE} is not divisible by 1024\n"
-        ABORT 255
+        message WARN "--bytes-per-inode ratio of ${SINGULARITY_INODESIZE} is not divisible by 1024\n"
     fi
 fi
 
