@@ -24,15 +24,15 @@ const (
 
 // YumConveyor holds stuff that needs to be packed into the bundle
 type YumConveyor struct {
-	recipe        Definition
-	b             *Bundle
-	rpmPath       string
-	mirrorurl     string
-	mirrorUpdates string
-	osversion     string
-	include       string
-	gpg           string
-	httpProxy     string
+	recipe    Definition
+	b         *Bundle
+	rpmPath   string
+	mirrorurl string
+	updateurl string
+	osversion string
+	include   string
+	gpg       string
+	httpProxy string
 }
 
 // YumConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -85,13 +85,16 @@ func (c *YumConveyor) Get(recipe Definition) (err error) {
 	args = append(args, strings.Fields(c.include)...)
 
 	//Do the install
-	sylog.Debugf("\n\tInstall Command Path: %s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n\tIncludes: %s\n", installCommandPath, runtime.GOARCH, c.osversion, c.mirrorurl, c.include)
+	sylog.Debugf("\n\tInstall Command Path: %s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n\tUpdateURL: %s\n\tIncludes: %s\n", installCommandPath, runtime.GOARCH, c.osversion, c.mirrorurl, c.updateurl, c.include)
 	cmd := exec.Command(installCommandPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("While bootstrapping: %v", err)
 	}
+
+	//clean up bootstrap packages
+	os.RemoveAll(filepath.Join(c.b.Rootfs(), "/var/cache/yum-bootstrap"))
 
 	return nil
 }
@@ -172,20 +175,23 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	c.gpg = os.Getenv("GPG")
 	c.httpProxy = os.Getenv("http_proxy")
 
-	//get mirrorURL, OSVerison, and Includes components to definition
+	//get mirrorURL, updateURL, OSVerison, and Includes components to definition
 	c.mirrorurl, ok = c.recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid zypper header, no MirrorURL specified")
 	}
 
-	//look for an OS version if the mirror specifies it
+	c.updateurl, _ = c.recipe.Header["updateurl"]
+
+	//look for an OS version if a mirror specifies it
 	c.osversion = ""
-	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) {
+	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) || strings.Contains(c.updateurl, `%{OSVERSION}`) {
 		c.osversion, ok = c.recipe.Header["osversion"]
 		if !ok {
 			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
 		}
 		c.mirrorurl = strings.Replace(c.mirrorurl, `%{OSVERSION}`, c.osversion, -1)
+		c.updateurl = strings.Replace(c.updateurl, `%{OSVERSION}`, c.osversion, -1)
 	}
 
 	include, _ := c.recipe.Header["include"]
@@ -242,11 +248,11 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		fileContent += "gpgcheck=0\n"
 	}
 
-	//this whole section is in an if statement related to the mirrors
-	if c.mirrorUpdates != "" {
+	//add update section if updateurl is specified
+	if c.updateurl != "" {
 		fileContent += "[updates]\n"
 		fileContent += "name=Linux $releasever - $basearch updates\n"
-		fileContent += "baseurl=" + c.mirrorUpdates + "\n"
+		fileContent += "baseurl=" + c.updateurl + "\n"
 		fileContent += "enabled=1\n"
 		//gpg
 		if c.gpg != "" {
@@ -273,12 +279,16 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		if err != nil {
 			return fmt.Errorf("While importing GPG key: %v", err)
 		}
+	} else {
+		sylog.Infof("Skipping GPG Key Import")
 	}
 
 	return nil
 }
 
 func (c *YumConveyor) importGPGKey() (err error) {
+
+	sylog.Infof("We have a GPG key!  Preparing RPM database.")
 
 	//make sure gpg is being imported over https
 	if strings.HasPrefix(c.gpg, "https://") == false {
@@ -294,15 +304,17 @@ func (c *YumConveyor) importGPGKey() (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return
+		return fmt.Errorf("While initializing new rpm db: %v", err)
 	}
 
 	cmd = exec.Command(c.rpmPath, "--root", c.b.Rootfs(), "--import", c.gpg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return
+		return fmt.Errorf("While importing GPG key with rpm: %v", err)
 	}
+
+	sylog.Infof("GPG key import complete!")
 
 	return nil
 }
