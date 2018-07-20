@@ -7,17 +7,21 @@ package build
 
 import (
 	"os"
+	"os/exec"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const yumDef = "./testdata_good/yum/yum"
 
 func TestYumConveyor(t *testing.T) {
 
-	//test must be run as root
-	if os.Getuid() != 0 {
-		return
+	if _, err := exec.LookPath("yum"); err != nil {
+		t.Skip("skipping test, yum not installed")
 	}
+
+	test.EnsurePrivilege(t)
 
 	defFile, err := os.Open(yumDef)
 	if err != nil {
@@ -43,10 +47,11 @@ func TestYumConveyor(t *testing.T) {
 
 func TestYumPacker(t *testing.T) {
 
-	//test must be run as root
-	if os.Getuid() != 0 {
-		return
+	if _, err := exec.LookPath("yum"); err != nil {
+		t.Skip("skipping test, yum not installed")
 	}
+
+	test.EnsurePrivilege(t)
 
 	defFile, err := os.Open(yumDef)
 	if err != nil {

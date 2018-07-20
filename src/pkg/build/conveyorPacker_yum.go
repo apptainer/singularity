@@ -7,6 +7,7 @@ package build
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -87,7 +88,7 @@ func (c *YumConveyor) Get(recipe Definition) (err error) {
 	//Do the install
 	sylog.Debugf("\n\tInstall Command Path: %s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n\tUpdateURL: %s\n\tIncludes: %s\n", installCommandPath, runtime.GOARCH, c.osversion, c.mirrorurl, c.updateurl, c.include)
 	cmd := exec.Command(installCommandPath, args...)
-	cmd.Stdout = os.Stdout
+	//cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("While bootstrapping: %v", err)
@@ -123,27 +124,22 @@ func (c *YumConveyor) getRPMPath() (err error) {
 		return fmt.Errorf("RPM is not in PATH: %v", err)
 	}
 
-	r, w, err := os.Pipe()
-	if err != nil {
+	output := &bytes.Buffer{}
+	cmd := exec.Command("rpm", "--showrc")
+	cmd.Stdout = output
+
+	if err = cmd.Run(); err != nil {
 		return
 	}
-	go func() {
-		//needs to be native go
-		cmd := exec.Command("rpm", "--showrc")
-		cmd.Stdout = w
-		defer w.Close()
-		if err = cmd.Run(); err != nil {
-			return
-		}
-	}()
 
 	rpmDBPath := ""
-	scanner := bufio.NewScanner(r)
+	scanner := bufio.NewScanner(output)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
 		//search for dbpath from showrc output
 		if strings.Contains(scanner.Text(), "_dbpath\t") {
+			fmt.Println(scanner.Text())
 			//second field in the string is the path
 			rpmDBPath = strings.Fields(scanner.Text())[2]
 		}
