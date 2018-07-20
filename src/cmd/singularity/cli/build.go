@@ -273,6 +273,8 @@ func makeBundle(def build.Definition) *build.Bundle {
 		cp = &build.DebootstrapConveyorPacker{}
 	case "arch":
 		cp = &build.ArchConveyorPacker{}
+	case "yum":
+		cp = &build.YumConveyorPacker{}
 	default:
 		sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
 	}
