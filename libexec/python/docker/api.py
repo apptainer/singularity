@@ -225,7 +225,7 @@ class DockerApiConnection(ApiConnection):
 
         try:
             data = json.loads(response)
-            if data.has_key("access_token"):
+            if 'access_token' in data:
                 access_token = data["access_token"]
             else:
                 access_token = data["token"]
