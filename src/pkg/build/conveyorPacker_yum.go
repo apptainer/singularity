@@ -55,23 +55,22 @@ func (c *YumConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("Neither yum nor dnf in PATH")
 	}
 
-	//check for rpm on system
-	err = c.getRPMPath()
-	if err != nil {
-		return
-	}
-
 	c.b, err = NewBundle("")
 	if err != nil {
 		return
 	}
 
-	err = c.getConfVars()
+	//check for rpm on system
+	err = c.getRPMPath()
 	if err != nil {
-		return fmt.Errorf("While getting : %v", err)
+		return fmt.Errorf("While checking rpm path: %v", err)
 	}
 
-	//Create the main portion of zypper config
+	err = c.getBootstrapOptions()
+	if err != nil {
+		return fmt.Errorf("While getting bootstrap options: %v", err)
+	}
+
 	err = c.genYumConfig()
 	if err != nil {
 		return fmt.Errorf("While generating Yum config: %v", err)
@@ -94,17 +93,6 @@ func (c *YumConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("While bootstrapping: %v", err)
 	}
 
-	//update yum conf after install
-	/*
-			if [ -f "/etc/yum.conf" ]; then
-		    if [ -n "${http_proxy:-}" ]; then
-		        sed -i -e "s/\[main\]/\[main\]\nproxy=$http_proxy/" /etc/yum.conf
-		    elif [ -n "${HTTP_PROXY:-}" ]; then
-		        sed -i -e "s/\[main\]/\[main\]\nproxy=$HTTP_PROXY/" /etc/yum.conf
-		    fi
-		fi
-	*/
-
 	return nil
 }
 
@@ -126,18 +114,92 @@ func (cp *YumConveyorPacker) Pack() (b *Bundle, err error) {
 	return cp.b, nil
 }
 
-func (cp *YumConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return
+func (c *YumConveyor) getRPMPath() (err error) {
+	c.rpmPath, err = exec.LookPath("rpm")
+	if err != nil {
+		return fmt.Errorf("RPM is not in PATH: %v", err)
 	}
-	return nil
-}
 
-func (cp *YumConveyorPacker) insertRunScript() (err error) {
-	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	r, w, err := os.Pipe()
 	if err != nil {
 		return
 	}
+	go func() {
+		//needs to be native go
+		cmd := exec.Command("rpm", "--showrc")
+		cmd.Stdout = w
+		defer w.Close()
+		if err = cmd.Run(); err != nil {
+			return
+		}
+	}()
+
+	rpmDBPath := ""
+	scanner := bufio.NewScanner(r)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		//search for dbpath from showrc output
+		if strings.Contains(scanner.Text(), `_dbpath`) {
+			//second field in the string is the path
+			rpmDBPath = strings.Fields(scanner.Text())[2]
+		}
+	}
+
+	if rpmDBPath == "" {
+		return fmt.Errorf("Could find dbpath")
+	} else if rpmDBPath != `%{_var}/lib/rpm` {
+		return fmt.Errorf("RPM database is using a weird path: %s\n"+
+			"You are probably running this bootstrap on Debian or Ubuntu.\n"+
+			"There is a way to work around this problem:\n"+
+			"Create a file at path %s/.rpmmacros.\n"+
+			"Place the following lines into the '.rpmmacros' file:\n"+
+			"%s\n"+
+			"%s\n"+
+			"After creating the file, re-run the bootstrap.\n"+
+			"More info: https://github.com/singularityware/singularity/issues/241\n",
+			rpmDBPath, os.Getenv("HOME"), `%_var /var`, `%_dbpath %{_var}/lib/rpm`)
+	}
+
+	return nil
+}
+
+func (c *YumConveyor) getBootstrapOptions() (err error) {
+
+	var ok bool
+
+	//look for http_proxy and gpg environment vars
+	c.gpg = os.Getenv("GPG")
+	c.httpProxy = os.Getenv("http_proxy")
+
+	//get mirrorURL, OSVerison, and Includes components to definition
+	c.mirrorurl, ok = c.recipe.Header["mirrorurl"]
+	if !ok {
+		return fmt.Errorf("Invalid zypper header, no MirrorURL specified")
+	}
+
+	//look for an OS version if the mirror specifies it
+	c.osversion = ""
+	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) {
+		c.osversion, ok = c.recipe.Header["osversion"]
+		if !ok {
+			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
+		}
+		c.mirrorurl = strings.Replace(c.mirrorurl, `%{OSVERSION}`, c.osversion, -1)
+	}
+
+	include, _ := c.recipe.Header["include"]
+
+	//check for include environment variable and add it to requires string
+	include += ` ` + os.Getenv("INCLUDE")
+
+	//trim leading and trailing whitespace
+	include = strings.TrimSpace(include)
+
+	//add aa_base to start of include list by default
+	include = `/etc/redhat-release coreutils ` + include
+
+	c.include = include
 
 	return nil
 }
@@ -205,81 +267,12 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), yumConf), err)
 	}
 
-	//if gpg key, import it
+	//if gpg key is specified, import it
 	if c.gpg != "" {
 		err = c.importGPGKey()
 		if err != nil {
 			return fmt.Errorf("While importing GPG key: %v", err)
 		}
-	}
-
-	return nil
-}
-
-func (c *YumConveyor) copyPseudoDevices() (err error) {
-
-	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/dev"), 0775)
-	if err != nil {
-		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), "/dev"), err)
-	}
-
-	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
-
-	for _, dev := range devs {
-		cmd := exec.Command("cp", "-a", dev, filepath.Join(c.b.Rootfs(), "/dev"))
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err = cmd.Run(); err != nil {
-			f, err := os.Create(c.b.Rootfs() + "/.singularity.d/runscript")
-			if err != nil {
-				return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), dev), err)
-			}
-
-			defer f.Close()
-		}
-	}
-
-	return nil
-}
-
-func (c *YumConveyor) getRPMPath() (err error) {
-	c.rpmPath, err = exec.LookPath("rpm")
-	if err != nil {
-		return fmt.Errorf("RPM is not in PATH: %v", err)
-	}
-
-	r, w, err := os.Pipe()
-	if err != nil {
-		return
-	}
-	go func() {
-		//needs to be native go
-		cmd := exec.Command("bash", "-c", `rpm --showrc | grep -E ":\s_dbpath\s" | cut -f2`)
-		cmd.Stdout = w
-		defer w.Close()
-		if err = cmd.Run(); err != nil {
-			return
-		}
-	}()
-
-	reader := bufio.NewReader(r)
-	rpmDBPath, err := reader.ReadString('\n')
-	if err != nil {
-		return fmt.Errorf("Could not read rpm --showrc output")
-	}
-	rpmDBPath = strings.TrimSuffix(rpmDBPath, "\n")
-
-	if rpmDBPath != `%{_var}/lib/rpm` {
-		return fmt.Errorf("RPM database is using a weird path: %s"+
-			"You are probably running this bootstrap on Debian or Ubuntu.\n"+
-			"There is a way to work around this problem:\n"+
-			"Create a file at path %s/.rpmmacros.\n"+
-			"Place the following lines into the '.rpmmacros' file:\n"+
-			"%s\n"+
-			"%s\n"+
-			"After creating the file, re-run the bootstrap.\n"+
-			"More info: https://github.com/singularityware/singularity/issues/241\n",
-			rpmDBPath, os.Getenv("HOME"), `%_var /var`, `%_dbpath %{_var}/lib/rpm`)
 	}
 
 	return nil
@@ -314,42 +307,44 @@ func (c *YumConveyor) importGPGKey() (err error) {
 	return nil
 }
 
-func (c *YumConveyor) getConfVars() (err error) {
+func (c *YumConveyor) copyPseudoDevices() (err error) {
 
-	var ok bool
-
-	//look for http_proxy and gpg environment vars
-	c.gpg = os.Getenv("GPG")
-	c.httpProxy = os.Getenv("http_proxy")
-
-	//get mirrorURL, OSVerison, and Includes components to definition
-	c.mirrorurl, ok = c.recipe.Header["mirrorurl"]
-	if !ok {
-		return fmt.Errorf("Invalid zypper header, no MirrorURL specified")
+	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/dev"), 0775)
+	if err != nil {
+		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), "/dev"), err)
 	}
 
-	//look for an OS version if the mirror specifies it
-	c.osversion = ""
-	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) {
-		c.osversion, ok = c.recipe.Header["osversion"]
-		if !ok {
-			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
+	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
+
+	for _, dev := range devs {
+		cmd := exec.Command("cp", "-a", dev, filepath.Join(c.b.Rootfs(), "/dev"))
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			f, err := os.Create(c.b.Rootfs() + "/.singularity.d/runscript")
+			if err != nil {
+				return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), dev), err)
+			}
+
+			defer f.Close()
 		}
-		c.mirrorurl = strings.Replace(c.mirrorurl, `%{OSVERSION}`, c.osversion, -1)
 	}
 
-	include, _ := c.recipe.Header["include"]
+	return nil
+}
 
-	//check for include environment variable and add it to requires string
-	include += ` ` + os.Getenv("INCLUDE")
+func (cp *YumConveyorPacker) insertBaseEnv() (err error) {
+	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+		return
+	}
+	return nil
+}
 
-	//trim leading and trailing whitespace
-	include = strings.TrimSpace(include)
-
-	//add aa_base to start of include list by default
-	include = `/etc/redhat-release coreutils ` + include
-
-	c.include = include
+func (cp *YumConveyorPacker) insertRunScript() (err error) {
+	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	if err != nil {
+		return
+	}
 
 	return nil
 }
