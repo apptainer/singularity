@@ -140,7 +140,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 
 	for scanner.Scan() {
 		//search for dbpath from showrc output
-		if strings.Contains(scanner.Text(), `_dbpath`) {
+		if strings.Contains(scanner.Text(), "_dbpath\t") {
 			//second field in the string is the path
 			rpmDBPath = strings.Fields(scanner.Text())[2]
 		}
