@@ -45,3 +45,5 @@
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Hakon Enger <hakonenger@github.com>
+    - Hugo Meiland <hugo.meiland@microsoft.com>
