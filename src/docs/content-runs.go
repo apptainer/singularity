@@ -55,4 +55,11 @@ your host.`
 	RunsSpecGenLong  string = `
 	The specification file includes an args parameter. The args parameter is used
 	to specify command(s) that get run when the container is started.`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Runs - Spec add
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	RunsSpecAddUse   string = `add </path/To/config.json> </path/to/SIF>`
+	RunsSpecAddShort string = `adds a target config.json into a SIF`
+	RunsSpecAddLong  string = `
+	Insert a OCI runtime spec config.json file into a SIF data object as a JSON.generic`
 )
