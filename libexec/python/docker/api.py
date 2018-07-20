@@ -225,7 +225,11 @@ class DockerApiConnection(ApiConnection):
 
         try:
             data = json.loads(response)
-            token = {"Authorization": "Bearer %s" % data["token"]}
+            if data.has_key("access_token"):
+                access_token = data["access_token"]
+            else:
+                access_token = data["token"]
+            token = {"Authorization": "Bearer %s" % access_token}
             self.token = token
 
             # Default expiry from API is 60s
