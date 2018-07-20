@@ -42,13 +42,17 @@ your host.`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Runs - Spec
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunsSpecUse   string = `spec sif`
-	RunsSpecShort string = `inspect a config.json inside a SIF`
+	RunsSpecUse   string = `spec [command] [options...]`
+	RunsSpecShort string = `Cmd tool set for working with OCI (Open Container Initiative) runtime spec`
 	RunsSpecLong  string = `
-	The create command creates an instance of a container from a SIF bundle. The bundle
-	is a SIF with a specification file named "config.json" as a SIF data objet and a root
-	filesystem.
-
+	The specification file includes an args parameter. The args parameter is used
+	to specify command(s) that get run when the container is started.`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Runs - Spec gen
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	RunsSpecGenUse   string = `gen [options...] </path/to/SIF>`
+	RunsSpecGenShort string = `generates a config.json OCI runtime spec`
+	RunsSpecGenLong  string = `
 	The specification file includes an args parameter. The args parameter is used
 	to specify command(s) that get run when the container is started.`
 )
