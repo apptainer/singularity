@@ -36,34 +36,34 @@ var (
 )
 
 func init() {
-	ExecRunCmd.Flags().SetInterspersed(false)
-	ExecRunCmd.PersistentFlags().SetInterspersed(false)
+	ExecRunsCmd.Flags().SetInterspersed(false)
+	ExecRunsCmd.PersistentFlags().SetInterspersed(false)
 
 	templateFuncs := template.FuncMap{
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 	cobra.AddTemplateFuncs(templateFuncs)
 
-	ExecRunCmd.SetHelpTemplate(docs.HelpTemplate)
-	ExecRunCmd.SetUsageTemplate(docs.UseTemplate)
+	ExecRunsCmd.SetHelpTemplate(docs.HelpTemplate)
+	ExecRunsCmd.SetUsageTemplate(docs.UseTemplate)
 
-	ExecRunCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	ExecRunCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	ExecRunCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	ExecRunCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
+	ExecRunsCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
+	ExecRunsCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
+	ExecRunsCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
+	ExecRunsCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 	usr, err := user.Current()
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
-	ExecRunCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	ExecRunsCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 	VersionCmd.Flags().SetInterspersed(false)
-	ExecRunCmd.AddCommand(VersionCmd)
+	ExecRunsCmd.AddCommand(VersionCmd)
 }
 
-// ExecRunCmd is the base command when called without any subcommands
-var ExecRunCmd = &cobra.Command{
+// ExecRunsCmd is the base command when called without any subcommands
+var ExecRunsCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	Run: nil,
@@ -79,7 +79,7 @@ var ExecRunCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteRunsCmd() {
-	if err := ExecRunCmd.Execute(); err != nil {
+	if err := ExecRunsCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
