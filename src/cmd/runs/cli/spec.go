@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -36,7 +37,7 @@ func init() {
 	ExecRunsCmd.AddCommand(SpecCmd)
 	SpecCmd.AddCommand(SpecGenCmd)
 	SpecCmd.AddCommand(SpecAddCmd)
-
+	SpecCmd.AddCommand(SpecInspectCmd)
 }
 
 // SpecCmd runs spec cmd
@@ -48,6 +49,55 @@ var SpecCmd = &cobra.Command{
 	Use:   docs.RunsSpecUse,
 	Short: docs.RunsSpecShort,
 	Long:  docs.RunsSpecLong,
+}
+
+// SpecInspectCmd prints the OCi runtime spec stored in the SIF bundle
+var SpecInspectCmd = &cobra.Command{
+	Args: cobra.MinimumNArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		sifPath := args[0]
+
+		// load the SIF (singularity image file)
+		fimg, err := sif.LoadContainer(sifPath, false)
+		if err != nil {
+			sylog.Fatalf("Error loading SIF %s:\t%s", sifPath, err)
+		}
+
+		// lookup of a descriptor of type DataGenericJSON
+		descr := sif.Descriptor{
+			Datatype: sif.DataGenericJSON,
+		}
+		d, match, _ := fimg.GetFromDescr(descr)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		if match != 1 && d.GetName() != ConfigSpec {
+			sylog.Infof("SIF bundle doesn't contains a OCI runtime spec")
+			return
+		}
+
+		// if found, print OCI runtime spec into stdout
+		// TODO: format flag, or to file
+		if _, err := fimg.Fp.Seek(d.Fileoff, 0); err != nil {
+			sylog.Errorf("while seeking to data object: %s", err)
+			return
+		}
+		if _, err := io.CopyN(os.Stdout, fimg.Fp, d.Filelen); err != nil {
+			sylog.Errorf("while copying data object to stdout: %s", err)
+			return
+		}
+
+		// unload the SIF container
+		if err = fimg.UnloadContainer(); err != nil {
+			sylog.Fatalf("UnloadContainer(fimg):\t%s", err)
+		}
+
+	},
+	DisableFlagsInUseLine: true,
+
+	Use:   docs.RunsSpecInspectUse,
+	Short: docs.RunsSpecInspectShort,
+	Long:  docs.RunsSpecInspectLong,
 }
 
 // SpecAddCmd adds a given config.json to a  target SIF
