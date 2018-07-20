@@ -569,6 +569,11 @@ func (c *container) addDevMount(system *mount.System) error {
 }
 
 func (c *container) addHostMount(system *mount.System) error {
+	if !c.engine.EngineConfig.File.MountHostfs {
+		sylog.Debugf("Not mounting host file systems per configuration")
+		return nil
+	}
+
 	info, err := proc.ParseMountInfo("/proc/self/mountinfo")
 	if err != nil {
 		return err
