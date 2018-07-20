@@ -14,6 +14,7 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/sif/pkg/sif"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
@@ -34,6 +35,7 @@ func init() {
 	SpecGenCmd.Flags().StringVarP(&bundlePath, "bundle", "b", cwd, "path to singularity image file (SIF), default to current directory")
 	ExecRunsCmd.AddCommand(SpecCmd)
 	SpecCmd.AddCommand(SpecGenCmd)
+	SpecCmd.AddCommand(SpecAddCmd)
 
 }
 
@@ -46,6 +48,71 @@ var SpecCmd = &cobra.Command{
 	Use:   docs.RunsSpecUse,
 	Short: docs.RunsSpecShort,
 	Long:  docs.RunsSpecLong,
+}
+
+// SpecAddCmd adds a given config.json to a  target SIF
+var SpecAddCmd = &cobra.Command{
+	Args: cobra.MinimumNArgs(2),
+	Run: func(cmd *cobra.Command, args []string) {
+		var err error
+
+		specPath := args[0]
+		sifPath := args[1]
+
+		// create sif descriptor input for DataGenericJSON
+		configInput := sif.DescriptorInput{
+			Datatype: sif.DataGenericJSON,
+			Groupid:  sif.DescrDefaultGroup,
+			Link:     sif.DescrUnusedLink,
+			Fname:    specPath,
+		}
+
+		// open up the JSON data object file for this descriptor
+		if configInput.Fp, err = os.Open(configInput.Fname); err != nil {
+			sylog.Fatalf("read data object file:\t%s", err)
+		}
+		defer configInput.Fp.Close()
+
+		fi, err := configInput.Fp.Stat()
+		if err != nil {
+			sylog.Fatalf("can't stat partition file:\t%s", err)
+		}
+		configInput.Size = fi.Size()
+
+		// load the SIF (singularity image file)
+		fimg, err := sif.LoadContainer(sifPath, false)
+		if err != nil {
+			sylog.Fatalf("Error loading SIF %s:\t%s", sifPath, err)
+		}
+
+		// lookup of a descriptor of type DataGenericJSON
+		descr := sif.Descriptor{
+			Datatype: sif.DataGenericJSON,
+		}
+		d, match, _ := fimg.GetFromDescr(descr)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		if match == 1 && d.GetName() == ConfigSpec {
+			sylog.Fatalf("SIF bundle already contains a config.json")
+		}
+
+		// add new data object 'configInput' to SIF file
+		if err = fimg.AddObject(configInput); err != nil {
+			sylog.Fatalf("fimg.AddObject():\t%s", err)
+		}
+
+		// unload the SIF container
+		if err = fimg.UnloadContainer(); err != nil {
+			sylog.Fatalf("UnloadContainer(fimg):\t%s", err)
+		}
+
+	},
+	DisableFlagsInUseLine: true,
+
+	Use:   docs.RunsSpecAddUse,
+	Short: docs.RunsSpecAddShort,
+	Long:  docs.RunsSpecAddLong,
 }
 
 // SpecGenCmd creates a config.json in the cwd, with Linux as the default OS
