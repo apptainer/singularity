@@ -49,12 +49,12 @@ stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 #     container_check
 # fi
 
-# from yum to squashfs
-if which yum > /dev/null 2>&1; then
-    sudo rm "$CONTAINER"
-    stest 0 sudo singularity build "$CONTAINER" "../examples/centos/Singularity"
-    container_check
-fi
+# # from yum to squashfs
+# if which yum > /dev/null 2>&1; then
+#     sudo rm "$CONTAINER"
+#     stest 0 sudo singularity build "$CONTAINER" "../examples/centos/Singularity"
+#     container_check
+# fi
 
 # # from definition file to sandbox
 # sudo rm "$CONTAINER"

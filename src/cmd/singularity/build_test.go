@@ -91,6 +91,7 @@ func TestBuild(t *testing.T) {
 		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false},
 		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
 		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false},
+		{"Yum", "yum", "../../../examples/centos/Singularity", false, false},
 	}
 
 	for _, tt := range tests {
