@@ -12,6 +12,11 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.6](upcoming)
+
+### Bug fixes
+ - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
+
 ## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2) (2018-07-03)
 
 ### [Security related fixes](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2018-12021)
