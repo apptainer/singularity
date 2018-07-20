@@ -42,12 +42,12 @@ stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 # stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 # container_check
 
-# from debootstrap example to squashfs
-if which debootstrap > /dev/null 2>&1; then
-    sudo rm "$CONTAINER"
-    stest 0 sudo singularity build "$CONTAINER" "../examples/debian/Singularity"
-    container_check
-fi
+# # from debootstrap example to squashfs
+# if which debootstrap > /dev/null 2>&1; then
+#     sudo rm "$CONTAINER"
+#     stest 0 sudo singularity build "$CONTAINER" "../examples/debian/Singularity"
+#     container_check
+# fi
 
 # from yum to squashfs
 if which yum > /dev/null 2>&1; then

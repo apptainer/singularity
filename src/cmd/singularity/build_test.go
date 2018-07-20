@@ -86,6 +86,7 @@ func TestBuild(t *testing.T) {
 		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false},
 		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false},
 		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true},
+		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", false, false},
 		{"DockerURI", "", "docker://busybox", false, false},
 		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false},
 		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
