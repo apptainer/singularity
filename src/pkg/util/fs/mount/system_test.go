@@ -8,9 +8,14 @@ package mount
 import (
 	"syscall"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestSystem(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	points.AddBind(BindsTag, "/etc/hosts", "/etc/hosts", syscall.MS_BIND|syscall.MS_REC)

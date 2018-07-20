@@ -7,6 +7,8 @@ package auth
 
 import (
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -15,6 +17,9 @@ const (
 )
 
 func Test_ReadToken(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	result, w := ReadToken("/no/such/file")
 	if result != "" {

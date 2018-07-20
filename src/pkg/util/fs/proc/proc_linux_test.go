@@ -9,9 +9,14 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestHasFilesystem(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	p, err := HasFilesystem("proc")
 	if err != nil {
 		t.Error(err)
@@ -67,6 +72,9 @@ var mountInfoData = `22 28 0:21 / /sys rw,nosuid,nodev,noexec,relatime shared:7 
 363 381 0:52 / /run/user/1000/gvfs rw,nosuid,nodev,relatime shared:233 - fuse.gvfsd-fuse gvfsd-fuse rw,user_id=1000,group_id=1000`
 
 func TestParseMountInfo(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	if _, err := ParseMountInfo("/proc/self/fakemountinfo"); err == nil {
 		t.Errorf("should have failed with non existent path")
 	}

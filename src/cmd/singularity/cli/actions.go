@@ -32,29 +32,30 @@ func init() {
 	// TODO : the next n lines of code are repeating too much but I don't
 	// know how to shorten them tonight
 	for _, cmd := range actionCmds {
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("bind"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("contain"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("containall"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("cleanenv"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("home"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("ipc"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("net"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("nv"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("overlay"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pid"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("uts"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pwd"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("scratch"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("userns"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("workdir"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("hostname"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("fakeroot"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("keep-privs"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("no-privs"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("add-caps"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("drop-caps"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("contain"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("containall"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("cleanenv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("pwd"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().SetInterspersed(false)
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
@@ -66,7 +67,8 @@ func init() {
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.MinimumNArgs(2),
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -81,7 +83,8 @@ var ExecCmd = &cobra.Command{
 // ShellCmd represents the shell command
 var ShellCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.MinimumNArgs(1),
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
 		execWrapper(cmd, args[0], a)
@@ -96,7 +99,8 @@ var ShellCmd = &cobra.Command{
 // RunCmd represents the run command
 var RunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.MinimumNArgs(1),
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execWrapper(cmd, args[0], a)

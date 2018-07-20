@@ -42,6 +42,20 @@ stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 stest 0 sudo singularity build "$CONTAINER" "../examples/busybox/Singularity"
 container_check
 
+# from debootstrap example to squashfs
+if which debootstrap > /dev/null 2>&1; then
+    sudo rm "$CONTAINER"
+    stest 0 sudo singularity build "$CONTAINER" "../examples/debian/Singularity"
+    container_check
+fi
+
+# from yum to squashfs
+if which yum > /dev/null 2>&1; then
+    sudo rm "$CONTAINER"
+    stest 0 sudo singularity build "$CONTAINER" "../examples/centos/Singularity"
+    container_check
+fi
+
 # from definition file to sandbox
 sudo rm "$CONTAINER"
 stest 0 sudo singularity build --sandbox "$CONTAINER" "../examples/busybox/Singularity"
@@ -133,39 +147,6 @@ sudo rm "$CONTAINER"
 stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
 container_check
 
-# isolated: from shub to squashfs (via def file)
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/shub/Singularity"
-container_check
-
-# isolated: from docker to squashfs (via def file)
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/docker/Singularity"
-container_check
-
-# isolated: from definition file to squashfs
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build --isolated "$CONTAINER" "../examples/busybox/Singularity"
-container_check
-
-# when isolated, ${SINGULARITY_TESTDIR} is not accessible, localimage need to be in the same
-# directory as definition file and "From" need to be a relative path
-cat >"${SINGULARITY_TESTDIR}/Singularity" <<EOF
-Bootstrap: localimage
-From: $(basename $CONTAINER2)
-EOF
-
-# isolated: from localimage to squashfs (via def file)
-sudo rm -rf "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity build --isolated --writable "$CONTAINER2" "../examples/busybox/Singularity"
-stest 0 sudo singularity build --isolated "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
-container_check
-
-# isolated: from sandbox to squashfs (via def file)
-sudo rm -rf "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity -x build --isolated --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
-stest 0 sudo singularity build --isolated "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
-container_check
 
 stest 0 sudo rm -rf "${CONTAINER}"
 stest 0 sudo rm -rf "${CONTAINER2}"

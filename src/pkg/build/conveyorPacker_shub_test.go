@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -17,6 +19,9 @@ const (
 
 // TestShubConveyor tests if we can pull an image from singularity hub
 func TestShubConveyor(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
@@ -35,6 +40,9 @@ func TestShubConveyor(t *testing.T) {
 
 // TestShubPacker checks if we can create a Bundle from the pulled image
 func TestShubPacker(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
@@ -59,6 +67,9 @@ func TestShubPacker(t *testing.T) {
 
 // TestShubPacker checks if we can create a Bundle from the pulled image
 func TestShubParser(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	validShubURIs := []string{
 		`//username/container`,
 		`//username/container:tag`,

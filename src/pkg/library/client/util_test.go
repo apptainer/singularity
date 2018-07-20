@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func Test_isLibraryPullRef(t *testing.T) {
@@ -37,11 +38,11 @@ func Test_isLibraryPullRef(t *testing.T) {
 		{"Bad initial character", "library://entity/collection/-image:tag", false},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if got := IsLibraryPullRef(tt.libraryRef); got != tt.want {
 				t.Errorf("isLibraryPullRef() = %v, want %v", got, tt.want)
 			}
-		})
+		}))
 	}
 }
 
@@ -66,11 +67,11 @@ func Test_isLibraryPushRef(t *testing.T) {
 		{"No capitals", "library://Entity/collection/image:tag", false},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if got := IsLibraryPushRef(tt.libraryRef); got != tt.want {
 				t.Errorf("isLibraryPushRef() = %v, want %v", got, tt.want)
 			}
-		})
+		}))
 	}
 }
 
@@ -89,11 +90,11 @@ func Test_IsRefPart(t *testing.T) {
 		{"No capitals", "Abc123", false},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if got := IsRefPart(tt.libraryRef); got != tt.want {
 				t.Errorf("IsRefPart() = %v, want %v", got, tt.want)
 			}
-		})
+		}))
 	}
 }
 
@@ -113,11 +114,11 @@ func Test_IsImageHash(t *testing.T) {
 		{"sif bad character", "sif.g574b72c-7705-49cc-874e-424fc3b78116", false},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if got := IsImageHash(tt.libraryRef); got != tt.want {
 				t.Errorf("IsImageHash() = %v, want %v", got, tt.want)
 			}
-		})
+		}))
 	}
 }
 
@@ -142,7 +143,7 @@ func Test_parseLibraryRef(t *testing.T) {
 		{"Good short ref multi tag", "library://image:tag1,tag2,tag3", "", "", "image", []string{"tag1", "tag2", "tag3"}},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			ent, col, con, tags := parseLibraryRef(tt.libraryRef)
 			if ent != tt.wantEnt {
 				t.Errorf("parseLibraryRef() = entity %v, want %v", ent, tt.wantEnt)
@@ -156,11 +157,14 @@ func Test_parseLibraryRef(t *testing.T) {
 			if !reflect.DeepEqual(tags, tt.wantTags) {
 				t.Errorf("parseLibraryRef() = entity %v, want %v", tags, tt.wantTags)
 			}
-		})
+		}))
 	}
 }
 
 func Test_ParseErrorBody(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	eb := JSONError{
 		Code:    500,
@@ -191,6 +195,9 @@ func Test_ParseErrorBody(t *testing.T) {
 
 func TestIdInSlice(t *testing.T) {
 
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	trueID := bson.NewObjectId()
 
 	slice := []bson.ObjectId{trueID, bson.NewObjectId(), bson.NewObjectId(), bson.NewObjectId()}
@@ -216,6 +223,9 @@ func TestIdInSlice(t *testing.T) {
 }
 
 func TestSliceWithoutID(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	a := bson.NewObjectId()
 	b := bson.NewObjectId()
@@ -244,6 +254,9 @@ func TestSliceWithoutID(t *testing.T) {
 
 func TestStringInSlice(t *testing.T) {
 
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	trueID := bson.NewObjectId().Hex()
 
 	slice := []string{trueID, bson.NewObjectId().Hex(), bson.NewObjectId().Hex(), bson.NewObjectId().Hex()}
@@ -270,6 +283,9 @@ func TestStringInSlice(t *testing.T) {
 
 func Test_imageHash(t *testing.T) {
 
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	expectedSha256 := "sha256.d7d356079af905c04e5ae10711ecf3f5b34385e9b143c5d9ddbf740665ce2fb7"
 
 	shasum, err := ImageHash("no_such_file.txt")
@@ -287,6 +303,9 @@ func Test_imageHash(t *testing.T) {
 }
 
 func Test_sha256sum(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	expectedSha256 := "sha256.d7d356079af905c04e5ae10711ecf3f5b34385e9b143c5d9ddbf740665ce2fb7"
 
