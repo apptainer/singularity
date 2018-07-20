@@ -125,7 +125,8 @@ func Init(path string, writable bool) (*Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error while opening image %s: %s", path, err)
 	}
-	procPath, err := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", file.Fd()))
+	// comment this code causing bug on 3.10 kernel especially on CentOS/RHEL 7
+	/*procPath, err := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", file.Fd()))
 	if err != nil {
 		file.Close()
 		return nil, fmt.Errorf("failed to readlink of path file descriptor: %s", err)
@@ -133,7 +134,7 @@ func Init(path string, writable bool) (*Image, error) {
 	if procPath != resolvedPath {
 		file.Close()
 		return nil, fmt.Errorf("path doesn't match %s != %s", resolvedPath, procPath)
-	}
+	}*/
 	img := &Image{
 		Path:     resolvedPath,
 		Name:     filepath.Base(resolvedPath),

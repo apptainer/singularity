@@ -63,3 +63,12 @@ func IsSuid(name string) bool {
 	}
 	return (info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0)
 }
+
+// MkdirAll creates a directory and parents if it doesn't exist with
+// mode after umask reset
+func MkdirAll(path string, mode os.FileMode) error {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	return os.MkdirAll(path, mode)
+}

@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/fs/files"
 	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
 	"github.com/singularityware/singularity/src/pkg/util/fs/layout/layer/overlay"
@@ -23,6 +25,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
 	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
+	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/sif/pkg/sif"
 )
@@ -69,13 +72,16 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, underlay.New()); err != nil {
 				return err
 			}
+			if err := system.RunAfterTag(mount.LayerTag, c.switchMount); err != nil {
+				return err
+			}
 		} else {
 			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, nil); err != nil {
 				return err
 			}
-		}
-		if err := system.RunAfterTag(mount.RootfsTag, c.switchMount); err != nil {
-			return err
+			if err := system.RunAfterTag(mount.RootfsTag, c.switchMount); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -151,10 +157,12 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 func (c *container) localMount(point *mount.Point) error {
 	uid := os.Getuid()
 
-	if err := syscall.Setresuid(uid, 0, uid); err != nil {
-		return fmt.Errorf("failed to elevate privileges")
+	if !c.userNS {
+		if err := syscall.Setresuid(uid, 0, uid); err != nil {
+			return fmt.Errorf("failed to elevate privileges")
+		}
+		defer syscall.Setresuid(uid, uid, 0)
 	}
-	defer syscall.Setresuid(uid, uid, 0)
 
 	if _, err := mount.GetOffset(point.InternalOptions); err == nil {
 		if err := c.mountImage(point); err != nil {
@@ -186,7 +194,7 @@ func (c *container) switchMount(system *mount.System) error {
 func (c *container) mountGeneric(mnt *mount.Point, local bool) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
-	sessionPath, _ := c.session.GetPath("/")
+	sessionPath := c.session.Path()
 
 	if flags&syscall.MS_BIND != 0 && flags&syscall.MS_REMOUNT == 0 {
 		if _, err := os.Stat(mnt.Source); os.IsNotExist(err) {
@@ -364,7 +372,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				return err
 			}
 		case image.SQUASHFS:
-			flags := uintptr(syscall.MS_NOSUID | syscall.MS_RDONLY | syscall.MS_NODEV)
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
 			if err != nil {
 				return err
@@ -392,39 +400,170 @@ func (c *container) addKernelMount(system *mount.System) error {
 	var err error
 	bindFlags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
-	sylog.Debugf("Adding proc to mount list\n")
-	if c.pidNS {
-		err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV, "")
-	} else {
-		err = system.Points.AddBind(mount.KernelTag, "/proc", "/proc", bindFlags)
-		if err == nil {
-			system.Points.AddRemount(mount.KernelTag, "/proc", bindFlags)
+	sylog.Debugf("Checking configuration file for 'mount proc'")
+	if c.engine.EngineConfig.File.MountProc {
+		sylog.Debugf("Adding proc to mount list\n")
+		if c.pidNS {
+			err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV, "")
+		} else {
+			err = system.Points.AddBind(mount.KernelTag, "/proc", "/proc", bindFlags)
+			if err == nil {
+				if !c.userNS {
+					system.Points.AddRemount(mount.KernelTag, "/proc", bindFlags)
+				}
+			}
 		}
-	}
-	if err != nil {
-		return fmt.Errorf("unable to add proc to mount list: %s", err)
+		if err != nil {
+			return fmt.Errorf("unable to add proc to mount list: %s", err)
+		}
+	} else {
+		sylog.Verbosef("Skipping /proc mount")
 	}
 
-	sylog.Debugf("Adding sysfs to mount list\n")
-	if !c.userNS {
-		err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
-	} else {
-		err = system.Points.AddBind(mount.KernelTag, "/sys", "/sys", bindFlags)
-		if err == nil {
-			system.Points.AddRemount(mount.KernelTag, "/sys", bindFlags)
+	sylog.Debugf("Checking configuration file for 'mount sys'")
+	if c.engine.EngineConfig.File.MountSys {
+		sylog.Debugf("Adding sysfs to mount list\n")
+		if !c.userNS {
+			err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
+		} else {
+			err = system.Points.AddBind(mount.KernelTag, "/sys", "/sys", bindFlags)
+			if err == nil {
+				if !c.userNS {
+					system.Points.AddRemount(mount.KernelTag, "/sys", bindFlags)
+				}
+			}
 		}
+		if err != nil {
+			return fmt.Errorf("unable to add sys to mount list: %s", err)
+		}
+	} else {
+		sylog.Verbosef("Skipping /sys mount")
 	}
-	if err != nil {
-		return fmt.Errorf("unable to add sys to mount list: %s", err)
+	return nil
+}
+
+func (c *container) bindDev(devpath string, system *mount.System) error {
+	if err := c.session.AddFile(devpath, nil); err != nil {
+		return fmt.Errorf("failed to %s session file: %s", devpath, err)
+	}
+
+	dst, _ := c.session.GetPath(devpath)
+
+	sylog.Debugf("Mounting device %s at %s", devpath, dst)
+
+	if err := system.Points.AddBind(mount.DevTag, devpath, dst, syscall.MS_BIND); err != nil {
+		return fmt.Errorf("failed to add %s mount: %s", devpath, err)
 	}
 	return nil
 }
 
 func (c *container) addDevMount(system *mount.System) error {
-	sylog.Debugf("Adding dev to mount list\n")
-	err := system.Points.AddBind(mount.DevTag, "/dev", "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
-	if err != nil {
-		return fmt.Errorf("unable to add dev to mount list: %s", err)
+	sylog.Debugf("Checking configuration file for 'mount dev'")
+
+	if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
+		sylog.Debugf("Creating temporary staged /dev")
+		if err := c.session.AddDir("/dev"); err != nil {
+			return fmt.Errorf("failed to add /dev session directory: %s", err)
+		}
+		sylog.Debugf("Creating temporary staged /dev/shm")
+		if err := c.session.AddDir("/dev/shm"); err != nil {
+			return fmt.Errorf("failed to add /dev/shm session directory: %s", err)
+		}
+		devshmPath, _ := c.session.GetPath("/dev/shm")
+		flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+		err := system.Points.AddFS(mount.DevTag, devshmPath, c.engine.EngineConfig.File.MemoryFSType, flags, "mode=1777")
+		if err != nil {
+			return fmt.Errorf("failed to add /dev/shm temporary filesystem: %s", err)
+		}
+		if c.engine.EngineConfig.File.MountDevPts {
+			if _, err := os.Stat("/dev/pts/ptmx"); os.IsNotExist(err) {
+				return fmt.Errorf("Multiple devpts instances unsupported and /dev/pts configured")
+			}
+
+			sylog.Debugf("Creating temporary staged /dev/pts")
+			if err := c.session.AddDir("/dev/pts"); err != nil {
+				return fmt.Errorf("failed to /dev/pts session directory: %s", err)
+			}
+
+			options := "mode=0620,newinstance,ptmxmode=0666"
+			if !c.userNS {
+				group, err := user.GetGrNam("tty")
+				if err != nil {
+					return fmt.Errorf("Problem resolving 'tty' group GID: %s", err)
+				}
+				options = fmt.Sprintf("%s,gid=%d", options, group.GID)
+
+			} else {
+				sylog.Debugf("Not setting /dev/pts filesystem gid: user namespace enabled")
+			}
+			sylog.Debugf("Mounting devpts for staged /dev/pts")
+			devptsPath, _ := c.session.GetPath("/dev/pts")
+			err = system.Points.AddFS(mount.DevTag, devptsPath, "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, options)
+			if err != nil {
+				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY functionality disabled")
+			} else {
+				if err := c.bindDev("/dev/tty", system); err != nil {
+					return err
+				}
+				if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
+					return fmt.Errorf("failed to create /dev/ptmx symlink: %s", err)
+				}
+			}
+		}
+		if err := c.bindDev("/dev/null", system); err != nil {
+			return err
+		}
+		if err := c.bindDev("/dev/zero", system); err != nil {
+			return err
+		}
+		if err := c.bindDev("/dev/random", system); err != nil {
+			return err
+		}
+		if err := c.bindDev("/dev/urandom", system); err != nil {
+			return err
+		}
+		if c.engine.EngineConfig.GetNv() {
+			files, err := ioutil.ReadDir("/dev")
+			if err != nil {
+				return fmt.Errorf("failed to read /dev directory: %s", err)
+			}
+			for _, file := range files {
+				if strings.HasPrefix(file.Name(), "nvidia") {
+					if err := c.bindDev(filepath.Join("/dev", file.Name()), system); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		if err := c.session.AddSymlink("/dev/fd", "/proc/self/fd"); err != nil {
+			return fmt.Errorf("failed to create symlink /dev/fd")
+		}
+		if err := c.session.AddSymlink("/dev/stdin", "/proc/self/fd/0"); err != nil {
+			return fmt.Errorf("failed to create symlink /dev/stdin")
+		}
+		if err := c.session.AddSymlink("/dev/stdout", "/proc/self/fd/1"); err != nil {
+			return fmt.Errorf("failed to create symlink /dev/stdout")
+		}
+		if err := c.session.AddSymlink("/dev/stderr", "/proc/self/fd/2"); err != nil {
+			return fmt.Errorf("failed to create symlink /dev/stderr")
+		}
+
+		devPath, _ := c.session.GetPath("/dev")
+		err = system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		if err != nil {
+			return fmt.Errorf("unable to add dev to mount list: %s", err)
+		}
+		system.Points.AddRemount(mount.DevTag, "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		return nil
+	} else if c.engine.EngineConfig.File.MountDev == "yes" {
+		sylog.Debugf("Adding dev to mount list\n")
+		err := system.Points.AddBind(mount.DevTag, "/dev", "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		if err != nil {
+			return fmt.Errorf("unable to add dev to mount list: %s", err)
+		}
+	} else if c.engine.EngineConfig.File.MountDev == "no" {
+		sylog.Verbosef("Not mounting /dev inside the container")
 	}
 	return nil
 }
@@ -436,14 +575,30 @@ func (c *container) addHostMount(system *mount.System) error {
 	}
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 	for _, child := range info["/"] {
-		switch child {
-		case "/proc", "/sys", "/dev", "/run":
+		if strings.HasPrefix(child, "/proc") {
+			sylog.Debugf("Skipping /proc based file system")
 			continue
-		default:
-			sylog.Debugf("Adding %s to mount list\n", child)
-			if err := system.Points.AddBind(mount.HostfsTag, child, child, flags); err != nil {
-				return fmt.Errorf("unable to add %s to mount list: %s", child, err)
-			}
+		} else if strings.HasPrefix(child, "/sys") {
+			sylog.Debugf("Skipping /sys based file system")
+			continue
+		} else if strings.HasPrefix(child, "/dev") {
+			sylog.Debugf("Skipping /dev based file system")
+			continue
+		} else if strings.HasPrefix(child, "/run") {
+			sylog.Debugf("Skipping /run based file system")
+			continue
+		} else if strings.HasPrefix(child, "/boot") {
+			sylog.Debugf("Skipping /boot based file system")
+			continue
+		} else if strings.HasPrefix(child, "/var") {
+			sylog.Debugf("Skipping /var based file system")
+			continue
+		}
+		sylog.Debugf("Adding %s to mount list\n", child)
+		if err := system.Points.AddBind(mount.HostfsTag, child, child, flags); err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", child, err)
+		}
+		if !c.userNS {
 			system.Points.AddRemount(mount.HostfsTag, child, flags)
 		}
 	}
@@ -455,12 +610,12 @@ func (c *container) addBindsMount(system *mount.System) error {
 
 	for _, bindpath := range c.engine.EngineConfig.File.BindPath {
 		splitted := strings.Split(bindpath, ":")
-		src := ""
-		dst := splitted[0]
+		src := splitted[0]
+		dst := ""
 		if len(splitted) > 1 {
-			src = splitted[1]
+			dst = splitted[1]
 		} else {
-			src = dst
+			dst = src
 		}
 		err := system.Points.AddBind(mount.BindsTag, src, dst, flags)
 		if err != nil {
@@ -473,7 +628,13 @@ func (c *container) addBindsMount(system *mount.System) error {
 
 func (c *container) addHomeMount(system *mount.System) error {
 	sylog.Debugf("Adding home to mount list\n")
-	err := system.Points.AddBind(mount.HomeTag, "/home", "/home", syscall.MS_BIND)
+	homedir := strings.SplitN(c.engine.EngineConfig.GetHomeDir(), ":", 2)
+	src := homedir[0]
+	dst := src
+	if len(homedir) == 2 {
+		dst = homedir[1]
+	}
+	err := system.Points.AddBind(mount.HomeTag, src, dst, syscall.MS_BIND)
 	if err != nil {
 		return fmt.Errorf("unable to add home to mount list: %s", err)
 	}
@@ -483,10 +644,20 @@ func (c *container) addHomeMount(system *mount.System) error {
 func (c *container) addUserbindsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
+	sylog.Debugf("Checking for 'user bind control' in configuration file")
+	if !c.engine.EngineConfig.File.UserBindControl {
+		sylog.Warningf("Ignoring user bind request: user bind control disabled by system administrator")
+		return nil
+	}
+
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
 		splitted := strings.Split(b, ":")
 
-		src := splitted[0]
+		src, err := filepath.Abs(splitted[0])
+		if err != nil {
+			sylog.Warningf("Can't determine absolute path of %s bind point", splitted[0])
+			continue
+		}
 		dst := src
 		if len(splitted) > 1 {
 			dst = splitted[1]
@@ -503,20 +674,171 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
 			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
 		}
-		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
+		if c.userNS && flags&syscall.MS_RDONLY != 0 {
+			system.Points.AddRemount(mount.UserbindsTag, dst, flags^(syscall.MS_NOSUID|syscall.MS_NODEV))
+		} else {
+			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
+		}
 	}
 	return nil
 }
 
 func (c *container) addTmpMount(system *mount.System) error {
+	sylog.Debugf("Checking for 'mount tmp' in configuration file")
+	if !c.engine.EngineConfig.File.MountTmp {
+		sylog.Verbosef("Skipping tmp dir mounting (per config)")
+		return nil
+	}
+	tmpSource := "/tmp"
+	vartmpSource := "/var/tmp"
+
+	if c.engine.EngineConfig.GetContain() {
+		workdir := c.engine.EngineConfig.GetWorkdir()
+		if workdir != "" {
+			if !c.engine.EngineConfig.File.UserBindControl {
+				sylog.Warningf("User bind control is disabled by system administrator")
+				return nil
+			}
+
+			vartmpSource = "/var_tmp"
+
+			workdir, err := filepath.Abs(filepath.Clean(workdir))
+			if err != nil {
+				sylog.Warningf("Can't determine absolute path of workdir %s", workdir)
+			}
+
+			tmpSource = workdir + tmpSource
+			vartmpSource = workdir + vartmpSource
+
+			if err := fs.MkdirAll(tmpSource, 0755); err != nil {
+				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
+			}
+			if err := fs.MkdirAll(vartmpSource, 0755); err != nil {
+				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
+			}
+		} else {
+			if err := c.session.AddDir(tmpSource); err != nil {
+				return err
+			}
+			if err := c.session.AddDir(vartmpSource); err != nil {
+				return err
+			}
+			tmpSource, _ = c.session.GetPath(tmpSource)
+			vartmpSource, _ = c.session.GetPath(vartmpSource)
+		}
+	}
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+
+	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
+		if !c.userNS {
+			system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
+		}
+	} else {
+		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
+	}
+	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, "/var/tmp", flags); err == nil {
+		if !c.userNS {
+			system.Points.AddRemount(mount.TmpTag, "/var/tmp", flags)
+		}
+	} else {
+		return fmt.Errorf("could not mount container's /var/tmp directory: %s", err)
+	}
 	return nil
 }
 
 func (c *container) addScratchMount(system *mount.System) error {
+	hasWorkdir := false
+
+	scratchdir := c.engine.EngineConfig.GetScratchDir()
+	if len(scratchdir) == 0 {
+		sylog.Debugf("Not mounting scratch directory: Not requested")
+		return nil
+	} else if len(scratchdir) == 1 {
+		scratchdir = strings.Split(filepath.Clean(scratchdir[0]), ",")
+	}
+	if !c.engine.EngineConfig.File.UserBindControl {
+		sylog.Verbosef("Not mounting scratch: user bind control disabled by system administrator")
+		return nil
+	}
+	workdir := c.engine.EngineConfig.GetWorkdir()
+	sourceDir := ""
+	if workdir != "" {
+		hasWorkdir = true
+		sourceDir = filepath.Clean(workdir) + "/scratch"
+	} else {
+		sourceDir = c.session.Path()
+	}
+	if hasWorkdir {
+		if err := fs.MkdirAll(sourceDir, 0750); err != nil {
+			return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
+		}
+	}
+	for _, dir := range scratchdir {
+		fullSourceDir := ""
+
+		if hasWorkdir {
+			fullSourceDir = filepath.Join(sourceDir, filepath.Base(dir))
+			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil {
+				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
+			}
+		} else {
+			src := filepath.Join("/scratch", filepath.Base(dir))
+			if err := c.session.AddDir(src); err != nil {
+				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
+			}
+			fullSourceDir, _ = c.session.GetPath(src)
+		}
+		flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+		if err := system.Points.AddBind(mount.ScratchTag, fullSourceDir, dir, flags); err != nil {
+			return fmt.Errorf("could not bind scratch directory %s into container: %s", fullSourceDir, err)
+		}
+		if !c.userNS {
+			system.Points.AddRemount(mount.ScratchTag, dir, flags)
+		}
+	}
 	return nil
 }
 
 func (c *container) addCwdMount(system *mount.System) error {
+	cwd := ""
+
+	if c.engine.EngineConfig.GetContain() {
+		sylog.Verbosef("Not mounting current directory: container was requested")
+		return nil
+	}
+	if !c.engine.EngineConfig.File.UserBindControl {
+		sylog.Warningf("Not mounting current directory: user bind control is disabled by system administrator")
+		return nil
+	}
+	if c.engine.CommonConfig.OciConfig.Process == nil {
+		return nil
+	}
+	cwd = c.engine.CommonConfig.OciConfig.Process.Cwd
+	if err := os.Chdir(cwd); err != nil {
+		sylog.Debugf("can't go to container working directory: %s", err)
+		return nil
+	}
+	current, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("could not obtain current directory path: %s", err)
+	}
+	switch current {
+	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin":
+		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)
+		return nil
+	}
+	if strings.HasPrefix(current, "/sys") || strings.HasPrefix(current, "/proc") || strings.HasPrefix(current, "/dev") {
+		sylog.Verbosef("Not mounting CWD within virtual directory: %s", current)
+		return nil
+	}
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+	if err := system.Points.AddBind(mount.CwdTag, current, cwd, flags); err == nil {
+		if !c.userNS {
+			system.Points.AddRemount(mount.CwdTag, cwd, flags)
+		}
+	} else {
+		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
+	}
 	return nil
 }
 
@@ -534,7 +856,7 @@ func (c *container) addFilesMount(system *mount.System) error {
 
 	if c.engine.EngineConfig.File.ConfigPasswd {
 		passwd := filepath.Join(rootfs, "/etc/passwd")
-		content, err := files.Passwd(passwd, "")
+		content, err := files.Passwd(passwd, c.engine.EngineConfig.GetHome())
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {

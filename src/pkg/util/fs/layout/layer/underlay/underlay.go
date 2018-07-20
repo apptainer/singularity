@@ -66,6 +66,10 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 	sessionDir := u.session.Path()
 	for _, tag := range mount.GetTagList() {
 		for _, point := range points.GetByTag(tag) {
+			flags, _ := mount.ConvertOptions(point.Options)
+			if flags&syscall.MS_REMOUNT != 0 {
+				continue
+			}
 			if strings.HasPrefix(point.Destination, sessionDir) {
 				continue
 			}

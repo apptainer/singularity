@@ -202,10 +202,9 @@ static void prepare_scontainer_stage(int stage) {
 
 #ifdef USER_CAPABILITIES
     // set ambient capabilities if supported
-    int i;
-    for (i = 0; i <= CAPSET_MAX; i++ ) {
-        if ( (config.capAmbient & (1ULL << i)) ) {
-            if ( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, i, 0, 0) < 0 ) {
+    for (caps_index = 0; caps_index <= last_cap; caps_index++ ) {
+        if ( (config.capAmbient & (1ULL << caps_index)) ) {
+            if ( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps_index, 0, 0) < 0 ) {
                 singularity_message(ERROR, "Failed to set ambient capability: %s\n", strerror(errno));
                 exit(1);
             }
