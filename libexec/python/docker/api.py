@@ -245,7 +245,7 @@ class DockerApiConnection(ApiConnection):
             self.update_headers(token)
 
         except Exception as e:
-            bot.error("Error getting token for repository %s, please check your credentials.\n%s\n"
+            bot.error("Error getting token for repository %s, please check your credentials.\n%s\n" # noqa
                       % (self.repo_name, str(e)))
 
             sys.exit(1)
