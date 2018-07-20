@@ -62,4 +62,11 @@ your host.`
 	RunsSpecAddShort string = `adds a target config.json into a SIF`
 	RunsSpecAddLong  string = `
 	Insert a OCI runtime spec config.json file into a SIF data object as a JSON.generic`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Runs - Spec Inspect
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	RunsSpecInspectUse   string = `inspect </path/to/SIF>`
+	RunsSpecInspectShort string = `seek into a SIF bundle for OCI runtime specs`
+	RunsSpecInspectLong  string = `
+	seek into a SIF bundle for OCI runtime specs, if found, prints the OCI runtime spec into stoud`
 )
