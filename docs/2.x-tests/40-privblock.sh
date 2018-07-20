@@ -29,30 +29,17 @@ test_init "Checking escalation block"
 
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 
-stest 0 sudo singularity build --sandbox "$CONTAINER" docker://centos:7
-stest 0 sudo singularity exec -w "$CONTAINER" chmod +s /bin/ping
-
+stest 0 sudo singularity build "$CONTAINER" docker://centos:7
 stest 0 singularity exec "$CONTAINER" true
 stest 1 singularity exec "$CONTAINER" false
 
 # Checking no new privs with capabilities
-stest 1 sudo singularity exec "$CONTAINER" ping -c 1 127.0.0.1
+stest 0 sudo singularity exec "$CONTAINER" ping -c 1 127.0.0.1
 stest 1 singularity exec "$CONTAINER" ping -c 1 127.0.0.1
 
-stest 1 sudo singularity exec --keep-privs "$CONTAINER" su -s /bin/sh - bin -c "ping -c 1 127.0.0.1"
-stest 0 sudo singularity exec --keep-privs --allow-setuid "$CONTAINER" su -s /bin/sh - bin -c "ping -c 1 127.0.0.1"
-
-stest 1 sudo singularity exec "$CONTAINER" mount -B /etc /mnt
-stest 1 sudo singularity exec --no-privs "$CONTAINER" mount -B /etc /mnt
-stest 0 sudo singularity exec --add-caps sys_admin "$CONTAINER" mount -B /etc /mnt
-
-stest 0 sudo singularity exec --no-privs --add-caps sys_admin "$CONTAINER" mount -B /etc /mnt
-stest 1 sudo singularity exec --keep-privs --drop-caps sys_admin "$CONTAINER" mount -B /etc /mnt
-
-stest 1 sudo singularity exec "$CONTAINER" dd if=/dev/mem of=/dev/null bs=1 count=1
-stest 0 sudo singularity exec --keep-privs "$CONTAINER" dd if=/dev/mem of=/dev/null bs=1 count=1
-
-stest 0 sudo rm -rf "$CONTAINER"
+# Checking no new privs with setuid root
+stest 0 sudo singularity exec "$CONTAINER" /usr/sbin/pam_timestamp_check -k root
+stest 1 singularity exec "$CONTAINER" /usr/sbin/pam_timestamp_check -k root
 
 test_cleanup
 

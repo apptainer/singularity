@@ -6,16 +6,19 @@
 package build
 
 import (
-	"os"
+	"os/exec"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestDebootstrapConveyor(t *testing.T) {
 
-	//test must be run as root
-	if os.Getuid() != 0 {
-		return
+	if _, err := exec.LookPath("debootstrap"); err != nil {
+		t.Skip("skipping test, debootstrap not installed")
 	}
+
+	test.EnsurePrivilege(t)
 
 	testDef := Definition{}
 
@@ -36,10 +39,11 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 func TestDebootstrapPacker(t *testing.T) {
 
-	//test must be run as root
-	if os.Getuid() != 0 {
-		return
+	if _, err := exec.LookPath("debootstrap"); err != nil {
+		t.Skip("skipping test, debootstrap not installed")
 	}
+
+	test.EnsurePrivilege(t)
 
 	testDef := Definition{}
 

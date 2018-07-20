@@ -8,11 +8,16 @@ package build
 import (
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const busyBoxDef = "./testdata_good/busybox/busybox"
 
 func TestBusyBoxConveyor(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	defFile, err := os.Open(busyBoxDef)
 	if err != nil {
@@ -38,6 +43,10 @@ func TestBusyBoxConveyor(t *testing.T) {
 }
 
 func TestBusyBoxPacker(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	defFile, err := os.Open(busyBoxDef)
 	if err != nil {
 		t.Fatalf("unable to open file %s: %v\n", busyBoxDef, err)

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 //func postFile(baseURL string, filePath string, imageID string) error {
@@ -50,29 +51,29 @@ func Test_postFile(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:        t,
-				code:     test.code,
-				httpPath: "/v1/imagefile/" + test.imageRef,
+				code:     tt.code,
+				httpPath: "/v1/imagefile/" + tt.imageRef,
 			}
 
 			m.Run()
 
-			err := postFile(m.baseURI, testToken, test.testFile, test.imageRef)
+			err := postFile(m.baseURI, testToken, tt.testFile, tt.imageRef)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
