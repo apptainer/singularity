@@ -6,6 +6,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"os"
 	"os/exec"
 	"path"
@@ -201,6 +202,53 @@ func TestBuildMultiStage(t *testing.T) {
 					imageVerify(t, ts.imagePath, ts.labels)
 				}))
 			}
+		}))
+	}
+}
+
+func TestBuildTar(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	// Build base image
+	baseImage := path.Join(testDir, "base-container")
+	b, err := imageBuild(buildOpts{}, baseImage, "../../../examples/busybox/Singularity")
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+	defer os.Remove(baseImage)
+
+	tests := []struct {
+		name       string
+		exportPath string
+		gzip       bool
+	}{
+		{"TAR", path.Join(testDir, "container.tar"), false},
+		{"TGZ", path.Join(testDir, "container.tgz"), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			if !tt.gzip {
+				if err := imageExportTAR(baseImage, tt.exportPath); err != nil {
+					t.Fatalf("failed to export TAR: %v", err)
+				}
+			} else {
+				if err := imageExportTGZ(baseImage, tt.exportPath, gzip.BestCompression); err != nil {
+					t.Fatalf("failed to export TGZ: %v", err)
+				}
+			}
+			defer os.Remove(tt.exportPath)
+
+			imagePath := path.Join(testDir, "container")
+			defer os.Remove(imagePath)
+
+			b, err = imageBuild(buildOpts{}, imagePath, tt.exportPath)
+			if err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			}
+			imageVerify(t, imagePath, false)
 		}))
 	}
 }

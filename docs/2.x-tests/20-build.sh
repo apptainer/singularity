@@ -135,17 +135,17 @@ stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 # stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
 # container_check
 
-# from tar to squashfs
-stest 0 sudo sh -c "singularity image.export '$CONTAINER' > '${CONTAINER2}.tar'"
-stest 0 sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar"
-container_check
+# # from tar to squashfs
+# stest 0 sudo sh -c "singularity image.export '$CONTAINER' > '${CONTAINER2}.tar'"
+# stest 0 sudo rm "$CONTAINER"
+# stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar"
+# container_check
 
-# from tar.gz to squashfs
-stest 0 sh -c "singularity image.export '$CONTAINER' | gzip -9 > '${CONTAINER2}.tar.gz'"
-sudo rm "$CONTAINER"
-stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
-container_check
+# # from tar.gz to squashfs
+# stest 0 sh -c "singularity image.export '$CONTAINER' | gzip -9 > '${CONTAINER2}.tar.gz'"
+# sudo rm "$CONTAINER"
+# stest 0 sudo singularity build "$CONTAINER" "${CONTAINER2}.tar.gz"
+# container_check
 
 
 stest 0 sudo rm -rf "${CONTAINER}"
