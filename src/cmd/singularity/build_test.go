@@ -119,6 +119,63 @@ func TestBuild(t *testing.T) {
 	}
 }
 
+func TestBuildMultiStage(t *testing.T) {
+	imagePath1 := path.Join(testDir, "container1")
+	imagePath2 := path.Join(testDir, "container2")
+
+	type testSpec struct {
+		name      string
+		imagePath string
+		buildSpec string
+		force     bool
+		sandbox   bool
+		writable  bool
+		labels    bool
+	}
+
+	tests := []struct {
+		name  string
+		steps []testSpec
+	}{
+		{"SIFToSIF", []testSpec{
+			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false, false},
+			{"SIF", imagePath2, imagePath1, false, false, false, false},
+		}},
+		{"SandboxToSIF", []testSpec{
+			{"BusyBoxSandbox", imagePath1, "../../../examples/busybox/Singularity", false, true, false, false},
+			{"SIF", imagePath2, imagePath1, false, false, false, false},
+		}},
+		{"WritableToSIF", []testSpec{
+			{"BusyBoxWritable", imagePath1, "../../../examples/busybox/Singularity", false, false, true, false},
+			{"SIF", imagePath2, imagePath1, false, false, false, false},
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			for _, ts := range tt.steps {
+				defer os.RemoveAll(ts.imagePath)
+			}
+
+			for _, ts := range tt.steps {
+				t.Run(ts.name, test.WithPrivilege(func(t *testing.T) {
+					opts := buildOpts{
+						force:    ts.force,
+						sandbox:  ts.sandbox,
+						writable: ts.writable,
+					}
+
+					if b, err := imageBuild(opts, ts.imagePath, ts.buildSpec); err != nil {
+						t.Log(string(b))
+						t.Fatalf("unexpected failure: %v", err)
+					}
+					imageVerify(t, ts.imagePath, ts.labels)
+				}))
+			}
+		}))
+	}
+}
+
 func TestBadPath(t *testing.T) {
 	test.EnsurePrivilege(t)
 

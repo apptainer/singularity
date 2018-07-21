@@ -64,30 +64,30 @@ stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 # # from ridicolus to squashfs
 # stest 1 sudo singularity build "$CONTAINER" "/some/dumb/path"
 
-# from sandbox to squashfs
-sudo mv "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
-container_check
+# # from sandbox to squashfs
+# sudo mv "$CONTAINER" "$CONTAINER2"
+# stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
+# container_check
 
 # # from definition file to image
 # rm -rf "$CONTAINER"
 # stest 0 sudo singularity build --writable "$CONTAINER" "../examples/busybox/Singularity"
 # container_check
 
-# from image to squasfs
-sudo mv "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
-container_check
+# # from image to squasfs
+# sudo mv "$CONTAINER" "$CONTAINER2"
+# stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
+# container_check
 
 # # from docker to squashfs
 # sudo rm "$CONTAINER"
 # stest 0 singularity build "$CONTAINER" "docker://busybox"
 # container_check
 
-# from sqaushfs to squashfs 
-sudo mv "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
-container_check
+# # from sqaushfs to squashfs
+# sudo mv "$CONTAINER" "$CONTAINER2"
+# stest 0 sudo singularity build "$CONTAINER" "$CONTAINER2"
+# container_check
 
 # # from shub to squashfs
 # sudo rm "$CONTAINER"
