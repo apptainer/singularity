@@ -122,6 +122,22 @@ func TestBuild(t *testing.T) {
 func TestBuildMultiStage(t *testing.T) {
 	imagePath1 := path.Join(testDir, "container1")
 	imagePath2 := path.Join(testDir, "container2")
+	imagePath3 := path.Join(testDir, "container3")
+
+	liDefFile := prepareDefFile(DefFileDetail{
+		Bootstrap: "localimage",
+		From:      imagePath1,
+	})
+	defer os.Remove(liDefFile)
+
+	labels := make(map[string]string)
+	labels["FOO"] = "bar"
+	liLabelDefFile := prepareDefFile(DefFileDetail{
+		Bootstrap: "localimage",
+		From:      imagePath2,
+		Labels:    labels,
+	})
+	defer os.Remove(liLabelDefFile)
 
 	type testSpec struct {
 		name      string
@@ -148,6 +164,11 @@ func TestBuildMultiStage(t *testing.T) {
 		{"WritableToSIF", []testSpec{
 			{"BusyBoxWritable", imagePath1, "../../../examples/busybox/Singularity", false, false, true, false},
 			{"SIF", imagePath2, imagePath1, false, false, false, false},
+		}},
+		{"LocalImage", []testSpec{
+			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false, false},
+			{"LocalImage", imagePath2, liDefFile, false, false, false, false},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
 		}},
 	}
 
