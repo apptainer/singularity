@@ -123,17 +123,17 @@ stest 0 singularity exec \"$CONTAINER\" test -L /singularity"
 # container_check
 # stest 0 singularity exec "$CONTAINER" test -f /.singularity.d/labels.json
 
-# from localimage to squashfs (via def file)
-sudo rm -rf "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity build --writable "$CONTAINER2" "../examples/busybox/Singularity"
-stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
-container_check
+# # from localimage to squashfs (via def file)
+# sudo rm -rf "$CONTAINER" "$CONTAINER2"
+# stest 0 sudo singularity build --writable "$CONTAINER2" "../examples/busybox/Singularity"
+# stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+# container_check
 
-# from sandbox to squashfs (via def file)
-sudo rm -rf "$CONTAINER" "$CONTAINER2"
-stest 0 sudo singularity -x build --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
-stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
-container_check
+# # from sandbox to squashfs (via def file)
+# sudo rm -rf "$CONTAINER" "$CONTAINER2"
+# stest 0 sudo singularity -x build --force --sandbox "$CONTAINER2" "../examples/busybox/Singularity"
+# stest 0 sudo singularity build "$CONTAINER" "${SINGULARITY_TESTDIR}/Singularity"
+# container_check
 
 # from tar to squashfs
 stest 0 sudo sh -c "singularity image.export '$CONTAINER' > '${CONTAINER2}.tar'"

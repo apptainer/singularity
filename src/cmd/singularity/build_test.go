@@ -170,6 +170,14 @@ func TestBuildMultiStage(t *testing.T) {
 			{"LocalImage", imagePath2, liDefFile, false, false, false, false},
 			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
 		}},
+		{"LocalImageSandbox", []testSpec{
+			{"BusyBoxSandbox", imagePath2, "../../../examples/busybox/Singularity", true, true, false, false},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
+		}},
+		{"LocalImageWritable", []testSpec{
+			{"BusyBoxWritable", imagePath2, "../../../examples/busybox/Singularity", false, false, true, false},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
+		}},
 	}
 
 	for _, tt := range tests {
