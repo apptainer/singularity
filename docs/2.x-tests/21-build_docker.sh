@@ -44,10 +44,10 @@ KERNEL_MAJOR=$(uname -r | cut -f1 -d.)
 # stest 0 singularity exec "$CONTAINER" true
 # stest 1 singularity exec "$CONTAINER" false
 
-stest 0 sed -i -e 's@ubuntu:16.04@centos:latest@' "$DEFFILE"
-stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+# stest 0 sed -i -e 's@ubuntu:16.04@centos:latest@' "$DEFFILE"
+# stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+# stest 0 singularity exec "$CONTAINER" true
+# stest 1 singularity exec "$CONTAINER" false
 
 if [ "$KERNEL_MAJOR" = "2" ]; then
     echo "Skipping Arch Linux tests - requires host with >=3.x kernel"
