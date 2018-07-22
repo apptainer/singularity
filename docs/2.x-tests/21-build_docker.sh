@@ -31,7 +31,7 @@ test_init "Docker bootstrap tests"
 CONTAINER="$SINGULARITY_TESTDIR/container.img"
 DEFFILE="$SINGULARITY_TESTDIR/example.def"
 
-KERNEL_MAJOR=$(uname -r | cut -f1 -d.)
+# KERNEL_MAJOR=$(uname -r | cut -f1 -d.)
 
 # # Make sure the examples/docker/Singularity is pointing to busybox:latest (nobody mess with the examples! LOL)
 # stest 0 grep busybox:latest ../examples/docker/Singularity
@@ -49,14 +49,14 @@ KERNEL_MAJOR=$(uname -r | cut -f1 -d.)
 # stest 0 singularity exec "$CONTAINER" true
 # stest 1 singularity exec "$CONTAINER" false
 
-if [ "$KERNEL_MAJOR" = "2" ]; then
-    echo "Skipping Arch Linux tests - requires host with >=3.x kernel"
-else
-    stest 0 sed -i -e 's@centos:latest@dock0/arch:latest@' "$DEFFILE"
-    stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
-    stest 0 singularity exec "$CONTAINER" true
-    stest 1 singularity exec "$CONTAINER" false
-fi
+# if [ "$KERNEL_MAJOR" = "2" ]; then
+#     echo "Skipping Arch Linux tests - requires host with >=3.x kernel"
+# else
+#     stest 0 sed -i -e 's@centos:latest@dock0/arch:latest@' "$DEFFILE"
+#     stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
+#     stest 0 singularity exec "$CONTAINER" true
+#     stest 1 singularity exec "$CONTAINER" false
+# fi
 
 stest 0 sudo singularity build -F "$CONTAINER" docker://busybox
 stest 0 singularity exec "$CONTAINER" true

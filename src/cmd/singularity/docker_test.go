@@ -33,6 +33,7 @@ func TestDockerDefFile(t *testing.T) {
 		kernelMajorRequired int
 		from                string
 	}{
+		{"Arch", 3, "dock0/arch:latest"},
 		{"BusyBox", 0, "busybox:latest"},
 		{"CentOS", 0, "centos:latest"},
 		{"Ubuntu", 0, "ubuntu:16.04"},
