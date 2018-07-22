@@ -66,11 +66,11 @@ DEFFILE="$SINGULARITY_TESTDIR/example.def"
 # stest 1 singularity exec "$CONTAINER" true
 # stest 1 singularity exec "$CONTAINER" false
 
-# AUFS sanity tests
-stest 0 sudo singularity build -F "$CONTAINER" docker://dctrud/docker-aufs-sanity
-stest 0 singularity exec "$CONTAINER" ls /test/whiteout-dir/file2 /test/whiteout-file/file2 /test/normal-dir/file2
-stest 1 singularity exec "$CONTAINER" ls /test/whiteout-dir/file1 /test/whiteout-file/file1
-stest 1 singularity exec "$CONTAINER" ls /test/*/.wh*
+# # AUFS sanity tests
+# stest 0 sudo singularity build -F "$CONTAINER" docker://dctrud/docker-aufs-sanity
+# stest 0 singularity exec "$CONTAINER" ls /test/whiteout-dir/file2 /test/whiteout-file/file2 /test/normal-dir/file2
+# stest 1 singularity exec "$CONTAINER" ls /test/whiteout-dir/file1 /test/whiteout-file/file1
+# stest 1 singularity exec "$CONTAINER" ls /test/*/.wh*
 
 # Check force permissions for user builds #977
 stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-userperms

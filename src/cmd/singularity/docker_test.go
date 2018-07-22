@@ -45,6 +45,42 @@ func TestDocker(t *testing.T) {
 	}
 }
 
+// AUFS sanity tests
+func TestDockerAUFS(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	imagePath := path.Join(testDir, "container")
+	defer os.Remove(imagePath)
+
+	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+
+	fileTests := []struct {
+		name          string
+		command       []string
+		expectSuccess bool
+	}{
+		{"File2", []string{"ls", "/test/whiteout-dir/file2", "/test/whiteout-file/file2", "/test/normal-dir/file2"}, true},
+		{"File1", []string{"ls", "/test/whiteout-dir/file1", "/test/whiteout-file/file1"}, false},
+		{"Glob", []string{"ls", "/test/*/.wh*"}, false},
+	}
+	for _, ft := range fileTests {
+		t.Run(ft.name, test.WithoutPrivilege(func(t *testing.T) {
+			b, err := imageExec(execOpts{}, imagePath, ft.command)
+			if ft.expectSuccess && (err != nil) {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			} else if !ft.expectSuccess && (err == nil) {
+				t.Log(string(b))
+				t.Fatalf("unexpected success")
+			}
+		}))
+	}
+}
+
 func getKernelMajor(t *testing.T) (major int) {
 	var buf unix.Utsname
 	if err := unix.Uname(&buf); err != nil {
