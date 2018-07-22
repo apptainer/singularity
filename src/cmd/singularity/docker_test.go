@@ -15,6 +15,35 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+func TestDocker(t *testing.T) {
+	tests := []struct {
+		name          string
+		imagePath     string
+		expectSuccess bool
+	}{
+		{"BusyBox", "docker://busybox", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			imagePath := path.Join(testDir, "container")
+			defer os.Remove(imagePath)
+
+			b, err := imageBuild(buildOpts{}, imagePath, tt.imagePath)
+			if tt.expectSuccess {
+				if err != nil {
+					t.Log(string(b))
+					t.Fatalf("unexpected failure: %v", err)
+				}
+				imageVerify(t, imagePath, false)
+			} else if !tt.expectSuccess && err == nil {
+				t.Log(string(b))
+				t.Fatal("unexpected success")
+			}
+		}))
+	}
+}
+
 func getKernelMajor(t *testing.T) (major int) {
 	var buf unix.Utsname
 	if err := unix.Uname(&buf); err != nil {
