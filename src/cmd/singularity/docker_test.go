@@ -22,6 +22,7 @@ func TestDocker(t *testing.T) {
 		expectSuccess bool
 	}{
 		{"BusyBox", "docker://busybox", true},
+		{"DoesNotExist", "docker://something_that_doesnt_exist_ever", false},
 	}
 
 	for _, tt := range tests {

@@ -62,9 +62,9 @@ DEFFILE="$SINGULARITY_TESTDIR/example.def"
 # stest 0 singularity exec "$CONTAINER" true
 # stest 1 singularity exec "$CONTAINER" false
 
-stest 1 sudo singularity build -F "$CONTAINER" docker://something_that_doesnt_exist_ever
-stest 1 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+# stest 1 sudo singularity build -F "$CONTAINER" docker://something_that_doesnt_exist_ever
+# stest 1 singularity exec "$CONTAINER" true
+# stest 1 singularity exec "$CONTAINER" false
 
 # AUFS sanity tests
 stest 0 sudo singularity build -F "$CONTAINER" docker://dctrud/docker-aufs-sanity
