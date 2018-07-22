@@ -117,6 +117,22 @@ func TestDockerPermissions(t *testing.T) {
 	}
 }
 
+// Check whiteout of symbolic links #1592 #1576
+func TestDockerWhiteoutSymlink(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	imagePath := path.Join(testDir, "container")
+	defer os.Remove(imagePath)
+
+	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+	imageVerify(t, imagePath, false)
+}
+
 func getKernelMajor(t *testing.T) (major int) {
 	var buf unix.Utsname
 	if err := unix.Uname(&buf); err != nil {

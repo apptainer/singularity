@@ -77,9 +77,9 @@ DEFFILE="$SINGULARITY_TESTDIR/example.def"
 # stest 0 singularity exec "$CONTAINER" ls /testdir/
 # stest 1 singularity exec "$CONTAINER" ls /testdir/testfile
 
-# Check whiteout of symbolic links #1592 #1576
-stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-linkwh
-stest 0 singularity exec "$CONTAINER" true
+# # Check whiteout of symbolic links #1592 #1576
+# stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-linkwh
+# stest 0 singularity exec "$CONTAINER" true
 
 if singularity_which docker >/dev/null 2>&1; then
 # make sure local test does not exist, ignore errors
