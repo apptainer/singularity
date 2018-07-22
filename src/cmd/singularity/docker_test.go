@@ -34,6 +34,7 @@ func TestDockerDefFile(t *testing.T) {
 		from                string
 	}{
 		{"BusyBox", 0, "busybox:latest"},
+		{"Ubuntu", 0, "ubuntu:16.04"},
 	}
 
 	for _, tt := range tests {
