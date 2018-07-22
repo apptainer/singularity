@@ -33,11 +33,11 @@ DEFFILE="$SINGULARITY_TESTDIR/example.def"
 
 KERNEL_MAJOR=$(uname -r | cut -f1 -d.)
 
-# Make sure the examples/docker/Singularity is pointing to busybox:latest (nobody mess with the examples! LOL)
-stest 0 grep busybox:latest ../examples/docker/Singularity
+# # Make sure the examples/docker/Singularity is pointing to busybox:latest (nobody mess with the examples! LOL)
+# stest 0 grep busybox:latest ../examples/docker/Singularity
 
-stest 0 cp ../examples/docker/Singularity "$DEFFILE"
-stest 0 sudo singularity build "$CONTAINER" "$DEFFILE"
+# stest 0 cp ../examples/docker/Singularity "$DEFFILE"
+# stest 0 sudo singularity build "$CONTAINER" "$DEFFILE"
 
 stest 0 sed -i -e 's@busybox:latest@ubuntu:16.04@' "$DEFFILE"
 stest 0 sudo singularity build -F "$CONTAINER" "$DEFFILE"
