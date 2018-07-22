@@ -72,10 +72,10 @@ DEFFILE="$SINGULARITY_TESTDIR/example.def"
 # stest 1 singularity exec "$CONTAINER" ls /test/whiteout-dir/file1 /test/whiteout-file/file1
 # stest 1 singularity exec "$CONTAINER" ls /test/*/.wh*
 
-# Check force permissions for user builds #977
-stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-userperms
-stest 0 singularity exec "$CONTAINER" ls /testdir/
-stest 1 singularity exec "$CONTAINER" ls /testdir/testfile
+# # Check force permissions for user builds #977
+# stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-userperms
+# stest 0 singularity exec "$CONTAINER" ls /testdir/
+# stest 1 singularity exec "$CONTAINER" ls /testdir/testfile
 
 # Check whiteout of symbolic links #1592 #1576
 stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-linkwh

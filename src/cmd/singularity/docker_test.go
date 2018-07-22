@@ -81,6 +81,42 @@ func TestDockerAUFS(t *testing.T) {
 	}
 }
 
+// Check force permissions for user builds #977
+func TestDockerPermissions(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	imagePath := path.Join(testDir, "container")
+	defer os.Remove(imagePath)
+
+	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+
+	fileTests := []struct {
+		name          string
+		command       []string
+		expectSuccess bool
+	}{
+		{"TestDir", []string{"ls", "/testdir/"}, true},
+		{"TestDirFile", []string{"ls", "/testdir/testfile"}, false},
+	}
+	for _, ft := range fileTests {
+		t.Run(ft.name, test.WithoutPrivilege(func(t *testing.T) {
+			b, err := imageExec(execOpts{}, imagePath, ft.command)
+			if ft.expectSuccess && (err != nil) {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			} else if !ft.expectSuccess && (err == nil) {
+				t.Log(string(b))
+				t.Fatalf("unexpected success")
+			}
+		}))
+	}
+}
+
 func getKernelMajor(t *testing.T) (major int) {
 	var buf unix.Utsname
 	if err := unix.Uname(&buf); err != nil {
