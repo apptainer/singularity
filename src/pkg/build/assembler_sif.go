@@ -6,7 +6,6 @@
 package build
 
 import (
-	"container/list"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
@@ -30,7 +29,6 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 		Sifversion: sif.HdrVersion,
 		Arch:       sif.HdrArchAMD64,
 		ID:         uuid.NewV4(),
-		Inputlist:  list.New(),
 	}
 
 	// data we need to create a system partition descriptor
@@ -63,7 +61,7 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 	}
 
 	// add this descriptor input element to the list
-	cinfo.Inputlist.PushBack(parinput)
+	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	// test container creation with two partition input descriptors
 	if err := sif.CreateContainer(cinfo); err != nil {
