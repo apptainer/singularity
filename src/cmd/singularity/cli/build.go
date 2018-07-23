@@ -273,6 +273,8 @@ func makeBundle(def build.Definition) *build.Bundle {
 		cp = &build.DebootstrapConveyorPacker{}
 	case "arch":
 		cp = &build.ArchConveyorPacker{}
+	case "localimage":
+		cp = &build.LocalConveyorPacker{}
 	default:
 		sylog.Fatalf("Not a valid build source %s: %v\n", def.Header["bootstrap"], err)
 	}
