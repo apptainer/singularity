@@ -147,6 +147,44 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.simg /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// pgp
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PgpUse   string = `pgp <subcommand>`
+	PgpShort string = `Manage PGP key stores`
+	PgpLong  string = `
+  Pgp allows you to manage local PGP key stores by create a new store and new
+  keys pairs. You can also list available keys from the default store.`
+	PgpExample string = `
+  All group commands have their own help output:
+
+  $ singularity help pgp newpair
+  $ singularity pgp list --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// pgp newpair
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PgpNewPairUse   string = `newpair`
+	PgpNewPairShort string = `create a new PGP key pair`
+	PgpNewPairLong  string = `
+	The PGP newpair command allows you to create a new key or public/private
+	keys to be stored in the default user local key store location
+	(e.g., $HOME/.singularity/sypgp)`
+	PgpNewPairExample string = `
+  $ singularity pgp newpair`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// pgp list
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PgpListUse   string = `list`
+	PgpListShort string = `list keys from the default key store`
+	PgpListLong  string = `
+	The PGP list command allows you to list public/private key pairs
+	from the default user local key store location
+	(e.g., $HOME/.singularity/sypgp)`
+	PgpListExample string = `
+  $ singularity pgp list`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`
