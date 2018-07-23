@@ -28,6 +28,8 @@
     - Diana Langenbach <dcl@dcl.sh>
     - Felix Abecassis <fabecassis@nvidia.com>
     - George Hartzell <hartzell@alerce.com>
+    - Hakon Enger <hakonenger@github.com>
+    - Hugo Meiland <hugo.meiland@microsoft.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
@@ -35,6 +37,7 @@
     - Justin Riley <justin_riley@harvard.edu>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
+    - Michael Herzberg <michael@mherzberg.de>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
@@ -47,4 +50,3 @@
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Michael Herzberg <michael@mherzberg.de>

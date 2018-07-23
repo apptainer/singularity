@@ -30,8 +30,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    `mount home = yes` is set. #1761
 
 ### Bug fixes
-  - Fix 404 when using Arch Linux bootstrap #1731
-  - Bind `/dev/nvidia*` into the container when the `--nv` flag is used in 
+ - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
+ - Fix 404 when using Arch Linux bootstrap #1731
+ - Bind `/dev/nvidia*` into the container when the `--nv` flag is used in 
     conjuction with the `--contain` flag #1358
 
 ## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2) (2018-07-03)

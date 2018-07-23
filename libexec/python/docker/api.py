@@ -225,7 +225,11 @@ class DockerApiConnection(ApiConnection):
 
         try:
             data = json.loads(response)
-            token = {"Authorization": "Bearer %s" % data["token"]}
+            if 'access_token' in data:
+                access_token = data["access_token"]
+            else:
+                access_token = data["token"]
+            token = {"Authorization": "Bearer %s" % access_token}
             self.token = token
 
             # Default expiry from API is 60s
@@ -241,7 +245,7 @@ class DockerApiConnection(ApiConnection):
             self.update_headers(token)
 
         except Exception as e:
-            bot.error("Error getting token for repository %s, please check your credentials.\n%s\n"
+            bot.error("Error getting token for repository %s, please check your credentials.\n%s\n" # noqa
                       % (self.repo_name, str(e)))
 
             sys.exit(1)
