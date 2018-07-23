@@ -53,7 +53,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	p := &mount.Points{}
 	system := &mount.System{Points: p, Mount: c.localMount}
 
-	if enabled, _ := proc.HasFilesystem("overlay"); enabled {
+	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !engine.EngineConfig.GetWritableImage() {
 		switch engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
 			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, overlay.New()); err != nil {
@@ -68,7 +68,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 		}
 	}
 	if c.session == nil {
-		if engine.EngineConfig.File.EnableUnderlay {
+		if engine.EngineConfig.File.EnableUnderlay && !engine.EngineConfig.GetWritableImage() {
 			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, underlay.New()); err != nil {
 				return err
 			}
@@ -219,6 +219,8 @@ func (c *container) mountGeneric(mnt *mount.Point, local bool) (err error) {
 
 	if mnt.Source != "" {
 		sylog.Debugf("Mounting %s to %s\n", mnt.Source, dest)
+	} else {
+		sylog.Debugf("Remounting %s\n", dest)
 	}
 	if !local {
 		_, err = c.rpcOps.Mount(mnt.Source, dest, mnt.Type, flags, optsString)
@@ -279,10 +281,20 @@ func (c *container) mountImage(mnt *mount.Point) error {
 }
 
 func (c *container) addRootfsMount(system *mount.System) error {
-	var flags uintptr = syscall.MS_NOSUID | syscall.MS_RDONLY | syscall.MS_NODEV
+	flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 	rootfs := c.engine.EngineConfig.GetImage()
+	writable := true
 
-	imageObject, err := image.Init(rootfs, false)
+	if !c.engine.EngineConfig.GetWritableImage() {
+		flags |= syscall.MS_RDONLY
+		writable = false
+	}
+	fi, _ := os.Stat(rootfs)
+	if fi.IsDir() {
+		writable = false
+	}
+
+	imageObject, err := image.Init(rootfs, writable)
 	if err != nil {
 		return err
 	}
@@ -318,6 +330,9 @@ func (c *container) addRootfsMount(system *mount.System) error {
 			return err
 		}
 		if fstype == sif.FsSquash {
+			if writable {
+				return fmt.Errorf("can't set writable flag with squashfs image")
+			}
 			mountType = "squashfs"
 		} else if fstype == sif.FsExt3 {
 			mountType = "ext3"
@@ -328,12 +343,20 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		imageObject.Offset = uint64(part.Fileoff)
 		imageObject.Size = uint64(part.Filelen)
 	case image.SQUASHFS:
+		if writable {
+			return fmt.Errorf("can't set writable flag with squashfs image")
+		}
 		mountType = "squashfs"
 	case image.EXT3:
 		mountType = "ext3"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
-		return system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), syscall.MS_BIND|flags)
+		flags |= syscall.MS_BIND
+		if err := system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), flags); err != nil {
+			return err
+		}
+		// remount sandbox in PreLayerTag to apply flags in container namespace
+		return system.Points.AddRemount(mount.PreLayerTag, c.session.RootFsPath(), flags)
 	}
 
 	src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
@@ -852,12 +875,13 @@ func (c *container) addLibsMount(system *mount.System) error {
 }
 
 func (c *container) addFilesMount(system *mount.System) error {
-	rootfs := c.session.RootFsPath()
-
 	if os.Geteuid() == 0 {
 		sylog.Verbosef("Not updating passwd/group files, running as root!")
 		return nil
 	}
+
+	rootfs := c.session.RootFsPath()
+	defer c.session.Update()
 
 	if c.engine.EngineConfig.File.ConfigPasswd {
 		passwd := filepath.Join(rootfs, "/etc/passwd")

@@ -128,6 +128,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetOverlayImage(OverlayPath)
+	engineConfig.SetWritableImage(IsWritable)
 
 	if IsContained || IsContainAll {
 		engineConfig.SetContain(true)

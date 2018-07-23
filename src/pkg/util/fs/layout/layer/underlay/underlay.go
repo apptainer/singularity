@@ -51,7 +51,7 @@ func (u *Underlay) Add(session *layout.Session, system *mount.System) error {
 
 func (u *Underlay) createUnderlay(system *mount.System) error {
 	points := system.Points.GetByTag(mount.RootfsTag)
-	if len(points) != 1 {
+	if len(points) <= 0 {
 		return fmt.Errorf("no root fs image found")
 	}
 	return u.createLayer(points[0].Destination, system)
