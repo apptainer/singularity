@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
     singularity_runtime_autofs();
 
     singularity_registry_set("UNSHARE_PID", "1");
+    singularity_registry_set("NOSHIMINIT", "1");
     singularity_registry_set("UNSHARE_IPC", "1");
 
     singularity_cleanupd();

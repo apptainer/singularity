@@ -38,6 +38,38 @@ else
     exit 1
 fi
 
+_add_run_or_start_script() {
+    SCRIPT_TYPE=$1
+    if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "${SCRIPT_TYPE}" ]; then
+        if singularity_section_exists "${SCRIPT_TYPE}" "$SINGULARITY_BUILDDEF"; then
+            message 1 "Adding ${SCRIPT_TYPE}\n"
+
+            # process the shebang if it exists
+            RUNSCRIPT_CONTENTS=`singularity_section_get "${SCRIPT_TYPE}" "$SINGULARITY_BUILDDEF"`
+            SHEBANG=`echo "$RUNSCRIPT_CONTENTS" | head -n 1 | sed 's/^[ \t]*//;s/[ \t]*$//' | grep -E "^#!"`
+            if [ -n "${SHEBANG}" ]; then
+                echo -n "$SHEBANG " > "$SINGULARITY_ROOTFS/.singularity.d/${SCRIPT_TYPE}"
+            else
+                echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/${SCRIPT_TYPE}"
+            fi
+
+            # add any args to shebang
+            singularity_section_args "${SCRIPT_TYPE}" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/${SCRIPT_TYPE}"
+            echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/${SCRIPT_TYPE}"
+
+            # add the rest of the content (minus shebang if it exists)
+            if [ -n "${SHEBANG}" ]; then
+                echo "$RUNSCRIPT_CONTENTS" | tail -n +2  >> "$SINGULARITY_ROOTFS/.singularity.d/${SCRIPT_TYPE}"
+            else
+                echo "$RUNSCRIPT_CONTENTS" >> "$SINGULARITY_ROOTFS/.singularity.d/${SCRIPT_TYPE}"
+            fi
+
+        fi
+    else
+        message 2 "Skipping ${SCRIPT_TYPE} section\n"
+    fi
+}
+
 if [ -z "${SINGULARITY_ROOTFS:-}" ]; then
     message ERROR "Singularity root file system not defined\n"
     exit 1
@@ -177,37 +209,13 @@ else
     message 2 "Skipping labels section\n"
 fi
 
-### RUNSCRIPT
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "startscript" ]; then
-    if singularity_section_exists "startscript" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Adding startscript\n"
 
-        echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-        singularity_section_args "startscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-        echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-        singularity_section_get "startscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/startscript"
-
-    fi
-else
-    message 2 "Skipping startscript section\n"
-fi
+### STARTSCRIPT
+_add_run_or_start_script startscript
 
 
 ### RUNSCRIPT
-if [ -z "${SINGULARITY_BUILDSECTION:-}" -o "${SINGULARITY_BUILDSECTION:-}" == "runscript" ]; then
-    if singularity_section_exists "runscript" "$SINGULARITY_BUILDDEF"; then
-        message 1 "Adding runscript\n"
-
-        echo -n "#!/bin/sh " > "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-        singularity_section_args "runscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-        echo "" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-        singularity_section_get "runscript" "$SINGULARITY_BUILDDEF" >> "$SINGULARITY_ROOTFS/.singularity.d/runscript"
-
-    fi
-else
-    message 2 "Skipping runscript section\n"
-
-fi
+_add_run_or_start_script runscript
 
 
 ### HELP FOR RUNSCRIPT

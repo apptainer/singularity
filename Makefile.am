@@ -24,7 +24,8 @@ if !FOUND_MKSQUASHFS
 	@echo "******"
 	@echo "WARNING - mksquashfs was not found at configure time"
 	@echo "mksquashfs is required at runtime for full functionality"
-	@echo "Provided by distribution package squashfs-tools"
+	@echo "Provided by distribution package squashfs-tools or use"
+	@echo "the --with-mksquashfs option."
 	@echo "******"
 	@echo
 endif

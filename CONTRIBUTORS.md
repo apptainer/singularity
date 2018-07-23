@@ -22,11 +22,14 @@
     - Bernard Li <bernardli@lbl.gov>
     - Brian Bockelman <bbockelm@cse.unl.edu>
     - Chris Hollowell <hollowec@bnl.gov>
+    - Christian Neyers <foss@neyers.org>
     - Daniele Tamino <daniele.tamino@gmail.com>
     - Dave Love <d.love@liverpool.ac.uk>
     - Diana Langenbach <dcl@dcl.sh>
     - Felix Abecassis <fabecassis@nvidia.com>
     - George Hartzell <hartzell@alerce.com>
+    - Hakon Enger <hakonenger@github.com>
+    - Hugo Meiland <hugo.meiland@microsoft.com>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
@@ -34,9 +37,11 @@
     - Justin Riley <justin_riley@harvard.edu>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
+    - Michael Herzberg <michael@mherzberg.de>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
+    - Peter Steinbach <steinbach@scionics.de>
     - Petr Votava <votava.petr@gene.com>
     - Rafal Gumienny <rafal.gumienny@gmail.com>
     - Ralph Castain <rhc@open-mpi.org>
@@ -45,5 +50,3 @@
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Hakon Enger <hakonenger@github.com>
-    - Hugo Meiland <hugo.meiland@microsoft.com>

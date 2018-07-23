@@ -5,9 +5,9 @@
 #
 # This software is licensed under a 3-clause BSD license.  Please
 # consult LICENSE file distributed with the sources of this project regarding
-# your rights to use or distribute this software. 
+# your rights to use or distribute this software.
 #
-# 
+#
 
 
 ## Basic sanity
@@ -34,7 +34,6 @@ if ! USERID=`id -ru`; then
     exit 255
 fi
 
-
 while true; do
     case ${1:-} in
         -h|--help|help)
@@ -49,6 +48,10 @@ while true; do
                 message ERROR "Must be root to list with -u/--user option\n"
                 exit 1
             fi
+        ;;
+        -j|--json)
+            SINGULARITY_PRINT_STRUCTURED="true"
+            shift
         ;;
         -*)
             message ERROR "Unknown option: ${1:-}\n"
@@ -67,7 +70,15 @@ else
     DAEMONS=`singularity_daemon_glob "$@" | sort | uniq`
 fi
 
-message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+DLEN=`echo "$DAEMONS"|wc -l`
+let DLEN--
+JSON_PRINTF='\t{\n\t\t"instance":"%s",\n\t\t"pid":"%s",\n\t\t"img":"%s"\n\t}'
+
+if [ -z "${SINGULARITY_PRINT_STRUCTURED:-}" ]; then
+    message 1 "%-16s %-8s %s\n" "DAEMON NAME" "PID" "CONTAINER IMAGE"
+else
+    printf "%s\n\t%s:[\n" "{" '"instances"'
+fi
 
 for i in $DAEMONS; do
     if [ -f "$i" ]; then
@@ -93,11 +104,25 @@ for i in $DAEMONS; do
             fi
         fi
 
-        printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+        if [ -z "${SINGULARITY_PRINT_STRUCTURED:-}" ]; then
+            printf "%-16s %-8s %s\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+        else
+            if [ "$COUNT" -lt "$DLEN" ]; then
+                printf "${JSON_PRINTF},\n" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+            else
+                printf "${JSON_PRINTF}" "${FILE_NAME}" "${DAEMON_PID}" "${DAEMON_IMAGE:-}"
+            fi
+        fi
 
         let "COUNT++"
     fi
 done
+
+if [ -z "${SINGULARITY_PRINT_STRUCTURED:-}" ]; then
+    printf "\n"
+else
+    printf "\n\t]\n}\n"
+fi
 
 if [ "$COUNT" == 0 ]; then
     exit 1

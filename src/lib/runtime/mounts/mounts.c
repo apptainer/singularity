@@ -49,10 +49,10 @@ int _singularity_runtime_mounts(void) {
     int retval = 0;
 
     singularity_message(VERBOSE, "Running all mount components\n");
+    retval += _singularity_runtime_mount_dev();
+    retval += _singularity_runtime_mount_kernelfs();
     retval += _singularity_runtime_mount_hostfs();
     retval += _singularity_runtime_mount_binds();
-    retval += _singularity_runtime_mount_kernelfs();
-    retval += _singularity_runtime_mount_dev();
     retval += _singularity_runtime_mount_home();
     retval += _singularity_runtime_mount_userbinds();
     retval += _singularity_runtime_mount_tmp();

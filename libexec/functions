@@ -453,6 +453,81 @@ is_tar() {
 }
 
 
+bind_nvidia_files() {
+# either use nvidia-container-cli or nvliblist.conf to find nvidia libs and
+# binaries for binding at runtime with --nv 
+    if ! SINGULARITY_NVLIBLIST=`mktemp "${TMPDIR:-/tmp}"/.singularity-nvliblist.XXXXXXXX`; then
+        message ERROR "Failed to create temporary nvliblist file.\n"
+        ABORT 255
+    fi
+
+    # check to see if nvidia-container-cli is producing plausible output
+    if ! singularity_which nvidia-container-cli > /dev/null 2>&1 || ! SINGULARITY_NV_FILES=`nvidia-container-cli list --binaries --ipcs --libraries`; then
+        message 2 "nvidia-container-cli not installed or not working\n"
+        SINGULARITY_USE_NVLIBLIST_CONF=1
+    else
+        for i in $SINGULARITY_NV_FILES; do
+            if [ ! -f $i ]; then
+                message 2 "nvidia-container-cli is returning unusable output\n"
+                SINGULARITY_USE_NVLIBLIST_CONF=1
+            fi
+        done
+    fi
+
+    # first choice use nvidia-container-cli
+    if [ -z ${SINGULARITY_USE_NVLIBLIST_CONF:-} ]; then
+        message 2 "Using nvidia-container-cli to locate nvidia libraries and binaries.\n"
+        # bins should have full paths
+        SINGULARITY_NVBINLIST=`echo "$SINGULARITY_NV_FILES" | grep -Ev "\.so"`
+        # libs should just be basenames ending in ".so"
+        for i in `echo "$SINGULARITY_NV_FILES" | grep -E "\.so"`; do
+            basename "$i" | awk -F "\.so" '{print $1 ".so"}' >> "$SINGULARITY_NVLIBLIST"
+        done
+
+    # if it's absent, or broken fall back to nvliblist.conf
+    else [ -n ${USE_NVLIBLIST_CONF:-} ]
+        message 2 "Falling back to $SINGULARITY_sysconfdir/singularity/nvliblist.conf\n"
+        # strip comments and spaces and bins do NOT end in .so
+        SINGULARITY_NVBINLIST=`cat $SINGULARITY_sysconfdir"/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" | grep -vE "\.so$"`
+        # strip comments and spaces and libs DO end in .so
+        cat "${SINGULARITY_sysconfdir}/singularity/nvliblist.conf" | grep -Ev "^#|^\s*$" | grep -E "\.so$" > $SINGULARITY_NVLIBLIST
+    fi
+
+    # first deal with libs (pattern match from ld.so cache)
+    for i in $(ldconfig -p | grep -f "${SINGULARITY_NVLIBLIST}"); do
+        if [ -f "$i" ]; then
+            message 2 "Found NV library: $i\n"
+            SINGULARITY_CONTAINLIBS="${SINGULARITY_CONTAINLIBS:-},$i"
+        fi
+    done
+    rm $SINGULARITY_NVLIBLIST
+
+    # then deal with bins (should have full path specified)
+    for SINGULARITY_NVBIN in $SINGULARITY_NVBINLIST; do
+        if [ -f "$SINGULARITY_NVBIN" ]; then
+            message 2 "Found NV binary: $SINGULARITY_NVBIN\n"
+            SINGULARITY_BIN_FOUND=1
+            SINGULARITY_BINDPATH="${SINGULARITY_BINDPATH:-},${SINGULARITY_NVBIN}"
+        fi
+    done
+
+    # in case we couldn't find files, warn the user. otherwise export variables
+    if [ -z "${SINGULARITY_CONTAINLIBS:-}" ]; then
+        message WARNING "Could not find any NVIDIA libraries on this host!\n";
+        message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
+    else
+        export SINGULARITY_CONTAINLIBS
+    fi
+
+    if [ -z "${SINGULARITY_BIN_FOUND:-}" ]; then
+        message WARNING "Could not find any NVIDIA binaries on this host!\n";
+        message WARNING "You may need to edit ${SINGULARITY_sysconfdir}/singularity/nvliblist.conf\n"
+    else
+        export SINGULARITY_BINDPATH
+    fi
+}
+
+
 ##############################################################################
 # CHECKS
 ##############################################################################
@@ -545,3 +620,4 @@ atexit() {
 if [ -n "${SHELL_DEBUG:-}" ]; then
     set -x
 fi
+

@@ -1,0 +1,45 @@
+#!/bin/bash -ex
+
+# this script runs as root under docker 
+
+# Prepare for build
+export DEBIAN_FRONTEND=noninteractive
+export LC_ALL=C
+apt-get update
+apt-get -y dist-upgrade
+apt-get -y install devscripts build-essential lintian gdebi-core git
+
+DEB_VERS=$(dpkg-parsechangelog -S "Version")
+PLAIN_VERS=$(echo ${DEB_VERS} | sed 's#-.*##')
+git archive --format=tar HEAD | gzip > ../singularity-container_${PLAIN_VERS}.orig.tar.gz
+
+# Install dependencies
+mk-build-deps
+mv singularity-container-build-deps_*.deb ..
+gdebi -n ../singularity-container-build-deps_*.deb
+
+# Build package
+debuild -us -uc
+
+echo "Directory containing the build .deb-files:"
+ls -la ..
+gdebi -n ../singularity-container_*.deb
+
+# Install python 3 and pylint
+apt-get -y install python3 python3-pip python3-setuptools
+pip3 install pylint==1.9.2
+
+# Install docker
+apt-get -y install apt-transport-https ca-certificates curl gnupg2 software-properties-common
+curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg | apt-key add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") $(lsb_release -cs) stable"
+apt-get update
+apt-get -y install docker-ce
+
+# run the test suite
+apt-get -y install libtool sudo e2fsprogs
+useradd -u 1000 --create-home testuser
+echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
+echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+
+su testuser -c "make test"

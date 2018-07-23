@@ -196,3 +196,20 @@ bind path = /etc/hosts
 # errors when accessed from container (typically bind mounts)
 #autofs bug path = /nfs
 #autofs bug path = /cifs-share
+
+
+# MEMORY FS TYPE: [tmpfs/ramfs]
+# DEFAULT: tmpfs
+# This feature allow to choose temporary filesystem type used by Singularity.
+# Cray CLE 5 and 6 up to CLE 6.0.UP05 there is an issue (kernel panic) when Singularity
+# use tmpfs, so on affected version it's recommended to set this value to ramfs to avoid
+# kernel panic
+@MEMORY_FS_TYPE@ = @MEMORY_FS_TYPE_DEFAULT@
+
+
+# ALWAYS USE NV ${TYPE}: [BOOL]
+# DEFAULT: no
+# This feature allows an administrator to determine that every action command
+# should be executed implicitely with the --nv option (useful for GPU only 
+# environments). 
+@ALWAYS_USE_NV@ = @ALWAYS_USE_NV_DEFAULT@  

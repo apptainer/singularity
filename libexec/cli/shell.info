@@ -26,6 +26,8 @@ SHELL OPTIONS:
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest
                         overrides the home directory within the container
+    --no-home           Do NOT mount users home directory if home is not the
+                        current working directory.
     -i|--ipc            Run container in a new IPC namespace
     -j|--join           Join a running named instance of the given container 
                         image
@@ -33,7 +35,8 @@ SHELL OPTIONS:
                         only network device active)
     --nv                Enable experimental Nvidia support
     -o|--overlay        Use a persistent overlayFS via a writable image
-    -p|--pid            Run container in a new PID namespace (creates child)
+    -p|--pid            Run container in a new PID namespace
+    --noinit            Do not start shim init process with --pid
     --pwd               Initial working directory for payload process inside
                         the container
     -S|--scratch <path> Include a scratch directory within the container that

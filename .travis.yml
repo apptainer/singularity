@@ -23,6 +23,14 @@ matrix:
       env: OS_TYPE=centos OS_VERSION=6
     - os: linux
       env: OS_TYPE=centos OS_VERSION=7
+    - os: linux
+      env: OS_TYPE=debian OS_VERSION=8
+    - os: linux
+      env: OS_TYPE=debian OS_VERSION=9
+    - os: linux
+      env: OS_TYPE=opensuse OS_VERSION=42.3
+    - os: linux
+      env: OS_TYPE=opensuse OS_VERSION=15.0
 
 services:
   - docker

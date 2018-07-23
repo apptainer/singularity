@@ -1,5 +1,5 @@
 AC_PREREQ(2.59)
-AC_INIT([singularity],[2.5.2],[gmkurtzer@gmail.com])
+AC_INIT([singularity],[2.5.99],[gmkurtzer@gmail.com])
 
 if test -z "$prefix" -o "$prefix" = "NONE" ; then
   prefix=${ac_default_prefix}
@@ -266,9 +266,33 @@ AC_CHECK_FUNCS(setns, [
 
 AC_SUBST(SINGULARITY_DEFINES)
 
+AC_MSG_CHECKING([--with-mksquashfs])
+AC_ARG_WITH([mksquashfs],
+            AS_HELP_STRING([--with-mksquashfs], [Full path of mksquashfs binary])
+           )
+AS_IF([test "x$with_mksquashfs" != "x"],
+      [
+       MKSFS=`AS_DIRNAME(["$with_mksquashfs"])`
+       AC_CHECK_PROG([MKSQUASHFS_CHECK],[mksquashfs],[yes],[no],[$MKSFS])
+       AS_IF([test "x$MKSQUASHFS_CHECK" == "xyes"],
+             [
+              AC_SUBST(MKSQUASHFS_PATH,"$with_mksquashfs")
+              AC_MSG_RESULT([using $with_mksquashfs])
+             ],
+             [
+              AC_MSG_WARN([mksquashfs no found - needed at runtime for full build functionality])
+             ])
+       ],
+       [
+        AC_MSG_RESULT([no])
+       ])
 
-AC_CHECK_PROG([mksquashfs],[mksquashfs],[yes],[no])
-AM_CONDITIONAL([FOUND_MKSQUASHFS], [test "x$mksquashfs" = xyes])
+AS_IF([test "x$with_mksquashfs" == "x"],
+      [
+       AC_CHECK_PROG([mksquashfs],[mksquashfs],[yes],[no])
+      ])
+
+AM_CONDITIONAL([FOUND_MKSQUASHFS], [test "x$MKSQUASHFS_CHECK" == "xyes" -o "x$mksquashfs" = "xyes"])
 AM_COND_IF([FOUND_MKSQUASHFS],,[AC_MSG_WARN([mksquashfs not found - needed at runtime for full build functionality])])
 
 # ---------------------------------------------------------------------
@@ -412,6 +436,7 @@ AC_CONFIG_FILES([
    libexec/bootstrap-scripts/Makefile
    libexec/bootstrap-scripts/environment/Makefile
    libexec/cli/Makefile
+   libexec/cli/build.exec
    libexec/handlers/Makefile
    libexec/helpers/Makefile
    libexec/helpers/apps/Makefile

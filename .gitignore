@@ -25,6 +25,7 @@ libexec/Makefile
 libexec/Makefile.in
 libexec/cli/Makefile
 libexec/cli/Makefile.in
+libexec/cli/build.exec
 libexec/mods/Makefile
 libexec/mods/Makefile.in
 libexec/bootstrap-scripts/environment/environment.tar
@@ -55,6 +56,7 @@ src/start
 src/start-suid
 src/docker-extract
 src/prepheader
+src/get-configvals
 
 src/.deps/
 src/.libs/

@@ -1,0 +1,5 @@
+#!/bin/bash -ex
+
+# this file contains amendments for opensuse leap 15.0
+
+test_deps+=(hostname)

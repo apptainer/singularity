@@ -118,6 +118,11 @@ int _singularity_runtime_overlayfs(void) {
 
         } else {
             char *size = NULL;
+            char memfs_type[] = "tmpfs";
+
+            if ( strcmp("tmpfs", singularity_config_get_value(MEMORY_FS_TYPE)) != 0 ) {
+                memcpy(memfs_type, "ramfs", 5);
+            }
 
             if ( singularity_priv_getuid() == 0 ) {
                 size = strdup("");
@@ -126,9 +131,18 @@ int _singularity_runtime_overlayfs(void) {
             }
 
             singularity_message(DEBUG, "Mounting overlay tmpfs: %s\n", overlay_mount);
-            if ( singularity_mount("tmpfs", overlay_mount, "tmpfs", MS_NOSUID | MS_NODEV, size) < 0 ){
+            if ( singularity_mount(memfs_type, overlay_mount, memfs_type, MS_NOSUID | MS_NODEV, size) < 0 ){
                 singularity_message(ERROR, "Failed to mount overlay tmpfs %s: %s\n", overlay_mount, strerror(errno));
                 ABORT(255);
+            }
+
+            if ( strcmp("tmpfs", memfs_type) != 0 ) {
+                singularity_priv_escalate();
+                if ( chmod(overlay_mount, S_IRWXU|S_IRWXG|S_IRWXO) < 0 ) { // Flawfinder: ignore, not controllable by user
+                    singularity_message(ERROR, "Failed to set permission on %s: %s", overlay_mount, strerror(errno));
+                    ABORT(255);
+                }
+                singularity_priv_drop();
             }
 
             free(size);

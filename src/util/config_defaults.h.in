@@ -107,4 +107,10 @@
 #define ALLOW_CONTAINER_SQUASHFS "allow container squashfs"
 #define ALLOW_CONTAINER_SQUASHFS_DEFAULT 1
 
+#define MEMORY_FS_TYPE "memory fs type"
+#define MEMORY_FS_TYPE_DEFAULT "tmpfs"
+
+#define ALWAYS_USE_NV "always use nv"
+#define ALWAYS_USE_NV_DEFAULT "no"
+
 #endif  // __SINGULARITY_CONFIG_DEFAULTS_H_

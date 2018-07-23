@@ -139,6 +139,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cli/shell.*
 %{_libexecdir}/singularity/cli/test.*
 %{_libexecdir}/singularity/bin/action
+%{_libexecdir}/singularity/bin/get-configvals
 %{_libexecdir}/singularity/bin/start
 %{_libexecdir}/singularity/bin/docker-extract
 %{_libexecdir}/singularity/functions
