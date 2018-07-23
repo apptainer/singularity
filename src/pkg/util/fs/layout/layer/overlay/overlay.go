@@ -82,6 +82,18 @@ func (o *Overlay) createOverlay(system *mount.System) error {
 			o.AddLowerDir(point.Destination)
 		}
 	}
+
+	if o.upperDir == "" {
+		if err := o.session.AddDir("/overlay-upper"); err != nil {
+			return fmt.Errorf("failed to add /overlay-upper directory")
+		}
+		if err := o.session.AddDir("/overlay-work"); err != nil {
+			return fmt.Errorf("failed to add /overlay-work directory")
+		}
+		o.upperDir, _ = o.session.GetPath("/overlay-upper")
+		o.workDir, _ = o.session.GetPath("/overlay-work")
+	}
+
 	o.lowerDirs = append(o.lowerDirs, o.session.RootFsPath())
 
 	lowerdir := strings.Join(o.lowerDirs, ":")
