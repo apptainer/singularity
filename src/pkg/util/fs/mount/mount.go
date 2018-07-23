@@ -68,14 +68,14 @@ const (
 	PreLayerTag = "prelayer"
 	// LayerTag defines tag for overlay/underlay final mount point
 	LayerTag = "layer"
+	// DevTag defines tag for dev related mount point
+	DevTag = "dev"
 	// HostfsTag defines tag for host filesystem mount point
 	HostfsTag = "hostfs"
 	// BindsTag defines tag for bind path
 	BindsTag = "binds"
 	// KernelTag defines tag for kernel related mount point (proc, sysfs)
 	KernelTag = "kernel"
-	// DevTag defines tag for dev related mount point
-	DevTag = "dev"
 	// HomeTag defines tag for home directory mount point
 	HomeTag = "home"
 	// UserbindsTag defines tag for user bind mount points
@@ -102,10 +102,10 @@ var authorizedTags = map[AuthorizedTag]struct {
 	RootfsTag:    {false, 1},
 	PreLayerTag:  {true, 2},
 	LayerTag:     {false, 3},
-	HostfsTag:    {true, 4},
-	BindsTag:     {true, 5},
-	KernelTag:    {true, 6},
-	DevTag:       {true, 7},
+	DevTag:       {true, 4},
+	HostfsTag:    {true, 5},
+	BindsTag:     {true, 6},
+	KernelTag:    {true, 7},
 	HomeTag:      {false, 8},
 	UserbindsTag: {true, 9},
 	TmpTag:       {true, 10},
