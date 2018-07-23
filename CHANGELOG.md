@@ -28,6 +28,9 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
    container is initiated in its own PID namespace #1221
  - Bind `/dev/nvidia*` into the container when the `--nv` flag is used in 
     conjuction with the `--contain` flag #1358
+ - Add --no-home option to not mount user $HOME if it is not the $CWD and
+   `mount home = yes` is set. #1761
+ - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
 
 ### Bug fixes
  - Fix 404 when using Arch Linux bootstrap #1731
