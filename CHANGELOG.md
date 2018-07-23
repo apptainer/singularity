@@ -26,14 +26,14 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Added build and packaging tests for Debian 8/9 and openSUSE 42.3/15.0 #1713
  - Restore shim init process for proper signal handling and child reaping when
    container is initiated in its own PID namespace #1221
- - Add --no-home option to not mount user $HOME if it is not the $CWD and
-   `mount home = yes` is set. #1761
-
-### Bug fixes
- - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
- - Fix 404 when using Arch Linux bootstrap #1731
  - Bind `/dev/nvidia*` into the container when the `--nv` flag is used in 
     conjuction with the `--contain` flag #1358
+ - Add --no-home option to not mount user $HOME if it is not the $CWD and
+   `mount home = yes` is set. #1761
+ - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
+
+### Bug fixes
+ - Fix 404 when using Arch Linux bootstrap #1731
 
 ## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2) (2018-07-03)
 
