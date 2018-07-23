@@ -67,12 +67,12 @@ func (o *Overlay) createOverlay(system *mount.System) error {
 				return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
 			}
 			if !fs.IsDir(u) {
-				if err := os.Mkdir(u, 0755); err != nil {
+				if err := fs.MkdirAll(u, 0755); err != nil {
 					return fmt.Errorf("failed to create %s directory: %s", u, err)
 				}
 			}
 			if !fs.IsDir(w) {
-				if err := os.Mkdir(w, 0755); err != nil {
+				if err := fs.MkdirAll(w, 0755); err != nil {
 					return fmt.Errorf("failed to create %s directory: %s", w, err)
 				}
 			}
