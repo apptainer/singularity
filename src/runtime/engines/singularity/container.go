@@ -364,11 +364,49 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	return system.Points.AddImage(mount.RootfsTag, src, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
 }
 
+func (c *container) overlayUpperWork(system *mount.System) error {
+	ov := c.session.Layer.(*overlay.Overlay)
+
+	for _, point := range system.Points.GetByTag(mount.PreLayerTag) {
+		switch point.Type {
+		case "ext3":
+			u := point.Destination + "/upper"
+			w := point.Destination + "/work"
+			if fs.IsLink(u) {
+				return fmt.Errorf("symlink detected, upper overlay %s must be a directory", u)
+			}
+			if fs.IsLink(w) {
+				return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
+			}
+			if !fs.IsDir(u) {
+				if err := os.Mkdir(u, 0755); err != nil {
+					return fmt.Errorf("failed to create %s directory: %s", u, err)
+				}
+			}
+			if !fs.IsDir(w) {
+				if err := os.Mkdir(w, 0755); err != nil {
+					return fmt.Errorf("failed to create %s directory: %s", w, err)
+				}
+			}
+			if err := ov.AddUpperDir(u); err != nil {
+				return fmt.Errorf("failed to add overlay upper: %s", err)
+			}
+			if err := ov.AddWorkDir(w); err != nil {
+				return fmt.Errorf("failed to add overlay upper: %s", err)
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
 func (c *container) addOverlayMount(system *mount.System) error {
 	nb := 0
-	writable := true
+	ov := c.session.Layer.(*overlay.Overlay)
 
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
+		writable := true
+
 		imageObject, err := image.Init(img, writable)
 		if err != nil {
 			writable = !writable
@@ -394,12 +432,16 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
+			if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+				return err
+			}
 		case image.SQUASHFS:
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
 			if err != nil {
 				return err
 			}
+			ov.AddLowerDir(dst)
 		case image.SANDBOX:
 			if os.Geteuid() != 0 {
 				return fmt.Errorf("only root user can use sandbox as overlay")
@@ -412,6 +454,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
+			ov.AddLowerDir(dst)
 		default:
 			return fmt.Errorf("unkown image format")
 		}
