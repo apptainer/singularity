@@ -81,58 +81,58 @@ DEFFILE="$SINGULARITY_TESTDIR/example.def"
 # stest 0 singularity build -F "$CONTAINER" docker://dctrud/docker-singularity-linkwh
 # stest 0 singularity exec "$CONTAINER" true
 
-if singularity_which docker >/dev/null 2>&1; then
-# make sure local test does not exist, ignore errors
-sudo docker kill registry >/dev/null 2>&1
-sudo docker rm registry >/dev/null 2>&1
+# if singularity_which docker >/dev/null 2>&1; then
+# # make sure local test does not exist, ignore errors
+# sudo docker kill registry >/dev/null 2>&1
+# sudo docker rm registry >/dev/null 2>&1
 
-# start local docker registry
-stest 0 sudo docker run -d -p 5000:5000 --restart=always --name registry registry:2
-# pull busybox from docker and push to local registry
-stest 0 sudo docker pull busybox
-stest 0 sudo docker tag busybox localhost:5000/my-busybox
-stest 0 sudo docker push localhost:5000/my-busybox
+# # start local docker registry
+# stest 0 sudo docker run -d -p 5000:5000 --restart=always --name registry registry:2
+# # pull busybox from docker and push to local registry
+# stest 0 sudo docker pull busybox
+# stest 0 sudo docker tag busybox localhost:5000/my-busybox
+# stest 0 sudo docker push localhost:5000/my-busybox
 
-# alright, now we have a local registry to test with
+# # alright, now we have a local registry to test with
 
-# test with custom registry and custom namespace (including empty namespace)
-# from squashfs to squashfs (via def file)
-cat >"$DEFFILE" <<EOF
-Bootstrap: docker
-From: localhost:5000/my-busybox
-EOF
+# # test with custom registry and custom namespace (including empty namespace)
+# # from squashfs to squashfs (via def file)
+# cat >"$DEFFILE" <<EOF
+# Bootstrap: docker
+# From: localhost:5000/my-busybox
+# EOF
 
-stest 0 sudo SINGULARITY_NOHTTPS=true singularity build -F "$CONTAINER" "$DEFFILE"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
+# stest 0 sudo SINGULARITY_NOHTTPS=true singularity build -F "$CONTAINER" "$DEFFILE"
+# stest 0 singularity exec "$CONTAINER" true
+# stest 1 singularity exec "$CONTAINER" false
 
-cat >"$DEFFILE" <<EOF
-Bootstrap: docker
-From: my-busybox
-Registry: localhost:5000
-EOF
+# cat >"$DEFFILE" <<EOF
+# Bootstrap: docker
+# From: my-busybox
+# Registry: localhost:5000
+# EOF
 
-# this will fail, as it will try to use the default namespace
-stest 1 sudo SINGULARITY_NOHTTPS=true singularity build -F "$CONTAINER" "$DEFFILE"
+# # this will fail, as it will try to use the default namespace
+# stest 1 sudo SINGULARITY_NOHTTPS=true singularity build -F "$CONTAINER" "$DEFFILE"
 
-cat >"$DEFFILE" <<EOF
-Bootstrap: docker
-From: my-busybox
-Registry: localhost:5000
-Namespace:
-EOF
+# cat >"$DEFFILE" <<EOF
+# Bootstrap: docker
+# From: my-busybox
+# Registry: localhost:5000
+# Namespace:
+# EOF
 
-# remove registry container, not needed now
-stest 0 sudo SINGULARITY_NOHTTPS=true singularity build -F "$CONTAINER" "$DEFFILE"
-stest 0 singularity exec "$CONTAINER" true
-stest 1 singularity exec "$CONTAINER" false
-# note: technically this doesn't clean everything, the volume the registry
-# created, containing out pushed my-busybox, is still there
+# # remove registry container, not needed now
+# stest 0 sudo SINGULARITY_NOHTTPS=true singularity build -F "$CONTAINER" "$DEFFILE"
+# stest 0 singularity exec "$CONTAINER" true
+# stest 1 singularity exec "$CONTAINER" false
+# # note: technically this doesn't clean everything, the volume the registry
+# # created, containing out pushed my-busybox, is still there
 
-# destroy registry container once done
-stest 0 sudo docker kill registry
-stest 0 sudo docker rm registry
+# # destroy registry container once done
+# stest 0 sudo docker kill registry
+# stest 0 sudo docker rm registry
 
-fi
+# fi
 
 test_cleanup
