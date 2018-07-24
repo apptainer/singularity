@@ -27,7 +27,7 @@ $ runsy help <command>
 	// Runsy - Spec
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunsySpecUse   string = `spec [command] [options...]`
-	RunsySpecShort string = `Cmd tool set for working with OCI (Open Container Initiative) runtime spec`
+	RunsySpecShort string = `cli tool set for working with OCI (Open Container Initiative) runtime spec`
 	RunsySpecLong  string = `
 	The specification file includes an args parameter. The args parameter is used
 	to specify command(s) that get run when the container is started.`
