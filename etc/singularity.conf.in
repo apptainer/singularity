@@ -140,8 +140,8 @@ bind path = /etc/hosts
 # ENABLE UNDERLAY: [yes/no]
 # DEFAULT: @ENABLE_UNDERLAY_DEFAULT@
 # Enabling this option will make it possible to specify bind paths to locations
-# that do not currently exist within the container even if overlay is not
-# working.  If overlay is available, it will be tried first.
+# that do not currently exist within the container, similar to the overlay
+# option.  This will only be used if overlay is not enabled.
 @ENABLE_UNDERLAY@ = @ENABLE_UNDERLAY_DEFAULT@
 
 
