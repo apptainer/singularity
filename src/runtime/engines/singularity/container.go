@@ -170,6 +170,10 @@ func (c *container) localMount(point *mount.Point) error {
 		}
 	} else {
 		if err := c.mountGeneric(point, true); err != nil {
+			flags, _ := mount.ConvertOptions(point.Options)
+			if flags&syscall.MS_REMOUNT != 0 {
+				return fmt.Errorf("can't remount %s: %s", point.Destination, err)
+			}
 			sylog.Verbosef("can't mount %s: %s", point.Source, err)
 			return nil
 		}
@@ -179,6 +183,10 @@ func (c *container) localMount(point *mount.Point) error {
 
 func (c *container) rpcMount(point *mount.Point) error {
 	if err := c.mountGeneric(point, false); err != nil {
+		flags, _ := mount.ConvertOptions(point.Options)
+		if flags&syscall.MS_REMOUNT != 0 {
+			return fmt.Errorf("can't remount %s: %s", point.Destination, err)
+		}
 		sylog.Verbosef("can't mount %s: %s", point.Source, err)
 		return nil
 	}
@@ -285,6 +293,55 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	return nil
 }
 
+func (c *container) loadImage(path string, writable bool) (*image.Image, error) {
+	fi, _ := os.Stat(path)
+	if fi.IsDir() {
+		writable = false
+	}
+
+	imgObject, err := image.Init(path, writable)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(c.engine.EngineConfig.File.LimitContainerPaths) != 0 {
+		if authorized, err := imgObject.AuthorizedPath(c.engine.EngineConfig.File.LimitContainerPaths); err != nil {
+			return nil, err
+		} else if !authorized {
+			return nil, fmt.Errorf("Singularity image is not an allowed configured path")
+		}
+	}
+	if len(c.engine.EngineConfig.File.LimitContainerGroups) != 0 {
+		if authorized, err := imgObject.AuthorizedGroup(c.engine.EngineConfig.File.LimitContainerGroups); err != nil {
+			return nil, err
+		} else if !authorized {
+			return nil, fmt.Errorf("Singularity image is not owned by required group(s)")
+		}
+	}
+	if len(c.engine.EngineConfig.File.LimitContainerOwners) != 0 {
+		if authorized, err := imgObject.AuthorizedOwner(c.engine.EngineConfig.File.LimitContainerOwners); err != nil {
+			return nil, err
+		} else if !authorized {
+			return nil, fmt.Errorf("Singularity image is not owned by required user(s)")
+		}
+	}
+	switch imgObject.Type {
+	case image.SANDBOX:
+		if !c.engine.EngineConfig.File.AllowContainerDir {
+			return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
+		}
+	case image.EXT3:
+		if !c.engine.EngineConfig.File.AllowContainerExtfs {
+			return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
+		}
+	case image.SQUASHFS:
+		if !c.engine.EngineConfig.File.AllowContainerSquashfs {
+			return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
+		}
+	}
+	return imgObject, nil
+}
+
 func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 	rootfs := c.engine.EngineConfig.GetImage()
@@ -294,12 +351,8 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		flags |= syscall.MS_RDONLY
 		writable = false
 	}
-	fi, _ := os.Stat(rootfs)
-	if fi.IsDir() {
-		writable = false
-	}
 
-	imageObject, err := image.Init(rootfs, writable)
+	imageObject, err := c.loadImage(rootfs, writable)
 	if err != nil {
 		return err
 	}
@@ -362,6 +415,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		}
 		// remount sandbox in PreLayerTag to apply flags in container namespace
 		system.Points.AddRemount(mount.PreLayerTag, c.session.RootFsPath(), flags)
+		return nil
 	}
 
 	src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
@@ -371,36 +425,39 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 func (c *container) overlayUpperWork(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
+	var point mount.Point
 
-	for _, point := range system.Points.GetByTag(mount.PreLayerTag) {
-		switch point.Type {
-		case "ext3":
-			u := point.Destination + "/upper"
-			w := point.Destination + "/work"
-			if fs.IsLink(u) {
-				return fmt.Errorf("symlink detected, upper overlay %s must be a directory", u)
-			}
-			if fs.IsLink(w) {
-				return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
-			}
-			if !fs.IsDir(u) {
-				if err := os.Mkdir(u, 0755); err != nil {
-					return fmt.Errorf("failed to create %s directory: %s", u, err)
-				}
-			}
-			if !fs.IsDir(w) {
-				if err := os.Mkdir(w, 0755); err != nil {
-					return fmt.Errorf("failed to create %s directory: %s", w, err)
-				}
-			}
-			if err := ov.AddUpperDir(u); err != nil {
-				return fmt.Errorf("failed to add overlay upper: %s", err)
-			}
-			if err := ov.AddWorkDir(w); err != nil {
-				return fmt.Errorf("failed to add overlay upper: %s", err)
-			}
-			return nil
+	for _, p := range system.Points.GetByTag(mount.PreLayerTag) {
+		if p.Type == "ext3" || (p.Source != "" && p.Destination != "" && p.Type == "") {
+			point = p
+			break
 		}
+	}
+
+	u := point.Destination + "/upper"
+	w := point.Destination + "/work"
+
+	if fs.IsLink(u) {
+		return fmt.Errorf("symlink detected, upper overlay %s must be a directory", u)
+	}
+	if fs.IsLink(w) {
+		return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
+	}
+	if !fs.IsDir(u) {
+		if err := fs.MkdirAll(u, 0755); err != nil {
+			return fmt.Errorf("failed to create %s directory: %s", u, err)
+		}
+	}
+	if !fs.IsDir(w) {
+		if err := fs.MkdirAll(w, 0755); err != nil {
+			return fmt.Errorf("failed to create %s directory: %s", w, err)
+		}
+	}
+	if err := ov.AddUpperDir(u); err != nil {
+		return fmt.Errorf("failed to add overlay upper: %s", err)
+	}
+	if err := ov.AddWorkDir(w); err != nil {
+		return fmt.Errorf("failed to add overlay upper: %s", err)
 	}
 	return nil
 }
@@ -410,15 +467,22 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
 
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
+		overlayImg := img
 		writable := true
 
-		imageObject, err := image.Init(img, writable)
+		splitted := strings.SplitN(img, ":", 2)
+		if len(splitted) == 2 {
+			if splitted[1] == "ro" {
+				writable = false
+				overlayImg = splitted[0]
+			}
+		}
+
+		imageObject, err := c.loadImage(overlayImg, writable)
 		if err != nil {
-			writable = !writable
+			return fmt.Errorf("failed to open overlay image %s: %s", overlayImg, err)
 		}
-		if !writable {
-			imageObject, err = image.Init(img, writable)
-		}
+
 		sessionDest := fmt.Sprintf("/overlay-images/%d", nb)
 		if err := c.session.AddDir(sessionDest); err != nil {
 			return fmt.Errorf("failed to create session directory for overlay: %s", err)
@@ -429,16 +493,17 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
 		switch imageObject.Type {
 		case image.EXT3:
-			if !writable {
-				return fmt.Errorf("you don't have write permission for %s", img)
-			}
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, imageObject.Offset, imageObject.Size)
 			if err != nil {
 				return err
 			}
-			if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
-				return err
+			if writable {
+				if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+					return err
+				}
+			} else {
+				ov.AddLowerDir(dst)
 			}
 		case image.SQUASHFS:
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY)
@@ -446,20 +511,28 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
+			if writable {
+				sylog.Warningf("squashfs is not a writable filesystem")
+			}
 			ov.AddLowerDir(dst)
 		case image.SANDBOX:
 			if os.Geteuid() != 0 {
 				return fmt.Errorf("only root user can use sandbox as overlay")
-			}
-			if !writable {
-				return fmt.Errorf("you don't have write permission for %s", img)
 			}
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 			err = system.Points.AddBind(mount.PreLayerTag, src, dst, flags)
 			if err != nil {
 				return err
 			}
-			ov.AddLowerDir(dst)
+			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
+
+			if writable {
+				if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+					return err
+				}
+			} else {
+				ov.AddLowerDir(dst)
+			}
 		default:
 			return fmt.Errorf("unkown image format")
 		}
@@ -479,7 +552,9 @@ func (c *container) addKernelMount(system *mount.System) error {
 		} else {
 			err = system.Points.AddBind(mount.KernelTag, "/proc", "/proc", bindFlags)
 			if err == nil {
-				system.Points.AddRemount(mount.KernelTag, "/proc", bindFlags)
+				if !c.userNS {
+					system.Points.AddRemount(mount.KernelTag, "/proc", bindFlags)
+				}
 			}
 		}
 		if err != nil {
@@ -497,7 +572,9 @@ func (c *container) addKernelMount(system *mount.System) error {
 		} else {
 			err = system.Points.AddBind(mount.KernelTag, "/sys", "/sys", bindFlags)
 			if err == nil {
-				system.Points.AddRemount(mount.KernelTag, "/sys", bindFlags)
+				if !c.userNS {
+					system.Points.AddRemount(mount.KernelTag, "/sys", bindFlags)
+				}
 			}
 		}
 		if err != nil {
