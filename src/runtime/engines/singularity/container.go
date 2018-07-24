@@ -758,6 +758,11 @@ func (c *container) addHostMount(system *mount.System) error {
 func (c *container) addBindsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
+	if c.engine.EngineConfig.GetContain() {
+		sylog.Debugf("Skipping bind mounts as contain was requested")
+		return nil
+	}
+
 	for _, bindpath := range c.engine.EngineConfig.File.BindPath {
 		splitted := strings.Split(bindpath, ":")
 		src := splitted[0]
@@ -767,6 +772,8 @@ func (c *container) addBindsMount(system *mount.System) error {
 		} else {
 			dst = src
 		}
+
+		sylog.Verbosef("Found 'bind path' = %s, %s", src, dst)
 		err := system.Points.AddBind(mount.BindsTag, src, dst, flags)
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
@@ -855,6 +862,10 @@ func (c *container) addHomeMount(system *mount.System) error {
 
 func (c *container) addUserbindsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+
+	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
+		return nil
+	}
 
 	sylog.Debugf("Checking for 'user bind control' in configuration file")
 	if !c.engine.EngineConfig.File.UserBindControl {
