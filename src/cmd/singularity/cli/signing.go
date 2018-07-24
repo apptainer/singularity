@@ -11,6 +11,7 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/signing"
+	"github.com/singularityware/singularity/src/pkg/util/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +23,12 @@ func init() {
 // SignCmd singularity sign
 var SignCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(1),
-	PreRun: sylabsToken,
+	Args: cobra.ExactArgs(1),
 
 	Run: func(cmd *cobra.Command, args []string) {
+		// get the Sylabs token
+		authToken, _ := cli.SylabsToken(defaultTokenFile, tokenFile)
+
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
 		if err := signing.Sign(args[0], authToken); err != nil {

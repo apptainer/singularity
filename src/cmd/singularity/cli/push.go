@@ -9,6 +9,7 @@ import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -28,9 +29,10 @@ func init() {
 // PushCmd singularity push
 var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(2),
-	PreRun: sylabsToken,
+	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
+		// get the Sylabs token
+		authToken, authWarning := cli.SylabsToken(defaultTokenFile, tokenFile)
 		// Push to library requires a valid authToken
 		if authToken != "" {
 			libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)

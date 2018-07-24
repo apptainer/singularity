@@ -8,6 +8,7 @@ package cli
 import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
+	"github.com/singularityware/singularity/src/pkg/util/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -28,9 +29,11 @@ func init() {
 // PullCmd singularity pull
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: sylabsToken,
+	Args: cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
+		// get the Sylabs token
+		authToken, _ := cli.SylabsToken(defaultTokenFile, tokenFile)
+
 		if len(args) == 2 {
 			libexec.PullImage(args[0], args[1], PullLibraryURI, force, authToken)
 			return

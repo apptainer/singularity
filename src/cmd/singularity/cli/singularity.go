@@ -15,7 +15,7 @@ import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/auth"
+	"github.com/singularityware/singularity/src/pkg/util/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ func init() {
 	SingularityCmd.PersistentFlags().SetInterspersed(false)
 
 	templateFuncs := template.FuncMap{
-		"TraverseParentsUses": TraverseParentsUses,
+		"TraverseParentsUses": cli.TraverseParentsUses,
 	}
 	cobra.AddTemplateFuncs(templateFuncs)
 
@@ -101,21 +101,4 @@ var VersionCmd = &cobra.Command{
 
 	Use:   "version",
 	Short: "Show application version",
-}
-
-// sylabsToken process the authentication Token
-// priority default_file < env < file_flag
-func sylabsToken(cmd *cobra.Command, args []string) {
-	if val := os.Getenv("SYLABS_TOKEN"); val != "" {
-		authToken = val
-	}
-	if tokenFile != defaultTokenFile {
-		authToken, authWarning = auth.ReadToken(tokenFile)
-	}
-	if authToken == "" {
-		authToken, authWarning = auth.ReadToken(defaultTokenFile)
-	}
-	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
-		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
-	}
 }

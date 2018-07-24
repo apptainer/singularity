@@ -20,6 +20,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/cli"
 	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
@@ -68,11 +69,13 @@ var BuildCmd = &cobra.Command{
 	Short:   docs.BuildShort,
 	Long:    docs.BuildLong,
 	Example: docs.BuildExample,
-	PreRun:  sylabsToken,
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 		var a build.Assembler
+
+		// get the Sylabs token
+		authToken, authWarning := cli.SylabsToken(defaultTokenFile, tokenFile)
 
 		if silent {
 			fmt.Println("Silent!")
