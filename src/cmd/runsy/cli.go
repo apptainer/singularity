@@ -9,6 +9,6 @@ import "github.com/singularityware/singularity/src/cmd/runsy/cli"
 
 func main() {
 
-	// In cli/runs.go
+	// In cli/runsy.go
 	cli.ExecuteRunsyCmd()
 }
