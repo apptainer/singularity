@@ -11,11 +11,15 @@ CREATE OPTIONS:
     -s|--size   Specify a size for an operation in MiB, i.e. 1024*1024B
                 (default 768MiB)
     -F|--force  Overwrite an image file if it exists
+    -i|--bytes-per-inode
+                Specify a size for the inode ratio in Bytes. Default is
+                the host system value.
 
 EXAMPLES:
 
     $ singularity image.create /tmp/Debian.img
     $ singularity image.create -s 4096 /tmp/Debian.img
+    $ singularity image.create -i 8192 /tmp/Debian.img
 
 For additional help, please visit our public documentation pages which are
 found at:

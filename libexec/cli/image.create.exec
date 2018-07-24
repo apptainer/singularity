@@ -46,6 +46,12 @@ while true; do
             export SINGULARITY_IMAGESIZE
             shift
         ;;
+        -i|--bytes-per-inode)
+            shift
+            SINGULARITY_INODESIZE="${1:-}"
+            export SINGULARITY_INODESIZE
+            shift
+        ;;
         -F|--force)
             shift
             OVERWRITE=1
@@ -96,6 +102,18 @@ if [ -f "$SINGULARITY_IMAGE" ]; then
     fi
 fi
 
+# Get the inode option *before* creating the empty file
+# We want to exit before the 'dd' command
+INODE=""
+if [ -n "${SINGULARITY_INODESIZE:-}" ]; then
+    INODE="-i ${SINGULARITY_INODESIZE}"
+
+    if [ $(expr ${SINGULARITY_INODESIZE} % 1024) -ne 0 ]; then
+        message WARN "--bytes-per-inode ratio of ${SINGULARITY_INODESIZE} is not divisible by 1024\n"
+    fi
+fi
+
+
 DDSTATUS="none"
 if dd --help | grep -q 'status=noxfer'; then
     DDSTATUS="noxfer"
@@ -108,7 +126,7 @@ if ! dd if=/dev/zero of="$SINGULARITY_IMAGE" bs=1M count=${SINGULARITY_IMAGESIZE
 fi
 
 message 1 "Formatting image with ext3 file system\n"
-if ! /sbin/mkfs.ext3 -q -F "$SINGULARITY_IMAGE"; then
+if ! /sbin/mkfs.ext3 -q ${INODE} -F "$SINGULARITY_IMAGE"; then
     exit 1
 fi
 
