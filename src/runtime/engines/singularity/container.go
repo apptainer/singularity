@@ -1037,6 +1037,10 @@ func (c *container) addCwdMount(system *mount.System) error {
 	if err != nil {
 		return fmt.Errorf("could not obtain current directory path: %s", err)
 	}
+	if len(system.Points.GetByDest(cwd)) != 0 {
+		sylog.Debugf("Not mounting current directory: %s already mounted", cwd)
+		return nil
+	}
 	switch current {
 	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin":
 		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)

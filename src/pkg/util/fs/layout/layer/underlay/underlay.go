@@ -81,6 +81,9 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 				continue
 			}
 			dst := underlayDir + point.Destination
+			if _, err := u.session.GetPath(dst); err == nil {
+				continue
+			}
 			switch st.Mode & syscall.S_IFMT {
 			case syscall.S_IFDIR:
 				if err := u.session.AddDir(dst); err != nil {
