@@ -242,11 +242,11 @@ func makeDefinition(source string, isJSON bool) build.Definition {
 		}
 	} else if _, err := os.Stat(source); err == nil {
 		//local image or sandbox
-		//define source as local and follow uri format for defs
-		source = "local://" + source
-		def, err = build.NewDefinitionFromURI(source)
-		if err != nil {
-			sylog.Fatalf("unable to parse URI %s: %v\n", source, err)
+		def = build.Definition{
+			Header: map[string]string{
+				"bootstrap": "localimage",
+				"from":      source,
+			},
 		}
 	} else {
 		sylog.Fatalf("unable to build from %s: %v\n", source, err)
@@ -263,8 +263,6 @@ func makeBundle(def build.Definition) *build.Bundle {
 	switch def.Header["bootstrap"] {
 	case "shub":
 		cp = &build.ShubConveyorPacker{}
-	case "local":
-		cp = &build.LocalConveyorPacker{}
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
 		cp = &build.OCIConveyorPacker{}
 	case "busybox":
