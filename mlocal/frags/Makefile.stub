@@ -95,9 +95,8 @@ $(BUILDDIR)/vendors-done:
 	fi
 	$(V)touch $@
 
-#TODO: generate real config file and install, currently is just blank
-$(config):
-	$(V)touch $(config)
+$(config): $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
