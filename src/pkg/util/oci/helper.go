@@ -8,55 +8,52 @@ package oci
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/sylabs/sif/pkg/sif"
+)
+
+const (
+	// ConfigSpec holds the name for the OCI runtime spec file
+	ConfigSpec = "config.json"
 )
 
 // LoadConfigSpec loads the config.json oci runtime spec
 // from the provided path to a SIF.
 func LoadConfigSpec(Path string) (spec *specs.Spec, err error) {
-	configJSON, err := os.Open(Path)
+	// load the SIF (singularity image file)
+	fimg, err := sif.LoadContainer(Path, false)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("JSON specification file %s not found", Path)
-		}
-		return nil, err
+		sylog.Fatalf("Error loading SIF %s:\t%s", Path, err)
 	}
-	defer configJSON.Close()
 
-	// Load the SIF
-	fimg, err := sif.LoadContainerFp(configJSON, true)
+	// lookup of a descriptor of type DataGenericJSON
+	descr := sif.Descriptor{
+		Datatype: sif.DataGenericJSON,
+	}
+	d, match, _ := fimg.GetFromDescr(descr)
 	if err != nil {
-		return nil, fmt.Errorf("while loading SIF file: %s", err)
+		sylog.Fatalf("%s", err)
 	}
-	defer fimg.UnloadContainer()
-
-	name := "oci-runtime-spec"
-	var bn [128]byte
-	copy(bn[:], name)
-	var data []byte
-
-	// Search for the SIF data object with the config.json
-	// MUST be named oci-runtime-spec
-	for _, v := range fimg.DescrArr {
-		if v.Used == false {
-			continue
-		} else if v.Name == bn {
-			object, _, err := fimg.GetFromDescrID(v.ID)
-			if err != nil {
-				return nil, fmt.Errorf("no json file found: %s", err)
-			}
-			data = fimg.Filedata[object.Fileoff : object.Fileoff+object.Filelen]
-			break
-		}
+	if match != 1 && d.GetName() != ConfigSpec {
+		sylog.Infof("SIF bundle doesn't contains a OCI runtime spec")
+		return
 	}
+
+	// if found, retrieve the OCI spec from file
+	data := fimg.Filedata[d.Fileoff : d.Fileoff+d.Filelen]
 
 	if err = json.Unmarshal(data, &spec); err != nil {
 		return nil, err
 	}
+
+	// unload the SIF container
+	if err = fimg.UnloadContainer(); err != nil {
+		sylog.Fatalf("UnloadContainer(fimg):\t%s", err)
+	}
+
 	return spec, validateConfigSpec(spec)
 }
 
