@@ -7,6 +7,7 @@ package fs
 
 import (
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -71,4 +72,20 @@ func MkdirAll(path string, mode os.FileMode) error {
 	defer syscall.Umask(oldmask)
 
 	return os.MkdirAll(path, mode)
+}
+
+// RootDir returns the root directory of path (rootdir of /my/path is /my).
+// Returns "." if path is empty
+func RootDir(path string) string {
+	if path == "" {
+		return "."
+	}
+
+	iter := filepath.Dir(path)
+	for iter != "/" && iter != "." {
+		path = iter
+		iter = filepath.Dir(path)
+	}
+
+	return path
 }

@@ -698,16 +698,83 @@ func (c *container) addBindsMount(system *mount.System) error {
 }
 
 func (c *container) addHomeMount(system *mount.System) error {
+	if c.engine.EngineConfig.GetNoHome() {
+		sylog.Debugf("Skipping home directory mount by user request.")
+		return nil
+	}
+	if !c.engine.EngineConfig.File.MountHome {
+		sylog.Debugf("Skipping home dir mounting (per config)")
+		return nil
+	}
+
+	customHome := false
+
+	pw, err := user.GetPwUID(uint32(os.Getuid()))
+	if err != nil {
+		return fmt.Errorf("failed to retrieve user information")
+	}
+
+	if pw.Dir != c.engine.EngineConfig.GetHome() {
+		customHome = true
+	}
+
+	sylog.Debugf("Checking if user bind control is allowed")
+
+	if customHome && !c.engine.EngineConfig.File.UserBindControl {
+		return fmt.Errorf("Not mounting user requested home: user bind control is disallowed")
+	}
+
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+
 	sylog.Debugf("Adding home to mount list\n")
 	homedir := strings.SplitN(c.engine.EngineConfig.GetHomeDir(), ":", 2)
-	src := homedir[0]
+	src, err := filepath.Abs(homedir[0])
+	if err != nil {
+		sylog.Warningf("Can't determine absolute path of %s home directory", homedir[0])
+	}
 	dst := src
 	if len(homedir) == 2 {
 		dst = homedir[1]
 	}
-	err := system.Points.AddBind(mount.HomeTag, src, dst, syscall.MS_BIND)
-	if err != nil {
-		return fmt.Errorf("unable to add home to mount list: %s", err)
+
+	sylog.Debugf("Checking if a layer is enabled")
+
+	if c.session.Layer == nil {
+		sylog.Debugf("Staging home directory base")
+
+		if err := c.session.AddDir(dst); err != nil {
+			return fmt.Errorf("failed to add %s as session directory: %s", src, err)
+		}
+		sessionDir, _ := c.session.GetPath(dst)
+		if err := system.Points.AddBind(mount.HomeTag, src, sessionDir, flags); err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
+		}
+		if !c.userNS {
+			system.Points.AddRemount(mount.HomeTag, sessionDir, flags)
+		}
+
+		sylog.Debugf("Identifying the base home directory")
+
+		dstDir := fs.RootDir(dst)
+		if dstDir == "." {
+			return fmt.Errorf("could not identify base home directory path: %s", dst)
+		}
+		sessionDir, _ = c.session.GetPath(dstDir)
+		sylog.Verbosef("Mounting staged home directory base to container's base dir")
+		if err := system.Points.AddBind(mount.FinalTag, sessionDir, dstDir, flags); err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", sessionDir, err)
+		}
+	} else {
+		sylog.Debugf("Staging home directory")
+
+		err := system.Points.AddBind(mount.HomeTag, src, dst, flags)
+		if err != nil {
+			return fmt.Errorf("unable to add home to mount list: %s", err)
+		}
+		if !c.userNS {
+			return system.Points.AddRemount(mount.HomeTag, dst, flags)
+		}
+		return nil
 	}
 	return nil
 }

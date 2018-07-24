@@ -77,6 +77,7 @@ type JSONConfig struct {
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
 	Home             string   `json:"home,omitempty"`
+	NoHome           bool     `json:"noHome,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -329,4 +330,14 @@ func (e *EngineConfig) SetHome(home string) {
 // GetHome retrieves user home directory
 func (e *EngineConfig) GetHome() string {
 	return e.JSON.Home
+}
+
+// SetNoHome set no-home flag to not mount home user home directory
+func (e *EngineConfig) SetNoHome(val bool) {
+	e.JSON.NoHome = val
+}
+
+// GetNoHome returns if no-home flag is set or not
+func (e *EngineConfig) GetNoHome() bool {
+	return e.JSON.NoHome
 }

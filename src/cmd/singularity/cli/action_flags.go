@@ -31,6 +31,7 @@ var (
 	IsContainAll bool
 	IsWritable   bool
 	Nvidia       bool
+	NoHome       bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -121,6 +122,9 @@ func initBoolVars() {
 
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
+
+	// --no-home
+	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
