@@ -9,20 +9,16 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/oci"
 	"github.com/sylabs/sif/pkg/sif"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
-)
-
-const (
-	ConfigSpec = "config.json"
 )
 
 func init() {
@@ -51,47 +47,20 @@ var SpecCmd = &cobra.Command{
 	Long:  docs.RunsySpecLong,
 }
 
-// SpecInspectCmd prints the OCi runtime spec stored in the SIF bundle
+// SpecInspectCmd check if the target SIF has a OCI runtime spec
+// if found will print it into stdout
+// TODO: flag for print to file
 var SpecInspectCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		sifPath := args[0]
 
-		// load the SIF (singularity image file)
-		fimg, err := sif.LoadContainer(sifPath, false)
+		spec, err := oci.LoadConfigSpec(sifPath)
 		if err != nil {
-			sylog.Fatalf("Error loading SIF %s:\t%s", sifPath, err)
+			sylog.Fatalf("%v", err)
 		}
-
-		// lookup of a descriptor of type DataGenericJSON
-		descr := sif.Descriptor{
-			Datatype: sif.DataGenericJSON,
-		}
-		d, match, _ := fimg.GetFromDescr(descr)
-		if err != nil {
-			sylog.Fatalf("%s", err)
-		}
-		if match != 1 && d.GetName() != ConfigSpec {
-			sylog.Infof("SIF bundle doesn't contains a OCI runtime spec")
-			return
-		}
-
-		// if found, print OCI runtime spec into stdout
-		// TODO: format flag, or to file
-		if _, err := fimg.Fp.Seek(d.Fileoff, 0); err != nil {
-			sylog.Errorf("while seeking to data object: %s", err)
-			return
-		}
-		if _, err := io.CopyN(os.Stdout, fimg.Fp, d.Filelen); err != nil {
-			sylog.Errorf("while copying data object to stdout: %s", err)
-			return
-		}
-
-		// unload the SIF container
-		if err = fimg.UnloadContainer(); err != nil {
-			sylog.Fatalf("UnloadContainer(fimg):\t%s", err)
-		}
-
+		enc := json.NewEncoder(os.Stdout)
+		enc.Encode(spec)
 	},
 	DisableFlagsInUseLine: true,
 
@@ -143,7 +112,7 @@ var SpecAddCmd = &cobra.Command{
 		if err != nil {
 			sylog.Fatalf("%s", err)
 		}
-		if match == 1 && d.GetName() == ConfigSpec {
+		if match == 1 && d.GetName() == oci.ConfigSpec {
 			sylog.Fatalf("SIF bundle already contains a config.json")
 		}
 
@@ -169,14 +138,12 @@ var SpecAddCmd = &cobra.Command{
 var SpecGenCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for existing config.json on CWD
-		overwrite, err := configFileExist(ConfigSpec)
+		overwrite, err := configFileExist(oci.ConfigSpec)
 		if err != nil {
 			sylog.Fatalf("%s", err)
 		}
 		if !overwrite {
 			return
-		} else {
-			sylog.Infof("Overwriting existing config.json...")
 		}
 
 		specgen, err := generate.New("linux")
@@ -190,7 +157,7 @@ var SpecGenCmd = &cobra.Command{
 			sylog.Fatalf("unable to marshal oci runtime spec: %s", err)
 		}
 
-		err = ioutil.WriteFile(ConfigSpec, config, 0644)
+		err = ioutil.WriteFile(oci.ConfigSpec, config, 0644)
 		if err != nil {
 			sylog.Fatalf("couldn't write config file: %s", err)
 		}
@@ -221,9 +188,8 @@ func configFileExist(name string) (bool, error) {
 
 		if resp == "y" {
 			return true, nil
-		} else {
-			return false, nil
 		}
+		return false, nil
 
 	}
 
