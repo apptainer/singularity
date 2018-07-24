@@ -96,7 +96,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 		}
 	}
 
-	if err := system.RunAfterTag(mount.RootfsTag, c.addFilesMount); err != nil {
+	if err := system.RunAfterTag(mount.LayerTag, c.addFilesMount); err != nil {
 		return err
 	}
 
