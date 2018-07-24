@@ -34,7 +34,7 @@ func init() {
 	}
 
 	SpecGenCmd.Flags().StringVarP(&bundlePath, "bundle", "b", cwd, "path to singularity image file (SIF), default to current directory")
-	ExecRunsCmd.AddCommand(SpecCmd)
+	RunsyCmd.AddCommand(SpecCmd)
 	SpecCmd.AddCommand(SpecGenCmd)
 	SpecCmd.AddCommand(SpecAddCmd)
 	SpecCmd.AddCommand(SpecInspectCmd)
@@ -46,9 +46,9 @@ var SpecCmd = &cobra.Command{
 	Run:  nil,
 	DisableFlagsInUseLine: true,
 
-	Use:   docs.RunsSpecUse,
-	Short: docs.RunsSpecShort,
-	Long:  docs.RunsSpecLong,
+	Use:   docs.RunsySpecUse,
+	Short: docs.RunsySpecShort,
+	Long:  docs.RunsySpecLong,
 }
 
 // SpecInspectCmd prints the OCi runtime spec stored in the SIF bundle
@@ -95,9 +95,9 @@ var SpecInspectCmd = &cobra.Command{
 	},
 	DisableFlagsInUseLine: true,
 
-	Use:   docs.RunsSpecInspectUse,
-	Short: docs.RunsSpecInspectShort,
-	Long:  docs.RunsSpecInspectLong,
+	Use:   docs.RunsySpecInspectUse,
+	Short: docs.RunsySpecInspectShort,
+	Long:  docs.RunsySpecInspectLong,
 }
 
 // SpecAddCmd adds a given config.json to a  target SIF
@@ -160,9 +160,9 @@ var SpecAddCmd = &cobra.Command{
 	},
 	DisableFlagsInUseLine: true,
 
-	Use:   docs.RunsSpecAddUse,
-	Short: docs.RunsSpecAddShort,
-	Long:  docs.RunsSpecAddLong,
+	Use:   docs.RunsySpecAddUse,
+	Short: docs.RunsySpecAddShort,
+	Long:  docs.RunsySpecAddLong,
 }
 
 // SpecGenCmd creates a config.json in the cwd, with Linux as the default OS
@@ -197,9 +197,9 @@ var SpecGenCmd = &cobra.Command{
 	},
 	DisableFlagsInUseLine: true,
 
-	Use:   docs.RunsSpecGenUse,
-	Short: docs.RunsSpecGenShort,
-	Long:  docs.RunsSpecGenLong,
+	Use:   docs.RunsySpecGenUse,
+	Short: docs.RunsySpecGenShort,
+	Long:  docs.RunsySpecGenLong,
 }
 
 func configFileExist(name string) (bool, error) {

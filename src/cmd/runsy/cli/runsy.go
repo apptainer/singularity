@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Global variables for singularity CLI
+// Global variables for RunSy CLI
 var (
 	debug      bool
 	silent     bool
@@ -36,50 +36,50 @@ var (
 )
 
 func init() {
-	ExecRunsCmd.Flags().SetInterspersed(false)
-	ExecRunsCmd.PersistentFlags().SetInterspersed(false)
+	RunsyCmd.Flags().SetInterspersed(false)
+	RunsyCmd.PersistentFlags().SetInterspersed(false)
 
 	templateFuncs := template.FuncMap{
 		"TraverseParentsUses": TraverseParentsUses,
 	}
 	cobra.AddTemplateFuncs(templateFuncs)
 
-	ExecRunsCmd.SetHelpTemplate(docs.HelpTemplate)
-	ExecRunsCmd.SetUsageTemplate(docs.UseTemplate)
+	RunsyCmd.SetHelpTemplate(docs.HelpTemplate)
+	RunsyCmd.SetUsageTemplate(docs.UseTemplate)
 
-	ExecRunsCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	ExecRunsCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	ExecRunsCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	ExecRunsCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
+	RunsyCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
+	RunsyCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
+	RunsyCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
+	RunsyCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 	usr, err := user.Current()
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
-	ExecRunsCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	RunsyCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
 	VersionCmd.Flags().SetInterspersed(false)
-	ExecRunsCmd.AddCommand(VersionCmd)
+	RunsyCmd.AddCommand(VersionCmd)
 }
 
-// ExecRunsCmd is the base command when called without any subcommands
-var ExecRunsCmd = &cobra.Command{
+// RunsyCmd is the base command when called without any subcommands
+var RunsyCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	Run: nil,
 
-	Use:     docs.RunsUse,
+	Use:     docs.RunsyUse,
 	Version: fmt.Sprintf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION),
-	Short:   docs.RunsShort,
-	Long:    docs.RunsLong,
-	Example: docs.RunsExample,
+	Short:   docs.RunsyShort,
+	Long:    docs.RunsyLong,
+	Example: docs.RunsyExample,
 }
 
-// ExecuteRunsCmd adds all child commands to the root command and sets
+// ExecuteRunsyCmd adds all child commands to the root command and sets
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
-func ExecuteRunsCmd() {
-	if err := ExecRunsCmd.Execute(); err != nil {
+func ExecuteRunsyCmd() {
+	if err := RunsyCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 }
