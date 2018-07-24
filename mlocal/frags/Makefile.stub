@@ -18,6 +18,7 @@ singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/sin
 # runsy
 runsy := $(BUILDDIR)/runsy
 runsy_INSTALL := $(PREFIX)/bin/runsy
+runsy_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/runsy/cli.go)
 
 wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
 wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
@@ -70,16 +71,16 @@ $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) 
 
 # runsy
-$(runsy): $(go_OBJ) $(singularity_OBJ)
+$(runsy): $(go_OBJ) $(runsy_OBJ)
 	@echo " GO" $@
 	$(V)go build -o $(BUILDDIR)/runsy $(SOURCEDIR)/src/cmd/runsy/cli.go
 $(runsy_INSTALL): $(runsy)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(runsy) $(runsy_INSTALL) # set cp to install
+	$(V)install -m 0755 $(runsy) $(runsy_INSTALL) 
 
 # config.go
 $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
