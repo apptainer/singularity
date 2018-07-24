@@ -294,7 +294,11 @@ func (c *container) mountImage(mnt *mount.Point) error {
 }
 
 func (c *container) loadImage(path string, writable bool) (*image.Image, error) {
-	fi, _ := os.Stat(path)
+	fi, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
 	if fi.IsDir() {
 		writable = false
 	}
