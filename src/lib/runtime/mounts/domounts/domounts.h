@@ -21,12 +21,12 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_MOUNT_H_
-#define __SINGULARITY_RUNTIME_MOUNT_H_
+#ifndef __SINGULARITY_RUNTIME_MOUNT_DOMOUNTS_H_
+#define __SINGULARITY_RUNTIME_MOUNT_DOMOUNTS_H_
 
 struct mountlist;
 
 extern int _singularity_runtime_domounts(struct mountlist *mountlist);
 
-#endif /* __SINGULARITY_RUNTIME_MOUNT_H */
+#endif /* __SINGULARITY_RUNTIME_MOUNT_DOMOUNTS_H */
 
