@@ -93,7 +93,7 @@ func (p *SIFPacker) unpackSIF(b *Bundle, rootfs string) (err error) {
 		return fmt.Errorf("While copying partition data to bundle: %v", err)
 	}
 
-	return err
+	return nil
 }
 
 // unpackImagePart temporarily mounts an image parition using a loop device and then copies its contents to the destination directory
@@ -111,7 +111,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 		return err
 	}
 
-	tmpmnt, err := ioutil.TempDir("/tmp", "tmpmnt-")
+	tmpmnt, err := ioutil.TempDir("", "tmpmnt-")
 	if err != nil {
 		return fmt.Errorf("Failed to make tmp mount point: %v", err)
 	}
@@ -135,5 +135,5 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 		return err
 	}
 
-	return err
+	return nil
 }
