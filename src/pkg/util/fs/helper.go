@@ -81,11 +81,12 @@ func RootDir(path string) string {
 		return "."
 	}
 
-	iter := filepath.Dir(path)
+	p := filepath.Clean(path)
+	iter := filepath.Dir(p)
 	for iter != "/" && iter != "." {
-		path = iter
-		iter = filepath.Dir(path)
+		p = iter
+		iter = filepath.Dir(p)
 	}
 
-	return path
+	return p
 }
