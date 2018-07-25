@@ -12,13 +12,7 @@ import (
 )
 
 func init() {
-	pgpNewPairCmds := []*cobra.Command{
-		PgpNewPairCmd,
-	}
-
-	for _, cmd := range pgpNewPairCmds {
-		cmd.Flags().SetInterspersed(false)
-	}
+	PgpNewPairCmd.Flags().SetInterspersed(false)
 }
 
 // PgpNewPairCmd is `singularity pgp newpair' and generate a new PGP key pair

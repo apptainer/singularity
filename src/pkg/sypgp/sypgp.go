@@ -204,7 +204,8 @@ func printEntity(index int, e *openpgp.Entity) {
 	fmt.Printf("   L: %v\n", bits)
 }
 
-func printPubKeyring() (err error) {
+// PrintPubKeyring prints the public keyring read from the public local store
+func PrintPubKeyring() (err error) {
 	var pubEntlist openpgp.EntityList
 
 	if pubEntlist, err = LoadPubKeyring(); err != nil {
@@ -219,7 +220,8 @@ func printPubKeyring() (err error) {
 	return
 }
 
-func printPrivKeyring() (err error) {
+// PrintPrivKeyring prints the secret keyring read from the public local store
+func PrintPrivKeyring() (err error) {
 	var privEntlist openpgp.EntityList
 
 	if privEntlist, err = LoadPrivKeyring(); err != nil {
@@ -327,7 +329,7 @@ func DecryptKey(k *openpgp.Entity) error {
 func SelectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	var index int
 
-	printPrivKeyring()
+	PrintPrivKeyring()
 	fmt.Print("Enter # of signing key to use : ")
 	n, err := fmt.Scanf("%d", &index)
 	if err != nil || n != 1 {
