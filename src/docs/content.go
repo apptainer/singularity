@@ -185,6 +185,29 @@ Enterprise Performance Computing (EPC)`
   $ singularity pgp list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// pgp pull
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PgpPullUse   string = `pull`
+	PgpPullShort string = `fetch a PGP public key from a key server`
+	PgpPullLong  string = `
+	The PGP pull command allows you to connect to a key server look
+	for and download a public key. Key rings are stored into
+	(e.g., $HOME/.singularity/sypgp)`
+	PgpPullExample string = `
+  $ singularity pgp pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// pgp push
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PgpPushUse   string = `push`
+	PgpPushShort string = `upload a PGP public key to a key server`
+	PgpPushLong  string = `
+	The PGP push command allows you to connect to a key server and
+	upload public keys from the local key store`
+	PgpPushExample string = `
+  $ singularity pgp push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`

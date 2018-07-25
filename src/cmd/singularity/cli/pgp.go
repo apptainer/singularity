@@ -14,6 +14,8 @@ func init() {
 	SingularityCmd.AddCommand(PgpCmd)
 	PgpCmd.AddCommand(PgpNewPairCmd)
 	PgpCmd.AddCommand(PgpListCmd)
+	PgpCmd.AddCommand(PgpPullCmd)
+	PgpCmd.AddCommand(PgpPushCmd)
 }
 
 // PgpCmd is the 'pgp' command that allows management of key stores
