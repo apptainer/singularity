@@ -7,6 +7,7 @@ package build
 
 import (
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -33,7 +34,7 @@ type LocalConveyorPacker struct {
 
 // Get just stores the source
 func (c *LocalConveyor) Get(recipe Definition) (err error) {
-	c.src = recipe.Header["from"]
+	c.src = filepath.Clean(recipe.Header["from"])
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-local-")
 	if err != nil {

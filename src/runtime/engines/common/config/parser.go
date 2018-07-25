@@ -7,23 +7,33 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
+	"text/template"
 )
 
 // Parser parses configuration found in the file with the specified path.
 func Parser(filepath string, f interface{}) error {
+	var b []byte
 	directives := make(map[string][]string)
+
+	// If the configuration file isn't found, continue with sensible defaults
 	c, err := os.Open(filepath)
-	if err != nil {
-		return err
-	}
-	b, err := ioutil.ReadAll(c)
-	if err != nil {
+	if err == nil {
+		b, err = ioutil.ReadAll(c)
+		if err != nil {
+			return err
+		}
+
+		c.Close()
+	} else if os.IsNotExist(err) || filepath == "" {
+		b = []byte{}
+	} else {
 		return err
 	}
 
@@ -140,5 +150,19 @@ func Parser(filepath string, f interface{}) error {
 			}
 		}
 	}
+	return nil
+}
+
+// Generate executes the template stored at fpath on object f
+func Generate(out io.Writer, tmplpath string, f interface{}) error {
+	t, err := template.ParseFiles(tmplpath)
+	if err != nil {
+		return err
+	}
+
+	if err := t.Execute(out, f); err != nil {
+		return fmt.Errorf("unable to execute template at %s on %v: %v", tmplpath, f, err)
+	}
+
 	return nil
 }
