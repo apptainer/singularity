@@ -10,6 +10,7 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func init() {
@@ -18,7 +19,19 @@ func init() {
 		// capabilityDotDropCmd,
 	}
 
+	var capabilityDropFlags = pflag.NewFlagSet("CapabilityDropFlags", pflag.ExitOnError)
+
+	// -u|--user
+	capabilityDropFlags.StringVarP(&CapUser, "user", "u", "", "Drop capabilities for the given user")
+	capabilityDropFlags.SetAnnotation("user", "argtag", []string{"<user>"})
+
+	// -g|--group
+	capabilityDropFlags.StringVarP(&CapGroup, "group", "g", "", "Drop capabilities for the given group")
+	capabilityDropFlags.SetAnnotation("group", "argtag", []string{"<group>"})
+
 	for _, cmd := range capabilityDropCmds {
+		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
+		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
 		cmd.Flags().SetInterspersed(false)
 	}
 

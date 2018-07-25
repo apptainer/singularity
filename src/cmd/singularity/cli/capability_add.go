@@ -10,6 +10,14 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
+
+// contains flag variables for capability commands
+var (
+	CapUser    string
+	CapGroup   string
+	CapDefined bool
 )
 
 func init() {
@@ -18,7 +26,19 @@ func init() {
 		// capabilityDotAddCmd,
 	}
 
+	var capabilityAddFlags = pflag.NewFlagSet("CapabilityAddFlags", pflag.ExitOnError)
+
+	// -u|--user
+	capabilityAddFlags.StringVarP(&CapUser, "user", "u", "", "Add capabilities for the given user")
+	capabilityAddFlags.SetAnnotation("user", "argtag", []string{"<user>"})
+
+	// -g|--group
+	capabilityAddFlags.StringVarP(&CapGroup, "group", "g", "", "Add capabilities for the given group")
+	capabilityAddFlags.SetAnnotation("group", "argtag", []string{"<group>"})
+
 	for _, cmd := range capabilityAddCmds {
+		cmd.Flags().AddFlag(capabilityAddFlags.Lookup("user"))
+		cmd.Flags().AddFlag(capabilityAddFlags.Lookup("group"))
 		cmd.Flags().SetInterspersed(false)
 	}
 

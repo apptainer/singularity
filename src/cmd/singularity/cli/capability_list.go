@@ -10,6 +10,7 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func init() {
@@ -18,7 +19,23 @@ func init() {
 		// capabilityDotListCmd,
 	}
 
+	var capabilityListFlags = pflag.NewFlagSet("CapabilityListFlags", pflag.ExitOnError)
+
+	// -u|--user
+	capabilityListFlags.StringVarP(&CapUser, "user", "u", "", "List capabilities for the given user")
+	capabilityListFlags.SetAnnotation("user", "argtag", []string{"<user>"})
+
+	// -g|--group
+	capabilityListFlags.StringVarP(&CapGroup, "group", "g", "", "List capabilities for the given group")
+	capabilityListFlags.SetAnnotation("group", "argtag", []string{"<group>"})
+
+	// -d|--defined
+	capabilityListFlags.BoolVarP(&CapDefined, "defined", "d", false, "List users and groups for those capabilities are defined")
+
 	for _, cmd := range capabilityListCmds {
+		cmd.Flags().AddFlag(capabilityListFlags.Lookup("user"))
+		cmd.Flags().AddFlag(capabilityListFlags.Lookup("group"))
+		cmd.Flags().AddFlag(capabilityListFlags.Lookup("defined"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -30,7 +47,7 @@ var CapabilityListCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("listping capability")
+		fmt.Println("listing capability")
 	},
 
 	Use:     docs.CapabilityListUse,
