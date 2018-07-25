@@ -196,7 +196,7 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 
 func printEntity(index int, e *openpgp.Entity) {
 	for _, v := range e.Identities {
-		fmt.Printf("%v) U: %v %v %v\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+		fmt.Printf("%v) U: %v (%v) <%v>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
 	}
 	fmt.Printf("   C: %v\n", e.PrimaryKey.CreationTime)
 	fmt.Printf("   F: %0X\n", e.PrimaryKey.Fingerprint)
