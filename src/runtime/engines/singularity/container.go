@@ -155,13 +155,17 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 }
 
 func (c *container) localMount(point *mount.Point) error {
-	uid := os.Getuid()
-
 	if !c.userNS {
+		uid := os.Getuid()
+
 		if err := syscall.Setresuid(uid, 0, uid); err != nil {
 			return fmt.Errorf("failed to elevate privileges")
 		}
 		defer syscall.Setresuid(uid, uid, 0)
+
+		if err := syscall.Setfsuid(uid); err != nil {
+			return fmt.Errorf("failed to set FS uid")
+		}
 	}
 
 	if _, err := mount.GetOffset(point.InternalOptions); err == nil {
