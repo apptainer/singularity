@@ -200,7 +200,11 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 				continue
 			}
 			if e[0] == "HOME" {
-				generator.AddProcessEnv(e[0], engineConfig.GetHome())
+				if !NoHome {
+					generator.AddProcessEnv(e[0], engineConfig.GetHome())
+				} else {
+					generator.AddProcessEnv(e[0], "/")
+				}
 			} else {
 				generator.AddProcessEnv(e[0], e[1])
 			}
