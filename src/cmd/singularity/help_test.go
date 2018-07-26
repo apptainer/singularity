@@ -36,7 +36,9 @@ func TestHelpSingularity(t *testing.T) {
 }
 
 func TestHelpFailure(t *testing.T) {
-	t.Skip("disabled until issue addressed") // TODO
+	if !*runDisabled {
+		t.Skip("disabled until issue addressed") // TODO
+	}
 
 	tests := []struct {
 		name string
@@ -108,7 +110,7 @@ func TestHelpCommands(t *testing.T) {
 				{"PreCommand", append([]string{"help"}, tt.argv...), false},
 			}
 			for _, tt := range tests {
-				if tt.skip {
+				if tt.skip && !*runDisabled {
 					t.Skip("disabled until issue addressed")
 				}
 
