@@ -7,6 +7,7 @@ package fs
 
 import (
 	"os"
+	"path/filepath"
 	"syscall"
 )
 
@@ -62,4 +63,30 @@ func IsSuid(name string) bool {
 		return false
 	}
 	return (info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0)
+}
+
+// MkdirAll creates a directory and parents if it doesn't exist with
+// mode after umask reset
+func MkdirAll(path string, mode os.FileMode) error {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	return os.MkdirAll(path, mode)
+}
+
+// RootDir returns the root directory of path (rootdir of /my/path is /my).
+// Returns "." if path is empty
+func RootDir(path string) string {
+	if path == "" {
+		return "."
+	}
+
+	p := filepath.Clean(path)
+	iter := filepath.Dir(p)
+	for iter != "/" && iter != "." {
+		p = iter
+		iter = filepath.Dir(p)
+	}
+
+	return p
 }

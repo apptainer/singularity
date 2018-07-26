@@ -6,6 +6,8 @@
 package main
 
 import (
+	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -15,7 +17,12 @@ import (
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
-var cmdPath string
+var (
+	cmdPath string
+	testDir string
+)
+
+var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
 
 func TestSelfTest(t *testing.T) {
 	test.DropPrivilege(t)
@@ -44,9 +51,22 @@ func run(m *testing.M) int {
 		log.Fatalf("singularity config is not a regular file")
 	}
 
+	// Make temp dir for tests
+	name, err := ioutil.TempDir("", "stest.")
+	if err != nil {
+		log.Fatalf("failed to create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(name)
+	if err := os.Chmod(name, 0777); err != nil {
+		log.Fatalf("failed to chmod temporary directory: %v", err)
+	}
+	testDir = name
+
 	return m.Run()
 }
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+
 	os.Exit(run(m))
 }

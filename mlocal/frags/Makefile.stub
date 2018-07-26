@@ -37,7 +37,7 @@ abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
 cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
-INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sessiondir) $(config_INSTALL)
 
 CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ)
 
@@ -103,18 +103,6 @@ $(config_INSTALL): $(config)
 	$(V)install -d $(@D)
 	$(V)install -m 0644 $(config) $(config_INSTALL)
 
-$(mountdir):
-	@echo " INSTALL" $@
-	$(V)install -d $(mountdir)
-
-$(finaldir):
-	@echo " INSTALL" $@
-	$(V)install -d $(finaldir)
-
-$(overlaydir):
-	@echo " INSTALL" $@
-	$(V)install -d $(overlaydir)
-
 $(sessiondir):
 	@echo " INSTALL" $@
 	$(V)install -d $(sessiondir)
@@ -150,7 +138,7 @@ test:
 	@echo "       PASS"
 	@echo " TEST sudo go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
+		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: cscope
