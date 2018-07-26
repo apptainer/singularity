@@ -153,7 +153,9 @@ Enterprise Performance Computing (EPC)`
 	PgpShort string = `Manage PGP key stores`
 	PgpLong  string = `
   Pgp allows you to manage local PGP key stores by create a new store and new
-  keys pairs. You can also list available keys from the default store.`
+  keys pairs. You can also list available keys from the default store. Finally,
+  the pgp command offers subcommands to communicate with an HKP key server to
+  fetch and upload public keys.`
 	PgpExample string = `
   All group commands have their own help output:
 
@@ -164,11 +166,11 @@ Enterprise Performance Computing (EPC)`
 	// pgp newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PgpNewPairUse   string = `newpair`
-	PgpNewPairShort string = `create a new PGP key pair`
+	PgpNewPairShort string = `Create a new PGP key pair`
 	PgpNewPairLong  string = `
 	The PGP newpair command allows you to create a new key or public/private
 	keys to be stored in the default user local key store location
-	(e.g., $HOME/.singularity/sypgp)`
+	(e.g., $HOME/.singularity/sypgp).`
 	PgpNewPairExample string = `
   $ singularity pgp newpair`
 
@@ -176,11 +178,11 @@ Enterprise Performance Computing (EPC)`
 	// pgp list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PgpListUse   string = `list`
-	PgpListShort string = `list keys from the default key store`
+	PgpListShort string = `List keys from the default key store`
 	PgpListLong  string = `
 	The PGP list command allows you to list public/private key pairs
 	from the default user local key store location
-	(e.g., $HOME/.singularity/sypgp)`
+	(e.g., $HOME/.singularity/sypgp).`
 	PgpListExample string = `
   $ singularity pgp list`
 
@@ -188,11 +190,11 @@ Enterprise Performance Computing (EPC)`
 	// pgp pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PgpPullUse   string = `pull`
-	PgpPullShort string = `fetch a PGP public key from a key server`
+	PgpPullShort string = `Fetch a PGP public key from a key server`
 	PgpPullLong  string = `
-	The PGP pull command allows you to connect to a key server look
-	for and download a public key. Key rings are stored into
-	(e.g., $HOME/.singularity/sypgp)`
+	The PGP pull command allows you to connect to a key server look for
+	and download a public key. Key rings are stored into
+	(e.g., $HOME/.singularity/sypgp).`
 	PgpPullExample string = `
   $ singularity pgp pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
@@ -200,10 +202,10 @@ Enterprise Performance Computing (EPC)`
 	// pgp push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PgpPushUse   string = `push`
-	PgpPushShort string = `upload a PGP public key to a key server`
+	PgpPushShort string = `Upload a PGP public key to a key server`
 	PgpPushLong  string = `
 	The PGP push command allows you to connect to a key server and
-	upload public keys from the local key store`
+	upload public keys from the local key store.`
 	PgpPushExample string = `
   $ singularity pgp push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
