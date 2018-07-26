@@ -59,53 +59,45 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	sylog.Infof("Finished running %%pre script. exit status 0\n")
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
-	_, err = rpcOps.Mount(rootfs, buildcfg.CONTAINER_FINALDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, "errors=remount-ro")
+	_, err = rpcOps.Mount(rootfs, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 	}
 
-	sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"))
-	_, err = rpcOps.Mount("/proc", filepath.Join(buildcfg.CONTAINER_FINALDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting proc at %s\n", filepath.Join(buildcfg.SESSIONDIR, "proc"))
+	_, err = rpcOps.Mount("/proc", filepath.Join(buildcfg.SESSIONDIR, "proc"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"))
-	_, err = rpcOps.Mount("sysfs", filepath.Join(buildcfg.CONTAINER_FINALDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
+	sylog.Debugf("Mounting sysfs at %s\n", filepath.Join(buildcfg.SESSIONDIR, "sys"))
+	_, err = rpcOps.Mount("sysfs", filepath.Join(buildcfg.SESSIONDIR, "sys"), "sysfs", syscall.MS_NOSUID, "")
 	if err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"))
-	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.CONTAINER_FINALDIR, "home"), "", syscall.MS_BIND, "")
+	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.SESSIONDIR, "home"))
+	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.SESSIONDIR, "home"), "", syscall.MS_BIND, "")
 	if err != nil {
 		return fmt.Errorf("mount /home failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"))
-	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.CONTAINER_FINALDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.SESSIONDIR, "dev"))
+	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.SESSIONDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/resolv.conf"))
-	_, err = rpcOps.Mount("/etc/resolv.conf", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/resolv.conf"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", filepath.Join(buildcfg.SESSIONDIR, "etc/resolv.conf"))
+	_, err = rpcOps.Mount("/etc/resolv.conf", filepath.Join(buildcfg.SESSIONDIR, "etc/resolv.conf"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting /etc/hosts at %s\n", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/hosts"))
-	_, err = rpcOps.Mount("/etc/hosts", filepath.Join(buildcfg.CONTAINER_FINALDIR, "etc/hosts"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
+	sylog.Debugf("Mounting /etc/hosts at %s\n", filepath.Join(buildcfg.SESSIONDIR, "etc/hosts"))
+	_, err = rpcOps.Mount("/etc/hosts", filepath.Join(buildcfg.SESSIONDIR, "etc/hosts"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
-	}
-
-	// do all bind mounts requested
-
-	sylog.Debugf("Mounting staging dir %s into final dir %s\n", buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR)
-	_, err = rpcOps.Mount(buildcfg.CONTAINER_FINALDIR, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("mount staging directory failed: %s", err)
 	}
 
 	// Run %setup script here

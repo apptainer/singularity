@@ -17,7 +17,7 @@ import (
 var (
 	BindPaths   []string
 	HomePath    string
-	OverlayPath string
+	OverlayPath []string
 	ScratchPath []string
 	WorkdirPath string
 	PwdPath     string
@@ -31,6 +31,7 @@ var (
 	IsContainAll bool
 	IsWritable   bool
 	Nvidia       bool
+	NoHome       bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -75,7 +76,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("home", "argtag", []string{"<spec>"})
 
 	// -o|--overlay
-	actionFlags.StringVarP(&OverlayPath, "overlay", "o", "", "Use a persistent overlayFS via a writable image.")
+	actionFlags.StringSliceVarP(&OverlayPath, "overlay", "o", []string{}, "Use an overlayFS image for persistent data storage or as read-only layer of container.")
 	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
 
 	// -S|--scratch
@@ -121,6 +122,9 @@ func initBoolVars() {
 
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
+
+	// --no-home
+	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
