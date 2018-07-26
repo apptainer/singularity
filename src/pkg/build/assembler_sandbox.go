@@ -8,6 +8,7 @@ package build
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
@@ -27,7 +28,7 @@ func (a *SandboxAssembler) Assemble(b *Bundle, path string) (err error) {
 	}
 
 	//copy bundle rootfs into sandboxdir
-	cmd := exec.Command("cp", "-r", b.Rootfs()+`/.`, path)
+	cmd := exec.Command("cp", "-r", filepath.Join(b.Rootfs(), `/.`), path)
 	err = cmd.Run()
 	if err != nil {
 		sylog.Errorf("Sandbox Assemble Failed", err.Error())
