@@ -44,7 +44,7 @@ func NewSession(path string, fstype string, size int, system *mount.System, laye
 	if size >= 0 {
 		options = fmt.Sprintf("mode=1777,size=%dm", size)
 	}
-	err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID|syscall.MS_NODEV, options)
+	err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID, options)
 	if err != nil {
 		return nil, err
 	}

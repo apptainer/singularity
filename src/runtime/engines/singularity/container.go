@@ -706,7 +706,6 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
-		system.Points.AddRemount(mount.DevTag, "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
 	} else if c.engine.EngineConfig.File.MountDev == "yes" {
 		sylog.Debugf("Adding dev to mount list\n")
 		err := system.Points.AddBind(mount.DevTag, "/dev", "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
@@ -953,9 +952,7 @@ func (c *container) addTmpMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
 	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
-		if !c.userNS {
-			system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
-		}
+		system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
 	} else {
 		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
 	}

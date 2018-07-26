@@ -94,10 +94,6 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 					return err
 				}
 			}
-			dst, _ = u.session.GetPath(dst)
-			if err := system.Points.AddBind(mount.PreLayerTag, point.Source, dst, syscall.MS_BIND); err != nil {
-				return fmt.Errorf("can't add bind mount point: %s", err)
-			}
 			createdPath = append(createdPath, pathLen{path: point.Destination, len: uint16(strings.Count(point.Destination, "/"))})
 		}
 	}
