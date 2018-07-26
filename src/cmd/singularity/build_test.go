@@ -32,7 +32,7 @@ func imageVerify(t *testing.T, imagePath string, labels bool) {
 		{"Environment", []string{"test", "-L", "/environment"}, true},
 		{"Singularity", []string{"test", "-L", "/singularity"}, true},
 	}
-	if labels {
+	if labels && *runDisabled { // TODO
 		tests = append(tests, testSpec{"Labels", []string{"test", "-f", "/.singularity.d/labels.json"}, true})
 	}
 
@@ -83,19 +83,24 @@ func TestBuild(t *testing.T) {
 		buildSpec  string
 		sandbox    bool
 		writable   bool
+		skip       bool
 	}{
-		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false},
-		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false},
-		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true},
-		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", false, false},
-		{"DockerURI", "", "docker://busybox", false, false},
-		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false},
-		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
-		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false},
-		{"Yum", "yum", "../../../examples/centos/Singularity", false, false},
+		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false, false},
+		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false, false},
+		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true, false},
+		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", false, false, false},
+		{"DockerURI", "", "docker://busybox", false, false, false},
+		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false, true}, // TODO
+		{"SHubURI", "", "shub://GodloveD/busybox", false, false, false},
+		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false, true}, // TODO
+		{"Yum", "yum", "../../../examples/centos/Singularity", false, false, false},
 	}
 
 	for _, tt := range tests {
+		if tt.skip && !*runDisabled {
+			t.Skip("disabled until issue addressed")
+		}
+
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
 			if tt.dependency != "" {
 				if _, err := exec.LookPath(tt.dependency); err != nil {
@@ -207,6 +212,10 @@ func TestBuildMultiStage(t *testing.T) {
 }
 
 func TestBuildTar(t *testing.T) {
+	if !*runDisabled {
+		t.Skip("disabled until issue addressed") // TODO
+	}
+
 	test.EnsurePrivilege(t)
 
 	// Build base image
