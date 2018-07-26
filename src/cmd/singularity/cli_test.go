@@ -6,6 +6,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/exec"
@@ -16,6 +17,8 @@ import (
 )
 
 var cmdPath string
+
+var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
 
 func TestSelfTest(t *testing.T) {
 	test.DropPrivilege(t)
@@ -48,5 +51,7 @@ func run(m *testing.M) int {
 }
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+
 	os.Exit(run(m))
 }
