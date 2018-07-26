@@ -6,58 +6,93 @@
 package capabilities
 
 import (
+	"encoding/json"
 	"fmt"
-	"path/filepath"
-	"strings"
-
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
+	"io/ioutil"
+	"os"
+	"syscall"
 )
 
+type caplist map[string][]string
+
+type data struct {
+	Users  caplist `json:"users,omitempty"`
+	Groups caplist `json:"groups,omitempty"`
+}
+
+// File represents a file containing a list of users/groups
+// associated with authorized capabilities
 type File struct {
-	Users  map[string][]string `json:"users,omitempty"`
-	Groups map[string][]string `json:"groups,omitempty"`
+	file *os.File
+	data *data
 }
 
-// Split takes a list of capabilities separated by commas and
-// returns a string list with normalized capability name and a
-// second list with unrecognized capabitilies
-func Split(caps string) ([]string, []string) {
-	include := make([]string, 0)
-	exclude := make([]string, 0)
+// Open reads a capability file provided in path and returns a capability
+// file with users/groups authorized capabilities
+func Open(path string, readonly bool) (*File, error) {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
 
-	f := func(c rune) bool {
-		if c == ',' {
-			return true
-		}
-		return false
-	}
-	capabilities := strings.FieldsFunc(caps, f)
-
-	for _, capability := range capabilities {
-		c := strings.ToUpper(capability)
-		if !strings.HasPrefix(c, "CAP_") {
-			c = "CAP_" + c
-		}
-		if _, ok := Map[c]; !ok {
-			exclude = append(exclude, capability)
-			continue
-		}
-		include = append(include, c)
+	flag := os.O_RDWR | os.O_CREATE
+	if readonly {
+		flag = os.O_RDONLY
 	}
 
-	return include, exclude
+	f, err := os.OpenFile(path, flag, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open %s capabilities: %s", path, err)
+	}
+
+	file := &File{file: f, data: &data{
+		Users:  make(caplist, 0),
+		Groups: make(caplist, 0),
+	}}
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		f.Close()
+		return nil, fmt.Errorf("failed to read %s: %s", path, err)
+	}
+	if len(b) > 0 {
+		if err := json.Unmarshal(b, file.data); err != nil {
+			f.Close()
+			return nil, fmt.Errorf("failed to decode JSON data in %s: %s", path, err)
+		}
+	} else {
+		data, err := json.Marshal(file.data)
+		if err != nil {
+			f.Close()
+			return nil, fmt.Errorf("failed to initialize data")
+		}
+		json.Unmarshal(data, file.data)
+	}
+	return file, nil
 }
 
-func Read(path string) (*File, error) {
-	capabilitiesDir := filepath.Join(buildcfg.SYSCONFDIR, "singularity/capabilities")
-
-	layoutManager := &layout.Manager{}
-	if err := layoutManager.SetRootPath(capabilitiesDir); err != nil {
-		return nil, err
+// Write writes capability modification into opened file
+func (f *File) Write() error {
+	json, err := json.MarshalIndent(f.data, "", "\t")
+	if err != nil {
+		return fmt.Errorf("failed to save capabilities in file %s: %s", f.file.Name(), err)
 	}
+	if err := f.file.Truncate(0); err != nil {
+		return fmt.Errorf("failed to truncate file %s: %s", f.file.Name(), err)
+	}
+	if n, err := f.file.Seek(0, os.SEEK_SET); err != nil || n != 0 {
+		return fmt.Errorf("failed to reset %s cursor: %s", f.file.Name(), err)
+	}
+	if f.file.Write(json); err != nil {
+		return fmt.Errorf("failed to save capabilities in file %s: %s", f.file.Name(), err)
+	}
+	if f.file.Sync(); err != nil {
+		return fmt.Errorf("failed to flush capabilities in file %s: %s", f.file.Name(), err)
+	}
+	return nil
+}
 
-	return &File{}, nil
+// Close closes capability file
+func (f *File) Close() error {
+	return f.file.Close()
 }
 
 func (f *File) checkCaps(caps []string) error {
@@ -69,79 +104,128 @@ func (f *File) checkCaps(caps []string) error {
 	return nil
 }
 
-func (f *File) checkUser(user string) error {
-	if _, ok := f.Users[user]; !ok {
-		return fmt.Errorf("user '%s' not found", user)
-	}
-	return nil
-}
-
-func (f *File) checkGroup(group string) error {
-	if _, ok := f.Groups[group]; !ok {
-		return fmt.Errorf("group '%s' not found", group)
-	}
-	return nil
-}
-
+// AddUserCaps adds an authorized capability set to user
 func (f *File) AddUserCaps(user string, caps []string) error {
-	if err := f.checkUser(user); err != nil {
-		return err
-	}
 	if err := f.checkCaps(caps); err != nil {
 		return err
 	}
-	if err := f.checkUser(user); err != nil {
-		f.Users[user] = make([]string, 0)
+	for _, cap := range caps {
+		present := false
+		for _, c := range f.data.Users[user] {
+			if c == cap {
+				present = true
+			}
+		}
+		if !present {
+			f.data.Users[user] = append(f.data.Users[user], cap)
+		}
 	}
-	f.Users[user] = append(f.Users[user], caps...)
 	return nil
 }
 
+// AddGroupCaps adds an authorized capability set to group
 func (f *File) AddGroupCaps(group string, caps []string) error {
 	if err := f.checkCaps(caps); err != nil {
 		return err
 	}
-	if err := f.checkGroup(group); err != nil {
-		f.Groups[group] = make([]string, 0)
+	for _, cap := range caps {
+		present := false
+		for _, c := range f.data.Groups[group] {
+			if c == cap {
+				present = true
+			}
+		}
+		if !present {
+			f.data.Groups[group] = append(f.data.Groups[group], cap)
+		}
 	}
-	f.Groups[group] = append(f.Groups[group], caps...)
 	return nil
 }
 
+// DropUserCaps drops a set of capabilities for user
 func (f *File) DropUserCaps(user string, caps []string) error {
-	if err := f.checkUser(user); err != nil {
-		return err
-	}
 	if err := f.checkCaps(caps); err != nil {
 		return err
+	}
+	if _, ok := f.data.Users[user]; !ok {
+		return fmt.Errorf("user '%s' not found", user)
+	}
+	for _, cap := range caps {
+		for i := len(f.data.Users[user]) - 1; i >= 0; i-- {
+			if f.data.Users[user][i] == cap {
+				f.data.Users[user] = append(f.data.Users[user][:i], f.data.Users[user][i+1:]...)
+			}
+		}
 	}
 	return nil
 }
 
+// DropGroupCaps drops a set of capabilities for group
 func (f *File) DropGroupCaps(group string, caps []string) error {
-	if err := f.checkGroup(group); err != nil {
-		return err
-	}
 	if err := f.checkCaps(caps); err != nil {
 		return err
 	}
+	if _, ok := f.data.Groups[group]; !ok {
+		return fmt.Errorf("group '%s' not found", group)
+	}
+	for _, cap := range caps {
+		for i := len(f.data.Groups[group]) - 1; i >= 0; i-- {
+			if f.data.Groups[group][i] == cap {
+				f.data.Groups[group] = append(f.data.Groups[group][:i], f.data.Groups[group][i+1:]...)
+			}
+		}
+	}
 	return nil
 }
 
-func (f *File) ListUserCaps(user string) ([]string, error) {
-	if err := f.checkUser(user); err != nil {
-		return nil, err
-	}
-	return f.Users[user], nil
+// ListUserCaps returns a capability list authorized for user
+func (f *File) ListUserCaps(user string) []string {
+	return f.data.Users[user]
 }
 
-func (f *File) ListGroupCaps(group string) ([]string, error) {
-	if err := f.checkGroup(group); err != nil {
-		return nil, err
-	}
-	return f.Groups[group], nil
+// ListGroupCaps returns a capability list authorized for group
+func (f *File) ListGroupCaps(group string) []string {
+	return f.data.Groups[group]
 }
 
-func (f *File) ListAllCaps() error {
-	return nil
+// CheckUserCaps checks if provided capability list for user are whether
+// or not authorized by returning two lists, the first one containing
+// authorized capabilities and the second one containing unauthorized
+// capabilities
+func (f *File) CheckUserCaps(user string, caps []string) (authorized []string, unauthorized []string) {
+	for _, ca := range caps {
+		present := false
+		for _, userCap := range f.ListUserCaps(user) {
+			if userCap == ca {
+				authorized = append(authorized, ca)
+				present = true
+				break
+			}
+		}
+		if !present {
+			unauthorized = append(unauthorized, ca)
+		}
+	}
+	return authorized, unauthorized
+}
+
+// CheckGroupCaps checks if provided capability list for group are whether
+// or not authorized by returning two lists, the first one containing
+// authorized capabilities and the second one containing unauthorized
+// capabilities
+func (f *File) CheckGroupCaps(group string, caps []string) (authorized []string, unauthorized []string) {
+	for _, ca := range caps {
+		present := false
+		for _, groupCap := range f.ListGroupCaps(group) {
+			if groupCap == ca {
+				authorized = append(authorized, ca)
+				present = true
+				break
+			}
+		}
+		if !present {
+			unauthorized = append(unauthorized, ca)
+		}
+	}
+	return authorized, unauthorized
 }
