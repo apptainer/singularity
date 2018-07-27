@@ -8,7 +8,7 @@ package main
 import (
 	"os"
 
-	cli2 "github.com/singularityware/singularity/src/cmd/runsy/cli"
+	runsy "github.com/singularityware/singularity/src/cmd/runsy/cli"
 	"github.com/singularityware/singularity/src/cmd/singularity/cli"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra/doc"
@@ -57,7 +57,7 @@ func main() {
 
 	// make man pages for runsy
 	// works recursively on all sub-commands (thanks bauerm97)
-	if err := doc.GenManTree(cli2.RunsyCmd, runsyHeader, dir); err != nil {
+	if err := doc.GenManTree(runsy.RunsyCmd, runsyHeader, dir); err != nil {
 		sylog.Fatalf("Failed to create man page for runsy\n")
 	}
 }
