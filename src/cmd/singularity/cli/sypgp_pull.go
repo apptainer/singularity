@@ -19,29 +19,29 @@ import (
 var url string
 
 func init() {
-	PgpPullCmd.Flags().SetInterspersed(false)
-	PgpPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	SyPgpPullCmd.Flags().SetInterspersed(false)
+	SyPgpPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
 }
 
-// PgpPullCmd is `singularity pgp pull' and fetches public keys from a key server
-var PgpPullCmd = &cobra.Command{
+// SyPgpPullCmd is `singularity sypgp pull' and fetches public keys from a key server
+var SyPgpPullCmd = &cobra.Command{
 	Args: cobra.RangeArgs(1, 2),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doPgpPullCmd(args[0], url); err != nil {
+		if err := doSyPgpPullCmd(args[0], url); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.PgpPullUse,
-	Short:   docs.PgpPullShort,
-	Long:    docs.PgpPullLong,
-	Example: docs.PgpPullExample,
+	Use:     docs.SyPgpPullUse,
+	Short:   docs.SyPgpPullShort,
+	Long:    docs.SyPgpPullLong,
+	Example: docs.SyPgpPullExample,
 }
 
-func doPgpPullCmd(fingerprint string, url string) error {
+func doSyPgpPullCmd(fingerprint string, url string) error {
 	var count int
 
 	if url == "" {

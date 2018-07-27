@@ -11,20 +11,20 @@ import (
 )
 
 func init() {
-	SingularityCmd.AddCommand(PgpCmd)
-	PgpCmd.AddCommand(PgpNewPairCmd)
-	PgpCmd.AddCommand(PgpListCmd)
-	PgpCmd.AddCommand(PgpPullCmd)
-	PgpCmd.AddCommand(PgpPushCmd)
+	SingularityCmd.AddCommand(SyPgpCmd)
+	SyPgpCmd.AddCommand(SyPgpNewPairCmd)
+	SyPgpCmd.AddCommand(SyPgpListCmd)
+	SyPgpCmd.AddCommand(SyPgpPullCmd)
+	SyPgpCmd.AddCommand(SyPgpPushCmd)
 }
 
-// PgpCmd is the 'pgp' command that allows management of key stores
-var PgpCmd = &cobra.Command{
+// SyPgpCmd is the 'sypgp' command that allows management of key stores
+var SyPgpCmd = &cobra.Command{
 	Run: nil,
 	DisableFlagsInUseLine: true,
 
-	Use:     docs.PgpUse,
-	Short:   docs.PgpShort,
-	Long:    docs.PgpLong,
-	Example: docs.PgpExample,
+	Use:     docs.SyPgpUse,
+	Short:   docs.SyPgpShort,
+	Long:    docs.SyPgpLong,
+	Example: docs.SyPgpExample,
 }

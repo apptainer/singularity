@@ -305,7 +305,6 @@ func GenKeyPair() error {
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
-// XXX: replace that with acutal cli passwd grab
 func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
 		fmt.Print("Enter key passphrase: ")

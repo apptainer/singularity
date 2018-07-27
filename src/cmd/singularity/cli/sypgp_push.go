@@ -17,29 +17,29 @@ import (
 )
 
 func init() {
-	PgpPushCmd.Flags().SetInterspersed(false)
-	PgpPushCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	SyPgpPushCmd.Flags().SetInterspersed(false)
+	SyPgpPushCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
 }
 
-// PgpPushCmd is `singularity pgp list' and lists local store PGP keys
-var PgpPushCmd = &cobra.Command{
+// SyPgpPushCmd is `singularity sypgp list' and lists local store OpenPGP keys
+var SyPgpPushCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doPgpPushCmd(args[0], url); err != nil {
+		if err := doSyPgpPushCmd(args[0], url); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.PgpPushUse,
-	Short:   docs.PgpPushShort,
-	Long:    docs.PgpPushLong,
-	Example: docs.PgpPushExample,
+	Use:     docs.SyPgpPushUse,
+	Short:   docs.SyPgpPushShort,
+	Long:    docs.SyPgpPushLong,
+	Example: docs.SyPgpPushExample,
 }
 
-func doPgpPushCmd(fingerprint string, url string) error {
+func doSyPgpPushCmd(fingerprint string, url string) error {
 	el, err := sypgp.LoadPubKeyring()
 	if err != nil {
 		return err

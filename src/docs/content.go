@@ -147,67 +147,67 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.simg /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// pgp
+	// sypgp
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PgpUse   string = `pgp <subcommand>`
-	PgpShort string = `Manage PGP key stores`
-	PgpLong  string = `
-  Pgp allows you to manage local PGP key stores by create a new store and new
+	SyPgpUse   string = `sypgp <subcommand>`
+	SyPgpShort string = `Manage OpenPGP key stores`
+	SyPgpLong  string = `
+  sypgp allows you to manage local OpenPGP key stores by create a new store and new
   keys pairs. You can also list available keys from the default store. Finally,
-  the pgp command offers subcommands to communicate with an HKP key server to
+  the sypgp command offers subcommands to communicate with an HKP key server to
   fetch and upload public keys.`
-	PgpExample string = `
+	SyPgpExample string = `
   All group commands have their own help output:
 
-  $ singularity help pgp newpair
-  $ singularity pgp list --help`
+  $ singularity help sypgp newpair
+  $ singularity sypgp list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// pgp newpair
+	// sypgp newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PgpNewPairUse   string = `newpair`
-	PgpNewPairShort string = `Create a new PGP key pair`
-	PgpNewPairLong  string = `
-	The PGP newpair command allows you to create a new key or public/private
+	SyPgpNewPairUse   string = `newpair`
+	SyPgpNewPairShort string = `Create a new OpenPGP key pair`
+	SyPgpNewPairLong  string = `
+	The sypgp newpair command allows you to create a new key or public/private
 	keys to be stored in the default user local key store location
 	(e.g., $HOME/.singularity/sypgp).`
-	PgpNewPairExample string = `
-  $ singularity pgp newpair`
+	SyPgpNewPairExample string = `
+  $ singularity sypgp newpair`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// pgp list
+	// sypgp list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PgpListUse   string = `list`
-	PgpListShort string = `List keys from the default key store`
-	PgpListLong  string = `
-	The PGP list command allows you to list public/private key pairs
+	SyPgpListUse   string = `list`
+	SyPgpListShort string = `List keys from the default key store`
+	SyPgpListLong  string = `
+	The sypgp list command allows you to list public/private key pairs
 	from the default user local key store location
 	(e.g., $HOME/.singularity/sypgp).`
-	PgpListExample string = `
-  $ singularity pgp list`
+	SyPgpListExample string = `
+  $ singularity sypgp list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// pgp pull
+	// sypgp pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PgpPullUse   string = `pull`
-	PgpPullShort string = `Fetch a PGP public key from a key server`
-	PgpPullLong  string = `
-	The PGP pull command allows you to connect to a key server look for
+	SyPgpPullUse   string = `pull`
+	SyPgpPullShort string = `Fetch an OpenPGP public key from a key server`
+	SyPgpPullLong  string = `
+	The sypgp pull command allows you to connect to a key server look for
 	and download a public key. Key rings are stored into
 	(e.g., $HOME/.singularity/sypgp).`
-	PgpPullExample string = `
-  $ singularity pgp pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+	SyPgpPullExample string = `
+  $ singularity sypgp pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// pgp push
+	// sypgp push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PgpPushUse   string = `push`
-	PgpPushShort string = `Upload a PGP public key to a key server`
-	PgpPushLong  string = `
-	The PGP push command allows you to connect to a key server and
+	SyPgpPushUse   string = `push`
+	SyPgpPushShort string = `Upload an OpenPGP public key to a key server`
+	SyPgpPushLong  string = `
+	The sypgp push command allows you to connect to a key server and
 	upload public keys from the local key store.`
-	PgpPushExample string = `
-  $ singularity pgp push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+	SyPgpPushExample string = `
+  $ singularity sypgp push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
