@@ -6,6 +6,9 @@
 package fs
 
 import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/singularityware/singularity/src/pkg/test"
@@ -62,5 +65,63 @@ func TestIsSuid(t *testing.T) {
 
 	if IsSuid("/bin/su") != true {
 		t.Errorf("IsSuid returns false for /bin/su setuid bit")
+	}
+}
+
+func TestRootDir(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	var tests = []struct {
+		path     string
+		expected string
+	}{
+		{"/path/to/something", "/path"},
+		{"relative/path", "relative"},
+		{"/path/to/something/", "/path"},
+		{"relative/path/", "relative"},
+		{"/path", "/path"},
+		{"/path/", "/path"},
+		{"/path/../something", "/something"},
+		{"/", "/"},
+		{"./", "."},
+		{"/.././", "/"},
+		{"./path", "path"},
+		{"../path", ".."},
+		{"", "."},
+	}
+
+	for _, test := range tests {
+		if rootpath := RootDir(test.path); rootpath != test.expected {
+			t.Errorf("RootDir(%v) != \"%v\" (function returned %v)", test.path, test.expected, rootpath)
+		}
+	}
+}
+
+func TestMkdirAll(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpdir, err := ioutil.TempDir("", "mkdir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := MkdirAll(filepath.Join(tmpdir, "test"), 0777); err != nil {
+		t.Error(err)
+	}
+	if err := MkdirAll(filepath.Join(tmpdir, "test/test"), 0000); err != nil {
+		t.Error(err)
+	}
+	if err := MkdirAll(filepath.Join(tmpdir, "test/test/test"), 0755); err == nil {
+		t.Errorf("should have failed with a permission denied")
+	}
+	fi, err := os.Stat(filepath.Join(tmpdir, "test"))
+	if err != nil {
+		t.Error(err)
+	}
+	if fi.Mode().Perm() != 0777 {
+		t.Errorf("bad mode applied on %s, got %v", filepath.Join(tmpdir, "test"), fi.Mode().Perm())
 	}
 }

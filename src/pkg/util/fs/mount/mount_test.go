@@ -103,48 +103,48 @@ func TestOverlay(t *testing.T) {
 
 	points := &Points{}
 
-	if err := points.AddOverlay(OverlayTag, "", 0, "/", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "", 0, "/", "", ""); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "", "/upper", "/work"); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "", "/upper", "/work"); err == nil {
 		t.Errorf("should have failed with empty lowerdir")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "/upper", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "/lower", "/upper", ""); err == nil {
 		t.Errorf("should have failed with empty workdir")
 	}
 
-	if err := points.AddOverlay(OverlayTag, "/", 0, "lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/", 0, "lower", "", ""); err == nil {
 		t.Errorf("should have failed as lowerdir is not an absolute path")
 	}
-	if err := points.AddOverlay(OverlayTag, "/", 0, "/lower", "upper", "/work"); err == nil {
+	if err := points.AddOverlay(LayerTag, "/", 0, "/lower", "upper", "/work"); err == nil {
 		t.Errorf("should have failed as upperdir is not an absolute path")
 	}
-	if err := points.AddOverlay(OverlayTag, "/", 0, "/lower", "/upper", "work"); err == nil {
+	if err := points.AddOverlay(LayerTag, "/", 0, "/lower", "/upper", "work"); err == nil {
 		t.Errorf("should have failed as workdir is not an absolute path")
 	}
 
-	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "", ""); err != nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "/lower", "", ""); err != nil {
 		t.Errorf("%s", err)
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "/upper", "/work"); err != nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "/lower", "/upper", "/work"); err != nil {
 		t.Errorf("%s", err)
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay(OverlayTag, "/mnt", syscall.MS_NOSUID, "/lower", "/upper", "/work"); err != nil {
+	if err := points.AddOverlay(LayerTag, "/mnt", syscall.MS_NOSUID, "/lower", "/upper", "/work"); err != nil {
 		t.Fatalf("%s", err)
 	}
 
@@ -354,7 +354,7 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		OverlayTag: []Point{
+		LayerTag: []Point{
 			Point{
 				Mount: specs.Mount{
 					Source:      "",
@@ -409,7 +409,7 @@ func TestImport(t *testing.T) {
 		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveByDest("/opt")
-	all = points.GetByTag(OverlayTag)
+	all = points.GetByTag(LayerTag)
 	if len(all) != 0 {
 		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}

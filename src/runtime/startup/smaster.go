@@ -27,6 +27,9 @@ import (
 // SMaster initializes a runtime engine and runs it
 func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *C.char) {
 	var fatal error
+	var status syscall.WaitStatus
+
+	fatalChan := make(chan error, 1)
 	ppid := os.Getppid()
 
 	containerPid := int(config.containerPid)
@@ -41,16 +44,14 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 		comm := os.NewFile(uintptr(socket), "socket")
 		conn, err := net.FileConn(comm)
 		if err != nil {
-			fatal = fmt.Errorf("failed to copy unix socket descriptor: %s", err)
-			syscall.Kill(containerPid, syscall.SIGTERM)
+			fatalChan <- fmt.Errorf("failed to copy unix socket descriptor: %s", err)
 			return
 		}
 		comm.Close()
 
 		runtime.LockOSThread()
 		if err := engine.CreateContainer(containerPid, conn); err != nil {
-			fatal = fmt.Errorf("container creation failed: %s", err)
-			syscall.Kill(containerPid, syscall.SIGTERM)
+			fatalChan <- fmt.Errorf("container creation failed: %s", err)
 		} else {
 			conn.Close()
 		}
@@ -77,10 +78,12 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 		}()
 	}
 
-	status, err := engine.MonitorContainer(containerPid)
-	if err != nil {
-		sylog.Errorf("%s", err)
-	}
+	go func() {
+		status, err = engine.MonitorContainer(containerPid)
+		fatalChan <- err
+	}()
+
+	fatal = <-fatalChan
 
 	runtime.LockOSThread()
 	if err := engine.CleanupContainer(); err != nil {

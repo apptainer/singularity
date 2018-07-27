@@ -1,0 +1,17 @@
+Bootstrap: {{.Bootstrap}}
+From: {{.From}}
+
+{{- if .Registry}}
+Registry: {{.Registry}}
+{{- end}}
+
+{{- if .Namespace}}
+Namespace: {{.Namespace}}
+{{- end}}
+
+{{- if .Labels}}
+%labels
+{{- end}}
+{{- range $k, $v := .Labels}}
+    {{$k}} {{$v}}
+{{- end}}
