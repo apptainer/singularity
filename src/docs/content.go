@@ -158,7 +158,7 @@ Enterprise Performance Computing (EPC)`
   All group commands have their own help output:
   
   $ singularity help capability add
-  $ singularity capability list --help`
+  $ singularity capability add --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability add
@@ -208,10 +208,15 @@ Enterprise Performance Computing (EPC)`
   CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
   CAP_WAKE_ALARM        | WAKE_ALARM
 
-  See "man capabilities" for description of each capabilities`
+  See "-d" flag example for description of each capabilities`
 	CapabilityAddExample string = `
-  $ singularity capability.add --user nobody AUDIT_READ,chown
-  $ singularity capability.add --group nobody cap_audit_write`
+  $ singularity capability add --user nobody AUDIT_READ,chown
+  $ singularity capability add --group nobody cap_audit_write
+
+  To print capabilities description:
+
+  $ singularity capability add -d CAP_CHOWN
+  $ singularity capability add -d CAP_CHOWN,CAP_SYS_ADMIN`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
@@ -261,10 +266,15 @@ Enterprise Performance Computing (EPC)`
   CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
   CAP_WAKE_ALARM        | WAKE_ALARM
 
-  See "man capabilities" for description of each capabilities`
+  See "-d" flag example for description of each capabilities`
 	CapabilityDropExample string = `
-  $ singularity capability.drop --user nobody AUDIT_READ,CHOWN
-  $ singularity capability.drop --group nobody audit_write`
+  $ singularity capability drop --user nobody AUDIT_READ,CHOWN
+  $ singularity capability drop --group nobody audit_write
+
+  To print capabilities description:
+
+  $ singularity capability drop -d CAP_CHOWN
+  $ singularity capability drop -d CAP_CHOWN,CAP_SYS_ADMIN`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability list
@@ -275,8 +285,9 @@ Enterprise Performance Computing (EPC)`
   The capability list command allows you to see
   what Linux capabilities are associated with users/groups.`
 	CapabilityListExample string = `
-  $ singularity capability.list --user nobody
-  $ singularity capability.list --group nobody`
+  $ singularity capability list --user nobody
+  $ singularity capability list --group nobody
+  $ singularity capability list --all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// exec

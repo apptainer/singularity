@@ -71,6 +71,20 @@ func TestOpen(t *testing.T) {
 		t.Errorf("should have failed with unknown capability")
 	}
 
+	users, groups := file.ListAllCaps()
+	if len(users) != 1 {
+		t.Errorf("should have returnes 1 instead of %d", len(users))
+	}
+	if len(groups) != 1 {
+		t.Errorf("should have returnes 1 instead of %d", len(groups))
+	}
+	if len(users["test"]) != len(validCaps) {
+		t.Errorf("should have returnes %d instead of %d", len(users["test"]), len(validCaps))
+	}
+	if len(groups["test"]) != len(validCaps) {
+		t.Errorf("should have returnes %d instead of %d", len(groups["test"]), len(validCaps))
+	}
+
 	authorized, unauthorized := file.CheckUserCaps("test", validCaps)
 	if len(authorized) != len(validCaps) {
 		t.Errorf("should have returned %d instead of %d", len(validCaps), len(authorized))

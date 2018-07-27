@@ -13,11 +13,12 @@ import (
 	"syscall"
 )
 
-type caplist map[string][]string
+// Caplist defines a map of users/groups with associated list of capabilities
+type Caplist map[string][]string
 
 type data struct {
-	Users  caplist `json:"users,omitempty"`
-	Groups caplist `json:"groups,omitempty"`
+	Users  Caplist `json:"users,omitempty"`
+	Groups Caplist `json:"groups,omitempty"`
 }
 
 // File represents a file containing a list of users/groups
@@ -38,14 +39,14 @@ func Open(path string, readonly bool) (*File, error) {
 		flag = os.O_RDONLY
 	}
 
-	f, err := os.OpenFile(path, flag, 0755)
+	f, err := os.OpenFile(path, flag, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open %s capabilities: %s", path, err)
 	}
 
 	file := &File{file: f, data: &data{
-		Users:  make(caplist, 0),
-		Groups: make(caplist, 0),
+		Users:  make(Caplist, 0),
+		Groups: make(Caplist, 0),
 	}}
 
 	b, err := ioutil.ReadAll(f)
@@ -186,6 +187,11 @@ func (f *File) ListUserCaps(user string) []string {
 // ListGroupCaps returns a capability list authorized for group
 func (f *File) ListGroupCaps(group string) []string {
 	return f.data.Groups[group]
+}
+
+// ListAllCaps returns capabilitiy list for both authorized users and groups
+func (f *File) ListAllCaps() (Caplist, Caplist) {
+	return f.data.Users, f.data.Groups
 }
 
 // CheckUserCaps checks if provided capability list for user are whether
