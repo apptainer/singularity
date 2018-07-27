@@ -325,8 +325,28 @@ func DecryptKey(k *openpgp.Entity) error {
 	return nil
 }
 
-// SelectKey prints a key list to user and returns the choice
-func SelectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+// SelectPubKey prints a public key list to user and returns the choice
+func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	var index int
+
+	PrintPubKeyring()
+	fmt.Print("Enter # of public key to use : ")
+	n, err := fmt.Scanf("%d", &index)
+	if err != nil || n != 1 {
+		sylog.Errorf("error while reading key choice from user: %s\n", err)
+		return nil, err
+	}
+
+	if index < 0 || index > len(el)-1 {
+		fmt.Println("invalid key choice")
+		return nil, fmt.Errorf("invalid key choice")
+	}
+
+	return el[index], nil
+}
+
+// SelectPrivKey prints a secret key list to user and returns the choice
+func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	var index int
 
 	PrintPrivKeyring()

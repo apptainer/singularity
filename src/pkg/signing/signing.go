@@ -107,7 +107,7 @@ func Sign(cpath, authToken string) error {
 	}
 
 	if len(el) > 1 {
-		if en, err = sypgp.SelectKey(el); err != nil {
+		if en, err = sypgp.SelectPrivKey(el); err != nil {
 			return err
 		}
 	} else {

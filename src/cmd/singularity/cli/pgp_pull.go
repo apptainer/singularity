@@ -6,6 +6,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/sypgp"
@@ -28,6 +30,7 @@ var PgpPullCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := doPgpPullCmd(args[0], url); err != nil {
+			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
 	},
@@ -39,13 +42,46 @@ var PgpPullCmd = &cobra.Command{
 }
 
 func doPgpPullCmd(fingerprint string, url string) error {
-	sylog.Debugf("fingerprint: %s, url: %s, authToken: %s\n", fingerprint, url, authToken)
+	var count int
+
 	if url == "" {
 		// lookup key management server URL from singularity.conf
-		sypgp.FetchPubkey(fingerprint, "https://example.com:11371", authToken)
-	} else {
-		sypgp.FetchPubkey(fingerprint, url, authToken)
+		url = "https://example.com:11371"
 	}
+
+	// get matching keyring
+	el, err := sypgp.FetchPubkey(fingerprint, url, authToken)
+	if err != nil {
+		return err
+	}
+
+	elstore, err := sypgp.LoadPubKeyring()
+	if err != nil {
+		return err
+	}
+
+	// store in local cache
+	fp, err := os.OpenFile(sypgp.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	for _, e := range el {
+		for _, estore := range elstore {
+			if e.PrimaryKey.KeyId == estore.PrimaryKey.KeyId {
+				e = nil // Entity is already in key store
+			}
+		}
+		if e != nil {
+			if err = e.Serialize(fp); err != nil {
+				return err
+			}
+			count++
+		}
+	}
+
+	fmt.Printf("%v key(s) fetched and stored in local cache %s\n", count, sypgp.PublicPath())
 
 	return nil
 }
