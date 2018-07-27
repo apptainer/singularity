@@ -103,6 +103,7 @@ var SpecAddCmd = &cobra.Command{
 		if err != nil {
 			sylog.Fatalf("Error loading SIF %s:\t%s", sifPath, err)
 		}
+		defer fimg.UnloadContainer()
 
 		// lookup of a descriptor of type DataGenericJSON
 		descr := sif.Descriptor{
@@ -119,11 +120,6 @@ var SpecAddCmd = &cobra.Command{
 		// add new data object 'configInput' to SIF file
 		if err = fimg.AddObject(configInput); err != nil {
 			sylog.Fatalf("fimg.AddObject():\t%s", err)
-		}
-
-		// unload the SIF container
-		if err = fimg.UnloadContainer(); err != nil {
-			sylog.Fatalf("UnloadContainer(fimg):\t%s", err)
 		}
 
 	},
