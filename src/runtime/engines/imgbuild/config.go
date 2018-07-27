@@ -5,6 +5,7 @@
 
 package imgbuild
 
+/*
 import (
 	"encoding/json"
 
@@ -20,12 +21,4 @@ type EngineConfig struct {
 	build.Bundle
 }
 
-// MarshalJSON implements json.Marshaler interface
-func (c *EngineConfig) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.Bundle)
-}
-
-// UnmarshalJSON implements json.Unmarshaler interface
-func (c *EngineConfig) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &c.Bundle)
-}
+*/
