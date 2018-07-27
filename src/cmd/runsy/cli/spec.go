@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -88,20 +89,20 @@ var SpecAddCmd = &cobra.Command{
 
 		// open up the JSON data object file for this descriptor
 		if configInput.Fp, err = os.Open(configInput.Fname); err != nil {
-			sylog.Fatalf("read data object file:\t%s", err)
+			sylog.Fatalf("read data object file:%s", err)
 		}
 		defer configInput.Fp.Close()
 
 		fi, err := configInput.Fp.Stat()
 		if err != nil {
-			sylog.Fatalf("can't stat partition file:\t%s", err)
+			sylog.Fatalf("can't stat partition file:%s", err)
 		}
 		configInput.Size = fi.Size()
 
 		// load the SIF (singularity image file)
 		fimg, err := sif.LoadContainer(sifPath, false)
 		if err != nil {
-			sylog.Fatalf("Error loading SIF %s:\t%s", sifPath, err)
+			sylog.Fatalf("Error loading SIF %s:%s", sifPath, err)
 		}
 		defer fimg.UnloadContainer()
 
@@ -109,17 +110,17 @@ var SpecAddCmd = &cobra.Command{
 		descr := sif.Descriptor{
 			Datatype: sif.DataGenericJSON,
 		}
-		d, match, _ := fimg.GetFromDescr(descr)
-		if err != nil {
-			sylog.Fatalf("%s", err)
-		}
-		if match == 1 && d.GetName() == oci.ConfigSpec {
+		copy(descr.Name[:], []byte(oci.ConfigSpec))
+
+		d, _, _ := fimg.GetFromDescr(descr)
+
+		if d != nil {
 			sylog.Fatalf("SIF bundle already contains a config.json")
 		}
 
 		// add new data object 'configInput' to SIF file
 		if err = fimg.AddObject(configInput); err != nil {
-			sylog.Fatalf("fimg.AddObject():\t%s", err)
+			sylog.Fatalf("fimg.AddObject():%s", err)
 		}
 
 	},
@@ -171,9 +172,9 @@ func configFileExist(name string) (bool, error) {
 		sylog.Fatalf("%s", err)
 	}
 
-	_, err = os.Stat(fmt.Sprintf("%s/%s", cwd, name))
+	_, err = os.Stat(filepath.Join(cwd, name))
 	if err == nil {
-		fmt.Printf("File %s exists: do you want to overwrite it? (y/n)\n", name)
+		fmt.Printf("File %s exists on cwd: do you want to overwrite it? (y/n)\n", name)
 		scanner := bufio.NewScanner(os.Stdin)
 		scanner.Scan()
 		resp := scanner.Text()
