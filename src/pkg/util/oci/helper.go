@@ -24,22 +24,24 @@ const (
 // from the provided path to a SIF.
 func LoadConfigSpec(Path string) (spec *specs.Spec, err error) {
 	// load the SIF (singularity image file)
-	fimg, err := sif.LoadContainer(Path, false)
+	fimg, err := sif.LoadContainer(Path, true)
 	if err != nil {
-		sylog.Fatalf("Error loading SIF %s:\t%s", Path, err)
+		sylog.Fatalf("Error loading SIF %s:%s", Path, err)
 	}
+	defer fimg.UnloadContainer()
 
 	// lookup of a descriptor of type DataGenericJSON
 	descr := sif.Descriptor{
 		Datatype: sif.DataGenericJSON,
 	}
-	d, match, _ := fimg.GetFromDescr(descr)
+	copy(descr.Name[:], []byte(ConfigSpec))
+
+	d, _, err := fimg.GetFromDescr(descr)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		return nil, err
 	}
-	if match != 1 && d.GetName() != ConfigSpec {
-		sylog.Infof("SIF bundle doesn't contains a OCI runtime spec")
-		return
+	if d == nil {
+		return nil, fmt.Errorf("SIF bundle doesn't contains a OCI runtime spec")
 	}
 
 	// if found, retrieve the OCI spec from file
@@ -47,11 +49,6 @@ func LoadConfigSpec(Path string) (spec *specs.Spec, err error) {
 
 	if err = json.Unmarshal(data, &spec); err != nil {
 		return nil, err
-	}
-
-	// unload the SIF container
-	if err = fimg.UnloadContainer(); err != nil {
-		sylog.Fatalf("UnloadContainer(fimg):\t%s", err)
 	}
 
 	return spec, validateConfigSpec(spec)
