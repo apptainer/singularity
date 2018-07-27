@@ -64,20 +64,18 @@ const (
 	SessionTag AuthorizedTag = "sessiondir"
 	// RootfsTag defines tag for container root filesystem
 	RootfsTag = "rootfs"
-	// OverlayLowerDirTag defines tag for overlay lower directories
-	OverlayLowerDirTag = "overlay-lowerdir"
-	// OverlayTag defines tag for overlay mount point
-	OverlayTag = "overlay"
-	// UnderlayTag defines tag for underlay mount points
-	UnderlayTag = "underlay"
+	// PreLayerTag defines tag to prepare overlay/underlay layer
+	PreLayerTag = "prelayer"
+	// LayerTag defines tag for overlay/underlay final mount point
+	LayerTag = "layer"
+	// DevTag defines tag for dev related mount point
+	DevTag = "dev"
 	// HostfsTag defines tag for host filesystem mount point
 	HostfsTag = "hostfs"
 	// BindsTag defines tag for bind path
 	BindsTag = "binds"
 	// KernelTag defines tag for kernel related mount point (proc, sysfs)
 	KernelTag = "kernel"
-	// DevTag defines tag for dev related mount point
-	DevTag = "dev"
 	// HomeTag defines tag for home directory mount point
 	HomeTag = "home"
 	// UserbindsTag defines tag for user bind mount points
@@ -100,23 +98,22 @@ var authorizedTags = map[AuthorizedTag]struct {
 	multiPoint bool
 	order      int
 }{
-	SessionTag:         {false, 0},
-	RootfsTag:          {false, 1},
-	OverlayLowerDirTag: {true, 2},
-	OverlayTag:         {false, 3},
-	UnderlayTag:        {true, 4},
-	HostfsTag:          {true, 5},
-	BindsTag:           {true, 6},
-	KernelTag:          {true, 7},
-	DevTag:             {true, 8},
-	HomeTag:            {false, 9},
-	UserbindsTag:       {true, 10},
-	TmpTag:             {true, 11},
-	ScratchTag:         {true, 12},
-	CwdTag:             {false, 13},
-	FilesTag:           {true, 14},
-	OtherTag:           {true, 15},
-	FinalTag:           {true, 16},
+	SessionTag:   {false, 0},
+	RootfsTag:    {false, 1},
+	PreLayerTag:  {true, 2},
+	LayerTag:     {false, 3},
+	DevTag:       {true, 4},
+	HostfsTag:    {true, 5},
+	BindsTag:     {true, 6},
+	KernelTag:    {true, 7},
+	HomeTag:      {false, 8},
+	UserbindsTag: {true, 9},
+	TmpTag:       {true, 10},
+	ScratchTag:   {true, 11},
+	CwdTag:       {false, 12},
+	FilesTag:     {true, 13},
+	OtherTag:     {true, 14},
+	FinalTag:     {true, 15},
 }
 
 var authorizedImage = map[string]fsContext{
@@ -183,7 +180,7 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 			}
 			switch m.Type {
 			case "overlay":
-				tag = OverlayTag
+				tag = LayerTag
 			case "proc", "sysfs":
 				tag = KernelTag
 			case "devpts", "mqueue":

@@ -138,14 +138,6 @@ user bind control = {{ if eq .UserBindControl true }}yes{{ else }}no{{ end }}
 enable overlay = {{ .EnableOverlay }}
 
 
-# ENABLE UNDERLAY: [yes/no]
-# DEFAULT: yes
-# Enabling this option will make it possible to specify bind paths to locations
-# that do not currently exist within the container even if overlay is not
-# working.  If overlay is available, it will be tried first.
-enable underlay = {{ if eq .EnableUnderlay true }}yes{{ else }}no{{ end }}
-
-
 # MOUNT SLAVE: [BOOL]
 # DEFAULT: yes
 # Should we automatically propagate file-system changes from the host?
@@ -175,7 +167,7 @@ limit container owners =
 {{- end }}
 
 # LIMIT CONTAINER GROUPS: [STRING]
-# DEFAULT: NULL
+# DEFAULT: @LIMIT_CONTAINER_GROUPS_DEFAULT@
 # Only allow containers to be used that are owned by a given group. If this
 # configuration is undefined (commented or set to NULL), all containers are
 # allowed to be used. This feature only applies when Singularity is running in

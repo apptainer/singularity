@@ -170,7 +170,7 @@ static void prepare_scontainer_stage(int stage) {
         }
     }
 
-    if ( execute == SCONTAINER_STAGE2 && !(config.nsFlags & CLONE_NEWUSER) ) {
+    if ( config.isSuid && !(config.nsFlags & CLONE_NEWUSER) ) {
         if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
             singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
             exit(1);

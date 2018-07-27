@@ -55,6 +55,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -127,6 +128,34 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 
 	engineConfig.SetImage(image)
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetOverlayImage(OverlayPath)
+	engineConfig.SetWritableImage(IsWritable)
+	engineConfig.SetNoHome(NoHome)
+
+	if IsContained || IsContainAll {
+		engineConfig.SetContain(true)
+
+		if IsContainAll {
+			PidNamespace = true
+			IpcNamespace = true
+			IsCleanEnv = true
+		}
+	}
+
+	engineConfig.SetScratchDir(ScratchPath)
+	engineConfig.SetWorkdir(WorkdirPath)
+
+	homedir := strings.SplitN(HomePath, ":", 2)
+	if len(homedir) == 2 {
+		engineConfig.SetHome(homedir[1])
+	} else {
+		engineConfig.SetHome(homedir[0])
+	}
+	engineConfig.SetHomeDir(HomePath)
+
+	if IsFakeroot {
+		UserNamespace = true
+	}
 
 	if NetNamespace {
 		generator.AddOrReplaceLinuxNamespace("network", "")
@@ -143,6 +172,17 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 		wrapper = buildcfg.SBINDIR + "/wrapper"
+
+		uid := uint32(os.Getuid())
+		gid := uint32(os.Getgid())
+
+		if IsFakeroot {
+			generator.AddLinuxUIDMapping(uid, 0, 1)
+			generator.AddLinuxGIDMapping(gid, 0, 1)
+		} else {
+			generator.AddLinuxUIDMapping(uid, uid, 1)
+			generator.AddLinuxGIDMapping(gid, gid, 1)
+		}
 	}
 
 	if verbose {
@@ -159,12 +199,24 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 				sylog.Verbosef("can't process environment variable %s", env)
 				continue
 			}
-			generator.AddProcessEnv(e[0], e[1])
+			if e[0] == "HOME" {
+				if !NoHome {
+					generator.AddProcessEnv(e[0], engineConfig.GetHome())
+				} else {
+					generator.AddProcessEnv(e[0], "/")
+				}
+			} else {
+				generator.AddProcessEnv(e[0], e[1])
+			}
 		}
 	}
 
 	if pwd, err := os.Getwd(); err == nil {
-		generator.SetProcessCwd(pwd)
+		if PwdPath != "" {
+			generator.SetProcessCwd(PwdPath)
+		} else {
+			generator.SetProcessCwd(pwd)
+		}
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
