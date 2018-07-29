@@ -361,8 +361,6 @@ func SearchPubkey(search, keyserverURI, authToken string) (string, error) {
 	u.Path = "pks/lookup"
 	u.RawQuery = v.Encode()
 
-	fmt.Println("URL:", u.String())
-
 	r, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
 		return "", err
