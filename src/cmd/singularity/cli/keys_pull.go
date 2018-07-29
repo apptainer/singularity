@@ -19,29 +19,29 @@ import (
 var url string
 
 func init() {
-	SyPgpPullCmd.Flags().SetInterspersed(false)
-	SyPgpPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	KeysPullCmd.Flags().SetInterspersed(false)
+	KeysPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
 }
 
-// SyPgpPullCmd is `singularity sypgp pull' and fetches public keys from a key server
-var SyPgpPullCmd = &cobra.Command{
+// KeysPullCmd is `singularity keys pull' and fetches public keys from a key server
+var KeysPullCmd = &cobra.Command{
 	Args: cobra.RangeArgs(1, 2),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doSyPgpPullCmd(args[0], url); err != nil {
+		if err := doKeysPullCmd(args[0], url); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.SyPgpPullUse,
-	Short:   docs.SyPgpPullShort,
-	Long:    docs.SyPgpPullLong,
-	Example: docs.SyPgpPullExample,
+	Use:     docs.KeysPullUse,
+	Short:   docs.KeysPullShort,
+	Long:    docs.KeysPullLong,
+	Example: docs.KeysPullExample,
 }
 
-func doSyPgpPullCmd(fingerprint string, url string) error {
+func doKeysPullCmd(fingerprint string, url string) error {
 	var count int
 
 	if url == "" {

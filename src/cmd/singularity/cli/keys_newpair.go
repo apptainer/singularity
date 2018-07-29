@@ -12,19 +12,19 @@ import (
 )
 
 func init() {
-	SyPgpNewPairCmd.Flags().SetInterspersed(false)
+	KeysNewPairCmd.Flags().SetInterspersed(false)
 }
 
-// SyPgpNewPairCmd is `singularity sypgp newpair' and generate a new OpenPGP key pair
-var SyPgpNewPairCmd = &cobra.Command{
+// KeysNewPairCmd is `singularity keys newpair' and generate a new OpenPGP key pair
+var KeysNewPairCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		sypgp.GenKeyPair()
 	},
 
-	Use:     docs.SyPgpNewPairUse,
-	Short:   docs.SyPgpNewPairShort,
-	Long:    docs.SyPgpNewPairLong,
-	Example: docs.SyPgpNewPairExample,
+	Use:     docs.KeysNewPairUse,
+	Short:   docs.KeysNewPairShort,
+	Long:    docs.KeysNewPairLong,
+	Example: docs.KeysNewPairExample,
 }

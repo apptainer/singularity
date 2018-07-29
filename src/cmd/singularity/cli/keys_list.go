@@ -18,27 +18,27 @@ import (
 var secret bool
 
 func init() {
-	SyPgpListCmd.Flags().SetInterspersed(false)
-	SyPgpListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
+	KeysListCmd.Flags().SetInterspersed(false)
+	KeysListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
 }
 
-// SyPgpListCmd is `singularity sypgp list' and lists local store PGP keys
-var SyPgpListCmd = &cobra.Command{
+// KeysListCmd is `singularity keys list' and lists local store PGP keys
+var KeysListCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doSyPgpListCmd(secret); err != nil {
+		if err := doKeysListCmd(secret); err != nil {
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.SyPgpListUse,
-	Short:   docs.SyPgpListShort,
-	Long:    docs.SyPgpListLong,
-	Example: docs.SyPgpListExample,
+	Use:     docs.KeysListUse,
+	Short:   docs.KeysListShort,
+	Long:    docs.KeysListLong,
+	Example: docs.KeysListExample,
 }
 
-func doSyPgpListCmd(secret bool) error {
+func doKeysListCmd(secret bool) error {
 	if secret == false {
 		fmt.Printf("Public key listing (%s):\n\n", sypgp.PublicPath())
 		sypgp.PrintPubKeyring()
