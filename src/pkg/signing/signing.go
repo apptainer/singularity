@@ -90,7 +90,7 @@ func Sign(cpath, authToken string) error {
 	if el, err = sypgp.LoadPrivKeyring(); err != nil {
 		return err
 	} else if el == nil {
-		return fmt.Errorf("no private keys found in %s, use the singularity sypgp newpair to create keys", sypgp.SecretPath())
+		return fmt.Errorf("no private keys found in %s, run 'singularity sypgp newpair' to create keys", sypgp.SecretPath())
 	}
 
 	if len(el) > 1 {
