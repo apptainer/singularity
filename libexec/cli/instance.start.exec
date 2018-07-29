@@ -74,6 +74,11 @@ while true; do
             SINGULARITY_CONTAIN=1
             export SINGULARITY_CONTAIN
         ;;
+        -e|--cleanenv)
+            shift
+            SINGULARITY_CLEANENV=1
+            export SINGULARITY_CLEANENV
+        ;;
         -o|--overlay)
             shift
             SINGULARITY_OVERLAYIMAGE="${1:-}"
