@@ -30,4 +30,5 @@ install:
   - sudo make -C ./builddir install
 
 script:
+  - make -C ./builddir check
   - make -C ./builddir test
