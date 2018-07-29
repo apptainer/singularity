@@ -224,7 +224,7 @@ _singularity() {
             elif [[ ${cur} == -W || ${cur} == --workdir || ${cur} == --wdir ]]; then
                 COMPREPLY=( $(compgen -f -- ${cur}) )
             elif [[ ${cur} == -* ]] ; then
-                COMPREPLY=( $(compgen -W "--bind --contain --home --net --no-home --nv --overlay --scratch --workdir --writable --help" -- ${cur}) )
+                COMPREPLY=( $(compgen -W "--bind --contain --home --net --no-home --nv --overlay --scratch --workdir --writable --help --cleanenv" -- ${cur}) )
             else
                 _filedir 
             fi
