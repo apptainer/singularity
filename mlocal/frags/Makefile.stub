@@ -144,6 +144,9 @@ test:
 		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
 	@echo "       PASS"
 
+.PHONY: testall
+testall: check test
+
 .PHONY: cscope
 cscope:
 	@printf " CSCOPE\n"
