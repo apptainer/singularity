@@ -10,10 +10,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var (
+	defaultKeysServer = "https://keys.sylabs.io:11371"
+	url               string // -u command line option
+)
+
 func init() {
 	SingularityCmd.AddCommand(KeysCmd)
 	KeysCmd.AddCommand(KeysNewPairCmd)
 	KeysCmd.AddCommand(KeysListCmd)
+	KeysCmd.AddCommand(KeysSearchCmd)
 	KeysCmd.AddCommand(KeysPullCmd)
 	KeysCmd.AddCommand(KeysPushCmd)
 }

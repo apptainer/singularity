@@ -23,7 +23,7 @@ func init() {
 
 // KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysPushCmd = &cobra.Command{
-	Args: cobra.RangeArgs(0, 1),
+	Args: cobra.RangeArgs(1, 2),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -65,7 +65,9 @@ func doKeysPushCmd(fingerprint string, url string) error {
 
 	if url == "" {
 		// lookup key management server URL from singularity.conf
-		url = "https://example.com:11371"
+
+		// else use default builtin
+		url = defaultKeysServer
 	}
 
 	if err = sypgp.PushPubkey(entity, url, authToken); err != nil {

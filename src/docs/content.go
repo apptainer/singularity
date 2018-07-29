@@ -187,6 +187,17 @@ Enterprise Performance Computing (EPC)`
   $ singularity keys list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys search
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysSearchUse   string = `search`
+	KeysSearchShort string = `Search for keys matching string argument`
+	KeysSearchLong  string = `
+	The 'keys search' command allows you to connect to a key server and look
+	for public keys marching the string argument passed to the command line.`
+	KeysSearchExample string = `
+  $ singularity keys search sylabs.io`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeysPullUse   string = `pull`

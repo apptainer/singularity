@@ -16,8 +16,6 @@ import (
 	"os"
 )
 
-var url string
-
 func init() {
 	KeysPullCmd.Flags().SetInterspersed(false)
 	KeysPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
@@ -46,7 +44,9 @@ func doKeysPullCmd(fingerprint string, url string) error {
 
 	if url == "" {
 		// lookup key management server URL from singularity.conf
-		url = "https://example.com:11371"
+
+		// else use default builtin
+		url = defaultKeysServer
 	}
 
 	// get matching keyring
