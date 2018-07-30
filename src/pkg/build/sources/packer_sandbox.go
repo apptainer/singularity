@@ -8,6 +8,7 @@ package sources
 import (
 	"os/exec"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -19,10 +20,10 @@ type SandboxPacker struct {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SandboxPacker) Pack() (b *Bundle, err error) {
+func (p *SandboxPacker) Pack() (b *types.Bundle, err error) {
 	rootfs := p.srcdir
 
-	b, err = NewBundle(p.tmpfs)
+	b, err = types.NewBundle(p.tmpfs)
 	if err != nil {
 		return
 	}

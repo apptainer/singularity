@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
@@ -25,10 +26,10 @@ type Ext3Packer struct {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *Ext3Packer) Pack() (b *Bundle, err error) {
+func (p *Ext3Packer) Pack() (b *types.Bundle, err error) {
 	rootfs := p.srcfile
 
-	b, err = NewBundle(p.tmpfs)
+	b, err = types.NewBundle(p.tmpfs)
 	if err != nil {
 		return
 	}
@@ -43,7 +44,7 @@ func (p *Ext3Packer) Pack() (b *Bundle, err error) {
 }
 
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle
-func (p *Ext3Packer) unpackExt3(b *Bundle, info *loop.Info64, rootfs string) (err error) {
+func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
 	tmpmnt, err := ioutil.TempDir(p.tmpfs, "mnt")
 
 	var number int

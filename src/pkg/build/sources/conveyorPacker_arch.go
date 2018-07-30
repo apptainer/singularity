@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -55,8 +56,8 @@ var baseToSkip = map[string]bool{
 
 // ArchConveyor only needs to hold the conveyor to have the needed data to pack
 type ArchConveyor struct {
-	recipe Definition
-	b      *Bundle
+	recipe types.Definition
+	b      *types.Bundle
 	src    string
 	tmpfs  string
 }
@@ -67,7 +68,7 @@ type ArchConveyorPacker struct {
 }
 
 // Get just stores the source
-func (c *ArchConveyor) Get(recipe Definition) (err error) {
+func (c *ArchConveyor) Get(recipe types.Definition) (err error) {
 	c.recipe = recipe
 
 	//check for pacstrap on system
@@ -86,7 +87,7 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 		return
 	}
 
-	c.b, err = NewBundle(c.tmpfs)
+	c.b, err = types.NewBundle(c.tmpfs)
 	if err != nil {
 		return
 	}
@@ -133,8 +134,7 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *ArchConveyorPacker) Pack() (b *Bundle, err error) {
-
+func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("While inserting base environment: %v", err)
@@ -151,7 +151,6 @@ func (cp *ArchConveyorPacker) Pack() (b *Bundle, err error) {
 }
 
 func (c *ArchConveyor) getInstList() (instList []string, err error) {
-
 	r, w, err := os.Pipe()
 	if err != nil {
 		return
@@ -181,7 +180,6 @@ func (c *ArchConveyor) getInstList() (instList []string, err error) {
 }
 
 func (c *ArchConveyor) getPacConf(pacmanConfURL string) (pacConf string, err error) {
-
 	pacConfFile, err := ioutil.TempFile(c.tmpfs, "pac-conf-")
 	if err != nil {
 		return
@@ -214,7 +212,6 @@ func (cp *ArchConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *ArchConveyorPacker) insertRunScript() (err error) {
-
 	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return

@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"strconv"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 )
@@ -22,10 +23,10 @@ type SquashfsPacker struct {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SquashfsPacker) Pack() (b *Bundle, err error) {
+func (p *SquashfsPacker) Pack() (b *types.Bundle, err error) {
 	rootfs := p.srcfile
 
-	b, err = NewBundle(p.tmpfs)
+	b, err = types.NewBundle(p.tmpfs)
 	if err != nil {
 		return
 	}
@@ -39,7 +40,7 @@ func (p *SquashfsPacker) Pack() (b *Bundle, err error) {
 }
 
 // unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
-func (p *SquashfsPacker) unpackSquashfs(b *Bundle, info *loop.Info64, rootfs string) (err error) {
+func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
 	trimfile, err := ioutil.TempFile(p.tmpfs, "trim.squashfs")
 
 	//trim header

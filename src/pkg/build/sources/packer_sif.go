@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	"github.com/sylabs/sif/pkg/sif"
@@ -24,9 +25,9 @@ type SIFPacker struct {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SIFPacker) Pack() (b *Bundle, err error) {
+func (p *SIFPacker) Pack() (b *types.Bundle, err error) {
 
-	b, err = NewBundle(p.tmpfs)
+	b, err = types.NewBundle(p.tmpfs)
 	if err != nil {
 		return
 	}
@@ -42,7 +43,7 @@ func (p *SIFPacker) Pack() (b *Bundle, err error) {
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files
 // unpackSIF parses throught the sif file and places each component in the sandbox
-func (p *SIFPacker) unpackSIF(b *Bundle, rootfs string) (err error) {
+func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 
 	// load the container
 	fimg, err := sif.LoadContainer(rootfs, false)

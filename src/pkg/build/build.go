@@ -99,7 +99,7 @@ func newBuild(d types.Definition, dest, format string) (*Build, error) {
 }
 
 // Full runs a standard build from start to finish
-func (b *Build) Full(path string) error {
+func (b *Build) Full() error {
 	if _, err := b.Bundle(); err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (b *Build) Full(path string) error {
 		return err
 	}
 
-	if err := b.Assemble(path); err != nil {
+	if err := b.Assemble(b.dest); err != nil {
 		return err
 	}
 
@@ -116,12 +116,12 @@ func (b *Build) Full(path string) error {
 }
 
 // WithoutSections runs the build without running any section
-func (b *Build) WithoutSections(path string) error {
+func (b *Build) WithoutSections() error {
 	if _, err := b.Bundle(); err != nil {
 		return err
 	}
 
-	if err := b.Assemble(path); err != nil {
+	if err := b.Assemble(b.dest); err != nil {
 		return err
 	}
 
@@ -129,7 +129,7 @@ func (b *Build) WithoutSections(path string) error {
 }
 
 // WithSections runs a build but only runs the specified sections
-func (b *Build) WithSections(path string, sections []string) error {
+func (b *Build) WithSections(sections []string) error {
 	if _, err := b.Bundle(); err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (b *Build) WithSections(path string, sections []string) error {
 		return err
 	}
 
-	if err := b.Assemble(path); err != nil {
+	if err := b.Assemble(b.dest); err != nil {
 		return err
 	}
 
@@ -151,6 +151,8 @@ func (b *Build) AllSections() error {
 		if err := b.runScripts(); err != nil {
 			return fmt.Errorf("unable to run scripts: %v", err)
 		}
+	} else if hasScripts(b.d) {
+		sylog.Warningf("Attempted to build with scripts as non-root user, skipping...\n")
 	}
 
 	return nil
@@ -258,16 +260,16 @@ func getcp(def types.Definition) (ConveyorPacker, error) {
 
 // makeDef gets a definition object from a spec
 func makeDef(spec string) (types.Definition, error) {
-	var def Definition
+	var def types.Definition
 
 	if ok, err := IsValidURI(spec); ok && err == nil {
 		// URI passed as arg[1]
-		def, err = NewDefinitionFromURI(spec)
+		def, err = types.NewDefinitionFromURI(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
 
-	} else if ok, err := IsValidDefinition(spec); ok && err == nil {
+	} else if ok, err := types.IsValidDefinition(spec); ok && err == nil {
 		// Non-URI passed as arg[1]
 		defFile, err := os.Open(spec)
 		if err != nil {
@@ -275,13 +277,13 @@ func makeDef(spec string) (types.Definition, error) {
 		}
 		defer defFile.Close()
 
-		def, err = ParseDefinitionFile(defFile)
+		def, err = types.ParseDefinitionFile(defFile)
 		if err != nil {
 			return def, fmt.Errorf("failed to parse definition file %s: %v", spec, err)
 		}
 	} else if _, err := os.Stat(spec); err == nil {
 		//local image or sandbox
-		def = Definition{
+		def = types.Definition{
 			Header: map[string]string{
 				"bootstrap": "localimage",
 				"from":      spec,
@@ -292,4 +294,9 @@ func makeDef(spec string) (types.Definition, error) {
 	}
 
 	return def, nil
+}
+
+// Assemble assembles the bundle to the specified path
+func (b *Build) Assemble(path string) error {
+	return b.a.Assemble(b.b, path)
 }

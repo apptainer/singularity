@@ -30,12 +30,13 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
 	//"github.com/singularityware/singularity/src/pkg/image"
+	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // OCIConveyor holds stuff that needs to be packed into the bundle
 type OCIConveyor struct {
-	recipe    Definition
+	recipe    sytypes.Definition
 	srcRef    types.ImageReference
 	tmpfs     string
 	tmpfsRef  types.ImageReference
@@ -49,7 +50,7 @@ type OCIConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (c *OCIConveyor) Get(recipe Definition) (err error) {
+func (c *OCIConveyor) Get(recipe sytypes.Definition) (err error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	c.policyCtx, err = signature.NewPolicyContext(policy)
 	if err != nil {
@@ -127,8 +128,8 @@ func (c *OCIConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *OCIConveyorPacker) Pack() (b *Bundle, err error) {
-	b, err = NewBundle(cp.tmpfs)
+func (cp *OCIConveyorPacker) Pack() (b *sytypes.Bundle, err error) {
+	b, err = sytypes.NewBundle(cp.tmpfs)
 	if err != nil {
 		return
 	}
@@ -265,20 +266,20 @@ func (c *OCIConveyor) extractArchive(src string, dst string) error {
 	}
 }
 
-func (cp *OCIConveyorPacker) unpackTmpfs(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) unpackTmpfs(b *sytypes.Bundle) (err error) {
 	refs := []string{"name=tmp"}
 	err = imagetools.UnpackLayout(cp.tmpfs, b.Rootfs(), "amd64", refs)
 	return err
 }
 
-func (cp *OCIConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) insertBaseEnv(b *sytypes.Bundle) (err error) {
 	if err = makeBaseEnv(b.Rootfs()); err != nil {
 		sylog.Errorf("%v", err)
 	}
 	return
 }
 
-func (cp *OCIConveyorPacker) insertRunScript(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) insertRunScript(b *sytypes.Bundle) (err error) {
 	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
 	if err != nil {
 		return
@@ -354,7 +355,7 @@ exec $SINGULARITY_OCI_RUN
 	return nil
 }
 
-func (cp *OCIConveyorPacker) insertEnv(b *Bundle) (err error) {
+func (cp *OCIConveyorPacker) insertEnv(b *sytypes.Bundle) (err error) {
 	f, err := os.Create(b.Rootfs() + "/.singularity.d/env/10-docker2singularity.sh")
 	if err != nil {
 		return

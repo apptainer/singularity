@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/build"
@@ -38,7 +37,7 @@ func init() {
 	BuildCmd.Flags().SetInterspersed(false)
 
 	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
-	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
+	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{"all"}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
 	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
 	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
 	BuildCmd.Flags().BoolVarP(&force, "force", "f", false, "Delete and overwrite an image if it currently exists")
@@ -63,54 +62,44 @@ var BuildCmd = &cobra.Command{
 	PreRun:  sylabsToken,
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-		var a build.Assembler
-
 		if silent {
 			fmt.Println("Silent!")
 		}
 
+		buildFormat := "sif"
 		if sandbox {
-			fmt.Println("Sandbox!")
+			buildFormat = "sandbox"
 		}
 
+		dest := args[0]
+		spec := args[1]
+
 		//check if target collides with existing file
-		if ok := checkBuildTargetCollision(args[0], force); !ok {
-			return
+		if ok := checkBuildTargetCollision(dest, force); !ok {
+			os.Exit(1)
 		}
 
 		if remote || builderURL != defbuilderURL {
 			// Submiting a remote build requires a valid authToken
-			var b *build.RemoteBuilder
-			if authToken != "" {
-				b = build.NewRemoteBuilder(args[0], libraryURL, def, detached, builderURL, authToken)
-			} else {
+			if authToken == "" {
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
+
+			b := build.NewRemoteBuilder(dest, libraryURL, spec, detached, builderURL, authToken)
 			b.Build(context.TODO())
-
 		} else {
-			//local build
-			bundle := makeBundle(def)
-
-			if syscall.Getuid() == 0 {
-				doSections(bundle, args[0])
-			} else if hasSections(def) {
-				sylog.Warningf("Skipping definition scripts, not running as root [uid=%v]\n", syscall.Getuid())
-			}
-
-			if sandbox {
-				a = &build.SandboxAssembler{}
-			} else {
-				a = &build.SIFAssembler{}
-			}
-
-			err = a.Assemble(bundle, args[0])
+			b, err := build.NewBuild(spec, dest, buildFormat)
 			if err != nil {
-				sylog.Fatalf("Assembler failed to assemble: %v\n", err)
+				sylog.Fatalf("Unable to create build: %v\n", err)
+				os.Exit(1)
+			}
+
+			if sections[0] == "all" {
+				b.Full()
+			} else {
+
 			}
 		}
-
 	},
 	TraverseChildren: true,
 }

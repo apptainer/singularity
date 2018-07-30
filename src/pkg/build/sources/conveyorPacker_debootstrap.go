@@ -13,24 +13,19 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// DebootstrapConveyor holds stuff that needs to be packed into the bundle
-type DebootstrapConveyor struct {
-	recipe Definition
+// DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
+type DebootstrapConveyorPacker struct {
+	recipe types.Definition
 	tmpfs  string
 }
 
-// DebootstrapConveyorPacker only needs to hold the conveyor to have the needed data to pack
-type DebootstrapConveyorPacker struct {
-	DebootstrapConveyor
-}
-
 // Get downloads container information from the specified source
-func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
-
-	c.recipe = recipe
+func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
+	cp.recipe = recipe
 
 	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
@@ -38,7 +33,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it: %v", err)
 	}
 
-	c.tmpfs, err = ioutil.TempDir("", "temp-debootstrap-")
+	cp.tmpfs, err = ioutil.TempDir("", "temp-debootstrap-")
 	if err != nil {
 		return
 	}
@@ -70,7 +65,7 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 	}
 
 	//run debootstrap command
-	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+include, `--arch=`+runtime.GOARCH, osversion, c.tmpfs, mirrorurl)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+include, `--arch=`+runtime.GOARCH, osversion, cp.tmpfs, mirrorurl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
@@ -85,8 +80,8 @@ func (c *DebootstrapConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
-	b, err = NewBundle("")
+func (cp *DebootstrapConveyorPacker) Pack() (b *types.Bundle, err error) {
+	b, err = types.NewBundle("")
 	if err != nil {
 		return
 	}
@@ -118,14 +113,14 @@ func (cp *DebootstrapConveyorPacker) Pack() (b *Bundle, err error) {
 	return b, nil
 }
 
-func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *Bundle) (err error) {
+func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *types.Bundle) (err error) {
 	if err = makeBaseEnv(b.Rootfs()); err != nil {
 		return
 	}
 	return nil
 }
 
-func (cp *DebootstrapConveyorPacker) insertRunScript(b *Bundle) (err error) {
+func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error) {
 	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
 	if err != nil {
 		return

@@ -20,6 +20,7 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -44,7 +45,7 @@ type mockService struct {
 
 var upgrader = websocket.Upgrader{}
 
-func newResponse(m *mockService, id bson.ObjectId, d Definition, libraryRef string) ResponseData {
+func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRef string) ResponseData {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,

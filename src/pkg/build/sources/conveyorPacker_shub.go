@@ -19,6 +19,7 @@ import (
 
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
+	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -40,7 +41,7 @@ type shubClient struct {
 
 // ShubConveyor holds data to be packed into a bundle.
 type ShubConveyor struct {
-	recipe   Definition
+	recipe   sytypes.Definition
 	src      string
 	srcRef   types.ImageReference
 	srcURI   ShubURI
@@ -52,7 +53,7 @@ type ShubConveyor struct {
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ShubConveyorPacker struct {
 	ShubConveyor
-	lp LocalPacker
+	localPacker
 }
 
 // ShubURI stores the various components of a singularityhub URI
@@ -66,7 +67,7 @@ type ShubURI struct {
 }
 
 // Get downloads container from Singularityhub
-func (c *ShubConveyor) Get(recipe Definition) (err error) {
+func (c *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
 	c.recipe = recipe
@@ -100,24 +101,8 @@ func (c *ShubConveyor) Get(recipe Definition) (err error) {
 		return
 	}
 
-	return nil
-}
-
-// Pack puts relevant objects in a Bundle!
-// After image is downloaded, we can use a local packer
-func (cp *ShubConveyorPacker) Pack() (b *Bundle, err error) {
-	//pack from our temporary downloaded image to our tmpfs
-	cp.lp = LocalPacker{cp.tmpfile, cp.tmpfs}
-
-	b, err = cp.lp.Pack()
-	if err != nil {
-		sylog.Errorf("Local Pack failed", err.Error())
-		return nil, err
-	}
-
-	b.Recipe = cp.recipe
-
-	return b, nil
+	c.localPacker, err = getLocalPacker(c.tmpfile, c.tmpfs)
+	return err
 }
 
 // Download an image from Singularity Hub, writing as we download instead
