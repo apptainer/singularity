@@ -27,13 +27,12 @@ const (
 func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 	if err != nil {
-		sylog.Errorf("%s\n", err)
 		return nil, err
 	}
 
-	sum := sha512.Sum384(fimg.Filedata[part.Fileoff : part.Fileoff+part.Filelen])
+	sum := sha512.Sum384(fimg.Filedata[parts[0].Fileoff : parts[0].Fileoff+parts[0].Filelen])
 
 	fmt.Fprintf(msg, "SIFHASH:\n%x", sum)
 
@@ -41,9 +40,8 @@ func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
 }
 
 func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte) error {
-	part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 	if err != nil {
-		sylog.Errorf("%s\n", err)
 		return err
 	}
 
@@ -51,7 +49,7 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
 		Groupid:  sif.DescrDefaultGroup,
-		Link:     part.ID,
+		Link:     parts[0].ID,
 		Fname:    "part-signature",
 		Data:     signature,
 	}
@@ -171,21 +169,20 @@ func Verify(cpath, authToken string) error {
 		return err
 	}
 
-	part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 	if err != nil {
 		return fmt.Errorf("no system partition found: %s", err)
 	}
 
-	sig, _, err := fimg.GetFromLinkedDescr(part.ID)
+	sigs, _, err := fimg.GetFromLinkedDescr(parts[0].ID)
 	if err != nil {
 		return fmt.Errorf("no signature found for system partition: %s", err)
 	}
 
-	data := fimg.Filedata[sig.Fileoff : sig.Fileoff+sig.Filelen]
+	data := fimg.Filedata[sigs[0].Fileoff : sigs[0].Fileoff+sigs[0].Filelen]
 
 	block, _ := clearsign.Decode(data)
 	if block == nil {
-		sylog.Errorf("failed to decode clearsign message\n")
 		return fmt.Errorf("failed to decode clearsign message")
 	}
 
@@ -199,7 +196,7 @@ func Verify(cpath, authToken string) error {
 	}
 
 	// get the entity fingerprint for the found signature block
-	fingerprint, err := sig.GetEntityString()
+	fingerprint, err := sigs[0].GetEntityString()
 	if err != nil {
 		return err
 	}
