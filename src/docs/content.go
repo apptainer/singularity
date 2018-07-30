@@ -147,6 +147,80 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.simg /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysUse   string = `keys <subcommand>`
+	KeysShort string = `Manage OpenPGP key stores`
+	KeysLong  string = `
+  The 'keys' command  allows you to manage local OpenPGP key stores by create a
+  new store and new keys pairs. You can also list available keys from the
+  default store. Finally, the keys command offers subcommands to communicate
+  with an HKP key server to fetch and upload public keys.`
+	KeysExample string = `
+  All group commands have their own help output:
+
+  $ singularity help keys newpair
+  $ singularity keys list --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys newpair
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysNewPairUse   string = `newpair`
+	KeysNewPairShort string = `Create a new OpenPGP key pair`
+	KeysNewPairLong  string = `
+	The 'keys newpair' command allows you to create a new key or public/private
+	keys to be stored in the default user local key store location
+	(e.g., $HOME/.singularity/sypgp).`
+	KeysNewPairExample string = `
+  $ singularity keys newpair`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys list
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysListUse   string = `list`
+	KeysListShort string = `List keys from the default key store`
+	KeysListLong  string = `
+	The 'keys list' command allows you to list public/private key pairs
+	from the default user local key store location
+	(e.g., $HOME/.singularity/sypgp).`
+	KeysListExample string = `
+  $ singularity keys list`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys search
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysSearchUse   string = `search`
+	KeysSearchShort string = `Search for keys matching string argument`
+	KeysSearchLong  string = `
+	The 'keys search' command allows you to connect to a key server and look
+	for public keys marching the string argument passed to the command line.`
+	KeysSearchExample string = `
+  $ singularity keys search sylabs.io`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys pull
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysPullUse   string = `pull`
+	KeysPullShort string = `Fetch an OpenPGP public key from a key server`
+	KeysPullLong  string = `
+	The 'keys pull' command allows you to connect to a key server look for
+	and download a public key. Key rings are stored into
+	(e.g., $HOME/.singularity/sypgp).`
+	KeysPullExample string = `
+  $ singularity keys pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys push
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysPushUse   string = `push`
+	KeysPushShort string = `Upload an OpenPGP public key to a key server`
+	KeysPushLong  string = `
+	The 'keys push' command allows you to connect to a key server and
+	upload public keys from the local key store.`
+	KeysPushExample string = `
+  $ singularity keys push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`
@@ -158,80 +232,136 @@ Enterprise Performance Computing (EPC)`
   All group commands have their own help output:
   
   $ singularity help capability add
-  $ singularity capability list --help`
+  $ singularity capability add --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability add
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
-	CapabilityAddShort string = `add Linux capabilities to a container`
+	CapabilityAddShort string = `Add authorized capabilities for a given user/group`
 	CapabilityAddLong  string = `
-  The capability add command allows you to grant fine grained Linux 
-  capabilities to your container at runtime. For instance, `
+  Capabilities must be separated by commas and are not case sensitive,
+  here accepted values:
+
+  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
+  CAP_AUDIT_READ        | AUDIT_READ
+  CAP_AUDIT_WRITE       | AUDIT_WRITE
+  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
+  CAP_CHOWN             | CHOWN
+  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
+  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
+  CAP_FOWNER            | FOWNER
+  CAP_FSETID            | FSETID
+  CAP_IPC_LOCK          | IPC_LOCK
+  CAP_IPC_OWNER         | IPC_OWNER
+  CAP_KILL              | KILL
+  CAP_LEASE             | LEASE
+  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
+  CAP_MAC_ADMIN         | MAC_ADMIN
+  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
+  CAP_MKNOD             | MKNOD
+  CAP_NET_ADMIN         | NET_ADMIN
+  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
+  CAP_NET_BROADCAST     | NET_BROADCAST
+  CAP_NET_RAW           | NET_RAW
+  CAP_SETFCAP           | SETFCAP
+  CAP_SETGID            | SETGID
+  CAP_SETPCAP           | SETPCAP
+  CAP_SETUID            | SETUID
+  CAP_SYS_ADMIN         | SYS_ADMIN
+  CAP_SYS_BOOT          | SYS_BOOT
+  CAP_SYS_CHROOT        | SYS_CHROOT
+  CAP_SYSLOG            | SYSLOG
+  CAP_SYS_MODULE        | SYS_MODULE
+  CAP_SYS_NICE          | SYS_NICE
+  CAP_SYS_PACCT         | SYS_PACCT
+  CAP_SYS_PTRACE        | SYS_PTRACE
+  CAP_SYS_RAWIO         | SYS_RAWIO
+  CAP_SYS_RESOURCE      | SYS_RESOURCE
+  CAP_SYS_TIME          | SYS_TIME
+  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
+  CAP_WAKE_ALARM        | WAKE_ALARM
+
+  See "-d" flag example for description of each capabilities`
 	CapabilityAddExample string = `
-  $ singularity capability.add /tmp/my-sql.img mysql
-  
-  $ singularity shell capability://mysql
-  Singularity my-sql.img> pwd
-  /home/mibauer/mysql
-  Singularity my-sql.img> ps
-  PID TTY          TIME CMD
-    1 pts/0    00:00:00 sinit
-    2 pts/0    00:00:00 bash
-    3 pts/0    00:00:00 ps
-  Singularity my-sql.img>
-  
-  $ singularity capability.stop /tmp/my-sql.img mysql
-  Stopping /tmp/my-sql.img mysql`
+  $ singularity capability add --user nobody AUDIT_READ,chown
+  $ singularity capability add --group nobody cap_audit_write
+
+  To print capabilities description:
+
+  $ singularity capability add -d CAP_CHOWN
+  $ singularity capability add -d CAP_CHOWN,CAP_SYS_ADMIN`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
-	CapabilityDropShort string = `remove Linux capabilities from your container`
+	CapabilityDropShort string = `Drop authorized capabilities for a given user/group`
 	CapabilityDropLong  string = `
-  The capability drop command allows you to remove Linux capabilities from your
-  container with fine grained precision. This way you can ensure that your
-  container is as secure as it can be given the functions it must carry out. For
-  instance, `
+  Capabilities must be separated by commas and are not case sensitive,
+  here accepted values:
+
+  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
+  CAP_AUDIT_READ        | AUDIT_READ
+  CAP_AUDIT_WRITE       | AUDIT_WRITE
+  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
+  CAP_CHOWN             | CHOWN
+  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
+  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
+  CAP_FOWNER            | FOWNER
+  CAP_FSETID            | FSETID
+  CAP_IPC_LOCK          | IPC_LOCK
+  CAP_IPC_OWNER         | IPC_OWNER
+  CAP_KILL              | KILL
+  CAP_LEASE             | LEASE
+  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
+  CAP_MAC_ADMIN         | MAC_ADMIN
+  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
+  CAP_MKNOD             | MKNOD
+  CAP_NET_ADMIN         | NET_ADMIN
+  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
+  CAP_NET_BROADCAST     | NET_BROADCAST
+  CAP_NET_RAW           | NET_RAW
+  CAP_SETFCAP           | SETFCAP
+  CAP_SETGID            | SETGID
+  CAP_SETPCAP           | SETPCAP
+  CAP_SETUID            | SETUID
+  CAP_SYS_ADMIN         | SYS_ADMIN
+  CAP_SYS_BOOT          | SYS_BOOT
+  CAP_SYS_CHROOT        | SYS_CHROOT
+  CAP_SYSLOG            | SYSLOG
+  CAP_SYS_MODULE        | SYS_MODULE
+  CAP_SYS_NICE          | SYS_NICE
+  CAP_SYS_PACCT         | SYS_PACCT
+  CAP_SYS_PTRACE        | SYS_PTRACE
+  CAP_SYS_RAWIO         | SYS_RAWIO
+  CAP_SYS_RESOURCE      | SYS_RESOURCE
+  CAP_SYS_TIME          | SYS_TIME
+  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
+  CAP_WAKE_ALARM        | WAKE_ALARM
+
+  See "-d" flag example for description of each capabilities`
 	CapabilityDropExample string = `
-  $ singularity capability.drop /tmp/my-sql.img mysql
-  
-  $ singularity shell capability://mysql
-  Singularity my-sql.img> pwd
-  /home/mibauer/mysql
-  Singularity my-sql.img> ps
-  PID TTY          TIME CMD
-  1 pts/0    00:00:00 sinit
-  2 pts/0    00:00:00 bash
-  3 pts/0    00:00:00 ps
-  Singularity my-sql.img>
-  
-  $ singularity capability.stop /tmp/my-sql.img mysql
-  Stopping /tmp/my-sql.img mysql`
+  $ singularity capability drop --user nobody AUDIT_READ,CHOWN
+  $ singularity capability drop --group nobody audit_write
+
+  To print capabilities description:
+
+  $ singularity capability drop -d CAP_CHOWN
+  $ singularity capability drop -d CAP_CHOWN,CAP_SYS_ADMIN`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityListUse   string = `list [list options...] <capabilities>`
-	CapabilityListShort string = `list Linux capabilities on a container`
-	CapabilityListLong  string = `The capability list command allows you to see
-  what Linux capabilities are associated with your container.`
+	CapabilityListShort string = `List authorized capabilities for the given user/group.`
+	CapabilityListLong  string = `
+  The capability list command allows you to see
+  what Linux capabilities are associated with users/groups.`
 	CapabilityListExample string = `
-  $ singularity capability.list /tmp/my-sql.img mysql
-  
-  $ singularity shell capability://mysql
-  Singularity my-sql.img> pwd
-  /home/mibauer/mysql
-  Singularity my-sql.img> ps
-  PID TTY          TIME CMD
-    1 pts/0    00:00:00 sinit
-    2 pts/0    00:00:00 bash
-    3 pts/0    00:00:00 ps
-  Singularity my-sql.img>
-  
-  $ singularity capability.stop /tmp/my-sql.img mysql
-  Stopping /tmp/my-sql.img mysql`
+  $ singularity capability list --user nobody
+  $ singularity capability list --group nobody
+  $ singularity capability list --all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// exec

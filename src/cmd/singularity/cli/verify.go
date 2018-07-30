@@ -11,6 +11,7 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/signing"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +30,7 @@ var VerifyCmd = &cobra.Command{
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
 		if err := signing.Verify(args[0], authToken); err != nil {
+			sylog.Errorf("verification failed: %s", err)
 			os.Exit(2)
 		}
 	},

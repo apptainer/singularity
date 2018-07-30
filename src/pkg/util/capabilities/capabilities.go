@@ -5,6 +5,8 @@
 
 package capabilities
 
+import "strings"
+
 type capability struct {
 	Name        string
 	Value       uint
@@ -370,4 +372,28 @@ var Map = map[string]*capability{
 	"CAP_WAKE_ALARM":       capWakeAlarm,
 	"CAP_BLOCK_SUSPEND":    capBlockSuspend,
 	"CAP_AUDIT_READ":       capAuditRead,
+}
+
+// Split takes a list of capabilities separated by commas and
+// returns a string list with normalized capability name and a
+// second list with unrecognized capabitilies
+func Split(caps string) ([]string, []string) {
+	included := make([]string, 0)
+	excluded := make([]string, 0)
+
+	capabilities := strings.Split(caps, ",")
+
+	for _, capability := range capabilities {
+		c := strings.ToUpper(strings.TrimSpace(capability))
+		if !strings.HasPrefix(c, "CAP_") {
+			c = "CAP_" + c
+		}
+		if _, ok := Map[c]; !ok {
+			excluded = append(excluded, capability)
+			continue
+		}
+		included = append(included, c)
+	}
+
+	return included, excluded
 }
