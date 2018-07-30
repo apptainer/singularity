@@ -16,6 +16,10 @@ const busyBoxDef = "./testdata_good/busybox/busybox"
 
 func TestBusyBoxConveyor(t *testing.T) {
 
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

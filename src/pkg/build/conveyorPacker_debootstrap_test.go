@@ -6,6 +6,7 @@
 package build
 
 import (
+	"os"
 	"os/exec"
 	"testing"
 
@@ -13,6 +14,10 @@ import (
 )
 
 func TestDebootstrapConveyor(t *testing.T) {
+
+	if testing.Short() {
+		t.SkipNow()
+	}
 
 	if _, err := exec.LookPath("debootstrap"); err != nil {
 		t.Skip("skipping test, debootstrap not installed")
@@ -33,8 +38,12 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	err := dc.Get(testDef)
 	if err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(dc.tmpfs)
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
+
+	os.RemoveAll(dc.tmpfs)
 }
 
 func TestDebootstrapPacker(t *testing.T) {
@@ -58,8 +67,12 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	err := dcp.Get(testDef)
 	if err != nil {
+		//clean up tmpfs since assembler isnt called
+		os.RemoveAll(dcp.tmpfs)
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
+
+	defer os.RemoveAll(dcp.tmpfs)
 
 	_, err = dcp.Pack()
 	if err != nil {
