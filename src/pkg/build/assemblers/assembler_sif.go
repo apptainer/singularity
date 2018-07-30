@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package assemblers
 
 import (
 	"encoding/binary"
@@ -13,6 +13,7 @@ import (
 	"os/exec"
 
 	"github.com/satori/go.uuid"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/sylabs/sif/pkg/sif"
 )
@@ -72,7 +73,7 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 }
 
 // Assemble creates a SIF image from a Bundle
-func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
+func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
 	mksquashfs, err := exec.LookPath("mksquashfs")

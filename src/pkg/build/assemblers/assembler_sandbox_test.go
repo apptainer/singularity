@@ -3,7 +3,7 @@
 // LICENSE file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package assemblers_test
 
 import (
 	"os"

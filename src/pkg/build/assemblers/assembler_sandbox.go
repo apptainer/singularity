@@ -3,13 +3,14 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package assemblers
 
 import (
 	"os"
 	"os/exec"
 	"path/filepath"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -18,7 +19,7 @@ type SandboxAssembler struct {
 }
 
 // Assemble creates a Sandbox image from a Bundle
-func (a *SandboxAssembler) Assemble(b *Bundle, path string) (err error) {
+func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
 	//make sandbox dir
