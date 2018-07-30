@@ -14,6 +14,9 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/build/assemblers"
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
@@ -26,7 +29,7 @@ const EngineName = "imgbuild"
 
 // EngineConfig is the engineConfig for the imgbuild Engine
 type EngineConfig struct {
-	Bundle
+	types.Bundle
 }
 
 // MarshalJSON implements json.Marshaler interface
@@ -41,12 +44,13 @@ func (c *EngineConfig) UnmarshalJSON(b []byte) error {
 
 // Build is a
 type Build struct {
-	dest   string
-	format string
-	c      ConveyorPacker
-	a      Assembler
-	b      *Bundle
-	d      Definition
+	dest        string
+	format      string
+	ranSections bool
+	c           ConveyorPacker
+	a           Assembler
+	b           *types.Bundle
+	d           types.Definition
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
@@ -61,7 +65,7 @@ func NewBuild(spec, dest, format string) (*Build, error) {
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
 func NewBuildJSON(r io.Reader, dest, format string) (*Build, error) {
-	def, err := NewDefinitionFromJSON(r)
+	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
@@ -69,20 +73,11 @@ func NewBuildJSON(r io.Reader, dest, format string) (*Build, error) {
 	return newBuild(def, dest, format)
 }
 
-func newBuild(d Definition, dest, format string) (*Build, error) {
+func newBuild(d types.Definition, dest, format string) (*Build, error) {
 	b := &Build{
 		dest: dest,
 		d:    d,
 		b:    nil,
-	}
-
-	switch format {
-	case "sandbox":
-		b.a = &SandboxAssembler{}
-	case "sif":
-		b.a = &SIFAssembler{}
-	default:
-		return nil, fmt.Errorf("unrecognized output format %s", format)
 	}
 
 	if c, err := getcp(b.d); err != nil {
@@ -91,17 +86,61 @@ func newBuild(d Definition, dest, format string) (*Build, error) {
 		return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
 	}
 
+	switch format {
+	case "sandbox":
+		b.a = &assemblers.SandboxAssembler{}
+	case "sif":
+		b.a = &assemblers.SIFAssembler{}
+	default:
+		return nil, fmt.Errorf("unrecognized output format %s", format)
+	}
+
 	return b, nil
 }
 
 // Full runs a standard build from start to finish
 func (b *Build) Full(path string) error {
+	if _, err := b.Bundle(); err != nil {
+		return err
+	}
+
+	if err := b.AllSections(); err != nil {
+		return err
+	}
+
+	if err := b.Assemble(path); err != nil {
+		return err
+	}
 
 	return nil
 }
 
 // WithoutSections runs the build without running any section
 func (b *Build) WithoutSections(path string) error {
+	if _, err := b.Bundle(); err != nil {
+		return err
+	}
+
+	if err := b.Assemble(path); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// WithSections runs a build but only runs the specified sections
+func (b *Build) WithSections(path string, sections []string) error {
+	if _, err := b.Bundle(); err != nil {
+		return err
+	}
+
+	if err := b.Sections(sections); err != nil {
+		return err
+	}
+
+	if err := b.Assemble(path); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -120,11 +159,11 @@ func (b *Build) AllSections() error {
 // Sections runs the list of sections specified by name in s
 func (b *Build) Sections(s []string) error {
 
-	return nil
+	return fmt.Errorf("sections is unimplemented")
 }
 
 // hasScripts returns true if build definition is requesting to run scripts in image
-func hasScripts(def Definition) bool {
+func hasScripts(def types.Definition) bool {
 	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
 }
 
@@ -174,11 +213,13 @@ func (b *Build) runScripts() error {
 	if err := wrapperCmd.Wait(); err != nil {
 		return fmt.Errorf("wrapper proc failed: %v", err)
 	}
+
+	return nil
 }
 
 // Bundle creates the bundle using the ConveyorPacker and returns it. If this
 // function is called multiple times it will return the already created Bundle
-func (b *Build) Bundle() (*Bundle, error) {
+func (b *Build) Bundle() (*types.Bundle, error) {
 	if b.b != nil {
 		return b.b, nil
 	}
@@ -196,27 +237,27 @@ func (b *Build) Bundle() (*Bundle, error) {
 	return b.b, nil
 }
 
-func getcp(def Definition) (ConveyorPacker, error) {
+func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "shub":
-		return &ShubConveyorPacker{}, nil
+		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
-		return &OCIConveyorPacker{}, nil
+		return &sources.OCIConveyorPacker{}, nil
 	case "busybox":
-		return &BusyBoxConveyorPacker{}, nil
+		return &sources.BusyBoxConveyorPacker{}, nil
 	case "debootstrap":
-		return &DebootstrapConveyorPacker{}, nil
+		return &sources.DebootstrapConveyorPacker{}, nil
 	case "arch":
-		return &ArchConveyorPacker{}, nil
+		return &sources.ArchConveyorPacker{}, nil
 	case "localimage":
-		return &LocalConveyorPacker{}, nil
+		return &sources.LocalConveyorPacker{}, nil
 	default:
 		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
 	}
 }
 
 // makeDef gets a definition object from a spec
-func makeDef(spec string) (Definition, error) {
+func makeDef(spec string) (types.Definition, error) {
 	var def Definition
 
 	if ok, err := IsValidURI(spec); ok && err == nil {

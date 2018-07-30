@@ -7,6 +7,8 @@ package build
 
 import (
 	"fmt"
+
+	"github.com/singularityware/singularity/src/pkg/build/types"
 )
 
 // validAssemblers contains of list of know Assemblers
@@ -21,7 +23,7 @@ var validAssemblers = map[string]bool{
 // to detect these directories and make sure it properly assembles the SIF
 // with them as partitions
 type Assembler interface {
-	Assemble(*Bundle, string) error
+	Assemble(*types.Bundle, string) error
 }
 
 // IsValidAssembler returns whether or not the given Assembler is valid
