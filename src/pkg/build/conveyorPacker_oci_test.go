@@ -13,6 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -24,6 +26,9 @@ const (
 
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub
 func TestOCIConveyorDocker(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
@@ -43,6 +48,9 @@ func TestOCIConveyorDocker(t *testing.T) {
 // TestOCIConveyorDockerArchive tests if we can use a docker save archive
 // as a source
 func TestOCIConveyorDockerArchive(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	archive, err := getTestTar(dockerArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download docker archive test file: %v", err)
@@ -69,6 +77,9 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 // TestOCIConveyerDockerDaemon tests if we can use an oci laytout dir
 // as a source
 func TestOCIConveyorDockerDaemon(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	cmd := exec.Command("docker", "ps")
 	err := cmd.Run()
 	if err != nil {
@@ -103,6 +114,9 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 // TestOCIConveyorOCIArchive tests if we can use an oci archive
 // as a source
 func TestOCIConveyorOCIArchive(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download oci archive test file: %v", err)
@@ -129,6 +143,9 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 // TestOCIConveyerOCILayout tests if we can use an oci layout dir
 // as a source
 func TestOCIConveyorOCILayout(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download oci archive test file: %v", err)
@@ -167,6 +184,9 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 
 // TestOCIPacker checks if we can create a Kitchen
 func TestOCIPacker(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)

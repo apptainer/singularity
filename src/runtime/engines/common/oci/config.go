@@ -30,6 +30,6 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &c.Spec); err != nil {
 		return err
 	}
-	c.Generator = generate.NewFromSpec(&c.Spec)
+	c.Generator = generate.Generator{Config: &c.Spec}
 	return nil
 }

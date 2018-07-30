@@ -7,6 +7,7 @@ package build
 
 import (
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -33,7 +34,7 @@ type LocalConveyorPacker struct {
 
 // Get just stores the source
 func (c *LocalConveyor) Get(recipe Definition) (err error) {
-	c.src = recipe.Header["from"]
+	c.src = filepath.Clean(recipe.Header["from"])
 
 	c.tmpfs, err = ioutil.TempDir("", "temp-local-")
 	if err != nil {
@@ -46,9 +47,8 @@ func (c *LocalConveyor) Get(recipe Definition) (err error) {
 // Pack puts relevant objects in a Bundle!
 func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 	var p Packer
-	rootfs := cp.src
 
-	imageObject, err := image.Init(rootfs, false)
+	imageObject, err := image.Init(cp.src, false)
 	if err != nil {
 		return nil, err
 	}
@@ -57,13 +57,12 @@ func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 
 	switch imageObject.Type {
 	case image.SIF:
-		sylog.Fatalf("Building from SIF not yet supported")
+		sylog.Debugf("Packing from SIF")
 
-		// Not yet implemented
-		// imageObject.Offset = uint64(part.Fileoff)
-		// imageObject.Size = uint64(part.Filelen)
-		// info.Offset = imageObject.Offset
-		// info.SizeLimit = imageObject.Size
+		p = &SIFPacker{
+			srcfile: cp.src,
+			tmpfs:   cp.tmpfs,
+		}
 	case image.SQUASHFS:
 		sylog.Debugf("Packing from Squashfs")
 
@@ -71,7 +70,7 @@ func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 		info.SizeLimit = imageObject.Size
 
 		p = &SquashfsPacker{
-			srcfile: rootfs,
+			srcfile: cp.src,
 			tmpfs:   cp.tmpfs,
 			info:    info,
 		}
@@ -82,7 +81,7 @@ func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 		info.SizeLimit = imageObject.Size
 
 		p = &Ext3Packer{
-			srcfile: rootfs,
+			srcfile: cp.src,
 			tmpfs:   cp.tmpfs,
 			info:    info,
 		}
@@ -90,7 +89,7 @@ func (cp *LocalPacker) Pack() (b *Bundle, err error) {
 		sylog.Debugf("Packing from Sandbox")
 
 		p = &SandboxPacker{
-			srcdir: rootfs,
+			srcdir: cp.src,
 			tmpfs:  cp.tmpfs,
 		}
 	default:

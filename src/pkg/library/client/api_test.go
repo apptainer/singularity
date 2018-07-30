@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const testToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
@@ -97,37 +98,37 @@ func Test_getEntity(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
-				httpPath:    "/v1/entities/" + test.entityRef,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
+				httpPath:    "/v1/entities/" + tt.entityRef,
 			}
 
 			m.Run()
 
-			entity, found, err := getEntity(m.baseURI, testToken, test.entityRef)
+			entity, found, err := getEntity(m.baseURI, testToken, tt.entityRef)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if found != test.expectFound {
-				t.Errorf("Got found %v - expected %v", found, test.expectFound)
+			if found != tt.expectFound {
+				t.Errorf("Got found %v - expected %v", found, tt.expectFound)
 			}
-			if !reflect.DeepEqual(entity, test.expectEntity) {
-				t.Errorf("Got entity %v - expected %v", entity, test.expectEntity)
+			if !reflect.DeepEqual(entity, tt.expectEntity) {
+				t.Errorf("Got entity %v - expected %v", entity, tt.expectEntity)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -177,37 +178,37 @@ func Test_getCollection(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
-				httpPath:    "/v1/collections/" + test.collectionRef,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
+				httpPath:    "/v1/collections/" + tt.collectionRef,
 			}
 
 			m.Run()
 
-			collection, found, err := getCollection(m.baseURI, testToken, test.collectionRef)
+			collection, found, err := getCollection(m.baseURI, testToken, tt.collectionRef)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if found != test.expectFound {
-				t.Errorf("Got found %v - expected %v", found, test.expectFound)
+			if found != tt.expectFound {
+				t.Errorf("Got found %v - expected %v", found, tt.expectFound)
 			}
-			if !reflect.DeepEqual(collection, test.expectCollection) {
-				t.Errorf("Got entity %v - expected %v", collection, test.expectCollection)
+			if !reflect.DeepEqual(collection, tt.expectCollection) {
+				t.Errorf("Got entity %v - expected %v", collection, tt.expectCollection)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -257,37 +258,37 @@ func Test_getContainer(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
-				httpPath:    "/v1/containers/" + test.containerRef,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
+				httpPath:    "/v1/containers/" + tt.containerRef,
 			}
 
 			m.Run()
 
-			container, found, err := getContainer(m.baseURI, testToken, test.containerRef)
+			container, found, err := getContainer(m.baseURI, testToken, tt.containerRef)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if found != test.expectFound {
-				t.Errorf("Got found %v - expected %v", found, test.expectFound)
+			if found != tt.expectFound {
+				t.Errorf("Got found %v - expected %v", found, tt.expectFound)
 			}
-			if !reflect.DeepEqual(container, test.expectContainer) {
-				t.Errorf("Got container %v - expected %v", container, test.expectContainer)
+			if !reflect.DeepEqual(container, tt.expectContainer) {
+				t.Errorf("Got container %v - expected %v", container, tt.expectContainer)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -337,37 +338,37 @@ func Test_getImage(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
-				httpPath:    "/v1/images/" + test.imageRef,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
+				httpPath:    "/v1/images/" + tt.imageRef,
 			}
 
 			m.Run()
 
-			image, found, err := getImage(m.baseURI, testToken, test.imageRef)
+			image, found, err := getImage(m.baseURI, testToken, tt.imageRef)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if found != test.expectFound {
-				t.Errorf("Got found %v - expected %v", found, test.expectFound)
+			if found != tt.expectFound {
+				t.Errorf("Got found %v - expected %v", found, tt.expectFound)
 			}
-			if !reflect.DeepEqual(image, test.expectImage) {
-				t.Errorf("Got image %v - expected %v", image, test.expectImage)
+			if !reflect.DeepEqual(image, tt.expectImage) {
+				t.Errorf("Got image %v - expected %v", image, tt.expectImage)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -402,34 +403,34 @@ func Test_createEntity(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
 				httpPath:    "/v1/entities/",
 			}
 
 			m.Run()
 
-			entity, err := createEntity(m.baseURI, testToken, test.entityRef)
+			entity, err := createEntity(m.baseURI, testToken, tt.entityRef)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if !reflect.DeepEqual(entity, test.expectEntity) {
-				t.Errorf("Got created entity %v - expected %v", entity, test.expectEntity)
+			if !reflect.DeepEqual(entity, tt.expectEntity) {
+				t.Errorf("Got created entity %v - expected %v", entity, tt.expectEntity)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -464,34 +465,34 @@ func Test_createCollection(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
 				httpPath:    "/v1/collections/",
 			}
 
 			m.Run()
 
-			collection, err := createCollection(m.baseURI, testToken, test.collectionRef, bson.NewObjectId().Hex())
+			collection, err := createCollection(m.baseURI, testToken, tt.collectionRef, bson.NewObjectId().Hex())
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if !reflect.DeepEqual(collection, test.expectCollection) {
-				t.Errorf("Got created collection %v - expected %v", collection, test.expectCollection)
+			if !reflect.DeepEqual(collection, tt.expectCollection) {
+				t.Errorf("Got created collection %v - expected %v", collection, tt.expectCollection)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -526,34 +527,34 @@ func Test_createContainer(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
 				httpPath:    "/v1/containers/",
 			}
 
 			m.Run()
 
-			container, err := createContainer(m.baseURI, testToken, test.containerRef, bson.NewObjectId().Hex())
+			container, err := createContainer(m.baseURI, testToken, tt.containerRef, bson.NewObjectId().Hex())
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if !reflect.DeepEqual(container, test.expectContainer) {
-				t.Errorf("Got created collection %v - expected %v", container, test.expectContainer)
+			if !reflect.DeepEqual(container, tt.expectContainer) {
+				t.Errorf("Got created collection %v - expected %v", container, tt.expectContainer)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -588,34 +589,34 @@ func Test_createImage(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				body:        test.body,
-				reqCallback: test.reqCallback,
+				code:        tt.code,
+				body:        tt.body,
+				reqCallback: tt.reqCallback,
 				httpPath:    "/v1/images/",
 			}
 
 			m.Run()
 
-			image, err := createImage(m.baseURI, testToken, test.imageRef, bson.NewObjectId().Hex())
+			image, err := createImage(m.baseURI, testToken, tt.imageRef, bson.NewObjectId().Hex())
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
-			if !reflect.DeepEqual(image, test.expectImage) {
-				t.Errorf("Got created collection %v - expected %v", image, test.expectImage)
+			if !reflect.DeepEqual(image, tt.expectImage) {
+				t.Errorf("Got created collection %v - expected %v", image, tt.expectImage)
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }
@@ -650,30 +651,30 @@ func Test_setTags(t *testing.T) {
 	}
 
 	// Loop over test cases
-	for _, test := range tests {
-		t.Run(test.description, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockService{
 				t:           t,
-				code:        test.code,
-				reqCallback: test.reqCallback,
-				httpPath:    "/v1/tags/" + test.containerRef,
+				code:        tt.code,
+				reqCallback: tt.reqCallback,
+				httpPath:    "/v1/tags/" + tt.containerRef,
 			}
 
 			m.Run()
 
-			err := setTags(m.baseURI, testToken, test.containerRef, test.imageRef, test.tags)
+			err := setTags(m.baseURI, testToken, tt.containerRef, tt.imageRef, tt.tags)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
 
 			m.Stop()
 
-		})
+		}))
 
 	}
 }

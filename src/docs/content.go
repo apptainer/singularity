@@ -1,14 +1,9 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
-
-/*
-TODO Provide some guidelines for writing these docs
-*/
+//TODO Provide some guidelines for writing these docs
 
 package docs
 
@@ -163,80 +158,136 @@ Enterprise Performance Computing (EPC)`
   All group commands have their own help output:
   
   $ singularity help capability add
-  $ singularity capability list --help`
+  $ singularity capability add --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability add
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
-	CapabilityAddShort string = `add Linux capabilities to a container`
+	CapabilityAddShort string = `Add authorized capabilities for a given user/group`
 	CapabilityAddLong  string = `
-  The capability add command allows you to grant fine grained Linux 
-  capabilities to your container at runtime. For instance, `
+  Capabilities must be separated by commas and are not case sensitive,
+  here accepted values:
+
+  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
+  CAP_AUDIT_READ        | AUDIT_READ
+  CAP_AUDIT_WRITE       | AUDIT_WRITE
+  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
+  CAP_CHOWN             | CHOWN
+  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
+  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
+  CAP_FOWNER            | FOWNER
+  CAP_FSETID            | FSETID
+  CAP_IPC_LOCK          | IPC_LOCK
+  CAP_IPC_OWNER         | IPC_OWNER
+  CAP_KILL              | KILL
+  CAP_LEASE             | LEASE
+  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
+  CAP_MAC_ADMIN         | MAC_ADMIN
+  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
+  CAP_MKNOD             | MKNOD
+  CAP_NET_ADMIN         | NET_ADMIN
+  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
+  CAP_NET_BROADCAST     | NET_BROADCAST
+  CAP_NET_RAW           | NET_RAW
+  CAP_SETFCAP           | SETFCAP
+  CAP_SETGID            | SETGID
+  CAP_SETPCAP           | SETPCAP
+  CAP_SETUID            | SETUID
+  CAP_SYS_ADMIN         | SYS_ADMIN
+  CAP_SYS_BOOT          | SYS_BOOT
+  CAP_SYS_CHROOT        | SYS_CHROOT
+  CAP_SYSLOG            | SYSLOG
+  CAP_SYS_MODULE        | SYS_MODULE
+  CAP_SYS_NICE          | SYS_NICE
+  CAP_SYS_PACCT         | SYS_PACCT
+  CAP_SYS_PTRACE        | SYS_PTRACE
+  CAP_SYS_RAWIO         | SYS_RAWIO
+  CAP_SYS_RESOURCE      | SYS_RESOURCE
+  CAP_SYS_TIME          | SYS_TIME
+  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
+  CAP_WAKE_ALARM        | WAKE_ALARM
+
+  See "-d" flag example for description of each capabilities`
 	CapabilityAddExample string = `
-  $ singularity capability.add /tmp/my-sql.img mysql
-  
-  $ singularity shell capability://mysql
-  Singularity my-sql.img> pwd
-  /home/mibauer/mysql
-  Singularity my-sql.img> ps
-  PID TTY          TIME CMD
-    1 pts/0    00:00:00 sinit
-    2 pts/0    00:00:00 bash
-    3 pts/0    00:00:00 ps
-  Singularity my-sql.img>
-  
-  $ singularity capability.stop /tmp/my-sql.img mysql
-  Stopping /tmp/my-sql.img mysql`
+  $ singularity capability add --user nobody AUDIT_READ,chown
+  $ singularity capability add --group nobody cap_audit_write
+
+  To print capabilities description:
+
+  $ singularity capability add -d CAP_CHOWN
+  $ singularity capability add -d CAP_CHOWN,CAP_SYS_ADMIN`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
-	CapabilityDropShort string = `remove Linux capabilities from your container`
+	CapabilityDropShort string = `Drop authorized capabilities for a given user/group`
 	CapabilityDropLong  string = `
-  The capability drop command allows you to remove Linux capabilities from your
-  container with fine grained precision. This way you can ensure that your
-  container is as secure as it can be given the functions it must carry out. For
-  instance, `
+  Capabilities must be separated by commas and are not case sensitive,
+  here accepted values:
+
+  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
+  CAP_AUDIT_READ        | AUDIT_READ
+  CAP_AUDIT_WRITE       | AUDIT_WRITE
+  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
+  CAP_CHOWN             | CHOWN
+  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
+  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
+  CAP_FOWNER            | FOWNER
+  CAP_FSETID            | FSETID
+  CAP_IPC_LOCK          | IPC_LOCK
+  CAP_IPC_OWNER         | IPC_OWNER
+  CAP_KILL              | KILL
+  CAP_LEASE             | LEASE
+  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
+  CAP_MAC_ADMIN         | MAC_ADMIN
+  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
+  CAP_MKNOD             | MKNOD
+  CAP_NET_ADMIN         | NET_ADMIN
+  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
+  CAP_NET_BROADCAST     | NET_BROADCAST
+  CAP_NET_RAW           | NET_RAW
+  CAP_SETFCAP           | SETFCAP
+  CAP_SETGID            | SETGID
+  CAP_SETPCAP           | SETPCAP
+  CAP_SETUID            | SETUID
+  CAP_SYS_ADMIN         | SYS_ADMIN
+  CAP_SYS_BOOT          | SYS_BOOT
+  CAP_SYS_CHROOT        | SYS_CHROOT
+  CAP_SYSLOG            | SYSLOG
+  CAP_SYS_MODULE        | SYS_MODULE
+  CAP_SYS_NICE          | SYS_NICE
+  CAP_SYS_PACCT         | SYS_PACCT
+  CAP_SYS_PTRACE        | SYS_PTRACE
+  CAP_SYS_RAWIO         | SYS_RAWIO
+  CAP_SYS_RESOURCE      | SYS_RESOURCE
+  CAP_SYS_TIME          | SYS_TIME
+  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
+  CAP_WAKE_ALARM        | WAKE_ALARM
+
+  See "-d" flag example for description of each capabilities`
 	CapabilityDropExample string = `
-  $ singularity capability.drop /tmp/my-sql.img mysql
-  
-  $ singularity shell capability://mysql
-  Singularity my-sql.img> pwd
-  /home/mibauer/mysql
-  Singularity my-sql.img> ps
-  PID TTY          TIME CMD
-  1 pts/0    00:00:00 sinit
-  2 pts/0    00:00:00 bash
-  3 pts/0    00:00:00 ps
-  Singularity my-sql.img>
-  
-  $ singularity capability.stop /tmp/my-sql.img mysql
-  Stopping /tmp/my-sql.img mysql`
+  $ singularity capability drop --user nobody AUDIT_READ,CHOWN
+  $ singularity capability drop --group nobody audit_write
+
+  To print capabilities description:
+
+  $ singularity capability drop -d CAP_CHOWN
+  $ singularity capability drop -d CAP_CHOWN,CAP_SYS_ADMIN`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityListUse   string = `list [list options...] <capabilities>`
-	CapabilityListShort string = `list Linux capabilities on a container`
-	CapabilityListLong  string = `The capability list command allows you to see
-  what Linux capabilities are associated with your container.`
+	CapabilityListShort string = `List authorized capabilities for the given user/group.`
+	CapabilityListLong  string = `
+  The capability list command allows you to see
+  what Linux capabilities are associated with users/groups.`
 	CapabilityListExample string = `
-  $ singularity capability.list /tmp/my-sql.img mysql
-  
-  $ singularity shell capability://mysql
-  Singularity my-sql.img> pwd
-  /home/mibauer/mysql
-  Singularity my-sql.img> ps
-  PID TTY          TIME CMD
-    1 pts/0    00:00:00 sinit
-    2 pts/0    00:00:00 bash
-    3 pts/0    00:00:00 ps
-  Singularity my-sql.img>
-  
-  $ singularity capability.stop /tmp/my-sql.img mysql
-  Stopping /tmp/my-sql.img mysql`
+  $ singularity capability list --user nobody
+  $ singularity capability list --group nobody
+  $ singularity capability list --all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// exec
@@ -471,76 +522,4 @@ Enterprise Performance Computing (EPC)`
   `
 	VerifyExample string = `
   `
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// sif
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SifUse   string = "sif"
-	SifShort string = "Singularity image file format management"
-	SifLong  string = `
-  Singularity image file(SIF) is a file format tailored to container images. It allows 
-  the storage of different parts that makes up a container. A SIF file resembles a 
-  general file system by its structure. A global header identifies the SIF file and 
-  holds information about what one can expect to find in the container file. Next to 
-  this is a list of data object descriptors that hold information for each region of 
-  data that a SIF file contains. The primary goal of the descriptors is to identify 
-  the kind of data stored and where to find it within the container file. 
-  Following those descriptors is the actual data for these descriptors namely the OS 
-  partition image, recipe, environment variables and signature blocks.`
-	SifCreateUse   string = "create [option] <file>"
-	SifCreateShort string = "Create a new sif file with input data objects"
-	SifListUse     string = "list <file>"
-	SifListShort   string = "List SIF data descriptors from an input SIF file"
-	SifInfoUse     string = "info [id] <file>"
-	SifInfoShort   string = "Print data object descriptor info"
-	SifDumpUse     string = "dump [id] <file>"
-	SifDumpShort   string = "Display data object content"
-	SifDelUse      string = "del [id] <file>"
-	SifDelShort    string = "Delete a specified set of descriptor+object"
-	SifHeaderUse   string = "header <file>"
-	SifHeaderShort string = "Display SIF header"
-
-	SifCreateExample string = `
-singularity sif create -P /tmp/fs.squash -f "SQUASHFS" -p "SYSTEM" -c "Linux" /tmp/container.sif`
-	SifListExample string = `
-singularity sif list /tmp/container.sif
-Container uuid: 2b88f62f-be4f-4143-8a7a-061c49a68249
-Created on: Fri May 25 17:23:04 2018
-Modified on: Fri May 25 17:23:04 2018
-----------------------------------------------------
-
-Descriptor list:
-ID   |GROUP   |LINK    |SIF POSITION (start-end)  |TYPE
-------------------------------------------------------------------------------
-1    |1       |NONE    |3328-2010367              |FS.Img (Squashfs/System)`
-	SifInfoExample string = `
-singularity sif info 1 container.sif
-Descriptor info:
----------------------------
-desc type: FS.Img
-desc id: 1
-group id: 1
-link: NONE
-fileoff: 3328
-filelen: 2007040
-fstype: Squashfs
-parttype: System
-content: LINUX
----------------------------`
-	SifHeaderExample string = `
-singularity sif header hah.sif
-================ SIF Header ================
-launch: #!/usr/bin/env run-singularity
-
-magic: SIF_MAGIC
-version: 0
-arch: AMD64
-uuid: 2b88f62f-be4f-4143-8a7a-061c49a68249
-creation time: Fri May 25 17:23:04 2018
-modification time: Fri May 25 17:23:04 2018
-number of descriptors: 1
-start of descriptors in file: 120
-length of descriptors in file: 104
-start of data in file: 3328
-length of data in file: 1MB
-============================================`
 )

@@ -41,4 +41,5 @@ Bootstrap: arch
     pacman -Sy --noconfirm vim bash-completion
 
     # Remove the packages downloaded to image's Pacman cache dir.
+    pacman -Sy --noconfirm pacman-contrib
     paccache -r -k0

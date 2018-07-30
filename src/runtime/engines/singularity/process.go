@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"runtime"
 	"syscall"
@@ -15,10 +16,12 @@ import (
 )
 
 // StartProcess starts the process
-func (engine *EngineOperations) StartProcess() error {
+func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	os.Setenv("PS1", "shell> ")
 
-	os.Chdir("/")
+	if err := os.Chdir(engine.CommonConfig.OciConfig.Process.Cwd); err != nil {
+		os.Chdir("/")
+	}
 
 	// lock the current thread to apply security configuration
 	runtime.LockOSThread()

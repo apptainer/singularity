@@ -64,20 +64,18 @@ const (
 	SessionTag AuthorizedTag = "sessiondir"
 	// RootfsTag defines tag for container root filesystem
 	RootfsTag = "rootfs"
-	// OverlayLowerDirTag defines tag for overlay lower directories
-	OverlayLowerDirTag = "overlay-lowerdir"
-	// OverlayTag defines tag for overlay mount point
-	OverlayTag = "overlay"
-	// UnderlayTag defines tag for underlay mount points
-	UnderlayTag = "underlay"
+	// PreLayerTag defines tag to prepare overlay/underlay layer
+	PreLayerTag = "prelayer"
+	// LayerTag defines tag for overlay/underlay final mount point
+	LayerTag = "layer"
+	// DevTag defines tag for dev related mount point
+	DevTag = "dev"
 	// HostfsTag defines tag for host filesystem mount point
 	HostfsTag = "hostfs"
 	// BindsTag defines tag for bind path
 	BindsTag = "binds"
 	// KernelTag defines tag for kernel related mount point (proc, sysfs)
 	KernelTag = "kernel"
-	// DevTag defines tag for dev related mount point
-	DevTag = "dev"
 	// HomeTag defines tag for home directory mount point
 	HomeTag = "home"
 	// UserbindsTag defines tag for user bind mount points
@@ -100,23 +98,22 @@ var authorizedTags = map[AuthorizedTag]struct {
 	multiPoint bool
 	order      int
 }{
-	SessionTag:         {false, 0},
-	RootfsTag:          {false, 1},
-	OverlayLowerDirTag: {true, 2},
-	OverlayTag:         {false, 3},
-	UnderlayTag:        {true, 4},
-	HostfsTag:          {true, 5},
-	BindsTag:           {true, 6},
-	KernelTag:          {true, 7},
-	DevTag:             {true, 8},
-	HomeTag:            {false, 9},
-	UserbindsTag:       {true, 10},
-	TmpTag:             {true, 11},
-	ScratchTag:         {true, 12},
-	CwdTag:             {false, 13},
-	FilesTag:           {true, 14},
-	OtherTag:           {true, 15},
-	FinalTag:           {true, 16},
+	SessionTag:   {false, 0},
+	RootfsTag:    {false, 1},
+	PreLayerTag:  {true, 2},
+	LayerTag:     {false, 3},
+	DevTag:       {true, 4},
+	HostfsTag:    {true, 5},
+	BindsTag:     {true, 6},
+	KernelTag:    {true, 7},
+	HomeTag:      {false, 8},
+	UserbindsTag: {true, 9},
+	TmpTag:       {true, 10},
+	ScratchTag:   {true, 11},
+	CwdTag:       {false, 12},
+	FilesTag:     {true, 13},
+	OtherTag:     {true, 14},
+	FinalTag:     {true, 15},
 }
 
 var authorizedImage = map[string]fsContext{
@@ -169,6 +166,41 @@ func ConvertOptions(options []string) (uintptr, []string) {
 		isFlag = false
 	}
 	return flags, finalOpt
+}
+
+// ConvertSpec converts an OCI Mount spec into an importable mount points list
+func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
+	var tag AuthorizedTag
+	points := make(map[AuthorizedTag][]Point)
+	for _, m := range mounts {
+		tag = ""
+		if m.Type != "" {
+			if _, ok := authorizedFS[m.Type]; !ok {
+				return points, fmt.Errorf("%s filesystem type is not authorized", m.Type)
+			}
+			switch m.Type {
+			case "overlay":
+				tag = LayerTag
+			case "proc", "sysfs":
+				tag = KernelTag
+			case "devpts", "mqueue":
+				tag = DevTag
+			default:
+				tag = OtherTag
+			}
+		} else {
+			tag = BindsTag
+		}
+		points[tag] = append(points[tag], Point{
+			Mount: specs.Mount{
+				Source:      m.Source,
+				Destination: m.Destination,
+				Type:        m.Type,
+				Options:     m.Options,
+			},
+		})
+	}
+	return points, nil
 }
 
 // GetTagList returns authorized tags in right order
@@ -434,6 +466,16 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 	return nil
 }
 
+// ImportFromSpec converts an OCI Mount spec into a mount point list
+// and imports it
+func (p *Points) ImportFromSpec(mounts []specs.Mount) error {
+	points, err := ConvertSpec(mounts)
+	if err != nil {
+		return err
+	}
+	return p.Import(points)
+}
+
 // AddImage adds an image mount point
 func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
 	options := ""
@@ -592,4 +634,27 @@ func (p *Points) SetContext(context string) error {
 // GetContext returns SELinux mount context
 func (p *Points) GetContext() string {
 	return p.context
+}
+
+// AddMaskedPaths adds mount points that will masked will /dev/null
+func (p *Points) AddMaskedPaths(paths []string) error {
+	for _, path := range paths {
+		if err := p.AddBind(OtherTag, "/dev/null", path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// AddReadonlyPaths adds bind mount points that will be mounted in read-only mode
+func (p *Points) AddReadonlyPaths(paths []string) error {
+	for _, path := range paths {
+		if err := p.AddBind(OtherTag, path, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+		if err := p.AddRemount(OtherTag, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+	}
+	return nil
 }
