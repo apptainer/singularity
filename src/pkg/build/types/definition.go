@@ -115,7 +115,6 @@ var validHeaders = map[string]bool{
 
 // IsValidDefinition returns whether or not the given file is a valid definition
 func IsValidDefinition(source string) (valid bool, err error) {
-
 	defFile, err := os.Open(source)
 	if err != nil {
 		sylog.Fatalf("unable to open file %s: %v\n", source, err)

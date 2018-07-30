@@ -31,7 +31,7 @@ type MetaData struct {
 
 // BuildHistory ...
 type BuildHistory struct {
-	ObjectHash string        `json:"objectHash"`
-	Object     Definition    `json:"object"`
-	Parent     *BuildHistory `json:"parentObject"`
+	DefinitionHash string `json:"definitionHash"`
+	Definition     `json:"definition"`
+	Parent         *BuildHistory `json:"parent"`
 }

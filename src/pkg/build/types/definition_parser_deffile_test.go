@@ -17,7 +17,6 @@ import (
 )
 
 func TestScanDefinitionFile(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		defPath  string
@@ -35,7 +34,6 @@ func TestScanDefinitionFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-
 			deffile := tt.defPath
 			r, err := os.Open(deffile)
 			if err != nil {
