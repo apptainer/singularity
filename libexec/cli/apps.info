@@ -43,6 +43,6 @@ GLOBAL APP ENVIRONMENT:
 For additional help, please visit our public documentation pages which are
 found at:
 
-    http://singularity.lbl.gov/
+    https://www.sylabs.io/docs/
 EOF
 }

@@ -53,7 +53,7 @@ EXAMPLES:
 For additional help, please visit our public documentation pages which are
 found at:
 
-    http://singularity.lbl.gov/
+    https://www.sylabs.io/docs/
     https://www.singularity-hub.org/faq
 EOF
 }

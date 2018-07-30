@@ -108,7 +108,7 @@ CONTAINER USAGE OPTIONS:
     see singularity help <command>
 
 For any additional help or support visit the Singularity
-website: http://singularity.lbl.gov/
+website: https://www.sylabs.io/
 
 EOF
 
