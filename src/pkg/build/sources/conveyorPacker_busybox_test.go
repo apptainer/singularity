@@ -1,21 +1,22 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"os"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const busyBoxDef = "./testdata_good/busybox/busybox"
 
 func TestBusyBoxConveyor(t *testing.T) {
-
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -25,12 +26,12 @@ func TestBusyBoxConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
-	bc := &BusyBoxConveyor{}
+	bc := &sources.BusyBoxConveyor{}
 
 	if err := bc.Get(def); err != nil {
 		//clean up tmpfs since assembler isnt called
@@ -43,7 +44,6 @@ func TestBusyBoxConveyor(t *testing.T) {
 }
 
 func TestBusyBoxPacker(t *testing.T) {
-
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -53,12 +53,12 @@ func TestBusyBoxPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
-	bcp := &BusyBoxConveyorPacker{}
+	bcp := &sources.BusyBoxConveyorPacker{}
 
 	if err := bcp.Get(def); err != nil {
 		//clean up tmpfs since assembler isnt called

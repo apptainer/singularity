@@ -1,22 +1,23 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"os"
 	"os/exec"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const archDef = "./testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
-
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
 	}
@@ -29,12 +30,12 @@ func TestArchConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
-	ac := &ArchConveyor{}
+	ac := &sources.ArchConveyor{}
 
 	if err := ac.Get(def); err != nil {
 		//clean up tmpfs since assembler isnt called
@@ -46,7 +47,6 @@ func TestArchConveyor(t *testing.T) {
 }
 
 func TestArchPacker(t *testing.T) {
-
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
 	}
@@ -59,12 +59,12 @@ func TestArchPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
-	acp := &ArchConveyorPacker{}
+	acp := &sources.ArchConveyorPacker{}
 
 	if err := acp.Get(def); err != nil {
 		//clean up tmpfs since assembler isnt called

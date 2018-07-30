@@ -1,15 +1,17 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -22,12 +24,12 @@ func TestShubConveyor(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(shubURI)
+	def, err := types.NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
-	sc := &ShubConveyor{}
+	sc := &sources.ShubConveyor{}
 
 	if err := sc.Get(def); err != nil {
 		//clean up tmpfs since assembler isnt called
@@ -43,12 +45,12 @@ func TestShubPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(shubURI)
+	def, err := types.NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
-	scp := &ShubConveyorPacker{}
+	scp := &sources.ShubConveyorPacker{}
 
 	if err := scp.Get(def); err != nil {
 		//clean up tmpfs since assembler isnt called
@@ -100,7 +102,7 @@ func TestShubParser(t *testing.T) {
 
 	for _, uri := range validShubURIs {
 		fmt.Println("Starting parsing of: ", uri)
-		_, err := shubParseReference(uri)
+		_, err := sources.shubParseReference(uri)
 		if err != nil {
 			t.Fatalf("failed to parse valid URI: %v %v", uri, err)
 		}
@@ -108,7 +110,7 @@ func TestShubParser(t *testing.T) {
 
 	for _, uri := range invalidShubURIs {
 		fmt.Println("Starting parsing of: ", uri)
-		_, err := shubParseReference(uri)
+		_, err := sources.shubParseReference(uri)
 		if err == nil {
 			t.Fatalf("failed to catch invalid URI: %v %v", uri, err)
 		}
