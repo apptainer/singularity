@@ -45,7 +45,7 @@ func (p *SIFPacker) Pack() (b *Bundle, err error) {
 func (p *SIFPacker) unpackSIF(b *Bundle, rootfs string) (err error) {
 
 	// load the container
-	fimg, err := sif.LoadContainer(rootfs, false)
+	fimg, err := sif.LoadContainer(rootfs, true)
 	if err != nil {
 		sylog.Errorf("error loading sif file %s: %s\n", rootfs, err)
 		return err
