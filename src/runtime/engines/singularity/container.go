@@ -31,24 +31,24 @@ import (
 )
 
 type container struct {
-	engine  *EngineOperations
-	rpcOps  *client.RPC
-	session *layout.Session
-	userNS  bool
-	pidNS   bool
+	engine        *EngineOperations
+	rpcOps        *client.RPC
+	session       *layout.Session
+	sessionFsType string
+	sessionSize   int
+	userNS        bool
+	pidNS         bool
 }
 
 func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	var err error
 
-	sessionFsType := engine.EngineConfig.File.MemoryFSType
-	sessionSize := -1
-
-	if os.Geteuid() != 0 {
-		sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
-	}
-
 	c := &container{engine: engine, rpcOps: rpcOps}
+
+	c.sessionFsType = engine.EngineConfig.File.MemoryFSType
+	if os.Geteuid() != 0 {
+		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
+	}
 
 	if engine.CommonConfig.OciConfig.Linux != nil {
 		for _, namespace := range engine.CommonConfig.OciConfig.Linux.Namespaces {
@@ -64,36 +64,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	p := &mount.Points{}
 	system := &mount.System{Points: p, Mount: c.localMount}
 
-	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !engine.EngineConfig.GetWritableImage() && !c.userNS {
-		switch engine.EngineConfig.File.EnableOverlay {
-		case "yes", "try":
-			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, overlay.New()); err != nil {
-				return err
-			}
-			if err := c.addOverlayMount(system); err != nil {
-				return err
-			}
-			if err := system.RunAfterTag(mount.LayerTag, c.switchMount); err != nil {
-				return err
-			}
-		}
-	}
-	if c.session == nil {
-		if engine.EngineConfig.File.EnableUnderlay && !engine.EngineConfig.GetWritableImage() {
-			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, underlay.New()); err != nil {
-				return err
-			}
-			if err := system.RunAfterTag(mount.LayerTag, c.switchMount); err != nil {
-				return err
-			}
-		} else {
-			if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, sessionFsType, sessionSize, system, nil); err != nil {
-				return err
-			}
-			if err := system.RunAfterTag(mount.RootfsTag, c.switchMount); err != nil {
-				return err
-			}
-		}
+	if err := c.setupSessionLayout(system); err != nil {
+		return err
 	}
 
 	if err := system.RunAfterTag(mount.LayerTag, c.addFilesMount); err != nil {
@@ -152,6 +124,67 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	}
 
 	return nil
+}
+
+// setupSessionLayout will create the session layout according to the capabilities of Singularity
+// on the system. It will first attempt to use "overlay", followed by "underlay", and if neither
+// are available it will not use either. If neither are used, we will not be able to bind mount
+// to non-existant paths within the container
+func (c *container) setupSessionLayout(system *mount.System) error {
+	if c.engine.EngineConfig.GetWritableImage() {
+		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
+		return c.setupDefaultLayout(system)
+	}
+
+	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
+		switch c.engine.EngineConfig.File.EnableOverlay {
+		case "yes", "try":
+			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
+			return c.setupOverlayLayout(system)
+		}
+	}
+
+	if c.engine.EngineConfig.File.EnableUnderlay {
+		sylog.Debugf("Attempting to use underlay (enable underlay = yes)\n")
+		return c.setupUnderlayLayout(system)
+	}
+
+	sylog.Debugf("Not attempting to use underlay or overlay\n")
+	return c.setupDefaultLayout(system)
+}
+
+// setupOverlayLayout sets up the session with overlay filesystem
+func (c *container) setupOverlayLayout(system *mount.System) (err error) {
+	sylog.Debugf("Creating overlay SESSIONDIR layout\n")
+	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, c.sessionFsType, c.sessionSize, system, overlay.New()); err != nil {
+		return err
+	}
+
+	if err := c.addOverlayMount(system); err != nil {
+		return err
+	}
+
+	return system.RunAfterTag(mount.LayerTag, c.switchMount)
+}
+
+// setupUnderlayLayout sets up the session with underlay "filesystem"
+func (c *container) setupUnderlayLayout(system *mount.System) (err error) {
+	sylog.Debugf("Creating underlay SESSIONDIR layout\n")
+	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, c.sessionFsType, c.sessionSize, system, underlay.New()); err != nil {
+		return err
+	}
+
+	return system.RunAfterTag(mount.LayerTag, c.switchMount)
+}
+
+// setupDefaultLayout sets up the session without overlay or underlay
+func (c *container) setupDefaultLayout(system *mount.System) (err error) {
+	sylog.Debugf("Creating default SESSIONDIR layout\n")
+	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, c.sessionFsType, c.sessionSize, system, nil); err != nil {
+		return err
+	}
+
+	return system.RunAfterTag(mount.RootfsTag, c.switchMount)
 }
 
 func (c *container) localMount(point *mount.Point) error {
