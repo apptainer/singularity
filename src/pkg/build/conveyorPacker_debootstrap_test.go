@@ -6,6 +6,7 @@
 package build
 
 import (
+	"os"
 	"os/exec"
 	"testing"
 
@@ -13,6 +14,10 @@ import (
 )
 
 func TestDebootstrapConveyor(t *testing.T) {
+
+	if testing.Short() {
+		t.SkipNow()
+	}
 
 	if _, err := exec.LookPath("debootstrap"); err != nil {
 		t.Skip("skipping test, debootstrap not installed")
@@ -32,6 +37,8 @@ func TestDebootstrapConveyor(t *testing.T) {
 	dc := DebootstrapConveyor{}
 
 	err := dc.Get(testDef)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(dc.tmpfs)
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
@@ -48,15 +55,17 @@ func TestDebootstrapPacker(t *testing.T) {
 	testDef := Definition{}
 
 	testDef.Header = map[string]string{
-		"Bootstrap": "debootstrap",
-		"OSVersion": "bionic",
-		"MirrorURL": "http://us.archive.ubuntu.com/ubuntu/",
-		"Include":   "apt python ",
+		"bootstrap": "debootstrap",
+		"osversion": "bionic",
+		"mirrorurl": "http://us.archive.ubuntu.com/ubuntu/",
+		"include":   "apt python ",
 	}
 
 	dcp := DebootstrapConveyorPacker{}
 
 	err := dcp.Get(testDef)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(dcp.tmpfs)
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}

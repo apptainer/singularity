@@ -17,6 +17,10 @@ const archDef = "./testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
 
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
 	}
@@ -36,13 +40,12 @@ func TestArchConveyor(t *testing.T) {
 
 	ac := &ArchConveyor{}
 
-	if err := ac.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(ac.tmpfs)
+	err = ac.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(ac.tmpfs)
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(ac.tmpfs)
 }
 
 func TestArchPacker(t *testing.T) {
@@ -66,13 +69,12 @@ func TestArchPacker(t *testing.T) {
 
 	acp := &ArchConveyorPacker{}
 
-	if err := acp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(acp.tmpfs)
+	err = acp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(acp.tmpfs)
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(acp.tmpfs)
 
 	_, err = acp.Pack()
 	if err != nil {
