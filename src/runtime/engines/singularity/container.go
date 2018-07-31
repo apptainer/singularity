@@ -353,14 +353,8 @@ func (c *container) loadImage(path string, writable bool) (*image.Image, error) 
 func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 	rootfs := c.engine.EngineConfig.GetImage()
-	writable := true
 
-	if !c.engine.EngineConfig.GetWritableImage() {
-		flags |= syscall.MS_RDONLY
-		writable = false
-	}
-
-	imageObject, err := c.loadImage(rootfs, writable)
+	imageObject, err := c.loadImage(rootfs, false)
 	if err != nil {
 		return err
 	}
@@ -396,9 +390,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 			return err
 		}
 		if fstype == sif.FsSquash {
-			if writable {
-				return fmt.Errorf("can't set writable flag with squashfs image")
-			}
 			mountType = "squashfs"
 		} else if fstype == sif.FsExt3 {
 			mountType = "ext3"
@@ -409,9 +400,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		imageObject.Offset = uint64(parts[0].Fileoff)
 		imageObject.Size = uint64(parts[0].Filelen)
 	case image.SQUASHFS:
-		if writable {
-			return fmt.Errorf("can't set writable flag with squashfs image")
-		}
 		mountType = "squashfs"
 	case image.EXT3:
 		mountType = "ext3"
@@ -425,6 +413,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		system.Points.AddRemount(mount.PreLayerTag, c.session.RootFsPath(), flags)
 		return nil
 	}
+	flags |= syscall.MS_RDONLY
 
 	src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
