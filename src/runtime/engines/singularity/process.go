@@ -16,7 +16,9 @@ import (
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	os.Setenv("PS1", "shell> ")
 
-	os.Chdir("/")
+	if err := os.Chdir(engine.CommonConfig.OciConfig.Process.Cwd); err != nil {
+		os.Chdir("/")
+	}
 
 	args := engine.CommonConfig.OciConfig.Process.Args
 	env := engine.CommonConfig.OciConfig.Process.Env

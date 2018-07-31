@@ -125,15 +125,6 @@ func Init(path string, writable bool) (*Image, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error while opening image %s: %s", path, err)
 	}
-	procPath, err := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", file.Fd()))
-	if err != nil {
-		file.Close()
-		return nil, fmt.Errorf("failed to readlink of path file descriptor: %s", err)
-	}
-	if procPath != resolvedPath {
-		file.Close()
-		return nil, fmt.Errorf("path doesn't match %s != %s", resolvedPath, procPath)
-	}
 	img := &Image{
 		Path:     resolvedPath,
 		Name:     filepath.Base(resolvedPath),

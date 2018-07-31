@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func defaultProfile() *specs.LinuxSeccomp {
@@ -194,6 +195,9 @@ func defaultProfile() *specs.LinuxSeccomp {
 }
 
 func TestLoadSeccompConfig(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	if err := LoadSeccompConfig(nil); err == nil {
 		t.Errorf("shoud have failed with an empty config")
 	}

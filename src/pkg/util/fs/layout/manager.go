@@ -96,7 +96,7 @@ func (m *Manager) SetRootPath(path string) error {
 	if !fs.IsDir(path) {
 		return fmt.Errorf("%s is not a directory or doesn't exists", path)
 	}
-	m.rootPath = path
+	m.rootPath = filepath.Clean(path)
 	if m.entries == nil {
 		m.entries = make(map[string]interface{})
 	} else {
@@ -158,7 +158,7 @@ func (m *Manager) GetPath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Clean(m.rootPath + path), nil
+	return filepath.Join(m.rootPath, path), nil
 }
 
 // Chmod sets permission mode for path
