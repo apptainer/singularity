@@ -37,13 +37,11 @@ func TestDebootstrapConveyor(t *testing.T) {
 	dc := DebootstrapConveyor{}
 
 	err := dc.Get(testDef)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(dc.tmpfs)
 	if err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(dc.tmpfs)
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
-
-	os.RemoveAll(dc.tmpfs)
 }
 
 func TestDebootstrapPacker(t *testing.T) {
@@ -66,13 +64,11 @@ func TestDebootstrapPacker(t *testing.T) {
 	dcp := DebootstrapConveyorPacker{}
 
 	err := dcp.Get(testDef)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(dcp.tmpfs)
 	if err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(dcp.tmpfs)
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
-
-	defer os.RemoveAll(dcp.tmpfs)
 
 	_, err = dcp.Pack()
 	if err != nil {
