@@ -31,21 +31,26 @@ import (
 )
 
 type container struct {
-	engine        *EngineOperations
-	rpcOps        *client.RPC
-	session       *layout.Session
-	sessionFsType string
-	sessionSize   int
-	userNS        bool
-	pidNS         bool
+	engine           *EngineOperations
+	rpcOps           *client.RPC
+	session          *layout.Session
+	sessionLayerType string
+	sessionFsType    string
+	sessionSize      int
+	userNS           bool
+	pidNS            bool
 }
 
 func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	var err error
 
-	c := &container{engine: engine, rpcOps: rpcOps}
+	c := &container{
+		engine:           engine,
+		rpcOps:           rpcOps,
+		sessionLayerType: "none",
+		sessionFsType:    engine.EngineConfig.File.MemoryFSType,
+	}
 
-	c.sessionFsType = engine.EngineConfig.File.MemoryFSType
 	if os.Geteuid() != 0 {
 		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
 	}
@@ -164,6 +169,7 @@ func (c *container) setupOverlayLayout(system *mount.System) (err error) {
 		return err
 	}
 
+	c.sessionLayerType = "overlay"
 	return system.RunAfterTag(mount.LayerTag, c.switchMount)
 }
 
@@ -174,6 +180,7 @@ func (c *container) setupUnderlayLayout(system *mount.System) (err error) {
 		return err
 	}
 
+	c.sessionLayerType = "underlay"
 	return system.RunAfterTag(mount.LayerTag, c.switchMount)
 }
 
@@ -184,7 +191,19 @@ func (c *container) setupDefaultLayout(system *mount.System) (err error) {
 		return err
 	}
 
+	c.sessionLayerType = "none"
 	return system.RunAfterTag(mount.RootfsTag, c.switchMount)
+}
+
+// isLayerEnabled returns whether or not overlay or underlay system
+// is enabled
+func (c *container) isLayerEnabled() bool {
+	sylog.Debugf("Using Layer system: %v\n", c.sessionLayerType)
+	if c.sessionLayerType == "none" {
+		return false
+	}
+
+	return true
 }
 
 func (c *container) localMount(point *mount.Point) error {
@@ -808,81 +827,113 @@ func (c *container) addBindsMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) addHomeMount(system *mount.System) error {
-	if c.engine.EngineConfig.GetNoHome() {
-		sylog.Debugf("Skipping home directory mount by user request.")
-		return nil
-	}
-	if !c.engine.EngineConfig.File.MountHome {
-		sylog.Debugf("Skipping home dir mounting (per config)")
-		return nil
-	}
-
-	customHome := false
-
+// isHomeAllowed returns an error if attempting to mount a custom home when not allowed to
+func (c *container) isHomeAllowed() error {
 	pw, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user information")
 	}
 
-	if pw.Dir != c.engine.EngineConfig.GetHome() {
-		customHome = true
-	}
-
 	sylog.Debugf("Checking if user bind control is allowed")
-
-	if customHome && !c.engine.EngineConfig.File.UserBindControl {
+	if pw.Dir != c.engine.EngineConfig.GetHome() && !c.engine.EngineConfig.File.UserBindControl {
 		return fmt.Errorf("Not mounting user requested home: user bind control is disallowed")
 	}
 
+	return nil
+}
+
+// getHomePaths returns the source and destination path of the requested home mount
+func (c *container) getHomePaths() (source string, dest string, err error) {
+	homeSlice := strings.Split(c.engine.EngineConfig.GetHomeDir(), ":")
+
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		return "", "", fmt.Errorf("EngineConfig HomeDir has incorrect number of elements: %v", len(homeSlice))
+	}
+
+	source = homeSlice[0]
+	if len(homeSlice) == 1 {
+		dest = homeSlice[0]
+	} else {
+		dest = homeSlice[1]
+	}
+
+	dest = filepath.Clean(dest)
+	source, err = filepath.Abs(filepath.Clean(source))
+	if err != nil {
+		return "", "", err
+	}
+
+	return source, dest, err
+}
+
+// addHomeLayer adds the home mount when using either overlay or underlay
+func (c *container) addHomeLayer(system *mount.System, source, dest string) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
-	sylog.Debugf("Adding home to mount list\n")
-	homedir := strings.SplitN(c.engine.EngineConfig.GetHomeDir(), ":", 2)
-	src, err := filepath.Abs(homedir[0])
-	if err != nil {
-		sylog.Warningf("Can't determine absolute path of %s home directory", homedir[0])
-	}
-	dst := src
-	if len(homedir) == 2 {
-		dst = homedir[1]
+	if err := system.Points.AddBind(mount.HomeTag, source, dest, flags); err != nil {
+		return fmt.Errorf("unable to add home to mount list: %s", err)
 	}
 
-	sylog.Debugf("Checking if overlay/underlay layers are enabled")
+	return system.Points.AddRemount(mount.HomeTag, dest, flags)
+}
 
-	if c.session.Layer == nil {
-		sylog.Debugf("Staging home directory base")
+// addHomeNoLayer is responsible for staging the home directory and adding the base
+// directory of the staged home into the container when overlay/underlay are unavailable
+func (c *container) addHomeNoLayer(system *mount.System, source, dest string) error {
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
-		if err := c.session.AddDir(dst); err != nil {
-			return fmt.Errorf("failed to add %s as session directory: %s", src, err)
-		}
-		sessionDir, _ := c.session.GetPath(dst)
-		if err := system.Points.AddBind(mount.HomeTag, src, sessionDir, flags); err != nil {
-			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
-		}
-		system.Points.AddRemount(mount.HomeTag, sessionDir, flags)
-
-		sylog.Debugf("Identifying the base home directory")
-
-		dstDir := fs.RootDir(dst)
-		if dstDir == "." {
-			return fmt.Errorf("could not identify base home directory path: %s", dst)
-		}
-		sessionDir, _ = c.session.GetPath(dstDir)
-		sylog.Verbosef("Mounting staged home directory base to container's base dir")
-		if err := system.Points.AddBind(mount.FinalTag, sessionDir, dstDir, flags); err != nil {
-			return fmt.Errorf("unable to add %s to mount list: %s", sessionDir, err)
-		}
-	} else {
-		sylog.Debugf("Staging home directory")
-
-		err := system.Points.AddBind(mount.HomeTag, src, dst, flags)
-		if err != nil {
-			return fmt.Errorf("unable to add home to mount list: %s", err)
-		}
-		system.Points.AddRemount(mount.HomeTag, dst, flags)
+	if err := c.session.AddDir(dest); err != nil {
+		return fmt.Errorf("failed to add %s as session directory: %s", source, err)
 	}
+
+	homeStage, _ := c.session.GetPath(dest)
+	sylog.Debugf("Staging home directory (%v) at %v\n", source, homeStage)
+
+	if err := system.Points.AddBind(mount.HomeTag, source, homeStage, flags); err != nil {
+		return fmt.Errorf("unable to add %s to mount list: %s", source, err)
+	}
+	system.Points.AddRemount(mount.HomeTag, homeStage, flags)
+
+	homeBase := fs.RootDir(dest)
+	if homeBase == "." {
+		return fmt.Errorf("could not identify staged home directory base: %s", dest)
+	}
+
+	homeStageBase, _ := c.session.GetPath(homeBase)
+	sylog.Verbosef("Mounting staged home directory base (%v) into container at %v\n", homeStageBase, filepath.Join(c.session.FinalPath(), homeBase))
+	if err := system.Points.AddBind(mount.FinalTag, homeStageBase, homeBase, flags); err != nil {
+		return fmt.Errorf("unable to add %s to mount list: %s", homeStageBase, err)
+	}
+
 	return nil
+}
+
+// addHomeMount is responsible for adding the home directory mount using the proper method
+func (c *container) addHomeMount(system *mount.System) error {
+	if c.engine.EngineConfig.GetNoHome() {
+		sylog.Debugf("Skipping home directory mount by user request.")
+		return nil
+	}
+
+	if !c.engine.EngineConfig.File.MountHome {
+		sylog.Debugf("Skipping home dir mounting (per config)")
+		return nil
+	}
+
+	if err := c.isHomeAllowed(); err != nil {
+		return err
+	}
+
+	source, dest, err := c.getHomePaths()
+	if err != nil {
+		return fmt.Errorf("unable to get home source/destination: %v", err)
+	}
+
+	sylog.Debugf("Adding home directory mount [%v:%v] to list using layer: %v\n", source, dest, c.sessionLayerType)
+	if !c.isLayerEnabled() {
+		return c.addHomeNoLayer(system, source, dest)
+	}
+	return c.addHomeLayer(system, source, dest)
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
