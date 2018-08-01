@@ -107,8 +107,6 @@ int _singularity_runtime_mount_dev(void) {
 
         /* If /dev/infiniband exists include it */
         if ( is_dir("/dev/infiniband") == 0 ) {
-            int ret;
-
             if ( container_mkpath_nopriv(joinpath(devdir, "/infiniband"), 0755) != 0 ) {
                 singularity_message(ERROR, "Failed creating /dev/infiniband %s: %s\n", joinpath(devdir, "/infiniband"), strerror(errno));
                 ABORT(255);
