@@ -7,11 +7,6 @@ package rpc
 
 import "github.com/singularityware/singularity/src/pkg/util/loop"
 
-// MkdirArgs defines the arguments to mkdir
-type MkdirArgs struct {
-	Path string
-}
-
 // LoopArgs defines the arguments to create a loop device
 type LoopArgs struct {
 	Image string

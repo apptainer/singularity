@@ -22,12 +22,6 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) error {
 	return syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 }
 
-// Mkdir performs a mkdir with the specified arguments
-func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) error {
-	fmt.Println("Mkdir requested")
-	return nil
-}
-
 // Chroot performs a chroot with the specified arguments
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	if err := syscall.Chdir(arguments.Root); err != nil {

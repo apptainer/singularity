@@ -74,6 +74,8 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 		cconf.isInstance = C.uchar(bool2int(engine.IsRunAsInstance()))
 		cconf.noNewPrivs = C.uchar(bool2int(engine.OciConfig.Process.NoNewPrivileges))
 
+		mntNs := false
+
 		if engine.OciConfig.Linux != nil {
 			for i, uid := range engine.OciConfig.Linux.UIDMappings {
 				cconf.uidMapping[i].containerID = C.uid_t(uid.ContainerID)
@@ -85,7 +87,6 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 				cconf.gidMapping[i].hostID = C.gid_t(gid.HostID)
 				cconf.gidMapping[i].size = C.uint(gid.Size)
 			}
-			mntNs := false
 			for _, namespace := range engine.OciConfig.Linux.Namespaces {
 				var pid uint
 
@@ -121,12 +122,14 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 					cconf.cgroupPid = C.pid_t(pid)
 				}
 			}
-			if !mntNs {
-				if err := engine.OciConfig.AddOrReplaceLinuxNamespace("mount", ""); err != nil {
-					sylog.Fatalf("failed to add mount namespace: %s", err)
-				}
+		}
+
+		if !mntNs {
+			if err := engine.OciConfig.AddOrReplaceLinuxNamespace("mount", ""); err != nil {
+				sylog.Fatalf("failed to add mount namespace: %s", err)
 			}
 		}
+
 		if engine.OciConfig.Process != nil && engine.OciConfig.Process.Capabilities != nil {
 			var caps uint64
 
