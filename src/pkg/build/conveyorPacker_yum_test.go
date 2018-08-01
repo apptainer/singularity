@@ -17,8 +17,14 @@ const yumDef = "./testdata_good/yum/yum"
 
 func TestYumConveyor(t *testing.T) {
 
-	if _, err := exec.LookPath("yum"); err != nil {
-		t.Skip("skipping test, yum not installed")
+	if testing.Short() {
+		t.SkipNow()
+	}
+
+	_, dnfErr := exec.LookPath("dnf")
+	_, yumErr := exec.LookPath("yum")
+	if dnfErr != nil && yumErr != nil {
+		t.Skip("skipping test, neither dnf nor yum found")
 	}
 
 	test.EnsurePrivilege(t)
@@ -36,19 +42,20 @@ func TestYumConveyor(t *testing.T) {
 
 	yc := &YumConveyor{}
 
-	if err := yc.Get(def); err != nil {
-		//clean up bundle since assembler isnt called
-		os.RemoveAll(yc.b.Path)
+	err = yc.Get(def)
+	//clean up bundle since assembler isnt called
+	defer os.RemoveAll(yc.b.Path)
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(yc.b.Path)
 }
 
 func TestYumPacker(t *testing.T) {
 
-	if _, err := exec.LookPath("yum"); err != nil {
-		t.Skip("skipping test, yum not installed")
+	_, dnfErr := exec.LookPath("dnf")
+	_, yumErr := exec.LookPath("yum")
+	if dnfErr != nil && yumErr != nil {
+		t.Skip("skipping test, neither dnf nor yum found")
 	}
 
 	test.EnsurePrivilege(t)
@@ -66,13 +73,12 @@ func TestYumPacker(t *testing.T) {
 
 	ycp := &YumConveyorPacker{}
 
-	if err := ycp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(ycp.b.Path)
+	err = ycp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(ycp.b.Path)
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(ycp.b.Path)
 
 	_, err = ycp.Pack()
 	if err != nil {
