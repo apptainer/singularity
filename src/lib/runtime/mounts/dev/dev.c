@@ -105,6 +105,20 @@ int _singularity_runtime_mount_dev(void) {
         bind_dev(sessiondir, "/dev/random");
         bind_dev(sessiondir, "/dev/urandom");
 
+        /* If /dev/infiniband exists include it */
+        if ( is_dir("/dev/infiniband") == 0 ) {
+            int ret;
+
+            if ( container_mkpath_nopriv(joinpath(devdir, "/infiniband"), 0755) != 0 ) {
+                singularity_message(ERROR, "Failed creating /dev/infiniband %s: %s\n", joinpath(devdir, "/infiniband"), strerror(errno));
+                ABORT(255);
+            }
+            singularity_message(DEBUG, "Attempting to mount /dev/infiniband into session dev dir (%s)\n", joinpath(devdir, "/infiniband"));
+            if ( singularity_mount("/dev/infiniband", joinpath(devdir, "/infiniband"), NULL, MS_BIND|MS_REC, NULL) < 0 ) {
+                singularity_message(WARNING, "Could not mount host /dev/infiniband to '%s' : %s\n", joinpath(devdir, "/infiniband"), strerror(errno));
+            }
+        }
+
         /* if the user passed the --nv flag and the --contain flag, still bind
         nvidia devices */
         if ( nvopt != NULL ) {
