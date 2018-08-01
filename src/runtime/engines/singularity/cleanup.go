@@ -5,6 +5,8 @@
 
 package singularity
 
+import "github.com/singularityware/singularity/src/pkg/sylog"
+
 /*
  * see https://github.com/opencontainers/runtime-spec/blob/master/runtime.md#lifecycle
  * we will run step 8/9 there
@@ -12,5 +14,6 @@ package singularity
 
 // CleanupContainer cleans up the container
 func (engine *EngineOperations) CleanupContainer() error {
+	sylog.Debugf("Cleanup container")
 	return nil
 }

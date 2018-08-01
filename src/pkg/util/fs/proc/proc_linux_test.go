@@ -119,3 +119,29 @@ func TestParseMountInfo(t *testing.T) {
 		t.Errorf("got %d child mount point for '/run/user/1000' instead of 1", len(m["/run/user/1000"]))
 	}
 }
+
+func TestExtractPid(t *testing.T) {
+	procList := []struct {
+		path string
+		pid  uint
+		fail bool
+	}{
+		{"/proc/1/fd", 1, false},
+		{"/proc/self", 0, true},
+		{"/proc/123/ns/pid", 123, false},
+		{"/proc/-1", 0, true},
+		{"/etc/../proc/1/fd", 0, true},
+	}
+	for _, pl := range procList {
+		pid, err := ExtractPid(pl.path)
+		if err != nil && !pl.fail {
+			t.Fatal(err)
+		}
+		if !pl.fail && pid != pl.pid {
+			t.Fatalf("should have returned %d as PID instead of %d", pid, pl.pid)
+		}
+		if pl.fail && err == nil {
+			t.Fatalf("extract path %s should have failed", pl.path)
+		}
+	}
+}

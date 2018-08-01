@@ -7,6 +7,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
@@ -56,6 +58,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("noinit"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -72,7 +75,7 @@ var ExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		execWrapper(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -87,8 +90,8 @@ var ShellCmd = &cobra.Command{
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		a := []string{"/.singularity.d/actions/shell"}
+		execWrapper(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -104,7 +107,7 @@ var RunCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		execWrapper(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -114,15 +117,19 @@ var RunCmd = &cobra.Command{
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
+func execWrapper(cobraCmd *cobra.Command, image string, args []string, name string) {
+	progname := ""
 	lvl := "0"
+
+	uid := uint32(os.Getuid())
+	gid := uint32(os.Getgid())
 
 	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
 
 	engineConfig := singularity.NewConfig()
 
 	ociConfig := &oci.Config{}
-	generator := generate.NewFromSpec(&ociConfig.Spec)
+	generator := generate.Generator{Config: &ociConfig.Spec}
 
 	generator.SetProcessArgs(args)
 
@@ -131,8 +138,19 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
+	engineConfig.SetNv(Nvidia)
+	engineConfig.SetAddCaps(AddCaps)
+	engineConfig.SetDropCaps(DropCaps)
+	engineConfig.SetAllowSUID(AllowSUID)
+	engineConfig.SetKeepPrivs(KeepPrivs)
+	engineConfig.SetNoPrivs(NoPrivs)
 
-	if IsContained || IsContainAll {
+	if Hostname != "" {
+		UtsNamespace = true
+		engineConfig.SetHostname(Hostname)
+	}
+
+	if IsContained || IsContainAll || IsBoot {
 		engineConfig.SetContain(true)
 
 		if IsContainAll {
@@ -157,6 +175,32 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		UserNamespace = true
 	}
 
+	/* if name submitted, run as instance */
+	if name != "" {
+		PidNamespace = true
+		IpcNamespace = true
+		engineConfig.SetInstance(true)
+		engineConfig.SetBootInstance(IsBoot)
+
+		if IsBoot {
+			UtsNamespace = true
+			NetNamespace = true
+			if Hostname == "" {
+				engineConfig.SetHostname(name)
+			}
+			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			generator.SetProcessArgs([]string{"/sbin/init"})
+		}
+		pwd, err := user.GetPwUID(uid)
+		if err != nil {
+			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
+		}
+		progname = fmt.Sprintf("Singularity instance: %s [%s]", pwd.Name, name)
+	} else {
+		generator.SetProcessArgs(args)
+		progname = "Singularity runtime parent"
+	}
+
 	if NetNamespace {
 		generator.AddOrReplaceLinuxNamespace("network", "")
 	}
@@ -165,6 +209,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if PidNamespace {
 		generator.AddOrReplaceLinuxNamespace("pid", "")
+		engineConfig.SetNoInit(NoInit)
 	}
 	if IpcNamespace {
 		generator.AddOrReplaceLinuxNamespace("ipc", "")
@@ -172,9 +217,6 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 		wrapper = buildcfg.SBINDIR + "/wrapper"
-
-		uid := uint32(os.Getuid())
-		gid := uint32(os.Getgid())
 
 		if IsFakeroot {
 			generator.AddLinuxUIDMapping(uid, 0, 1)
@@ -222,11 +264,10 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 
 	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
-	progname := "Singularity runtime parent"
 
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
-		ContainerID:  "new",
+		ContainerID:  name,
 		OciConfig:    ociConfig,
 		EngineConfig: engineConfig,
 	}

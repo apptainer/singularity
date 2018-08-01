@@ -20,6 +20,7 @@
 #include <grp.h>
 #include <link.h>
 #include <limits.h>
+#include <sys/signalfd.h>
 #include <sys/fsuid.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
@@ -479,9 +480,10 @@ __attribute__((constructor)) static void init(void) {
     char *pipe_fd_env;
     int output[2];
     int status;
-    struct pollfd fds[2];
+    struct pollfd fds[3];
     int syncfd = -1;
     int pipe_fd = -1;
+    int sfd;
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
     singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
@@ -578,6 +580,13 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
+    /* poll on SIGCHLD signal to exit properly if scontainer exit without returning configuration */
+    sfd = signalfd(-1, &mask, 0);
+    if (sfd == -1) {
+        singularity_message(ERROR, "Signalfd failed: %s\n", strerror(errno));
+        exit(1);
+    }
+
     if ( pipe2(output, 0) < 0 ) {
         singularity_message(ERROR, "Failed to create output process pipes: %s\n", strerror(errno));
         exit(1);
@@ -629,9 +638,13 @@ __attribute__((constructor)) static void init(void) {
     fds[1].events = POLLIN;
     fds[1].revents = 0;
 
+    fds[2].fd = sfd;
+    fds[2].events = POLLIN;
+    fds[2].revents = 0;
+
     singularity_message(DEBUG, "Wait C and JSON runtime configuration from scontainer stage 1\n");
 
-    while ( poll(fds, 2, -1) >= 0 ) {
+    while ( poll(fds, 3, -1) >= 0 ) {
         if ( fds[0].revents & POLLIN ) {
             int ret;
             singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
@@ -654,9 +667,13 @@ __attribute__((constructor)) static void init(void) {
         if ( fds[1].revents & POLLIN ) {
             continue;
         }
+        if ( fds[2].revents & POLLIN ) {
+            break;
+        }
     }
 
     close(output[0]);
+    close(sfd);
 
     singularity_message(DEBUG, "Wait completion of scontainer stage1\n");
     if ( wait(&status) != stage_pid ) {
@@ -690,6 +707,9 @@ __attribute__((constructor)) static void init(void) {
 
             action.sa_sigaction = (void *)&do_exit;
             action.sa_flags = SA_SIGINFO|SA_RESTART;
+
+            close(master_socket[0]);
+            close(master_socket[1]);
 
             sigemptyset(&usrmask);
             sigaddset(&usrmask, SIGUSR1);

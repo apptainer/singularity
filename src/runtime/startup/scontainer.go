@@ -22,6 +22,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
+	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
@@ -84,22 +85,45 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 				cconf.gidMapping[i].hostID = C.gid_t(gid.HostID)
 				cconf.gidMapping[i].size = C.uint(gid.Size)
 			}
+			mntNs := false
 			for _, namespace := range engine.OciConfig.Linux.Namespaces {
+				var pid uint
+
+				pid = 0
+				if namespace.Path != "" {
+					if pid, err = proc.ExtractPid(namespace.Path); err != nil {
+						sylog.Fatalf("failed to determine pid for proc path %s: %s", namespace.Path, err)
+					}
+				}
+
 				switch namespace.Type {
 				case specs.UserNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWUSER
+					cconf.userPid = C.pid_t(pid)
 				case specs.IPCNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWIPC
+					cconf.ipcPid = C.pid_t(pid)
 				case specs.UTSNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWUTS
+					cconf.utsPid = C.pid_t(pid)
 				case specs.PIDNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWPID
+					cconf.pidPid = C.pid_t(pid)
 				case specs.NetworkNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWNET
+					cconf.netPid = C.pid_t(pid)
 				case specs.MountNamespace:
 					cconf.nsFlags |= syscall.CLONE_NEWNS
+					cconf.mntPid = C.pid_t(pid)
+					mntNs = true
 				case specs.CgroupNamespace:
 					cconf.nsFlags |= 0x2000000
+					cconf.cgroupPid = C.pid_t(pid)
+				}
+			}
+			if !mntNs {
+				if err := engine.OciConfig.AddOrReplaceLinuxNamespace("mount", ""); err != nil {
+					sylog.Fatalf("failed to add mount namespace: %s", err)
 				}
 			}
 		}

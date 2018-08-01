@@ -60,6 +60,7 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 
 	if engine.IsRunAsInstance() {
 		go func() {
+			sylog.Debugf("Running as instance")
 			data := make([]byte, 1)
 
 			comm := os.NewFile(uintptr(masterSocket), "master-socket")
@@ -67,12 +68,17 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 			comm.Close()
 
 			_, err = conn.Read(data)
-			if err == io.EOF {
+			if err == io.EOF || err == nil {
 				/* sleep a bit to see if child exit */
 				time.Sleep(100 * time.Millisecond)
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR1)
 				}
+			} else {
+				if os.Getppid() == ppid {
+					syscall.Kill(ppid, syscall.SIGUSR2)
+				}
+				fatalChan <- fmt.Errorf("failed to spawn instance: %s", err)
 			}
 			conn.Close()
 		}()
@@ -95,7 +101,10 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 		sylog.Fatalf("%s", fatal)
 	}
 
-	if status.Exited() {
+	if status.Signaled() {
+		sylog.Debugf("Child exited due to signal %d", status.Signal())
+		syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
+	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
 		if engine.IsRunAsInstance() {
 			if status.ExitStatus() != 0 {
@@ -109,10 +118,6 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 			}
 		}
 		os.Exit(status.ExitStatus())
-	} else if status.Signaled() {
-		sylog.Debugf("Child exited due to signal %d", status.Signal())
-		syscall.Kill(os.Getpid(), status.Signal())
-		os.Exit(1)
 	}
 }
 
@@ -140,6 +145,8 @@ func main() {
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 		RPCServer(C.rpc_socket[1], C.sruntime)
+
+		syscall.Close(int(C.rpc_socket[1]))
 
 		sylog.Verbosef("Execute scontainer stage 2\n")
 		C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)

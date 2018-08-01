@@ -56,3 +56,12 @@ func ParseMountInfo(path string) (map[string][]string, error) {
 	}
 	return mp, nil
 }
+
+// ExtractPid returns a pid extracted from path of type "/proc/1"
+func ExtractPid(path string) (pid uint, err error) {
+	n, err := fmt.Sscanf(path, "/proc/%d", &pid)
+	if n != 1 {
+		return 0, fmt.Errorf("can't extract PID from %s: %s", path, err)
+	}
+	return
+}
