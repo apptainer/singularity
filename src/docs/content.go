@@ -147,6 +147,80 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.simg /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysUse   string = `keys <subcommand>`
+	KeysShort string = `Manage OpenPGP key stores`
+	KeysLong  string = `
+  The 'keys' command  allows you to manage local OpenPGP key stores by create a
+  new store and new keys pairs. You can also list available keys from the
+  default store. Finally, the keys command offers subcommands to communicate
+  with an HKP key server to fetch and upload public keys.`
+	KeysExample string = `
+  All group commands have their own help output:
+
+  $ singularity help keys newpair
+  $ singularity keys list --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys newpair
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysNewPairUse   string = `newpair`
+	KeysNewPairShort string = `Create a new OpenPGP key pair`
+	KeysNewPairLong  string = `
+	The 'keys newpair' command allows you to create a new key or public/private
+	keys to be stored in the default user local key store location
+	(e.g., $HOME/.singularity/sypgp).`
+	KeysNewPairExample string = `
+  $ singularity keys newpair`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys list
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysListUse   string = `list`
+	KeysListShort string = `List keys from the default key store`
+	KeysListLong  string = `
+	The 'keys list' command allows you to list public/private key pairs
+	from the default user local key store location
+	(e.g., $HOME/.singularity/sypgp).`
+	KeysListExample string = `
+  $ singularity keys list`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys search
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysSearchUse   string = `search`
+	KeysSearchShort string = `Search for keys matching string argument`
+	KeysSearchLong  string = `
+	The 'keys search' command allows you to connect to a key server and look
+	for public keys marching the string argument passed to the command line.`
+	KeysSearchExample string = `
+  $ singularity keys search sylabs.io`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys pull
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysPullUse   string = `pull`
+	KeysPullShort string = `Fetch an OpenPGP public key from a key server`
+	KeysPullLong  string = `
+	The 'keys pull' command allows you to connect to a key server look for
+	and download a public key. Key rings are stored into
+	(e.g., $HOME/.singularity/sypgp).`
+	KeysPullExample string = `
+  $ singularity keys pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keys push
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeysPushUse   string = `push`
+	KeysPushShort string = `Upload an OpenPGP public key to a key server`
+	KeysPushLong  string = `
+	The 'keys push' command allows you to connect to a key server and
+	upload public keys from the local key store.`
+	KeysPushExample string = `
+  $ singularity keys push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`

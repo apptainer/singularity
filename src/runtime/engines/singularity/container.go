@@ -376,13 +376,13 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		}
 
 		// Get the default system partition image
-		part, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+		parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
 		if err != nil {
 			return err
 		}
 
 		// Check that this is a system partition
-		parttype, err := part.GetPartType()
+		parttype, err := parts[0].GetPartType()
 		if err != nil {
 			return err
 		}
@@ -391,7 +391,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		}
 
 		// record the fs type
-		fstype, err := part.GetFsType()
+		fstype, err := parts[0].GetFsType()
 		if err != nil {
 			return err
 		}
@@ -406,8 +406,8 @@ func (c *container) addRootfsMount(system *mount.System) error {
 			return fmt.Errorf("unknown file system type: %v", fstype)
 		}
 
-		imageObject.Offset = uint64(part.Fileoff)
-		imageObject.Size = uint64(part.Filelen)
+		imageObject.Offset = uint64(parts[0].Fileoff)
+		imageObject.Size = uint64(parts[0].Filelen)
 	case image.SQUASHFS:
 		if writable {
 			return fmt.Errorf("can't set writable flag with squashfs image")

@@ -16,6 +16,10 @@ const busyBoxDef = "./testdata_good/busybox/busybox"
 
 func TestBusyBoxConveyor(t *testing.T) {
 
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -32,13 +36,12 @@ func TestBusyBoxConveyor(t *testing.T) {
 
 	bc := &BusyBoxConveyor{}
 
-	if err := bc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(bc.tmpfs)
+	err = bc.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(bc.tmpfs)
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(bc.tmpfs)
 
 }
 
@@ -60,14 +63,12 @@ func TestBusyBoxPacker(t *testing.T) {
 
 	bcp := &BusyBoxConveyorPacker{}
 
-	if err := bcp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(bcp.tmpfs)
-		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
-	}
-
+	err = bcp.Get(def)
 	//clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(bcp.tmpfs)
+	if err != nil {
+		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
+	}
 
 	_, err = bcp.Pack()
 	if err != nil {
