@@ -125,10 +125,15 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 			if syscall.Stat(p, st) == nil {
 				continue
 			}
-			if err := syscall.Stat(point.Source, st); os.IsNotExist(err) {
-				return fmt.Errorf("stat failed for %s: %s", point.Source, err)
+			if point.Type == "" {
+				if err := syscall.Stat(point.Source, st); os.IsNotExist(err) {
+					return fmt.Errorf("stat failed for %s: %s", point.Source, err)
+				}
 			}
 			dest := lowerDir + point.Destination
+			if _, err := o.session.GetPath(dest); err == nil {
+				continue
+			}
 			// don't exist create it in overlay
 			switch st.Mode & syscall.S_IFMT {
 			case syscall.S_IFDIR:
@@ -136,8 +141,14 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 					return err
 				}
 			default:
-				if err := o.session.AddFile(dest, nil); err != nil {
-					return err
+				if point.Type == "" {
+					if err := o.session.AddFile(dest, nil); err != nil {
+						return err
+					}
+				} else {
+					if err := o.session.AddDir(dest); err != nil {
+						return err
+					}
 				}
 			}
 		}

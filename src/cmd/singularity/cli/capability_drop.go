@@ -6,10 +6,9 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 func init() {
@@ -18,7 +17,23 @@ func init() {
 		// capabilityDotDropCmd,
 	}
 
+	var capabilityDropFlags = pflag.NewFlagSet("CapabilityDropFlags", pflag.ExitOnError)
+
+	// -u|--user
+	capabilityDropFlags.StringVarP(&CapUser, "user", "u", "", "Drop capabilities for the given user")
+	capabilityDropFlags.SetAnnotation("user", "argtag", []string{"<user>"})
+
+	// -g|--group
+	capabilityDropFlags.StringVarP(&CapGroup, "group", "g", "", "Drop capabilities for the given group")
+	capabilityDropFlags.SetAnnotation("group", "argtag", []string{"<group>"})
+
+	// -d|--desc
+	capabilityDropFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
+
 	for _, cmd := range capabilityDropCmds {
+		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
+		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
+		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("desc"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -27,10 +42,10 @@ func init() {
 
 // CapabilityDropCmd singularity capability drop
 var CapabilityDropCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(2),
+	Args: cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dropping capability")
+		manageCap(args[0], capDrop)
 	},
 
 	Use:     docs.CapabilityDropUse,

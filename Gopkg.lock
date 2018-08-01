@@ -390,7 +390,7 @@
   branch = "master"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
-  revision = "4fac65923e1431647956fa36d1374feba299b893"
+  revision = "8ad2fb65a618b8d83f03efd93d0fbf2ecce61a02"
 
 [[projects]]
   branch = "master"
