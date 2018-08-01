@@ -32,7 +32,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - Add --no-home option to not mount user $HOME if it is not the $CWD and
    `mount home = yes` is set. #1761
  - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
- - Include /dev/infiniband if it exists when --contain is used #????
+ - Include /dev/infiniband if it exists when --contain is used #1810
 
 ### Bug fixes
  - Fix 404 when using Arch Linux bootstrap #1731
