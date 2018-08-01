@@ -822,8 +822,8 @@ __attribute__((constructor)) static void init(void) {
                 exit(1);
             }
 
-            if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
-                singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
+            if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
             }
 
             if ( syncfd >= 0 ) {

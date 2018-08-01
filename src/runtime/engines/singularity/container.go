@@ -67,7 +67,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 	}
 
 	p := &mount.Points{}
-	system := &mount.System{Points: p, Mount: c.localMount}
+	system := &mount.System{Points: p, Mount: c.mount}
 
 	if err := c.setupSessionLayout(system); err != nil {
 		return err
@@ -170,7 +170,7 @@ func (c *container) setupOverlayLayout(system *mount.System) (err error) {
 	}
 
 	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.LayerTag, c.switchMount)
+	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
@@ -181,7 +181,7 @@ func (c *container) setupUnderlayLayout(system *mount.System) (err error) {
 	}
 
 	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.LayerTag, c.switchMount)
+	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
@@ -192,7 +192,7 @@ func (c *container) setupDefaultLayout(system *mount.System) (err error) {
 	}
 
 	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.RootfsTag, c.switchMount)
+	return system.RunAfterTag(mount.RootfsTag, c.setSlaveMount)
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
@@ -206,26 +206,13 @@ func (c *container) isLayerEnabled() bool {
 	return true
 }
 
-func (c *container) localMount(point *mount.Point) error {
-	if !c.userNS {
-		uid := os.Getuid()
-
-		if err := syscall.Setresuid(uid, 0, uid); err != nil {
-			return fmt.Errorf("failed to elevate privileges")
-		}
-		defer syscall.Setresuid(uid, uid, 0)
-
-		if err := syscall.Setfsuid(uid); err != nil {
-			return fmt.Errorf("failed to set FS uid")
-		}
-	}
-
+func (c *container) mount(point *mount.Point) error {
 	if _, err := mount.GetOffset(point.InternalOptions); err == nil {
 		if err := c.mountImage(point); err != nil {
 			return fmt.Errorf("can't mount image %s: %s", point.Source, err)
 		}
 	} else {
-		if err := c.mountGeneric(point, true); err != nil {
+		if err := c.mountGeneric(point); err != nil {
 			flags, _ := mount.ConvertOptions(point.Options)
 			if flags&syscall.MS_REMOUNT != 0 {
 				return fmt.Errorf("can't remount %s: %s", point.Destination, err)
@@ -237,25 +224,16 @@ func (c *container) localMount(point *mount.Point) error {
 	return nil
 }
 
-func (c *container) rpcMount(point *mount.Point) error {
-	if err := c.mountGeneric(point, false); err != nil {
-		flags, _ := mount.ConvertOptions(point.Options)
-		if flags&syscall.MS_REMOUNT != 0 {
-			return fmt.Errorf("can't remount %s: %s", point.Destination, err)
-		}
-		sylog.Verbosef("can't mount %s: %s", point.Source, err)
-		return nil
+func (c *container) setSlaveMount(system *mount.System) error {
+	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
+	if _, err := c.rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, ""); err != nil {
+		return err
 	}
 	return nil
 }
 
-func (c *container) switchMount(system *mount.System) error {
-	system.Mount = c.rpcMount
-	return nil
-}
-
 // mount any generic mount (not loop dev)
-func (c *container) mountGeneric(mnt *mount.Point, local bool) (err error) {
+func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 	sessionPath := c.session.Path()
@@ -291,11 +269,7 @@ func (c *container) mountGeneric(mnt *mount.Point, local bool) (err error) {
 	} else {
 		sylog.Debugf("Mounting %s to %s\n", mnt.Source, dest)
 	}
-	if !local {
-		_, err = c.rpcOps.Mount(mnt.Source, dest, mnt.Type, flags, optsString)
-	} else {
-		err = syscall.Mount(mnt.Source, dest, mnt.Type, flags, optsString)
-	}
+	_, err = c.rpcOps.Mount(mnt.Source, dest, mnt.Type, flags, optsString)
 	return err
 }
 
@@ -328,20 +302,14 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	loopdev := new(loop.Device)
-
-	number := 0
-
-	if err := loopdev.Attach(mnt.Source, attachFlag, &number); err != nil {
-		return err
-	}
-	if err := loopdev.SetStatus(info); err != nil {
-		return err
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info)
+	if err != nil {
+		return fmt.Errorf("failed to find loop device: %s", err)
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
 	sylog.Debugf("Mounting loop device %s to %s\n", path, mnt.Destination)
-	err = syscall.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
+	_, err = c.rpcOps.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
 	if err != nil {
 		return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
 	}
@@ -461,15 +429,13 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		if err := system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), flags); err != nil {
 			return err
 		}
-		// remount sandbox in PreLayerTag to apply flags in container namespace
-		system.Points.AddRemount(mount.PreLayerTag, c.session.RootFsPath(), flags)
+		system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
 		return nil
 	}
 	flags |= syscall.MS_RDONLY
 
-	src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return system.Points.AddImage(mount.RootfsTag, src, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+	return system.Points.AddImage(mount.RootfsTag, rootfs, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
 }
 
 func (c *container) overlayUpperWork(system *mount.System) error {
