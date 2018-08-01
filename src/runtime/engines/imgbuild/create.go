@@ -100,6 +100,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
+	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
+	_, err = rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("mount /etc/hosts failed: %s", err)
+	}
+
 	// Run %setup script here
 	setup := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Setup)
 	setup.Stdout = os.Stdout
