@@ -21,6 +21,7 @@ import (
 	"unsafe"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/mainthread"
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
@@ -121,7 +122,7 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 	}
 }
 
-func main() {
+func startup() {
 	loglevel := os.Getenv("SINGULARITY_MESSAGELEVEL")
 
 	os.Clearenv()
@@ -153,4 +154,17 @@ func main() {
 		SContainer(C.SCONTAINER_STAGE2, C.master_socket[1], &C.config, C.json_stdin)
 	}
 	sylog.Fatalf("You should not be there\n")
+}
+
+func init() {
+	runtime.LockOSThread()
+}
+
+func main() {
+	go startup()
+
+	// run functions requiring execution in main thread
+	for f := range mainthread.FuncChannel {
+		f()
+	}
 }

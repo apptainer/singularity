@@ -46,13 +46,14 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 			sylog.Fatalf("failed to copy master unix socket descriptor: %s", err)
 			return
 		}
-		comm.Close()
+		if stage == 2 {
+			comm.Close()
+		}
 	} else {
 		conn = nil
 	}
 
 	/* get json configuration */
-	sylog.Debugf("cconf.jsonConfSize: %d\n", C.int(cconf.jsonConfSize))
 	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(cconf.jsonConfSize))
 
 	engine, err := engines.NewEngine(jsonBytes)
@@ -165,10 +166,13 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 
 		jsonConf, _ := json.Marshal(engine.Common)
 		cconf.jsonConfSize = C.uint(len(jsonConf))
-		sylog.Debugf("jsonConfSize = %v\n", cconf.jsonConfSize)
 		cconfPayload := C.GoBytes(unsafe.Pointer(cconf), C.sizeof_struct_cConfig)
 
-		os.Stdout.Write(append(cconfPayload, jsonConf...))
+		data := append(cconfPayload, jsonConf...)
+		if n, err := conn.Write(data); err != nil || n != len(data) {
+			sylog.Fatalf("failed to write configuration: %s", err)
+		}
+		conn.Close()
 		os.Exit(0)
 	} else {
 		if err := engine.StartProcess(conn); err != nil {

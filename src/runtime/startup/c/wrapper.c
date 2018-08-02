@@ -478,9 +478,8 @@ __attribute__((constructor)) static void init(void) {
     char *loglevel;
     char *runtime;
     char *pipe_fd_env;
-    int output[2];
     int status;
-    struct pollfd fds[3];
+    struct pollfd fds[2];
     int syncfd = -1;
     int pipe_fd = -1;
     int sfd;
@@ -587,29 +586,15 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
-    if ( pipe2(output, 0) < 0 ) {
-        singularity_message(ERROR, "Failed to create output process pipes: %s\n", strerror(errno));
-        exit(1);
-    }
-
     singularity_message(DEBUG, "Create socketpair for smaster communication channel\n");
     if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, master_socket) < 0 ) {
         singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
         exit(1);
     }
 
-    stage_pid = fork();
+    stage_pid = fork_ns(CLONE_FILES);
     if ( stage_pid == 0 ) {
         set_parent_death_signal(SIGKILL);
-
-        close(output[0]);
-        close(master_socket[0]);
-
-        if ( dup2(output[1], STDOUT_FILENO) < 0 ) {
-            singularity_message(ERROR, "Failed to create stdout pipe: %s\n", strerror(errno));
-            exit(1);
-        }
-        close(output[1]);
 
         singularity_message(VERBOSE, "Spawn scontainer stage 1\n");
 
@@ -628,23 +613,17 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
-    close(output[1]);
-
-    fds[0].fd = output[0];
+    fds[0].fd = master_socket[0];
     fds[0].events = POLLIN;
     fds[0].revents = 0;
 
-    fds[1].fd = master_socket[0];
+    fds[1].fd = sfd;
     fds[1].events = POLLIN;
     fds[1].revents = 0;
 
-    fds[2].fd = sfd;
-    fds[2].events = POLLIN;
-    fds[2].revents = 0;
-
     singularity_message(DEBUG, "Wait C and JSON runtime configuration from scontainer stage 1\n");
 
-    while ( poll(fds, 3, -1) >= 0 ) {
+    while ( poll(fds, 2, -1) >= 0 ) {
         if ( fds[0].revents & POLLIN ) {
             int ret;
             singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
@@ -663,16 +642,11 @@ __attribute__((constructor)) static void init(void) {
             json_stdin[config.jsonConfSize] = '\0';
             break;
         }
-        /* TODO: pass file descriptors from stage 1 over unix socket */
         if ( fds[1].revents & POLLIN ) {
-            continue;
-        }
-        if ( fds[2].revents & POLLIN ) {
             break;
         }
     }
 
-    close(output[0]);
     close(sfd);
 
     singularity_message(DEBUG, "Wait completion of scontainer stage1\n");
