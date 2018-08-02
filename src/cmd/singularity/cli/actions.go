@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -133,7 +134,18 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	generator.SetProcessArgs(args)
 
-	engineConfig.SetImage(image)
+	// temporary check for development
+	// TODO: a real URI handler
+	if strings.HasPrefix(image, "instance://") {
+		engineConfig.SetImage(image)
+	} else {
+		abspath, err := filepath.Abs(image)
+		if err != nil {
+			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
+		}
+		engineConfig.SetImage(abspath)
+	}
+
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)

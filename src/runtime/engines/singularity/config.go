@@ -7,7 +7,6 @@ package singularity
 
 import (
 	"encoding/json"
-	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -115,8 +114,7 @@ func NewConfig() *EngineConfig {
 
 // SetImage sets the container image path to be used by containee.JSON.
 func (e *EngineConfig) SetImage(name string) {
-	abs, _ := filepath.Abs(name)
-	e.JSON.Image = abs
+	e.JSON.Image = name
 }
 
 // GetImage retrieves the container image path.

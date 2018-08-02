@@ -32,6 +32,16 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 	return reply, err
 }
 
+// Mkdir calls the mkdir RPC using the supplied arguments
+func (t *RPC) Mkdir(path string) (int, error) {
+	arguments := &args.MkdirArgs{
+		Path: path,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".Mkdir", arguments, &reply)
+	return reply, err
+}
+
 // Chroot calls the chroot RPC using the supplied arguments
 func (t *RPC) Chroot(root string) (int, error) {
 	arguments := &args.ChrootArgs{
