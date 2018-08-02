@@ -13,6 +13,11 @@
 #define JOKER           42
 #define MAX_ID_MAPPING  5
 
+struct fdlist {
+    int *fds;
+    unsigned int num;
+};
+
 struct uidMapping {
     uid_t hostID;
     uid_t containerID;

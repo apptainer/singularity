@@ -20,6 +20,7 @@
 #include <grp.h>
 #include <link.h>
 #include <limits.h>
+#include <dirent.h>
 #include <sys/signalfd.h>
 #include <sys/fsuid.h>
 #include <sys/mount.h>
@@ -463,6 +464,58 @@ static unsigned char is_suid(void) {
     return suid;
 }
 
+static void list_fd(struct fdlist *fl) {
+    int i = 0;
+    int fd_proc;
+    DIR *dir;
+    struct dirent *dirent;
+
+    if ( ( fd_proc = open("/proc/self/fd", O_RDONLY) ) < 0 ) {
+        singularity_message(ERROR, "Failed to open /proc/self/fd: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    if ( ( dir = fdopendir(fd_proc) ) == NULL ) {
+        singularity_message(ERROR, "Failed to list /proc/self/fd directory: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    while ( ( dirent = readdir(dir ) ) ) {
+        if ( strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0 ) {
+            continue;
+        }
+        if ( atoi(dirent->d_name) == fd_proc ) {
+            continue;
+        }
+        fl->num++;
+    }
+
+    rewinddir(dir);
+
+    fl->fds = (int *)malloc(sizeof(int)*fl->num);
+    if ( fl->fds == NULL ) {
+        singularity_message(ERROR, "Memory allocation failed: %s\n", strerror(errno));
+        exit(1);
+    }
+
+    while ( ( dirent = readdir(dir ) ) ) {
+        int cv;
+        if ( strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0 ) {
+            continue;
+        }
+
+        cv = atoi(dirent->d_name);
+        if ( cv == fd_proc ) {
+            continue;
+        }
+
+        fl->fds[i++] = atoi(dirent->d_name);
+    }
+
+    closedir(dir);
+    close(fd_proc);
+}
+
 void do_exit(int sig) {
     if ( sig == SIGUSR1 ) {
         exit(0);
@@ -483,6 +536,10 @@ __attribute__((constructor)) static void init(void) {
     int syncfd = -1;
     int pipe_fd = -1;
     int sfd;
+    int i, j;
+    struct fdlist fd_before = {NULL, 0};
+    struct fdlist fd_after = {NULL, 0};
+    char *source, *target;
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
     singularity_message(ERROR, "Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
@@ -538,6 +595,8 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
+    list_fd(&fd_before);
+
     if ( config.isSuid ) {
         singularity_message(DEBUG, "Drop privileges\n");
         if ( setegid(gid) < 0 || seteuid(uid) < 0 ) {
@@ -592,6 +651,13 @@ __attribute__((constructor)) static void init(void) {
         exit(1);
     }
 
+    /*
+     *  use CLONE_FILES to share file descriptors opened during stage 1,
+     *  this is a lazy implementation to avoid passing file descriptors
+     *  between wrapper and stage 1 over unix socket.
+     *  This is required so that all processes works with same files/directories
+     *  to minimize race conditions
+     */
     stage_pid = fork_ns(CLONE_FILES);
     if ( stage_pid == 0 ) {
         set_parent_death_signal(SIGKILL);
@@ -694,11 +760,11 @@ __attribute__((constructor)) static void init(void) {
                 exit(1);
             }
             if (sigaction(SIGUSR2, &action, NULL) < 0) {
-		        singularity_message(ERROR, "Failed to install signal handler for SIGUSR2\n");
+                singularity_message(ERROR, "Failed to install signal handler for SIGUSR2\n");
                 exit(1);
             }
             if (sigaction(SIGUSR1, &action, NULL) < 0) {
-		        singularity_message(ERROR, "Failed to install signal handler for SIGUSR1\n");
+                singularity_message(ERROR, "Failed to install signal handler for SIGUSR1\n");
                 exit(1);
             }
             if (sigprocmask(SIG_UNBLOCK, &usrmask, NULL) == -1) {
@@ -726,6 +792,65 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
+    list_fd(&fd_after);
+
+    source = (char *)malloc(PATH_MAX);
+    target = (char *)malloc(PATH_MAX);
+
+    if ( source == NULL || target == NULL ) {
+        singularity_message(ERROR, "Memory allocation failed: %s", strerror(errno));
+        exit(1);
+    }
+
+    /*
+     *  close unattended file descriptors opened during scontainer stage 1
+     *  execution, that may not be accurate depending of fs operations done
+     *  in stage 1, but should work for most engines.
+     */
+    for ( i = 0; i < fd_after.num; i++ ) {
+        struct stat st;
+        int found;
+
+        if ( fd_after.fds[i] == master_socket[0] || fd_after.fds[i] == master_socket[1] ) {
+            continue;
+        }
+
+        found = 0;
+        for ( j = 0; j < fd_before.num; j++ ) {
+            if ( fd_before.fds[j] == pipe_fd ) {
+                continue;
+            }
+            if ( fd_before.fds[j] == fd_after.fds[i] ) {
+                found = 1;
+                break;
+            }
+        }
+        if ( found == 1 ) {
+            continue;
+        }
+
+        memset(target, 0, PATH_MAX);
+        snprintf(source, PATH_MAX, "/proc/self/fd/%d", fd_after.fds[i]);
+
+        /* fd with link generating error are closed */
+        if ( readlink(source, target, PATH_MAX) < 0 ) {
+            close(fd_after.fds[i]);
+            continue;
+        }
+        /* fd pointing to /dev/tty or anonymous inodes are closed */
+        if ( strcmp(target, "/dev/tty") == 0 || stat(target, &st) < 0 ) {
+            close(fd_after.fds[i]);
+            continue;
+        }
+        /* set force close on exec for remaining fd */
+        if ( fcntl(fd_after.fds[i], F_SETFD, FD_CLOEXEC) < 0 ) {
+            singularity_message(DEBUG, "Can't set FD_CLOEXEC on file descriptor %d: %s", fd_after.fds[i], strerror(errno));
+        }
+    }
+
+    free(source);
+    free(target);
+
     if ( config.mntPid ) {
         if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
             singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
@@ -742,6 +867,7 @@ __attribute__((constructor)) static void init(void) {
         }
         if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+            exit(1);
         }
         if ( create_namespace(CLONE_NEWNS) < 0 ) {
             singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
@@ -749,6 +875,7 @@ __attribute__((constructor)) static void init(void) {
         }
         if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+            exit(1);
         }
         /* sync smaster and near child with an eventfd */
         syncfd = eventfd(0, 0);
@@ -757,11 +884,13 @@ __attribute__((constructor)) static void init(void) {
             exit(1);
         }
     }
+
     singularity_message(DEBUG, "Create RPC socketpair for communication between scontainer and RPC server\n");
     if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
         singularity_message(ERROR, "Failed to create communication socket: %s\n", strerror(errno));
         exit(1);
     }
+
     /* Use setfsuid to address issue about root_squash filesystems option */
     if ( config.isSuid ) {
         if ( setfsuid(uid) != 0 ) {
@@ -818,6 +947,7 @@ __attribute__((constructor)) static void init(void) {
 
             if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
+                exit(1);
             }
 
             if ( syncfd >= 0 ) {
