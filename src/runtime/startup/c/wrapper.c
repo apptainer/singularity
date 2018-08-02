@@ -824,6 +824,7 @@ __attribute__((constructor)) static void init(void) {
 
             if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+                exit(1);
             }
 
             if ( syncfd >= 0 ) {
