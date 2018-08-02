@@ -149,9 +149,14 @@ func startup() {
 
 		syscall.Close(int(C.rpc_socket[1]))
 
+		// that's the only way to ensure to be executed in a specific thread
+		// since prepare_scontainer_stage modify capabilities and IDs and we
+		// need to execute container process with requested security settings
 		sylog.Verbosef("Execute scontainer stage 2\n")
-		C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
-		SContainer(C.SCONTAINER_STAGE2, C.master_socket[1], &C.config, C.json_stdin)
+		mainthread.Execute(func() {
+			C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
+			SContainer(C.SCONTAINER_STAGE2, C.master_socket[1], &C.config, C.json_stdin)
+		})
 	}
 	sylog.Fatalf("You should not be there\n")
 }
