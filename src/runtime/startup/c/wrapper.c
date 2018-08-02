@@ -851,12 +851,7 @@ __attribute__((constructor)) static void init(void) {
     free(source);
     free(target);
 
-    if ( config.mntPid ) {
-        if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
-            singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
-            exit(1);
-        }
-    } else {
+    if ( config.mntPid == 0 ) {
         if ( unshare(CLONE_FS) < 0 ) {
             singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
             exit(1);
@@ -939,26 +934,6 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-        if ( config.mntPid == 0 ) {
-            if ( create_namespace(CLONE_NEWNS) < 0 ) {
-                singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
-                exit(1);
-            }
-
-            if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
-                singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
-                exit(1);
-            }
-
-            if ( syncfd >= 0 ) {
-                unsigned long long counter = 1;
-                if ( write(syncfd, &counter, sizeof(counter)) != sizeof(counter) ) {
-                    singularity_message(ERROR, "Failed to synchronize with smaster: %s\n", strerror(errno));
-                    exit(1);
-                }
-                close(syncfd);
-            }
-        }
         if ( config.utsPid ) {
             if ( enter_namespace(config.utsPid, CLONE_NEWUTS) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in uts namespace: %s\n", strerror(errno));
@@ -996,6 +971,31 @@ __attribute__((constructor)) static void init(void) {
                     singularity_message(ERROR, "Failed to create cgroup namespace: %s\n", strerror(errno));
                     exit(1);
                 }
+            }
+        }
+        if ( config.mntPid == 0 ) {
+            if ( create_namespace(CLONE_NEWNS) < 0 ) {
+                singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+
+            if ( mount(NULL, "/", NULL, MS_SLAVE|MS_REC, NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to propagate as SLAVE: %s\n", strerror(errno));
+                exit(1);
+            }
+
+            if ( syncfd >= 0 ) {
+                unsigned long long counter = 1;
+                if ( write(syncfd, &counter, sizeof(counter)) != sizeof(counter) ) {
+                    singularity_message(ERROR, "Failed to synchronize with smaster: %s\n", strerror(errno));
+                    exit(1);
+                }
+                close(syncfd);
+            }
+        } else {
+            if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
+                exit(1);
             }
         }
 
