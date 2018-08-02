@@ -85,10 +85,6 @@ func TestDockerAUFS(t *testing.T) {
 
 // Check force permissions for user builds #977
 func TestDockerPermissions(t *testing.T) {
-	if !*runDisabled {
-		t.Skip("disabled until issue addressed") // TODO
-	}
-
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -125,10 +121,6 @@ func TestDockerPermissions(t *testing.T) {
 
 // Check whiteout of symbolic links #1592 #1576
 func TestDockerWhiteoutSymlink(t *testing.T) {
-	if !*runDisabled {
-		t.Skip("disabled until issue addressed") // TODO
-	}
-
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

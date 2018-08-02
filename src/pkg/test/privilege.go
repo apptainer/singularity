@@ -30,17 +30,17 @@ func EnsurePrivilege(t *testing.T) {
 // occur before the test completes (a defer statement is recommended.)
 func DropPrivilege(t *testing.T) {
 
-	// setreuid/setregid modifies the current thread only. To ensure our new
+	// setresuid/setresgid modifies the current thread only. To ensure our new
 	// uid/gid sticks, we need to lock ourselves to the current OS thread.
 	runtime.LockOSThread()
 
 	if os.Getgid() == 0 {
-		if err := syscall.Setregid(0, unprivGID); err != nil {
+		if err := syscall.Setresgid(unprivGID, unprivGID, origGID); err != nil {
 			t.Fatalf("failed to set group identity: %v", err)
 		}
 	}
 	if os.Getuid() == 0 {
-		if err := syscall.Setreuid(0, unprivUID); err != nil {
+		if err := syscall.Setresuid(unprivUID, unprivUID, origUID); err != nil {
 			t.Fatalf("failed to set user identity: %v", err)
 		}
 	}
@@ -48,10 +48,10 @@ func DropPrivilege(t *testing.T) {
 
 // ResetPrivilege returns effective privilege to the original user.
 func ResetPrivilege(t *testing.T) {
-	if err := syscall.Setreuid(origUID, origUID); err != nil {
+	if err := syscall.Setresuid(origUID, origUID, unprivUID); err != nil {
 		t.Fatalf("failed to reset user identity: %v", err)
 	}
-	if err := syscall.Setregid(origGID, origGID); err != nil {
+	if err := syscall.Setresgid(origGID, origGID, unprivGID); err != nil {
 		t.Fatalf("failed to reset group identity: %v", err)
 	}
 	runtime.UnlockOSThread()
