@@ -162,7 +162,10 @@ func startup() {
 }
 
 func init() {
+	// lock main thread for function execution loop
 	runtime.LockOSThread()
+	// this is mainly to reduce memory footprint
+	runtime.GOMAXPROCS(1)
 }
 
 func main() {
