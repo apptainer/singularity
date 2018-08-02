@@ -18,6 +18,7 @@ START OPTIONS:
                         default). This option can be called multiple times.
     -c|--contain        Use minimal /dev and empty other directories (e.g. /tmp
                         and $HOME) instead of sharing filesystems on your host
+    -e|--cleanenv       Clean environment before running container
     -H|--home <spec>    A home directory specification.  spec can either be a
                         src path or src:dest pair.  src is the source path
                         of the home directory outside the container and dest

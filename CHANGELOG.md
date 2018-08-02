@@ -35,6 +35,7 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
 
 ### Bug fixes
  - Fix 404 when using Arch Linux bootstrap #1731
+ - Fix environment variables clearing while starting instances #1766
 
 ## [v2.5.2](https://github.com/singularityware/singularity/releases/tag/2.5.2) (2018-07-03)
 
