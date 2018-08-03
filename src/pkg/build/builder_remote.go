@@ -67,11 +67,7 @@ func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewRemoteBuilder(imagePath, libraryURL string, spec string, isDetached bool, httpAddr, authToken string) (rb *RemoteBuilder) {
-	d, err := makeDef(spec)
-	if err != nil {
-		sylog.Fatalf("Unable to make definition: %v\n", err)
-	}
+func NewRemoteBuilder(imagePath, libraryURL string, d types.Definition, isDetached bool, httpAddr, authToken string) (rb *RemoteBuilder) {
 
 	rb = &RemoteBuilder{
 		Client: http.Client{
