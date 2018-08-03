@@ -35,15 +35,14 @@ func TestArchConveyor(t *testing.T) {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
-	ac := &sources.ArchConveyor{}
+	cp := &sources.ArchConveyorPacker{}
 
-	if err := ac.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(ac.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(ac.tmpfs)
 }
 
 func TestArchPacker(t *testing.T) {
@@ -64,17 +63,16 @@ func TestArchPacker(t *testing.T) {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
-	acp := &sources.ArchConveyorPacker{}
+	cp := &sources.ArchConveyorPacker{}
 
-	if err := acp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(acp.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(acp.tmpfs)
 
-	_, err = acp.Pack()
+	_, err = cp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", archDef, err)
 	}

@@ -31,9 +31,11 @@ func TestDebootstrapConveyor(t *testing.T) {
 		"include":   "apt python ",
 	}
 
-	dc := sources.DebootstrapConveyor{}
+	cp := sources.DebootstrapConveyorPacker{}
 
-	err := dc.Get(testDef)
+	err := cp.Get(testDef)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
@@ -56,14 +58,16 @@ func TestDebootstrapPacker(t *testing.T) {
 		"Include":   "apt python ",
 	}
 
-	dcp := sources.DebootstrapConveyorPacker{}
+	cp := sources.DebootstrapConveyorPacker{}
 
-	err := dcp.Get(testDef)
+	err := cp.Get(testDef)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
 
-	_, err = dcp.Pack()
+	_, err = cp.Pack()
 	if err != nil {
 		t.Fatalf("Debootstrap Pack failed: %v", err)
 	}

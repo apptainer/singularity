@@ -7,7 +7,6 @@ package sources
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"runtime"
@@ -19,8 +18,11 @@ import (
 
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
 type DebootstrapConveyorPacker struct {
-	recipe types.Definition
-	tmpfs  string
+	recipe    types.Definition
+	b         *types.Bundle
+	mirrorurl string
+	osversion string
+	include   string
 }
 
 // Get downloads container information from the specified source
@@ -33,43 +35,25 @@ func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
 		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it: %v", err)
 	}
 
-	cp.tmpfs, err = ioutil.TempDir("", "temp-debootstrap-")
-	if err != nil {
-		return
+	if err = cp.getRecipeHeaderInfo(); err != nil {
+		return err
 	}
-
-	//get mirrorURL, OSVerison, and Includes components to definition
-	mirrorurl, ok := recipe.Header["mirrorurl"]
-	if !ok {
-		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
-	}
-
-	osversion, ok := recipe.Header["osversion"]
-	if !ok {
-		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
-	}
-
-	include, _ := recipe.Header["include"]
-
-	//check for include environment variable and add it to requires string
-	include += ` ` + os.Getenv("INCLUDE")
-
-	//trim leading and trailing whitespace
-	include = strings.TrimSpace(include)
-
-	//convert Requires string to comma separated list
-	include = strings.Replace(include, ` `, `,`, -1)
 
 	if os.Getuid() != 0 {
 		return fmt.Errorf("You must be root to build with debootstrap")
 	}
 
+	cp.b, err = types.NewBundle("sbuild-debootstrap-")
+	if err != nil {
+		return
+	}
+
 	//run debootstrap command
-	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+include, `--arch=`+runtime.GOARCH, osversion, cp.tmpfs, mirrorurl)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.Rootfs(), cp.mirrorurl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, include, runtime.GOARCH, osversion, mirrorurl)
+	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, cp.include, runtime.GOARCH, cp.osversion, cp.mirrorurl)
 
 	//run debootstrap
 	if err = cmd.Run(); err != nil {
@@ -80,37 +64,52 @@ func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *DebootstrapConveyorPacker) Pack() (b *types.Bundle, err error) {
-	b, err = types.NewBundle("")
-	if err != nil {
-		return
-	}
-
-	//remove old rootfs
-	os.RemoveAll(b.Rootfs())
-
-	//move downloaded files from tmpdir to bundle
-	err = os.Rename(cp.tmpfs, b.Rootfs())
-	if err != nil {
-		return nil, fmt.Errorf("While renaming bundle rootfs: %v", err)
-	}
+func (cp *DebootstrapConveyorPacker) Pack() (*types.Bundle, error) {
 
 	//change root directory permissions to 0755
-	if err := os.Chmod(b.Rootfs(), 0755); err != nil {
+	if err := os.Chmod(cp.b.Rootfs(), 0755); err != nil {
 		return nil, fmt.Errorf("While changing bundle rootfs perms: %v", err)
 	}
 
-	err = cp.insertBaseEnv(b)
+	err := cp.insertBaseEnv(cp.b)
 	if err != nil {
 		return nil, fmt.Errorf("While inserting base environtment: %v", err)
 	}
 
-	err = cp.insertRunScript(b)
+	err = cp.insertRunScript(cp.b)
 	if err != nil {
 		return nil, fmt.Errorf("While inserting runscript: %v", err)
 	}
 
-	return b, nil
+	return cp.b, nil
+}
+
+func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
+	var ok bool
+
+	//get mirrorURL, OSVerison, and Includes components to definition
+	cp.mirrorurl, ok = cp.recipe.Header["mirrorurl"]
+	if !ok {
+		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
+	}
+
+	cp.osversion, ok = cp.recipe.Header["osversion"]
+	if !ok {
+		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
+	}
+
+	include, _ := cp.recipe.Header["include"]
+
+	//check for include environment variable and add it to requires string
+	include += ` ` + os.Getenv("INCLUDE")
+
+	//trim leading and trailing whitespace
+	include = strings.TrimSpace(include)
+
+	//convert Requires string to comma separated list
+	cp.include = strings.Replace(include, ` `, `,`, -1)
+
+	return nil
 }
 
 func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *types.Bundle) (err error) {
@@ -145,4 +144,9 @@ func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error
 	}
 
 	return nil
+}
+
+// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+func (cp *DebootstrapConveyorPacker) CleanUp() {
+	os.RemoveAll(cp.b.Path)
 }

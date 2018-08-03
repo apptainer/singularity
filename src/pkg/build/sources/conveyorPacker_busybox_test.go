@@ -31,16 +31,14 @@ func TestBusyBoxConveyor(t *testing.T) {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
-	bc := &sources.BusyBoxConveyor{}
+	c := &sources.BusyBoxConveyor{}
 
-	if err := bc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(bc.tmpfs)
+	err = c.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer c.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(bc.tmpfs)
-
 }
 
 func TestBusyBoxPacker(t *testing.T) {
@@ -58,18 +56,16 @@ func TestBusyBoxPacker(t *testing.T) {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
-	bcp := &sources.BusyBoxConveyorPacker{}
+	cp := &sources.BusyBoxConveyorPacker{}
 
-	if err := bcp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(bcp.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
 	}
 
-	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(bcp.tmpfs)
-
-	_, err = bcp.Pack()
+	_, err = cp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", busyBoxDef, err)
 	}

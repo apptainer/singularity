@@ -34,8 +34,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// OCIConveyor holds stuff that needs to be packed into the bundle
-type OCIConveyor struct {
+// OCIConveyorPacker holds stuff that needs to be packed into the bundle
+type OCIConveyorPacker struct {
 	recipe    sytypes.Definition
 	srcRef    types.ImageReference
 	tmpfs     string
@@ -44,35 +44,30 @@ type OCIConveyor struct {
 	imgConfig imgspecv1.ImageConfig
 }
 
-// OCIConveyorPacker only needs to hold the conveyor to have the needed data to pack
-type OCIConveyorPacker struct {
-	OCIConveyor
-}
-
 // Get downloads container information from the specified source
-func (c *OCIConveyor) Get(recipe sytypes.Definition) (err error) {
+func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	c.policyCtx, err = signature.NewPolicyContext(policy)
+	cp.policyCtx, err = signature.NewPolicyContext(policy)
 	if err != nil {
 		return
 	}
 
-	c.recipe = recipe
+	cp.recipe = recipe
 
 	switch recipe.Header["bootstrap"] {
 	case "docker":
 		ref := "//" + recipe.Header["from"]
-		c.srcRef, err = docker.ParseReference(ref)
+		cp.srcRef, err = docker.ParseReference(ref)
 	case "docker-archive":
-		c.srcRef, err = dockerarchive.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = dockerarchive.ParseReference(recipe.Header["from"])
 	case "docker-daemon":
-		c.srcRef, err = dockerdaemon.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = dockerdaemon.ParseReference(recipe.Header["from"])
 	case "oci":
-		c.srcRef, err = oci.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = oci.ParseReference(recipe.Header["from"])
 	case "oci-archive":
 		if os.Geteuid() == 0 {
 			// As root, the direct oci-archive handling will work
-			c.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
+			cp.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
 		} else {
 			// As non-root we need to do a dumb tar extraction first
 			tmpDir, err := ioutil.TempDir("", "temp-oci-")
@@ -82,15 +77,15 @@ func (c *OCIConveyor) Get(recipe sytypes.Definition) (err error) {
 			defer os.RemoveAll(tmpDir)
 
 			refParts := strings.SplitN(recipe.Header["from"], ":", 2)
-			err = c.extractArchive(refParts[0], tmpDir)
+			err = cp.extractArchive(refParts[0], tmpDir)
 			if err != nil {
 				return fmt.Errorf("error extracting the OCI archive file: %v", err)
 			}
 			// We may or may not have had a ':tag' in the source to handle
 			if len(refParts) == 2 {
-				c.srcRef, err = oci.ParseReference(tmpDir + ":" + refParts[1])
+				cp.srcRef, err = oci.ParseReference(tmpDir + ":" + refParts[1])
 			} else {
-				c.srcRef, err = oci.ParseReference(tmpDir)
+				cp.srcRef, err = oci.ParseReference(tmpDir)
 			}
 		}
 
@@ -102,23 +97,23 @@ func (c *OCIConveyor) Get(recipe sytypes.Definition) (err error) {
 		return fmt.Errorf("Invalid image source: %v", err)
 	}
 
-	c.tmpfs, err = ioutil.TempDir("", "temp-oci-")
+	cp.tmpfs, err = ioutil.TempDir("", "sbuild-oci-")
 	if err != nil {
 		return
 	}
 
-	c.tmpfsRef, err = oci.ParseReference(c.tmpfs + ":" + "tmp")
+	cp.tmpfsRef, err = oci.ParseReference(cp.tmpfs + ":" + "tmp")
 	if err != nil {
 		return
 	}
 
-	err = c.fetch()
+	err = cp.fetch()
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 
-	c.imgConfig, err = c.getConfig()
+	cp.imgConfig, err = cp.getConfig()
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -163,8 +158,8 @@ func (cp *OCIConveyorPacker) Pack() (b *sytypes.Bundle, err error) {
 	return b, nil
 }
 
-func (c *OCIConveyor) fetch() (err error) {
-	err = copy.Image(context.Background(), c.policyCtx, c.tmpfsRef, c.srcRef, &copy.Options{
+func (cp *OCIConveyorPacker) fetch() (err error) {
+	err = copy.Image(context.Background(), cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
 		ReportWriter: os.Stderr,
 	})
 	if err != nil {
@@ -174,8 +169,8 @@ func (c *OCIConveyor) fetch() (err error) {
 	return nil
 }
 
-func (c *OCIConveyor) getConfig() (imgspecv1.ImageConfig, error) {
-	img, err := c.tmpfsRef.NewImage(context.Background(), nil)
+func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
+	img, err := cp.tmpfsRef.NewImage(context.Background(), nil)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
@@ -193,7 +188,7 @@ func (c *OCIConveyor) getConfig() (imgspecv1.ImageConfig, error) {
 // This is needed for non-root handling of `oci-archive` as the extraction
 // by containers/archive is failing when uid/gid don't match local machine
 // and we're not root
-func (c *OCIConveyor) extractArchive(src string, dst string) error {
+func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 	f, err := os.Open(src)
 	if err != nil {
 		return err
@@ -384,4 +379,9 @@ func (cp *OCIConveyorPacker) insertEnv(b *sytypes.Bundle) (err error) {
 	}
 
 	return nil
+}
+
+// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+func (cp *OCIConveyorPacker) CleanUp() {
+	os.RemoveAll(cp.tmpfs)
 }

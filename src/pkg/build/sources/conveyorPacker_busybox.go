@@ -21,8 +21,6 @@ import (
 // BusyBoxConveyor only needs to hold the conveyor to have the needed data to pack
 type BusyBoxConveyor struct {
 	recipe types.Definition
-	src    string
-	tmpfs  string
 	b      *types.Bundle
 }
 
@@ -35,7 +33,7 @@ type BusyBoxConveyorPacker struct {
 func (c *BusyBoxConveyor) Get(recipe types.Definition) (err error) {
 	c.recipe = recipe
 
-	c.b, err = types.NewBundle("")
+	c.b, err = types.NewBundle("sbuild-busybox-")
 	if err != nil {
 		return
 	}
@@ -151,4 +149,9 @@ func (cp *BusyBoxConveyorPacker) insertRunScript() (err error) {
 	}
 
 	return nil
+}
+
+// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+func (c *BusyBoxConveyor) CleanUp() {
+	os.RemoveAll(c.b.Path)
 }

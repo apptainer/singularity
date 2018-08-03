@@ -13,48 +13,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
 
-	oci "github.com/containers/image/oci/layout"
-	"github.com/containers/image/types"
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 const defaultRegistry string = `singularity-hub.org/api/container/`
-
-type shubAPIResponse struct {
-	Image   string `json:"image"`
-	Name    string `json:"name"`
-	Tag     string `json:"tag"`
-	Version string `json:"version"`
-}
-
-// ShubClient contains the uri and client, lowercase means not exported
-type shubClient struct {
-	Client   http.Client
-	ImageURI string
-	HTTPAddr string
-}
-
-// ShubConveyor holds data to be packed into a bundle.
-type ShubConveyor struct {
-	recipe   sytypes.Definition
-	src      string
-	srcRef   types.ImageReference
-	srcURI   ShubURI
-	tmpfs    string
-	tmpfsRef types.ImageReference
-	tmpfile  string
-}
-
-// ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
-type ShubConveyorPacker struct {
-	ShubConveyor
-	localPacker
-}
 
 // ShubURI stores the various components of a singularityhub URI
 type ShubURI struct {
@@ -66,80 +34,94 @@ type ShubURI struct {
 	defaultReg bool
 }
 
+type shubAPIResponse struct {
+	Image   string `json:"image"`
+	Name    string `json:"name"`
+	Tag     string `json:"tag"`
+	Version string `json:"version"`
+}
+
+// ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
+type ShubConveyorPacker struct {
+	recipe   sytypes.Definition
+	srcURI   ShubURI
+	tmpfs    string
+	tmpfile  string
+	manifest *shubAPIResponse
+	localPacker
+}
+
 // Get downloads container from Singularityhub
-func (c *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
+func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
-	c.recipe = recipe
+	cp.recipe = recipe
 
 	src := `//` + recipe.Header["from"]
 
 	//use custom parser to make sure we have a valid shub URI
-	c.srcURI, err = shubParseReference(src)
+	cp.srcURI, err = ShubParseReference(src)
 	if err != nil {
 		sylog.Fatalf("Invalid shub URI: %v", err)
 		return
 	}
 
-	c.tmpfs, err = ioutil.TempDir("", "temp-shub-")
-	if err != nil {
-		return
-	}
-
-	c.tmpfsRef, err = oci.ParseReference(c.tmpfs + ":" + "tmp")
+	cp.tmpfs, err = ioutil.TempDir("", "sbuild-shub-")
 	if err != nil {
 		return
 	}
 
 	// Get the image manifest
-	manifest, err := c.getManifest()
-
-	// retrieve the image
-	c.tmpfile, err = c.fetch(manifest.Image)
-	if err != nil {
-		sylog.Fatalf("Failed to get image from SHub: %v", err)
+	if err = cp.getManifest(); err != nil {
+		sylog.Fatalf("Failed to get manifest from Shub: %v", err)
 		return
 	}
 
-	c.localPacker, err = getLocalPacker(c.tmpfile, c.tmpfs)
+	// retrieve the image
+	if err = cp.fetchImage(); err != nil {
+		sylog.Fatalf("Failed to get image from Shub: %v", err)
+		return
+	}
+
+	cp.localPacker, err = getLocalPacker(cp.tmpfile, cp.tmpfs)
 	return err
 }
 
 // Download an image from Singularity Hub, writing as we download instead
 // of storing in memory
-func (c *ShubConveyor) fetch(url string) (image string, err error) {
+func (cp *ShubConveyorPacker) fetchImage() (err error) {
 
 	// Create temporary download name
-	tmpfile, err := ioutil.TempFile(c.tmpfs, "shub-container")
+	tmpfile, err := ioutil.TempFile(cp.tmpfs, "shub-container")
 	sylog.Debugf("\nCreating temporary image file %v\n", tmpfile.Name())
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer tmpfile.Close()
 
-	// Get the image data
-	resp, err := http.Get(url)
+	// Get the image based on the manifest
+	resp, err := http.Get(cp.manifest.Image)
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer resp.Body.Close()
 
 	// Write the body to file
 	bytesWritten, err := io.Copy(tmpfile, resp.Body)
 	if err != nil {
-		return "", err
+		return err
 	}
 	//Simple check to make sure image received is the correct size
 	if bytesWritten != resp.ContentLength {
-		return "", fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
+		return fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
 	}
 
-	return tmpfile.Name(), err
+	return nil
 }
 
 // getManifest will return the image manifest for a container uri
 // from Singularity Hub. We return the shubAPIResponse and error
-func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
+func (cp *ShubConveyorPacker) getManifest() (err error) {
 
 	// Create a new Singularity Hub client
 	sc := http.Client{
@@ -147,12 +129,12 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 	}
 
 	//if we are using a non default registry error out for now
-	if !c.srcURI.defaultReg {
-		return nil, err
+	if !cp.srcURI.defaultReg {
+		return err
 	}
 
 	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("www.%s", c.srcURI.String())
+	httpAddr := fmt.Sprintf("www.%s", cp.srcURI.String())
 
 	// Create the request, add headers context
 	url := url.URL{
@@ -163,7 +145,7 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Do the request, if status isn't success, return error
@@ -171,31 +153,33 @@ func (c *ShubConveyor) getManifest() (manifest *shubAPIResponse, err error) {
 	sylog.Debugf("response: %v\n", res)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		err = errors.New(res.Status)
-		return nil, err
+		return err
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = json.Unmarshal(body, &manifest)
-	sylog.Debugf("manifest: %v\n", manifest.Image)
+	err = json.Unmarshal(body, &cp.manifest)
+	sylog.Debugf("manifest: %v\n", cp.manifest.Image)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return manifest, err
-
+	return nil
 }
 
-func shubParseReference(src string) (uri ShubURI, err error) {
+// ShubParseReference accepts a URI string and parses its content
+// It will return an error if the given URI is not valid,
+// otherwise it will parse the contents into a ShubURI struct
+func ShubParseReference(src string) (uri ShubURI, err error) {
 
 	//define regex for each URI component
 	registryRegexp := `([-a-zA-Z0-9/]{1,64}\/)?` //target is very open, outside registry
@@ -258,4 +242,9 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 
 func (s *ShubURI) String() string {
 	return s.registry + s.user + s.container + s.tag + s.digest
+}
+
+// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+func (cp *ShubConveyorPacker) CleanUp() {
+	os.RemoveAll(cp.tmpfs)
 }

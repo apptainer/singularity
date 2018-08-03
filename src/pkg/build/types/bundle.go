@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
 )
 
 // Bundle is the temporary build environment used during the image
@@ -38,17 +36,16 @@ type Bundle struct {
 }
 
 // NewBundle creates a Bundle environment
-// TODO: choose appropriate location for TempDir, currently using /tmp
-func NewBundle(rootfs string) (b *Bundle, err error) {
+func NewBundle(directoryPrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
 
-	if rootfs == "" {
-		b.Path, err = ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		b.Path = rootfs
+	if directoryPrefix == "" {
+		directoryPrefix = "sbuild-"
+	}
+
+	b.Path, err = ioutil.TempDir("", directoryPrefix+"-")
+	if err != nil {
+		return nil, err
 	}
 
 	b.FSObjects = map[string]string{

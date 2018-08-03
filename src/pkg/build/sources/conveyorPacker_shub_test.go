@@ -7,7 +7,6 @@ package sources_test
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/singularityware/singularity/src/pkg/build/sources"
@@ -29,15 +28,14 @@ func TestShubConveyor(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
-	sc := &sources.ShubConveyor{}
+	cp := &sources.ShubConveyorPacker{}
 
-	if err := sc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(sc.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(sc.tmpfs)
 }
 
 // TestShubPacker checks if we can create a Bundle from the pulled image
@@ -52,14 +50,12 @@ func TestShubPacker(t *testing.T) {
 
 	scp := &sources.ShubConveyorPacker{}
 
-	if err := scp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(scp.tmpfs)
+	err = scp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer scp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
-
-	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(scp.tmpfs)
 
 	_, err = scp.Pack()
 	if err != nil {
@@ -102,7 +98,7 @@ func TestShubParser(t *testing.T) {
 
 	for _, uri := range validShubURIs {
 		fmt.Println("Starting parsing of: ", uri)
-		_, err := sources.shubParseReference(uri)
+		_, err := sources.ShubParseReference(uri)
 		if err != nil {
 			t.Fatalf("failed to parse valid URI: %v %v", uri, err)
 		}
@@ -110,7 +106,7 @@ func TestShubParser(t *testing.T) {
 
 	for _, uri := range invalidShubURIs {
 		fmt.Println("Starting parsing of: ", uri)
-		_, err := sources.shubParseReference(uri)
+		_, err := sources.ShubParseReference(uri)
 		if err == nil {
 			t.Fatalf("failed to catch invalid URI: %v %v", uri, err)
 		}

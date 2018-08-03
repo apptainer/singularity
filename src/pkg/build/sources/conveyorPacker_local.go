@@ -80,8 +80,6 @@ func getLocalPacker(src, tmpfs string) (localPacker, error) {
 	default:
 		return nil, fmt.Errorf("invalid image format")
 	}
-
-	return nil, nil
 }
 
 // Get just stores the source
