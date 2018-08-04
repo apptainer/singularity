@@ -12,24 +12,24 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
-## [v2.6.0-rc2]
+## [v2.6.0]
     
 ### Implemented enhancements
  - Allow admin to specify a non-standard location for mksquashfs binary at 
-   build time with --with-mksquashfs option #1662
- - --nv option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed #1681
+   build time with `--with-mksquashfs` option #1662
+ - `--nv` option will use [nvidia-container-cli](https://github.com/NVIDIA/libnvidia-container) if installed #1681
  - [nvliblist.conf](https://github.com/singularityware/singularity/blob/master/etc/nvliblist.conf) now has a section for binaries #1681
- - --nv can be made default with all action commands in singularity.conf #1681
- - --nv can be controlled by env vars `$SINGULARITY_NV` and 
+ - `--nv` can be made default with all action commands in singularity.conf #1681
+ - `--nv` can be controlled by env vars `$SINGULARITY_NV` and 
    `$SINGULARITY_NV_OFF` #1681
  - Refactored travis build and packaging tests #1601
  - Added build and packaging tests for Debian 8/9 and openSUSE 42.3/15.0 #1713
  - Restore shim init process for proper signal handling and child reaping when
    container is initiated in its own PID namespace #1221
- - Add -i option to image.create to specify the inode ratio. #1759
+ - Add `-i` option to image.create to specify the inode ratio. #1759
  - Bind `/dev/nvidia*` into the container when the `--nv` flag is used in 
     conjuction with the `--contain` flag #1358
- - Add --no-home option to not mount user $HOME if it is not the $CWD and
+ - Add `--no-home` option to not mount user $HOME if it is not the $CWD and
    `mount home = yes` is set. #1761
  - Added support for OAUTH2 Docker registries like Azure Container Registry #1622
 
