@@ -122,12 +122,8 @@ int main(int argc, char **argv) {
     stderr_log = make_logfile("stderr");
 
     singularity_runtime_enter();
+    singularity_runtime_environment();
     singularity_priv_drop_perm();
-
-    if ( envclean() != 0 ) {
-        singularity_message(ERROR, "Failed sanitizing the environment\n");
-        ABORT(255);
-    }
 
     singularity_install_signal_handler();
 
