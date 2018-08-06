@@ -24,7 +24,9 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_TMP_H_
 #define __SINGULARITY_RUNTIME_MOUNT_TMP_H_
 
-extern int _singularity_runtime_mount_tmp(void);
+struct mountlist;
+
+extern int _singularity_runtime_mount_tmp(struct mountlist *mountlist);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_TMP_H */
 

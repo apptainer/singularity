@@ -137,6 +137,14 @@ bind path = /etc/hosts
 @ENABLE_OVERLAY@ = @ENABLE_OVERLAY_DEFAULT@
 
 
+# ENABLE UNDERLAY: [yes/no]
+# DEFAULT: @ENABLE_UNDERLAY_DEFAULT@
+# Enabling this option will make it possible to specify bind paths to locations
+# that do not currently exist within the container, similar to the overlay
+# option.  This will only be used if overlay is not enabled.
+@ENABLE_UNDERLAY@ = @ENABLE_UNDERLAY_DEFAULT@
+
+
 # MOUNT SLAVE: [BOOL]
 # DEFAULT: @MOUNT_SLAVE_DEFAULT@
 # Should we automatically propagate file-system changes from the host?

@@ -41,6 +41,9 @@
 #define ENABLE_OVERLAY "enable overlay"
 #define ENABLE_OVERLAY_DEFAULT "try"
 
+#define ENABLE_UNDERLAY "enable underlay"
+#define ENABLE_UNDERLAY_DEFAULT "no"
+
 #define CONFIG_PASSWD "config passwd"
 #define CONFIG_PASSWD_DEFAULT 1
 

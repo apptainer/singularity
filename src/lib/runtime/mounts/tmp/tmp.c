@@ -36,16 +36,14 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
-#include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
-#include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 
 
-int _singularity_runtime_mount_tmp(void) {
-    char *container_dir = CONTAINER_FINALDIR;
+int _singularity_runtime_mount_tmp(struct mountlist *mountlist) {
     char *tmp_source;
     char *vartmp_source;
 
@@ -74,60 +72,26 @@ int _singularity_runtime_mount_tmp(void) {
         free(tmpdirpath);
     }
 
-    if ( check_mounted("/tmp") < 0 ) {
-        if ( s_mkpath(tmp_source, 0755) < 0 ) {
-            singularity_message(ERROR, "Could not create source /tmp directory %s: %s\n", tmp_source, strerror(errno));
-            ABORT(255);
-        }
-        if ( is_dir(tmp_source) == 0 ) {
-            if ( is_dir(joinpath(container_dir, "/tmp")) == 0 ) {
-                singularity_message(VERBOSE, "Mounting directory: /tmp\n");
-                if ( singularity_mount(tmp_source, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Failed to mount %s -> /tmp: %s\n", tmp_source, strerror(errno));
-                    ABORT(255);
-                }
-                if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( singularity_mount(NULL, joinpath(container_dir, "/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-                        singularity_message(ERROR, "Failed to remount /tmp: %s\n", strerror(errno));
-                        ABORT(255);
-                    }
-                }
-            } else {
-                singularity_message(VERBOSE, "Could not mount container's /tmp directory: does not exist\n");
-            }
-        } else {
-            singularity_message(VERBOSE, "Could not mount host's /tmp directory (%s): does not exist\n", tmp_source);
-        }
+    if ( s_mkpath(tmp_source, 0755) < 0 ) {
+        singularity_message(ERROR, "Could not create source /tmp directory %s: %s\n", tmp_source, strerror(errno));
+        ABORT(255);
+    }
+    if ( is_dir(tmp_source) == 0 ) {
+        singularity_message(VERBOSE, "Queuing bind mount of /tmp\n");
+        mountlist_add(mountlist, strdup(tmp_source), strdup("/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
     } else {
-        singularity_message(VERBOSE, "Not mounting '/tmp', already mounted\n");
+        singularity_message(VERBOSE, "Could not mount host's /tmp directory (%s): does not exist\n", tmp_source);
     }
 
-    if ( check_mounted("/var/tmp") < 0 ) {
-        if ( s_mkpath(vartmp_source, 0755) < 0 ) {
-            singularity_message(ERROR, "Could not create source /var/tmp directory %s: %s\n", vartmp_source, strerror(errno));
-            ABORT(255);
-        }
-        if ( is_dir(vartmp_source) == 0 ) {
-            if ( is_dir(joinpath(container_dir, "/var/tmp")) == 0 ) {
-                singularity_message(VERBOSE, "Mounting directory: /var/tmp\n");
-                if ( singularity_mount(vartmp_source, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Failed to mount %s -> /var/tmp: %s\n", vartmp_source, strerror(errno));
-                    ABORT(255);
-                }
-                if ( singularity_priv_userns_enabled() != 1 ) {
-                    if ( singularity_mount(NULL, joinpath(container_dir, "/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_REC|MS_NODEV|MS_REMOUNT, NULL) < 0 ) {
-                        singularity_message(ERROR, "Failed to remount /var/tmp: %s\n", strerror(errno));
-                        ABORT(255);
-                    }
-                }
-            } else {
-                singularity_message(VERBOSE, "Could not mount container's /var/tmp directory: does not exist\n");
-            }
-        } else {
-            singularity_message(VERBOSE, "Could not mount host's /var/tmp directory (%s): does not exist\n", vartmp_source);
-        }
+    if ( s_mkpath(vartmp_source, 0755) < 0 ) {
+        singularity_message(ERROR, "Could not create source /var/tmp directory %s: %s\n", vartmp_source, strerror(errno));
+        ABORT(255);
+    }
+    if ( is_dir(vartmp_source) == 0 ) {
+        singularity_message(VERBOSE, "Queuing bind mount of /var/tmp\n");
+        mountlist_add(mountlist, strdup(vartmp_source), strdup("/var/tmp"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
     } else {
-        singularity_message(VERBOSE, "Not mounting '/var/tmp', already mounted\n");
+        singularity_message(VERBOSE, "Could not mount host's /var/tmp directory (%s): does not exist\n", vartmp_source);
     }
 
     free(tmp_source);

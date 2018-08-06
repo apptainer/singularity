@@ -40,18 +40,15 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
-#include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
-#include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 
 
-int _singularity_runtime_mount_cwd(void) {
-    char *container_dir = CONTAINER_FINALDIR;
+int _singularity_runtime_mount_cwd(struct mountlist *mountlist) {
     char *cwd_path = (char *)malloc(PATH_MAX);
-    int r;
 
     singularity_message(DEBUG, "Checking to see if we should mount current working directory\n");
     if ( cwd_path == NULL ) {
@@ -69,34 +66,6 @@ int _singularity_runtime_mount_cwd(void) {
     singularity_message(DEBUG, "Checking for contain option\n");
     if ( singularity_registry_get("CONTAIN") != NULL ) {
         singularity_message(VERBOSE, "Not mounting current directory: contain was requested\n");
-        free(cwd_path);
-        return(0);
-    }
-
-    singularity_message(DEBUG, "Checking if current directory already available within container: %s\n", cwd_path);
-    if ( is_dir(joinpath(container_dir, cwd_path)) == 0 ) {
-        char *cwd_fileid = file_devino(cwd_path);
-        char *container_cwd_fileid = file_devino(joinpath(container_dir, cwd_path));
-
-        singularity_message(DEBUG, "Checking if container's cwd == host's cwd\n");
-        if ( strcmp(cwd_fileid, container_cwd_fileid) == 0 ) {
-            singularity_message(VERBOSE, "Not mounting current directory: location already available within container\n");
-            free(cwd_path);
-            free(cwd_fileid);
-            free(container_cwd_fileid);
-            return(0);
-        } else {
-            singularity_message(DEBUG, "Container's cwd is not the same as the host, continuing on...\n");
-        }
-    } else {
-        singularity_message(VERBOSE, "Not mounting CWD, directory does not exist within container: %s\n", cwd_path);
-        free(cwd_path);
-        return(0);
-    }
-
-    singularity_message(DEBUG, "Checking if CWD is already mounted: %s\n", cwd_path);
-    if ( check_mounted(cwd_path) >= 0 ) {
-        singularity_message(VERBOSE, "Not mounting CWD (already mounted in container): %s\n", cwd_path);
         free(cwd_path);
         return(0);
     }
@@ -131,16 +100,9 @@ int _singularity_runtime_mount_cwd(void) {
         return(0);
     }
 
-    singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", cwd_path, container_dir, cwd_path);
-    r = singularity_mount(cwd_path, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL);
-    if ( singularity_priv_userns_enabled() != 1 ) {
-        r = singularity_mount(NULL, joinpath(container_dir, cwd_path), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL);
-    }
-    if ( r < 0 ) {
-        singularity_message(WARNING, "Could not bind CWD to container %s: %s\n", cwd_path, strerror(errno));
-    }
+    singularity_message(VERBOSE, "Queuing bind mount of '%s' to '%s' if mountpoint exists\n", cwd_path, cwd_path);
+    mountlist_add(mountlist, NULL, cwd_path, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, ML_ONLY_IF_POINT_PRESENT);
 
-    free(cwd_path);
     return(0);
 }
 
