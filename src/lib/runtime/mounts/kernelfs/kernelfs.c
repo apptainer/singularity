@@ -37,34 +37,23 @@
 #include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
-#include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 #include "../../ns/ns.h"
 
 
-int _singularity_runtime_mount_kernelfs(void) {
-    char *container_dir = CONTAINER_FINALDIR;
+int _singularity_runtime_mount_kernelfs(struct mountlist *mountlist) {
 
     // Mount /proc if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount proc'\n");
     if ( singularity_config_get_bool(MOUNT_PROC) > 0 ) {
-        if ( is_dir(joinpath(container_dir, "/proc")) == 0 ) {
-            if ( singularity_registry_get("PIDNS_ENABLED") == NULL ) {
-                singularity_message(VERBOSE, "Bind-mounting host /proc\n");
-                if ( singularity_mount("/proc", joinpath(container_dir, "/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not bind-mount host /proc into container: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                singularity_message(VERBOSE, "Mounting new procfs\n");
-                if ( singularity_mount("proc", joinpath(container_dir, "/proc"), "proc", MS_NOSUID, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not mount new procfs into container: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-            }
+        if ( singularity_registry_get("PIDNS_ENABLED") == NULL ) {
+            singularity_message(VERBOSE, "Queuing bind mount of host /proc\n");
+            mountlist_add(mountlist, NULL, strdup("/proc"), NULL, MS_BIND | MS_NOSUID | MS_REC, 0);
         } else {
-            singularity_message(WARNING, "Not mounting /proc, container has no bind directory\n");
+            singularity_message(VERBOSE, "Queuing mount of new procfs\n");
+            mountlist_add(mountlist, strdup("proc"), strdup("/proc"), "proc", MS_NOSUID, 0);
         }
     } else {
         singularity_message(VERBOSE, "Skipping /proc mount\n");
@@ -74,22 +63,12 @@ int _singularity_runtime_mount_kernelfs(void) {
     // Mount /sys if we are configured
     singularity_message(DEBUG, "Checking configuration file for 'mount sys'\n");
     if ( singularity_config_get_bool(MOUNT_SYS) > 0 ) {
-        if ( is_dir(joinpath(container_dir, "/sys")) == 0 ) {
-            if ( singularity_priv_userns_enabled() == 1 ) {
-                singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( singularity_mount("/sys", joinpath(container_dir, "/sys"), NULL, MS_BIND | MS_NOSUID | MS_REC, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-            } else {
-                singularity_message(VERBOSE, "Mounting /sys\n");
-                if ( singularity_mount("sysfs", joinpath(container_dir, "/sys"), "sysfs", MS_NOSUID, NULL) < 0 ) {
-                    singularity_message(ERROR, "Could not mount /sys into container: %s\n", strerror(errno));
-                    ABORT(255);
-                }
-            }
+        if ( singularity_priv_userns_enabled() == 1 ) {
+            singularity_message(VERBOSE, "Queuing bind mount of /sys\n");
+            mountlist_add(mountlist, NULL, strdup("/sys"), NULL, MS_BIND | MS_NOSUID | MS_REC, 0);
         } else {
-            singularity_message(WARNING, "Not mounting /sys, container has no bind directory\n");
+            singularity_message(VERBOSE, "Queuing mount of new sysfs\n");
+            mountlist_add(mountlist, strdup("sysfs"), strdup("/sys"), "sysfs", MS_NOSUID, 0);
         }
     } else {
         singularity_message(VERBOSE, "Skipping /sys mount\n");

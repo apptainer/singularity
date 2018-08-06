@@ -32,6 +32,7 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
+#include "util/mountlist.h"
 #include "util/privilege.h"
 
 #include "./binds/binds.h"
@@ -43,21 +44,30 @@
 #include "./cwd/cwd.h"
 #include "./userbinds/userbinds.h"
 #include "./scratch/scratch.h"
+#include "./libs/libs.h"
+#include "./domounts/domounts.h"
 
 
 int _singularity_runtime_mounts(void) {
     int retval = 0;
+    struct mountlist mountlist;
+    memset(&mountlist, 0, sizeof(mountlist));
 
     singularity_message(VERBOSE, "Running all mount components\n");
-    retval += _singularity_runtime_mount_dev();
-    retval += _singularity_runtime_mount_kernelfs();
-    retval += _singularity_runtime_mount_hostfs();
-    retval += _singularity_runtime_mount_binds();
-    retval += _singularity_runtime_mount_home();
-    retval += _singularity_runtime_mount_userbinds();
-    retval += _singularity_runtime_mount_tmp();
-    retval += _singularity_runtime_mount_scratch();
-    retval += _singularity_runtime_mount_cwd();
+    retval += _singularity_runtime_mount_dev(&mountlist);
+    retval += _singularity_runtime_mount_kernelfs(&mountlist);
+    retval += _singularity_runtime_mount_hostfs(&mountlist);
+    retval += _singularity_runtime_mount_binds(&mountlist);
+    retval += _singularity_runtime_mount_home(&mountlist);
+    retval += _singularity_runtime_mount_userbinds(&mountlist);
+    retval += _singularity_runtime_mount_tmp(&mountlist);
+    retval += _singularity_runtime_mount_scratch(&mountlist);
+    retval += _singularity_runtime_mount_cwd(&mountlist);
+    retval += _singularity_runtime_mount_libs(&mountlist);
+
+    retval += _singularity_runtime_domounts(&mountlist);
+
+    mountlist_cleanup(&mountlist);
 
     return(retval);
 }

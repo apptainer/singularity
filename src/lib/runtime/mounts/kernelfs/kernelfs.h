@@ -24,7 +24,9 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_KERNELFS_H_
 #define __SINGULARITY_RUNTIME_MOUNT_KERNELFS_H_
 
-extern int _singularity_runtime_mount_kernelfs(void);
+struct mountlist;
+
+extern int _singularity_runtime_mount_kernelfs(struct mountlist *mountlist);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_KERNELFS_H */
 

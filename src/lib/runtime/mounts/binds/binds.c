@@ -35,17 +35,17 @@
 #include "util/file.h"
 #include "util/util.h"
 #include "util/message.h"
-#include "util/privilege.h"
 #include "util/config_parser.h"
 #include "util/registry.h"
-#include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 
 
-int _singularity_runtime_mount_binds(void) {
+int _singularity_runtime_mount_binds(struct mountlist *mountlist) {
     char *tmp_config_string;
-    char *container_dir = CONTAINER_FINALDIR;
+    char *source = NULL;
+    char *dest = NULL;
 
     if ( singularity_registry_get("CONTAIN") != NULL ) {
         singularity_message(DEBUG, "Skipping bind mounts as contain was requested\n");
@@ -60,14 +60,21 @@ int _singularity_runtime_mount_binds(void) {
     while ( *tmp_config_string_list != NULL ) {
         tmp_config_string = strdup(*tmp_config_string_list);
         tmp_config_string_list++;
-        char *source = strtok(tmp_config_string, ":");
-        char *dest = strtok(NULL, ":");
+        if (source != NULL)
+            free(source);
+        if (dest != NULL)
+            free(dest);
+        source = strtok(tmp_config_string, ":");
+        dest = strtok(NULL, ":");
+        source = strdup(source);
         chomp(source);
         if ( dest == NULL ) {
             dest = strdup(source);
         } else {
+            dest = strdup(dest);
             chomp(dest);
         }
+        free(tmp_config_string);
 
         singularity_message(VERBOSE2, "Found 'bind path' = %s, %s\n", source, dest);
 
@@ -76,61 +83,16 @@ int _singularity_runtime_mount_binds(void) {
             continue;
         }
 
-        singularity_message(DEBUG, "Checking if bind point is already mounted: %s\n", dest);
-        if ( check_mounted(dest) >= 0 ) {
-            singularity_message(VERBOSE, "Not mounting bind point (already mounted): %s\n", dest);
-            continue;
-        }
-
-        if ( ( is_file(source) == 0 ) && ( is_file(joinpath(container_dir, dest)) < 0 ) ) {
-            if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                char *basedir = dirname(joinpath(container_dir, dest));
-
-                singularity_message(DEBUG, "Checking base directory for file %s ('%s')\n", dest, basedir);
-                if ( is_dir(basedir) != 0 ) {
-                    singularity_message(DEBUG, "Creating base directory for file bind\n");
-                    if ( container_mkpath_priv(basedir, 0755) != 0 ) {
-                        singularity_message(ERROR, "Failed creating base directory to bind file: %s\n", dest);
-                        ABORT(255);
-                    }
-                }
-
-                free(basedir);
-
-                singularity_message(VERBOSE3, "Creating bind file on overlay file system: %s\n", dest);
-                if ( fileput_priv(joinpath(container_dir, dest), "") != 0 ) {
-                    continue;
-                }
-                singularity_message(DEBUG, "Created bind file: %s\n", dest);
-            } else {
-                singularity_message(WARNING, "Non existent bind point (file) in container: '%s'\n", dest);
-                continue;
-            }
-        } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
-            if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
-                if ( container_mkpath_priv(joinpath(container_dir, dest), 0755) < 0 ) {
-                    singularity_message(WARNING, "Could not create bind point directory in container %s: %s\n", dest, strerror(errno));
-                    continue;
-                }
-            } else {
-                singularity_message(WARNING, "Non existent bind point (directory) in container: '%s'\n", dest);
-                continue;
-            }
-        }
-
-        singularity_message(VERBOSE, "Binding '%s' to '%s/%s'\n", source, container_dir, dest);
-        if ( singularity_mount(source, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "There was an error binding the path %s: %s\n", source, strerror(errno));
-            ABORT(255);
-        }
-        if ( singularity_priv_userns_enabled() != 1 ) {
-            if ( singularity_mount(NULL, joinpath(container_dir, dest), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC|MS_REMOUNT, NULL) < 0 ) {
-                singularity_message(ERROR, "There was an error remounting the path %s: %s\n", source, strerror(errno));
-                ABORT(255);
-            }
-        }
+        singularity_message(VERBOSE, "Queuing bind mount of '%s' to '%s'\n", source, dest);
+        mountlist_add(mountlist, source, dest, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
+        source = NULL;
+        dest = NULL;
     }
+
+    if (source != NULL)
+        free(source);
+    if (dest != NULL)
+        free(dest);
 
     return(0);
 }

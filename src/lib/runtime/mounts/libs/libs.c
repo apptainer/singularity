@@ -44,19 +44,18 @@
 #include "util/config_parser.h"
 #include "util/registry.h"
 #include "util/mount.h"
+#include "util/mountlist.h"
 
-#include "../file-bind.h"
 #include "../../runtime.h"
 
 
-int _singularity_runtime_files_libs(void) {
-    char *container_dir = CONTAINER_FINALDIR;
+int _singularity_runtime_mount_libs(struct mountlist *mountlist) {
     char *tmpdir = singularity_registry_get("SESSIONDIR");
     char *includelibs_string;
-    char *libdir = joinpath(tmpdir, "/libs");
-    char *libdir_contained = joinpath(container_dir, "/.singularity.d/libs");
 
     if ( ( includelibs_string = singularity_registry_get("CONTAINLIBS") ) != NULL ) {
+        char *libdir = joinpath(tmpdir, "/libs");
+        char *libdir_contained = joinpath(CONTAINER_MOUNTDIR, "/.singularity.d/libs");
         char *tok = NULL;
         char *current = strtok_r(strdup(includelibs_string), ",", &tok);
 
@@ -67,7 +66,16 @@ int _singularity_runtime_files_libs(void) {
         singularity_message(DEBUG, "Checking if libdir in container exists: %s\n", libdir_contained);
         if ( is_dir(libdir_contained) != 0 ) {
             singularity_message(WARNING, "Library bind directory not present in container, update container\n");
+            char *ld_path = envar_path("LD_LIBRARY_PATH");
+            if ( ld_path == NULL ) {
+                singularity_message(DEBUG, "Setting LD_LIBRARY_PATH to '/.singularity.d/libs'\n");
+                envar_set("LD_LIBRARY_PATH", "/.singularity.d/libs", 1);
+            } else {
+                singularity_message(DEBUG, "Prepending '/.singularity.d/libs' to LD_LIBRARY_PATH\n");
+                envar_set("LD_LIBRARY_PATH", strjoin("/.singularity.d/libs:", ld_path), 1);
+            }
         }
+        free(libdir_contained);
 
         singularity_message(DEBUG, "Creating session libdir at: %s\n", libdir);
         if ( container_mkpath_nopriv(libdir, 0755) != 0 ) {
@@ -141,28 +149,8 @@ int _singularity_runtime_files_libs(void) {
             current = strtok_r(NULL, ",", &tok);
         }
 
-        if ( is_dir(libdir_contained) != 0 ) {
-            char *ld_path;
-            singularity_message(DEBUG, "Attempting to create contained libdir\n");
-            if ( container_mkpath_priv(libdir_contained, 0755) != 0 ) {
-                singularity_message(ERROR, "Failed creating directory %s :%s\n", libdir_contained, strerror(errno));
-                ABORT(255);
-            }
-            ld_path = envar_path("LD_LIBRARY_PATH");
-            if ( ld_path == NULL ) {
-                singularity_message(DEBUG, "Setting LD_LIBRARY_PATH to '/.singularity.d/libs'\n");
-                envar_set("LD_LIBRARY_PATH", "/.singularity.d/libs", 1);
-            } else {
-                singularity_message(DEBUG, "Prepending '/.singularity.d/libs' to LD_LIBRARY_PATH\n");
-                envar_set("LD_LIBRARY_PATH", strjoin("/.singularity.d/libs:", ld_path), 1);
-            }
-        }
-
-        singularity_message(VERBOSE, "Binding libdir '%s' to '%s'\n", libdir, libdir_contained);
-        if ( singularity_mount(libdir, libdir_contained, NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, NULL) < 0 ) {
-                singularity_message(ERROR, "There was an error binding %s to %s: %s\n", libdir, libdir_contained, strerror(errno));
-                ABORT(255);
-        }
+        singularity_message(VERBOSE, "Queueing bind mount of libdir '%s' to '%s'\n", libdir, "/.singularity.d/libs");
+        mountlist_add(mountlist, libdir, strdup("/.singularity.d/libs"), NULL, MS_BIND|MS_NOSUID|MS_NODEV|MS_REC, 0);
     }
 
     return(0);

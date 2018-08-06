@@ -24,7 +24,9 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H_
 #define __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H_
 
-extern int _singularity_runtime_mount_hostfs(void);
+struct mountlist;
+
+extern int _singularity_runtime_mount_hostfs(struct mountlist *mountlist);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_HOSTFS_H */
 

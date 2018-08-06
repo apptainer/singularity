@@ -20,6 +20,8 @@ EXTRA_DIST = cleanupd.c \
 			 message.h \
 			 mount.c \
 			 mount.h \
+			 mountlist.c \
+			 mountlist.h \
 			 privilege.c \
 			 privilege.h \
 			 registry.c \

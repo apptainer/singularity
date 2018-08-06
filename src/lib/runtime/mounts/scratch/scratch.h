@@ -24,7 +24,9 @@
 #ifndef __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H_
 #define __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H_
 
-extern int _singularity_runtime_mount_scratch(void);
+struct mountlist;
+
+extern int _singularity_runtime_mount_scratch(struct mountlist *mountlist);
 
 #endif /* __SINGULARITY_RUNTIME_MOUNT_SCRATCH_H */
 

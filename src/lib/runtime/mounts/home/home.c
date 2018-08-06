@@ -39,15 +39,15 @@
 #include "util/config_parser.h"
 #include "util/registry.h"
 #include "util/mount.h"
+#include "util/mountlist.h"
 
 #include "../../runtime.h"
 
 
-int _singularity_runtime_mount_home(void) {
+int _singularity_runtime_mount_home(struct mountlist *mountlist) {
     char *home_source = singularity_priv_homedir();
     char *home_dest = singularity_priv_home();
     char *session_dir = singularity_registry_get("SESSIONDIR");
-    char *container_dir = CONTAINER_FINALDIR;
 
     singularity_message(DEBUG, "Checking that home directry is configured: %s\n", home_dest);
     if ( home_dest == NULL ) {
@@ -81,12 +81,6 @@ int _singularity_runtime_mount_home(void) {
     if ( home_dest[0] != '/' ) {
         singularity_message(ERROR, "Home directory must be a full path: %s\n", home_dest);
         ABORT(255);
-    }
-
-    singularity_message(DEBUG, "Checking if home directory is already mounted: %s\n", home_dest);
-    if ( check_mounted(home_dest) >= 0 ) {
-        singularity_message(VERBOSE, "Not mounting home directory (already mounted in container): %s\n", home_dest);
-        return(0);
     }
 
     singularity_message(DEBUG, "Creating temporary directory to stage home: %s\n", joinpath(session_dir, home_dest));
@@ -124,33 +118,12 @@ int _singularity_runtime_mount_home(void) {
             ABORT(255);
         }
 
-        singularity_message(DEBUG, "Checking home directory base exists in container: %s\n", homedir_base);
-        if ( is_dir(joinpath(container_dir, homedir_base)) != 0 ) {
-            singularity_message(ERROR, "Base home directory does not exist within the container: %s\n", homedir_base);
-            ABORT(255);
-        }
+        singularity_message(VERBOSE, "Queuing bind mount of staged home directory base to container's base dir: %s/%s -> %s\n", session_dir, homedir_base, homedir_base);
+        mountlist_add(mountlist, joinpath(session_dir, homedir_base), strdup(homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, 0);
 
-        singularity_message(VERBOSE, "Mounting staged home directory base to container's base dir: %s -> %s\n", joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base));
-        if ( singularity_mount(joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "Failed to mount staged home base: %s -> %s: %s\n", joinpath(session_dir, homedir_base), joinpath(container_dir, homedir_base), strerror(errno));
-            ABORT(255);
-        }
-
-        free(homedir_base);
     } else {
-        singularity_message(DEBUG, "Staging home directory\n");
-
-        singularity_message(DEBUG, "Creating home directory within container: %s\n", joinpath(container_dir, home_dest));
-        if ( container_mkpath_priv(joinpath(container_dir, home_dest), 0755) < 0 ) {
-            singularity_message(ERROR, "Failed creating home directory in container %s: %s\n", joinpath(container_dir, home_dest), strerror(errno));
-            ABORT(255);
-        }
-
-        singularity_message(VERBOSE, "Mounting staged home directory to container: %s -> %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest));
-        if ( singularity_mount(joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "Failed to mount staged home base: %s -> %s: %s\n", joinpath(session_dir, home_dest), joinpath(container_dir, home_dest), strerror(errno));
-            ABORT(255);
-        }
+        singularity_message(VERBOSE, "Queuing bind mount of staged home directory to container: %s/%s -> %s\n", session_dir, home_dest, home_dest);
+        mountlist_add(mountlist, joinpath(session_dir, home_dest), strdup(home_dest), NULL, MS_BIND | MS_NOSUID | MS_NODEV | MS_REC, 0);
     }
 
     envar_set("HOME", home_dest, 1);

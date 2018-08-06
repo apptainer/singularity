@@ -21,10 +21,12 @@
  * 
 */
 
-#ifndef __SINGULARITY_RUNTIME_FILES_LIBS_H_
-#define __SINGULARITY_RUNTIME_FILES_LIBS_H_
+#ifndef __SINGULARITY_RUNTIME_MOUNT_LIBS_H_
+#define __SINGULARITY_RUNTIME_MOUNT_LIBS_H_
 
-extern int _singularity_runtime_files_libs(void);
+struct mountlist;
 
-#endif /* __SINGULARITY_RUNTIME_FILES_LIBS_H */
+extern int _singularity_runtime_mount_libs(struct mountlist *);
+
+#endif /* __SINGULARITY_RUNTIME_MOUNT_LIBS_H */
 
