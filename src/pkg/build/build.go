@@ -63,7 +63,7 @@ func newBuild(d types.Definition, dest, format string) (*Build, error) {
 		b:    nil,
 	}
 
-	if c, err := getcp(b.d); err != nil {
+	if c, err := getcp(b.d); err == nil {
 		b.c = c
 	} else {
 		return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)

@@ -15,7 +15,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
-const archDef = "./testdata_good/arch/arch"
+const archDef = "../testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
 	if _, err := exec.LookPath("pacstrap"); err != nil {

@@ -14,7 +14,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
-const busyBoxDef = "./testdata_good/busybox/busybox"
+const busyBoxDef = "../testdata_good/busybox/busybox"
 
 func TestBusyBoxConveyor(t *testing.T) {
 	test.DropPrivilege(t)

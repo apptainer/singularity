@@ -52,10 +52,10 @@ func TestDebootstrapPacker(t *testing.T) {
 	testDef := types.Definition{}
 
 	testDef.Header = map[string]string{
-		"Bootstrap": "debootstrap",
-		"OSVersion": "bionic",
-		"MirrorURL": "http://us.archive.ubuntu.com/ubuntu/",
-		"Include":   "apt python ",
+		"bootstrap": "debootstrap",
+		"osversion": "bionic",
+		"mirrorurl": "http://us.archive.ubuntu.com/ubuntu/",
+		"include":   "apt python ",
 	}
 
 	cp := sources.DebootstrapConveyorPacker{}
