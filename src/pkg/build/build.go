@@ -22,25 +22,8 @@ import (
 	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 )
-
-// EngineName is the engine name of the imgbuild engine
-const EngineName = "imgbuild"
-
-// EngineConfig is the engineConfig for the imgbuild Engine
-type EngineConfig struct {
-	types.Bundle
-}
-
-// MarshalJSON implements json.Marshaler interface
-func (c *EngineConfig) MarshalJSON() ([]byte, error) {
-	return json.Marshal(c.Bundle)
-}
-
-// UnmarshalJSON implements json.Unmarshaler interface
-func (c *EngineConfig) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, &c.Bundle)
-}
 
 // Build is a
 type Build struct {
@@ -171,17 +154,17 @@ func hasScripts(def types.Definition) bool {
 
 // runScripts runs %pre %post %setup scripts in the bundle using the imgbuild engine
 func (b *Build) runScripts() error {
-	env := []string{"SINGULARITY_MESSAGELEVEL=" + string(sylog.GetLevel()), "SRUNTIME=" + EngineName}
+	env := []string{"SINGULARITY_MESSAGELEVEL=" + string(sylog.GetLevel()), "SRUNTIME=" + imgbuild.Name}
 	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
 	progname := []string{"singularity image-build"}
 
-	engineConfig := &EngineConfig{
+	engineConfig := &imgbuild.EngineConfig{
 		Bundle: *b.b,
 	}
 	ociConfig := &oci.Config{}
 
 	config := &config.Common{
-		EngineName:   EngineName,
+		EngineName:   imgbuild.Name,
 		ContainerID:  "image-build",
 		OciConfig:    ociConfig,
 		EngineConfig: engineConfig,
@@ -294,6 +277,11 @@ func makeDef(spec string) (types.Definition, error) {
 	}
 
 	return def, nil
+}
+
+// MakeDef gets a definition object from a spec
+func MakeDef(spec string) (types.Definition, error) {
+	return makeDef(spec)
 }
 
 // Assemble assembles the bundle to the specified path

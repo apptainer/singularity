@@ -10,7 +10,6 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
 )
@@ -18,8 +17,8 @@ import (
 // EngineOperations implements the engines.EngineOperations interface for
 // the image build process
 type EngineOperations struct {
-	CommonConfig *config.Common      `json:"-"`
-	EngineConfig *build.EngineConfig `json:"engineConfig"`
+	CommonConfig *config.Common `json:"-"`
+	EngineConfig *EngineConfig  `json:"engineConfig"`
 }
 
 // InitConfig initializes engines config internals

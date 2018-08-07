@@ -85,7 +85,12 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
 
-			b := build.NewRemoteBuilder(dest, libraryURL, spec, detached, builderURL, authToken)
+			def, err := build.MakeDef(spec)
+			if err != nil {
+				return
+			}
+
+			b := build.NewRemoteBuilder(dest, libraryURL, def, detached, builderURL, authToken)
 			b.Build(context.TODO())
 		} else {
 			b, err := build.NewBuild(spec, dest, buildFormat)
