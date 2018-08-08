@@ -1,4 +1,0 @@
-NAME="selftest"
-SECTION="general"
-SUMMARY="Run some self tests for singularity install"
-USAGE="singularity selftest"

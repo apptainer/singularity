@@ -1,6 +1,7 @@
 # Copyright (c) 2015-2016, Maciej Sieczka, Gregory M. Kurtzer. All rights
 # reserved.
 #
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -40,4 +41,5 @@ Bootstrap: arch
     pacman -Sy --noconfirm vim bash-completion
 
     # Remove the packages downloaded to image's Pacman cache dir.
+    pacman -Sy --noconfirm pacman-contrib
     paccache -r -k0

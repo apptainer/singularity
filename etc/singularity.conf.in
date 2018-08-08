@@ -161,6 +161,15 @@ bind path = /etc/hosts
 #@LIMIT_CONTAINER_OWNERS@ = gmk, singularity, nobody
 
 
+# LIMIT CONTAINER GROUPS: [STRING]
+# DEFAULT: @LIMIT_CONTAINER_GROUPS_DEFAULT@
+# Only allow containers to be used that are owned by a given group. If this
+# configuration is undefined (commented or set to NULL), all containers are
+# allowed to be used. This feature only applies when Singularity is running in
+# SUID mode and the user is non-root.
+#@LIMIT_CONTAINER_GROUPS@ = group1, singularity, nobody
+
+
 # LIMIT CONTAINER PATHS: [STRING]
 # DEFAULT: @LIMIT_CONTAINER_PATHS_DEFAULT@
 # Only allow containers to be used that are located within an allowed path
@@ -179,6 +188,14 @@ bind path = /etc/hosts
 @ALLOW_CONTAINER_EXTFS@ = @ALLOW_CONTAINER_EXTFS_DEFAULT@
 @ALLOW_CONTAINER_DIR@ = @ALLOW_CONTAINER_DIR_DEFAULT@
 
+# MKSQUASHFS LOCATION ${TYPE}: [STRING] 
+# DEFAULT: @MKSQUASHFS_LOCATION_DEFAULT@
+# The mksquashfs command is necessary to use the build command.  If your
+# mksquashfs is installed outside of the following directories:
+# /bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin
+# you can specify the full path to it here. For example:
+# mksquashfs location = /opt/bin/mksquashfs
+@MKSQUASHFS_LOCATION@ = @MKSQUASHFS_LOCATION_DEFAULT@
 
 # AUTOFS BUG PATH: [STRING]
 # DEFAULT: Undefined
@@ -186,3 +203,39 @@ bind path = /etc/hosts
 # errors when accessed from container (typically bind mounts)
 #autofs bug path = /nfs
 #autofs bug path = /cifs-share
+
+
+# ALWAYS USE NV ${TYPE}: [BOOL]
+# DEFAULT: no
+# This feature allows an administrator to determine that every action command
+# should be executed implicitely with the --nv option (useful for GPU only 
+# environments). 
+@ALWAYS_USE_NV@ = @ALWAYS_USE_NV_DEFAULT@  
+
+
+# ROOT DEFAULT CAPABILITIES: [full/file/default/no]
+# DEFAULT: no
+# Define default root capability set kept during runtime
+# - full: keep all capabilities (same as --keep-privs)
+# - file: keep capabilities configured in ${prefix}/etc/singularity/capabilities/user.root
+# - default: keep capabilities required by singularity binary
+# - no: no capabilities (same as --no-privs)
+@ROOT_DEFAULT_CAPABILITIES@ = @ROOT_DEFAULT_CAPABILITIES_DEFAULT@
+
+
+# ALLOW_ROOT CAPABILITIES: [BOOL]
+# DEFAULT: yes
+# This allows root to gain/drop capabilities other than those defined
+# by root default capabilities.
+# Example:
+# If root default capabilities = file and allow root capabilities = no,
+# only capabilities defined in file ${prefix}/etc/singularity/capabilities/user.root
+# could be obtained by root
+@ALLOW_ROOT_CAPABILITIES@ = @ALLOW_ROOT_CAPABILITIES_DEFAULT@
+
+
+# ALLOW USER CAPABILITIES: [BOOL]
+# DEFAULT: no
+# This allows user to gain capabilities based on whitelist managed by administrator
+# (requires recent kernel >= 4.3)
+@ALLOW_USER_CAPABILITIES@ = @ALLOW_USER_CAPABILITIES_DEFAULT@

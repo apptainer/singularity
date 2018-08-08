@@ -1,0 +1,4 @@
+mirrorurl: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+include: yum
+bootstrap: yum
+osversion: 7

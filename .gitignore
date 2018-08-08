@@ -4,10 +4,15 @@
 src/*.o
 singularity-*.tar.gz
 *.m4
-config.*
 *.pyc
+*.swp
+generate_docs
 
-Makefile
+.vscode
+vendor/
+builddir/
+src/pkg/buildcfg/config.go
+trash.lock
 Makefile.in
 autom4te.cache/
 bin/Makefile
@@ -33,6 +38,9 @@ missing
 singularity.spec
 src/util/config_defaults.h
 test.sh
+secbuildimg.sh
+
+docs/man/singularity*
 
 src/action
 src/action-suid
@@ -43,15 +51,16 @@ src/cleanupd
 src/image-type
 src/mount
 src/mount-suid
-src/prepheader
+src/sif
 src/sinit
 src/get-section
+src/sign
+src/verify
 src/stamp-h1
 src/include/stamp-h1
 src/.dirstamp
-src/sinit
-src/start
-src/start-suid
+src/wrapper
+src/wrapper-suid
 
 src/.deps/
 src/.libs/
@@ -88,3 +97,7 @@ src/*/*/*/*/*.o
 src/*/*/*/*/*.lo
 src/*/*/*/*/.dirstamp
 
+build/*
+runtime/cli
+
+src/pkg/library/client/test[0-9]*

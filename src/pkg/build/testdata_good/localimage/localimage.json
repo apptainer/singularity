@@ -1,0 +1,1 @@
+{"header":{"bootstrap":"localimage","from":"/path/to/container/file/or/directory"},"imageData":{"metadata":null,"labels":null,"imageScripts":{"help":"","environment":"","runScript":"","test":""}},"buildData":{"files":{},"buildScripts":{"pre":"","setup":"","post":""}}}

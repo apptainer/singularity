@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 '''
-Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+Copyright (c) 2017-2018, Sylabs, Inc. All rights reserved.
 
 Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 Copyright (c) 2017, Vanessa Sochat All rights reserved.

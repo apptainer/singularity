@@ -1,0 +1,9 @@
+[  
+   {  
+      "Header":"Bootstrap: yum\nOSVersion: 7\nMirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/\nInclude: yum\n"
+   }
+]
+
+
+
+

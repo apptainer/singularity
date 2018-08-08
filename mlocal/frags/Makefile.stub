@@ -1,0 +1,165 @@
+# include may contain conditional variables set in mlocal/checks/project.mk
+# like go_TAG / WRAPPER_LIBS
+include Makefile.cond
+
+libruntime := $(BUILDDIR)/lib/libruntime.a
+
+libstartup := $(BUILDDIR)/lib/libstartup.a
+libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
+libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
+libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
+libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
+
+singularity := $(BUILDDIR)/singularity
+singularity_INSTALL := $(PREFIX)/bin/singularity
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
+
+wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
+wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
+wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
+
+config := $(BUILDDIR)/singularity.conf
+config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
+
+mountdir := $(PREFIX)/var/singularity/mnt/container
+finaldir := $(PREFIX)/var/singularity/mnt/final
+overlaydir := $(PREFIX)/var/singularity/mnt/overlay
+sessiondir := $(PREFIX)/var/singularity/mnt/session
+
+go_BIN := $(singularity)
+go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
+go_INSTALL := $(singularity_INSTALL)
+
+go_TAG += containers_image_openpgp
+
+abs_BUILDDIR := `readlink -f $(BUILDDIR)`
+
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
+cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
+
+INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sessiondir) $(config_INSTALL)
+
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ)
+
+all: cscope collect $(libruntime) $(go_BIN) $(config) $(wrapper)
+
+$(libruntime): $(libutil_OBJ)
+	@echo " AR" $@
+	@mkdir -p $(@D)
+	$(V)$(AR) rcs $@ $(libutil_OBJ)
+
+# wrapper
+$(wrapper): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
+		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
+		$(SOURCEDIR)/src/runtime/startup/smaster.go \
+		$(SOURCEDIR)/src/runtime/startup/rpc.go
+
+# singularity
+$(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
+	@echo " GO" $@
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		go build -tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+$(singularity_INSTALL): $(singularity)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+
+# config.go
+$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
+	@rm -f $(go_OBJ)
+	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
+
+# wrappper & wrapper-suid install
+$(wrapper_INSTALL): $(wrapper)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
+$(wrapper_suid_INSTALL): $(wrapper)
+	@echo " INSTALL SUID" $@
+	$(V)install -d $(@D)
+	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
+
+# generate the vendor folder with dep and patch when necessary
+$(BUILDDIR)/vendors-done:
+	@echo " VENDORS"
+	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+		dep ensure -vendor-only >/dev/null 2>&1 && \
+			touch $(BUILDDIR)/.dep-done; \
+	fi
+	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+			touch $(BUILDDIR)/.patch-done; \
+	fi
+	$(V)touch $@
+
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
+
+$(config_INSTALL): $(config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $(config) $(config_INSTALL)
+
+$(sessiondir):
+	@echo " INSTALL" $@
+	$(V)install -d $(sessiondir)
+
+.PHONY: man
+man:
+	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
+
+.PHONY: collect
+collect:
+	@printf " DEPENDS\n"
+	$(V)mkdir -p $(BUILDDIR)
+	$(V):>$(BUILDDIR)/mergeddeps
+	$(V)for i in `find $(BUILDDIR) -name '*.o.d'`; do		\
+		(awk -v path="$${i%/*.*}" '/^.+:/ {			\
+			print path "/" $$0; next }{ print }' < $$i	\
+			>> $(BUILDDIR)/mergeddeps)			\
+	done
+
+.PHONY: check
+check:
+	@echo " CHECK go fmt"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && test -z $(go fmt ./...)
+	@echo "       PASS"
+	@echo " CHECK go vet"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && go vet -tags "$(go_TAG)" -all ./...
+	@echo "       PASS"
+	@echo " CHECK go lint"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
+	@echo "       PASS"
+
+.PHONY: test
+test:
+	@echo " TEST sudo go test"
+	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
+		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
+	@echo "       PASS"
+
+.PHONY: testall
+testall: check test
+
+.PHONY: cscope
+cscope:
+	@printf " CSCOPE\n"
+	$(V)(cscope -k -R -q -u -b -v `find $(SOURCEDIR) -name '*.[chS]'` \
+		>/dev/null 2>&1 || true)
+
+.PHONY: clean
+clean:
+	@printf " CLEAN\n"
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+
+.PHONY: install
+install: $(INSTALLFILES)
+	@echo " DONE"
+
+-include $(BUILDDIR)/mergeddeps

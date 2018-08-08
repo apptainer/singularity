@@ -1,3 +1,18 @@
+_Please note recent changes in the github repo branch structure.  If you want
+to install a stable release of Singularity, please use a tag or a [release
+tarball](https://github.com/singularityware/singularity/releases).  If you are
+a developer who would like to contribute to Singularity and you want to know
+which branch to submit your pull request to, please see notes on the branch
+reorganization [here](https://www.sylabs.io/2018/03/managing-singularity-branches/).
+
+Please also note that 2.6.0 is expected to be the final feature release in the
+2.x series. While bug fixes may be added via point releases (for example 2.6.1)
+no new features releases (for example 2.7.0) are planned.
+
+Pull requests adding features to the 2.x series will no longer be reviewed.
+Any new features should be targeted to the master branch (which used to be
+called development-3.0)._
+
 [![Build Status](https://travis-ci.org/singularityware/singularity.svg?branch=master)](https://travis-ci.org/singularityware/singularity)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)

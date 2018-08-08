@@ -1,3 +1,0 @@
-#!/bin/sh
-
-echo "There is no runscript defined for this container\n";
