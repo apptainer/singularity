@@ -168,13 +168,21 @@ fi
 ########################
 printf " checking: target architecture... "
 tgt_arch=
-if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+if echo | $tgtcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
 	tgt_arch=i386
 fi
-if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+if echo | $tgtcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	-e __x86_64__; then
 	tgt_arch=x86_64
 fi
+if echo | $tgtcc -E -dM - | grep -qs -e __arm__; then
+	tgt_arch=arm
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	tgt_arch=aarch64
+fi
+
 if [ "$tgt_arch" != "" ]; then
 	echo $tgt_arch
 else
@@ -189,13 +197,22 @@ fi
 ########################
 printf " checking: architecture word size... "
 wordsize=
-if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+if echo | $tgtcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
 	wordsize=32
 fi
-if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+if echo | $tgtcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	-e __x86_64__; then
 	wordsize=64
 fi
+if echo | $tgtcc -E -dM - | grep -qs -e __arm__; then
+	tgt_arch=32
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	tgt_arch=64
+fi
+
+
 if [ "$wordsize" != "" ]; then
 	echo $wordsize
 else
