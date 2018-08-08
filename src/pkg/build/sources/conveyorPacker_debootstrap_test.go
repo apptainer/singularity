@@ -16,6 +16,10 @@ import (
 
 func TestDebootstrapConveyor(t *testing.T) {
 
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	if _, err := exec.LookPath("debootstrap"); err != nil {
 		t.Skip("skipping test, debootstrap not installed")
 	}

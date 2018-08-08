@@ -54,7 +54,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().SetInterspersed(false)
 	}

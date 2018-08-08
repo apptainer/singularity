@@ -20,6 +20,11 @@ const (
 
 // TestShubConveyor tests if we can pull an image from singularity hub
 func TestShubConveyor(t *testing.T) {
+
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

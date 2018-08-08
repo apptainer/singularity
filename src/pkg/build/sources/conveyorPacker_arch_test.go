@@ -18,6 +18,11 @@ import (
 const archDef = "../testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
+
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
 	}
