@@ -7,7 +7,6 @@ package sources
 
 import (
 	"fmt"
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/build/types"
@@ -18,8 +17,8 @@ import (
 
 // LocalConveyor only needs to hold the conveyor to have the needed data to pack
 type LocalConveyor struct {
-	src   string
-	tmpfs string
+	src string
+	b   *types.Bundle
 }
 
 type localPacker interface {
@@ -32,7 +31,7 @@ type LocalConveyorPacker struct {
 	localPacker
 }
 
-func getLocalPacker(src, tmpfs string) (localPacker, error) {
+func getLocalPacker(src string, b *types.Bundle) (localPacker, error) {
 	imageObject, err := image.Init(src, false)
 	if err != nil {
 		return nil, err
@@ -46,7 +45,7 @@ func getLocalPacker(src, tmpfs string) (localPacker, error) {
 
 		return &SIFPacker{
 			srcfile: src,
-			tmpfs:   tmpfs,
+			b:       b,
 		}, nil
 	case image.SQUASHFS:
 		sylog.Debugf("Packing from Squashfs")
@@ -56,7 +55,7 @@ func getLocalPacker(src, tmpfs string) (localPacker, error) {
 
 		return &SquashfsPacker{
 			srcfile: src,
-			tmpfs:   tmpfs,
+			b:       b,
 			info:    info,
 		}, nil
 	case image.EXT3:
@@ -67,7 +66,7 @@ func getLocalPacker(src, tmpfs string) (localPacker, error) {
 
 		return &Ext3Packer{
 			srcfile: src,
-			tmpfs:   tmpfs,
+			b:       b,
 			info:    info,
 		}, nil
 	case image.SANDBOX:
@@ -75,7 +74,7 @@ func getLocalPacker(src, tmpfs string) (localPacker, error) {
 
 		return &SandboxPacker{
 			srcdir: src,
-			tmpfs:  tmpfs,
+			b:      b,
 		}, nil
 	default:
 		return nil, fmt.Errorf("invalid image format")
@@ -83,14 +82,15 @@ func getLocalPacker(src, tmpfs string) (localPacker, error) {
 }
 
 // Get just stores the source
-func (c *LocalConveyorPacker) Get(recipe types.Definition) (err error) {
-	c.src = filepath.Clean(recipe.Header["from"])
+func (cp *LocalConveyorPacker) Get(recipe types.Definition) (err error) {
+	cp.src = filepath.Clean(recipe.Header["from"])
 
-	c.tmpfs, err = ioutil.TempDir("", "temp-local-")
+	//create bundle to build into
+	cp.b, err = types.NewBundle("sbuild-local")
 	if err != nil {
 		return
 	}
 
-	c.localPacker, err = getLocalPacker(c.src, c.tmpfs)
+	cp.localPacker, err = getLocalPacker(cp.src, cp.b)
 	return err
 }

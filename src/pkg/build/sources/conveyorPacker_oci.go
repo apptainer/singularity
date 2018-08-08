@@ -38,7 +38,7 @@ import (
 type OCIConveyorPacker struct {
 	recipe    sytypes.Definition
 	srcRef    types.ImageReference
-	tmpfs     string
+	b         *sytypes.Bundle
 	tmpfsRef  types.ImageReference
 	policyCtx *signature.PolicyContext
 	imgConfig imgspecv1.ImageConfig
@@ -97,12 +97,12 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		return fmt.Errorf("Invalid image source: %v", err)
 	}
 
-	cp.tmpfs, err = ioutil.TempDir("", "sbuild-oci-")
+	cp.b, err = sytypes.NewBundle("sbuild-oci")
 	if err != nil {
 		return
 	}
 
-	cp.tmpfsRef, err = oci.ParseReference(cp.tmpfs + ":" + "tmp")
+	cp.tmpfsRef, err = oci.ParseReference(cp.b.Path + ":" + "tmp")
 	if err != nil {
 		return
 	}
@@ -123,39 +123,31 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *OCIConveyorPacker) Pack() (b *sytypes.Bundle, err error) {
-	b, err = sytypes.NewBundle(cp.tmpfs)
+func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
+
+	err := cp.unpackTmpfs()
 	if err != nil {
-		return
+		return nil, fmt.Errorf("While unpacking tmpfs: %v", err)
 	}
 
-	err = cp.unpackTmpfs(b)
+	err = cp.insertBaseEnv()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return nil, fmt.Errorf("While inserting base environment: %v", err)
 	}
 
-	err = cp.insertBaseEnv(b)
+	err = cp.insertRunScript()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return nil, fmt.Errorf("While inserting runscript: %v", err)
 	}
 
-	err = cp.insertRunScript(b)
+	err = cp.insertEnv()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
 	}
 
-	err = cp.insertEnv(b)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	cp.b.Recipe = cp.recipe
 
-	b.Recipe = cp.recipe
-
-	return b, nil
+	return cp.b, nil
 }
 
 func (cp *OCIConveyorPacker) fetch() (err error) {
@@ -261,21 +253,21 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 	}
 }
 
-func (cp *OCIConveyorPacker) unpackTmpfs(b *sytypes.Bundle) (err error) {
+func (cp *OCIConveyorPacker) unpackTmpfs() (err error) {
 	refs := []string{"name=tmp"}
-	err = imagetools.UnpackLayout(cp.tmpfs, b.Rootfs(), "amd64", refs)
+	err = imagetools.UnpackLayout(cp.b.Path, cp.b.Rootfs(), "amd64", refs)
 	return err
 }
 
-func (cp *OCIConveyorPacker) insertBaseEnv(b *sytypes.Bundle) (err error) {
-	if err = makeBaseEnv(b.Rootfs()); err != nil {
+func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {
+	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
 		sylog.Errorf("%v", err)
 	}
 	return
 }
 
-func (cp *OCIConveyorPacker) insertRunScript(b *sytypes.Bundle) (err error) {
-	f, err := os.Create(b.Rootfs() + "/.singularity.d/runscript")
+func (cp *OCIConveyorPacker) insertRunScript() (err error) {
+	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
 	if err != nil {
 		return
 	}
@@ -342,7 +334,7 @@ exec $SINGULARITY_OCI_RUN
 
 	f.Sync()
 
-	err = os.Chmod(b.Rootfs()+"/.singularity.d/runscript", 0755)
+	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/runscript", 0755)
 	if err != nil {
 		return
 	}
@@ -350,8 +342,8 @@ exec $SINGULARITY_OCI_RUN
 	return nil
 }
 
-func (cp *OCIConveyorPacker) insertEnv(b *sytypes.Bundle) (err error) {
-	f, err := os.Create(b.Rootfs() + "/.singularity.d/env/10-docker2singularity.sh")
+func (cp *OCIConveyorPacker) insertEnv() (err error) {
+	f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/env/10-docker2singularity.sh")
 	if err != nil {
 		return
 	}
@@ -373,7 +365,7 @@ func (cp *OCIConveyorPacker) insertEnv(b *sytypes.Bundle) (err error) {
 
 	f.Sync()
 
-	err = os.Chmod(b.Rootfs()+"/.singularity.d/env/10-docker2singularity.sh", 0755)
+	err = os.Chmod(cp.b.Rootfs()+"/.singularity.d/env/10-docker2singularity.sh", 0755)
 	if err != nil {
 		return
 	}
@@ -383,5 +375,5 @@ func (cp *OCIConveyorPacker) insertEnv(b *sytypes.Bundle) (err error) {
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (cp *OCIConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.tmpfs)
+	os.RemoveAll(cp.b.Path)
 }

@@ -45,9 +45,9 @@ type shubAPIResponse struct {
 type ShubConveyorPacker struct {
 	recipe   sytypes.Definition
 	srcURI   ShubURI
-	tmpfs    string
 	tmpfile  string
 	manifest *shubAPIResponse
+	b        *sytypes.Bundle
 	localPacker
 }
 
@@ -66,7 +66,8 @@ func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		return
 	}
 
-	cp.tmpfs, err = ioutil.TempDir("", "sbuild-shub-")
+	//create bundle to build into
+	cp.b, err = sytypes.NewBundle("sbuild-shub")
 	if err != nil {
 		return
 	}
@@ -83,7 +84,8 @@ func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		return
 	}
 
-	cp.localPacker, err = getLocalPacker(cp.tmpfile, cp.tmpfs)
+	cp.localPacker, err = getLocalPacker(cp.tmpfile, cp.b)
+
 	return err
 }
 
@@ -92,7 +94,7 @@ func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 func (cp *ShubConveyorPacker) fetchImage() (err error) {
 
 	// Create temporary download name
-	tmpfile, err := ioutil.TempFile(cp.tmpfs, "shub-container")
+	tmpfile, err := ioutil.TempFile(cp.b.Path, "shub-container")
 	sylog.Debugf("\nCreating temporary image file %v\n", tmpfile.Name())
 	if err != nil {
 		return err
@@ -116,6 +118,7 @@ func (cp *ShubConveyorPacker) fetchImage() (err error) {
 		return fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
 	}
 
+	cp.tmpfile = tmpfile.Name()
 	return nil
 }
 
@@ -246,5 +249,5 @@ func (s *ShubURI) String() string {
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
 func (cp *ShubConveyorPacker) CleanUp() {
-	os.RemoveAll(cp.tmpfs)
+	os.RemoveAll(cp.b.Path)
 }

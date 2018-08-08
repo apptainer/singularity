@@ -18,30 +18,26 @@ import (
 // SquashfsPacker holds the locations of where to pack from and to, aswell as image offset info
 type SquashfsPacker struct {
 	srcfile string
-	tmpfs   string
+	b       *types.Bundle
 	info    *loop.Info64
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SquashfsPacker) Pack() (b *types.Bundle, err error) {
+func (p *SquashfsPacker) Pack() (*types.Bundle, error) {
 	rootfs := p.srcfile
 
-	b, err = types.NewBundle(p.tmpfs)
-	if err != nil {
-		return
-	}
-	err = p.unpackSquashfs(b, p.info, rootfs)
+	err := p.unpackSquashfs(p.b, p.info, rootfs)
 	if err != nil {
 		sylog.Errorf("unpackSquashfs Failed", err.Error())
 		return nil, err
 	}
 
-	return b, nil
+	return p.b, nil
 }
 
 // unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
 func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
-	trimfile, err := ioutil.TempFile(p.tmpfs, "trim.squashfs")
+	trimfile, err := ioutil.TempFile(p.b.Path, "trim.squashfs")
 
 	//trim header
 	sylog.Debugf("Creating copy of %s without header at %s\n", rootfs, trimfile.Name())

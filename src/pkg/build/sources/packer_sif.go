@@ -21,24 +21,19 @@ import (
 // SIFPacker holds the locations of where to pack from and to
 type SIFPacker struct {
 	srcfile string
-	tmpfs   string
+	b       *types.Bundle
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SIFPacker) Pack() (b *types.Bundle, err error) {
+func (p *SIFPacker) Pack() (*types.Bundle, error) {
 
-	b, err = types.NewBundle(p.tmpfs)
-	if err != nil {
-		return
-	}
-
-	err = p.unpackSIF(b, p.srcfile)
+	err := p.unpackSIF(p.b, p.srcfile)
 	if err != nil {
 		sylog.Errorf("unpackSIF Failed", err.Error())
 		return nil, err
 	}
 
-	return b, nil
+	return p.b, nil
 }
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files

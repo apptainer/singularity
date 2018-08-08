@@ -83,14 +83,17 @@ func newBuild(d types.Definition, dest, format string) (*Build, error) {
 
 // Full runs a standard build from start to finish
 func (b *Build) Full() error {
+	sylog.Debugf("Creating bundle")
 	if _, err := b.Bundle(); err != nil {
 		return err
 	}
 
+	sylog.Debugf("Executing all sections of definition")
 	if err := b.AllSections(); err != nil {
 		return err
 	}
 
+	sylog.Debugf("Calling assembler")
 	if err := b.Assemble(b.dest); err != nil {
 		return err
 	}

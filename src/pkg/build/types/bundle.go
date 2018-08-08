@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // Bundle is the temporary build environment used during the image
@@ -47,6 +49,7 @@ func NewBundle(directoryPrefix string) (b *Bundle, err error) {
 	if err != nil {
 		return nil, err
 	}
+	sylog.Debugf("Created temporary directory for bundle %v\n", b.Path)
 
 	b.FSObjects = map[string]string{
 		"rootfs": "fs",

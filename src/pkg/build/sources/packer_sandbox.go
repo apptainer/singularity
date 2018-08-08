@@ -16,26 +16,21 @@ import (
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info
 type SandboxPacker struct {
 	srcdir string
-	tmpfs  string
+	b      *types.Bundle
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SandboxPacker) Pack() (b *types.Bundle, err error) {
+func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	rootfs := p.srcdir
 
-	b, err = types.NewBundle(p.tmpfs)
-	if err != nil {
-		return
-	}
-
 	//copy filesystem into bundle rootfs
-	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, b.Rootfs())
-	cmd := exec.Command("cp", "-r", rootfs+`/.`, b.Rootfs())
-	err = cmd.Run()
+	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, p.b.Rootfs())
+	cmd := exec.Command("cp", "-r", rootfs+`/.`, p.b.Rootfs())
+	err := cmd.Run()
 	if err != nil {
 		sylog.Errorf("cp Failed", err.Error())
 		return nil, err
 	}
 
-	return b, nil
+	return p.b, nil
 }
