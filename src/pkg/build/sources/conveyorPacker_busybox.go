@@ -33,7 +33,7 @@ type BusyBoxConveyorPacker struct {
 func (c *BusyBoxConveyor) Get(recipe types.Definition) (err error) {
 	c.recipe = recipe
 
-	c.b, err = types.NewBundle("sbuild-busybox-")
+	c.b, err = types.NewBundle("sbuild-busybox")
 	if err != nil {
 		return
 	}

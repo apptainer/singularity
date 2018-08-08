@@ -123,7 +123,7 @@ func IsValidDefinition(source string) (valid bool, err error) {
 
 	ok, err := canGetHeader(defFile)
 	if err != nil {
-		//sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
+		sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
 	}
 
 	return ok, nil

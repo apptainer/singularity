@@ -43,7 +43,7 @@ func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
 		return fmt.Errorf("You must be root to build with debootstrap")
 	}
 
-	cp.b, err = types.NewBundle("sbuild-debootstrap-")
+	cp.b, err = types.NewBundle("sbuild-debootstrap")
 	if err != nil {
 		return
 	}

@@ -77,7 +77,7 @@ func (cp *ArchConveyorPacker) Get(recipe types.Definition) (err error) {
 	}
 
 	//create bundle to build into
-	cp.b, err = types.NewBundle("sbuild-arch-")
+	cp.b, err = types.NewBundle("sbuild-arch")
 	if err != nil {
 		return
 	}
