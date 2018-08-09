@@ -18,7 +18,7 @@ called development-3.0)._
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
-- [Documentation](http://singularity.lbl.gov/)
+- [Documentation](https://www.sylabs.io/docs/)
 - [Citation](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0177459)
 
 # Singularity - Enabling users to have full control of their environment.
@@ -188,4 +188,4 @@ http://dx.doi.org/10.5281/zenodo.60736
 ```
 
 # Webpage
-We have full documentation at [http://singularity.lbl.gov/](http://singularity.lbl.gov/), and [welcome contributions](http://www.github.com/singularityware/singularityware.github.io).
+We have full documentation at [https://www.sylabs.io/docs/](https://www.sylabs.io/docs/), and welcome contributions to [user docs](https://github.com/singularityware/singularity-userdocs) and [admin docs](https://github.com/singularityware/singularity-admindocs).
