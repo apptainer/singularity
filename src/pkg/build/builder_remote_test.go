@@ -177,7 +177,10 @@ func TestBuild(t *testing.T) {
 	// Loop over test cases
 	for _, tt := range tests {
 		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
-			rb := NewRemoteBuilder(tt.imagePath, "", Definition{}, tt.isDetached, s.Listener.Addr().String(), authToken)
+			rb, err := NewRemoteBuilder(tt.imagePath, "", Definition{}, tt.isDetached, s.URL, authToken)
+			if err != nil {
+				t.Fatalf("failed to get new remote builder: %v", err)
+			}
 			rb.Force = true
 
 			// Set the response codes for each stage of the build
@@ -188,7 +191,7 @@ func TestBuild(t *testing.T) {
 			m.imageResponseCode = tt.imageResponseCode
 
 			// Do it!
-			err := rb.Build(tt.ctx)
+			err = rb.Build(tt.ctx)
 
 			if tt.expectSuccess {
 				// Ensure the handler returned no error, and the response is as expected
@@ -231,8 +234,12 @@ func TestDoBuildRequest(t *testing.T) {
 	defer s.Close()
 
 	// Enough of a struct to test with
+	url, err := url.Parse(s.URL)
+	if err != nil {
+		t.Fatalf("failed to parse URL: %v", err)
+	}
 	rb := RemoteBuilder{
-		HTTPAddr: s.Listener.Addr().String(),
+		BuilderURL: url,
 	}
 
 	// Loop over test cases
@@ -293,8 +300,12 @@ func TestDoStatusRequest(t *testing.T) {
 	defer s.Close()
 
 	// Enough of a struct to test with
+	url, err := url.Parse(s.URL)
+	if err != nil {
+		t.Fatalf("failed to parse URL: %v", err)
+	}
 	rb := RemoteBuilder{
-		HTTPAddr: s.Listener.Addr().String(),
+		BuilderURL: url,
 	}
 
 	// ID to test with
