@@ -47,8 +47,6 @@ $ mkdir -p $GOPATH/src/github.com/singularityware
 $ cd $GOPATH/src/github.com/singularityware
 $ git clone https://github.com/singularityware/singularity.git
 $ cd singularity
-$ git fetch
-$ git checkout development-3.0
 ```
 
 ## Install golang dependencies 
