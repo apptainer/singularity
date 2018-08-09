@@ -205,11 +205,11 @@ if echo | $tgtcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	wordsize=64
 fi
 if echo | $tgtcc -E -dM - | grep -qs -e __arm__; then
-	tgt_arch=32
+	wordsize=32
 fi
 if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
 	-e __arm64__; then
-	tgt_arch=64
+	wordsize=64
 fi
 
 
