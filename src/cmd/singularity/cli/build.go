@@ -102,7 +102,7 @@ var BuildCmd = &cobra.Command{
 			if sections[0] == "all" {
 				b.Full()
 			} else {
-
+				sylog.Fatalf("Running specific sections of definitions not implemented.")
 			}
 		}
 	},
