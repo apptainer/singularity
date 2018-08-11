@@ -26,10 +26,10 @@ func init() {
 	// -d|--desc
 	capabilityAddFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
 
-    CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("user"))
-    CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("group"))
-    CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("desc"))
-    CapabilityAddCmd.Flags().SetInterspersed(false)
+	CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("user"))
+	CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("group"))
+	CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("desc"))
+	CapabilityAddCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityAddCmd singularity capability add

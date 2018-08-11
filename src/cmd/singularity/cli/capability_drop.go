@@ -26,10 +26,10 @@ func init() {
 	// -d|--desc
 	capabilityDropFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
 
-    CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
-    CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
-    CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("desc"))
-    CapabilityDropCmd.Flags().SetInterspersed(false)
+	CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
+	CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
+	CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("desc"))
+	CapabilityDropCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityDropCmd singularity capability drop

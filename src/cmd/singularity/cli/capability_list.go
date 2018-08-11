@@ -26,10 +26,10 @@ func init() {
 	// -a|--all
 	capabilityListFlags.BoolVarP(&CapListAll, "all", "a", false, "List all users and groups capabilities")
 
-    CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("user"))
-    CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("group"))
-    CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("all"))
-    CapabilityListCmd.Flags().SetInterspersed(false)
+	CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("user"))
+	CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("group"))
+	CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("all"))
+	CapabilityListCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityListCmd singularity capability list

@@ -14,30 +14,30 @@ import (
 
 func init() {
 
-    options := [16]string {
-        "add-caps",
-        "allow-setuid",
-        "bind",
-        "boot",
-        "drop-caps",
-        "fakeroot",
-        "home",
-        "hostname",
-        "keep-privs",
-        "net",
-        "no-privs",
-        "overlay",
-        "scratch",
-        "userns",
-        "uts",
-        "workdir",
-    }
+	options := [16]string{
+		"add-caps",
+		"allow-setuid",
+		"bind",
+		"boot",
+		"drop-caps",
+		"fakeroot",
+		"home",
+		"hostname",
+		"keep-privs",
+		"net",
+		"no-privs",
+		"overlay",
+		"scratch",
+		"userns",
+		"uts",
+		"workdir",
+	}
 
 	for _, opt := range options {
 		InstanceStartCmd.Flags().AddFlag(actionFlags.Lookup(opt))
 	}
 
-    InstanceStartCmd.Flags().SetInterspersed(false)
+	InstanceStartCmd.Flags().SetInterspersed(false)
 }
 
 // InstanceStartCmd singularity instance start
