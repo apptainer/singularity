@@ -12,10 +12,6 @@ import (
 )
 
 func init() {
-	capabilityAddCmds := []*cobra.Command{
-		CapabilityAddCmd,
-		// capabilityDotAddCmd,
-	}
 
 	var capabilityAddFlags = pflag.NewFlagSet("CapabilityAddFlags", pflag.ExitOnError)
 
@@ -30,14 +26,10 @@ func init() {
 	// -d|--desc
 	capabilityAddFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
 
-	for _, cmd := range capabilityAddCmds {
-		cmd.Flags().AddFlag(capabilityAddFlags.Lookup("user"))
-		cmd.Flags().AddFlag(capabilityAddFlags.Lookup("group"))
-		cmd.Flags().AddFlag(capabilityAddFlags.Lookup("desc"))
-		cmd.Flags().SetInterspersed(false)
-	}
-
-	// SingularityCmd.AddCommand(capabilityDotAddCmd)
+    CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("user"))
+    CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("group"))
+    CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("desc"))
+    CapabilityAddCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityAddCmd singularity capability add
@@ -53,17 +45,3 @@ var CapabilityAddCmd = &cobra.Command{
 	Long:    docs.CapabilityAddLong,
 	Example: docs.CapabilityAddExample,
 }
-
-/* I'd like to have a discussion about dropping the dot version of command
-groups.  Don't really want to support duplicate code that doesn't serve a real
-purpose and if we are going to drop them major release is the time.
-var capabilityDotAddCmd = &cobra.Command{
-	Use:  "capability.add [options...] <capabilities>",
-	Args: cobra.MinimumNArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("adding capability")
-	},
-	Example: capabilityAddExamples,
-	Hidden:  true,
-}
-*/

@@ -12,10 +12,6 @@ import (
 )
 
 func init() {
-	capabilityListCmds := []*cobra.Command{
-		CapabilityListCmd,
-		// capabilityDotListCmd,
-	}
 
 	var capabilityListFlags = pflag.NewFlagSet("CapabilityListFlags", pflag.ExitOnError)
 
@@ -30,14 +26,10 @@ func init() {
 	// -a|--all
 	capabilityListFlags.BoolVarP(&CapListAll, "all", "a", false, "List all users and groups capabilities")
 
-	for _, cmd := range capabilityListCmds {
-		cmd.Flags().AddFlag(capabilityListFlags.Lookup("user"))
-		cmd.Flags().AddFlag(capabilityListFlags.Lookup("group"))
-		cmd.Flags().AddFlag(capabilityListFlags.Lookup("all"))
-		cmd.Flags().SetInterspersed(false)
-	}
-
-	// SingularityCmd.AddCommand(capabilityDotListCmd)
+    CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("user"))
+    CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("group"))
+    CapabilityListCmd.Flags().AddFlag(capabilityListFlags.Lookup("all"))
+    CapabilityListCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityListCmd singularity capability list
@@ -53,17 +45,3 @@ var CapabilityListCmd = &cobra.Command{
 	Long:    docs.CapabilityListLong,
 	Example: docs.CapabilityListExample,
 }
-
-/*
-var capabilityDotListCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("listping capability")
-	},
-
-    Use: capabilityListUse,
-    Short: capabilityListShort,
-    Long: capabilityListLong,
-	Example: capabilityListExamples,
-}
-*/

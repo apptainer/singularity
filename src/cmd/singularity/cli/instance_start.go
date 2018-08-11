@@ -14,32 +14,30 @@ import (
 
 func init() {
 
-	instanceStartCmds := []*cobra.Command{
-		InstanceStartCmd,
-		// instanceDotStartCmd,
+    options := [16]string {
+        "add-caps",
+        "allow-setuid",
+        "bind",
+        "boot",
+        "drop-caps",
+        "fakeroot",
+        "home",
+        "hostname",
+        "keep-privs",
+        "net",
+        "no-privs",
+        "overlay",
+        "scratch",
+        "userns",
+        "uts",
+        "workdir",
+    }
+
+	for _, opt := range options {
+		InstanceStartCmd.Flags().AddFlag(actionFlags.Lookup(opt))
 	}
 
-	for _, cmd := range instanceStartCmds {
-		cmd.Flags().SetInterspersed(false)
-
-		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("boot"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-	}
-
+    InstanceStartCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(InstanceStartCmd)
 }
 
@@ -56,15 +54,3 @@ var InstanceStartCmd = &cobra.Command{
 	Long:    docs.InstanceStartLong,
 	Example: docs.InstanceStartExample,
 }
-
-/*
-var instanceDotStartCmd = &cobra.Command{
-	Use:  "instance.start [options...] <container path> <instance name>",
-	Args: cobra.MinimumNArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("starting instance")
-	},
-	Example: instanceStartExample,
-	Hidden:  true,
-}
-*/

@@ -13,7 +13,6 @@ import (
 )
 
 func init() {
-	// SingularityCmd.AddCommand(instanceDotStopCmd)
 	InstanceStopCmd.Flags().SetInterspersed(false)
 }
 
@@ -29,13 +28,3 @@ var InstanceStopCmd = &cobra.Command{
 	Long:    docs.InstanceStopLong,
 	Example: docs.InstanceStopExample,
 }
-
-/*
-var instanceDotStopCmd = &cobra.Command{
-	Use:    "instance.stop",
-	Hidden: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("stopping instance")
-	},
-}
-*/

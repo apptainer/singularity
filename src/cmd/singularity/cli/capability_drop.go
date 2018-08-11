@@ -12,10 +12,6 @@ import (
 )
 
 func init() {
-	capabilityDropCmds := []*cobra.Command{
-		CapabilityDropCmd,
-		// capabilityDotDropCmd,
-	}
 
 	var capabilityDropFlags = pflag.NewFlagSet("CapabilityDropFlags", pflag.ExitOnError)
 
@@ -30,14 +26,10 @@ func init() {
 	// -d|--desc
 	capabilityDropFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
 
-	for _, cmd := range capabilityDropCmds {
-		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
-		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
-		cmd.Flags().AddFlag(capabilityDropFlags.Lookup("desc"))
-		cmd.Flags().SetInterspersed(false)
-	}
-
-	// SingularityCmd.AddCommand(capabilityDotDropCmd)
+    CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
+    CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
+    CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("desc"))
+    CapabilityDropCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityDropCmd singularity capability drop
@@ -53,15 +45,3 @@ var CapabilityDropCmd = &cobra.Command{
 	Long:    docs.CapabilityDropLong,
 	Example: docs.CapabilityDropExample,
 }
-
-/*
-var capabilityDotDropCmd = &cobra.Command{
-	Use:  "capability.drop [options...] <capabilities>",
-	Args: cobra.MinimumNArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("dropping capability")
-	},
-	Example: capabilityDropExample,
-	Hidden:  true,
-}
-*/
