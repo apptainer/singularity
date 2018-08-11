@@ -38,7 +38,6 @@ func init() {
 	}
 
     InstanceStartCmd.Flags().SetInterspersed(false)
-	SingularityCmd.AddCommand(InstanceStartCmd)
 }
 
 // InstanceStartCmd singularity instance start
