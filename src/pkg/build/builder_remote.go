@@ -55,7 +55,7 @@ type RemoteBuilder struct {
 	LibraryURL string
 	Definition Definition
 	IsDetached bool
-	HTTPAddr   string
+	BuilderURL *url.URL
 	AuthToken  string
 }
 
@@ -66,7 +66,12 @@ func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewRemoteBuilder(imagePath, libraryURL string, d Definition, isDetached bool, httpAddr, authToken string) (rb *RemoteBuilder) {
+func NewRemoteBuilder(imagePath, libraryURL string, d Definition, isDetached bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
+	builderURL, err := url.Parse(builderAddr)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse builder address")
+	}
+
 	rb = &RemoteBuilder{
 		Client: http.Client{
 			Timeout: 30 * time.Second,
@@ -75,7 +80,7 @@ func NewRemoteBuilder(imagePath, libraryURL string, d Definition, isDetached boo
 		LibraryURL: libraryURL,
 		Definition: d,
 		IsDetached: isDetached,
-		HTTPAddr:   httpAddr,
+		BuilderURL: builderURL,
 		AuthToken:  authToken,
 	}
 
@@ -192,8 +197,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, libra
 		return
 	}
 
-	url := url.URL{Scheme: "http", Host: rb.HTTPAddr, Path: "/v1/build"}
-	req, err := http.NewRequest(http.MethodPost, url.String(), bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, rb.BuilderURL.String()+"/v1/build", bytes.NewReader(b))
 	if err != nil {
 		return
 	}
@@ -218,8 +222,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, libra
 
 // doStatusRequest gets the status of a build from the Remote Build Service
 func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) (rd ResponseData, err error) {
-	url := url.URL{Scheme: "http", Host: rb.HTTPAddr, Path: "/v1/build/" + id.Hex()}
-	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, rb.BuilderURL.String()+"/v1/build/"+id.Hex(), nil)
 	if err != nil {
 		return
 	}

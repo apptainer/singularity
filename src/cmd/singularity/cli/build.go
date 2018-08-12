@@ -40,8 +40,6 @@ var (
 	sections   []string
 )
 
-const defbuilderURL = "localhost:5050"
-
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
 
@@ -53,8 +51,8 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
 	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
-	BuildCmd.Flags().StringVar(&builderURL, "builder", defbuilderURL, "Specify the URL of the remote builder")
-	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "")
+	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "Remote Build Service URL")
+	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "Container Library URL")
 
 	SingularityCmd.AddCommand(BuildCmd)
 }
@@ -89,11 +87,14 @@ var BuildCmd = &cobra.Command{
 
 		def := makeDefinition(args[1], isJSON)
 
-		if remote || builderURL != defbuilderURL {
+		if remote {
 			// Submiting a remote build requires a valid authToken
 			var b *build.RemoteBuilder
 			if authToken != "" {
-				b = build.NewRemoteBuilder(args[0], libraryURL, def, detached, builderURL, authToken)
+				b, err = build.NewRemoteBuilder(args[0], libraryURL, def, detached, builderURL, authToken)
+				if err != nil {
+					sylog.Fatalf("failed to create builder: %v", err)
+				}
 			} else {
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
