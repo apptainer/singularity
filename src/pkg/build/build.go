@@ -32,13 +32,13 @@ import (
 // 		Execute all of a definition using AllSections()
 // 		And finally call Assemble() to create our container image
 type Build struct {
-	dest        string
-	format      string
-	ranSections bool
-	c           ConveyorPacker
-	a           Assembler
-	b           *types.Bundle
-	d           types.Definition
+	dest        string           // Location for container after build is complete
+	format      string           // Format of built container, e.g., SIF, sandbox
+	ranSections bool             // If sections of the definition were run on container
+	c           ConveyorPacker   //	Gets and Packs data needed to build a container into a Bundle from various sources
+	a           Assembler        // Assembles a container from the information stored in a Bundle into various formats
+	b           *types.Bundle    // Intermediate stucture that encapsulates all information for the container, e.g., metadata, filesystems
+	d           types.Definition // Describes how a container is to be built, including actions to be run in the container to reach its final state
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
