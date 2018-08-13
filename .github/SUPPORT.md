@@ -3,8 +3,7 @@
 Need help? We have several ways to reach us, depending on your preferences and needs.
 
 ## Documentation
-If you haven't already, search our [user quick start](http://singularity.lbl.gov/quickstart), [docs base](http://singularity.lbl.gov/docs-quick-start-installation), and [other guides](http://singularity.lbl.gov/links) from the community. These docs have common use cases, and might be helpful to browse before submitting an issue. If you have a good resource, please [let us know](https://github.com/singularityware/singularity/issues).
-
+If you haven't already, read our [documentation](https://www.sylabs.io/docs/). These docs have common use cases, and might be helpful to browse before submitting an issue. You can contribute to our documentation by creating PRs against the [singularity-admindocs](https://github.com/singularityware/singularity-admindocs) and [singularity-userdocs](https://github.com/singularityware/singularity-userdocs) repositories.
 
 ## Github
 For issues with code (and especially if you need to share debug output) we recommend Github issues boards.
