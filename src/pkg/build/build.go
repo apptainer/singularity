@@ -25,7 +25,12 @@ import (
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 )
 
-// Build is a
+// Build is an abstracted way to look at the entire build process.
+// For example calling NewBuild() will return this object.
+// From there we can call Full() on this build object, which will:
+// 		Call Bundle() to obtain all data needed to execute the specified build locally on the machine
+// 		Execute all of a definition using AllSections()
+// 		And finally call Assemble() to create our container image
 type Build struct {
 	dest        string
 	format      string
@@ -249,14 +254,14 @@ func makeDef(spec string) (types.Definition, error) {
 	var def types.Definition
 
 	if ok, err := IsValidURI(spec); ok && err == nil {
-		// URI passed as arg[1]
+		// URI passed as spec
 		def, err = types.NewDefinitionFromURI(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
 
 	} else if ok, err := types.IsValidDefinition(spec); ok && err == nil {
-		// Non-URI passed as arg[1]
+		// Non-URI passed as spec, check is its a definition
 		defFile, err := os.Open(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
@@ -268,7 +273,7 @@ func makeDef(spec string) (types.Definition, error) {
 			return def, fmt.Errorf("failed to parse definition file %s: %v", spec, err)
 		}
 	} else if _, err := os.Stat(spec); err == nil {
-		//local image or sandbox
+		//local image or sandbox, make sure it exists on filesystem
 		def = types.Definition{
 			Header: map[string]string{
 				"bootstrap": "localimage",
