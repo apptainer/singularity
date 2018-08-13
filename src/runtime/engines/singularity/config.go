@@ -92,7 +92,7 @@ func (e *EngineConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.JSON)
 }
 
-// UnmarshalJSON is for json.Marshaler
+// UnmarshalJSON is for json.Unmarshaler
 func (e *EngineConfig) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, e.JSON)
 }
@@ -112,7 +112,7 @@ func NewConfig() *EngineConfig {
 	return ret
 }
 
-// SetImage sets the container image path to be used by containee.JSON.
+// SetImage sets the container image path to be used by EngineConfig.JSON.
 func (e *EngineConfig) SetImage(name string) {
 	e.JSON.Image = name
 }

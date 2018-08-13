@@ -43,8 +43,6 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 	}
-
-	SingularityCmd.AddCommand(InstanceStartCmd)
 }
 
 // InstanceStartCmd singularity instance start
