@@ -6,18 +6,24 @@
 package singularity
 
 import (
+	"fmt"
 	"net"
 	"os"
 	"os/exec"
 	"os/signal"
+	"reflect"
 	"syscall"
+	"unsafe"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	isInstance := engine.EngineConfig.GetInstance()
+	bootInstance := (isInstance && engine.EngineConfig.GetBootInstance())
+	shimProcess := false
 
 	if err := os.Chdir(engine.CommonConfig.OciConfig.Process.Cwd); err != nil {
 		os.Chdir("/")
@@ -26,11 +32,24 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	args := engine.CommonConfig.OciConfig.Process.Args
 	env := engine.CommonConfig.OciConfig.Process.Env
 
-	if !isInstance || (isInstance && engine.EngineConfig.GetBootInstance()) {
+	if engine.CommonConfig.OciConfig.Linux != nil {
+		namespaces := engine.CommonConfig.OciConfig.Linux.Namespaces
+		for _, ns := range namespaces {
+			if ns.Type == specs.PIDNamespace {
+				if !engine.EngineConfig.GetNoInit() {
+					shimProcess = true
+				}
+				break
+			}
+		}
+	}
+
+	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
 		return err
 	}
 
+	// Spawn and wait container process, signal handler
 	cmd := exec.Command(args[0], args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -42,7 +61,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	signals := make(chan os.Signal, 1)
 
 	if err := cmd.Start(); err != nil {
-		sylog.Fatalf("exec %s failed: %s", args[0], err)
+		return fmt.Errorf("exec %s failed: %s", args[0], err)
 	}
 
 	go func() {
@@ -51,6 +70,26 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	masterConn.Close()
 
+	// Modify argv argument and program name shown in /proc/self/comm
+	name := "sinit"
+
+	argv0str := (*reflect.StringHeader)(unsafe.Pointer(&os.Args[0]))
+	argv0 := (*[1 << 30]byte)(unsafe.Pointer(argv0str.Data))[:argv0str.Len]
+	progname := make([]byte, argv0str.Len)
+
+	if len(name) > argv0str.Len {
+		return fmt.Errorf("program name too short")
+	}
+
+	copy(progname, name)
+	copy(argv0, progname)
+
+	ptr := unsafe.Pointer(&progname[0])
+	if _, _, err := syscall.Syscall(syscall.SYS_PRCTL, syscall.PR_SET_NAME, uintptr(ptr), 0); err != 0 {
+		return syscall.Errno(err)
+	}
+
+	// Manage all signals
 	signal.Notify(signals)
 
 	for {
@@ -82,7 +121,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					}
 					os.Exit(status.ExitStatus())
 				}
-				sylog.Fatalf("command exit with error: %s", err)
+				return fmt.Errorf("command exit with error: %s", err)
 			}
 			if err != nil {
 				os.Exit(1)
