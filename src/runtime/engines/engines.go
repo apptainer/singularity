@@ -28,6 +28,7 @@ type Engine struct {
 // EngineOperations is an interface describing necessary operations to launch a
 // container process.
 type EngineOperations interface {
+	SecurityOperations
 	// Config returns the current EngineConfig, used to populate the Common struct
 	Config() config.EngineConfig
 	// InitConfig is responsible for storing the parse config.Common inside
@@ -37,8 +38,6 @@ type EngineOperations interface {
 	PrepareConfig(net.Conn) error
 	// IsRunAsInstance returns whether or not the container is an instance or batch
 	IsRunAsInstance() bool
-	// IsAllowSUID returns whether or not the engine allow SUID workflow
-	IsAllowSUID() bool
 	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
 	CreateContainer(int, net.Conn) error
@@ -51,6 +50,15 @@ type EngineOperations interface {
 	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
 	// for ensuring that the container has been properly torn down
 	CleanupContainer() error
+}
+
+// SecurityOperations contains security related functions that an engine should
+// implement
+type SecurityOperations interface {
+	// IsAllowSUID returns whether or not the engine allow SUID workflow
+	IsAllowSUID() bool
+	// NamespaceFlags returns the set of requested namespaces as a uint bit field
+	NamespaceFlags() uint
 }
 
 // NewEngine returns the engine described by the JSON []byte configuration

@@ -16,10 +16,8 @@ import (
 	"encoding/json"
 	"net"
 	"os"
-	"syscall"
 	"unsafe"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
 	"github.com/singularityware/singularity/src/runtime/engines"
@@ -84,24 +82,8 @@ func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC
 				cconf.gidMapping[i].hostID = C.gid_t(gid.HostID)
 				cconf.gidMapping[i].size = C.uint(gid.Size)
 			}
-			for _, namespace := range engine.OciConfig.Linux.Namespaces {
-				switch namespace.Type {
-				case specs.UserNamespace:
-					cconf.nsFlags |= syscall.CLONE_NEWUSER
-				case specs.IPCNamespace:
-					cconf.nsFlags |= syscall.CLONE_NEWIPC
-				case specs.UTSNamespace:
-					cconf.nsFlags |= syscall.CLONE_NEWUTS
-				case specs.PIDNamespace:
-					cconf.nsFlags |= syscall.CLONE_NEWPID
-				case specs.NetworkNamespace:
-					cconf.nsFlags |= syscall.CLONE_NEWNET
-				case specs.MountNamespace:
-					cconf.nsFlags |= syscall.CLONE_NEWNS
-				case specs.CgroupNamespace:
-					cconf.nsFlags |= 0x2000000
-				}
-			}
+
+			cconf.nsFlags |= C.uint(engine.NamespaceFlags())
 		}
 		if engine.OciConfig.Process != nil && engine.OciConfig.Process.Capabilities != nil {
 			var caps uint64
