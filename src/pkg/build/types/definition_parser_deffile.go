@@ -155,6 +155,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
+		Test:  sections["test"],
 	}
 
 	return

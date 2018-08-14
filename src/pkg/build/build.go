@@ -100,9 +100,18 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	sylog.Debugf("Executing all sections of definition")
-	if err := b.AllSections(); err != nil {
-		return err
+	sylog.Debugf("Copying files from host")
+	if err := b.copyFiles(); err != nil {
+		return fmt.Errorf("unable to copy files to container fs: %v", err)
+	}
+
+	sylog.Debugf("Running scripts")
+	if syscall.Getuid() == 0 && hasScripts(b.d) {
+		if err := b.runScripts(); err != nil {
+			return fmt.Errorf("unable to run scripts: %v", err)
+		}
+	} else if hasScripts(b.d) {
+		sylog.Warningf("Attempted to build with scripts as non-root user, skipping...\n")
 	}
 
 	sylog.Debugf("Calling assembler")
@@ -114,38 +123,42 @@ func (b *Build) Full() error {
 }
 
 // WithoutSections runs the build without running any section
-func (b *Build) WithoutSections() error {
-	if _, err := b.Bundle(); err != nil {
-		return err
-	}
+// func (b *Build) WithoutSections() error {
+// 	if _, err := b.Bundle(); err != nil {
+// 		return err
+// 	}
 
-	if err := b.Assemble(b.dest); err != nil {
-		return err
-	}
+// 	if err := b.Assemble(b.dest); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // WithSections runs a build but only runs the specified sections
-func (b *Build) WithSections(sections []string) error {
-	if _, err := b.Bundle(); err != nil {
-		return err
-	}
+// func (b *Build) WithSections(sections []string) error {
+// 	if _, err := b.Bundle(); err != nil {
+// 		return err
+// 	}
 
-	if err := b.Sections(sections); err != nil {
-		return err
-	}
+// 	if err := b.Sections(sections); err != nil {
+// 		return err
+// 	}
 
-	if err := b.Assemble(b.dest); err != nil {
-		return err
-	}
+// 	if err := b.Assemble(b.dest); err != nil {
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 // AllSections runs all the sections in the definition
 func (b *Build) AllSections() error {
 	if syscall.Getuid() == 0 && hasScripts(b.d) {
+		if err := b.copyFiles(); err != nil {
+			return fmt.Errorf("unable to copy files to container fs: %v", err)
+		}
+
 		if err := b.runScripts(); err != nil {
 			return fmt.Errorf("unable to run scripts: %v", err)
 		}
@@ -157,14 +170,24 @@ func (b *Build) AllSections() error {
 }
 
 // Sections runs the list of sections specified by name in s
-func (b *Build) Sections(s []string) error {
+// func (b *Build) Sections(s []string) error {
 
-	return fmt.Errorf("sections is unimplemented")
-}
+// 	return fmt.Errorf("sections is unimplemented")
+// }
 
 // hasScripts returns true if build definition is requesting to run scripts in image
 func hasScripts(def types.Definition) bool {
 	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
+}
+
+// copyFiles ...
+func (b *Build) copyFiles() error {
+
+	//iterate through files section
+	//copy each file into bundle rootfs
+	//use cp -fLr source rootfs/dest(dest = source if not specifed)
+
+	return nil
 }
 
 // runScripts runs %pre %post %setup scripts in the bundle using the imgbuild engine

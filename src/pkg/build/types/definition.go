@@ -50,6 +50,7 @@ type Scripts struct {
 	Pre   string `json:"pre"`
 	Setup string `json:"setup"`
 	Post  string `json:"post"`
+	Test  string `json:"test"`
 }
 
 // NewDefinitionFromURI crafts a new Definition given a URI
