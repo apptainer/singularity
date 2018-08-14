@@ -32,43 +32,30 @@ go_INSTALL := $(singularity_INSTALL)
 
 go_TAG += containers_image_openpgp
 
-cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
-cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
+abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 
-INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL)
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
+cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER)
+INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sessiondir) $(config_INSTALL)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper)
+CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ)
+
+all: cscope collect $(libruntime) $(go_BIN) $(config) $(wrapper)
 
 $(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
-# libstartup
-$(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
-	@echo " AR" $@
+# wrapper
+$(wrapper): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
+	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags "$(go_TAG)" -ldflags="-s -w" -buildmode=c-archive -o $@ \
+		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
 		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
 		$(SOURCEDIR)/src/runtime/startup/smaster.go \
 		$(SOURCEDIR)/src/runtime/startup/rpc.go
-
-# wrapper
-wrapper_OBJ := \
-	$(BUILDDIR)/src/runtime/startup/wrapper.o \
-
-$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
-	@echo " CC src/runtime/startup/c/wrapper.c"
-	@mkdir -p $(@D)
-	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/startup/wrapper.o $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
-
-$(wrapper): $(wrapper_OBJ) $(libstartup)
-	@echo " LD" $@
-	@mkdir -p $(@D)
-	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread -lgpgme $(WRAPPER_LIBS)
-	$(V)($(SIZE) $@ 2>/dev/null || true)
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
@@ -108,26 +95,13 @@ $(BUILDDIR)/vendors-done:
 	fi
 	$(V)touch $@
 
-#TODO: generate real config file and install, currently is just blank
-$(config):
-	$(V)touch $(config)
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0644 $(config) $(config_INSTALL)
-
-$(mountdir):
-	@echo " INSTALL" $@
-	$(V)install -d $(mountdir)
-
-$(finaldir):
-	@echo " INSTALL" $@
-	$(V)install -d $(finaldir)
-
-$(overlaydir):
-	@echo " INSTALL" $@
-	$(V)install -d $(overlaydir)
 
 $(sessiondir):
 	@echo " INSTALL" $@
@@ -148,24 +122,30 @@ collect:
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
 
-.PHONY: test
-test:
-	@echo " TEST go fmt"
+.PHONY: check
+check:
+	@echo " CHECK go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && test -z $(go fmt ./...)
 	@echo "       PASS"
-	@echo " TEST go vet"
+	@echo " CHECK go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && go vet -tags "$(go_TAG)" -all ./...
 	@echo "       PASS"
-	@echo " TEST go lint"
+	@echo " CHECK go lint"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
-	@echo " TEST go test"
+
+.PHONY: test
+test:
+	@echo " TEST sudo go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
+		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
 	@echo "       PASS"
+
+.PHONY: testall
+testall: check test
 
 .PHONY: cscope
 cscope:

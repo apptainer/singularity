@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -17,6 +19,9 @@ const (
 
 // TestShubConveyor tests if we can pull an image from singularity hub
 func TestShubConveyor(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
@@ -24,17 +29,20 @@ func TestShubConveyor(t *testing.T) {
 
 	sc := &ShubConveyor{}
 
-	if err := sc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(sc.tmpfs)
+	err = sc.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer os.RemoveAll(sc.tmpfs)
+	if err != nil {
+
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(sc.tmpfs)
 }
 
 // TestShubPacker checks if we can create a Bundle from the pulled image
 func TestShubPacker(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	def, err := NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
@@ -42,14 +50,13 @@ func TestShubPacker(t *testing.T) {
 
 	scp := &ShubConveyorPacker{}
 
-	if err := scp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(scp.tmpfs)
-		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
-	}
-
+	err = scp.Get(def)
 	//clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(scp.tmpfs)
+	if err != nil {
+
+		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
+	}
 
 	_, err = scp.Pack()
 	if err != nil {
@@ -59,6 +66,9 @@ func TestShubPacker(t *testing.T) {
 
 // TestShubPacker checks if we can create a Bundle from the pulled image
 func TestShubParser(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	validShubURIs := []string{
 		`//username/container`,
 		`//username/container:tag`,

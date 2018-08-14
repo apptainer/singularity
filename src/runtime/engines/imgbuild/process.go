@@ -7,18 +7,14 @@ package imgbuild
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
-// PrestartProcess _
-func (e *EngineOperations) PrestartProcess() error {
-	return nil
-}
-
 // StartProcess runs the %post script
-func (e *EngineOperations) StartProcess() error {
+func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	// Run %post scripts here
 	runAllScripts("post", e.EngineConfig.Recipe.BuildData.Post)

@@ -14,6 +14,7 @@ import "C"
 
 import (
 	"encoding/json"
+	"net"
 	"os"
 	"syscall"
 	"unsafe"
@@ -32,9 +33,22 @@ func bool2int(b bool) uint8 {
 }
 
 // SContainer performs container startup
-//export SContainer
-func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
+func SContainer(stage C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *C.char) {
+	var conn net.Conn
+	var err error
 	cconf := config
+
+	if masterSocket != -1 {
+		comm := os.NewFile(uintptr(masterSocket), "master-socket")
+		conn, err = net.FileConn(comm)
+		if err != nil {
+			sylog.Fatalf("failed to copy master unix socket descriptor: %s", err)
+			return
+		}
+		comm.Close()
+	} else {
+		conn = nil
+	}
 
 	/* get json configuration */
 	sylog.Debugf("cconf.jsonConfSize: %d\n", C.int(cconf.jsonConfSize))
@@ -48,7 +62,11 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 	if stage == 1 {
 		sylog.Debugf("Entering scontainer stage 1\n")
 
-		if err := engine.CheckConfig(); err != nil {
+		if cconf.isSuid == 1 && engine.IsAllowSUID() == false {
+			sylog.Fatalf("runtime engine %s doesn't allow SUID workflow", engine.EngineName)
+		}
+
+		if err := engine.PrepareConfig(conn); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
 
@@ -126,7 +144,7 @@ func SContainer(stage C.int, config *C.struct_cConfig, jsonC *C.char) {
 		os.Stdout.Write(append(cconfPayload, jsonConf...))
 		os.Exit(0)
 	} else {
-		if err := engine.StartProcess(); err != nil {
+		if err := engine.StartProcess(conn); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
 	}

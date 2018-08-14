@@ -39,8 +39,6 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 	}
-
-	SingularityCmd.AddCommand(InstanceStartCmd)
 }
 
 // InstanceStartCmd singularity instance start

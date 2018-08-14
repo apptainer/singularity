@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func testWithGoodDir(t *testing.T, f func(d string) error) {
@@ -30,16 +32,25 @@ func testWithBadDir(t *testing.T, f func(d string) error) {
 }
 
 func TestMakeDirs(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	testWithGoodDir(t, makeDirs)
 	testWithBadDir(t, makeDirs)
 }
 
 func TestMakeSymlinks(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	testWithGoodDir(t, makeSymlinks)
 	testWithBadDir(t, makeSymlinks)
 }
 
 func TestMakeFiles(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	testWithGoodDir(t, func(d string) error {
 		if err := makeDirs(d); err != nil {
 			return err
@@ -50,6 +61,9 @@ func TestMakeFiles(t *testing.T) {
 }
 
 func TestMakeBaseEnv(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	testWithGoodDir(t, makeBaseEnv)
 	testWithBadDir(t, makeBaseEnv)
 }

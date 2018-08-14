@@ -35,6 +35,7 @@ type FileConfig struct {
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
 	UserBindControl         bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
+	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
 	LimitContainerOwners    []string `directive:"limit container owners"`
@@ -55,7 +56,7 @@ type FileConfig struct {
 type JSONConfig struct {
 	Image            string   `json:"image"`
 	WritableImage    bool     `json:"writableImage,omitempty"`
-	OverlayImage     string   `json:"overlayImage,omitempty"`
+	OverlayImage     []string `json:"overlayImage,omitempty"`
 	OverlayFsEnabled bool     `json:"overlayFsEnabled,omitempty"`
 	Contain          bool     `json:"container,omitempty"`
 	Nv               bool     `json:"nv,omitempty"`
@@ -76,6 +77,7 @@ type JSONConfig struct {
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
 	Home             string   `json:"home,omitempty"`
+	NoHome           bool     `json:"noHome,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -89,7 +91,7 @@ func (e *EngineConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(e.JSON)
 }
 
-// UnmarshalJSON is for json.Marshaler
+// UnmarshalJSON is for json.Unmarshaler
 func (e *EngineConfig) UnmarshalJSON(b []byte) error {
 	return json.Unmarshal(b, e.JSON)
 }
@@ -109,7 +111,7 @@ func NewConfig() *EngineConfig {
 	return ret
 }
 
-// SetImage sets the container image path to be used by containee.JSON.
+// SetImage sets the container image path to be used by EngineConfig.JSON.
 func (e *EngineConfig) SetImage(name string) {
 	abs, _ := filepath.Abs(name)
 	e.JSON.Image = abs
@@ -131,12 +133,12 @@ func (e *EngineConfig) GetWritableImage() bool {
 }
 
 // SetOverlayImage sets the overlay image path to be used on top of container image.
-func (e *EngineConfig) SetOverlayImage(name string) {
-	e.JSON.OverlayImage = name
+func (e *EngineConfig) SetOverlayImage(paths []string) {
+	e.JSON.OverlayImage = paths
 }
 
 // GetOverlayImage retrieves the overlay image path.
-func (e *EngineConfig) GetOverlayImage() string {
+func (e *EngineConfig) GetOverlayImage() []string {
 	return e.JSON.OverlayImage
 }
 
@@ -328,4 +330,14 @@ func (e *EngineConfig) SetHome(home string) {
 // GetHome retrieves user home directory
 func (e *EngineConfig) GetHome() string {
 	return e.JSON.Home
+}
+
+// SetNoHome set no-home flag to not mount home user home directory
+func (e *EngineConfig) SetNoHome(val bool) {
+	e.JSON.NoHome = val
+}
+
+// GetNoHome returns if no-home flag is set or not
+func (e *EngineConfig) GetNoHome() bool {
+	return e.JSON.NoHome
 }

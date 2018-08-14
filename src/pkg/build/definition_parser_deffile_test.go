@@ -12,6 +12,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestScanDefinitionFile(t *testing.T) {
@@ -31,10 +33,10 @@ func TestScanDefinitionFile(t *testing.T) {
 		{"Zypper", "./testdata_good/zypper/zypper", "./testdata_good/zypper/zypper_sections.json"},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 
-			deffile := test.defPath
+			deffile := tt.defPath
 			r, err := os.Open(deffile)
 			if err != nil {
 				t.Fatal("failed to read deffile:", err)
@@ -46,7 +48,7 @@ func TestScanDefinitionFile(t *testing.T) {
 			for s.Scan() && s.Text() == "" && s.Err() == nil {
 			}
 
-			b, err := ioutil.ReadFile(test.sections)
+			b, err := ioutil.ReadFile(tt.sections)
 			if err != nil {
 				t.Fatal("failed to read JSON:", err)
 			}
@@ -65,7 +67,7 @@ func TestScanDefinitionFile(t *testing.T) {
 				t.Fatal("scanDefinitionFile does not produce same header as reference")
 			}
 
-		})
+		}))
 	}
 }
 
@@ -85,15 +87,15 @@ func TestParseDefinitionFile(t *testing.T) {
 		{"Zypper", "./testdata_good/zypper/zypper", "./testdata_good/zypper/zypper.json"},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			defFile, err := os.Open(test.defPath)
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			defFile, err := os.Open(tt.defPath)
 			if err != nil {
 				t.Fatal("failed to open:", err)
 			}
 			defer defFile.Close()
 
-			jsonFile, err := os.OpenFile(test.jsonPath, os.O_RDWR, 0755)
+			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0755)
 			if err != nil {
 				t.Fatal("failed to open:", err)
 			}
@@ -112,7 +114,7 @@ func TestParseDefinitionFile(t *testing.T) {
 			if !reflect.DeepEqual(defTest, defCorrect) {
 				t.Fatal("parsed definition did not match reference")
 			}
-		})
+		}))
 	}
 }
 
@@ -127,9 +129,9 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 		{"Empty", "./testdata_bad/empty"},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			defFile, err := os.Open(test.defPath)
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			defFile, err := os.Open(tt.defPath)
 			if err != nil {
 				t.Fatal("failed to open:", err)
 			}
@@ -138,6 +140,6 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 			if _, err = ParseDefinitionFile(defFile); err == nil {
 				t.Fatal("unexpected success parsing definition file")
 			}
-		})
+		}))
 	}
 }

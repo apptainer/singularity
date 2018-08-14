@@ -6,6 +6,7 @@
 package imgbuild
 
 import (
+	"net"
 	"os"
 	"syscall"
 
@@ -30,8 +31,8 @@ func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }
 
-// CheckConfig validates EngineConfig setup
-func (e *EngineOperations) CheckConfig() error {
+// PrepareConfig validates/prepares EngineConfig setup
+func (e *EngineOperations) PrepareConfig(masterConn net.Conn) error {
 	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
 	if syscall.Getuid() != 0 {
@@ -45,5 +46,10 @@ func (e *EngineOperations) CheckConfig() error {
 
 // IsRunAsInstance returns false
 func (e *EngineOperations) IsRunAsInstance() bool {
+	return false
+}
+
+// IsAllowSUID always returns false to not allow SUID workflow
+func (e *EngineOperations) IsAllowSUID() bool {
 	return false
 }
