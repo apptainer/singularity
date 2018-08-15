@@ -43,7 +43,9 @@ func SContainer(stage int, masterSocket int, wrapperConfig *wrapper.Config, json
 			sylog.Fatalf("%s\n", err)
 		}
 
-		wrapperConfig.WritePayload(os.Stdout, engine.Common)
+		if err := wrapperConfig.WritePayload(os.Stdout, engine.Common); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 		os.Exit(0)
 	} else {
 		if err := engine.StartProcess(conn); err != nil {

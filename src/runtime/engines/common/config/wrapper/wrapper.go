@@ -13,6 +13,7 @@ package wrapper
 import "C"
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"syscall"
 	"unsafe"
@@ -90,12 +91,20 @@ func (c *Config) GetJSONConfSize() uint {
 
 // WritePayload writes raw C configuration and payload passed in
 // argument to the provided writer
-func (c *Config) WritePayload(w io.Writer, payload interface{}) {
-	jsonConf, _ := json.Marshal(payload)
+func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
+	jsonConf, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payload: %s", err)
+	}
+
 	c.config.jsonConfSize = C.uint(len(jsonConf))
 	cconfPayload := C.GoBytes(unsafe.Pointer(c.config), C.sizeof_struct_cConfig)
+	finalPayload := append(cconfPayload, jsonConf...)
 
-	w.Write(append(cconfPayload, jsonConf...))
+	if n, err := w.Write(finalPayload); err != nil || n != len(finalPayload) {
+		return fmt.Errorf("failed to write payload: %s", err)
+	}
+	return nil
 }
 
 // AddUIDMappings sets user namespace UID mapping
