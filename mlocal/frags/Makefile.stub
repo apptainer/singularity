@@ -4,11 +4,11 @@ include Makefile.cond
 
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-libstartup := $(BUILDDIR)/lib/libstartup.a
-libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
-libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
+startup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/main.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/preparestartup.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/startprocess.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
@@ -21,9 +21,6 @@ wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
-mountdir := $(PREFIX)/var/singularity/mnt/container
-finaldir := $(PREFIX)/var/singularity/mnt/final
-overlaydir := $(PREFIX)/var/singularity/mnt/overlay
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
 go_BIN := $(singularity)
@@ -39,7 +36,7 @@ cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ)
+CLEANFILES += $(libruntime) $(wrapper) $(singularity) $(go_BIN) $(go_OBJ)
 
 all: cscope collect $(libruntime) $(go_BIN) $(config) $(wrapper)
 
@@ -49,12 +46,14 @@ $(libruntime): $(libutil_OBJ)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
 # wrapper
-$(wrapper): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
+$(wrapper): $(go_OBJ) $(startup_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
-		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
+		$(SOURCEDIR)/src/runtime/startup/main.go \
 		$(SOURCEDIR)/src/runtime/startup/smaster.go \
+		$(SOURCEDIR)/src/runtime/startup/preparestartup.go \
+		$(SOURCEDIR)/src/runtime/startup/startprocess.go \
 		$(SOURCEDIR)/src/runtime/startup/rpc.go
 
 # singularity

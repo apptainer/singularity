@@ -25,7 +25,7 @@ struct gidMapping {
     unsigned int size;
 };
 
-struct cConfig {
+struct startup_config {
     unsigned long long capPermitted;
     unsigned long long capEffective;
     unsigned long long capInheritable;
@@ -47,5 +47,38 @@ struct cConfig {
     struct gidMapping gidMapping[MAX_ID_MAPPING];
     unsigned int jsonConfSize;
 };
+
+
+/*struct startup_config {
+    unsigned long long capPermitted;
+    unsigned long long capEffective;
+    unsigned long long capInheritable;
+    unsigned long long capBounding;
+    unsigned long long capAmbient;
+    unsigned int nsFlags;
+    pid_t containerPid;
+    pid_t netPid;
+    pid_t mntPid;
+    pid_t userPid;
+    pid_t ipcPid;
+    pid_t utsPid;
+    pid_t cgroupPid;
+    pid_t pidPid;
+    unsigned char isInstance;
+    unsigned char noNewPrivs;
+    struct uidMapping uidMapping[MAX_ID_MAPPING];
+    struct gidMapping gidMapping[MAX_ID_MAPPING];
+};
+
+struct engine_config {
+    char *json_bytes;
+    char json_size;
+};
+
+struct startup_state {
+    struct engine_config engine_config;
+    struct startup_config startup_config;
+    unsigned char is_suid;
+    };*/
 
 #endif /* _SINGULARITY_WRAPPER_H */

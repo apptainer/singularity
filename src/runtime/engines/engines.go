@@ -13,7 +13,6 @@ import (
 	"syscall"
 
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/wrapper"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
@@ -32,10 +31,18 @@ type EngineOperations interface {
 	// Config returns the current EngineConfig, used to populate the Common struct
 	Config() config.EngineConfig
 	// InitConfig is responsible for storing the parse config.Common inside
-	// the EngineOperations implementation.
+	// the EngineOperations implementation. InitConfig is GUARANTEED to run before
+	// NewEngine() returns the engine.
 	InitConfig(*config.Common)
 	// PrepareConfig is called in stage1 to validate and prepare container configuration
-	PrepareConfig(net.Conn, *wrapper.Config) error
+	//PrepareConfig(net.Conn, *wrapper.Config) error
+
+	// PrepareEngineConfig Validates and updates the EngineConfig which has been set. This
+	// ensures that all privileges are appropriately handled and can error out if necessary
+	PrepareEngineConfig(net.Conn) error
+	// PrepareStartupConfig prepares the startup config which contains the information which
+	// the startup function needs to handle (namespaces, capabilities, etc...)
+	PrepareStartupConfig(*config.Startup) error
 	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
 	CreateContainer(int, net.Conn) error
