@@ -123,7 +123,30 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
-	files := make(map[string]string)
+	var files []FileTransport
+
+	for _, line := range subs {
+
+		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			continue
+		}
+		var src, dst string
+		lineSubs := strings.SplitN(line, " ", 2)
+		if len(lineSubs) < 2 {
+			src = strings.TrimSpace(lineSubs[0])
+			dst = ""
+		} else {
+			src = strings.TrimSpace(lineSubs[0])
+			dst = strings.TrimSpace(lineSubs[1])
+		}
+
+		files = append(files, FileTransport{src, dst})
+	}
+
+	// labels are parsed as a map[string]string
+	labelsSections := strings.TrimSpace(sections["labels"])
+	subs = strings.Split(labelsSections, "\n")
+	labels := make(map[string]string)
 
 	for _, line := range subs {
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
@@ -139,7 +162,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 			val = strings.TrimSpace(lineSubs[1])
 		}
 
-		files[key] = val
+		labels[key] = val
 	}
 
 	d.ImageData = ImageData{
@@ -149,6 +172,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 			Runscript:   sections["runscript"],
 			Test:        sections["test"],
 		},
+		Labels: labels,
 	}
 	d.BuildData.Files = files
 	d.BuildData.Scripts = Scripts{

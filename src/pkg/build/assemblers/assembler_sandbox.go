@@ -6,7 +6,10 @@
 package assemblers
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -19,32 +22,38 @@ type SandboxAssembler struct {
 
 // Assemble creates a Sandbox image from a Bundle
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
-
+	//Consider changing the interface so that bundles and part of assembler declaration?
 	a.b = b
 	defer os.RemoveAll(b.Path)
 
 	//insert help
 	err = a.insertHelpScript()
 	if err != nil {
-		return
+		return fmt.Errorf("While inserting help script: %v", err)
+	}
+
+	//insert labels
+	err = a.insertLabelsJSON()
+	if err != nil {
+		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
 	//append environment
 	err = a.appendEnvScript()
 	if err != nil {
-		return
+		return fmt.Errorf("While inserting environment script: %v", err)
 	}
 
 	//insert runscript
 	err = a.insertRunScript()
 	if err != nil {
-		return
+		return fmt.Errorf("While inserting runscript: %v", err)
 	}
 
 	//insert test script
 	err = a.insertTestScript()
 	if err != nil {
-		return
+		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
 	//move bundle rootfs to sandboxdir as final sandbox
@@ -57,22 +66,36 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	return nil
 }
 
-func (a *SandboxAssembler) insertHelpScript() (err error) {
-	//this becomes .singularity.d/runscript.help
-	return nil
+func (a *SandboxAssembler) insertHelpScript() error {
+	err := ioutil.WriteFile(filepath.Join(a.b.Rootfs(), "/.singularity.d/runscript.help"), []byte(a.b.Recipe.ImageData.Help+"\n"), 0664)
+	return err
 }
 
-func (a *SandboxAssembler) appendEnvScript() (err error) {
-	//this goes onto .singularity.d/env/90-environment.sh
-	return nil
+func (a *SandboxAssembler) appendEnvScript() error {
+	err := ioutil.WriteFile(filepath.Join(a.b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte(a.b.Recipe.ImageData.Environment+"\n"), 0775)
+	return err
 }
 
-func (a *SandboxAssembler) insertRunScript() (err error) {
-	//this becomes .singularity.d/runscript
-	return nil
+func (a *SandboxAssembler) insertRunScript() error {
+	err := ioutil.WriteFile(filepath.Join(a.b.Rootfs(), "/.singularity.d/runscript"), []byte(a.b.Recipe.ImageData.Runscript), 0775)
+	return err
 }
 
-func (a *SandboxAssembler) insertTestScript() (err error) {
-	//this becomes .singularity.d/actions/test
-	return nil
+func (a *SandboxAssembler) insertTestScript() error {
+	err := ioutil.WriteFile(filepath.Join(a.b.Rootfs(), "/.singularity.d/actions/test"), []byte(a.b.Recipe.ImageData.Test), 0775)
+	return err
+}
+
+func (a *SandboxAssembler) insertLabelsJSON() error {
+
+	text := "{\n"
+
+	for key, val := range a.b.Recipe.ImageData.Labels {
+		text += "    \"" + key + "\": \"" + val + "\"\n"
+	}
+
+	text += "}"
+
+	err := ioutil.WriteFile(filepath.Join(a.b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+	return err
 }
