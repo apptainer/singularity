@@ -84,7 +84,7 @@ func prefix(level messageLevel) string {
 	}
 
 	if loggerLevel < debug {
-		return fmt.Sprintf("%s%-8s ", messageColor, level.String()+":")
+		return fmt.Sprintf("%s%-8s%s ", messageColor, level.String()+":", colorReset)
 	}
 
 	pc, _, _, ok := runtime.Caller(3)
@@ -99,7 +99,7 @@ func prefix(level messageLevel) string {
 		funcName = funcNameSplit[len(funcNameSplit)-1] + "()"
 	}
 
-	uid := os.Getuid()
+	uid := os.Geteuid()
 	pid := os.Getpid()
 	uidStr := fmt.Sprintf("[U=%d,P=%d]", uid, pid)
 
