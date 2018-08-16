@@ -170,7 +170,7 @@ func hasScripts(def types.Definition) bool {
 // runScripts runs %pre %post %setup scripts in the bundle using the imgbuild engine
 func (b *Build) runScripts() error {
 	env := []string{"SINGULARITY_MESSAGELEVEL=" + string(sylog.GetLevel()), "SRUNTIME=" + imgbuild.Name}
-	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
+	startup := filepath.Join(buildcfg.SBINDIR, "/startup")
 	progname := []string{"singularity image-build"}
 
 	engineConfig := &imgbuild.EngineConfig{
@@ -198,20 +198,20 @@ func (b *Build) runScripts() error {
 
 	env = append(env, pipefd)
 
-	// Create os/exec.Command to run wrapper and return control once finished
-	wrapperCmd := &exec.Cmd{
-		Path:   wrapper,
+	// Create os/exec.Command to run startup and return control once finished
+	startupCmd := &exec.Cmd{
+		Path:   startup,
 		Args:   progname,
 		Env:    env,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 	}
 
-	if err := wrapperCmd.Start(); err != nil {
-		return fmt.Errorf("failed to start wrapper proc: %v", err)
+	if err := startupCmd.Start(); err != nil {
+		return fmt.Errorf("failed to start startup proc: %v", err)
 	}
-	if err := wrapperCmd.Wait(); err != nil {
-		return fmt.Errorf("wrapper proc failed: %v", err)
+	if err := startupCmd.Wait(); err != nil {
+		return fmt.Errorf("startup proc failed: %v", err)
 	}
 
 	return nil

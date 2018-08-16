@@ -17,9 +17,9 @@ import (
 // _two_ primary functions:
 //
 //     * Validate the Engine Configuration JSON which was passed in
-//     * Populate the Startup Configuration object for the [wrapper.c binary name] to consume
+//     * Populate the Startup Configuration object for the startup binary to consume
 //
-// PrepareStartup will then pass the validated Engine AND Startup Configurations back to the [wrapper.c binary]
+// PrepareStartup will then pass the validated Engine AND Startup Configurations back to the startup binary
 // by writing the raw data to os.Stdout
 func PrepareStartup(masterSocket int, startupConfig *config.Startup, engineConfig []byte) {
 	engine, err := engines.NewEngine(engineConfig)

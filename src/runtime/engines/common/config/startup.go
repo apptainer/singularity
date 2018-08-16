@@ -25,12 +25,12 @@ import (
 // CConfig is the common type for C.struct_cConfig
 type CStartupConfig *C.struct_startup_config
 
-// Config represents structure to manipulate C wrapper configuration
+// Config represents structure to manipulate C startup configuration
 type Startup struct {
 	config CStartupConfig
 }
 
-// NewConfig takes a pointer to C wrapper configuration and returns a
+// NewConfig takes a pointer to C startup configuration and returns a
 // pointer to a Config
 func NewStartupConfig(config CStartupConfig) *Startup {
 	return &Startup{config}
@@ -49,7 +49,7 @@ func (c *Startup) GetContainerPid() int {
 	return int(c.config.containerPid)
 }
 
-// SetInstance sets if wrapper should spawn instance or not
+// SetInstance sets if startup should spawn instance or not
 func (c *Startup) SetInstance(instance bool) {
 	if instance {
 		c.config.isInstance = C.uchar(1)
@@ -84,7 +84,7 @@ func (c *Startup) GetNoNewPrivs() bool {
 }
 
 // GetJSONConfSize returns size of JSON configuration sent
-// by wrapper
+// by startup
 func (c *Startup) GetJSONConfSize() uint {
 	return uint(c.config.jsonConfSize)
 }

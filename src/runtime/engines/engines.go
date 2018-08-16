@@ -34,9 +34,6 @@ type EngineOperations interface {
 	// the EngineOperations implementation. InitConfig is GUARANTEED to run before
 	// NewEngine() returns the engine.
 	InitConfig(*config.Common)
-	// PrepareConfig is called in stage1 to validate and prepare container configuration
-	//PrepareConfig(net.Conn, *wrapper.Config) error
-
 	// PrepareEngineConfig Validates and updates the EngineConfig which has been set. This
 	// ensures that all privileges are appropriately handled and can error out if necessary
 	PrepareEngineConfig(net.Conn) error
