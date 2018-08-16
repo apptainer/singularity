@@ -145,6 +145,12 @@ func startup() {
 	wrapperConfig := wrapper.NewConfig(wrapper.CConfig(cconf))
 	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(wrapperConfig.GetJSONConfSize()))
 
+	/* free allocated buffer */
+	C.free(unsafe.Pointer(C.json_stdin))
+	if unsafe.Pointer(C.nspath) != nil {
+		C.free(unsafe.Pointer(C.nspath))
+	}
+
 	switch C.execute {
 	case C.SCONTAINER_STAGE1:
 		sylog.Verbosef("Execute scontainer stage 1\n")

@@ -70,6 +70,9 @@ extern char **environ;
 /* C and JSON configuration */
 struct cConfig config;
 char *json_stdin;
+char *nspath;
+
+#define get_nspath(nstype) (config.nstype##NsPathOffset == 0 ? NULL : &nspath[config.nstype##NsPathOffset])
 
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
@@ -269,64 +272,48 @@ static int create_namespace(int nstype) {
     return unshare(nstype);
 }
 
-static int enter_namespace(pid_t pid, int nstype) {
+static int enter_namespace(char *nspath, int nstype) {
     int ns_fd;
-    static char buffer[PATH_MAX];
-    char *namespace;
-
-    memset(buffer, 0, PATH_MAX);
 
     switch(nstype) {
     case CLONE_NEWPID:
         singularity_message(VERBOSE, "Entering in pid namespace\n");
-#ifdef NS_CLONE_NEWPID
-        namespace = strdup("pid");
-#else
+#ifndef NS_CLONE_NEWPID
         errno = EINVAL;
         return(-1);
 #endif /* NS_CLONE_NEWPID */
         break;
     case CLONE_NEWNET:
         singularity_message(VERBOSE, "Entering in network namespace\n");
-#ifdef NS_CLONE_NEWNET
-        namespace = strdup("net");
-#else
+#ifndef NS_CLONE_NEWNET
         errno = EINVAL;
         return(-1);
 #endif /* NS_CLONE_NEWNET */
         break;
     case CLONE_NEWIPC:
         singularity_message(VERBOSE, "Entering in ipc namespace\n");
-#ifdef NS_CLONE_NEWIPC
-        namespace = strdup("ipc");
-#else
+#ifndef NS_CLONE_NEWIPC
         errno = EINVAL;
         return(-1);
 #endif /* NS_CLONE_NEWIPC */
         break;
     case CLONE_NEWNS:
         singularity_message(VERBOSE, "Entering in mount namespace\n");
-#ifdef NS_CLONE_NEWNS
-        namespace = strdup("mnt");
-#else
+#ifndef NS_CLONE_NEWNS
         errno = EINVAL;
         return(-1);
 #endif /* NS_CLONE_NEWNS */
         break;
     case CLONE_NEWUTS:
         singularity_message(VERBOSE, "Entering in uts namespace\n");
-#ifdef NS_CLONE_NEWUTS
-        namespace = strdup("uts");
-#else
+#ifndef NS_CLONE_NEWUTS
         errno = EINVAL;
         return(-1);
 #endif /* NS_CLONE_NEWUTS */
         break;
     case CLONE_NEWUSER:
         singularity_message(VERBOSE, "Entering in user namespace\n");
-#ifdef NS_CLONE_NEWUSER
-        namespace = strdup("user");
-#else
+#ifndef NS_CLONE_NEWUSER
         errno = EINVAL;
         return(-1);
 #endif /* NS_CLONE_NEWUSER */
@@ -334,7 +321,6 @@ static int enter_namespace(pid_t pid, int nstype) {
 #ifdef NS_CLONE_NEWCGROUP
     case CLONE_NEWCGROUP:
         singularity_message(VERBOSE, "Entering in cgroup namespace\n");
-        namespace = strdup("cgroup");
         break;
 #endif /* NS_CLONE_NEWCGROUP */
     default:
@@ -343,9 +329,8 @@ static int enter_namespace(pid_t pid, int nstype) {
         return(-1);
     }
 
-    snprintf(buffer, PATH_MAX-1, "/proc/%d/ns/%s", pid, namespace);
-    singularity_message(DEBUG, "Opening namespace file descriptor %s\n", buffer);
-    ns_fd = open(buffer, O_RDONLY);
+    singularity_message(DEBUG, "Opening namespace file descriptor %s\n", nspath);
+    ns_fd = open(nspath, O_RDONLY);
     if ( ns_fd < 0 ) {
         return(-1);
     }
@@ -353,13 +338,11 @@ static int enter_namespace(pid_t pid, int nstype) {
     if ( setns(ns_fd, nstype) < 0 ) {
         int err = errno;
         close(ns_fd);
-        free(namespace);
         errno = err;
         return(-1);
     }
 
     close(ns_fd);
-    free(namespace);
     return(0);
 }
 
@@ -694,15 +677,28 @@ __attribute__((constructor)) static void init(void) {
             int ret;
             singularity_message(DEBUG, "Receiving configuration from scontainer stage 1\n");
             if ( (ret = read(fds[0].fd, &config, sizeof(config))) != sizeof(config) ) {
-                singularity_message(ERROR, "Failed to read C configuration stdout pipe: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to read C configuration socket: %s\n", strerror(errno));
                 exit(1);
             }
-            if ( config.jsonConfSize >= MAX_JSON_SIZE) {
+            if ( config.nsPathSize >= MAX_NSPATH_SIZE ) {
+                singularity_message(ERROR, "Namespace path too long > %d", MAX_NSPATH_SIZE);
+                exit(1);
+            }
+            nspath = (char *)malloc(MAX_NSPATH_SIZE);
+            if ( nspath == NULL ) {
+                singularity_message(ERROR, "Memory allocation failed: %s\n", strerror(errno));
+                exit(1);
+            }
+            if ( (ret = read(fds[0].fd, nspath, config.nsPathSize)) != config.nsPathSize ) {
+                singularity_message(ERROR, "Failed to read namespace path from socket: %s\n", strerror(errno));
+                exit(1);
+            }
+            if ( config.jsonConfSize >= MAX_JSON_SIZE ) {
                 singularity_message(ERROR, "JSON configuration too big\n");
                 exit(1);
             }
             if ( (ret = read(fds[0].fd, json_stdin, config.jsonConfSize)) != config.jsonConfSize ) {
-                singularity_message(ERROR, "Failed to read JSON configuration from stdout pipe: %s\n", strerror(errno));
+                singularity_message(ERROR, "Failed to read JSON configuration from socket: %s\n", strerror(errno));
                 exit(1);
             }
             json_stdin[config.jsonConfSize] = '\0';
@@ -782,8 +778,8 @@ __attribute__((constructor)) static void init(void) {
             singularity_message(ERROR, "Running setuid workflow with user namespace is not allowed\n");
             exit(1);
         }
-        if ( config.userPid ) {
-            if ( enter_namespace(config.userPid, CLONE_NEWUSER) < 0 ) {
+        if ( get_nspath(user) ) {
+            if ( enter_namespace(get_nspath(user), CLONE_NEWUSER) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in user namespace: %s\n", strerror(errno));
                 exit(1);
             }
@@ -851,7 +847,7 @@ __attribute__((constructor)) static void init(void) {
     free(source);
     free(target);
 
-    if ( config.mntPid == 0 ) {
+    if ( get_nspath(mnt) == NULL ) {
         if ( unshare(CLONE_FS) < 0 ) {
             singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
             exit(1);
@@ -897,8 +893,8 @@ __attribute__((constructor)) static void init(void) {
             exit(1);
         }
     }
-    if ( config.pidPid ) {
-        if ( enter_namespace(config.pidPid, CLONE_NEWPID) < 0 ) {
+    if ( get_nspath(pid) ) {
+        if ( enter_namespace(get_nspath(pid), CLONE_NEWPID) < 0 ) {
             singularity_message(ERROR, "Failed to enter in pid namespace: %s\n", strerror(errno));
             exit(1);
         }
@@ -921,8 +917,8 @@ __attribute__((constructor)) static void init(void) {
 
         singularity_message(VERBOSE, "Spawn scontainer stage 2\n");
 
-        if ( config.netPid ) {
-            if ( enter_namespace(config.netPid, CLONE_NEWNET) < 0 ) {
+        if ( get_nspath(net) ) {
+            if ( enter_namespace(get_nspath(net), CLONE_NEWNET) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in network namespace: %s\n", strerror(errno));
                 exit(1);
             }
@@ -934,8 +930,8 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-        if ( config.utsPid ) {
-            if ( enter_namespace(config.utsPid, CLONE_NEWUTS) < 0 ) {
+        if ( get_nspath(uts) ) {
+            if ( enter_namespace(get_nspath(uts), CLONE_NEWUTS) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in uts namespace: %s\n", strerror(errno));
                 exit(1);
             }
@@ -947,8 +943,8 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-        if ( config.ipcPid ) {
-            if ( enter_namespace(config.ipcPid, CLONE_NEWIPC) < 0 ) {
+        if ( get_nspath(ipc) ) {
+            if ( enter_namespace(get_nspath(ipc), CLONE_NEWIPC) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in ipc namespace: %s\n", strerror(errno));
                 exit(1);
             }
@@ -960,8 +956,8 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-        if ( config.cgroupPid ) {
-            if ( enter_namespace(config.cgroupPid, CLONE_NEWCGROUP) < 0 ) {
+        if ( get_nspath(cgroup) ) {
+            if ( enter_namespace(get_nspath(cgroup), CLONE_NEWCGROUP) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in cgroup namespace: %s\n", strerror(errno));
                 exit(1);
             }
@@ -973,7 +969,7 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
         }
-        if ( config.mntPid == 0 ) {
+        if ( get_nspath(mnt) == NULL ) {
             if ( create_namespace(CLONE_NEWNS) < 0 ) {
                 singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
                 exit(1);
@@ -993,7 +989,7 @@ __attribute__((constructor)) static void init(void) {
                 close(syncfd);
             }
         } else {
-            if ( enter_namespace(config.mntPid, CLONE_NEWNS) < 0 ) {
+            if ( enter_namespace(get_nspath(mnt), CLONE_NEWNS) < 0 ) {
                 singularity_message(ERROR, "Failed to enter in mount namespace: %s\n", strerror(errno));
                 exit(1);
             }
@@ -1001,7 +997,7 @@ __attribute__((constructor)) static void init(void) {
 
         close(rpc_socket[0]);
 
-        if ( config.mntPid == 0 ) {
+        if ( get_nspath(mnt) == NULL ) {
             singularity_message(VERBOSE, "Spawn RPC server\n");
             execute = RPC_SERVER;
         } else {
@@ -1028,7 +1024,7 @@ __attribute__((constructor)) static void init(void) {
             close(syncfd);
         }
 
-        if ( config.mntPid != 0 ) {
+        if ( get_nspath(mnt) ) {
             if ( config.isSuid && setresuid(uid, uid, uid) < 0 ) {
                 singularity_message(ERROR, "Failed to drop privileges permanently\n");
                 exit(1);
