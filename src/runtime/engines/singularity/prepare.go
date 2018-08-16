@@ -41,6 +41,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, wrapperConfig *wra
 
 	wrapperConfig.SetInstance(e.EngineConfig.GetInstance())
 	wrapperConfig.SetNoNewPrivs(e.CommonConfig.OciConfig.Process.NoNewPrivileges)
+	if e.EngineConfig.File.MountSlave {
+		wrapperConfig.SetMountPropagation("slave")
+	} else {
+		wrapperConfig.SetMountPropagation("private")
+	}
 
 	if e.CommonConfig.OciConfig.Linux != nil {
 		wrapperConfig.AddUIDMappings(e.CommonConfig.OciConfig.Linux.UIDMappings)

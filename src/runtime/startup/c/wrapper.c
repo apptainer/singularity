@@ -848,6 +848,11 @@ __attribute__((constructor)) static void init(void) {
     free(target);
 
     if ( get_nspath(mnt) == NULL ) {
+        unsigned long propagation = config.mountPropagation;
+
+        if ( propagation == 0 ) {
+            propagation = MS_PRIVATE | MS_REC;
+        }
         if ( unshare(CLONE_FS) < 0 ) {
             singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
             exit(1);
@@ -856,14 +861,11 @@ __attribute__((constructor)) static void init(void) {
             singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
             exit(1);
         }
-        if ( mount(NULL, "/", NULL, MS_PRIVATE|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+        if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
+            singularity_message(ERROR, "Failed to set mount propagation: %s\n", strerror(errno));
             exit(1);
         }
-        if ( create_namespace(CLONE_NEWNS) < 0 ) {
-            singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
-            exit(1);
-        }
+        /* set shared mount propagation to share mount points between smaster and container process */
         if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
             singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
             exit(1);
@@ -970,11 +972,13 @@ __attribute__((constructor)) static void init(void) {
             }
         }
         if ( get_nspath(mnt) == NULL ) {
+            /* create a namespace for container process to separate smaster during pivot_root */
             if ( create_namespace(CLONE_NEWNS) < 0 ) {
                 singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
                 exit(1);
             }
 
+            /* set shared propagation to propagate few mount points to smaster */
             if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
                 singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
                 exit(1);

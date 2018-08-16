@@ -84,6 +84,18 @@ func (c *Config) GetNoNewPrivs() bool {
 	return false
 }
 
+// SetMountPropagation sets root filesystem mount propagation
+func (c *Config) SetMountPropagation(propagation string) {
+	switch propagation {
+	case "shared":
+		c.config.mountPropagation = C.ulong(syscall.MS_SHARED | syscall.MS_REC)
+	case "slave":
+		c.config.mountPropagation = C.ulong(syscall.MS_SLAVE | syscall.MS_REC)
+	case "private":
+		c.config.mountPropagation = C.ulong(syscall.MS_PRIVATE | syscall.MS_REC)
+	}
+}
+
 // GetJSONConfSize returns size of JSON configuration sent
 // by wrapper
 func (c *Config) GetJSONConfSize() uint {

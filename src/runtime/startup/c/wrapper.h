@@ -37,6 +37,7 @@ struct cConfig {
     unsigned long long capInheritable;
     unsigned long long capBounding;
     unsigned long long capAmbient;
+    unsigned long mountPropagation;
     unsigned int nsFlags;
     pid_t containerPid;
     off_t netNsPathOffset;
