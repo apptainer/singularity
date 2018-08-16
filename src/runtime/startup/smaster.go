@@ -61,31 +61,37 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 		runtime.Goexit()
 	}()
 
-	if wrapperConfig.GetInstance() {
-		go func() {
-			sylog.Debugf("Running as instance")
-			data := make([]byte, 1)
+	go func() {
+		data := make([]byte, 1)
 
-			comm := os.NewFile(uintptr(masterSocket), "master-socket")
-			conn, err := net.FileConn(comm)
-			comm.Close()
+		comm := os.NewFile(uintptr(masterSocket), "master-socket")
+		conn, err := net.FileConn(comm)
+		comm.Close()
 
-			_, err = conn.Read(data)
-			if err == io.EOF || err == nil {
-				/* sleep a bit to see if child exit */
-				time.Sleep(100 * time.Millisecond)
-				if os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR1)
-				}
-			} else {
-				if os.Getppid() == ppid {
+		_, err = conn.Read(data)
+		if err == io.EOF || err == nil {
+			if err := engine.PostStartProcess(containerPid); err != nil {
+				if wrapperConfig.GetInstance() && os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)
 				}
-				fatalChan <- fmt.Errorf("failed to spawn instance: %s", err)
+				fatalChan <- fmt.Errorf("post start process failed: %s", err)
+			} else {
+				if wrapperConfig.GetInstance() {
+					/* sleep a bit to see if child exit */
+					time.Sleep(100 * time.Millisecond)
+					if os.Getppid() == ppid {
+						syscall.Kill(ppid, syscall.SIGUSR1)
+					}
+				}
 			}
-			conn.Close()
-		}()
-	}
+		} else {
+			if wrapperConfig.GetInstance() && os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+			}
+			fatalChan <- fmt.Errorf("failed to start process: %s", err)
+		}
+		conn.Close()
+	}()
 
 	go func() {
 		status, err = engine.MonitorContainer(containerPid)

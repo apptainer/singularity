@@ -68,8 +68,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		errChan <- cmd.Wait()
 	}()
 
-	masterConn.Close()
-
 	// Modify argv argument and program name shown in /proc/self/comm
 	name := "sinit"
 
@@ -91,6 +89,8 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	// Manage all signals
 	signal.Notify(signals)
+
+	masterConn.Close()
 
 	for {
 		select {
@@ -131,4 +131,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 			}
 		}
 	}
+}
+
+// PostStartProcess will execute code in smaster context after execution of container
+// process, typically to write instance state/config files or execute post start OCI hook
+func (engine *EngineOperations) PostStartProcess(pid int) error {
+	sylog.Debugf("Post start process")
+	return nil
 }
