@@ -8,6 +8,7 @@ package main
 /*
 #include "c/wrapper.c"
 */
+// #cgo CFLAGS: -I..
 import "C"
 
 import (
@@ -20,21 +21,22 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/singularityware/singularity/src/runtime/engines/common/config/wrapper"
+
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/mainthread"
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
 // SMaster initializes a runtime engine and runs it
-func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *C.char) {
+func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBytes []byte) {
 	var fatal error
 	var status syscall.WaitStatus
 
 	fatalChan := make(chan error, 1)
 	ppid := os.Getppid()
 
-	containerPid := int(config.containerPid)
-	jsonBytes := C.GoBytes(unsafe.Pointer(jsonC), C.int(config.jsonConfSize))
+	containerPid := wrapperConfig.GetContainerPid()
 
 	engine, err := engines.NewEngine(jsonBytes)
 	if err != nil {
@@ -59,7 +61,7 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 		runtime.Goexit()
 	}()
 
-	if engine.IsRunAsInstance() {
+	if wrapperConfig.GetInstance() {
 		go func() {
 			sylog.Debugf("Running as instance")
 			data := make([]byte, 1)
@@ -107,7 +109,7 @@ func SMaster(socket C.int, masterSocket C.int, config *C.struct_cConfig, jsonC *
 		syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if engine.IsRunAsInstance() {
+		if wrapperConfig.GetInstance() {
 			if status.ExitStatus() != 0 {
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)
@@ -133,19 +135,23 @@ func startup() {
 		}
 	}
 
+	cconf := unsafe.Pointer(&C.config)
+	wrapperConfig := wrapper.NewConfig(wrapper.CConfig(cconf))
+	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(wrapperConfig.GetJSONConfSize()))
+
 	switch C.execute {
 	case C.SCONTAINER_STAGE1:
 		sylog.Verbosef("Execute scontainer stage 1\n")
-		SContainer(C.SCONTAINER_STAGE1, C.master_socket[1], &C.config, C.json_stdin)
+		SContainer(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), wrapperConfig, jsonBytes)
 	case C.SCONTAINER_STAGE2:
 		sylog.Verbosef("Execute scontainer stage 2\n")
-		SContainer(C.SCONTAINER_STAGE2, C.master_socket[1], &C.config, C.json_stdin)
+		SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), wrapperConfig, jsonBytes)
 	case C.SMASTER:
 		sylog.Verbosef("Execute smaster process\n")
-		SMaster(C.rpc_socket[0], C.master_socket[0], &C.config, C.json_stdin)
+		SMaster(int(C.rpc_socket[0]), int(C.master_socket[0]), wrapperConfig, jsonBytes)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
-		RPCServer(C.rpc_socket[1], C.sruntime)
+		RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
 
 		syscall.Close(int(C.rpc_socket[1]))
 
@@ -155,7 +161,7 @@ func startup() {
 		sylog.Verbosef("Execute scontainer stage 2\n")
 		mainthread.Execute(func() {
 			C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
-			SContainer(C.SCONTAINER_STAGE2, C.master_socket[1], &C.config, C.json_stdin)
+			SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), wrapperConfig, jsonBytes)
 		})
 	}
 	sylog.Fatalf("You should not be there\n")

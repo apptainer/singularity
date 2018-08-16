@@ -76,16 +76,22 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.SESSIONDIR, "home"))
-	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.SESSIONDIR, "home"), "", syscall.MS_BIND, "")
-	if err != nil {
-		return fmt.Errorf("mount /home failed: %s", err)
-	}
-
 	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.SESSIONDIR, "dev"))
 	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.SESSIONDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
+	}
+
+	sylog.Debugf("Mounting tmp at %s\n", filepath.Join(buildcfg.SESSIONDIR, "tmp"))
+	_, err = rpcOps.Mount("/tmp", filepath.Join(buildcfg.SESSIONDIR, "tmp"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("mount /tmp failed: %s", err)
+	}
+
+	sylog.Debugf("Mounting var/tmp at %s\n", filepath.Join(buildcfg.SESSIONDIR, "var/tmp"))
+	_, err = rpcOps.Mount("/var/tmp", filepath.Join(buildcfg.SESSIONDIR, "var/tmp"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("mount /var/tmp failed: %s", err)
 	}
 
 	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", filepath.Join(buildcfg.SESSIONDIR, "etc/resolv.conf"))

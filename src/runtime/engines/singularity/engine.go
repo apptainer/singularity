@@ -26,13 +26,3 @@ func (e *EngineOperations) InitConfig(cfg *config.Common) {
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }
-
-// IsRunAsInstance returns true if the runtime engine was run as an instance
-func (e *EngineOperations) IsRunAsInstance() bool {
-	return e.EngineConfig.GetInstance()
-}
-
-// IsAllowSUID always returns true to allow SUID workflow
-func (e *EngineOperations) IsAllowSUID() bool {
-	return e.EngineConfig.File.AllowSetuid
-}
