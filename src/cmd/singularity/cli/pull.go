@@ -43,20 +43,18 @@ var PullCmd = &cobra.Command{
 	Args:   cobra.RangeArgs(1, 2),
 	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		var uri string
+		var uri, image string
+		image = ""
 		if len(args) == 2 {
 			uri = args[1]
+			image = args[0]
 		} else {
 			uri = args[0]
 		}
 		BaseURI := strings.Split(uri, "://")
 		switch BaseURI[0] {
 		case SyCloudLibrary:
-			if len(args) == 2 {
-				libexec.PullImage(args[0], uri, PullLibraryURI, force, authToken)
-				return
-			}
-			libexec.PullImage("", args[0], PullLibraryURI, force, authToken)
+			libexec.PullImage(image, uri, PullLibraryURI, force, authToken)
 		case Shub:
 			fmt.Println("Shub not yet supported")
 		default:
