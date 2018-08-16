@@ -7,6 +7,7 @@ package server
 
 import (
 	"fmt"
+	"os"
 	"syscall"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -30,22 +31,39 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) error {
 
 // Chroot performs a chroot with the specified arguments
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
+	// idea taken from libcontainer (and also LXC developpers) to avoid
+	// creation of temporary directory or use of existing directory
+	// for pivot_root
+
+	sylog.Debugf("Hold reference to host / directory")
+	oldroot, err := os.Open("/")
+	if err != nil {
+		return fmt.Errorf("failed to open host root directory: %s", err)
+	}
+	defer oldroot.Close()
+
+	sylog.Debugf("Change current directory to %s", arguments.Root)
 	if err := syscall.Chdir(arguments.Root); err != nil {
-		return fmt.Errorf("Failed to change directory to %s", arguments.Root)
+		return fmt.Errorf("failed to change directory to %s", arguments.Root)
 	}
 
-	sylog.Debugf("Called pivot_root(%s, etc)\n", arguments.Root)
-	if err := syscall.PivotRoot(".", "etc"); err != nil {
+	sylog.Debugf("Called pivot_root on %s\n", arguments.Root)
+	if err := syscall.PivotRoot(".", "."); err != nil {
 		return fmt.Errorf("pivot_root %s: %s", arguments.Root, err)
 	}
 
-	sylog.Debugf("Called chroot(%s)\n", arguments.Root)
-	if err := syscall.Chroot("."); err != nil {
-		return fmt.Errorf("chroot %s", err)
+	sylog.Debugf("Change current directory to host / directory")
+	if err := syscall.Fchdir(int(oldroot.Fd())); err != nil {
+		return fmt.Errorf("failed to change directory to old root: %s", err)
 	}
 
-	sylog.Debugf("Called unmount(etc, syscall.MNT_DETACH)\n")
-	if err := syscall.Unmount("etc", syscall.MNT_DETACH); err != nil {
+	sylog.Debugf("Apply slave mount propagation for host / directory")
+	if err := syscall.Mount("", ".", "", syscall.MS_SLAVE|syscall.MS_REC, ""); err != nil {
+		return fmt.Errorf("failed to apply slave mount propagation for host / directory: %s", err)
+	}
+
+	sylog.Debugf("Called unmount(/, syscall.MNT_DETACH)\n")
+	if err := syscall.Unmount(".", syscall.MNT_DETACH); err != nil {
 		return fmt.Errorf("unmount pivot_root dir %s", err)
 	}
 
