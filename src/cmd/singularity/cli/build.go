@@ -60,10 +60,6 @@ var BuildCmd = &cobra.Command{
 	PreRun:  sylabsToken,
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
-		if silent {
-			fmt.Println("Silent!")
-		}
-
 		buildFormat := "sif"
 		if sandbox {
 			buildFormat = "sandbox"
@@ -126,7 +122,7 @@ func checkBuildTargetCollision(path string, force bool) bool {
 			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
 				os.RemoveAll(path)
 			} else {
-				fmt.Println("Stopping build.")
+				sylog.Errorf("Stopping build.")
 				return false
 			}
 		}
