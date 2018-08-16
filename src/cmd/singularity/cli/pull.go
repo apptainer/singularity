@@ -6,11 +6,11 @@
 package cli
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -56,9 +56,9 @@ var PullCmd = &cobra.Command{
 		case SyCloudLibrary:
 			libexec.PullImage(image, uri, PullLibraryURI, force, authToken)
 		case Shub:
-			fmt.Println("Shub not yet supported")
+			sylog.Errorf("Shub not yet supported")
 		default:
-			fmt.Println(BaseURI[0], "Not a supported URI")
+			sylog.Errorf("Not a supported URI")
 		}
 	},
 
