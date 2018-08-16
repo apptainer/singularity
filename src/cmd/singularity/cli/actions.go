@@ -117,7 +117,7 @@ var RunCmd = &cobra.Command{
 func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	lvl := "0"
 
-	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
+	startup := buildcfg.SBINDIR + "/startup-suid"
 
 	engineConfig := singularity.NewConfig()
 
@@ -171,7 +171,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		wrapper = buildcfg.SBINDIR + "/wrapper"
+		startup = buildcfg.SBINDIR + "/startup"
 
 		uid := uint32(os.Getuid())
 		gid := uint32(os.Getgid())
@@ -236,7 +236,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {
+	if err := exec.Pipe(startup, []string{progname}, Env, configData); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 }

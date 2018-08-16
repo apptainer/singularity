@@ -3,13 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package wrapper
+package config
 
 /*
 #include <sys/types.h>
-#include "startup/c/wrapper.h"
+#include "startup/c/startup.h"
 */
-// #cgo CFLAGS: -I../../../..
+// #cgo CFLAGS: -I../../..
 import "C"
 import (
 	"encoding/json"
@@ -23,21 +23,21 @@ import (
 )
 
 // CConfig is the common type for C.struct_cConfig
-type CConfig *C.struct_cConfig
+type CStartupConfig *C.struct_startup_config
 
-// Config represents structure to manipulate C wrapper configuration
-type Config struct {
-	config CConfig
+// Config represents structure to manipulate C startup configuration
+type Startup struct {
+	config CStartupConfig
 }
 
-// NewConfig takes a pointer to C wrapper configuration and returns a
+// NewConfig takes a pointer to C startup configuration and returns a
 // pointer to a Config
-func NewConfig(config CConfig) *Config {
-	return &Config{config}
+func NewStartupConfig(config CStartupConfig) *Startup {
+	return &Startup{config}
 }
 
 // GetIsSUID returns if SUID workflow is enabled or not
-func (c *Config) GetIsSUID() bool {
+func (c *Startup) GetIsSUID() bool {
 	if c.config.isSuid == 1 {
 		return true
 	}
@@ -45,12 +45,12 @@ func (c *Config) GetIsSUID() bool {
 }
 
 // GetContainerPid returns container process ID
-func (c *Config) GetContainerPid() int {
+func (c *Startup) GetContainerPid() int {
 	return int(c.config.containerPid)
 }
 
-// SetInstance sets if wrapper should spawn instance or not
-func (c *Config) SetInstance(instance bool) {
+// SetInstance sets if startup should spawn instance or not
+func (c *Startup) SetInstance(instance bool) {
 	if instance {
 		c.config.isInstance = C.uchar(1)
 	} else {
@@ -59,7 +59,7 @@ func (c *Config) SetInstance(instance bool) {
 }
 
 // GetInstance returns if container run as instance or not
-func (c *Config) GetInstance() bool {
+func (c *Startup) GetInstance() bool {
 	if c.config.isInstance == 1 {
 		return true
 	}
@@ -67,7 +67,7 @@ func (c *Config) GetInstance() bool {
 }
 
 // SetNoNewPrivs sets NO_NEW_PRIVS flag
-func (c *Config) SetNoNewPrivs(noprivs bool) {
+func (c *Startup) SetNoNewPrivs(noprivs bool) {
 	if noprivs {
 		c.config.noNewPrivs = C.uchar(1)
 	} else {
@@ -76,7 +76,7 @@ func (c *Config) SetNoNewPrivs(noprivs bool) {
 }
 
 // GetNoNewPrivs returns if NO_NEW_PRIVS flag is set or not
-func (c *Config) GetNoNewPrivs() bool {
+func (c *Startup) GetNoNewPrivs() bool {
 	if c.config.noNewPrivs == 1 {
 		return true
 	}
@@ -84,21 +84,21 @@ func (c *Config) GetNoNewPrivs() bool {
 }
 
 // GetJSONConfSize returns size of JSON configuration sent
-// by wrapper
-func (c *Config) GetJSONConfSize() uint {
+// by startup
+func (c *Startup) GetJSONConfSize() uint {
 	return uint(c.config.jsonConfSize)
 }
 
 // WritePayload writes raw C configuration and payload passed in
 // argument to the provided writer
-func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
+func (c *Startup) WritePayload(w io.Writer, payload interface{}) error {
 	jsonConf, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %s", err)
 	}
 
 	c.config.jsonConfSize = C.uint(len(jsonConf))
-	cconfPayload := C.GoBytes(unsafe.Pointer(c.config), C.sizeof_struct_cConfig)
+	cconfPayload := C.GoBytes(unsafe.Pointer(c.config), C.sizeof_struct_startup_config)
 	finalPayload := append(cconfPayload, jsonConf...)
 
 	if n, err := w.Write(finalPayload); err != nil || n != len(finalPayload) {
@@ -108,7 +108,7 @@ func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
 }
 
 // AddUIDMappings sets user namespace UID mapping
-func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) {
+func (c *Startup) AddUIDMappings(uids []specs.LinuxIDMapping) {
 	for i, uid := range uids {
 		c.config.uidMapping[i].containerID = C.uid_t(uid.ContainerID)
 		c.config.uidMapping[i].hostID = C.uid_t(uid.HostID)
@@ -117,7 +117,7 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) {
 }
 
 // AddGIDMappings sets user namespace GID mapping
-func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) {
+func (c *Startup) AddGIDMappings(gids []specs.LinuxIDMapping) {
 	for i, gid := range gids {
 		c.config.gidMapping[i].containerID = C.gid_t(gid.ContainerID)
 		c.config.gidMapping[i].hostID = C.gid_t(gid.HostID)
@@ -126,12 +126,12 @@ func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) {
 }
 
 // SetNsFlags sets namespaces flag directly from flags argument
-func (c *Config) SetNsFlags(flags int) {
+func (c *Startup) SetNsFlags(flags int) {
 	c.config.nsFlags = C.uint(flags)
 }
 
 // SetNsFlagsFromSpec sets namespaces flag from OCI spec
-func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
+func (c *Startup) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	c.config.nsFlags = 0
 	for _, namespace := range namespaces {
 		switch namespace.Type {
@@ -154,7 +154,7 @@ func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 }
 
 // SetNsPid sets corresponding namespace to be joined
-func (c *Config) SetNsPid(nstype specs.LinuxNamespaceType, pid int) {
+func (c *Startup) SetNsPid(nstype specs.LinuxNamespaceType, pid int) {
 	switch nstype {
 	case specs.UserNamespace:
 		c.config.userPid = C.pid_t(pid)
@@ -175,7 +175,7 @@ func (c *Config) SetNsPid(nstype specs.LinuxNamespaceType, pid int) {
 
 // SetCapabilities sets corresponding capability set identified by ctype
 // from a capability string list identified by ctype
-func (c *Config) SetCapabilities(ctype string, caps []string) {
+func (c *Startup) SetCapabilities(ctype string, caps []string) {
 	switch ctype {
 	case capabilities.Permitted:
 		c.config.capPermitted = 0

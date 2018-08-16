@@ -4,26 +4,23 @@ include Makefile.cond
 
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-libstartup := $(BUILDDIR)/lib/libstartup.a
-libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
-libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
+startup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/main.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/preparestartup.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/startprocess.go)
+startup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
-wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
-wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
-wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
+startup := $(BUILDDIR)/src/runtime/startup/startup
+startup_INSTALL := $(PREFIX)/libexec/singularity/bin/startup
+startup_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/startup-suid
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
-mountdir := $(PREFIX)/var/singularity/mnt/container
-finaldir := $(PREFIX)/var/singularity/mnt/final
-overlaydir := $(PREFIX)/var/singularity/mnt/overlay
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
 go_BIN := $(singularity)
@@ -37,24 +34,26 @@ abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
 cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
-INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(startup_INSTALL) $(startup_suid_INSTALL) $(sessiondir) $(config_INSTALL)
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ)
+CLEANFILES += $(libruntime) $(startup) $(singularity) $(go_BIN) $(go_OBJ)
 
-all: cscope collect $(libruntime) $(go_BIN) $(config) $(wrapper)
+all: cscope collect $(libruntime) $(go_BIN) $(config) $(startup)
 
 $(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
 	@mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
-# wrapper
-$(wrapper): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
+# startup
+$(startup): $(go_OBJ) $(startup_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
-		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
+		$(SOURCEDIR)/src/runtime/startup/main.go \
 		$(SOURCEDIR)/src/runtime/startup/smaster.go \
+		$(SOURCEDIR)/src/runtime/startup/preparestartup.go \
+		$(SOURCEDIR)/src/runtime/startup/startprocess.go \
 		$(SOURCEDIR)/src/runtime/startup/rpc.go
 
 # singularity
@@ -65,22 +64,22 @@ $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+	$(V)install -m 0755 $(singularity) $@
 
 # config.go
 $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
-# wrappper & wrapper-suid install
-$(wrapper_INSTALL): $(wrapper)
+# wrappper & startup-suid install
+$(startup_INSTALL): $(startup)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
-$(wrapper_suid_INSTALL): $(wrapper)
+	$(V)install -m 0755 $(startup) $@
+$(startup_suid_INSTALL): $(startup)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
-	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
+	$(V)install -m 4755 $(startup) $@
 
 # generate the vendor folder with dep and patch when necessary
 $(BUILDDIR)/vendors-done:
@@ -101,11 +100,11 @@ $(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engin
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0644 $(config) $(config_INSTALL)
+	$(V)install -m 0644 $(config) $@
 
 $(sessiondir):
 	@echo " INSTALL" $@
-	$(V)install -d $(sessiondir)
+	$(V)install -d $@
 
 .PHONY: man
 man:

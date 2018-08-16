@@ -58,7 +58,7 @@
 #include "c/lib/util/capability.h"
 #include "c/lib/util/message.h"
 
-#include "startup/c/wrapper.h"
+#include "startup/c/startup.h"
 
 #define CLONE_STACK_SIZE    1024*1024
 #define BUFSIZE             512
@@ -66,19 +66,19 @@
 extern char **environ;
 
 /* C and JSON configuration */
-struct cConfig config;
+struct startup_config config;
 char *json_stdin;
 
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
 int master_socket[2] = {-1, -1};
 
-#define SCONTAINER_STAGE1   1
-#define SCONTAINER_STAGE2   2
-#define SMASTER             4
-#define RPC_SERVER          5
+#define STAGE_PREPARESTARTUP 1
+#define STAGE_JOINCONTAINER  2
+#define STAGE_SMASTER        4
+#define STAGE_STARTCONTAINER 5
 
-unsigned char execute = SCONTAINER_STAGE1;
+unsigned char execute = STAGE_PREPARESTARTUP;
 pid_t stage_pid;
 char *sruntime;
 
@@ -469,6 +469,12 @@ void do_exit(int sig) {
     exit(1);
 }
 
+// prepare_configuration will prepare the c/engine configurations via PrepareConfig
+// stage of container execution (Previously scontainer stage1)
+//int prepare_configuration(cConfig *c_config, char *engine_config_json) {
+//  
+//}
+
 __attribute__((constructor)) static void init(void) {
     char *env[8] = {0};
     uid_t uid = getuid();
@@ -610,7 +616,7 @@ __attribute__((constructor)) static void init(void) {
          */
         if ( config.isSuid || geteuid() == 0 ) {
             priv_escalate();
-            prepare_scontainer_stage(SCONTAINER_STAGE1);
+            prepare_scontainer_stage(STAGE_PREPARESTARTUP);
         }
 
         return;
@@ -880,10 +886,10 @@ __attribute__((constructor)) static void init(void) {
 
         if ( config.mntPid == 0 ) {
             singularity_message(VERBOSE, "Spawn RPC server\n");
-            execute = RPC_SERVER;
+            execute = STAGE_STARTCONTAINER;
         } else {
             singularity_message(VERBOSE, "Don't execute RPC server, joining instance\n");
-            prepare_scontainer_stage(SCONTAINER_STAGE2);
+            prepare_scontainer_stage(STAGE_JOINCONTAINER);
         }
         return;
     } else if ( stage_pid > 0 ) {
@@ -923,7 +929,7 @@ __attribute__((constructor)) static void init(void) {
                 singularity_message(ERROR, "Failed to drop privileges\n");
                 exit(1);
             }
-            execute = SMASTER;
+            execute = STAGE_SMASTER;
             return;
         }
     }
