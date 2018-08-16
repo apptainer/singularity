@@ -1,9 +1,9 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package types
 
 import (
 	"encoding/json"
@@ -115,17 +115,13 @@ var validHeaders = map[string]bool{
 
 // IsValidDefinition returns whether or not the given file is a valid definition
 func IsValidDefinition(source string) (valid bool, err error) {
-
 	defFile, err := os.Open(source)
 	if err != nil {
 		sylog.Fatalf("unable to open file %s: %v\n", source, err)
 	}
 	defer defFile.Close()
 
-	ok, err := canGetHeader(defFile)
-	if err != nil {
-		//sylog.Fatalf("failed to parse definition file %s: %v\n", source, err)
-	}
+	ok, _ := canGetHeader(defFile)
 
 	return ok, nil
 }

@@ -1,19 +1,21 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"os"
 	"os/exec"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
-const archDef = "./testdata_good/arch/arch"
+const archDef = "../testdata_good/arch/arch"
 
 func TestArchConveyor(t *testing.T) {
 
@@ -33,23 +35,22 @@ func TestArchConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
-	ac := &ArchConveyor{}
+	cp := &sources.ArchConveyorPacker{}
 
-	err = ac.Get(def)
+	err = cp.Get(def)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(ac.tmpfs)
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
 }
 
 func TestArchPacker(t *testing.T) {
-
 	if _, err := exec.LookPath("pacstrap"); err != nil {
 		t.Skip("skipping test, pacstrap not installed")
 	}
@@ -62,21 +63,21 @@ func TestArchPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
-	acp := &ArchConveyorPacker{}
+	cp := &sources.ArchConveyorPacker{}
 
-	err = acp.Get(def)
+	err = cp.Get(def)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(acp.tmpfs)
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
 
-	_, err = acp.Pack()
+	_, err = cp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", archDef, err)
 	}

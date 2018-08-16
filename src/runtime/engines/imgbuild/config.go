@@ -8,7 +8,7 @@ package imgbuild
 import (
 	"encoding/json"
 
-	"github.com/singularityware/singularity/src/pkg/build"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 )
 
 // Name of the engine
@@ -17,7 +17,7 @@ const Name = "imgbuild"
 // EngineConfig is the config for the Singularity engine used to run a minimal image
 // during image build process
 type EngineConfig struct {
-	build.Bundle
+	types.Bundle
 }
 
 // MarshalJSON implements json.Marshaler interface

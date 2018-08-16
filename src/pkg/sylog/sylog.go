@@ -147,3 +147,8 @@ func Verbosef(format string, a ...interface{}) {
 func Debugf(format string, a ...interface{}) {
 	writef(debug, format, a...)
 }
+
+// GetLevel returns the current log level as integer
+func GetLevel() int {
+	return int(loggerLevel)
+}

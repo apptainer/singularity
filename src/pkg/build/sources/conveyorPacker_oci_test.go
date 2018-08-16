@@ -1,9 +1,9 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"io"
@@ -14,6 +14,8 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -29,20 +31,19 @@ func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(dockerURI)
+	def, err := types.NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
-	oc := &OCIConveyor{}
+	cp := &sources.OCIConveyorPacker{}
 
-	if err := oc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(oc.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyorDockerArchive tests if we can use a docker save archive
@@ -58,20 +59,19 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	defer os.Remove(archive)
 
 	archiveURI := "docker-archive:" + archive
-	def, err := NewDefinitionFromURI(archiveURI)
+	def, err := types.NewDefinitionFromURI(archiveURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
 
-	oc := &OCIConveyor{}
+	cp := &sources.OCIConveyorPacker{}
 
-	if err := oc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(oc.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyerDockerDaemon tests if we can use an oci laytout dir
@@ -95,20 +95,19 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 	}
 
 	daemonURI := "docker-daemon:" + dockerDaemonImage
-	def, err := NewDefinitionFromURI(daemonURI)
+	def, err := types.NewDefinitionFromURI(daemonURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", daemonURI, err)
 	}
 
-	oc := &OCIConveyor{}
+	cp := &sources.OCIConveyorPacker{}
 
-	if err := oc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(oc.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", daemonURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyorOCIArchive tests if we can use an oci archive
@@ -124,20 +123,19 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	defer os.Remove(archive)
 
 	archiveURI := "oci-archive:" + archive
-	def, err := NewDefinitionFromURI(archiveURI)
+	def, err := types.NewDefinitionFromURI(archiveURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
 
-	oc := &OCIConveyor{}
+	cp := &sources.OCIConveyorPacker{}
 
-	if err := oc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(oc.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIConveyerOCILayout tests if we can use an oci layout dir
@@ -166,20 +164,19 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	}
 
 	layoutURI := "oci:" + dir
-	def, err := NewDefinitionFromURI(layoutURI)
+	def, err := types.NewDefinitionFromURI(layoutURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", layoutURI, err)
 	}
 
-	oc := &OCIConveyor{}
+	cp := &sources.OCIConveyorPacker{}
 
-	if err := oc.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(oc.tmpfs)
+	err = cp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer cp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", layoutURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	os.RemoveAll(oc.tmpfs)
 }
 
 // TestOCIPacker checks if we can create a Kitchen
@@ -187,20 +184,19 @@ func TestOCIPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(dockerURI)
+	def, err := types.NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
-	ocp := &OCIConveyorPacker{}
+	ocp := &sources.OCIConveyorPacker{}
 
-	if err := ocp.Get(def); err != nil {
-		//clean up tmpfs since assembler isnt called
-		os.RemoveAll(ocp.tmpfs)
+	err = ocp.Get(def)
+	//clean up tmpfs since assembler isnt called
+	defer ocp.CleanUp()
+	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
 	}
-	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(ocp.tmpfs)
 
 	_, err = ocp.Pack()
 

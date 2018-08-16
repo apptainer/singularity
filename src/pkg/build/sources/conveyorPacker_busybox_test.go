@@ -1,18 +1,20 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"os"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
-const busyBoxDef = "./testdata_good/busybox/busybox"
+const busyBoxDef = "../testdata_good/busybox/busybox"
 
 func TestBusyBoxConveyor(t *testing.T) {
 
@@ -29,24 +31,22 @@ func TestBusyBoxConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
-	bc := &BusyBoxConveyor{}
+	c := &sources.BusyBoxConveyor{}
 
-	err = bc.Get(def)
+	err = c.Get(def)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(bc.tmpfs)
+	defer c.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
 	}
-
 }
 
 func TestBusyBoxPacker(t *testing.T) {
-
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -56,21 +56,21 @@ func TestBusyBoxPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
-	bcp := &BusyBoxConveyorPacker{}
+	cp := &sources.BusyBoxConveyorPacker{}
 
-	err = bcp.Get(def)
+	err = cp.Get(def)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(bcp.tmpfs)
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", busyBoxDef, err)
 	}
 
-	_, err = bcp.Pack()
+	_, err = cp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", busyBoxDef, err)
 	}

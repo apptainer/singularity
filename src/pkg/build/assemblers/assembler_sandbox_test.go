@@ -3,12 +3,15 @@
 // LICENSE file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package assemblers_test
 
 import (
 	"os"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/assemblers"
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -22,12 +25,12 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(assemblerDockerURI)
+	def, err := types.NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
 	}
 
-	ocp := &OCIConveyorPacker{}
+	ocp := &sources.OCIConveyorPacker{}
 
 	if err := ocp.Get(def); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerDockerURI, err)
@@ -38,7 +41,7 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	a := &SandboxAssembler{}
+	a := &assemblers.SandboxAssembler{}
 
 	err = a.Assemble(b, assemblerDockerDestDir)
 	if err != nil {
@@ -51,12 +54,12 @@ func TestSandboxAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(assemblerShubURI)
+	def, err := types.NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerShubURI, err)
 	}
 
-	scp := &ShubConveyorPacker{}
+	scp := &sources.ShubConveyorPacker{}
 
 	if err := scp.Get(def); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerShubURI, err)
@@ -67,7 +70,7 @@ func TestSandboxAssemblerShub(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerShubURI, err)
 	}
 
-	a := &SIFAssembler{}
+	a := &assemblers.SIFAssembler{}
 
 	err = a.Assemble(b, assemblerShubDestDir)
 	if err != nil {

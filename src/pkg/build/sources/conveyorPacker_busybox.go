@@ -1,9 +1,9 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources
 
 import (
 	"fmt"
@@ -14,15 +14,14 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // BusyBoxConveyor only needs to hold the conveyor to have the needed data to pack
 type BusyBoxConveyor struct {
-	recipe Definition
-	src    string
-	tmpfs  string
-	b      *Bundle
+	recipe types.Definition
+	b      *types.Bundle
 }
 
 // BusyBoxConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -31,11 +30,10 @@ type BusyBoxConveyorPacker struct {
 }
 
 // Get just stores the source
-func (c *BusyBoxConveyor) Get(recipe Definition) (err error) {
-
+func (c *BusyBoxConveyor) Get(recipe types.Definition) (err error) {
 	c.recipe = recipe
 
-	c.b, err = NewBundle("")
+	c.b, err = types.NewBundle("sbuild-busybox")
 	if err != nil {
 		return
 	}
@@ -74,8 +72,7 @@ func (c *BusyBoxConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *BusyBoxConveyorPacker) Pack() (b *Bundle, err error) {
-
+func (cp *BusyBoxConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertRunScript()
 	if err != nil {
 		return nil, fmt.Errorf("While inserting base environment: %v", err)
@@ -87,7 +84,6 @@ func (cp *BusyBoxConveyorPacker) Pack() (b *Bundle, err error) {
 }
 
 func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
-
 	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0664)
 	if err != nil {
 		return
@@ -107,7 +103,6 @@ func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
-
 	os.Mkdir(filepath.Join(c.b.Rootfs(), "/bin"), 0755)
 
 	resp, err := http.Get(mirrorurl)
@@ -148,11 +143,15 @@ func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
 }
 
 func (cp *BusyBoxConveyorPacker) insertRunScript() (err error) {
-
 	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
 
 	return nil
+}
+
+// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+func (c *BusyBoxConveyor) CleanUp() {
+	os.RemoveAll(c.b.Path)
 }

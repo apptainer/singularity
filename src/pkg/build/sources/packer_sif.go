@@ -1,9 +1,9 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	"github.com/sylabs/sif/pkg/sif"
@@ -20,29 +21,24 @@ import (
 // SIFPacker holds the locations of where to pack from and to
 type SIFPacker struct {
 	srcfile string
-	tmpfs   string
+	b       *types.Bundle
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *SIFPacker) Pack() (b *Bundle, err error) {
+func (p *SIFPacker) Pack() (*types.Bundle, error) {
 
-	b, err = NewBundle(p.tmpfs)
-	if err != nil {
-		return
-	}
-
-	err = p.unpackSIF(b, p.srcfile)
+	err := p.unpackSIF(p.b, p.srcfile)
 	if err != nil {
 		sylog.Errorf("unpackSIF Failed", err.Error())
 		return nil, err
 	}
 
-	return b, nil
+	return p.b, nil
 }
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files
 // unpackSIF parses throught the sif file and places each component in the sandbox
-func (p *SIFPacker) unpackSIF(b *Bundle, rootfs string) (err error) {
+func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 
 	// load the container
 	fimg, err := sif.LoadContainer(rootfs, true)

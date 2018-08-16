@@ -1,16 +1,16 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package types
 
 import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
-	"time"
+
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // Bundle is the temporary build environment used during the image
@@ -38,18 +38,18 @@ type Bundle struct {
 }
 
 // NewBundle creates a Bundle environment
-// TODO: choose appropriate location for TempDir, currently using /tmp
-func NewBundle(rootfs string) (b *Bundle, err error) {
+func NewBundle(directoryPrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
 
-	if rootfs == "" {
-		b.Path, err = ioutil.TempDir("", "sbuild-"+strconv.FormatInt(time.Now().Unix(), 10)+"-")
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		b.Path = rootfs
+	if directoryPrefix == "" {
+		directoryPrefix = "sbuild-"
 	}
+
+	b.Path, err = ioutil.TempDir("", directoryPrefix+"-")
+	if err != nil {
+		return nil, err
+	}
+	sylog.Debugf("Created temporary directory for bundle %v\n", b.Path)
 
 	b.FSObjects = map[string]string{
 		"rootfs": "fs",
