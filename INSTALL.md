@@ -59,8 +59,7 @@ $ go get -u -v github.com/golang/dep/cmd/dep
 
 ## Compile the Singularity binary
 Now you are ready to build Singularity. Dependencies will be automatically
-downloaded using the previously installed dep via a makefile rule generated
-by mconfig. You can build Singularity using the following commands:
+downloaded. You can build Singularity using the following commands:
 
 ```
 $ cd $GOPATH/src/github.com/singularityware/singularity
