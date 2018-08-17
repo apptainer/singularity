@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -27,20 +28,22 @@ const (
 func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
 	var msg = new(bytes.Buffer)
 
-	parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	// for now signing is done on the primary partition
+	part, _, err := fimg.GetPartPrimSys()
 	if err != nil {
 		return nil, err
 	}
 
-	sum := sha512.Sum384(fimg.Filedata[parts[0].Fileoff : parts[0].Fileoff+parts[0].Filelen])
+	sum := sha512.Sum384(fimg.Filedata[part.Fileoff : part.Fileoff+part.Filelen])
 
 	fmt.Fprintf(msg, "SIFHASH:\n%x", sum)
 
 	return msg, nil
 }
 
+// adds a signature block for the primary partition
 func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte) error {
-	parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	part, _, err := fimg.GetPartPrimSys()
 	if err != nil {
 		return err
 	}
@@ -49,22 +52,16 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
 		Groupid:  sif.DescrDefaultGroup,
-		Link:     parts[0].ID,
+		Link:     part.ID,
 		Fname:    "part-signature",
 		Data:     signature,
 	}
 	siginput.Size = int64(binary.Size(siginput.Data))
 
 	// extra data needed for the creation of a signature descriptor
-	siginfo := sif.Signature{
-		Hashtype: sif.HashSHA384,
-		Entity:   [sif.DescrEntityLen]byte{},
-	}
-	copy(siginfo.Entity[:], fingerprint[:])
-
-	// serialize the signature data for integration with the base descriptor input
-	if err := binary.Write(&siginput.Extra, binary.LittleEndian, siginfo); err != nil {
-		return fmt.Errorf("binary encoding siginput.Extra: %s", err)
+	err = siginput.SetSignExtra(sif.HashSHA384, hex.EncodeToString(fingerprint[:]))
+	if err != nil {
+		return err
 	}
 
 	// add new signature data object to SIF file
@@ -152,12 +149,12 @@ func Verify(cpath, authToken string) error {
 		return err
 	}
 
-	parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	part, _, err := fimg.GetPartPrimSys()
 	if err != nil {
-		return fmt.Errorf("no system partition found: %s", err)
+		return err
 	}
 
-	sigs, _, err := fimg.GetFromLinkedDescr(parts[0].ID)
+	sigs, _, err := fimg.GetFromLinkedDescr(part.ID)
 	if err != nil {
 		return fmt.Errorf("no signature found for system partition: %s", err)
 	}

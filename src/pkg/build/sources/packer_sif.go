@@ -48,24 +48,15 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 	}
 	defer fimg.UnloadContainer()
 
-	// Get the default system partition image as rootfs
-	rootfsParts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+	// Get the default system partition image as rootfs part
+	part, _, err := fimg.GetPartPrimSys()
 	if err != nil {
 		return err
-	}
-
-	// Check that this is a system partition
-	parttype, err := rootfsParts[0].GetPartType()
-	if err != nil {
-		return err
-	}
-	if parttype != sif.PartSystem {
-		return fmt.Errorf("Default partition is not system")
 	}
 
 	// record the fs type
 	mountType := ""
-	fstype, err := rootfsParts[0].GetFsType()
+	fstype, err := part.GetFsType()
 	if err != nil {
 		return err
 	}
@@ -78,8 +69,8 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 	}
 
 	info := &loop.Info64{
-		Offset:    uint64(rootfsParts[0].Fileoff),
-		SizeLimit: uint64(rootfsParts[0].Filelen),
+		Offset:    uint64(part.Fileoff),
+		SizeLimit: uint64(part.Filelen),
 		Flags:     loop.FlagsAutoClear,
 	}
 
