@@ -15,11 +15,15 @@ package user
 #include <grp.h>
 
 #ifndef uid_t
+#ifndef __uid_t_defined
 typedef uid_t __uid_t;
+#endif
 #endif
 
 #ifndef gid_t
+#ifndef __gid_t_defined
 typedef gid_t __gid_t;
+#endif
 #endif
 */
 import "C"
