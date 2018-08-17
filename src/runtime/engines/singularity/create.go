@@ -27,5 +27,5 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("failed to initialiaze RPC client")
 	}
 
-	return create(engine, rpcOps)
+	return create(engine, rpcOps, pid)
 }
