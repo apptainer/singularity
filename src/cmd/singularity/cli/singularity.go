@@ -61,11 +61,30 @@ func init() {
 	SingularityCmd.AddCommand(VersionCmd)
 }
 
+func setSylogMessageLevel(cmd *cobra.Command, args []string) {
+	var level int
+
+	if debug {
+		level = 5
+	} else if verbose {
+		level = 4
+	} else if quiet {
+		level = -1
+	} else if silent {
+		level = -3
+	} else {
+		level = 1
+	}
+
+	sylog.SetLevel(level)
+}
+
 // SingularityCmd is the base command when called without any subcommands
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	Run: nil,
+	PersistentPreRun:      setSylogMessageLevel,
+	Run:                   nil,
 
 	Use:     docs.SingularityUse,
 	Version: fmt.Sprintf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION),
