@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -122,11 +123,12 @@ func askQuestion(question string) (string, error) {
 func DirPath() string {
 	user, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
-		sylog.Errorf("could lookup user's real home folder %s\n", err)
-		return ""
+		sylog.Warningf("could lookup user's real home folder %s\n", err)
+		sylog.Warningf("using current directory for %s\n", filepath.Join(".singularity", "sypgp"))
+		return filepath.Join(".singularity", "sypgp")
 	}
 
-	return filepath.Join(user.Dir, ".singularity/sypgp")
+	return filepath.Join(user.Dir, ".singularity", "sypgp")
 }
 
 // SecretPath returns a string describing the path to the private keys store
@@ -336,12 +338,9 @@ func GenKeyPair() error {
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
-		fmt.Print("Enter key passphrase: ")
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Scan()
-		pass := scanner.Text()
-		if err := scanner.Err(); err != nil {
-			return err
+		pass, err := askQuestion("Enter key passphrase: ")
+		if err != nil {
+			return nil
 		}
 
 		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
@@ -353,40 +352,48 @@ func DecryptKey(k *openpgp.Entity) error {
 
 // SelectPubKey prints a public key list to user and returns the choice
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	var index int
-
 	PrintPubKeyring()
-	fmt.Print("Enter # of public key to use : ")
-	n, err := fmt.Scanf("%d", &index)
-	if err != nil || n != 1 {
+
+	index, err := askQuestion("Enter # of public key to use : ")
+	if err != nil {
+		return nil, err
+	}
+	if index == "" {
+		return nil, fmt.Errorf("invalid key choice")
+	}
+	i, err := strconv.ParseUint(index, 10, 32)
+	if err != nil {
 		return nil, err
 	}
 
-	if index < 0 || index > len(el)-1 {
-		fmt.Println("invalid key choice")
+	if i < 0 || i > uint64(len(el))-1 {
 		return nil, fmt.Errorf("invalid key choice")
 	}
 
-	return el[index], nil
+	return el[i], nil
 }
 
 // SelectPrivKey prints a secret key list to user and returns the choice
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	var index int
-
 	PrintPrivKeyring()
-	fmt.Print("Enter # of signing key to use : ")
-	n, err := fmt.Scanf("%d", &index)
-	if err != nil || n != 1 {
+
+	index, err := askQuestion("Enter # of signing key to use : ")
+	if err != nil {
+		return nil, err
+	}
+	if index == "" {
+		return nil, fmt.Errorf("invalid key choice")
+	}
+	i, err := strconv.ParseUint(index, 10, 32)
+	if err != nil {
 		return nil, err
 	}
 
-	if index < 0 || index > len(el)-1 {
-		fmt.Println("invalid key choice")
+	if i < 0 || i > uint64(len(el))-1 {
 		return nil, fmt.Errorf("invalid key choice")
 	}
 
-	return el[index], nil
+	return el[i], nil
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
