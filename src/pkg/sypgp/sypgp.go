@@ -106,6 +106,18 @@ func printSignatures(entity *openpgp.Entity) error {
 	return nil
 }
 
+// askQuestion prompts the user with a question and return the response
+func askQuestion(question string) (string, error) {
+	fmt.Print(question)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	response := scanner.Text()
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return response, nil
+}
+
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
 	user, err := user.GetPwUID(uint32(os.Getuid()))
@@ -129,22 +141,59 @@ func PublicPath() string {
 
 // PathsCheck creates the sypgp home folder, secret and public keyring files
 func PathsCheck() error {
+	// create the sypgp base directory
 	if err := os.MkdirAll(DirPath(), 0700); err != nil {
 		return err
 	}
 
+	dirinfo, err := os.Stat(DirPath())
+	if err != nil {
+		return err
+	}
+	if dirinfo.Mode() != os.ModeDir|0700 {
+		sylog.Warningf("directory mode (%v) on %v needs to be 0700, fixing that...", dirinfo.Mode(), DirPath())
+		if err = os.Chmod(DirPath(), 0700); err != nil {
+			return err
+		}
+	}
+
+	// create or open the secret OpenPGP key cache file
 	fs, err := os.OpenFile(SecretPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}
-	fs.Close()
+	defer fs.Close()
 
+	// check and fix permissions (secret cache file)
+	fsinfo, err := fs.Stat()
+	if err != nil {
+		return err
+	}
+	if fsinfo.Mode() != 0600 {
+		sylog.Warningf("file mode (%v) on %v needs to be 0600, fixing that...", fsinfo.Mode(), SecretPath())
+		if err = fs.Chmod(0600); err != nil {
+			return err
+		}
+	}
+
+	// create or open the public OpenPGP key cache file
 	fp, err := os.OpenFile(PublicPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return err
 	}
-	fp.Close()
+	defer fp.Close()
 
+	// check and fix permissions (public cache file)
+	fpinfo, err := fp.Stat()
+	if err != nil {
+		return err
+	}
+	if fpinfo.Mode() != 0600 {
+		sylog.Warningf("file mode (%v) on %v needs to be 0600, fixing that...", fpinfo.Mode(), PublicPath())
+		if err = fp.Chmod(0600); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
