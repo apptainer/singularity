@@ -288,25 +288,18 @@ func GenKeyPair() error {
 		return err
 	}
 
-	fmt.Print("Enter your name (e.g., John Doe) : ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	name := scanner.Text()
-	if err := scanner.Err(); err != nil {
+	name, err := askQuestion("Enter your name (e.g., John Doe) : ")
+	if err != nil {
 		return err
 	}
 
-	fmt.Print("Enter your email address (e.g., john.doe@example.com) : ")
-	scanner.Scan()
-	email := scanner.Text()
-	if err := scanner.Err(); err != nil {
+	email, err := askQuestion("Enter your email address (e.g., john.doe@example.com) : ")
+	if err != nil {
 		return err
 	}
 
-	fmt.Print("Enter optional comment (e.g., development keys) : ")
-	scanner.Scan()
-	comment := scanner.Text()
-	if err := scanner.Err(); err != nil {
+	comment, err := askQuestion("Enter optional comment (e.g., development keys) : ")
+	if err != nil {
 		return err
 	}
 
