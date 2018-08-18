@@ -107,8 +107,8 @@ func printSignatures(entity *openpgp.Entity) error {
 	return nil
 }
 
-// askQuestion prompts the user with a question and return the response
-func askQuestion(question string) (string, error) {
+// AskQuestion prompts the user with a question and return the response
+func AskQuestion(question string) (string, error) {
 	fmt.Print(question)
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
@@ -290,17 +290,17 @@ func GenKeyPair() error {
 		return err
 	}
 
-	name, err := askQuestion("Enter your name (e.g., John Doe) : ")
+	name, err := AskQuestion("Enter your name (e.g., John Doe) : ")
 	if err != nil {
 		return err
 	}
 
-	email, err := askQuestion("Enter your email address (e.g., john.doe@example.com) : ")
+	email, err := AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
 	if err != nil {
 		return err
 	}
 
-	comment, err := askQuestion("Enter optional comment (e.g., development keys) : ")
+	comment, err := AskQuestion("Enter optional comment (e.g., development keys) : ")
 	if err != nil {
 		return err
 	}
@@ -338,7 +338,7 @@ func GenKeyPair() error {
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
-		pass, err := askQuestion("Enter key passphrase: ")
+		pass, err := AskQuestion("Enter key passphrase: ")
 		if err != nil {
 			return nil
 		}
@@ -354,7 +354,7 @@ func DecryptKey(k *openpgp.Entity) error {
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	PrintPubKeyring()
 
-	index, err := askQuestion("Enter # of public key to use : ")
+	index, err := AskQuestion("Enter # of public key to use : ")
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	PrintPrivKeyring()
 
-	index, err := askQuestion("Enter # of signing key to use : ")
+	index, err := AskQuestion("Enter # of signing key to use : ")
 	if err != nil {
 		return nil, err
 	}
