@@ -108,8 +108,8 @@ func printSignatures(entity *openpgp.Entity) error {
 }
 
 // AskQuestion prompts the user with a question and return the response
-func AskQuestion(question string) (string, error) {
-	fmt.Print(question)
+func AskQuestion(format string, a ...interface{}) (string, error) {
+	fmt.Printf(format, a...)
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
 	response := scanner.Text()
@@ -282,6 +282,34 @@ func PrintPrivKeyring() (err error) {
 	return
 }
 
+// StorePrivKey stores a private entity list into the local key cache
+func StorePrivKey(e *openpgp.Entity) (err error) {
+	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if err = e.SerializePrivate(f, nil); err != nil {
+		return
+	}
+	return
+}
+
+// StorePubKey stores a public key entity list into the local key cache
+func StorePubKey(e *openpgp.Entity) (err error) {
+	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if err = e.Serialize(f); err != nil {
+		return
+	}
+	return
+}
+
 // GenKeyPair generates a PGP key pair and store them in the sypgp home folder
 func GenKeyPair() (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
@@ -312,23 +340,11 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 	}
 	fmt.Println("Done")
 
-	fs, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
+	// Store key parts in local key caches
+	if err = StorePrivKey(entity); err != nil {
 		return
 	}
-	defer fs.Close()
-
-	if err = entity.SerializePrivate(fs, nil); err != nil {
-		return
-	}
-
-	fp, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		return
-	}
-	defer fp.Close()
-
-	if err = entity.Serialize(fp); err != nil {
+	if err = StorePubKey(entity); err != nil {
 		return
 	}
 

@@ -160,8 +160,6 @@ func Sign(cpath, authToken string) error {
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
 func Verify(cpath, authToken string) error {
-	var el openpgp.EntityList
-
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
@@ -196,7 +194,8 @@ func Verify(cpath, authToken string) error {
 		return fmt.Errorf("sif hash string mismatch -- don't use")
 	}
 
-	if el, err = sypgp.LoadPubKeyring(); err != nil {
+	elist, err := sypgp.LoadPubKeyring()
+	if err != nil {
 		return err
 	}
 
@@ -207,29 +206,47 @@ func Verify(cpath, authToken string) error {
 	}
 
 	// try to verify with local OpenPGP store first
-	var signer *openpgp.Entity
-	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
-		sylog.Errorf("failed to check signature: %s\n", err)
+	signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+	if err != nil {
 		// verification with local keyring failed, try to fetch from key server
-		sylog.Infof("contacting key management services for: %s\n", fingerprint)
-		syel, err := sypgp.FetchPubkey(fingerprint, defaultKeysServer, authToken)
+		sylog.Infof("key missing, searching SyCloud for KeyID: %s...", fingerprint[24:])
+		elist, err = sypgp.FetchPubkey(fingerprint, defaultKeysServer, authToken)
 		if err != nil {
 			return err
 		}
+		sylog.Infof("key retreived successfully!")
 
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			return fmt.Errorf("failed to decode clearsign message")
 		}
 
-		if signer, err = openpgp.CheckDetachedSignature(syel, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
+		// try verification again with downloaded key
+		signer, err = openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+		if err != nil {
 			return fmt.Errorf("signature verification failed: %s", err)
 		}
+
+		// Ask to store new public key
+		resp, err := sypgp.AskQuestion("Store new public key %X permanently? [Y/n] ", signer.PrimaryKey.KeyId)
+		if err != nil {
+			return err
+		}
+		if resp == "" || resp == "y" || resp == "Y" {
+			if err = sypgp.StorePubKey(elist[0]); err != nil {
+				return err
+			}
+		}
 	}
-	fmt.Print("Authentic and signed by:\n")
-	for _, i := range signer.Identities {
-		fmt.Printf("\t%s\n", i.Name)
+
+	fmt.Printf("Data integrity checked, authentic and signed by:\n")
+	// Get first Identity data for convenience
+	var name string
+	for _, v := range signer.Identities {
+		name = v.Name
+		break
 	}
+	fmt.Printf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 
 	return nil
 }
