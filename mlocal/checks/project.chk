@@ -10,7 +10,7 @@ echo "" > $makecond
 ########################
 # git version
 ########################
-git_version=`git describe --match 'v[0-9]*' --long --dirty --always`
+git_version=`git describe --match 'v[0-9]*' --dirty --always | sed -e "s/^v//"`
 
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
