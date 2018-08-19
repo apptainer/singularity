@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	keyserverURI = "https://keys.sylabs.io:11371"
+	defaultKeysServer = "https://keys.sylabs.io:11371"
 )
 
 func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
@@ -79,24 +79,48 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 // to a key server if enabled. This should be a separate step in the next round
 // of development.
 func Sign(cpath, authToken string) error {
-	var el openpgp.EntityList
-	var en *openpgp.Entity
-	var err error
-
-	if el, err = sypgp.LoadPrivKeyring(); err != nil {
+	elist, err := sypgp.LoadPrivKeyring()
+	if err != nil {
 		return err
-	} else if el == nil {
-		return fmt.Errorf("no private keys found in %s, run 'singularity keys newpair' to create keys", sypgp.SecretPath())
 	}
 
-	if len(el) > 1 {
-		if en, err = sypgp.SelectPrivKey(el); err != nil {
+	var entity *openpgp.Entity
+	if elist == nil {
+		resp, err := sypgp.AskQuestion("No OpenPGP signing keys found, autogenerate? [Y/n] ")
+		if err != nil {
 			return err
 		}
+		if resp == "" || resp == "y" || resp == "Y" {
+			entity, err = sypgp.GenKeyPair()
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("cannot sign without installed keys")
+		}
+		resp, err = sypgp.AskQuestion("Upload public key to Sylabs Cloud? [Y/n] ")
+		if err != nil {
+			return err
+		}
+		if resp == "" || resp == "y" || resp == "Y" {
+			if err = sypgp.PushPubkey(entity, defaultKeysServer, authToken); err != nil {
+				return err
+			}
+			fmt.Printf("Uploaded key with fingerprint %X successfully\n", entity.PrimaryKey.Fingerprint)
+		}
 	} else {
-		en = el[0]
+		if len(elist) > 1 {
+			entity, err = sypgp.SelectPrivKey(elist)
+			if err != nil {
+				return err
+			}
+		} else {
+			entity = elist[0]
+		}
 	}
-	sypgp.DecryptKey(en)
+
+	// Decrypt key is needed
+	sypgp.DecryptKey(entity)
 
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
@@ -111,7 +135,7 @@ func Sign(cpath, authToken string) error {
 	}
 
 	var signedmsg bytes.Buffer
-	plaintext, err := clearsign.Encode(&signedmsg, en.PrivateKey, nil)
+	plaintext, err := clearsign.Encode(&signedmsg, entity.PrivateKey, nil)
 	if err != nil {
 		return err
 	}
@@ -122,7 +146,8 @@ func Sign(cpath, authToken string) error {
 		return err
 	}
 
-	if err = sifAddSignature(en.PrimaryKey.Fingerprint, &fimg, signedmsg.Bytes()); err != nil {
+	err = sifAddSignature(entity.PrimaryKey.Fingerprint, &fimg, signedmsg.Bytes())
+	if err != nil {
 		return err
 	}
 
@@ -187,7 +212,7 @@ func Verify(cpath, authToken string) error {
 		sylog.Errorf("failed to check signature: %s\n", err)
 		// verification with local keyring failed, try to fetch from key server
 		sylog.Infof("contacting key management services for: %s\n", fingerprint)
-		syel, err := sypgp.FetchPubkey(fingerprint, keyserverURI, authToken)
+		syel, err := sypgp.FetchPubkey(fingerprint, defaultKeysServer, authToken)
 		if err != nil {
 			return err
 		}

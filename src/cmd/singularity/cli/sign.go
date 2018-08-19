@@ -33,6 +33,7 @@ var SignCmd = &cobra.Command{
 			sylog.Errorf("signing container failed: %s", err)
 			os.Exit(2)
 		}
+		fmt.Printf("Signature created and applied to %v\n", args[0])
 	},
 
 	Use:     docs.SignUse,

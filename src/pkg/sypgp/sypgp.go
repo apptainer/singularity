@@ -283,56 +283,56 @@ func PrintPrivKeyring() (err error) {
 }
 
 // GenKeyPair generates a PGP key pair and store them in the sypgp home folder
-func GenKeyPair() error {
+func GenKeyPair() (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	if err := PathsCheck(); err != nil {
-		return err
+	if err = PathsCheck(); err != nil {
+		return
 	}
 
 	name, err := AskQuestion("Enter your name (e.g., John Doe) : ")
 	if err != nil {
-		return err
+		return
 	}
 
 	email, err := AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
 	if err != nil {
-		return err
+		return
 	}
 
 	comment, err := AskQuestion("Enter optional comment (e.g., development keys) : ")
 	if err != nil {
-		return err
+		return
 	}
 
 	fmt.Print("Generating Entity and PGP Key Pair... ")
-	entity, err := openpgp.NewEntity(name, comment, email, conf)
+	entity, err = openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
-		return err
+		return
 	}
 	fmt.Println("Done")
 
 	fs, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		return err
+		return
 	}
 	defer fs.Close()
 
 	if err = entity.SerializePrivate(fs, nil); err != nil {
-		return err
+		return
 	}
 
 	fp, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		return err
+		return
 	}
 	defer fp.Close()
 
 	if err = entity.Serialize(fp); err != nil {
-		return err
+		return
 	}
 
-	return nil
+	return
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
@@ -522,7 +522,7 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Key server did not accept PGP key")
+		return fmt.Errorf("Key server did not accept PGP key, HTTP status: %v", resp.StatusCode)
 	}
 
 	return nil
