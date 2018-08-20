@@ -112,6 +112,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
+	//insert definition
+	err = insertDefinition(b)
+	if err != nil {
+		return fmt.Errorf("While inserting definition: %v", err)
+	}
+
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		sylog.Errorf("mksquashfs is not installed on this system")

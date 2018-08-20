@@ -265,6 +265,44 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 		w.Write([]byte(ident))
 		w.Write([]byte("\n"))
 		w.Write([]byte(s))
+		w.Write([]byte("\n\n"))
+	}
+}
+
+func writeFilesIfExists(w io.Writer, f []FileTransport) {
+
+	if len(f) > 0 {
+
+		w.Write([]byte("%"))
+		w.Write([]byte("files"))
+		w.Write([]byte("\n"))
+
+		for _, ft := range f {
+			w.Write([]byte("\t"))
+			w.Write([]byte(ft.Src))
+			w.Write([]byte("\t"))
+			w.Write([]byte(ft.Dst))
+			w.Write([]byte("\n"))
+		}
+		w.Write([]byte("\n"))
+	}
+}
+
+func writeLabelsIfExists(w io.Writer, l map[string]string) {
+
+	if len(l) > 0 {
+
+		w.Write([]byte("%"))
+		w.Write([]byte("labels"))
+		w.Write([]byte("\n"))
+
+		for k, v := range l {
+			w.Write([]byte("\t"))
+			w.Write([]byte(k))
+			w.Write([]byte(" "))
+			w.Write([]byte(v))
+			w.Write([]byte("\n"))
+		}
 		w.Write([]byte("\n"))
 	}
 }
@@ -278,6 +316,10 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 		w.Write([]byte(v))
 		w.Write([]byte("\n"))
 	}
+	w.Write([]byte("\n"))
+
+	writeLabelsIfExists(w, d.ImageData.Labels)
+	writeFilesIfExists(w, d.BuildData.Files)
 
 	writeSectionIfExists(w, "help", d.ImageData.Help)
 	writeSectionIfExists(w, "environment", d.ImageData.Environment)

@@ -60,6 +60,12 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
+	//insert definition
+	err = insertDefinition(b)
+	if err != nil {
+		return fmt.Errorf("While inserting definition: %v", err)
+	}
+
 	//move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
 	if err := os.Rename(b.Rootfs(), path); err != nil {
@@ -93,6 +99,22 @@ func insertStartScript(b *types.Bundle) error {
 func insertTestScript(b *types.Bundle) error {
 	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
 	return err
+}
+
+func insertDefinition(b *types.Bundle) error {
+	f, err := os.Create(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"))
+	if err != nil {
+		return err
+	}
+
+	err = f.Chmod(0644)
+	if err != nil {
+		return err
+	}
+
+	b.Recipe.WriteDefinitionFile(f)
+
+	return nil
 }
 
 func insertLabelsJSON(b *types.Bundle) error {
