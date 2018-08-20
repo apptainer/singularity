@@ -25,8 +25,8 @@ type Definition struct {
 // ImageData contains any scripts, metadata, etc... that needs to be
 // present in some from in the final built image
 type ImageData struct {
-	Metadata     []byte   `json:"metadata"`
-	Labels       []string `json:"labels"`
+	Metadata     []byte            `json:"metadata"`
+	Labels       map[string]string `json:"labels"`
 	ImageScripts `json:"imageScripts"`
 }
 
@@ -41,8 +41,14 @@ type ImageScripts struct {
 // Data contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
 type Data struct {
-	Files   map[string]string `json:"files"`
+	Files   []FileTransport `json:"files"`
 	Scripts `json:"buildScripts"`
+}
+
+// FileTransport holds source and destination information of files to copy into the container
+type FileTransport struct {
+	Src string `json:"source"`
+	Dst string `json:"destination"`
 }
 
 // Scripts defines scripts that are used at build time.
@@ -50,6 +56,7 @@ type Scripts struct {
 	Pre   string `json:"pre"`
 	Setup string `json:"setup"`
 	Post  string `json:"post"`
+	Test  string `json:"test"`
 }
 
 // NewDefinitionFromURI crafts a new Definition given a URI

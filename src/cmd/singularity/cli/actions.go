@@ -71,8 +71,8 @@ var ExecCmd = &cobra.Command{
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		command := addArgs(execCommand, args[1:])
+		execWrapper(cmd, args[0], command)
 	},
 
 	Use:     docs.ExecUse,
@@ -87,8 +87,8 @@ var ShellCmd = &cobra.Command{
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		command := addArgs(shellCommand, args[1:])
+		execWrapper(cmd, args[0], command)
 	},
 
 	Use:     docs.ShellUse,
@@ -103,8 +103,8 @@ var RunCmd = &cobra.Command{
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		command := addArgs(runCommand, args[1:])
+		execWrapper(cmd, args[0], command)
 	},
 
 	Use:     docs.RunUse,
@@ -231,3 +231,70 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		sylog.Fatalf("%s", err)
 	}
 }
+
+func addArgs(command string, args []string) []string {
+	argString := strings.Join(args, " ")
+	payload := strings.Replace(command, `"$@"`, argString, -1)
+	return []string{`/bin/sh`, "-c", payload}
+}
+
+const (
+	execCommand = `for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+exec "$@"
+`
+
+	runCommand = `for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+if test -n "${SINGULARITY_APPNAME:-}"; then
+
+    if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript"; then
+        exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript" "$@"
+    else
+        echo "No Singularity runscript for contained app: ${SINGULARITY_APPNAME:-}"
+        exit 1
+    fi
+
+elif test -x "/.singularity.d/runscript"; then
+    exec "/.singularity.d/runscript" "$@"
+else
+    echo "No Singularity runscript found, executing /bin/sh"
+    exec /bin/sh "$@"
+fi
+`
+
+	shellCommand = `for script in /.singularity.d/env/*.sh; do
+	if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+if test -n "$SINGULARITY_SHELL" -a -x "$SINGULARITY_SHELL"; then
+    exec $SINGULARITY_SHELL "$@"
+
+    echo "ERROR: Failed running shell as defined by '\$SINGULARITY_SHELL'" 1>&2
+    exit 1
+
+elif test -x /bin/bash; then
+    SHELL=/bin/bash
+    PS1="Singularity $SINGULARITY_CONTAINER:\\w> "
+    export SHELL PS1
+    exec /bin/bash --norc "$@"
+elif test -x /bin/sh; then
+    SHELL=/bin/sh
+    export SHELL
+    exec /bin/sh "$@"
+else
+    echo "ERROR: /bin/sh does not exist in container" 1>&2
+fi
+exit 1
+`
+)

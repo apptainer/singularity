@@ -33,6 +33,23 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 	sylog.Infof("Finished running %%post script. exit status 0\n")
 
+	// Run %test script here if its defined
+	// this also needs to consider the --notest flag from the CLI eventually
+	if e.EngineConfig.Recipe.BuildData.Test != "" {
+		test := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Test)
+		test.Stdout = os.Stdout
+		test.Stderr = os.Stderr
+
+		sylog.Infof("Running %%test script\n")
+		if err := test.Start(); err != nil {
+			sylog.Fatalf("failed to start %%test proc: %v\n", err)
+		}
+		if err := test.Wait(); err != nil {
+			sylog.Fatalf("test proc: %v\n", err)
+		}
+		sylog.Infof("Finished running %%test script. exit status 0\n")
+	}
+
 	os.Exit(0)
 	return nil
 }
