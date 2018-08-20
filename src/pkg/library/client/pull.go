@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -62,6 +63,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 
 	res, err := client.Do(req)
 	if err != nil {
