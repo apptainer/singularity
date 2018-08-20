@@ -76,6 +76,36 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
+	//insert help
+	err = insertHelpScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting help script: %v", err)
+	}
+
+	//insert labels
+	err = insertLabelsJSON(b)
+	if err != nil {
+		return fmt.Errorf("While inserting labels JSON: %v", err)
+	}
+
+	//append environment
+	err = insertEnvScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting environment script: %v", err)
+	}
+
+	//insert runscript
+	err = insertRunScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting runscript: %v", err)
+	}
+
+	//insert test script
+	err = insertTestScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting test script: %v", err)
+	}
+
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		sylog.Errorf("mksquashfs is not installed on this system")
