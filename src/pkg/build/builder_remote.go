@@ -18,33 +18,35 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/library/client"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 // RequestData contains the info necessary for submitting a build to a remote service
 type RequestData struct {
-	Definition  `json:"definition"`
-	LibraryRef  string `json:"libraryRef"`
-	LibraryURL  string `json:"libraryURL"`
-	CallbackURL string `json:"callbackURL"`
+	types.Definition `json:"definition"`
+	LibraryRef       string `json:"libraryRef"`
+	LibraryURL       string `json:"libraryURL"`
+	CallbackURL      string `json:"callbackURL"`
 }
 
 // ResponseData contains the details of an individual build
 type ResponseData struct {
-	ID            bson.ObjectId `json:"id"`
-	CreatedBy     string        `json:"createdBy"`
-	SubmitTime    time.Time     `json:"submitTime"`
-	StartTime     *time.Time    `json:"startTime,omitempty" bson:",omitempty"`
-	IsComplete    bool          `json:"isComplete"`
-	CompleteTime  *time.Time    `json:"completeTime,omitempty"`
-	ImageSize     int64         `json:"imageSize,omitempty"`
-	ImageChecksum string        `json:"imageChecksum,omitempty"`
-	Definition    Definition    `json:"definition"`
-	WSURL         string        `json:"wsURL,omitempty" bson:"-"`
-	LibraryRef    string        `json:"libraryRef"`
-	LibraryURL    string        `json:"libraryURL"`
-	CallbackURL   string        `json:"callbackURL"`
+	ID            bson.ObjectId    `json:"id"`
+	CreatedBy     string           `json:"createdBy"`
+	SubmitTime    time.Time        `json:"submitTime"`
+	StartTime     *time.Time       `json:"startTime,omitempty" bson:",omitempty"`
+	IsComplete    bool             `json:"isComplete"`
+	CompleteTime  *time.Time       `json:"completeTime,omitempty"`
+	ImageSize     int64            `json:"imageSize,omitempty"`
+	ImageChecksum string           `json:"imageChecksum,omitempty"`
+	Definition    types.Definition `json:"definition"`
+	WSURL         string           `json:"wsURL,omitempty" bson:"-"`
+	LibraryRef    string           `json:"libraryRef"`
+	LibraryURL    string           `json:"libraryURL"`
+	CallbackURL   string           `json:"callbackURL"`
 }
 
 // RemoteBuilder contains the build request and response
@@ -53,7 +55,7 @@ type RemoteBuilder struct {
 	ImagePath  string
 	Force      bool
 	LibraryURL string
-	Definition Definition
+	Definition types.Definition
 	IsDetached bool
 	BuilderURL *url.URL
 	AuthToken  string
@@ -66,7 +68,7 @@ func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewRemoteBuilder(imagePath, libraryURL string, d Definition, isDetached bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
+func NewRemoteBuilder(imagePath, libraryURL string, d types.Definition, isDetached bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
 	builderURL, err := url.Parse(builderAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse builder address")
@@ -147,6 +149,8 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err error) {
 	h := http.Header{}
 	rb.setAuthHeader(h)
+	h.Set("User-Agent", useragent.Value)
+
 	c, _, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
 		return err
@@ -181,7 +185,7 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 }
 
 // doBuildRequest creates a new build on a Remote Build Service
-func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, libraryRef string) (rd ResponseData, err error) {
+func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d types.Definition, libraryRef string) (rd ResponseData, err error) {
 	if libraryRef != "" && !client.IsLibraryPushRef(libraryRef) {
 		err = fmt.Errorf("invalid library reference: %v", rb.ImagePath)
 		sylog.Warningf("%v", err)
@@ -203,6 +207,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d Definition, libra
 	}
 	req = req.WithContext(ctx)
 	rb.setAuthHeader(req.Header)
+	req.Header.Set("User-Agent", useragent.Value)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := rb.Client.Do(req)
@@ -228,6 +233,7 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 	}
 	req = req.WithContext(ctx)
 	rb.setAuthHeader(req.Header)
+	req.Header.Set("User-Agent", useragent.Value)
 
 	res, err := rb.Client.Do(req)
 	if err != nil {

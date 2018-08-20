@@ -1,15 +1,16 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
-	"os"
 	"os/exec"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -25,7 +26,7 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	testDef := Definition{}
+	testDef := types.Definition{}
 
 	testDef.Header = map[string]string{
 		"bootstrap": "debootstrap",
@@ -34,11 +35,11 @@ func TestDebootstrapConveyor(t *testing.T) {
 		"include":   "apt python ",
 	}
 
-	dc := DebootstrapConveyor{}
+	cp := sources.DebootstrapConveyorPacker{}
 
-	err := dc.Get(testDef)
+	err := cp.Get(testDef)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(dc.tmpfs)
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
@@ -52,7 +53,7 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	testDef := Definition{}
+	testDef := types.Definition{}
 
 	testDef.Header = map[string]string{
 		"bootstrap": "debootstrap",
@@ -61,16 +62,16 @@ func TestDebootstrapPacker(t *testing.T) {
 		"include":   "apt python ",
 	}
 
-	dcp := DebootstrapConveyorPacker{}
+	cp := sources.DebootstrapConveyorPacker{}
 
-	err := dcp.Get(testDef)
+	err := cp.Get(testDef)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(dcp.tmpfs)
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
 	}
 
-	_, err = dcp.Pack()
+	_, err = cp.Pack()
 	if err != nil {
 		t.Fatalf("Debootstrap Pack failed: %v", err)
 	}

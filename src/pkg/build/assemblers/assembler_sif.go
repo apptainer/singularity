@@ -3,16 +3,17 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package assemblers
 
 import (
-	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 
 	"github.com/satori/go.uuid"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/sylabs/sif/pkg/sif"
 )
@@ -27,7 +28,6 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 		Pathname:   path,
 		Launchstr:  sif.HdrLaunch,
 		Sifversion: sif.HdrVersion,
-		Arch:       sif.HdrArchAMD64,
 		ID:         uuid.NewV4(),
 	}
 
@@ -49,22 +49,16 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 	}
 	parinput.Size = fi.Size()
 
-	// extra data needed for the creation of a partition descriptor
-	pinfo := sif.Partition{
-		Fstype:   sif.FsSquash,
-		Parttype: sif.PartSystem,
-	}
-
-	// serialize the partition data for integration with the base descriptor input
-	if err := binary.Write(&parinput.Extra, binary.LittleEndian, pinfo); err != nil {
-		return fmt.Errorf("while serializing pinfo: %s", err)
+	err = parinput.SetPartExtra(sif.FsSquash, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
+	if err != nil {
+		return
 	}
 
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
 	// test container creation with two partition input descriptors
-	if err := sif.CreateContainer(cinfo); err != nil {
+	if _, err := sif.CreateContainer(cinfo); err != nil {
 		return fmt.Errorf("while creating container: %s", err)
 	}
 
@@ -72,7 +66,7 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 }
 
 // Assemble creates a SIF image from a Bundle
-func (a *SIFAssembler) Assemble(b *Bundle, path string) (err error) {
+func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
 	mksquashfs, err := exec.LookPath("mksquashfs")

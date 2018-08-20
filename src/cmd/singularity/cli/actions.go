@@ -120,7 +120,6 @@ var RunCmd = &cobra.Command{
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execWrapper(cobraCmd *cobra.Command, image string, args []string, name string) {
 	progname := ""
-	lvl := "0"
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
@@ -239,13 +238,6 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	if verbose {
-		lvl = "2"
-	}
-	if debug {
-		lvl = "5"
-	}
-
 	if !IsCleanEnv {
 		for _, env := range os.Environ() {
 			e := strings.SplitN(env, "=", 2)
@@ -275,7 +267,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
-	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
+	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
 	cfg := &config.Common{
 		EngineName:   singularity.Name,

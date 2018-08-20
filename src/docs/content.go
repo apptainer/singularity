@@ -487,24 +487,23 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PullUse   string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
+	PullUse   string = `pull [pull options...] <URI://>`
 	PullShort string = `Pull a container from a URI`
 	PullLong  string = `
   SUPPORTED URIs:
   
     library: Pull an image from the currently configured library
-    shub: Pull an image using python from Singularity Hub to /home/vagrant/versioned/singularity
-    docker: Pull a docker image using python to /home/vagrant/versioned/singularity`
+      [library://[user[collection/[container[:tag]]]]]
+    shub: Pull an image from Singularity Hub to CWD
+      shub://user/image:tag
+     `
 	PullExample string = `
-  $ singularity pull docker://ubuntu:latest
-  
+  From Sylabs cloud library
+  $ singularity pull library://dtrudg/demo/alpine:latest
+
+  From Shub
   $ singularity pull shub://vsoch/singularity-images
-  Found image vsoch/singularity-images:mongo
-  Downloading image... vsoch-singularity-images-mongo.img
-  
-  $ singularity pull --name "meatballs.img" shub://vsoch/singularity-images
-  $ singularity pull --commit shub://vsoch/singularity-images
-  $ singularity pull --hash shub://vsoch/singularity-images`
+`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push

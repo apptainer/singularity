@@ -1,15 +1,16 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources_test
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/sources"
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -19,21 +20,25 @@ const (
 
 // TestShubConveyor tests if we can pull an image from singularity hub
 func TestShubConveyor(t *testing.T) {
+
+	if testing.Short() {
+		t.SkipNow()
+	}
+
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(shubURI)
+	def, err := types.NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
-	sc := &ShubConveyor{}
+	cp := &sources.ShubConveyorPacker{}
 
-	err = sc.Get(def)
+	err = cp.Get(def)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(sc.tmpfs)
+	defer cp.CleanUp()
 	if err != nil {
-
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
 }
@@ -43,18 +48,17 @@ func TestShubPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := NewDefinitionFromURI(shubURI)
+	def, err := types.NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
-	scp := &ShubConveyorPacker{}
+	scp := &sources.ShubConveyorPacker{}
 
 	err = scp.Get(def)
 	//clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(scp.tmpfs)
+	defer scp.CleanUp()
 	if err != nil {
-
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
 
@@ -99,7 +103,7 @@ func TestShubParser(t *testing.T) {
 
 	for _, uri := range validShubURIs {
 		fmt.Println("Starting parsing of: ", uri)
-		_, err := shubParseReference(uri)
+		_, err := sources.ShubParseReference(uri)
 		if err != nil {
 			t.Fatalf("failed to parse valid URI: %v %v", uri, err)
 		}
@@ -107,7 +111,7 @@ func TestShubParser(t *testing.T) {
 
 	for _, uri := range invalidShubURIs {
 		fmt.Println("Starting parsing of: ", uri)
-		_, err := shubParseReference(uri)
+		_, err := sources.ShubParseReference(uri)
 		if err == nil {
 			t.Fatalf("failed to catch invalid URI: %v %v", uri, err)
 		}

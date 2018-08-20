@@ -3,12 +3,12 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package assemblers
 
 import (
 	"os"
-	"os/exec"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -17,19 +17,12 @@ type SandboxAssembler struct {
 }
 
 // Assemble creates a Sandbox image from a Bundle
-func (a *SandboxAssembler) Assemble(b *Bundle, path string) (err error) {
+func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
-	//make sandbox dir
-	if err := os.MkdirAll(path, 0755); err != nil {
-		sylog.Errorf("Making sandbox directory Failed", err.Error())
-		return err
-	}
-
-	//copy bundle rootfs into sandboxdir
-	cmd := exec.Command("cp", "-r", b.Rootfs()+`/.`, path)
-	err = cmd.Run()
-	if err != nil {
+	//move bundle rootfs to sandboxdir as final sandbox
+	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
+	if err := os.Rename(b.Rootfs(), path); err != nil {
 		sylog.Errorf("Sandbox Assemble Failed", err.Error())
 		return err
 	}

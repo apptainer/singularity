@@ -1,9 +1,9 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources
 
 import (
 	"fmt"
@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
@@ -20,31 +21,26 @@ import (
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info
 type Ext3Packer struct {
 	srcfile string
-	tmpfs   string
+	b       *types.Bundle
 	info    *loop.Info64
 }
 
 // Pack puts relevant objects in a Bundle!
-func (p *Ext3Packer) Pack() (b *Bundle, err error) {
+func (p *Ext3Packer) Pack() (*types.Bundle, error) {
 	rootfs := p.srcfile
 
-	b, err = NewBundle(p.tmpfs)
-	if err != nil {
-		return
-	}
-
-	err = p.unpackExt3(b, p.info, rootfs)
+	err := p.unpackExt3(p.b, p.info, rootfs)
 	if err != nil {
 		sylog.Errorf("unpackExt3 Failed", err.Error())
 		return nil, err
 	}
 
-	return b, nil
+	return p.b, nil
 }
 
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle
-func (p *Ext3Packer) unpackExt3(b *Bundle, info *loop.Info64, rootfs string) (err error) {
-	tmpmnt, err := ioutil.TempDir(p.tmpfs, "mnt")
+func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
+	tmpmnt, err := ioutil.TempDir(p.b.Path, "mnt")
 
 	var number int
 	info.Flags = loop.FlagsAutoClear

@@ -1,12 +1,13 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -16,6 +17,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -53,22 +55,15 @@ var baseToSkip = map[string]bool{
 	"xfsprogs":           true,
 }
 
-// ArchConveyor only needs to hold the conveyor to have the needed data to pack
-type ArchConveyor struct {
-	recipe Definition
-	b      *Bundle
-	src    string
-	tmpfs  string
-}
-
 // ArchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ArchConveyorPacker struct {
-	ArchConveyor
+	recipe types.Definition
+	b      *types.Bundle
 }
 
 // Get just stores the source
-func (c *ArchConveyor) Get(recipe Definition) (err error) {
-	c.recipe = recipe
+func (cp *ArchConveyorPacker) Get(recipe types.Definition) (err error) {
+	cp.recipe = recipe
 
 	//check for pacstrap on system
 	pacstrapPath, err := exec.LookPath("pacstrap")
@@ -81,40 +76,36 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("%v architecture is not supported", arch)
 	}
 
-	c.tmpfs, err = ioutil.TempDir("", "temp-arch-")
+	//create bundle to build into
+	cp.b, err = types.NewBundle("sbuild-arch")
 	if err != nil {
 		return
 	}
 
-	c.b, err = NewBundle(c.tmpfs)
-	if err != nil {
-		return
-	}
-
-	instList, err := c.getInstList()
+	instList, err := getPacmanBaseList()
 	if err != nil {
 		return fmt.Errorf("While generating the installation list: %v", err)
 	}
 
-	pacConf, err := c.getPacConf(pacmanConfURL)
+	pacConf, err := cp.getPacConf(pacmanConfURL)
 	if err != nil {
 		return fmt.Errorf("While getting pacman config: %v", err)
 	}
 
-	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", c.b.Rootfs(), "haveged"}
+	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.Rootfs(), "haveged"}
 	args = append(args, instList...)
 
 	pacCmd := exec.Command(pacstrapPath, args...)
 	pacCmd.Stdout = os.Stdout
 	pacCmd.Stderr = os.Stderr
-	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, c.b.Rootfs(), instList)
+	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, cp.b.Rootfs(), instList)
 
 	if err = pacCmd.Run(); err != nil {
 		return fmt.Errorf("While pacstrapping: %v", err)
 	}
 
 	//Pacman package signing setup
-	cmd := exec.Command("arch-chroot", c.b.Rootfs(), "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
+	cmd := exec.Command("arch-chroot", cp.b.Rootfs(), "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
@@ -122,7 +113,7 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 	}
 
 	//Clean up haveged
-	cmd = exec.Command("arch-chroot", c.b.Rootfs(), "pacman", "-Rs", "--noconfirm", "haveged")
+	cmd = exec.Command("arch-chroot", cp.b.Rootfs(), "pacman", "-Rs", "--noconfirm", "haveged")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
@@ -133,8 +124,7 @@ func (c *ArchConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *ArchConveyorPacker) Pack() (b *Bundle, err error) {
-
+func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("While inserting base environment: %v", err)
@@ -150,25 +140,17 @@ func (cp *ArchConveyorPacker) Pack() (b *Bundle, err error) {
 	return cp.b, nil
 }
 
-func (c *ArchConveyor) getInstList() (instList []string, err error) {
+func getPacmanBaseList() (instList []string, err error) {
 
-	r, w, err := os.Pipe()
-	if err != nil {
+	output := &bytes.Buffer{}
+	cmd := exec.Command("pacman", "-Sgq", "base")
+	cmd.Stdout = output
+	if err = cmd.Run(); err != nil {
 		return
 	}
 
-	//feed command output(base packages list) into pipe while scanner reads from the other end
-	go func() {
-		cmd := exec.Command("pacman", "-Sgq", "base")
-		cmd.Stdout = w
-		defer w.Close()
-		if err = cmd.Run(); err != nil {
-			return
-		}
-	}()
-
 	var toInstall []string
-	scanner := bufio.NewScanner(r)
+	scanner := bufio.NewScanner(output)
 	scanner.Split(bufio.ScanWords)
 
 	for scanner.Scan() {
@@ -180,9 +162,8 @@ func (c *ArchConveyor) getInstList() (instList []string, err error) {
 	return toInstall, nil
 }
 
-func (c *ArchConveyor) getPacConf(pacmanConfURL string) (pacConf string, err error) {
-
-	pacConfFile, err := ioutil.TempFile(c.tmpfs, "pac-conf-")
+func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, err error) {
+	pacConfFile, err := ioutil.TempFile(cp.b.Rootfs(), "pac-conf-")
 	if err != nil {
 		return
 	}
@@ -214,11 +195,15 @@ func (cp *ArchConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *ArchConveyorPacker) insertRunScript() (err error) {
-
 	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
 
 	return nil
+}
+
+// CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem
+func (cp *ArchConveyorPacker) CleanUp() {
+	os.RemoveAll(cp.b.Path)
 }
