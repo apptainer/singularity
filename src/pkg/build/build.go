@@ -127,36 +127,6 @@ func (b *Build) Full() error {
 	return nil
 }
 
-// WithoutSections runs the build without running any section
-// func (b *Build) WithoutSections() error {
-// 	if _, err := b.Bundle(); err != nil {
-// 		return err
-// 	}
-
-// 	if err := b.Assemble(b.dest); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
-// WithSections runs a build but only runs the specified sections
-// func (b *Build) WithSections(sections []string) error {
-// 	if _, err := b.Bundle(); err != nil {
-// 		return err
-// 	}
-
-// 	if err := b.Sections(sections); err != nil {
-// 		return err
-// 	}
-
-// 	if err := b.Assemble(b.dest); err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }
-
 // AllSections runs all the sections in the definition
 func (b *Build) AllSections() error {
 	if syscall.Getuid() == 0 && hasScripts(b.d) {
@@ -173,12 +143,6 @@ func (b *Build) AllSections() error {
 
 	return nil
 }
-
-// Sections runs the list of sections specified by name in s
-// func (b *Build) Sections(s []string) error {
-
-// 	return fmt.Errorf("sections is unimplemented")
-// }
 
 // hasScripts returns true if build definition is requesting to run scripts in image
 func hasScripts(def types.Definition) bool {
