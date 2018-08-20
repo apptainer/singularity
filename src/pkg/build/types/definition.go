@@ -36,6 +36,7 @@ type ImageScripts struct {
 	Environment string `json:"environment"`
 	Runscript   string `json:"runScript"`
 	Test        string `json:"test"`
+	Startscript string `json:"startScript"`
 }
 
 // Data contains any scripts, metadata, etc... that the Builder may
@@ -107,6 +108,7 @@ var validSections = map[string]bool{
 	"post":        true,
 	"runscript":   true,
 	"test":        true,
+	"startscript": true,
 }
 
 // validHeaders just contains a list of all the valid headers a definition file

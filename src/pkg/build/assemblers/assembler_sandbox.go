@@ -48,6 +48,12 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting runscript: %v", err)
 	}
 
+	//insert startscript
+	err = insertStartScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting startscript: %v", err)
+	}
+
 	//insert test script
 	err = insertTestScript(b)
 	if err != nil {
@@ -90,14 +96,6 @@ func insertTestScript(b *types.Bundle) error {
 }
 
 func insertLabelsJSON(b *types.Bundle) error {
-
-	// text := "{\n"
-
-	// for key, val := range b.Recipe.ImageData.Labels {
-	// 	text += "    \"" + key + "\": \"" + val + "\"\n"
-	// }
-
-	// text += "}"
 
 	text, err := json.Marshal(b.Recipe.ImageData.Labels)
 	if err != nil {

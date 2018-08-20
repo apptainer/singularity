@@ -171,6 +171,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 			Environment: sections["environment"],
 			Runscript:   sections["runscript"],
 			Test:        sections["test"],
+			Startscript: sections["startscript"],
 		},
 		Labels: labels,
 	}
@@ -282,6 +283,7 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 	writeSectionIfExists(w, "environment", d.ImageData.Environment)
 	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
 	writeSectionIfExists(w, "test", d.ImageData.Test)
+	writeSectionIfExists(w, "startscript", d.ImageData.Startscript)
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)
