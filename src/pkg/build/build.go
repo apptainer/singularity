@@ -187,7 +187,6 @@ func hasScripts(def types.Definition) bool {
 
 // copyFiles ...
 func (b *Build) copyFiles() error {
-	fmt.Println(b.d.BuildData.Files)
 
 	//iterate through files transfers
 	for _, transfer := range b.d.BuildData.Files {
