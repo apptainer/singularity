@@ -87,7 +87,7 @@ var SingularityCmd = &cobra.Command{
 	Run:                   nil,
 
 	Use:     docs.SingularityUse,
-	Version: fmt.Sprintf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION),
+	Version: buildcfg.PACKAGE_VERSION,
 	Short:   docs.SingularityShort,
 	Long:    docs.SingularityLong,
 	Example: docs.SingularityExample,
@@ -115,7 +115,7 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 var VersionCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION)
+		fmt.Println(buildcfg.PACKAGE_VERSION)
 	},
 
 	Use:   "version",
