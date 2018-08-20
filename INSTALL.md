@@ -57,15 +57,9 @@ use `go get` to install it like so:
 $ go get -u -v github.com/golang/dep/cmd/dep
 ```
 
-And then you can install the golang dependencies as part of the build later on or like so:
-
-```
-$ cd $GOPATH/src/github.com/singularityware/singularity
-$ dep ensure -v
-```
-
 ## Compile the Singularity binary
-Now you are ready to build Singularity:
+Now you are ready to build Singularity. Dependencies will be automatically
+downloaded. You can build Singularity using the following commands:
 
 ```
 $ cd $GOPATH/src/github.com/singularityware/singularity
