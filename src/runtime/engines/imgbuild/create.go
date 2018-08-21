@@ -100,6 +100,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	// Run %setup script here
 	setup := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Setup)
+	setup.Env = engine.CommonConfig.OciConfig.Process.Env
 	setup.Stdout = os.Stdout
 	setup.Stderr = os.Stderr
 

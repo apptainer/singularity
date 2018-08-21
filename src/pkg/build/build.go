@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/build/assemblers"
 	"github.com/singularityware/singularity/src/pkg/build/sources"
 	"github.com/singularityware/singularity/src/pkg/build/types"
@@ -194,6 +195,13 @@ func (b *Build) runBuildEngine() error {
 	}
 	ociConfig := &oci.Config{}
 
+	//surface build specific environment variables for scripts
+	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
+	sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
+
+	ociConfig.Process = &specs.Process{}
+	ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
+
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
 		ContainerID:  "image-build",
@@ -213,13 +221,6 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	env = append(env, pipefd)
-
-	//surface build specific environment variables for scripts
-	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
-	sEnvironment := "SINGULARITY_ENVIRONMENT=" + filepath.Join(b.b.Rootfs(), "/.singularity.d/env/91-environment.sh")
-
-	env = append(env, sRootfs, sEnvironment)
-	env = append(env, os.Environ()...)
 
 	// Create os/exec.Command to run wrapper and return control once finished
 	wrapperCmd := &exec.Cmd{

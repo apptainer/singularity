@@ -145,8 +145,9 @@ fi
 
 
 `
-	// Contents of /.singularity.d/env/90-environment.sh
-	environmentShFileContent = `# Custom environment shell code should follow
+	// Contents of /.singularity.d/env/90-environment.sh and /.singularity.d/env/91-environment.sh
+	environmentShFileContent = `#!/bin/sh
+#Custom environment shell code should follow
 
 `
 	// Contents of /.singularity.d/env/95-apps.sh
@@ -342,6 +343,9 @@ func makeFiles(rootPath string) (err error) {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "90-environment.sh"), 0755, environmentShFileContent); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "91-environment.sh"), 0755, environmentShFileContent); err != nil {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "95-apps.sh"), 0755, appsShFileContent); err != nil {
