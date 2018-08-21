@@ -96,12 +96,14 @@ func newBuild(d types.Definition, dest, format string) (*Build, error) {
 // Full runs a standard build from start to finish
 func (b *Build) Full() error {
 
-	if syscall.Getuid() != 0 && hasScripts(b.d) {
-		sylog.Errorf("Attempted to build with scripts as non-root user")
-	}
-
-	if err := b.runPreScript(); err != nil {
-		return err
+	if hasScripts(b.d) {
+		if syscall.Getuid() == 0 {
+			if err := b.runPreScript(); err != nil {
+				return err
+			}
+		} else {
+			sylog.Errorf("Attempted to build with scripts as non-root user")
+		}
 	}
 
 	sylog.Debugf("Creating bundle")
@@ -114,31 +116,20 @@ func (b *Build) Full() error {
 		return fmt.Errorf("unable to copy files to container fs: %v", err)
 	}
 
-	sylog.Debugf("Starting build engine")
-	if err := b.runBuildEngine(); err != nil {
-		return fmt.Errorf("unable to run scripts: %v", err)
+	if hasScripts(b.d) {
+		if syscall.Getuid() == 0 {
+			sylog.Debugf("Starting build engine")
+			if err := b.runBuildEngine(); err != nil {
+				return fmt.Errorf("unable to run scripts: %v", err)
+			}
+		} else {
+			sylog.Errorf("Attempted to build with scripts as non-root user")
+		}
 	}
 
 	sylog.Debugf("Calling assembler")
 	if err := b.Assemble(b.dest); err != nil {
 		return err
-	}
-
-	return nil
-}
-
-// AllSections runs all the sections in the definition
-func (b *Build) AllSections() error {
-	if syscall.Getuid() == 0 && hasScripts(b.d) {
-		if err := b.copyFiles(); err != nil {
-			return fmt.Errorf("unable to copy files to container fs: %v", err)
-		}
-
-		if err := b.runBuildEngine(); err != nil {
-			return fmt.Errorf("unable to run scripts: %v", err)
-		}
-	} else if hasScripts(b.d) {
-		sylog.Warningf("Attempted to build with scripts as non-root user, skipping...\n")
 	}
 
 	return nil
