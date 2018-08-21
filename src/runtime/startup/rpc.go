@@ -5,8 +5,6 @@
 
 package main
 
-import "C"
-
 import (
 	"net"
 	"os"
@@ -16,9 +14,7 @@ import (
 )
 
 // RPCServer serves runtime engine requests
-func RPCServer(socket C.int, sruntime *C.char) {
-	runtime := C.GoString(sruntime)
-
+func RPCServer(socket int, runtime string) {
 	comm := os.NewFile(uintptr(socket), "unix")
 
 	conn, err := net.FileConn(comm)

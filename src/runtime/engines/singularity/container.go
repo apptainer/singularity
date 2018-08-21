@@ -390,22 +390,13 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		}
 
 		// Get the default system partition image
-		parts, _, err := fimg.GetPartFromGroup(sif.DescrDefaultGroup)
+		part, _, err := fimg.GetPartPrimSys()
 		if err != nil {
 			return err
-		}
-
-		// Check that this is a system partition
-		parttype, err := parts[0].GetPartType()
-		if err != nil {
-			return err
-		}
-		if parttype != sif.PartSystem {
-			return fmt.Errorf("found partition is not system")
 		}
 
 		// record the fs type
-		fstype, err := parts[0].GetFsType()
+		fstype, err := part.GetFsType()
 		if err != nil {
 			return err
 		}
@@ -417,8 +408,8 @@ func (c *container) addRootfsMount(system *mount.System) error {
 			return fmt.Errorf("unknown file system type: %v", fstype)
 		}
 
-		imageObject.Offset = uint64(parts[0].Fileoff)
-		imageObject.Size = uint64(parts[0].Filelen)
+		imageObject.Offset = uint64(part.Fileoff)
+		imageObject.Size = uint64(part.Filelen)
 	case image.SQUASHFS:
 		mountType = "squashfs"
 	case image.EXT3:
