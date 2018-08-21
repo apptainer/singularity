@@ -244,7 +244,7 @@ func Verify(cpath, authToken string) error {
 			}
 
 			// Ask to store new public key
-			resp, err := sypgp.AskQuestion("Store new public key %X permanently? [Y/n] ", signer.PrimaryKey.KeyId)
+			resp, err := sypgp.AskQuestion("Store new public key %X permanently? [Y/n] ", signer.PrimaryKey.Fingerprint)
 			if err != nil {
 				return err
 			}
