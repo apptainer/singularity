@@ -7,6 +7,19 @@ package capabilities
 
 import "strings"
 
+const (
+	// Permitted capability string constant
+	Permitted string = "permitted"
+	// Effective capability string constant
+	Effective = "effective"
+	// Inheritable capability string constant
+	Inheritable = "inheritable"
+	// Ambient capability string constant
+	Ambient = "ambient"
+	// Bounding capability string constant
+	Bounding = "bounding"
+)
+
 type capability struct {
 	Name        string
 	Value       uint
