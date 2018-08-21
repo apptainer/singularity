@@ -214,6 +214,13 @@ func (b *Build) runBuildEngine() error {
 
 	env = append(env, pipefd)
 
+	//surface build specific environment variables for scripts
+	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
+	sEnvironment := "SINGULARITY_ENVIRONMENT=" + filepath.Join(b.b.Rootfs(), "/.singularity.d/env/91-environment.sh")
+
+	env = append(env, sRootfs, sEnvironment)
+	env = append(env, os.Environ()...)
+
 	// Create os/exec.Command to run wrapper and return control once finished
 	wrapperCmd := &exec.Cmd{
 		Path:   wrapper,
