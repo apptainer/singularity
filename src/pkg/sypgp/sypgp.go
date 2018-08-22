@@ -311,7 +311,7 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-// GenKeyPair generates a PGP key pair and store them in the sypgp home folder
+// GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
 func GenKeyPair() (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
@@ -334,7 +334,7 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
-	fmt.Print("Generating Entity and PGP Key Pair... ")
+	fmt.Print("Generating Entity and OpenPGP Key Pair... ")
 	entity, err = openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
 		return
@@ -542,7 +542,7 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Key server did not accept PGP key, HTTP status: %v", resp.StatusCode)
+		return fmt.Errorf("Key server did not accept OpenPGP key, HTTP status: %v", resp.StatusCode)
 	}
 
 	return nil
