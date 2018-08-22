@@ -221,7 +221,7 @@ func Verify(cpath, url, authToken string) error {
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
 			// verification with local keyring failed, try to fetch from key server
-			sylog.Infof("key missing, searching SyCloud for KeyID: %s...", fingerprint[24:])
+			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
 			elist, err = sypgp.FetchPubkey(fingerprint, url, authToken)
 			if err != nil {
 				return err
