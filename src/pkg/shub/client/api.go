@@ -9,15 +9,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
-	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
@@ -47,42 +44,9 @@ type ShubAPIResponse struct {
 // ShubClient holds the information for interacting with Singularity Hub API
 type ShubClient struct {
 	FilePath string
-	Tmpfile  string
 	ShubURI
 	*ShubAPIResponse
-	*sytypes.Bundle
 	ShubURL string
-}
-
-// fetchImage downloads an image from Singularity Hub
-func (s *ShubClient) fetchImage(bundle *sytypes.Bundle) (err error) {
-	// Create temporary download name
-	tmpfile, err := ioutil.TempFile(bundle.Path, "shub-container")
-	sylog.Debugf("\nCreating temporary image file %v\n", tmpfile.Name())
-	if err != nil {
-		return err
-	}
-	defer tmpfile.Close()
-
-	// Get the image based on the manifest
-	resp, err := http.Get(s.ShubAPIResponse.Image)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Write the body to file
-	bytesWritten, err := io.Copy(tmpfile, resp.Body)
-	if err != nil {
-		return err
-	}
-	//Simple check to make sure image received is the correct size
-	if bytesWritten != resp.ContentLength {
-		return fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
-	}
-
-	s.Tmpfile = tmpfile.Name()
-	return nil
 }
 
 // getManifest will return the image manifest for a container uri
@@ -141,9 +105,4 @@ func (s *ShubClient) getManifest() (err error) {
 	}
 
 	return nil
-}
-
-// CleanUp removes any tmpfs owned by the ShubClient on the filesystem
-func (s *ShubClient) CleanUp() {
-	os.RemoveAll(s.Bundle.Path)
 }
