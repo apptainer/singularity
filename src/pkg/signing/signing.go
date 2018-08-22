@@ -198,6 +198,7 @@ func Verify(cpath, url, authToken string) error {
 	}
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
+	var authok string
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
@@ -207,7 +208,7 @@ func Verify(cpath, url, authToken string) error {
 		}
 
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			return fmt.Errorf("hash comparison failed, data or signature block corrupted")
+			return fmt.Errorf("hash check failed, data or signature block corrupted")
 		}
 
 		// (1) Data integrity is verified, (2) now validate identify of signers
@@ -223,7 +224,7 @@ func Verify(cpath, url, authToken string) error {
 		if err != nil {
 			// verification with local keyring failed, try to fetch from key server
 			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
-			elist, err = sypgp.FetchPubkey(fingerprint, url, authToken)
+			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken)
 			if err != nil {
 				return err
 			}
@@ -235,7 +236,7 @@ func Verify(cpath, url, authToken string) error {
 			}
 
 			// try verification again with downloaded key
-			signer, err = openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 			if err != nil {
 				return fmt.Errorf("signature verification failed: %s", err)
 			}
@@ -246,21 +247,22 @@ func Verify(cpath, url, authToken string) error {
 				return err
 			}
 			if resp == "" || resp == "y" || resp == "Y" {
-				if err = sypgp.StorePubKey(elist[0]); err != nil {
+				if err = sypgp.StorePubKey(netlist[0]); err != nil {
 					return err
 				}
 			}
 		}
 
-		fmt.Printf("Data integrity checked, authentic and signed by:\n")
 		// Get first Identity data for convenience
 		var name string
 		for _, i := range signer.Identities {
 			name = i.Name
 			break
 		}
-		fmt.Printf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
+		authok += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 	}
+	fmt.Printf("Data integrity checked, authentic and signed by:\n")
+	fmt.Print(authok)
 
 	return nil
 }
