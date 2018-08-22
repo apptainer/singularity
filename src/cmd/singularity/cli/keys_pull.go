@@ -23,7 +23,7 @@ func init() {
 
 // KeysPullCmd is `singularity keys pull' and fetches public keys from a key server
 var KeysPullCmd = &cobra.Command{
-	Args: cobra.RangeArgs(1, 2),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {

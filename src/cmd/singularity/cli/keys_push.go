@@ -23,7 +23,7 @@ func init() {
 
 // KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysPushCmd = &cobra.Command{
-	Args: cobra.RangeArgs(1, 2),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {

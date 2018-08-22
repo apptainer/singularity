@@ -24,7 +24,7 @@ func init() {
 // VerifyCmd singularity verify
 var VerifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.RangeArgs(1, 2),
+	Args:   cobra.ExactArgs(1),
 	PreRun: sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
