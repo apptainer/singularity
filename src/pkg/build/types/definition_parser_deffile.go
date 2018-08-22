@@ -196,7 +196,10 @@ func doHeader(h string, d *Definition) (err error) {
 			continue
 		}
 
-		linetoks := strings.SplitN(line, ":", 2)
+		//remove any comments on header lines
+		trimLine := strings.Split(line, "#")[0]
+
+		linetoks := strings.SplitN(trimLine, ":", 2)
 		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
 		if _, ok := validHeaders[key]; !ok {
 			return fmt.Errorf("invalid header keyword found: %s", key)
