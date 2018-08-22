@@ -97,7 +97,11 @@ var BuildCmd = &cobra.Command{
 			}
 
 			if sections[0] == "all" {
-				b.Full()
+				err = b.Full()
+				if err != nil {
+					sylog.Fatalf("While performing build: %v\n", err)
+					os.Exit(1)
+				}
 			} else {
 				sylog.Fatalf("Running specific sections of definitions not implemented.")
 			}
