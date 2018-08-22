@@ -21,24 +21,10 @@ import (
 	"golang.org/x/crypto/openpgp/clearsign"
 )
 
-const (
-	keyserverURI = "https://keys.sylabs.io:11371"
-)
+func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
+	sum := sha512.Sum384(fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen])
 
-func sifDataObjectHash(fimg *sif.FileImage) (*bytes.Buffer, error) {
-	var msg = new(bytes.Buffer)
-
-	// for now signing is done on the primary partition
-	part, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return nil, err
-	}
-
-	sum := sha512.Sum384(fimg.Filedata[part.Fileoff : part.Fileoff+part.Filelen])
-
-	fmt.Fprintf(msg, "SIFHASH:\n%x", sum)
-
-	return msg, nil
+	return fmt.Sprintf("SIFHASH:\n%x", sum)
 }
 
 // adds a signature block for the primary partition
@@ -78,25 +64,49 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 // configuration options. In its current form, Sign also pushes public material
 // to a key server if enabled. This should be a separate step in the next round
 // of development.
-func Sign(cpath, authToken string) error {
-	var el openpgp.EntityList
-	var en *openpgp.Entity
-	var err error
-
-	if el, err = sypgp.LoadPrivKeyring(); err != nil {
+func Sign(cpath, url, authToken string) error {
+	elist, err := sypgp.LoadPrivKeyring()
+	if err != nil {
 		return err
-	} else if el == nil {
-		return fmt.Errorf("no private keys found in %s, run 'singularity keys newpair' to create keys", sypgp.SecretPath())
 	}
 
-	if len(el) > 1 {
-		if en, err = sypgp.SelectPrivKey(el); err != nil {
+	var entity *openpgp.Entity
+	if elist == nil {
+		resp, err := sypgp.AskQuestion("No OpenPGP signing keys found, autogenerate? [Y/n] ")
+		if err != nil {
 			return err
 		}
+		if resp == "" || resp == "y" || resp == "Y" {
+			entity, err = sypgp.GenKeyPair()
+			if err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("cannot sign without installed keys")
+		}
+		resp, err = sypgp.AskQuestion("Upload public key %X to %s? [Y/n] ", entity.PrimaryKey.Fingerprint, url)
+		if err != nil {
+			return err
+		}
+		if resp == "" || resp == "y" || resp == "Y" {
+			if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
+				return err
+			}
+			fmt.Printf("Uploaded key successfully!\n")
+		}
 	} else {
-		en = el[0]
+		if len(elist) > 1 {
+			entity, err = sypgp.SelectPrivKey(elist)
+			if err != nil {
+				return err
+			}
+		} else {
+			entity = elist[0]
+		}
 	}
-	sypgp.DecryptKey(en)
+
+	// Decrypt key is needed
+	sypgp.DecryptKey(entity)
 
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
@@ -105,28 +115,55 @@ func Sign(cpath, authToken string) error {
 	}
 	defer fimg.UnloadContainer()
 
-	msg, err := sifDataObjectHash(&fimg)
+	part, _, err := fimg.GetPartPrimSys()
+	if err != nil {
+		return err
+	}
+
+	sifhash := computeHashStr(&fimg, part)
 	if err != nil {
 		return err
 	}
 
 	var signedmsg bytes.Buffer
-	plaintext, err := clearsign.Encode(&signedmsg, en.PrivateKey, nil)
+	plaintext, err := clearsign.Encode(&signedmsg, entity.PrivateKey, nil)
 	if err != nil {
 		return err
 	}
-	if _, err = plaintext.Write(msg.Bytes()); err != nil {
+	_, err = plaintext.Write([]byte(sifhash))
+	if err != nil {
 		return err
 	}
 	if err = plaintext.Close(); err != nil {
 		return err
 	}
 
-	if err = sifAddSignature(en.PrimaryKey.Fingerprint, &fimg, signedmsg.Bytes()); err != nil {
+	err = sifAddSignature(entity.PrimaryKey.Fingerprint, &fimg, signedmsg.Bytes())
+	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// XXX: move to SIF/Lookup.go
+func getDescrData(fimg *sif.FileImage, descr *sif.Descriptor) []byte {
+	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
+}
+
+// return all signatures for "id" being unique or group id
+func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
+	descr, _, err = fimg.GetPartPrimSys()
+	if err != nil {
+		return
+	}
+
+	sigs, _, err = fimg.GetFromLinkedDescr(descr.ID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signature found for system partition: %s", err)
+	}
+
+	return
 }
 
 // Verify takes a container path and look for a verification block for a
@@ -134,76 +171,94 @@ func Sign(cpath, authToken string) error {
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, authToken string) error {
-	var el openpgp.EntityList
-
-	// load the container
+func Verify(cpath, url, authToken string) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return err
 	}
 	defer fimg.UnloadContainer()
 
-	msg, err := sifDataObjectHash(&fimg)
+	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
+	signatures, descr, err := getSigsForSelection(&fimg)
 	if err != nil {
 		return err
 	}
 
-	part, _, err := fimg.GetPartPrimSys()
+	// the selected data object is hashed for comparison against signature block's
+	sifhash := computeHashStr(&fimg, descr)
 	if err != nil {
 		return err
 	}
 
-	sigs, _, err := fimg.GetFromLinkedDescr(part.ID)
-	if err != nil {
-		return fmt.Errorf("no signature found for system partition: %s", err)
-	}
-
-	data := fimg.Filedata[sigs[0].Fileoff : sigs[0].Fileoff+sigs[0].Filelen]
-
-	block, _ := clearsign.Decode(data)
-	if block == nil {
-		return fmt.Errorf("failed to decode clearsign message")
-	}
-
-	if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), msg.Bytes()) {
-		sylog.Debugf("hash string mismatch:\nsigned:     %s\ncalculated: %s\n", msg.String(), block.Plaintext)
-		return fmt.Errorf("sif hash string mismatch -- don't use")
-	}
-
-	if el, err = sypgp.LoadPubKeyring(); err != nil {
-		return err
-	}
-
-	// get the entity fingerprint for the found signature block
-	fingerprint, err := sigs[0].GetEntityString()
+	// load the public keys available locally from the cache
+	elist, err := sypgp.LoadPubKeyring()
 	if err != nil {
 		return err
 	}
 
-	// try to verify with local OpenPGP store first
-	var signer *openpgp.Entity
-	if signer, err = openpgp.CheckDetachedSignature(el, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
-		sylog.Errorf("failed to check signature: %s\n", err)
-		// verification with local keyring failed, try to fetch from key server
-		sylog.Infof("contacting key management services for: %s\n", fingerprint)
-		syel, err := sypgp.FetchPubkey(fingerprint, keyserverURI, authToken)
-		if err != nil {
-			return err
-		}
-
+	// compare freshly computed hash with hashes stored in signatures block(s)
+	for _, v := range signatures {
+		// Extract hash string from signature block
+		data := getDescrData(&fimg, v)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			return fmt.Errorf("failed to decode clearsign message")
 		}
 
-		if signer, err = openpgp.CheckDetachedSignature(syel, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body); err != nil {
-			return fmt.Errorf("signature verification failed: %s", err)
+		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
+			return fmt.Errorf("hash comparison failed, data or signature block corrupted")
 		}
-	}
-	fmt.Print("Authentic and signed by:\n")
-	for _, i := range signer.Identities {
-		fmt.Printf("\t%s\n", i.Name)
+
+		// (1) Data integrity is verified, (2) now validate identify of signers
+
+		// get the entity fingerprint for the signature block
+		fingerprint, err := v.GetEntityString()
+		if err != nil {
+			return err
+		}
+
+		// try to verify with local OpenPGP store first
+		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+		if err != nil {
+			// verification with local keyring failed, try to fetch from key server
+			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
+			elist, err = sypgp.FetchPubkey(fingerprint, url, authToken)
+			if err != nil {
+				return err
+			}
+			sylog.Infof("key retreived successfully!")
+
+			block, _ := clearsign.Decode(data)
+			if block == nil {
+				return fmt.Errorf("failed to decode clearsign message")
+			}
+
+			// try verification again with downloaded key
+			signer, err = openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+			if err != nil {
+				return fmt.Errorf("signature verification failed: %s", err)
+			}
+
+			// Ask to store new public key
+			resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
+			if err != nil {
+				return err
+			}
+			if resp == "" || resp == "y" || resp == "Y" {
+				if err = sypgp.StorePubKey(elist[0]); err != nil {
+					return err
+				}
+			}
+		}
+
+		fmt.Printf("Data integrity checked, authentic and signed by:\n")
+		// Get first Identity data for convenience
+		var name string
+		for _, i := range signer.Identities {
+			name = i.Name
+			break
+		}
+		fmt.Printf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 	}
 
 	return nil
