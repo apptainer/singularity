@@ -18,7 +18,7 @@ import (
 
 func init() {
 	KeysSearchCmd.Flags().SetInterspersed(false)
-	KeysSearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "overwrite the default remote url")
+	KeysSearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
 }
 
 // KeysSearchCmd is `singularity keys search' and look for public keys from a key server
@@ -40,13 +40,6 @@ var KeysSearchCmd = &cobra.Command{
 }
 
 func doKeysSearchCmd(search string, url string) error {
-	if url == "" {
-		// lookup key management server URL from singularity.conf
-
-		// else use default builtin
-		url = defaultKeysServer
-	}
-
 	// get keyring with matching search string
 	list, err := sypgp.SearchPubkey(search, url, authToken)
 	if err != nil {

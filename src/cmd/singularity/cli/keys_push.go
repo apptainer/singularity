@@ -18,7 +18,7 @@ import (
 
 func init() {
 	KeysPushCmd.Flags().SetInterspersed(false)
-	KeysPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "specify the key server URL (default: https://keys.sylabs.io)")
+	KeysPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
 }
 
 // KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
@@ -62,13 +62,6 @@ func doKeysPushCmd(fingerprint string, url string) error {
 		return fmt.Errorf("could not find the requested key")
 	}
 	entity := keys[0].Entity
-
-	if url == "" {
-		// lookup key management server URL from singularity.conf
-
-		// else use default builtin
-		url = defaultKeysServer
-	}
 
 	if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
 		return err

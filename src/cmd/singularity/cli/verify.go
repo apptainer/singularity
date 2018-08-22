@@ -17,7 +17,7 @@ import (
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
-	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "specify the key server URL (default: https://keys.sylabs.io)")
+	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
 	SingularityCmd.AddCommand(VerifyCmd)
 }
 
@@ -43,13 +43,6 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cpath, url string) error {
-	if url == "" {
-		// lookup key management server URL from singularity.conf
-
-		// else use default builtin
-		url = defaultKeysServer
-	}
-
 	if err := signing.Verify(cpath, url, authToken); err != nil {
 		return err
 	}

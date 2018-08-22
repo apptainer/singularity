@@ -84,7 +84,7 @@ func Sign(cpath, url, authToken string) error {
 		} else {
 			return fmt.Errorf("cannot sign without installed keys")
 		}
-		resp, err = sypgp.AskQuestion("Upload public key %X to key server? [Y/n] ", entity.PrimaryKey.Fingerprint)
+		resp, err = sypgp.AskQuestion("Upload public key %X to %s? [Y/n] ", entity.PrimaryKey.Fingerprint, url)
 		if err != nil {
 			return err
 		}
