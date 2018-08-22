@@ -22,7 +22,7 @@ func init() {
 	KeysListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
 }
 
-// KeysListCmd is `singularity keys list' and lists local store PGP keys
+// KeysListCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysListCmd = &cobra.Command{
 	Args: cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
