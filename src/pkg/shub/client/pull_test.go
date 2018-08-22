@@ -6,13 +6,15 @@
 package client
 
 import (
+	"os"
 	"testing"
 
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
-	shubURI = "//ikaneshiro/singularityhub:latest"
+	shubURI     = "//ikaneshiro/singularityhub:latest"
+	shubImgPath = "/tmp/shub-test_img.simg"
 )
 
 // TestDownloadImage tests if we can pull an image from Singularity Hub
@@ -25,13 +27,14 @@ func TestDownloadImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	sc := &ShubClient{}
-
-	err := sc.DownloadImage(shubURI, false)
-
-	//clean up tmpfs since assembler isn't called
-	defer sc.CleanUp()
+	err := DownloadImage(shubImgPath, shubURI, false)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
+	}
+
+	//clean up
+	err = os.Remove(shubImgPath)
+	if err != nil {
+		t.Fatalf("failed to clean up test environment: %v", err)
 	}
 }
