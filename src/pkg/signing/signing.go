@@ -21,10 +21,6 @@ import (
 	"golang.org/x/crypto/openpgp/clearsign"
 )
 
-const (
-	defaultKeysServer = "https://keys.sylabs.io:11371"
-)
-
 func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
 	sum := sha512.Sum384(fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen])
 
@@ -68,7 +64,7 @@ func sifAddSignature(fingerprint [20]byte, fimg *sif.FileImage, signature []byte
 // configuration options. In its current form, Sign also pushes public material
 // to a key server if enabled. This should be a separate step in the next round
 // of development.
-func Sign(cpath, authToken string) error {
+func Sign(cpath, url, authToken string) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
 		return err
@@ -88,15 +84,15 @@ func Sign(cpath, authToken string) error {
 		} else {
 			return fmt.Errorf("cannot sign without installed keys")
 		}
-		resp, err = sypgp.AskQuestion("Upload public key to Sylabs Cloud? [Y/n] ")
+		resp, err = sypgp.AskQuestion("Upload public key %X to key server? [Y/n] ", entity.PrimaryKey.Fingerprint)
 		if err != nil {
 			return err
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
-			if err = sypgp.PushPubkey(entity, defaultKeysServer, authToken); err != nil {
+			if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
 				return err
 			}
-			fmt.Printf("Uploaded key with fingerprint %X successfully\n", entity.PrimaryKey.Fingerprint)
+			fmt.Printf("Uploaded key successfully!\n")
 		}
 	} else {
 		if len(elist) > 1 {
@@ -175,7 +171,7 @@ func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *si
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, authToken string) error {
+func Verify(cpath, url, authToken string) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return err
@@ -226,7 +222,7 @@ func Verify(cpath, authToken string) error {
 		if err != nil {
 			// verification with local keyring failed, try to fetch from key server
 			sylog.Infof("key missing, searching SyCloud for KeyID: %s...", fingerprint[24:])
-			elist, err = sypgp.FetchPubkey(fingerprint, defaultKeysServer, authToken)
+			elist, err = sypgp.FetchPubkey(fingerprint, url, authToken)
 			if err != nil {
 				return err
 			}
@@ -244,7 +240,7 @@ func Verify(cpath, authToken string) error {
 			}
 
 			// Ask to store new public key
-			resp, err := sypgp.AskQuestion("Store new public key %X permanently? [Y/n] ", signer.PrimaryKey.Fingerprint)
+			resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
 			if err != nil {
 				return err
 			}

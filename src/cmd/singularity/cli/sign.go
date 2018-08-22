@@ -17,19 +17,20 @@ import (
 
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
+	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "specify the key server URL (default: https://keys.sylabs.io)")
 	SingularityCmd.AddCommand(SignCmd)
 }
 
 // SignCmd singularity sign
 var SignCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(1),
+	Args:   cobra.RangeArgs(1, 2),
 	PreRun: sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		if err := signing.Sign(args[0], authToken); err != nil {
+		if err := doSignCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("signing container failed: %s", err)
 			os.Exit(2)
 		}
@@ -40,4 +41,19 @@ var SignCmd = &cobra.Command{
 	Short:   docs.SignShort,
 	Long:    docs.SignLong,
 	Example: docs.SignExample,
+}
+
+func doSignCmd(cpath, url string) error {
+	if url == "" {
+		// lookup key management server URL from singularity.conf
+
+		// else use default builtin
+		url = defaultKeysServer
+	}
+
+	if err := signing.Sign(cpath, url, authToken); err != nil {
+		return err
+	}
+
+	return nil
 }

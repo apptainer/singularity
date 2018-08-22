@@ -18,7 +18,7 @@ import (
 
 func init() {
 	KeysPullCmd.Flags().SetInterspersed(false)
-	KeysPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	KeysPullCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "specify the key server URL (default: https://keys.sylabs.io)")
 }
 
 // KeysPullCmd is `singularity keys pull' and fetches public keys from a key server
@@ -27,7 +27,7 @@ var KeysPullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysPullCmd(args[0], url); err != nil {
+		if err := doKeysPullCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}

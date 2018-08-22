@@ -17,19 +17,20 @@ import (
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "specify the key server URL (default: https://keys.sylabs.io)")
 	SingularityCmd.AddCommand(VerifyCmd)
 }
 
 // VerifyCmd singularity verify
 var VerifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(1),
+	Args:   cobra.RangeArgs(1, 2),
 	PreRun: sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
-		if err := signing.Verify(args[0], authToken); err != nil {
+		if err := doVerifyCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("verification failed: %s", err)
 			os.Exit(2)
 		}
@@ -39,4 +40,19 @@ var VerifyCmd = &cobra.Command{
 	Short:   docs.VerifyShort,
 	Long:    docs.VerifyLong,
 	Example: docs.VerifyExample,
+}
+
+func doVerifyCmd(cpath, url string) error {
+	if url == "" {
+		// lookup key management server URL from singularity.conf
+
+		// else use default builtin
+		url = defaultKeysServer
+	}
+
+	if err := signing.Verify(cpath, url, authToken); err != nil {
+		return err
+	}
+
+	return nil
 }

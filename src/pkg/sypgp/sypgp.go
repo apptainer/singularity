@@ -124,8 +124,8 @@ func AskQuestion(format string, a ...interface{}) (string, error) {
 func DirPath() string {
 	user, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
-		sylog.Warningf("could not lookup user's real home folder %s\n", err)
-		sylog.Warningf("using current directory for %s\n", filepath.Join(".singularity", "sypgp"))
+		sylog.Warningf("could not lookup user's real home folder %s", err)
+		sylog.Warningf("using current directory for %s", filepath.Join(".singularity", "sypgp"))
 		return filepath.Join(".singularity", "sypgp")
 	}
 

@@ -18,7 +18,7 @@ import (
 
 func init() {
 	KeysPushCmd.Flags().SetInterspersed(false)
-	KeysPushCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	KeysPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "specify the key server URL (default: https://keys.sylabs.io)")
 }
 
 // KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
@@ -27,7 +27,7 @@ var KeysPushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysPushCmd(args[0], url); err != nil {
+		if err := doKeysPushCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}

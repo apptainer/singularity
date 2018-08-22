@@ -18,7 +18,7 @@ import (
 
 func init() {
 	KeysSearchCmd.Flags().SetInterspersed(false)
-	KeysSearchCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	KeysSearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", "", "overwrite the default remote url")
 }
 
 // KeysSearchCmd is `singularity keys search' and look for public keys from a key server
@@ -27,7 +27,7 @@ var KeysSearchCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysSearchCmd(args[0], url); err != nil {
+		if err := doKeysSearchCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
 		}

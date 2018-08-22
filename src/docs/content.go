@@ -579,20 +579,30 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// sign
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SignUse   string = `sign <image path>`
-	SignShort string = `Attach cryptographic signature to container`
+	SignUse   string = `sign [sign options...] <image path>`
+	SignShort string = `Attach cryptographic signatures to container`
 	SignLong  string = `
-  `
+	The sign command allows a user to create a cryptographic signature
+	on either a single data object or a list of data objects within the
+	same SIF group. By default without parameters, the command searches
+	for the primary partition and creates a verification block that is
+	then added to the SIF container file.`
 	SignExample string = `
-  `
+  $ singularity sign container.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// verify
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	VerifyUse   string = `verify <image path>`
-	VerifyShort string = `Verify cryptographic signature on container`
+	VerifyUse   string = `verify [verify options...] <image path>`
+	VerifyShort string = `Verify cryptographic signatures on container`
 	VerifyLong  string = `
-  `
+	The verify command allows a user to verify cryptographic signatures
+	on SIF container files. There may be multiple signatures for data
+	objects and multiple data objects signed. By default the command
+	searches for the primary partition signature. If found, a list of
+	all verification blocks applied on the primary partition is gathered
+	so that data integrity (hashing) and signature verification is done
+	for all those blocks.`
 	VerifyExample string = `
-  `
+  $ singularity verify container.sif`
 )
