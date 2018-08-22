@@ -155,11 +155,6 @@ func Sign(cpath, url, authToken string) error {
 	return nil
 }
 
-// XXX: move to SIF/Lookup.go
-func getDescrData(fimg *sif.FileImage, descr *sif.Descriptor) []byte {
-	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
-}
-
 // return all signatures for "id" being unique or group id
 func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
 	descr, _, err = fimg.GetPartPrimSys()
@@ -176,7 +171,7 @@ func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *si
 }
 
 // Verify takes a container path and look for a verification block for a
-// system partition. If found, the signature block is used to verify the
+// specified descriptor. If found, the signature block is used to verify the
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
@@ -205,7 +200,7 @@ func Verify(cpath, url, authToken string) error {
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
 		// Extract hash string from signature block
-		data := getDescrData(&fimg, v)
+		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			return fmt.Errorf("failed to decode clearsign message")
