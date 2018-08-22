@@ -8,134 +8,85 @@
 
 package user
 
-/*
-#include <stdlib.h>
-#include <sys/types.h>
-#include <pwd.h>
-#include <grp.h>
+import "strconv"
+import osuser "os/user"
 
-#ifndef uid_t
-typedef uid_t __uid_t;
-#endif
-
-#ifndef gid_t
-typedef gid_t __gid_t;
-#endif
-*/
-import "C"
-import "fmt"
-import "unsafe"
-import "sync"
-
-// Passwd correspond to Go structure mapping C passwd structure
-type Passwd struct {
-	Name   string
-	Passwd string
-	UID    uint32
-	GID    uint32
-	Gecos  string
-	Dir    string
-	Shell  string
+// User represents an Unix user account information
+type User struct {
+	Name  string
+	UID   uint32
+	GID   uint32
+	Gecos string
+	Dir   string
+	Shell string
 }
 
-// Group correspond to Go structure mapping C group structure
+// Group represents an Unix group information
 type Group struct {
-	Name   string
-	Passwd string
-	GID    uint32
+	Name string
+	GID  uint32
 }
 
-func convertCPasswd(cPasswd *C.struct_passwd) *Passwd {
-	return &Passwd{
-		Name:   C.GoString(cPasswd.pw_name),
-		Passwd: C.GoString(cPasswd.pw_passwd),
-		UID:    uint32(cPasswd.pw_uid),
-		GID:    uint32(cPasswd.pw_gid),
-		Gecos:  C.GoString(cPasswd.pw_gecos),
-		Dir:    C.GoString(cPasswd.pw_dir),
-		Shell:  C.GoString(cPasswd.pw_shell),
+func convertUser(user *osuser.User) (*User, error) {
+	uid, err := strconv.ParseUint(user.Uid, 10, 32)
+	if err != nil {
+		return nil, err
 	}
+	gid, err := strconv.ParseUint(user.Gid, 10, 32)
+	if err != nil {
+		return nil, err
+	}
+	u := &User{
+		Name:  user.Username,
+		UID:   uint32(uid),
+		GID:   uint32(gid),
+		Dir:   user.HomeDir,
+		Gecos: user.Name,
+		Shell: "/bin/sh",
+	}
+	return u, nil
 }
 
-func convertCGroup(cGroup *C.struct_group) *Group {
-	return &Group{
-		Name:   C.GoString(cGroup.gr_name),
-		Passwd: C.GoString(cGroup.gr_passwd),
-		GID:    uint32(cGroup.gr_gid),
+func convertGroup(group *osuser.Group) (*Group, error) {
+	gid, err := strconv.ParseUint(group.Gid, 10, 32)
+	if err != nil {
+		return nil, err
 	}
+	return &Group{Name: group.Name, GID: uint32(gid)}, nil
 }
 
-var pwUIDMux sync.Mutex
-var pwNamMux sync.Mutex
-var grGIDMux sync.Mutex
-var grNamMux sync.Mutex
-
-// GetPwUID wraps C library getpwuid call and returns a pointer to Passwd structure
-// associated with user uid
-func GetPwUID(uid uint32) (*Passwd, error) {
-	pwUIDMux.Lock()
-	defer pwUIDMux.Unlock()
-
-	cPasswd, _ := C.getpwuid(C.__uid_t(uid))
-	if unsafe.Pointer(cPasswd) == nil {
-		return nil, fmt.Errorf("can't retrieve password information for uid %d", uid)
+// GetPwUID returns a pointer to User structure associated with user uid
+func GetPwUID(uid uint32) (*User, error) {
+	u, err := osuser.LookupId(strconv.FormatUint(uint64(uid), 10))
+	if err != nil {
+		return nil, err
 	}
-
-	return convertCPasswd(cPasswd), nil
+	return convertUser(u)
 }
 
-// GetPwNam wraps C library getpwnam call and returns a pointer to Passwd structure
-// associated with user name
-func GetPwNam(name string) (*Passwd, error) {
-	cName := C.CString(name)
-
-	if unsafe.Pointer(cName) == nil {
-		return nil, fmt.Errorf("failed to allocate memory")
+// GetPwNam returns a pointer to User structure associated with user name
+func GetPwNam(name string) (*User, error) {
+	u, err := osuser.Lookup(name)
+	if err != nil {
+		return nil, err
 	}
-	defer C.free(unsafe.Pointer(cName))
-
-	pwNamMux.Lock()
-	defer pwNamMux.Unlock()
-
-	cPasswd, _ := C.getpwnam(cName)
-	if unsafe.Pointer(cPasswd) == nil {
-		return nil, fmt.Errorf("can't retrieve password information for user %s", name)
-	}
-
-	return convertCPasswd(cPasswd), nil
+	return convertUser(u)
 }
 
-// GetGrGID wraps C library getgrgid call and returns a pointer to Group structure
-// associated with groud gid
+// GetGrGID returns a pointer to Group structure associated with groud gid
 func GetGrGID(gid uint32) (*Group, error) {
-	grGIDMux.Lock()
-	defer grGIDMux.Unlock()
-
-	cGroup, _ := C.getgrgid(C.__gid_t(gid))
-	if unsafe.Pointer(cGroup) == nil {
-		return nil, fmt.Errorf("can't retrieve password information for uid %d", gid)
+	g, err := osuser.LookupGroupId(strconv.FormatUint(uint64(gid), 10))
+	if err != nil {
+		return nil, err
 	}
-
-	return convertCGroup(cGroup), nil
+	return convertGroup(g)
 }
 
-// GetGrNam wraps C library getgrnam call and returns a pointer to Group structure
-// associated with group name
+// GetGrNam returns a pointer to Group structure associated with group name
 func GetGrNam(name string) (*Group, error) {
-	cName := C.CString(name)
-
-	if unsafe.Pointer(cName) == nil {
-		return nil, fmt.Errorf("failed to allocate memory")
+	g, err := osuser.LookupGroup(name)
+	if err != nil {
+		return nil, err
 	}
-	defer C.free(unsafe.Pointer(cName))
-
-	grNamMux.Lock()
-	defer grNamMux.Unlock()
-
-	cGroup, _ := C.getgrnam(cName)
-	if unsafe.Pointer(cGroup) == nil {
-		return nil, fmt.Errorf("can't retrieve group information for group %s", name)
-	}
-
-	return convertCGroup(cGroup), nil
+	return convertGroup(g)
 }

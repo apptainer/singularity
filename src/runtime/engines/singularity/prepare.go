@@ -44,7 +44,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, wrapperConfig *wra
 
 	if e.CommonConfig.OciConfig.Linux != nil {
 		wrapperConfig.AddUIDMappings(e.CommonConfig.OciConfig.Linux.UIDMappings)
-		wrapperConfig.AddGIDMappings(e.CommonConfig.OciConfig.Linux.UIDMappings)
+		wrapperConfig.AddGIDMappings(e.CommonConfig.OciConfig.Linux.GIDMappings)
 		wrapperConfig.SetNsFlagsFromSpec(e.CommonConfig.OciConfig.Linux.Namespaces)
 	}
 	if e.CommonConfig.OciConfig.Process != nil && e.CommonConfig.OciConfig.Process.Capabilities != nil {

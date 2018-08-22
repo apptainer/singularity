@@ -15,6 +15,7 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 // HTTP timeout in seconds
@@ -188,6 +189,7 @@ func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
@@ -223,6 +225,7 @@ func apiGet(url string, authToken string) (objJSON []byte, found bool, err error
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 	res, err := client.Do(req)
 	if err != nil {
 		return []byte{}, false, fmt.Errorf("error making request to server:\n\t%v", err)
@@ -259,6 +262,7 @@ func apiGetTags(url string, authToken string) (tags TagMap, err error) {
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
@@ -291,6 +295,7 @@ func apiSetTag(url string, authToken string, t ImageTag) (err error) {
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
 	}

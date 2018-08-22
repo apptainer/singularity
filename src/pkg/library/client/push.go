@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -137,6 +138,7 @@ func postFile(baseURL string, authToken string, filePath string, imageID string)
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	client := &http.Client{

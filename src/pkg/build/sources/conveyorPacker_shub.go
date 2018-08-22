@@ -20,6 +20,7 @@ import (
 
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 const defaultRegistry string = `singularity-hub.org/api/container/`
@@ -150,6 +151,7 @@ func (cp *ShubConveyorPacker) getManifest() (err error) {
 	if err != nil {
 		return err
 	}
+	req.Header.Set("User-Agent", useragent.Value)
 
 	// Do the request, if status isn't success, return error
 	res, err := sc.Do(req)
