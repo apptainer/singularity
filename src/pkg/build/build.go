@@ -186,7 +186,7 @@ func (b *Build) runPreScript() error {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func (b *Build) runBuildEngine() error {
-	env := []string{"SINGULARITY_MESSAGELEVEL=" + string(sylog.GetLevel()), "SRUNTIME=" + imgbuild.Name}
+	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
 	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
 	progname := []string{"singularity image-build"}
 
