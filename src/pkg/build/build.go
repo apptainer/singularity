@@ -24,6 +24,9 @@ import (
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
+
+	// comment justifying it
+	_ "github.com/sylabs/singularity/src/pkg/apps"
 )
 
 // Build is an abstracted way to look at the entire build process.

@@ -18,6 +18,7 @@ import (
 	"unicode"
 
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
@@ -68,7 +69,7 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 				// When advance == 0 and we found a section identifier, that means we have already
 				// parsed the header out and left the % as the first character in the data. This means
 				// we can now parse into sections.
-				retbuf.Write(word[1:])
+				retbuf.Write(line[1:])
 				retbuf.WriteString("\n")
 				inSection = true
 			} else {
@@ -105,6 +106,25 @@ func isValidSection(key string) bool {
 	return true
 }
 
+func getSectionName(line string) string {
+	lineSplit := strings.SplitN(strings.ToLower(line), " ", 2)
+
+	return lineSplit[0]
+}
+
+// splitToken splits tok -> identline & content pair (sep on \n)
+func splitToken(tok string) (ident string, content string) {
+	tokSplit := strings.SplitN(tok, "\n", 2)
+	if len(tokSplit) == 1 {
+		content = ""
+	} else {
+		content = tokSplit[1]
+	}
+
+	return strings.ToLower(tokSplit[0]), content
+
+}
+
 var sectionsMutex = &sync.Mutex{}
 
 // parseTokenSection splits the token into maximum 2 strings separated by a newline,
@@ -117,9 +137,9 @@ func parseTokenSection(tok string, sections map[string]string) {
 		return
 	}
 
-	key := strings.ToLower(split[0])
+	key := getSectionName(split[0])
 	if !isValidSection(key) {
-		sylog.Fatalf("Invalid section identifier found: %s", key)
+		return
 	}
 
 	sectionsMutex.Lock()
@@ -132,16 +152,17 @@ func doSections(s *bufio.Scanner, d *Definition) error {
 
 	var wg sync.WaitGroup
 
-	token := strings.TrimSpace(s.Text())
+	tok := strings.TrimSpace(s.Text())
 	//check if first thing parsed is a header or just a section
-	if strings.ToLower(token[0:9]) == "bootstrap" {
-		if err := doHeader(token, d); err != nil {
+	if strings.ToLower(tok[0:9]) == "bootstrap" {
+		if err := doHeader(tok, d); err != nil {
 			sylog.Warningf("failed to parse DefFile header: %v\n", err)
 			return err
 		}
 	} else {
 		//this is a section
-		parseTokenSection(token, sectionsMap)
+		parseTokenSection(tok, sectionsMap)
+		syplugin.BuildHandleSections(splitToken(tok))
 	}
 
 	//parse remaining sections while scanner can advance
@@ -156,11 +177,15 @@ func doSections(s *bufio.Scanner, d *Definition) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-
 			parseTokenSection(tok, sectionsMap)
 		}()
 
 		// Process any custom section handling
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			syplugin.BuildHandleSections(splitToken(tok))
+		}()
 	}
 
 	if err := s.Err(); err != nil {
