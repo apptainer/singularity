@@ -14,6 +14,7 @@ import (
 	"log"
 	"reflect"
 	"strings"
+	"sync"
 	"unicode"
 
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -57,14 +58,9 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 		// Check if the first word starts with % sign
 		if word != nil && word[0] == '%' {
 			// If the word starts with %, it's a section identifier
-			_, ok := validSections[string(word[1:])] // Validate that the section identifier is valid
 
-			if !ok {
-				// Invalid Section Identifier
-				return 0, nil, fmt.Errorf("invalid section identifier found: %s", string(word))
-			}
-
-			// Valid Section Identifier
+			// We no longer check if the word is a valid section identifier here, since we want to move to
+			// a more modular approach where we can parse arbitrary sections
 			if inSection {
 				// Here we found the end of the section
 				return advance, retbuf.Bytes(), nil
@@ -101,44 +97,81 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 }
 
-func insertSection(b []byte, sections map[string]string) {
-	for i := 0; i < len(b); i++ {
-		if b[i] == '\n' {
-			sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
-			break
-		}
+func isValidSection(key string) bool {
+	if _, ok := validSections[key]; !ok {
+		return false
 	}
+
+	return true
 }
 
-func doSections(s *bufio.Scanner, d *Definition) (err error) {
-	sections := make(map[string]string)
+var sectionsMutex = &sync.Mutex{}
+
+// parseTokenSection splits the token into maximum 2 strings separated by a newline,
+// and then inserts the section into the sections map
+//
+// goroutine safe
+func parseTokenSection(tok string, sections map[string]string) {
+	split := strings.SplitN(tok, "\n", 2)
+	if len(split) != 2 {
+		return
+	}
+
+	key := strings.ToLower(split[0])
+	if !isValidSection(key) {
+		sylog.Fatalf("Invalid section identifier found: %s", key)
+	}
+
+	sectionsMutex.Lock()
+	sections[key] = strings.TrimRightFunc(split[1], unicode.IsSpace)
+	sectionsMutex.Unlock()
+}
+
+func doSections(s *bufio.Scanner, d *Definition) error {
+	sectionsMap := make(map[string]string)
+
+	var wg sync.WaitGroup
 
 	token := strings.TrimSpace(s.Text())
 	//check if first thing parsed is a header or just a section
 	if strings.ToLower(token[0:9]) == "bootstrap" {
-		if err = doHeader(token, d); err != nil {
+		if err := doHeader(token, d); err != nil {
 			sylog.Warningf("failed to parse DefFile header: %v\n", err)
-			return
+			return err
 		}
 	} else {
 		//this is a section
-		insertSection([]byte(token), sections)
+		parseTokenSection(token, sectionsMap)
 	}
 
 	//parse remaining sections while scanner can advance
 	for s.Scan() {
-		if err = s.Err(); err != nil {
-			return
+		if err := s.Err(); err != nil {
+			return err
 		}
 
-		b := s.Bytes()
-		insertSection(b, sections)
+		tok := s.Text()
+
+		// Parse each token -> section
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			parseTokenSection(tok, sectionsMap)
+		}()
+
+		// Process any custom section handling
 	}
 
-	if err = s.Err(); err != nil {
-		return
+	if err := s.Err(); err != nil {
+		return err
 	}
 
+	wg.Wait()
+	return populateDefinition(sectionsMap, d)
+}
+
+func populateDefinition(sections map[string]string, d *Definition) error {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
@@ -210,7 +243,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		return fmt.Errorf("parsed definition did not have any valid information")
 	}
 
-	return
+	return nil
 }
 
 func doHeader(h string, d *Definition) (err error) {
