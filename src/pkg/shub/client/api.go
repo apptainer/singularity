@@ -21,6 +21,9 @@ import (
 
 const (
 	defaultRegistry string = `singularity-hub.org/api/container/`
+	shubAPIRoute    string = "/api/container/"
+	//URINotSupported if we are using a non default registry error out for now
+	URINotSupported string = "Only the default Singularity Hub registry is suported for now"
 )
 
 // ShubURI stores the various components of a singularityhub URI
@@ -33,6 +36,10 @@ type ShubURI struct {
 	defaultReg bool
 }
 
+func (s *ShubURI) String() string {
+	return s.registry + s.user + "/" + s.container + s.tag + s.digest
+}
+
 // ShubAPIResponse holds the information returned from the Shub API
 type ShubAPIResponse struct {
 	Image   string `json:"image"`
@@ -41,30 +48,21 @@ type ShubAPIResponse struct {
 	Version string `json:"version"`
 }
 
-// ShubClient holds the information for interacting with Singularity Hub API
-type ShubClient struct {
-	FilePath string
-	ShubURI
-	*ShubAPIResponse
-	ShubURL string
-}
-
 // getManifest will return the image manifest for a container uri
 // from Singularity Hub.
-func (s *ShubClient) getManifest() (err error) {
+func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 
 	// Create a new Singularity Hub client
 	sc := http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	//if we are using a non default registry error out for now
-	if !s.ShubURI.defaultReg {
-		return errors.New("Only the default Singularity Hub registry is suported for now")
+	if !uri.defaultReg {
+		return ShubAPIResponse{}, errors.New(URINotSupported)
 	}
 
 	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("www.%s", s.ShubURI.String())
+	httpAddr := fmt.Sprintf("www.%s", uri.String())
 
 	// Create the request, add headers context
 	url := url.URL{
@@ -75,7 +73,7 @@ func (s *ShubClient) getManifest() (err error) {
 
 	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return err
+		return ShubAPIResponse{}, err
 	}
 	req.Header.Set("User-Agent", useragent.Value)
 
@@ -84,25 +82,25 @@ func (s *ShubClient) getManifest() (err error) {
 	sylog.Debugf("response: %v\n", res)
 
 	if err != nil {
-		return err
+		return ShubAPIResponse{}, err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		err = errors.New(res.Status)
-		return err
+		return ShubAPIResponse{}, err
 	}
 
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return err
+		return ShubAPIResponse{}, err
 	}
 
-	err = json.Unmarshal(body, &s.ShubAPIResponse)
-	sylog.Debugf("manifest: %v\n", s.ShubAPIResponse.Image)
+	err = json.Unmarshal(body, &manifest)
+	sylog.Debugf("manifest: %v\n", manifest.Image)
 	if err != nil {
-		return err
+		return ShubAPIResponse{}, err
 	}
 
-	return nil
+	return
 }
