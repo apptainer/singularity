@@ -96,7 +96,6 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 	}
 
 	return
-
 }
 
 // ParseErrorBody - Parse an API format error out of the body
