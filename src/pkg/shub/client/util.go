@@ -47,14 +47,12 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 
 	if l := len(refParts); l > 2 {
 		//more than two pieces indicates a custom registry
-		uri.defaultReg = false
 		uri.registry = strings.Join(refParts[:l-2], "") + shubAPIRoute
 		uri.user = refParts[l-2]
 		src = refParts[l-1]
 	} else if l == 2 {
 		//two pieces means default registry
-		uri.defaultReg = true
-		uri.registry = defaultRegistry
+		uri.registry = defaultRegistry + shubAPIRoute
 		uri.user = refParts[l-2]
 		src = refParts[l-1]
 	} else if l < 2 {
