@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	defaultRegistry string = `singularity-hub.org/api/container/`
+	defaultRegistry string = `singularity-hub.org`
 	shubAPIRoute    string = "/api/container/"
 	//URINotSupported if we are using a non default registry error out for now
 	URINotSupported string = "Only the default Singularity Hub registry is suported for now"
@@ -28,12 +28,11 @@ const (
 
 // ShubURI stores the various components of a singularityhub URI
 type ShubURI struct {
-	registry   string
-	user       string
-	container  string
-	tag        string
-	digest     string
-	defaultReg bool
+	registry  string
+	user      string
+	container string
+	tag       string
+	digest    string
 }
 
 func (s *ShubURI) String() string {
@@ -57,7 +56,7 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 		Timeout: 30 * time.Second,
 	}
 
-	if !uri.defaultReg {
+	if uri.registry != fmt.Sprintf("%s%s", defaultRegistry, shubAPIRoute) {
 		return ShubAPIResponse{}, errors.New(URINotSupported)
 	}
 
