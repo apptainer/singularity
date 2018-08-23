@@ -16,25 +16,27 @@ import (
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
-// Timeout for an image pull in seconds
-const pullTimeout = 1800
+// Timeout for an image pull in seconds (2 hours)
+const pullTimeout = 7200
 
 // DownloadImage will retrieve an image from the Container Singularityhub,
 // saving it into the specified file
 func DownloadImage(filePath string, shubRef string, Force bool) (err error) {
 	sylog.Debugf("Downloading container from Shub")
 
-	sc := ShubClient{FilePath: filePath}
-
 	//use custom parser to make sure we have a valid shub URI
-	sc.ShubURI, err = ShubParseReference(shubRef)
-	if err != nil {
+	if ok := isShubPullRef(shubRef); !ok {
 		sylog.Fatalf("Invalid shub URI: %v", err)
+	}
+
+	ShubURI, err := shubParseReference(shubRef)
+	if err != nil {
+		sylog.Fatalf("Failed to parse shub URI: %v", err)
 		return
 	}
 
 	if filePath == "" {
-		filePath = fmt.Sprintf("%s_%s.simg", sc.ShubURI.container, sc.ShubURI.tag)
+		filePath = fmt.Sprintf("%s_%s.simg", ShubURI.container, ShubURI.tag)
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 
@@ -45,13 +47,14 @@ func DownloadImage(filePath string, shubRef string, Force bool) (err error) {
 	}
 
 	// Get the image manifest
-	if err = sc.getManifest(); err != nil {
+	manifest, err := getManifest(ShubURI)
+	if err != nil {
 		sylog.Fatalf("Failed to get manifest from Shub: %v", err)
 		return
 	}
 
 	// Get the image based on the manifest
-	resp, err := http.Get(sc.ShubAPIResponse.Image)
+	resp, err := http.Get(manifest.Image)
 	if err != nil {
 		return err
 	}
