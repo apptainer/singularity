@@ -6,13 +6,22 @@
 package libexec
 
 import (
-	"github.com/singularityware/singularity/src/pkg/library/client"
+	library "github.com/singularityware/singularity/src/pkg/library/client"
+	shub "github.com/singularityware/singularity/src/pkg/shub/client"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// PullImage is the function that is responsible for pulling an image from a Sylabs library.
-func PullImage(image string, library string, libraryURL string, force bool, authToken string) {
-	err := client.DownloadImage(image, library, libraryURL, force, authToken)
+// PullLibraryImg is the function that is responsible for pulling an image from a Sylabs library.
+func PullLibraryImg(image string, libraryRef string, libraryURL string, force bool, authToken string) {
+	err := library.DownloadImage(image, libraryRef, libraryURL, force, authToken)
+	if err != nil {
+		sylog.Fatalf("%v\n", err)
+	}
+}
+
+// PullShubImg is the function that is responsible for pulling an image from a Singularity Hub.
+func PullShubImg(filePath string, shubRef string, force bool) {
+	err := shub.DownloadImage(filePath, shubRef, force)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}
