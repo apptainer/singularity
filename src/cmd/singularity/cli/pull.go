@@ -54,9 +54,9 @@ var PullCmd = &cobra.Command{
 		BaseURI := strings.Split(uri, "://")
 		switch BaseURI[0] {
 		case SyCloudLibrary:
-			libexec.PullImage(image, uri, PullLibraryURI, force, authToken)
+			libexec.PullLibraryImg(image, uri, PullLibraryURI, force, authToken)
 		case Shub:
-			sylog.Errorf("Shub not yet supported")
+			libexec.PullShubImg(image, uri, force)
 		default:
 			sylog.Errorf("Not a supported URI")
 		}
