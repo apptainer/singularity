@@ -10,7 +10,7 @@ NAME=`basename "$SINGULARITY_IMAGE"`
 CACHE="${SINGULARITY_CACHEDIR:-${HOME}/.singularity}/image_cache"
 
 if [ ! -d ${CACHE} ]; then
-    mkdir -p ${CACHE};
+    mkdir -m 0700 -p ${CACHE};
 fi
 
 if [ -f "${CACHE}/${NAME}" ]; then
