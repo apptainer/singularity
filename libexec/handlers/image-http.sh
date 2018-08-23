@@ -7,13 +7,19 @@
 
 NAME=`basename "$SINGULARITY_IMAGE"`
 
-if [ -f "$NAME" ]; then
-    message 2 "Using cached container in current working directory: $NAME\n"
-    SINGULARITY_IMAGE="$NAME"
+CACHE="${SINGULARITY_CACHEDIR:-${HOME}/.singularity}/image_cache"
+
+if [ ! -d ${CACHE} ]; then
+    mkdir -p ${CACHE};
+fi
+
+if [ -f "${CACHE}/${NAME}" ]; then
+    message 2 "Using cached container from: ${CACHE}/${NAME}\n"
+    SINGULARITY_IMAGE="${CACHE}/${NAME}"
 else
-    message 1 "Caching container to current working directory: $NAME\n"
-    if curl -L -k "$SINGULARITY_IMAGE" > "$NAME"; then
-        SINGULARITY_IMAGE="$NAME"
+    message 1 "Caching container to: ${CACHE}/${NAME}\n"
+    if curl -L -k "$SINGULARITY_IMAGE" > "${CACHE}/${NAME}"; then
+        SINGULARITY_IMAGE="${CACHE}/${NAME}"
     else
         ABORT 255
     fi
