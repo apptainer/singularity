@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	shubURI     = "//ikaneshiro/singularityhub:latest"
+	shubURI     = "shub://ikaneshiro/singularityhub:latest"
 	shubImgPath = "/tmp/shub-test_img.simg"
 )
 
