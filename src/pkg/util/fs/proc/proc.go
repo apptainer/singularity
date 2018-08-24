@@ -80,14 +80,11 @@ func CountChilds(pid int) (int, error) {
 	parentLine := fmt.Sprintf("PPid:\t%d", pid)
 	pattern := filepath.Join("/proc", "[0-9]*")
 
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return 0, err
-	}
+	matches, _ := filepath.Glob(pattern)
 	for _, path := range matches {
 		r, err := os.Open(filepath.Join(path, "status"))
 		if err != nil {
-			return 0, err
+			continue
 		}
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {

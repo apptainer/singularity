@@ -87,10 +87,10 @@ func killInstance(file *instance.File, sig syscall.Signal, fileChan chan *instan
 
 	for sig != syscall.SIGKILL {
 		if childs, err := proc.CountChilds(file.Pid); childs == 0 {
-			fileChan <- file
 			if err == nil {
 				syscall.Kill(file.Pid, syscall.SIGKILL)
 			}
+			fileChan <- file
 			break
 		}
 		time.Sleep(10 * time.Millisecond)
@@ -124,6 +124,7 @@ func stopInstance(name string) {
 	if len(files) == 0 {
 		sylog.Fatalf("no instance found")
 	}
+
 	for _, file := range files {
 		go killInstance(file, sig, fileChan)
 	}

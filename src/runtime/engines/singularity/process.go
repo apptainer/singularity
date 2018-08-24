@@ -129,9 +129,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				}
 				return fmt.Errorf("command exit with error: %s", err)
 			}
-			if err != nil {
-				os.Exit(1)
-			}
 			if !isInstance {
 				os.Exit(0)
 			}
