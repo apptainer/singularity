@@ -18,11 +18,14 @@ const (
 	KeyFP2 = "7064B1D6EFF01B1262FED3F03581D99FE87EAFD1"
 
 	srcContainer1 = "testdata/container1.sif"
+	srcContainer2 = "testdata/container2.sif"
+	srcContainer3 = "testdata/container3.sif"
 )
 
 var testWlConfig = WlConfig{
 	Activated: true,
-	AuthList: []authorized{{"", []string{KeyFP1, KeyFP2}},
+	AuthList: []authorized{
+		{"", []string{KeyFP1, KeyFP2}},
 		{"", []string{KeyFP2}},
 	},
 }
@@ -31,6 +34,8 @@ var testWlFileName string // pathname of the whitelist config file
 var testWlDomain1 string  // dirname of the first whitelist domaine
 var testWlDomain2 string  // dirname of the second whitelist domaine
 var testContainer1 string // pathname of the first test container
+var testContainer2 string // pathname of the second test container
+var testContainer3 string // pathname of the third test container
 
 func TestAPutConfig(t *testing.T) {
 	err := PutConfig(testWlConfig, testWlFileName)
@@ -76,13 +81,31 @@ func TestShouldRun(t *testing.T) {
 		t.Error(`wlcfg.ValidateConfig():`, err)
 	}
 
+	// check container1 authorization
 	run, err := wlcfg.ShouldRun(testContainer1)
 	if err != nil {
 		t.Error(`wlcfg.ShouldRun(testContainer1):`, err)
 	}
-
 	if !run {
 		t.Error(testContainer1, "should be allowed to run")
+	}
+	// check container2 authorization
+	run, err = wlcfg.ShouldRun(testContainer2)
+	if err != nil {
+		t.Error(`wlcfg.ShouldRun(testContainer2):`, err)
+	}
+	if !run {
+		t.Error(testContainer2, "should be allowed to run")
+	}
+	// check container3 authorization (fails by entity)
+	run, err = wlcfg.ShouldRun(testContainer3)
+	if err == nil || run == true {
+		t.Error(testContainer3, "should NOT be allowed to run")
+	}
+	// check srcContainer1 authorization (fails by path)
+	run, err = wlcfg.ShouldRun(srcContainer1)
+	if err == nil || run == true {
+		t.Error(srcContainer1, "should NOT be allowed to run")
 	}
 }
 
@@ -137,6 +160,14 @@ func setup() error {
 	// prepare and copy test containers from testdata/* to their test domaines
 	testContainer1 = filepath.Join(testWlDomain1, filepath.Base(srcContainer1))
 	if err := copyFile(testContainer1, srcContainer1); err != nil {
+		return err
+	}
+	testContainer2 = filepath.Join(testWlDomain2, filepath.Base(srcContainer2))
+	if err := copyFile(testContainer2, srcContainer2); err != nil {
+		return err
+	}
+	testContainer3 = filepath.Join(testWlDomain2, filepath.Base(srcContainer3))
+	if err := copyFile(testContainer3, srcContainer3); err != nil {
 		return err
 	}
 

@@ -99,6 +99,9 @@ func (wlcfg *WlConfig) ShouldRun(cpath string) (run bool, err error) {
 			}
 		}
 	}
+	if run == false {
+		return false, fmt.Errorf("%s is not signed by required entities", cpath)
+	}
 
 	return
 }
