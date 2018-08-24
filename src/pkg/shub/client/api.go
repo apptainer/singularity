@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -20,7 +19,7 @@ import (
 )
 
 const (
-	defaultRegistry string = `singularity-hub.org`
+	defaultRegistry string = `https://singularity-hub.org`
 	shubAPIRoute    string = "/api/container/"
 	//URINotSupported if we are using a non default registry error out for now
 	URINotSupported string = "Only the default Singularity Hub registry is suported for now"
@@ -60,17 +59,17 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 		return ShubAPIResponse{}, errors.New(URINotSupported)
 	}
 
-	// Format the http address, coinciding with the image uri
-	httpAddr := fmt.Sprintf("www.%s", uri.String())
-
 	// Create the request, add headers context
-	url := url.URL{
-		Scheme: "https",
-		Host:   strings.Split(httpAddr, `/`)[0],     //split url to match format, first half
-		Path:   strings.SplitN(httpAddr, `/`, 2)[1], //second half
+	url, err := url.Parse(defaultRegistry)
+	if err != nil {
+		return ShubAPIResponse{}, err
+	}
+	rel, err := url.Parse(shubAPIRoute + uri.user + "/" + uri.container + uri.tag + uri.digest)
+	if err != nil {
+		return ShubAPIResponse{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
+	req, err := http.NewRequest(http.MethodGet, rel.String(), nil)
 	if err != nil {
 		return ShubAPIResponse{}, err
 	}
