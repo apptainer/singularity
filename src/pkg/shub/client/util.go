@@ -19,7 +19,7 @@ func isShubPullRef(shubRef string) bool {
 	nameRegexp := `([-a-zA-Z0-9]{1,39}\/)`        //target valid github usernames
 	containerRegexp := `([-_.a-zA-Z0-9]{1,64})`   //target valid github repo names
 	tagRegexp := `(:[-_.a-zA-Z0-9]{1,64})?`       //target is very open, file extensions or branch names
-	digestRegexp := `(\@[a-f0-9]{32})?`           //target file md5 has, git commit hash, git branch
+	digestRegexp := `(\@[a-f0-9]{40})?`           //target file md5 has, git commit hash, git branch
 
 	//expression is anchored
 	shubRegex, err := regexp.Compile(`^(shub://)` + registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp + `$`)
