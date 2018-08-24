@@ -130,6 +130,11 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
 
+	if Hostname != "" {
+		UtsNamespace = true
+		engineConfig.SetHostname(Hostname)
+	}
+
 	if IsContained || IsContainAll {
 		engineConfig.SetContain(true)
 

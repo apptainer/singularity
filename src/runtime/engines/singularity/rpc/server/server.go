@@ -68,3 +68,11 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	}
 	return nil
 }
+
+// SetHostname sets hostname with the specified arguments
+func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
+	if err := syscall.Sethostname([]byte(arguments.Hostname)); err != nil {
+		return err
+	}
+	return nil
+}
