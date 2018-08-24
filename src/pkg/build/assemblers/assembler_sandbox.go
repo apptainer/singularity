@@ -16,6 +16,7 @@ import (
 
 	"github.com/otiai10/copy"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
@@ -123,7 +124,7 @@ func insertDefinition(b *types.Bundle) error {
 		return err
 	}
 
-	b.Recipe.WriteDefinitionFile(f)
+	parser.WriteDefinitionFile(&b.Recipe, f)
 
 	return nil
 }

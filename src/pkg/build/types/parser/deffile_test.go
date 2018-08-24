@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package types
+package parser
 
 import (
 	"bufio"
@@ -13,6 +13,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/test"
 )
 
@@ -104,7 +105,7 @@ func TestParseDefinitionFile(t *testing.T) {
 				t.Fatal("failed to parse definition file:", err)
 			}
 
-			var defCorrect Definition
+			var defCorrect types.Definition
 			if err := json.NewDecoder(jsonFile).Decode(&defCorrect); err != nil {
 				t.Fatal("failed to parse JSON:", err)
 			}

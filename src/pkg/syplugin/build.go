@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/sylabs/singularity/src/pkg/apps"
+	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -52,25 +54,60 @@ func GetBuildPlugins() map[string]BuildPlugin {
 	return registeredBuildPlugins.Plugins
 }
 
-// BuildHandleSections runs the HandleSection()hook on every plugin
+// BuildHandleSections runs the HandleSection() hook on every plugin
 func BuildHandleSections(i, s string) {
 	var plwait sync.WaitGroup
 
 	for name, pl := range GetBuildPlugins() {
 		plwait.Add(1)
-		go func(name string, pl *BuildPlugin) {
+		go func(name string, pl BuildPlugin) {
 			defer plwait.Done()
 			sylog.Debugf("Running %s plugin: HandleSection() hook", name)
 
-			(*pl).HandleSection(i, s)
-		}(name, &pl)
+			pl.HandleSection(i, s)
+		}(name, pl)
 	}
 
 	plwait.Wait()
+}
+
+// BuildHandleBundles runs the HandleBundle() hook on every plugin
+func BuildHandleBundles(b *types.Bundle) {
+	var plwait sync.WaitGroup
+
+	for name, pl := range GetBuildPlugins() {
+		plwait.Add(1)
+		go func(name string, pl BuildPlugin) {
+			defer plwait.Done()
+			sylog.Debugf("Running %s plugin: HandleBundle() hook", name)
+
+			pl.HandleBundle(b)
+		}(name, pl)
+	}
+
+	plwait.Wait()
+}
+
+// BuildHandlePosts runs the HandleBundle() hook on every plugin
+func BuildHandlePosts() (ret string) {
+	for name, pl := range GetBuildPlugins() {
+		sylog.Debugf("Running %s plugin: HandlePost() hook", name)
+
+		ret += pl.HandlePost()
+	}
+
+	return
 }
 
 // BuildPlugin is the interface for plugins on the build system
 type BuildPlugin interface {
 	Name() string
 	HandleSection(string, string)
+	HandleBundle(*types.Bundle)
+	HandlePost() string
+}
+
+func init() {
+	appPl := apps.New()
+	RegisterBuildPlugin(&appPl)
 }

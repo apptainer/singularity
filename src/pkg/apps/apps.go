@@ -9,12 +9,14 @@
 package apps
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
+	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
 const name = "singularity_apps"
@@ -25,53 +27,64 @@ const (
 	sectionEnv     = "appenv"
 	sectionTest    = "apptest"
 	sectionHelp    = "apphelp"
+	sectionRun     = "apprun"
 )
 
-// App represents a Singularity app at build time
+// App stores the deffile sections of the app
 type App struct {
+	Name    string
 	Install string
 	Files   string
 	Env     string
 	Test    string
 	Help    string
+	Run     string
 }
 
 // BuildPlugin is the type which the build system can understand
 type BuildPlugin struct {
-	Apps map[string]App `json:"appsDefined"`
-	*sync.Mutex
+	Apps map[string]*App `json:"appsDefined"`
+	sync.Mutex
 }
 
-func init() {
-	if err := syplugin.RegisterBuildPlugin(BuildPlugin{
-		Apps:  make(map[string]App),
-		Mutex: &sync.Mutex{},
-	}); err != nil {
-		os.Exit(1)
+// New returns a new BuildPlugin for the plugin registry to hold
+func New() BuildPlugin {
+	return BuildPlugin{
+		Apps: make(map[string]*App),
 	}
+
 }
 
 // Name returns this handler's name [singularity_apps]
-func (pl BuildPlugin) Name() string {
+func (pl *BuildPlugin) Name() string {
 	return name
 }
 
 // HandleSection receives a string of each section from the deffile
-func (pl BuildPlugin) HandleSection(ident, section string) {
+func (pl *BuildPlugin) HandleSection(ident, section string) {
 	name, sect := getAppAndSection(ident)
-	app := *(pl.initApp(name))
+	if name == "" || sect == "" {
+		return
+	}
+
+	pl.initApp(name)
+	app := pl.Apps[name]
 
 	switch sect {
 	case sectionInstall:
-		app.Install = sect
+		app.Install = section
+		fmt.Println("set app.Install = sect")
+		fmt.Println(section)
 	case sectionFiles:
-		app.Files = sect
+		app.Files = section
 	case sectionEnv:
-		app.Env = sect
+		app.Env = section
 	case sectionTest:
-		app.Test = sect
+		app.Test = section
 	case sectionHelp:
-		app.Help = sect
+		app.Help = section
+	case sectionRun:
+		app.Run = section
 	default:
 		return
 	}
@@ -79,16 +92,22 @@ func (pl BuildPlugin) HandleSection(ident, section string) {
 	sylog.Debugf("App: %s - Section: %s\n", name, sect)
 }
 
-func (pl BuildPlugin) initApp(name string) *App {
+func (pl *BuildPlugin) initApp(name string) {
 	pl.Lock()
 	defer pl.Unlock()
 
-	app, ok := pl.Apps[name]
+	_, ok := pl.Apps[name]
 	if !ok {
-		pl.Apps[name] = App{}
+		pl.Apps[name] = &App{
+			Name:    name,
+			Install: "",
+			Files:   "",
+			Env:     "",
+			Test:    "",
+			Help:    "",
+			Run:     "",
+		}
 	}
-
-	return &app
 }
 
 // getAppAndSection returns the app name and section name from the header of the section:
@@ -103,27 +122,169 @@ func getAppAndSection(ident string) (appName string, sectionName string) {
 	return identSplit[1], identSplit[0]
 }
 
-// func createBase(b *types.Bundle) {
-// }
+// HandleBundle is a hook where we can modify the bundle
+func (pl *BuildPlugin) HandleBundle(b *types.Bundle) {
+	if err := pl.createAllApps(b); err != nil {
+		sylog.Fatalf("Unable to create apps: %s", err)
+	}
+}
 
-// func createAppBase(b *types.Bundle, name string) {
+func (pl *BuildPlugin) createAllApps(b *types.Bundle) error {
+	for name, app := range pl.Apps {
+		sylog.Debugf("Creating %s app in bundle", name)
+		if err := createAppRoot(b, app); err != nil {
+			return err
+		}
 
-// }
+		if err := writeEnvFile(b, app); err != nil {
+			return err
+		}
 
-// // OnPost hook allows custom code to be run after %post script is done running. This happens in
-// // the same environment as %post
-// func OnPost() {
+		if err := writeRunscriptFile(b, app); err != nil {
+			return err
+		}
 
-// }
+		if err := writeHelpFile(b, app); err != nil {
+			return err
+		}
+	}
 
-// // OnPre hook allows custom code to be run after %pre script is done running. This happens in
-// // the same environment as %pre
-// func OnPre() {
+	return nil
+}
 
-// }
+func createAppRoot(b *types.Bundle, a *App) error {
+	if err := os.MkdirAll(appBase(b, a), 0755); err != nil {
+		return err
+	}
 
-// // OnSetup hook allows custom code to be run after %setup script is done running. This happens in
-// // the same environment as %setup
-// func OnSetup() {
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/scif/"), 0755); err != nil {
+		return err
+	}
 
-// }
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/bin/"), 0755); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/lib/"), 0755); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(appBase(b, a), "/scif/env/"), 0755); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(appData(b, a), "/input/"), 0755); err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Join(appData(b, a), "/output/"), 0755); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// %appenv and 01-base.sh
+func writeEnvFile(b *types.Bundle, a *App) error {
+	content := fmt.Sprintf(scifEnv01Base, a.Name)
+	if err := writeFile(filepath.Join(appMeta(b, a), "/env/01-base.sh"), 0755, content); err != nil {
+		return err
+	}
+
+	if a.Env == "" {
+		return nil
+	}
+
+	return writeFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), 0755, a.Env)
+}
+
+// %apprun
+func writeRunscriptFile(b *types.Bundle, a *App) error {
+	if a.Run == "" {
+		return nil
+	}
+
+	content := fmt.Sprintf(scifRunscriptBase, a.Run)
+	return writeFile(filepath.Join(appMeta(b, a), "/runscript"), 0755, content)
+}
+
+// %apphelp
+func writeHelpFile(b *types.Bundle, a *App) error {
+	if a.Help == "" {
+		return nil
+	}
+
+	return writeFile(filepath.Join(appMeta(b, a), "/runscript.help"), 0755, a.Help)
+}
+
+//util funcs
+
+func appBase(b *types.Bundle, a *App) string {
+	return filepath.Join(b.Rootfs(), "/scif/apps/", a.Name)
+}
+
+func appMeta(b *types.Bundle, a *App) string {
+	return filepath.Join(appBase(b, a), "/scif/")
+}
+
+func appData(b *types.Bundle, a *App) string {
+	return filepath.Join(b.Rootfs(), "/scif/data/", a.Name)
+}
+
+func writeFile(path string, perm os.FileMode, s string) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.WriteString(s)
+	return err
+}
+
+const (
+	scifEnv01Base = `#!/bin/sh
+
+SCIF_APPNAME=%[1]s
+SCIF_APPROOT="/scif/apps/%[1]s"
+SCIF_APPMETA="/scif/apps/%[1]s/scif"
+SCIF_DATA="/scif/data"
+SCIF_APPDATA="/scif/data/%[1]s"
+SCIF_APPINPUT="/scif/data/%[1]s/input"
+SCIF_APPOUTPUT="/scif/data/%[1]s/output"
+export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_APPOUTPUT SCIF_DATA
+`
+
+	scifRunscriptBase = `#!/bin/sh
+
+%s
+`
+
+	scifInstallBase = `
+cd /
+. %[1]s/env/01-base.sh
+
+cd %[1]s
+%[2]s
+
+cd /
+`
+)
+
+// HandlePost returns a script that should run after %post
+func (pl *BuildPlugin) HandlePost() string {
+	post := ""
+	for name, app := range pl.Apps {
+		sylog.Debugf("Building app[%s] post script section", name)
+
+		post += buildPost(app)
+	}
+
+	sylog.Debugf("AppPost: \n%s\n", post)
+	return post
+}
+
+func buildPost(a *App) string {
+	fmt.Println(a.Install)
+	return fmt.Sprintf(scifInstallBase, filepath.Join("/scif/apps/", a.Name, "/scif"), a.Install)
+}

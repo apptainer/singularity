@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package types
+package parser
 
 import (
 	"bufio"
@@ -12,11 +12,13 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"reflect"
 	"strings"
 	"sync"
 	"unicode"
 
+	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
@@ -147,7 +149,7 @@ func parseTokenSection(tok string, sections map[string]string) {
 	sectionsMutex.Unlock()
 }
 
-func doSections(s *bufio.Scanner, d *Definition) error {
+func doSections(s *bufio.Scanner, d *types.Definition) error {
 	sectionsMap := make(map[string]string)
 
 	var wg sync.WaitGroup
@@ -196,11 +198,11 @@ func doSections(s *bufio.Scanner, d *Definition) error {
 	return populateDefinition(sectionsMap, d)
 }
 
-func populateDefinition(sections map[string]string, d *Definition) error {
+func populateDefinition(sections map[string]string, d *types.Definition) error {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
-	var files []FileTransport
+	var files []types.FileTransport
 
 	for _, line := range subs {
 
@@ -217,7 +219,7 @@ func populateDefinition(sections map[string]string, d *Definition) error {
 			dst = strings.TrimSpace(lineSubs[1])
 		}
 
-		files = append(files, FileTransport{src, dst})
+		files = append(files, types.FileTransport{Src: src, Dst: dst})
 	}
 
 	// labels are parsed as a map[string]string
@@ -242,8 +244,8 @@ func populateDefinition(sections map[string]string, d *Definition) error {
 		labels[key] = val
 	}
 
-	d.ImageData = ImageData{
-		ImageScripts: ImageScripts{
+	d.ImageData = types.ImageData{
+		ImageScripts: types.ImageScripts{
 			Help:        sections["help"],
 			Environment: sections["environment"],
 			Runscript:   sections["runscript"],
@@ -253,7 +255,7 @@ func populateDefinition(sections map[string]string, d *Definition) error {
 		Labels: labels,
 	}
 	d.BuildData.Files = files
-	d.BuildData.Scripts = Scripts{
+	d.BuildData.Scripts = types.Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
@@ -261,7 +263,7 @@ func populateDefinition(sections map[string]string, d *Definition) error {
 	}
 
 	// make sure information was valid by checking if definition is not equal to an empty one
-	emptyDef := new(Definition)
+	emptyDef := new(types.Definition)
 	// labels is always initialized
 	emptyDef.Labels = make(map[string]string)
 	if reflect.DeepEqual(d, emptyDef) {
@@ -271,7 +273,7 @@ func populateDefinition(sections map[string]string, d *Definition) error {
 	return nil
 }
 
-func doHeader(h string, d *Definition) (err error) {
+func doHeader(h string, d *types.Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	d.Header = make(map[string]string)
@@ -298,7 +300,7 @@ func doHeader(h string, d *Definition) (err error) {
 // ParseDefinitionFile recieves a reader from a definition file
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
-func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
+func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
 
@@ -320,7 +322,7 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 }
 
 func canGetHeader(r io.Reader) (ok bool, err error) {
-	var d Definition
+	var d types.Definition
 
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
@@ -337,7 +339,7 @@ func canGetHeader(r io.Reader) (ok bool, err error) {
 
 	if err = doHeader(s.Text(), &d); err != nil {
 		sylog.Warningf("failed to parse DefFile header: %v\n", err)
-		return
+		return false, nil
 	}
 
 	return true, nil
@@ -353,7 +355,7 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 	}
 }
 
-func writeFilesIfExists(w io.Writer, f []FileTransport) {
+func writeFilesIfExists(w io.Writer, f []types.FileTransport) {
 
 	if len(f) > 0 {
 
@@ -393,7 +395,7 @@ func writeLabelsIfExists(w io.Writer, l map[string]string) {
 
 // WriteDefinitionFile is a helper func to output a Definition struct
 // into a definition file.
-func (d *Definition) WriteDefinitionFile(w io.Writer) {
+func WriteDefinitionFile(d *types.Definition, w io.Writer) {
 	for k, v := range d.Header {
 		w.Write([]byte(k))
 		w.Write([]byte(": "))
@@ -413,4 +415,43 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)
+}
+
+// IsValidDefinition returns whether or not the given file is a valid definition
+func IsValidDefinition(source string) (valid bool, err error) {
+	defFile, err := os.Open(source)
+	if err != nil {
+		return false, err
+	}
+	defer defFile.Close()
+
+	ok, _ := canGetHeader(defFile)
+
+	return ok, nil
+}
+
+// validSections just contains a list of all the valid sections a definition file
+// could contain. If any others are found, an error will generate
+var validSections = map[string]bool{
+	"help":        true,
+	"setup":       true,
+	"files":       true,
+	"labels":      true,
+	"environment": true,
+	"pre":         true,
+	"post":        true,
+	"runscript":   true,
+	"test":        true,
+	"startscript": true,
+}
+
+// validHeaders just contains a list of all the valid headers a definition file
+// could contain. If any others are found, an error will generate
+var validHeaders = map[string]bool{
+	"bootstrap":  true,
+	"from":       true,
+	"includecmd": true,
+	"mirrorurl":  true,
+	"osversion":  true,
+	"include":    true,
 }

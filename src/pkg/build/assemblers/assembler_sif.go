@@ -17,6 +17,7 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -105,7 +106,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	// convert definition to plain text
 	var buf bytes.Buffer
-	b.Recipe.WriteDefinitionFile(&buf)
+	parser.WriteDefinitionFile(&(b.Recipe), &buf)
 	def := buf.Bytes()
 
 	// make system partition image
