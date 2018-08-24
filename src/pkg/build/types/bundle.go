@@ -6,7 +6,6 @@
 package types
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -79,7 +78,6 @@ func (b Bundle) RunSection(s string) bool {
 			return false
 		}
 		if section == "all" || section == s {
-			fmt.Println(section, s)
 			return true
 		}
 	}
