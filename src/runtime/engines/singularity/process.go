@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -15,7 +16,11 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/singularityware/singularity/src/pkg/util/mainthread"
+	"github.com/singularityware/singularity/src/pkg/util/user"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -46,7 +51,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
-		return err
+		return fmt.Errorf("exec %s failed: %s", args[0], err)
 	}
 
 	// Spawn and wait container process, signal handler
@@ -104,10 +109,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 						break
 					}
 				}
-			case syscall.SIGCONT:
 			default:
 				if isInstance {
-					syscall.Kill(-1, s.(syscall.Signal))
+					if s != syscall.SIGCONT {
+						syscall.Kill(-1, s.(syscall.Signal))
+					}
 				} else {
 					// kill ourself with SIGKILL whatever signal was received
 					syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
@@ -137,5 +143,70 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
+
+	if engine.EngineConfig.GetInstance() {
+		uid := os.Getuid()
+		gid := os.Getgid()
+		name := engine.CommonConfig.ContainerID
+		privileged := true
+
+		if engine.CommonConfig.OciConfig.Linux != nil {
+			for _, ns := range engine.CommonConfig.OciConfig.Linux.Namespaces {
+				if ns.Type == specs.UserNamespace {
+					privileged = false
+					break
+				}
+			}
+		}
+
+		file, err := instance.Add(name, privileged)
+		if err != nil {
+			return err
+		}
+
+		file.Config, err = json.Marshal(engine.CommonConfig)
+		if err != nil {
+			return err
+		}
+
+		pw, err := user.GetPwUID(uint32(uid))
+		if err != nil {
+			return err
+		}
+		file.User = pw.Name
+		file.Pid = pid
+		file.PPid = os.Getpid()
+		file.Image = engine.EngineConfig.GetImage()
+
+		if privileged {
+			var err error
+
+			mainthread.Execute(func() {
+				if err = syscall.Setresuid(0, 0, uid); err != nil {
+					err = fmt.Errorf("failed to escalate uid privileges")
+					return
+				}
+				if err = syscall.Setresgid(0, 0, gid); err != nil {
+					err = fmt.Errorf("failed to escalate gid privileges")
+					return
+				}
+				if err = file.Update(); err != nil {
+					return
+				}
+				if err = syscall.Setresgid(gid, gid, 0); err != nil {
+					err = fmt.Errorf("failed to escalate gid privileges")
+					return
+				}
+				if err := syscall.Setresuid(uid, uid, 0); err != nil {
+					err = fmt.Errorf("failed to escalate uid privileges")
+					return
+				}
+			})
+
+			return err
+		}
+
+		return file.Update()
+	}
 	return nil
 }

@@ -145,3 +145,44 @@ func TestExtractPid(t *testing.T) {
 		}
 	}
 }
+
+func TestCountChilds(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	childs, err := CountChilds(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if childs == 0 {
+		t.Fatal("init have no child processes")
+	}
+	childs, err = CountChilds(0)
+	if err == nil {
+		t.Fatal("no error reported with PID 0")
+	}
+}
+
+func TestReadIDMap(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// skip tests if uid_map doesn't exists
+	if _, err := os.Stat("/proc/self/uid_map"); os.IsNotExist(err) {
+		return
+	}
+	containerID, hostID, err := ReadIDMap("/proc/self/uid_map")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if containerID != 0 || containerID != hostID {
+		t.Errorf("")
+	}
+	containerID, hostID, err = ReadIDMap("/proc/self/gid_map")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if containerID != 0 || containerID != hostID {
+		t.Errorf("")
+	}
+}

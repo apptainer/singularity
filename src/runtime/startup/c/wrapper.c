@@ -771,7 +771,7 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
-    if ( (config.nsFlags & CLONE_NEWUSER) == 0 ) {
+    if ( (config.nsFlags & CLONE_NEWUSER) == 0 && get_nspath(user) == NULL ) {
         priv_escalate();
     } else {
         if ( config.isSuid ) {

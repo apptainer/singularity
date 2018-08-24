@@ -7,7 +7,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/pkg/util/user"
@@ -119,7 +119,7 @@ var RunCmd = &cobra.Command{
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execWrapper(cobraCmd *cobra.Command, image string, args []string, name string) {
-	progname := ""
+	procname := ""
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
@@ -136,7 +136,16 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 	// temporary check for development
 	// TODO: a real URI handler
 	if strings.HasPrefix(image, "instance://") {
+		instanceName := instance.ExtractName(image)
+		file, err := instance.Get(instanceName)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		if !file.Privileged {
+			UserNamespace = true
+		}
 		engineConfig.SetImage(image)
+		engineConfig.SetInstanceJoin(true)
 	} else {
 		abspath, err := filepath.Abs(image)
 		if err != nil {
@@ -193,6 +202,14 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetInstance(true)
 		engineConfig.SetBootInstance(IsBoot)
 
+		_, err := instance.Get(name)
+		if err == nil {
+			sylog.Fatalf("instance %s already exists", name)
+		}
+		if err := instance.SetLogFile(name); err != nil {
+			sylog.Fatalf("failed to create instance log files: %s", err)
+		}
+
 		if IsBoot {
 			UtsNamespace = true
 			NetNamespace = true
@@ -206,10 +223,10 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
 		}
-		progname = fmt.Sprintf("Singularity instance: %s [%s]", pwd.Name, name)
+		procname = instance.ProcName(name, pwd.Name)
 	} else {
 		generator.SetProcessArgs(args)
-		progname = "Singularity runtime parent"
+		procname = "Singularity runtime parent"
 	}
 
 	if NetNamespace {
@@ -281,7 +298,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {
+	if err := exec.Pipe(wrapper, []string{procname}, Env, configData); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 }

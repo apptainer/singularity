@@ -119,8 +119,8 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 			if status.ExitStatus() != 0 {
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)
+					sylog.Fatalf("failed to spawn instance")
 				}
-				sylog.Fatalf("failed to spawn instance")
 			}
 			if os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR1)
