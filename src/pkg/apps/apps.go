@@ -30,6 +30,51 @@ const (
 	sectionRun     = "apprun"
 )
 
+const (
+	globalEnv94Base = `## App Global Exports For: %[1]s
+	
+SCIF_APPDATA_%[1]s=/scif/data/%[1]s
+SCIF_APPMETA_%[1]s=/scif/apps/%[1]s/scif
+SCIF_APPROOT_%[1]s=/scif/apps/%[1]s
+SCIF_APPBIN_%[1]s=/scif/apps/%[1]s/bin
+SCIF_APPLIB_%[1]s=/scif/apps/%[1]s/lib
+
+export SCIF_APPDATA_%[1]s SCIF_APPMETA_%[1]s SCIF_APPROOT_%[1]s SCIF_APPBIN_%[1]s SCIF_APPLIB_%[1]s
+`
+
+	globalEnv94AppEnv = `export SCIF_APPENV_%[1]s="/scif/apps/%[1]s/scif/env/90-environment.sh"
+`
+	globalEnv94AppRun = `export SCIF_APPRUN_%[1]s="/scif/apps/%[1]s/scif/runscript"
+`
+
+	scifEnv01Base = `#!/bin/sh
+
+SCIF_APPNAME=%[1]s
+SCIF_APPROOT="/scif/apps/%[1]s"
+SCIF_APPMETA="/scif/apps/%[1]s/scif"
+SCIF_DATA="/scif/data"
+SCIF_APPDATA="/scif/data/%[1]s"
+SCIF_APPINPUT="/scif/data/%[1]s/input"
+SCIF_APPOUTPUT="/scif/data/%[1]s/output"
+export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_APPOUTPUT SCIF_DATA
+`
+
+	scifRunscriptBase = `#!/bin/sh
+
+%s
+`
+
+	scifInstallBase = `
+cd /
+. %[1]s/env/01-base.sh
+
+cd %[1]s
+%[2]s
+
+cd /
+`
+)
+
 // App stores the deffile sections of the app
 type App struct {
 	Name    string
@@ -73,8 +118,6 @@ func (pl *BuildPlugin) HandleSection(ident, section string) {
 	switch sect {
 	case sectionInstall:
 		app.Install = section
-		fmt.Println("set app.Install = sect")
-		fmt.Println(section)
 	case sectionFiles:
 		app.Files = section
 	case sectionEnv:
@@ -88,8 +131,6 @@ func (pl *BuildPlugin) HandleSection(ident, section string) {
 	default:
 		return
 	}
-
-	sylog.Debugf("App: %s - Section: %s\n", name, sect)
 }
 
 func (pl *BuildPlugin) initApp(name string) {
@@ -130,6 +171,8 @@ func (pl *BuildPlugin) HandleBundle(b *types.Bundle) {
 }
 
 func (pl *BuildPlugin) createAllApps(b *types.Bundle) error {
+	globalEnv94 := ""
+
 	for name, app := range pl.Apps {
 		sylog.Debugf("Creating %s app in bundle", name)
 		if err := createAppRoot(b, app); err != nil {
@@ -147,9 +190,11 @@ func (pl *BuildPlugin) createAllApps(b *types.Bundle) error {
 		if err := writeHelpFile(b, app); err != nil {
 			return err
 		}
+
+		globalEnv94 += globalAppEnv(b, app)
 	}
 
-	return nil
+	return writeFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/94-appsbase.sh"), 0755, globalEnv94)
 }
 
 func createAppRoot(b *types.Bundle, a *App) error {
@@ -198,6 +243,20 @@ func writeEnvFile(b *types.Bundle, a *App) error {
 	return writeFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), 0755, a.Env)
 }
 
+func globalAppEnv(b *types.Bundle, a *App) string {
+	content := fmt.Sprintf(globalEnv94Base, a.Name)
+
+	if _, err := os.Stat(filepath.Join(appMeta(b, a), "/env/90-environment.sh")); err == nil {
+		content += fmt.Sprintf(globalEnv94AppEnv, a.Name)
+	}
+
+	if _, err := os.Stat(filepath.Join(appMeta(b, a), "/runscript")); err == nil {
+		content += fmt.Sprintf(globalEnv94AppRun, a.Name)
+	}
+
+	return content
+}
+
 // %apprun
 func writeRunscriptFile(b *types.Bundle, a *App) error {
 	if a.Run == "" {
@@ -242,35 +301,6 @@ func writeFile(path string, perm os.FileMode, s string) error {
 	return err
 }
 
-const (
-	scifEnv01Base = `#!/bin/sh
-
-SCIF_APPNAME=%[1]s
-SCIF_APPROOT="/scif/apps/%[1]s"
-SCIF_APPMETA="/scif/apps/%[1]s/scif"
-SCIF_DATA="/scif/data"
-SCIF_APPDATA="/scif/data/%[1]s"
-SCIF_APPINPUT="/scif/data/%[1]s/input"
-SCIF_APPOUTPUT="/scif/data/%[1]s/output"
-export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_APPOUTPUT SCIF_DATA
-`
-
-	scifRunscriptBase = `#!/bin/sh
-
-%s
-`
-
-	scifInstallBase = `
-cd /
-. %[1]s/env/01-base.sh
-
-cd %[1]s
-%[2]s
-
-cd /
-`
-)
-
 // HandlePost returns a script that should run after %post
 func (pl *BuildPlugin) HandlePost() string {
 	post := ""
@@ -280,11 +310,9 @@ func (pl *BuildPlugin) HandlePost() string {
 		post += buildPost(app)
 	}
 
-	sylog.Debugf("AppPost: \n%s\n", post)
 	return post
 }
 
 func buildPost(a *App) string {
-	fmt.Println(a.Install)
 	return fmt.Sprintf(scifInstallBase, filepath.Join("/scif/apps/", a.Name, "/scif"), a.Install)
 }

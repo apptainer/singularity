@@ -173,9 +173,7 @@ func (b *Build) Full() error {
 	}
 
 	syplugin.BuildHandleBundles(bundle)
-	content := syplugin.BuildHandlePosts()
-	sylog.Debugf("content: \n%s\n", content)
-	b.b.Recipe.BuildData.Post += content
+	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
 
 	if hasScripts(b.d) {
 		if syscall.Getuid() == 0 {
