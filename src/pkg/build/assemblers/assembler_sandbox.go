@@ -38,30 +38,6 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
-	// //append environment
-	// err = insertEnvScript(b)
-	// if err != nil {
-	// 	return fmt.Errorf("While inserting environment script: %v", err)
-	// }
-
-	// //insert runscript
-	// err = insertRunScript(b)
-	// if err != nil {
-	// 	return fmt.Errorf("While inserting runscript: %v", err)
-	// }
-
-	// //insert startscript
-	// err = insertStartScript(b)
-	// if err != nil {
-	// 	return fmt.Errorf("While inserting startscript: %v", err)
-	// }
-
-	// //insert test script
-	// err = insertTestScript(b)
-	// if err != nil {
-	// 	return fmt.Errorf("While inserting test script: %v", err)
-	// }
-
 	//insert definition
 	err = insertDefinition(b)
 	if err != nil {
@@ -87,26 +63,6 @@ func insertHelpScript(b *types.Bundle) error {
 		}
 	}
 	return nil
-}
-
-func insertEnvScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
-	return err
-}
-
-func insertRunScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0775)
-	return err
-}
-
-func insertStartScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0775)
-	return err
-}
-
-func insertTestScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
-	return err
 }
 
 func insertDefinition(b *types.Bundle) error {
