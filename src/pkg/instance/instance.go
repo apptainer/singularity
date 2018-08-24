@@ -218,6 +218,17 @@ func SetLogFile(name string) error {
 	}
 	stderrPath := filepath.Join(path, name+".err")
 	stdoutPath := filepath.Join(path, name+".out")
+
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	if err := os.MkdirAll(filepath.Dir(stderrPath), 0755); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(stdoutPath), 0755); err != nil {
+		return err
+	}
+
 	stderr, err := os.OpenFile(stderrPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err

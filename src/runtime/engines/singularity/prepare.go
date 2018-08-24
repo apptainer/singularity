@@ -41,6 +41,24 @@ func (e *EngineOperations) prepareContainerConfig(wrapperConfig *wrapper.Config)
 	if os.Getuid() == 0 {
 		if e.EngineConfig.File.RootDefaultCapabilities == "full" {
 			e.CommonConfig.OciConfig.SetupPrivileged(true)
+
+			commonCaps := e.CommonConfig.OciConfig.Process.Capabilities.Permitted
+
+			caps, _ := capabilities.Split(e.EngineConfig.GetDropCaps())
+			for _, cap := range caps {
+				for i, c := range commonCaps {
+					if c == cap {
+						commonCaps = append(commonCaps[:i], commonCaps[i+1:]...)
+						break
+					}
+				}
+			}
+
+			e.CommonConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
+			e.CommonConfig.OciConfig.Process.Capabilities.Effective = commonCaps
+			e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
+			e.CommonConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
+			e.CommonConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
 		}
 	} else {
 		e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
