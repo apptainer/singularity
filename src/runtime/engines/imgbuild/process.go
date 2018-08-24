@@ -7,12 +7,14 @@ package imgbuild
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -34,6 +36,26 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 			sylog.Fatalf("post proc: %v\n", err)
 		}
 		sylog.Infof("Finished running %%post script. exit status 0\n")
+	}
+
+	//append environment
+	if err := insertEnvScript(e.EngineConfig.Recipe); err != nil {
+		return fmt.Errorf("While inserting environment script: %v", err)
+	}
+
+	//insert startscript
+	if err := insertStartScript(e.EngineConfig.Recipe); err != nil {
+		return fmt.Errorf("While inserting startscript: %v", err)
+	}
+
+	//insert runscript
+	if err := insertRunScript(e.EngineConfig.Recipe); err != nil {
+		return fmt.Errorf("While inserting runscript: %v", err)
+	}
+
+	//insert test script
+	if err := insertTestScript(e.EngineConfig.Recipe); err != nil {
+		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
 	// Run %test script here if its defined
@@ -82,5 +104,47 @@ func (e *EngineOperations) MonitorContainer(pid int) (syscall.WaitStatus, error)
 
 // CleanupContainer _
 func (e *EngineOperations) CleanupContainer() error {
+	return nil
+}
+
+func insertEnvScript(d types.Definition) error {
+	if d.ImageData.Environment != "" {
+		err := ioutil.WriteFile("/.singularity.d/env/90-environment.sh", []byte("#!/bin/sh\n\n"+d.ImageData.Environment+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertRunScript(d types.Definition) error {
+	if d.ImageData.Runscript != "" {
+		err := ioutil.WriteFile("/.singularity.d/runscript", []byte("#!/bin/sh\n\n"+d.ImageData.Runscript+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertStartScript(d types.Definition) error {
+	if d.ImageData.Startscript != "" {
+		sylog.Infof("Adding startscript")
+		err := ioutil.WriteFile("/.singularity.d/startscript", []byte("#!/bin/sh\n\n"+d.ImageData.Startscript+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertTestScript(d types.Definition) error {
+	if d.ImageData.Test != "" {
+		sylog.Infof("Adding testscript")
+		err := ioutil.WriteFile("/.singularity.d/test", []byte("#!/bin/sh\n\n"+d.ImageData.Test+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }

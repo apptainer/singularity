@@ -81,29 +81,29 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
-	//append environment
-	err = insertEnvScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
-	}
+	// //append environment
+	// err = insertEnvScript(b)
+	// if err != nil {
+	// 	return fmt.Errorf("While inserting environment script: %v", err)
+	// }
 
-	//insert runscript
-	err = insertRunScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
-	}
+	// //insert runscript
+	// err = insertRunScript(b)
+	// if err != nil {
+	// 	return fmt.Errorf("While inserting runscript: %v", err)
+	// }
 
-	//insert startscript
-	err = insertStartScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
-	}
+	// //insert startscript
+	// err = insertStartScript(b)
+	// if err != nil {
+	// 	return fmt.Errorf("While inserting startscript: %v", err)
+	// }
 
-	//insert test script
-	err = insertTestScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
-	}
+	// //insert test script
+	// err = insertTestScript(b)
+	// if err != nil {
+	// 	return fmt.Errorf("While inserting test script: %v", err)
+	// }
 
 	//insert definition
 	err = insertDefinition(b)

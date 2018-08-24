@@ -141,7 +141,6 @@ func hasScripts(def types.Definition) bool {
 	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != "" || def.BuildData.Test != ""
 }
 
-// copyFiles ...
 func (b *Build) copyFiles() error {
 
 	//iterate through files transfers
@@ -155,10 +154,10 @@ func (b *Build) copyFiles() error {
 		if transfer.Dst == "" {
 			transfer.Dst = transfer.Src
 		}
+		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		//copy each file into bundle rootfs
 		transfer.Dst = filepath.Join(b.b.Rootfs(), transfer.Dst)
 		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
-		sylog.Debugf("While copying %v to %v", transfer.Src, transfer.Dst)
 		if err := copy.Run(); err != nil {
 			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
 		}
