@@ -39,9 +39,11 @@ type container struct {
 	sessionSize      int
 	userNS           bool
 	pidNS            bool
+	mountInfoPath    string
+	skippedMount     []string
 }
 
-func create(engine *EngineOperations, rpcOps *client.RPC) error {
+func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
 
 	c := &container{
@@ -49,6 +51,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC) error {
 		rpcOps:           rpcOps,
 		sessionLayerType: "none",
 		sessionFsType:    engine.EngineConfig.File.MemoryFSType,
+		mountInfoPath:    fmt.Sprintf("/proc/%d/mountinfo", pid),
+		skippedMount:     make([]string, 0),
 	}
 
 	if os.Geteuid() != 0 {
@@ -232,6 +236,41 @@ func (c *container) setSlaveMount(system *mount.System) error {
 	return nil
 }
 
+func (c *container) checkMounted(dest string) string {
+	if dest[0] != '/' {
+		return ""
+	}
+
+	minfo, err := proc.ParseMountInfo(c.mountInfoPath)
+	if err != nil {
+		return ""
+	}
+
+	p, err := filepath.EvalSymlinks(dest)
+	if err != nil {
+		return ""
+	}
+
+	finalPath := c.session.FinalPath()
+	rootfsPath := c.session.RootFsPath()
+	sessionPath := c.session.Path()
+
+	for {
+		if p == finalPath || p == rootfsPath || p == sessionPath || p == "/" {
+			break
+		}
+		for _, childs := range minfo {
+			for _, child := range childs {
+				if p == child {
+					return child
+				}
+			}
+		}
+		p = filepath.Dir(p)
+	}
+	return ""
+}
+
 // mount any generic mount (not loop dev)
 func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
@@ -265,8 +304,23 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	}
 
 	if remount {
+		for _, skipped := range c.skippedMount {
+			if skipped == mnt.Destination {
+				return nil
+			}
+		}
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
+		// detection of mounted points for underlay layer is not really a simple
+		// task, detection is disabled with this layer for the time being
+		if c.sessionLayerType != "underlay" {
+			mounted := c.checkMounted(dest)
+			if mounted != "" {
+				c.skippedMount = append(c.skippedMount, mnt.Destination)
+				sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
+				return nil
+			}
+		}
 		sylog.Debugf("Mounting %s to %s\n", mnt.Source, dest)
 	}
 	_, err = c.rpcOps.Mount(mnt.Source, dest, mnt.Type, flags, optsString)

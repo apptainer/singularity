@@ -62,5 +62,5 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	return create(engine, rpcOps)
+	return create(engine, rpcOps, pid)
 }

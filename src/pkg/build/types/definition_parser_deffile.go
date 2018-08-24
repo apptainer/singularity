@@ -123,7 +123,30 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
-	files := make(map[string]string)
+	var files []FileTransport
+
+	for _, line := range subs {
+
+		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			continue
+		}
+		var src, dst string
+		lineSubs := strings.SplitN(line, " ", 2)
+		if len(lineSubs) < 2 {
+			src = strings.TrimSpace(lineSubs[0])
+			dst = ""
+		} else {
+			src = strings.TrimSpace(lineSubs[0])
+			dst = strings.TrimSpace(lineSubs[1])
+		}
+
+		files = append(files, FileTransport{src, dst})
+	}
+
+	// labels are parsed as a map[string]string
+	labelsSections := strings.TrimSpace(sections["labels"])
+	subs = strings.Split(labelsSections, "\n")
+	labels := make(map[string]string)
 
 	for _, line := range subs {
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
@@ -139,7 +162,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 			val = strings.TrimSpace(lineSubs[1])
 		}
 
-		files[key] = val
+		labels[key] = val
 	}
 
 	d.ImageData = ImageData{
@@ -148,13 +171,16 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 			Environment: sections["environment"],
 			Runscript:   sections["runscript"],
 			Test:        sections["test"],
+			Startscript: sections["startscript"],
 		},
+		Labels: labels,
 	}
 	d.BuildData.Files = files
 	d.BuildData.Scripts = Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
+		Test:  sections["test"],
 	}
 
 	return
@@ -170,7 +196,10 @@ func doHeader(h string, d *Definition) (err error) {
 			continue
 		}
 
-		linetoks := strings.SplitN(line, ":", 2)
+		//remove any comments on header lines
+		trimLine := strings.Split(line, "#")[0]
+
+		linetoks := strings.SplitN(trimLine, ":", 2)
 		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
 		if _, ok := validHeaders[key]; !ok {
 			return fmt.Errorf("invalid header keyword found: %s", key)
@@ -239,6 +268,44 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 		w.Write([]byte(ident))
 		w.Write([]byte("\n"))
 		w.Write([]byte(s))
+		w.Write([]byte("\n\n"))
+	}
+}
+
+func writeFilesIfExists(w io.Writer, f []FileTransport) {
+
+	if len(f) > 0 {
+
+		w.Write([]byte("%"))
+		w.Write([]byte("files"))
+		w.Write([]byte("\n"))
+
+		for _, ft := range f {
+			w.Write([]byte("\t"))
+			w.Write([]byte(ft.Src))
+			w.Write([]byte("\t"))
+			w.Write([]byte(ft.Dst))
+			w.Write([]byte("\n"))
+		}
+		w.Write([]byte("\n"))
+	}
+}
+
+func writeLabelsIfExists(w io.Writer, l map[string]string) {
+
+	if len(l) > 0 {
+
+		w.Write([]byte("%"))
+		w.Write([]byte("labels"))
+		w.Write([]byte("\n"))
+
+		for k, v := range l {
+			w.Write([]byte("\t"))
+			w.Write([]byte(k))
+			w.Write([]byte(" "))
+			w.Write([]byte(v))
+			w.Write([]byte("\n"))
+		}
 		w.Write([]byte("\n"))
 	}
 }
@@ -252,11 +319,16 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 		w.Write([]byte(v))
 		w.Write([]byte("\n"))
 	}
+	w.Write([]byte("\n"))
+
+	writeLabelsIfExists(w, d.ImageData.Labels)
+	writeFilesIfExists(w, d.BuildData.Files)
 
 	writeSectionIfExists(w, "help", d.ImageData.Help)
 	writeSectionIfExists(w, "environment", d.ImageData.Environment)
 	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
 	writeSectionIfExists(w, "test", d.ImageData.Test)
+	writeSectionIfExists(w, "startscript", d.ImageData.Startscript)
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)

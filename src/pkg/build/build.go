@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"syscall"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/build/assemblers"
 	"github.com/singularityware/singularity/src/pkg/build/sources"
 	"github.com/singularityware/singularity/src/pkg/build/types"
@@ -95,14 +96,36 @@ func newBuild(d types.Definition, dest, format string) (*Build, error) {
 
 // Full runs a standard build from start to finish
 func (b *Build) Full() error {
+
+	if hasScripts(b.d) {
+		if syscall.Getuid() == 0 {
+			if err := b.runPreScript(); err != nil {
+				return err
+			}
+		} else {
+			sylog.Errorf("Attempted to build with scripts as non-root user")
+		}
+	}
+
 	sylog.Debugf("Creating bundle")
 	if _, err := b.Bundle(); err != nil {
 		return err
 	}
 
-	sylog.Debugf("Executing all sections of definition")
-	if err := b.AllSections(); err != nil {
-		return err
+	sylog.Debugf("Copying files from host")
+	if err := b.copyFiles(); err != nil {
+		return fmt.Errorf("unable to copy files to container fs: %v", err)
+	}
+
+	if hasScripts(b.d) {
+		if syscall.Getuid() == 0 {
+			sylog.Debugf("Starting build engine")
+			if err := b.runBuildEngine(); err != nil {
+				return fmt.Errorf("unable to run scripts: %v", err)
+			}
+		} else {
+			sylog.Errorf("Attempted to build with scripts as non-root user")
+		}
 	}
 
 	sylog.Debugf("Calling assembler")
@@ -113,63 +136,57 @@ func (b *Build) Full() error {
 	return nil
 }
 
-// WithoutSections runs the build without running any section
-func (b *Build) WithoutSections() error {
-	if _, err := b.Bundle(); err != nil {
-		return err
-	}
-
-	if err := b.Assemble(b.dest); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// WithSections runs a build but only runs the specified sections
-func (b *Build) WithSections(sections []string) error {
-	if _, err := b.Bundle(); err != nil {
-		return err
-	}
-
-	if err := b.Sections(sections); err != nil {
-		return err
-	}
-
-	if err := b.Assemble(b.dest); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// AllSections runs all the sections in the definition
-func (b *Build) AllSections() error {
-	if syscall.Getuid() == 0 && hasScripts(b.d) {
-		if err := b.runScripts(); err != nil {
-			return fmt.Errorf("unable to run scripts: %v", err)
-		}
-	} else if hasScripts(b.d) {
-		sylog.Warningf("Attempted to build with scripts as non-root user, skipping...\n")
-	}
-
-	return nil
-}
-
-// Sections runs the list of sections specified by name in s
-func (b *Build) Sections(s []string) error {
-
-	return fmt.Errorf("sections is unimplemented")
-}
-
 // hasScripts returns true if build definition is requesting to run scripts in image
 func hasScripts(def types.Definition) bool {
-	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != ""
+	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != "" || def.BuildData.Test != ""
 }
 
-// runScripts runs %pre %post %setup scripts in the bundle using the imgbuild engine
-func (b *Build) runScripts() error {
-	env := []string{"SINGULARITY_MESSAGELEVEL=" + string(sylog.GetLevel()), "SRUNTIME=" + imgbuild.Name}
+// copyFiles ...
+func (b *Build) copyFiles() error {
+
+	//iterate through files transfers
+	for _, transfer := range b.d.BuildData.Files {
+		//sanity
+		if transfer.Src == "" {
+			sylog.Warningf("Attempt to copy file with no name...")
+			continue
+		}
+		//dest = source if not specifed
+		if transfer.Dst == "" {
+			transfer.Dst = transfer.Src
+		}
+		//copy each file into bundle rootfs
+		transfer.Dst = filepath.Join(b.b.Rootfs(), transfer.Dst)
+		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
+		sylog.Debugf("While copying %v to %v", transfer.Src, transfer.Dst)
+		if err := copy.Run(); err != nil {
+			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
+		}
+	}
+
+	return nil
+}
+
+func (b *Build) runPreScript() error {
+	// Run %pre script here
+	pre := exec.Command("/bin/sh", "-c", b.d.BuildData.Pre)
+	pre.Stdout = os.Stdout
+	pre.Stderr = os.Stderr
+
+	sylog.Infof("Running %%pre script\n")
+	if err := pre.Start(); err != nil {
+		sylog.Fatalf("failed to start %%pre proc: %v\n", err)
+	}
+	if err := pre.Wait(); err != nil {
+		sylog.Fatalf("pre proc: %v\n", err)
+	}
+	sylog.Infof("Finished running %%pre script. exit status 0\n")
+	return nil
+}
+
+// runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
+func (b *Build) runBuildEngine() error {
+	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
 	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
 	progname := []string{"singularity image-build"}
 
@@ -177,6 +194,13 @@ func (b *Build) runScripts() error {
 		Bundle: *b.b,
 	}
 	ociConfig := &oci.Config{}
+
+	//surface build specific environment variables for scripts
+	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
+	sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
+
+	ociConfig.Process = &specs.Process{}
+	ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
 
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
