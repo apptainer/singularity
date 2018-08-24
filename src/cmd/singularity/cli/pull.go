@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -44,14 +44,18 @@ var PullCmd = &cobra.Command{
 	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		var uri, image string
+
 		image = ""
+
 		if len(args) == 2 {
 			uri = args[1]
 			image = args[0]
 		} else {
 			uri = args[0]
 		}
+
 		BaseURI := strings.Split(uri, "://")
+
 		switch BaseURI[0] {
 		case SyCloudLibrary:
 			libexec.PullLibraryImg(image, uri, PullLibraryURI, force, authToken)
