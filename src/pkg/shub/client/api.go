@@ -55,6 +55,7 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 		Timeout: 30 * time.Second,
 	}
 
+	// TODO: support custom registry URI's
 	if uri.registry != fmt.Sprintf("%s%s", defaultRegistry, shubAPIRoute) {
 		return ShubAPIResponse{}, errors.New(URINotSupported)
 	}
@@ -77,7 +78,7 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 
 	// Do the request, if status isn't success, return error
 	res, err := sc.Do(req)
-	sylog.Debugf("response: %v\n", res)
+	sylog.Debugf("%s response received, beginning body download\n", res.Status)
 
 	if err != nil {
 		return ShubAPIResponse{}, err
@@ -95,7 +96,7 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 	}
 
 	err = json.Unmarshal(body, &manifest)
-	sylog.Debugf("manifest: %v\n", manifest.Image)
+	sylog.Debugf("manifest image name: %v\n", manifest.Name)
 	if err != nil {
 		return ShubAPIResponse{}, err
 	}
