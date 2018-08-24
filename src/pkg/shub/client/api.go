@@ -50,8 +50,8 @@ type ShubAPIResponse struct {
 // from Singularity Hub.
 func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 
-	// Create a new Singularity Hub client
-	sc := http.Client{
+	// Create a new http Hub client
+	httpc := http.Client{
 		Timeout: 30 * time.Second,
 	}
 
@@ -77,8 +77,11 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 	req.Header.Set("User-Agent", useragent.Value)
 
 	// Do the request, if status isn't success, return error
-	res, err := sc.Do(req)
-	sylog.Debugf("%s response received, beginning body download\n", res.Status)
+	res, err := httpc.Do(req)
+	if res.StatusCode == http.StatusNotFound {
+		return ShubAPIResponse{}, fmt.Errorf("The requested manifest was not found in singularity hub")
+	}
+	sylog.Debugf("%s response received, beginning manifest download\n", res.Status)
 
 	if err != nil {
 		return ShubAPIResponse{}, err

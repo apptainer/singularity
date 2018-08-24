@@ -10,9 +10,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"time"
 
 	util "github.com/singularityware/singularity/src/pkg/library/client"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -54,15 +56,22 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	}
 
 	// Get the image based on the manifest
-	resp, err := http.Get(manifest.Image)
+	httpc := http.Client{
+		Timeout: pullTimeout * time.Second,
+	}
+
+	req, err := http.NewRequest(http.MethodGet, manifest.Image, nil)
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	req.Header.Set("User-Agent", useragent.Value)
 
+	// Do the request, if status isn't success, return error
+	resp, err := httpc.Do(req)
 	if resp.StatusCode == http.StatusNotFound {
 		return fmt.Errorf("The requested image was not found in singularity hub")
 	}
+	sylog.Debugf("%s response received, beginning image download\n", resp.Status)
 
 	if resp.StatusCode != http.StatusOK {
 		jRes, err := util.ParseErrorBody(resp.Body)
@@ -72,8 +81,6 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 		return fmt.Errorf("Download did not succeed: %d %s\n\t%v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
-
-	sylog.Debugf("OK response received, beginning image download\n")
 
 	// Perms are 777 *prior* to umask
 	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
