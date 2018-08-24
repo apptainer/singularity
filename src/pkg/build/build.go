@@ -168,19 +168,21 @@ func (b *Build) copyFiles() error {
 }
 
 func (b *Build) runPreScript() error {
-	// Run %pre script here
-	pre := exec.Command("/bin/sh", "-c", b.d.BuildData.Pre)
-	pre.Stdout = os.Stdout
-	pre.Stderr = os.Stderr
+	if b.d.BuildData.Pre != "" {
+		// Run %pre script here
+		pre := exec.Command("/bin/sh", "-c", b.d.BuildData.Pre)
+		pre.Stdout = os.Stdout
+		pre.Stderr = os.Stderr
 
-	sylog.Infof("Running %%pre script\n")
-	if err := pre.Start(); err != nil {
-		sylog.Fatalf("failed to start %%pre proc: %v\n", err)
+		sylog.Infof("Running %%pre script\n")
+		if err := pre.Start(); err != nil {
+			sylog.Fatalf("failed to start %%pre proc: %v\n", err)
+		}
+		if err := pre.Wait(); err != nil {
+			sylog.Fatalf("pre proc: %v\n", err)
+		}
+		sylog.Infof("Finished running %%pre script. exit status 0\n")
 	}
-	if err := pre.Wait(); err != nil {
-		sylog.Fatalf("pre proc: %v\n", err)
-	}
-	sylog.Infof("Finished running %%pre script. exit status 0\n")
 	return nil
 }
 

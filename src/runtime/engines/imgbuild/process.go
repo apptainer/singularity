@@ -18,21 +18,23 @@ import (
 
 // StartProcess runs the %post script
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
-	// Run %post script here
 
-	post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
-	post.Env = e.CommonConfig.OciConfig.Process.Env
-	post.Stdout = os.Stdout
-	post.Stderr = os.Stderr
+	if e.EngineConfig.Recipe.BuildData.Post != "" {
+		// Run %post script here
+		post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
+		post.Env = e.CommonConfig.OciConfig.Process.Env
+		post.Stdout = os.Stdout
+		post.Stderr = os.Stderr
 
-	sylog.Infof("Running %%post script\n")
-	if err := post.Start(); err != nil {
-		sylog.Fatalf("failed to start %%post proc: %v\n", err)
+		sylog.Infof("Running %%post script\n")
+		if err := post.Start(); err != nil {
+			sylog.Fatalf("failed to start %%post proc: %v\n", err)
+		}
+		if err := post.Wait(); err != nil {
+			sylog.Fatalf("post proc: %v\n", err)
+		}
+		sylog.Infof("Finished running %%post script. exit status 0\n")
 	}
-	if err := post.Wait(); err != nil {
-		sylog.Fatalf("post proc: %v\n", err)
-	}
-	sylog.Infof("Finished running %%post script. exit status 0\n")
 
 	// Run %test script here if its defined
 	// this also needs to consider the --notest flag from the CLI eventually
