@@ -33,8 +33,7 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 
 	ShubURI, err := shubParseReference(shubRef)
 	if err != nil {
-		sylog.Fatalf("Failed to parse shub URI: %v", err)
-		return
+		return fmt.Errorf("Failed to parse shub URI: %v", err)
 	}
 
 	if filePath == "" {
