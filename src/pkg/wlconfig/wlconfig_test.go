@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package wlconf
+package wlconfig
 
 import (
 	"io"

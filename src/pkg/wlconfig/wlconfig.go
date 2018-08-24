@@ -3,11 +3,11 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package wlconf implements the loading and management of container white
+// Package wlconfig implements the loading and management of container white
 // listing feature. This code uses the TOML config file standard to extract
 // the structured configuration activating or disabling and controlling of
 // the container execution white listing feature.
-package wlconf
+package wlconfig
 
 import (
 	"fmt"
@@ -73,6 +73,11 @@ func (wlcfg *WlConfig) ValidateConfig() (err error) {
 // ShouldRun determines if a container should run according to the white list state
 func (wlcfg *WlConfig) ShouldRun(cpath string) (run bool, err error) {
 	var auth *authorized
+
+	// look if whitelisting is activated
+	if wlcfg.Activated == false {
+		return true, nil
+	}
 
 	// look if container is part of a defined domain
 	for _, v := range wlcfg.AuthList {

@@ -17,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/wlconfig"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/fs/files"
 	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
@@ -437,6 +438,22 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
+		// query the white listing module
+		wlcfg, err := wlconfig.LoadConfig("/usr/local/etc/singularity/wlconfig.toml")
+		if err != nil {
+			return err
+		}
+		if err = wlcfg.ValidateConfig(); err != nil {
+			return err
+		}
+		run, err := wlcfg.ShouldRun(imageObject.File.Name())
+		if err != nil {
+			return err
+		}
+		if !run {
+			return err
+		}
+
 		// Load the SIF file
 		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
 		if err != nil {
