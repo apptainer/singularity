@@ -22,19 +22,18 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
 		// Run %post script here
-		post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
+		post := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Post)
 		post.Env = e.CommonConfig.OciConfig.Process.Env
 		post.Stdout = os.Stdout
 		post.Stderr = os.Stderr
 
-		sylog.Infof("Running %%post script\n")
+		sylog.Infof("Running post scriptlet\n")
 		if err := post.Start(); err != nil {
 			sylog.Fatalf("failed to start %%post proc: %v\n", err)
 		}
 		if err := post.Wait(); err != nil {
 			sylog.Fatalf("post proc: %v\n", err)
 		}
-		sylog.Infof("Finished running %%post script. exit status 0\n")
 	}
 
 	//append environment
@@ -60,18 +59,17 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if e.EngineConfig.RunSection("test") {
 		if !e.EngineConfig.NoTest && e.EngineConfig.Recipe.BuildData.Test != "" {
 			// Run %test script
-			test := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Test)
+			test := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Test)
 			test.Stdout = os.Stdout
 			test.Stderr = os.Stderr
 
-			sylog.Infof("Running %%test script\n")
+			sylog.Infof("Running test scriptlet\n")
 			if err := test.Start(); err != nil {
 				sylog.Fatalf("failed to start %%test proc: %v\n", err)
 			}
 			if err := test.Wait(); err != nil {
 				sylog.Fatalf("test proc: %v\n", err)
 			}
-			sylog.Infof("Finished running %%test script. exit status 0\n")
 		}
 	}
 

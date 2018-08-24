@@ -98,21 +98,20 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
-	if engine.EngineConfig.RunSection("environment") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
+	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
 		// Run %setup script here
-		setup := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Setup)
+		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
 		setup.Env = engine.CommonConfig.OciConfig.Process.Env
 		setup.Stdout = os.Stdout
 		setup.Stderr = os.Stderr
 
-		sylog.Infof("Running %%setup script\n")
+		sylog.Infof("Running setup scriptlet\n")
 		if err := setup.Start(); err != nil {
 			sylog.Fatalf("failed to start %%setup proc: %v\n", err)
 		}
 		if err := setup.Wait(); err != nil {
 			sylog.Fatalf("setup proc: %v\n", err)
 		}
-		sylog.Infof("Finished running %%setup script. exit status 0\n")
 	}
 
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
