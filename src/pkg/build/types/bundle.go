@@ -6,6 +6,7 @@
 package types
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,6 +37,7 @@ type Bundle struct {
 	BindPath    []string          `json:"bindPath"`
 	Path        string            `json:"bundlePath"`
 	NoTest      bool              `json:"noTest"`
+	Sections    []string          `json:"sections"`
 }
 
 // NewBundle creates a Bundle environment
@@ -68,4 +70,18 @@ func NewBundle(directoryPrefix string) (b *Bundle, err error) {
 // Rootfs give the path to the root filesystem in the Bundle
 func (b *Bundle) Rootfs() string {
 	return filepath.Join(b.Path, b.FSObjects["rootfs"])
+}
+
+// RunSection determines if a section name was specified
+func (b Bundle) RunSection(s string) bool {
+	for _, section := range b.Sections {
+		if section == "none" {
+			return false
+		}
+		if section == "all" || section == s {
+			fmt.Println(section, s)
+			return true
+		}
+	}
+	return false
 }

@@ -98,7 +98,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
-	if engine.EngineConfig.Recipe.BuildData.Setup != "" {
+	if engine.EngineConfig.RunSection("environment") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
 		// Run %setup script here
 		setup := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Setup)
 		setup.Env = engine.CommonConfig.OciConfig.Process.Env

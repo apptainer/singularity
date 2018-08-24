@@ -14,14 +14,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // StartProcess runs the %post script
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
-	if e.EngineConfig.Recipe.BuildData.Post != "" {
+	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
 		// Run %post script here
 		post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
 		post.Env = e.CommonConfig.OciConfig.Process.Env
@@ -39,40 +38,41 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	//append environment
-	if err := insertEnvScript(e.EngineConfig.Recipe); err != nil {
+	if err := e.insertEnvScript(); err != nil {
 		return fmt.Errorf("While inserting environment script: %v", err)
 	}
 
 	//insert startscript
-	if err := insertStartScript(e.EngineConfig.Recipe); err != nil {
+	if err := e.insertStartScript(); err != nil {
 		return fmt.Errorf("While inserting startscript: %v", err)
 	}
 
 	//insert runscript
-	if err := insertRunScript(e.EngineConfig.Recipe); err != nil {
+	if err := e.insertRunScript(); err != nil {
 		return fmt.Errorf("While inserting runscript: %v", err)
 	}
 
 	//insert test script
-	if err := insertTestScript(e.EngineConfig.Recipe); err != nil {
+	if err := e.insertTestScript(); err != nil {
 		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
-	// Run %test script here if its defined
-	// this also needs to consider the --notest flag from the CLI eventually
-	if !e.EngineConfig.NoTest && e.EngineConfig.Recipe.BuildData.Test != "" {
-		test := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Test)
-		test.Stdout = os.Stdout
-		test.Stderr = os.Stderr
+	if e.EngineConfig.RunSection("test") {
+		if !e.EngineConfig.NoTest && e.EngineConfig.Recipe.BuildData.Test != "" {
+			// Run %test script
+			test := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Test)
+			test.Stdout = os.Stdout
+			test.Stderr = os.Stderr
 
-		sylog.Infof("Running %%test script\n")
-		if err := test.Start(); err != nil {
-			sylog.Fatalf("failed to start %%test proc: %v\n", err)
+			sylog.Infof("Running %%test script\n")
+			if err := test.Start(); err != nil {
+				sylog.Fatalf("failed to start %%test proc: %v\n", err)
+			}
+			if err := test.Wait(); err != nil {
+				sylog.Fatalf("test proc: %v\n", err)
+			}
+			sylog.Infof("Finished running %%test script. exit status 0\n")
 		}
-		if err := test.Wait(); err != nil {
-			sylog.Fatalf("test proc: %v\n", err)
-		}
-		sylog.Infof("Finished running %%test script. exit status 0\n")
 	}
 
 	os.Exit(0)
@@ -107,10 +107,10 @@ func (e *EngineOperations) CleanupContainer() error {
 	return nil
 }
 
-func insertEnvScript(d types.Definition) error {
-	if d.ImageData.Environment != "" {
+func (e *EngineOperations) insertEnvScript() error {
+	if e.EngineConfig.RunSection("environment") && e.EngineConfig.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile("/.singularity.d/env/90-environment.sh", []byte("#!/bin/sh\n\n"+d.ImageData.Environment+"\n"), 0775)
+		err := ioutil.WriteFile("/.singularity.d/env/90-environment.sh", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Environment+"\n"), 0775)
 		if err != nil {
 			return err
 		}
@@ -118,10 +118,10 @@ func insertEnvScript(d types.Definition) error {
 	return nil
 }
 
-func insertRunScript(d types.Definition) error {
-	if d.ImageData.Runscript != "" {
+func (e *EngineOperations) insertRunScript() error {
+	if e.EngineConfig.RunSection("runscript") && e.EngineConfig.Recipe.ImageData.Runscript != "" {
 		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile("/.singularity.d/runscript", []byte("#!/bin/sh\n\n"+d.ImageData.Runscript+"\n"), 0775)
+		err := ioutil.WriteFile("/.singularity.d/runscript", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Runscript+"\n"), 0775)
 		if err != nil {
 			return err
 		}
@@ -129,10 +129,10 @@ func insertRunScript(d types.Definition) error {
 	return nil
 }
 
-func insertStartScript(d types.Definition) error {
-	if d.ImageData.Startscript != "" {
+func (e *EngineOperations) insertStartScript() error {
+	if e.EngineConfig.RunSection("startscript") && e.EngineConfig.Recipe.ImageData.Startscript != "" {
 		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile("/.singularity.d/startscript", []byte("#!/bin/sh\n\n"+d.ImageData.Startscript+"\n"), 0775)
+		err := ioutil.WriteFile("/.singularity.d/startscript", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Startscript+"\n"), 0775)
 		if err != nil {
 			return err
 		}
@@ -140,10 +140,10 @@ func insertStartScript(d types.Definition) error {
 	return nil
 }
 
-func insertTestScript(d types.Definition) error {
-	if d.ImageData.Test != "" {
+func (e *EngineOperations) insertTestScript() error {
+	if e.EngineConfig.RunSection("test") && e.EngineConfig.Recipe.ImageData.Test != "" {
 		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile("/.singularity.d/test", []byte("#!/bin/sh\n\n"+d.ImageData.Test+"\n"), 0775)
+		err := ioutil.WriteFile("/.singularity.d/test", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Test+"\n"), 0775)
 		if err != nil {
 			return err
 		}

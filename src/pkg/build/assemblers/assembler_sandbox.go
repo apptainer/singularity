@@ -55,7 +55,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 }
 
 func insertHelpScript(b *types.Bundle) error {
-	if b.Recipe.ImageData.Help != "" {
+	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
 		sylog.Infof("Adding help info")
 		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
 		if err != nil {
@@ -83,7 +83,7 @@ func insertDefinition(b *types.Bundle) error {
 
 func insertLabelsJSON(b *types.Bundle) error {
 
-	if len(b.Recipe.ImageData.Labels) > 0 {
+	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
 		sylog.Infof("Adding labels")
 		text, err := json.Marshal(b.Recipe.ImageData.Labels)
 		if err != nil {

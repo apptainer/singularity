@@ -90,20 +90,26 @@ var BuildCmd = &cobra.Command{
 			}
 			b.Build(context.TODO())
 		} else {
-			b, err := build.NewBuild(spec, dest, buildFormat, noTest)
+
+			err := checkSections()
+			if err != nil {
+				sylog.Fatalf(err.Error())
+			}
+
+			b, err := build.NewBuild(spec, dest, buildFormat, sections, noTest)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 				os.Exit(1)
 			}
 
-			if sections[0] == "all" {
-				err = b.Full()
-				if err != nil {
-					sylog.Fatalf("While performing build: %v", err)
-					os.Exit(1)
-				}
+			if sections[0] == "none" {
+				err = b.WithoutSections()
 			} else {
-				sylog.Fatalf("Running specific sections of definitions not implemented.")
+				err = b.Full()
+			}
+			if err != nil {
+				sylog.Fatalf("While performing build: %v", err)
+				os.Exit(1)
 			}
 		}
 	},
@@ -132,4 +138,25 @@ func checkBuildTargetCollision(path string, force bool) bool {
 		}
 	}
 	return true
+}
+
+func checkSections() error {
+	var all, none bool
+	for _, section := range sections {
+		if section == "none" {
+			none = true
+		}
+		if section == "all" {
+			all = true
+		}
+	}
+
+	if all && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have all and any other option")
+	}
+	if none && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have none and any other option")
+	}
+
+	return nil
 }
