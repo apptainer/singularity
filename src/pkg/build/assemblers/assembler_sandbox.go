@@ -24,6 +24,8 @@ type SandboxAssembler struct {
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
+	sylog.Infof("Creating sandbox directory...")
+
 	//insert help
 	err = insertHelpScript(b)
 	if err != nil {
@@ -77,8 +79,14 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 }
 
 func insertHelpScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
-	return err
+	if b.Recipe.ImageData.Help != "" {
+		sylog.Infof("Adding help info")
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func insertEnvScript(b *types.Bundle) error {
@@ -119,11 +127,17 @@ func insertDefinition(b *types.Bundle) error {
 
 func insertLabelsJSON(b *types.Bundle) error {
 
-	text, err := json.Marshal(b.Recipe.ImageData.Labels)
-	if err != nil {
-		return err
-	}
+	if len(b.Recipe.ImageData.Labels) > 0 {
+		sylog.Infof("Adding labels")
+		text, err := json.Marshal(b.Recipe.ImageData.Labels)
+		if err != nil {
+			return err
+		}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
-	return err
+		err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

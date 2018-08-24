@@ -69,6 +69,8 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
+	sylog.Infof("Creating SIF file...")
+
 	//insert help
 	err = insertHelpScript(b)
 	if err != nil {
@@ -124,9 +126,9 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(squashfsPath)
 
 	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
-	mksquashfsCmd.Stdin = os.Stdin
-	mksquashfsCmd.Stdout = os.Stdout
-	mksquashfsCmd.Stderr = os.Stderr
+	//mksquashfsCmd.Stdin = os.Stdin
+	//mksquashfsCmd.Stdout = os.Stdout
+	//mksquashfsCmd.Stderr = os.Stderr
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {

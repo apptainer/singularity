@@ -97,6 +97,8 @@ func newBuild(d types.Definition, dest, format string) (*Build, error) {
 // Full runs a standard build from start to finish
 func (b *Build) Full() error {
 
+	sylog.Infof("Starting build...")
+
 	if hasScripts(b.d) {
 		if syscall.Getuid() == 0 {
 			if err := b.runPreScript(); err != nil {
@@ -133,6 +135,7 @@ func (b *Build) Full() error {
 		return err
 	}
 
+	sylog.Infof("Build complete!")
 	return nil
 }
 

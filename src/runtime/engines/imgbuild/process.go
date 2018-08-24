@@ -109,6 +109,7 @@ func (e *EngineOperations) CleanupContainer() error {
 
 func insertEnvScript(d types.Definition) error {
 	if d.ImageData.Environment != "" {
+		sylog.Infof("Adding environment to container")
 		err := ioutil.WriteFile("/.singularity.d/env/90-environment.sh", []byte("#!/bin/sh\n\n"+d.ImageData.Environment+"\n"), 0775)
 		if err != nil {
 			return err
@@ -119,6 +120,7 @@ func insertEnvScript(d types.Definition) error {
 
 func insertRunScript(d types.Definition) error {
 	if d.ImageData.Runscript != "" {
+		sylog.Infof("Adding runscript")
 		err := ioutil.WriteFile("/.singularity.d/runscript", []byte("#!/bin/sh\n\n"+d.ImageData.Runscript+"\n"), 0775)
 		if err != nil {
 			return err
