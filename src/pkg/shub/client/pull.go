@@ -50,8 +50,7 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	// Get the image manifest
 	manifest, err := getManifest(ShubURI)
 	if err != nil {
-		sylog.Fatalf("Failed to get manifest from Shub: %v", err)
-		return
+		return fmt.Errorf("Failed to get manifest from Shub: %v", err)
 	}
 
 	// Get the image based on the manifest
