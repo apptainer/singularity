@@ -21,7 +21,7 @@ const pullTimeout = 7200
 
 // DownloadImage will retrieve an image from the Container Singularityhub,
 // saving it into the specified file
-func DownloadImage(filePath string, shubRef string, Force bool) (err error) {
+func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	sylog.Debugf("Downloading container from Shub")
 
 	//use custom parser to make sure we have a valid shub URI
@@ -40,7 +40,7 @@ func DownloadImage(filePath string, shubRef string, Force bool) (err error) {
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 
-	if !Force {
+	if !force {
 		if _, err := os.Stat(filePath); err == nil {
 			return fmt.Errorf("image file already exists - will not overwrite")
 		}
