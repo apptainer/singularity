@@ -60,7 +60,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	// Run %test script here if its defined
 	// this also needs to consider the --notest flag from the CLI eventually
-	if e.EngineConfig.Recipe.BuildData.Test != "" {
+	if !e.EngineConfig.NoTest && e.EngineConfig.Recipe.BuildData.Test != "" {
 		test := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Test)
 		test.Stdout = os.Stdout
 		test.Stderr = os.Stderr

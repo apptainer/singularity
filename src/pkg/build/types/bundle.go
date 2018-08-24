@@ -35,6 +35,7 @@ type Bundle struct {
 	Recipe      Definition        `json:"rawDeffile"`
 	BindPath    []string          `json:"bindPath"`
 	Path        string            `json:"bundlePath"`
+	NoTest      bool              `json:"noTest"`
 }
 
 // NewBundle creates a Bundle environment

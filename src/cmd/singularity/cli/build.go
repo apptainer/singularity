@@ -90,7 +90,7 @@ var BuildCmd = &cobra.Command{
 			}
 			b.Build(context.TODO())
 		} else {
-			b, err := build.NewBuild(spec, dest, buildFormat)
+			b, err := build.NewBuild(spec, dest, buildFormat, noTest)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 				os.Exit(1)

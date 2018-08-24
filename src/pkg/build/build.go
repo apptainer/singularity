@@ -39,6 +39,8 @@ type Build struct {
 	format string
 	// ranSections reflects if sections of the definition were run on container
 	ranSections bool
+	// noTest indicated whether build should skip running the test script
+	noTest bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
@@ -50,30 +52,31 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string) (*Build, error) {
+func NewBuild(spec, dest, format string, noTest bool) (*Build, error) {
 	def, err := makeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format)
+	return newBuild(def, dest, format, noTest)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string) (*Build, error) {
+func NewBuildJSON(r io.Reader, dest, format string, noTest bool) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format)
+	return newBuild(def, dest, format, noTest)
 }
 
-func newBuild(d types.Definition, dest, format string) (*Build, error) {
+func newBuild(d types.Definition, dest, format string, noTest bool) (*Build, error) {
 	b := &Build{
-		dest: dest,
-		d:    d,
-		b:    nil,
+		noTest: noTest,
+		dest:   dest,
+		d:      d,
+		b:      nil,
 	}
 
 	if c, err := getcp(b.d); err == nil {
@@ -262,6 +265,9 @@ func (b *Build) Bundle() (*types.Bundle, error) {
 	}
 
 	b.b = bundle
+
+	b.addFlags()
+
 	return b.b, nil
 }
 
@@ -320,6 +326,10 @@ func makeDef(spec string) (types.Definition, error) {
 	}
 
 	return def, nil
+}
+
+func (b *Build) addFlags() {
+	b.b.NoTest = b.noTest
 }
 
 // MakeDef gets a definition object from a spec
