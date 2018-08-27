@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/sylabs/singularity/src/pkg/apps"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
@@ -34,7 +33,12 @@ type BuildPluginRegistry struct {
 }
 
 // RegisterBuildPlugin adds the plugin to the known plugins
-func RegisterBuildPlugin(pl BuildPlugin) error {
+func RegisterBuildPlugin(_pl interface{}) error {
+	pl, ok := _pl.(BuildPlugin)
+	if !ok {
+		return nil
+	}
+
 	registeredBuildPlugins.Lock()
 	defer registeredBuildPlugins.Unlock()
 
@@ -107,7 +111,7 @@ type BuildPlugin interface {
 	HandlePost() string
 }
 
-func init() {
-	appPl := apps.New()
-	RegisterBuildPlugin(&appPl)
-}
+// func init() {
+// 	appPl := apps.New()
+// 	RegisterBuildPlugin(&appPl)
+// }

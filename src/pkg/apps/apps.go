@@ -3,10 +3,10 @@
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
 
-// Package apps provides the functions which are necessary for adding SCI-F apps support
+// Package main [apps-plugin] provides the functions which are necessary for adding SCI-F apps support
 // to Singularity 3.0.0. In 3.1.0+, this package will be able to be built standalone as
 // a plugin so it will be maintainable separately from the core Singularity functionality
-package apps
+package main
 
 import (
 	"fmt"
@@ -93,8 +93,8 @@ type BuildPlugin struct {
 }
 
 // New returns a new BuildPlugin for the plugin registry to hold
-func New() BuildPlugin {
-	return BuildPlugin{
+func New() interface{} {
+	return &BuildPlugin{
 		Apps: make(map[string]*App),
 	}
 
