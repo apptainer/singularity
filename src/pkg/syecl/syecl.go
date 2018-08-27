@@ -1,0 +1,127 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
+// Package syecl implements the loading and management of the container
+// execution control list feature. This code uses the TOML config file standard
+// to extract the structured configuration for activating or disabling the list
+// and for the implementation of the execution groups.
+package syecl
+
+import (
+	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
+	"github.com/pelletier/go-toml"
+	"github.com/singularityware/singularity/src/pkg/signing"
+)
+
+// EclConfig describes the structure of an execution control list configuration file
+type EclConfig struct {
+	Activated  bool        `toml:"activated"` // toggle the activation of the ECL rules
+	ExecGroups []execgroup `toml:"execgroup"` // Slice of all execution groups
+}
+
+// execgroup describes an execution group, the main unit of configuration:
+//	TagName: a descriptive identifier
+//	ListMode: whether the execgroup follows a whitelist, whitestrict or blacklist model
+//		whitelist: one or more KeyFP's present and verified,
+//		whitestrict: all KeyFP's present and verified,
+//		blacklist: none of the KeyFP should be present
+//	DirPath: containers must be stored in this directory path
+//	KeyFPs: list of Key Fingerprints of entities to verify
+type execgroup struct {
+	TagName  string   `toml:"tagname"`
+	ListMode string   `toml:"mode"`
+	DirPath  string   `toml:"dirpath"`
+	KeyFPs   []string `toml:"keyfp"`
+}
+
+// LoadConfig opens an ECL config file and unmarshals it into structures
+func LoadConfig(confPath string) (ecl EclConfig, err error) {
+	// read in the ECL config file
+	b, err := ioutil.ReadFile(confPath)
+	if err != nil {
+		return
+	}
+
+	// Unmarshal config file
+	err = toml.Unmarshal(b, &ecl)
+	return
+}
+
+// PutConfig takes the content of an EclConfig struct and Marshals it to file
+func PutConfig(ecl EclConfig, confPath string) (err error) {
+	data, err := toml.Marshal(ecl)
+	if err != nil {
+		return
+	}
+
+	return ioutil.WriteFile(confPath, data, 0600)
+}
+
+// ValidateConfig makes sure paths from configs are fully resolved and that
+// values from an execgroup are logically correct.
+// XXX: look that there's only one unique DirPath execgroup
+func (ecl *EclConfig) ValidateConfig() (err error) {
+	for _, v := range ecl.ExecGroups {
+		path, err := filepath.EvalSymlinks(v.DirPath)
+		if err != nil {
+			return err
+		}
+		abs, err := filepath.Abs(path)
+		if err != nil {
+			return err
+		}
+		if v.DirPath != abs {
+			return fmt.Errorf("all paths should be fully cleaned with symlinks resolved")
+		}
+	}
+	return
+}
+
+// ShouldRun determines if a container should run according to its execgroup rules
+func (ecl *EclConfig) ShouldRun(cpath string) (run bool, err error) {
+	var egroup *execgroup
+
+	// look if ECL rules are activated
+	if ecl.Activated == false {
+		return true, nil
+	}
+
+	// look what execgroup a container is part of
+	for _, v := range ecl.ExecGroups {
+		if filepath.Dir(cpath) == v.DirPath {
+			egroup = &v
+			break
+		}
+	}
+	// XXX: if an open (DirPath == "") execgroup exists match container to it
+
+	if egroup == nil {
+		return false, fmt.Errorf("%s not part of any execgroup", cpath)
+	}
+
+	// get all signing entities fingerprints on the primary partition
+	keyfps, err := signing.GetSignEntities(cpath)
+	if err != nil {
+		return
+	}
+
+	// was the primary partition signed by an authorized entity?
+	// XXX: implement whitelist, whitestrict and blacklist modes.
+	for _, v := range egroup.KeyFPs {
+		for _, u := range keyfps {
+			if v == u {
+				run = true
+			}
+		}
+	}
+	if run == false {
+		return false, fmt.Errorf("%s is not signed by required entities", cpath)
+	}
+
+	return
+}

@@ -16,8 +16,8 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/syecl"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/wlconfig"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/fs/files"
 	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
@@ -438,15 +438,15 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
-		// query the white listing module
-		wlcfg, err := wlconfig.LoadConfig("/usr/local/etc/singularity/wlconfig.toml")
+		// query the ECL module
+		ecl, err := syecl.LoadConfig("/usr/local/etc/singularity/eclconfig.toml")
 		if err != nil {
 			return err
 		}
-		if err = wlcfg.ValidateConfig(); err != nil {
+		if err = ecl.ValidateConfig(); err != nil {
 			return err
 		}
-		run, err := wlcfg.ShouldRun(imageObject.File.Name())
+		run, err := ecl.ShouldRun(imageObject.File.Name())
 		if err != nil {
 			return err
 		}

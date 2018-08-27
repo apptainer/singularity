@@ -1,0 +1,28 @@
+# Singularity crypto verified container ECL config file
+#
+# This file describes the domains (path names) in which container files are
+# authorized execution. The decision is made by validating both the location
+# of the container file in the file system and the signing authority of said
+# container.
+#
+# Example:
+#
+#activated = true
+#
+#[[execgroup]]
+#  dirpath = "/var/cache/containers"
+#  keyfp = ["5994BE54C31CF1B5E1994F987C52CF6D055F072B","7064B1D6EFF01B1262FED3F03581D99FE87EAFD1"]
+#  mode = "whitelist"
+#  tagname = "group1"
+#
+#[[execgroup]]
+#  dirpath = "/tmp/containers"
+#  keyfp = ["7064B1D6EFF01B1262FED3F03581D99FE87EAFD1"]
+#  mode = "whitelist"
+#  tagname = "group2"
+#
+# The above example defines 2 execution groups (dirpath: /var/cache/containers
+# and /tmp/containers), in which only containers signed with Key IDs 055F072B and
+# E87EAFD1 may run if started from /var/cache/containers and only container
+# signed with Key ID E87EAFD1 may run is started from /tmp/containers.
+#
