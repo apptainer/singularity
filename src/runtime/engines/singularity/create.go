@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/rpc"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
@@ -19,12 +20,46 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
+	if engine.EngineConfig.GetInstanceJoin() {
+		return nil
+	}
+
 	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
 		Name:   engine.CommonConfig.EngineName,
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
+	}
+
+	if engine.EngineConfig.GetInstance() {
+		if engine.CommonConfig.OciConfig.Linux != nil {
+			for i, namespace := range engine.CommonConfig.OciConfig.Linux.Namespaces {
+				nstype := ""
+
+				switch namespace.Type {
+				case specs.PIDNamespace:
+					nstype = "pid"
+				case specs.UTSNamespace:
+					nstype = "uts"
+				case specs.IPCNamespace:
+					nstype = "ipc"
+				case specs.MountNamespace:
+					nstype = "mnt"
+				case specs.CgroupNamespace:
+					nstype = "cgroup"
+				case specs.NetworkNamespace:
+					nstype = "net"
+				case specs.UserNamespace:
+					nstype = "user"
+				}
+
+				if nstype != "" {
+					path := fmt.Sprintf("/proc/%d/ns/%s", pid, nstype)
+					engine.CommonConfig.OciConfig.Linux.Namespaces[i].Path = path
+				}
+			}
+		}
 	}
 
 	return create(engine, rpcOps, pid)
