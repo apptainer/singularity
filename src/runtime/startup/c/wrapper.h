@@ -9,9 +9,15 @@
 #ifndef _SINGULARITY_WRAPPER_H
 #define _SINGULARITY_WRAPPER_H
 
+#define MAX_NSPATH_SIZE PATH_MAX*7
 #define MAX_JSON_SIZE   128*1024
 #define JOKER           42
 #define MAX_ID_MAPPING  5
+
+struct fdlist {
+    int *fds;
+    unsigned int num;
+};
 
 struct uidMapping {
     uid_t hostID;
@@ -31,21 +37,23 @@ struct cConfig {
     unsigned long long capInheritable;
     unsigned long long capBounding;
     unsigned long long capAmbient;
+    unsigned long mountPropagation;
     unsigned int nsFlags;
     pid_t containerPid;
-    pid_t netPid;
-    pid_t mntPid;
-    pid_t userPid;
-    pid_t ipcPid;
-    pid_t utsPid;
-    pid_t cgroupPid;
-    pid_t pidPid;
+    off_t netNsPathOffset;
+    off_t mntNsPathOffset;
+    off_t userNsPathOffset;
+    off_t ipcNsPathOffset;
+    off_t utsNsPathOffset;
+    off_t cgroupNsPathOffset;
+    off_t pidNsPathOffset;
     unsigned char isSuid;
     unsigned char isInstance;
     unsigned char noNewPrivs;
     struct uidMapping uidMapping[MAX_ID_MAPPING];
     struct gidMapping gidMapping[MAX_ID_MAPPING];
     unsigned int jsonConfSize;
+    unsigned int nsPathSize;
 };
 
 #endif /* _SINGULARITY_WRAPPER_H */

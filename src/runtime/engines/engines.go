@@ -42,6 +42,8 @@ type EngineOperations interface {
 	// StartProcess is called in stage2 after waiting on RPC server exit. It is
 	// responsible for exec'ing the payload proc in the container
 	StartProcess(net.Conn) error
+	// PostStartProcess is called in smaster after successful execution of container process
+	PostStartProcess(int) error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
 	// will typically block until the container proc exists
 	MonitorContainer(int) (syscall.WaitStatus, error)

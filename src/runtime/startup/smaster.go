@@ -24,6 +24,7 @@ import (
 	"github.com/singularityware/singularity/src/runtime/engines/common/config/wrapper"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/mainthread"
 	"github.com/singularityware/singularity/src/runtime/engines"
 )
 
@@ -60,25 +61,37 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 		runtime.Goexit()
 	}()
 
-	if wrapperConfig.GetInstance() {
-		go func() {
-			data := make([]byte, 1)
+	go func() {
+		data := make([]byte, 1)
 
-			comm := os.NewFile(uintptr(masterSocket), "master-socket")
-			conn, err := net.FileConn(comm)
-			comm.Close()
+		comm := os.NewFile(uintptr(masterSocket), "master-socket")
+		conn, err := net.FileConn(comm)
+		comm.Close()
 
-			_, err = conn.Read(data)
-			if err == io.EOF {
-				/* sleep a bit to see if child exit */
-				time.Sleep(100 * time.Millisecond)
-				if os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR1)
+		_, err = conn.Read(data)
+		if err == io.EOF || err == nil {
+			if err := engine.PostStartProcess(containerPid); err != nil {
+				if wrapperConfig.GetInstance() && os.Getppid() == ppid {
+					syscall.Kill(ppid, syscall.SIGUSR2)
+				}
+				fatalChan <- fmt.Errorf("post start process failed: %s", err)
+			} else {
+				if wrapperConfig.GetInstance() {
+					/* sleep a bit to see if child exit */
+					time.Sleep(100 * time.Millisecond)
+					if os.Getppid() == ppid {
+						syscall.Kill(ppid, syscall.SIGUSR1)
+					}
 				}
 			}
-			conn.Close()
-		}()
-	}
+		} else {
+			if wrapperConfig.GetInstance() && os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+			}
+			fatalChan <- fmt.Errorf("failed to start process: %s", err)
+		}
+		conn.Close()
+	}()
 
 	go func() {
 		status, err = engine.MonitorContainer(containerPid)
@@ -97,28 +110,27 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 		sylog.Fatalf("%s", fatal)
 	}
 
-	if status.Exited() {
+	if status.Signaled() {
+		sylog.Debugf("Child exited due to signal %d", status.Signal())
+		syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
+	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
 		if wrapperConfig.GetInstance() {
 			if status.ExitStatus() != 0 {
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)
+					sylog.Fatalf("failed to spawn instance")
 				}
-				sylog.Fatalf("failed to spawn instance")
 			}
 			if os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR1)
 			}
 		}
 		os.Exit(status.ExitStatus())
-	} else if status.Signaled() {
-		sylog.Debugf("Child exited due to signal %d", status.Signal())
-		syscall.Kill(os.Getpid(), status.Signal())
-		os.Exit(1)
 	}
 }
 
-func main() {
+func startup() {
 	loglevel := os.Getenv("SINGULARITY_MESSAGELEVEL")
 
 	os.Clearenv()
@@ -132,6 +144,12 @@ func main() {
 	cconf := unsafe.Pointer(&C.config)
 	wrapperConfig := wrapper.NewConfig(wrapper.CConfig(cconf))
 	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(wrapperConfig.GetJSONConfSize()))
+
+	/* free allocated buffer */
+	C.free(unsafe.Pointer(C.json_stdin))
+	if unsafe.Pointer(C.nspath) != nil {
+		C.free(unsafe.Pointer(C.nspath))
+	}
 
 	switch C.execute {
 	case C.SCONTAINER_STAGE1:
@@ -147,9 +165,32 @@ func main() {
 		sylog.Verbosef("Serve RPC requests\n")
 		RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
 
+		syscall.Close(int(C.rpc_socket[1]))
+
+		// that's the only way to ensure to be executed in a specific thread
+		// since prepare_scontainer_stage modify capabilities and IDs and we
+		// need to execute container process with requested security settings
 		sylog.Verbosef("Execute scontainer stage 2\n")
-		C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
-		SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), wrapperConfig, jsonBytes)
+		mainthread.Execute(func() {
+			C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
+			SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), wrapperConfig, jsonBytes)
+		})
 	}
 	sylog.Fatalf("You should not be there\n")
+}
+
+func init() {
+	// lock main thread for function execution loop
+	runtime.LockOSThread()
+	// this is mainly to reduce memory footprint
+	runtime.GOMAXPROCS(1)
+}
+
+func main() {
+	go startup()
+
+	// run functions requiring execution in main thread
+	for f := range mainthread.FuncChannel {
+		f()
+	}
 }
