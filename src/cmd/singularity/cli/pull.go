@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	// SyCloudLibrary holds sylabs cloud library base URI
+	// LibraryProtocol holds the sylabs cloud library base URI
 	// for more info refer to https://cloud.sylabs.io/library
-	SyCloudLibrary = "library"
-	// Shub holds singularity hub base URI
+	LibraryProtocol = "library"
+	// ShubProtocol holds singularity hub base URI
 	// for more info refer to https://singularity-hub.org/
-	Shub = "shub"
+	ShubProtocol = "shub"
 )
 
 var (
@@ -44,19 +44,23 @@ var PullCmd = &cobra.Command{
 	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		var uri, image string
+
 		image = ""
+
 		if len(args) == 2 {
 			uri = args[1]
 			image = args[0]
 		} else {
 			uri = args[0]
 		}
+
 		BaseURI := strings.Split(uri, "://")
+
 		switch BaseURI[0] {
-		case SyCloudLibrary:
-			libexec.PullImage(image, uri, PullLibraryURI, force, authToken)
-		case Shub:
-			sylog.Errorf("Shub not yet supported")
+		case LibraryProtocol:
+			libexec.PullLibraryImage(image, uri, PullLibraryURI, force, authToken)
+		case ShubProtocol:
+			libexec.PullShubImage(image, uri, force)
 		default:
 			sylog.Errorf("Not a supported URI")
 		}
