@@ -15,12 +15,12 @@ import (
 )
 
 const (
-	// SyCloudLibrary holds sylabs cloud library base URI
+	// LibraryProtocol holds the sylabs cloud library base URI
 	// for more info refer to https://cloud.sylabs.io/library
-	SyCloudLibrary = "library"
-	// Shub holds singularity hub base URI
+	LibraryProtocol = "library"
+	// ShubProtocol holds singularity hub base URI
 	// for more info refer to https://singularity-hub.org/
-	Shub = "shub"
+	ShubProtocol = "shub"
 )
 
 var (
@@ -57,9 +57,9 @@ var PullCmd = &cobra.Command{
 		BaseURI := strings.Split(uri, "://")
 
 		switch BaseURI[0] {
-		case SyCloudLibrary:
+		case LibraryProtocol:
 			libexec.PullLibraryImage(image, uri, PullLibraryURI, force, authToken)
-		case Shub:
+		case ShubProtocol:
 			libexec.PullShubImage(image, uri, force)
 		default:
 			sylog.Errorf("Not a supported URI")
