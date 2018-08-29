@@ -118,10 +118,10 @@ int _singularity_runtime_mount_userbinds(void) {
                     continue;
                 }
             } else if ( ( is_dir(source) == 0 ) && ( is_dir(joinpath(container_dir, dest)) < 0 ) ) {
-                if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL ) {
-                    singularity_message(VERBOSE3, "Creating bind directory on overlay file system: %s\n", dest);
+                if ( singularity_registry_get("OVERLAYFS_ENABLED") != NULL || singularity_registry_get("CONTAIN") != NULL ) {
+                    singularity_message(VERBOSE3, "Creating bind directory: %s\n", dest);
                     if ( container_mkpath_nopriv(joinpath(container_dir, dest), 0755) < 0 ) {
-                        singularity_message(VERBOSE3, "Retrying with privileges to create bind directory on overlay file system: %s\n", dest);
+                        singularity_message(VERBOSE3, "Retrying with privileges to create bind directory: %s\n", dest);
                         if ( container_mkpath_priv(joinpath(container_dir, dest), 0755) < 0 ) {
                             singularity_message(WARNING, "Skipping user bind, could not create bind point %s: %s\n", dest, strerror(errno));
                             continue;
