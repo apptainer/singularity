@@ -13,7 +13,7 @@ import (
 	"syscall"
 
 	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/wrapper"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config/starter"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
@@ -35,7 +35,7 @@ type EngineOperations interface {
 	// the EngineOperations implementation.
 	InitConfig(*config.Common)
 	// PrepareConfig is called in stage1 to validate and prepare container configuration
-	PrepareConfig(net.Conn, *wrapper.Config) error
+	PrepareConfig(net.Conn, *starter.Config) error
 	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
 	CreateContainer(int, net.Conn) error
