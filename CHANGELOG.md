@@ -12,6 +12,11 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.6.1]
+
+### Bug fixes
+ - Attempt directory creation with `--contain` option and no OverlayFS support for certain run conditions
+
 ## [v2.6.0]
     
 ### Implemented enhancements
