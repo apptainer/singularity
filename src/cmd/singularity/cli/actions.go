@@ -76,7 +76,7 @@ var ExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		execWrapper(cmd, args[0], a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -92,7 +92,7 @@ var ShellCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
-		execWrapper(cmd, args[0], a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -108,7 +108,7 @@ var RunCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		execWrapper(cmd, args[0], a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -118,13 +118,13 @@ var RunCmd = &cobra.Command{
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execWrapper(cobraCmd *cobra.Command, image string, args []string, name string) {
+func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	procname := ""
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
-	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
+	starter := buildcfg.SBINDIR + "/starter-suid"
 
 	engineConfig := singularity.NewConfig()
 
@@ -244,7 +244,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		wrapper = buildcfg.SBINDIR + "/wrapper"
+		starter = buildcfg.SBINDIR + "/starter"
 
 		if IsFakeroot {
 			generator.AddLinuxUIDMapping(uid, 0, 1)
@@ -308,7 +308,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, []string{procname}, Env, configData); err != nil {
+	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 }
