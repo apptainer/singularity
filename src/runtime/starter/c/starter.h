@@ -6,8 +6,8 @@
   your rights to use or distribute this software.
 */
 
-#ifndef _SINGULARITY_WRAPPER_H
-#define _SINGULARITY_WRAPPER_H
+#ifndef _SINGULARITY_STARTER_H
+#define _SINGULARITY_STARTER_H
 
 #define MAX_NSPATH_SIZE PATH_MAX*7
 #define MAX_JSON_SIZE   128*1024
@@ -56,4 +56,4 @@ struct cConfig {
     unsigned int nsPathSize;
 };
 
-#endif /* _SINGULARITY_WRAPPER_H */
+#endif /* _SINGULARITY_STARTER_H */
