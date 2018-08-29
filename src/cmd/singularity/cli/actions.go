@@ -282,6 +282,14 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
+	// Transpose environment
+	for _, e := range environment {
+		if strings.HasPrefix(e, "SINGULARITYENV_") {
+			te := strings.Split(strings.TrimPrefix(e, "SINGULARITYENV_"), "=")
+			generator.AddProcessEnv(te[0], te[1])
+		}
+	}
+
 	if pwd, err := os.Getwd(); err == nil {
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
