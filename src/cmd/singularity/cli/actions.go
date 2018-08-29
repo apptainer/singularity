@@ -260,7 +260,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	// Clean environment
 	if !IsCleanEnv {
-		for _, env := range os.Environ() {
+		for _, env := range environment {
 			e := strings.SplitN(env, "=", 2)
 			if len(e) != 2 {
 				sylog.Verbosef("can't process environment variable %s", env)
