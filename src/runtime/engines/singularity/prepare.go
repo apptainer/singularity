@@ -11,6 +11,9 @@ import (
 	"net"
 	"os"
 
+	"github.com/singularityware/singularity/src/pkg/util/user"
+
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
@@ -19,6 +22,147 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
+
+// prepareUserCaps is responsible for checking that user's requested
+// capabilities are authorized
+func (e *EngineOperations) prepareUserCaps() error {
+	uid := os.Getuid()
+	commonCaps := make([]string, 0)
+
+	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
+
+	file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	pw, err := user.GetPwUID(uint32(uid))
+	if err != nil {
+		return err
+	}
+
+	caps, _ := capabilities.Split(e.EngineConfig.GetAddCaps())
+	authorizedCaps, _ := file.CheckUserCaps(pw.Name, caps)
+
+	if len(authorizedCaps) > 0 {
+		sylog.Debugf("User capabilities %v added", authorizedCaps)
+		commonCaps = authorizedCaps
+	}
+
+	groups, err := os.Getgroups()
+	for _, g := range groups {
+		gr, err := user.GetGrGID(uint32(g))
+		if err != nil {
+			return err
+		}
+		authorizedCaps, _ := file.CheckGroupCaps(gr.Name, caps)
+		if len(authorizedCaps) > 0 {
+			sylog.Debugf("%s group capabilities %v added", gr.Name, authorizedCaps)
+			commonCaps = append(commonCaps, authorizedCaps...)
+		}
+	}
+
+	commonCaps = capabilities.RemoveDuplicated(commonCaps)
+
+	caps, _ = capabilities.Split(e.EngineConfig.GetDropCaps())
+	for _, cap := range caps {
+		for i, c := range commonCaps {
+			if c == cap {
+				sylog.Debugf("Capability %s dropped", cap)
+				commonCaps = append(commonCaps[:i], commonCaps[i+1:]...)
+				break
+			}
+		}
+	}
+
+	e.CommonConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Effective = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
+
+	return nil
+}
+
+// prepareRootCaps is responsible for setting root capabilities
+// based on capability/configuration files and requested capabilities
+func (e *EngineOperations) prepareRootCaps() error {
+	commonCaps := make([]string, 0)
+	defaultCapabilities := e.EngineConfig.File.RootDefaultCapabilities
+
+	// is no-privs/keep-privs set on command line
+	if e.EngineConfig.GetNoPrivs() {
+		sylog.Debugf("--no-privs requested")
+		defaultCapabilities = "no"
+	} else if e.EngineConfig.GetKeepPrivs() {
+		sylog.Debugf("--keep-privs requested")
+		defaultCapabilities = "full"
+	}
+
+	sylog.Debugf("Root %s capabilities", defaultCapabilities)
+
+	// set default capabilities based on configuration file directive
+	switch defaultCapabilities {
+	case "full":
+		e.CommonConfig.OciConfig.SetupPrivileged(true)
+		commonCaps = e.CommonConfig.OciConfig.Process.Capabilities.Permitted
+	case "file":
+		file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		commonCaps = append(commonCaps, file.ListUserCaps("root")...)
+		groups, err := os.Getgroups()
+		for _, g := range groups {
+			gr, err := user.GetGrGID(uint32(g))
+			if err != nil {
+				return err
+			}
+			caps := file.ListGroupCaps(gr.Name)
+			commonCaps = append(commonCaps, caps...)
+			sylog.Debugf("%s group capabilities %v added", gr.Name, caps)
+		}
+	}
+
+	caps, _ := capabilities.Split(e.EngineConfig.GetAddCaps())
+	for _, cap := range caps {
+		found := false
+		for _, c := range commonCaps {
+			if c == cap {
+				found = true
+				break
+			}
+		}
+		if !found {
+			sylog.Debugf("Root capability %s added", cap)
+			commonCaps = append(commonCaps, cap)
+		}
+	}
+
+	commonCaps = capabilities.RemoveDuplicated(commonCaps)
+
+	caps, _ = capabilities.Split(e.EngineConfig.GetDropCaps())
+	for _, cap := range caps {
+		for i, c := range commonCaps {
+			if c == cap {
+				sylog.Debugf("Root capability %s dropped", cap)
+				commonCaps = append(commonCaps[:i], commonCaps[i+1:]...)
+				break
+			}
+		}
+	}
+
+	e.CommonConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Effective = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
+	e.CommonConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
+
+	return nil
+}
 
 // prepareContainerConfig is responsible for getting and applying user supplied
 // configuration for container creation
@@ -39,29 +183,13 @@ func (e *EngineOperations) prepareContainerConfig(wrapperConfig *wrapper.Config)
 	}
 
 	if os.Getuid() == 0 {
-		if e.EngineConfig.File.RootDefaultCapabilities == "full" {
-			e.CommonConfig.OciConfig.SetupPrivileged(true)
-
-			commonCaps := e.CommonConfig.OciConfig.Process.Capabilities.Permitted
-
-			caps, _ := capabilities.Split(e.EngineConfig.GetDropCaps())
-			for _, cap := range caps {
-				for i, c := range commonCaps {
-					if c == cap {
-						commonCaps = append(commonCaps[:i], commonCaps[i+1:]...)
-						break
-					}
-				}
-			}
-
-			e.CommonConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
-			e.CommonConfig.OciConfig.Process.Capabilities.Effective = commonCaps
-			e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
-			e.CommonConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
-			e.CommonConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
+		if err := e.prepareRootCaps(); err != nil {
+			return err
 		}
 	} else {
-		e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
+		if err := e.prepareUserCaps(); err != nil {
+			return err
+		}
 	}
 
 	if e.EngineConfig.File.MountSlave {
@@ -108,13 +236,6 @@ func (e *EngineOperations) prepareInstanceJoinConfig(wrapperConfig *wrapper.Conf
 	// set namespaces to join
 	wrapperConfig.SetNsPathFromSpec(instanceConfig.OciConfig.Linux.Namespaces)
 
-	if e.CommonConfig.OciConfig.Process == nil {
-		e.CommonConfig.OciConfig.Process = &specs.Process{}
-	}
-	if e.CommonConfig.OciConfig.Process.Capabilities == nil {
-		e.CommonConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
-	}
-
 	// duplicate instance capabilities
 	if instanceConfig.OciConfig.Process != nil && instanceConfig.OciConfig.Process.Capabilities != nil {
 		e.CommonConfig.OciConfig.Process.Capabilities.Permitted = instanceConfig.OciConfig.Process.Capabilities.Permitted
@@ -122,6 +243,16 @@ func (e *EngineOperations) prepareInstanceJoinConfig(wrapperConfig *wrapper.Conf
 		e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = instanceConfig.OciConfig.Process.Capabilities.Inheritable
 		e.CommonConfig.OciConfig.Process.Capabilities.Bounding = instanceConfig.OciConfig.Process.Capabilities.Bounding
 		e.CommonConfig.OciConfig.Process.Capabilities.Ambient = instanceConfig.OciConfig.Process.Capabilities.Ambient
+	}
+
+	if os.Getuid() == 0 {
+		if err := e.prepareRootCaps(); err != nil {
+			return err
+		}
+	} else {
+		if err := e.prepareUserCaps(); err != nil {
+			return err
+		}
 	}
 
 	e.CommonConfig.OciConfig.Process.NoNewPrivileges = instanceConfig.OciConfig.Process.NoNewPrivileges
@@ -137,6 +268,13 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, wrapperConfig *wra
 
 	if !e.EngineConfig.File.AllowSetuid && wrapperConfig.GetIsSUID() {
 		return fmt.Errorf("SUID workflow disabled by administrator")
+	}
+
+	if e.CommonConfig.OciConfig.Process == nil {
+		e.CommonConfig.OciConfig.Process = &specs.Process{}
+	}
+	if e.CommonConfig.OciConfig.Process.Capabilities == nil {
+		e.CommonConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
 	}
 
 	if e.EngineConfig.GetInstanceJoin() {
