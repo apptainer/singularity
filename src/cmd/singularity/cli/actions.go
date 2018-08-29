@@ -255,22 +255,32 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	if !IsCleanEnv {
-		for _, env := range os.Environ() {
-			e := strings.SplitN(env, "=", 2)
-			if len(e) != 2 {
-				sylog.Verbosef("can't process environment variable %s", env)
-				continue
-			}
-			if e[0] == "HOME" {
-				if !NoHome {
-					generator.AddProcessEnv(e[0], engineConfig.GetHome())
-				} else {
-					generator.AddProcessEnv(e[0], "/")
-				}
+	// Copy and cache environment
+	environment := os.Environ()
+
+	// Clean environment
+	for _, env := range environment {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) != 2 {
+			sylog.Verbosef("can't process environment variable %s", env)
+			continue
+		}
+
+		// Transpose environment
+		if strings.HasPrefix(e[0], "SINGULARITYENV_") {
+			e[0] = strings.TrimPrefix(e[0], "SINGULARITYENV_")
+		} else if IsCleanEnv {
+			continue
+		}
+
+		if e[0] == "HOME" {
+			if !NoHome {
+				generator.AddProcessEnv(e[0], engineConfig.GetHome())
 			} else {
-				generator.AddProcessEnv(e[0], e[1])
+				generator.AddProcessEnv(e[0], "/")
 			}
+		} else {
+			generator.AddProcessEnv(e[0], e[1])
 		}
 	}
 
