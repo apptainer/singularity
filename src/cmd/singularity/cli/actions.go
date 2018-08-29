@@ -255,6 +255,10 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
+	// Copy and cache environment
+	environment := os.Environ()
+
+	// Clean environment
 	if !IsCleanEnv {
 		for _, env := range os.Environ() {
 			e := strings.SplitN(env, "=", 2)
