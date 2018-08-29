@@ -259,34 +259,30 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 	environment := os.Environ()
 
 	// Clean environment
-	if !IsCleanEnv {
-		for _, env := range environment {
-			e := strings.SplitN(env, "=", 2)
-			if len(e) != 2 {
-				sylog.Verbosef("can't process environment variable %s", env)
-				continue
-			}
-			// skip any variables prefixed with "SINGULARITYENV_"
-			if strings.HasPrefix(e[0], "SINGULARITYENV_") {
-				continue
-			}
-			if e[0] == "HOME" {
-				if !NoHome {
-					generator.AddProcessEnv(e[0], engineConfig.GetHome())
-				} else {
-					generator.AddProcessEnv(e[0], "/")
-				}
-			} else {
-				generator.AddProcessEnv(e[0], e[1])
-			}
+	for _, env := range environment {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) != 2 {
+			sylog.Verbosef("can't process environment variable %s", env)
+			continue
 		}
-	}
 
-	// Transpose environment
-	for _, e := range environment {
-		if strings.HasPrefix(e, "SINGULARITYENV_") {
-			te := strings.Split(strings.TrimPrefix(e, "SINGULARITYENV_"), "=")
+		// Transpose environment
+		if strings.HasPrefix(env, "SINGULARITYENV_") {
+			te := strings.Split(strings.TrimPrefix(env, "SINGULARITYENV_"), "=")
 			generator.AddProcessEnv(te[0], te[1])
+			continue
+		} else if IsCleanEnv {
+			continue
+		}
+
+		if e[0] == "HOME" {
+			if !NoHome {
+				generator.AddProcessEnv(e[0], engineConfig.GetHome())
+			} else {
+				generator.AddProcessEnv(e[0], "/")
+			}
+		} else {
+			generator.AddProcessEnv(e[0], e[1])
 		}
 	}
 
