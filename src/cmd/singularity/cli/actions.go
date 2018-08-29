@@ -269,8 +269,8 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		// Transpose environment
 		if strings.HasPrefix(env, "SINGULARITYENV_") {
 			te := strings.Split(strings.TrimPrefix(env, "SINGULARITYENV_"), "=")
-			generator.AddProcessEnv(te[0], te[1])
-			continue
+			e[0] = te[0]
+			e[1] = te[1]
 		} else if IsCleanEnv {
 			continue
 		}
