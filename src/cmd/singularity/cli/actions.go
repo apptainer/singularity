@@ -266,6 +266,10 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 				sylog.Verbosef("can't process environment variable %s", env)
 				continue
 			}
+			// skip any variables prefixed with "SINGULARITYENV_"
+			if strings.HasPrefix(e[0], "SINGULARITYENV_") {
+				continue
+			}
 			if e[0] == "HOME" {
 				if !NoHome {
 					generator.AddProcessEnv(e[0], engineConfig.GetHome())
