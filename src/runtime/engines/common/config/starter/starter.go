@@ -3,11 +3,11 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package wrapper
+package starter
 
 /*
 #include <sys/types.h>
-#include "startup/c/wrapper.h"
+#include "starter/c/starter.h"
 */
 // #cgo CFLAGS: -I../../../..
 import "C"
@@ -25,15 +25,16 @@ import (
 // CConfig is the common type for C.struct_cConfig
 type CConfig *C.struct_cConfig
 
-// Config represents structure to manipulate C wrapper configuration
+// Config represents structure to manipulate C starter configuration
 type Config struct {
 	config CConfig
+	nsPath []byte
 }
 
-// NewConfig takes a pointer to C wrapper configuration and returns a
+// NewConfig takes a pointer to C starter configuration and returns a
 // pointer to a Config
 func NewConfig(config CConfig) *Config {
-	return &Config{config}
+	return &Config{config: config, nsPath: make([]byte, 1)}
 }
 
 // GetIsSUID returns if SUID workflow is enabled or not
@@ -49,7 +50,7 @@ func (c *Config) GetContainerPid() int {
 	return int(c.config.containerPid)
 }
 
-// SetInstance sets if wrapper should spawn instance or not
+// SetInstance sets if starter should spawn instance or not
 func (c *Config) SetInstance(instance bool) {
 	if instance {
 		c.config.isInstance = C.uchar(1)
@@ -83,8 +84,20 @@ func (c *Config) GetNoNewPrivs() bool {
 	return false
 }
 
+// SetMountPropagation sets root filesystem mount propagation
+func (c *Config) SetMountPropagation(propagation string) {
+	switch propagation {
+	case "shared":
+		c.config.mountPropagation = C.ulong(syscall.MS_SHARED | syscall.MS_REC)
+	case "slave":
+		c.config.mountPropagation = C.ulong(syscall.MS_SLAVE | syscall.MS_REC)
+	case "private":
+		c.config.mountPropagation = C.ulong(syscall.MS_PRIVATE | syscall.MS_REC)
+	}
+}
+
 // GetJSONConfSize returns size of JSON configuration sent
-// by wrapper
+// by starter
 func (c *Config) GetJSONConfSize() uint {
 	return uint(c.config.jsonConfSize)
 }
@@ -98,10 +111,12 @@ func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
 	}
 
 	c.config.jsonConfSize = C.uint(len(jsonConf))
+	c.config.nsPathSize = C.uint(len(c.nsPath))
 	cconfPayload := C.GoBytes(unsafe.Pointer(c.config), C.sizeof_struct_cConfig)
-	finalPayload := append(cconfPayload, jsonConf...)
+	cconfPayload = append(cconfPayload, c.nsPath...)
+	cconfPayload = append(cconfPayload, jsonConf...)
 
-	if n, err := w.Write(finalPayload); err != nil || n != len(finalPayload) {
+	if n, err := w.Write(cconfPayload); err != nil || n != len(cconfPayload) {
 		return fmt.Errorf("failed to write payload: %s", err)
 	}
 	return nil
@@ -153,23 +168,53 @@ func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	}
 }
 
-// SetNsPid sets corresponding namespace to be joined
-func (c *Config) SetNsPid(nstype specs.LinuxNamespaceType, pid int) {
+// SetNsPath sets corresponding namespace to be joined
+func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) {
+	nullified := path + "\x00"
+
 	switch nstype {
 	case specs.UserNamespace:
-		c.config.userPid = C.pid_t(pid)
+		c.config.userNsPathOffset = C.off_t(len(c.nsPath))
 	case specs.IPCNamespace:
-		c.config.ipcPid = C.pid_t(pid)
+		c.config.ipcNsPathOffset = C.off_t(len(c.nsPath))
 	case specs.UTSNamespace:
-		c.config.utsPid = C.pid_t(pid)
+		c.config.utsNsPathOffset = C.off_t(len(c.nsPath))
 	case specs.PIDNamespace:
-		c.config.pidPid = C.pid_t(pid)
+		c.config.pidNsPathOffset = C.off_t(len(c.nsPath))
 	case specs.NetworkNamespace:
-		c.config.netPid = C.pid_t(pid)
+		c.config.netNsPathOffset = C.off_t(len(c.nsPath))
 	case specs.MountNamespace:
-		c.config.mntPid = C.pid_t(pid)
+		c.config.mntNsPathOffset = C.off_t(len(c.nsPath))
 	case specs.CgroupNamespace:
-		c.config.cgroupPid = C.pid_t(pid)
+		c.config.cgroupNsPathOffset = C.off_t(len(c.nsPath))
+	}
+
+	c.nsPath = append(c.nsPath, nullified...)
+}
+
+// SetNsPathFromSpec sets corresponding namespace to be joined from OCI spec
+func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) {
+	for _, namespace := range namespaces {
+		nullified := namespace.Path + "\x00"
+
+		switch namespace.Type {
+		case specs.UserNamespace:
+			c.config.userNsPathOffset = C.off_t(len(c.nsPath))
+		case specs.IPCNamespace:
+			c.config.ipcNsPathOffset = C.off_t(len(c.nsPath))
+		case specs.UTSNamespace:
+			c.config.utsNsPathOffset = C.off_t(len(c.nsPath))
+		case specs.PIDNamespace:
+			c.config.pidNsPathOffset = C.off_t(len(c.nsPath))
+		case specs.NetworkNamespace:
+			c.config.netNsPathOffset = C.off_t(len(c.nsPath))
+		case specs.MountNamespace:
+			c.config.mntNsPathOffset = C.off_t(len(c.nsPath))
+		case specs.CgroupNamespace:
+			c.config.cgroupNsPathOffset = C.off_t(len(c.nsPath))
+		}
+
+		c.nsPath = append(c.nsPath, nullified...)
 	}
 }
 

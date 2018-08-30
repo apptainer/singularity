@@ -82,3 +82,8 @@ func (e *EngineOperations) MonitorContainer(pid int) (syscall.WaitStatus, error)
 func (e *EngineOperations) CleanupContainer() error {
 	return nil
 }
+
+// PostStartProcess actually does nothing for build engine
+func (e *EngineOperations) PostStartProcess(pid int) error {
+	return nil
+}

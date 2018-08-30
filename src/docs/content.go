@@ -410,8 +410,8 @@ Enterprise Performance Computing (EPC)`
 	InstanceExample string = `
   All group commands have their own help output:
   
-  $ singularity help instance.start
-  $ singularity instance.start --help`
+  $ singularity help instance start
+  $ singularity instance start --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
@@ -422,11 +422,11 @@ Enterprise Performance Computing (EPC)`
   The instance list command allows you to view the Singularity container
   instances that are currently running in the background.`
 	InstanceListExample string = `
-  $ singularity instance.list
+  $ singularity instance list
   DAEMON NAME      PID      CONTAINER IMAGE
   test            11963     /home/mibauer/singularity/sinstance/test.img
   
-  $ sudo singularity instance.list -u mibauer
+  $ sudo singularity instance list -u mibauer
   DAEMON NAME      PID      CONTAINER IMAGE
   test            11963     /home/mibauer/singularity/sinstance/test.img
   test2           16219     /home/mibauer/singularity/sinstance/test.img`
@@ -444,7 +444,7 @@ Enterprise Performance Computing (EPC)`
   
   singularity instance start accepts the following container formats` + formats
 	InstanceStartExample string = `
-  $ singularity instance.start /tmp/my-sql.img mysql
+  $ singularity instance start /tmp/my-sql.img mysql
   
   $ singularity shell instance://mysql
   Singularity my-sql.img> pwd
@@ -456,7 +456,7 @@ Enterprise Performance Computing (EPC)`
     3 pts/0    00:00:00 ps
   Singularity my-sql.img>
   
-  $ singularity instance.stop /tmp/my-sql.img mysql
+  $ singularity instance stop /tmp/my-sql.img mysql
   Stopping /tmp/my-sql.img mysql`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -468,21 +468,21 @@ Enterprise Performance Computing (EPC)`
   The command singularity instance stop allows you to stop and clean up a named,
   running instance of a given container image.`
 	InstanceStopExample string = `
-  $ singularity instance.start my-sql.img mysql1
-  $ singularity instance.start my-sql.img mysql2
-  $ singularity instance.stop mysql*
+  $ singularity instance start my-sql.img mysql1
+  $ singularity instance start my-sql.img mysql2
+  $ singularity instance stop mysql*
   Stopping mysql1 instance of my-sql.img (PID=23845)
   Stopping mysql2 instance of my-sql.img (PID=23858)
   
-  $ singularity instance.start my-sql.img mysql1
+  $ singularity instance start my-sql.img mysql1
   
   Force instance to shutdown
-  $ singularity instance.stop -f mysql1 (may corrupt data)
+  $ singularity instance stop -f mysql1 (may corrupt data)
   
   Send SIGTERM to the instance
-  $ singularity instance.stop -s SIGTERM mysql1
-  $ singularity instance.stop -s TERM mysql1
-  $ singularity instance.stop -s 15 mysql1`
+  $ singularity instance stop -s SIGTERM mysql1
+  $ singularity instance stop -s TERM mysql1
+  $ singularity instance stop -s 15 mysql1`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// pull

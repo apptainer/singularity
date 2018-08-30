@@ -9,6 +9,8 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -55,4 +57,68 @@ func ParseMountInfo(path string) (map[string][]string, error) {
 		}
 	}
 	return mp, nil
+}
+
+// ExtractPid returns a pid extracted from path of type "/proc/1"
+func ExtractPid(path string) (pid uint, err error) {
+	n, err := fmt.Sscanf(path, "/proc/%d", &pid)
+	if n != 1 {
+		return 0, fmt.Errorf("can't extract PID from %s: %s", path, err)
+	}
+	return
+}
+
+// CountChilds returns the number of child processes for a given process id
+func CountChilds(pid int) (int, error) {
+	childs := 0
+
+	parentProc := fmt.Sprintf("/proc/%d", pid)
+	if _, err := os.Stat(parentProc); os.IsNotExist(err) {
+		return 0, fmt.Errorf("pid %d doesn't exists", pid)
+	}
+
+	parentLine := fmt.Sprintf("PPid:\t%d", pid)
+	pattern := filepath.Join("/proc", "[0-9]*")
+
+	matches, _ := filepath.Glob(pattern)
+	for _, path := range matches {
+		r, err := os.Open(filepath.Join(path, "status"))
+		if err != nil {
+			continue
+		}
+		scanner := bufio.NewScanner(r)
+		for scanner.Scan() {
+			if scanner.Text() == parentLine {
+				childs++
+				break
+			}
+		}
+		r.Close()
+	}
+	return childs, nil
+}
+
+// ReadIDMap reads uid_map or gid_map and returns both container ID
+// and host ID
+func ReadIDMap(path string) (uint32, uint32, error) {
+	r, err := os.Open(path)
+	if err != nil {
+		return 0, 0, err
+	}
+	defer r.Close()
+
+	scanner := bufio.NewScanner(r)
+	scanner.Scan()
+	fields := strings.Fields(scanner.Text())
+
+	containerID, err := strconv.ParseUint(fields[0], 10, 32)
+	if err != nil {
+		return 0, 0, err
+	}
+	hostID, err := strconv.ParseUint(fields[1], 10, 32)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return uint32(containerID), uint32(hostID), nil
 }
