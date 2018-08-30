@@ -119,8 +119,8 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	sylog.Debugf("Copying files from host")
 	if b.b.RunSection("files") {
+		sylog.Debugf("Copying files from host")
 		if err := b.copyFiles(); err != nil {
 			return fmt.Errorf("unable to copy files to container fs: %v", err)
 		}
@@ -145,68 +145,6 @@ func (b *Build) Full() error {
 	sylog.Infof("Build complete!")
 	return nil
 }
-
-// WithoutSections runs the build without running any section
-func (b *Build) WithoutSections() error {
-	sylog.Infof("Starting build without sections...")
-
-	sylog.Debugf("Creating bundle")
-	if _, err := b.Bundle(); err != nil {
-		return err
-	}
-
-	sylog.Debugf("Calling assembler")
-	if err := b.Assemble(b.dest); err != nil {
-		return err
-	}
-
-	sylog.Infof("Build complete!")
-	return nil
-}
-
-// // WithSections runs a build but only runs the specified sections
-// func (b *Build) WithSections(sections []string) error {
-// 	sylog.Infof("Starting build...")
-
-// 	if hasScripts(b.d) {
-// 		if syscall.Getuid() == 0 {
-// 			if err := b.runPreScript(); err != nil {
-// 				return err
-// 			}
-// 		} else {
-// 			sylog.Errorf("Attempted to build with scripts as non-root user")
-// 		}
-// 	}
-
-// 	sylog.Debugf("Creating bundle")
-// 	if _, err := b.Bundle(); err != nil {
-// 		return err
-// 	}
-
-// 	sylog.Debugf("Copying files from host")
-// 	if err := b.copyFiles(); err != nil {
-// 		return fmt.Errorf("unable to copy files to container fs: %v", err)
-// 	}
-
-// 	if hasScripts(b.d) {
-// 		if syscall.Getuid() == 0 {
-// 			sylog.Debugf("Starting build engine")
-// 			if err := b.runBuildEngine(); err != nil {
-// 				return fmt.Errorf("unable to run scripts: %v", err)
-// 			}
-// 		} else {
-// 			sylog.Errorf("Attempted to build with scripts as non-root user")
-// 		}
-// 	}
-
-// 	sylog.Debugf("Calling assembler")
-// 	if err := b.Assemble(b.dest); err != nil {
-// 		return err
-// 	}
-
-// 	sylog.Infof("Build complete!")
-// 	return nil
-// }
 
 // hasScripts returns true if build definition is requesting to run scripts in image
 func hasScripts(def types.Definition) bool {

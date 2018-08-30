@@ -99,17 +99,10 @@ var BuildCmd = &cobra.Command{
 			b, err := build.NewBuild(spec, dest, buildFormat, sections, noTest)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
-				os.Exit(1)
 			}
 
-			if sections[0] == "none" {
-				err = b.WithoutSections()
-			} else {
-				err = b.Full()
-			}
-			if err != nil {
+			if err = b.Full(); err != nil {
 				sylog.Fatalf("While performing build: %v", err)
-				os.Exit(1)
 			}
 		}
 	},
