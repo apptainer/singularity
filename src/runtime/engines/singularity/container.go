@@ -854,7 +854,7 @@ func (c *container) getHomePaths() (source string, dest string, err error) {
 	return source, dest, err
 }
 
-// addHomeStagingDir adds the home staging directory in session directory and
+// addHomeStagingDir adds and mounts home directory in session staging directory
 func (c *container) addHomeStagingDir(system *mount.System, source string, dest string) (string, error) {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 	homeStage := ""
