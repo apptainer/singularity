@@ -61,7 +61,9 @@ type JSONConfig struct {
 	Nv               bool     `json:"nv,omitempty"`
 	Workdir          string   `json:"workdir,omitempty"`
 	ScratchDir       []string `json:"scratchdir,omitempty"`
-	HomeDir          string   `json:"homedir,omitempty"`
+	HomeSource       string   `json:"homedir,omitempty"`
+	HomeDest         string   `json:"homeDest,omitempty"`
+	CustomHome       bool     `json:"customHome,omitempty"`
 	BindPath         []string `json:"bindpath,omitempty"`
 	Command          string   `json:"command,omitempty"`
 	Shell            string   `json:"shell,omitempty"`
@@ -76,7 +78,6 @@ type JSONConfig struct {
 	AllowSUID        bool     `json:"allowSUID,omitempty"`
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
-	Home             string   `json:"home,omitempty"`
 	NoHome           bool     `json:"noHome,omitempty"`
 	NoInit           bool     `json:"noInit,omitempty"`
 }
@@ -192,14 +193,34 @@ func (e *EngineConfig) GetScratchDir() []string {
 	return e.JSON.ScratchDir
 }
 
-// SetHomeDir sets the home directory path.
-func (e *EngineConfig) SetHomeDir(name string) {
-	e.JSON.HomeDir = name
+// SetHomeSource sets the source home directory path.
+func (e *EngineConfig) SetHomeSource(source string) {
+	e.JSON.HomeSource = source
 }
 
-// GetHomeDir retrieves the home directory path.
-func (e *EngineConfig) GetHomeDir() string {
-	return e.JSON.HomeDir
+// GetHomeSource retrieves the source home directory path.
+func (e *EngineConfig) GetHomeSource() string {
+	return e.JSON.HomeSource
+}
+
+// SetHomeDest sets the container home directory path.
+func (e *EngineConfig) SetHomeDest(dest string) {
+	e.JSON.HomeDest = dest
+}
+
+// GetHomeDest retrieves the container home directory path.
+func (e *EngineConfig) GetHomeDest() string {
+	return e.JSON.HomeDest
+}
+
+// SetCustomHome sets if home path is a custom path or not.
+func (e *EngineConfig) SetCustomHome(custom bool) {
+	e.JSON.CustomHome = custom
+}
+
+// GetCustomHome retrieves if home path is a custom path.
+func (e *EngineConfig) GetCustomHome() bool {
+	return e.JSON.CustomHome
 }
 
 // SetBindPath sets paths to bind into containee.JSON.
@@ -330,16 +351,6 @@ func (e *EngineConfig) SetNoPrivs(nopriv bool) {
 // GetNoPrivs return if no-privs flag is set or not
 func (e *EngineConfig) GetNoPrivs() bool {
 	return e.JSON.NoPrivs
-}
-
-// SetHome set user home directory
-func (e *EngineConfig) SetHome(home string) {
-	e.JSON.Home = home
-}
-
-// GetHome retrieves user home directory
-func (e *EngineConfig) GetHome() string {
-	return e.JSON.Home
 }
 
 // SetNoHome set no-home flag to not mount home user home directory

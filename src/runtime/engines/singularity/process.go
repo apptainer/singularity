@@ -31,7 +31,9 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	shimProcess := false
 
 	if err := os.Chdir(engine.CommonConfig.OciConfig.Process.Cwd); err != nil {
-		os.Chdir("/")
+		if err := os.Chdir(engine.EngineConfig.GetHomeDest()); err != nil {
+			os.Chdir("/")
+		}
 	}
 
 	args := engine.CommonConfig.OciConfig.Process.Args
