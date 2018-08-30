@@ -17,6 +17,8 @@ singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 
+dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
+dist_bin_SCRIPTS_INSTALL := $(PREFIX)/bin/run-singularity
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
@@ -34,7 +36,7 @@ abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
 cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
-INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) $(config_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) $(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL)
 
 CLEANFILES += $(libruntime) $(starter) $(starter_OBJ) $(singularity) $(go_BIN) $(go_OBJ)
 
@@ -78,6 +80,12 @@ $(starter_suid_INSTALL): $(starter)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
 	$(V)install -m 4755 $(starter) $(starter_suid_INSTALL)
+
+# Run-Singularity bin script
+$(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
 # generate the vendor folder with dep and patch when necessary
 $(BUILDDIR)/vendors-done:
