@@ -105,6 +105,11 @@ func (e *EngineOperations) CleanupContainer() error {
 	return nil
 }
 
+// PostStartProcess actually does nothing for build engine
+func (e *EngineOperations) PostStartProcess(pid int) error {
+	return nil
+}
+
 func (e *EngineOperations) insertEnvScript() error {
 	if e.EngineConfig.RunSection("environment") && e.EngineConfig.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")

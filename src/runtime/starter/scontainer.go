@@ -11,11 +11,11 @@ import (
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/wrapper"
+	"github.com/singularityware/singularity/src/runtime/engines/common/config/starter"
 )
 
 // SContainer performs container startup
-func SContainer(stage int, masterSocket int, wrapperConfig *wrapper.Config, jsonBytes []byte) {
+func SContainer(stage int, masterSocket int, starterConfig *starter.Config, jsonBytes []byte) {
 	var conn net.Conn
 	var err error
 
@@ -26,7 +26,9 @@ func SContainer(stage int, masterSocket int, wrapperConfig *wrapper.Config, json
 			sylog.Fatalf("failed to copy master unix socket descriptor: %s", err)
 			return
 		}
-		comm.Close()
+		if stage == 2 {
+			comm.Close()
+		}
 	} else {
 		conn = nil
 	}
@@ -39,13 +41,14 @@ func SContainer(stage int, masterSocket int, wrapperConfig *wrapper.Config, json
 	if stage == 1 {
 		sylog.Debugf("Entering scontainer stage 1\n")
 
-		if err := engine.PrepareConfig(conn, wrapperConfig); err != nil {
+		if err := engine.PrepareConfig(conn, starterConfig); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
 
-		if err := wrapperConfig.WritePayload(os.Stdout, engine.Common); err != nil {
+		if err := starterConfig.WritePayload(conn, engine.Common); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+		conn.Close()
 		os.Exit(0)
 	} else {
 		if err := engine.StartProcess(conn); err != nil {

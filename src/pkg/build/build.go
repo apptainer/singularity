@@ -197,7 +197,7 @@ func (b *Build) runPreScript() error {
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func (b *Build) runBuildEngine() error {
 	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
-	wrapper := filepath.Join(buildcfg.SBINDIR, "/wrapper")
+	starter := filepath.Join(buildcfg.SBINDIR, "/starter")
 	progname := []string{"singularity image-build"}
 
 	engineConfig := &imgbuild.EngineConfig{
@@ -232,20 +232,20 @@ func (b *Build) runBuildEngine() error {
 
 	env = append(env, pipefd)
 
-	// Create os/exec.Command to run wrapper and return control once finished
-	wrapperCmd := &exec.Cmd{
-		Path:   wrapper,
+	// Create os/exec.Command to run starter and return control once finished
+	starterCmd := &exec.Cmd{
+		Path:   starter,
 		Args:   progname,
 		Env:    env,
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 	}
 
-	if err := wrapperCmd.Start(); err != nil {
-		return fmt.Errorf("failed to start wrapper proc: %v", err)
+	if err := starterCmd.Start(); err != nil {
+		return fmt.Errorf("failed to start starter proc: %v", err)
 	}
-	if err := wrapperCmd.Wait(); err != nil {
-		return fmt.Errorf("wrapper proc failed: %v", err)
+	if err := starterCmd.Wait(); err != nil {
+		return fmt.Errorf("starter proc failed: %v", err)
 	}
 
 	return nil
