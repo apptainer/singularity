@@ -61,8 +61,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
 	}
 
-	if engine.CommonConfig.OciConfig.Linux != nil {
-		for _, namespace := range engine.CommonConfig.OciConfig.Linux.Namespaces {
+	if engine.EngineConfig.OciConfig.Linux != nil {
+		for _, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
 			switch namespace.Type {
 			case specs.UserNamespace:
 				c.userNS = true
@@ -1122,10 +1122,10 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Warningf("Not mounting current directory: user bind control is disabled by system administrator")
 		return nil
 	}
-	if c.engine.CommonConfig.OciConfig.Process == nil {
+	if c.engine.EngineConfig.OciConfig.Process == nil {
 		return nil
 	}
-	cwd = c.engine.CommonConfig.OciConfig.Process.Cwd
+	cwd = c.engine.EngineConfig.OciConfig.Process.Cwd
 	if err := os.Chdir(cwd); err != nil {
 		sylog.Debugf("can't go to container working directory: %s", err)
 		return nil
