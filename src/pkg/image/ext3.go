@@ -93,3 +93,11 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
 }
+
+func (f *ext3Format) openMode(writable bool) int {
+	mode := os.O_RDONLY
+	if writable {
+		mode = os.O_RDWR
+	}
+	return mode
+}

@@ -8,6 +8,9 @@ package server
 import (
 	"fmt"
 	"os"
+	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -76,9 +79,36 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 
 // LoopDevice attaches a loop device with the specified arguments
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
+	var image *os.File
 	loopdev := new(loop.Device)
 
-	if err := loopdev.Attach(arguments.Image, arguments.Mode, reply); err != nil {
+	runtime.LockOSThread()
+
+	defer runtime.UnlockOSThread()
+	defer syscall.Setfsuid(os.Getuid())
+
+	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
+		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
+		fd, err := strconv.ParseUint(strFd, 10, 32)
+		if err != nil {
+			return fmt.Errorf("failed to convert image file descriptor: %s", err)
+		}
+		image = os.NewFile(uintptr(fd), "")
+		if err != nil {
+			return fmt.Errorf("can't find image %s", arguments.Image)
+		}
+	} else {
+		var err error
+
+		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
+		if err != nil {
+			return err
+		}
+	}
+
+	syscall.Setfsuid(0)
+
+	if err := loopdev.AttachFromFile(image, arguments.Mode, reply); err != nil {
 		return err
 	}
 	if err := loopdev.SetStatus(&arguments.Info); err != nil {

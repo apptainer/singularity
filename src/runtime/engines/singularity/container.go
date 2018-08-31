@@ -277,19 +277,20 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	optsString := strings.Join(opts, ",")
 	sessionPath := c.session.Path()
 	remount := false
+	source := mnt.Source
+	dest := ""
 
 	if flags&syscall.MS_REMOUNT != 0 {
 		remount = true
 	}
 
 	if flags&syscall.MS_BIND != 0 && !remount {
-		if _, err := os.Stat(mnt.Source); os.IsNotExist(err) {
-			sylog.Debugf("Skipping mount, host source %s doesn't exist", mnt.Source)
+		if _, err := os.Stat(source); os.IsNotExist(err) {
+			sylog.Debugf("Skipping mount, host source %s doesn't exist", source)
 			return nil
 		}
 	}
 
-	dest := ""
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
 		dest = c.session.FinalPath() + mnt.Destination
 		if _, err := os.Stat(dest); os.IsNotExist(err) {
@@ -321,9 +322,16 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 				return nil
 			}
 		}
-		sylog.Debugf("Mounting %s to %s\n", mnt.Source, dest)
+		sylog.Debugf("Mounting %s to %s\n", source, dest)
+
+		// in scontainer stage 1 we changed current working directory to
+		// sandbox image directory, just pass "." as source argument to
+		// be sure RPC mount the right sandbox image
+		if dest == c.session.RootFsPath() && flags&syscall.MS_BIND != 0 {
+			source = "."
+		}
 	}
-	_, err = c.rpcOps.Mount(mnt.Source, dest, mnt.Type, flags, optsString)
+	_, err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
 	return err
 }
 
@@ -371,57 +379,38 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	return nil
 }
 
-func (c *container) loadImage(path string, writable bool) (*image.Image, error) {
-	fi, err := os.Stat(path)
-	if err != nil {
-		return nil, err
+func (c *container) loadImage(path string, overlay bool) (*image.Image, error) {
+	list := c.engine.EngineConfig.GetImageList()
+
+	if !overlay {
+		for _, img := range list {
+			if img.RootFS {
+				img.File = os.NewFile(img.Fd, img.Name)
+				if img.File == nil {
+					return nil, fmt.Errorf("can't find image %s", path)
+				}
+				return &img, nil
+			}
+		}
+	} else {
+		for _, img := range list {
+			if !img.RootFS {
+				p, err := image.CleanPath(path)
+				if err != nil {
+					return nil, err
+				}
+				if p == img.Path {
+					img.File = os.NewFile(img.Fd, img.Name)
+					if img.File == nil {
+						return nil, fmt.Errorf("can't find image %s", path)
+					}
+					return &img, nil
+				}
+			}
+		}
 	}
 
-	if fi.IsDir() {
-		writable = false
-	}
-
-	imgObject, err := image.Init(path, writable)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(c.engine.EngineConfig.File.LimitContainerPaths) != 0 {
-		if authorized, err := imgObject.AuthorizedPath(c.engine.EngineConfig.File.LimitContainerPaths); err != nil {
-			return nil, err
-		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not an allowed configured path")
-		}
-	}
-	if len(c.engine.EngineConfig.File.LimitContainerGroups) != 0 {
-		if authorized, err := imgObject.AuthorizedGroup(c.engine.EngineConfig.File.LimitContainerGroups); err != nil {
-			return nil, err
-		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not owned by required group(s)")
-		}
-	}
-	if len(c.engine.EngineConfig.File.LimitContainerOwners) != 0 {
-		if authorized, err := imgObject.AuthorizedOwner(c.engine.EngineConfig.File.LimitContainerOwners); err != nil {
-			return nil, err
-		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not owned by required user(s)")
-		}
-	}
-	switch imgObject.Type {
-	case image.SANDBOX:
-		if !c.engine.EngineConfig.File.AllowContainerDir {
-			return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
-		}
-	case image.EXT3:
-		if !c.engine.EngineConfig.File.AllowContainerExtfs {
-			return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
-		}
-	case image.SQUASHFS:
-		if !c.engine.EngineConfig.File.AllowContainerSquashfs {
-			return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
-		}
-	}
-	return imgObject, nil
+	return nil, fmt.Errorf("no image found with path %s", path)
 }
 
 func (c *container) addRootfsMount(system *mount.System) error {
@@ -431,6 +420,13 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	imageObject, err := c.loadImage(rootfs, false)
 	if err != nil {
 		return err
+	}
+
+	if !imageObject.Writable {
+		sylog.Debugf("Mount rootfs in read-only mode")
+		flags |= syscall.MS_RDONLY
+	} else {
+		sylog.Debugf("Mount rootfs in read-write mode")
 	}
 
 	mountType := ""
@@ -477,10 +473,9 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
 		return nil
 	}
-	flags |= syscall.MS_RDONLY
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return system.Points.AddImage(mount.RootfsTag, rootfs, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+	return system.Points.AddImage(mount.RootfsTag, imageObject.Source, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
 }
 
 func (c *container) overlayUpperWork(system *mount.System) error {
@@ -527,20 +522,11 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
 
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
-		overlayImg := img
-		writable := true
-
 		splitted := strings.SplitN(img, ":", 2)
-		if len(splitted) == 2 {
-			if splitted[1] == "ro" {
-				writable = false
-				overlayImg = splitted[0]
-			}
-		}
 
-		imageObject, err := c.loadImage(overlayImg, writable)
+		imageObject, err := c.loadImage(splitted[0], true)
 		if err != nil {
-			return fmt.Errorf("failed to open overlay image %s: %s", overlayImg, err)
+			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 		}
 
 		sessionDest := fmt.Sprintf("/overlay-images/%d", nb)
@@ -550,7 +536,8 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		dst, _ := c.session.GetPath(sessionDest)
 		nb++
 
-		src := fmt.Sprintf("/proc/self/fd/%d", imageObject.File.Fd())
+		src := imageObject.Source
+
 		switch imageObject.Type {
 		case image.EXT3:
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
@@ -558,7 +545,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
-			if writable {
+			if imageObject.Writable {
 				if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
 					return err
 				}
@@ -570,9 +557,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
 			if err != nil {
 				return err
-			}
-			if writable {
-				sylog.Warningf("squashfs is not a writable filesystem")
 			}
 			ov.AddLowerDir(dst)
 		case image.SANDBOX:
@@ -586,7 +570,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			}
 			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
 
-			if writable {
+			if imageObject.Writable {
 				if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
 					return err
 				}

@@ -81,7 +81,7 @@ func getLoopDevice(arguments *args.LoopArgs) error {
 	reply = 1
 	loopdev := new(loop.Device)
 
-	if err := loopdev.Attach(arguments.Image, arguments.Mode, &reply); err != nil {
+	if err := loopdev.AttachFromPath(arguments.Image, arguments.Mode, &reply); err != nil {
 		return err
 	}
 

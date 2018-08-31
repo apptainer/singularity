@@ -641,7 +641,7 @@ __attribute__((constructor)) static void init(void) {
      *  This is required so that all processes works with same files/directories
      *  to minimize race conditions
      */
-    stage_pid = fork_ns(CLONE_FILES);
+    stage_pid = fork_ns(CLONE_FILES|CLONE_FS);
     if ( stage_pid == 0 ) {
         set_parent_death_signal(SIGKILL);
 
