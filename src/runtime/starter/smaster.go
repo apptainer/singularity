@@ -21,7 +21,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/starter"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/mainthread"

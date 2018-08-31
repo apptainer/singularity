@@ -11,7 +11,7 @@ import (
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/starter"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 )
 
 // SContainer performs container startup

@@ -17,8 +17,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/starter"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -29,7 +29,7 @@ func (e *EngineOperations) prepareUserCaps() error {
 	uid := os.Getuid()
 	commonCaps := make([]string, 0)
 
-	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
+	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
 	file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
 	if err != nil {
@@ -76,11 +76,11 @@ func (e *EngineOperations) prepareUserCaps() error {
 		}
 	}
 
-	e.CommonConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Effective = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Effective = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
 
 	return nil
 }
@@ -105,8 +105,8 @@ func (e *EngineOperations) prepareRootCaps() error {
 	// set default capabilities based on configuration file directive
 	switch defaultCapabilities {
 	case "full":
-		e.CommonConfig.OciConfig.SetupPrivileged(true)
-		commonCaps = e.CommonConfig.OciConfig.Process.Capabilities.Permitted
+		e.EngineConfig.OciConfig.SetupPrivileged(true)
+		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
 		file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
 		if err != nil {
@@ -155,11 +155,11 @@ func (e *EngineOperations) prepareRootCaps() error {
 		}
 	}
 
-	e.CommonConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Effective = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
-	e.CommonConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Effective = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
 
 	return nil
 }
@@ -168,15 +168,15 @@ func (e *EngineOperations) prepareRootCaps() error {
 // configuration for container creation
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
 	// always set mount namespace
-	e.CommonConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
 	// if PID namespace is not allowed remove it from namespaces
-	if !e.EngineConfig.File.AllowPidNs && e.CommonConfig.OciConfig.Linux != nil {
-		namespaces := e.CommonConfig.OciConfig.Linux.Namespaces
+	if !e.EngineConfig.File.AllowPidNs && e.EngineConfig.OciConfig.Linux != nil {
+		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 		for i, ns := range namespaces {
 			if ns.Type == specs.PIDNamespace {
 				sylog.Debugf("Not virtualizing PID namespace by configuration")
-				e.CommonConfig.OciConfig.Linux.Namespaces = append(namespaces[:i], namespaces[i+1:]...)
+				e.EngineConfig.OciConfig.Linux.Namespaces = append(namespaces[:i], namespaces[i+1:]...)
 				break
 			}
 		}
@@ -200,12 +200,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
-	starterConfig.SetNsFlagsFromSpec(e.CommonConfig.OciConfig.Linux.Namespaces)
+	starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 
 	// user namespace ID mappings
-	if e.CommonConfig.OciConfig.Linux != nil {
-		starterConfig.AddUIDMappings(e.CommonConfig.OciConfig.Linux.UIDMappings)
-		starterConfig.AddGIDMappings(e.CommonConfig.OciConfig.Linux.GIDMappings)
+	if e.EngineConfig.OciConfig.Linux != nil {
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}
 
 	return nil
@@ -225,24 +225,33 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return fmt.Errorf("try to join unprivileged instance with SUID workflow")
 	}
 
+	instanceEngineConfig := NewConfig()
+
 	// extract configuration from instance file
 	instanceConfig := &config.Common{
-		EngineConfig: NewConfig(),
+		EngineConfig: instanceEngineConfig,
 	}
 	if err := json.Unmarshal(file.Config, instanceConfig); err != nil {
 		return err
 	}
 
 	// set namespaces to join
-	starterConfig.SetNsPathFromSpec(instanceConfig.OciConfig.Linux.Namespaces)
+	starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces)
+
+	if e.EngineConfig.OciConfig.Process == nil {
+		e.EngineConfig.OciConfig.Process = &specs.Process{}
+	}
+	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
+		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
+	}
 
 	// duplicate instance capabilities
-	if instanceConfig.OciConfig.Process != nil && instanceConfig.OciConfig.Process.Capabilities != nil {
-		e.CommonConfig.OciConfig.Process.Capabilities.Permitted = instanceConfig.OciConfig.Process.Capabilities.Permitted
-		e.CommonConfig.OciConfig.Process.Capabilities.Effective = instanceConfig.OciConfig.Process.Capabilities.Effective
-		e.CommonConfig.OciConfig.Process.Capabilities.Inheritable = instanceConfig.OciConfig.Process.Capabilities.Inheritable
-		e.CommonConfig.OciConfig.Process.Capabilities.Bounding = instanceConfig.OciConfig.Process.Capabilities.Bounding
-		e.CommonConfig.OciConfig.Process.Capabilities.Ambient = instanceConfig.OciConfig.Process.Capabilities.Ambient
+	if instanceEngineConfig.OciConfig.Process != nil && instanceEngineConfig.OciConfig.Process.Capabilities != nil {
+		e.EngineConfig.OciConfig.Process.Capabilities.Permitted = instanceEngineConfig.OciConfig.Process.Capabilities.Permitted
+		e.EngineConfig.OciConfig.Process.Capabilities.Effective = instanceEngineConfig.OciConfig.Process.Capabilities.Effective
+		e.EngineConfig.OciConfig.Process.Capabilities.Inheritable = instanceEngineConfig.OciConfig.Process.Capabilities.Inheritable
+		e.EngineConfig.OciConfig.Process.Capabilities.Bounding = instanceEngineConfig.OciConfig.Process.Capabilities.Bounding
+		e.EngineConfig.OciConfig.Process.Capabilities.Ambient = instanceEngineConfig.OciConfig.Process.Capabilities.Ambient
 	}
 
 	if os.Getuid() == 0 {
@@ -255,7 +264,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 	}
 
-	e.CommonConfig.OciConfig.Process.NoNewPrivileges = instanceConfig.OciConfig.Process.NoNewPrivileges
+	e.EngineConfig.OciConfig.Process.NoNewPrivileges = instanceEngineConfig.OciConfig.Process.NoNewPrivileges
 
 	return nil
 }
@@ -270,11 +279,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}
 
-	if e.CommonConfig.OciConfig.Process == nil {
-		e.CommonConfig.OciConfig.Process = &specs.Process{}
+	if e.EngineConfig.OciConfig.Process == nil {
+		e.EngineConfig.OciConfig.Process = &specs.Process{}
 	}
-	if e.CommonConfig.OciConfig.Process.Capabilities == nil {
-		e.CommonConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
+	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
+		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
 	}
 
 	if e.EngineConfig.GetInstanceJoin() {
@@ -287,14 +296,14 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		}
 	}
 
-	starterConfig.SetNoNewPrivs(e.CommonConfig.OciConfig.Process.NoNewPrivileges)
+	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
-	if e.CommonConfig.OciConfig.Process != nil && e.CommonConfig.OciConfig.Process.Capabilities != nil {
-		starterConfig.SetCapabilities(capabilities.Permitted, e.CommonConfig.OciConfig.Process.Capabilities.Permitted)
-		starterConfig.SetCapabilities(capabilities.Effective, e.CommonConfig.OciConfig.Process.Capabilities.Effective)
-		starterConfig.SetCapabilities(capabilities.Inheritable, e.CommonConfig.OciConfig.Process.Capabilities.Inheritable)
-		starterConfig.SetCapabilities(capabilities.Bounding, e.CommonConfig.OciConfig.Process.Capabilities.Bounding)
-		starterConfig.SetCapabilities(capabilities.Ambient, e.CommonConfig.OciConfig.Process.Capabilities.Ambient)
+	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
+		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
+		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
+		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
+		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
+		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
 	return nil
 }

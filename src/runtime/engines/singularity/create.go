@@ -33,8 +33,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	if engine.EngineConfig.GetInstance() {
-		if engine.CommonConfig.OciConfig.Linux != nil {
-			for i, namespace := range engine.CommonConfig.OciConfig.Linux.Namespaces {
+		if engine.EngineConfig.OciConfig.Linux != nil {
+			for i, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
 				nstype := ""
 
 				switch namespace.Type {
@@ -56,7 +56,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 				if nstype != "" {
 					path := fmt.Sprintf("/proc/%d/ns/%s", pid, nstype)
-					engine.CommonConfig.OciConfig.Linux.Namespaces[i].Path = path
+					engine.EngineConfig.OciConfig.Linux.Namespaces[i].Path = path
 				}
 			}
 		}

@@ -38,7 +38,7 @@ cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) $(config_INSTALL) $(capability_JSON)
 
-CLEANFILES += $(libruntime) $(starter) $(starter_OBJ) $(singularity) $(go_BIN) $(go_OBJ)
+CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ)
 
 all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter)
 
