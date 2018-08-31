@@ -19,8 +19,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
@@ -76,7 +76,7 @@ var ExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		execWrapper(cmd, args[0], a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -92,7 +92,7 @@ var ShellCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
-		execWrapper(cmd, args[0], a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -108,7 +108,7 @@ var RunCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		execWrapper(cmd, args[0], a, "")
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -118,18 +118,20 @@ var RunCmd = &cobra.Command{
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execWrapper(cobraCmd *cobra.Command, image string, args []string, name string) {
+func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	procname := ""
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
-	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
+	starter := buildcfg.SBINDIR + "/starter-suid"
 
 	engineConfig := singularity.NewConfig()
 
 	ociConfig := &oci.Config{}
 	generator := generate.Generator{Config: &ociConfig.Spec}
+
+	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
 
@@ -244,7 +246,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		wrapper = buildcfg.SBINDIR + "/wrapper"
+		starter = buildcfg.SBINDIR + "/starter"
 
 		if IsFakeroot {
 			generator.AddLinuxUIDMapping(uid, 0, 1)
@@ -255,22 +257,32 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	if !IsCleanEnv {
-		for _, env := range os.Environ() {
-			e := strings.SplitN(env, "=", 2)
-			if len(e) != 2 {
-				sylog.Verbosef("can't process environment variable %s", env)
-				continue
-			}
-			if e[0] == "HOME" {
-				if !NoHome {
-					generator.AddProcessEnv(e[0], engineConfig.GetHome())
-				} else {
-					generator.AddProcessEnv(e[0], "/")
-				}
+	// Copy and cache environment
+	environment := os.Environ()
+
+	// Clean environment
+	for _, env := range environment {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) != 2 {
+			sylog.Verbosef("can't process environment variable %s", env)
+			continue
+		}
+
+		// Transpose environment
+		if strings.HasPrefix(e[0], "SINGULARITYENV_") {
+			e[0] = strings.TrimPrefix(e[0], "SINGULARITYENV_")
+		} else if IsCleanEnv {
+			continue
+		}
+
+		if e[0] == "HOME" {
+			if !NoHome {
+				generator.AddProcessEnv(e[0], engineConfig.GetHome())
 			} else {
-				generator.AddProcessEnv(e[0], e[1])
+				generator.AddProcessEnv(e[0], "/")
 			}
+		} else {
+			generator.AddProcessEnv(e[0], e[1])
 		}
 	}
 
@@ -289,7 +301,6 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
 		ContainerID:  name,
-		OciConfig:    ociConfig,
 		EngineConfig: engineConfig,
 	}
 
@@ -298,7 +309,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, []string{procname}, Env, configData); err != nil {
+	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 }

@@ -3,13 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package wrapper
+package starter
 
 /*
 #include <sys/types.h>
-#include "startup/c/wrapper.h"
+#include "starter/c/starter.h"
 */
-// #cgo CFLAGS: -I../../../..
+// #cgo CFLAGS: -I../../..
 import "C"
 import (
 	"encoding/json"
@@ -25,13 +25,13 @@ import (
 // CConfig is the common type for C.struct_cConfig
 type CConfig *C.struct_cConfig
 
-// Config represents structure to manipulate C wrapper configuration
+// Config represents structure to manipulate C starter configuration
 type Config struct {
 	config CConfig
 	nsPath []byte
 }
 
-// NewConfig takes a pointer to C wrapper configuration and returns a
+// NewConfig takes a pointer to C starter configuration and returns a
 // pointer to a Config
 func NewConfig(config CConfig) *Config {
 	return &Config{config: config, nsPath: make([]byte, 1)}
@@ -50,7 +50,7 @@ func (c *Config) GetContainerPid() int {
 	return int(c.config.containerPid)
 }
 
-// SetInstance sets if wrapper should spawn instance or not
+// SetInstance sets if starter should spawn instance or not
 func (c *Config) SetInstance(instance bool) {
 	if instance {
 		c.config.isInstance = C.uchar(1)
@@ -97,7 +97,7 @@ func (c *Config) SetMountPropagation(propagation string) {
 }
 
 // GetJSONConfSize returns size of JSON configuration sent
-// by wrapper
+// by starter
 func (c *Config) GetJSONConfSize() uint {
 	return uint(c.config.jsonConfSize)
 }

@@ -60,7 +60,7 @@
 #include "c/lib/util/capability.h"
 #include "c/lib/util/message.h"
 
-#include "startup/c/wrapper.h"
+#include "starter/c/starter.h"
 
 #define CLONE_STACK_SIZE    1024*1024
 #define BUFSIZE             512

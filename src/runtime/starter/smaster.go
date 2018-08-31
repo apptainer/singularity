@@ -6,7 +6,7 @@
 package main
 
 /*
-#include "c/wrapper.c"
+#include "c/starter.c"
 */
 // #cgo CFLAGS: -I..
 import "C"
@@ -21,7 +21,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/wrapper"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/mainthread"
@@ -29,14 +29,14 @@ import (
 )
 
 // SMaster initializes a runtime engine and runs it
-func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBytes []byte) {
+func SMaster(socket int, masterSocket int, starterConfig *starter.Config, jsonBytes []byte) {
 	var fatal error
 	var status syscall.WaitStatus
 
 	fatalChan := make(chan error, 1)
 	ppid := os.Getppid()
 
-	containerPid := wrapperConfig.GetContainerPid()
+	containerPid := starterConfig.GetContainerPid()
 
 	engine, err := engines.NewEngine(jsonBytes)
 	if err != nil {
@@ -71,12 +71,12 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 		_, err = conn.Read(data)
 		if err == io.EOF || err == nil {
 			if err := engine.PostStartProcess(containerPid); err != nil {
-				if wrapperConfig.GetInstance() && os.Getppid() == ppid {
+				if starterConfig.GetInstance() && os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)
 				}
 				fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			} else {
-				if wrapperConfig.GetInstance() {
+				if starterConfig.GetInstance() {
 					/* sleep a bit to see if child exit */
 					time.Sleep(100 * time.Millisecond)
 					if os.Getppid() == ppid {
@@ -85,7 +85,7 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 				}
 			}
 		} else {
-			if wrapperConfig.GetInstance() && os.Getppid() == ppid {
+			if starterConfig.GetInstance() && os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
 			fatalChan <- fmt.Errorf("failed to start process: %s", err)
@@ -115,7 +115,7 @@ func SMaster(socket int, masterSocket int, wrapperConfig *wrapper.Config, jsonBy
 		syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if wrapperConfig.GetInstance() {
+		if starterConfig.GetInstance() {
 			if status.ExitStatus() != 0 {
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)
@@ -142,8 +142,8 @@ func startup() {
 	}
 
 	cconf := unsafe.Pointer(&C.config)
-	wrapperConfig := wrapper.NewConfig(wrapper.CConfig(cconf))
-	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(wrapperConfig.GetJSONConfSize()))
+	starterConfig := starter.NewConfig(starter.CConfig(cconf))
+	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(starterConfig.GetJSONConfSize()))
 
 	/* free allocated buffer */
 	C.free(unsafe.Pointer(C.json_stdin))
@@ -154,13 +154,13 @@ func startup() {
 	switch C.execute {
 	case C.SCONTAINER_STAGE1:
 		sylog.Verbosef("Execute scontainer stage 1\n")
-		SContainer(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), wrapperConfig, jsonBytes)
+		SContainer(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), starterConfig, jsonBytes)
 	case C.SCONTAINER_STAGE2:
 		sylog.Verbosef("Execute scontainer stage 2\n")
-		SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), wrapperConfig, jsonBytes)
+		SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), starterConfig, jsonBytes)
 	case C.SMASTER:
 		sylog.Verbosef("Execute smaster process\n")
-		SMaster(int(C.rpc_socket[0]), int(C.master_socket[0]), wrapperConfig, jsonBytes)
+		SMaster(int(C.rpc_socket[0]), int(C.master_socket[0]), starterConfig, jsonBytes)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 		RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
@@ -173,7 +173,7 @@ func startup() {
 		sylog.Verbosef("Execute scontainer stage 2\n")
 		mainthread.Execute(func() {
 			C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
-			SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), wrapperConfig, jsonBytes)
+			SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), starterConfig, jsonBytes)
 		})
 	}
 	sylog.Fatalf("You should not be there\n")

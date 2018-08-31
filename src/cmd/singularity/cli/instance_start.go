@@ -51,7 +51,7 @@ var InstanceStartCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/start"}
-		execWrapper(cmd, args[0], a, args[1])
+		execStarter(cmd, args[0], a, args[1])
 	},
 
 	Use:     docs.InstanceStartUse,
