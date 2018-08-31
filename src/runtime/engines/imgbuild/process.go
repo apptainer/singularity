@@ -23,7 +23,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
 		// Run %post script here
 		post := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Post)
-		post.Env = e.CommonConfig.OciConfig.Process.Env
+		post.Env = e.EngineConfig.OciConfig.Process.Env
 		post.Stdout = os.Stdout
 		post.Stderr = os.Stderr
 

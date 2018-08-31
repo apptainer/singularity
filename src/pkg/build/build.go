@@ -21,8 +21,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 )
 
@@ -199,11 +199,12 @@ func (b *Build) runBuildEngine() error {
 	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
 	starter := filepath.Join(buildcfg.SBINDIR, "/starter")
 	progname := []string{"singularity image-build"}
+	ociConfig := &oci.Config{}
 
 	engineConfig := &imgbuild.EngineConfig{
-		Bundle: *b.b,
+		Bundle:    *b.b,
+		OciConfig: ociConfig,
 	}
-	ociConfig := &oci.Config{}
 
 	//surface build specific environment variables for scripts
 	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
@@ -215,7 +216,6 @@ func (b *Build) runBuildEngine() error {
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
 		ContainerID:  "image-build",
-		OciConfig:    ociConfig,
 		EngineConfig: engineConfig,
 	}
 

@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 )
 

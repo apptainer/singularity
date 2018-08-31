@@ -6,11 +6,10 @@
 package singularity
 
 import (
-	"encoding/json"
-
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
 )
 
 // Name is the name of the runtime.
@@ -83,18 +82,9 @@ type JSONConfig struct {
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON *JSONConfig `json:"jsonConfig"`
-	File *FileConfig `json:"-"`
-}
-
-// MarshalJSON is for json.Marshaler
-func (e *EngineConfig) MarshalJSON() ([]byte, error) {
-	return json.Marshal(e.JSON)
-}
-
-// UnmarshalJSON is for json.Unmarshaler
-func (e *EngineConfig) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, e.JSON)
+	JSON      *JSONConfig `json:"jsonConfig"`
+	OciConfig *oci.Config `json:"ociConfig"`
+	File      *FileConfig `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -105,8 +95,9 @@ func NewConfig() *EngineConfig {
 	}
 
 	ret := &EngineConfig{
-		JSON: &JSONConfig{},
-		File: c,
+		JSON:      &JSONConfig{},
+		OciConfig: &oci.Config{},
+		File:      c,
 	}
 
 	return ret
