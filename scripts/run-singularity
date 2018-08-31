@@ -27,3 +27,4 @@
 exec /usr/bin/env singularity --quiet run "$@"
 
 exit 255
+
