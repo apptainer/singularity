@@ -12,8 +12,8 @@ import (
 	"net/rpc"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config/starter"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
