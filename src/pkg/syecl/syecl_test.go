@@ -6,6 +6,7 @@
 package syecl
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,10 +17,22 @@ import (
 const (
 	KeyFP1 = "5994BE54C31CF1B5E1994F987C52CF6D055F072B"
 	KeyFP2 = "7064B1D6EFF01B1262FED3F03581D99FE87EAFD1"
+)
 
-	srcContainer1 = "testdata/container1.sif"
-	srcContainer2 = "testdata/container2.sif"
-	srcContainer3 = "testdata/container3.sif"
+var (
+	srcContainer1 = filepath.Join("testdata", "container1.sif")
+	srcContainer2 = filepath.Join("testdata", "container2.sif")
+	srcContainer3 = filepath.Join("testdata", "container3.sif")
+)
+
+var (
+	testEclFileName  string // pathname of the Ecl config file
+	testEclFileName2 string // pathname of the Ecl config file
+	testEclDirPath1  string // dirname of the first Ecl execgroup
+	testEclDirPath2  string // dirname of the second Ecl execgroup
+	testContainer1   string // pathname of the first test container
+	testContainer2   string // pathname of the second test container
+	testContainer3   string // pathname of the third test container
 )
 
 var testEclConfig = EclConfig{
@@ -30,17 +43,22 @@ var testEclConfig = EclConfig{
 	},
 }
 
-var testEclFileName string // pathname of the Ecl config file
-var testEclDirPath1 string // dirname of the first Ecl execgroup
-var testEclDirPath2 string // dirname of the second Ecl execgroup
-var testContainer1 string  // pathname of the first test container
-var testContainer2 string  // pathname of the second test container
-var testContainer3 string  // pathname of the third test container
+var testEclConfig2 = EclConfig{
+	Activated: true,
+	ExecGroups: []execgroup{
+		{"pathdup", "whitelist", "/tmp", nil},
+		{"pathdup", "whitelist", "/tmp", nil},
+	},
+}
 
 func TestAPutConfig(t *testing.T) {
 	err := PutConfig(testEclConfig, testEclFileName)
 	if err != nil {
-		t.Error(`PutConfig(config, name):`, err)
+		t.Error(`PutConfig(testEclConfig, testEclFileName):`, err)
+	}
+	err = PutConfig(testEclConfig2, testEclFileName2)
+	if err != nil {
+		t.Error(`PutConfig(testEclConfig2, testEclFileName2):`, err)
 	}
 }
 
@@ -61,13 +79,22 @@ func TestLoadConfig(t *testing.T) {
 }
 
 func TestValidateConfig(t *testing.T) {
+	// Validate properly formed config file
 	ecl, err := LoadConfig(testEclFileName)
 	if err != nil {
 		t.Error(`LoadConfig(testEclFileName):`, err)
 	}
-
 	if err = ecl.ValidateConfig(); err != nil {
 		t.Error(`ecl.ValidateConfig():`, err)
+	}
+
+	// Validate config file with duplicated dirpaths
+	ecl, err = LoadConfig(testEclFileName2)
+	if err != nil {
+		t.Error(`LoadConfig(testEclFileName2):`, err)
+	}
+	if err = ecl.ValidateConfig(); err == nil {
+		t.Error(`ecl.ValidateConfig(): Sould have detected duplicated dirpaths`, err)
 	}
 }
 
@@ -107,6 +134,21 @@ func TestShouldRun(t *testing.T) {
 	if err == nil || run == true {
 		t.Error(srcContainer1, "should NOT be allowed to run")
 	}
+
+	// in this second round of tests, set DirPath to "", and test container in testdata/
+	testEclConfig.ExecGroups[0].DirPath = ""
+	testEclConfig.ExecGroups[1].DirPath = ""
+
+	// check container1 authorization (outside of defined dirpath)
+	fmt.Println(testEclConfig)
+	run, err = ecl.ShouldRun(srcContainer1)
+	if err != nil {
+		t.Error(`ecl.ShouldRun(srcContainer1):`, err)
+	}
+	if !run {
+		t.Error(srcContainer1, "should be allowed to run")
+	}
+
 }
 
 func copyFile(dst, src string) error {
@@ -134,12 +176,19 @@ func copyFile(dst, src string) error {
 }
 
 func setup() error {
-	// Use TempFile to create a placeholder for the ECL config test file
+	// Use TempFile to create a placeholder for the ECL config test files
 	tmpfile, err := ioutil.TempFile("", "eclconfig-test")
 	if err != nil {
 		return nil
 	}
 	testEclFileName = tmpfile.Name()
+	tmpfile.Close()
+
+	tmpfile, err = ioutil.TempFile("", "eclconfig2-test")
+	if err != nil {
+		return nil
+	}
+	testEclFileName2 = tmpfile.Name()
 	tmpfile.Close()
 
 	// Create two directories where we put test containers
@@ -176,6 +225,7 @@ func setup() error {
 
 func shutdown() {
 	os.Remove(testEclFileName)
+	os.Remove(testEclFileName2)
 	os.RemoveAll(testEclDirPath1)
 	os.RemoveAll(testEclDirPath2)
 }

@@ -64,19 +64,28 @@ func PutConfig(ecl EclConfig, confPath string) (err error) {
 
 // ValidateConfig makes sure paths from configs are fully resolved and that
 // values from an execgroup are logically correct.
-// XXX: look that there's only one unique DirPath execgroup
 func (ecl *EclConfig) ValidateConfig() (err error) {
+	m := map[string]bool{}
+
 	for _, v := range ecl.ExecGroups {
-		path, err := filepath.EvalSymlinks(v.DirPath)
-		if err != nil {
-			return err
+		if m[v.DirPath] {
+			return fmt.Errorf("a specific dirpath can only appear in one execgroup: %s", v.DirPath)
 		}
-		abs, err := filepath.Abs(path)
-		if err != nil {
-			return err
-		}
-		if v.DirPath != abs {
-			return fmt.Errorf("all paths should be fully cleaned with symlinks resolved")
+		m[v.DirPath] = true
+
+		// if we allow containers everywhere, don't test dirpath constraint
+		if v.DirPath != "" {
+			path, err := filepath.EvalSymlinks(v.DirPath)
+			if err != nil {
+				return err
+			}
+			abs, err := filepath.Abs(path)
+			if err != nil {
+				return err
+			}
+			if v.DirPath != abs {
+				return fmt.Errorf("all execgroup dirpath`s should be fully cleaned with symlinks resolved")
+			}
 		}
 	}
 	return

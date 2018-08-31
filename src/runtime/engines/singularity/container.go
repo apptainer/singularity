@@ -438,20 +438,19 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
-		// query the ECL module
+		// query the ECL module, proceed if an ecl config file is found
 		ecl, err := syecl.LoadConfig("/usr/local/etc/singularity/eclconfig.toml")
-		if err != nil {
-			return err
-		}
-		if err = ecl.ValidateConfig(); err != nil {
-			return err
-		}
-		run, err := ecl.ShouldRun(imageObject.File.Name())
-		if err != nil {
-			return err
-		}
-		if !run {
-			return err
+		if err == nil {
+			if err = ecl.ValidateConfig(); err != nil {
+				return err
+			}
+			run, err := ecl.ShouldRun(imageObject.File.Name())
+			if err != nil {
+				return err
+			}
+			if !run {
+				return err
+			}
 		}
 
 		// Load the SIF file
