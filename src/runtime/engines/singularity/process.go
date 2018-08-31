@@ -30,15 +30,15 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	bootInstance := (isInstance && engine.EngineConfig.GetBootInstance())
 	shimProcess := false
 
-	if err := os.Chdir(engine.CommonConfig.OciConfig.Process.Cwd); err != nil {
+	if err := os.Chdir(engine.EngineConfig.OciConfig.Process.Cwd); err != nil {
 		os.Chdir("/")
 	}
 
-	args := engine.CommonConfig.OciConfig.Process.Args
-	env := engine.CommonConfig.OciConfig.Process.Env
+	args := engine.EngineConfig.OciConfig.Process.Args
+	env := engine.EngineConfig.OciConfig.Process.Env
 
-	if engine.CommonConfig.OciConfig.Linux != nil {
-		namespaces := engine.CommonConfig.OciConfig.Linux.Namespaces
+	if engine.EngineConfig.OciConfig.Linux != nil {
+		namespaces := engine.EngineConfig.OciConfig.Linux.Namespaces
 		for _, ns := range namespaces {
 			if ns.Type == specs.PIDNamespace {
 				if !engine.EngineConfig.GetNoInit() {
@@ -147,8 +147,8 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		name := engine.CommonConfig.ContainerID
 		privileged := true
 
-		if engine.CommonConfig.OciConfig.Linux != nil {
-			for _, ns := range engine.CommonConfig.OciConfig.Linux.Namespaces {
+		if engine.EngineConfig.OciConfig.Linux != nil {
+			for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
 				if ns.Type == specs.UserNamespace {
 					privileged = false
 					break
