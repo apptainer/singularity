@@ -21,7 +21,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// Run %post script here
 
 	post := exec.Command("/bin/sh", "-c", e.EngineConfig.Recipe.BuildData.Post)
-	post.Env = e.CommonConfig.OciConfig.Process.Env
+	post.Env = e.EngineConfig.OciConfig.Process.Env
 	post.Stdout = os.Stdout
 	post.Stderr = os.Stderr
 
