@@ -167,6 +167,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
 
+	homeFlag := cobraCmd.Flag("home")
+	engineConfig.SetCustomHome(homeFlag.Changed)
+
 	if Hostname != "" {
 		UtsNamespace = true
 		engineConfig.SetHostname(Hostname)
@@ -185,13 +188,18 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetScratchDir(ScratchPath)
 	engineConfig.SetWorkdir(WorkdirPath)
 
-	homedir := strings.SplitN(HomePath, ":", 2)
-	if len(homedir) == 2 {
-		engineConfig.SetHome(homedir[1])
-	} else {
-		engineConfig.SetHome(homedir[0])
+	homeSlice := strings.Split(HomePath, ":")
+
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
 	}
-	engineConfig.SetHomeDir(HomePath)
+
+	engineConfig.SetHomeSource(homeSlice[0])
+	if len(homeSlice) == 1 {
+		engineConfig.SetHomeDest(homeSlice[0])
+	} else {
+		engineConfig.SetHomeDest(homeSlice[1])
+	}
 
 	if IsFakeroot {
 		UserNamespace = true
@@ -277,7 +285,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 		if e[0] == "HOME" {
 			if !NoHome {
-				generator.AddProcessEnv(e[0], engineConfig.GetHome())
+				generator.AddProcessEnv(e[0], engineConfig.GetHomeDest())
 			} else {
 				generator.AddProcessEnv(e[0], "/")
 			}
@@ -290,7 +298,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
 		} else {
-			generator.SetProcessCwd(pwd)
+			if engineConfig.GetContain() {
+				generator.SetProcessCwd(engineConfig.GetHomeDest())
+			} else {
+				generator.SetProcessCwd(pwd)
+			}
 		}
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)

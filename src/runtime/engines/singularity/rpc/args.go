@@ -32,3 +32,8 @@ type MountArgs struct {
 type ChrootArgs struct {
 	Root string
 }
+
+// HostnameArgs defines the arguments to sethostname
+type HostnameArgs struct {
+	Hostname string
+}
