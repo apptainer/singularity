@@ -94,13 +94,15 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Type = SQUASHFS
 	img.Offset = offset
 	img.Size = uint64(fileinfo.Size()) - img.Offset
-	img.Writable = false
+
+	if img.Writable {
+		sylog.Warningf("squashfs is not a writable filesystem")
+		img.Writable = false
+	}
+
 	return nil
 }
 
 func (f *squashfsFormat) openMode(writable bool) int {
-	if writable {
-		sylog.Warningf("squashfs is not a writable filesystem")
-	}
 	return os.O_RDONLY
 }

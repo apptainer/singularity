@@ -7,6 +7,7 @@ package client
 
 import (
 	"net/rpc"
+	"os"
 
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
@@ -33,9 +34,10 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 }
 
 // Mkdir calls the mkdir RPC using the supplied arguments
-func (t *RPC) Mkdir(path string) (int, error) {
+func (t *RPC) Mkdir(path string, perm os.FileMode) (int, error) {
 	arguments := &args.MkdirArgs{
 		Path: path,
+		Perm: perm,
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".Mkdir", arguments, &reply)

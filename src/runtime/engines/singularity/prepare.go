@@ -187,6 +187,13 @@ func (e *EngineOperations) loadImages() error {
 		if err := os.Chdir(img.Source); err != nil {
 			return err
 		}
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to determine current working directory: %s", err)
+		}
+		if cwd != img.Path {
+			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
+		}
 	}
 	img.RootFS = true
 	images = append(images, *img)

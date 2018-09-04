@@ -379,10 +379,10 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	return nil
 }
 
-func (c *container) loadImage(path string, overlay bool) (*image.Image, error) {
+func (c *container) loadImage(path string, rootfs bool) (*image.Image, error) {
 	list := c.engine.EngineConfig.GetImageList()
 
-	if !overlay {
+	if rootfs {
 		for _, img := range list {
 			if img.RootFS {
 				img.File = os.NewFile(img.Fd, img.Name)
@@ -417,7 +417,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 	rootfs := c.engine.EngineConfig.GetImage()
 
-	imageObject, err := c.loadImage(rootfs, false)
+	imageObject, err := c.loadImage(rootfs, true)
 	if err != nil {
 		return err
 	}
@@ -480,17 +480,9 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 func (c *container) overlayUpperWork(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
-	var point mount.Point
 
-	for _, p := range system.Points.GetByTag(mount.PreLayerTag) {
-		if p.Type == "ext3" || (p.Source != "" && p.Destination != "" && p.Type == "") {
-			point = p
-			break
-		}
-	}
-
-	u := point.Destination + "/upper"
-	w := point.Destination + "/work"
+	u := ov.GetUpperDir()
+	w := ov.GetWorkDir()
 
 	if fs.IsLink(u) {
 		return fmt.Errorf("symlink detected, upper overlay %s must be a directory", u)
@@ -498,33 +490,30 @@ func (c *container) overlayUpperWork(system *mount.System) error {
 	if fs.IsLink(w) {
 		return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
 	}
+
 	if !fs.IsDir(u) {
-		if err := fs.MkdirAll(u, 0755); err != nil {
+		if _, err := c.rpcOps.Mkdir(u, 0755); err != nil {
 			return fmt.Errorf("failed to create %s directory: %s", u, err)
 		}
 	}
 	if !fs.IsDir(w) {
-		if err := fs.MkdirAll(w, 0755); err != nil {
+		if _, err := c.rpcOps.Mkdir(w, 0755); err != nil {
 			return fmt.Errorf("failed to create %s directory: %s", w, err)
 		}
 	}
-	if err := ov.AddUpperDir(u); err != nil {
-		return fmt.Errorf("failed to add overlay upper: %s", err)
-	}
-	if err := ov.AddWorkDir(w); err != nil {
-		return fmt.Errorf("failed to add overlay upper: %s", err)
-	}
+
 	return nil
 }
 
 func (c *container) addOverlayMount(system *mount.System) error {
 	nb := 0
 	ov := c.session.Layer.(*overlay.Overlay)
+	hasUpper := false
 
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
 		splitted := strings.SplitN(img, ":", 2)
 
-		imageObject, err := c.loadImage(splitted[0], true)
+		imageObject, err := c.loadImage(splitted[0], false)
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
 		}
@@ -541,16 +530,15 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		switch imageObject.Type {
 		case image.EXT3:
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+
+			if !imageObject.Writable {
+				flags |= syscall.MS_RDONLY
+				ov.AddLowerDir(dst)
+			}
+
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, imageObject.Offset, imageObject.Size)
 			if err != nil {
 				return err
-			}
-			if imageObject.Writable {
-				if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
-					return err
-				}
-			} else {
-				ov.AddLowerDir(dst)
 			}
 		case image.SQUASHFS:
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY)
@@ -564,21 +552,36 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				return fmt.Errorf("only root user can use sandbox as overlay")
 			}
 			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
-			err = system.Points.AddBind(mount.PreLayerTag, src, dst, flags)
+
+			err = system.Points.AddBind(mount.PreLayerTag, imageObject.Path, dst, flags)
 			if err != nil {
 				return err
 			}
 			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
 
-			if imageObject.Writable {
-				if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
-					return err
-				}
-			} else {
+			if !imageObject.Writable {
 				ov.AddLowerDir(dst)
 			}
 		default:
 			return fmt.Errorf("unkown image format")
+		}
+
+		if imageObject.Writable && !hasUpper {
+			if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+				return err
+			}
+
+			upper := filepath.Join(dst, "upper")
+			work := filepath.Join(dst, "work")
+
+			if err := ov.SetUpperDir(upper); err != nil {
+				return fmt.Errorf("failed to add overlay upper: %s", err)
+			}
+			if err := ov.SetWorkDir(work); err != nil {
+				return fmt.Errorf("failed to add overlay upper: %s", err)
+			}
+
+			hasUpper = true
 		}
 	}
 	return nil

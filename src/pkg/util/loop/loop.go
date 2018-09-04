@@ -53,6 +53,11 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		}
 		loop.file = loopDev
 		*number = device
+
+		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, loopDev.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+			return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
+		}
+
 		return nil
 	}
 
@@ -71,8 +76,6 @@ func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
 
 // SetStatus sets info status about image
 func (loop *Device) SetStatus(info *Info64) error {
-	defer loop.file.Close()
-
 	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetStatus64, uintptr(unsafe.Pointer(info)))
 	if err != 0 {
 		return fmt.Errorf("Failed to set loop flags on loop device: %s", syscall.Errno(err))

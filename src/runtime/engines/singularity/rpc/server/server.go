@@ -22,14 +22,34 @@ import (
 type Methods int
 
 // Mount performs a mount with the specified arguments
-func (t *Methods) Mount(arguments *args.MountArgs, reply *int) error {
+func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
+	if arguments.Filesystem == "overlay" {
+		// overlay requires root filesytem UID/GID since upper/work
+		// directories are owned by root
+		runtime.LockOSThread()
+		syscall.Setfsuid(0)
+		syscall.Setfsgid(0)
+
+		defer runtime.UnlockOSThread()
+		defer syscall.Setfsgid(os.Getgid())
+		defer syscall.Setfsuid(os.Getuid())
+	}
 	return syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 }
 
 // Mkdir performs a mkdir with the specified arguments
 func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) error {
-	fmt.Println("Mkdir requested")
-	return nil
+	runtime.LockOSThread()
+	oldmask := syscall.Umask(0)
+	syscall.Setfsuid(0)
+	syscall.Setfsgid(0)
+
+	defer runtime.UnlockOSThread()
+	defer syscall.Umask(oldmask)
+	defer syscall.Setfsgid(os.Getgid())
+	defer syscall.Setfsuid(os.Getuid())
+
+	return os.Mkdir(arguments.Path, arguments.Perm)
 }
 
 // Chroot performs a chroot with the specified arguments

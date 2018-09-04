@@ -651,7 +651,7 @@ __attribute__((constructor)) static void init(void) {
          *  stage1 is responsible for singularity configuration file parsing, handle user input,
          *  read capabilities, check what namespaces is required.
          */
-        if ( config.isSuid || geteuid() == 0 ) {
+        if ( config.isSuid ) {
             priv_escalate();
             prepare_scontainer_stage(SCONTAINER_STAGE1);
         }
@@ -728,10 +728,6 @@ __attribute__((constructor)) static void init(void) {
         singularity_message(VERBOSE, "Run as instance\n");
         int forked = fork();
         if ( forked == 0 ) {
-            if ( chdir("/") < 0 ) {
-                singularity_message(ERROR, "Can't change directory to /: %s\n", strerror(errno));
-                exit(1);
-            }
             if ( setsid() < 0 ) {
                 singularity_message(ERROR, "Can't set session leader: %s\n", strerror(errno));
                 exit(1);

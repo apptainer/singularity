@@ -140,7 +140,7 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	for _, rf := range registeredFormats {
-		sylog.Debugf("Check if it's a %s image", rf.name)
+		sylog.Debugf("Check for image format %s", rf.name)
 
 		mode := rf.format.openMode(writable)
 
