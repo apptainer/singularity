@@ -65,3 +65,13 @@ func (t *RPC) LoopDevice(image string, mode int, info loop.Info64) (int, error) 
 	err := t.Client.Call(t.Name+".LoopDevice", arguments, &reply)
 	return reply, err
 }
+
+// SetHostname calls the sethostname RPC using the supplied arguments
+func (t *RPC) SetHostname(hostname string) (int, error) {
+	arguments := &args.HostnameArgs{
+		Hostname: hostname,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".SetHostname", arguments, &reply)
+	return reply, err
+}

@@ -39,6 +39,8 @@ type container struct {
 	sessionSize      int
 	userNS           bool
 	pidNS            bool
+	utsNS            bool
+	netNS            bool
 	mountInfoPath    string
 	skippedMount     []string
 }
@@ -66,6 +68,10 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 				c.userNS = true
 			case specs.PIDNamespace:
 				c.pidNS = true
+			case specs.UTSNamespace:
+				c.utsNS = true
+			case specs.NetworkNamespace:
+				c.netNS = true
 			}
 		}
 	}
@@ -77,7 +83,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
-	if err := system.RunAfterTag(mount.LayerTag, c.addFilesMount); err != nil {
+	if err := system.RunAfterTag(mount.LayerTag, c.addIdentityMount); err != nil {
 		return err
 	}
 
@@ -112,6 +118,12 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 	if err := c.addLibsMount(system); err != nil {
+		return err
+	}
+	if err := c.addResolvConfMount(system); err != nil {
+		return err
+	}
+	if err := c.addHostnameMount(system); err != nil {
 		return err
 	}
 
@@ -1131,7 +1143,7 @@ func (c *container) addLibsMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) addFilesMount(system *mount.System) error {
+func (c *container) addIdentityMount(system *mount.System) error {
 	if os.Geteuid() == 0 {
 		sylog.Verbosef("Not updating passwd/group files, running as root!")
 		return nil
@@ -1187,5 +1199,67 @@ func (c *container) addFilesMount(system *mount.System) error {
 		sylog.Verbosef("Skipping bind of the host's /etc/group")
 	}
 
+	return nil
+}
+
+func (c *container) addResolvConfMount(system *mount.System) error {
+	resolvConf := "/etc/resolv.conf"
+
+	if c.engine.EngineConfig.File.ConfigResolvConf {
+		if !c.netNS {
+			r, err := os.Open(resolvConf)
+			if err != nil {
+				return err
+			}
+			content, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+			if err := c.session.AddFile(resolvConf, content); err != nil {
+				sylog.Warningf("failed to add resolv.conf session file: %s", err)
+			}
+			sessionFile, _ := c.session.GetPath(resolvConf)
+
+			sylog.Debugf("Adding %s to mount list\n", resolvConf)
+			err = system.Points.AddBind(mount.FilesTag, sessionFile, resolvConf, syscall.MS_BIND)
+			if err != nil {
+				return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
+			}
+		}
+	} else {
+		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)
+	}
+	return nil
+}
+
+func (c *container) addHostnameMount(system *mount.System) error {
+	hostnameFile := "/etc/hostname"
+
+	if c.utsNS {
+		hostname := c.engine.EngineConfig.GetHostname()
+		if hostname != "" {
+			sylog.Debugf("Set container hostname %s", hostname)
+
+			content, err := files.Hostname(hostname)
+			if err != nil {
+				return fmt.Errorf("unable to add %s to hostname file: %s", hostname, err)
+			}
+			if err := c.session.AddFile(hostnameFile, content); err != nil {
+				return fmt.Errorf("failed to add hostname session file: %s", err)
+			}
+			sessionFile, _ := c.session.GetPath(hostnameFile)
+
+			sylog.Debugf("Adding %s to mount list\n", hostnameFile)
+			err = system.Points.AddBind(mount.FilesTag, sessionFile, hostnameFile, syscall.MS_BIND)
+			if err != nil {
+				return fmt.Errorf("unable to add %s to mount list: %s", hostnameFile, err)
+			}
+			if _, err := c.rpcOps.SetHostname(hostname); err != nil {
+				return fmt.Errorf("failed to set container hostname: %s", err)
+			}
+		}
+	} else {
+		sylog.Debugf("Skipping hostname mount, not virtualizing UTS namespace on user request")
+	}
 	return nil
 }
