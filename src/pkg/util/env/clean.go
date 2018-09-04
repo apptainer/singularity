@@ -18,7 +18,7 @@ func CleanEnv(g *generate.Generator, IsCleanEnv bool, environment []string) {
 	for _, env := range environment {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) != 2 {
-			sylog.Verbosef("can't process environment variable %s", env)
+			sylog.Verbosef("Can't process environment variable %s", env)
 			continue
 		}
 
