@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -17,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/env"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
@@ -269,30 +270,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	environment := os.Environ()
 
 	// Clean environment
-	for _, env := range environment {
-		e := strings.SplitN(env, "=", 2)
-		if len(e) != 2 {
-			sylog.Verbosef("can't process environment variable %s", env)
-			continue
-		}
-
-		// Transpose environment
-		if strings.HasPrefix(e[0], "SINGULARITYENV_") {
-			e[0] = strings.TrimPrefix(e[0], "SINGULARITYENV_")
-		} else if IsCleanEnv {
-			continue
-		}
-
-		if e[0] == "HOME" {
-			if !NoHome {
-				generator.AddProcessEnv(e[0], engineConfig.GetHomeDest())
-			} else {
-				generator.AddProcessEnv(e[0], "/")
-			}
-		} else {
-			generator.AddProcessEnv(e[0], e[1])
-		}
-	}
+	env.CleanEnv(&generator, IsCleanEnv, environment)
 
 	if pwd, err := os.Getwd(); err == nil {
 		if PwdPath != "" {
