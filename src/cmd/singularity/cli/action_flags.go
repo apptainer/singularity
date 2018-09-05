@@ -127,8 +127,8 @@ func initBoolVars() {
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
 
-	// --noinit
-	actionFlags.BoolVar(&NoInit, "noinit", false, "Do NOT start shim process with --pid.")
+	// --no-init
+	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
@@ -156,7 +156,7 @@ func initPrivilegeVars() {
 	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "Let root user keep privileges in container")
 
 	// --no-privs
-	actionFlags.BoolVar(&NoPrivs, "no-privs", true, "Drop all privileges from root user in container")
+	actionFlags.BoolVar(&NoPrivs, "no-privs", false, "Drop all privileges from root user in container")
 
 	// --add-caps
 	actionFlags.StringVar(&AddCaps, "add-caps", "", "A comma separated capability list to add")
