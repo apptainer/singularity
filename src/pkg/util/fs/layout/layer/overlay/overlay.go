@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
 	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
 )
@@ -127,7 +128,8 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 			}
 			if point.Type == "" {
 				if err := syscall.Stat(point.Source, st); os.IsNotExist(err) {
-					return fmt.Errorf("stat failed for %s: %s", point.Source, err)
+					sylog.Warningf("skipping mount of %s: %s", point.Source, err)
+					continue
 				}
 			}
 			dest := lowerDir + point.Destination
