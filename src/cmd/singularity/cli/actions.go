@@ -59,7 +59,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("noinit"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
