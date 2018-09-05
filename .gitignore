@@ -9,6 +9,7 @@ singularity-*.tar.gz
 generate_docs
 
 .vscode
+etc/bash_completion.d/
 vendor/
 builddir/
 src/pkg/buildcfg/config.go
