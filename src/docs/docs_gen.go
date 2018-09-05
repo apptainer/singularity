@@ -5,4 +5,4 @@
 
 package docs
 
-//go:generate go run bash_completion.d/bash_completion.go "${SOURCEDIR}/etc/bash_completion.d/singularity"
+//go:generate go run bash_completion.d/bash_completion.go "${BUILDDIR}/etc/bash_completion.d/singularity"
