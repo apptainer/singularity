@@ -111,8 +111,8 @@ func (i *Image) AuthorizedGroup(groups []string) (bool, error) {
 	return authorized, nil
 }
 
-// CleanPath returns a resolved absolute path
-func CleanPath(path string) (string, error) {
+// ResolvePath returns a resolved absolute path
+func ResolvePath(path string) (string, error) {
 	abspath, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("failed to get absolute path: %s", err)
@@ -128,7 +128,7 @@ func CleanPath(path string) (string, error) {
 func Init(path string, writable bool) (*Image, error) {
 	sylog.Debugf("Entering image format intializer")
 
-	resolvedPath, err := CleanPath(path)
+	resolvedPath, err := ResolvePath(path)
 	if err != nil {
 		return nil, err
 	}
