@@ -39,6 +39,8 @@ type container struct {
 	sessionSize      int
 	userNS           bool
 	pidNS            bool
+	utsNS            bool
+	netNS            bool
 	mountInfoPath    string
 	skippedMount     []string
 }
@@ -66,6 +68,10 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 				c.userNS = true
 			case specs.PIDNamespace:
 				c.pidNS = true
+			case specs.UTSNamespace:
+				c.utsNS = true
+			case specs.NetworkNamespace:
+				c.netNS = true
 			}
 		}
 	}
@@ -77,7 +83,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
-	if err := system.RunAfterTag(mount.LayerTag, c.addFilesMount); err != nil {
+	if err := system.RunAfterTag(mount.LayerTag, c.addIdentityMount); err != nil {
 		return err
 	}
 
@@ -112,6 +118,12 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 	if err := c.addLibsMount(system); err != nil {
+		return err
+	}
+	if err := c.addResolvConfMount(system); err != nil {
+		return err
+	}
+	if err := c.addHostnameMount(system); err != nil {
 		return err
 	}
 
@@ -838,43 +850,45 @@ func (c *container) addBindsMount(system *mount.System) error {
 	return nil
 }
 
-// isHomeAllowed returns an error if attempting to mount a custom home when not allowed to
-func (c *container) isHomeAllowed() error {
-	pw, err := user.GetPwUID(uint32(os.Getuid()))
-	if err != nil {
-		return fmt.Errorf("failed to retrieve user information")
-	}
-
-	sylog.Debugf("Checking if user bind control is allowed")
-	if pw.Dir != c.engine.EngineConfig.GetHome() && !c.engine.EngineConfig.File.UserBindControl {
-		return fmt.Errorf("Not mounting user requested home: user bind control is disallowed")
-	}
-
-	return nil
-}
-
 // getHomePaths returns the source and destination path of the requested home mount
 func (c *container) getHomePaths() (source string, dest string, err error) {
-	homeSlice := strings.Split(c.engine.EngineConfig.GetHomeDir(), ":")
-
-	if len(homeSlice) > 2 || len(homeSlice) == 0 {
-		return "", "", fmt.Errorf("EngineConfig HomeDir has incorrect number of elements: %v", len(homeSlice))
-	}
-
-	source = homeSlice[0]
-	if len(homeSlice) == 1 {
-		dest = homeSlice[0]
+	if c.engine.EngineConfig.GetCustomHome() {
+		dest = filepath.Clean(c.engine.EngineConfig.GetHomeDest())
+		source, err = filepath.Abs(filepath.Clean(c.engine.EngineConfig.GetHomeSource()))
 	} else {
-		dest = homeSlice[1]
-	}
-
-	dest = filepath.Clean(dest)
-	source, err = filepath.Abs(filepath.Clean(source))
-	if err != nil {
-		return "", "", err
+		pw, err := user.GetPwUID(uint32(os.Getuid()))
+		if err == nil {
+			dest = pw.Dir
+			source = pw.Dir
+		}
 	}
 
 	return source, dest, err
+}
+
+// addHomeStagingDir adds and mounts home directory in session staging directory
+func (c *container) addHomeStagingDir(system *mount.System, source string, dest string) (string, error) {
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
+	homeStage := ""
+
+	if err := c.session.AddDir(dest); err != nil {
+		return "", fmt.Errorf("failed to add %s as session directory: %s", source, err)
+	}
+
+	homeStage, _ = c.session.GetPath(dest)
+
+	if !c.engine.EngineConfig.GetContain() || c.engine.EngineConfig.GetCustomHome() {
+		sylog.Debugf("Staging home directory (%v) at %v\n", source, homeStage)
+
+		if err := system.Points.AddBind(mount.HomeTag, source, homeStage, flags); err != nil {
+			return "", fmt.Errorf("unable to add %s to mount list: %s", source, err)
+		}
+		system.Points.AddRemount(mount.HomeTag, homeStage, flags)
+	} else {
+		sylog.Debugf("Using session directory for home directory")
+	}
+
+	return homeStage, nil
 }
 
 // addHomeLayer adds the home mount when using either overlay or underlay
@@ -892,18 +906,6 @@ func (c *container) addHomeLayer(system *mount.System, source, dest string) erro
 // directory of the staged home into the container when overlay/underlay are unavailable
 func (c *container) addHomeNoLayer(system *mount.System, source, dest string) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
-
-	if err := c.session.AddDir(dest); err != nil {
-		return fmt.Errorf("failed to add %s as session directory: %s", source, err)
-	}
-
-	homeStage, _ := c.session.GetPath(dest)
-	sylog.Debugf("Staging home directory (%v) at %v\n", source, homeStage)
-
-	if err := system.Points.AddBind(mount.HomeTag, source, homeStage, flags); err != nil {
-		return fmt.Errorf("unable to add %s to mount list: %s", source, err)
-	}
-	system.Points.AddRemount(mount.HomeTag, homeStage, flags)
 
 	homeBase := fs.RootDir(dest)
 	if homeBase == "." {
@@ -931,8 +933,9 @@ func (c *container) addHomeMount(system *mount.System) error {
 		return nil
 	}
 
-	if err := c.isHomeAllowed(); err != nil {
-		return err
+	// check if user attempt to mount a custom home when not allowed to
+	if c.engine.EngineConfig.GetCustomHome() && !c.engine.EngineConfig.File.UserBindControl {
+		return fmt.Errorf("Not mounting user requested home: user bind control is disallowed")
 	}
 
 	source, dest, err := c.getHomePaths()
@@ -940,11 +943,16 @@ func (c *container) addHomeMount(system *mount.System) error {
 		return fmt.Errorf("unable to get home source/destination: %v", err)
 	}
 
-	sylog.Debugf("Adding home directory mount [%v:%v] to list using layer: %v\n", source, dest, c.sessionLayerType)
-	if !c.isLayerEnabled() {
-		return c.addHomeNoLayer(system, source, dest)
+	stagingDir, err := c.addHomeStagingDir(system, source, dest)
+	if err != nil {
+		return err
 	}
-	return c.addHomeLayer(system, source, dest)
+
+	sylog.Debugf("Adding home directory mount [%v:%v] to list using layer: %v\n", stagingDir, dest, c.sessionLayerType)
+	if !c.isLayerEnabled() {
+		return c.addHomeNoLayer(system, stagingDir, dest)
+	}
+	return c.addHomeLayer(system, stagingDir, dest)
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
@@ -1023,11 +1031,15 @@ func (c *container) addTmpMount(system *mount.System) error {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
-			if err := c.session.AddDir(tmpSource); err != nil {
-				return err
+			if _, err := c.session.GetPath(tmpSource); err != nil {
+				if err := c.session.AddDir(tmpSource); err != nil {
+					return err
+				}
 			}
-			if err := c.session.AddDir(vartmpSource); err != nil {
-				return err
+			if _, err := c.session.GetPath(vartmpSource); err != nil {
+				if err := c.session.AddDir(vartmpSource); err != nil {
+					return err
+				}
 			}
 			tmpSource, _ = c.session.GetPath(tmpSource)
 			vartmpSource, _ = c.session.GetPath(vartmpSource)
@@ -1144,7 +1156,7 @@ func (c *container) addLibsMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) addFilesMount(system *mount.System) error {
+func (c *container) addIdentityMount(system *mount.System) error {
 	if os.Geteuid() == 0 {
 		sylog.Verbosef("Not updating passwd/group files, running as root!")
 		return nil
@@ -1155,19 +1167,24 @@ func (c *container) addFilesMount(system *mount.System) error {
 
 	if c.engine.EngineConfig.File.ConfigPasswd {
 		passwd := filepath.Join(rootfs, "/etc/passwd")
-		content, err := files.Passwd(passwd, c.engine.EngineConfig.GetHome())
+		_, home, err := c.getHomePaths()
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
-			if err := c.session.AddFile("/etc/passwd", content); err != nil {
-				sylog.Warningf("failed to add passwd session file: %s", err)
-			}
-			passwd, _ = c.session.GetPath("/etc/passwd")
-
-			sylog.Debugf("Adding /etc/passwd to mount list\n")
-			err = system.Points.AddBind(mount.FilesTag, passwd, "/etc/passwd", syscall.MS_BIND)
+			content, err := files.Passwd(passwd, home)
 			if err != nil {
-				return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
+				sylog.Warningf("%s", err)
+			} else {
+				if err := c.session.AddFile("/etc/passwd", content); err != nil {
+					sylog.Warningf("failed to add passwd session file: %s", err)
+				}
+				passwd, _ = c.session.GetPath("/etc/passwd")
+
+				sylog.Debugf("Adding /etc/passwd to mount list\n")
+				err = system.Points.AddBind(mount.FilesTag, passwd, "/etc/passwd", syscall.MS_BIND)
+				if err != nil {
+					return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
+				}
 			}
 		}
 	} else {
@@ -1195,5 +1212,67 @@ func (c *container) addFilesMount(system *mount.System) error {
 		sylog.Verbosef("Skipping bind of the host's /etc/group")
 	}
 
+	return nil
+}
+
+func (c *container) addResolvConfMount(system *mount.System) error {
+	resolvConf := "/etc/resolv.conf"
+
+	if c.engine.EngineConfig.File.ConfigResolvConf {
+		if !c.netNS {
+			r, err := os.Open(resolvConf)
+			if err != nil {
+				return err
+			}
+			content, err := ioutil.ReadAll(r)
+			if err != nil {
+				return err
+			}
+			if err := c.session.AddFile(resolvConf, content); err != nil {
+				sylog.Warningf("failed to add resolv.conf session file: %s", err)
+			}
+			sessionFile, _ := c.session.GetPath(resolvConf)
+
+			sylog.Debugf("Adding %s to mount list\n", resolvConf)
+			err = system.Points.AddBind(mount.FilesTag, sessionFile, resolvConf, syscall.MS_BIND)
+			if err != nil {
+				return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
+			}
+		}
+	} else {
+		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)
+	}
+	return nil
+}
+
+func (c *container) addHostnameMount(system *mount.System) error {
+	hostnameFile := "/etc/hostname"
+
+	if c.utsNS {
+		hostname := c.engine.EngineConfig.GetHostname()
+		if hostname != "" {
+			sylog.Debugf("Set container hostname %s", hostname)
+
+			content, err := files.Hostname(hostname)
+			if err != nil {
+				return fmt.Errorf("unable to add %s to hostname file: %s", hostname, err)
+			}
+			if err := c.session.AddFile(hostnameFile, content); err != nil {
+				return fmt.Errorf("failed to add hostname session file: %s", err)
+			}
+			sessionFile, _ := c.session.GetPath(hostnameFile)
+
+			sylog.Debugf("Adding %s to mount list\n", hostnameFile)
+			err = system.Points.AddBind(mount.FilesTag, sessionFile, hostnameFile, syscall.MS_BIND)
+			if err != nil {
+				return fmt.Errorf("unable to add %s to mount list: %s", hostnameFile, err)
+			}
+			if _, err := c.rpcOps.SetHostname(hostname); err != nil {
+				return fmt.Errorf("failed to set container hostname: %s", err)
+			}
+		}
+	} else {
+		sylog.Debugf("Skipping hostname mount, not virtualizing UTS namespace on user request")
+	}
 	return nil
 }
