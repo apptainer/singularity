@@ -766,18 +766,18 @@ func (c *container) addDevMount(system *mount.System) error {
 		}
 
 		devPath, _ := c.session.GetPath("/dev")
-		err = system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		err = system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_REC)
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "yes" {
 		sylog.Debugf("Adding dev to mount list\n")
-		err := system.Points.AddBind(mount.DevTag, "/dev", "/dev", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC)
+		err := system.Points.AddBind(mount.DevTag, "/dev", "/dev", syscall.MS_BIND|syscall.MS_REC)
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
-		sylog.Verbosef("Not mounting /dev inside the container")
+		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
 	return nil
 }
@@ -989,6 +989,21 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		}
 
 		sylog.Debugf("Adding %s to mount list\n", src)
+		if src == "/dev" {
+			// special case for /dev mount to override default mount behaviour
+			// by example with --contain option
+			if c.engine.EngineConfig.File.MountDev == "yes" {
+				system.Points.RemoveByTag(mount.DevTag)
+
+				err := system.Points.AddBind(mount.DevTag, "/dev", dst, syscall.MS_BIND|syscall.MS_REC)
+				if err != nil {
+					return fmt.Errorf("unable to add dev to mount list: %s", err)
+				}
+			} else {
+				sylog.Verbosef("Skipping /dev bind mount, disallowed by configuration")
+			}
+			continue
+		}
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
 			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
 		}
