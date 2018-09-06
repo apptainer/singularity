@@ -20,30 +20,43 @@ type JSONResponse struct {
 
 // EntityResponse - Response from the API for an Entity request
 type EntityResponse struct {
-	Data  Entity    `bson:"data" json:"data"`
+	Data  Entity    `json:"data"`
 	Error JSONError `json:"error,omitempty"`
 }
 
 // CollectionResponse - Response from the API for an Collection request
 type CollectionResponse struct {
-	Data  Collection `bson:"data" json:"data"`
+	Data  Collection `json:"data"`
 	Error JSONError  `json:"error,omitempty"`
 }
 
 // ContainerResponse - Response from the API for an Container request
 type ContainerResponse struct {
-	Data  Container `bson:"data" json:"data"`
+	Data  Container `json:"data"`
 	Error JSONError `json:"error,omitempty"`
 }
 
 // ImageResponse - Response from the API for an Image request
 type ImageResponse struct {
-	Data  Image     `bson:"data" json:"data"`
+	Data  Image     `json:"data"`
 	Error JSONError `json:"error,omitempty"`
 }
 
 // TagsResponse - Response from the API for a tags request
 type TagsResponse struct {
-	Data  TagMap    `bson:"data" json:"data"`
+	Data  TagMap    `json:"data"`
 	Error JSONError `json:"error,omitempty"`
+}
+
+// SearchResults - Results structure for searches
+type SearchResults struct {
+	Entities    []Entity     `json:"entity"`
+	Collections []Collection `json:"collection"`
+	Containers  []Container  `json:"container"`
+}
+
+// SearchResponse - Response from the API for a search request
+type SearchResponse struct {
+	Data  SearchResults `json:"data"`
+	Error JSONError     `json:"error,omitempty"`
 }

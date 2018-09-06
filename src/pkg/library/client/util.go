@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/globalsign/mgo/bson"
-	"github.com/golang/glog"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
 // IsLibraryPullRef returns true if the provided string is a valid library
@@ -42,7 +42,7 @@ func IsLibraryPushRef(libraryRef string) bool {
 func IsRefPart(refPart string) bool {
 	match, err := regexp.MatchString("^[a-z0-9]+(?:[._-][a-z0-9]+)*$", refPart)
 	if err != nil {
-		glog.Errorf("Error in regex matching: %v", err)
+		sylog.Debugf("Error in regex matching: %v", err)
 		return false
 	}
 	return match
@@ -56,7 +56,7 @@ func IsImageHash(refPart string) bool {
 	//  which is the unique SIF UUID
 	match, err := regexp.MatchString("^((sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))$", refPart)
 	if err != nil {
-		glog.Errorf("Error in regex matching: %v", err)
+		sylog.Debugf("Error in regex matching: %v", err)
 		return false
 	}
 	return match

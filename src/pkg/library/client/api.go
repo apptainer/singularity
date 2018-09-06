@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/globalsign/mgo/bson"
@@ -176,6 +177,32 @@ func setTags(baseURL string, authToken string, containerID string, imageID strin
 		}
 	}
 	return nil
+}
+
+func search(baseURL string, authToken string, value string) (results SearchResults, found bool, err error) {
+
+	u, err := url.Parse(baseURL + "/v1/search")
+	if err != nil {
+		return
+	}
+	q := u.Query()
+	q.Set("value", value)
+	u.RawQuery = q.Encode()
+
+	resJSON, found, err := apiGet(u.String(), authToken)
+	if err != nil {
+		return results, false, err
+	}
+	if !found {
+		return results, false, nil
+	}
+
+	var res SearchResponse
+	if err := json.Unmarshal(resJSON, &res); err != nil {
+		return results, false, fmt.Errorf("error decoding reesults: %v", err)
+	}
+
+	return res.Data, found, nil
 }
 
 func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err error) {

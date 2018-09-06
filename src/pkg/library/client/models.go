@@ -6,6 +6,7 @@
 package client
 
 import (
+	"strings"
 	"time"
 
 	"github.com/globalsign/mgo/bson"
@@ -81,6 +82,11 @@ func (e Entity) GetID() bson.ObjectId {
 	return e.ID
 }
 
+// LibraryURI - library:// URI to the entity
+func (e Entity) LibraryURI() string {
+	return "library://" + e.Name
+}
+
 // Collection - Second level in the library, holds a collection of containers
 type Collection struct {
 	BaseModel
@@ -101,6 +107,11 @@ type Collection struct {
 // GetID - Convenience method to get model ID if working with an interface
 func (c Collection) GetID() bson.ObjectId {
 	return c.ID
+}
+
+// LibraryURI - library:// URI to the collection
+func (c Collection) LibraryURI() string {
+	return "library://" + c.EntityName + "/" + c.Name
 }
 
 // Container - Third level of library. Inside a collection, holds images for
@@ -127,6 +138,21 @@ type Container struct {
 // GetID - Convenience method to get model ID if working with an interface
 func (c Container) GetID() bson.ObjectId {
 	return c.ID
+}
+
+// LibraryURI - library:// URI to the container
+func (c Container) LibraryURI() string {
+	return "library://" + c.EntityName + "/" + c.CollectionName + "/" + c.Name
+}
+
+// TagList - return space delimited list of tags
+func (c Container) TagList() string {
+	var taglist string
+	for tag := range c.ImageTags {
+		taglist = taglist + tag + " "
+	}
+	taglist = strings.TrimRight(taglist, " ")
+	return taglist
 }
 
 // Image - Represents a Singularity image held by the library for a particular
