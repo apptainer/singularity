@@ -101,6 +101,7 @@ func (ecl *EclConfig) ValidateConfig() (err error) {
 	return
 }
 
+// checkWhiteList evaluates authorization by requiring at least 1 entity
 func checkWhiteList(cpath string, egroup *execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints on the primary partition
 	keyfps, err := signing.GetSignEntities(cpath)
@@ -122,6 +123,7 @@ func checkWhiteList(cpath string, egroup *execgroup) (ok bool, err error) {
 	return true, nil
 }
 
+// checkWhiteStrict evaluates authorization by requiring all entities
 func checkWhiteStrict(cpath string, egroup *execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints on the primary partition
 	keyfps, err := signing.GetSignEntities(cpath)
@@ -148,6 +150,7 @@ func checkWhiteStrict(cpath string, egroup *execgroup) (ok bool, err error) {
 	return true, nil
 }
 
+// checkBlackList evaluates authorization by requiring all entities to be absent
 func checkBlackList(cpath string, egroup *execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints on the primary partition
 	keyfps, err := signing.GetSignEntities(cpath)
