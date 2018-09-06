@@ -179,7 +179,7 @@ func setTags(baseURL string, authToken string, containerID string, imageID strin
 	return nil
 }
 
-func search(baseURL string, authToken string, value string) (results SearchResults, found bool, err error) {
+func search(baseURL string, authToken string, value string) (results SearchResults, err error) {
 
 	u, err := url.Parse(baseURL + "/v1/search")
 	if err != nil {
@@ -189,20 +189,17 @@ func search(baseURL string, authToken string, value string) (results SearchResul
 	q.Set("value", value)
 	u.RawQuery = q.Encode()
 
-	resJSON, found, err := apiGet(u.String(), authToken)
+	resJSON, _, err := apiGet(u.String(), authToken)
 	if err != nil {
-		return results, false, err
-	}
-	if !found {
-		return results, false, nil
+		return results, err
 	}
 
 	var res SearchResponse
 	if err := json.Unmarshal(resJSON, &res); err != nil {
-		return results, false, fmt.Errorf("error decoding reesults: %v", err)
+		return results, fmt.Errorf("error decoding reesults: %v", err)
 	}
 
-	return res.Data, found, nil
+	return res.Data, nil
 }
 
 func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err error) {
