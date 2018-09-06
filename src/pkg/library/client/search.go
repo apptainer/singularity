@@ -16,7 +16,7 @@ func SearchLibrary(value string, libraryURL string, authToken string) error {
 		return fmt.Errorf("Bad query '%s'. You must search for at least 3 characters", value)
 	}
 
-	results, _, err := search(libraryURL, authToken, value)
+	results, err := search(libraryURL, authToken, value)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func SearchLibrary(value string, libraryURL string, authToken string) error {
 		fmt.Printf("\n")
 
 	} else {
-		fmt.Printf("No containers found for '%s'\n", value)
+		fmt.Printf("No containers found for '%s'\n\n", value)
 	}
 
 	return nil
