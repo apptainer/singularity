@@ -517,6 +517,17 @@ Enterprise Performance Computing (EPC)`
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// search
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	SearchUse   string = `search [search options...] <search query>`
+	SearchShort string = `Search the library`
+	SearchLong  string = `
+  The Singularity search command allows you to search within a container library
+  of your choosing`
+	SearchExample string = `
+  $ singularity search lolcow`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// run
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunUse   string = `run [run options...] <container>`
