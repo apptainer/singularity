@@ -460,9 +460,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
-			if !run {
-				return err
-			}
 		}
 
 		// Load the SIF file
