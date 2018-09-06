@@ -6,6 +6,8 @@ set -e
 
 # defaults and compiler options
 prefix="/usr/local"
+# exec_prefix will be set again later
+exec_prefix=""
 verbose=0
 debug=0
 hstcc=
@@ -18,6 +20,7 @@ tgtcxx=
 tgtcxx_opts=$hstcxx_opts
 hststatic=0
 tgtstatic=0
+package_version=""
 
 
 
@@ -26,16 +29,18 @@ usage () {
 }
 
 usage_args () {
-	echo "usage: ${0##*/}: [-dvsS] [-p prefix] [-b builddir] [-c hstcc]"
-	echo "                 [-C tgtcc] [-x hstcxx] [-X tgtcxx]"
+	echo "Usage: ${0##*/}: [-dvsS] [-p prefix] [-e exec_prefix] [-b builddir] [-c hstcc]"
+	echo "                 [-C tgtcc] [-V version] [-x hstcxx] [-X tgtcxx]"
 	echo "       -v build project with verbose flags on"
 	echo "       -d build project with debug flags on"
 	echo "       -s build final host project binary statically"
 	echo "       -S build final target project binary statically"
 	echo "       -p install project in \`prefix'"
+	echo "       -e install project executables in \`exec_prefix'"
 	echo "       -b build project in \`builddir'"
 	echo "       -c build project with host C \`compiler'"
 	echo "       -C build project with target C\`compiler'"
+	echo "       -V build project with given version"
 	echo "       -x build project with host C++ \`compiler'"
 	echo "       -h this help"
 	echo "\`host C compiler': $hstcc_opts"
@@ -47,15 +52,16 @@ usage_args () {
 cmdline="`readlink -f $0` $*"
 
 # check line options
-args=`getopt p:b:c:C:dsSvx:h $*`
+args=`getopt p:e:b:c:C:dsSvV:x:h $*`
 if [ $? -ne 0 ]; then
 	usage_args
 	exit 2
 fi
-set -- $args
+eval set -- "$args"
 while [ $# -ne 0 ]; do
  case $1 in
   -p) prefix="$2"; shift; shift;;
+  -e) exec_prefix="$2"; shift; shift;;
   -b) builddir="$2"; shift; shift;;
   -c) hstcc="$2"; shift; shift;;
   -C) tgtcc="$2"; shift; shift;;
@@ -64,6 +70,7 @@ while [ $# -ne 0 ]; do
   -s) hststatic=1; shift;;
   -S) tgtstatic=1; shift;;
   -v) verbose=1; shift;;
+  -V) package_version="$2"; shift; shift;;
   -h) usage_args; exit 2;;
   --) shift; break;;
   ?) usage_args
@@ -76,11 +83,19 @@ if [ $# != 0 ]; then
 	usage_args
 	exit 2
 fi
+if [ -z "$exec_prefix" ]; then
+    exec_prefix=$prefix
+fi
 topdir=`dirname \`readlink mconfig\`` || (echo "\`mconfig' needs to be symlinked at the top of the project."; exit 2)
 sourcedir=`readlink -f .`
 mfragsdir=$sourcedir/mlocal/frags
 mchecksdir=$sourcedir/mlocal/checks
 
+if [ -z "$package_version" ]; then
+    package_version=`git describe --match 'v[0-9]*' --dirty --always | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+fi
+# export so this can be used in mlocal/checks
+export package_version
 
 
 #######################################################################
@@ -150,6 +165,7 @@ BUILDDIR := .
 SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
+EXEC_PREFIX := $exec_prefix
 
 HOSTAR := ar
 HOSTCC := $hstcc
@@ -289,6 +305,18 @@ cat $mfragsdir/Makefile.stub | awk \
 
 rm -rf $genconfdir
 
+
+
+#######################################################################
+# Target package build files
+#######################################################################
+
+TARGET=dist/rpm/singularity.spec
+echo "=> generating $TARGET ..."
+rm -f $TARGET
+VERSION="`echo "$package_version"|sed 's/-.*//'`"
+RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
+sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/" $TARGET.in >$TARGET
 
 
 #######################################################################
