@@ -316,6 +316,10 @@ echo "=> generating $TARGET ..."
 rm -f $TARGET
 VERSION="`echo "$package_version"|sed 's/-.*//'`"
 RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
+if [ "$VERSION" = "$RELEASE" ]; then
+    # $package_version has no dash
+    RELEASE=1
+fi
 sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/" $TARGET.in >$TARGET
 
 
