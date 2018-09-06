@@ -6,7 +6,6 @@
 package syecl
 
 import (
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -30,16 +29,19 @@ var (
 	testEclFileName2 string // pathname of the Ecl config file
 	testEclDirPath1  string // dirname of the first Ecl execgroup
 	testEclDirPath2  string // dirname of the second Ecl execgroup
+	testEclDirPath3  string // dirname of the third Ecl execgroup
 	testContainer1   string // pathname of the first test container
 	testContainer2   string // pathname of the second test container
 	testContainer3   string // pathname of the third test container
+	testContainer4   string // pathname of the forth test container
 )
 
 var testEclConfig = EclConfig{
 	Activated: true,
 	ExecGroups: []execgroup{
 		{"group1", "whitelist", "", []string{KeyFP1, KeyFP2}},
-		{"group2", "whitelist", "", []string{KeyFP2}},
+		{"group2", "whitestrict", "", []string{KeyFP1, KeyFP2}},
+		{"group3", "blacklist", "", []string{KeyFP1}},
 	},
 }
 
@@ -134,13 +136,17 @@ func TestShouldRun(t *testing.T) {
 	if err == nil || run == true {
 		t.Error(srcContainer1, "should NOT be allowed to run")
 	}
+	// check container4 authorization (fails with blacklist)
+	run, err = ecl.ShouldRun(testContainer4)
+	if err == nil || run == true {
+		t.Error(testContainer4, "should NOT be allowed to run")
+	}
 
 	// in this second round of tests, set DirPath to "", and test container in testdata/
-	testEclConfig.ExecGroups[0].DirPath = ""
-	testEclConfig.ExecGroups[1].DirPath = ""
+	ecl.ExecGroups[0].DirPath = ""
+	ecl.ExecGroups[1].DirPath = ""
 
 	// check container1 authorization (outside of defined dirpath)
-	fmt.Println(testEclConfig)
 	run, err = ecl.ShouldRun(srcContainer1)
 	if err != nil {
 		t.Error(`ecl.ShouldRun(srcContainer1):`, err)
@@ -148,7 +154,6 @@ func TestShouldRun(t *testing.T) {
 	if !run {
 		t.Error(srcContainer1, "should be allowed to run")
 	}
-
 }
 
 func copyFile(dst, src string) error {
@@ -191,13 +196,18 @@ func setup() error {
 	testEclFileName2 = tmpfile.Name()
 	tmpfile.Close()
 
-	// Create two directories where we put test containers
-	testEclDirPath1, err = ioutil.TempDir("", "ecldir1")
+	// Create three directories where we put test containers
+	testEclDirPath1, err = ioutil.TempDir("", "ecldir1-")
 	if err != nil {
 		return err
 	}
 
-	testEclDirPath2, err = ioutil.TempDir("", "ecldir2")
+	testEclDirPath2, err = ioutil.TempDir("", "ecldir2-")
+	if err != nil {
+		return err
+	}
+
+	testEclDirPath3, err = ioutil.TempDir("", "ecldir3-")
 	if err != nil {
 		return err
 	}
@@ -205,6 +215,7 @@ func setup() error {
 	// Set the just created Dirpaths in the EclConfig struct to marshal
 	testEclConfig.ExecGroups[0].DirPath = testEclDirPath1
 	testEclConfig.ExecGroups[1].DirPath = testEclDirPath2
+	testEclConfig.ExecGroups[2].DirPath = testEclDirPath3
 
 	// prepare and copy test containers from testdata/* to their test dirpaths
 	testContainer1 = filepath.Join(testEclDirPath1, filepath.Base(srcContainer1))
@@ -219,6 +230,10 @@ func setup() error {
 	if err := copyFile(testContainer3, srcContainer3); err != nil {
 		return err
 	}
+	testContainer4 = filepath.Join(testEclDirPath3, filepath.Base(srcContainer3))
+	if err := copyFile(testContainer4, srcContainer3); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -228,6 +243,7 @@ func shutdown() {
 	os.Remove(testEclFileName2)
 	os.RemoveAll(testEclDirPath1)
 	os.RemoveAll(testEclDirPath2)
+	os.RemoveAll(testEclDirPath3)
 }
 
 func TestMain(m *testing.M) {

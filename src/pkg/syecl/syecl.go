@@ -10,6 +10,7 @@
 package syecl
 
 import (
+	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -87,12 +88,86 @@ func (ecl *EclConfig) ValidateConfig() (err error) {
 				return fmt.Errorf("all execgroup dirpath`s should be fully cleaned with symlinks resolved")
 			}
 		}
+		if v.ListMode != "whitelist" && v.ListMode != "whitestrict" && v.ListMode != "blacklist" {
+			return fmt.Errorf("the mode field can only be either: whitelist, whitestrict, blacklist")
+		}
+		for _, k := range v.KeyFPs {
+			decoded, err := hex.DecodeString(k)
+			if err != nil || len(decoded) != 20 {
+				return fmt.Errorf("expecting a 40 chars hex fingerprint string")
+			}
+		}
 	}
 	return
 }
 
+func checkWhiteList(cpath string, egroup *execgroup) (ok bool, err error) {
+	// get all signing entities fingerprints on the primary partition
+	keyfps, err := signing.GetSignEntities(cpath)
+	if err != nil {
+		return
+	}
+	// was the primary partition signed by an authorized entity?
+	for _, v := range egroup.KeyFPs {
+		for _, u := range keyfps {
+			if v == u {
+				ok = true
+			}
+		}
+	}
+	if !ok {
+		return false, fmt.Errorf("%s is not signed by required entities", cpath)
+	}
+
+	return true, nil
+}
+
+func checkWhiteStrict(cpath string, egroup *execgroup) (ok bool, err error) {
+	// get all signing entities fingerprints on the primary partition
+	keyfps, err := signing.GetSignEntities(cpath)
+	if err != nil {
+		return
+	}
+
+	// was the primary partition signed by all authorized entity?
+	m := map[string]bool{}
+	for _, v := range egroup.KeyFPs {
+		m[v] = false
+		for _, u := range keyfps {
+			if v == u {
+				m[v] = true
+			}
+		}
+	}
+	for _, v := range m {
+		if v != true {
+			return false, fmt.Errorf("%s is not signed by required entities", cpath)
+		}
+	}
+
+	return true, nil
+}
+
+func checkBlackList(cpath string, egroup *execgroup) (ok bool, err error) {
+	// get all signing entities fingerprints on the primary partition
+	keyfps, err := signing.GetSignEntities(cpath)
+	if err != nil {
+		return
+	}
+	// was the primary partition signed by an authorized entity?
+	for _, v := range egroup.KeyFPs {
+		for _, u := range keyfps {
+			if v == u {
+				return false, fmt.Errorf("%s is signed by a forbidden entity", cpath)
+			}
+		}
+	}
+
+	return true, nil
+}
+
 // ShouldRun determines if a container should run according to its execgroup rules
-func (ecl *EclConfig) ShouldRun(cpath string) (run bool, err error) {
+func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
 	var egroup *execgroup
 
 	// look if ECL rules are activated
@@ -107,30 +182,28 @@ func (ecl *EclConfig) ShouldRun(cpath string) (run bool, err error) {
 			break
 		}
 	}
-	// XXX: if an open (DirPath == "") execgroup exists match container to it
+	// go back at it and this time look for an empty dirpath execgroup to fallback into
+	if egroup == nil {
+		for _, v := range ecl.ExecGroups {
+			if v.DirPath == "" {
+				egroup = &v
+				break
+			}
+		}
+	}
 
 	if egroup == nil {
 		return false, fmt.Errorf("%s not part of any execgroup", cpath)
 	}
 
-	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntities(cpath)
-	if err != nil {
-		return
+	switch egroup.ListMode {
+	case "whitelist":
+		return checkWhiteList(cpath, egroup)
+	case "whitestrict":
+		return checkWhiteStrict(cpath, egroup)
+	case "blacklist":
+		return checkBlackList(cpath, egroup)
 	}
 
-	// was the primary partition signed by an authorized entity?
-	// XXX: implement whitelist, whitestrict and blacklist modes.
-	for _, v := range egroup.KeyFPs {
-		for _, u := range keyfps {
-			if v == u {
-				run = true
-			}
-		}
-	}
-	if run == false {
-		return false, fmt.Errorf("%s is not signed by required entities", cpath)
-	}
-
-	return
+	return false, fmt.Errorf("ECL config file invalid")
 }
