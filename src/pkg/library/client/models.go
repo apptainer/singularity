@@ -66,6 +66,14 @@ type Entity struct {
 	Name        string          `bson:"name" json:"name"`
 	Description string          `bson:"description" json:"description"`
 	Collections []bson.ObjectId `bson:"collections" json:"collections"`
+	Size        int64           `bson:"size" json:"size"`
+	Quota       int64           `bson:"quota" json:"quota"`
+	// DefaultPrivate set true will make any new Collections in ths entity
+	// private at the time of creation.
+	DefaultPrivate bool `bson:"defaultPrivate" json:"defaultPrivate"`
+	// CustomData can hold a user-provided string for integration purposes
+	// not used by the library itself.
+	CustomData string `bson:"customData" json:"customData"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
@@ -81,6 +89,13 @@ type Collection struct {
 	Description string          `bson:"description" json:"description"`
 	Entity      bson.ObjectId   `bson:"entity" json:"entity"`
 	Containers  []bson.ObjectId `bson:"containers" json:"containers"`
+	Size        int64           `bson:"size" json:"size"`
+	Private     bool            `bson:"private" json:"private"`
+	// CustomData can hold a user-provided string for integration purposes
+	// not used by the library itself.
+	CustomData string `bson:"customData" json:"customData"`
+	// Computed fields that will not be stored - JSON response use only
+	EntityName string `bson:"-" json:"entityName,omitempty"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
@@ -92,12 +107,21 @@ func (c Collection) GetID() bson.ObjectId {
 // a particular container
 type Container struct {
 	BaseModel
-	ID          bson.ObjectId            `bson:"_id" json:"id"`
-	Name        string                   `bson:"name" json:"name"`
-	Description string                   `bson:"description" json:"description"`
-	Collection  bson.ObjectId            `bson:"collection" json:"collection"`
-	Images      []bson.ObjectId          `bson:"images" json:"images"`
-	ImageTags   map[string]bson.ObjectId `bson:"imageTags" json:"imageTags"`
+	ID            bson.ObjectId            `bson:"_id" json:"id"`
+	Name          string                   `bson:"name" json:"name"`
+	Description   string                   `bson:"description" json:"description"`
+	Collection    bson.ObjectId            `bson:"collection" json:"collection"`
+	Images        []bson.ObjectId          `bson:"images" json:"images"`
+	ImageTags     map[string]bson.ObjectId `bson:"imageTags" json:"imageTags"`
+	Size          int64                    `bson:"size" json:"size"`
+	DownloadCount int64                    `bson:"downloadCount" json:"downloadCount"`
+	// CustomData can hold a user-provided string for integration purposes
+	// not used by the library itself.
+	CustomData string `bson:"customData" json:"customData"`
+	// Computed fields that will not be stored - JSON response use only
+	Entity         bson.ObjectId `bson:"-" json:"entity,omitempty"`
+	EntityName     string        `bson:"-" json:"entityName,omitempty"`
+	CollectionName string        `bson:"-" json:"collectionName,omitempty"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
@@ -116,6 +140,15 @@ type Image struct {
 	Blob        bson.ObjectId `bson:"blob,omitempty" json:"blob,omitempty"`
 	Size        int64         `bson:"size" json:"size"`
 	Uploaded    bool          `bson:"uploaded" json:"uploaded"`
+	// CustomData can hold a user-provided string for integration purposes
+	// not used by the library itself.
+	CustomData string `bson:"customData" json:"customData"`
+	// Computed fields that will not be stored - JSON response use only
+	Entity         bson.ObjectId `bson:"-" json:"entity,omitempty"`
+	EntityName     string        `bson:"-" json:"entityName,omitempty"`
+	Collection     bson.ObjectId `bson:"-" json:"collection,omitempty"`
+	CollectionName string        `bson:"-" json:"collectionName,omitempty"`
+	ContainerName  string        `bson:"-" json:"containerName,omitempty"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
