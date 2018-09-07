@@ -31,7 +31,9 @@ func CleanEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest stri
 			e[0] != "https_proxy" &&
 			e[0] != "no_proxy" &&
 			e[0] != "all_proxy" &&
-			e[0] != "ftp_proxy") {
+			e[0] != "ftp_proxy" &&
+			e[0] != "SINGULARITY_CONTAINER" &&
+			e[0] != "SINGULARITY_NAME") {
 			continue
 		}
 
