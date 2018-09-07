@@ -45,8 +45,8 @@ type Build struct {
 	noTest bool
 	// force build over existing container
 	force bool
-	// rebuild building using existing destination container
-	rebuild bool
+	// update building using existing destination container
+	update bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
@@ -58,29 +58,30 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, force bool, sections []string, noTest bool) (*Build, error) {
+func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
 	def, err := makeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, force, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string, force bool, sections []string, noTest bool) (*Build, error) {
+func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, force, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest)
 }
 
-func newBuild(d types.Definition, dest, format string, force bool, sections []string, noTest bool) (*Build, error) {
+func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
 	var err error
 
 	b := &Build{
+		update:   update,
 		force:    force,
 		sections: sections,
 		noTest:   noTest,
@@ -112,21 +113,6 @@ func newBuild(d types.Definition, dest, format string, force bool, sections []st
 		return nil, fmt.Errorf("unrecognized output format %s", format)
 	}
 
-	//if dest exists, extract it to bundle for build and set rebuild flag
-	if _, err := os.Stat(dest); err == nil {
-		sylog.Infof("Building into existing container: %s", dest)
-		b.rebuild = true
-		p, err := sources.GetLocalPacker(dest, b.b)
-		if err != nil {
-			return nil, err
-		}
-
-		_, err = p.Pack()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	return b, nil
 }
 
@@ -144,8 +130,20 @@ func (b *Build) Full() error {
 		}
 	}
 
-	//bootstrap if not a rebuild or force option
-	if !b.rebuild || b.force {
+	if b.update && !b.force {
+		//if updating, extract dest container to bundle
+		sylog.Infof("Building into existing container: %s", b.dest)
+		p, err := sources.GetLocalPacker(b.dest, b.b)
+		if err != nil {
+			return err
+		}
+
+		_, err = p.Pack()
+		if err != nil {
+			return err
+		}
+	} else {
+		//if force, start build from scratch
 		if err := b.c.Get(b.b); err != nil {
 			return fmt.Errorf("conveyor failed to get: %v", err)
 		}
