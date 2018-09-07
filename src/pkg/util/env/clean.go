@@ -12,8 +12,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
-// CleanEnv cleans environment variables before running the container
-func CleanEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest string, environment []string) {
+// SetContainerEnv cleans environment variables before running the container
+func SetContainerEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest string, environment []string) {
 	for _, env := range environment {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) != 2 {
