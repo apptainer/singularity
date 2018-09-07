@@ -120,7 +120,7 @@ func checkBuildTargetCollision(path string, force bool) bool {
 			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
 			input, err := reader.ReadString('\n')
 			if err != nil {
-				sylog.Fatalf("Error parsing input:", err)
+				sylog.Fatalf("Error parsing input: %s", err)
 			}
 			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
 				os.RemoveAll(path)

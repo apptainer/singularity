@@ -89,7 +89,7 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		}
 
 	default:
-		return fmt.Errorf("OCI ConveyerPacker does not support %s", recipe.Header["bootstrap"])
+		return fmt.Errorf("OCI ConveyorPacker does not support %s", recipe.Header["bootstrap"])
 	}
 
 	if err != nil {
