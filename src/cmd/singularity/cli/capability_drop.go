@@ -8,27 +8,21 @@ package cli
 import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 func init() {
 
-	var capabilityDropFlags = pflag.NewFlagSet("CapabilityDropFlags", pflag.ExitOnError)
-
 	// -u|--user
-	capabilityDropFlags.StringVarP(&CapUser, "user", "u", "", "Drop capabilities for the given user")
-	capabilityDropFlags.SetAnnotation("user", "argtag", []string{"<user>"})
+	CapabilityDropCmd.Flags().StringVarP(&CapUser, "user", "u", "", "Drop capabilities for the given user")
+	CapabilityDropCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
 
 	// -g|--group
-	capabilityDropFlags.StringVarP(&CapGroup, "group", "g", "", "Drop capabilities for the given group")
-	capabilityDropFlags.SetAnnotation("group", "argtag", []string{"<group>"})
+	CapabilityDropCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "Drop capabilities for the given group")
+	CapabilityDropCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 
 	// -d|--desc
-	capabilityDropFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
+	CapabilityDropCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
 
-	CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("user"))
-	CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("group"))
-	CapabilityDropCmd.Flags().AddFlag(capabilityDropFlags.Lookup("desc"))
 	CapabilityDropCmd.Flags().SetInterspersed(false)
 }
 

@@ -8,27 +8,21 @@ package cli
 import (
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 func init() {
 
-	var capabilityAddFlags = pflag.NewFlagSet("CapabilityAddFlags", pflag.ExitOnError)
-
 	// -u|--user
-	capabilityAddFlags.StringVarP(&CapUser, "user", "u", "", "Add capabilities for the given user")
-	capabilityAddFlags.SetAnnotation("user", "argtag", []string{"<user>"})
+	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "Add capabilities for the given user")
+	CapabilityAddCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
 
 	// -g|--group
-	capabilityAddFlags.StringVarP(&CapGroup, "group", "g", "", "Add capabilities for the given group")
-	capabilityAddFlags.SetAnnotation("group", "argtag", []string{"<group>"})
+	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "Add capabilities for the given group")
+	CapabilityAddCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 
 	// -d|--desc
-	capabilityAddFlags.BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
+	CapabilityAddCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
 
-	CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("user"))
-	CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("group"))
-	CapabilityAddCmd.Flags().AddFlag(capabilityAddFlags.Lookup("desc"))
 	CapabilityAddCmd.Flags().SetInterspersed(false)
 }
 
