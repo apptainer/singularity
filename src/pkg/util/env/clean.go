@@ -13,8 +13,7 @@ import (
 )
 
 // CleanEnv cleans environment variables before running the container
-func CleanEnv(g *generate.Generator, IsCleanEnv bool, environment []string) {
-
+func CleanEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest string, environment []string) {
 	for _, env := range environment {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) != 2 {
