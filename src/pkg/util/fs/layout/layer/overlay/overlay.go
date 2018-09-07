@@ -7,7 +7,6 @@ package overlay
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"syscall"
 
@@ -127,7 +126,7 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 				continue
 			}
 			if point.Type == "" {
-				if err := syscall.Stat(point.Source, st); os.IsNotExist(err) {
+				if err := syscall.Stat(point.Source, st); err != nil {
 					sylog.Warningf("skipping mount of %s: %s", point.Source, err)
 					continue
 				}
