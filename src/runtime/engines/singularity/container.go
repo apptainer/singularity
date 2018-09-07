@@ -398,7 +398,7 @@ func (c *container) loadImage(path string, rootfs bool) (*image.Image, error) {
 	if rootfs {
 		for _, img := range list {
 			if img.RootFS {
-				img.File = os.NewFile(img.Fd, img.Name)
+				img.File = os.NewFile(img.Fd, img.Path)
 				if img.File == nil {
 					return nil, fmt.Errorf("can't find image %s", path)
 				}
@@ -413,7 +413,7 @@ func (c *container) loadImage(path string, rootfs bool) (*image.Image, error) {
 					return nil, err
 				}
 				if p == img.Path {
-					img.File = os.NewFile(img.Fd, img.Name)
+					img.File = os.NewFile(img.Fd, img.Path)
 					if img.File == nil {
 						return nil, fmt.Errorf("can't find image %s", path)
 					}
