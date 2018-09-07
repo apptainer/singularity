@@ -44,7 +44,7 @@ func CleanEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest stri
 				g.AddProcessEnv(e[0], "/")
 			}
 		} else {
-		g.AddProcessEnv(e[0], e[1])
+			g.AddProcessEnv(e[0], e[1])
+		}
 	}
-}
 }
