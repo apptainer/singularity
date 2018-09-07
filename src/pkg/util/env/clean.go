@@ -35,6 +35,14 @@ func CleanEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest stri
 			continue
 		}
 
+		if e[0] == "HOME" {
+			if !NoHome {
+				g.AddProcessEnv(e[0], HomeDest)
+			} else {
+				g.AddProcessEnv(e[0], "/")
+			}
+		} else {
 		g.AddProcessEnv(e[0], e[1])
 	}
+}
 }
