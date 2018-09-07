@@ -18,7 +18,7 @@ import (
 type ShubConveyorPacker struct {
 	recipe sytypes.Definition
 	b      *sytypes.Bundle
-	localPacker
+	LocalPacker
 }
 
 // Get downloads container from Singularityhub
@@ -49,7 +49,7 @@ func (cp *ShubConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
 	}
 
-	cp.localPacker, err = getLocalPacker(cp.b.FSObjects["shubImg"], cp.b)
+	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["shubImg"], cp.b)
 
 	return err
 }

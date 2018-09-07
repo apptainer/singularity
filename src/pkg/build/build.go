@@ -45,6 +45,8 @@ type Build struct {
 	noTest bool
 	// force build over existing container
 	force bool
+	// rebuild building using existing destination container
+	rebuild bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
@@ -93,6 +95,8 @@ func newBuild(d types.Definition, dest, format string, force bool, sections []st
 
 	b.b.Recipe = b.d
 
+	b.addOptions()
+
 	if c, err := getcp(b.d); err == nil {
 		b.c = c
 	} else {
@@ -106,6 +110,21 @@ func newBuild(d types.Definition, dest, format string, force bool, sections []st
 		b.a = &assemblers.SIFAssembler{}
 	default:
 		return nil, fmt.Errorf("unrecognized output format %s", format)
+	}
+
+	//if dest exists, extract it to bundle for build and set rebuild flag
+	if _, err := os.Stat(dest); err == nil {
+		sylog.Infof("Building into existing container: %s", dest)
+		b.rebuild = true
+		p, err := sources.GetLocalPacker(dest, b.b)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = p.Pack()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return b, nil
@@ -125,9 +144,16 @@ func (b *Build) Full() error {
 		}
 	}
 
-	sylog.Debugf("Creating bundle")
-	if _, err := b.Bundle(); err != nil {
-		return err
+	//bootstrap if not a rebuild or force option
+	if !b.rebuild || b.force {
+		if err := b.c.Get(b.b); err != nil {
+			return fmt.Errorf("conveyor failed to get: %v", err)
+		}
+
+		_, err := b.c.Pack()
+		if err != nil {
+			return fmt.Errorf("packer failed to pack: %v", err)
+		}
 	}
 
 	if b.b.RunSection("files") {
@@ -264,23 +290,23 @@ func (b *Build) runBuildEngine() error {
 
 // Bundle creates the bundle using the ConveyorPacker and returns it. If this
 // function is called multiple times it will return the already created Bundle
-func (b *Build) Bundle() (*types.Bundle, error) {
+// func (b *Build) Bundle() (*types.Bundle, error) {
 
-	if err := b.c.Get(b.b); err != nil {
-		return nil, fmt.Errorf("conveyor failed to get: %v", err)
-	}
+// 	if err := b.c.Get(b.b); err != nil {
+// 		return nil, fmt.Errorf("conveyor failed to get: %v", err)
+// 	}
 
-	bundle, err := b.c.Pack()
-	if err != nil {
-		return nil, fmt.Errorf("packer failed to pack: %v", err)
-	}
+// 	bundle, err := b.c.Pack()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("packer failed to pack: %v", err)
+// 	}
 
-	b.b = bundle
+// 	b.b = bundle
 
-	b.addOptions()
+// 	b.addOptions()
 
-	return b.b, nil
-}
+// 	return b.b, nil
+// }
 
 func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
