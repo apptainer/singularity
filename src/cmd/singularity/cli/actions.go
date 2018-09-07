@@ -147,10 +147,14 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if !file.Privileged {
 			UserNamespace = true
 		}
+		generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
+		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
 		engineConfig.SetImage(image)
 		engineConfig.SetInstanceJoin(true)
 	} else {
 		abspath, err := filepath.Abs(image)
+		generator.AddProcessEnv("SINGULARITY_CONTAINER", abspath)
+		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(abspath))
 		if err != nil {
 			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
 		}
