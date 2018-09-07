@@ -253,11 +253,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
 	if !UserNamespace {
-                if _, err := os.Stat(starter); os.IsNotExist(err) {
+		if _, err := os.Stat(starter); os.IsNotExist(err) {
 			sylog.Verbosef("start-suid not found, using user namespace")
-                        UserNamespace = true
-                }
-        }
+			UserNamespace = true
+		}
+	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 		starter = buildcfg.SBINDIR + "/starter"
