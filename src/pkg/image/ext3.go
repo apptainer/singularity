@@ -95,9 +95,8 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 }
 
 func (f *ext3Format) openMode(writable bool) int {
-	mode := os.O_RDONLY
 	if writable {
-		mode = os.O_RDWR
+		return os.O_RDWR
 	}
-	return mode
+	return os.O_RDONLY
 }

@@ -134,15 +134,24 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	img := &Image{
-		Path:     resolvedPath,
-		Name:     filepath.Base(resolvedPath),
-		Writable: writable,
+		Path: resolvedPath,
+		Name: filepath.Base(resolvedPath),
 	}
 
 	for _, rf := range registeredFormats {
 		sylog.Debugf("Check for image format %s", rf.name)
 
+		img.Writable = writable
+
 		mode := rf.format.openMode(writable)
+
+		if mode&os.O_RDWR != 0 {
+			if err := syscall.Access(resolvedPath, 2); err != nil {
+				sylog.Debugf("Opening %s in read-only mode: no write permissions", path)
+				mode = os.O_RDONLY
+				img.Writable = false
+			}
+		}
 
 		img.File, err = os.OpenFile(resolvedPath, mode, 0)
 		if err != nil {
