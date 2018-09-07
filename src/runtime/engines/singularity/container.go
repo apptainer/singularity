@@ -1013,7 +1013,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 					return fmt.Errorf("unable to add dev to mount list: %s", err)
 				}
 			} else {
-				sylog.Verbosef("Skipping /dev bind mount, disallowed by configuration")
+				sylog.Warningf("Skipping /dev bind mount, disallowed by configuration")
 			}
 			continue
 		}
