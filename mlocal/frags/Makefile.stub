@@ -23,6 +23,11 @@ dist_bin_SCRIPTS_INSTALL := $(PREFIX)/bin/run-singularity
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
+syecl_config := $(SOURCEDIR)/src/pkg/syecl/syecl.toml.example
+syecl_config_INSTALL := $(PREFIX)/etc/singularity/ecl.toml
+
+capability_JSON := $(PREFIX)/etc/singularity/capability.json
+
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
 go_BIN := $(singularity)
@@ -36,7 +41,8 @@ abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
 cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
-INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) $(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
+	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL)
 
 CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) 
 
@@ -108,9 +114,18 @@ $(config_INSTALL): $(config)
 	$(V)install -d $(@D)
 	$(V)install -m 0644 $(config) $(config_INSTALL)
 
+$(syecl_config_INSTALL): $(syecl_config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
 $(sessiondir):
 	@echo " INSTALL" $@
 	$(V)install -d $(sessiondir)
+
+$(capability_JSON):
+	@echo " INSTALL" $@
+	$(V)touch $(capability_JSON)
 
 .PHONY: man
 man:
