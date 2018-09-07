@@ -6,7 +6,7 @@
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
 )
 
 // EngineOperations describes a runtime engine
@@ -25,9 +25,4 @@ func (e *EngineOperations) InitConfig(cfg *config.Common) {
 // field.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
-}
-
-// IsRunAsInstance returns true if the runtime engine was run as an instance
-func (e *EngineOperations) IsRunAsInstance() bool {
-	return e.EngineConfig.GetInstance()
 }

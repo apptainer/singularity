@@ -30,4 +30,4 @@ install:
   - sudo make -C ./builddir install
 
 script:
-  - make -C ./builddir test
+  - make -C ./builddir testall

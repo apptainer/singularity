@@ -6,11 +6,13 @@
 package imgbuild
 
 import (
-	"os"
+	"fmt"
+	"net"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/pkg/util/capabilities"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 )
 
 // EngineOperations implements the engines.EngineOperations interface for
@@ -30,20 +32,31 @@ func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
 }
 
-// CheckConfig validates EngineConfig setup
-func (e *EngineOperations) CheckConfig() error {
-	e.CommonConfig.OciConfig.SetProcessNoNewPrivileges(true)
+// PrepareConfig validates/prepares EngineConfig setup
+func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
+	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
+	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if syscall.Getuid() != 0 {
-		sylog.Fatalf("Unable to run imgbuild engine as non-root user\n")
-		os.Exit(1)
+		return fmt.Errorf("unable to run imgbuild engine as non-root user")
 	}
 
-	e.CommonConfig.OciConfig.SetupPrivileged(true)
-	return nil
-}
+	if starterConfig.GetIsSUID() {
+		return fmt.Errorf("%s don't allow SUID workflow", e.CommonConfig.EngineName)
+	}
 
-// IsRunAsInstance returns false
-func (e *EngineOperations) IsRunAsInstance() bool {
-	return false
+	e.EngineConfig.OciConfig.SetupPrivileged(true)
+
+	if e.EngineConfig.OciConfig.Linux != nil {
+		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
+	}
+	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
+		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
+		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
+		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
+		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
+		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
+	}
+
+	return nil
 }

@@ -4,27 +4,31 @@ include Makefile.cond
 
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-libstartup := $(BUILDDIR)/lib/libstartup.a
-libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
-libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
+starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/smaster.go)
+starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/scontainer.go)
+starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/rpc.go)
+
+starter := $(BUILDDIR)/src/runtime/starter/c/starter
+starter_INSTALL := $(PREFIX)/libexec/singularity/bin/starter
+starter_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/starter-suid
+
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 singularity_REPO := github.com/singularityware/singularity
 
-wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
-wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
-wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
+dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
+dist_bin_SCRIPTS_INSTALL := $(PREFIX)/bin/run-singularity
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 
-mountdir := $(PREFIX)/var/singularity/mnt/container
-finaldir := $(PREFIX)/var/singularity/mnt/final
-overlaydir := $(PREFIX)/var/singularity/mnt/overlay
+syecl_config := $(SOURCEDIR)/src/pkg/syecl/syecl.toml.example
+syecl_config_INSTALL := $(PREFIX)/etc/singularity/ecl.toml
+
+capability_JSON := $(PREFIX)/etc/singularity/capability.json
+
 sessiondir := $(PREFIX)/var/singularity/mnt/session
 
 go_BIN := $(singularity)
@@ -33,8 +37,7 @@ go_INSTALL := $(singularity_INSTALL)
 
 go_TAG += containers_image_openpgp
 
-cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
-cgo_LDFLAGS = -L`readlink -f $(BUILDDIR)`/lib
+abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 
 vendor := $(SOURCEDIR)/vendor
 
@@ -48,11 +51,16 @@ cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(P
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 
-INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(mountdir) $(finaldir) $(overlaydir) $(sessiondir) $(config_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL)
+cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
+cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ) $(libstartup_HEADER) $(cni_plugins_EXECUTABLES)
+INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
+	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
+	$(cni_plugins_INSTALL) $(cni_config_INSTALL)
 
-all: cscope collect $(libruntime) $(libstartup) $(go_BIN) $(config) $(wrapper) cniplugins
+CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(cni_plugins_EXECUTABLES)
+
+all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) cniplugins
 
 .PHONY: cniplugins
 cniplugins: $(BUILDDIR)/vendors-done
@@ -80,29 +88,14 @@ $(libruntime): $(libutil_OBJ)
 	@mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
-# libstartup
-$(libstartup): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
-	@echo " AR" $@
+# starter
+$(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
+	@echo " GO" $@
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags "$(go_TAG)" -ldflags="-s -w" -buildmode=c-archive -o $@ \
-		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
-		$(SOURCEDIR)/src/runtime/startup/smaster.go \
-		$(SOURCEDIR)/src/runtime/startup/rpc.go
-
-# wrapper
-wrapper_OBJ := \
-	$(BUILDDIR)/src/runtime/startup/wrapper.o \
-
-$(wrapper_OBJ): $(libstartup) $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
-	@echo " CC src/runtime/startup/c/wrapper.c"
-	@mkdir -p $(@D)
-	$(V)$(CC) -Wp,-MMD,$(BUILDDIR)/src/runtime/startup/wrapper.o.d -I$(BUILDDIR) -c $(ARCH_CFLAGS) $(CFLAGS)  $(CPPFLAGS) -o $(BUILDDIR)/src/runtime/startup/wrapper.o $(SOURCEDIR)/src/runtime/startup/c/wrapper.c
-
-$(wrapper): $(wrapper_OBJ) $(libstartup)
-	@echo " LD" $@
-	@mkdir -p $(@D)
-	$(V)$(CC) $(LDFLAGS) -o $@ $(wrapper_OBJ) -Wl,--start-group -L$(BUILDDIR)/lib -lruntime -lstartup -Wl,--end-group -luuid -lpthread -lgpgme $(WRAPPER_LIBS)
-	$(V)($(SIZE) $@ 2>/dev/null || true)
+		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
+		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
+		$(SOURCEDIR)/src/runtime/starter/smaster.go \
+		$(SOURCEDIR)/src/runtime/starter/rpc.go
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
@@ -119,15 +112,21 @@ $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
-# wrappper & wrapper-suid install
-$(wrapper_INSTALL): $(wrapper)
+# starter & starter-suid install
+$(starter_INSTALL): $(starter)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
-$(wrapper_suid_INSTALL): $(wrapper)
+	$(V)install -m 0755 $(starter) $(starter_INSTALL)
+$(starter_suid_INSTALL): $(starter)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
-	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
+	$(V)install -m 4755 $(starter) $(starter_suid_INSTALL)
+
+# Run-Singularity bin script
+$(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
 # generate the vendor folder with dep and patch when necessary
 $(BUILDDIR)/vendors-done:
@@ -142,30 +141,26 @@ $(BUILDDIR)/vendors-done:
 	fi
 	$(V)touch $@
 
-#TODO: generate real config file and install, currently is just blank
-$(config):
-	$(V)touch $(config)
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0644 $(config) $(config_INSTALL)
 
-$(mountdir):
+$(syecl_config_INSTALL): $(syecl_config)
 	@echo " INSTALL" $@
-	$(V)install -d $(mountdir)
-
-$(finaldir):
-	@echo " INSTALL" $@
-	$(V)install -d $(finaldir)
-
-$(overlaydir):
-	@echo " INSTALL" $@
-	$(V)install -d $(overlaydir)
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
 
 $(sessiondir):
 	@echo " INSTALL" $@
 	$(V)install -d $(sessiondir)
+
+$(capability_JSON):
+	@echo " INSTALL" $@
+	$(V)touch $(capability_JSON)
 
 .PHONY: man
 man:
@@ -182,24 +177,30 @@ collect:
 			>> $(BUILDDIR)/mergeddeps)			\
 	done
 
-.PHONY: test
-test:
-	@echo " TEST go fmt"
+.PHONY: check
+check:
+	@echo " CHECK go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && test -z $(go fmt ./...)
 	@echo "       PASS"
-	@echo " TEST go vet"
+	@echo " CHECK go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && go vet -tags "$(go_TAG)" -all ./...
 	@echo "       PASS"
-	@echo " TEST go lint"
+	@echo " CHECK go lint"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
-	@echo " TEST go test"
+
+.PHONY: test
+test:
+	@echo " TEST sudo go test"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go test -count=1 -tags "$(go_TAG)" -cover -race -timeout 120s ./...
+		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
 	@echo "       PASS"
+
+.PHONY: testall
+testall: check test
 
 .PHONY: cscope
 cscope:
