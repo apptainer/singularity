@@ -31,7 +31,7 @@ func (p *Ext3Packer) Pack() (*types.Bundle, error) {
 
 	err := p.unpackExt3(p.b, p.info, rootfs)
 	if err != nil {
-		sylog.Errorf("unpackExt3 Failed", err.Error())
+		sylog.Errorf("unpackExt3 Failed: %s", err)
 		return nil, err
 	}
 
@@ -58,7 +58,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
 	err = syscall.Mount(path, tmpmnt, "ext3", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-		sylog.Errorf("Mount Failed", err.Error())
+		sylog.Errorf("Mount Failed: %s", err)
 		return err
 	}
 	defer syscall.Unmount(tmpmnt, 0)
@@ -68,7 +68,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
 	err = cmd.Run()
 	if err != nil {
-		sylog.Errorf("cp Failed", err.Error())
+		sylog.Errorf("cp Failed: %s", err)
 		return err
 	}
 
