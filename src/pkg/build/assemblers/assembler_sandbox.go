@@ -46,6 +46,9 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	//move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
+	if _, err := os.Stat(path); err == nil {
+		os.RemoveAll(path)
+	}
 	if err := os.Rename(b.Rootfs(), path); err != nil {
 		sylog.Errorf("Sandbox Assemble Failed", err.Error())
 		return err
@@ -64,7 +67,7 @@ func insertHelpScript(b *types.Bundle) error {
 				return err
 			}
 		} else {
-			sylog.Errorf("Unable to insert help script as it already exists and force option is false")
+			sylog.Warningf("Help message already exists and force option is false, not overwriting")
 		}
 	}
 	return nil
@@ -119,7 +122,7 @@ func insertLabelsJSON(b *types.Bundle) error {
 					if b.Force {
 						existingLabels[key] = value
 					} else {
-						sylog.Errorf("Label: %s already exists and force option is false, not overwriting", key)
+						sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
 					}
 				}
 			}
