@@ -13,7 +13,6 @@ import (
 )
 
 func main() {
-
 	if err := cli.SingularityCmd.GenBashCompletionFile(os.Args[1]); err != nil {
 		fmt.Println(err)
 		return
