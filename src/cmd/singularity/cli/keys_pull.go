@@ -18,16 +18,16 @@ import (
 
 func init() {
 	KeysPullCmd.Flags().SetInterspersed(false)
-	KeysPullCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	KeysPullCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
 }
 
 // KeysPullCmd is `singularity keys pull' and fetches public keys from a key server
 var KeysPullCmd = &cobra.Command{
-	Args: cobra.RangeArgs(1, 2),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysPullCmd(args[0], url); err != nil {
+		if err := doKeysPullCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
@@ -41,13 +41,6 @@ var KeysPullCmd = &cobra.Command{
 
 func doKeysPullCmd(fingerprint string, url string) error {
 	var count int
-
-	if url == "" {
-		// lookup key management server URL from singularity.conf
-
-		// else use default builtin
-		url = defaultKeysServer
-	}
 
 	// get matching keyring
 	el, err := sypgp.FetchPubkey(fingerprint, url, authToken)

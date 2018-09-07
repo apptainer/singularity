@@ -149,7 +149,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysUse   string = `keys <subcommand>`
+	KeysUse   string = `keys`
 	KeysShort string = `Manage OpenPGP key stores`
 	KeysLong  string = `
   The 'keys' command  allows you to manage local OpenPGP key stores by create a
@@ -189,7 +189,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysSearchUse   string = `search`
+	KeysSearchUse   string = `search [search options...] <search_string>`
 	KeysSearchShort string = `Search for keys matching string argument`
 	KeysSearchLong  string = `
 	The 'keys search' command allows you to connect to a key server and look
@@ -200,7 +200,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPullUse   string = `pull`
+	KeysPullUse   string = `pull [pull options...] <fingerprint>`
 	KeysPullShort string = `Fetch an OpenPGP public key from a key server`
 	KeysPullLong  string = `
 	The 'keys pull' command allows you to connect to a key server look for
@@ -212,7 +212,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPushUse   string = `push`
+	KeysPushUse   string = `push [push options...] <fingerprint>`
 	KeysPushShort string = `Upload an OpenPGP public key to a key server`
 	KeysPushLong  string = `
 	The 'keys push' command allows you to connect to a key server and
@@ -410,8 +410,8 @@ Enterprise Performance Computing (EPC)`
 	InstanceExample string = `
   All group commands have their own help output:
   
-  $ singularity help instance.start
-  $ singularity instance.start --help`
+  $ singularity help instance start
+  $ singularity instance start --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
@@ -422,11 +422,11 @@ Enterprise Performance Computing (EPC)`
   The instance list command allows you to view the Singularity container
   instances that are currently running in the background.`
 	InstanceListExample string = `
-  $ singularity instance.list
+  $ singularity instance list
   DAEMON NAME      PID      CONTAINER IMAGE
   test            11963     /home/mibauer/singularity/sinstance/test.img
   
-  $ sudo singularity instance.list -u mibauer
+  $ sudo singularity instance list -u mibauer
   DAEMON NAME      PID      CONTAINER IMAGE
   test            11963     /home/mibauer/singularity/sinstance/test.img
   test2           16219     /home/mibauer/singularity/sinstance/test.img`
@@ -444,7 +444,7 @@ Enterprise Performance Computing (EPC)`
   
   singularity instance start accepts the following container formats` + formats
 	InstanceStartExample string = `
-  $ singularity instance.start /tmp/my-sql.img mysql
+  $ singularity instance start /tmp/my-sql.img mysql
   
   $ singularity shell instance://mysql
   Singularity my-sql.img> pwd
@@ -456,7 +456,7 @@ Enterprise Performance Computing (EPC)`
     3 pts/0    00:00:00 ps
   Singularity my-sql.img>
   
-  $ singularity instance.stop /tmp/my-sql.img mysql
+  $ singularity instance stop /tmp/my-sql.img mysql
   Stopping /tmp/my-sql.img mysql`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -468,43 +468,42 @@ Enterprise Performance Computing (EPC)`
   The command singularity instance stop allows you to stop and clean up a named,
   running instance of a given container image.`
 	InstanceStopExample string = `
-  $ singularity instance.start my-sql.img mysql1
-  $ singularity instance.start my-sql.img mysql2
-  $ singularity instance.stop mysql*
+  $ singularity instance start my-sql.img mysql1
+  $ singularity instance start my-sql.img mysql2
+  $ singularity instance stop mysql*
   Stopping mysql1 instance of my-sql.img (PID=23845)
   Stopping mysql2 instance of my-sql.img (PID=23858)
   
-  $ singularity instance.start my-sql.img mysql1
+  $ singularity instance start my-sql.img mysql1
   
   Force instance to shutdown
-  $ singularity instance.stop -f mysql1 (may corrupt data)
+  $ singularity instance stop -f mysql1 (may corrupt data)
   
   Send SIGTERM to the instance
-  $ singularity instance.stop -s SIGTERM mysql1
-  $ singularity instance.stop -s TERM mysql1
-  $ singularity instance.stop -s 15 mysql1`
+  $ singularity instance stop -s SIGTERM mysql1
+  $ singularity instance stop -s TERM mysql1
+  $ singularity instance stop -s 15 mysql1`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PullUse   string = `pull [pull options...] [library://[user[collection/[<container>:tag]]]]`
+	PullUse   string = `pull [pull options...] <URI://>`
 	PullShort string = `Pull a container from a URI`
 	PullLong  string = `
   SUPPORTED URIs:
   
     library: Pull an image from the currently configured library
-    shub: Pull an image using python from Singularity Hub to /home/vagrant/versioned/singularity
-    docker: Pull a docker image using python to /home/vagrant/versioned/singularity`
+      [library://[user[collection/[container[:tag]]]]]
+    shub: Pull an image from Singularity Hub to CWD
+      shub://user/image:tag
+     `
 	PullExample string = `
-  $ singularity pull docker://ubuntu:latest
-  
+  From Sylabs cloud library
+  $ singularity pull library://dtrudg/demo/alpine:latest
+
+  From Shub
   $ singularity pull shub://vsoch/singularity-images
-  Found image vsoch/singularity-images:mongo
-  Downloading image... vsoch-singularity-images-mongo.img
-  
-  $ singularity pull --name "meatballs.img" shub://vsoch/singularity-images
-  $ singularity pull --commit shub://vsoch/singularity-images
-  $ singularity pull --hash shub://vsoch/singularity-images`
+`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
@@ -580,20 +579,30 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// sign
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SignUse   string = `sign <image path>`
-	SignShort string = `Attach cryptographic signature to container`
+	SignUse   string = `sign [sign options...] <image path>`
+	SignShort string = `Attach cryptographic signatures to container`
 	SignLong  string = `
-  `
+	The sign command allows a user to create a cryptographic signature
+	on either a single data object or a list of data objects within the
+	same SIF group. By default without parameters, the command searches
+	for the primary partition and creates a verification block that is
+	then added to the SIF container file.`
 	SignExample string = `
-  `
+  $ singularity sign container.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// verify
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	VerifyUse   string = `verify <image path>`
-	VerifyShort string = `Verify cryptographic signature on container`
+	VerifyUse   string = `verify [verify options...] <image path>`
+	VerifyShort string = `Verify cryptographic signatures on container`
 	VerifyLong  string = `
-  `
+	The verify command allows a user to verify cryptographic signatures
+	on SIF container files. There may be multiple signatures for data
+	objects and multiple data objects signed. By default the command
+	searches for the primary partition signature. If found, a list of
+	all verification blocks applied on the primary partition is gathered
+	so that data integrity (hashing) and signature verification is done
+	for all those blocks.`
 	VerifyExample string = `
-  `
+  $ singularity verify container.sif`
 )

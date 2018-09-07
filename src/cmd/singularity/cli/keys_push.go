@@ -18,16 +18,16 @@ import (
 
 func init() {
 	KeysPushCmd.Flags().SetInterspersed(false)
-	KeysPushCmd.Flags().StringVarP(&url, "url", "u", "", "overwrite the default remote url")
+	KeysPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
 }
 
 // KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysPushCmd = &cobra.Command{
-	Args: cobra.RangeArgs(1, 2),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysPushCmd(args[0], url); err != nil {
+		if err := doKeysPushCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
@@ -62,13 +62,6 @@ func doKeysPushCmd(fingerprint string, url string) error {
 		return fmt.Errorf("could not find the requested key")
 	}
 	entity := keys[0].Entity
-
-	if url == "" {
-		// lookup key management server URL from singularity.conf
-
-		// else use default builtin
-		url = defaultKeysServer
-	}
 
 	if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
 		return err

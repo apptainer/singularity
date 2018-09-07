@@ -17,6 +17,7 @@ import (
 
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
+	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
 	SingularityCmd.AddCommand(SignCmd)
 }
 
@@ -29,14 +30,23 @@ var SignCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		if err := signing.Sign(args[0], authToken); err != nil {
+		if err := doSignCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("signing container failed: %s", err)
 			os.Exit(2)
 		}
+		fmt.Printf("Signature created and applied to %v\n", args[0])
 	},
 
 	Use:     docs.SignUse,
 	Short:   docs.SignShort,
 	Long:    docs.SignLong,
 	Example: docs.SignExample,
+}
+
+func doSignCmd(cpath, url string) error {
+	if err := signing.Sign(cpath, url, authToken); err != nil {
+		return err
+	}
+
+	return nil
 }

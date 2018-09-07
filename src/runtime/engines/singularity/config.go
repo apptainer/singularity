@@ -6,12 +6,10 @@
 package singularity
 
 import (
-	"encoding/json"
-	"path/filepath"
-
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
 )
 
 // Name is the name of the runtime.
@@ -62,12 +60,15 @@ type JSONConfig struct {
 	Nv               bool     `json:"nv,omitempty"`
 	Workdir          string   `json:"workdir,omitempty"`
 	ScratchDir       []string `json:"scratchdir,omitempty"`
-	HomeDir          string   `json:"homedir,omitempty"`
+	HomeSource       string   `json:"homedir,omitempty"`
+	HomeDest         string   `json:"homeDest,omitempty"`
+	CustomHome       bool     `json:"customHome,omitempty"`
 	BindPath         []string `json:"bindpath,omitempty"`
 	Command          string   `json:"command,omitempty"`
 	Shell            string   `json:"shell,omitempty"`
 	TmpDir           string   `json:"tmpdir,omitempty"`
-	IsInstance       bool     `json:"isInstance,omitempty"`
+	Instance         bool     `json:"instance,omitempty"`
+	InstanceJoin     bool     `json:"instanceJoin,omitempty"`
 	BootInstance     bool     `json:"bootInstance,omitempty"`
 	RunPrivileged    bool     `json:"runPrivileged,omitempty"`
 	AddCaps          string   `json:"addCaps,omitempty"`
@@ -76,24 +77,15 @@ type JSONConfig struct {
 	AllowSUID        bool     `json:"allowSUID,omitempty"`
 	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
 	NoPrivs          bool     `json:"noPrivs,omitempty"`
-	Home             string   `json:"home,omitempty"`
 	NoHome           bool     `json:"noHome,omitempty"`
+	NoInit           bool     `json:"noInit,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON *JSONConfig `json:"jsonConfig"`
-	File *FileConfig `json:"-"`
-}
-
-// MarshalJSON is for json.Marshaler
-func (e *EngineConfig) MarshalJSON() ([]byte, error) {
-	return json.Marshal(e.JSON)
-}
-
-// UnmarshalJSON is for json.Unmarshaler
-func (e *EngineConfig) UnmarshalJSON(b []byte) error {
-	return json.Unmarshal(b, e.JSON)
+	JSON      *JSONConfig `json:"jsonConfig"`
+	OciConfig *oci.Config `json:"ociConfig"`
+	File      *FileConfig `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -104,8 +96,9 @@ func NewConfig() *EngineConfig {
 	}
 
 	ret := &EngineConfig{
-		JSON: &JSONConfig{},
-		File: c,
+		JSON:      &JSONConfig{},
+		OciConfig: &oci.Config{},
+		File:      c,
 	}
 
 	return ret
@@ -113,8 +106,7 @@ func NewConfig() *EngineConfig {
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
 func (e *EngineConfig) SetImage(name string) {
-	abs, _ := filepath.Abs(name)
-	e.JSON.Image = abs
+	e.JSON.Image = name
 }
 
 // GetImage retrieves the container image path.
@@ -192,14 +184,34 @@ func (e *EngineConfig) GetScratchDir() []string {
 	return e.JSON.ScratchDir
 }
 
-// SetHomeDir sets the home directory path.
-func (e *EngineConfig) SetHomeDir(name string) {
-	e.JSON.HomeDir = name
+// SetHomeSource sets the source home directory path.
+func (e *EngineConfig) SetHomeSource(source string) {
+	e.JSON.HomeSource = source
 }
 
-// GetHomeDir retrieves the home directory path.
-func (e *EngineConfig) GetHomeDir() string {
-	return e.JSON.HomeDir
+// GetHomeSource retrieves the source home directory path.
+func (e *EngineConfig) GetHomeSource() string {
+	return e.JSON.HomeSource
+}
+
+// SetHomeDest sets the container home directory path.
+func (e *EngineConfig) SetHomeDest(dest string) {
+	e.JSON.HomeDest = dest
+}
+
+// GetHomeDest retrieves the container home directory path.
+func (e *EngineConfig) GetHomeDest() string {
+	return e.JSON.HomeDest
+}
+
+// SetCustomHome sets if home path is a custom path or not.
+func (e *EngineConfig) SetCustomHome(custom bool) {
+	e.JSON.CustomHome = custom
+}
+
+// GetCustomHome retrieves if home path is a custom path.
+func (e *EngineConfig) GetCustomHome() bool {
+	return e.JSON.CustomHome
 }
 
 // SetBindPath sets paths to bind into containee.JSON.
@@ -244,12 +256,22 @@ func (e *EngineConfig) GetTmpDir() string {
 
 // SetInstance sets if container run as instance or not.
 func (e *EngineConfig) SetInstance(instance bool) {
-	e.JSON.IsInstance = instance
+	e.JSON.Instance = instance
 }
 
 // GetInstance returns if container run as instance or not.
 func (e *EngineConfig) GetInstance() bool {
-	return e.JSON.IsInstance
+	return e.JSON.Instance
+}
+
+// SetInstanceJoin sets if process joins an instance or not.
+func (e *EngineConfig) SetInstanceJoin(join bool) {
+	e.JSON.InstanceJoin = join
+}
+
+// GetInstanceJoin returns if process joins an instance or not.
+func (e *EngineConfig) GetInstanceJoin() bool {
+	return e.JSON.InstanceJoin
 }
 
 // SetBootInstance sets boot flag to execute /sbin/init as main instance process.
@@ -322,16 +344,6 @@ func (e *EngineConfig) GetNoPrivs() bool {
 	return e.JSON.NoPrivs
 }
 
-// SetHome set user home directory
-func (e *EngineConfig) SetHome(home string) {
-	e.JSON.Home = home
-}
-
-// GetHome retrieves user home directory
-func (e *EngineConfig) GetHome() string {
-	return e.JSON.Home
-}
-
 // SetNoHome set no-home flag to not mount home user home directory
 func (e *EngineConfig) SetNoHome(val bool) {
 	e.JSON.NoHome = val
@@ -340,4 +352,14 @@ func (e *EngineConfig) SetNoHome(val bool) {
 // GetNoHome returns if no-home flag is set or not
 func (e *EngineConfig) GetNoHome() bool {
 	return e.JSON.NoHome
+}
+
+// SetNoInit set noinit flag to not start shim init process
+func (e *EngineConfig) SetNoInit(val bool) {
+	e.JSON.NoInit = val
+}
+
+// GetNoInit returns if noinit flag is set or not
+func (e *EngineConfig) GetNoInit() bool {
+	return e.JSON.NoInit
 }

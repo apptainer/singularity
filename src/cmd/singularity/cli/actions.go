@@ -8,16 +8,19 @@ package cli
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
@@ -56,6 +59,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
 		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -72,7 +76,7 @@ var ExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -87,8 +91,8 @@ var ShellCmd = &cobra.Command{
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		a := []string{"/.singularity.d/actions/shell"}
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -104,7 +108,7 @@ var RunCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -114,25 +118,64 @@ var RunCmd = &cobra.Command{
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
-	lvl := "0"
+func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	procname := ""
 
-	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
+	uid := uint32(os.Getuid())
+	gid := uint32(os.Getgid())
+
+	starter := buildcfg.SBINDIR + "/starter-suid"
 
 	engineConfig := singularity.NewConfig()
 
 	ociConfig := &oci.Config{}
-	generator := generate.NewFromSpec(&ociConfig.Spec)
+	generator := generate.Generator{Config: &ociConfig.Spec}
+
+	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
 
-	engineConfig.SetImage(image)
+	// temporary check for development
+	// TODO: a real URI handler
+	if strings.HasPrefix(image, "instance://") {
+		instanceName := instance.ExtractName(image)
+		file, err := instance.Get(instanceName)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		if !file.Privileged {
+			UserNamespace = true
+		}
+		engineConfig.SetImage(image)
+		engineConfig.SetInstanceJoin(true)
+	} else {
+		abspath, err := filepath.Abs(image)
+		if err != nil {
+			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
+		}
+		engineConfig.SetImage(abspath)
+	}
+
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
+	engineConfig.SetNv(Nvidia)
+	engineConfig.SetAddCaps(AddCaps)
+	engineConfig.SetDropCaps(DropCaps)
+	engineConfig.SetAllowSUID(AllowSUID)
+	engineConfig.SetKeepPrivs(KeepPrivs)
+	engineConfig.SetNoPrivs(NoPrivs)
 
-	if IsContained || IsContainAll {
+	homeFlag := cobraCmd.Flag("home")
+	engineConfig.SetCustomHome(homeFlag.Changed)
+
+	if Hostname != "" {
+		UtsNamespace = true
+		engineConfig.SetHostname(Hostname)
+	}
+
+	if IsContained || IsContainAll || IsBoot {
 		engineConfig.SetContain(true)
 
 		if IsContainAll {
@@ -145,16 +188,55 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	engineConfig.SetScratchDir(ScratchPath)
 	engineConfig.SetWorkdir(WorkdirPath)
 
-	homedir := strings.SplitN(HomePath, ":", 2)
-	if len(homedir) == 2 {
-		engineConfig.SetHome(homedir[1])
-	} else {
-		engineConfig.SetHome(homedir[0])
+	homeSlice := strings.Split(HomePath, ":")
+
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
 	}
-	engineConfig.SetHomeDir(HomePath)
+
+	engineConfig.SetHomeSource(homeSlice[0])
+	if len(homeSlice) == 1 {
+		engineConfig.SetHomeDest(homeSlice[0])
+	} else {
+		engineConfig.SetHomeDest(homeSlice[1])
+	}
 
 	if IsFakeroot {
 		UserNamespace = true
+	}
+
+	/* if name submitted, run as instance */
+	if name != "" {
+		PidNamespace = true
+		IpcNamespace = true
+		engineConfig.SetInstance(true)
+		engineConfig.SetBootInstance(IsBoot)
+
+		_, err := instance.Get(name)
+		if err == nil {
+			sylog.Fatalf("instance %s already exists", name)
+		}
+		if err := instance.SetLogFile(name); err != nil {
+			sylog.Fatalf("failed to create instance log files: %s", err)
+		}
+
+		if IsBoot {
+			UtsNamespace = true
+			NetNamespace = true
+			if Hostname == "" {
+				engineConfig.SetHostname(name)
+			}
+			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			generator.SetProcessArgs([]string{"/sbin/init"})
+		}
+		pwd, err := user.GetPwUID(uid)
+		if err != nil {
+			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
+		}
+		procname = instance.ProcName(name, pwd.Name)
+	} else {
+		generator.SetProcessArgs(args)
+		procname = "Singularity runtime parent"
 	}
 
 	if NetNamespace {
@@ -165,16 +247,14 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if PidNamespace {
 		generator.AddOrReplaceLinuxNamespace("pid", "")
+		engineConfig.SetNoInit(NoInit)
 	}
 	if IpcNamespace {
 		generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		wrapper = buildcfg.SBINDIR + "/wrapper"
-
-		uid := uint32(os.Getuid())
-		gid := uint32(os.Getgid())
+		starter = buildcfg.SBINDIR + "/starter"
 
 		if IsFakeroot {
 			generator.AddLinuxUIDMapping(uid, 0, 1)
@@ -185,29 +265,32 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		}
 	}
 
-	if verbose {
-		lvl = "2"
-	}
-	if debug {
-		lvl = "5"
-	}
+	// Copy and cache environment
+	environment := os.Environ()
 
-	if !IsCleanEnv {
-		for _, env := range os.Environ() {
-			e := strings.SplitN(env, "=", 2)
-			if len(e) != 2 {
-				sylog.Verbosef("can't process environment variable %s", env)
-				continue
-			}
-			if e[0] == "HOME" {
-				if !NoHome {
-					generator.AddProcessEnv(e[0], engineConfig.GetHome())
-				} else {
-					generator.AddProcessEnv(e[0], "/")
-				}
+	// Clean environment
+	for _, env := range environment {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) != 2 {
+			sylog.Verbosef("can't process environment variable %s", env)
+			continue
+		}
+
+		// Transpose environment
+		if strings.HasPrefix(e[0], "SINGULARITYENV_") {
+			e[0] = strings.TrimPrefix(e[0], "SINGULARITYENV_")
+		} else if IsCleanEnv {
+			continue
+		}
+
+		if e[0] == "HOME" {
+			if !NoHome {
+				generator.AddProcessEnv(e[0], engineConfig.GetHomeDest())
 			} else {
-				generator.AddProcessEnv(e[0], e[1])
+				generator.AddProcessEnv(e[0], "/")
 			}
+		} else {
+			generator.AddProcessEnv(e[0], e[1])
 		}
 	}
 
@@ -215,19 +298,21 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
 		} else {
-			generator.SetProcessCwd(pwd)
+			if engineConfig.GetContain() {
+				generator.SetProcessCwd(engineConfig.GetHomeDest())
+			} else {
+				generator.SetProcessCwd(pwd)
+			}
 		}
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
-	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
-	progname := "Singularity runtime parent"
+	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
-		ContainerID:  "new",
-		OciConfig:    ociConfig,
+		ContainerID:  name,
 		EngineConfig: engineConfig,
 	}
 
@@ -236,7 +321,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {
+	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 }

@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
 )
@@ -19,18 +17,24 @@ func init() {
 		"allow-setuid",
 		"bind",
 		"boot",
+		"contain",
+		"containall",
+		"cleanenv",
 		"drop-caps",
 		"fakeroot",
 		"home",
 		"hostname",
 		"keep-privs",
 		"net",
+		"no-home",
 		"no-privs",
+		"nv",
 		"overlay",
 		"scratch",
 		"userns",
 		"uts",
 		"workdir",
+		"writable",
 	}
 
 	for _, opt := range options {
@@ -45,7 +49,8 @@ var InstanceStartCmd = &cobra.Command{
 	Args: cobra.MinimumNArgs(2),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("starting instance")
+		a := []string{"/.singularity.d/actions/start"}
+		execStarter(cmd, args[0], a, args[1])
 	},
 
 	Use:     docs.InstanceStartUse,

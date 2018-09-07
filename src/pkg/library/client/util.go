@@ -96,10 +96,9 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 	}
 
 	return
-
 }
 
-// ParseErrorBody - Parse an API format rror out of the body
+// ParseErrorBody - Parse an API format error out of the body
 func ParseErrorBody(r io.Reader) (jRes JSONResponse, err error) {
 	err = json.NewDecoder(r).Decode(&jRes)
 	if err != nil {
