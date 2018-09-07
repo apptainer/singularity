@@ -12,7 +12,7 @@ import (
 
 func init() {
 
-	options := [16]string{
+	options := [22]string{
 		"add-caps",
 		"allow-setuid",
 		"bind",
