@@ -270,7 +270,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	environment := os.Environ()
 
 	// Clean environment
-	env.CleanEnv(&generator, IsCleanEnv, environment)
+	env.CleanEnv(&generator, NoHome, IsCleanEnv, engineConfig.GetHomeDest(), environment)
 
 	if pwd, err := os.Getwd(); err == nil {
 		if PwdPath != "" {
