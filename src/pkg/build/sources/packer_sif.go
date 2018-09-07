@@ -29,7 +29,7 @@ func (p *SIFPacker) Pack() (*types.Bundle, error) {
 
 	err := p.unpackSIF(p.b, p.srcfile)
 	if err != nil {
-		sylog.Errorf("unpackSIF Failed", err.Error())
+		sylog.Errorf("unpackSIF Failed: %v", err.Error())
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
 	err = syscall.Mount(path, tmpmnt, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-		sylog.Errorf("Mount Failed", err.Error())
+		sylog.Errorf("Mount Failed: %v", err.Error())
 		return err
 	}
 	defer syscall.Unmount(tmpmnt, 0)
@@ -118,7 +118,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)
 	err = cmd.Run()
 	if err != nil {
-		sylog.Errorf("cp Failed", err.Error())
+		sylog.Errorf("cp Failed: %v", err.Error())
 		return err
 	}
 

@@ -28,7 +28,7 @@ func (p *SquashfsPacker) Pack() (*types.Bundle, error) {
 
 	err := p.unpackSquashfs(p.b, p.info, rootfs)
 	if err != nil {
-		sylog.Errorf("unpackSquashfs Failed", err.Error())
+		sylog.Errorf("unpackSquashfs Failed: %v", err.Error())
 		return nil, err
 	}
 
@@ -44,7 +44,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
 	err = cmd.Run()
 	if err != nil {
-		sylog.Errorf("Trimming header Failed", err.Error())
+		sylog.Errorf("Trimming header Failed: %v", err.Error())
 		return err
 	}
 
@@ -53,7 +53,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())
 	err = cmd.Run()
 	if err != nil {
-		sylog.Errorf("unsquashfs Failed", err.Error())
+		sylog.Errorf("unsquashfs Failed: %v", err.Error())
 		return err
 	}
 

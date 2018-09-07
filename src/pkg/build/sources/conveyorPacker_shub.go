@@ -22,12 +22,12 @@ type ShubConveyorPacker struct {
 }
 
 // Get downloads container from Singularityhub
-func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
+func (cp *ShubConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
-	cp.recipe = recipe
+	cp.b = b
 
-	src := `shub://` + recipe.Header["from"]
+	src := `shub://` + b.Recipe.Header["from"]
 
 	//create bundle to build into
 	cp.b, err = sytypes.NewBundle("sbuild-shub")

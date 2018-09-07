@@ -69,9 +69,9 @@ var BuildCmd = &cobra.Command{
 		spec := args[1]
 
 		//check if target collides with existing file
-		if ok := checkBuildTargetCollision(dest, force); !ok {
-			os.Exit(1)
-		}
+		// if ok := checkBuildTargetCollision(dest, force); !ok {
+		// 	os.Exit(1)
+		// }
 
 		if remote {
 			// Submiting a remote build requires a valid authToken
@@ -96,7 +96,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf(err.Error())
 			}
 
-			b, err := build.NewBuild(spec, dest, buildFormat, sections, noTest)
+			b, err := build.NewBuild(spec, dest, buildFormat, force, sections, noTest)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 			}
