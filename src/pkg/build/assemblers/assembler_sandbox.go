@@ -56,10 +56,15 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 func insertHelpScript(b *types.Bundle) error {
 	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
-		sylog.Infof("Adding help info")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
-		if err != nil {
-			return err
+		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
+		if err != nil || b.Force {
+			sylog.Infof("Adding help info")
+			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
+			if err != nil {
+				return err
+			}
+		} else {
+			sylog.Errorf("Unable to insert help script as it already exists and force option is false")
 		}
 	}
 	return nil
@@ -85,12 +90,53 @@ func insertLabelsJSON(b *types.Bundle) error {
 
 	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
 		sylog.Infof("Adding labels")
-		text, err := json.Marshal(b.Recipe.ImageData.Labels)
-		if err != nil {
-			return err
+
+		var text []byte
+
+		if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json")); err == nil {
+			existingLabels := make(map[string]string)
+			//check for labels that already exist
+			jsonFile, err := os.Open(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"))
+			if err != nil {
+				return err
+			}
+			defer jsonFile.Close()
+
+			jsonBytes, err := ioutil.ReadAll(jsonFile)
+			if err != nil {
+				return err
+			}
+
+			err = json.Unmarshal(jsonBytes, &existingLabels)
+			if err != nil {
+				return err
+			}
+
+			//add new labels to new map and check for collisions
+			for key, value := range b.Recipe.ImageData.Labels {
+				if _, ok := existingLabels[key]; ok {
+					//overwrite collision if force flag is set
+					if b.Force {
+						existingLabels[key] = value
+					} else {
+						sylog.Errorf("Label: %s already exists and force option is false, not overwriting", key)
+					}
+				}
+			}
+
+			//make new map into json
+			text, err = json.Marshal(existingLabels)
+			if err != nil {
+				return err
+			}
+		} else {
+			text, err = json.Marshal(b.Recipe.ImageData.Labels)
+			if err != nil {
+				return err
+			}
 		}
 
-		err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
 		if err != nil {
 			return err
 		}
