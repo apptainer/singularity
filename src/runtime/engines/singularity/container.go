@@ -16,6 +16,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/syecl"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/fs/files"
@@ -407,7 +408,7 @@ func (c *container) loadImage(path string, rootfs bool) (*image.Image, error) {
 	} else {
 		for _, img := range list {
 			if !img.RootFS {
-				p, err := image.CleanPath(path)
+				p, err := image.ResolvePath(path)
 				if err != nil {
 					return nil, err
 				}
@@ -445,6 +446,18 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
+		// query the ECL module, proceed if an ecl config file is found
+		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
+		if err == nil {
+			if err = ecl.ValidateConfig(); err != nil {
+				return err
+			}
+			_, err := ecl.ShouldRun(imageObject.File.Name())
+			if err != nil {
+				return err
+			}
+		}
+
 		// Load the SIF file
 		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
 		if err != nil {
