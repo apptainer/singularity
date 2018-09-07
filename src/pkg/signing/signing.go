@@ -155,8 +155,8 @@ func Sign(cpath, url, authToken string) error {
 	return nil
 }
 
-// return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
+// return all signatures for the primary partition
+func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
 	descr, _, err = fimg.GetPartPrimSys()
 	if err != nil {
 		return
@@ -168,6 +168,11 @@ func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *si
 	}
 
 	return
+}
+
+// return all signatures for "id" being unique or group id
+func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
+	return getSigsPrimPart(fimg)
 }
 
 // Verify takes a container path and look for a verification block for a
@@ -265,4 +270,30 @@ func Verify(cpath, url, authToken string) error {
 	fmt.Print(authok)
 
 	return nil
+}
+
+// GetSignEntities returns all signing entities for an ID/Groupid
+func GetSignEntities(cpath string) ([]string, error) {
+	fimg, err := sif.LoadContainer(cpath, true)
+	if err != nil {
+		return nil, err
+	}
+	defer fimg.UnloadContainer()
+
+	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
+	signatures, _, err := getSigsPrimPart(&fimg)
+	if err != nil {
+		return nil, err
+	}
+
+	var entities []string
+	for _, v := range signatures {
+		fingerprint, err := v.GetEntityString()
+		if err != nil {
+			return nil, err
+		}
+		entities = append(entities, fingerprint)
+	}
+
+	return entities, nil
 }

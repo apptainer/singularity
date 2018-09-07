@@ -69,7 +69,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	//move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
 	if err := os.Rename(b.Rootfs(), path); err != nil {
-		sylog.Errorf("Sandbox Assemble Failed", err.Error())
+		sylog.Errorf("Sandbox Assemble Failed: %s", err)
 		return err
 	}
 
