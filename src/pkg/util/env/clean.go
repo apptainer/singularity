@@ -26,25 +26,19 @@ func SetContainerEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDe
 			e[0] = strings.TrimPrefix(e[0], "SINGULARITYENV_")
 		} else if IsCleanEnv && (e[0] != "HOME" &&
 			e[0] != "TERM" &&
-			e[0] != "LANG" &&
 			e[0] != "http_proxy" &&
 			e[0] != "https_proxy" &&
 			e[0] != "no_proxy" &&
 			e[0] != "all_proxy" &&
-			e[0] != "ftp_proxy" &&
-			e[0] != "SINGULARITY_CONTAINER" &&
-			e[0] != "SINGULARITY_NAME") {
+			e[0] != "ftp_proxy") {
 			continue
 		}
 
-		if e[0] == "HOME" {
-			if !NoHome {
-				g.AddProcessEnv(e[0], HomeDest)
-			} else {
-				g.AddProcessEnv(e[0], "/")
-			}
-		} else {
 			g.AddProcessEnv(e[0], e[1])
 		}
+
+	// Set LANG env
+	if IsCleanEnv {
+		g.AddProcessEnv("LANG", "C")
 	}
 }
