@@ -13,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/singularityware/singularity/src/pkg/util/mainthread"
+
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/loop"
 	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
@@ -23,33 +25,20 @@ type Methods int
 
 // Mount performs a mount with the specified arguments
 func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
-	if arguments.Filesystem == "overlay" {
-		// overlay requires root filesytem UID/GID since upper/work
-		// directories are owned by root
-		runtime.LockOSThread()
-		syscall.Setfsuid(0)
-		syscall.Setfsgid(0)
-
-		defer runtime.UnlockOSThread()
-		defer syscall.Setfsgid(os.Getgid())
-		defer syscall.Setfsuid(os.Getuid())
-	}
-	return syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
+	mainthread.Execute(func() {
+		err = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
+	})
+	return err
 }
 
 // Mkdir performs a mkdir with the specified arguments
-func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) error {
-	runtime.LockOSThread()
-	oldmask := syscall.Umask(0)
-	syscall.Setfsuid(0)
-	syscall.Setfsgid(0)
-
-	defer runtime.UnlockOSThread()
-	defer syscall.Umask(oldmask)
-	defer syscall.Setfsgid(os.Getgid())
-	defer syscall.Setfsuid(os.Getuid())
-
-	return os.Mkdir(arguments.Path, arguments.Perm)
+func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
+	mainthread.Execute(func() {
+		oldmask := syscall.Umask(0)
+		err = os.Mkdir(arguments.Path, arguments.Perm)
+		syscall.Umask(oldmask)
+	})
+	return err
 }
 
 // Chroot performs a chroot with the specified arguments
@@ -102,11 +91,6 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	var image *os.File
 	loopdev := new(loop.Device)
 
-	runtime.LockOSThread()
-
-	defer runtime.UnlockOSThread()
-	defer syscall.Setfsuid(os.Getuid())
-
 	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
 		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
 		fd, err := strconv.ParseUint(strFd, 10, 32)
@@ -126,7 +110,11 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 		}
 	}
 
+	runtime.LockOSThread()
 	syscall.Setfsuid(0)
+
+	defer runtime.UnlockOSThread()
+	defer syscall.Setfsuid(os.Getuid())
 
 	if err := loopdev.AttachFromFile(image, arguments.Mode, reply); err != nil {
 		return err
@@ -140,4 +128,13 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 // SetHostname sets hostname with the specified arguments
 func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 	return syscall.Sethostname([]byte(arguments.Hostname))
+}
+
+// SetFsID sets filesystem uid and gid
+func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
+	mainthread.Execute(func() {
+		syscall.Setfsuid(arguments.UID)
+		syscall.Setfsgid(arguments.GID)
+	})
+	return nil
 }

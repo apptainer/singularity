@@ -42,3 +42,9 @@ type ChrootArgs struct {
 type HostnameArgs struct {
 	Hostname string
 }
+
+// SetFsIDArgs defines the arguments to setfsid
+type SetFsIDArgs struct {
+	UID int
+	GID int
+}

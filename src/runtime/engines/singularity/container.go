@@ -343,6 +343,13 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		if dest == c.session.RootFsPath() && flags&syscall.MS_BIND != 0 {
 			source = "."
 		}
+
+		// overlay requires root filesystem UID/GID since upper/work
+		// directories are owned by root
+		if mnt.Type == "overlay" {
+			c.rpcOps.SetFsID(0, 0)
+			defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
+		}
 	}
 	_, err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
 	return err
@@ -515,6 +522,9 @@ func (c *container) overlayUpperWork(system *mount.System) error {
 	if fs.IsLink(w) {
 		return fmt.Errorf("symlink detected, work overlay %s must be a directory", w)
 	}
+
+	c.rpcOps.SetFsID(0, 0)
+	defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
 
 	if !fs.IsDir(u) {
 		if _, err := c.rpcOps.Mkdir(u, 0755); err != nil {
