@@ -14,7 +14,6 @@ import (
 
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/priv"
 )
 
 /*
@@ -27,14 +26,9 @@ func (engine *EngineOperations) CleanupContainer() error {
 	sylog.Debugf("Cleanup container")
 
 	if engine.EngineConfig.Network != nil {
-		if err := priv.Escalate(); err != nil {
-			return err
-		}
 		if err := engine.EngineConfig.Network.DelNetworks(); err != nil {
-			priv.Drop()
 			return err
 		}
-		priv.Drop()
 	}
 
 	if engine.EngineConfig.GetInstance() {

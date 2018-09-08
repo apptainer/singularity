@@ -39,14 +39,9 @@ go_TAG += containers_image_openpgp
 
 abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 
-vendor := $(SOURCEDIR)/vendor
-
 cni_builddir := $(abspath $(BUILDDIR))/cni
-cni_builddir_plugins := $(cni_builddir)/plugins
-
 cni_plugins_REPO := github.com/containernetworking/plugins/plugins
-cni_plugins_VENDOR := $(vendor)/$(cni_plugins_REPO)
-cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir_plugins)/*)
+cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir)/*)
 cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(PREFIX)/libexec/singularity/cni/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
@@ -64,19 +59,18 @@ all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) cniplugins
 
 .PHONY: cniplugins
 cniplugins: $(BUILDDIR)/vendors-done
-	@install -d $(cni_builddir)/cnigopath
-	@ln -sfn $(vendor) $(cni_builddir)/cnigopath/src
+	@install -d $(cni_builddir)
 	@for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
-		if [ ! -f $(cni_builddir_plugins)/`basename $$p` ]; then \
+		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
 			echo " CNI PLUGIN" `basename $$p`; \
-			GOPATH="$(cni_builddir)/cnigopath" go build -o $(cni_builddir_plugins)/`basename $$p` $${p#$(singularity_REPO)/vendor/}; \
+			go build -o $(cni_builddir)/`basename $$p` $$p; \
 		fi \
 	done
 
 $(cni_plugins_INSTALL): $(cni_plugins_EXECUTABLES)
 	@echo " INSTALL CNI PLUGIN" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(cni_builddir_plugins)/$(@F) $@
+	$(V)install -m 0755 $(cni_builddir)/$(@F) $@
 
 $(cni_config_INSTALL): $(cni_config_LIST)
 	@echo " INSTALL CNI CONFIGURATION FILES"
