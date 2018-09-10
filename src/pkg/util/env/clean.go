@@ -34,8 +34,8 @@ func SetContainerEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDe
 			continue
 		}
 
-			g.AddProcessEnv(e[0], e[1])
-		}
+		g.AddProcessEnv(e[0], e[1])
+	}
 
 	// Set LANG env
 	if IsCleanEnv {
