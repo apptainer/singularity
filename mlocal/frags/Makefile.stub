@@ -83,7 +83,7 @@ $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 
 # bash_completion file
 $(bash_completion): $(go_OBJ)
-	@rm -f $(bash_completion)
+	@rm -f $@
 	@mkdir -p $(@D)
 	$(V) go run  $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $(bash_completion)
 
