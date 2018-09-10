@@ -133,7 +133,7 @@ func (e *EngineConfig) GetWritableImage() bool {
 // SetOverlayImage sets the overlay image path to be used on top of container image.
 func (e *EngineConfig) SetOverlayImage(paths []string, envvar string) {
 	if ev := strings.Split(os.Getenv(envvar), ","); ev[0] != "" {
-		paths = ev
+		e.JSON.OverlayImage = ev
 	}
 	e.JSON.OverlayImage = paths
 }
