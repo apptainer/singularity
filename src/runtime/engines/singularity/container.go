@@ -1053,13 +1053,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		// with --contain option or 'mount dev = minimal'
 		if strings.HasPrefix(src, "/dev") {
 			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
-				if strings.HasPrefix(src, "/dev/shm") || strings.HasPrefix(src, "/dev/mqueue") {
-					sylog.Warningf("Skipping %s bind mount: not authorized", src)
-				}
-				if err := c.addSessionDev(src, system); err != nil {
-					sylog.Warningf("Skipping %s bind mount: %s", src, err)
+				if strings.HasPrefix(src, "/dev/shm/") || strings.HasPrefix(src, "/dev/mqueue/") {
+					sylog.Warningf("Skipping %s bind mount: not allowed", src)
 				} else {
-					sylog.Debugf("Adding device %s to mount list\n", src)
+					if err := c.addSessionDev(src, system); err != nil {
+						sylog.Warningf("Skipping %s bind mount: %s", src, err)
+					} else {
+						sylog.Debugf("Adding device %s to mount list\n", src)
+					}
 				}
 				devicesMounted++
 			} else if c.engine.EngineConfig.File.MountDev == "yes" {
