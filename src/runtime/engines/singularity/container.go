@@ -631,13 +631,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 
 func (c *container) addKernelMount(system *mount.System) error {
 	var err error
-	bindFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
+	bindFlags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_REC)
 
 	sylog.Debugf("Checking configuration file for 'mount proc'")
 	if c.engine.EngineConfig.File.MountProc {
 		sylog.Debugf("Adding proc to mount list\n")
 		if c.pidNS {
-			err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", c.suidFlag|syscall.MS_NODEV, "")
+			err = system.Points.AddFS(mount.KernelTag, "/proc", "proc", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 		} else {
 			err = system.Points.AddBind(mount.KernelTag, "/proc", "/proc", bindFlags)
 			if err == nil {
@@ -657,7 +657,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 	if c.engine.EngineConfig.File.MountSys {
 		sylog.Debugf("Adding sysfs to mount list\n")
 		if !c.userNS {
-			err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", c.suidFlag|syscall.MS_NODEV, "")
+			err = system.Points.AddFS(mount.KernelTag, "/sys", "sysfs", syscall.MS_NOSUID|syscall.MS_NODEV, "")
 		} else {
 			err = system.Points.AddBind(mount.KernelTag, "/sys", "/sys", bindFlags)
 			if err == nil {
@@ -703,7 +703,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			return fmt.Errorf("failed to add /dev/shm session directory: %s", err)
 		}
 		devshmPath, _ := c.session.GetPath("/dev/shm")
-		flags := uintptr(c.suidFlag | syscall.MS_NODEV)
+		flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
 		err := system.Points.AddFS(mount.DevTag, devshmPath, c.engine.EngineConfig.File.MemoryFSType, flags, "mode=1777")
 		if err != nil {
 			return fmt.Errorf("failed to add /dev/shm temporary filesystem: %s", err)
@@ -731,7 +731,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			}
 			sylog.Debugf("Mounting devpts for staged /dev/pts")
 			devptsPath, _ := c.session.GetPath("/dev/pts")
-			err = system.Points.AddFS(mount.DevTag, devptsPath, "devpts", c.suidFlag|syscall.MS_NOEXEC, options)
+			err = system.Points.AddFS(mount.DevTag, devptsPath, "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, options)
 			if err != nil {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY functionality disabled")
 			} else {
