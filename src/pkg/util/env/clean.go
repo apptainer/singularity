@@ -12,33 +12,48 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
+const (
+	envPrefix = "SINGULARITYENV_"
+)
+
+var alwaysPassKeys = map[string]bool{
+	"TERM":        true,
+	"http_proxy":  true,
+	"https_proxy": true,
+	"no_proxy":    true,
+	"all_proxy":   true,
+	"ftp_proxy":   true,
+}
+
 // SetContainerEnv cleans environment variables before running the container
-func SetContainerEnv(g *generate.Generator, NoHome bool, IsCleanEnv bool, HomeDest string, environment []string) {
-	for _, env := range environment {
+func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDest string) {
+	for _, env := range env {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) != 2 {
 			sylog.Verbosef("Can't process environment variable %s", env)
 			continue
 		}
 
-		// Transpose environment
-		if strings.HasPrefix(e[0], "SINGULARITYENV_") {
-			e[0] = strings.TrimPrefix(e[0], "SINGULARITYENV_")
-		} else if IsCleanEnv && (e[0] != "HOME" &&
-			e[0] != "TERM" &&
-			e[0] != "http_proxy" &&
-			e[0] != "https_proxy" &&
-			e[0] != "no_proxy" &&
-			e[0] != "all_proxy" &&
-			e[0] != "ftp_proxy") {
-			continue
+		// Transpose host env variables into config
+		if addKey, ok := addIfReq(e[0], cleanEnv); ok {
+			g.AddProcessEnv(addKey, e[1])
 		}
-
-		g.AddProcessEnv(e[0], e[1])
 	}
+
+	g.AddProcessEnv("HOME", homeDest)
 
 	// Set LANG env
-	if IsCleanEnv {
+	if cleanEnv {
 		g.AddProcessEnv("LANG", "C")
 	}
+}
+
+func addIfReq(key string, cleanEnv bool) (string, bool) {
+	if strings.HasPrefix(key, envPrefix) {
+		return strings.TrimPrefix(key, envPrefix), true
+	} else if _, ok := alwaysPassKeys[key]; cleanEnv && !ok {
+		return "", false
+	}
+
+	return key, true
 }
