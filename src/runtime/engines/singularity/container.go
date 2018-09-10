@@ -42,6 +42,7 @@ type container struct {
 	pidNS            bool
 	utsNS            bool
 	netNS            bool
+	ipcNS            bool
 	mountInfoPath    string
 	skippedMount     []string
 }
@@ -73,6 +74,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 				c.utsNS = true
 			case specs.NetworkNamespace:
 				c.netNS = true
+			case specs.IPCNamespace:
+				c.ipcNS = true
 			}
 		}
 	}
@@ -739,6 +742,20 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("failed to add /dev/shm temporary filesystem: %s", err)
 		}
+
+		if c.ipcNS {
+			sylog.Debugf("Creating temporary staged /dev/mqueue")
+			if err := c.session.AddDir("/dev/mqueue"); err != nil {
+				return fmt.Errorf("failed to add /dev/mqueue session directory: %s", err)
+			}
+			mqueuePath, _ := c.session.GetPath("/dev/mqueue")
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			err := system.Points.AddFS(mount.DevTag, mqueuePath, "mqueue", flags, "")
+			if err != nil {
+				return fmt.Errorf("failed to add /dev/mqueue filesystem: %s", err)
+			}
+		}
+
 		if c.engine.EngineConfig.File.MountDevPts {
 			if _, err := os.Stat("/dev/pts/ptmx"); os.IsNotExist(err) {
 				return fmt.Errorf("Multiple devpts instances unsupported and /dev/pts configured")
