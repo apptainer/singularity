@@ -65,7 +65,7 @@ if test -n "$SINGULARITY_SHELL" -a -x "$SINGULARITY_SHELL"; then
 
 elif test -x /bin/bash; then
     SHELL=/bin/bash
-    PS1="Singularity $SINGULARITY_CONTAINER:\\w> "
+    PS1="Singularity $SINGULARITY_NAME:\\w> "
     export SHELL PS1
     exec /bin/bash --norc "$@"
 elif test -x /bin/sh; then
