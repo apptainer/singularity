@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -11,7 +11,6 @@ import (
 
 // SearchLibrary will search the library for a given query ans display results
 func SearchLibrary(value string, libraryURL string, authToken string) error {
-
 	if len(value) < 3 {
 		return fmt.Errorf("Bad query '%s'. You must search for at least 3 characters", value)
 	}

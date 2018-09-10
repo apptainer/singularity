@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -180,7 +180,6 @@ func setTags(baseURL string, authToken string, containerID string, imageID strin
 }
 
 func search(baseURL string, authToken string, value string) (results SearchResults, err error) {
-
 	u, err := url.Parse(baseURL + "/v1/search")
 	if err != nil {
 		return
