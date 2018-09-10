@@ -46,20 +46,12 @@ Requires: squashfs-tools
 %endif
 
 
-Requires: %{name}-unpriv = %{version}-%{release}
 Provides: %{name}-runtime
 Obsoletes: %{name}-runtime
 
 %description
 Singularity provides functionality to make portable
 containers that can be used across host environments.
-
-%package unpriv
-Summary: The unprivileged portions of %{name}
-Group: System Environment/Base
-
-%description unpriv
-This package contains the unprivileged non-setuid portions of %{name}
 
 %prep
 %setup
@@ -93,8 +85,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
-
-%files unpriv
 %{_bindir}/*
 %dir %{_libexecdir}/singularity
 %{_libexecdir}/singularity/bin/starter
