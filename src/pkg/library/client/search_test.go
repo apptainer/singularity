@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -37,7 +37,6 @@ No containers found for 'test'
 )
 
 func Test_SearchLibrary(t *testing.T) {
-
 	m := mockService{
 		t:        t,
 		code:     http.StatusOK,
@@ -86,11 +85,9 @@ func Test_SearchLibrary(t *testing.T) {
 		t.Errorf("=== ACTUAL ===")
 		t.Errorf(out)
 	}
-
 }
 
 func Test_SearchLibraryEmpty(t *testing.T) {
-
 	m := mockService{
 		t:        t,
 		code:     http.StatusOK,
@@ -130,5 +127,4 @@ func Test_SearchLibraryEmpty(t *testing.T) {
 		t.Errorf("=== ACTUAL ===")
 		t.Errorf(out)
 	}
-
 }
