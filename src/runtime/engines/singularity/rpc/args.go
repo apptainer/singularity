@@ -37,3 +37,9 @@ type ChrootArgs struct {
 type HostnameArgs struct {
 	Hostname string
 }
+
+// HasNamespaceArgs defines the arguments to compare host namespace
+// and RPC process
+type HasNamespaceArgs struct {
+	NsType string
+}

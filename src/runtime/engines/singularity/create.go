@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/rpc"
+	"path/filepath"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
@@ -33,31 +34,28 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	if engine.EngineConfig.GetInstance() {
-		if engine.EngineConfig.OciConfig.Linux != nil {
-			for i, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
-				nstype := ""
+		namespaces := []struct {
+			nstype string
+			ns     specs.LinuxNamespaceType
+		}{
+			{"pid", specs.PIDNamespace},
+			{"uts", specs.UTSNamespace},
+			{"ipc", specs.IPCNamespace},
+			{"mnt", specs.MountNamespace},
+			{"cgroup", specs.CgroupNamespace},
+			{"net", specs.NetworkNamespace},
+			{"user", specs.UserNamespace},
+		}
 
-				switch namespace.Type {
-				case specs.PIDNamespace:
-					nstype = "pid"
-				case specs.UTSNamespace:
-					nstype = "uts"
-				case specs.IPCNamespace:
-					nstype = "ipc"
-				case specs.MountNamespace:
-					nstype = "mnt"
-				case specs.CgroupNamespace:
-					nstype = "cgroup"
-				case specs.NetworkNamespace:
-					nstype = "net"
-				case specs.UserNamespace:
-					nstype = "user"
-				}
+		path := fmt.Sprintf("/proc/%d/ns", pid)
 
-				if nstype != "" {
-					path := fmt.Sprintf("/proc/%d/ns/%s", pid, nstype)
-					engine.EngineConfig.OciConfig.Linux.Namespaces[i].Path = path
-				}
+		for _, n := range namespaces {
+			has, err := rpcOps.HasNamespace(n.nstype)
+			if err == nil && has {
+				nspath := filepath.Join(path, n.nstype)
+				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+			} else if err != nil {
+				return fmt.Errorf("failed to check %s root and container namespace: %s", n.ns, err)
 			}
 		}
 	}

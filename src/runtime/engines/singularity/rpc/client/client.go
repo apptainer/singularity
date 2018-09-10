@@ -73,3 +73,19 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 	err := t.Client.Call(t.Name+".SetHostname", arguments, &reply)
 	return reply, err
 }
+
+// HasNamespace calls the HasNamespace RPC using the supplied arguments
+func (t *RPC) HasNamespace(nstype string) (bool, error) {
+	arguments := &args.HasNamespaceArgs{
+		NsType: nstype,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".HasNamespace", arguments, &reply)
+	if err != nil {
+		return false, err
+	}
+	if reply == 1 {
+		return true, err
+	}
+	return false, err
+}
