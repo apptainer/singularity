@@ -91,7 +91,7 @@ $(bash_completion): $(go_OBJ)
 $(bash_completion_INSTALL): $(bash_completion)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0644 $(bash_completion) $(bash_completion_INSTALL)
+	$(V)install -m 0644 $< $@
 
 # starter & starter-suid install
 $(starter_INSTALL): $(starter)
