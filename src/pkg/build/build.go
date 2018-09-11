@@ -364,6 +364,7 @@ func makeDef(spec string) (types.Definition, error) {
 }
 
 func (b *Build) addOptions() {
+	b.b.Update = b.update
 	b.b.Force = b.force
 	b.b.NoTest = b.noTest
 	b.b.Sections = b.sections

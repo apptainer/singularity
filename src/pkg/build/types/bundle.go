@@ -36,6 +36,7 @@ type Bundle struct {
 	BindPath    []string          `json:"bindPath"`
 	Path        string            `json:"bundlePath"`
 	Force       bool              `json:"force"`
+	Update      bool              `json:"update"`
 	NoTest      bool              `json:"noTest"`
 	Sections    []string          `json:"sections"`
 }

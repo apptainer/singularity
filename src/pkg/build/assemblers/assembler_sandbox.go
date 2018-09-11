@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -50,7 +51,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		os.RemoveAll(path)
 	}
 	if err := os.Rename(b.Rootfs(), path); err != nil {
-		sylog.Errorf("Sandbox Assemble Failed", err.Error())
+		sylog.Errorf("Sandbox Assemble Failed %v", err.Error())
 		return err
 	}
 
@@ -74,6 +75,35 @@ func insertHelpScript(b *types.Bundle) error {
 }
 
 func insertDefinition(b *types.Bundle) error {
+
+	//if update, check for existing definition and move it to bootstrap history
+	if b.Update {
+		if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity")); err == nil {
+			//make bootstrap_history directory if it doesnt exist
+			if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history")); err != nil {
+				err = os.Mkdir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"), 0755)
+				if err != nil {
+					return err
+				}
+			}
+
+			//look at number of files in bootstrap_history to give correct file name
+			files, err := ioutil.ReadDir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"))
+
+			//name is "Singularity" concatinated with an index based on number of other files in bootstrap_history
+			len := strconv.Itoa(len(files))
+
+			histName := "Singularity" + len
+
+			//move old definition into bootstrap_history
+			err = os.Rename(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history", histName))
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+	//bootstrap_history
 	f, err := os.Create(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"))
 	if err != nil {
 		return err
