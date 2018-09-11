@@ -51,7 +51,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		os.RemoveAll(path)
 	}
 	if err := os.Rename(b.Rootfs(), path); err != nil {
-		sylog.Errorf("Sandbox Assemble Failed %v", err.Error())
+		sylog.Errorf("Sandbox Assemble Failed: %s", err)
 		return err
 	}
 

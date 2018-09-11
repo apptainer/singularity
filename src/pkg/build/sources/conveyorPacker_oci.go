@@ -29,6 +29,8 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
+
+	//"github.com/singularityware/singularity/src/pkg/image"
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
@@ -89,7 +91,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		}
 
 	default:
-		return fmt.Errorf("OCI ConveyerPacker does not support %s", b.Recipe.Header["bootstrap"])
+		return fmt.Errorf("OCI ConveyorPacker does not support %s", recipe.Header["bootstrap"])
 	}
 
 	if err != nil {

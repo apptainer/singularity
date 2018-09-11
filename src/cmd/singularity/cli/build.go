@@ -122,7 +122,7 @@ func checkBuildTarget(path string) bool {
 			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
 			input, err := reader.ReadString('\n')
 			if err != nil {
-				sylog.Fatalf("Error parsing input: %v", err)
+				sylog.Fatalf("Error parsing input: %s", err)
 			}
 			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
 				force = true

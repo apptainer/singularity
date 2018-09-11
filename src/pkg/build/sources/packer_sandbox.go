@@ -28,7 +28,7 @@ func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	cmd := exec.Command("cp", "-r", rootfs+`/.`, p.b.Rootfs())
 	err := cmd.Run()
 	if err != nil {
-		sylog.Errorf("cp Failed: %v", err.Error())
+		sylog.Errorf("cp Failed: %s", err)
 		return nil, err
 	}
 
