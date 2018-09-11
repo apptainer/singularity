@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/globalsign/mgo/bson"
@@ -176,6 +177,28 @@ func setTags(baseURL string, authToken string, containerID string, imageID strin
 		}
 	}
 	return nil
+}
+
+func search(baseURL string, authToken string, value string) (results SearchResults, err error) {
+	u, err := url.Parse(baseURL + "/v1/search")
+	if err != nil {
+		return
+	}
+	q := u.Query()
+	q.Set("value", value)
+	u.RawQuery = q.Encode()
+
+	resJSON, _, err := apiGet(u.String(), authToken)
+	if err != nil {
+		return results, err
+	}
+
+	var res SearchResponse
+	if err := json.Unmarshal(resJSON, &res); err != nil {
+		return results, fmt.Errorf("error decoding reesults: %v", err)
+	}
+
+	return res.Data, nil
 }
 
 func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err error) {
