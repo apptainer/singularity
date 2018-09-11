@@ -16,7 +16,7 @@ import (
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
 	BindPaths   []string
-	HomePath    string
+	HomeSpec    string
 	OverlayPath []string
 	ScratchPath []string
 	WorkdirPath string
@@ -73,7 +73,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
 
 	// -H|--home
-	actionFlags.StringVarP(&HomePath, "home", "H", getHomeDir(), "A home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")
+	actionFlags.StringVarP(&HomeSpec, "home", "H", getHomeDir(), "A home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")
 	actionFlags.SetAnnotation("home", "argtag", []string{"<spec>"})
 
 	// -o|--overlay

@@ -197,8 +197,12 @@ func (e *EngineConfig) GetScratchDir() []string {
 }
 
 // SetHomeSource sets the source home directory path.
-func (e *EngineConfig) SetHomeSource(source string) {
-	e.JSON.HomeSource = source
+func (e *EngineConfig) SetHomeSource(homeSpec string) {
+	homeSlice := strings.Split(homeSpec, ":")
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
+	}
+	e.JSON.HomeSource = homeSlice[0]
 }
 
 // GetHomeSource retrieves the source home directory path.
@@ -207,8 +211,16 @@ func (e *EngineConfig) GetHomeSource() string {
 }
 
 // SetHomeDest sets the container home directory path.
-func (e *EngineConfig) SetHomeDest(dest string) {
-	e.JSON.HomeDest = dest
+func (e *EngineConfig) SetHomeDest(homeSpec string) {
+	homeSlice := strings.Split(homeSpec, ":")
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
+	}
+	if len(homeSlice) == 1 {
+		e.JSON.HomeDest = homeSlice[0]
+	} else {
+		e.JSON.HomeDest = homeSlice[1]
+	}
 }
 
 // GetHomeDest retrieves the container home directory path.

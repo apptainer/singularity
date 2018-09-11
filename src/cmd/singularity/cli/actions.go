@@ -192,19 +192,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig.SetScratchDir(ScratchPath)
 	engineConfig.SetWorkdir(WorkdirPath)
-
-	homeSlice := strings.Split(HomePath, ":")
-
-	if len(homeSlice) > 2 || len(homeSlice) == 0 {
-		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
-	}
-
-	engineConfig.SetHomeSource(homeSlice[0])
-	if len(homeSlice) == 1 {
-		engineConfig.SetHomeDest(homeSlice[0])
-	} else {
-		engineConfig.SetHomeDest(homeSlice[1])
-	}
+	engineConfig.SetHomeSource(HomeSpec)
+	engineConfig.SetHomeDest(HomeSpec)
 
 	if IsFakeroot {
 		UserNamespace = true
