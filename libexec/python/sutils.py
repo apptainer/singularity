@@ -395,7 +395,7 @@ def write_file(filename, content, mode="w"):
     '''
     bot.verbose2("Writing file %s with mode %s." % (filename, mode))
     with open(filename, mode) as filey:
-        filey.writelines(content)
+        filey.writelines(content.encode('utf-8'))
     return filename
 
 

@@ -92,7 +92,8 @@ def PULL(image, download_folder=None, layerfile=None):
         cache_base = custom_folder
         image_name = os.path.basename(image_name)
 
-    image_file = "%s/%s" % (cache_base, image_name)
+    image_file = "%s/%s" % (cache_base.decode('utf-8'),
+                            image_name.decode('utf-8'))
 
     bot.debug('Pulling to %s' % image_file)
     if not os.path.exists(image_file):

@@ -167,7 +167,8 @@ class SingularityApiConnection(ApiConnection):
             sys.exit(1)
 
         if download_folder is not None:
-            image_name = "%s/%s" % (download_folder, image_name)
+            image_name = "%s/%s" % (download_folder.decode('utf-8'),
+                                    image_name.decode('utf-8'))
 
         # Download image file atomically, streaming
         image_file = self.download_atomically(url=url,
