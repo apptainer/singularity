@@ -103,7 +103,6 @@ func insertDefinition(b *types.Bundle) error {
 		}
 
 	}
-	//bootstrap_history
 	f, err := os.Create(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"))
 	if err != nil {
 		return err
