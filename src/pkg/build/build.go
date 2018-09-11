@@ -41,11 +41,11 @@ type Build struct {
 	ranSections bool
 	// sections are the parts of the definition to run during the build
 	sections []string
-	// noTest indicated whether build should skip running the test script
+	// noTest indicates if build should skip running the test script
 	noTest bool
-	// force build over existing container
+	// force automatically deletes an existing container at build destination while performing build
 	force bool
-	// update building using existing destination container
+	// update detects and builds using an existing sandbox container at build destination
 	update bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
