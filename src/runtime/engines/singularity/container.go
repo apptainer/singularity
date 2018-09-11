@@ -499,7 +499,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		if err := system.Points.AddBind(mount.RootfsTag, rootfs, c.session.RootFsPath(), flags); err != nil {
 			return err
 		}
-		system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
 		return nil
 	}
 	flags |= syscall.MS_RDONLY
