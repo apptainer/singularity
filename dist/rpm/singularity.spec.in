@@ -65,7 +65,8 @@ tar -xf $GOTAR
 
 
 %build
-export PATH=$PWD/go/bin:$PATH
+export GOROOT=$PWD/go
+export PATH=$GOROOT/bin:$PATH
 export GOPATH=$PWD/gopath
 cd $GOPATH/%{singgopath}
 go get -u -v github.com/golang/dep/cmd/dep
@@ -74,7 +75,8 @@ cd builddir
 make
 
 %install
-export PATH=$PWD/go/bin:$PATH
+export GOROOT=$PWD/go
+export PATH=$GOROOT/bin:$PATH
 export GOPATH=$PWD/gopath
 cd $GOPATH/%{singgopath}/builddir
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
