@@ -35,6 +35,7 @@
     - Jeff Kriske <jekriske@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Justin Riley <justin_riley@harvard.edu>
+    - Lennart C. Karssen <l.c.karssen@polyomica.com>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Michael Herzberg <michael@mherzberg.de>
