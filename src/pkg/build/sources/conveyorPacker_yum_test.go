@@ -3,13 +3,14 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources
 
 import (
 	"os"
 	"os/exec"
 	"testing"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
 )
 
@@ -35,7 +36,7 @@ func TestYumConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}
@@ -66,7 +67,7 @@ func TestYumPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := ParseDefinitionFile(defFile)
+	def, err := types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}

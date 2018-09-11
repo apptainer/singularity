@@ -3,7 +3,7 @@
 // LICENSE file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package sources
 
 import (
 	"bufio"
@@ -16,6 +16,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -25,8 +26,8 @@ const (
 
 // YumConveyor holds stuff that needs to be packed into the bundle
 type YumConveyor struct {
-	recipe    Definition
-	b         *Bundle
+	recipe    types.Definition
+	b         *types.Bundle
 	rpmPath   string
 	mirrorurl string
 	updateurl string
@@ -42,7 +43,7 @@ type YumConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (c *YumConveyor) Get(recipe Definition) (err error) {
+func (c *YumConveyor) Get(recipe types.Definition) (err error) {
 
 	c.recipe = recipe
 
@@ -56,7 +57,7 @@ func (c *YumConveyor) Get(recipe Definition) (err error) {
 		return fmt.Errorf("Neither yum nor dnf in PATH")
 	}
 
-	c.b, err = NewBundle("")
+	c.b, err = types.NewBundle("sbuild-yum")
 	if err != nil {
 		return
 	}
@@ -101,7 +102,7 @@ func (c *YumConveyor) Get(recipe Definition) (err error) {
 }
 
 // Pack puts relevant objects in a Bundle!
-func (cp *YumConveyorPacker) Pack() (b *Bundle, err error) {
+func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
 
 	err = cp.insertBaseEnv()
 	if err != nil {
