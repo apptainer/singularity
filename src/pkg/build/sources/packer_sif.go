@@ -108,11 +108,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
 	err = syscall.Mount(path, tmpmnt, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-<<<<<<< HEAD
-		sylog.Errorf("Mount Failed: %v", err.Error())
-=======
 		sylog.Errorf("Mount Failed: %s", err)
->>>>>>> 19b229325c303f8c3571ad6cb3ff08939d54417d
 		return err
 	}
 	defer syscall.Unmount(tmpmnt, 0)
@@ -122,11 +118,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)
 	err = cmd.Run()
 	if err != nil {
-<<<<<<< HEAD
-		sylog.Errorf("cp Failed: %v", err.Error())
-=======
 		sylog.Errorf("cp Failed: %s", err)
->>>>>>> 19b229325c303f8c3571ad6cb3ff08939d54417d
 		return err
 	}
 

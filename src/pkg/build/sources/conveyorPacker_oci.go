@@ -91,7 +91,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		}
 
 	default:
-		return fmt.Errorf("OCI ConveyorPacker does not support %s", recipe.Header["bootstrap"])
+		return fmt.Errorf("OCI ConveyorPacker does not support %s", b.Recipe.Header["bootstrap"])
 	}
 
 	if err != nil {
