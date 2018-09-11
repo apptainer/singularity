@@ -6,6 +6,7 @@
 package client
 
 import (
+	"sort"
 	"strings"
 	"time"
 
@@ -145,14 +146,14 @@ func (c Container) LibraryURI() string {
 	return "library://" + c.EntityName + "/" + c.CollectionName + "/" + c.Name
 }
 
-// TagList - return space delimited list of tags
+// TagList - return a sorted space delimited list of tags
 func (c Container) TagList() string {
-	var taglist string
+	var taglist sort.StringSlice
 	for tag := range c.ImageTags {
-		taglist = taglist + tag + " "
+		taglist = append(taglist, tag)
 	}
-	taglist = strings.TrimRight(taglist, " ")
-	return taglist
+	taglist.Sort()
+	return strings.Join(taglist, " ")
 }
 
 // Image - Represents a Singularity image held by the library for a particular
