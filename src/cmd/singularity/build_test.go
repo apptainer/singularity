@@ -93,6 +93,7 @@ func TestBuild(t *testing.T) {
 		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
 		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false},
 		{"Yum", "yum", "../../../examples/centos/Singularity", false, false},
+		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", false, false},
 	}
 
 	for _, tt := range tests {
