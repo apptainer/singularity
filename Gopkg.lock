@@ -297,6 +297,12 @@
   version = "v0.6.0"
 
 [[projects]]
+  name = "github.com/pelletier/go-toml"
+  packages = ["."]
+  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -390,7 +396,7 @@
   branch = "master"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
-  revision = "8ad2fb65a618b8d83f03efd93d0fbf2ecce61a02"
+  revision = "a4f82381d252d398a7dda63a38c88f626bf68fb9"
 
 [[projects]]
   branch = "master"
@@ -473,6 +479,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "8bdc66695187635b85d5072ff4f03efea2e39736bf2f702d2d38cb8fd385ca7b"
+  inputs-digest = "b5a4f3db8e7b9ce196abd32da6f27af3c42393d28180ad159555491466c80a03"
   solver-name = "gps-cdcl"
   solver-version = 1

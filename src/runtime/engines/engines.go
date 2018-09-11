@@ -12,7 +12,8 @@ import (
 	"net/rpc"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
@@ -34,17 +35,15 @@ type EngineOperations interface {
 	// the EngineOperations implementation.
 	InitConfig(*config.Common)
 	// PrepareConfig is called in stage1 to validate and prepare container configuration
-	PrepareConfig(net.Conn) error
-	// IsRunAsInstance returns whether or not the container is an instance or batch
-	IsRunAsInstance() bool
-	// IsAllowSUID returns whether or not the engine allow SUID workflow
-	IsAllowSUID() bool
+	PrepareConfig(net.Conn, *starter.Config) error
 	// CreateContainer is called in smaster and does mount operations, etc... to
 	// set up the container environment for the payload proc
 	CreateContainer(int, net.Conn) error
 	// StartProcess is called in stage2 after waiting on RPC server exit. It is
 	// responsible for exec'ing the payload proc in the container
 	StartProcess(net.Conn) error
+	// PostStartProcess is called in smaster after successful execution of container process
+	PostStartProcess(int) error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
 	// will typically block until the container proc exists
 	MonitorContainer(int) (syscall.WaitStatus, error)

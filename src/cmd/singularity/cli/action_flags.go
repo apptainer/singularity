@@ -32,6 +32,7 @@ var (
 	IsWritable   bool
 	Nvidia       bool
 	NoHome       bool
+	NoInit       bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -42,8 +43,8 @@ var (
 	AllowSUID bool
 	KeepPrivs bool
 	NoPrivs   bool
-	AddCaps   []string
-	DropCaps  []string
+	AddCaps   string
+	DropCaps  string
 )
 
 var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
@@ -125,6 +126,9 @@ func initBoolVars() {
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
+
+	// --no-init
+	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
@@ -152,13 +156,13 @@ func initPrivilegeVars() {
 	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "Let root user keep privileges in container")
 
 	// --no-privs
-	actionFlags.BoolVar(&NoPrivs, "no-privs", true, "Drop all privileges from root user in container")
+	actionFlags.BoolVar(&NoPrivs, "no-privs", false, "Drop all privileges from root user in container")
 
 	// --add-caps
-	actionFlags.StringSliceVar(&AddCaps, "add-caps", []string{}, "A comma separated capability list to add")
+	actionFlags.StringVar(&AddCaps, "add-caps", "", "A comma separated capability list to add")
 
 	// --drop-caps
-	actionFlags.StringSliceVar(&DropCaps, "drop-caps", []string{}, "A comma separated capability list to drop")
+	actionFlags.StringVar(&DropCaps, "drop-caps", "", "A comma separated capability list to drop")
 
 	// --allow-setuid
 	actionFlags.BoolVar(&AllowSUID, "allow-setuid", false, "Allow setuid binaries in container (root only)")

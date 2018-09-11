@@ -18,6 +18,7 @@ type sandboxFormat struct{}
 func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
 		img.Type = SANDBOX
+		img.Writable = true
 	} else {
 		return fmt.Errorf("not a directory image")
 	}
