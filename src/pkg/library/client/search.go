@@ -9,7 +9,7 @@ import (
 	"fmt"
 )
 
-// SearchLibrary will search the library for a given query ans display results
+// SearchLibrary will search the library for a given query and display results
 func SearchLibrary(value string, libraryURL string, authToken string) error {
 	if len(value) < 3 {
 		return fmt.Errorf("Bad query '%s'. You must search for at least 3 characters", value)
