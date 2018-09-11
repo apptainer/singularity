@@ -34,6 +34,9 @@ go_BIN := $(singularity)
 go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL)
 
+bash_completion :=  $(BUILDDIR)/etc/bash_completion.d/singularity
+bash_completion_INSTALL := $(PREFIX)/etc/bash_completion.d/singularity
+
 go_TAG += containers_image_openpgp
 
 abs_BUILDDIR := `readlink -f $(BUILDDIR)`
@@ -42,11 +45,12 @@ cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runti
 cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
-	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL)
+	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
+	$(bash_completion_INSTALL)
 
-CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) 
+CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion)
 
-all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter)
+all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completion)
 
 $(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
@@ -76,6 +80,18 @@ $(singularity_INSTALL): $(singularity)
 $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 	@rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
+
+# bash_completion file
+$(bash_completion): $(go_OBJ)
+	@rm -f $@
+	@mkdir -p $(@D)
+	$(V)go run  $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+
+# install singularity CLI bash_completion file
+$(bash_completion_INSTALL): $(bash_completion)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
 
 # starter & starter-suid install
 $(starter_INSTALL): $(starter)
