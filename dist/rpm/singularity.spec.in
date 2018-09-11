@@ -92,6 +92,8 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/bin/starter
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
+%dir %{_sysconfdir}/bash_completion.d
+%{_sysconfdir}/bash_completion.d/*
 %dir %{_localstatedir}/singularity
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
