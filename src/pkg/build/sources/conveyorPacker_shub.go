@@ -29,12 +29,6 @@ func (cp *ShubConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 
 	src := `shub://` + b.Recipe.Header["from"]
 
-	//create bundle to build into
-	cp.b, err = sytypes.NewBundle("sbuild-shub")
-	if err != nil {
-		return
-	}
-
 	//create file for image download
 	f, err := ioutil.TempFile(cp.b.Path, "shub-img")
 	if err != nil {
