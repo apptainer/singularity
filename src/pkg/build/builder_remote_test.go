@@ -45,7 +45,7 @@ type mockService struct {
 
 var upgrader = websocket.Upgrader{}
 
-func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRef string) ResponseData {
+func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRef string) types.ResponseData {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,
@@ -59,7 +59,7 @@ func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRe
 		libraryRef = "library://user/collection/image"
 	}
 
-	return ResponseData{
+	return types.ResponseData{
 		ID:         id,
 		Definition: d,
 		WSURL:      wsURL.String(),
@@ -72,7 +72,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Set the respone body, depending on the type of operation
 	if r.Method == http.MethodPost && r.RequestURI == buildPath {
 		// Mock new build endpoint
-		var rd RequestData
+		var rd types.RequestData
 		if err := json.NewDecoder(r.Body).Decode(&rd); err != nil {
 			m.t.Fatalf("failed to parse request: %v", err)
 		}
