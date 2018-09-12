@@ -11,14 +11,17 @@ import (
 	"bytes"
 	"crypto"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
@@ -105,15 +108,28 @@ func printSignatures(entity *openpgp.Entity) error {
 	return nil
 }
 
+// AskQuestion prompts the user with a question and return the response
+func AskQuestion(format string, a ...interface{}) (string, error) {
+	fmt.Printf(format, a...)
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	response := scanner.Text()
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return response, nil
+}
+
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
 	user, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
-		sylog.Errorf("could lookup user's real home folder %s\n", err)
-		return ""
+		sylog.Warningf("could not lookup user's real home folder %s", err)
+		sylog.Warningf("using current directory for %s", filepath.Join(".singularity", "sypgp"))
+		return filepath.Join(".singularity", "sypgp")
 	}
 
-	return filepath.Join(user.Dir, ".singularity/sypgp")
+	return filepath.Join(user.Dir, ".singularity", "sypgp")
 }
 
 // SecretPath returns a string describing the path to the private keys store
@@ -128,25 +144,59 @@ func PublicPath() string {
 
 // PathsCheck creates the sypgp home folder, secret and public keyring files
 func PathsCheck() error {
+	// create the sypgp base directory
 	if err := os.MkdirAll(DirPath(), 0700); err != nil {
-		sylog.Errorf("could not create singularity PGP directory: %s\n", err)
 		return err
 	}
 
+	dirinfo, err := os.Stat(DirPath())
+	if err != nil {
+		return err
+	}
+	if dirinfo.Mode() != os.ModeDir|0700 {
+		sylog.Warningf("directory mode (%v) on %v needs to be 0700, fixing that...", dirinfo.Mode(), DirPath())
+		if err = os.Chmod(DirPath(), 0700); err != nil {
+			return err
+		}
+	}
+
+	// create or open the secret OpenPGP key cache file
 	fs, err := os.OpenFile(SecretPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		sylog.Errorf("could not create private keyring file: %s\n", err)
 		return err
 	}
-	fs.Close()
+	defer fs.Close()
 
+	// check and fix permissions (secret cache file)
+	fsinfo, err := fs.Stat()
+	if err != nil {
+		return err
+	}
+	if fsinfo.Mode() != 0600 {
+		sylog.Warningf("file mode (%v) on %v needs to be 0600, fixing that...", fsinfo.Mode(), SecretPath())
+		if err = fs.Chmod(0600); err != nil {
+			return err
+		}
+	}
+
+	// create or open the public OpenPGP key cache file
 	fp, err := os.OpenFile(PublicPath(), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
-		sylog.Errorf("could not create public keyring file: %s\n", err)
 		return err
 	}
-	fp.Close()
+	defer fp.Close()
 
+	// check and fix permissions (public cache file)
+	fpinfo, err := fp.Stat()
+	if err != nil {
+		return err
+	}
+	if fpinfo.Mode() != 0600 {
+		sylog.Warningf("file mode (%v) on %v needs to be 0600, fixing that...", fpinfo.Mode(), PublicPath())
+		if err = fp.Chmod(0600); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -158,14 +208,12 @@ func LoadPrivKeyring() (openpgp.EntityList, error) {
 
 	f, err := os.Open(SecretPath())
 	if err != nil {
-		sylog.Errorf("error trying to open secret keyring file: %s\n", err)
 		return nil, err
 	}
 	defer f.Close()
 
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		sylog.Errorf("error while trying to read secret key ring: %s\n", err)
 		return nil, err
 	}
 
@@ -180,23 +228,22 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 
 	f, err := os.Open(PublicPath())
 	if err != nil {
-		sylog.Errorf("error trying to open public keyring file: %s\n", err)
 		return nil, err
 	}
 	defer f.Close()
 
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		sylog.Errorf("error while trying to read public key ring: %s\n", err)
 		return nil, err
 	}
 
 	return el, nil
 }
 
-func printEntity(index int, e *openpgp.Entity) {
+// PrintEntity pretty prints an entity entry
+func PrintEntity(index int, e *openpgp.Entity) {
 	for _, v := range e.Identities {
-		fmt.Printf("%v) U: %v %v %v\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+		fmt.Printf("%v) U: %v (%v) <%v>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
 	}
 	fmt.Printf("   C: %v\n", e.PrimaryKey.CreationTime)
 	fmt.Printf("   F: %0X\n", e.PrimaryKey.Fingerprint)
@@ -204,7 +251,8 @@ func printEntity(index int, e *openpgp.Entity) {
 	fmt.Printf("   L: %v\n", bits)
 }
 
-func printPubKeyring() (err error) {
+// PrintPubKeyring prints the public keyring read from the public local store
+func PrintPubKeyring() (err error) {
 	var pubEntlist openpgp.EntityList
 
 	if pubEntlist, err = LoadPubKeyring(); err != nil {
@@ -212,14 +260,15 @@ func printPubKeyring() (err error) {
 	}
 
 	for i, e := range pubEntlist {
-		printEntity(i, e)
+		PrintEntity(i, e)
 		fmt.Println("   --------")
 	}
 
 	return
 }
 
-func printPrivKeyring() (err error) {
+// PrintPrivKeyring prints the secret keyring read from the public local store
+func PrintPrivKeyring() (err error) {
 	var privEntlist openpgp.EntityList
 
 	if privEntlist, err = LoadPrivKeyring(); err != nil {
@@ -227,120 +276,182 @@ func printPrivKeyring() (err error) {
 	}
 
 	for i, e := range privEntlist {
-		printEntity(i, e)
+		PrintEntity(i, e)
 		fmt.Println("   --------")
 	}
 
 	return
 }
 
-// GenKeyPair generates a PGP key pair and store them in the sypgp home folder
-func GenKeyPair() error {
+// StorePrivKey stores a private entity list into the local key cache
+func StorePrivKey(e *openpgp.Entity) (err error) {
+	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if err = e.SerializePrivate(f, nil); err != nil {
+		return
+	}
+	return
+}
+
+// StorePubKey stores a public key entity list into the local key cache
+func StorePubKey(e *openpgp.Entity) (err error) {
+	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if err = e.Serialize(f); err != nil {
+		return
+	}
+	return
+}
+
+// GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
+func GenKeyPair() (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	if err := PathsCheck(); err != nil {
-		return err
+	if err = PathsCheck(); err != nil {
+		return
 	}
 
-	fmt.Print("Enter your name (e.g., John Doe) : ")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	name := scanner.Text()
-	if err := scanner.Err(); err != nil {
-		sylog.Errorf("error while reading name from user: %s\n", err)
-		return err
-	}
-
-	fmt.Print("Enter your email address (e.g., john.doe@example.com) : ")
-	scanner.Scan()
-	email := scanner.Text()
-	if err := scanner.Err(); err != nil {
-		sylog.Errorf("error while reading email from user: %s\n", err)
-		return err
-	}
-
-	fmt.Print("Enter optional comment (e.g., development keys) : ")
-	scanner.Scan()
-	comment := scanner.Text()
-	if err := scanner.Err(); err != nil {
-		sylog.Errorf("error while reading comment from user: %s\n", err)
-		return err
-	}
-
-	fmt.Print("Generating Entity and PGP Key Pair... ")
-	entity, err := openpgp.NewEntity(name, comment, email, conf)
+	name, err := AskQuestion("Enter your name (e.g., John Doe) : ")
 	if err != nil {
-		sylog.Errorf("error while creating entity: %s\n", err)
-		return err
+		return
+	}
+
+	email, err := AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
+	if err != nil {
+		return
+	}
+
+	comment, err := AskQuestion("Enter optional comment (e.g., development keys) : ")
+	if err != nil {
+		return
+	}
+
+	fmt.Print("Generating Entity and OpenPGP Key Pair... ")
+	entity, err = openpgp.NewEntity(name, comment, email, conf)
+	if err != nil {
+		return
 	}
 	fmt.Println("Done")
 
-	fs, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		sylog.Errorf("could not open private keyring file for appending: %s\n", err)
-		return err
+	// Store key parts in local key caches
+	if err = StorePrivKey(entity); err != nil {
+		return
 	}
-	defer fs.Close()
-
-	if err = entity.SerializePrivate(fs, nil); err != nil {
-		sylog.Errorf("error while writing private entity to keyring file: %s\n", err)
-		return err
+	if err = StorePubKey(entity); err != nil {
+		return
 	}
 
-	fp, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	if err != nil {
-		sylog.Errorf("could not open public keyring file for appending: %s\n", err)
-		return err
-	}
-	defer fp.Close()
-
-	if err = entity.Serialize(fp); err != nil {
-		sylog.Errorf("error while writing public entity to keyring file: %s\n", err)
-		return err
-	}
-
-	return nil
+	return
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
-// XXX: replace that with acutal cli passwd grab
 func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
-		fmt.Print("Enter key passphrase: ")
-		scanner := bufio.NewScanner(os.Stdin)
-		scanner.Scan()
-		pass := scanner.Text()
-		if err := scanner.Err(); err != nil {
-			sylog.Errorf("error while reading passphrase from user: %s\n", err)
-			return err
+		pass, err := AskQuestion("Enter key passphrase: ")
+		if err != nil {
+			return nil
 		}
 
 		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
-			sylog.Errorf("error while decrypting key: %s\n", err)
 			return err
 		}
 	}
 	return nil
 }
 
-// SelectKey prints a key list to user and returns the choice
-func SelectKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	var index int
+// SelectPubKey prints a public key list to user and returns the choice
+func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	PrintPubKeyring()
 
-	printPrivKeyring()
-	fmt.Print("Enter # of signing key to use : ")
-	n, err := fmt.Scanf("%d", &index)
-	if err != nil || n != 1 {
-		sylog.Errorf("error while reading key choice from user: %s\n", err)
+	index, err := AskQuestion("Enter # of public key to use : ")
+	if err != nil {
+		return nil, err
+	}
+	if index == "" {
+		return nil, fmt.Errorf("invalid key choice")
+	}
+	i, err := strconv.ParseUint(index, 10, 32)
+	if err != nil {
 		return nil, err
 	}
 
-	if index < 0 || index > len(el)-1 {
-		fmt.Println("invalid key choice")
+	if i < 0 || i > uint64(len(el))-1 {
 		return nil, fmt.Errorf("invalid key choice")
 	}
 
-	return el[index], nil
+	return el[i], nil
+}
+
+// SelectPrivKey prints a secret key list to user and returns the choice
+func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	PrintPrivKeyring()
+
+	index, err := AskQuestion("Enter # of signing key to use : ")
+	if err != nil {
+		return nil, err
+	}
+	if index == "" {
+		return nil, fmt.Errorf("invalid key choice")
+	}
+	i, err := strconv.ParseUint(index, 10, 32)
+	if err != nil {
+		return nil, err
+	}
+
+	if i < 0 || i > uint64(len(el))-1 {
+		return nil, fmt.Errorf("invalid key choice")
+	}
+
+	return el[i], nil
+}
+
+// SearchPubkey connects to a key server and searches for a specific key
+func SearchPubkey(search, keyserverURI, authToken string) (string, error) {
+	v := url.Values{}
+	v.Set("search", search)
+	v.Set("op", "index")
+	v.Set("fingerprint", "on")
+
+	u, err := url.Parse(keyserverURI)
+	if err != nil {
+		return "", err
+	}
+	u.Path = "pks/lookup"
+	u.RawQuery = v.Encode()
+
+	r, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return "", err
+	}
+	if authToken != "" {
+		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
+	}
+	r.Header.Set("User-Agent", useragent.Value)
+
+	resp, err := http.DefaultClient.Do(r)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return "", fmt.Errorf("no keys match provided search string")
+	}
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
 
 // FetchPubkey connects to a key server and requests a specific key
@@ -352,7 +463,6 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityLis
 
 	u, err := url.Parse(keyserverURI)
 	if err != nil {
-		sylog.Errorf("failed to parse keyserver URI: %v", err)
 		return nil, err
 	}
 	u.Path = "pks/lookup"
@@ -365,34 +475,27 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityLis
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
+	r.Header.Set("User-Agent", useragent.Value)
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		sylog.Errorf("error in http.Get: %s\n", err)
 		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
-		err = fmt.Errorf("no matching keys found for fingerprint")
-		sylog.Errorf("%s\n", err)
-		return nil, err
+		return nil, fmt.Errorf("no matching keys found for fingerprint")
 	}
 
 	el, err := openpgp.ReadArmoredKeyRing(resp.Body)
 	if err != nil {
-		sylog.Errorf("error while trying to read armored key ring: %s\n", err)
 		return nil, err
 	}
 	if len(el) == 0 {
-		err = fmt.Errorf("no keys in keyring")
-		sylog.Errorf("%s\n", err)
-		return nil, err
+		return nil, fmt.Errorf("no keys in keyring")
 	}
 	if len(el) > 1 {
-		err = fmt.Errorf("server returned more than one key for unique fingerprint")
-		sylog.Errorf("%s\n", err)
-		return nil, err
+		return nil, fmt.Errorf("server returned more than one key for unique fingerprint")
 	}
 
 	return el, nil
@@ -403,12 +506,11 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	w := bytes.NewBuffer(nil)
 	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)
 	if err != nil {
-		sylog.Errorf("armor.Encode failed: %s\n", err)
+		return err
 	}
 
 	err = entity.Serialize(wr)
 	if err != nil {
-		sylog.Errorf("can't serialize public key: %s\n", err)
 		return err
 	}
 	wr.Close()
@@ -418,7 +520,6 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 
 	u, err := url.Parse(keyserverURI)
 	if err != nil {
-		sylog.Errorf("failed to parse keyserver URI: %v", err)
 		return err
 	}
 	u.Path = "pks/add"
@@ -428,22 +529,20 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	if err != nil {
 		return err
 	}
-	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
+	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
-		sylog.Errorf("error in http.PostForm(): %s\n", err)
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Key server did not accept PGP key")
-		sylog.Errorf("%s\n", err)
-		return err
+		return fmt.Errorf("Key server did not accept OpenPGP key, HTTP status: %v", resp.StatusCode)
 	}
 
 	return nil

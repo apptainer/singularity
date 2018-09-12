@@ -8,6 +8,8 @@ package build
 import (
 	"fmt"
 	"strings"
+
+	"github.com/singularityware/singularity/src/pkg/build/types"
 )
 
 // validURIs contains a list of known uris
@@ -22,13 +24,13 @@ var validURIs = map[string]bool{
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
 type Conveyor interface {
-	Get(Definition) error
+	Get(types.Definition) error
 }
 
 // Packer is the type which is responsible for installing the chroot directory,
 // metadata directory, and potentially other files/directories within the Bundle
 type Packer interface {
-	Pack() (*Bundle, error)
+	Pack() (*types.Bundle, error)
 }
 
 // ConveyorPacker describes an interface that a ConveyorPacker type must implement

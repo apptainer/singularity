@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
 )
@@ -15,13 +13,34 @@ import (
 func init() {
 	// SingularityCmd.AddCommand(instanceDotStopCmd)
 	InstanceStopCmd.Flags().SetInterspersed(false)
+
+	// -u|--user
+	InstanceStopCmd.Flags().StringVarP(&username, "user", "u", "", `If running as root, list instances from "<username>"`)
+	InstanceStopCmd.Flags().SetAnnotation("user", "argtag", []string{"<username>"})
+
+	// -a|--all
+	InstanceStopCmd.Flags().BoolVarP(&stopAll, "all", "a", false, "Stop all user's instances")
+
+	// -f|--force
+	InstanceStopCmd.Flags().BoolVarP(&forceStop, "force", "f", false, "Force kill instance")
+
+	// -s|--signal
+	InstanceStopCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "Signal sent to the instance")
+	InstanceStopCmd.Flags().SetAnnotation("signal", "argtag", []string{"<signal>"})
+
+	// -t|--timeout
+	InstanceStopCmd.Flags().IntVarP(&stopTimeout, "timeout", "t", 10, "Force kill non stopped instances after X seconds")
 }
 
 // InstanceStopCmd singularity instance stop
 var InstanceStopCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("stopping instance")
+		if len(args) > 0 && !stopAll {
+			stopInstance(args[0])
+		} else {
+			stopInstance("*")
+		}
 	},
 
 	Use:     docs.InstanceStopUse,

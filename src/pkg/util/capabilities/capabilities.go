@@ -5,6 +5,21 @@
 
 package capabilities
 
+import "strings"
+
+const (
+	// Permitted capability string constant
+	Permitted string = "permitted"
+	// Effective capability string constant
+	Effective = "effective"
+	// Inheritable capability string constant
+	Inheritable = "inheritable"
+	// Ambient capability string constant
+	Ambient = "ambient"
+	// Bounding capability string constant
+	Bounding = "bounding"
+)
+
 type capability struct {
 	Name        string
 	Value       uint
@@ -370,4 +385,45 @@ var Map = map[string]*capability{
 	"CAP_WAKE_ALARM":       capWakeAlarm,
 	"CAP_BLOCK_SUSPEND":    capBlockSuspend,
 	"CAP_AUDIT_READ":       capAuditRead,
+}
+
+// Split takes a list of capabilities separated by commas and
+// returns a string list with normalized capability name and a
+// second list with unrecognized capabitilies
+func Split(caps string) ([]string, []string) {
+	included := make([]string, 0)
+	excluded := make([]string, 0)
+
+	capabilities := strings.Split(caps, ",")
+
+	for _, capability := range capabilities {
+		c := strings.ToUpper(strings.TrimSpace(capability))
+		if !strings.HasPrefix(c, "CAP_") {
+			c = "CAP_" + c
+		}
+		if _, ok := Map[c]; !ok {
+			excluded = append(excluded, capability)
+			continue
+		}
+		included = append(included, c)
+	}
+
+	return RemoveDuplicated(included), RemoveDuplicated(excluded)
+}
+
+// RemoveDuplicated removes duplicated capability value from
+// provided list and returns it
+func RemoveDuplicated(caps []string) []string {
+	length := len(caps) - 1
+	for i := 0; i < length; i++ {
+		for j := i + 1; j <= length; j++ {
+			if caps[i] == caps[j] {
+				caps[j] = caps[length]
+				caps = caps[0:length]
+				length--
+				j--
+			}
+		}
+	}
+	return caps
 }

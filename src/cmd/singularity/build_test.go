@@ -83,24 +83,20 @@ func TestBuild(t *testing.T) {
 		buildSpec  string
 		sandbox    bool
 		writable   bool
-		skip       bool
 	}{
-		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false, false},
-		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false, false},
-		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true, false},
-		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", false, false, false},
-		{"DockerURI", "", "docker://busybox", false, false, false},
-		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false, true}, // TODO
-		{"SHubURI", "", "shub://GodloveD/busybox", false, false, false},
-		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false, true}, // TODO
-		{"Yum", "yum", "../../../examples/centos/Singularity", false, false, false},
+		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false},
+		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false},
+		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true},
+		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", false, false},
+		{"DockerURI", "", "docker://busybox", false, false},
+		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false},
+		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
+		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false},
+		{"Yum", "yum", "../../../examples/centos/Singularity", false, false},
+		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", false, false},
 	}
 
 	for _, tt := range tests {
-		if tt.skip && !*runDisabled {
-			t.Skip("disabled until issue addressed")
-		}
-
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
 			if tt.dependency != "" {
 				if _, err := exec.LookPath(tt.dependency); err != nil {

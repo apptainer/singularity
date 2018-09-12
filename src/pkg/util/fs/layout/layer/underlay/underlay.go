@@ -124,11 +124,18 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 		return err
 	}
 
+	flags := uintptr(syscall.MS_BIND | syscall.MS_REC | syscall.MS_RDONLY)
 	path, _ := u.session.GetPath(underlayDir)
-	err := system.Points.AddBind(mount.LayerTag, path, u.session.FinalPath(), syscall.MS_BIND|syscall.MS_REC)
+
+	err := system.Points.AddBind(mount.LayerTag, path, u.session.FinalPath(), flags)
 	if err != nil {
 		return err
 	}
+	err = system.Points.AddRemount(mount.LayerTag, u.session.FinalPath(), flags)
+	if err != nil {
+		return err
+	}
+
 	return u.session.Update()
 }
 
