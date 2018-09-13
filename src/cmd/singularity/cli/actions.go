@@ -31,6 +31,7 @@ func init() {
 		ExecCmd,
 		ShellCmd,
 		RunCmd,
+		HelpCmd,
 	}
 
 	// TODO : the next n lines of code are repeating too much but I don't
