@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/user"
 	"runtime"
+	"strconv"
 	"syscall"
 	"testing"
 )
@@ -133,7 +134,7 @@ func getUnprivIDs(pid int) (uid int, gid int) {
 func init() {
 	origUID = os.Getuid()
 	origGID = os.Getgid()
-	origUser, err := user.LookupId(fmt.Sprintf("%d", origUID))
+	origUser, err := user.LookupId(strconv.Itoa(origUID))
 
 	if err != nil {
 		log.Fatalf("err: %s", err)
@@ -142,7 +143,7 @@ func init() {
 	origHome = origUser.HomeDir
 
 	unprivUID, unprivGID = getUnprivIDs(os.Getpid())
-	unprivUser, err := user.LookupId(fmt.Sprintf("%d", unprivUID))
+	unprivUser, err := user.LookupId(strconv.Itoa(unprivUID))
 
 	if err != nil {
 		log.Fatalf("err: %s", err)
