@@ -98,10 +98,13 @@ func newBuild(d types.Definition, dest, format string, force, update bool, secti
 
 	b.addOptions()
 
-	if c, err := getcp(b.d); err == nil {
-		b.c = c
-	} else {
-		return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+	// dont need to get cp if we're skipping bootstrap
+	if !update || force {
+		if c, err := getcp(b.d); err == nil {
+			b.c = c
+		} else {
+			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+		}
 	}
 
 	switch format {
