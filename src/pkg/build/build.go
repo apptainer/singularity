@@ -335,26 +335,27 @@ func makeDef(spec string) (types.Definition, error) {
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
+	}
+	// Non-URI passed as spec
+	if _, err := os.Stat(spec); err == nil {
 
-	} else if ok, err := types.IsValidDefinition(spec); ok && err == nil {
-		// Non-URI passed as spec, check is its a definition
 		defFile, err := os.Open(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
 		}
 		defer defFile.Close()
 
-		def, err = types.ParseDefinitionFile(defFile)
-		if err != nil {
-			return def, fmt.Errorf("failed to parse definition file %s: %v", spec, err)
-		}
-	} else if _, err := os.Stat(spec); err == nil {
-		//local image or sandbox, make sure it exists on filesystem
-		def = types.Definition{
-			Header: map[string]string{
-				"bootstrap": "localimage",
-				"from":      spec,
-			},
+		if d, err := types.ParseDefinitionFile(defFile); err == nil {
+			//definition used as input
+			def = d
+		} else {
+			//local image or sandbox, make sure it exists on filesystem
+			def = types.Definition{
+				Header: map[string]string{
+					"bootstrap": "localimage",
+					"from":      spec,
+				},
+			}
 		}
 	} else {
 		return def, fmt.Errorf("unable to build from %s: %v", spec, err)
