@@ -24,6 +24,10 @@ before_install:
   - go get -u golang.org/x/lint/golint
   - export PATH="${GOPATH}/bin:${PATH}"
 
+env:
+  global:
+    - SINGULARITY_CACHEDIR=/tmp/singularity_test/cache
+
 install:
   - ./mconfig -p /usr/local
   - make -j `nproc 2>/dev/null || echo 1` -C ./builddir
