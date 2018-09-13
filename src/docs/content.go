@@ -617,9 +617,12 @@ Enterprise Performance Computing (EPC)`
 	// help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	HelpUse   string = `help <command|image path>`
-	HelpShort string = `Display help for command||container if available`
+	HelpShort string = `Display help for command|container if available`
 	HelpLong  string = `
-  Show additional help for a command or container if available
+  Help provides help for any command in the application.
+  Simply type singularity help [command] for full details.
+  Or show additional help for a command or container if available
+  singularity help [path to image]
 `
 	HelpExample string = `
  	$ cat my_container.def
