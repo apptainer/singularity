@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
 )
@@ -47,6 +48,17 @@ var (
 	DropCaps  string
 )
 
+func envAppend(flag *pflag.Flag, val string) {
+	flag.Value.Set(val)
+	flag.Changed = true
+
+	sylog.Debugf("Update flag Value to: %s", flag.Value)
+}
+
+type envHandle func(*pflag.Flag, string)
+
+var flagEnvFuncs map[string]envHandle
+
 var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
 
 func getHomeDir() string {
@@ -60,6 +72,10 @@ func getHomeDir() string {
 }
 
 func init() {
+	flagEnvFuncs = map[string]envHandle{
+		"bind": envAppend,
+	}
+
 	initPathVars()
 	initBoolVars()
 	initNamespaceVars()
@@ -71,6 +87,7 @@ func initPathVars() {
 	// -B|--bind
 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
 	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
+	actionFlags.SetAnnotation("bind", "envkey", []string{"BINDPATH", "BIND"})
 
 	// -H|--home
 	actionFlags.StringVarP(&HomePath, "home", "H", getHomeDir(), "A home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")

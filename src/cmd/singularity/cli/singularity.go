@@ -17,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // Global variables for singularity CLI
@@ -32,6 +33,10 @@ var (
 	defaultTokenFile, tokenFile string
 	// authToken holds the sylabs auth token
 	authToken, authWarning string
+)
+
+const (
+	envPrefix = "SINGULARITY_"
 )
 
 func init() {
@@ -83,7 +88,7 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	PersistentPreRun:      setSylogMessageLevel,
+	PersistentPreRun:      persistentPreRun,
 	Run:                   nil,
 
 	Use:     docs.SingularityUse,
@@ -120,6 +125,33 @@ var VersionCmd = &cobra.Command{
 
 	Use:   "version",
 	Short: "Show application version",
+}
+
+func updateFlagsFromEnv(cmd *cobra.Command) {
+	cmd.Flags().VisitAll(handleEnv)
+}
+
+func handleEnv(flag *pflag.Flag) {
+	envKeys, ok := flag.Annotations["envkey"]
+	if !ok {
+		return
+	}
+
+	for _, key := range envKeys {
+		val := os.Getenv(envPrefix + key)
+		if val == "" {
+			continue
+		}
+
+		updateFn := flagEnvFuncs[flag.Name]
+		updateFn(flag, val)
+	}
+
+}
+
+func persistentPreRun(cmd *cobra.Command, args []string) {
+	setSylogMessageLevel(cmd, args)
+	updateFlagsFromEnv(cmd)
 }
 
 // sylabsToken process the authentication Token
