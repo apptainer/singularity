@@ -31,14 +31,19 @@ func TestBusyBoxConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	b, err := types.NewBundle("sbuild-busybox")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
 	c := &sources.BusyBoxConveyor{}
 
-	err = c.Get(def)
+	err = c.Get(b)
 	//clean up tmpfs since assembler isnt called
 	defer c.CleanUp()
 	if err != nil {
@@ -56,14 +61,19 @@ func TestBusyBoxPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	b, err := types.NewBundle("sbuild-busybox")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
 
 	cp := &sources.BusyBoxConveyorPacker{}
 
-	err = cp.Get(def)
+	err = cp.Get(b)
 	//clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {

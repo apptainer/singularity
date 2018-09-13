@@ -35,6 +35,10 @@ type Bundle struct {
 	Recipe      Definition        `json:"rawDeffile"`
 	BindPath    []string          `json:"bindPath"`
 	Path        string            `json:"bundlePath"`
+	Force       bool              `json:"force"`
+	Update      bool              `json:"update"`
+	NoTest      bool              `json:"noTest"`
+	Sections    []string          `json:"sections"`
 }
 
 // NewBundle creates a Bundle environment
@@ -67,4 +71,17 @@ func NewBundle(directoryPrefix string) (b *Bundle, err error) {
 // Rootfs give the path to the root filesystem in the Bundle
 func (b *Bundle) Rootfs() string {
 	return filepath.Join(b.Path, b.FSObjects["rootfs"])
+}
+
+// RunSection determines if a section name was specified
+func (b Bundle) RunSection(s string) bool {
+	for _, section := range b.Sections {
+		if section == "none" {
+			return false
+		}
+		if section == "all" || section == s {
+			return true
+		}
+	}
+	return false
 }

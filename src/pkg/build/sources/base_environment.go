@@ -285,23 +285,35 @@ func makeDirs(rootPath string) (err error) {
 }
 
 func makeSymlinks(rootPath string) (err error) {
-	if err = os.Symlink(".singularity.d/runscript", filepath.Join(rootPath, "singularity")); err != nil {
-		return
+	if _, err := os.Stat(filepath.Join(rootPath, "singularity")); err != nil {
+		if err = os.Symlink(".singularity.d/runscript", filepath.Join(rootPath, "singularity")); err != nil {
+			return err
+		}
 	}
-	if err = os.Symlink(".singularity.d/actions/run", filepath.Join(rootPath, ".run")); err != nil {
-		return
+	if _, err := os.Stat(filepath.Join(rootPath, ".run")); err != nil {
+		if err = os.Symlink(".singularity.d/actions/run", filepath.Join(rootPath, ".run")); err != nil {
+			return err
+		}
 	}
-	if err = os.Symlink(".singularity.d/actions/exec", filepath.Join(rootPath, ".exec")); err != nil {
-		return
+	if _, err := os.Stat(filepath.Join(rootPath, ".exec")); err != nil {
+		if err = os.Symlink(".singularity.d/actions/exec", filepath.Join(rootPath, ".exec")); err != nil {
+			return err
+		}
 	}
-	if err = os.Symlink(".singularity.d/actions/test", filepath.Join(rootPath, ".test")); err != nil {
-		return
+	if _, err := os.Stat(filepath.Join(rootPath, ".test")); err != nil {
+		if err = os.Symlink(".singularity.d/actions/test", filepath.Join(rootPath, ".test")); err != nil {
+			return err
+		}
 	}
-	if err = os.Symlink(".singularity.d/actions/shell", filepath.Join(rootPath, ".shell")); err != nil {
-		return
+	if _, err := os.Stat(filepath.Join(rootPath, ".shell")); err != nil {
+		if err = os.Symlink(".singularity.d/actions/shell", filepath.Join(rootPath, ".shell")); err != nil {
+			return err
+		}
 	}
-	if err = os.Symlink(".singularity.d/env/90-environment.sh", filepath.Join(rootPath, "environment")); err != nil {
-		return
+	if _, err := os.Stat(filepath.Join(rootPath, "environment")); err != nil {
+		if err = os.Symlink(".singularity.d/env/90-environment.sh", filepath.Join(rootPath, "environment")); err != nil {
+			return err
+		}
 	}
 	return
 }
