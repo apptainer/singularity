@@ -10,12 +10,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"runtime"
 	"syscall"
 	"testing"
 )
 
 var origUID, origGID, unprivUID, unprivGID int
+var origHome, unprivHome string
 
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
@@ -43,6 +45,10 @@ func DropPrivilege(t *testing.T) {
 		if err := syscall.Setresuid(unprivUID, unprivUID, origUID); err != nil {
 			t.Fatalf("failed to set user identity: %v", err)
 		}
+
+		if err := os.Setenv("HOME", unprivHome); err != nil {
+			t.Fatalf("failed to set HOME environment variable: %v", err)
+		}
 	}
 }
 
@@ -54,6 +60,10 @@ func ResetPrivilege(t *testing.T) {
 	if err := syscall.Setresgid(origGID, origGID, unprivGID); err != nil {
 		t.Fatalf("failed to reset group identity: %v", err)
 	}
+	if err := os.Setenv("HOME", origHome); err != nil {
+		t.Fatalf("failed to reset HOME environment variable: %v", err)
+	}
+
 	runtime.UnlockOSThread()
 }
 
@@ -123,5 +133,20 @@ func getUnprivIDs(pid int) (uid int, gid int) {
 func init() {
 	origUID = os.Getuid()
 	origGID = os.Getgid()
+	origUser, err := user.LookupId(fmt.Sprintf("%d", origUID))
+
+	if err != nil {
+		log.Fatalf("err: %s", err)
+	}
+
+	origHome = origUser.HomeDir
+
 	unprivUID, unprivGID = getUnprivIDs(os.Getpid())
+	unprivUser, err := user.LookupId(fmt.Sprintf("%d", unprivUID))
+
+	if err != nil {
+		log.Fatalf("err: %s", err)
+	}
+
+	unprivHome = unprivUser.HomeDir
 }
