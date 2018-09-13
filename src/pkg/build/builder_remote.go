@@ -124,7 +124,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err error) {
 	h := http.Header{}
 	rb.setAuthHeader(h)
-	h.Set("User-Agent", useragent.Value)
+	h.Set("User-Agent", useragent.Value())
 
 	c, _, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
@@ -182,7 +182,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d types.Definition,
 	}
 	req = req.WithContext(ctx)
 	rb.setAuthHeader(req.Header)
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := rb.Client.Do(req)
@@ -208,7 +208,7 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 	}
 	req = req.WithContext(ctx)
 	rb.setAuthHeader(req.Header)
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	res, err := rb.Client.Do(req)
 	if err != nil {
