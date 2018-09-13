@@ -119,7 +119,13 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
-	cacheDir := path.Join(usr.HomeDir, ".singularity", "cache", "oci")
+
+	var cacheDir string
+	if cacheDir = os.Getenv("SINGULARITY_CACHEDIR"); cacheDir != "" {
+		cacheDir = path.Join(os.Getenv("SINGULARITY_CACHEDIR"), "oci")
+	} else {
+		cacheDir = path.Join(usr.HomeDir, ".singularity", "cache", "oci")
+	}
 
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
 		sylog.Debugf("Creating oci cache directory: %s", cacheDir)
