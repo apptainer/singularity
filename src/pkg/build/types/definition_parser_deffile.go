@@ -23,7 +23,8 @@ import (
 //
 // Scanner behavior:
 //     1. The *first* time `s.Text()` is non-nil (which can be after infinitely many calls to
-//        `s.Scan()`), that text is *guaranteed* to be the header
+//        `s.Scan()`), that text is *guaranteed* to be the header, unless the header doesnt exist.
+//		  In that case it returns the first section it finds.
 //     2. The next `n` times that `s.Text()` is non-nil (again, each could take many calls to
 //        `s.Scan()`), that text is guaranteed to be one specific section of the definition file.
 //     3. Once the input buffer is completely scanned, `s.Text()` will either be nil or non-nil
@@ -99,21 +100,39 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 }
 
+func insertSection(b []byte, sections map[string]string) {
+	for i := 0; i < len(b); i++ {
+		if b[i] == '\n' {
+			sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
+			break
+		}
+	}
+}
+
 func doSections(s *bufio.Scanner, d *Definition) (err error) {
+
 	sections := make(map[string]string)
 
+	token := strings.TrimSpace(s.Text())
+	//check if first thing parsed is a header or just a section
+	if strings.ToLower(token[0:9]) == "bootstrap" {
+		if err = doHeader(token, d); err != nil {
+			sylog.Warningf("failed to parse DefFile header: %v\n", err)
+			return
+		}
+	} else {
+		//this is a section
+		insertSection([]byte(token), sections)
+	}
+
+	//parse remaining sections while scanner can advance
 	for s.Scan() {
 		if err = s.Err(); err != nil {
 			return
 		}
 
 		b := s.Bytes()
-		for i := 0; i < len(b); i++ {
-			if b[i] == '\n' {
-				sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
-				break
-			}
-		}
+		insertSection(b, sections)
 	}
 
 	if err = s.Err(); err != nil {
@@ -227,10 +246,6 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 		return d, errors.New("Empty definition file")
 	}
 
-	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Warningf("failed to parse DefFile header: %v\n", err)
-		return
-	}
 	if err = doSections(s, &d); err != nil {
 		sylog.Warningf("failed to parse DefFile sections: %v\n", err)
 	}
