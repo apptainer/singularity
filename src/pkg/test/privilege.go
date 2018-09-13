@@ -29,7 +29,7 @@ func EnsurePrivilege(t *testing.T) {
 }
 
 // DropPrivilege drops privilege. Use this at the start of a test that does
-// not require elevated privleges. A matching call to ResetPrivilege must
+// not require elevated privileges. A matching call to ResetPrivilege must
 // occur before the test completes (a defer statement is recommended.)
 func DropPrivilege(t *testing.T) {
 
@@ -51,6 +51,9 @@ func DropPrivilege(t *testing.T) {
 			t.Fatalf("failed to set HOME environment variable: %v", err)
 		}
 	}
+
+	// set SINGULARITY_CACHEDIR
+	os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithoutPrivilege_UID%d", os.Getuid()))
 }
 
 // ResetPrivilege returns effective privilege to the original user.
@@ -66,6 +69,9 @@ func ResetPrivilege(t *testing.T) {
 	}
 
 	runtime.UnlockOSThread()
+
+	// set SINGULARITY_CACHEDIR
+	os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithPrivilege_UID%d", os.Getuid()))
 }
 
 // WithPrivilege wraps the supplied test function with calls to ensure
@@ -73,6 +79,9 @@ func ResetPrivilege(t *testing.T) {
 func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
+
+		// set SINGULARITY_CACHEDIR
+		os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithPrivilege_UID%d", os.Getuid()))
 
 		EnsurePrivilege(t)
 
@@ -88,6 +97,9 @@ func WithoutPrivilege(f func(t *testing.T)) func(t *testing.T) {
 
 		DropPrivilege(t)
 		defer ResetPrivilege(t)
+
+		// set SINGULARITY_CACHEDIR
+		os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithoutPrivilege_UID%d", os.Getuid()))
 
 		f(t)
 	}
