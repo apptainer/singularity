@@ -23,9 +23,6 @@ Enterprise Performance Computing (EPC)`
   Singularity one is capable of building a root file system and running that
   root file system on any other Linux system where Singularity is installed.`
 	SingularityExample string = `
-  $ singularity help
-      Will print a generalized usage summary and available commands.
-
   $ singularity help <command>
       Additional help for any Singularity subcommand can be seen by appending
       the subcommand name to the above command.`
@@ -619,8 +616,8 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	HelpUse   string = `help <image path>`
-	HelpShort string = `Display help for container if available`
+	HelpUse   string = `help <command|image path>`
+	HelpShort string = `Display help for command||container if available`
 	HelpLong  string = `
   Show additional help for a command or container if available
 `
