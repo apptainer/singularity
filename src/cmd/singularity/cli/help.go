@@ -22,9 +22,13 @@ func init() {
 // HelpCmd singularity help
 var HelpCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(1),
-	PreRun: sylabsToken,
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			cmd.Root().Help()
+			return
+		}
+
 		c, _, e := cmd.Root().Find(args)
 		if _, err := os.Stat(args[0]); err == nil {
 			// Help prints (if set) the sourced %help section on the definition file
