@@ -33,7 +33,6 @@ var RunHelpCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 	Args:                  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-
 		if _, err := os.Stat(args[0]); err == nil {
 			// Help prints (if set) the sourced %help section on the definition file
 			abspath, err := filepath.Abs(args[0])
@@ -65,6 +64,8 @@ var RunHelpCmd = &cobra.Command{
 			if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 				sylog.Fatalf("%s", err)
 			}
+		} else {
+			sylog.Fatalf("container not found: %s", err)
 		}
 
 	},
