@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package singularity
@@ -10,13 +10,15 @@ import (
 	"fmt"
 	"net"
 	"os"
-
-	"github.com/singularityware/singularity/src/pkg/util/user"
+	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
+	"github.com/singularityware/singularity/src/pkg/util/mainthread"
+	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
 	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
 
@@ -43,6 +45,8 @@ func (e *EngineOperations) prepareUserCaps() error {
 	}
 
 	caps, _ := capabilities.Split(e.EngineConfig.GetAddCaps())
+	caps = append(caps, e.EngineConfig.OciConfig.Process.Capabilities.Permitted...)
+
 	authorizedCaps, _ := file.CheckUserCaps(pw.Name, caps)
 
 	if len(authorizedCaps) > 0 {
@@ -294,6 +298,9 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		if err := e.prepareContainerConfig(starterConfig); err != nil {
 			return err
 		}
+		if err := e.loadImages(); err != nil {
+			return err
+		}
 	}
 
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
@@ -305,5 +312,107 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
+
 	return nil
+}
+
+func (e *EngineOperations) loadImages() error {
+	images := make([]image.Image, 0)
+
+	// load rootfs image
+	writable := e.EngineConfig.GetWritableImage()
+	img, err := e.loadImage(e.EngineConfig.GetImage(), writable)
+	if err != nil {
+		return err
+	}
+	// sandbox are handled differently for security reasons
+	if img.Type == image.SANDBOX {
+		if img.Path == "/" {
+			return fmt.Errorf("/ as sandbox is not authorized")
+		}
+		if err := os.Chdir(img.Source); err != nil {
+			return err
+		}
+		cwd, err := os.Getwd()
+		if err != nil {
+			return fmt.Errorf("failed to determine current working directory: %s", err)
+		}
+		if cwd != img.Path {
+			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
+		}
+	}
+	img.RootFS = true
+	images = append(images, *img)
+
+	// load overlay images
+	for _, overlayImg := range e.EngineConfig.GetOverlayImage() {
+		writable := true
+
+		splitted := strings.SplitN(overlayImg, ":", 2)
+		if len(splitted) == 2 {
+			if splitted[1] == "ro" {
+				writable = false
+			}
+		}
+
+		img, err := e.loadImage(splitted[0], writable)
+		if err != nil {
+			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+		}
+		images = append(images, *img)
+	}
+
+	e.EngineConfig.SetImageList(images)
+
+	return nil
+}
+
+func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, error) {
+	imgObject, err := image.Init(path, writable)
+	if err != nil {
+		return nil, err
+	}
+
+	link, err := mainthread.Readlink(imgObject.Source)
+	if link != imgObject.Path {
+		return nil, fmt.Errorf("resolved path %s doesn't match with opened path %s", imgObject.Path, link)
+	}
+
+	if len(e.EngineConfig.File.LimitContainerPaths) != 0 {
+		if authorized, err := imgObject.AuthorizedPath(e.EngineConfig.File.LimitContainerPaths); err != nil {
+			return nil, err
+		} else if !authorized {
+			return nil, fmt.Errorf("Singularity image is not in an allowed configured path")
+		}
+	}
+	if len(e.EngineConfig.File.LimitContainerGroups) != 0 {
+		if authorized, err := imgObject.AuthorizedGroup(e.EngineConfig.File.LimitContainerGroups); err != nil {
+			return nil, err
+		} else if !authorized {
+			return nil, fmt.Errorf("Singularity image is not owned by required group(s)")
+		}
+	}
+	if len(e.EngineConfig.File.LimitContainerOwners) != 0 {
+		if authorized, err := imgObject.AuthorizedOwner(e.EngineConfig.File.LimitContainerOwners); err != nil {
+			return nil, err
+		} else if !authorized {
+			return nil, fmt.Errorf("Singularity image is not owned by required user(s)")
+		}
+	}
+
+	switch imgObject.Type {
+	case image.SANDBOX:
+		if !e.EngineConfig.File.AllowContainerDir {
+			return nil, fmt.Errorf("configuration disallows users from running sandbox based containers")
+		}
+	case image.EXT3:
+		if !e.EngineConfig.File.AllowContainerExtfs {
+			return nil, fmt.Errorf("configuration disallows users from running extFS based containers")
+		}
+	case image.SQUASHFS:
+		if !e.EngineConfig.File.AllowContainerSquashfs {
+			return nil, fmt.Errorf("configuration disallows users from running squashFS based containers")
+		}
+	}
+	return imgObject, nil
 }

@@ -1,15 +1,20 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package rpc
 
-import "github.com/singularityware/singularity/src/pkg/util/loop"
+import (
+	"os"
+
+	"github.com/singularityware/singularity/src/pkg/util/loop"
+)
 
 // MkdirArgs defines the arguments to mkdir
 type MkdirArgs struct {
 	Path string
+	Perm os.FileMode
 }
 
 // LoopArgs defines the arguments to create a loop device
@@ -42,4 +47,10 @@ type HostnameArgs struct {
 // and RPC process
 type HasNamespaceArgs struct {
 	NsType string
+}
+
+// SetFsIDArgs defines the arguments to setfsid
+type SetFsIDArgs struct {
+	UID int
+	GID int
 }

@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package image
@@ -92,4 +92,11 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Offset = offset
 	img.Size = uint64(fileinfo.Size()) - img.Offset
 	return nil
+}
+
+func (f *ext3Format) openMode(writable bool) int {
+	if writable {
+		return os.O_RDWR
+	}
+	return os.O_RDONLY
 }
