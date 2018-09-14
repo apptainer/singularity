@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package sources
@@ -17,7 +17,6 @@ import (
 const yumDef = "./testdata_good/yum/yum"
 
 func TestYumConveyor(t *testing.T) {
-
 	if testing.Short() {
 		t.SkipNow()
 	}
@@ -52,7 +51,6 @@ func TestYumConveyor(t *testing.T) {
 }
 
 func TestYumPacker(t *testing.T) {
-
 	_, dnfErr := exec.LookPath("dnf")
 	_, yumErr := exec.LookPath("yum")
 	if dnfErr != nil && yumErr != nil {
