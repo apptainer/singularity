@@ -8,6 +8,7 @@ package types
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
@@ -135,7 +136,8 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 			}
 			defer defFile.Close()
 
-			if _, err = ParseDefinitionFile(defFile); err == nil {
+			if d, err := ParseDefinitionFile(defFile); err == nil {
+				fmt.Println(d)
 				t.Fatal("unexpected success parsing definition file")
 			}
 		}))

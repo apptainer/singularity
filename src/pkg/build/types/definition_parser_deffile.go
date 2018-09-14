@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"reflect"
 	"strings"
 	"unicode"
 
@@ -202,6 +203,14 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		Test:  sections["test"],
 	}
 
+	// make sure information was valid by checking if definition is not equal to an empty one
+	emptyDef := new(Definition)
+	//labels is always initialized
+	emptyDef.Labels = make(map[string]string)
+	if reflect.DeepEqual(d, emptyDef) {
+		return fmt.Errorf("parsed definition did not have any valid information")
+	}
+
 	return
 }
 
@@ -247,7 +256,7 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 	}
 
 	if err = doSections(s, &d); err != nil {
-		sylog.Warningf("failed to parse DefFile sections: %v\n", err)
+		return d, fmt.Errorf("failed to parse DefFile sections: %v", err)
 	}
 
 	return
