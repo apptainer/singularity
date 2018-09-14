@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package sources
@@ -44,7 +44,6 @@ type YumConveyorPacker struct {
 
 // Get downloads container information from the specified source
 func (c *YumConveyor) Get(recipe types.Definition) (err error) {
-
 	c.recipe = recipe
 
 	//check for dnf or yum on system
@@ -103,7 +102,6 @@ func (c *YumConveyor) Get(recipe types.Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
-
 	err = cp.insertBaseEnv()
 	if err != nil {
 		return nil, fmt.Errorf("While inserting base environment: %v", err)
@@ -164,7 +162,6 @@ func (c *YumConveyor) getRPMPath() (err error) {
 }
 
 func (c *YumConveyor) getBootstrapOptions() (err error) {
-
 	var ok bool
 
 	//look for http_proxy and gpg environment vars
@@ -207,7 +204,6 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 }
 
 func (c *YumConveyor) genYumConfig() (err error) {
-
 	fileContent := "[main]\n"
 	//http proxy
 	if c.httpProxy != "" {
@@ -283,7 +279,6 @@ func (c *YumConveyor) genYumConfig() (err error) {
 }
 
 func (c *YumConveyor) importGPGKey() (err error) {
-
 	sylog.Infof("We have a GPG key!  Preparing RPM database.")
 
 	//make sure gpg is being imported over https
@@ -316,7 +311,6 @@ func (c *YumConveyor) importGPGKey() (err error) {
 }
 
 func (c *YumConveyor) copyPseudoDevices() (err error) {
-
 	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/dev"), 0775)
 	if err != nil {
 		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), "/dev"), err)
