@@ -6,6 +6,9 @@
 package singularity
 
 import (
+	"os"
+	"strings"
+
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
@@ -104,7 +107,7 @@ func NewConfig() *EngineConfig {
 	return ret
 }
 
-// SetImage sets the container image path to be used by EngineConfig.JSON.
+// SetImage sets the container image path to be used by EngineConfig.JSON. CLI argument overrides env var if set.
 func (e *EngineConfig) SetImage(name string) {
 	e.JSON.Image = name
 }
@@ -115,7 +118,10 @@ func (e *EngineConfig) GetImage() string {
 }
 
 // SetWritableImage defines the container image as writable or not.
-func (e *EngineConfig) SetWritableImage(writable bool) {
+func (e *EngineConfig) SetWritableImage(writable bool, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		writable = true
+	}
 	e.JSON.WritableImage = writable
 }
 
@@ -125,7 +131,10 @@ func (e *EngineConfig) GetWritableImage() bool {
 }
 
 // SetOverlayImage sets the overlay image path to be used on top of container image.
-func (e *EngineConfig) SetOverlayImage(paths []string) {
+func (e *EngineConfig) SetOverlayImage(paths []string, envvar string) {
+	if ev := strings.Split(os.Getenv(envvar), ","); ev[0] != "" {
+		e.JSON.OverlayImage = ev
+	}
 	e.JSON.OverlayImage = paths
 }
 
@@ -155,7 +164,10 @@ func (e *EngineConfig) GetContain() bool {
 }
 
 // SetNv sets nv flag to bind cuda libraries into containee.JSON.
-func (e *EngineConfig) SetNv(nv bool) {
+func (e *EngineConfig) SetNv(nv bool, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		nv = true
+	}
 	e.JSON.Nv = nv
 }
 
@@ -185,8 +197,12 @@ func (e *EngineConfig) GetScratchDir() []string {
 }
 
 // SetHomeSource sets the source home directory path.
-func (e *EngineConfig) SetHomeSource(source string) {
-	e.JSON.HomeSource = source
+func (e *EngineConfig) SetHomeSource(homeSpec string) {
+	homeSlice := strings.Split(homeSpec, ":")
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
+	}
+	e.JSON.HomeSource = homeSlice[0]
 }
 
 // GetHomeSource retrieves the source home directory path.
@@ -195,8 +211,16 @@ func (e *EngineConfig) GetHomeSource() string {
 }
 
 // SetHomeDest sets the container home directory path.
-func (e *EngineConfig) SetHomeDest(dest string) {
-	e.JSON.HomeDest = dest
+func (e *EngineConfig) SetHomeDest(homeSpec string) {
+	homeSlice := strings.Split(homeSpec, ":")
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
+	}
+	if len(homeSlice) == 1 {
+		e.JSON.HomeDest = homeSlice[0]
+	} else {
+		e.JSON.HomeDest = homeSlice[1]
+	}
 }
 
 // GetHomeDest retrieves the container home directory path.
@@ -214,8 +238,11 @@ func (e *EngineConfig) GetCustomHome() bool {
 	return e.JSON.CustomHome
 }
 
-// SetBindPath sets paths to bind into containee.JSON.
-func (e *EngineConfig) SetBindPath(bindpath []string) {
+// SetBindPath sets paths to bind into containee.JSON. Combines arguments and environment variables.
+func (e *EngineConfig) SetBindPath(bindpath []string, envvar string) {
+	if ev := strings.Split(os.Getenv(envvar), ","); ev[0] != "" {
+		bindpath = append(bindpath, ev...)
+	}
 	e.JSON.BindPath = bindpath
 }
 
@@ -285,7 +312,10 @@ func (e *EngineConfig) GetBootInstance() bool {
 }
 
 // SetAddCaps sets bounding/effective/permitted/inheritable/ambient capabilities to add.
-func (e *EngineConfig) SetAddCaps(caps string) {
+func (e *EngineConfig) SetAddCaps(caps string, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		caps = caps + "," + ev
+	}
 	e.JSON.AddCaps = caps
 }
 
@@ -295,7 +325,10 @@ func (e *EngineConfig) GetAddCaps() string {
 }
 
 // SetDropCaps sets bounding/effective/permitted/inheritable/ambient capabilities to drop.
-func (e *EngineConfig) SetDropCaps(caps string) {
+func (e *EngineConfig) SetDropCaps(caps string, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		caps = caps + "," + ev
+	}
 	e.JSON.DropCaps = caps
 }
 
@@ -315,7 +348,10 @@ func (e *EngineConfig) GetHostname() string {
 }
 
 // SetAllowSUID sets allow-suid flag to allow to run setuid binary inside containee.JSON.
-func (e *EngineConfig) SetAllowSUID(allow bool) {
+func (e *EngineConfig) SetAllowSUID(allow bool, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		allow = true
+	}
 	e.JSON.AllowSUID = allow
 }
 
@@ -325,7 +361,10 @@ func (e *EngineConfig) GetAllowSUID() bool {
 }
 
 // SetKeepPrivs sets keep-privs flag to allow root to retain all privileges.
-func (e *EngineConfig) SetKeepPrivs(keep bool) {
+func (e *EngineConfig) SetKeepPrivs(keep bool, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		keep = true
+	}
 	e.JSON.KeepPrivs = keep
 }
 
@@ -335,7 +374,10 @@ func (e *EngineConfig) GetKeepPrivs() bool {
 }
 
 // SetNoPrivs set no-privs flag to force root user to lose all privileges.
-func (e *EngineConfig) SetNoPrivs(nopriv bool) {
+func (e *EngineConfig) SetNoPrivs(nopriv bool, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		nopriv = true
+	}
 	e.JSON.NoPrivs = nopriv
 }
 
@@ -345,7 +387,10 @@ func (e *EngineConfig) GetNoPrivs() bool {
 }
 
 // SetNoHome set no-home flag to not mount home user home directory
-func (e *EngineConfig) SetNoHome(val bool) {
+func (e *EngineConfig) SetNoHome(val bool, envvar string) {
+	if ev := os.Getenv(envvar); ev != "" {
+		val = true
+	}
 	e.JSON.NoHome = val
 }
 

@@ -138,6 +138,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	// temporary check for development
 	// TODO: a real URI handler
+	// if image == "" { // if image arg is blank check for an env var
+	// 	if ev := os.Getenv("SINGULARITY_IMAGE"); ev != "" {
+	// 		image = ev
+	// 	}
+	// }
 	if strings.HasPrefix(image, "instance://") {
 		instanceName := instance.ExtractName(image)
 		file, err := instance.Get(instanceName)
@@ -161,16 +166,16 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetImage(abspath)
 	}
 
-	engineConfig.SetBindPath(BindPaths)
-	engineConfig.SetOverlayImage(OverlayPath)
-	engineConfig.SetWritableImage(IsWritable)
-	engineConfig.SetNoHome(NoHome)
-	engineConfig.SetNv(Nvidia)
-	engineConfig.SetAddCaps(AddCaps)
-	engineConfig.SetDropCaps(DropCaps)
-	engineConfig.SetAllowSUID(AllowSUID)
-	engineConfig.SetKeepPrivs(KeepPrivs)
-	engineConfig.SetNoPrivs(NoPrivs)
+	engineConfig.SetBindPath(BindPaths, "SINGULARITY_BINDPATH")
+	engineConfig.SetOverlayImage(OverlayPath, "SINGULARITY_OVERLAYIMAGE")
+	engineConfig.SetWritableImage(IsWritable, "SINGULARITY_WRITABLE")
+	engineConfig.SetNoHome(NoHome, "SINGULARITY_NOHOME")
+	engineConfig.SetNv(Nvidia, "SINGULARITY_NV")
+	engineConfig.SetAddCaps(AddCaps, "SINGULARITY_ADDCAPS")
+	engineConfig.SetDropCaps(DropCaps, "SINGULARITY_DROPCAPS")
+	engineConfig.SetAllowSUID(AllowSUID, "SINGULARITY_SUID")
+	engineConfig.SetKeepPrivs(KeepPrivs, "SINGULARITY_KEEPPRIVS")
+	engineConfig.SetNoPrivs(NoPrivs, "SINGULARITY_NOPRIVS")
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
@@ -192,19 +197,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig.SetScratchDir(ScratchPath)
 	engineConfig.SetWorkdir(WorkdirPath)
-
-	homeSlice := strings.Split(HomePath, ":")
-
-	if len(homeSlice) > 2 || len(homeSlice) == 0 {
-		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
-	}
-
-	engineConfig.SetHomeSource(homeSlice[0])
-	if len(homeSlice) == 1 {
-		engineConfig.SetHomeDest(homeSlice[0])
-	} else {
-		engineConfig.SetHomeDest(homeSlice[1])
-	}
+	engineConfig.SetHomeSource(HomeSpec)
+	engineConfig.SetHomeDest(HomeSpec)
 
 	if IsFakeroot {
 		UserNamespace = true
@@ -231,7 +225,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			if Hostname == "" {
 				engineConfig.SetHostname(name)
 			}
-			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO", "")
 			generator.SetProcessArgs([]string{"/sbin/init"})
 		}
 		pwd, err := user.GetPwUID(uid)
