@@ -51,6 +51,12 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
+	for _, img := range engine.EngineConfig.GetImageList() {
+		if err := syscall.Close(int(img.Fd)); err != nil {
+			return fmt.Errorf("failed to close file descriptor for %s", img.Path)
+		}
+	}
+
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
 		return fmt.Errorf("exec %s failed: %s", args[0], err)
@@ -148,6 +154,10 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		gid := os.Getgid()
 		name := engine.CommonConfig.ContainerID
 		privileged := true
+
+		if err := os.Chdir("/"); err != nil {
+			return fmt.Errorf("failed to change directory to /: %s", err)
+		}
 
 		if engine.EngineConfig.OciConfig.Linux != nil {
 			for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
