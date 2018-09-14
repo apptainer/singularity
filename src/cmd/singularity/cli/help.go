@@ -6,9 +6,18 @@
 package cli
 
 import (
+	"encoding/json"
 	"os"
+	"path/filepath"
 
+	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
+	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
 
@@ -32,8 +41,35 @@ var HelpCmd = &cobra.Command{
 		c, _, e := cmd.Root().Find(args)
 		if _, err := os.Stat(args[0]); err == nil {
 			// Help prints (if set) the sourced %help section on the definition file
+			abspath, err := filepath.Abs(args[0])
+			name := filepath.Base(abspath)
 			a := []string{"/bin/cat", "/.singularity.d/runscript.help"}
-			execStarter(cmd, args[0], a, "")
+			starter := buildcfg.SBINDIR + "/starter-suid"
+			procname := "Singularity help"
+			Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
+
+			engineConfig := singularity.NewConfig()
+			ociConfig := &oci.Config{}
+			generator := generate.Generator{Config: &ociConfig.Spec}
+			engineConfig.OciConfig = ociConfig
+
+			generator.SetProcessArgs(a)
+			engineConfig.SetImage(abspath)
+
+			cfg := &config.Common{
+				EngineName:   singularity.Name,
+				ContainerID:  name,
+				EngineConfig: engineConfig,
+			}
+
+			configData, err := json.Marshal(cfg)
+			if err != nil {
+				sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+			}
+
+			if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
+				sylog.Fatalf("%s", err)
+			}
 		} else if c == nil || e != nil {
 			c.Printf("Unknown help topic %#q\n", args)
 			c.Root().Usage()
