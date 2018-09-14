@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package main
@@ -107,6 +107,11 @@ func SMaster(socket int, masterSocket int, starterConfig *starter.Config, jsonBy
 	runtime.UnlockOSThread()
 
 	if fatal != nil {
+		if starterConfig.GetInstance() {
+			if os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+			}
+		}
 		sylog.Fatalf("%s", fatal)
 	}
 
