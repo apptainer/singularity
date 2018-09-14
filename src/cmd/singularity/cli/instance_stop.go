@@ -41,7 +41,7 @@ var InstanceStopCmd = &cobra.Command{
 		} else if stopAll {
 			stopInstance("*")
 		} else {
-			sylog.Fatalf("no options provided")
+			sylog.Fatalf("no arguments supplied")
 		}
 	},
 
