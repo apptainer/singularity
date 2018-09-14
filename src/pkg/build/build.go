@@ -153,19 +153,19 @@ func hasScripts(def types.Definition) bool {
 
 func (b *Build) copyFiles() error {
 
-	//iterate through files transfers
+	// iterate through files transfers
 	for _, transfer := range b.d.BuildData.Files {
-		//sanity
+		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")
 			continue
 		}
-		//dest = source if not specifed
+		// dest = source if not specifed
 		if transfer.Dst == "" {
 			transfer.Dst = transfer.Src
 		}
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		//copy each file into bundle rootfs
+		// copy each file into bundle rootfs
 		transfer.Dst = filepath.Join(b.b.Rootfs(), transfer.Dst)
 		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
 		if err := copy.Run(); err != nil {
@@ -206,7 +206,7 @@ func (b *Build) runBuildEngine() error {
 		OciConfig: ociConfig,
 	}
 
-	//surface build specific environment variables for scripts
+	// surface build specific environment variables for scripts
 	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
 	sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
 
@@ -325,7 +325,7 @@ func makeDef(spec string) (types.Definition, error) {
 			return def, fmt.Errorf("failed to parse definition file %s: %v", spec, err)
 		}
 	} else if _, err := os.Stat(spec); err == nil {
-		//local image or sandbox, make sure it exists on filesystem
+		// local image or sandbox, make sure it exists on filesystem
 		def = types.Definition{
 			Header: map[string]string{
 				"bootstrap": "localimage",
