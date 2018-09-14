@@ -7,9 +7,11 @@ package client
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/singularityware/singularity/src/pkg/test"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 var (
@@ -27,6 +29,12 @@ var (
 		`shub://myprivateregistry.sylabs.io/sylabs/container:latest`,
 	}
 )
+
+func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
+	os.Exit(m.Run())
+}
 
 // TestShubParser checks if the Shub ref parser is working as expected
 func TestIsShubPullRef(t *testing.T) {
