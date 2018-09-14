@@ -18,6 +18,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/pkg/util/nvidiautils"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
 	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
@@ -154,6 +155,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
 		}
 		engineConfig.SetImage(abspath)
+	}
+
+	if Nvidia {
+		NvidiaBindPaths := nvidiautils.GetNvidiaBindPath("/home/cmadison")
+		BindPaths = append(BindPaths, NvidiaBindPaths...)
 	}
 
 	engineConfig.SetBindPath(BindPaths)
