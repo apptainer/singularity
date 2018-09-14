@@ -344,7 +344,7 @@ func (b *Build) addOptions() {
 	b.b.Sections = b.sections
 }
 
-// RunSection determines if a section name was specified
+// runPre determines if %pre section was specified to be run from the CLI
 func (b Build) runPre() bool {
 	for _, section := range b.sections {
 		if section == "none" {
