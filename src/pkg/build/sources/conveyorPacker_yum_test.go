@@ -35,14 +35,20 @@ func TestYumConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	//create bundle to build into
+	b, err := types.NewBundle("sbuild-yum")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}
 
 	yc := &YumConveyor{}
 
-	err = yc.Get(def)
+	err = yc.Get(b)
 	//clean up bundle since assembler isnt called
 	defer os.RemoveAll(yc.b.Path)
 	if err != nil {
@@ -65,14 +71,20 @@ func TestYumPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	//create bundle to build into
+	b, err := types.NewBundle("sbuild-yum")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}
 
 	ycp := &YumConveyorPacker{}
 
-	err = ycp.Get(def)
+	err = ycp.Get(b)
 	//clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(ycp.b.Path)
 	if err != nil {
