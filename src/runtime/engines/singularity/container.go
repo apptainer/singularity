@@ -570,17 +570,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 
 		switch imageObject.Type {
 		case image.EXT3:
-<<<<<<< HEAD
-			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			flags := uintptr(c.suidFlag | syscall.MS_NODEV)
 
 			if !imageObject.Writable {
 				flags |= syscall.MS_RDONLY
 				ov.AddLowerDir(dst)
 			}
 
-=======
-			flags := uintptr(c.suidFlag | syscall.MS_NODEV)
->>>>>>> upstream/master
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, imageObject.Offset, imageObject.Size)
 			if err != nil {
 				return err
