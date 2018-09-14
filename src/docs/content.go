@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 //TODO Provide some guidelines for writing these docs
@@ -515,6 +515,17 @@ Enterprise Performance Computing (EPC)`
   of your choosing`
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// search
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	SearchUse   string = `search [search options...] <search query>`
+	SearchShort string = `Search the library`
+	SearchLong  string = `
+  The Singularity search command allows you to search within a container library
+  of your choosing. The Singularity search command allows you to search within a container library of your choosing.  The container library defaults to https://library.sylabs.io when no other library argument is given.`
+	SearchExample string = `
+  $ singularity search lolcow`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// run

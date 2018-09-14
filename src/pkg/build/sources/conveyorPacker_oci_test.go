@@ -17,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/build/sources"
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 const (
@@ -25,6 +26,12 @@ const (
 	ociArchiveURI     = "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-archive.tar"
 	dockerDaemonImage = "alpine:latest"
 )
+
+func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
+	os.Exit(m.Run())
+}
 
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub
 func TestOCIConveyorDocker(t *testing.T) {
