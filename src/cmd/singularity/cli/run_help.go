@@ -22,23 +22,18 @@ import (
 )
 
 func init() {
-	HelpCmd.Flags().SetInterspersed(false)
-	SingularityCmd.SetHelpCommand(HelpCmd)
+	RunHelpCmd.Flags().SetInterspersed(false)
 
-	SingularityCmd.AddCommand(HelpCmd)
+	SingularityCmd.AddCommand(RunHelpCmd)
 }
 
-// HelpCmd singularity help
-var HelpCmd = &cobra.Command{
+// RunHelpCmd singularity run-help <image>
+var RunHelpCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
+	Args:                  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) == 0 {
-			cmd.Root().Help()
-			return
-		}
 
-		c, _, e := cmd.Root().Find(args)
 		if _, err := os.Stat(args[0]); err == nil {
 			// Help prints (if set) the sourced %help section on the definition file
 			abspath, err := filepath.Abs(args[0])
@@ -70,17 +65,12 @@ var HelpCmd = &cobra.Command{
 			if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 				sylog.Fatalf("%s", err)
 			}
-		} else if c == nil || e != nil {
-			c.Printf("Unknown help topic %#q\n", args)
-			c.Root().Usage()
-		} else {
-			c.InitDefaultHelpFlag() // make possible 'help' flag to be shown
-			c.Help()
 		}
+
 	},
 
-	Use:     docs.HelpUse,
-	Short:   docs.HelpShort,
-	Long:    docs.HelpLong,
-	Example: docs.HelpExample,
+	Use:     docs.RunHelpUse,
+	Short:   docs.RunHelpShort,
+	Long:    docs.RunHelpLong,
+	Example: docs.RunHelpExample,
 }

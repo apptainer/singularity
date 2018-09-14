@@ -614,17 +614,15 @@ Enterprise Performance Computing (EPC)`
 	VerifyExample string = `
   $ singularity verify container.sif`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// help
+	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	HelpUse   string = `help <command|image path>`
-	HelpShort string = `Display help for command|container if available`
-	HelpLong  string = `
-  Help provides help for any command in the application.
-  Simply type singularity help [command] for full details.
-  Or show additional help for a command or container if available
-  singularity help [path to image]
+	RunHelpUse   string = `run-help <image path>`
+	RunHelpShort string = `Display help for command|container if available`
+	RunHelpLong  string = `
+   show additional help for a container if available
+  singularity run-help <path to image>
 `
-	HelpExample string = `
+	RunHelpExample string = `
  	$ cat my_container.def
   Bootstrap: docker
   From: busybox
@@ -637,7 +635,7 @@ Enterprise Performance Computing (EPC)`
   [...snip...]
   Cleaning up...
 
-  $ singularity help my_container.sif
+  $ singularity run-help my_container.sif
 
 
     Some help for this container`
