@@ -13,6 +13,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/build/sources"
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 const (
@@ -21,6 +22,12 @@ const (
 	assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
 	assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
 )
+
+func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
+	os.Exit(m.Run())
+}
 
 // TestAssembler sees if we can build a SIF image from a docke based kitchen to /tmp
 func TestSIFAssemblerDocker(t *testing.T) {
