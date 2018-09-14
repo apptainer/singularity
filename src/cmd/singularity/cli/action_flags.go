@@ -48,21 +48,36 @@ var (
 	DropCaps  string
 )
 
-func envAppend(flag *pflag.Flag, val string) {
-	if err := flag.Value.Set(val); err != nil {
-		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, val)
+// Combine command line and environment var into a single argument
+func envAppend(flag *pflag.Flag, envvar string) {
+	if err := flag.Value.Set(envvar); err != nil {
+		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
 	}
 
 	flag.Changed = true
 	sylog.Debugf("Update flag Value to: %s", flag.Value)
 }
 
-func envBool(flag *pflag.Flag, val string) {
-	if flag.Changed == false {
-		if val != "" {
-			flag.Value.Set("true")
-			flag.Changed = true
+// If CLI option is unset but env var is set enable the bool
+func envBool(flag *pflag.Flag, envvar string) {
+	if flag.Changed == false && envvar != "" {
+		if err := flag.Value.Set("true"); err != nil {
+			sylog.Warningf("Unable to set %s to true", flag.Name)
 		}
+
+		flag.Changed = true
+		sylog.Debugf("Update flag Value to: %s", flag.Value)
+	}
+}
+
+// If CLI option/argument string is unset and env var is set write to string or slice flag
+func envStringNSlice(flag *pflag.Flag, envvar string) {
+	if flag.Changed == false && envvar != "" {
+		if err := flag.Value.Set(envvar); err != nil {
+			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+		}
+		flag.Changed = true
+		sylog.Debugf("Update flag Value to: %s", flag.Value)
 	}
 }
 
@@ -85,6 +100,8 @@ func getHomeDir() string {
 func init() {
 	flagEnvFuncs = map[string]envHandle{
 		"bind":    envAppend,
+		"home":    envStringNSlice,
+		"overlay": envStringNSlice,
 		"contain": envBool,
 	}
 
@@ -104,10 +121,12 @@ func initPathVars() {
 	// -H|--home
 	actionFlags.StringVarP(&HomePath, "home", "H", getHomeDir(), "A home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")
 	actionFlags.SetAnnotation("home", "argtag", []string{"<spec>"})
+	actionFlags.SetAnnotation("home", "envkey", []string{"HOME"})
 
 	// -o|--overlay
 	actionFlags.StringSliceVarP(&OverlayPath, "overlay", "o", []string{}, "Use an overlayFS image for persistent data storage or as read-only layer of container.")
 	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("overlay", "envkey", []string{"OVERLAYIMAGE", "OVERLAY"})
 
 	// -S|--scratch
 	actionFlags.StringSliceVarP(&ScratchPath, "scratch", "S", []string{}, "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location)")
