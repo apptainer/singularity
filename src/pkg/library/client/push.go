@@ -138,7 +138,7 @@ func postFile(baseURL string, authToken string, filePath string, imageID string)
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	client := &http.Client{

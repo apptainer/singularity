@@ -5,10 +5,17 @@
 
 package main
 
-import "github.com/singularityware/singularity/src/cmd/singularity/cli"
+import (
+	"github.com/singularityware/singularity/src/cmd/singularity/cli"
+	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
+)
 
 func main() {
-
 	// In cli/singularity.go
 	cli.ExecuteSingularity()
+}
+
+func init() {
+	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
 }

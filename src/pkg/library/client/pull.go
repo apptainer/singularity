@@ -63,7 +63,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	res, err := client.Do(req)
 	if err != nil {

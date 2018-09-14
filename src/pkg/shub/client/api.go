@@ -74,7 +74,7 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 	if err != nil {
 		return ShubAPIResponse{}, err
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	// Do the request, if status isn't success, return error
 	res, err := httpc.Do(req)
