@@ -35,7 +35,7 @@ func TestYumConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	//create bundle to build into
+	// create bundle to build into
 	b, err := types.NewBundle("sbuild-yum")
 	if err != nil {
 		return
@@ -49,7 +49,7 @@ func TestYumConveyor(t *testing.T) {
 	yc := &YumConveyor{}
 
 	err = yc.Get(b)
-	//clean up bundle since assembler isnt called
+	// clean up bundle since assembler isnt called
 	defer os.RemoveAll(yc.b.Path)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
@@ -71,7 +71,7 @@ func TestYumPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	//create bundle to build into
+	// create bundle to build into
 	b, err := types.NewBundle("sbuild-yum")
 	if err != nil {
 		return
@@ -85,7 +85,7 @@ func TestYumPacker(t *testing.T) {
 	ycp := &YumConveyorPacker{}
 
 	err = ycp.Get(b)
-	//clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(ycp.b.Path)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
