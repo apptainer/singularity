@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package files
@@ -65,7 +65,7 @@ func Group(path string) (content []byte, err error) {
 	for _, gid := range groups {
 		grInfo, err := user.GetGrGID(uint32(gid))
 		if err != nil || grInfo == nil {
-			sylog.Verbosef("Skipping GID %d as group entry doesn't exist.\n")
+			sylog.Verbosef("Skipping GID %d as group entry doesn't exist.\n", gid)
 			continue
 		}
 		groupLine := fmt.Sprintf("%s:x:%d:%s\n", grInfo.Name, grInfo.GID, pwInfo.Name)

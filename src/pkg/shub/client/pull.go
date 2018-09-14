@@ -62,7 +62,7 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	// Do the request, if status isn't success, return error
 	resp, err := httpc.Do(req)
