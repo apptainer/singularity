@@ -60,9 +60,7 @@ func envAppend(flag *pflag.Flag, val string) {
 func envBool(flag *pflag.Flag, val string) {
 	if flag.Changed == false {
 		if val != "" {
-			// IsContained is obviously hardcoded.  But I can't figure out how
-			// to get these variables within the function.
-			IsContained = true
+			flag.Value.Set("true")
 			flag.Changed = true
 		}
 	}
