@@ -434,7 +434,7 @@ func SearchPubkey(search, keyserverURI, authToken string) (string, error) {
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
-	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("User-Agent", useragent.Value())
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
@@ -475,7 +475,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityLis
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
-	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("User-Agent", useragent.Value())
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
@@ -532,7 +532,7 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
-	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("User-Agent", useragent.Value())
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(r)

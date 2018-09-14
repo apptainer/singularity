@@ -9,11 +9,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/singularityware/singularity/src/pkg/test"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 const testToken = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM"
@@ -73,6 +75,12 @@ type mockService struct {
 	httpPath    string
 	httpServer  *httptest.Server
 	baseURI     string
+}
+
+func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
+	os.Exit(m.Run())
 }
 
 func (m *mockService) Run() {
