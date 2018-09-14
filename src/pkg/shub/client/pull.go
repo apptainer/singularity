@@ -66,6 +66,9 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 
 	// Do the request, if status isn't success, return error
 	resp, err := httpc.Do(req)
+	if resp == nil {
+		return fmt.Errorf("No response received from singularity hub")
+	}
 	if resp.StatusCode == http.StatusNotFound {
 		return fmt.Errorf("The requested image was not found in singularity hub")
 	}
