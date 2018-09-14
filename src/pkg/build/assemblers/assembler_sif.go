@@ -71,19 +71,19 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Creating SIF file...")
 
-	//insert help
+	// insert help
 	err = insertHelpScript(b)
 	if err != nil {
 		return fmt.Errorf("While inserting help script: %v", err)
 	}
 
-	//insert labels
+	// insert labels
 	err = insertLabelsJSON(b)
 	if err != nil {
 		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
-	//insert definition
+	// insert definition
 	err = insertDefinition(b)
 	if err != nil {
 		return fmt.Errorf("While inserting definition: %v", err)

@@ -41,7 +41,7 @@ func TestDebootstrapConveyor(t *testing.T) {
 	cp := sources.DebootstrapConveyorPacker{}
 
 	err = cp.Get(b)
-	//clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
@@ -71,7 +71,7 @@ func TestDebootstrapPacker(t *testing.T) {
 	cp := sources.DebootstrapConveyorPacker{}
 
 	err = cp.Get(b)
-	//clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)

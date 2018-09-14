@@ -32,8 +32,6 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-
-	//"github.com/singularityware/singularity/src/pkg/image"
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
