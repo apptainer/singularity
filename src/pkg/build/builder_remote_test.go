@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package build
@@ -22,6 +22,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 const (
@@ -45,7 +46,13 @@ type mockService struct {
 
 var upgrader = websocket.Upgrader{}
 
-func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRef string) ResponseData {
+func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
+	os.Exit(m.Run())
+}
+
+func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRef string) types.ResponseData {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,
@@ -59,7 +66,7 @@ func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRe
 		libraryRef = "library://user/collection/image"
 	}
 
-	return ResponseData{
+	return types.ResponseData{
 		ID:         id,
 		Definition: d,
 		WSURL:      wsURL.String(),
@@ -72,7 +79,7 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Set the respone body, depending on the type of operation
 	if r.Method == http.MethodPost && r.RequestURI == buildPath {
 		// Mock new build endpoint
-		var rd RequestData
+		var rd types.RequestData
 		if err := json.NewDecoder(r.Body).Decode(&rd); err != nil {
 			m.t.Fatalf("failed to parse request: %v", err)
 		}
