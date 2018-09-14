@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package singularity
@@ -43,6 +43,8 @@ func (e *EngineOperations) prepareUserCaps() error {
 	}
 
 	caps, _ := capabilities.Split(e.EngineConfig.GetAddCaps())
+	caps = append(caps, e.EngineConfig.OciConfig.Process.Capabilities.Permitted...)
+
 	authorizedCaps, _ := file.CheckUserCaps(pw.Name, caps)
 
 	if len(authorizedCaps) > 0 {

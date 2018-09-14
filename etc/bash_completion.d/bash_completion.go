@@ -3,6 +3,18 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package buildcfg
+package main
 
-//go:generate go run confgen/gen.go "${BUILDDIR}/config.h"
+import (
+	"fmt"
+	"os"
+
+	"github.com/singularityware/singularity/src/cmd/singularity/cli"
+)
+
+func main() {
+	if err := cli.SingularityCmd.GenBashCompletionFile(os.Args[1]); err != nil {
+		fmt.Println(err)
+		return
+	}
+}
