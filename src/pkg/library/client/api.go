@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/globalsign/mgo/bson"
@@ -178,6 +179,28 @@ func setTags(baseURL string, authToken string, containerID string, imageID strin
 	return nil
 }
 
+func search(baseURL string, authToken string, value string) (results SearchResults, err error) {
+	u, err := url.Parse(baseURL + "/v1/search")
+	if err != nil {
+		return
+	}
+	q := u.Query()
+	q.Set("value", value)
+	u.RawQuery = q.Encode()
+
+	resJSON, _, err := apiGet(u.String(), authToken)
+	if err != nil {
+		return results, err
+	}
+
+	var res SearchResponse
+	if err := json.Unmarshal(resJSON, &res); err != nil {
+		return results, fmt.Errorf("error decoding reesults: %v", err)
+	}
+
+	return res.Data, nil
+}
+
 func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err error) {
 	sylog.Debugf("apiCreate calling %s\n", url)
 	s, err := json.Marshal(o)
@@ -189,7 +212,7 @@ func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
@@ -225,7 +248,7 @@ func apiGet(url string, authToken string) (objJSON []byte, found bool, err error
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 	res, err := client.Do(req)
 	if err != nil {
 		return []byte{}, false, fmt.Errorf("error making request to server:\n\t%v", err)
@@ -262,7 +285,7 @@ func apiGetTags(url string, authToken string) (tags TagMap, err error) {
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 	res, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
@@ -295,7 +318,7 @@ func apiSetTag(url string, authToken string, t ImageTag) (err error) {
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 	client := &http.Client{
 		Timeout: (httpTimeout * time.Second),
 	}
