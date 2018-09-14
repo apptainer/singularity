@@ -10,12 +10,15 @@ import (
 	"bufio"
 	"compress/gzip"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -33,6 +36,7 @@ import (
 	//"github.com/singularityware/singularity/src/pkg/image"
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/fs"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -41,6 +45,7 @@ type OCIConveyorPacker struct {
 	srcRef    types.ImageReference
 	b         *sytypes.Bundle
 	tmpfsRef  types.ImageReference
+	cacheRef  types.ImageReference
 	policyCtx *signature.PolicyContext
 	imgConfig imgspecv1.ImageConfig
 }
@@ -103,10 +108,40 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		return
 	}
 
-	cp.tmpfsRef, err = oci.ParseReference(cp.b.Path + ":" + "tmp")
+	// Our cache dir is an OCI directory. We are using this as a 'blob pool'
+	// storing all incoming containers under unique tags, which are a hash of
+	// their source URI.
+	tag := fmt.Sprintf("%x", sha256.Sum256([]byte(recipe.Header["bootstrap"]+recipe.Header["from"])))
+
+	// Use "~/.singularity/cache/oci" which will not clash with any 2.x cache
+	// directory.
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Couldn't determine user home directory: %v", err)
+	}
+
+	var cacheDir string
+	if cacheDir = os.Getenv("SINGULARITY_CACHEDIR"); cacheDir != "" {
+		cacheDir = path.Join(os.Getenv("SINGULARITY_CACHEDIR"), "oci")
+	} else {
+		cacheDir = path.Join(usr.HomeDir, ".singularity", "cache", "oci")
+	}
+
+	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
+		sylog.Debugf("Creating oci cache directory: %s", cacheDir)
+		if err := fs.MkdirAll(cacheDir, 0755); err != nil {
+			sylog.Fatalf("Couldn't create oci cache directory: %v", err)
+		}
+	}
+
+	cp.cacheRef, err = oci.ParseReference(cacheDir + ":" + tag)
 	if err != nil {
 		return
 	}
+
+	// To to do the RootFS extraction we also have to have a location that
+	// contains *only* this image
+	cp.tmpfsRef, err = oci.ParseReference(cp.b.Path + ":" + "tmp")
 
 	err = cp.fetch()
 	if err != nil {
@@ -152,9 +187,16 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 }
 
 func (cp *OCIConveyorPacker) fetch() (err error) {
-	err = copy.Image(context.Background(), cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
+	// First we are fetching into the cache
+	err = copy.Image(context.Background(), cp.policyCtx, cp.cacheRef, cp.srcRef, &copy.Options{
 		ReportWriter: os.Stderr,
 	})
+	if err != nil {
+		return err
+	}
+	// Now we have to fetch from cache into a clean, single image OCI dir
+	// so that the rootfs extraction will work
+	err = copy.Image(context.Background(), cp.policyCtx, cp.tmpfsRef, cp.cacheRef, &copy.Options{})
 	if err != nil {
 		return err
 	}
@@ -163,7 +205,7 @@ func (cp *OCIConveyorPacker) fetch() (err error) {
 }
 
 func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
-	img, err := cp.tmpfsRef.NewImage(context.Background(), nil)
+	img, err := cp.cacheRef.NewImage(context.Background(), nil)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}

@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 // Package sypgp implements the openpgp integration into the singularity project.
@@ -434,7 +434,7 @@ func SearchPubkey(search, keyserverURI, authToken string) (string, error) {
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
-	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("User-Agent", useragent.Value())
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
@@ -475,7 +475,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityLis
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
-	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("User-Agent", useragent.Value())
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
@@ -532,7 +532,7 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	if authToken != "" {
 		r.Header.Set("Authorization", fmt.Sprintf("BEARER %s", authToken))
 	}
-	r.Header.Set("User-Agent", useragent.Value)
+	r.Header.Set("User-Agent", useragent.Value())
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := http.DefaultClient.Do(r)
