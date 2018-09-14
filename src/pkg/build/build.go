@@ -303,6 +303,8 @@ func getcp(def types.Definition) (ConveyorPacker, error) {
 		return &sources.ArchConveyorPacker{}, nil
 	case "localimage":
 		return &sources.LocalConveyorPacker{}, nil
+	case "yum":
+		return &sources.YumConveyorPacker{}, nil
 	default:
 		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
 	}
@@ -318,8 +320,11 @@ func makeDef(spec string) (types.Definition, error) {
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
-	} else if _, err := os.Stat(spec); err == nil {
-		// Non-URI passed as spec
+	}
+
+	// Non-URI passed as spec
+	if _, err := os.Stat(spec); err == nil {
+
 		defFile, err := os.Open(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
@@ -327,6 +332,10 @@ func makeDef(spec string) (types.Definition, error) {
 		defer defFile.Close()
 
 		if d, err := types.ParseDefinitionFile(defFile); err == nil {
+			// must be root to build from a definition
+			if os.Getuid() != 0 {
+				sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+			}
 			//definition used as input
 			def = d
 		} else {
