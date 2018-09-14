@@ -36,22 +36,22 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	//append environment
+	// append environment
 	if err := e.insertEnvScript(); err != nil {
 		return fmt.Errorf("While inserting environment script: %v", err)
 	}
 
-	//insert startscript
+	// insert startscript
 	if err := e.insertStartScript(); err != nil {
 		return fmt.Errorf("While inserting startscript: %v", err)
 	}
 
-	//insert runscript
+	// insert runscript
 	if err := e.insertRunScript(); err != nil {
 		return fmt.Errorf("While inserting runscript: %v", err)
 	}
 
-	//insert test script
+	// insert test script
 	if err := e.insertTestScript(); err != nil {
 		return fmt.Errorf("While inserting test script: %v", err)
 	}

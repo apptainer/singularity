@@ -27,25 +27,25 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Creating sandbox directory...")
 
-	//insert help
+	// insert help
 	err = insertHelpScript(b)
 	if err != nil {
 		return fmt.Errorf("While inserting help script: %v", err)
 	}
 
-	//insert labels
+	// insert labels
 	err = insertLabelsJSON(b)
 	if err != nil {
 		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
-	//insert definition
+	// insert definition
 	err = insertDefinition(b)
 	if err != nil {
 		return fmt.Errorf("While inserting definition: %v", err)
 	}
 
-	//move bundle rootfs to sandboxdir as final sandbox
+	// move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
 	if _, err := os.Stat(path); err == nil {
 		os.RemoveAll(path)

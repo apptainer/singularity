@@ -73,7 +73,9 @@ func (b *Bundle) Rootfs() string {
 	return filepath.Join(b.Path, b.FSObjects["rootfs"])
 }
 
-// RunSection determines if a section name was specified
+// RunSection iterates through the sections specified in a bundle
+// and returns true if the given string, s, is a section of the
+// definition that should be executed during the build process
 func (b Bundle) RunSection(s string) bool {
 	for _, section := range b.Sections {
 		if section == "none" {
