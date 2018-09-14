@@ -26,7 +26,6 @@ const (
 
 // YumConveyor holds stuff that needs to be packed into the bundle
 type YumConveyor struct {
-	recipe    types.Definition
 	b         *types.Bundle
 	rpmPath   string
 	mirrorurl string
@@ -43,8 +42,8 @@ type YumConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (c *YumConveyor) Get(recipe types.Definition) (err error) {
-	c.recipe = recipe
+func (c *YumConveyor) Get(b *types.Bundle) (err error) {
+	c.b = b
 
 	//check for dnf or yum on system
 	var installCommandPath string
@@ -112,8 +111,6 @@ func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
 		return nil, fmt.Errorf("While inserting runscript: %v", err)
 	}
 
-	cp.b.Recipe = cp.recipe
-
 	return cp.b, nil
 }
 
@@ -169,17 +166,17 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	c.httpProxy = os.Getenv("http_proxy")
 
 	//get mirrorURL, updateURL, OSVerison, and Includes components to definition
-	c.mirrorurl, ok = c.recipe.Header["mirrorurl"]
+	c.mirrorurl, ok = c.b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid zypper header, no MirrorURL specified")
 	}
 
-	c.updateurl, _ = c.recipe.Header["updateurl"]
+	c.updateurl, _ = c.b.Recipe.Header["updateurl"]
 
 	//look for an OS version if a mirror specifies it
 	c.osversion = ""
 	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) || strings.Contains(c.updateurl, `%{OSVERSION}`) {
-		c.osversion, ok = c.recipe.Header["osversion"]
+		c.osversion, ok = c.b.Recipe.Header["osversion"]
 		if !ok {
 			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
 		}
@@ -187,7 +184,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 		c.updateurl = strings.Replace(c.updateurl, `%{OSVERSION}`, c.osversion, -1)
 	}
 
-	include, _ := c.recipe.Header["include"]
+	include, _ := c.b.Recipe.Header["include"]
 
 	//check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")
