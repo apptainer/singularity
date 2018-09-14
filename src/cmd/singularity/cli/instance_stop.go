@@ -7,6 +7,7 @@ package cli
 
 import (
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -37,8 +38,10 @@ var InstanceStopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 && !stopAll {
 			stopInstance(args[0])
-		} else {
+		} else if stopAll {
 			stopInstance("*")
+		} else {
+			sylog.Fatalf("no options provided")
 		}
 	},
 
