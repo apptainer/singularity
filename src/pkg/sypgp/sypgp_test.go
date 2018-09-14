@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package sypgp
@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 )
 
@@ -24,6 +25,8 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
 	e, err := openpgp.NewEntity(testName, testComment, testEmail, nil)
 	if err != nil {
 		log.Fatalf("failed to create entity: %v", err)
