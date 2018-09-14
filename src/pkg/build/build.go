@@ -289,26 +289,6 @@ func (b *Build) runBuildEngine() error {
 	return nil
 }
 
-// Bundle creates the bundle using the ConveyorPacker and returns it. If this
-// function is called multiple times it will return the already created Bundle
-// func (b *Build) Bundle() (*types.Bundle, error) {
-
-// 	if err := b.c.Get(b.b); err != nil {
-// 		return nil, fmt.Errorf("conveyor failed to get: %v", err)
-// 	}
-
-// 	bundle, err := b.c.Pack()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("packer failed to pack: %v", err)
-// 	}
-
-// 	b.b = bundle
-
-// 	b.addOptions()
-
-// 	return b.b, nil
-// }
-
 func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "shub":
