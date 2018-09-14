@@ -292,6 +292,12 @@ func makeDef(spec string) (types.Definition, error) {
 		}
 
 	} else if ok, err := types.IsValidDefinition(spec); ok && err == nil {
+
+		//must be root to build froma definition
+		if os.Getuid() != 0 {
+			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+		}
+
 		// Non-URI passed as spec, check is its a definition
 		defFile, err := os.Open(spec)
 		if err != nil {
