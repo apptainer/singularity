@@ -617,9 +617,9 @@ Enterprise Performance Computing (EPC)`
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunHelpUse   string = `run-help <image path>`
-	RunHelpShort string = `Display help for command|container if available`
+	RunHelpShort string = `Display help for container if available`
 	RunHelpLong  string = `
-   show additional help for a container if available
+  show additional help for a container if available
   singularity run-help <path to image>
 `
 	RunHelpExample string = `
