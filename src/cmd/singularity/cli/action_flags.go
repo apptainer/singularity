@@ -49,10 +49,23 @@ var (
 )
 
 func envAppend(flag *pflag.Flag, val string) {
-	flag.Value.Set(val)
-	flag.Changed = true
+	if err := flag.Value.Set(val); err != nil {
+		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, val)
+	}
 
+	flag.Changed = true
 	sylog.Debugf("Update flag Value to: %s", flag.Value)
+}
+
+func envBool(flag *pflag.Flag, val string) {
+	if flag.Changed == false {
+		if val != "" {
+			// IsContained is obviously hardcoded.  But I can't figure out how
+			// to get these variables within the function.
+			IsContained = true
+			flag.Changed = true
+		}
+	}
 }
 
 type envHandle func(*pflag.Flag, string)
@@ -73,7 +86,8 @@ func getHomeDir() string {
 
 func init() {
 	flagEnvFuncs = map[string]envHandle{
-		"bind": envAppend,
+		"bind":    envAppend,
+		"contain": envBool,
 	}
 
 	initPathVars()
@@ -131,6 +145,7 @@ func initBoolVars() {
 
 	// -c|--contain
 	actionFlags.BoolVarP(&IsContained, "contain", "c", false, "Use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host.")
+	actionFlags.SetAnnotation("contain", "envkey", []string{"CONTAIN"})
 
 	// -C|--containall
 	actionFlags.BoolVarP(&IsContainAll, "containall", "C", false, "Contain not only file systems, but also PID, IPC, and environment")
