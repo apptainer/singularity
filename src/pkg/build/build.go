@@ -320,11 +320,8 @@ func makeDef(spec string) (types.Definition, error) {
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
-	}
-
-	// Non-URI passed as spec
-	if _, err := os.Stat(spec); err == nil {
-
+	} else if _, err := os.Stat(spec); err == nil {
+		// Non-URI passed as spec
 		defFile, err := os.Open(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
