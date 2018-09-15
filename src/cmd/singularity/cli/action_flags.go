@@ -52,10 +52,10 @@ var (
 func envAppend(flag *pflag.Flag, envvar string) {
 	if err := flag.Value.Set(envvar); err != nil {
 		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+	} else {
+		flag.Changed = true
+		sylog.Debugf("Update flag Value to: %s", flag.Value)
 	}
-
-	flag.Changed = true
-	sylog.Debugf("Update flag Value to: %s", flag.Value)
 }
 
 // If CLI option is unset but env var is set enable the bool
@@ -63,10 +63,10 @@ func envBool(flag *pflag.Flag, envvar string) {
 	if flag.Changed == false && envvar != "" {
 		if err := flag.Value.Set("true"); err != nil {
 			sylog.Warningf("Unable to set %s to true", flag.Name)
+		} else {
+			flag.Changed = true
+			sylog.Debugf("Update flag Value to: %s", flag.Value)
 		}
-
-		flag.Changed = true
-		sylog.Debugf("Update flag Value to: %s", flag.Value)
 	}
 }
 
@@ -75,9 +75,10 @@ func envStringNSlice(flag *pflag.Flag, envvar string) {
 	if flag.Changed == false && envvar != "" {
 		if err := flag.Value.Set(envvar); err != nil {
 			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+		} else {
+			flag.Changed = true
+			sylog.Debugf("Update flag Value to: %s", flag.Value)
 		}
-		flag.Changed = true
-		sylog.Debugf("Update flag Value to: %s", flag.Value)
 	}
 }
 
@@ -98,11 +99,39 @@ func getHomeDir() string {
 }
 
 func init() {
+
+	// map of functions to use to bind flags to environment variables
 	flagEnvFuncs = map[string]envHandle{
-		"bind":    envAppend,
-		"home":    envStringNSlice,
-		"overlay": envStringNSlice,
-		"contain": envBool,
+		"bind":     envAppend,
+		"home":     envStringNSlice,
+		"overlay":  envStringNSlice,
+		"scratch":  envStringNSlice,
+		"workdir":  envStringNSlice,
+		"shell":    envStringNSlice,
+		"pwd":      envStringNSlice,
+		"hostname": envStringNSlice,
+
+		"boot":       envBool,
+		"fakeroot":   envBool,
+		"cleanenv":   envBool,
+		"contain":    envBool,
+		"containall": envBool,
+		"nv":         envBool,
+		"writable":   envBool,
+		"no-home":    envBool,
+		"no-init":    envBool,
+
+		"pid":  envBool,
+		"ipc":  envBool,
+		"net":  envBool,
+		"uts":  envBool,
+		"user": envBool,
+
+		"keep-privs":   envBool,
+		"no-privs":     envBool,
+		"add-caps":     envStringNSlice,
+		"drop-caps":    envStringNSlice,
+		"allow-setuid": envBool,
 	}
 
 	initPathVars()
@@ -131,34 +160,43 @@ func initPathVars() {
 	// -S|--scratch
 	actionFlags.StringSliceVarP(&ScratchPath, "scratch", "S", []string{}, "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location)")
 	actionFlags.SetAnnotation("scratch", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("scratch", "envkey", []string{"SCRATCHDIR", "SCRATCH"})
 
 	// -W|--workdir
 	actionFlags.StringVarP(&WorkdirPath, "workdir", "W", "", "Working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used)")
 	actionFlags.SetAnnotation("workdir", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("workdir", "envkey", []string{"WORKDIR"})
 
 	// -s|--shell
 	actionFlags.StringVarP(&ShellPath, "shell", "s", "", "Path to program to use for interactive shell")
 	actionFlags.SetAnnotation("shell", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("shell", "envkey", []string{"SHELL"})
 
 	// --pwd
 	actionFlags.StringVar(&PwdPath, "pwd", "", "Initial working directory for payload process inside the container")
 	actionFlags.SetAnnotation("pwd", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("pwd", "envkey", []string{"TARGET_PWD", "PWD"})
 
 	// --hostname
 	actionFlags.StringVar(&Hostname, "hostname", "", "Set container hostname")
 	actionFlags.SetAnnotation("hostname", "argtag", []string{"<name>"})
+	actionFlags.SetAnnotation("hostname", "envkey", []string{"HOSTNAME"})
+
 }
 
 // initBoolVars initializes flags that take a boolean argument
 func initBoolVars() {
 	// --boot
 	actionFlags.BoolVar(&IsBoot, "boot", false, "Execute /sbin/init to boot container (root only)")
+	actionFlags.SetAnnotation("boot", "envkey", []string{"BOOT"})
 
 	// -f|--fakeroot
 	actionFlags.BoolVarP(&IsFakeroot, "fakeroot", "f", false, "Run container in new user namespace as uid 0")
+	actionFlags.SetAnnotation("fakeroot", "envkey", []string{"FAKEROOT"})
 
 	// -e|--cleanenv
 	actionFlags.BoolVarP(&IsCleanEnv, "cleanenv", "e", false, "Clean environment before running container")
+	actionFlags.SetAnnotation("cleanenv", "envkey", []string{"CLEANENV"})
 
 	// -c|--contain
 	actionFlags.BoolVarP(&IsContained, "contain", "c", false, "Use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host.")
@@ -166,53 +204,67 @@ func initBoolVars() {
 
 	// -C|--containall
 	actionFlags.BoolVarP(&IsContainAll, "containall", "C", false, "Contain not only file systems, but also PID, IPC, and environment")
+	actionFlags.SetAnnotation("containall", "envkey", []string{"CONTAINALL"})
 
 	// --nv
 	actionFlags.BoolVar(&Nvidia, "nv", false, "Enable experimental Nvidia support")
+	actionFlags.SetAnnotation("nv", "envkey", []string{"NV"})
 
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
+	actionFlags.SetAnnotation("writable", "envkey", []string{"WRITABLE"})
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
+	actionFlags.SetAnnotation("no-home", "envkey", []string{"NO_HOME", "NOHOME"})
 
 	// --no-init
 	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
+	actionFlags.SetAnnotation("no-init", "envkey", []string{"NOSHIMINIT", "NO_INIT", "NOINIT"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
 func initNamespaceVars() {
 	// -p|--pid
 	actionFlags.BoolVarP(&PidNamespace, "pid", "p", false, "Run container in a new PID namespace")
+	actionFlags.SetAnnotation("pid", "envkey", []string{"UNSHARE_PID", "PID"})
 
 	// -i|--ipc
 	actionFlags.BoolVarP(&IpcNamespace, "ipc", "i", false, "Run container in a new IPC namespace")
+	actionFlags.SetAnnotation("ipc", "envkey", []string{"UNSHARE_IPC", "IPC"})
 
 	// -n|--net
 	actionFlags.BoolVarP(&NetNamespace, "net", "n", false, "Run container in a new network namespace (loopback is the only network device active).")
+	actionFlags.SetAnnotation("net", "envkey", []string{"UNSHARE_NET", "NET"})
 
 	// --uts
 	actionFlags.BoolVar(&UtsNamespace, "uts", false, "Run container in a new UTS namespace")
+	actionFlags.SetAnnotation("uts", "envkey", []string{"UNSHARE_UTS", "UTS"})
 
 	// -u|--userns
 	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "Run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity.")
-
+	actionFlags.SetAnnotation("userns", "envkey", []string{"UNSHARE_USERNS", "USERNS"})
 }
 
 // initPrivilegeVars initializes flags that manipulate privileges
 func initPrivilegeVars() {
 	// --keep-privs
 	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "Let root user keep privileges in container")
+	actionFlags.SetAnnotation("keep-privs", "envkey", []string{"KEEP_PRIVS", "KEEPPRIVS"})
 
 	// --no-privs
 	actionFlags.BoolVar(&NoPrivs, "no-privs", false, "Drop all privileges from root user in container")
+	actionFlags.SetAnnotation("no-privs", "envkey", []string{"NO_PRIVS", "NOPRIVS"})
 
 	// --add-caps
 	actionFlags.StringVar(&AddCaps, "add-caps", "", "A comma separated capability list to add")
+	actionFlags.SetAnnotation("add-caps", "envkey", []string{"ADD_CAPS", "ADDCAPS"})
 
 	// --drop-caps
 	actionFlags.StringVar(&DropCaps, "drop-caps", "", "A comma separated capability list to drop")
+	actionFlags.SetAnnotation("drop-caps", "envkey", []string{"DROP_CAPS", "DROPCAPS"})
 
 	// --allow-setuid
 	actionFlags.BoolVar(&AllowSUID, "allow-setuid", false, "Allow setuid binaries in container (root only)")
+	actionFlags.SetAnnotation("allow-setuid", "envkey", []string{"ALLOW_SETUID", "ALLOWSETUID", "SETUID"})
 }
