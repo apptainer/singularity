@@ -637,6 +637,5 @@ Enterprise Performance Computing (EPC)`
 
   $ singularity run-help my_container.sif
 
-
     Some help for this container`
 )
