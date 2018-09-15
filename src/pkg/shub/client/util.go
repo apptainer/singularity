@@ -14,14 +14,14 @@ import (
 // isShubPullRef returns true if the provided string is a valid Shub
 // reference for a pull operation.
 func isShubPullRef(shubRef string) bool {
-	//define regex for each URI component
-	registryRegexp := `([-.a-zA-Z0-9/]{1,64}\/)?`           //target is very open, outside registry
-	nameRegexp := `([-a-zA-Z0-9]{1,39}\/)`                  //target valid github usernames
-	containerRegexp := `([-_.a-zA-Z0-9]{1,64})`             //target valid github repo names
-	tagRegexp := `(:[-_.a-zA-Z0-9]{1,64})?`                 //target is very open, file extensions or branch names
-	digestRegexp := `((\@[a-f0-9]{32})|(\@[a-f0-9]{40}))?$` //target file md5 has, git commit hash, git branch
+	// define regex for each URI component
+	registryRegexp := `([-.a-zA-Z0-9/]{1,64}\/)?`           // target is very open, outside registry
+	nameRegexp := `([-a-zA-Z0-9]{1,39}\/)`                  // target valid github usernames
+	containerRegexp := `([-_.a-zA-Z0-9]{1,64})`             // target valid github repo names
+	tagRegexp := `(:[-_.a-zA-Z0-9]{1,64})?`                 // target is very open, file extensions or branch names
+	digestRegexp := `((\@[a-f0-9]{32})|(\@[a-f0-9]{40}))?$` // target file md5 has, git commit hash, git branch
 
-	//expression is anchored
+	// expression is anchored
 	shubRegex, err := regexp.Compile(`^(shub://)` + registryRegexp + nameRegexp + containerRegexp + tagRegexp + digestRegexp + `$`)
 	if err != nil {
 		return false
@@ -29,8 +29,8 @@ func isShubPullRef(shubRef string) bool {
 
 	found := shubRegex.FindString(shubRef)
 
-	//sanity check
-	//if found string is not equal to the input, input isn't a valid URI
+	// sanity check
+	// if found string is not equal to the input, input isn't a valid URI
 	if strings.Compare(shubRef, found) != 0 {
 		return false
 	}
@@ -46,12 +46,12 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 	refParts := strings.Split(ShubRef, "/")
 
 	if l := len(refParts); l > 2 {
-		//more than two pieces indicates a custom registry
+		// more than two pieces indicates a custom registry
 		uri.registry = strings.Join(refParts[:l-2], "") + shubAPIRoute
 		uri.user = refParts[l-2]
 		src = refParts[l-1]
 	} else if l == 2 {
-		//two pieces means default registry
+		// two pieces means default registry
 		uri.registry = defaultRegistry + shubAPIRoute
 		uri.user = refParts[l-2]
 		src = refParts[l-1]
@@ -59,21 +59,21 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 		return ShubURI{}, errors.New("Not a valid Shub reference")
 	}
 
-	//look for an @ and split if it exists
+	// look for an @ and split if it exists
 	if strings.Contains(src, `@`) {
 		refParts = strings.Split(src, `@`)
 		uri.digest = `@` + refParts[1]
 		src = refParts[0]
 	}
 
-	//look for a : and split if it exists
+	// look for a : and split if it exists
 	if strings.Contains(src, `:`) {
 		refParts = strings.Split(src, `:`)
 		uri.tag = `:` + refParts[1]
 		src = refParts[0]
 	}
 
-	//container name is left over after other parts are split from it
+	// container name is left over after other parts are split from it
 	uri.container = src
 
 	return uri, nil
