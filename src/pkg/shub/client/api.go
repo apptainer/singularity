@@ -21,7 +21,7 @@ import (
 const (
 	defaultRegistry string = `https://singularity-hub.org`
 	shubAPIRoute    string = "/api/container/"
-	//URINotSupported if we are using a non default registry error out for now
+	// URINotSupported if we are using a non default registry error out for now
 	URINotSupported string = "Only the default Singularity Hub registry is suported for now"
 )
 
@@ -74,10 +74,13 @@ func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
 	if err != nil {
 		return ShubAPIResponse{}, err
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	// Do the request, if status isn't success, return error
 	res, err := httpc.Do(req)
+	if res == nil {
+		return ShubAPIResponse{}, fmt.Errorf("No response received from singularity hub")
+	}
 	if res.StatusCode == http.StatusNotFound {
 		return ShubAPIResponse{}, fmt.Errorf("The requested manifest was not found in singularity hub")
 	}

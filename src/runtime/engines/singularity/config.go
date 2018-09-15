@@ -1,12 +1,13 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package singularity
 
 import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/network"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
@@ -55,36 +56,36 @@ type FileConfig struct {
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
 type JSONConfig struct {
-	Image            string   `json:"image"`
-	WritableImage    bool     `json:"writableImage,omitempty"`
-	OverlayImage     []string `json:"overlayImage,omitempty"`
-	OverlayFsEnabled bool     `json:"overlayFsEnabled,omitempty"`
-	Contain          bool     `json:"container,omitempty"`
-	Nv               bool     `json:"nv,omitempty"`
-	Workdir          string   `json:"workdir,omitempty"`
-	ScratchDir       []string `json:"scratchdir,omitempty"`
-	HomeSource       string   `json:"homedir,omitempty"`
-	HomeDest         string   `json:"homeDest,omitempty"`
-	CustomHome       bool     `json:"customHome,omitempty"`
-	BindPath         []string `json:"bindpath,omitempty"`
-	Command          string   `json:"command,omitempty"`
-	Shell            string   `json:"shell,omitempty"`
-	TmpDir           string   `json:"tmpdir,omitempty"`
-	Instance         bool     `json:"instance,omitempty"`
-	InstanceJoin     bool     `json:"instanceJoin,omitempty"`
-	BootInstance     bool     `json:"bootInstance,omitempty"`
-	RunPrivileged    bool     `json:"runPrivileged,omitempty"`
-	AddCaps          string   `json:"addCaps,omitempty"`
-	DropCaps         string   `json:"dropCaps,omitempty"`
-	Hostname         string   `json:"hostname,omitempty"`
-	AllowSUID        bool     `json:"allowSUID,omitempty"`
-	KeepPrivs        bool     `json:"keepPrivs,omitempty"`
-	NoPrivs          bool     `json:"noPrivs,omitempty"`
-	NoHome           bool     `json:"noHome,omitempty"`
-	NoInit           bool     `json:"noInit,omitempty"`
-	Network          string   `json:"network,omitempty"`
-	NetworkArgs      []string `json:"networkArgs,omitempty"`
-	DNS              string   `json:"dns,omitempty"`
+	Image         string        `json:"image"`
+	WritableImage bool          `json:"writableImage,omitempty"`
+	OverlayImage  []string      `json:"overlayImage,omitempty"`
+	Contain       bool          `json:"container,omitempty"`
+	Nv            bool          `json:"nv,omitempty"`
+	Workdir       string        `json:"workdir,omitempty"`
+	ScratchDir    []string      `json:"scratchdir,omitempty"`
+	HomeSource    string        `json:"homedir,omitempty"`
+	HomeDest      string        `json:"homeDest,omitempty"`
+	CustomHome    bool          `json:"customHome,omitempty"`
+	BindPath      []string      `json:"bindpath,omitempty"`
+	Command       string        `json:"command,omitempty"`
+	Shell         string        `json:"shell,omitempty"`
+	TmpDir        string        `json:"tmpdir,omitempty"`
+	Instance      bool          `json:"instance,omitempty"`
+	InstanceJoin  bool          `json:"instanceJoin,omitempty"`
+	BootInstance  bool          `json:"bootInstance,omitempty"`
+	RunPrivileged bool          `json:"runPrivileged,omitempty"`
+	AddCaps       string        `json:"addCaps,omitempty"`
+	DropCaps      string        `json:"dropCaps,omitempty"`
+	Hostname      string        `json:"hostname,omitempty"`
+	AllowSUID     bool          `json:"allowSUID,omitempty"`
+	KeepPrivs     bool          `json:"keepPrivs,omitempty"`
+	NoPrivs       bool          `json:"noPrivs,omitempty"`
+	NoHome        bool          `json:"noHome,omitempty"`
+	NoInit        bool          `json:"noInit,omitempty"`
+	ImageList     []image.Image `json:"imageList,omitempty"`
+	Network       string        `json:"network,omitempty"`
+	NetworkArgs   []string      `json:"networkArgs,omitempty"`
+	DNS           string        `json:"dns,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -139,16 +140,6 @@ func (e *EngineConfig) SetOverlayImage(paths []string) {
 // GetOverlayImage retrieves the overlay image path.
 func (e *EngineConfig) GetOverlayImage() []string {
 	return e.JSON.OverlayImage
-}
-
-// SetOverlayFsEnabled defines if overlay filesystem is enabled or not.
-func (e *EngineConfig) SetOverlayFsEnabled(enabled bool) {
-	e.JSON.OverlayFsEnabled = enabled
-}
-
-// GetOverlayFsEnabled returns if overlay filesystem is enabled or not.
-func (e *EngineConfig) GetOverlayFsEnabled() bool {
-	return e.JSON.OverlayFsEnabled
 }
 
 // SetContain sets contain flag.
@@ -399,4 +390,14 @@ func (e *EngineConfig) SetDNS(dns string) {
 // GetDNS retrieves list of DNS servers
 func (e *EngineConfig) GetDNS() string {
 	return e.JSON.DNS
+}
+
+// SetImageList sets image list containing opened images
+func (e *EngineConfig) SetImageList(list []image.Image) {
+	e.JSON.ImageList = list
+}
+
+// GetImageList returns image list containing opened images
+func (e *EngineConfig) GetImageList() []image.Image {
+	return e.JSON.ImageList
 }

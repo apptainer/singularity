@@ -53,17 +53,6 @@ func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 }
 
 func (o *Overlay) createOverlay(system *mount.System) error {
-	if o.upperDir == "" {
-		if err := o.session.AddDir(upperDir); err != nil {
-			return fmt.Errorf("failed to add /overlay-upper directory")
-		}
-		if err := o.session.AddDir(workDir); err != nil {
-			return fmt.Errorf("failed to add /overlay-work directory")
-		}
-		o.upperDir, _ = o.session.GetPath(upperDir)
-		o.workDir, _ = o.session.GetPath(workDir)
-	}
-
 	o.lowerDirs = append(o.lowerDirs, o.session.RootFsPath())
 
 	lowerdir := strings.Join(o.lowerDirs, ":")
@@ -85,8 +74,8 @@ func (o *Overlay) AddLowerDir(path string) error {
 	return nil
 }
 
-// AddUpperDir adds upper directory to overlay mount
-func (o *Overlay) AddUpperDir(path string) error {
+// SetUpperDir sets upper directory to overlay mount
+func (o *Overlay) SetUpperDir(path string) error {
 	if o.upperDir != "" {
 		return fmt.Errorf("upper directory was already set")
 	}
@@ -94,13 +83,23 @@ func (o *Overlay) AddUpperDir(path string) error {
 	return nil
 }
 
-// AddWorkDir adds work directory to overlay mount
-func (o *Overlay) AddWorkDir(path string) error {
+// GetUpperDir returns upper directory path
+func (o *Overlay) GetUpperDir() string {
+	return o.upperDir
+}
+
+// SetWorkDir sets work directory to overlay mount
+func (o *Overlay) SetWorkDir(path string) error {
 	if o.workDir != "" {
 		return fmt.Errorf("upper directory was already set")
 	}
 	o.workDir = path
 	return nil
+}
+
+// GetWorkDir returns work directory path
+func (o *Overlay) GetWorkDir() string {
+	return o.workDir
 }
 
 // createLayer creates overlay layer based on content of root filesystem

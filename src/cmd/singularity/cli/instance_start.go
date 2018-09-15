@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -11,41 +11,39 @@ import (
 )
 
 func init() {
-
-	instanceStartCmds := []*cobra.Command{
-		InstanceStartCmd,
-		// instanceDotStartCmd,
+	options := []string{
+		"add-caps",
+		"allow-setuid",
+		"bind",
+		"boot",
+		"contain",
+		"containall",
+		"cleanenv",
+		"drop-caps",
+		"fakeroot",
+		"home",
+		"hostname",
+		"keep-privs",
+		"net",
+		"no-home",
+		"no-privs",
+		"nv",
+		"overlay",
+		"scratch",
+		"userns",
+		"uts",
+		"workdir",
+		"writable",
+		"network",
+		"network-args",
+		"dns",
 	}
 
-	for _, cmd := range instanceStartCmds {
-		cmd.Flags().SetInterspersed(false)
-
-		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("contain"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("containall"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("cleanenv"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("network"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("boot"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
+	for _, opt := range options {
+		InstanceStartCmd.Flags().AddFlag(actionFlags.Lookup(opt))
 	}
+
+	InstanceStartCmd.Flags().SetInterspersed(false)
 }
 
 // InstanceStartCmd singularity instance start
@@ -62,15 +60,3 @@ var InstanceStartCmd = &cobra.Command{
 	Long:    docs.InstanceStartLong,
 	Example: docs.InstanceStartExample,
 }
-
-/*
-var instanceDotStartCmd = &cobra.Command{
-	Use:  "instance.start [options...] <container path> <instance name>",
-	Args: cobra.MinimumNArgs(2),
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("starting instance")
-	},
-	Example: instanceStartExample,
-	Hidden:  true,
-}
-*/
