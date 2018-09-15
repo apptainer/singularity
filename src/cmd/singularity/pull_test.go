@@ -35,20 +35,20 @@ func imagePull(opts pullOpts, sourceSpec string) ([]byte, error) {
 func TestPullForce(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	imagePath := "./ubuntu_17.10.sif"
+	imagePath := "./alpine_3.7.sif"
 	defer os.Remove(imagePath)
-	if b, err := imagePull(pullOpts{}, "library://dtrudg/linux/ubuntu:17.10"); err != nil {
+	if b, err := imagePull(pullOpts{}, "library://dtrudg/linux/alpine:3.7"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
 	imageVerify(t, imagePath, false)
 
-	if b, err := imagePull(pullOpts{}, "library://dtrudg/linux/ubuntu:17.10"); err == nil {
+	if b, err := imagePull(pullOpts{}, "library://dtrudg/linux/alpine:3.7"); err == nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected success")
 	}
 
-	if b, err := imagePull(pullOpts{force: true}, "library://dtrudg/linux/ubuntu:17.10"); err != nil {
+	if b, err := imagePull(pullOpts{force: true}, "library://dtrudg/linux/alpine:3.7"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
