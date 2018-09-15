@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"runtime"
 	"syscall"
 	"unsafe"
 )
@@ -22,21 +21,10 @@ type Device struct {
 	file *os.File
 }
 
-// Attach finds a free loop device, opens it, and stores file descriptor
-func (loop *Device) Attach(image string, mode int, number *int) error {
+// AttachFromFile finds a free loop device, opens it, and stores file descriptor
+// provided by image file pointer
+func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error {
 	var path string
-
-	runtime.LockOSThread()
-
-	defer runtime.UnlockOSThread()
-	defer syscall.Setfsuid(os.Getuid())
-
-	img, err := os.OpenFile(image, mode, 0600)
-	if err != nil {
-		return err
-	}
-
-	syscall.Setfsuid(0)
 
 	for device := 0; device < MaxLoopDevices; device++ {
 		path = fmt.Sprintf("/dev/loop%d", device)
@@ -51,24 +39,39 @@ func (loop *Device) Attach(image string, mode int, number *int) error {
 				return fmt.Errorf("%s is not a block device", path)
 			}
 		}
-		file, err := os.OpenFile(path, mode, 0600)
+		loopDev, err := os.OpenFile(path, mode, 0600)
 		if err != nil {
 			continue
 		}
-		_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, file.Fd(), CmdSetFd, img.Fd())
+		_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, loopDev.Fd(), CmdSetFd, image.Fd())
 		if esys != 0 {
-			file.Close()
+			loopDev.Close()
 			continue
 		}
 		if device == MaxLoopDevices {
 			break
 		}
-		loop.file = file
+		loop.file = loopDev
 		*number = device
+
+		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, loopDev.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+			return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
+		}
+
 		return nil
 	}
 
 	return errors.New("No loop devices available")
+}
+
+// AttachFromPath finds a free loop device, opens it, and stores file descriptor
+// of opened image path
+func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
+	file, err := os.OpenFile(image, mode, 0600)
+	if err != nil {
+		return err
+	}
+	return loop.AttachFromFile(file, mode, number)
 }
 
 // SetStatus sets info status about image
