@@ -24,49 +24,27 @@ type SandboxAssembler struct {
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
-	//insert help
+	sylog.Infof("Creating sandbox directory...")
+
+	// insert help
 	err = insertHelpScript(b)
 	if err != nil {
 		return fmt.Errorf("While inserting help script: %v", err)
 	}
 
-	//insert labels
+	// insert labels
 	err = insertLabelsJSON(b)
 	if err != nil {
 		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
-	//append environment
-	err = insertEnvScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
-	}
-
-	//insert runscript
-	err = insertRunScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
-	}
-
-	//insert startscript
-	err = insertStartScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
-	}
-
-	//insert test script
-	err = insertTestScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
-	}
-
-	//insert definition
+	// insert definition
 	err = insertDefinition(b)
 	if err != nil {
 		return fmt.Errorf("While inserting definition: %v", err)
 	}
 
-	//move bundle rootfs to sandboxdir as final sandbox
+	// move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
 	if err := os.Rename(b.Rootfs(), path); err != nil {
 		sylog.Errorf("Sandbox Assemble Failed: %s", err)
@@ -77,28 +55,14 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 }
 
 func insertHelpScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
-	return err
-}
-
-func insertEnvScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
-	return err
-}
-
-func insertRunScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0775)
-	return err
-}
-
-func insertStartScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0775)
-	return err
-}
-
-func insertTestScript(b *types.Bundle) error {
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
-	return err
+	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
+		sylog.Infof("Adding help info")
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func insertDefinition(b *types.Bundle) error {
@@ -119,11 +83,17 @@ func insertDefinition(b *types.Bundle) error {
 
 func insertLabelsJSON(b *types.Bundle) error {
 
-	text, err := json.Marshal(b.Recipe.ImageData.Labels)
-	if err != nil {
-		return err
-	}
+	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
+		sylog.Infof("Adding labels")
+		text, err := json.Marshal(b.Recipe.ImageData.Labels)
+		if err != nil {
+			return err
+		}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
-	return err
+		err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -345,9 +345,6 @@ func makeFiles(rootPath string) (err error) {
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "90-environment.sh"), 0755, environmentShFileContent); err != nil {
 		return
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "91-environment.sh"), 0755, environmentShFileContent); err != nil {
-		return
-	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "95-apps.sh"), 0755, appsShFileContent); err != nil {
 		return
 	}

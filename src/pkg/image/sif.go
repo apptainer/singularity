@@ -34,3 +34,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Type = SIF
 	return nil
 }
+
+func (f *sifFormat) openMode(writable bool) int {
+	return os.O_RDWR
+}

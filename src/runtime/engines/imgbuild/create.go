@@ -98,20 +98,21 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
-	// Run %setup script here
-	setup := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Setup)
-	setup.Env = engine.EngineConfig.OciConfig.Process.Env
-	setup.Stdout = os.Stdout
-	setup.Stderr = os.Stderr
+	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
+		// Run %setup script here
+		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
+		setup.Env = engine.EngineConfig.OciConfig.Process.Env
+		setup.Stdout = os.Stdout
+		setup.Stderr = os.Stderr
 
-	sylog.Infof("Running %%setup script\n")
-	if err := setup.Start(); err != nil {
-		sylog.Fatalf("failed to start %%setup proc: %v\n", err)
+		sylog.Infof("Running setup scriptlet\n")
+		if err := setup.Start(); err != nil {
+			sylog.Fatalf("failed to start %%setup proc: %v\n", err)
+		}
+		if err := setup.Wait(); err != nil {
+			sylog.Fatalf("setup proc: %v\n", err)
+		}
 	}
-	if err := setup.Wait(); err != nil {
-		sylog.Fatalf("setup proc: %v\n", err)
-	}
-	sylog.Infof("Finished running %%setup script. exit status 0\n")
 
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
 	err = syscall.Chdir(buildcfg.SESSIONDIR)
