@@ -181,12 +181,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/golang/glog"
-  packages = ["."]
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
-
-[[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
@@ -303,6 +297,12 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
+  name = "github.com/pelletier/go-toml"
+  packages = ["."]
+  revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
+  version = "v1.2.0"
+
+[[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
   revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
@@ -396,7 +396,7 @@
   branch = "master"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
-  revision = "3bdbce3fa52865b2a360ddc11ec20ffcd4db5a00"
+  revision = "a4f82381d252d398a7dda63a38c88f626bf68fb9"
 
 [[projects]]
   branch = "master"
@@ -479,6 +479,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "70ffd8250cf7b08dc3c196b6c697bd3d6872663228f215f2453a7eb5cb932c25"
+  inputs-digest = "d112182fa4d53cba8fae32472348c84a7a83cf21ffe224d5ab7375485952bdc1"
   solver-name = "gps-cdcl"
   solver-version = 1

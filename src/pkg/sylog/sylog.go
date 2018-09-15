@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 // Package sylog implements a basic logger for Singularity Go code to log
@@ -9,6 +9,8 @@ package sylog
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -18,16 +20,16 @@ import (
 type messageLevel int
 
 const (
-	fatal messageLevel = iota - 4
-	error
-	warn
-	log
-	_
-	info
-	verbose
-	verbose2
-	verbose3
-	debug
+	fatal    messageLevel = iota - 4 // fatal    : -4
+	error                            // error    : -3
+	warn                             // warn     : -2
+	log                              // log      : -1
+	_                                // SKIP     : 0
+	info                             // info     : 1
+	verbose                          // verbose  : 2
+	verbose2                         // verbose2 : 3
+	verbose3                         // verbose3 : 4
+	debug                            // debug    : 5
 )
 
 func (l messageLevel) String() string {
@@ -67,7 +69,6 @@ func init() {
 	_level, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
 	if !ok {
 		loggerLevel = debug
-		//Printf(INFO, "SINGULARITY_MESSAGELEVEL not set, defaulting to 5")
 	} else {
 		_levelint, err := strconv.Atoi(_level)
 		if err != nil {
@@ -78,12 +79,17 @@ func init() {
 	}
 }
 
-func writef(level messageLevel, format string, a ...interface{}) {
-	if loggerLevel < level {
-		return
+func prefix(level messageLevel) string {
+	messageColor, ok := messageColors[level]
+	if !ok {
+		messageColor = "\x1b[0m"
 	}
 
-	pc, _, _, ok := runtime.Caller(2)
+	if loggerLevel < debug {
+		return fmt.Sprintf("%s%-8s%s ", messageColor, level.String()+":", colorReset)
+	}
+
+	pc, _, _, ok := runtime.Caller(3)
 	details := runtime.FuncForPC(pc)
 
 	var funcName string
@@ -95,22 +101,22 @@ func writef(level messageLevel, format string, a ...interface{}) {
 		funcName = funcNameSplit[len(funcNameSplit)-1] + "()"
 	}
 
-	uid := os.Getuid()
+	uid := os.Geteuid()
 	pid := os.Getpid()
-
 	uidStr := fmt.Sprintf("[U=%d,P=%d]", uid, pid)
 
-	messageColor, ok := messageColors[level]
-	if !ok {
-		messageColor = "\x1b[0m"
+	return fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
+}
+
+func writef(level messageLevel, format string, a ...interface{}) {
+	if loggerLevel < level {
+		return
 	}
 
-	prefix := fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
 	message := fmt.Sprintf(format, a...)
-
 	message = strings.TrimSuffix(message, "\n")
 
-	fmt.Fprintf(os.Stderr, "%s%s\n", prefix, message)
+	fmt.Fprintf(os.Stderr, "%s%s\n", prefix(level), message)
 }
 
 // Fatalf is equivalent to a call to Errorf followed by os.Exit(255). Code that
@@ -146,4 +152,30 @@ func Verbosef(format string, a ...interface{}) {
 // Debugf writes a DEBUG level message to the log.
 func Debugf(format string, a ...interface{}) {
 	writef(debug, format, a...)
+}
+
+// SetLevel explicitly sets the loggerLevel
+func SetLevel(l int) {
+	loggerLevel = messageLevel(l)
+}
+
+// GetLevel returns the current log level as integer
+func GetLevel() int {
+	return int(loggerLevel)
+}
+
+// GetEnvVar returns a formatted environment variable string which
+// can later be interpreted by init() in a child proc
+func GetEnvVar() string {
+	return fmt.Sprintf("SINGULARITY_MESSAGELEVEL=%d", loggerLevel)
+}
+
+// Writer returns an io.Writer to pass to an external packages logging utility. For example,
+// when --quiet option is set, this function returns ioutil.Discard writer to ignore output
+func Writer() io.Writer {
+	if loggerLevel <= -1 {
+		return ioutil.Discard
+	}
+
+	return os.Stderr
 }

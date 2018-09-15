@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package imgbuild
@@ -44,20 +44,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("%s is not a directory", rootfs)
 	}
 
-	// Run %pre script here
-	pre := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Pre)
-	pre.Stdout = os.Stdout
-	pre.Stderr = os.Stderr
-
-	sylog.Infof("Running %%pre script\n")
-	if err := pre.Start(); err != nil {
-		sylog.Fatalf("failed to start %%pre proc: %v\n", err)
-	}
-	if err := pre.Wait(); err != nil {
-		sylog.Fatalf("pre proc: %v\n", err)
-	}
-	sylog.Infof("Finished running %%pre script. exit status 0\n")
-
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
 	_, err = rpcOps.Mount(rootfs, buildcfg.SESSIONDIR, "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
@@ -76,16 +62,22 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
 
-	sylog.Debugf("Mounting home at %s\n", filepath.Join(buildcfg.SESSIONDIR, "home"))
-	_, err = rpcOps.Mount("/home", filepath.Join(buildcfg.SESSIONDIR, "home"), "", syscall.MS_BIND, "")
-	if err != nil {
-		return fmt.Errorf("mount /home failed: %s", err)
-	}
-
 	sylog.Debugf("Mounting dev at %s\n", filepath.Join(buildcfg.SESSIONDIR, "dev"))
 	_, err = rpcOps.Mount("/dev", filepath.Join(buildcfg.SESSIONDIR, "dev"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_REC, "")
 	if err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
+	}
+
+	sylog.Debugf("Mounting tmp at %s\n", filepath.Join(buildcfg.SESSIONDIR, "tmp"))
+	_, err = rpcOps.Mount("/tmp", filepath.Join(buildcfg.SESSIONDIR, "tmp"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("mount /tmp failed: %s", err)
+	}
+
+	sylog.Debugf("Mounting var/tmp at %s\n", filepath.Join(buildcfg.SESSIONDIR, "var/tmp"))
+	_, err = rpcOps.Mount("/var/tmp", filepath.Join(buildcfg.SESSIONDIR, "var/tmp"), "", syscall.MS_BIND|syscall.MS_NOSUID|syscall.MS_NODEV|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("mount /var/tmp failed: %s", err)
 	}
 
 	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", filepath.Join(buildcfg.SESSIONDIR, "etc/resolv.conf"))
@@ -100,19 +92,27 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
-	// Run %setup script here
-	setup := exec.Command("/bin/sh", "-c", engine.EngineConfig.Recipe.BuildData.Setup)
-	setup.Stdout = os.Stdout
-	setup.Stderr = os.Stderr
+	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
+	_, err = rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, "")
+	if err != nil {
+		return fmt.Errorf("mount /etc/hosts failed: %s", err)
+	}
 
-	sylog.Infof("Running %%setup script\n")
-	if err := setup.Start(); err != nil {
-		sylog.Fatalf("failed to start %%setup proc: %v\n", err)
+	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
+		// Run %setup script here
+		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
+		setup.Env = engine.EngineConfig.OciConfig.Process.Env
+		setup.Stdout = os.Stdout
+		setup.Stderr = os.Stderr
+
+		sylog.Infof("Running setup scriptlet\n")
+		if err := setup.Start(); err != nil {
+			sylog.Fatalf("failed to start %%setup proc: %v\n", err)
+		}
+		if err := setup.Wait(); err != nil {
+			sylog.Fatalf("setup proc: %v\n", err)
+		}
 	}
-	if err := setup.Wait(); err != nil {
-		sylog.Fatalf("setup proc: %v\n", err)
-	}
-	sylog.Infof("Finished running %%setup script. exit status 0\n")
 
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
 	err = syscall.Chdir(buildcfg.SESSIONDIR)

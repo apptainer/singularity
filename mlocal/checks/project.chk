@@ -7,10 +7,15 @@ set -e
 makecond="$builddir/Makefile.cond"
 echo "go_TAG += $BUILDTAG" > $makecond
 
+########################
+# git version
+########################
+git_version=`git describe --match 'v[0-9]*' --dirty --always | sed -e "s/^v//"`
+
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
-config_add_def PACKAGE_VERSION \"3.0.0\"
-config_add_def PACKAGE_STRING \"singularity 3.0.0\"
+config_add_def PACKAGE_VERSION \"$git_version\"
+config_add_def PACKAGE_STRING \"singularity $git_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
@@ -38,6 +43,7 @@ config_add_def LOCALEDIR DATAROOTDIR \"/locale\"
 config_add_def MANDIR DATAROOTDIR \"/man\"
 config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
 config_add_def CAPABILITY_FILE SINGULARITY_CONFDIR \"/capability.json\"
+config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
 
 # config_add_def SINGULARITY_USERNS 1
 # config_add_def DISABLE_SUID 1
@@ -46,20 +52,6 @@ config_add_def CONTAINER_MOUNTDIR LOCALSTATEDIR \"/singularity/mnt/container\"
 config_add_def CONTAINER_FINALDIR LOCALSTATEDIR \"/singularity/mnt/final\"
 config_add_def CONTAINER_OVERLAY LOCALSTATEDIR \"/singularity/mnt/overlay\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
-
-########################
-# git version 
-########################
-if BRANCH=`git rev-parse --abbrev-ref HEAD 2>/dev/null`; then
-    if HASH=`git rev-parse --short HEAD 2>/dev/null`; then
-        config_add_def GIT_VERSION \"$BRANCH.$HASH\"
-    else
-        config_add_def GIT_VERSION \"$BRANCH\"
-    fi
-else
-    config_add_def GIT_VERSION \"dist\"
-fi
-
 
 ########################
 # ns: CLONE_NEWPID

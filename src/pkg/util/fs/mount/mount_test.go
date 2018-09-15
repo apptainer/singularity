@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package mount
@@ -308,8 +308,8 @@ func TestImport(t *testing.T) {
 	}
 
 	validImport := map[AuthorizedTag][]Point{
-		UserbindsTag: []Point{
-			Point{
+		UserbindsTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/mnt",
@@ -317,7 +317,7 @@ func TestImport(t *testing.T) {
 					Options:     []string{"rbind"},
 				},
 			},
-			Point{
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/mnt",
@@ -326,8 +326,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		KernelTag: []Point{
-			Point{
+		KernelTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "proc",
 					Destination: "/proc",
@@ -335,7 +335,7 @@ func TestImport(t *testing.T) {
 					Options:     []string{"nosuid", "nodev"},
 				},
 			},
-			Point{
+			{
 				Mount: specs.Mount{
 					Source:      "sysfs",
 					Destination: "/sys",
@@ -344,8 +344,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		SessionTag: []Point{
-			Point{
+		SessionTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/tmp",
@@ -354,8 +354,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		LayerTag: []Point{
-			Point{
+		LayerTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/opt",
@@ -364,8 +364,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		RootfsTag: []Point{
-			Point{
+		RootfsTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/image.simg",
 					Destination: "/tmp/image",
@@ -448,8 +448,8 @@ func TestImport(t *testing.T) {
 	points.RemoveAll()
 
 	invalidImport := map[AuthorizedTag][]Point{
-		UserbindsTag: []Point{
-			Point{
+		UserbindsTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/mnt",
@@ -457,7 +457,7 @@ func TestImport(t *testing.T) {
 					Options:     []string{"rbind"},
 				},
 			},
-			Point{
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/mnt",
@@ -472,8 +472,8 @@ func TestImport(t *testing.T) {
 	}
 
 	validForceContextImport := map[AuthorizedTag][]Point{
-		SessionTag: []Point{
-			Point{
+		SessionTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/tmp",
@@ -503,8 +503,8 @@ func TestImport(t *testing.T) {
 	points.RemoveAll()
 
 	validContextImport := map[AuthorizedTag][]Point{
-		SessionTag: []Point{
-			Point{
+		SessionTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/tmp",

@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package proc
@@ -117,5 +117,72 @@ func TestParseMountInfo(t *testing.T) {
 	}
 	if len(m["/run/user/1000"]) != 1 {
 		t.Errorf("got %d child mount point for '/run/user/1000' instead of 1", len(m["/run/user/1000"]))
+	}
+}
+
+func TestExtractPid(t *testing.T) {
+	procList := []struct {
+		path string
+		pid  uint
+		fail bool
+	}{
+		{"/proc/1/fd", 1, false},
+		{"/proc/self", 0, true},
+		{"/proc/123/ns/pid", 123, false},
+		{"/proc/-1", 0, true},
+		{"/etc/../proc/1/fd", 0, true},
+	}
+	for _, pl := range procList {
+		pid, err := ExtractPid(pl.path)
+		if err != nil && !pl.fail {
+			t.Fatal(err)
+		}
+		if !pl.fail && pid != pl.pid {
+			t.Fatalf("should have returned %d as PID instead of %d", pid, pl.pid)
+		}
+		if pl.fail && err == nil {
+			t.Fatalf("extract path %s should have failed", pl.path)
+		}
+	}
+}
+
+func TestCountChilds(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	childs, err := CountChilds(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if childs == 0 {
+		t.Fatal("init have no child processes")
+	}
+	childs, err = CountChilds(0)
+	if err == nil {
+		t.Fatal("no error reported with PID 0")
+	}
+}
+
+func TestReadIDMap(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// skip tests if uid_map doesn't exists
+	if _, err := os.Stat("/proc/self/uid_map"); os.IsNotExist(err) {
+		return
+	}
+	containerID, hostID, err := ReadIDMap("/proc/self/uid_map")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if containerID != 0 || containerID != hostID {
+		t.Errorf("")
+	}
+	containerID, hostID, err = ReadIDMap("/proc/self/gid_map")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if containerID != 0 || containerID != hostID {
+		t.Errorf("")
 	}
 }

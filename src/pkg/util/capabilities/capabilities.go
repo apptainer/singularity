@@ -1,11 +1,24 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package capabilities
 
 import "strings"
+
+const (
+	// Permitted capability string constant
+	Permitted string = "permitted"
+	// Effective capability string constant
+	Effective = "effective"
+	// Inheritable capability string constant
+	Inheritable = "inheritable"
+	// Ambient capability string constant
+	Ambient = "ambient"
+	// Bounding capability string constant
+	Bounding = "bounding"
+)
 
 type capability struct {
 	Name        string
@@ -395,5 +408,22 @@ func Split(caps string) ([]string, []string) {
 		included = append(included, c)
 	}
 
-	return included, excluded
+	return RemoveDuplicated(included), RemoveDuplicated(excluded)
+}
+
+// RemoveDuplicated removes duplicated capability value from
+// provided list and returns it
+func RemoveDuplicated(caps []string) []string {
+	length := len(caps) - 1
+	for i := 0; i < length; i++ {
+		for j := i + 1; j <= length; j++ {
+			if caps[i] == caps[j] {
+				caps[j] = caps[length]
+				caps = caps[0:length]
+				length--
+				j--
+			}
+		}
+	}
+	return caps
 }
