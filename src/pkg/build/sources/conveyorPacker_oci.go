@@ -17,8 +17,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/user"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -33,8 +31,8 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
+	"github.com/singularityware/singularity/src/pkg/client/cache"
 	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/fs"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -106,28 +104,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	// their source URI.
 	tag := fmt.Sprintf("%x", sha256.Sum256([]byte(b.Recipe.Header["bootstrap"]+b.Recipe.Header["from"])))
 
-	// Use "~/.singularity/cache/oci" which will not clash with any 2.x cache
-	// directory.
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-
-	var cacheDir string
-	if cacheDir = os.Getenv("SINGULARITY_CACHEDIR"); cacheDir != "" {
-		cacheDir = path.Join(os.Getenv("SINGULARITY_CACHEDIR"), "oci")
-	} else {
-		cacheDir = path.Join(usr.HomeDir, ".singularity", "cache", "oci")
-	}
-
-	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
-		sylog.Debugf("Creating oci cache directory: %s", cacheDir)
-		if err := fs.MkdirAll(cacheDir, 0755); err != nil {
-			sylog.Fatalf("Couldn't create oci cache directory: %v", err)
-		}
-	}
-
-	cp.cacheRef, err = oci.ParseReference(cacheDir + ":" + tag)
+	cp.cacheRef, err = oci.ParseReference(cache.Dir + ":" + tag)
 	if err != nil {
 		return
 	}
