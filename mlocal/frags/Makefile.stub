@@ -113,7 +113,7 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 $(BUILDDIR)/vendors-done:
 	@echo " VENDORS"
 	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure -vendor-only >/dev/null 2>&1 && \
+		dep ensure >/dev/null 2>&1 && \
 			touch $(BUILDDIR)/.dep-done; \
 	fi
 	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
