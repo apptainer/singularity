@@ -14,6 +14,11 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// Enabled returns wether seccomp is enabled or not
+func Enabled() bool {
+	return false
+}
+
 // LoadSeccompConfig returns an error for unsupported platforms or without seccomp support
 func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 	if runtime.GOOS == "linux" {

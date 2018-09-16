@@ -291,6 +291,12 @@
   version = "v0.6.0"
 
 [[projects]]
+  name = "github.com/opencontainers/selinux"
+  packages = ["go-selinux"]
+  revision = "ba1aefe8057f1d0cfb8e88d0ec1dc85925ef987d"
+  version = "v1.0.0-rc1"
+
+[[projects]]
   name = "github.com/pelletier/go-toml"
   packages = ["."]
   revision = "c01d1270ff3e442a8a57cddc1c92dc1138598194"
@@ -473,6 +479,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "d8f4cbc291442f0f7a09ef95674446f88bc9732cb8c9d96abf4d0bd750db2902"
+  inputs-digest = "d112182fa4d53cba8fae32472348c84a7a83cf21ffe224d5ab7375485952bdc1"
   solver-name = "gps-cdcl"
   solver-version = 1
