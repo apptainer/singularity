@@ -25,7 +25,6 @@ var (
 	Hostname    string
 	Network     string
 	NetworkArgs []string
-	Port        []string
 	DNS         string
 
 	IsBoot       bool

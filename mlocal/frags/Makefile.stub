@@ -79,7 +79,7 @@ $(cni_plugins_INSTALL): $(cni_plugins_EXECUTABLES)
 $(cni_config_INSTALL): $(cni_config_LIST)
 	@echo " INSTALL CNI CONFIGURATION FILES"
 	$(V)install -d $(cni_config_INSTALL)
-	$(V)install -m 0755 $(cni_config_LIST) $@
+	$(V)install -m 0755 $? $@
 
 $(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
