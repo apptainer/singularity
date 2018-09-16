@@ -80,6 +80,7 @@ type JSONConfig struct {
 	NoHome        bool          `json:"noHome,omitempty"`
 	NoInit        bool          `json:"noInit,omitempty"`
 	ImageList     []image.Image `json:"imageList,omitempty"`
+	Cwd           string        `json:"cwd,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -363,4 +364,14 @@ func (e *EngineConfig) SetImageList(list []image.Image) {
 // GetImageList returns image list containing opened images
 func (e *EngineConfig) GetImageList() []image.Image {
 	return e.JSON.ImageList
+}
+
+// SetCwd sets current working directory
+func (e *EngineConfig) SetCwd(path string) {
+	e.JSON.Cwd = path
+}
+
+// GetCwd returns current working directory
+func (e *EngineConfig) GetCwd() string {
+	return e.JSON.Cwd
 }
