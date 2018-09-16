@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package sources
@@ -131,7 +131,7 @@ fi
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
 # This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
+# consult LICENSE.md file distributed with the sources of this project regarding
 # your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
@@ -215,7 +215,7 @@ fi
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 # 
 # This software is licensed under a customized 3-clause BSD license.  Please
-# consult LICENSE file distributed with the sources of this project regarding
+# consult LICENSE.md file distributed with the sources of this project regarding
 # your rights to use or distribute this software.
 # 
 # NOTICE.  This Software was developed under funding from the U.S. Department of
@@ -343,9 +343,6 @@ func makeFiles(rootPath string) (err error) {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "90-environment.sh"), 0755, environmentShFileContent); err != nil {
-		return
-	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "91-environment.sh"), 0755, environmentShFileContent); err != nil {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "95-apps.sh"), 0755, appsShFileContent); err != nil {

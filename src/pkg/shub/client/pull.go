@@ -26,7 +26,7 @@ const pullTimeout = 7200
 func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	sylog.Debugf("Downloading container from Shub")
 
-	//use custom parser to make sure we have a valid shub URI
+	// use custom parser to make sure we have a valid shub URI
 	if ok := isShubPullRef(shubRef); !ok {
 		sylog.Fatalf("Invalid shub URI: %v", err)
 	}
@@ -62,10 +62,13 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	if err != nil {
 		return err
 	}
-	req.Header.Set("User-Agent", useragent.Value)
+	req.Header.Set("User-Agent", useragent.Value())
 
 	// Do the request, if status isn't success, return error
 	resp, err := httpc.Do(req)
+	if resp == nil {
+		return fmt.Errorf("No response received from singularity hub")
+	}
 	if resp.StatusCode == http.StatusNotFound {
 		return fmt.Errorf("The requested image was not found in singularity hub")
 	}
@@ -103,7 +106,7 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	if err != nil {
 		return err
 	}
-	//Simple check to make sure image received is the correct size
+	// Simple check to make sure image received is the correct size
 	if bytesWritten != resp.ContentLength {
 		return fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
 	}

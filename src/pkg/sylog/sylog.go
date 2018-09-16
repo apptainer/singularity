@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 // Package sylog implements a basic logger for Singularity Go code to log
@@ -9,6 +9,8 @@ package sylog
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -166,4 +168,14 @@ func GetLevel() int {
 // can later be interpreted by init() in a child proc
 func GetEnvVar() string {
 	return fmt.Sprintf("SINGULARITY_MESSAGELEVEL=%d", loggerLevel)
+}
+
+// Writer returns an io.Writer to pass to an external packages logging utility. For example,
+// when --quiet option is set, this function returns ioutil.Discard writer to ignore output
+func Writer() io.Writer {
+	if loggerLevel <= -1 {
+		return ioutil.Discard
+	}
+
+	return os.Stderr
 }

@@ -85,7 +85,7 @@ $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 $(bash_completion): $(go_OBJ)
 	@rm -f $@
 	@mkdir -p $(@D)
-	$(V)go run  $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
 
 # install singularity CLI bash_completion file
 $(bash_completion_INSTALL): $(bash_completion)
@@ -113,7 +113,7 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 $(BUILDDIR)/vendors-done:
 	@echo " VENDORS"
 	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure -vendor-only >/dev/null 2>&1 && \
+		dep ensure >/dev/null 2>&1 && \
 			touch $(BUILDDIR)/.dep-done; \
 	fi
 	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
