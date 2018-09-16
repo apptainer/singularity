@@ -283,6 +283,15 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}
 
+	// Save the current working directory to restore it in stage 2
+	// for relative bind paths
+	if pwd, err := os.Getwd(); err == nil {
+		e.EngineConfig.SetCwd(pwd)
+	} else {
+		sylog.Warningf("can't determine current working directory")
+		e.EngineConfig.SetCwd("/")
+	}
+
 	if e.EngineConfig.OciConfig.Process == nil {
 		e.EngineConfig.OciConfig.Process = &specs.Process{}
 	}

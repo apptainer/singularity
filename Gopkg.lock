@@ -181,12 +181,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  name = "github.com/golang/glog"
-  packages = ["."]
-  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
-
-[[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
@@ -295,6 +289,12 @@
   ]
   revision = "1c243a8a8eb44d491790798afc9b634c6f6a6380"
   version = "v0.6.0"
+
+[[projects]]
+  name = "github.com/opencontainers/selinux"
+  packages = ["go-selinux"]
+  revision = "ba1aefe8057f1d0cfb8e88d0ec1dc85925ef987d"
+  version = "v1.0.0-rc1"
 
 [[projects]]
   name = "github.com/pelletier/go-toml"
@@ -479,6 +479,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b5a4f3db8e7b9ce196abd32da6f27af3c42393d28180ad159555491466c80a03"
+  inputs-digest = "d112182fa4d53cba8fae32472348c84a7a83cf21ffe224d5ab7375485952bdc1"
   solver-name = "gps-cdcl"
   solver-version = 1
