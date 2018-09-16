@@ -130,6 +130,31 @@ func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 	return syscall.Sethostname([]byte(arguments.Hostname))
 }
 
+// HasNamespace checks if host namespace and container namespace
+// are different and sets reply to 0 or 1
+func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) error {
+	var st1 syscall.Stat_t
+	var st2 syscall.Stat_t
+
+	processOne := fmt.Sprintf("/proc/1/ns/%s", arguments.NsType)
+	processTwo := fmt.Sprintf("/proc/self/ns/%s", arguments.NsType)
+
+	if err := syscall.Stat(processOne, &st1); err != nil {
+		return err
+	}
+	if err := syscall.Stat(processTwo, &st2); err != nil {
+		return err
+	}
+
+	if st1.Ino != st2.Ino {
+		*reply = 1
+	} else {
+		*reply = 0
+	}
+
+	return nil
+}
+
 // SetFsID sets filesystem uid and gid
 func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 	mainthread.Execute(func() {
