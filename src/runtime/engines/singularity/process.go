@@ -16,6 +16,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/singularityware/singularity/src/pkg/security"
+
 	"github.com/singularityware/singularity/src/pkg/util/mainthread"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 
@@ -55,6 +57,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := syscall.Close(int(img.Fd)); err != nil {
 			return fmt.Errorf("failed to close file descriptor for %s", img.Path)
 		}
+	}
+
+	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
