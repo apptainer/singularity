@@ -13,14 +13,11 @@ import (
 	"os"
 )
 
-// Enabled returns if apparmor is whether enabled/supported or not
+// Enabled returns whether apparmor is enabled/supported or not
 func Enabled() bool {
 	data, err := ioutil.ReadFile("/sys/module/apparmor/parameters/enabled")
-	if err == nil {
-		if len(data) > 0 && data[0] == 'Y' {
-			return true
-		}
-		return false
+	if err == nil && len(data) > 0 && data[0] == 'Y' {
+		return true
 	}
 	return false
 }

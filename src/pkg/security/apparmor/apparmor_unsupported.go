@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-// Enabled returns if apparmor is whether enabled/supported or not
+// Enabled returns whether apparmor is enabled/supported or not
 func Enabled() bool {
 	return false
 }
