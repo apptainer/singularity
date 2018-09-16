@@ -33,11 +33,6 @@ const (
 // Defaults to ${HOME}/.singularity/cache/oci
 var Dir string
 
-func init() {
-	Dir = cacheDir()
-	initCacheDir()
-}
-
 func cacheDir() string {
 	usr, err := user.Current()
 	if err != nil {
@@ -59,4 +54,10 @@ func initCacheDir() {
 	} else if err != nil {
 		sylog.Fatalf("Unable to stat %s: %s", Dir, err)
 	}
+}
+
+// update ensures that we're running the correct cache
+func update() {
+	Dir = cacheDir()
+	initCacheDir()
 }

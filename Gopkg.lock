@@ -750,6 +750,7 @@
     "github.com/containers/image/oci/archive",
     "github.com/containers/image/oci/layout",
     "github.com/containers/image/signature",
+    "github.com/containers/image/transports",
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
