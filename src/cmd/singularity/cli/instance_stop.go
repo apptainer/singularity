@@ -37,8 +37,10 @@ var InstanceStopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 && !stopAll {
 			stopInstance(args[0])
-		} else {
+		} else if stopAll {
 			stopInstance("*")
+		} else {
+			cmd.Usage()
 		}
 	},
 
