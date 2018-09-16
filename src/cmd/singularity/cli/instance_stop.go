@@ -7,7 +7,6 @@ package cli
 
 import (
 	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +40,7 @@ var InstanceStopCmd = &cobra.Command{
 		} else if stopAll {
 			stopInstance("*")
 		} else {
-			sylog.Fatalf("no arguments supplied")
+			cmd.Usage()
 		}
 	},
 
