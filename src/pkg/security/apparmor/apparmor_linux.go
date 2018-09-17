@@ -13,19 +13,17 @@ import (
 	"os"
 )
 
-// LoadProfile write apparmor profile in /proc/self/attr/exec
-func LoadProfile(profile string) error {
+// Enabled returns whether apparmor is enabled/supported or not
+func Enabled() bool {
 	data, err := ioutil.ReadFile("/sys/module/apparmor/parameters/enabled")
-	if err == nil {
-		if len(data) > 0 && data[0] == 'Y' {
-			return writeProfile(profile)
-		}
-		return fmt.Errorf("apparmor is not enabled")
+	if err == nil && len(data) > 0 && data[0] == 'Y' {
+		return true
 	}
-	return fmt.Errorf("no apparmor support found")
+	return false
 }
 
-func writeProfile(profile string) error {
+// LoadProfile write apparmor profile in /proc/self/attr/exec
+func LoadProfile(profile string) error {
 	f, err := os.OpenFile("/proc/self/attr/exec", os.O_WRONLY, 0)
 	if err != nil {
 		return err
