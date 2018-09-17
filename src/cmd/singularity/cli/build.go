@@ -27,6 +27,7 @@ var (
 	sandbox    bool
 	writable   bool
 	force      bool
+	update     bool
 	noTest     bool
 	sections   []string
 )
@@ -39,6 +40,7 @@ func init() {
 	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
 	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
 	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "Delete and overwrite an image if it currently exists")
+	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "Run definition over existing container")
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
 	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
@@ -68,8 +70,8 @@ var BuildCmd = &cobra.Command{
 		dest := args[0]
 		spec := args[1]
 
-		// check if target collides with existing file
-		if ok := checkBuildTargetCollision(dest, force); !ok {
+		//check if target collides with existing file
+		if ok := checkBuildTarget(dest); !ok {
 			os.Exit(1)
 		}
 
@@ -96,7 +98,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf(err.Error())
 			}
 
-			b, err := build.NewBuild(spec, dest, buildFormat, sections, noTest)
+			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 			}
@@ -110,12 +112,12 @@ var BuildCmd = &cobra.Command{
 }
 
 // checkTargetCollision makes sure output target doesnt exist, or is ok to overwrite
-func checkBuildTargetCollision(path string, force bool) bool {
-	if _, err := os.Stat(path); err == nil {
-		//exists
-		if force {
-			os.RemoveAll(path)
-		} else {
+func checkBuildTarget(path string) bool {
+	if f, err := os.Stat(path); err == nil {
+		if update && !f.IsDir() {
+			sylog.Fatalf("Only sandbox updating is supported.")
+		}
+		if !update && !force {
 			reader := bufio.NewReader(os.Stdin)
 			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
 			input, err := reader.ReadString('\n')
@@ -123,7 +125,7 @@ func checkBuildTargetCollision(path string, force bool) bool {
 				sylog.Fatalf("Error parsing input: %s", err)
 			}
 			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
-				os.RemoveAll(path)
+				force = true
 			} else {
 				sylog.Errorf("Stopping build.")
 				return false
