@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"syscall"
@@ -45,10 +46,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if args[0] == "/.singularity.d/actions/exec" {
 		if _, err := os.Stat(args[0]); os.IsNotExist(err) {
 			// for backward compatibility with old images
-			if args[1][0] != '/' {
+			if !filepath.IsAbs(args[1]) {
 				// match old behavior of searching path
 				oldpath := os.Getenv("PATH")
-				for _, keyval:= range env {
+				for _, keyval := range env {
 					if strings.HasPrefix(keyval, "PATH=") {
 						os.Setenv("PATH", keyval[5:])
 						break
