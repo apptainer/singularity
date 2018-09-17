@@ -80,11 +80,17 @@ func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections
 func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
 	var err error
 
+	// always build a sandbox if updating an existing sandbox
+	if update {
+		format = "sandbox"
+	}
+
 	b := &Build{
 		update:   update,
 		force:    force,
 		sections: sections,
 		noTest:   noTest,
+		format:   format,
 		dest:     dest,
 		d:        d,
 	}

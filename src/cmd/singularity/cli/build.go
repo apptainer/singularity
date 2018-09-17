@@ -115,7 +115,7 @@ var BuildCmd = &cobra.Command{
 func checkBuildTarget(path string) bool {
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {
-			sylog.Errorf("Only sandbox updating is supported.")
+			sylog.Fatalf("Only sandbox updating is supported.")
 		}
 		if !update && !force {
 			reader := bufio.NewReader(os.Stdin)
