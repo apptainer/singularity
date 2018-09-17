@@ -57,13 +57,12 @@ var baseToSkip = map[string]bool{
 
 // ArchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ArchConveyorPacker struct {
-	recipe types.Definition
-	b      *types.Bundle
+	b *types.Bundle
 }
 
 // Get just stores the source
-func (cp *ArchConveyorPacker) Get(recipe types.Definition) (err error) {
-	cp.recipe = recipe
+func (cp *ArchConveyorPacker) Get(b *types.Bundle) (err error) {
+	cp.b = b
 
 	//check for pacstrap on system
 	pacstrapPath, err := exec.LookPath("pacstrap")
@@ -74,12 +73,6 @@ func (cp *ArchConveyorPacker) Get(recipe types.Definition) (err error) {
 	//make sure architecture is supported
 	if arch := runtime.GOARCH; arch != `amd64` {
 		return fmt.Errorf("%v architecture is not supported", arch)
-	}
-
-	//create bundle to build into
-	cp.b, err = types.NewBundle("sbuild-arch")
-	if err != nil {
-		return
 	}
 
 	instList, err := getPacmanBaseList()
@@ -134,8 +127,6 @@ func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("While inserting runscript: %v", err)
 	}
-
-	cp.b.Recipe = cp.recipe
 
 	return cp.b, nil
 }

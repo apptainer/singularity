@@ -35,15 +35,21 @@ func TestArchConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	// create bundle to build into
+	b, err := types.NewBundle("sbuild-arch")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
 	cp := &sources.ArchConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
@@ -63,15 +69,21 @@ func TestArchPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	// create bundle to build into
+	b, err := types.NewBundle("sbuild-arch")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", archDef, err)
 	}
 
 	cp := &sources.ArchConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)

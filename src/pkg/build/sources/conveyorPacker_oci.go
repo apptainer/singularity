@@ -39,7 +39,6 @@ import (
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
 type OCIConveyorPacker struct {
-	recipe    sytypes.Definition
 	srcRef    types.ImageReference
 	b         *sytypes.Bundle
 	tmpfsRef  types.ImageReference
@@ -49,29 +48,30 @@ type OCIConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
+func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
+
+	cp.b = b
+
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	cp.policyCtx, err = signature.NewPolicyContext(policy)
 	if err != nil {
 		return
 	}
 
-	cp.recipe = recipe
-
-	switch recipe.Header["bootstrap"] {
+	switch b.Recipe.Header["bootstrap"] {
 	case "docker":
-		ref := "//" + recipe.Header["from"]
+		ref := "//" + b.Recipe.Header["from"]
 		cp.srcRef, err = docker.ParseReference(ref)
 	case "docker-archive":
-		cp.srcRef, err = dockerarchive.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = dockerarchive.ParseReference(b.Recipe.Header["from"])
 	case "docker-daemon":
-		cp.srcRef, err = dockerdaemon.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = dockerdaemon.ParseReference(b.Recipe.Header["from"])
 	case "oci":
-		cp.srcRef, err = oci.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = oci.ParseReference(b.Recipe.Header["from"])
 	case "oci-archive":
 		if os.Geteuid() == 0 {
 			// As root, the direct oci-archive handling will work
-			cp.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
+			cp.srcRef, err = ociarchive.ParseReference(b.Recipe.Header["from"])
 		} else {
 			// As non-root we need to do a dumb tar extraction first
 			tmpDir, err := ioutil.TempDir("", "temp-oci-")
@@ -80,7 +80,7 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 			}
 			defer os.RemoveAll(tmpDir)
 
-			refParts := strings.SplitN(recipe.Header["from"], ":", 2)
+			refParts := strings.SplitN(b.Recipe.Header["from"], ":", 2)
 			err = cp.extractArchive(refParts[0], tmpDir)
 			if err != nil {
 				return fmt.Errorf("error extracting the OCI archive file: %v", err)
@@ -94,22 +94,17 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		}
 
 	default:
-		return fmt.Errorf("OCI ConveyorPacker does not support %s", recipe.Header["bootstrap"])
+		return fmt.Errorf("OCI ConveyorPacker does not support %s", b.Recipe.Header["bootstrap"])
 	}
 
 	if err != nil {
 		return fmt.Errorf("Invalid image source: %v", err)
 	}
 
-	cp.b, err = sytypes.NewBundle("sbuild-oci")
-	if err != nil {
-		return
-	}
-
 	// Our cache dir is an OCI directory. We are using this as a 'blob pool'
 	// storing all incoming containers under unique tags, which are a hash of
 	// their source URI.
-	tag := fmt.Sprintf("%x", sha256.Sum256([]byte(recipe.Header["bootstrap"]+recipe.Header["from"])))
+	tag := fmt.Sprintf("%x", sha256.Sum256([]byte(b.Recipe.Header["bootstrap"]+b.Recipe.Header["from"])))
 
 	// Use "~/.singularity/cache/oci" which will not clash with any 2.x cache
 	// directory.
@@ -178,8 +173,6 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 	if err != nil {
 		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
 	}
-
-	cp.b.Recipe = cp.recipe
 
 	return cp.b, nil
 }
