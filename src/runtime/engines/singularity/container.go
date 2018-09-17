@@ -62,6 +62,11 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		suidFlag:         syscall.MS_NOSUID,
 	}
 
+	cwd := engine.EngineConfig.GetCwd()
+	if err := os.Chdir(cwd); err != nil {
+		return fmt.Errorf("can't change directory to %s: %s", cwd, err)
+	}
+
 	if engine.EngineConfig.OciConfig.Linux != nil {
 		for _, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
 			switch namespace.Type {
@@ -339,6 +344,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 
 	if flags&syscall.MS_BIND != 0 && !remount {
 		if _, err := os.Stat(source); os.IsNotExist(err) {
+			c.skippedMount = append(c.skippedMount, mnt.Destination)
 			sylog.Debugf("Skipping mount, host source %s doesn't exist", source)
 			return nil
 		}
@@ -347,6 +353,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
 		dest = c.session.FinalPath() + mnt.Destination
 		if _, err := os.Stat(dest); os.IsNotExist(err) {
+			c.skippedMount = append(c.skippedMount, mnt.Destination)
 			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
 			return nil
 		}
@@ -617,6 +624,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
+			flags &^= syscall.MS_RDONLY
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
@@ -1045,6 +1053,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
 		}
 		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
+		flags &^= syscall.MS_RDONLY
 	}
 	return nil
 }
