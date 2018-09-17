@@ -25,6 +25,7 @@ import (
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // routine that outputs signature type (applies to vindex operation)
@@ -118,6 +119,17 @@ func AskQuestion(format string, a ...interface{}) (string, error) {
 		return "", err
 	}
 	return response, nil
+}
+
+// AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
+func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
+	fmt.Printf(format, a...)
+	response, err := terminal.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println("")
+	if err != nil {
+		return "", err
+	}
+	return string(response), nil
 }
 
 // DirPath returns a string describing the path to the sypgp home folder
@@ -341,6 +353,15 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 	}
 	fmt.Println("Done")
 
+	// encrypt private key
+	pass, err := AskQuestionNoEcho("Enter encryption passphrase : ")
+	if err != nil {
+		return
+	}
+	if err = EncryptKey(entity, pass); err != nil {
+		return
+	}
+
 	// Store key parts in local key caches
 	if err = StorePrivKey(entity); err != nil {
 		return
@@ -355,7 +376,7 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
-		pass, err := AskQuestion("Enter key passphrase: ")
+		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
 			return nil
 		}
@@ -365,6 +386,15 @@ func DecryptKey(k *openpgp.Entity) error {
 		}
 	}
 	return nil
+}
+
+// EncryptKey encrypts a private key using a pass phrase
+func EncryptKey(k *openpgp.Entity, pass string) (err error) {
+	if k.PrivateKey.Encrypted == true {
+		return fmt.Errorf("key already encrypted")
+	}
+	err = k.PrivateKey.Encrypt([]byte(pass))
+	return
 }
 
 // SelectPubKey prints a public key list to user and returns the choice
