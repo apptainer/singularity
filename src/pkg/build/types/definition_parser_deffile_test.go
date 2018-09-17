@@ -135,7 +135,7 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 			}
 			defer defFile.Close()
 
-			if _, err := ParseDefinitionFile(defFile); err == nil {
+			if _, err = ParseDefinitionFile(defFile); err == nil {
 				t.Fatal("unexpected success parsing definition file")
 			}
 		}))
