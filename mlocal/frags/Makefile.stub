@@ -194,7 +194,7 @@ collect:
 check:
 	@echo " CHECK go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && test -z $(go fmt ./...)
+		cd $(SOURCEDIR) && test -z `gofmt -l .|tee /dev/stderr`
 	@echo "       PASS"
 	@echo " CHECK go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
