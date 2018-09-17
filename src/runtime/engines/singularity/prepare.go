@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
@@ -168,6 +169,44 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
+func (e *EngineOperations) prepareFd() {
+	fds := make([]int, 0)
+
+	if e.EngineConfig.File.UserBindControl {
+		for _, b := range e.EngineConfig.GetBindPath() {
+			splitted := strings.Split(b, ":")
+
+			src, err := filepath.Abs(splitted[0])
+			if err != nil {
+				continue
+			}
+
+			sylog.Debugf("Open file descriptor for %s", src)
+			f, err := os.Open(src)
+			if err != nil {
+				continue
+			}
+			fds = append(fds, int(f.Fd()))
+		}
+	}
+
+	if !e.EngineConfig.GetContain() {
+		for _, bindpath := range e.EngineConfig.File.BindPath {
+			splitted := strings.Split(bindpath, ":")
+			src := splitted[0]
+
+			sylog.Debugf("Open file descriptor for %s", src)
+			f, err := os.Open(src)
+			if err != nil {
+				continue
+			}
+			fds = append(fds, int(f.Fd()))
+		}
+	}
+
+	e.EngineConfig.SetOpenFd(fds)
+}
+
 // prepareContainerConfig is responsible for getting and applying user supplied
 // configuration for container creation
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
@@ -211,6 +250,9 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
 		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}
+
+	// open file descriptors (autofs bug path)
+	e.prepareFd()
 
 	return nil
 }
