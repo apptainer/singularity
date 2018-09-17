@@ -7,9 +7,11 @@
 package cache
 
 import (
+	"fmt"
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
@@ -20,44 +22,73 @@ const (
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
 
-	// DirDefault specifies the directory inside of ${HOME} that images are
+	// RootDefault specifies the directory inside of ${HOME} that images are
 	// cached in by default.
-	// Uses "~/.singularity/cache/oci" which will not clash with any 2.x cache
+	// Uses "~/.singularity/cache" which will not clash with any 2.x cache
 	// directory.
-	DirDefault = ".singularity/cache/oci"
+	RootDefault = ".singularity/cache"
+
+	// OciDir is the directory inside the cache.Dir where oci images are cached
+	OciDir = "oci"
+	// LibraryDir is the directory inside the cache.Dir where library images are cached
+	LibraryDir = "library"
+	// ShubDir is the directory inside the cache.Dir where shub images are cached
+	ShubDir = "shub"
 )
 
-// Dir is the location of the directory in which to cache blobs downloaded
-// from image formats supported by containers/image
-//
-// Defaults to ${HOME}/.singularity/cache/oci
-var Dir string
+var root string
 
-func cacheDir() string {
+// Root is the root location where all of singularity caching happens. Library, Shub,
+// and oci image formats supported by containers/image repository will be cached inside
+//
+// Defaults to ${HOME}/.singularity/cache
+func Root() string {
+	updateCacheRoot()
+
+	return root
+}
+
+func updateCacheRoot() {
 	usr, err := user.Current()
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
 
-	if dir := os.Getenv(DirEnv); dir != "" {
-		return path.Join(dir, "oci")
+	if d := os.Getenv(DirEnv); d != "" {
+		root = d
 	}
-	return path.Join(usr.HomeDir, DirDefault)
+
+	root = path.Join(usr.HomeDir, RootDefault)
+	if err := initCacheDir(root); err != nil {
+		panic(err)
+	}
 }
 
-func initCacheDir() {
-	if _, err := os.Stat(Dir); os.IsNotExist(err) {
-		sylog.Debugf("Creating oci cache directory: %s", Dir)
-		if err := fs.MkdirAll(Dir, 0755); err != nil {
-			sylog.Fatalf("Couldn't create oci cache directory: %v", err)
+func updateCacheSubdir(subdir string) string {
+	updateCacheRoot()
+
+	absdir, err := filepath.Abs(filepath.Join(root, subdir))
+	if err != nil {
+		panic(err)
+	}
+
+	if err := initCacheDir(absdir); err != nil {
+		panic(err)
+	}
+
+	sylog.Debugf("Caching directory set to %s", absdir)
+	return absdir
+}
+
+func initCacheDir(dir string) error {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		sylog.Debugf("Creating cache directory: %s", dir)
+		if err := fs.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("couldn't create cache directory %v: %v", dir, err)
 		}
 	} else if err != nil {
-		sylog.Fatalf("Unable to stat %s: %s", Dir, err)
+		return fmt.Errorf("unable to stat %s: %s", dir, err)
 	}
-}
 
-// update ensures that we're running the correct cache
-func update() {
-	Dir = cacheDir()
-	initCacheDir()
+	return nil
 }

@@ -3,7 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cache
+// Package oci provides transparent caching of oci-like refs
+package oci
 
 import (
 	"context"
@@ -15,6 +16,7 @@ import (
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
+	"github.com/singularityware/singularity/src/pkg/client/cache"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -26,15 +28,12 @@ type ImageReference struct {
 
 // ConvertReference converts a source reference into a cache.ImageReference to cache its blobs
 func ConvertReference(src types.ImageReference) (types.ImageReference, error) {
-	// Call update() when converting a ref so that we're always running from the appropriately set cache location
-	update()
-
 	// Our cache dir is an OCI directory. We are using this as a 'blob pool'
 	// storing all incoming containers under unique tags, which are a hash of
 	// their source URI.
 	cacheTag := fmt.Sprintf("%x", sha256.Sum256([]byte(transports.ImageName(src))))
 
-	c, err := layout.ParseReference(Dir + ":" + cacheTag)
+	c, err := layout.ParseReference(cache.Oci() + ":" + cacheTag)
 	if err != nil {
 		return nil, err
 	}

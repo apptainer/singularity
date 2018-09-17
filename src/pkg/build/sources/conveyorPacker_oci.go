@@ -29,7 +29,7 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/client/cache"
+	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
@@ -97,7 +97,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	}
 
 	// Grab the modified source ref from the cache
-	cp.srcRef, err = cache.ConvertReference(cp.srcRef)
+	cp.srcRef, err = ociclient.ConvertReference(cp.srcRef)
 	if err != nil {
 		return err
 	}
