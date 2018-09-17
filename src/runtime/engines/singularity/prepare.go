@@ -18,6 +18,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
+	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/mainthread"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
@@ -181,6 +182,10 @@ func (e *EngineOperations) prepareFd() {
 				continue
 			}
 
+			if !fs.IsDir(src) {
+				continue
+			}
+
 			sylog.Debugf("Open file descriptor for %s", src)
 			f, err := os.Open(src)
 			if err != nil {
@@ -195,6 +200,10 @@ func (e *EngineOperations) prepareFd() {
 			splitted := strings.Split(bindpath, ":")
 			src := splitted[0]
 
+			if !fs.IsDir(src) {
+				continue
+			}
+
 			sylog.Debugf("Open file descriptor for %s", src)
 			f, err := os.Open(src)
 			if err != nil {
@@ -202,6 +211,19 @@ func (e *EngineOperations) prepareFd() {
 			}
 			fds = append(fds, int(f.Fd()))
 		}
+	}
+
+	for _, path := range e.EngineConfig.File.AutofsBugPath {
+		if !fs.IsDir(path) {
+			continue
+		}
+
+		sylog.Debugf("Open file descriptor for %s", path)
+		f, err := os.Open(path)
+		if err != nil {
+			continue
+		}
+		fds = append(fds, int(f.Fd()))
 	}
 
 	e.EngineConfig.SetOpenFd(fds)
