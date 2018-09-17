@@ -113,11 +113,12 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 $(BUILDDIR)/vendors-done:
 	@echo " VENDORS"
 	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure -vendor-only >/dev/null 2>&1 && \
+		dep ensure >/dev/null 2>&1 && \
 			touch $(BUILDDIR)/.dep-done; \
 	fi
 	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
 		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+		(cd $(SOURCEDIR)/vendor/golang.org/x/crypto && patch --silent -b -p0 < $(SOURCEDIR)/patches/privkey-encryption.patch) && \
 			touch $(BUILDDIR)/.patch-done; \
 	fi
 	$(V)touch $@
