@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/sypgp"

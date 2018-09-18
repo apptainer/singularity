@@ -5,11 +5,16 @@
 
 package rpc
 
-import "github.com/singularityware/singularity/src/pkg/util/loop"
+import (
+	"os"
+
+	"github.com/singularityware/singularity/src/pkg/util/loop"
+)
 
 // MkdirArgs defines the arguments to mkdir
 type MkdirArgs struct {
 	Path string
+	Perm os.FileMode
 }
 
 // LoopArgs defines the arguments to create a loop device
@@ -36,4 +41,16 @@ type ChrootArgs struct {
 // HostnameArgs defines the arguments to sethostname
 type HostnameArgs struct {
 	Hostname string
+}
+
+// HasNamespaceArgs defines the arguments to compare host namespace
+// and RPC process
+type HasNamespaceArgs struct {
+	NsType string
+}
+
+// SetFsIDArgs defines the arguments to setfsid
+type SetFsIDArgs struct {
+	UID int
+	GID int
 }

@@ -69,43 +69,21 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
 
-	//insert help
+	sylog.Infof("Creating SIF file...")
+
+	// insert help
 	err = insertHelpScript(b)
 	if err != nil {
 		return fmt.Errorf("While inserting help script: %v", err)
 	}
 
-	//insert labels
+	// insert labels
 	err = insertLabelsJSON(b)
 	if err != nil {
 		return fmt.Errorf("While inserting labels JSON: %v", err)
 	}
 
-	//append environment
-	err = insertEnvScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
-	}
-
-	//insert runscript
-	err = insertRunScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
-	}
-
-	//insert startscript
-	err = insertStartScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
-	}
-
-	//insert test script
-	err = insertTestScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
-	}
-
-	//insert definition
+	// insert definition
 	err = insertDefinition(b)
 	if err != nil {
 		return fmt.Errorf("While inserting definition: %v", err)
@@ -124,9 +102,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(squashfsPath)
 
 	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
-	mksquashfsCmd.Stdin = os.Stdin
-	mksquashfsCmd.Stdout = os.Stdout
-	mksquashfsCmd.Stderr = os.Stderr
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {

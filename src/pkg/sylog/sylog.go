@@ -9,6 +9,8 @@ package sylog
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strconv"
@@ -166,4 +168,14 @@ func GetLevel() int {
 // can later be interpreted by init() in a child proc
 func GetEnvVar() string {
 	return fmt.Sprintf("SINGULARITY_MESSAGELEVEL=%d", loggerLevel)
+}
+
+// Writer returns an io.Writer to pass to an external packages logging utility.
+// i.e when --quiet option is set, this function returns ioutil.Discard writer to ignore output
+func Writer() io.Writer {
+	if loggerLevel <= -1 {
+		return ioutil.Discard
+	}
+
+	return os.Stderr
 }

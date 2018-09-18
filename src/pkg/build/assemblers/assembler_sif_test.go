@@ -34,18 +34,23 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := types.NewDefinitionFromURI(assemblerDockerURI)
+	b, err := types.NewBundle("sbuild-SIFAssembler")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
 	}
 
 	ocp := &sources.OCIConveyorPacker{}
 
-	if err := ocp.Get(def); err != nil {
+	if err := ocp.Get(b); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	b, err := ocp.Pack()
+	_, err = ocp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
@@ -63,18 +68,23 @@ func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := types.NewDefinitionFromURI(assemblerShubURI)
+	b, err := types.NewBundle("sbuild-SIFAssembler")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerShubURI, err)
 	}
 
 	scp := &sources.ShubConveyorPacker{}
 
-	if err := scp.Get(def); err != nil {
+	if err := scp.Get(b); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerShubURI, err)
 	}
 
-	b, err := scp.Pack()
+	_, err = scp.Pack()
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerShubURI, err)
 	}

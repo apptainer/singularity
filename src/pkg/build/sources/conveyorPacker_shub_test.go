@@ -27,15 +27,20 @@ func TestShubConveyor(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := types.NewDefinitionFromURI(shubURI)
+	b, err := types.NewBundle("sbuild-shub")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
 	cp := &sources.ShubConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
@@ -47,15 +52,20 @@ func TestShubPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := types.NewDefinitionFromURI(shubURI)
+	b, err := types.NewBundle("sbuild-shub")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.NewDefinitionFromURI(shubURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", shubURI, err)
 	}
 
 	scp := &sources.ShubConveyorPacker{}
 
-	err = scp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = scp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer scp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
