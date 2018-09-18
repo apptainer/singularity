@@ -506,7 +506,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 			if err = ecl.ValidateConfig(); err != nil {
 				return err
 			}
-			_, err := ecl.ShouldRun(imageObject.File.Name())
+			_, err := ecl.ShouldRunFp(imageObject.File)
 			if err != nil {
 				return err
 			}
