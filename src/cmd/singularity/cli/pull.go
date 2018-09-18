@@ -40,8 +40,8 @@ func init() {
 // PullCmd singularity pull
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: sylabsToken,
+	Args:                  cobra.RangeArgs(1, 2),
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		var uri, image string
 
