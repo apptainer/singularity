@@ -46,6 +46,11 @@ func Root() string {
 	return root
 }
 
+// Clean wipes all files in the cache directory
+func Clean() {
+	_ = os.RemoveAll(Root())
+}
+
 func updateCacheRoot() {
 	usr, err := user.Current()
 	if err != nil {
