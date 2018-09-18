@@ -81,7 +81,8 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if split := strings.SplitN(args[0], ":", 2); len(split) != 2 {
+	split := strings.Split(args[0], ":")
+	if len(split) < 2 {
 		return
 	}
 
@@ -90,11 +91,14 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("That didn't work %v", err)
 	}
 
-	img := cache.OciTempFile(sum)
-	if exists, err := cache.OciTempExists(sum); err != nil {
-		sylog.Fatalf("Unable to check if %v exists: %v", img, err)
+	name := split[1]
+	imgabs := cache.OciTempImage(sum, name)
+
+	if exists, err := cache.OciTempExists(sum, name); err != nil {
+		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
-		b, err := build.NewBuild(args[0], img, "sandbox", false, false, nil, true)
+		sylog.Infof("Converting OCI blobs to SIF format")
+		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true)
 		if err != nil {
 			sylog.Fatalf("Unable to create new build: %v", err)
 		}
@@ -102,9 +106,11 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		if err := b.Full(); err != nil {
 			sylog.Fatalf("Unable to build: %v", err)
 		}
+
+		sylog.Infof("Image cached as SIF at %s", imgabs)
 	}
 
-	args[0] = img
+	args[0] = imgabs
 	return
 }
 

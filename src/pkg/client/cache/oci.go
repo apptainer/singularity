@@ -27,14 +27,16 @@ func OciTemp() string {
 	return updateCacheSubdir(OciTempDir)
 }
 
-// OciTempFile returns the full path to a file within the OciTemp() cache directory
-func OciTempFile(f string) string {
-	return filepath.Join(OciTemp(), f)
+// OciTempImage creates a OciTempDir/sum directory and returns the abs path of the image
+func OciTempImage(sum, name string) string {
+	updateCacheSubdir(filepath.Join(OciTempDir, sum))
+
+	return filepath.Join(OciTemp(), sum, name)
 }
 
 // OciTempExists returns whether the image with the given sha sum exists in the OciTemp() cache
-func OciTempExists(sum string) (bool, error) {
-	_, err := os.Stat(OciTempFile(sum))
+func OciTempExists(sum, name string) (bool, error) {
+	_, err := os.Stat(OciTempImage(sum, name))
 	if os.IsNotExist(err) {
 		return false, nil
 	} else if err != nil {

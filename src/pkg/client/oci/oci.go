@@ -11,7 +11,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"path/filepath"
 	"strings"
 
 	"github.com/containers/image/copy"
@@ -104,8 +103,13 @@ func TempImageExists(uri string) (bool, string, error) {
 		return false, "", err
 	}
 
-	exists, err := cache.OciTempExists(sum)
-	return exists, filepath.Join(cache.OciTemp(), sum), err
+	split := strings.Split(uri, ":")
+	if len(split) < 2 {
+		return false, "", fmt.Errorf("poorly formatted URI %v", uri)
+	}
+
+	exists, err := cache.OciTempExists(sum, split[1])
+	return exists, cache.OciTempImage(sum, split[1]), err
 }
 
 // ImageSHA calculates the SHA of a uri's manifest
