@@ -43,6 +43,9 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("network"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
@@ -162,6 +165,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetNetwork(Network)
+	engineConfig.SetDNS(DNS)
+	engineConfig.SetNetworkArgs(NetworkArgs)
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)

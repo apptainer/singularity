@@ -10,12 +10,14 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
+	"github.com/singularityware/singularity/src/pkg/network"
 	"github.com/singularityware/singularity/src/pkg/syecl"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
@@ -152,6 +154,40 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	err = syscall.Chdir("/")
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
+	}
+
+	if c.netNS && !c.userNS {
+		if os.Geteuid() == 0 {
+			/* hold a reference to container network namespace for cleanup */
+			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+			if err != nil {
+				return fmt.Errorf("can't open network namespace: %s", err)
+			}
+			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
+
+			cniPath := &network.CNIPath{
+				Conf:   engine.EngineConfig.File.CniConfPath,
+				Plugin: engine.EngineConfig.File.CniPluginPath,
+			}
+
+			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+			if err != nil {
+				return fmt.Errorf("%s", err)
+			}
+			netargs := engine.EngineConfig.GetNetworkArgs()
+			if err := setup.SetArgs(netargs); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+
+			if err := setup.AddNetworks(); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+
+			engine.EngineConfig.Network = setup
+		} else {
+			return fmt.Errorf("Network requires root permissions")
+		}
 	}
 
 	return nil
