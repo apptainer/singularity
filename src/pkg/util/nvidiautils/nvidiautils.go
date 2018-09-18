@@ -54,7 +54,7 @@ func GetNvidiaBindPath(abspath string) []string {
 
 	// grab the entries in nvliblist.conf file
 	// use ldconfig to pattern match from ld.so.cache
-	newpath, err := filepath.Glob(abspath + "/singularity/nvliblist.conf")
+	newpath, err := filepath.Glob(abspath + "/nvliblist.conf")
 	if err == nil {
 		for _, filename := range newpath {
 

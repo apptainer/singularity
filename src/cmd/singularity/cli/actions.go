@@ -163,7 +163,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if Nvidia {
-		NvidiaBindPaths := nvidiautils.GetNvidiaBindPath("/home/cmadison")
+		NvidiaBindPaths := nvidiautils.GetNvidiaBindPath(buildcfg.SINGULARITY_CONFDIR)
 		BindPaths = append(BindPaths, NvidiaBindPaths...)
 	}
 
