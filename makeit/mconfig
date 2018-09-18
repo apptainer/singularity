@@ -20,7 +20,9 @@ tgtcxx=
 tgtcxx_opts=$hstcxx_opts
 hststatic=0
 tgtstatic=0
-package_version=""
+package_version=`git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || echo "" | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+# export so this can be used in mlocal/checks
+export package_version
 
 
 
@@ -91,11 +93,6 @@ sourcedir=`readlink -f .`
 mfragsdir=$sourcedir/mlocal/frags
 mchecksdir=$sourcedir/mlocal/checks
 
-if [ -z "$package_version" ]; then
-    package_version=`git describe --match 'v[0-9]*' --dirty --always | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
-fi
-# export so this can be used in mlocal/checks
-export package_version
 
 
 #######################################################################
