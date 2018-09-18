@@ -112,6 +112,7 @@ func SMaster(socket int, masterSocket int, starterConfig *starter.Config, jsonBy
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
 		}
+		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
 

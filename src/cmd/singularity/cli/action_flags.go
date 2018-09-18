@@ -23,6 +23,9 @@ var (
 	PwdPath     string
 	ShellPath   string
 	Hostname    string
+	Network     string
+	NetworkArgs []string
+	DNS         string
 
 	IsBoot       bool
 	IsFakeroot   bool
@@ -99,6 +102,18 @@ func initPathVars() {
 	// --hostname
 	actionFlags.StringVar(&Hostname, "hostname", "", "Set container hostname")
 	actionFlags.SetAnnotation("hostname", "argtag", []string{"<name>"})
+
+	// --network
+	actionFlags.StringVar(&Network, "network", "bridge", "Specify desired network type separated by commas, each network will bring up a dedicated interface inside container")
+	actionFlags.SetAnnotation("network", "argtag", []string{"<name>"})
+
+	// --network-args
+	actionFlags.StringSliceVar(&NetworkArgs, "network-args", []string{}, "Specify network arguments to pass to CNI plugins")
+	actionFlags.SetAnnotation("network-args", "argtag", []string{"<name>"})
+
+	// --dns
+	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
+	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
 }
 
 // initBoolVars initializes flags that take a boolean argument

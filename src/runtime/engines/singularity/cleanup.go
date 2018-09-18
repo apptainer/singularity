@@ -25,6 +25,12 @@ import (
 func (engine *EngineOperations) CleanupContainer() error {
 	sylog.Debugf("Cleanup container")
 
+	if engine.EngineConfig.Network != nil {
+		if err := engine.EngineConfig.Network.DelNetworks(); err != nil {
+			return err
+		}
+	}
+
 	if engine.EngineConfig.GetInstance() {
 		uid := os.Getuid()
 
