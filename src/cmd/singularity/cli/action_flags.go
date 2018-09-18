@@ -107,7 +107,7 @@ func initPathVars() {
 	// -B|--bind
 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
 	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
-	actionFlags.SetAnnotation("bind", "envkey", []string{"BINDPATH", "BIND"})
+	actionFlags.SetAnnotation("bind", "envkey", []string{"BIND", "BINDPATH"})
 
 	// -H|--home
 	actionFlags.StringVarP(&HomePath, "home", "H", getHomeDir(), "A home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")
@@ -117,12 +117,12 @@ func initPathVars() {
 	// -o|--overlay
 	actionFlags.StringSliceVarP(&OverlayPath, "overlay", "o", []string{}, "Use an overlayFS image for persistent data storage or as read-only layer of container.")
 	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("overlay", "envkey", []string{"OVERLAYIMAGE", "OVERLAY"})
+	actionFlags.SetAnnotation("overlay", "envkey", []string{"OVERLAY", "OVERLAYIMAGE"})
 
 	// -S|--scratch
 	actionFlags.StringSliceVarP(&ScratchPath, "scratch", "S", []string{}, "Include a scratch directory within the container that is linked to a temporary dir (use -W to force location)")
 	actionFlags.SetAnnotation("scratch", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("scratch", "envkey", []string{"SCRATCHDIR", "SCRATCH"})
+	actionFlags.SetAnnotation("scratch", "envkey", []string{"SCRATCH", "SCRATCHDIR"})
 
 	// -W|--workdir
 	actionFlags.StringVarP(&WorkdirPath, "workdir", "W", "", "Working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used)")
@@ -137,7 +137,7 @@ func initPathVars() {
 	// --pwd
 	actionFlags.StringVar(&PwdPath, "pwd", "", "Initial working directory for payload process inside the container")
 	actionFlags.SetAnnotation("pwd", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("pwd", "envkey", []string{"TARGET_PWD", "PWD"})
+	actionFlags.SetAnnotation("pwd", "envkey", []string{"PWD", "TARGET_PWD"})
 
 	// --hostname
 	actionFlags.StringVar(&Hostname, "hostname", "", "Set container hostname")
@@ -178,55 +178,55 @@ func initBoolVars() {
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
-	actionFlags.SetAnnotation("no-home", "envkey", []string{"NO_HOME", "NOHOME"})
+	actionFlags.SetAnnotation("no-home", "envkey", []string{"NO_HOME"})
 
 	// --no-init
 	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
-	actionFlags.SetAnnotation("no-init", "envkey", []string{"NOSHIMINIT", "NO_INIT", "NOINIT"})
+	actionFlags.SetAnnotation("no-init", "envkey", []string{"NO_INIT", "NOSHIMINIT"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
 func initNamespaceVars() {
 	// -p|--pid
 	actionFlags.BoolVarP(&PidNamespace, "pid", "p", false, "Run container in a new PID namespace")
-	actionFlags.SetAnnotation("pid", "envkey", []string{"UNSHARE_PID", "PID"})
+	actionFlags.SetAnnotation("pid", "envkey", []string{"PID", "UNSHARE_PID"})
 
 	// -i|--ipc
 	actionFlags.BoolVarP(&IpcNamespace, "ipc", "i", false, "Run container in a new IPC namespace")
-	actionFlags.SetAnnotation("ipc", "envkey", []string{"UNSHARE_IPC", "IPC"})
+	actionFlags.SetAnnotation("ipc", "envkey", []string{"IPC", "UNSHARE_IPC"})
 
 	// -n|--net
 	actionFlags.BoolVarP(&NetNamespace, "net", "n", false, "Run container in a new network namespace (loopback is the only network device active).")
-	actionFlags.SetAnnotation("net", "envkey", []string{"UNSHARE_NET", "NET"})
+	actionFlags.SetAnnotation("net", "envkey", []string{"NET", "UNSHARE_NET"})
 
 	// --uts
 	actionFlags.BoolVar(&UtsNamespace, "uts", false, "Run container in a new UTS namespace")
-	actionFlags.SetAnnotation("uts", "envkey", []string{"UNSHARE_UTS", "UTS"})
+	actionFlags.SetAnnotation("uts", "envkey", []string{"UTS", "UNSHARE_UTS"})
 
 	// -u|--userns
 	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "Run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity.")
-	actionFlags.SetAnnotation("userns", "envkey", []string{"UNSHARE_USERNS", "USERNS"})
+	actionFlags.SetAnnotation("userns", "envkey", []string{"USERNS", "UNSHARE_USERNS"})
 }
 
 // initPrivilegeVars initializes flags that manipulate privileges
 func initPrivilegeVars() {
 	// --keep-privs
 	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "Let root user keep privileges in container")
-	actionFlags.SetAnnotation("keep-privs", "envkey", []string{"KEEP_PRIVS", "KEEPPRIVS"})
+	actionFlags.SetAnnotation("keep-privs", "envkey", []string{"KEEP_PRIVS"})
 
 	// --no-privs
 	actionFlags.BoolVar(&NoPrivs, "no-privs", false, "Drop all privileges from root user in container")
-	actionFlags.SetAnnotation("no-privs", "envkey", []string{"NO_PRIVS", "NOPRIVS"})
+	actionFlags.SetAnnotation("no-privs", "envkey", []string{"NO_PRIVS"})
 
 	// --add-caps
 	actionFlags.StringVar(&AddCaps, "add-caps", "", "A comma separated capability list to add")
-	actionFlags.SetAnnotation("add-caps", "envkey", []string{"ADD_CAPS", "ADDCAPS"})
+	actionFlags.SetAnnotation("add-caps", "envkey", []string{"ADD_CAPS"})
 
 	// --drop-caps
 	actionFlags.StringVar(&DropCaps, "drop-caps", "", "A comma separated capability list to drop")
-	actionFlags.SetAnnotation("drop-caps", "envkey", []string{"DROP_CAPS", "DROPCAPS"})
+	actionFlags.SetAnnotation("drop-caps", "envkey", []string{"DROP_CAPS"})
 
 	// --allow-setuid
 	actionFlags.BoolVar(&AllowSUID, "allow-setuid", false, "Allow setuid binaries in container (root only)")
-	actionFlags.SetAnnotation("allow-setuid", "envkey", []string{"ALLOW_SETUID", "ALLOWSETUID", "SETUID"})
+	actionFlags.SetAnnotation("allow-setuid", "envkey", []string{"ALLOW_SETUID"})
 }
