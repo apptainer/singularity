@@ -64,7 +64,7 @@ func updateCacheRoot() {
 	}
 
 	if err := initCacheDir(root); err != nil {
-		sylog.Fatalf("Unable to initialze caching directory: %v", err)
+		sylog.Fatalf("Unable to initialize caching directory: %v", err)
 	}
 }
 
@@ -77,7 +77,7 @@ func updateCacheSubdir(subdir string) string {
 	}
 
 	if err := initCacheDir(absdir); err != nil {
-		sylog.Fatalf("Unable to initialze caching directory: %v", err)
+		sylog.Fatalf("Unable to initialize caching directory: %v", err)
 	}
 
 	sylog.Debugf("Caching directory set to %s", absdir)
