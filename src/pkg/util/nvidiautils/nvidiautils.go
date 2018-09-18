@@ -82,33 +82,33 @@ func GetNvidiaBindPath(abspath string) []string {
 		out, err := cmd.Output()
 		if err == nil {
 			lastadd := ""
-			for _, line := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
-				if line != "" {
+			for _, ldconfigOutputline := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
+				if ldconfigOutputline != "" {
 
 					for _, nvidiaConfFileline := range strings.Split(strings.TrimSuffix(searchString, "\n"), "\n") {
 						if nvidiaConfFileline != "" {
 
-							// sample ldconfig -p output (fileline)
+							// sample ldconfig -p output (ldconfigOutputline)
 							// 	libnvidia-ml.so.1 (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so.1
 							//	libnvidia-ml.so (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so
 
-							line2 := strings.SplitN(line, "=> ", 2)
-							if len(line2) > 1 {
+							ldconfigOutputSplitline := strings.SplitN(ldconfigOutputline, "=> ", 2)
+							if len(ldconfigOutputSplitline) > 1 {
 
-								// line2[0] is the "libnvidia-ml.so[.1] (libc6,x86-64)"" (from the above example)
-								// line2[1] is the "/usr/lib64/nvidia/libnvidia-ml.so[.1]" (from the above example)
+								// ldconfigOutputSplitline[0] is the "libnvidia-ml.so[.1] (libc6,x86-64)"" (from the above example)
+								// ldconfigOutputSplitline[1] is the "/usr/lib64/nvidia/libnvidia-ml.so[.1]" (from the above example)
 
-								if !strings.Contains(cliEntries, line2[1]) { // skip if nvidia-container-cli found it
+								if !strings.Contains(cliEntries, ldconfigOutputSplitline[1]) { // skip if nvidia-container-cli found it
 
 									// these 2 lines extract the "libnvdia-ml.so[.1]" (from the example above) - fileName
-									fileNames := strings.Split(line2[0], " ")
-									ldconfigFileName := strings.TrimSpace(string(fileNames[0]))
+									ldconfigFileNames := strings.Split(ldconfigOutputSplitline[0], " ")
+									ldconfigFileName := strings.TrimSpace(string(ldconfigFileNames[0]))
 
 									if ldconfigFileName == nvidiaConfFileline {
 
 										if ldconfigFileName != lastadd { // add if not duplicate
-											testString := line2[1] + ":/.singularity.d/libs/" + ldconfigFileName
-											bindArray = append(bindArray, testString)
+											bindString := ldconfigOutputSplitline[1] + ":/.singularity.d/libs/" + ldconfigFileName
+											bindArray = append(bindArray, bindString)
 											lastadd = ldconfigFileName
 										}
 									}
