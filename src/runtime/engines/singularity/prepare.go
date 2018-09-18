@@ -15,6 +15,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/instance"
+	"github.com/singularityware/singularity/src/pkg/syecl"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
 	"github.com/singularityware/singularity/src/pkg/util/mainthread"
@@ -348,6 +349,19 @@ func (e *EngineOperations) loadImages() error {
 		}
 		if cwd != img.Path {
 			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
+		}
+	}
+	if img.Type == image.SIF {
+		// query the ECL module, proceed if an ecl config file is found
+		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
+		if err == nil {
+			if err = ecl.ValidateConfig(); err != nil {
+				return err
+			}
+			_, err := ecl.ShouldRunFp(img.File)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	img.RootFS = true
