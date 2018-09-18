@@ -18,7 +18,6 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/network"
-	"github.com/singularityware/singularity/src/pkg/syecl"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/fs"
 	"github.com/singularityware/singularity/src/pkg/util/fs/files"
@@ -500,18 +499,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
-		// query the ECL module, proceed if an ecl config file is found
-		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
-		if err == nil {
-			if err = ecl.ValidateConfig(); err != nil {
-				return err
-			}
-			_, err := ecl.ShouldRunFp(imageObject.File)
-			if err != nil {
-				return err
-			}
-		}
-
 		// Load the SIF file
 		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
 		if err != nil {
