@@ -61,7 +61,7 @@ var PullCmd = &cobra.Command{
 		case ShubProtocol:
 			libexec.PullShubImage(image, uri, force)
 		default:
-			libexec.PullOciImage(uri)
+			libexec.PullOciImage(image, uri, force)
 		}
 	},
 
