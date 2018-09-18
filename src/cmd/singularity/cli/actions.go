@@ -7,7 +7,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -92,18 +91,20 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	}
 
 	img := cache.OciTempFile(sum)
+	if exists, err := cache.OciTempExists(sum); err != nil {
+		sylog.Fatalf("Unable to check if %v exists: %v", img, err)
+	} else if !exists {
+		b, err := build.NewBuild(args[0], img, "sandbox", false, false, nil, true)
+		if err != nil {
+			sylog.Fatalf("Unable to create new build: %v", err)
+		}
 
-	fmt.Println(args[0], img)
-	b, err := build.NewBuild(args[0], img, "sandbox", nil, true)
-	if err != nil {
-		sylog.Fatalf("That didn't work %v", err)
+		if err := b.Full(); err != nil {
+			sylog.Fatalf("Unable to build: %v", err)
+		}
 	}
 
-	if err := b.Full(); err != nil {
-		sylog.Fatalf("That didn't work %v", err)
-	}
 	args[0] = img
-
 	return
 }
 

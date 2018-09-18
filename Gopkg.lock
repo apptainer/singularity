@@ -771,6 +771,7 @@
     "golang.org/x/crypto/openpgp/armor",
     "golang.org/x/crypto/openpgp/clearsign",
     "golang.org/x/crypto/openpgp/packet",
+    "golang.org/x/crypto/ssh/terminal",
     "golang.org/x/sys/unix",
     "gopkg.in/cheggaaa/pb.v1",
   ]
