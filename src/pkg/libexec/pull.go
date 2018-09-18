@@ -6,7 +6,10 @@
 package libexec
 
 import (
+	"fmt"
+
 	library "github.com/singularityware/singularity/src/pkg/client/library"
+	"github.com/singularityware/singularity/src/pkg/client/oci"
 	shub "github.com/singularityware/singularity/src/pkg/client/shub"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
@@ -24,5 +27,15 @@ func PullShubImage(filePath string, shubRef string, force bool) {
 	err := shub.DownloadImage(filePath, shubRef, force)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
+	}
+}
+
+// PullOciImage ...
+func PullOciImage(uri string) {
+	image, err := oci.ImageSHA(uri)
+	fmt.Println(image)
+
+	if err != nil {
+		sylog.Fatalf("Unable to calculate uri hash: %v", err)
 	}
 }

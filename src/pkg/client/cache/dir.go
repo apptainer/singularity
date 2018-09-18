@@ -28,8 +28,6 @@ const (
 	// directory.
 	RootDefault = ".singularity/cache"
 
-	// OciDir is the directory inside the cache.Dir where oci images are cached
-	OciDir = "oci"
 	// LibraryDir is the directory inside the cache.Dir where library images are cached
 	LibraryDir = "library"
 	// ShubDir is the directory inside the cache.Dir where shub images are cached
