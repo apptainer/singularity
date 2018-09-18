@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
 )
@@ -48,44 +47,6 @@ var (
 	DropCaps  string
 )
 
-// Combine command line and environment var into a single argument
-func envAppend(flag *pflag.Flag, envvar string) {
-	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
-	} else {
-		flag.Changed = true
-		sylog.Debugf("Update flag Value to: %s", flag.Value)
-	}
-}
-
-// If CLI option is unset but env var is set enable the bool
-func envBool(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false && envvar != "" {
-		if err := flag.Value.Set("true"); err != nil {
-			sylog.Warningf("Unable to set %s to true", flag.Name)
-		} else {
-			flag.Changed = true
-			sylog.Debugf("Update flag Value to: %s", flag.Value)
-		}
-	}
-}
-
-// If CLI option/argument string is unset and env var is set write to string or slice flag
-func envStringNSlice(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false && envvar != "" {
-		if err := flag.Value.Set(envvar); err != nil {
-			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
-		} else {
-			flag.Changed = true
-			sylog.Debugf("Update flag Value to: %s", flag.Value)
-		}
-	}
-}
-
-type envHandle func(*pflag.Flag, string)
-
-var flagEnvFuncs map[string]envHandle
-
 var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
 
 func getHomeDir() string {
@@ -99,40 +60,41 @@ func getHomeDir() string {
 }
 
 func init() {
+	/*
+		// map of functions to use to bind flags to environment variables
+		flagEnvFuncs = map[string]envHandle{
+			"bind":     envAppend,
+			"home":     envStringNSlice,
+			"overlay":  envStringNSlice,
+			"scratch":  envStringNSlice,
+			"workdir":  envStringNSlice,
+			"shell":    envStringNSlice,
+			"pwd":      envStringNSlice,
+			"hostname": envStringNSlice,
 
-	// map of functions to use to bind flags to environment variables
-	flagEnvFuncs = map[string]envHandle{
-		"bind":     envAppend,
-		"home":     envStringNSlice,
-		"overlay":  envStringNSlice,
-		"scratch":  envStringNSlice,
-		"workdir":  envStringNSlice,
-		"shell":    envStringNSlice,
-		"pwd":      envStringNSlice,
-		"hostname": envStringNSlice,
+			"boot":       envBool,
+			"fakeroot":   envBool,
+			"cleanenv":   envBool,
+			"contain":    envBool,
+			"containall": envBool,
+			"nv":         envBool,
+			"writable":   envBool,
+			"no-home":    envBool,
+			"no-init":    envBool,
 
-		"boot":       envBool,
-		"fakeroot":   envBool,
-		"cleanenv":   envBool,
-		"contain":    envBool,
-		"containall": envBool,
-		"nv":         envBool,
-		"writable":   envBool,
-		"no-home":    envBool,
-		"no-init":    envBool,
+			"pid":  envBool,
+			"ipc":  envBool,
+			"net":  envBool,
+			"uts":  envBool,
+			"user": envBool,
 
-		"pid":  envBool,
-		"ipc":  envBool,
-		"net":  envBool,
-		"uts":  envBool,
-		"user": envBool,
-
-		"keep-privs":   envBool,
-		"no-privs":     envBool,
-		"add-caps":     envStringNSlice,
-		"drop-caps":    envStringNSlice,
-		"allow-setuid": envBool,
-	}
+			"keep-privs":   envBool,
+			"no-privs":     envBool,
+			"add-caps":     envStringNSlice,
+			"drop-caps":    envStringNSlice,
+			"allow-setuid": envBool,
+		}
+	*/
 
 	initPathVars()
 	initBoolVars()
