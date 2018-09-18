@@ -76,6 +76,7 @@ func GetNvidiaBindPath(abspath string) []string {
 
 	// walk thru the ldconfig output and add entries which contain the filenames located in
 	// the nvliblist.conf file (ldconfig filenames are full filepaths)
+	var searchFileName string
 	command, err = exec.LookPath("ldconfig")
 	if err == nil {
 		cmd := exec.Command(command, "-p")
@@ -104,11 +105,20 @@ func GetNvidiaBindPath(abspath string) []string {
 									ldconfigFileNames := strings.Split(ldconfigOutputSplitline[0], " ")
 									ldconfigFileName := strings.TrimSpace(string(ldconfigFileNames[0]))
 
-									if ldconfigFileName == nvidiaConfFileline {
+									// this code block adds in foo.so.1 if there is a foo.so found in the config file
+									if strings.HasSuffix(ldconfigFileName, ".1") {
+										// remove the .1 from the search param (but will bind the actual name)
+										searchFileName = strings.TrimSuffix(ldconfigFileName, ".1")
+									} else {
+										searchFileName = ldconfigFileName
+									}
 
+									if searchFileName == nvidiaConfFileline {
 										if ldconfigFileName != lastadd { // add if not duplicate
+											// this is binding the actual name found above...
 											bindString := ldconfigOutputSplitline[1] + ":/.singularity.d/libs/" + ldconfigFileName
 											bindArray = append(bindArray, bindString)
+
 											lastadd = ldconfigFileName
 										}
 									}
