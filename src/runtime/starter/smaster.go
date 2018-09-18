@@ -107,6 +107,12 @@ func SMaster(socket int, masterSocket int, starterConfig *starter.Config, jsonBy
 	runtime.UnlockOSThread()
 
 	if fatal != nil {
+		if starterConfig.GetInstance() {
+			if os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+			}
+		}
+		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
 

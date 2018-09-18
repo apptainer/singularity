@@ -11,7 +11,6 @@ import (
 )
 
 func init() {
-	// SingularityCmd.AddCommand(instanceDotStopCmd)
 	InstanceStopCmd.Flags().SetInterspersed(false)
 
 	// -u|--user
@@ -38,8 +37,10 @@ var InstanceStopCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 0 && !stopAll {
 			stopInstance(args[0])
-		} else {
+		} else if stopAll {
 			stopInstance("*")
+		} else {
+			cmd.Usage()
 		}
 	},
 
@@ -48,13 +49,3 @@ var InstanceStopCmd = &cobra.Command{
 	Long:    docs.InstanceStopLong,
 	Example: docs.InstanceStopExample,
 }
-
-/*
-var instanceDotStopCmd = &cobra.Command{
-	Use:    "instance.stop",
-	Hidden: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("stopping instance")
-	},
-}
-*/

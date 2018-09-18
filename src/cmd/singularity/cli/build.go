@@ -27,6 +27,7 @@ var (
 	sandbox    bool
 	writable   bool
 	force      bool
+	update     bool
 	noTest     bool
 	sections   []string
 )
@@ -39,6 +40,7 @@ func init() {
 	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
 	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
 	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "Delete and overwrite an image if it currently exists")
+	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "Run definition over existing container")
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
 	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
@@ -69,7 +71,7 @@ var BuildCmd = &cobra.Command{
 		spec := args[1]
 
 		//check if target collides with existing file
-		if ok := checkBuildTargetCollision(dest, force); !ok {
+		if ok := checkBuildTarget(dest); !ok {
 			os.Exit(1)
 		}
 
@@ -90,20 +92,19 @@ var BuildCmd = &cobra.Command{
 			}
 			b.Build(context.TODO())
 		} else {
-			b, err := build.NewBuild(spec, dest, buildFormat)
+
+			err := checkSections()
 			if err != nil {
-				sylog.Fatalf("Unable to create build: %v", err)
-				os.Exit(1)
+				sylog.Fatalf(err.Error())
 			}
 
-			if sections[0] == "all" {
-				err = b.Full()
-				if err != nil {
-					sylog.Fatalf("While performing build: %v", err)
-					os.Exit(1)
-				}
-			} else {
-				sylog.Fatalf("Running specific sections of definitions not implemented.")
+			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest)
+			if err != nil {
+				sylog.Fatalf("Unable to create build: %v", err)
+			}
+
+			if err = b.Full(); err != nil {
+				sylog.Fatalf("While performing build: %v", err)
 			}
 		}
 	},
@@ -111,12 +112,12 @@ var BuildCmd = &cobra.Command{
 }
 
 // checkTargetCollision makes sure output target doesnt exist, or is ok to overwrite
-func checkBuildTargetCollision(path string, force bool) bool {
-	if _, err := os.Stat(path); err == nil {
-		//exists
-		if force {
-			os.RemoveAll(path)
-		} else {
+func checkBuildTarget(path string) bool {
+	if f, err := os.Stat(path); err == nil {
+		if update && !f.IsDir() {
+			sylog.Fatalf("Only sandbox updating is supported.")
+		}
+		if !update && !force {
 			reader := bufio.NewReader(os.Stdin)
 			fmt.Print("Build target already exists. Do you want to overwrite? [N/y] ")
 			input, err := reader.ReadString('\n')
@@ -124,7 +125,7 @@ func checkBuildTargetCollision(path string, force bool) bool {
 				sylog.Fatalf("Error parsing input: %s", err)
 			}
 			if val := strings.Compare(strings.ToLower(input), "y\n"); val == 0 {
-				os.RemoveAll(path)
+				force = true
 			} else {
 				sylog.Errorf("Stopping build.")
 				return false
@@ -132,4 +133,25 @@ func checkBuildTargetCollision(path string, force bool) bool {
 		}
 	}
 	return true
+}
+
+func checkSections() error {
+	var all, none bool
+	for _, section := range sections {
+		if section == "none" {
+			none = true
+		}
+		if section == "all" {
+			all = true
+		}
+	}
+
+	if all && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have all and any other option")
+	}
+	if none && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have none and any other option")
+	}
+
+	return nil
 }

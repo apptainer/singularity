@@ -26,9 +26,12 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	testDef := types.Definition{}
+	b, err := types.NewBundle("sbuild-debootstrap")
+	if err != nil {
+		return
+	}
 
-	testDef.Header = map[string]string{
+	b.Recipe.Header = map[string]string{
 		"bootstrap": "debootstrap",
 		"osversion": "bionic",
 		"mirrorurl": "http://us.archive.ubuntu.com/ubuntu/",
@@ -37,8 +40,8 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	cp := sources.DebootstrapConveyorPacker{}
 
-	err := cp.Get(testDef)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)
@@ -53,9 +56,12 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	testDef := types.Definition{}
+	b, err := types.NewBundle("sbuild-debootstrap")
+	if err != nil {
+		return
+	}
 
-	testDef.Header = map[string]string{
+	b.Recipe.Header = map[string]string{
 		"bootstrap": "debootstrap",
 		"osversion": "bionic",
 		"mirrorurl": "http://us.archive.ubuntu.com/ubuntu/",
@@ -64,8 +70,8 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	cp := sources.DebootstrapConveyorPacker{}
 
-	err := cp.Get(testDef)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("Debootstrap Get failed: %v", err)

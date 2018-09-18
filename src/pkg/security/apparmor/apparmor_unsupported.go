@@ -11,6 +11,11 @@ import (
 	"fmt"
 )
 
+// Enabled returns whether apparmor is enabled/supported or not
+func Enabled() bool {
+	return false
+}
+
 // LoadProfile returns error for unsupported platform
 func LoadProfile(profile string) error {
 	return fmt.Errorf("apparmor is not supported by OS")
