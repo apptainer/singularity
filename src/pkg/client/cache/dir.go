@@ -54,11 +54,12 @@ func updateCacheRoot() {
 
 	if d := os.Getenv(DirEnv); d != "" {
 		root = d
+	} else {
+		root = path.Join(usr.HomeDir, RootDefault)
 	}
 
-	root = path.Join(usr.HomeDir, RootDefault)
 	if err := initCacheDir(root); err != nil {
-		panic(err)
+		sylog.Fatalf("Unable to initialze caching directory: %v", err)
 	}
 }
 
@@ -67,11 +68,11 @@ func updateCacheSubdir(subdir string) string {
 
 	absdir, err := filepath.Abs(filepath.Join(root, subdir))
 	if err != nil {
-		panic(err)
+		sylog.Fatalf("Unable to get abs filepath: %v", err)
 	}
 
 	if err := initCacheDir(absdir); err != nil {
-		panic(err)
+		sylog.Fatalf("Unable to initialze caching directory: %v", err)
 	}
 
 	sylog.Debugf("Caching directory set to %s", absdir)
