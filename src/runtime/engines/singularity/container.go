@@ -198,7 +198,9 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existant paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
-	if c.engine.EngineConfig.GetWritableImage() {
+	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
+
+	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
 		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
 		return c.setupDefaultLayout(system)
 	}
@@ -209,6 +211,10 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
 			return c.setupOverlayLayout(system)
 		}
+	}
+
+	if writableTmpfs {
+		sylog.Warningf("Ignoring --writable-tmpfs as it requires overlay support")
 	}
 
 	if c.engine.EngineConfig.File.EnableUnderlay {
@@ -594,6 +600,29 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
 	hasUpper := false
 
+	if c.engine.EngineConfig.GetWritableTmpfs() {
+		sylog.Debugf("Setup writable tmpfs overlay")
+
+		if err := c.session.AddDir("/upper"); err != nil {
+			return err
+		}
+		if err := c.session.AddDir("/work"); err != nil {
+			return err
+		}
+
+		upper, _ := c.session.GetPath("/upper")
+		work, _ := c.session.GetPath("/work")
+
+		if err := ov.SetUpperDir(upper); err != nil {
+			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+		if err := ov.SetWorkDir(work); err != nil {
+			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+
+		hasUpper = true
+	}
+
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
 		splitted := strings.SplitN(img, ":", 2)
 
@@ -652,10 +681,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 
 		if imageObject.Writable && !hasUpper {
-			if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
-				return err
-			}
-
 			upper := filepath.Join(dst, "upper")
 			work := filepath.Join(dst, "work")
 
@@ -669,6 +694,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			hasUpper = true
 		}
 	}
+
+	if hasUpper {
+		if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

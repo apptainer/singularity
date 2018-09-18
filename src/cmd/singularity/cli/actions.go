@@ -61,7 +61,8 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().SetInterspersed(false)
@@ -177,6 +178,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+	engineConfig.SetWritableTmpfs(IsWritableTmpfs)
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)

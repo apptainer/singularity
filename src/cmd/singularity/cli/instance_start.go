@@ -19,12 +19,15 @@ func init() {
 		"contain",
 		"containall",
 		"cleanenv",
+		"dns",
 		"drop-caps",
 		"fakeroot",
 		"home",
 		"hostname",
 		"keep-privs",
 		"net",
+		"network",
+		"network-args",
 		"no-home",
 		"no-privs",
 		"nv",
@@ -34,9 +37,7 @@ func init() {
 		"uts",
 		"workdir",
 		"writable",
-		"network",
-		"network-args",
-		"dns",
+		"writable-tmpfs",
 	}
 
 	for _, opt := range options {
