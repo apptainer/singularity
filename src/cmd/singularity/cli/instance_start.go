@@ -11,8 +11,7 @@ import (
 )
 
 func init() {
-
-	options := [22]string{
+	options := []string{
 		"add-caps",
 		"allow-setuid",
 		"bind",
@@ -35,6 +34,9 @@ func init() {
 		"uts",
 		"workdir",
 		"writable",
+		"network",
+		"network-args",
+		"dns",
 	}
 
 	for _, opt := range options {

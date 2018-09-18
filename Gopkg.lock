@@ -11,6 +11,14 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:665d2b11d5b351912ef95226b68b74195521fdeed447f4b20370b998a01041eb"
+  name = "github.com/alexflint/go-filemutex"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d358565f3c3f5334209f1e80693e4f621650c489"
+
+[[projects]]
+  branch = "master"
   digest = "1:d6afaeed1502aa28e80a4ed0981d570ad91b2579193404256ce672ed0a609e0d"
   name = "github.com/beorn7/perks"
   packages = ["quantile"]
@@ -32,6 +40,54 @@
   packages = ["pathdriver"]
   pruneopts = "UT"
   revision = "246e49050efdf45e8f17fbbcf1547ee376f9939e"
+
+[[projects]]
+  digest = "1:d8d8684ac16873cbf87fc33e2e2d812a5abe9f37d87e9c7ddb318d975a9fefd6"
+  name = "github.com/containernetworking/cni"
+  packages = [
+    "libcni",
+    "pkg/invoke",
+    "pkg/skel",
+    "pkg/types",
+    "pkg/types/020",
+    "pkg/types/current",
+    "pkg/version",
+  ]
+  pruneopts = "UT"
+  revision = "a7885cb6f8ab03fba07852ded351e4f5e7a112bf"
+  version = "v0.6.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:fd03728cf28e3d37b6a3da5f9a4b546d5a0c44fa6ebc399bcbfdf045b44f534e"
+  name = "github.com/containernetworking/plugins"
+  packages = [
+    "pkg/ip",
+    "pkg/ipam",
+    "pkg/ns",
+    "pkg/utils",
+    "pkg/utils/hwaddr",
+    "pkg/utils/sysctl",
+    "plugins/ipam/dhcp",
+    "plugins/ipam/host-local",
+    "plugins/ipam/host-local/backend",
+    "plugins/ipam/host-local/backend/allocator",
+    "plugins/ipam/host-local/backend/disk",
+    "plugins/ipam/static",
+    "plugins/main/bridge",
+    "plugins/main/host-device",
+    "plugins/main/ipvlan",
+    "plugins/main/loopback",
+    "plugins/main/macvlan",
+    "plugins/main/ptp",
+    "plugins/main/vlan",
+    "plugins/meta/bandwidth",
+    "plugins/meta/flannel",
+    "plugins/meta/portmap",
+    "plugins/meta/tuning",
+  ]
+  pruneopts = "T"
+  revision = "2b8b1ac0af4568e928d96ccc5f47b075416eeabd"
 
 [[projects]]
   branch = "master"
@@ -84,12 +140,44 @@
   revision = "88d80428f9b146f8f9fe7e2e8cc8688a5aae1a4e"
 
 [[projects]]
+  digest = "1:7636c39b077a4db2b354351ae7fffad19126ef6abc66248e7ae072aad7181d60"
+  name = "github.com/coreos/go-iptables"
+  packages = ["iptables"]
+  pruneopts = "UT"
+  revision = "b5b1876b170881a8259f036445ee89c8669db386"
+  version = "v0.3.0"
+
+[[projects]]
+  digest = "1:5155f7153c694dc8e2efd74d799a27fd54e65778fa3f0c3e17626df724857db9"
+  name = "github.com/coreos/go-systemd"
+  packages = ["activation"]
+  pruneopts = "UT"
+  revision = "39ca1b05acc7ad1220e09f133283b8859a8b71ab"
+  version = "v17"
+
+[[projects]]
   digest = "1:7cb4fdca4c251b3ef8027c90ea35f70c7b661a593b9eeae34753c65499098bb1"
   name = "github.com/cpuguy83/go-md2man"
   packages = ["md2man"]
   pruneopts = "UT"
   revision = "20f5889cbdc3c73dbd2862796665e7c465ade7d1"
   version = "v1.0.8"
+
+[[projects]]
+  branch = "master"
+  digest = "1:8b8afaf43926d20ddf59bb9a457cb336fc58dc2d4791aece28a3a46b5ef9bfd7"
+  name = "github.com/d2g/dhcp4"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a1d1b6c41b1ce8a71a5121a9cee31809c4707d9c"
+
+[[projects]]
+  branch = "master"
+  digest = "1:626a9c0ee9c0b3baa994ee7d58a7f2b8a180111b1978bc93976689b17b11265e"
+  name = "github.com/d2g/dhcp4client"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "e612998962035b93ba16cfd1ad2f3221985c1b8c"
 
 [[projects]]
   branch = "master"
@@ -271,12 +359,28 @@
   version = "v1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:4e546f0ce816dad2b5b8114adc7d02cb18e4b6d23d9d22e5a08af05a7b7d5d76"
+  name = "github.com/j-keck/arping"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
+
+[[projects]]
   digest = "1:e2d1d410fb367567c2b53ed9e2d719d3c1f0891397bb2fa49afd747cfbf1e8e4"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   pruneopts = "UT"
   revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
   version = "v0.0.2"
+
+[[projects]]
+  digest = "1:7efe48dea4db6b35dcc15e15394b627247e5b3fb814242de986b746ba8e0abf0"
+  name = "github.com/mattn/go-shellwords"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "02e3cf038dcea8290e44424da473dd12be796a8a"
+  version = "v1.0.3"
 
 [[projects]]
   digest = "1:ff5ebae34cfbf047d505ee150de27e60570e8c394b3b8fdbb720ff6ac71985fc"
@@ -444,6 +548,14 @@
   version = "v1.5.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:65ded0aa055b3420fe4edec30fc1006e4cd430f1c54e478bf904650864c1c7d3"
+  name = "github.com/safchain/ethtool"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "6e3f4faa84e1d8d48afec75ed064cf3611d3f8bf"
+
+[[projects]]
   digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
   name = "github.com/satori/go.uuid"
   packages = ["."]
@@ -501,6 +613,25 @@
   packages = ["capability"]
   pruneopts = "UT"
   revision = "33e07d32887e1e06b7c025f27ce52f62c7990bc0"
+
+[[projects]]
+  digest = "1:2d9d06cb9d46dacfdbb45f8575b39fc0126d083841a29d4fbf8d97708f43107e"
+  name = "github.com/vishvananda/netlink"
+  packages = [
+    ".",
+    "nl",
+  ]
+  pruneopts = "UT"
+  revision = "a2ad57a690f3caf3015351d2d6e1c0b95c349752"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:02b1d1b48bf853ea2a9bea029ffe54e3fd7804903a0eda9a78191db8984300d2"
+  name = "github.com/vishvananda/netns"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "be1fbeda19366dea804f00efff2dd73a1642fdcc"
 
 [[projects]]
   branch = "master"
@@ -596,6 +727,22 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/containernetworking/cni/libcni",
+    "github.com/containernetworking/cni/pkg/types",
+    "github.com/containernetworking/plugins/plugins/ipam/dhcp",
+    "github.com/containernetworking/plugins/plugins/ipam/host-local",
+    "github.com/containernetworking/plugins/plugins/ipam/static",
+    "github.com/containernetworking/plugins/plugins/main/bridge",
+    "github.com/containernetworking/plugins/plugins/main/host-device",
+    "github.com/containernetworking/plugins/plugins/main/ipvlan",
+    "github.com/containernetworking/plugins/plugins/main/loopback",
+    "github.com/containernetworking/plugins/plugins/main/macvlan",
+    "github.com/containernetworking/plugins/plugins/main/ptp",
+    "github.com/containernetworking/plugins/plugins/main/vlan",
+    "github.com/containernetworking/plugins/plugins/meta/bandwidth",
+    "github.com/containernetworking/plugins/plugins/meta/flannel",
+    "github.com/containernetworking/plugins/plugins/meta/portmap",
+    "github.com/containernetworking/plugins/plugins/meta/tuning",
     "github.com/containers/image/copy",
     "github.com/containers/image/docker",
     "github.com/containers/image/docker/archive",

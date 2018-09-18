@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <setjmp.h>
 #include <sys/syscall.h>
+#include <net/if.h>
 #include <sys/eventfd.h>
 
 #ifdef SINGULARITY_SECUREBITS
@@ -926,6 +927,26 @@ __attribute__((constructor)) static void init(void) {
                     singularity_message(ERROR, "Failed to create network namespace: %s\n", strerror(errno));
                     exit(1);
                 }
+
+                struct ifreq req;
+                int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+                if ( sockfd < 0 ) {
+                    singularity_message(ERROR, "Unable to open AF_INET socket: %s\n", strerror(errno));
+                    exit(1);
+                }
+
+                memset(&req, 0, sizeof(req));
+                strncpy(req.ifr_name, "lo", IFNAMSIZ);
+
+                req.ifr_flags |= IFF_UP;
+
+                singularity_message(DEBUG, "Bringing up network loopback interface\n");
+                if ( ioctl(sockfd, SIOCSIFFLAGS, &req) < 0 ) {
+                    singularity_message(ERROR, "Failed to set flags on interface: %s\n", strerror(errno));
+                    exit(1);
+                }
+                close(sockfd);
             }
         }
         if ( get_nspath(uts) ) {

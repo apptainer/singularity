@@ -104,10 +104,13 @@ func newBuild(d types.Definition, dest, format string, force, update bool, secti
 
 	b.addOptions()
 
-	if c, err := getcp(b.d); err == nil {
-		b.c = c
-	} else {
-		return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+	// dont need to get cp if we're skipping bootstrap
+	if !update || force {
+		if c, err := getcp(b.d); err == nil {
+			b.c = c
+		} else {
+			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+		}
 	}
 
 	switch format {
@@ -292,26 +295,6 @@ func (b *Build) runBuildEngine() error {
 	return nil
 }
 
-// Bundle creates the bundle using the ConveyorPacker and returns it. If this
-// function is called multiple times it will return the already created Bundle
-// func (b *Build) Bundle() (*types.Bundle, error) {
-
-// 	if err := b.c.Get(b.b); err != nil {
-// 		return nil, fmt.Errorf("conveyor failed to get: %v", err)
-// 	}
-
-// 	bundle, err := b.c.Pack()
-// 	if err != nil {
-// 		return nil, fmt.Errorf("packer failed to pack: %v", err)
-// 	}
-
-// 	b.b = bundle
-
-// 	b.addOptions()
-
-// 	return b.b, nil
-// }
-
 func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "shub":
@@ -343,32 +326,29 @@ func makeDef(spec string) (types.Definition, error) {
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
-
-	} else if ok, err := types.IsValidDefinition(spec); ok && err == nil {
-
-		// must be root to build from a definition
-		if os.Getuid() != 0 {
-			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
-		}
-
-		// Non-URI passed as spec, check is its a definition
+	} else if _, err := os.Stat(spec); err == nil {
+		// Non-URI passed as spec
 		defFile, err := os.Open(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
 		}
 		defer defFile.Close()
 
-		def, err = types.ParseDefinitionFile(defFile)
-		if err != nil {
-			return def, fmt.Errorf("failed to parse definition file %s: %v", spec, err)
-		}
-	} else if _, err := os.Stat(spec); err == nil {
-		// local image or sandbox, make sure it exists on filesystem
-		def = types.Definition{
-			Header: map[string]string{
-				"bootstrap": "localimage",
-				"from":      spec,
-			},
+		if d, err := types.ParseDefinitionFile(defFile); err == nil {
+			// must be root to build from a definition
+			if os.Getuid() != 0 {
+				sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+			}
+			//definition used as input
+			def = d
+		} else {
+			//local image or sandbox, make sure it exists on filesystem
+			def = types.Definition{
+				Header: map[string]string{
+					"bootstrap": "localimage",
+					"from":      spec,
+				},
+			}
 		}
 	} else {
 		return def, fmt.Errorf("unable to build from %s: %v", spec, err)
