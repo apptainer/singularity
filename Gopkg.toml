@@ -54,10 +54,6 @@ required = [
   name = "github.com/containers/image"
 
 [[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
-
-[[constraint]]
   name = "github.com/gorilla/websocket"
   version = "1.2.0"
 

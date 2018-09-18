@@ -41,8 +41,12 @@ type Build struct {
 	ranSections bool
 	// sections are the parts of the definition to run during the build
 	sections []string
-	// noTest indicated whether build should skip running the test script
+	// noTest indicates if build should skip running the test script
 	noTest bool
+	// force automatically deletes an existing container at build destination while performing build
+	force bool
+	// update detects and builds using an existing sandbox container at build destination
+	update bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
@@ -54,33 +58,51 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, sections []string, noTest bool) (*Build, error) {
+func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
 	def, err := makeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string, sections []string, noTest bool) (*Build, error) {
+func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest)
 }
 
-func newBuild(d types.Definition, dest, format string, sections []string, noTest bool) (*Build, error) {
+func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
+	var err error
+
+	// always build a sandbox if updating an existing sandbox
+	if update {
+		format = "sandbox"
+	}
+
 	b := &Build{
+		update:   update,
+		force:    force,
 		sections: sections,
 		noTest:   noTest,
+		format:   format,
 		dest:     dest,
 		d:        d,
-		b:        nil,
 	}
+
+	b.b, err = types.NewBundle("sbuild")
+	if err != nil {
+		return nil, err
+	}
+
+	b.b.Recipe = b.d
+
+	b.addOptions()
 
 	if c, err := getcp(b.d); err == nil {
 		b.c = c
@@ -114,9 +136,28 @@ func (b *Build) Full() error {
 		}
 	}
 
-	sylog.Debugf("Creating bundle")
-	if _, err := b.Bundle(); err != nil {
-		return err
+	if b.update && !b.force {
+		//if updating, extract dest container to bundle
+		sylog.Infof("Building into existing container: %s", b.dest)
+		p, err := sources.GetLocalPacker(b.dest, b.b)
+		if err != nil {
+			return err
+		}
+
+		_, err = p.Pack()
+		if err != nil {
+			return err
+		}
+	} else {
+		//if force, start build from scratch
+		if err := b.c.Get(b.b); err != nil {
+			return fmt.Errorf("conveyor failed to get: %v", err)
+		}
+
+		_, err := b.c.Pack()
+		if err != nil {
+			return fmt.Errorf("packer failed to pack: %v", err)
+		}
 	}
 
 	if b.b.RunSection("files") {
@@ -253,26 +294,23 @@ func (b *Build) runBuildEngine() error {
 
 // Bundle creates the bundle using the ConveyorPacker and returns it. If this
 // function is called multiple times it will return the already created Bundle
-func (b *Build) Bundle() (*types.Bundle, error) {
-	if b.b != nil {
-		return b.b, nil
-	}
+// func (b *Build) Bundle() (*types.Bundle, error) {
 
-	if err := b.c.Get(b.d); err != nil {
-		return nil, fmt.Errorf("conveyor failed to get: %v", err)
-	}
+// 	if err := b.c.Get(b.b); err != nil {
+// 		return nil, fmt.Errorf("conveyor failed to get: %v", err)
+// 	}
 
-	bundle, err := b.c.Pack()
-	if err != nil {
-		return nil, fmt.Errorf("packer failed to pack: %v", err)
-	}
+// 	bundle, err := b.c.Pack()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("packer failed to pack: %v", err)
+// 	}
 
-	b.b = bundle
+// 	b.b = bundle
 
-	b.addOptions()
+// 	b.addOptions()
 
-	return b.b, nil
-}
+// 	return b.b, nil
+// }
 
 func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
@@ -340,6 +378,8 @@ func makeDef(spec string) (types.Definition, error) {
 }
 
 func (b *Build) addOptions() {
+	b.b.Update = b.update
+	b.b.Force = b.force
 	b.b.NoTest = b.noTest
 	b.b.Sections = b.sections
 }

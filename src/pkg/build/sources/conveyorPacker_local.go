@@ -21,17 +21,20 @@ type LocalConveyor struct {
 	b   *types.Bundle
 }
 
-type localPacker interface {
+// LocalPacker ...
+type LocalPacker interface {
 	Pack() (*types.Bundle, error)
 }
 
 // LocalConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type LocalConveyorPacker struct {
 	LocalConveyor
-	localPacker
+	LocalPacker
 }
 
-func getLocalPacker(src string, b *types.Bundle) (localPacker, error) {
+// GetLocalPacker ...
+func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
+
 	imageObject, err := image.Init(src, false)
 	if err != nil {
 		return nil, err
@@ -82,15 +85,10 @@ func getLocalPacker(src string, b *types.Bundle) (localPacker, error) {
 }
 
 // Get just stores the source
-func (cp *LocalConveyorPacker) Get(recipe types.Definition) (err error) {
-	cp.src = filepath.Clean(recipe.Header["from"])
+func (cp *LocalConveyorPacker) Get(b *types.Bundle) (err error) {
 
-	//create bundle to build into
-	cp.b, err = types.NewBundle("sbuild-local")
-	if err != nil {
-		return
-	}
+	cp.src = filepath.Clean(b.Recipe.Header["from"])
 
-	cp.localPacker, err = getLocalPacker(cp.src, cp.b)
+	cp.LocalPacker, err = GetLocalPacker(cp.src, b)
 	return err
 }

@@ -147,6 +147,7 @@ $(BUILDDIR)/vendors-done:
 	fi
 	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
 		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
+		(cd $(SOURCEDIR)/vendor/golang.org/x/crypto && patch --silent -b -p0 < $(SOURCEDIR)/patches/privkey-encryption.patch) && \
 			touch $(BUILDDIR)/.patch-done; \
 	fi
 	$(V)touch $@

@@ -18,7 +18,6 @@ import (
 
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
 type DebootstrapConveyorPacker struct {
-	recipe    types.Definition
 	b         *types.Bundle
 	mirrorurl string
 	osversion string
@@ -26,8 +25,8 @@ type DebootstrapConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
-	cp.recipe = recipe
+func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
+	cp.b = b
 
 	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
@@ -41,11 +40,6 @@ func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
 
 	if os.Getuid() != 0 {
 		return fmt.Errorf("You must be root to build with debootstrap")
-	}
-
-	cp.b, err = types.NewBundle("sbuild-debootstrap")
-	if err != nil {
-		return
 	}
 
 	//run debootstrap command
@@ -88,17 +82,17 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 	var ok bool
 
 	//get mirrorURL, OSVerison, and Includes components to definition
-	cp.mirrorurl, ok = cp.recipe.Header["mirrorurl"]
+	cp.mirrorurl, ok = cp.b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
 	}
 
-	cp.osversion, ok = cp.recipe.Header["osversion"]
+	cp.osversion, ok = cp.b.Recipe.Header["osversion"]
 	if !ok {
 		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
 	}
 
-	include, _ := cp.recipe.Header["include"]
+	include, _ := cp.b.Recipe.Header["include"]
 
 	//check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")
