@@ -1,12 +1,12 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
 )
 
 // EngineOperations describes a runtime engine
@@ -25,14 +25,4 @@ func (e *EngineOperations) InitConfig(cfg *config.Common) {
 // field.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
-}
-
-// IsRunAsInstance returns true if the runtime engine was run as an instance
-func (e *EngineOperations) IsRunAsInstance() bool {
-	return e.EngineConfig.GetInstance()
-}
-
-// IsAllowSUID always returns true to allow SUID workflow
-func (e *EngineOperations) IsAllowSUID() bool {
-	return true
 }

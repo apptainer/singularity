@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -8,16 +8,20 @@ package cli
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/env"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/common/oci"
+	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
 	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
 )
@@ -32,29 +36,35 @@ func init() {
 	// TODO : the next n lines of code are repeating too much but I don't
 	// know how to shorten them tonight
 	for _, cmd := range actionCmds {
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("bind"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("contain"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("containall"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("cleanenv"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("home"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("ipc"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("net"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("nv"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("overlay"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pid"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("uts"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("pwd"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("scratch"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("userns"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("workdir"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("hostname"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("fakeroot"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("keep-privs"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("no-privs"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("add-caps"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("drop-caps"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		cmd.PersistentFlags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("contain"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("containall"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("cleanenv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("network"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("pwd"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
+		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
+		cmd.Flags().SetInterspersed(false)
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
@@ -66,10 +76,11 @@ func init() {
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.MinimumNArgs(2),
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ExecUse,
@@ -81,10 +92,11 @@ var ExecCmd = &cobra.Command{
 // ShellCmd represents the shell command
 var ShellCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.MinimumNArgs(1),
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/actions/shell"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		a := []string{"/.singularity.d/actions/shell"}
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.ShellUse,
@@ -96,10 +108,11 @@ var ShellCmd = &cobra.Command{
 // RunCmd represents the run command
 var RunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.MinimumNArgs(1),
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		execWrapper(cmd, args[0], a)
+		execStarter(cmd, args[0], a, "")
 	},
 
 	Use:     docs.RunUse,
@@ -109,20 +122,133 @@ var RunCmd = &cobra.Command{
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
-func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
-	lvl := "0"
+func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	procname := ""
 
-	wrapper := buildcfg.SBINDIR + "/wrapper-suid"
+	uid := uint32(os.Getuid())
+	gid := uint32(os.Getgid())
+
+	starter := buildcfg.SBINDIR + "/starter-suid"
 
 	engineConfig := singularity.NewConfig()
 
 	ociConfig := &oci.Config{}
-	generator := generate.NewFromSpec(&ociConfig.Spec)
+	generator := generate.Generator{Config: &ociConfig.Spec}
+
+	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
 
-	engineConfig.SetImage(image)
+	// temporary check for development
+	// TODO: a real URI handler
+	if strings.HasPrefix(image, "instance://") {
+		instanceName := instance.ExtractName(image)
+		file, err := instance.Get(instanceName)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		if !file.Privileged {
+			UserNamespace = true
+		}
+		generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
+		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
+		engineConfig.SetImage(image)
+		engineConfig.SetInstanceJoin(true)
+	} else {
+		abspath, err := filepath.Abs(image)
+		generator.AddProcessEnv("SINGULARITY_CONTAINER", abspath)
+		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(abspath))
+		if err != nil {
+			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
+		}
+		engineConfig.SetImage(abspath)
+	}
+
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetNetwork(Network)
+	engineConfig.SetDNS(DNS)
+	engineConfig.SetNetworkArgs(NetworkArgs)
+	engineConfig.SetOverlayImage(OverlayPath)
+	engineConfig.SetWritableImage(IsWritable)
+	engineConfig.SetNoHome(NoHome)
+	engineConfig.SetNv(Nvidia)
+	engineConfig.SetAddCaps(AddCaps)
+	engineConfig.SetDropCaps(DropCaps)
+	engineConfig.SetAllowSUID(AllowSUID)
+	engineConfig.SetKeepPrivs(KeepPrivs)
+	engineConfig.SetNoPrivs(NoPrivs)
+
+	homeFlag := cobraCmd.Flag("home")
+	engineConfig.SetCustomHome(homeFlag.Changed)
+
+	if Hostname != "" {
+		UtsNamespace = true
+		engineConfig.SetHostname(Hostname)
+	}
+
+	if IsContained || IsContainAll || IsBoot {
+		engineConfig.SetContain(true)
+
+		if IsContainAll {
+			PidNamespace = true
+			IpcNamespace = true
+			IsCleanEnv = true
+		}
+	}
+
+	engineConfig.SetScratchDir(ScratchPath)
+	engineConfig.SetWorkdir(WorkdirPath)
+
+	homeSlice := strings.Split(HomePath, ":")
+
+	if len(homeSlice) > 2 || len(homeSlice) == 0 {
+		sylog.Fatalf("home argument has incorrect number of elements: %v", len(homeSlice))
+	}
+
+	engineConfig.SetHomeSource(homeSlice[0])
+	if len(homeSlice) == 1 {
+		engineConfig.SetHomeDest(homeSlice[0])
+	} else {
+		engineConfig.SetHomeDest(homeSlice[1])
+	}
+
+	if IsFakeroot {
+		UserNamespace = true
+	}
+
+	/* if name submitted, run as instance */
+	if name != "" {
+		PidNamespace = true
+		IpcNamespace = true
+		engineConfig.SetInstance(true)
+		engineConfig.SetBootInstance(IsBoot)
+
+		_, err := instance.Get(name)
+		if err == nil {
+			sylog.Fatalf("instance %s already exists", name)
+		}
+		if err := instance.SetLogFile(name); err != nil {
+			sylog.Fatalf("failed to create instance log files: %s", err)
+		}
+
+		if IsBoot {
+			UtsNamespace = true
+			NetNamespace = true
+			if Hostname == "" {
+				engineConfig.SetHostname(name)
+			}
+			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			generator.SetProcessArgs([]string{"/sbin/init"})
+		}
+		pwd, err := user.GetPwUID(uid)
+		if err != nil {
+			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
+		}
+		procname = instance.ProcName(name, pwd.Name)
+	} else {
+		generator.SetProcessArgs(args)
+		procname = "Singularity runtime parent"
+	}
 
 	if NetNamespace {
 		generator.AddOrReplaceLinuxNamespace("network", "")
@@ -132,46 +258,55 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 	}
 	if PidNamespace {
 		generator.AddOrReplaceLinuxNamespace("pid", "")
+		engineConfig.SetNoInit(NoInit)
 	}
 	if IpcNamespace {
 		generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
+	if !UserNamespace {
+		if _, err := os.Stat(starter); os.IsNotExist(err) {
+			sylog.Verbosef("starter-suid not found, using user namespace")
+			UserNamespace = true
+		}
+	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		wrapper = buildcfg.SBINDIR + "/wrapper"
-	}
+		starter = buildcfg.SBINDIR + "/starter"
 
-	if verbose {
-		lvl = "2"
-	}
-	if debug {
-		lvl = "5"
-	}
-
-	if !IsCleanEnv {
-		for _, env := range os.Environ() {
-			e := strings.SplitN(env, "=", 2)
-			if len(e) != 2 {
-				sylog.Verbosef("can't process environment variable %s", env)
-				continue
-			}
-			generator.AddProcessEnv(e[0], e[1])
+		if IsFakeroot {
+			generator.AddLinuxUIDMapping(uid, 0, 1)
+			generator.AddLinuxGIDMapping(gid, 0, 1)
+		} else {
+			generator.AddLinuxUIDMapping(uid, uid, 1)
+			generator.AddLinuxGIDMapping(gid, gid, 1)
 		}
 	}
 
+	// Copy and cache environment
+	environment := os.Environ()
+
+	// Clean environment
+	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
+
 	if pwd, err := os.Getwd(); err == nil {
-		generator.SetProcessCwd(pwd)
+		if PwdPath != "" {
+			generator.SetProcessCwd(PwdPath)
+		} else {
+			if engineConfig.GetContain() {
+				generator.SetProcessCwd(engineConfig.GetHomeDest())
+			} else {
+				generator.SetProcessCwd(pwd)
+			}
+		}
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
-	Env := []string{"SINGULARITY_MESSAGELEVEL=" + lvl, "SRUNTIME=singularity"}
-	progname := "Singularity runtime parent"
+	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
-		ContainerID:  "new",
-		OciConfig:    ociConfig,
+		ContainerID:  name,
 		EngineConfig: engineConfig,
 	}
 
@@ -180,7 +315,7 @@ func execWrapper(cobraCmd *cobra.Command, image string, args []string) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(wrapper, []string{progname}, Env, configData); err != nil {
+	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 		sylog.Fatalf("%s", err)
 	}
 }

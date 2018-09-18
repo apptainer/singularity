@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 type mockRawService struct {
@@ -62,7 +63,7 @@ func (m *mockRawService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func Test_DownloadImage(t *testing.T) {
 
-	f, err := ioutil.TempFile(".", "test")
+	f, err := ioutil.TempFile("", "test")
 	if err != nil {
 		t.Fatalf("Error creating a temporary file for testing")
 	}
@@ -87,34 +88,34 @@ func Test_DownloadImage(t *testing.T) {
 		{"Good Download", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", "test_data/test_token", true, false},
 		{"Should not overwrite", "entity/collection/image:tag", tempFile, false, http.StatusOK, "test_data/test_sha256", "test_data/test_token", true, true},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 
 			m := mockRawService{
 				t:        t,
-				code:     test.code,
-				testFile: test.testFile,
-				httpPath: "/v1/imagefile/" + test.libraryRef,
+				code:     tt.code,
+				testFile: tt.testFile,
+				httpPath: "/v1/imagefile/" + tt.libraryRef,
 			}
 
 			m.Run()
 			defer m.Stop()
 
-			err := DownloadImage(test.outFile, test.libraryRef, m.baseURI, test.force, test.tokenFile)
+			err := DownloadImage(tt.outFile, tt.libraryRef, m.baseURI, tt.force, tt.tokenFile)
 
-			if err != nil && !test.expectError {
+			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)
 			}
-			if err == nil && test.expectError {
+			if err == nil && tt.expectError {
 				t.Errorf("Unexpected success. Expected error.")
 			}
 
-			if test.checkContent {
-				fileContent, err := ioutil.ReadFile(test.outFile)
+			if tt.checkContent {
+				fileContent, err := ioutil.ReadFile(tt.outFile)
 				if err != nil {
 					t.Errorf("Error reading test output file: %v", err)
 				}
-				testContent, err := ioutil.ReadFile(test.testFile)
+				testContent, err := ioutil.ReadFile(tt.testFile)
 				if err != nil {
 					t.Errorf("Error reading test file: %v", err)
 				}
@@ -123,6 +124,6 @@ func Test_DownloadImage(t *testing.T) {
 				}
 			}
 
-		})
+		}))
 	}
 }

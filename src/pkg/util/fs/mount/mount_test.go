@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package mount
@@ -10,9 +10,13 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 func TestImage(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddImage(RootfsTag, "", "/fake", "ext3", 0, 0, 10); err == nil {
@@ -94,50 +98,53 @@ func TestImage(t *testing.T) {
 }
 
 func TestOverlay(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
-	if err := points.AddOverlay(OverlayTag, "", 0, "/", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "", 0, "/", "", ""); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "", "/upper", "/work"); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "", "/upper", "/work"); err == nil {
 		t.Errorf("should have failed with empty lowerdir")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "/upper", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "/lower", "/upper", ""); err == nil {
 		t.Errorf("should have failed with empty workdir")
 	}
 
-	if err := points.AddOverlay(OverlayTag, "/", 0, "lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/", 0, "lower", "", ""); err == nil {
 		t.Errorf("should have failed as lowerdir is not an absolute path")
 	}
-	if err := points.AddOverlay(OverlayTag, "/", 0, "/lower", "upper", "/work"); err == nil {
+	if err := points.AddOverlay(LayerTag, "/", 0, "/lower", "upper", "/work"); err == nil {
 		t.Errorf("should have failed as upperdir is not an absolute path")
 	}
-	if err := points.AddOverlay(OverlayTag, "/", 0, "/lower", "/upper", "work"); err == nil {
+	if err := points.AddOverlay(LayerTag, "/", 0, "/lower", "/upper", "work"); err == nil {
 		t.Errorf("should have failed as workdir is not an absolute path")
 	}
 
-	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", syscall.MS_BIND, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", syscall.MS_REMOUNT, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddOverlay(OverlayTag, "/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
+	if err := points.AddOverlay(LayerTag, "/fake", syscall.MS_REC, "/lower", "", ""); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "", ""); err != nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "/lower", "", ""); err != nil {
 		t.Errorf("%s", err)
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay(OverlayTag, "/fake", 0, "/lower", "/upper", "/work"); err != nil {
+	if err := points.AddOverlay(LayerTag, "/fake", 0, "/lower", "/upper", "/work"); err != nil {
 		t.Errorf("%s", err)
 	}
 	points.RemoveAll()
 
-	if err := points.AddOverlay(OverlayTag, "/mnt", syscall.MS_NOSUID, "/lower", "/upper", "/work"); err != nil {
+	if err := points.AddOverlay(LayerTag, "/mnt", syscall.MS_NOSUID, "/lower", "/upper", "/work"); err != nil {
 		t.Fatalf("%s", err)
 	}
 
@@ -157,6 +164,9 @@ func TestOverlay(t *testing.T) {
 }
 
 func TestFS(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddFS(SessionTag, "", "tmpfs", 0, ""); err == nil {
@@ -208,6 +218,9 @@ func TestFS(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddBind(UserbindsTag, "/", "", 0); err == nil {
@@ -263,6 +276,9 @@ func TestBind(t *testing.T) {
 }
 
 func TestRemount(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddRemount(UserbindsTag, "", 0); err == nil {
@@ -275,6 +291,9 @@ func TestRemount(t *testing.T) {
 }
 
 func TestImport(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	mountLabel := "system_u:object_r:removable_t"
 	points := &Points{}
 
@@ -289,8 +308,8 @@ func TestImport(t *testing.T) {
 	}
 
 	validImport := map[AuthorizedTag][]Point{
-		UserbindsTag: []Point{
-			Point{
+		UserbindsTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/mnt",
@@ -298,7 +317,7 @@ func TestImport(t *testing.T) {
 					Options:     []string{"rbind"},
 				},
 			},
-			Point{
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/mnt",
@@ -307,8 +326,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		KernelTag: []Point{
-			Point{
+		KernelTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "proc",
 					Destination: "/proc",
@@ -316,7 +335,7 @@ func TestImport(t *testing.T) {
 					Options:     []string{"nosuid", "nodev"},
 				},
 			},
-			Point{
+			{
 				Mount: specs.Mount{
 					Source:      "sysfs",
 					Destination: "/sys",
@@ -325,8 +344,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		SessionTag: []Point{
-			Point{
+		SessionTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/tmp",
@@ -335,8 +354,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		OverlayTag: []Point{
-			Point{
+		LayerTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/opt",
@@ -345,8 +364,8 @@ func TestImport(t *testing.T) {
 				},
 			},
 		},
-		RootfsTag: []Point{
-			Point{
+		RootfsTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/image.simg",
 					Destination: "/tmp/image",
@@ -390,7 +409,7 @@ func TestImport(t *testing.T) {
 		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
 	points.RemoveByDest("/opt")
-	all = points.GetByTag(OverlayTag)
+	all = points.GetByTag(LayerTag)
 	if len(all) != 0 {
 		t.Errorf("returned a wrong number of mount points %d instead of 0", len(all))
 	}
@@ -429,8 +448,8 @@ func TestImport(t *testing.T) {
 	points.RemoveAll()
 
 	invalidImport := map[AuthorizedTag][]Point{
-		UserbindsTag: []Point{
-			Point{
+		UserbindsTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/mnt",
@@ -438,7 +457,7 @@ func TestImport(t *testing.T) {
 					Options:     []string{"rbind"},
 				},
 			},
-			Point{
+			{
 				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/mnt",
@@ -453,8 +472,8 @@ func TestImport(t *testing.T) {
 	}
 
 	validForceContextImport := map[AuthorizedTag][]Point{
-		SessionTag: []Point{
-			Point{
+		SessionTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/tmp",
@@ -484,8 +503,8 @@ func TestImport(t *testing.T) {
 	points.RemoveAll()
 
 	validContextImport := map[AuthorizedTag][]Point{
-		SessionTag: []Point{
-			Point{
+		SessionTag: {
+			{
 				Mount: specs.Mount{
 					Source:      "/",
 					Destination: "/tmp",
@@ -513,9 +532,72 @@ func TestImport(t *testing.T) {
 		t.Errorf("context option is set %d times for /tmp mount point %s", numContext, tmp[0])
 	}
 	points.RemoveAll()
+
+	points = &Points{}
+
+	validSpecs := []specs.Mount{
+		{
+			Source:      "/",
+			Destination: "/mnt",
+			Type:        "",
+			Options:     []string{"rbind"},
+		},
+		{
+			Source:      "",
+			Destination: "/mnt",
+			Type:        "",
+			Options:     []string{"rbind", "nosuid", "remount"},
+		},
+		{
+			Source:      "",
+			Destination: "/opt",
+			Type:        "overlay",
+			Options:     []string{"nosuid", "nodev", "lowerdir=/", "upperdir=/upper", "workdir=/work"},
+		},
+		{
+			Source:      "",
+			Destination: "/tmp",
+			Type:        "tmpfs",
+			Options:     []string{"nosuid", "nodev", "mode=1777"},
+		},
+		{
+			Source:      "sysfs",
+			Destination: "/sys",
+			Type:        "sysfs",
+			Options:     []string{"nosuid", "nodev"},
+		},
+		{
+			Source:      "",
+			Destination: "/dev/pts",
+			Type:        "devpts",
+			Options:     []string{"nosuid"},
+		},
+	}
+	if err := points.ImportFromSpec(validSpecs); err != nil {
+		t.Error(err)
+	}
+	if len(points.GetAll()) != 5 {
+		t.Errorf("returned a wrong number of mount points %d instead of 5", len(points.GetAll()))
+	}
+	points.RemoveAll()
+
+	invalidSpecs := []specs.Mount{
+		{
+			Source:      "/image.simg",
+			Destination: "/tmp/image",
+			Type:        "squashfs",
+			Options:     []string{"nosuid", "nodev"},
+		},
+	}
+	if err := points.ImportFromSpec(invalidSpecs); err == nil {
+		t.Errorf("should have failed with non authorized filesystem type")
+	}
 }
 
 func TestTag(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	points := &Points{}
 
 	if err := points.AddBind(AuthorizedTag("unknown"), "/", "/mnt", syscall.MS_NOSUID); err == nil {
@@ -532,5 +614,57 @@ func TestTag(t *testing.T) {
 		if len(points.GetByTag(tag)) != 0 {
 			t.Fatalf("removing mount point entries by tag failed")
 		}
+	}
+}
+
+func TestPaths(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	points := &Points{}
+	maskedPaths := []string{
+		"/proc/kcore",
+		"/proc/latency_stats",
+	}
+	roPaths := []string{
+		"/proc/asound",
+		"/proc/bus",
+	}
+	if err := points.AddMaskedPaths(maskedPaths); err != nil {
+		t.Error(err)
+	}
+	l := len(points.GetAll())
+	if l != 1 {
+		t.Errorf("returned a wrong number of mount points %d instead of 1", l)
+	}
+	l = len(points.GetByTag(OtherTag))
+	if l != 2 {
+		t.Errorf("returned a wrong number of mount points %d instead of 2", l)
+	}
+	points.RemoveAll()
+	if err := points.AddReadonlyPaths(roPaths); err != nil {
+		t.Error(err)
+	}
+	l = len(points.GetAll())
+	if l != 1 {
+		t.Errorf("returned a wrong number of mount points %d instead of 1", l)
+	}
+	l = len(points.GetByTag(OtherTag))
+	if l != 4 {
+		t.Errorf("returned a wrong number of mount points %d instead of 4", l)
+	}
+	maskedPaths = []string{
+		"/proc/kcore",
+		"/proc/kcore",
+	}
+	if err := points.AddMaskedPaths(maskedPaths); err == nil {
+		t.Errorf("should have failed with duplicated mount point")
+	}
+	roPaths = []string{
+		"/proc/asound",
+		"/proc/asound",
+	}
+	if err := points.AddReadonlyPaths(roPaths); err == nil {
+		t.Errorf("should have failed with duplicated mount point")
 	}
 }

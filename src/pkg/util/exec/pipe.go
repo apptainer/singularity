@@ -1,10 +1,7 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package exec
 
@@ -31,7 +28,7 @@ func Pipe(command string, args []string, env []string, data []byte) error {
 	return nil
 }
 
-// SetPipe sets the PIPE_EXEC_FD environment variable containing the JSON configuartion data
+// SetPipe sets the PIPE_EXEC_FD environment variable containing the JSON configuration data
 func SetPipe(data []byte) (string, error) {
 	r, w, err := os.Pipe()
 

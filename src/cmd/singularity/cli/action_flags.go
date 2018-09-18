@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -17,12 +17,15 @@ import (
 var (
 	BindPaths   []string
 	HomePath    string
-	OverlayPath string
+	OverlayPath []string
 	ScratchPath []string
 	WorkdirPath string
 	PwdPath     string
 	ShellPath   string
 	Hostname    string
+	Network     string
+	NetworkArgs []string
+	DNS         string
 
 	IsBoot       bool
 	IsFakeroot   bool
@@ -31,6 +34,8 @@ var (
 	IsContainAll bool
 	IsWritable   bool
 	Nvidia       bool
+	NoHome       bool
+	NoInit       bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -41,8 +46,8 @@ var (
 	AllowSUID bool
 	KeepPrivs bool
 	NoPrivs   bool
-	AddCaps   []string
-	DropCaps  []string
+	AddCaps   string
+	DropCaps  string
 )
 
 var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
@@ -75,7 +80,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("home", "argtag", []string{"<spec>"})
 
 	// -o|--overlay
-	actionFlags.StringVarP(&OverlayPath, "overlay", "o", "", "Use a persistent overlayFS via a writable image.")
+	actionFlags.StringSliceVarP(&OverlayPath, "overlay", "o", []string{}, "Use an overlayFS image for persistent data storage or as read-only layer of container.")
 	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
 
 	// -S|--scratch
@@ -97,6 +102,18 @@ func initPathVars() {
 	// --hostname
 	actionFlags.StringVar(&Hostname, "hostname", "", "Set container hostname")
 	actionFlags.SetAnnotation("hostname", "argtag", []string{"<name>"})
+
+	// --network
+	actionFlags.StringVar(&Network, "network", "bridge", "Specify desired network type separated by commas, each network will bring up a dedicated interface inside container")
+	actionFlags.SetAnnotation("network", "argtag", []string{"<name>"})
+
+	// --network-args
+	actionFlags.StringSliceVar(&NetworkArgs, "network-args", []string{}, "Specify network arguments to pass to CNI plugins")
+	actionFlags.SetAnnotation("network-args", "argtag", []string{"<name>"})
+
+	// --dns
+	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
+	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
@@ -121,6 +138,12 @@ func initBoolVars() {
 
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
+
+	// --no-home
+	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
+
+	// --no-init
+	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
@@ -148,13 +171,13 @@ func initPrivilegeVars() {
 	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "Let root user keep privileges in container")
 
 	// --no-privs
-	actionFlags.BoolVar(&NoPrivs, "no-privs", true, "Drop all privileges from root user in container")
+	actionFlags.BoolVar(&NoPrivs, "no-privs", false, "Drop all privileges from root user in container")
 
 	// --add-caps
-	actionFlags.StringSliceVar(&AddCaps, "add-caps", []string{}, "A comma separated capability list to add")
+	actionFlags.StringVar(&AddCaps, "add-caps", "", "A comma separated capability list to add")
 
 	// --drop-caps
-	actionFlags.StringSliceVar(&DropCaps, "drop-caps", []string{}, "A comma separated capability list to drop")
+	actionFlags.StringVar(&DropCaps, "drop-caps", "", "A comma separated capability list to drop")
 
 	// --allow-setuid
 	actionFlags.BoolVar(&AllowSUID, "allow-setuid", false, "Allow setuid binaries in container (root only)")

@@ -5,22 +5,22 @@
 set -e
 
 makecond="$builddir/Makefile.cond"
-echo "" > $makecond
+echo "go_TAG += $BUILDTAG" > $makecond
 
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
-config_add_def PACKAGE_VERSION \"3.0.0\"
-config_add_def PACKAGE_STRING \"singularity 3.0.0\"
+config_add_def PACKAGE_VERSION \"$package_version\"
+config_add_def PACKAGE_STRING \"singularity $package_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
 config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
-config_add_def EXECPREFIX PREFIX
+config_add_def EXECPREFIX \"$exec_prefix\"
 config_add_def BINDIR EXECPREFIX \"/bin\"
 config_add_def LIBEXECDIR EXECPREFIX \"/libexec\"
 config_add_def SBINDIR LIBEXECDIR \"/singularity/bin\"
-config_add_def DATAROOTDIR PREFIX \"/share\"
+config_add_def DATAROOTDIR EXECPREFIX \"/share\"
 config_add_def DATADIR DATAROOTDIR
 config_add_def SYSCONFDIR PREFIX \"/etc\"
 config_add_def SHAREDSTARTEDIR PREFIX \"/com\"
@@ -36,6 +36,9 @@ config_add_def PSDIR DOCDIR
 config_add_def LIBDIR EXECPREFIX \"/lib\"
 config_add_def LOCALEDIR DATAROOTDIR \"/locale\"
 config_add_def MANDIR DATAROOTDIR \"/man\"
+config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
+config_add_def CAPABILITY_FILE SINGULARITY_CONFDIR \"/capability.json\"
+config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
 
 # config_add_def SINGULARITY_USERNS 1
 # config_add_def DISABLE_SUID 1
@@ -44,20 +47,6 @@ config_add_def CONTAINER_MOUNTDIR LOCALSTATEDIR \"/singularity/mnt/container\"
 config_add_def CONTAINER_FINALDIR LOCALSTATEDIR \"/singularity/mnt/final\"
 config_add_def CONTAINER_OVERLAY LOCALSTATEDIR \"/singularity/mnt/overlay\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
-
-########################
-# git version 
-########################
-if BRANCH=`git rev-parse --abbrev-ref HEAD 2>/dev/null`; then
-    if HASH=`git rev-parse --short HEAD 2>/dev/null`; then
-        config_add_def GIT_VERSION \"$BRANCH.$HASH\"
-    else
-        config_add_def GIT_VERSION \"$BRANCH\"
-    fi
-else
-    config_add_def GIT_VERSION \"dist\"
-fi
-
 
 ########################
 # ns: CLONE_NEWPID
@@ -335,9 +324,13 @@ if ! printf "#include <seccomp.h>\nint main() { }" | \
     tgtstatic=0
     echo "no"
 else
-    echo "yes"
-    echo "WRAPPER_LIBS += -lseccomp" >> $makecond
-    echo "go_TAG += seccomp" >> $makecond
+    case "${BUILDTAG}" in
+        *seccomp*)
+            echo "yes"
+            echo "WRAPPER_LIBS += -lseccomp" >> $makecond ;;
+        *)
+            echo "yes (not configured)" ;;
+    esac
 fi
 
 echo "INFO: userns and disable_suid are disabled. (mchecks/base.chk)"

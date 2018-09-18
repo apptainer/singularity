@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -61,14 +61,33 @@ func init() {
 	SingularityCmd.AddCommand(VersionCmd)
 }
 
+func setSylogMessageLevel(cmd *cobra.Command, args []string) {
+	var level int
+
+	if debug {
+		level = 5
+	} else if verbose {
+		level = 4
+	} else if quiet {
+		level = -1
+	} else if silent {
+		level = -3
+	} else {
+		level = 1
+	}
+
+	sylog.SetLevel(level)
+}
+
 // SingularityCmd is the base command when called without any subcommands
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	Run: nil,
+	PersistentPreRun:      setSylogMessageLevel,
+	Run:                   nil,
 
 	Use:     docs.SingularityUse,
-	Version: fmt.Sprintf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION),
+	Version: buildcfg.PACKAGE_VERSION,
 	Short:   docs.SingularityShort,
 	Long:    docs.SingularityLong,
 	Example: docs.SingularityExample,
@@ -96,7 +115,7 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 var VersionCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("%v-%v\n", buildcfg.PACKAGE_VERSION, buildcfg.GIT_VERSION)
+		fmt.Println(buildcfg.PACKAGE_VERSION)
 	},
 
 	Use:   "version",

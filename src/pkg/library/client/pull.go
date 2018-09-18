@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -62,6 +63,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
 	}
+	req.Header.Set("User-Agent", useragent.Value())
 
 	res, err := client.Do(req)
 	if err != nil {

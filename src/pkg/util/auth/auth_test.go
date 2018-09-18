@@ -1,12 +1,14 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package auth
 
 import (
 	"testing"
+
+	"github.com/singularityware/singularity/src/pkg/test"
 )
 
 const (
@@ -15,6 +17,9 @@ const (
 )
 
 func Test_ReadToken(t *testing.T) {
+
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	result, w := ReadToken("/no/such/file")
 	if result != "" {
