@@ -22,9 +22,11 @@ func init() {
 	// -u|--user
 	InstanceListCmd.Flags().StringVarP(&username, "user", "u", "", `If running as root, list instances from "<username>"`)
 	InstanceListCmd.Flags().SetAnnotation("user", "argtag", []string{"<username>"})
+	InstanceListCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -j|--json
 	InstanceListCmd.Flags().BoolVarP(&jsonFormat, "json", "j", false, "Print structured json instead of list")
+	InstanceListCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
 }
 
 // InstanceListCmd singularity instance list

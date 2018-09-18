@@ -17,7 +17,10 @@ import (
 
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
+
 	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	SignCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+
 	SingularityCmd.AddCommand(SignCmd)
 }
 

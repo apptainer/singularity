@@ -15,13 +15,16 @@ func init() {
 	// -u|--user
 	CapabilityDropCmd.Flags().StringVarP(&CapUser, "user", "u", "", "Drop capabilities for the given user")
 	CapabilityDropCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
+	CapabilityDropCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -g|--group
 	CapabilityDropCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "Drop capabilities for the given group")
 	CapabilityDropCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
+	CapabilityDropCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
 
 	// -d|--desc
 	CapabilityDropCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
+	CapabilityDropCmd.Flags().SetAnnotation("desc", "envkey", []string{"DESC"})
 
 	CapabilityDropCmd.Flags().SetInterspersed(false)
 }

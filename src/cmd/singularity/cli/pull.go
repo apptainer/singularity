@@ -32,7 +32,10 @@ func init() {
 	PullCmd.Flags().SetInterspersed(false)
 
 	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "")
+	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
+	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
 	SingularityCmd.AddCommand(PullCmd)
 }

@@ -17,7 +17,10 @@ import (
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+
 	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+
 	SingularityCmd.AddCommand(VerifyCmd)
 }
 

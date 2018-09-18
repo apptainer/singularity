@@ -18,7 +18,9 @@ import (
 
 func init() {
 	KeysPullCmd.Flags().SetInterspersed(false)
+
 	KeysPullCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	KeysPullCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
 // KeysPullCmd is `singularity keys pull' and fetches public keys from a key server

@@ -18,7 +18,9 @@ import (
 
 func init() {
 	KeysSearchCmd.Flags().SetInterspersed(false)
+
 	KeysSearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	KeysSearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
 // KeysSearchCmd is `singularity keys search' and look for public keys from a key server

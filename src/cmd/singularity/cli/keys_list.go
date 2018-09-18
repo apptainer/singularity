@@ -19,7 +19,9 @@ var secret bool
 
 func init() {
 	KeysListCmd.Flags().SetInterspersed(false)
+
 	KeysListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
+	KeysListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
 }
 
 // KeysListCmd is `singularity keys list' and lists local store OpenPGP keys

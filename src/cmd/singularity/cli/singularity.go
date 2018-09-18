@@ -230,11 +230,11 @@ var flagEnvFuncs = map[string]envHandle{
 	"no-home":    envBool,
 	"no-init":    envBool,
 
-	"pid":  envBool,
-	"ipc":  envBool,
-	"net":  envBool,
-	"uts":  envBool,
-	"user": envBool,
+	"pid":    envBool,
+	"ipc":    envBool,
+	"net":    envBool,
+	"uts":    envBool,
+	"userns": envBool,
 
 	"keep-privs":   envBool,
 	"no-privs":     envBool,
@@ -254,4 +254,17 @@ var flagEnvFuncs = map[string]envHandle{
 	"detached": envBool,
 	"builder":  envStringNSlice,
 	"library":  envStringNSlice,
+
+	// capability flags (and others)
+	"user":  envStringNSlice,
+	"group": envStringNSlice,
+	"desc":  envBool,
+	"all":   envBool,
+
+	// instance flags
+	"signal": envStringNSlice,
+
+	// keys flags
+	"secret": envBool,
+	"url":    envStringNSlice,
 }
