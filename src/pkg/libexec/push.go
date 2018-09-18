@@ -6,7 +6,7 @@
 package libexec
 
 import (
-	"github.com/singularityware/singularity/src/pkg/library/client"
+	"github.com/singularityware/singularity/src/pkg/client/library"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
