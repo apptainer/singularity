@@ -3,7 +3,7 @@ package network
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -47,10 +47,10 @@ type portMap struct {
 }
 
 // DefaultCNIConfPath is the default directory to CNI network configuration files
-var DefaultCNIConfPath = path.Join(buildcfg.SYSCONFDIR, "singularity/network")
+var DefaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
 
 // DefaultCNIPluginPath is the default directory to CNI plugins executables
-var DefaultCNIPluginPath = path.Join(buildcfg.LIBEXECDIR, "singularity/cni")
+var DefaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
 // AvailableNetworks lists configured networks in configuration path directory
 // provided by cniPath
