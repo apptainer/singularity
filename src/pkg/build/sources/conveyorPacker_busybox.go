@@ -20,8 +20,7 @@ import (
 
 // BusyBoxConveyor only needs to hold the conveyor to have the needed data to pack
 type BusyBoxConveyor struct {
-	recipe types.Definition
-	b      *types.Bundle
+	b *types.Bundle
 }
 
 // BusyBoxConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -30,16 +29,11 @@ type BusyBoxConveyorPacker struct {
 }
 
 // Get just stores the source
-func (c *BusyBoxConveyor) Get(recipe types.Definition) (err error) {
-	c.recipe = recipe
-
-	c.b, err = types.NewBundle("sbuild-busybox")
-	if err != nil {
-		return
-	}
+func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
+	c.b = b
 
 	//get mirrorURL, OSVerison, and Includes components to definition
-	mirrorurl, ok := recipe.Header["mirrorurl"]
+	mirrorurl, ok := b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid busybox header, no MirrurURL specified")
 	}
@@ -77,8 +71,6 @@ func (cp *BusyBoxConveyorPacker) Pack() (b *types.Bundle, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("While inserting base environment: %v", err)
 	}
-
-	cp.b.Recipe = cp.recipe
 
 	return cp.b, nil
 }

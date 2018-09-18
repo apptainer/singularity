@@ -17,6 +17,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/build/sources"
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/test"
+	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 )
 
 const (
@@ -26,20 +27,31 @@ const (
 	dockerDaemonImage = "alpine:latest"
 )
 
+func TestMain(m *testing.M) {
+	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
+
+	os.Exit(m.Run())
+}
+
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub
 func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := types.NewDefinitionFromURI(dockerURI)
+	b, err := types.NewBundle("sbuild-oci")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
 	cp := &sources.OCIConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
@@ -58,16 +70,21 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	}
 	defer os.Remove(archive)
 
+	b, err := types.NewBundle("sbuild-oci")
+	if err != nil {
+		return
+	}
+
 	archiveURI := "docker-archive:" + archive
-	def, err := types.NewDefinitionFromURI(archiveURI)
+	b.Recipe, err = types.NewDefinitionFromURI(archiveURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
 
 	cp := &sources.OCIConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
@@ -94,16 +111,21 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 		return
 	}
 
+	b, err := types.NewBundle("sbuild-oci")
+	if err != nil {
+		return
+	}
+
 	daemonURI := "docker-daemon:" + dockerDaemonImage
-	def, err := types.NewDefinitionFromURI(daemonURI)
+	b.Recipe, err = types.NewDefinitionFromURI(daemonURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", daemonURI, err)
 	}
 
 	cp := &sources.OCIConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", daemonURI, err)
@@ -122,16 +144,21 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	}
 	defer os.Remove(archive)
 
+	b, err := types.NewBundle("sbuild-oci")
+	if err != nil {
+		return
+	}
+
 	archiveURI := "oci-archive:" + archive
-	def, err := types.NewDefinitionFromURI(archiveURI)
+	b.Recipe, err = types.NewDefinitionFromURI(archiveURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
 
 	cp := &sources.OCIConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archiveURI, err)
@@ -163,16 +190,21 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 		t.Fatalf("Error extracting oci archive to layout: %v", err)
 	}
 
+	b, err := types.NewBundle("sbuild-oci")
+	if err != nil {
+		return
+	}
+
 	layoutURI := "oci:" + dir
-	def, err := types.NewDefinitionFromURI(layoutURI)
+	b.Recipe, err = types.NewDefinitionFromURI(layoutURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", layoutURI, err)
 	}
 
 	cp := &sources.OCIConveyorPacker{}
 
-	err = cp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = cp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", layoutURI, err)
@@ -184,15 +216,20 @@ func TestOCIPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	def, err := types.NewDefinitionFromURI(dockerURI)
+	b, err := types.NewBundle("sbuild-oci")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
 	ocp := &sources.OCIConveyorPacker{}
 
-	err = ocp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = ocp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer ocp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", dockerURI, err)
