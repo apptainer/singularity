@@ -18,6 +18,7 @@ import (
 // related files to be added to the BindPaths
 func GetNvidiaBindPath(abspath string) []string {
 	var strArray []string
+	var bindArray []string
 	var searchArray []string
 	var commentID = regexp.MustCompile(`#`)
 	var soID = regexp.MustCompile(".so")
@@ -33,10 +34,17 @@ func GetNvidiaBindPath(abspath string) []string {
 				val := soID.FindString(line) // this will disallow binaries (non .so files)
 				if val != "" {               // contains .so
 					if line != "" {
-						strArray = append(strArray, line)
+						// extract the filename from the path
+						fileNames := strings.SplitAfter(line, "/")
+						fileName := fileNames[len(fileNames)-1]
+
+						testString := line + ":/.singularity.d/libs/" + fileName
+						bindArray = append(bindArray, testString)
+						strArray = append(strArray, fileName)
 					}
-				} else {
-					strArray = append(strArray, line) // binary
+				} else { // binary executable
+					bindArray = append(bindArray, line)
+					strArray = append(strArray, line)
 				}
 			}
 		}
@@ -77,17 +85,32 @@ func GetNvidiaBindPath(abspath string) []string {
 			for _, line := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
 				if line != "" {
 
-					for _, fileline := range strings.Split(strings.TrimSuffix(searchString, "\n"), "\n") {
-						if fileline != "" {
+					for _, nvidiaConfFileline := range strings.Split(strings.TrimSuffix(searchString, "\n"), "\n") {
+						if nvidiaConfFileline != "" {
+
+							// sample ldconfig -p output (fileline)
+							// 	libnvidia-ml.so.1 (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so.1
+							//	libnvidia-ml.so (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so
 
 							line2 := strings.SplitN(line, "=> ", 2)
 							if len(line2) > 1 {
 
+								// line2[0] is the "libnvidia-ml.so[.1] (libc6,x86-64)"" (from the above example)
+								// line2[1] is the "/usr/lib64/nvidia/libnvidia-ml.so[.1]" (from the above example)
+
 								if !strings.Contains(cliEntries, line2[1]) { // skip if nvidia-container-cli found it
 
-									if strings.Contains(line2[1], fileline) && fileline != lastadd { // add if not duplicate
-										strArray = append(strArray, line2[1])
-										lastadd = fileline
+									// these 2 lines extract the "libnvdia-ml.so[.1]" (from the example above) - fileName
+									fileNames := strings.Split(line2[0], " ")
+									ldconfigFileName := strings.TrimSpace(string(fileNames[0]))
+
+									if ldconfigFileName == nvidiaConfFileline {
+
+										if ldconfigFileName != lastadd { // add if not duplicate
+											testString := line2[1] + ":/.singularity.d/libs/" + ldconfigFileName
+											bindArray = append(bindArray, testString)
+											lastadd = ldconfigFileName
+										}
 									}
 								}
 							}
@@ -98,5 +121,5 @@ func GetNvidiaBindPath(abspath string) []string {
 		}
 	}
 
-	return strArray
+	return bindArray
 }
