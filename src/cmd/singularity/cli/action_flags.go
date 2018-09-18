@@ -60,42 +60,6 @@ func getHomeDir() string {
 }
 
 func init() {
-	/*
-		// map of functions to use to bind flags to environment variables
-		flagEnvFuncs = map[string]envHandle{
-			"bind":     envAppend,
-			"home":     envStringNSlice,
-			"overlay":  envStringNSlice,
-			"scratch":  envStringNSlice,
-			"workdir":  envStringNSlice,
-			"shell":    envStringNSlice,
-			"pwd":      envStringNSlice,
-			"hostname": envStringNSlice,
-
-			"boot":       envBool,
-			"fakeroot":   envBool,
-			"cleanenv":   envBool,
-			"contain":    envBool,
-			"containall": envBool,
-			"nv":         envBool,
-			"writable":   envBool,
-			"no-home":    envBool,
-			"no-init":    envBool,
-
-			"pid":  envBool,
-			"ipc":  envBool,
-			"net":  envBool,
-			"uts":  envBool,
-			"user": envBool,
-
-			"keep-privs":   envBool,
-			"no-privs":     envBool,
-			"add-caps":     envStringNSlice,
-			"drop-caps":    envStringNSlice,
-			"allow-setuid": envBool,
-		}
-	*/
-
 	initPathVars()
 	initBoolVars()
 	initNamespaceVars()
