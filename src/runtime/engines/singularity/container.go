@@ -193,24 +193,110 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	return nil
 }
 
+func (c *container) setupWritableSIFImage(img *image.Image, overlayEnabled bool) error {
+	fimg, err := sif.LoadContainerFp(img.File, !img.Writable)
+	if err != nil {
+		return err
+	}
+
+	// Get the default system partition image
+	part, _, err := fimg.GetPartPrimSys()
+	if err != nil {
+		return err
+	}
+
+	// Get descriptor for group associated with system partition
+	descriptors, _, err := fimg.GetPartFromGroup(part.Groupid)
+	if err != nil {
+		return err
+	}
+
+	// Determine if an overlay partition exists
+	overlayPart := 0
+	for _, desc := range descriptors {
+		ptype, err := desc.GetPartType()
+		if err != nil {
+			return err
+		}
+		if ptype == sif.PartOverlay {
+			fstype, err := desc.GetFsType()
+			if err != nil {
+				continue
+			}
+			if fstype == sif.FsExt3 {
+				if overlayPart == 0 {
+					if !overlayEnabled {
+						return fmt.Errorf("Can't mount SIF image as read-write, overlay is not enabled")
+					}
+
+					imgCopy := *img
+
+					imgCopy.Type = image.EXT3
+					imgCopy.Offset = uint64(desc.Fileoff)
+					imgCopy.Size = uint64(desc.Filelen)
+					imgCopy.RootFS = false
+					imgCopy.Writable = true
+
+					imglist := c.engine.EngineConfig.GetImageList()
+					imglist = append(imglist, imgCopy)
+
+					c.engine.EngineConfig.SetImageList(imglist)
+
+					overlayImg := c.engine.EngineConfig.GetOverlayImage()
+					overlayImg = append(overlayImg, imgCopy.Path)
+					c.engine.EngineConfig.SetOverlayImage(overlayImg)
+				}
+				overlayPart++
+			}
+		}
+	}
+
+	if overlayPart > 1 {
+		sylog.Warningf("more than one writable overlay partition found, taking the first")
+	} else if overlayPart == 0 {
+		return fmt.Errorf("no overlay partition found")
+	}
+
+	return nil
+}
+
 // setupSessionLayout will create the session layout according to the capabilities of Singularity
 // on the system. It will first attempt to use "overlay", followed by "underlay", and if neither
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existant paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
 	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
-
-	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
-		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
-		return c.setupDefaultLayout(system)
-	}
+	overlayEnabled := false
 
 	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
 		switch c.engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
-			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
-			return c.setupOverlayLayout(system)
+			overlayEnabled = true
 		}
+	}
+
+	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
+		imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
+		if err != nil {
+			return err
+		}
+
+		if imgObject.Type == image.SIF {
+			err = c.setupWritableSIFImage(imgObject, overlayEnabled)
+			if err == nil {
+				return c.setupOverlayLayout(system)
+			}
+			sylog.Warningf("%s", err)
+		} else {
+			sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
+		}
+
+		return c.setupDefaultLayout(system)
+	}
+
+	if overlayEnabled {
+		sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
+		return c.setupOverlayLayout(system)
 	}
 
 	if writableTmpfs {
@@ -676,6 +762,8 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if !imageObject.Writable {
 				ov.AddLowerDir(dst)
 			}
+		case image.SIF:
+
 		default:
 			return fmt.Errorf("unkown image format")
 		}
