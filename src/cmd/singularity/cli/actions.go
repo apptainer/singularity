@@ -14,7 +14,10 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 
 	"github.com/singularityware/singularity/src/docs"
+	"github.com/singularityware/singularity/src/pkg/build"
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
+	"github.com/singularityware/singularity/src/pkg/client/cache"
+	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
 	"github.com/singularityware/singularity/src/pkg/instance"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/env"
@@ -73,11 +76,50 @@ func init() {
 
 }
 
+func replaceURIWithImage(cmd *cobra.Command, args []string) {
+	if strings.HasPrefix(args[0], "instance://") {
+		return
+	}
+
+	split := strings.Split(args[0], ":")
+	if len(split) < 2 {
+		return
+	}
+
+	sum, err := ociclient.ImageSHA(args[0])
+	if err != nil {
+		sylog.Fatalf("That didn't work %v", err)
+	}
+
+	name := split[1]
+	imgabs := cache.OciTempImage(sum, name)
+
+	if exists, err := cache.OciTempExists(sum, name); err != nil {
+		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
+	} else if !exists {
+		sylog.Infof("Converting OCI blobs to SIF format")
+		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true)
+		if err != nil {
+			sylog.Fatalf("Unable to create new build: %v", err)
+		}
+
+		if err := b.Full(); err != nil {
+			sylog.Fatalf("Unable to build: %v", err)
+		}
+
+		sylog.Infof("Image cached as SIF at %s", imgabs)
+	}
+
+	args[0] = imgabs
+	return
+}
+
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(2),
+	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execStarter(cmd, args[0], a, "")
@@ -94,6 +136,7 @@ var ShellCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
 		execStarter(cmd, args[0], a, "")
@@ -110,6 +153,7 @@ var RunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execStarter(cmd, args[0], a, "")

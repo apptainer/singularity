@@ -10,7 +10,6 @@ import (
 
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
 
@@ -40,8 +39,8 @@ func init() {
 // PullCmd singularity pull
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: sylabsToken,
+	Args:                  cobra.RangeArgs(1, 2),
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		var uri, image string
 
@@ -62,7 +61,7 @@ var PullCmd = &cobra.Command{
 		case ShubProtocol:
 			libexec.PullShubImage(image, uri, force)
 		default:
-			sylog.Errorf("Not a supported URI")
+			libexec.PullOciImage(image, uri, force)
 		}
 	},
 
