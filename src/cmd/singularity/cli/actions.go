@@ -222,7 +222,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
-	engineConfig.SetWritableTmpfs(IsWritableTmpfs)
+
+	if IsWritable && IsWritableTmpfs {
+		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
+		engineConfig.SetWritableTmpfs(false)
+	} else {
+		engineConfig.SetWritableTmpfs(IsWritableTmpfs)
+	}
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
