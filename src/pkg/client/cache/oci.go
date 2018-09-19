@@ -8,6 +8,7 @@ package cache
 import (
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -30,6 +31,12 @@ func OciTemp() string {
 // OciTempImage creates a OciTempDir/sum directory and returns the abs path of the image
 func OciTempImage(sum, name string) string {
 	updateCacheSubdir(filepath.Join(OciTempDir, sum))
+
+	name = strings.Replace(strings.TrimPrefix(name, "//"), "/", "_", 3)
+
+	if strings.Contains(name, ":") {
+		name = strings.Replace(name, ":", "-", 1)
+	}
 
 	return filepath.Join(OciTemp(), sum, name)
 }
