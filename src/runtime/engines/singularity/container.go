@@ -749,8 +749,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if !imageObject.Writable {
 				ov.AddLowerDir(dst)
 			}
-		case image.SIF:
-
 		default:
 			return fmt.Errorf("unkown image format")
 		}
