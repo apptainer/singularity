@@ -10,7 +10,7 @@ import (
 	"os"
 
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/shub/client"
+	"github.com/singularityware/singularity/src/pkg/client/shub"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 

@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"os"
 
 	"github.com/pelletier/go-toml"
 	"github.com/singularityware/singularity/src/pkg/signing"
@@ -102,9 +103,9 @@ func (ecl *EclConfig) ValidateConfig() (err error) {
 }
 
 // checkWhiteList evaluates authorization by requiring at least 1 entity
-func checkWhiteList(cpath string, egroup *execgroup) (ok bool, err error) {
+func checkWhiteList(fp *os.File, egroup *execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntities(cpath)
+	keyfps, err := signing.GetSignEntitiesFp(fp)
 	if err != nil {
 		return
 	}
@@ -117,16 +118,16 @@ func checkWhiteList(cpath string, egroup *execgroup) (ok bool, err error) {
 		}
 	}
 	if !ok {
-		return false, fmt.Errorf("%s is not signed by required entities", cpath)
+		return false, fmt.Errorf("%s is not signed by required entities", fp.Name())
 	}
 
 	return true, nil
 }
 
 // checkWhiteStrict evaluates authorization by requiring all entities
-func checkWhiteStrict(cpath string, egroup *execgroup) (ok bool, err error) {
+func checkWhiteStrict(fp *os.File, egroup *execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntities(cpath)
+	keyfps, err := signing.GetSignEntitiesFp(fp)
 	if err != nil {
 		return
 	}
@@ -143,7 +144,7 @@ func checkWhiteStrict(cpath string, egroup *execgroup) (ok bool, err error) {
 	}
 	for _, v := range m {
 		if v != true {
-			return false, fmt.Errorf("%s is not signed by required entities", cpath)
+			return false, fmt.Errorf("%s is not signed by required entities", fp.Name())
 		}
 	}
 
@@ -151,9 +152,9 @@ func checkWhiteStrict(cpath string, egroup *execgroup) (ok bool, err error) {
 }
 
 // checkBlackList evaluates authorization by requiring all entities to be absent
-func checkBlackList(cpath string, egroup *execgroup) (ok bool, err error) {
+func checkBlackList(fp *os.File, egroup *execgroup) (ok bool, err error) {
 	// get all signing entities fingerprints on the primary partition
-	keyfps, err := signing.GetSignEntities(cpath)
+	keyfps, err := signing.GetSignEntitiesFp(fp)
 	if err != nil {
 		return
 	}
@@ -161,7 +162,7 @@ func checkBlackList(cpath string, egroup *execgroup) (ok bool, err error) {
 	for _, v := range egroup.KeyFPs {
 		for _, u := range keyfps {
 			if v == u {
-				return false, fmt.Errorf("%s is signed by a forbidden entity", cpath)
+				return false, fmt.Errorf("%s is signed by a forbidden entity", fp.Name())
 			}
 		}
 	}
@@ -169,18 +170,12 @@ func checkBlackList(cpath string, egroup *execgroup) (ok bool, err error) {
 	return true, nil
 }
 
-// ShouldRun determines if a container should run according to its execgroup rules
-func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
+func shouldRun(ecl *EclConfig, fp *os.File) (ok bool, err error) {
 	var egroup *execgroup
-
-	// look if ECL rules are activated
-	if ecl.Activated == false {
-		return true, nil
-	}
 
 	// look what execgroup a container is part of
 	for _, v := range ecl.ExecGroups {
-		if filepath.Dir(cpath) == v.DirPath {
+		if filepath.Dir(fp.Name()) == v.DirPath {
 			egroup = &v
 			break
 		}
@@ -196,17 +191,42 @@ func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
 	}
 
 	if egroup == nil {
-		return false, fmt.Errorf("%s not part of any execgroup", cpath)
+		return false, fmt.Errorf("%s not part of any execgroup", fp.Name())
 	}
 
 	switch egroup.ListMode {
 	case "whitelist":
-		return checkWhiteList(cpath, egroup)
+		return checkWhiteList(fp, egroup)
 	case "whitestrict":
-		return checkWhiteStrict(cpath, egroup)
+		return checkWhiteStrict(fp, egroup)
 	case "blacklist":
-		return checkBlackList(cpath, egroup)
+		return checkBlackList(fp, egroup)
 	}
 
 	return false, fmt.Errorf("ECL config file invalid")
+}
+
+// ShouldRun determines if a container should run according to its execgroup rules
+func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
+	// look if ECL rules are activated
+	if ecl.Activated == false {
+		return true, nil
+	}
+
+	fp, err := os.Open(cpath)
+	if err != nil {
+		return false, err
+	}
+
+	return shouldRun(ecl, fp)
+}
+
+// ShouldRunFp determines if an already opened container should run according to its execgroup rules
+func (ecl *EclConfig) ShouldRunFp(fp *os.File) (ok bool, err error) {
+	// look if ECL rules are activated
+	if ecl.Activated == false {
+		return true, nil
+	}
+
+	return shouldRun(ecl, fp)
 }
