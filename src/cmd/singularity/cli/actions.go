@@ -22,6 +22,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/env"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
+	"github.com/singularityware/singularity/src/pkg/util/uri"
 	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/singularityware/singularity/src/runtime/engines/config"
 	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
@@ -77,21 +78,17 @@ func init() {
 }
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
-	if strings.HasPrefix(args[0], "instance://") {
-		return
-	}
-
-	split := strings.Split(args[0], ":")
-	if len(split) < 2 {
+	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
+	if t, _ := uri.SplitURI(args[0]); t == "instance" || t == "" {
 		return
 	}
 
 	sum, err := ociclient.ImageSHA(args[0])
 	if err != nil {
-		sylog.Fatalf("That didn't work %v", err)
+		sylog.Fatalf("Failed to get SHA of %v: %v", args[0], err)
 	}
 
-	name := split[1]
+	name := uri.NameFromURI(args[0])
 	imgabs := cache.OciTempImage(sum, name)
 
 	if exists, err := cache.OciTempExists(sum, name); err != nil {
