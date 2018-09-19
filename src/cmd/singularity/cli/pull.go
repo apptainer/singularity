@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/singularityware/singularity/src/docs"
 	"github.com/singularityware/singularity/src/pkg/libexec"
 	"github.com/singularityware/singularity/src/pkg/sylog"
@@ -55,10 +53,8 @@ var PullCmd = &cobra.Command{
 			name = uri.NameFromURI(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
 		}
 
-		fmt.Println(name)
-
 		switch transport {
-		case LibraryProtocol, "": // Pull from
+		case LibraryProtocol, "":
 			libexec.PullLibraryImage(name, args[i], PullLibraryURI, force, authToken)
 		case ShubProtocol:
 			libexec.PullShubImage(name, args[i], force)

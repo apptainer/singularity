@@ -79,13 +79,13 @@ func init() {
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
-	if t, r := uri.SplitURI(args[0]); t == "instance" || t == "" && r == "" {
+	if t, _ := uri.SplitURI(args[0]); t == "instance" || t == "" {
 		return
 	}
 
 	sum, err := ociclient.ImageSHA(args[0])
 	if err != nil {
-		sylog.Fatalf("That didn't work %v", err)
+		sylog.Fatalf("Failed to get SHA of %v: %v", args[0], err)
 	}
 
 	name := uri.NameFromURI(args[0])

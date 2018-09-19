@@ -13,10 +13,10 @@ func Test_NameFromURI(t *testing.T) {
 		uri      string
 		expected string
 	}{
-		{"docker basic", "docker://ubuntu", "ubuntu"},
-		{"docker scoped", "docker://user/image", "image"},
-		{"dave's magical lolcow", "docker://godlovedc/lolcow", "lolcow"},
-		{"docker w/ tags", "docker://godlovedc/lolcow:latest", "lolcow"},
+		{"docker basic", "docker://ubuntu", "ubuntu_latest.sif"},
+		{"docker scoped", "docker://user/image", "image_latest.sif"},
+		{"dave's magical lolcow", "docker://godlovedc/lolcow", "lolcow_latest.sif"},
+		{"docker w/ tags", "docker://godlovedc/lolcow:3.7", "lolcow_3.7.sif"},
 	}
 
 	for _, tt := range tests {

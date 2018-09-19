@@ -6,6 +6,7 @@
 package uri
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -14,15 +15,28 @@ import (
 //
 // Returns "" when not in transport:ref format
 func NameFromURI(uri string) string {
-	uriSplit := strings.Split(uri, ":") // split URI into transport:ref:tag
+	uriSplit := strings.SplitN(uri, ":", 2) // split URI into transport:ref:tag
 	if len(uriSplit) == 1 {
 		return ""
 	}
 
-	ref := uriSplit[1] // possibly split ref into components
-	refSplit := strings.Split(ref, "/")
+	ref := strings.TrimLeft(uriSplit[1], "/") // Trim leading "/" characters
+	refSplit := strings.Split(ref, "/")       // Split ref into parts
 
-	return refSplit[len(refSplit)-1] // return last element of ref
+	// Default tag is latest
+	tags := []string{"latest"}
+	container := refSplit[len(refSplit)-1]
+
+	if strings.Contains(container, ":") {
+		imageParts := strings.Split(container, ":")
+		container = imageParts[0]
+		tags = []string{imageParts[1]}
+		if strings.Contains(tags[0], ",") {
+			tags = strings.Split(tags[0], ",")
+		}
+	}
+
+	return fmt.Sprintf("%s_%s.sif", container, tags[0])
 }
 
 // SplitURI splits a URI into it's components which can be used directly through containers/image
