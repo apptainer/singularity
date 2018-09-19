@@ -72,7 +72,6 @@ func GetNvidiaBindPath(abspath string) []string {
 			}
 		}
 	}
-	searchString := strings.Join(searchArray, "\n")
 
 	// walk thru the ldconfig output and add entries which contain the filenames located in
 	// the nvliblist.conf file (ldconfig filenames are full filepaths)
@@ -86,7 +85,7 @@ func GetNvidiaBindPath(abspath string) []string {
 			for _, ldconfigOutputline := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
 				if ldconfigOutputline != "" {
 
-					for _, nvidiaConfFileline := range strings.Split(strings.TrimSuffix(searchString, "\n"), "\n") {
+					for _, nvidiaConfFileline := range searchArray {
 						if nvidiaConfFileline != "" {
 
 							// sample ldconfig -p output (ldconfigOutputline)
