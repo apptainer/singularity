@@ -86,14 +86,14 @@ func TestBuild(t *testing.T) {
 	}{
 		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false},
 		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false},
-		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", false, true},
-		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", false, false},
-		{"DockerURI", "", "docker://busybox", false, false},
-		{"DockerDefFile", "", "../../../examples/docker/Singularity", false, false},
-		{"SHubURI", "", "shub://GodloveD/busybox", false, false},
-		{"SHubDefFile", "", "../../../examples/shub/Singularity", false, false},
-		{"Yum", "yum", "../../../examples/centos/Singularity", false, false},
-		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", false, false},
+		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", true, true},
+		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", true, false},
+		{"DockerURI", "", "docker://busybox", true, false},
+		{"DockerDefFile", "", "../../../examples/docker/Singularity", true, false},
+		{"SHubURI", "", "shub://GodloveD/busybox", true, false},
+		{"SHubDefFile", "", "../../../examples/shub/Singularity", true, false},
+		{"Yum", "yum", "../../../examples/centos/Singularity", true, false},
+		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", true, false},
 	}
 
 	for _, tt := range tests {

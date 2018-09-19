@@ -3,4 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package libexec
+package cache
+
+// Library returns the directory inside the cache.Dir() where library images are cached
+func Library() string {
+	return updateCacheSubdir(LibraryDir)
+}

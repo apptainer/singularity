@@ -20,6 +20,13 @@ import (
 var origUID, origGID, unprivUID, unprivGID int
 var origHome, unprivHome string
 
+const (
+	// CacheDirPriv is the directory the cachedir gets set to when running privileged
+	CacheDirPriv = "/tmp/WithPrivilege"
+	// CacheDirUnpriv is the directory the cachedir gets set to when running unprivileged
+	CacheDirUnpriv = "/tmp/WithoutPrivilege"
+)
+
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
 	uid := os.Getuid()
@@ -53,7 +60,7 @@ func DropPrivilege(t *testing.T) {
 	}
 
 	// set SINGULARITY_CACHEDIR
-	os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithoutPrivilege_UID%d", os.Getuid()))
+	os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
 }
 
 // ResetPrivilege returns effective privilege to the original user.
@@ -71,7 +78,7 @@ func ResetPrivilege(t *testing.T) {
 	runtime.UnlockOSThread()
 
 	// set SINGULARITY_CACHEDIR
-	os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithPrivilege_UID%d", os.Getuid()))
+	os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 }
 
 // WithPrivilege wraps the supplied test function with calls to ensure
@@ -81,7 +88,7 @@ func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 		t.Helper()
 
 		// set SINGULARITY_CACHEDIR
-		os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithPrivilege_UID%d", os.Getuid()))
+		os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 
 		EnsurePrivilege(t)
 
@@ -99,7 +106,7 @@ func WithoutPrivilege(f func(t *testing.T)) func(t *testing.T) {
 		defer ResetPrivilege(t)
 
 		// set SINGULARITY_CACHEDIR
-		os.Setenv("SINGULARITY_CACHEDIR", fmt.Sprintf("/tmp/WithoutPrivilege_UID%d", os.Getuid()))
+		os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
 
 		f(t)
 	}
