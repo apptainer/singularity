@@ -195,9 +195,8 @@ check:
 	@echo " CHECK go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && \
-		( test -z "`gofmt -l $$(find * -maxdepth 0 -type d ! -name vendor)|tee /dev/stderr`" || \
-		  (gofmt -d $$(find * -maxdepth 0 -type d ! -name vendor); \
-		   echo "Use 'go fmt' to update formatting"; false) )
+		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
+		   echo "Use 'go fmt' to update formatting"; false )
 	@echo "       PASS"
 	@echo " CHECK go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
