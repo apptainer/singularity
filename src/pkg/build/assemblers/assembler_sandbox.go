@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/otiai10/copy"
 	"github.com/singularityware/singularity/src/pkg/build/types"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
@@ -51,8 +52,15 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		os.RemoveAll(path)
 	}
 	if err := os.Rename(b.Rootfs(), path); err != nil {
-		sylog.Errorf("Sandbox Assemble Failed: %s", err)
-		return err
+		if err := copy.Copy(b.Rootfs(), path); err != nil {
+			sylog.Errorf("Sandbox Assemble Failed: %s", err)
+			return err
+		}
+
+		if err := os.RemoveAll(b.Rootfs()); err != nil {
+			sylog.Errorf("Unable to remove Bundle directory: %s", err)
+			return err
+		}
 	}
 
 	return nil
