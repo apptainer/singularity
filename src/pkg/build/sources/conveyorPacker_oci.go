@@ -32,7 +32,6 @@ import (
 	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/shell"
-	"github.com/singularityware/singularity/src/pkg/util/fs"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
