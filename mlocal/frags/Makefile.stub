@@ -2,6 +2,8 @@
 # like go_TAG / WRAPPER_LIBS
 include Makefile.cond
 
+EXEC_PREFIX := $(PREFIX)
+
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
 starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/smaster.go)
@@ -9,17 +11,17 @@ starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/sta
 starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/rpc.go)
 
 starter := $(BUILDDIR)/src/runtime/starter/c/starter
-starter_INSTALL := $(PREFIX)/libexec/singularity/bin/starter
-starter_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/starter-suid
+starter_INSTALL := $(EXEC_PREFIX)/libexec/singularity/bin/starter
+starter_suid_INSTALL := $(EXEC_PREFIX)/libexec/singularity/bin/starter-suid
 
 
 singularity := $(BUILDDIR)/singularity
-singularity_INSTALL := $(PREFIX)/bin/singularity
+singularity_INSTALL := $(EXEC_PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 singularity_REPO := github.com/singularityware/singularity
 
 dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
-dist_bin_SCRIPTS_INSTALL := $(PREFIX)/bin/run-singularity
+dist_bin_SCRIPTS_INSTALL := $(EXEC_PREFIX)/bin/run-singularity
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
@@ -175,7 +177,7 @@ $(capability_JSON):
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
+	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(EXEC_PREFIX)/share/man/man1
 
 .PHONY: collect
 collect:

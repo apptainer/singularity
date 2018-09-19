@@ -7,7 +7,7 @@ package cli
 
 import (
 	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/library/client"
+	"github.com/singularityware/singularity/src/pkg/client/library"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
 )
