@@ -91,16 +91,10 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("That didn't work %v", err)
 	}
 
-	var ociRef string
-	if len(split) > 2 {
-		ociRef = split[1] + ":" + split[2]
-	} else {
-		ociRef = split[1] + ":latest"
-	}
+	name := split[1]
+	imgabs := cache.OciTempImage(sum, name)
 
-	imgabs := cache.OciTempImage(sum, ociRef)
-
-	if exists, err := cache.OciTempExists(sum, ociRef); err != nil {
+	if exists, err := cache.OciTempExists(sum, name); err != nil {
 		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
