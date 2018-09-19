@@ -31,6 +31,7 @@ import (
 	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
 	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
 	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/singularityware/singularity/src/pkg/util/shell"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -275,24 +276,24 @@ func (cp *OCIConveyorPacker) insertRunScript() (err error) {
 	}
 
 	if len(cp.imgConfig.Entrypoint) > 0 {
-		_, err = f.WriteString("OCI_ENTRYPOINT=\"" + strings.Join(cp.imgConfig.Entrypoint, " ") + "\"\n")
+		_, err = f.WriteString("OCI_ENTRYPOINT='" + shell.ArgsQuoted(cp.imgConfig.Entrypoint) + "'\n")
 		if err != nil {
 			return
 		}
 	} else {
-		_, err = f.WriteString("OCI_ENTRYPOINT=\"\"\n")
+		_, err = f.WriteString("OCI_ENTRYPOINT=''\n")
 		if err != nil {
 			return
 		}
 	}
 
 	if len(cp.imgConfig.Cmd) > 0 {
-		_, err = f.WriteString("OCI_CMD=\"" + strings.Join(cp.imgConfig.Cmd, " ") + "\"\n")
+		_, err = f.WriteString("OCI_CMD='" + shell.ArgsQuoted(cp.imgConfig.Cmd) + "'\n")
 		if err != nil {
 			return
 		}
 	} else {
-		_, err = f.WriteString("OCI_CMD=\"\"\n")
+		_, err = f.WriteString("OCI_CMD=''\n")
 		if err != nil {
 			return
 		}
@@ -320,7 +321,7 @@ else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-exec $SINGULARITY_OCI_RUN
+eval ${SINGULARITY_OCI_RUN}
 
 `)
 	if err != nil {
@@ -351,11 +352,19 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 	}
 
 	for _, element := range cp.imgConfig.Env {
-		_, err = f.WriteString("export " + element + "\n")
-		if err != nil {
-			return
-		}
 
+		envParts := strings.SplitN(element, "=", 2)
+		if len(envParts) == 1 {
+			_, err = f.WriteString("export " + shell.Escape(element) + "\n")
+			if err != nil {
+				return
+			}
+		} else {
+			_, err = f.WriteString("export " + envParts[0] + "=\"" + shell.Escape(envParts[1]) + "\"\n")
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	f.Sync()
