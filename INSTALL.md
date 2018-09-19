@@ -18,7 +18,7 @@ First, visit the [golang download page](https://golang.org/dl/) and pick a
 package archive to download.  Copy the link address and download with `wget`.
 
 ```
-$ export VERSION=1.10.3 OS=linux ARCH=amd64
+$ export VERSION=1.11 OS=linux ARCH=amd64
 $ cd /tmp
 $ wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz
 ```
