@@ -13,7 +13,7 @@ func Test_NameFromURI(t *testing.T) {
 		uri      string
 		expected string
 	}{
-		{"docker no scope", "docker://ubuntu", "ubuntu"},
+		{"docker basic", "docker://ubuntu", "ubuntu"},
 		{"docker scoped", "docker://user/image", "image"},
 		{"dave's magical lolcow", "docker://godlovedc/lolcow", "lolcow"},
 		{"docker w/ tags", "docker://godlovedc/lolcow:latest", "lolcow"},
@@ -35,10 +35,13 @@ func Test_SplitURI(t *testing.T) {
 		transport string
 		ref       string
 	}{
-		{"docker no scope", "docker://ubuntu", "docker", "//ubuntu"},
+		{"docker basic", "docker://ubuntu", "docker", "//ubuntu"},
 		{"docker scoped", "docker://user/image", "docker", "//user/image"},
 		{"dave's magical lolcow", "docker://godlovedc/lolcow", "docker", "//godlovedc/lolcow"},
-		{"docker w/ tags", "docker://godlovedc/lolcow:latest", "docker", "//godlovedc/lolcow:latest"},
+		{"docker with tags", "docker://godlovedc/lolcow:latest", "docker", "//godlovedc/lolcow:latest"},
+		{"library basic", "library://image", "library", "//image"},
+		{"library scoped", "library://collection/image", "library", "//collection/image"},
+		{"without transport", "ubuntu", "", "ubuntu"},
 	}
 
 	for _, tt := range tests {

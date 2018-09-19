@@ -28,9 +28,9 @@ func PullShubImage(filePath, shubRef string, force bool) {
 	}
 }
 
-// PullOciImage pulls an OCI image to a sandbox
+// PullOciImage pulls an OCI image to a sif
 func PullOciImage(path, uri string, force bool) {
-	b, err := build.NewBuild(uri, path, "sandbox", force, false, nil, true)
+	b, err := build.NewBuild(uri, path, "sif", force, false, nil, true)
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", uri, err)
 	}

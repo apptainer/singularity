@@ -31,10 +31,11 @@ func NameFromURI(uri string) string {
 //   docker://ubuntu -> docker, //ubuntu
 //   docker://ubuntu:18.04 -> docker, //ubuntu:18.04
 //   oci-archive:path/to/archive -> oci-archive, path/to/archive
+//   ubuntu -> "", ubuntu
 func SplitURI(uri string) (transport string, ref string) {
 	uriSplit := strings.SplitN(uri, ":", 2)
 	if len(uriSplit) == 1 {
-		return "", ""
+		return "", uriSplit[0]
 	}
 
 	return uriSplit[0], uriSplit[1]
