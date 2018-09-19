@@ -196,7 +196,7 @@ check:
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
-		   echo "Use 'go fmt' to update formatting"; false )
+		   ( echo "Use 'go fmt' to update formatting"; false ) )
 	@echo "       PASS"
 	@echo " CHECK go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
