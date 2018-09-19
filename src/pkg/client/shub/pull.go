@@ -12,7 +12,7 @@ import (
 	"os"
 	"time"
 
-	util "github.com/singularityware/singularity/src/pkg/library/client"
+	util "github.com/singularityware/singularity/src/pkg/client/library"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"

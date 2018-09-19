@@ -768,6 +768,9 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
+    /* relinquish CPU to apply current directory change for current thread */
+    sched_yield();
+
     if ( (config.nsFlags & CLONE_NEWUSER) == 0 && get_nspath(user) == NULL ) {
         priv_escalate();
     } else {
