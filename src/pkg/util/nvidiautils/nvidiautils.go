@@ -7,6 +7,7 @@ package nvidiautils
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
@@ -23,12 +24,12 @@ func nvidiaContainerCli() ([]string, []string, error) {
 	// use nvidia-container-cli (if present)
 	command, err := exec.LookPath("nvidia-container-cli")
 	if err != nil {
-		return nil, nil, nil
+		return nil, nil, fmt.Errorf("no nvidia-container-cli present: %v\n", err)
 	}
 	cmd := exec.Command(command, "list", "--binaries", "--ipcs", "--libraries")
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, nil, nil
+		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v\n", err)
 	}
 	for _, line := range strings.Split(string(out), "\n") {
 		val := soID.FindString(line) // this will disallow binaries (non .so files)
@@ -56,11 +57,11 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	var strArray []string
 	var bindArray []string
 	var searchArray []string
-	var commentID = regexp.MustCompile(`#`)
+	var commentID = regexp.MustCompile(`^#`)
 
 	bindArray, strArray, err := nvidiaContainerCli()
 	if err != nil {
-		sylog.Warningf("no nvidia-container-cli returned: %v", err)
+		sylog.Warningf("nvidia-container-cli returned: %v", err)
 	}
 	cliEntries := strings.Join(strArray, " ") // save away for later comparison check (disallow duplicates)
 
@@ -78,7 +79,7 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 				searchArray = append(searchArray, line)
 			}
 		}
-		file.Close()
+		defer file.Close()
 	}
 
 	// walk thru the ldconfig output and add entries which contain the filenames located in
