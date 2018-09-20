@@ -6,7 +6,7 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
+	"github.com/sylabs/singularity/src/docs"
 	"github.com/spf13/cobra"
 )
 

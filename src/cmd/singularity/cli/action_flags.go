@@ -9,7 +9,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
 )
 

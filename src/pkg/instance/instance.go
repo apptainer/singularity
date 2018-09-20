@@ -15,8 +15,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
-	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 )
 
 const (

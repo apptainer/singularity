@@ -60,7 +60,7 @@ all your interactions with the project members and users.
 
 You are **required** to document it in the [changelog](CHANGELOG.md) for the next release.  
 You are also required to provide documentation or a direct pull request to
-the (upcoming) version of the [singularityware.github.io](https://www.github.io/singularityware/singularityware.github.io) docs. Ask for help if you aren't sure where your contribution
+the (upcoming) version of the [sylabs.github.io](https://www.github.io/sylabs/sylabs.github.io) docs. Ask for help if you aren't sure where your contribution
 should go.
 2. If necessary, update the README.md, and check the `*.help` scripts under
    [libexec/cli](libexec/cli) that provide the command line helper output. If

@@ -8,8 +8,8 @@ package main
 import (
 	"os"
 
-	"github.com/singularityware/singularity/src/cmd/singularity/cli"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/cmd/singularity/cli"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra/doc"
 	"golang.org/x/sys/unix"
 )
@@ -29,7 +29,7 @@ func main() {
 		// otherwise try to save in the $GOPATH if it exits (failing both of these
 		// options, default is to save into /tmp
 	} else if gopath := os.Getenv("GOPATH"); len(gopath) > 0 {
-		dir = gopath + "/src/github.com/singularityware/singularity/docs/man"
+		dir = gopath + "/src/github.com/sylabs/singularity/docs/man"
 	}
 
 	if err := unix.Access(dir, unix.W_OK); err != nil {

@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 const yumDef = "./testdata_good/yum/yum"
