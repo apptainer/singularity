@@ -14,7 +14,8 @@ import (
 	"syscall"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+
+	"github.com/sylabs/singularity/src/pkg/sylog"
 
 	cseccomp "github.com/kubernetes-sigs/cri-o/pkg/seccomp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"

@@ -12,12 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
-	"github.com/singularityware/singularity/src/pkg/util/signal"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/src/pkg/util/signal"
 )
 
 // instance list/stop options

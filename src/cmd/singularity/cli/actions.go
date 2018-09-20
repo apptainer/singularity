@@ -16,22 +16,22 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/build"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/client/cache"
-	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/security"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/env"
-	"github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/pkg/util/uri"
-	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/build"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/client/cache"
+	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/security"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/env"
+	"github.com/sylabs/singularity/src/pkg/util/exec"
+	"github.com/sylabs/singularity/src/pkg/util/uri"
+	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 func init() {
@@ -69,7 +69,8 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
@@ -248,6 +249,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
+
+	if IsWritable && IsWritableTmpfs {
+		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
+		engineConfig.SetWritableTmpfs(false)
+	} else {
+		engineConfig.SetWritableTmpfs(IsWritableTmpfs)
+	}
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)

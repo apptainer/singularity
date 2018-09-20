@@ -6,12 +6,12 @@
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/image"
-	"github.com/singularityware/singularity/src/pkg/network"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/image"
+	"github.com/sylabs/singularity/src/pkg/network"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 )
 
 // Name is the name of the runtime.
@@ -58,6 +58,7 @@ type FileConfig struct {
 type JSONConfig struct {
 	Image         string        `json:"image"`
 	WritableImage bool          `json:"writableImage,omitempty"`
+	WritableTmpfs bool          `json:"writableTmpfs,omitempty"`
 	OverlayImage  []string      `json:"overlayImage,omitempty"`
 	Contain       bool          `json:"container,omitempty"`
 	Nv            bool          `json:"nv,omitempty"`
@@ -412,6 +413,16 @@ func (e *EngineConfig) SetCwd(path string) {
 // GetCwd returns current working directory
 func (e *EngineConfig) GetCwd() string {
 	return e.JSON.Cwd
+}
+
+// SetWritableTmpfs sets writable tmpfs flag
+func (e *EngineConfig) SetWritableTmpfs(writable bool) {
+	e.JSON.WritableTmpfs = writable
+}
+
+// GetWritableTmpfs returns if writable tmpfs is set or no
+func (e *EngineConfig) GetWritableTmpfs() bool {
+	return e.JSON.WritableTmpfs
 }
 
 // SetSecurity sets security feature arguments

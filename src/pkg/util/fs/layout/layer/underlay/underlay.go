@@ -14,10 +14,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
-	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
+	"github.com/sylabs/singularity/src/pkg/util/fs/mount"
 )
 
 const underlayDir = "/underlay"

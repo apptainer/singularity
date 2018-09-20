@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/security/apparmor"
-	"github.com/singularityware/singularity/src/pkg/security/seccomp"
-	"github.com/singularityware/singularity/src/pkg/security/selinux"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/security/apparmor"
+	"github.com/sylabs/singularity/src/pkg/security/seccomp"
+	"github.com/sylabs/singularity/src/pkg/security/selinux"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // Configure applies security related configuration to current process

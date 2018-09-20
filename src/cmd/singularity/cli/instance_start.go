@@ -6,8 +6,8 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
 )
 
 func init() {
@@ -38,6 +38,7 @@ func init() {
 		"uts",
 		"workdir",
 		"writable",
+		"writable-tmpfs",
 	}
 
 	for _, opt := range options {
@@ -49,7 +50,7 @@ func init() {
 
 // InstanceStartCmd singularity instance start
 var InstanceStartCmd = &cobra.Command{
-	Args:                  cobra.MinimumNArgs(2),
+	Args: cobra.MinimumNArgs(2),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/start"}

@@ -21,11 +21,11 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
-	"github.com/singularityware/singularity/src/runtime/engines"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/runtime/engines"
 )
 
 // SMaster initializes a runtime engine and runs it

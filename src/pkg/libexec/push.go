@@ -6,8 +6,8 @@
 package libexec
 
 import (
-	"github.com/singularityware/singularity/src/pkg/client/library"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/client/library"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // PushImage is the function that is responsible for pushing an image to the Sylabs library.

@@ -6,10 +6,10 @@
 package libexec
 
 import (
-	"github.com/singularityware/singularity/src/pkg/build"
-	library "github.com/singularityware/singularity/src/pkg/client/library"
-	shub "github.com/singularityware/singularity/src/pkg/client/shub"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/build"
+	library "github.com/sylabs/singularity/src/pkg/client/library"
+	shub "github.com/sylabs/singularity/src/pkg/client/shub"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // PullLibraryImage is the function that is responsible for pulling an image from a Sylabs library.

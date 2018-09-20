@@ -9,8 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 )
 
 // actionflags.go contains flag variables for action-like commands to draw from
@@ -28,15 +28,16 @@ var (
 	DNS         string
 	Security    []string
 
-	IsBoot       bool
-	IsFakeroot   bool
-	IsCleanEnv   bool
-	IsContained  bool
-	IsContainAll bool
-	IsWritable   bool
-	Nvidia       bool
-	NoHome       bool
-	NoInit       bool
+	IsBoot          bool
+	IsFakeroot      bool
+	IsCleanEnv      bool
+	IsContained     bool
+	IsContainAll    bool
+	IsWritable      bool
+	IsWritableTmpfs bool
+	Nvidia          bool
+	NoHome          bool
+	NoInit          bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -143,6 +144,9 @@ func initBoolVars() {
 
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
+
+	// --writable-tmpfs
+	actionFlags.BoolVar(&IsWritableTmpfs, "writable-tmpfs", false, "Makes the file system accessible as read-write with non persistent data (with overlay support only).")
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
