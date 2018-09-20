@@ -165,12 +165,12 @@ func insertLabelsJSON(b *types.Bundle) error {
 			}
 
 			// make new map into json
-			text, err = json.Marshal(existingLabels)
+			text, err = json.MarshalIndent(existingLabels, "", "\t")
 			if err != nil {
 				return err
 			}
 		} else {
-			text, err = json.Marshal(b.Recipe.ImageData.Labels)
+			text, err = json.MarshalIndent(b.Recipe.ImageData.Labels, "", "\t")
 			if err != nil {
 				return err
 			}
