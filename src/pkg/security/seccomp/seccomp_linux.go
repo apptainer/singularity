@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"

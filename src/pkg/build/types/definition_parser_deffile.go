@@ -16,7 +16,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens

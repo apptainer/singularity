@@ -14,9 +14,9 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 // CreateContainer creates a container

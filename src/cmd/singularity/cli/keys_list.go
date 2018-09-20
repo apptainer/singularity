@@ -8,9 +8,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"os"
 )
