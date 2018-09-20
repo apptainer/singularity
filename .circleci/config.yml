@@ -3,7 +3,7 @@ version: 2.0
 jobs:
   build:
     docker:
-      - image: go:1.11
+      - image: golang:1.11
     working_directory: ~/go/src/github.com/sylabs/singularity"
     steps:
       - checkout
