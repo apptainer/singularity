@@ -12,12 +12,12 @@ import (
 	"path"
 	"text/template"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/auth"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/auth"
 )
 
 // Global variables for singularity CLI
@@ -211,14 +211,17 @@ type envHandle func(*pflag.Flag, string)
 // map of functions to use to bind flags to environment variables
 var flagEnvFuncs = map[string]envHandle{
 	// action flags
-	"bind":     envAppend,
-	"home":     envStringNSlice,
-	"overlay":  envStringNSlice,
-	"scratch":  envStringNSlice,
-	"workdir":  envStringNSlice,
-	"shell":    envStringNSlice,
-	"pwd":      envStringNSlice,
-	"hostname": envStringNSlice,
+	"bind":         envAppend,
+	"home":         envStringNSlice,
+	"overlay":      envStringNSlice,
+	"scratch":      envStringNSlice,
+	"workdir":      envStringNSlice,
+	"shell":        envStringNSlice,
+	"pwd":          envStringNSlice,
+	"hostname":     envStringNSlice,
+	"network":      envStringNSlice,
+	"network-args": envStringNSlice,
+	"dns":          envStringNSlice,
 
 	"boot":       envBool,
 	"fakeroot":   envBool,

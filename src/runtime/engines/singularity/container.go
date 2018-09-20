@@ -10,25 +10,26 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/image"
-	"github.com/singularityware/singularity/src/pkg/syecl"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/fs"
-	"github.com/singularityware/singularity/src/pkg/util/fs/files"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout/layer/overlay"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout/layer/underlay"
-	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
-	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/image"
+	"github.com/sylabs/singularity/src/pkg/network"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
+	"github.com/sylabs/singularity/src/pkg/util/fs/files"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout/layer/overlay"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout/layer/underlay"
+	"github.com/sylabs/singularity/src/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/src/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/src/pkg/util/loop"
+	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 type container struct {
@@ -154,6 +155,107 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return fmt.Errorf("change directory failed: %s", err)
 	}
 
+	if c.netNS && !c.userNS {
+		if os.Geteuid() == 0 {
+			/* hold a reference to container network namespace for cleanup */
+			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+			if err != nil {
+				return fmt.Errorf("can't open network namespace: %s", err)
+			}
+			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
+
+			cniPath := &network.CNIPath{
+				Conf:   engine.EngineConfig.File.CniConfPath,
+				Plugin: engine.EngineConfig.File.CniPluginPath,
+			}
+
+			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+			if err != nil {
+				return fmt.Errorf("%s", err)
+			}
+			netargs := engine.EngineConfig.GetNetworkArgs()
+			if err := setup.SetArgs(netargs); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+
+			if err := setup.AddNetworks(); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+
+			engine.EngineConfig.Network = setup
+		} else {
+			return fmt.Errorf("Network requires root permissions")
+		}
+	}
+
+	return nil
+}
+
+func (c *container) setupWritableSIFImage(img *image.Image, overlayEnabled bool) error {
+	fimg, err := sif.LoadContainerFp(img.File, !img.Writable)
+	if err != nil {
+		return err
+	}
+
+	// Get the default system partition image
+	part, _, err := fimg.GetPartPrimSys()
+	if err != nil {
+		return err
+	}
+
+	// Get descriptor for group associated with system partition
+	descriptors, _, err := fimg.GetPartFromGroup(part.Groupid)
+	if err != nil {
+		return err
+	}
+
+	// Determine if an overlay partition exists
+	overlayPart := 0
+	for _, desc := range descriptors {
+		ptype, err := desc.GetPartType()
+		if err != nil {
+			return err
+		}
+		if ptype == sif.PartOverlay {
+			fstype, err := desc.GetFsType()
+			if err != nil {
+				continue
+			}
+			if fstype == sif.FsExt3 {
+				if overlayPart == 0 {
+					if !overlayEnabled {
+						return fmt.Errorf("Can't mount SIF image as read-write, overlay is not enabled")
+					}
+
+					imgCopy := *img
+
+					imgCopy.Type = image.EXT3
+					imgCopy.Offset = uint64(desc.Fileoff)
+					imgCopy.Size = uint64(desc.Filelen)
+					imgCopy.RootFS = false
+					imgCopy.Writable = true
+
+					imglist := c.engine.EngineConfig.GetImageList()
+					imglist = append(imglist, imgCopy)
+
+					c.engine.EngineConfig.SetImageList(imglist)
+
+					overlayImg := c.engine.EngineConfig.GetOverlayImage()
+					overlayImg = append(overlayImg, imgCopy.Path)
+					c.engine.EngineConfig.SetOverlayImage(overlayImg)
+				}
+				overlayPart++
+			}
+		}
+	}
+
+	if overlayPart > 1 {
+		sylog.Warningf("more than one writable overlay partition found, taking the first")
+	} else if overlayPart == 0 {
+		return fmt.Errorf("no overlay partition found")
+	}
+
 	return nil
 }
 
@@ -162,17 +264,42 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existant paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
-	if c.engine.EngineConfig.GetWritableImage() {
-		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
-		return c.setupDefaultLayout(system)
-	}
+	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
+	overlayEnabled := false
 
 	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
 		switch c.engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
-			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
-			return c.setupOverlayLayout(system)
+			overlayEnabled = true
 		}
+	}
+
+	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
+		imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
+		if err != nil {
+			return err
+		}
+
+		if imgObject.Type == image.SIF {
+			err = c.setupWritableSIFImage(imgObject, overlayEnabled)
+			if err == nil {
+				return c.setupOverlayLayout(system)
+			}
+			sylog.Warningf("%s", err)
+		} else {
+			sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
+		}
+
+		return c.setupDefaultLayout(system)
+	}
+
+	if overlayEnabled {
+		sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
+		return c.setupOverlayLayout(system)
+	}
+
+	if writableTmpfs {
+		sylog.Warningf("Ignoring --writable-tmpfs as it requires overlay support")
 	}
 
 	if c.engine.EngineConfig.File.EnableUnderlay {
@@ -464,18 +591,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
-		// query the ECL module, proceed if an ecl config file is found
-		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
-		if err == nil {
-			if err = ecl.ValidateConfig(); err != nil {
-				return err
-			}
-			_, err := ecl.ShouldRun(imageObject.File.Name())
-			if err != nil {
-				return err
-			}
-		}
-
 		// Load the SIF file
 		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
 		if err != nil {
@@ -558,6 +673,29 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
 	hasUpper := false
 
+	if c.engine.EngineConfig.GetWritableTmpfs() {
+		sylog.Debugf("Setup writable tmpfs overlay")
+
+		if err := c.session.AddDir("/upper"); err != nil {
+			return err
+		}
+		if err := c.session.AddDir("/work"); err != nil {
+			return err
+		}
+
+		upper, _ := c.session.GetPath("/upper")
+		work, _ := c.session.GetPath("/work")
+
+		if err := ov.SetUpperDir(upper); err != nil {
+			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+		if err := ov.SetWorkDir(work); err != nil {
+			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+
+		hasUpper = true
+	}
+
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
 		splitted := strings.SplitN(img, ":", 2)
 
@@ -616,10 +754,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 
 		if imageObject.Writable && !hasUpper {
-			if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
-				return err
-			}
-
 			upper := filepath.Join(dst, "upper")
 			work := filepath.Join(dst, "work")
 
@@ -633,6 +767,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			hasUpper = true
 		}
 	}
+
+	if hasUpper {
+		if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

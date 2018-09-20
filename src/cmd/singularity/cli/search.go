@@ -6,10 +6,10 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/library/client"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/client/library"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 var (
@@ -29,8 +29,8 @@ func init() {
 // SearchCmd singularity search
 var SearchCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(1),
-	PreRun: sylabsToken,
+	Args:                  cobra.ExactArgs(1),
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := client.SearchLibrary(args[0], SearchLibraryURI, authToken); err != nil {
 			sylog.Fatalf("Couldn't search library: %v", err)

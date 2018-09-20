@@ -13,17 +13,21 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/env"
-	"github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/build"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/client/cache"
+	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/env"
+	"github.com/sylabs/singularity/src/pkg/util/exec"
+	"github.com/sylabs/singularity/src/pkg/util/uri"
+	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 func init() {
@@ -43,6 +47,9 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("network"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
@@ -58,7 +65,8 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().SetInterspersed(false)
@@ -70,11 +78,46 @@ func init() {
 
 }
 
+func replaceURIWithImage(cmd *cobra.Command, args []string) {
+	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
+	if t, _ := uri.SplitURI(args[0]); t == "instance" || t == "" {
+		return
+	}
+
+	sum, err := ociclient.ImageSHA(args[0])
+	if err != nil {
+		sylog.Fatalf("Failed to get SHA of %v: %v", args[0], err)
+	}
+
+	name := uri.NameFromURI(args[0])
+	imgabs := cache.OciTempImage(sum, name)
+
+	if exists, err := cache.OciTempExists(sum, name); err != nil {
+		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
+	} else if !exists {
+		sylog.Infof("Converting OCI blobs to SIF format")
+		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true)
+		if err != nil {
+			sylog.Fatalf("Unable to create new build: %v", err)
+		}
+
+		if err := b.Full(); err != nil {
+			sylog.Fatalf("Unable to build: %v", err)
+		}
+
+		sylog.Infof("Image cached as SIF at %s", imgabs)
+	}
+
+	args[0] = imgabs
+	return
+}
+
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(2),
+	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		execStarter(cmd, args[0], a, "")
@@ -91,6 +134,7 @@ var ShellCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
 		execStarter(cmd, args[0], a, "")
@@ -107,6 +151,7 @@ var RunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		execStarter(cmd, args[0], a, "")
@@ -162,6 +207,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	engineConfig.SetBindPath(BindPaths)
+	engineConfig.SetNetwork(Network)
+	engineConfig.SetDNS(DNS)
+	engineConfig.SetNetworkArgs(NetworkArgs)
 	engineConfig.SetOverlayImage(OverlayPath)
 	engineConfig.SetWritableImage(IsWritable)
 	engineConfig.SetNoHome(NoHome)
@@ -171,6 +219,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+
+	if IsWritable && IsWritableTmpfs {
+		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
+		engineConfig.SetWritableTmpfs(false)
+	} else {
+		engineConfig.SetWritableTmpfs(IsWritableTmpfs)
+	}
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)

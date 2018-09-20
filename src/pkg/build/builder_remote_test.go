@@ -20,9 +20,9 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/test"
-	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/test"
+	useragent "github.com/sylabs/singularity/src/pkg/util/user-agent"
 )
 
 const (

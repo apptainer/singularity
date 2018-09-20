@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 	"golang.org/x/sys/unix"
 )
 

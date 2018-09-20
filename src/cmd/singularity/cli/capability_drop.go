@@ -6,8 +6,8 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
 )
 
 func init() {
@@ -31,7 +31,7 @@ func init() {
 
 // CapabilityDropCmd singularity capability drop
 var CapabilityDropCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		manageCap(args[0], capDrop)

@@ -8,9 +8,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"os"
 )
@@ -26,7 +26,7 @@ func init() {
 
 // KeysListCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysListCmd = &cobra.Command{
-	Args: cobra.ExactArgs(0),
+	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := doKeysListCmd(secret); err != nil {

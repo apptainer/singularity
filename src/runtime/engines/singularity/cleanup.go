@@ -10,10 +10,10 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
 
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 /*
@@ -24,6 +24,12 @@ import (
 // CleanupContainer cleans up the container
 func (engine *EngineOperations) CleanupContainer() error {
 	sylog.Debugf("Cleanup container")
+
+	if engine.EngineConfig.Network != nil {
+		if err := engine.EngineConfig.Network.DelNetworks(); err != nil {
+			return err
+		}
+	}
 
 	if engine.EngineConfig.GetInstance() {
 		uid := os.Getuid()

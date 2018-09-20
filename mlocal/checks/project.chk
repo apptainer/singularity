@@ -7,25 +7,20 @@ set -e
 makecond="$builddir/Makefile.cond"
 echo "go_TAG += $BUILDTAG" > $makecond
 
-########################
-# git version
-########################
-git_version=`git describe --match 'v[0-9]*' --dirty --always | sed -e "s/^v//"`
-
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
-config_add_def PACKAGE_VERSION \"$git_version\"
-config_add_def PACKAGE_STRING \"singularity $git_version\"
+config_add_def PACKAGE_VERSION \"$package_version\"
+config_add_def PACKAGE_STRING \"singularity $package_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
 config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
-config_add_def EXECPREFIX PREFIX
+config_add_def EXECPREFIX \"$exec_prefix\"
 config_add_def BINDIR EXECPREFIX \"/bin\"
 config_add_def LIBEXECDIR EXECPREFIX \"/libexec\"
 config_add_def SBINDIR LIBEXECDIR \"/singularity/bin\"
-config_add_def DATAROOTDIR PREFIX \"/share\"
+config_add_def DATAROOTDIR EXECPREFIX \"/share\"
 config_add_def DATADIR DATAROOTDIR
 config_add_def SYSCONFDIR PREFIX \"/etc\"
 config_add_def SHAREDSTARTEDIR PREFIX \"/com\"

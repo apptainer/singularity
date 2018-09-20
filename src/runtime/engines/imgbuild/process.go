@@ -14,7 +14,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // StartProcess runs the %post script

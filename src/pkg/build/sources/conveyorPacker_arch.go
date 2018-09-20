@@ -17,8 +17,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 const (

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/src/pkg/util/fs/mount"
 )
 
 const rootFsDir = "/rootfs"

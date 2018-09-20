@@ -9,8 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 )
 
 // actionflags.go contains flag variables for action-like commands to draw from
@@ -23,16 +23,20 @@ var (
 	PwdPath     string
 	ShellPath   string
 	Hostname    string
+	Network     string
+	NetworkArgs []string
+	DNS         string
 
-	IsBoot       bool
-	IsFakeroot   bool
-	IsCleanEnv   bool
-	IsContained  bool
-	IsContainAll bool
-	IsWritable   bool
-	Nvidia       bool
-	NoHome       bool
-	NoInit       bool
+	IsBoot          bool
+	IsFakeroot      bool
+	IsCleanEnv      bool
+	IsContained     bool
+	IsContainAll    bool
+	IsWritable      bool
+	IsWritableTmpfs bool
+	Nvidia          bool
+	NoHome          bool
+	NoInit          bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -108,6 +112,20 @@ func initPathVars() {
 	actionFlags.SetAnnotation("hostname", "argtag", []string{"<name>"})
 	actionFlags.SetAnnotation("hostname", "envkey", []string{"HOSTNAME"})
 
+	// --network
+	actionFlags.StringVar(&Network, "network", "bridge", "Specify desired network type separated by commas, each network will bring up a dedicated interface inside container")
+	actionFlags.SetAnnotation("network", "argtag", []string{"<name>"})
+	actionFlags.SetAnnotation("network", "envkey", []string{"NETWORK"})
+
+	// --network-args
+	actionFlags.StringSliceVar(&NetworkArgs, "network-args", []string{}, "Specify network arguments to pass to CNI plugins")
+	actionFlags.SetAnnotation("network-args", "argtag", []string{"<name>"})
+	actionFlags.SetAnnotation("network-args", "envkey", []string{"NETWORK_ARGS"})
+
+	// --dns
+	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
+	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
+	actionFlags.SetAnnotation("dns", "envkey", []string{"DNS"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
@@ -139,6 +157,9 @@ func initBoolVars() {
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
 	actionFlags.SetAnnotation("writable", "envkey", []string{"WRITABLE"})
+
+	// --writable-tmpfs
+	actionFlags.BoolVar(&IsWritableTmpfs, "writable-tmpfs", false, "Makes the file system accessible as read-write with non persistent data (with overlay support only).")
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
