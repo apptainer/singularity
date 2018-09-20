@@ -12,9 +12,13 @@ jobs:
           command: |-
             apt-get update
             apt-get -y --force-yes install libssl-dev uuid-dev libgpgme11-dev
-            go get -u -v github.com/golang/dep/cmd/dep
+            go get -u github.com/golang/dep/cmd/dep
             echo 'export PATH=`go env GOPATH`/bin:$PATH' >> $BASH_ENV
             source $BASH_ENV
-      - run: ./mconfig
-      - run: make -C builddir/
+      - run: 
+          name: Build Singularity
+          command: |-
+            export PATH=`go env GOPATH`/bin:$PATH`
+            ./mconfig
+            make -C builddir/
 
