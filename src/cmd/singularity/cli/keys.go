@@ -1,13 +1,13 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
 )
 
 const (
@@ -29,7 +29,7 @@ func init() {
 
 // KeysCmd is the 'keys' command that allows management of key stores
 var KeysCmd = &cobra.Command{
-	Run: nil,
+	Run:                   nil,
 	DisableFlagsInUseLine: true,
 
 	Use:     docs.KeysUse,

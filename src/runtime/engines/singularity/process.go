@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package singularity
@@ -16,12 +16,14 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
-	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/pkg/security"
+
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // StartProcess starts the process
@@ -49,6 +51,16 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				break
 			}
 		}
+	}
+
+	for _, img := range engine.EngineConfig.GetImageList() {
+		if err := syscall.Close(int(img.Fd)); err != nil {
+			return fmt.Errorf("failed to close file descriptor for %s", img.Path)
+		}
+	}
+
+	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
@@ -148,6 +160,10 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		gid := os.Getgid()
 		name := engine.CommonConfig.ContainerID
 		privileged := true
+
+		if err := os.Chdir("/"); err != nil {
+			return fmt.Errorf("failed to change directory to /: %s", err)
+		}
 
 		if engine.EngineConfig.OciConfig.Linux != nil {
 			for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {

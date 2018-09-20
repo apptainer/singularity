@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package main
@@ -21,11 +21,11 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
-	"github.com/singularityware/singularity/src/runtime/engines"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/runtime/engines"
 )
 
 // SMaster initializes a runtime engine and runs it
@@ -107,6 +107,12 @@ func SMaster(socket int, masterSocket int, starterConfig *starter.Config, jsonBy
 	runtime.UnlockOSThread()
 
 	if fatal != nil {
+		if starterConfig.GetInstance() {
+			if os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+			}
+		}
+		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -9,8 +9,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/pflag"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 )
 
 // actionflags.go contains flag variables for action-like commands to draw from
@@ -23,16 +23,20 @@ var (
 	PwdPath     string
 	ShellPath   string
 	Hostname    string
+	Network     string
+	NetworkArgs []string
+	DNS         string
 
-	IsBoot       bool
-	IsFakeroot   bool
-	IsCleanEnv   bool
-	IsContained  bool
-	IsContainAll bool
-	IsWritable   bool
-	Nvidia       bool
-	NoHome       bool
-	NoInit       bool
+	IsBoot          bool
+	IsFakeroot      bool
+	IsCleanEnv      bool
+	IsContained     bool
+	IsContainAll    bool
+	IsWritable      bool
+	IsWritableTmpfs bool
+	Nvidia          bool
+	NoHome          bool
+	NoInit          bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -99,6 +103,18 @@ func initPathVars() {
 	// --hostname
 	actionFlags.StringVar(&Hostname, "hostname", "", "Set container hostname")
 	actionFlags.SetAnnotation("hostname", "argtag", []string{"<name>"})
+
+	// --network
+	actionFlags.StringVar(&Network, "network", "bridge", "Specify desired network type separated by commas, each network will bring up a dedicated interface inside container")
+	actionFlags.SetAnnotation("network", "argtag", []string{"<name>"})
+
+	// --network-args
+	actionFlags.StringSliceVar(&NetworkArgs, "network-args", []string{}, "Specify network arguments to pass to CNI plugins")
+	actionFlags.SetAnnotation("network-args", "argtag", []string{"<name>"})
+
+	// --dns
+	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
+	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
@@ -123,6 +139,9 @@ func initBoolVars() {
 
 	// -w|--writable
 	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "By default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
+
+	// --writable-tmpfs
+	actionFlags.BoolVar(&IsWritableTmpfs, "writable-tmpfs", false, "Makes the file system accessible as read-write with non persistent data (with overlay support only).")
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")

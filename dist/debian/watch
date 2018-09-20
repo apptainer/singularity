@@ -1,5 +1,5 @@
 version=3
 
 opts="filenamemangle=s/(?:.*)?v?(\d[\d\.]*)\.tar\.gz/singularity-$1.tar.gz/" \
-  https://github.com/singularityware/singularity/tags (?:.*/)?v?(\d[\d\.]*)\.tar\.gz
+  https://github.com/sylabs/singularity/tags (?:.*/)?v?(\d[\d\.]*)\.tar\.gz
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package build
@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types"
 )
 
 // validURIs contains a list of known uris
@@ -24,7 +24,7 @@ var validURIs = map[string]bool{
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
 type Conveyor interface {
-	Get(types.Definition) error
+	Get(*types.Bundle) error
 }
 
 // Packer is the type which is responsible for installing the chroot directory,

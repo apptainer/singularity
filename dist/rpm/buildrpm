@@ -1,0 +1,25 @@
+#!/bin/bash
+if [ -f dist/rpm/singularity.spec.in ]; then
+    cd dist/rpm
+elif [ ! -f singularity.spec.in ]; then
+    echo "Run this from top level or dist/rpm directory" >&2
+    exit 1
+fi
+if [ ! -f singularity.spec ]; then
+    echo "Run mconfig first" >&2
+    exit 1
+fi
+VERSION="`sed -n "s/^Version: //p" singularity.spec`"
+rm -f *.tar.gz
+rm -f singularity-$VERSION
+ln -s ../.. singularity-$VERSION
+# Give the paths under singularity-$VERSION to tar with wildcards so
+#  the symlink will be followed, without having to use tar -h which 
+#  dereferences all symlinks.
+tar czf singularity-$VERSION.tar.gz \
+        --exclude .git --exclude builddir --exclude vendor \
+        --exclude dist/rpm/*.tar.gz --exclude dist/rpm/singularity.spec \
+        --exclude dist/rpm/singularity-$VERSION \
+        singularity.spec singularity-$VERSION/.??* singularity-$VERSION/*
+rm singularity-$VERSION
+rpmbuild -ta singularity-$VERSION.tar.gz

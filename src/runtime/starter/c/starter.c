@@ -2,7 +2,7 @@
   Copyright (c) 2018, Sylabs, Inc. All rights reserved.
 
   This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE file distributed with the sources of this project regarding
+  consult LICENSE.md file distributed with the sources of this project regarding
   your rights to use or distribute this software.
 */
 
@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <setjmp.h>
 #include <sys/syscall.h>
+#include <net/if.h>
 #include <sys/eventfd.h>
 
 #ifdef SINGULARITY_SECUREBITS
@@ -641,7 +642,7 @@ __attribute__((constructor)) static void init(void) {
      *  This is required so that all processes works with same files/directories
      *  to minimize race conditions
      */
-    stage_pid = fork_ns(CLONE_FILES);
+    stage_pid = fork_ns(CLONE_FILES|CLONE_FS);
     if ( stage_pid == 0 ) {
         set_parent_death_signal(SIGKILL);
 
@@ -651,7 +652,7 @@ __attribute__((constructor)) static void init(void) {
          *  stage1 is responsible for singularity configuration file parsing, handle user input,
          *  read capabilities, check what namespaces is required.
          */
-        if ( config.isSuid || geteuid() == 0 ) {
+        if ( config.isSuid ) {
             priv_escalate();
             prepare_scontainer_stage(SCONTAINER_STAGE1);
         }
@@ -728,10 +729,6 @@ __attribute__((constructor)) static void init(void) {
         singularity_message(VERBOSE, "Run as instance\n");
         int forked = fork();
         if ( forked == 0 ) {
-            if ( chdir("/") < 0 ) {
-                singularity_message(ERROR, "Can't change directory to /: %s\n", strerror(errno));
-                exit(1);
-            }
             if ( setsid() < 0 ) {
                 singularity_message(ERROR, "Can't set session leader: %s\n", strerror(errno));
                 exit(1);
@@ -770,6 +767,9 @@ __attribute__((constructor)) static void init(void) {
             pause();
         }
     }
+
+    /* relinquish CPU to apply current directory change for current thread */
+    sched_yield();
 
     if ( (config.nsFlags & CLONE_NEWUSER) == 0 && get_nspath(user) == NULL ) {
         priv_escalate();
@@ -930,6 +930,26 @@ __attribute__((constructor)) static void init(void) {
                     singularity_message(ERROR, "Failed to create network namespace: %s\n", strerror(errno));
                     exit(1);
                 }
+
+                struct ifreq req;
+                int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+                if ( sockfd < 0 ) {
+                    singularity_message(ERROR, "Unable to open AF_INET socket: %s\n", strerror(errno));
+                    exit(1);
+                }
+
+                memset(&req, 0, sizeof(req));
+                strncpy(req.ifr_name, "lo", IFNAMSIZ);
+
+                req.ifr_flags |= IFF_UP;
+
+                singularity_message(DEBUG, "Bringing up network loopback interface\n");
+                if ( ioctl(sockfd, SIOCSIFFLAGS, &req) < 0 ) {
+                    singularity_message(ERROR, "Failed to set flags on interface: %s\n", strerror(errno));
+                    exit(1);
+                }
+                close(sockfd);
             }
         }
         if ( get_nspath(uts) ) {

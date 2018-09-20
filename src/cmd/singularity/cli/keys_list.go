@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package cli
@@ -8,9 +8,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"os"
 )
@@ -24,7 +24,7 @@ func init() {
 
 // KeysListCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysListCmd = &cobra.Command{
-	Args: cobra.ExactArgs(0),
+	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := doKeysListCmd(secret); err != nil {

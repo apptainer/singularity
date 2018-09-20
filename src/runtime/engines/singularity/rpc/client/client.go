@@ -1,15 +1,16 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package client
 
 import (
 	"net/rpc"
+	"os"
 
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
+	"github.com/sylabs/singularity/src/pkg/util/loop"
+	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
 
 // RPC holds the state necessary for remote procedure calls
@@ -33,9 +34,10 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 }
 
 // Mkdir calls the mkdir RPC using the supplied arguments
-func (t *RPC) Mkdir(path string) (int, error) {
+func (t *RPC) Mkdir(path string, perm os.FileMode) (int, error) {
 	arguments := &args.MkdirArgs{
 		Path: path,
+		Perm: perm,
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".Mkdir", arguments, &reply)
@@ -71,5 +73,32 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".SetHostname", arguments, &reply)
+	return reply, err
+}
+
+// HasNamespace calls the HasNamespace RPC using the supplied arguments
+func (t *RPC) HasNamespace(nstype string) (bool, error) {
+	arguments := &args.HasNamespaceArgs{
+		NsType: nstype,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".HasNamespace", arguments, &reply)
+	if err != nil {
+		return false, err
+	}
+	if reply == 1 {
+		return true, err
+	}
+	return false, err
+}
+
+// SetFsID calls the setfsid RPC using the supplied arguments
+func (t *RPC) SetFsID(uid int, gid int) (int, error) {
+	arguments := &args.SetFsIDArgs{
+		UID: uid,
+		GID: gid,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".SetFsID", arguments, &reply)
 	return reply, err
 }

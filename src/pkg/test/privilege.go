@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package test
@@ -10,12 +10,22 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"runtime"
+	"strconv"
 	"syscall"
 	"testing"
 )
 
 var origUID, origGID, unprivUID, unprivGID int
+var origHome, unprivHome string
+
+const (
+	// CacheDirPriv is the directory the cachedir gets set to when running privileged
+	CacheDirPriv = "/tmp/WithPrivilege"
+	// CacheDirUnpriv is the directory the cachedir gets set to when running unprivileged
+	CacheDirUnpriv = "/tmp/WithoutPrivilege"
+)
 
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
@@ -26,7 +36,7 @@ func EnsurePrivilege(t *testing.T) {
 }
 
 // DropPrivilege drops privilege. Use this at the start of a test that does
-// not require elevated privleges. A matching call to ResetPrivilege must
+// not require elevated privileges. A matching call to ResetPrivilege must
 // occur before the test completes (a defer statement is recommended.)
 func DropPrivilege(t *testing.T) {
 
@@ -43,7 +53,14 @@ func DropPrivilege(t *testing.T) {
 		if err := syscall.Setresuid(unprivUID, unprivUID, origUID); err != nil {
 			t.Fatalf("failed to set user identity: %v", err)
 		}
+
+		if err := os.Setenv("HOME", unprivHome); err != nil {
+			t.Fatalf("failed to set HOME environment variable: %v", err)
+		}
 	}
+
+	// set SINGULARITY_CACHEDIR
+	os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
 }
 
 // ResetPrivilege returns effective privilege to the original user.
@@ -54,7 +71,14 @@ func ResetPrivilege(t *testing.T) {
 	if err := syscall.Setresgid(origGID, origGID, unprivGID); err != nil {
 		t.Fatalf("failed to reset group identity: %v", err)
 	}
+	if err := os.Setenv("HOME", origHome); err != nil {
+		t.Fatalf("failed to reset HOME environment variable: %v", err)
+	}
+
 	runtime.UnlockOSThread()
+
+	// set SINGULARITY_CACHEDIR
+	os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 }
 
 // WithPrivilege wraps the supplied test function with calls to ensure
@@ -62,6 +86,9 @@ func ResetPrivilege(t *testing.T) {
 func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
+
+		// set SINGULARITY_CACHEDIR
+		os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 
 		EnsurePrivilege(t)
 
@@ -77,6 +104,9 @@ func WithoutPrivilege(f func(t *testing.T)) func(t *testing.T) {
 
 		DropPrivilege(t)
 		defer ResetPrivilege(t)
+
+		// set SINGULARITY_CACHEDIR
+		os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
 
 		f(t)
 	}
@@ -123,5 +153,20 @@ func getUnprivIDs(pid int) (uid int, gid int) {
 func init() {
 	origUID = os.Getuid()
 	origGID = os.Getgid()
+	origUser, err := user.LookupId(strconv.Itoa(origUID))
+
+	if err != nil {
+		log.Fatalf("err: %s", err)
+	}
+
+	origHome = origUser.HomeDir
+
 	unprivUID, unprivGID = getUnprivIDs(os.Getpid())
+	unprivUser, err := user.LookupId(strconv.Itoa(unprivUID))
+
+	if err != nil {
+		log.Fatalf("err: %s", err)
+	}
+
+	unprivHome = unprivUser.HomeDir
 }

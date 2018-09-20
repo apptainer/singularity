@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -29,15 +28,14 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-
-	//"github.com/singularityware/singularity/src/pkg/image"
-	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	sytypes "github.com/sylabs/singularity/src/pkg/build/types"
+	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/shell"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
 type OCIConveyorPacker struct {
-	recipe    sytypes.Definition
 	srcRef    types.ImageReference
 	b         *sytypes.Bundle
 	tmpfsRef  types.ImageReference
@@ -46,29 +44,30 @@ type OCIConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
+func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
+
+	cp.b = b
+
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	cp.policyCtx, err = signature.NewPolicyContext(policy)
 	if err != nil {
-		return
+		return err
 	}
 
-	cp.recipe = recipe
-
-	switch recipe.Header["bootstrap"] {
+	switch b.Recipe.Header["bootstrap"] {
 	case "docker":
-		ref := "//" + recipe.Header["from"]
+		ref := "//" + b.Recipe.Header["from"]
 		cp.srcRef, err = docker.ParseReference(ref)
 	case "docker-archive":
-		cp.srcRef, err = dockerarchive.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = dockerarchive.ParseReference(b.Recipe.Header["from"])
 	case "docker-daemon":
-		cp.srcRef, err = dockerdaemon.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = dockerdaemon.ParseReference(b.Recipe.Header["from"])
 	case "oci":
-		cp.srcRef, err = oci.ParseReference(recipe.Header["from"])
+		cp.srcRef, err = oci.ParseReference(b.Recipe.Header["from"])
 	case "oci-archive":
 		if os.Geteuid() == 0 {
 			// As root, the direct oci-archive handling will work
-			cp.srcRef, err = ociarchive.ParseReference(recipe.Header["from"])
+			cp.srcRef, err = ociarchive.ParseReference(b.Recipe.Header["from"])
 		} else {
 			// As non-root we need to do a dumb tar extraction first
 			tmpDir, err := ioutil.TempDir("", "temp-oci-")
@@ -77,7 +76,7 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 			}
 			defer os.RemoveAll(tmpDir)
 
-			refParts := strings.SplitN(recipe.Header["from"], ":", 2)
+			refParts := strings.SplitN(b.Recipe.Header["from"], ":", 2)
 			err = cp.extractArchive(refParts[0], tmpDir)
 			if err != nil {
 				return fmt.Errorf("error extracting the OCI archive file: %v", err)
@@ -91,33 +90,31 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 		}
 
 	default:
-		return fmt.Errorf("OCI ConveyorPacker does not support %s", recipe.Header["bootstrap"])
+		return fmt.Errorf("OCI ConveyorPacker does not support %s", b.Recipe.Header["bootstrap"])
 	}
 
 	if err != nil {
 		return fmt.Errorf("Invalid image source: %v", err)
 	}
 
-	cp.b, err = sytypes.NewBundle("sbuild-oci")
+	// Grab the modified source ref from the cache
+	cp.srcRef, err = ociclient.ConvertReference(cp.srcRef)
 	if err != nil {
-		return
+		return err
 	}
 
+	// To to do the RootFS extraction we also have to have a location that
+	// contains *only* this image
 	cp.tmpfsRef, err = oci.ParseReference(cp.b.Path + ":" + "tmp")
-	if err != nil {
-		return
-	}
 
 	err = cp.fetch()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	cp.imgConfig, err = cp.getConfig()
 	if err != nil {
-		log.Fatal(err)
-		return
+		return err
 	}
 
 	return nil
@@ -125,7 +122,6 @@ func (cp *OCIConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 
 // Pack puts relevant objects in a Bundle!
 func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
-
 	err := cp.unpackTmpfs()
 	if err != nil {
 		return nil, fmt.Errorf("While unpacking tmpfs: %v", err)
@@ -146,14 +142,13 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
 	}
 
-	cp.b.Recipe = cp.recipe
-
 	return cp.b, nil
 }
 
 func (cp *OCIConveyorPacker) fetch() (err error) {
+	// cp.srcRef contains the cache source reference
 	err = copy.Image(context.Background(), cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
-		ReportWriter: os.Stderr,
+		ReportWriter: ioutil.Discard,
 	})
 	if err != nil {
 		return err
@@ -163,7 +158,7 @@ func (cp *OCIConveyorPacker) fetch() (err error) {
 }
 
 func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
-	img, err := cp.tmpfsRef.NewImage(context.Background(), nil)
+	img, err := cp.srcRef.NewImage(context.Background(), nil)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
@@ -281,24 +276,24 @@ func (cp *OCIConveyorPacker) insertRunScript() (err error) {
 	}
 
 	if len(cp.imgConfig.Entrypoint) > 0 {
-		_, err = f.WriteString("OCI_ENTRYPOINT=\"" + strings.Join(cp.imgConfig.Entrypoint, " ") + "\"\n")
+		_, err = f.WriteString("OCI_ENTRYPOINT='" + shell.ArgsQuoted(cp.imgConfig.Entrypoint) + "'\n")
 		if err != nil {
 			return
 		}
 	} else {
-		_, err = f.WriteString("OCI_ENTRYPOINT=\"\"\n")
+		_, err = f.WriteString("OCI_ENTRYPOINT=''\n")
 		if err != nil {
 			return
 		}
 	}
 
 	if len(cp.imgConfig.Cmd) > 0 {
-		_, err = f.WriteString("OCI_CMD=\"" + strings.Join(cp.imgConfig.Cmd, " ") + "\"\n")
+		_, err = f.WriteString("OCI_CMD='" + shell.ArgsQuoted(cp.imgConfig.Cmd) + "'\n")
 		if err != nil {
 			return
 		}
 	} else {
-		_, err = f.WriteString("OCI_CMD=\"\"\n")
+		_, err = f.WriteString("OCI_CMD=''\n")
 		if err != nil {
 			return
 		}
@@ -326,7 +321,7 @@ else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-exec $SINGULARITY_OCI_RUN
+eval ${SINGULARITY_OCI_RUN}
 
 `)
 	if err != nil {
@@ -357,11 +352,19 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 	}
 
 	for _, element := range cp.imgConfig.Env {
-		_, err = f.WriteString("export " + element + "\n")
-		if err != nil {
-			return
-		}
 
+		envParts := strings.SplitN(element, "=", 2)
+		if len(envParts) == 1 {
+			_, err = f.WriteString("export " + shell.Escape(element) + "\n")
+			if err != nil {
+				return
+			}
+		} else {
+			_, err = f.WriteString("export " + envParts[0] + "=\"" + shell.Escape(envParts[1]) + "\"\n")
+			if err != nil {
+				return
+			}
+		}
 	}
 
 	f.Sync()

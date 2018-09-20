@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 // +build seccomp
@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"
@@ -63,6 +63,11 @@ func prctl(option uintptr, arg2 uintptr, arg3 uintptr, arg4 uintptr, arg5 uintpt
 func hasConditionSupport() bool {
 	major, minor, micro := lseccomp.GetLibraryVersion()
 	return (major > 2) || (major == 2 && minor >= 2) || (major == 2 && minor == 2 && micro >= 1)
+}
+
+// Enabled returns wether seccomp is enabled or not
+func Enabled() bool {
+	return true
 }
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process
