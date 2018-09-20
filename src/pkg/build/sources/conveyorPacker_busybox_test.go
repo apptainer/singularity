@@ -9,9 +9,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/build/sources"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/build/sources"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 const busyBoxDef = "../testdata_good/busybox/busybox"

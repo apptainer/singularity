@@ -10,8 +10,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
-	"github.com/singularityware/singularity/src/pkg/util/fs"
+	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
 )
 
 func TestLayout(t *testing.T) {

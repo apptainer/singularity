@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 func TestGenConf(t *testing.T) {

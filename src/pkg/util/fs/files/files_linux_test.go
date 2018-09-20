@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 func TestGroup(t *testing.T) {

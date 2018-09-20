@@ -11,7 +11,7 @@ package user
 import (
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 func TestGetPwUID(t *testing.T) {

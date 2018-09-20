@@ -13,16 +13,17 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/image"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/capabilities"
-	"github.com/singularityware/singularity/src/pkg/util/fs"
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
-	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/image"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/syecl"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/capabilities"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -398,6 +399,12 @@ func (e *EngineOperations) loadImages() error {
 	if err != nil {
 		return err
 	}
+
+	if writable && !img.Writable {
+		sylog.Warningf("Can't set writable flag on image, no write permissions")
+		e.EngineConfig.SetWritableImage(false)
+	}
+
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
@@ -412,6 +419,19 @@ func (e *EngineOperations) loadImages() error {
 		}
 		if cwd != img.Path {
 			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
+		}
+	}
+	if img.Type == image.SIF {
+		// query the ECL module, proceed if an ecl config file is found
+		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
+		if err == nil {
+			if err = ecl.ValidateConfig(); err != nil {
+				return err
+			}
+			_, err := ecl.ShouldRunFp(img.File)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	img.RootFS = true

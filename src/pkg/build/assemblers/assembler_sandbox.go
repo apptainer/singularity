@@ -13,8 +13,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/otiai10/copy"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // SandboxAssembler doesnt store anything
@@ -51,8 +52,15 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		os.RemoveAll(path)
 	}
 	if err := os.Rename(b.Rootfs(), path); err != nil {
-		sylog.Errorf("Sandbox Assemble Failed: %s", err)
-		return err
+		if err := copy.Copy(b.Rootfs(), path); err != nil {
+			sylog.Errorf("Sandbox Assemble Failed: %s", err)
+			return err
+		}
+
+		if err := os.RemoveAll(b.Rootfs()); err != nil {
+			sylog.Errorf("Unable to remove Bundle directory: %s", err)
+			return err
+		}
 	}
 
 	return nil
@@ -157,12 +165,12 @@ func insertLabelsJSON(b *types.Bundle) error {
 			}
 
 			// make new map into json
-			text, err = json.Marshal(existingLabels)
+			text, err = json.MarshalIndent(existingLabels, "", "\t")
 			if err != nil {
 				return err
 			}
 		} else {
-			text, err = json.Marshal(b.Recipe.ImageData.Labels)
+			text, err = json.MarshalIndent(b.Recipe.ImageData.Labels, "", "\t")
 			if err != nil {
 				return err
 			}

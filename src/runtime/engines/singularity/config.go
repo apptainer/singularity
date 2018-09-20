@@ -6,11 +6,12 @@
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/image"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/image"
+	"github.com/sylabs/singularity/src/pkg/network"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 )
 
 // Name is the name of the runtime.
@@ -49,12 +50,15 @@ type FileConfig struct {
 	AllowRootCapabilities   bool     `default:"yes" authorized:"yes,no" directive:"allow root capabilities"`
 	AllowUserCapabilities   bool     `default:"no" authorized:"yes,no" directive:"allow user capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
+	CniConfPath             string   `directive:"cni configuration path"`
+	CniPluginPath           string   `directive:"cni plugin path"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
 type JSONConfig struct {
 	Image         string        `json:"image"`
 	WritableImage bool          `json:"writableImage,omitempty"`
+	WritableTmpfs bool          `json:"writableTmpfs,omitempty"`
 	OverlayImage  []string      `json:"overlayImage,omitempty"`
 	Contain       bool          `json:"container,omitempty"`
 	Nv            bool          `json:"nv,omitempty"`
@@ -80,15 +84,19 @@ type JSONConfig struct {
 	NoHome        bool          `json:"noHome,omitempty"`
 	NoInit        bool          `json:"noInit,omitempty"`
 	ImageList     []image.Image `json:"imageList,omitempty"`
+	Network       string        `json:"network,omitempty"`
+	NetworkArgs   []string      `json:"networkArgs,omitempty"`
+	DNS           string        `json:"dns,omitempty"`
 	Cwd           string        `json:"cwd,omitempty"`
 	OpenFd        []int         `json:"openFd,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON      *JSONConfig `json:"jsonConfig"`
-	OciConfig *oci.Config `json:"ociConfig"`
-	File      *FileConfig `json:"-"`
+	JSON      *JSONConfig    `json:"jsonConfig"`
+	OciConfig *oci.Config    `json:"ociConfig"`
+	File      *FileConfig    `json:"-"`
+	Network   *network.Setup `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -327,12 +335,12 @@ func (e *EngineConfig) GetKeepPrivs() bool {
 	return e.JSON.KeepPrivs
 }
 
-// SetNoPrivs set no-privs flag to force root user to lose all privileges.
+// SetNoPrivs sets no-privs flag to force root user to lose all privileges.
 func (e *EngineConfig) SetNoPrivs(nopriv bool) {
 	e.JSON.NoPrivs = nopriv
 }
 
-// GetNoPrivs return if no-privs flag is set or not
+// GetNoPrivs returns if no-privs flag is set or not
 func (e *EngineConfig) GetNoPrivs() bool {
 	return e.JSON.NoPrivs
 }
@@ -355,6 +363,36 @@ func (e *EngineConfig) SetNoInit(val bool) {
 // GetNoInit returns if noinit flag is set or not
 func (e *EngineConfig) GetNoInit() bool {
 	return e.JSON.NoInit
+}
+
+// SetNetwork sets a list of commas separated networks to configure inside container
+func (e *EngineConfig) SetNetwork(network string) {
+	e.JSON.Network = network
+}
+
+// GetNetwork retrieves a list of commas separated networks configured in container
+func (e *EngineConfig) GetNetwork() string {
+	return e.JSON.Network
+}
+
+// SetNetworkArgs sets network arguments to pass to CNI plugins
+func (e *EngineConfig) SetNetworkArgs(args []string) {
+	e.JSON.NetworkArgs = args
+}
+
+// GetNetworkArgs retrieves network arguments passed to CNI plugins
+func (e *EngineConfig) GetNetworkArgs() []string {
+	return e.JSON.NetworkArgs
+}
+
+// SetDNS sets a commas separated list of DNS servers to add in resolv.conf
+func (e *EngineConfig) SetDNS(dns string) {
+	e.JSON.DNS = dns
+}
+
+// GetDNS retrieves list of DNS servers
+func (e *EngineConfig) GetDNS() string {
+	return e.JSON.DNS
 }
 
 // SetImageList sets image list containing opened images
@@ -385,4 +423,14 @@ func (e *EngineConfig) SetOpenFd(fds []int) {
 // GetOpenFd returns the list of open file descriptor
 func (e *EngineConfig) GetOpenFd() []int {
 	return e.JSON.OpenFd
+}
+
+// SetWritableTmpfs sets writable tmpfs flag
+func (e *EngineConfig) SetWritableTmpfs(writable bool) {
+	e.JSON.WritableTmpfs = writable
+}
+
+// GetWritableTmpfs returns if writable tmpfs is set or no
+func (e *EngineConfig) GetWritableTmpfs() bool {
+	return e.JSON.WritableTmpfs
 }

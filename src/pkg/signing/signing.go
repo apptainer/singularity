@@ -11,9 +11,10 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"os"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"github.com/sylabs/sif/pkg/sif"
 
@@ -272,16 +273,9 @@ func Verify(cpath, url, authToken string) error {
 	return nil
 }
 
-// GetSignEntities returns all signing entities for an ID/Groupid
-func GetSignEntities(cpath string) ([]string, error) {
-	fimg, err := sif.LoadContainer(cpath, true)
-	if err != nil {
-		return nil, err
-	}
-	defer fimg.UnloadContainer()
-
+func getSignEntities(fimg *sif.FileImage) ([]string, error) {
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-	signatures, _, err := getSigsPrimPart(&fimg)
+	signatures, _, err := getSigsPrimPart(fimg)
 	if err != nil {
 		return nil, err
 	}
@@ -296,4 +290,26 @@ func GetSignEntities(cpath string) ([]string, error) {
 	}
 
 	return entities, nil
+}
+
+// GetSignEntities returns all signing entities for an ID/Groupid
+func GetSignEntities(cpath string) ([]string, error) {
+	fimg, err := sif.LoadContainer(cpath, true)
+	if err != nil {
+		return nil, err
+	}
+	defer fimg.UnloadContainer()
+
+	return getSignEntities(&fimg)
+}
+
+// GetSignEntitiesFp returns all signing entities for an ID/Groupid
+func GetSignEntitiesFp(fp *os.File) ([]string, error) {
+	fimg, err := sif.LoadContainerFp(fp, true)
+	if err != nil {
+		return nil, err
+	}
+	defer fimg.UnloadContainer()
+
+	return getSignEntities(&fimg)
 }
