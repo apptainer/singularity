@@ -15,9 +15,16 @@ import (
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
+var (
+	sifGroupID uint32 // -g groupid specification
+	sifDescID uint32 // -i id specification
+)
+
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
 	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "specify a group ID to be verified")
+	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "specify a descriptor ID to be verified")
 	SingularityCmd.AddCommand(VerifyCmd)
 }
 
@@ -43,7 +50,20 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cpath, url string) error {
-	if err := signing.Verify(cpath, url, authToken); err != nil {
+	if sifGroupID != 0 && sifDescID != 0 {
+		return fmt.Errorf("only one of -i or -g may be set")
+	}
+
+	var isGroup bool
+	var id uint32
+	if sifGroupID != 0 {
+		isGroup = true
+		id = sifGroupID
+	} else {
+		id = sifDescID
+	}
+
+	if err := signing.Verify(cpath, url, id, isGroup, authToken); err != nil {
 		return err
 	}
 

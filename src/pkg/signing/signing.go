@@ -172,8 +172,13 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.De
 }
 
 // return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
-	return getSigsPrimPart(fimg)
+func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
+	if id == 0 {
+		return getSigsPrimPart(fimg)
+	} else if isGroup {
+		return getSigsGroup(fimg, id)
+	}
+	return getSigsDesc(fimg, id)
 }
 
 // Verify takes a container path and look for a verification block for a
@@ -181,7 +186,7 @@ func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *si
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, url, authToken string) error {
+func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return err
@@ -189,7 +194,7 @@ func Verify(cpath, url, authToken string) error {
 	defer fimg.UnloadContainer()
 
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-	signatures, descr, err := getSigsForSelection(&fimg)
+	signatures, descr, err := getSigsForSelection(&fimg, id, isGroup)
 	if err != nil {
 		return err
 	}
