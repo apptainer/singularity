@@ -110,7 +110,9 @@ func (e *EngineOperations) prepareRootCaps() error {
 	// set default capabilities based on configuration file directive
 	switch defaultCapabilities {
 	case "full":
+		backup := e.EngineConfig.OciConfig.Linux.Seccomp
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
+		e.EngineConfig.OciConfig.Linux.Seccomp = backup
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
 		file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
@@ -267,6 +269,14 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		if err := e.prepareUserCaps(); err != nil {
 			return err
 		}
+	}
+
+	// restore seccomp rules
+	if instanceEngineConfig.OciConfig.Linux != nil {
+		if e.EngineConfig.OciConfig.Linux == nil {
+			e.EngineConfig.OciConfig.Linux = &specs.Linux{}
+		}
+		e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
 	}
 
 	e.EngineConfig.OciConfig.Process.NoNewPrivileges = instanceEngineConfig.OciConfig.Process.NoNewPrivileges

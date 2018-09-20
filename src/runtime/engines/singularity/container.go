@@ -903,10 +903,18 @@ func (c *container) getHomePaths() (source string, dest string, err error) {
 		dest = filepath.Clean(c.engine.EngineConfig.GetHomeDest())
 		source, err = filepath.Abs(filepath.Clean(c.engine.EngineConfig.GetHomeSource()))
 	} else {
-		pw, err := user.GetPwUID(uint32(os.Getuid()))
-		if err == nil {
-			dest = pw.Dir
-			source = pw.Dir
+		if os.Geteuid() == 0 && c.engine.EngineConfig.OciConfig.Process.User.UID != 0 {
+			pw, err := user.GetPwUID(c.engine.EngineConfig.OciConfig.Process.User.UID)
+			if err == nil {
+				dest = pw.Dir
+				source = pw.Dir
+			}
+		} else {
+			pw, err := user.GetPwUID(uint32(os.Getuid()))
+			if err == nil {
+				dest = pw.Dir
+				source = pw.Dir
+			}
 		}
 	}
 

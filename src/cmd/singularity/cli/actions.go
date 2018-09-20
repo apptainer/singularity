@@ -8,6 +8,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,6 +16,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/kubernetes-sigs/cri-o/pkg/seccomp"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 
 	"github.com/singularityware/singularity/src/docs"
@@ -167,9 +170,9 @@ var RunCmd = &cobra.Command{
 	Example: docs.RunExamples,
 }
 
-// prepareSecurityConfig is responsible for getting and applying security
+// securityConfig is responsible for getting and applying security
 // parameters
-func prepareSecurityConfig(security []string, generator *generate.Generator) error {
+func securityConfig(security []string, generator *generate.Generator) error {
 	for _, param := range security {
 		splitted := strings.SplitN(param, ":", 2)
 		if len(splitted) != 2 {
@@ -180,6 +183,26 @@ func prepareSecurityConfig(security []string, generator *generate.Generator) err
 		case "selinux":
 			generator.SetProcessSelinuxLabel(splitted[1])
 		case "seccomp":
+			file, err := os.Open(splitted[1])
+			if err != nil {
+				return err
+			}
+			defer file.Close()
+
+			data, err := ioutil.ReadAll(file)
+			if err != nil {
+				return err
+			}
+			if generator.Config.Linux == nil {
+				generator.Config.Linux = &specs.Linux{}
+			}
+			if generator.Config.Linux.Seccomp == nil {
+				generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
+			}
+			generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
+			if err := seccomp.LoadProfileFromBytes(data, generator); err != nil {
+				return err
+			}
 		case "apparmor":
 			generator.SetProcessApparmorProfile(splitted[1])
 		case "uid":
@@ -224,6 +247,17 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
+
+	if err := securityConfig(Security, &generator); err != nil {
+		sylog.Fatalf("%s", err)
+	}
+
+	if engineConfig.OciConfig.Process.User.UID != 0 && os.Getuid() == 0 {
+		uid = engineConfig.OciConfig.Process.User.UID
+	}
+	if engineConfig.OciConfig.Process.User.GID != 0 && os.Getuid() == 0 {
+		gid = engineConfig.OciConfig.Process.User.GID
+	}
 
 	// temporary check for development
 	// TODO: a real URI handler
@@ -386,10 +420,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)
-	}
-
-	if err := prepareSecurityConfig(Security, &generator); err != nil {
-		sylog.Fatalf("%s", err)
 	}
 
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
