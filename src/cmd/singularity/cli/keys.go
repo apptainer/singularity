@@ -6,8 +6,8 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
 )
 
 const (
@@ -29,7 +29,7 @@ func init() {
 
 // KeysCmd is the 'keys' command that allows management of key stores
 var KeysCmd = &cobra.Command{
-	Run: nil,
+	Run:                   nil,
 	DisableFlagsInUseLine: true,
 
 	Use:     docs.KeysUse,

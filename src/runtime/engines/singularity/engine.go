@@ -6,7 +6,7 @@
 package singularity
 
 import (
-	"github.com/singularityware/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
 )
 
 // EngineOperations describes a runtime engine

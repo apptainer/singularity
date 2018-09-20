@@ -14,8 +14,8 @@ import (
 	"strconv"
 
 	"github.com/otiai10/copy"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // SandboxAssembler doesnt store anything
@@ -165,12 +165,12 @@ func insertLabelsJSON(b *types.Bundle) error {
 			}
 
 			// make new map into json
-			text, err = json.Marshal(existingLabels)
+			text, err = json.MarshalIndent(existingLabels, "", "\t")
 			if err != nil {
 				return err
 			}
 		} else {
-			text, err = json.Marshal(b.Recipe.ImageData.Labels)
+			text, err = json.MarshalIndent(b.Recipe.ImageData.Labels, "", "\t")
 			if err != nil {
 				return err
 			}

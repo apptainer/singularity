@@ -13,11 +13,11 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"os"
+	"path/filepath"
 
 	"github.com/pelletier/go-toml"
-	"github.com/singularityware/singularity/src/pkg/signing"
+	"github.com/sylabs/singularity/src/pkg/signing"
 )
 
 // EclConfig describes the structure of an execution control list configuration file

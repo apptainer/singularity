@@ -164,16 +164,51 @@ fi
 
 
 ########################
+# host architecture
+########################
+printf " checking: host architecture... "
+hst_arch=
+if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+	hst_arch=i386
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+	-e __x86_64__; then
+	hst_arch=x86_64
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __arm__; then
+	hst_arch=arm
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	hst_arch=aarch64
+fi
+if [ "$hst_arch" != "" ]; then
+	echo $hst_arch
+else
+	echo "not found!"
+	usage
+	exit 1
+fi
+
+
+########################
 # target architecture
 ########################
 printf " checking: target architecture... "
 tgt_arch=
-if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+if echo | $tgtcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
 	tgt_arch=i386
 fi
-if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+if echo | $tgtcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	-e __x86_64__; then
 	tgt_arch=x86_64
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __arm__; then
+	tgt_arch=arm
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	tgt_arch=aarch64
 fi
 if [ "$tgt_arch" != "" ]; then
 	echo $tgt_arch
@@ -185,19 +220,54 @@ fi
 
 
 ########################
-# wordsize
+# host wordsize
 ########################
-printf " checking: architecture word size... "
-wordsize=
+printf " checking: host architecture word size... "
+hst_word=
 if echo | $hstcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
-	wordsize=32
+	hst_word=32
 fi
 if echo | $hstcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
 	-e __x86_64__; then
-	wordsize=64
+	hst_word=64
 fi
-if [ "$wordsize" != "" ]; then
-	echo $wordsize
+if echo | $hstcc -E -dM - | grep -qs -e __arm__; then
+	hst_word=32
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	hst_word=64
+fi
+if [ "$hst_word" != "" ]; then
+	echo $hst_word
+else
+	echo "not found!"
+	usage
+	exit 1
+fi
+
+
+########################
+# target wordsize
+########################
+printf " checking: target architecture word size... "
+tgt_word=
+if echo | $tgtcc -E -dM - | grep -qs -e __i386 -e __i386__ -e i386; then
+	tgt_word=32
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __amd64 -e __amd64__ -e __x86_64 \
+	-e __x86_64__; then
+	tgt_word=64
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __arm__; then
+	tgt_word=32
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
+	-e __arm64__; then
+	tgt_word=64
+fi
+if [ "$tgt_word" != "" ]; then
+	echo $tgt_word
 else
 	echo "not found!"
 	usage

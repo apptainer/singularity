@@ -12,10 +12,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/build"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/build"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 var (
@@ -53,7 +53,7 @@ func init() {
 // BuildCmd represents the build command
 var BuildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.ExactArgs(2),
+	Args:                  cobra.ExactArgs(2),
 
 	Use:     docs.BuildUse,
 	Short:   docs.BuildShort,

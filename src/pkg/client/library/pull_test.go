@@ -15,8 +15,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 type mockRawService struct {

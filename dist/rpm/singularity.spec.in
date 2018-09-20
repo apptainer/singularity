@@ -22,7 +22,7 @@
 # 
 
 %define goversion 1.11
-%define singgopath src/github.com/singularityware/singularity
+%define singgopath src/github.com/sylabs/singularity
 
 Summary: Application and environment virtualization
 Name: singularity

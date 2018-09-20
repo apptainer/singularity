@@ -28,10 +28,10 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
-	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/shell"
+	sytypes "github.com/sylabs/singularity/src/pkg/build/types"
+	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/shell"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle

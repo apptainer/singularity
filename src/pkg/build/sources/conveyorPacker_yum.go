@@ -16,8 +16,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 const (
@@ -151,7 +151,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 			"%s\n"+
 			"%s\n"+
 			"After creating the file, re-run the bootstrap.\n"+
-			"More info: https://github.com/singularityware/singularity/issues/241\n",
+			"More info: https://github.com/sylabs/singularity/issues/241\n",
 			rpmDBPath, os.Getenv("HOME"), `%_var /var`, `%_dbpath %{_var}/lib/rpm`)
 	}
 

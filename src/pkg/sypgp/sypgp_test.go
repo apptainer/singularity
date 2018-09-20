@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	useragent "github.com/singularityware/singularity/src/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/src/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 )
 

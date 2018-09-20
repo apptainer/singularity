@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 const (
