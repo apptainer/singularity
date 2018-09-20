@@ -335,6 +335,12 @@ func (e *EngineOperations) loadImages() error {
 	if err != nil {
 		return err
 	}
+
+	if writable && !img.Writable {
+		sylog.Warningf("Can't set writable flag on image, no write permissions")
+		e.EngineConfig.SetWritableImage(false)
+	}
+
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
