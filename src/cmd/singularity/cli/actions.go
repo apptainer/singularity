@@ -170,6 +170,9 @@ var RunCmd = &cobra.Command{
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	targetUID := 0
+	targetGID := make([]int, 0)
+
 	procname := ""
 
 	uid := uint32(os.Getuid())
@@ -194,18 +197,23 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("failed to parse provided UID")
 		}
-		generator.Config.Process.User.UID = uint32(u)
-		uid = engineConfig.OciConfig.Process.User.UID
+		targetUID = int(u)
+		uid = uint32(targetUID)
 	} else if uidParam != "" {
 		sylog.Warningf("uid security feature requires root privileges")
 	}
 	if os.Getuid() == 0 && gidParam != "" {
-		g, err := strconv.ParseUint(gidParam, 10, 32)
-		if err != nil {
-			sylog.Fatalf("failed to parse provided GID")
+		gids := strings.Split(gidParam, ":")
+		for _, id := range gids {
+			g, err := strconv.ParseUint(id, 10, 32)
+			if err != nil {
+				sylog.Fatalf("failed to parse provided GID")
+			}
+			targetGID = append(targetGID, int(g))
 		}
-		generator.Config.Process.User.GID = uint32(g)
-		gid = engineConfig.OciConfig.Process.User.GID
+		if len(gids) > 0 {
+			gid = uint32(targetGID[0])
+		}
 	} else if gidParam != "" {
 		sylog.Warningf("gid security feature requires root privileges")
 	}
@@ -396,13 +404,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	runtime.LockOSThread()
 
-	if engineConfig.OciConfig.Process.User.GID != 0 {
-		gid := int(engineConfig.OciConfig.Process.User.GID)
-		gids := make([]int, len(engineConfig.OciConfig.Process.User.AdditionalGids))
+	if len(targetGID) > 0 {
+		gid := int(targetGID[0])
+		gids := targetGID[1:]
 
-		for i, g := range engineConfig.OciConfig.Process.User.AdditionalGids {
-			gids[i] = int(g)
-		}
 		if err := syscall.Setgroups(gids); err != nil {
 			sylog.Fatalf("failed to reset groups: %s", err)
 		}
@@ -411,8 +416,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	if engineConfig.OciConfig.Process.User.UID != 0 {
-		uid := int(engineConfig.OciConfig.Process.User.UID)
+	if targetUID != 0 {
+		uid := int(targetUID)
 		if err := syscall.Setresuid(uid, uid, uid); err != nil {
 			sylog.Fatalf("failed to set UID %d: %s", uid, err)
 		}
