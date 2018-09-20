@@ -26,7 +26,7 @@ Available Commands:{{range .Commands}}{{if (or .IsAvailableCommand (eq .Name "he
 Examples:{{.Example}}{{end}}
 
 
-For additional help or support, please visit https://docs.sylabs.io
+For additional help or support, please visit https://www.sylabs.io/docs/
 `
 
 	UseTemplate string = `Usage:
