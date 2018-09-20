@@ -14,8 +14,8 @@ import (
 	"strconv"
 
 	"github.com/otiai10/copy"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // SandboxAssembler doesnt store anything

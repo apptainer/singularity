@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )

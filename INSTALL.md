@@ -43,9 +43,9 @@ golang is a bit finicky about where things are placed. Here is the correct way
 to build Singularity from source.
 
 ```
-$ mkdir -p $GOPATH/src/github.com/singularityware
-$ cd $GOPATH/src/github.com/singularityware
-$ git clone https://github.com/singularityware/singularity.git
+$ mkdir -p $GOPATH/src/github.com/sylabs
+$ cd $GOPATH/src/github.com/sylabs
+$ git clone https://github.com/sylabs/singularity.git
 $ cd singularity
 ```
 
@@ -62,7 +62,7 @@ Now you are ready to build Singularity. Dependencies will be automatically
 downloaded. You can build Singularity using the following commands:
 
 ```
-$ cd $GOPATH/src/github.com/singularityware/singularity
+$ cd $GOPATH/src/github.com/sylabs/singularity
 $ ./mconfig
 $ cd ./builddir
 $ make

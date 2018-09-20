@@ -15,15 +15,15 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/build/assemblers"
-	"github.com/singularityware/singularity/src/pkg/build/sources"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
-	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
+	"github.com/sylabs/singularity/src/pkg/build/assemblers"
+	"github.com/sylabs/singularity/src/pkg/build/sources"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	syexec "github.com/sylabs/singularity/src/pkg/util/exec"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
 )
 
 // Build is an abstracted way to look at the entire build process.

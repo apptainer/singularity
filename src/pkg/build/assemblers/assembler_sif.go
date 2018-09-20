@@ -13,9 +13,9 @@ import (
 	"runtime"
 
 	"github.com/satori/go.uuid"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // SIFAssembler doesnt store anything

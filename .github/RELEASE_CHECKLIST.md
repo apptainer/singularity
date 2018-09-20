@@ -2,7 +2,7 @@
 
 
 ## Code
-- [] Ensure docs exist at singularityware.github.io for new/updated features
+- [] Ensure docs exist at sylabs.github.io for new/updated features
 - [] Update version number in `configure.ac`
 - [] Update changelog and version in `debian/changelog`
 - [] Confirm tests exist for new features, and tests pass
@@ -23,5 +23,5 @@ git tag -a 2.3.3
 
 ## Announcement
 - [] Initial announcement to list (@gmk)
-- [] Announcement for singularityware.github.io (ensure links work) (@vsoch)
+- [] Announcement for sylabs.github.io (ensure links work) (@vsoch)
 - [] If release, @SingularityWare on twitter

@@ -10,12 +10,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/capabilities"
-	"github.com/singularityware/singularity/src/pkg/util/user"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/capabilities"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 )
 
 // contains flag variables for capability commands
