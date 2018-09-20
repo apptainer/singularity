@@ -270,4 +270,12 @@ var flagEnvFuncs = map[string]envHandle{
 	// keys flags
 	"secret": envBool,
 	"url":    envStringNSlice,
+
+	// inspect flags
+	"labels":      envBool,
+	"deffile":     envBool,
+	"runscript":   envBool,
+	"test":        envBool,
+	"environment": envBool,
+	"helpfile":    envBool,
 }
