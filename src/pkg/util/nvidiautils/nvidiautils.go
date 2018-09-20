@@ -71,6 +71,7 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	if err != nil {
 		sylog.Warningf("failed to open file %v:", err)
 	} else {
+		defer file.Close()
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			line := scanner.Text()
@@ -79,7 +80,7 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 				searchArray = append(searchArray, line)
 			}
 		}
-		defer file.Close()
+
 	}
 
 	// walk thru the ldconfig output and add entries which contain the filenames located in
