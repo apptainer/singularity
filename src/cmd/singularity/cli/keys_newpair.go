@@ -6,10 +6,10 @@
 package cli
 
 import (
+	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/sypgp"
-	"github.com/spf13/cobra"
 )
 
 func init() {

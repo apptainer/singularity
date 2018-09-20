@@ -8,10 +8,10 @@ package cli
 import (
 	"fmt"
 
+	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/sypgp"
-	"github.com/spf13/cobra"
 
 	"os"
 	"strconv"

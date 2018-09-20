@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/image"
 	"github.com/sylabs/singularity/src/pkg/network"
@@ -29,7 +30,6 @@ import (
 	"github.com/sylabs/singularity/src/pkg/util/loop"
 	"github.com/sylabs/singularity/src/pkg/util/user"
 	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
-	"github.com/sylabs/sif/pkg/sif"
 )
 
 type container struct {

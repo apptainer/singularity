@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -18,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/src/runtime/engines/singularity"
-	"github.com/spf13/cobra"
 )
 
 func init() {

@@ -8,9 +8,9 @@ package main
 import (
 	"os"
 
+	"github.com/spf13/cobra/doc"
 	"github.com/sylabs/singularity/src/cmd/singularity/cli"
 	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/spf13/cobra/doc"
 	"golang.org/x/sys/unix"
 )
 

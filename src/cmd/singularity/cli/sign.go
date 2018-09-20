@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/signing"
 	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/spf13/cobra"
 )
 
 func init() {
