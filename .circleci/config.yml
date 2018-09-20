@@ -10,6 +10,7 @@ jobs:
       - run:
           name: Install Dependencies 
           command: |-
+            apt-get update
             apt-get -y --force-yes install libssl-dev uuid-dev libgpgme11-dev
             go get -u -v github.com/golang/dep/cmd/dep
       - run: ./mconfig
