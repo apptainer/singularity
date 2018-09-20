@@ -4,6 +4,8 @@ jobs:
   build:
     docker:
       - image: golang:1.11
+    environment:
+      PATH: /go/bin:${PATH}
     working_directory: ~/go/src/github.com/sylabs/singularity
     steps:
       - checkout
