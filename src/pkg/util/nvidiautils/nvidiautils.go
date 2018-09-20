@@ -15,6 +15,41 @@ import (
 	"github.com/singularityware/singularity/src/pkg/sylog"
 )
 
+func nvidiaContainerCli() ([]string, []string, error) {
+	var strArray []string
+	var bindArray []string
+	var soID = regexp.MustCompile(".so")
+
+	// use nvidia-container-cli (if present)
+	command, err := exec.LookPath("nvidia-container-cli")
+	if err != nil {
+		return nil, nil, nil
+	}
+	cmd := exec.Command(command, "list", "--binaries", "--ipcs", "--libraries")
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, nil, nil
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		val := soID.FindString(line) // this will disallow binaries (non .so files)
+		if val != "" {               // contains .so
+			if line != "" {
+				// extract the filename from the path
+				fileNames := strings.SplitAfter(line, "/")
+				fileName := fileNames[len(fileNames)-1]
+
+				testString := line + ":/.singularity.d/libs/" + fileName
+				bindArray = append(bindArray, testString)
+				strArray = append(strArray, fileName)
+			}
+		} else { // binary executable
+			bindArray = append(bindArray, line)
+			strArray = append(strArray, line)
+		}
+	}
+	return bindArray, strArray, nil
+}
+
 // GetNvidiaBindPath returns a string array consisting of filepaths of nvidia
 // related files to be added to the BindPaths
 func GetNvidiaBindPath(abspath string) ([]string, error) {
@@ -22,35 +57,11 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	var bindArray []string
 	var searchArray []string
 	var commentID = regexp.MustCompile(`#`)
-	var soID = regexp.MustCompile(".so")
 
-	// use nvidia-container-cli (if present)
-	command, err := exec.LookPath("nvidia-container-cli")
-	if err == nil {
-		cmd := exec.Command(command, "list", "--binaries", "--ipcs", "--libraries")
-		out, err := cmd.Output()
-		if err == nil {
-
-			for _, line := range strings.Split(string(out), "\n") {
-				val := soID.FindString(line) // this will disallow binaries (non .so files)
-				if val != "" {               // contains .so
-					if line != "" {
-						// extract the filename from the path
-						fileNames := strings.SplitAfter(line, "/")
-						fileName := fileNames[len(fileNames)-1]
-
-						testString := line + ":/.singularity.d/libs/" + fileName
-						bindArray = append(bindArray, testString)
-						strArray = append(strArray, fileName)
-					}
-				} else { // binary executable
-					bindArray = append(bindArray, line)
-					strArray = append(strArray, line)
-				}
-			}
-		}
+	bindArray, strArray, err := nvidiaContainerCli()
+	if err != nil {
+		sylog.Warningf("no nvidia-container-cli returned: %v", err)
 	}
-
 	cliEntries := strings.Join(strArray, " ") // save away for later comparison check (disallow duplicates)
 
 	// grab the entries in nvliblist.conf file
@@ -73,7 +84,7 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	// walk thru the ldconfig output and add entries which contain the filenames located in
 	// the nvliblist.conf file (ldconfig filenames are full filepaths)
 	var searchFileName string
-	command, err = exec.LookPath("ldconfig")
+	command, err := exec.LookPath("ldconfig")
 	if err != nil {
 		sylog.Warningf("ldconfig not found: %v", err)
 		return bindArray, nil
