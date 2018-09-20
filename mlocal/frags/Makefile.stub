@@ -196,7 +196,9 @@ check:
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
-		   ( echo "Use 'go fmt' to update formatting"; false ) )
+		   ( echo "The above files have formatting errors."; \
+		     echo "Use 'go fmt github.com/singularityware/singularity/...' to correct the errors."; \
+		     false ) )
 	@echo "       PASS"
 	@echo " CHECK go vet"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
