@@ -7,9 +7,13 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/opencontainers/runtime-tools/generate"
 
@@ -67,6 +71,7 @@ func init() {
 		//cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -163,6 +168,46 @@ var RunCmd = &cobra.Command{
 	Short:   docs.RunShort,
 	Long:    docs.RunLong,
 	Example: docs.RunExamples,
+}
+
+// prepareSecurityConfig is responsible for getting and applying security
+// parameters
+func prepareSecurityConfig(security []string, generator *generate.Generator) error {
+	for _, param := range security {
+		splitted := strings.SplitN(param, ":", 2)
+		if len(splitted) != 2 {
+			sylog.Warningf("bad format for parameter %s (format is <security>:<arg>)", param)
+		}
+
+		switch splitted[0] {
+		case "selinux":
+			generator.SetProcessSelinuxLabel(splitted[1])
+		case "seccomp":
+		case "apparmor":
+			generator.SetProcessApparmorProfile(splitted[1])
+		case "uid":
+			if os.Geteuid() != 0 {
+				sylog.Warningf("uid security feature requires root privileges")
+			} else {
+				uid, err := strconv.ParseUint(splitted[1], 10, 32)
+				if err != nil {
+					return fmt.Errorf("failed to parse provided UID")
+				}
+				generator.Config.Process.User.UID = uint32(uid)
+			}
+		case "gid":
+			if os.Geteuid() != 0 {
+				sylog.Warningf("gid security feature requires root privileges")
+			} else {
+				gid, err := strconv.ParseUint(splitted[1], 10, 32)
+				if err != nil {
+					return fmt.Errorf("failed to parse provided GID")
+				}
+				generator.Config.Process.User.GID = uint32(gid)
+			}
+		}
+	}
+	return nil
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
@@ -346,6 +391,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
+	if err := prepareSecurityConfig(Security, &generator); err != nil {
+		sylog.Fatalf("%s", err)
+	}
+
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
 	cfg := &config.Common{
@@ -357,6 +406,30 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	configData, err := json.Marshal(cfg)
 	if err != nil {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	runtime.LockOSThread()
+
+	if engineConfig.OciConfig.Process.User.GID != 0 {
+		gid := int(engineConfig.OciConfig.Process.User.GID)
+		gids := make([]int, len(engineConfig.OciConfig.Process.User.AdditionalGids))
+
+		for i, g := range engineConfig.OciConfig.Process.User.AdditionalGids {
+			gids[i] = int(g)
+		}
+		if err := syscall.Setgroups(gids); err != nil {
+			sylog.Fatalf("failed to reset groups: %s", err)
+		}
+		if err := syscall.Setresgid(gid, gid, gid); err != nil {
+			sylog.Fatalf("failed to set GID %d: %s", gid, err)
+		}
+	}
+
+	if engineConfig.OciConfig.Process.User.UID != 0 {
+		uid := int(engineConfig.OciConfig.Process.User.UID)
+		if err := syscall.Setresuid(uid, uid, uid); err != nil {
+			sylog.Fatalf("failed to set UID %d: %s", uid, err)
+		}
 	}
 
 	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
