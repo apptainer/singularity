@@ -7,6 +7,11 @@ jobs:
     working_directory: ~/go/src/github.com/sylabs/singularity
     steps:
       - checkout
+      - run:
+          name: Install Dependencies 
+          command: |-
+            apt-get -y --force-yes install libssl-dev uuid-dev libgpgme11-dev
+            go get -u -v github.com/golang/dep/cmd/dep
       - run: ./mconfig
       - run: make -C builddir/
 
