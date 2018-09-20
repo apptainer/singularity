@@ -378,7 +378,7 @@ func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted == true {
 		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
-			return nil
+			return err
 		}
 
 		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
