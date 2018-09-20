@@ -18,7 +18,9 @@ jobs:
       - run: 
           name: Build Singularity
           command: |-
-            export PATH=`go env GOPATH`/bin:$PATH`
+            export PATH=`go env GOPATH`/bin:$PATH
+            echo $PATH
+            which dep
             ./mconfig
             make -C builddir/
 
