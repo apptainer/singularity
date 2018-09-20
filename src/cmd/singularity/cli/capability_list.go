@@ -28,7 +28,7 @@ func init() {
 
 // CapabilityListCmd singularity capability list
 var CapabilityListCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(0),
+	Args:                  cobra.MinimumNArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		manageCap("", capList)
