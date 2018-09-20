@@ -43,6 +43,7 @@ type container struct {
 	pidNS            bool
 	utsNS            bool
 	netNS            bool
+	ipcNS            bool
 	mountInfoPath    string
 	skippedMount     []string
 	suidFlag         uintptr
@@ -77,6 +78,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 				c.utsNS = true
 			case specs.NetworkNamespace:
 				c.netNS = true
+			case specs.IPCNamespace:
+				c.ipcNS = true
 			}
 		}
 	}
@@ -823,9 +826,35 @@ func (c *container) addKernelMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) bindDev(devpath string, system *mount.System) error {
-	if err := c.session.AddFile(devpath, nil); err != nil {
-		return fmt.Errorf("failed to %s session file: %s", devpath, err)
+func (c *container) addSessionDev(devpath string, system *mount.System) error {
+	fi, err := os.Lstat(devpath)
+	if err != nil {
+		return err
+	}
+
+	switch mode := fi.Mode(); {
+	case mode&os.ModeSymlink != 0:
+		target, err := os.Readlink(devpath)
+		if err != nil {
+			return err
+		}
+		if err := c.session.AddSymlink(devpath, target); err != nil {
+			return fmt.Errorf("failed to create symlink %s", devpath)
+		}
+
+		dst, _ := c.session.GetPath(devpath)
+
+		sylog.Debugf("Adding symlink device %s at %s", devpath, dst)
+
+		return nil
+	case mode.IsDir():
+		if err := c.session.AddDir(devpath); err != nil {
+			return fmt.Errorf("failed to add %s session dir: %s", devpath, err)
+		}
+	default:
+		if err := c.session.AddFile(devpath, nil); err != nil {
+			return fmt.Errorf("failed to add %s session file: %s", devpath, err)
+		}
 	}
 
 	dst, _ := c.session.GetPath(devpath)
@@ -834,6 +863,15 @@ func (c *container) bindDev(devpath string, system *mount.System) error {
 
 	if err := system.Points.AddBind(mount.DevTag, devpath, dst, syscall.MS_BIND); err != nil {
 		return fmt.Errorf("failed to add %s mount: %s", devpath, err)
+	}
+	return nil
+}
+
+func (c *container) addSessionDevMount(system *mount.System) error {
+	devPath, _ := c.session.GetPath("/dev")
+	err := system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_REC)
+	if err != nil {
+		return fmt.Errorf("unable to add dev to mount list: %s", err)
 	}
 	return nil
 }
@@ -856,6 +894,20 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("failed to add /dev/shm temporary filesystem: %s", err)
 		}
+
+		if c.ipcNS {
+			sylog.Debugf("Creating temporary staged /dev/mqueue")
+			if err := c.session.AddDir("/dev/mqueue"); err != nil {
+				return fmt.Errorf("failed to add /dev/mqueue session directory: %s", err)
+			}
+			mqueuePath, _ := c.session.GetPath("/dev/mqueue")
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			err := system.Points.AddFS(mount.DevTag, mqueuePath, "mqueue", flags, "")
+			if err != nil {
+				return fmt.Errorf("failed to add /dev/mqueue filesystem: %s", err)
+			}
+		}
+
 		if c.engine.EngineConfig.File.MountDevPts {
 			if _, err := os.Stat("/dev/pts/ptmx"); os.IsNotExist(err) {
 				return fmt.Errorf("Multiple devpts instances unsupported and /dev/pts configured")
@@ -883,7 +935,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			if err != nil {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY functionality disabled")
 			} else {
-				if err := c.bindDev("/dev/tty", system); err != nil {
+				if err := c.addSessionDev("/dev/tty", system); err != nil {
 					return err
 				}
 				if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
@@ -891,16 +943,16 @@ func (c *container) addDevMount(system *mount.System) error {
 				}
 			}
 		}
-		if err := c.bindDev("/dev/null", system); err != nil {
+		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
 		}
-		if err := c.bindDev("/dev/zero", system); err != nil {
+		if err := c.addSessionDev("/dev/zero", system); err != nil {
 			return err
 		}
-		if err := c.bindDev("/dev/random", system); err != nil {
+		if err := c.addSessionDev("/dev/random", system); err != nil {
 			return err
 		}
-		if err := c.bindDev("/dev/urandom", system); err != nil {
+		if err := c.addSessionDev("/dev/urandom", system); err != nil {
 			return err
 		}
 		if c.engine.EngineConfig.GetNv() {
@@ -910,30 +962,30 @@ func (c *container) addDevMount(system *mount.System) error {
 			}
 			for _, file := range files {
 				if strings.HasPrefix(file.Name(), "nvidia") {
-					if err := c.bindDev(filepath.Join("/dev", file.Name()), system); err != nil {
+					if err := c.addSessionDev(filepath.Join("/dev", file.Name()), system); err != nil {
 						return err
 					}
 				}
 			}
 		}
 
-		if err := c.session.AddSymlink("/dev/fd", "/proc/self/fd"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/fd")
+		if err := c.addSessionDev("/dev/fd", system); err != nil {
+			return err
 		}
-		if err := c.session.AddSymlink("/dev/stdin", "/proc/self/fd/0"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/stdin")
+		if err := c.addSessionDev("/dev/stdin", system); err != nil {
+			return err
 		}
-		if err := c.session.AddSymlink("/dev/stdout", "/proc/self/fd/1"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/stdout")
+		if err := c.addSessionDev("/dev/stdout", system); err != nil {
+			return err
 		}
-		if err := c.session.AddSymlink("/dev/stderr", "/proc/self/fd/2"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/stderr")
+		if err := c.addSessionDev("/dev/stderr", system); err != nil {
+			return err
 		}
 
-		devPath, _ := c.session.GetPath("/dev")
-		err = system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_REC)
-		if err != nil {
-			return fmt.Errorf("unable to add dev to mount list: %s", err)
+		// devices could be added in addUserbindsMount so bind session dev
+		// after that all devices have been added to the mount point list
+		if err := system.RunAfterTag(mount.LayerTag, c.addSessionDevMount); err != nil {
+			return err
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "yes" {
 		sylog.Debugf("Adding dev to mount list\n")
@@ -942,7 +994,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
-		sylog.Verbosef("Not mounting /dev inside the container")
+		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
 	return nil
 }
@@ -1121,15 +1173,11 @@ func (c *container) addHomeMount(system *mount.System) error {
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
+	devicesMounted := 0
+	userBindControl := c.engine.EngineConfig.File.UserBindControl
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
-		return nil
-	}
-
-	sylog.Debugf("Checking for 'user bind control' in configuration file")
-	if !c.engine.EngineConfig.File.UserBindControl {
-		sylog.Warningf("Ignoring user bind request: user bind control disabled by system administrator")
 		return nil
 	}
 
@@ -1153,13 +1201,44 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 			}
 		}
 
+		// special case for /dev mount to override default mount behaviour
+		// with --contain option or 'mount dev = minimal'
+		if strings.HasPrefix(src, "/dev") {
+			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
+				if strings.HasPrefix(src, "/dev/shm/") || strings.HasPrefix(src, "/dev/mqueue/") {
+					sylog.Warningf("Skipping %s bind mount: not allowed", src)
+				} else {
+					if err := c.addSessionDev(src, system); err != nil {
+						sylog.Warningf("Skipping %s bind mount: %s", src, err)
+					} else {
+						sylog.Debugf("Adding device %s to mount list\n", src)
+					}
+				}
+				devicesMounted++
+			} else if c.engine.EngineConfig.File.MountDev == "yes" {
+				sylog.Warningf("Skipping %s bind mount: /dev is already mounted", src)
+			} else {
+				sylog.Warningf("Skipping %s bind mount: disallowed by configuration", src)
+			}
+			continue
+		} else if !userBindControl {
+			continue
+		}
+
 		sylog.Debugf("Adding %s to mount list\n", src)
+
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
 			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
 		}
 		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		flags &^= syscall.MS_RDONLY
 	}
+
+	sylog.Debugf("Checking for 'user bind control' in configuration file")
+	if !userBindControl && devicesMounted == 0 {
+		sylog.Warningf("Ignoring user bind request: user bind control disabled by system administrator")
+	}
+
 	return nil
 }
 
