@@ -62,6 +62,10 @@ required = [
   name = "github.com/opencontainers/image-spec"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/containerd/cgroups"
+
+[[constraint]]
   name = "github.com/opencontainers/runtime-spec"
   version = "1.0.1"
 
