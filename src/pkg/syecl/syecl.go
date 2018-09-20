@@ -13,8 +13,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
 	"os"
+	"path/filepath"
 
 	"github.com/pelletier/go-toml"
 	"github.com/singularityware/singularity/src/pkg/signing"

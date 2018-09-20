@@ -241,10 +241,10 @@ func SetLogFile(name string) error {
 	}
 	defer stdout.Close()
 
-	if err := syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd())); err != nil {
+	if err := syscall.Dup3(int(stderr.Fd()), int(os.Stderr.Fd()), 0); err != nil {
 		return err
 	}
-	if err := syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd())); err != nil {
+	if err := syscall.Dup3(int(stdout.Fd()), int(os.Stdout.Fd()), 0); err != nil {
 		return err
 	}
 
