@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types"
 )
 
 // validURIs contains a list of known uris

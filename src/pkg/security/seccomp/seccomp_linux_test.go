@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 func defaultProfile() *specs.LinuxSeccomp {

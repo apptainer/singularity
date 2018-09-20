@@ -324,7 +324,9 @@ sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/" $RPMSPEC.in >$
 echo "=> project setup with :"
 echo "    - target arch: $tgt_arch"
 echo "    - target compiler: $tgtcc"
-echo "    - host wordsize: ${wordsize}-bit"
+echo "    - target wordsize: ${tgt_word}-bit"
+echo "    - host arch: $hst_arch"
+echo "    - host wordsize: ${hst_word}-bit"
 echo "    - host system: $host"
 if [ "$verbose" = 1 ]; then
 	echo "    - verbose: yes"

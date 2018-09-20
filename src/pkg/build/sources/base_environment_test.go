@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 func testWithGoodDir(t *testing.T, f func(d string) error) {

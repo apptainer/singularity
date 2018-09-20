@@ -13,8 +13,8 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 var (

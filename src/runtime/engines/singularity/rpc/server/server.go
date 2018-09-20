@@ -13,11 +13,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/loop"
+	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
 
 // Methods is a receiver type
