@@ -11,7 +11,9 @@ For issues with code (and especially if you need to share debug output) we recom
  - [Singularity Issues](https://github.com/sylabs/singularity/issues): is recommended for most issues with the Singularity software.
  - [Singularity Hub Issues](https://github.com/singularityhub/singularityhub.github.io/issues): is the board for issues relevant to Singularity Hub.
  - [Singularity Registry Issues](https://github.com/singularityhub/sregistry/issues): is the board for issues relevant to Singularity Registry
- - [Documentation Issues](https://github.com/sylabs/sylabs.github.io/issues): documentation questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
+ - [User Documentation](https://github.com/sylabs/singularity-userdocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
+ - [Admin Documentation](https://github.com/sylabs/singularity-admindocs/issues) questions, feedback, and suggestions should go here. Feel free to create an issue on a board and additionally request updated content here.
+
 
 ### How do I ask for help?
 After you identify a bug, you should search the respective issue board for similar problems reported by other users. Another user may be facing the same issue, and you can add a +1 (in message or icon) to indicate to the maintainers that the issue is pressing for you as well. The squeaky wheel gets the grease!
