@@ -87,6 +87,7 @@ type JSONConfig struct {
 	NetworkArgs   []string      `json:"networkArgs,omitempty"`
 	DNS           string        `json:"dns,omitempty"`
 	Cwd           string        `json:"cwd,omitempty"`
+	Security      []string      `json:"security,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -411,4 +412,14 @@ func (e *EngineConfig) SetCwd(path string) {
 // GetCwd returns current working directory
 func (e *EngineConfig) GetCwd() string {
 	return e.JSON.Cwd
+}
+
+// SetSecurity sets security feature arguments
+func (e *EngineConfig) SetSecurity(security []string) {
+	e.JSON.Security = security
+}
+
+// GetSecurity returns security feature arguments
+func (e *EngineConfig) GetSecurity() []string {
+	return e.JSON.Security
 }

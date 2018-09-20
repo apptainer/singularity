@@ -15,6 +15,8 @@ import (
 	"github.com/singularityware/singularity/src/pkg/buildcfg"
 	"github.com/singularityware/singularity/src/pkg/image"
 	"github.com/singularityware/singularity/src/pkg/instance"
+	"github.com/singularityware/singularity/src/pkg/security"
+	"github.com/singularityware/singularity/src/pkg/security/seccomp"
 	"github.com/singularityware/singularity/src/pkg/syecl"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/capabilities"
@@ -110,9 +112,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 	// set default capabilities based on configuration file directive
 	switch defaultCapabilities {
 	case "full":
-		backup := e.EngineConfig.OciConfig.Linux.Seccomp
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
-		e.EngineConfig.OciConfig.Linux.Seccomp = backup
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
 		file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
@@ -215,6 +215,25 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}
 
+	param := security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
+	if param != "" {
+		sylog.Debugf("Applying SELinux context %s", param)
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(param)
+	}
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
+	if param != "" {
+		sylog.Debugf("Applying Apparmor profile %s", param)
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(param)
+	}
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
+	if param != "" {
+		sylog.Debugf("Applying seccomp rule from %s", param)
+		generator := &e.EngineConfig.OciConfig.Generator
+		if err := seccomp.LoadProfileFromFile(param, generator); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -271,12 +290,39 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 	}
 
-	// restore seccomp rules
-	if instanceEngineConfig.OciConfig.Linux != nil {
-		if e.EngineConfig.OciConfig.Linux == nil {
-			e.EngineConfig.OciConfig.Linux = &specs.Linux{}
+	// restore apparmor profile
+	param := security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
+	if param != "" {
+		sylog.Debugf("Applying Apparmor profile %s", param)
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(param)
+	} else {
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(instanceEngineConfig.OciConfig.Process.ApparmorProfile)
+	}
+
+	// restore selinux context
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
+	if param != "" {
+		sylog.Debugf("Applying SELinux context %s", param)
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(param)
+	} else {
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(instanceEngineConfig.OciConfig.Process.SelinuxLabel)
+	}
+
+	// restore security features
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
+	if param != "" {
+		sylog.Debugf("Applying seccomp rule from %s", param)
+		generator := &e.EngineConfig.OciConfig.Generator
+		if err := seccomp.LoadProfileFromFile(param, generator); err != nil {
+			return err
 		}
-		e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
+	} else {
+		if instanceEngineConfig.OciConfig.Linux != nil {
+			if e.EngineConfig.OciConfig.Linux == nil {
+				e.EngineConfig.OciConfig.Linux = &specs.Linux{}
+			}
+			e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
+		}
 	}
 
 	e.EngineConfig.OciConfig.Process.NoNewPrivileges = instanceEngineConfig.OciConfig.Process.NoNewPrivileges

@@ -9,10 +9,14 @@ package seccomp
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"syscall"
 
+	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 
+	cseccomp "github.com/kubernetes-sigs/cri-o/pkg/seccomp"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"
 )
@@ -196,4 +200,31 @@ func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([][]lseccomp.ScmpCo
 		}
 	}
 	return finalConditions, nil
+}
+
+// LoadProfileFromFile loads seccomp rules from json file and fill in
+// provided OCI configuration
+func LoadProfileFromFile(profile string, generator *generate.Generator) error {
+	file, err := os.Open(profile)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return err
+	}
+
+	if generator.Config.Linux == nil {
+		generator.Config.Linux = &specs.Linux{}
+	}
+	if generator.Config.Linux.Seccomp == nil {
+		generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
+	}
+	generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
+	if err := cseccomp.LoadProfileFromBytes(data, generator); err != nil {
+		return err
+	}
+	return nil
 }

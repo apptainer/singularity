@@ -7,8 +7,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -16,8 +14,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/kubernetes-sigs/cri-o/pkg/seccomp"
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 
 	"github.com/singularityware/singularity/src/docs"
@@ -26,6 +22,7 @@ import (
 	"github.com/singularityware/singularity/src/pkg/client/cache"
 	ociclient "github.com/singularityware/singularity/src/pkg/client/oci"
 	"github.com/singularityware/singularity/src/pkg/instance"
+	"github.com/singularityware/singularity/src/pkg/security"
 	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/singularityware/singularity/src/pkg/util/env"
 	"github.com/singularityware/singularity/src/pkg/util/exec"
@@ -170,66 +167,6 @@ var RunCmd = &cobra.Command{
 	Example: docs.RunExamples,
 }
 
-// securityConfig is responsible for getting and applying security
-// parameters
-func securityConfig(security []string, generator *generate.Generator) error {
-	for _, param := range security {
-		splitted := strings.SplitN(param, ":", 2)
-		if len(splitted) != 2 {
-			sylog.Warningf("bad format for parameter %s (format is <security>:<arg>)", param)
-		}
-
-		switch splitted[0] {
-		case "selinux":
-			generator.SetProcessSelinuxLabel(splitted[1])
-		case "seccomp":
-			file, err := os.Open(splitted[1])
-			if err != nil {
-				return err
-			}
-			defer file.Close()
-
-			data, err := ioutil.ReadAll(file)
-			if err != nil {
-				return err
-			}
-			if generator.Config.Linux == nil {
-				generator.Config.Linux = &specs.Linux{}
-			}
-			if generator.Config.Linux.Seccomp == nil {
-				generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
-			}
-			generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
-			if err := seccomp.LoadProfileFromBytes(data, generator); err != nil {
-				return err
-			}
-		case "apparmor":
-			generator.SetProcessApparmorProfile(splitted[1])
-		case "uid":
-			if os.Geteuid() != 0 {
-				sylog.Warningf("uid security feature requires root privileges")
-			} else {
-				uid, err := strconv.ParseUint(splitted[1], 10, 32)
-				if err != nil {
-					return fmt.Errorf("failed to parse provided UID")
-				}
-				generator.Config.Process.User.UID = uint32(uid)
-			}
-		case "gid":
-			if os.Geteuid() != 0 {
-				sylog.Warningf("gid security feature requires root privileges")
-			} else {
-				gid, err := strconv.ParseUint(splitted[1], 10, 32)
-				if err != nil {
-					return fmt.Errorf("failed to parse provided GID")
-				}
-				generator.Config.Process.User.GID = uint32(gid)
-			}
-		}
-	}
-	return nil
-}
-
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	procname := ""
@@ -248,15 +185,28 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	generator.SetProcessArgs(args)
 
-	if err := securityConfig(Security, &generator); err != nil {
-		sylog.Fatalf("%s", err)
-	}
+	uidParam := security.GetParam(Security, "uid")
+	gidParam := security.GetParam(Security, "gid")
 
-	if engineConfig.OciConfig.Process.User.UID != 0 && os.Getuid() == 0 {
+	if os.Getuid() == 0 && uidParam != "" {
+		u, err := strconv.ParseUint(uidParam, 10, 32)
+		if err != nil {
+			sylog.Fatalf("failed to parse provided UID")
+		}
+		generator.Config.Process.User.UID = uint32(u)
 		uid = engineConfig.OciConfig.Process.User.UID
+	} else if uidParam != "" {
+		sylog.Warningf("uid security feature requires root privileges")
 	}
-	if engineConfig.OciConfig.Process.User.GID != 0 && os.Getuid() == 0 {
+	if os.Getuid() == 0 && gidParam != "" {
+		g, err := strconv.ParseUint(gidParam, 10, 32)
+		if err != nil {
+			sylog.Fatalf("failed to parse provided GID")
+		}
+		generator.Config.Process.User.GID = uint32(g)
 		gid = engineConfig.OciConfig.Process.User.GID
+	} else if gidParam != "" {
+		sylog.Warningf("gid security feature requires root privileges")
 	}
 
 	// temporary check for development
@@ -297,6 +247,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+	engineConfig.SetSecurity(Security)
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
