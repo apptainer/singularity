@@ -537,7 +537,6 @@ func SearchPubkey(search, keyserverURI, authToken string) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("error while preparing http request: %s", err)
 		}
-		fmt.Println(r)
 		resp, err = http.DefaultClient.Do(r)
 		if err != nil {
 			return "", err
