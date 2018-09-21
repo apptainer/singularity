@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
@@ -20,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/src/pkg/syecl"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/capabilities"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
 	"github.com/sylabs/singularity/src/pkg/util/mainthread"
 	"github.com/sylabs/singularity/src/pkg/util/user"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
@@ -171,6 +173,65 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
+func (e *EngineOperations) prepareFd() {
+	fds := make([]int, 0)
+
+	if e.EngineConfig.File.UserBindControl {
+		for _, b := range e.EngineConfig.GetBindPath() {
+			splitted := strings.Split(b, ":")
+
+			src, err := filepath.Abs(splitted[0])
+			if err != nil {
+				continue
+			}
+
+			if !fs.IsDir(src) {
+				continue
+			}
+
+			sylog.Debugf("Open file descriptor for %s", src)
+			f, err := os.Open(src)
+			if err != nil {
+				continue
+			}
+			fds = append(fds, int(f.Fd()))
+		}
+	}
+
+	if !e.EngineConfig.GetContain() {
+		for _, bindpath := range e.EngineConfig.File.BindPath {
+			splitted := strings.Split(bindpath, ":")
+			src := splitted[0]
+
+			if !fs.IsDir(src) {
+				continue
+			}
+
+			sylog.Debugf("Open file descriptor for %s", src)
+			f, err := os.Open(src)
+			if err != nil {
+				continue
+			}
+			fds = append(fds, int(f.Fd()))
+		}
+	}
+
+	for _, path := range e.EngineConfig.File.AutofsBugPath {
+		if !fs.IsDir(path) {
+			continue
+		}
+
+		sylog.Debugf("Open file descriptor for %s", path)
+		f, err := os.Open(path)
+		if err != nil {
+			continue
+		}
+		fds = append(fds, int(f.Fd()))
+	}
+
+	e.EngineConfig.SetOpenFd(fds)
+}
+
 // prepareContainerConfig is responsible for getting and applying user supplied
 // configuration for container creation
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
@@ -233,6 +294,9 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 			return err
 		}
 	}
+
+	// open file descriptors (autofs bug path)
+	e.prepareFd()
 
 	return nil
 }

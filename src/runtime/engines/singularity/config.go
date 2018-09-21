@@ -89,6 +89,7 @@ type JSONConfig struct {
 	DNS           string        `json:"dns,omitempty"`
 	Cwd           string        `json:"cwd,omitempty"`
 	Security      []string      `json:"security,omitempty"`
+	OpenFd        []int         `json:"openFd,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -413,6 +414,16 @@ func (e *EngineConfig) SetCwd(path string) {
 // GetCwd returns current working directory
 func (e *EngineConfig) GetCwd() string {
 	return e.JSON.Cwd
+}
+
+// SetOpenFd sets a list of open file descriptor
+func (e *EngineConfig) SetOpenFd(fds []int) {
+	e.JSON.OpenFd = fds
+}
+
+// GetOpenFd returns the list of open file descriptor
+func (e *EngineConfig) GetOpenFd() []int {
+	return e.JSON.OpenFd
 }
 
 // SetWritableTmpfs sets writable tmpfs flag
