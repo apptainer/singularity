@@ -4,8 +4,6 @@ defaults: &defaults
   working_directory: /go/src/github.com/sylabs/singularity
   docker:
     - image: golang:latest
-    - privileged: true
-
 
 jobs:
   build:
