@@ -13,7 +13,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // generate bind list using nvidia-container-cli

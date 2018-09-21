@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/singularityware/singularity/src/pkg/util/nvidiautils"
+	"github.com/sylabs/singularity/src/pkg/util/nvidiautils"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
