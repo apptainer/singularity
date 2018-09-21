@@ -28,10 +28,32 @@ var alwaysPassKeys = map[string]bool{
 
 // SetContainerEnv cleans environment variables before running the container
 func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDest string) {
+
+	// first deal with special variables that allow user to control $PATH at
+	// runtime (meh... special cases)
+	if prependPath := os.Getenv("SINGULARITYENV_PREPEND_PATH"); prependPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", prependPath)
+	}
+
+	if appendPath := os.Getenv("SINGULARITYENV_APPEND_PATH"); appendPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", appendPath)
+	}
+
+	if userPath := os.Getenv("SINGULARITYENV_PATH"); userPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_PATH", userPath)
+	}
+
 	for _, env := range env {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) != 2 {
 			sylog.Verbosef("Can't process environment variable %s", env)
+			continue
+		}
+
+		if e[0] == "SINGULARITYENV_PREPEND_PATH" ||
+			e[0] == "SINGULARITYENV_APPEND_PATH" ||
+			e[0] == "SINGULARITYENV_PATH" {
+			sylog.Verbosef("Not adding special case PATH control variable %s to container environment", e[0])
 			continue
 		}
 
@@ -43,21 +65,6 @@ func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDes
 
 	g.AddProcessEnv("HOME", homeDest)
 	g.AddProcessEnv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
-
-	if prependPath := os.Getenv("SINGULARITYENV_PREPEND_PATH"); prependPath != "" {
-		g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", prependPath)
-		os.Unsetenv("SINGULARITYENV_PREPEND_PATH")
-	}
-
-	if appendPath := os.Getenv("SINGULARITYENV_APPEND_PATH"); appendPath != "" {
-		g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", appendPath)
-		os.Unsetenv("SINGULARITYENV_APPEND_PATH")
-	}
-
-	if userPath := os.Getenv("SINGULARITYENV_PATH"); userPath != "" {
-		g.AddProcessEnv("SING_USER_DEFINED_PATH", userPath)
-		os.Unsetenv("SINGULARITYENV_PATH")
-	}
 
 	// Set LANG env
 	if cleanEnv {
