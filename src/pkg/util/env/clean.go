@@ -28,7 +28,6 @@ var alwaysPassKeys = map[string]bool{
 
 // SetContainerEnv cleans environment variables before running the container
 func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDest string) {
-
 	// first deal with special variables that allow user to control $PATH at
 	// runtime (meh... special cases)
 	if prependPath := os.Getenv("SINGULARITYENV_PREPEND_PATH"); prependPath != "" {
