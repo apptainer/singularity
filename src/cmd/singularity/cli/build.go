@@ -53,7 +53,7 @@ func init() {
 // BuildCmd represents the build command
 var BuildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(2),
 
 	Use:     docs.BuildUse,
 	Short:   docs.BuildShort,
@@ -98,7 +98,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf(err.Error())
 			}
 
-			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest)
+			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest, libraryURL, authToken)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 			}
