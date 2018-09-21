@@ -18,7 +18,7 @@ starter_suid_INSTALL := $(EXEC_PREFIX)/libexec/singularity/bin/starter-suid
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(EXEC_PREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
-singularity_REPO := github.com/singularityware/singularity
+singularity_REPO := github.com/sylabs/singularity
 
 dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
 dist_bin_SCRIPTS_INSTALL := $(EXEC_PREFIX)/bin/run-singularity
