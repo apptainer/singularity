@@ -4,6 +4,8 @@ defaults: &defaults
   working_directory: /go/src/github.com/sylabs/singularity
   docker:
     - image: golang:latest
+    - privileged: true
+
 
 jobs:
   build:
@@ -95,6 +97,10 @@ jobs:
           command: |-
             apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
             curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: Check for Lint
+          command: |-
+            go get -u golang.org/x/lint/golint
       - run:
           name: Check vet & lint
           working_directory: /go/src/github.com/sylabs/singularity
