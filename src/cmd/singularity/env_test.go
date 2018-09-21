@@ -6,17 +6,16 @@
 package main
 
 import (
-	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 func TestSingularityEnv(t *testing.T) {
-	if os.Getenv("TEST_26") == "" {
-		t.Skip("Skip until features are completed")
+	if !*runDisabled {
+		t.Skip("disabled until issue addressed") // TODO
 	}
 
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
