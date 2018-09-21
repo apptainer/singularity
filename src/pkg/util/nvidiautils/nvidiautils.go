@@ -81,7 +81,7 @@ func nvidiaLiblist(abspath string) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if strings.HasPrefix(line, "#") && line != "" {
+		if !strings.HasPrefix(line, "#") && line != "" {
 			strArray = append(strArray, line)
 		}
 	}
