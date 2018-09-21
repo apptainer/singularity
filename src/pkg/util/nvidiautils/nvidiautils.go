@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
+	"path/filepath"
 	"strings"
 
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -54,20 +54,13 @@ func nvidiaContainerCli() ([]string, []string, error) {
 	for _, line := range strings.Split(string(out), "\n") {
 		if line != "" {
 
-			// strip off the filepath info as we are using
-			// the filepath returned by "ldconfig -p"
-			filePaths := strings.Split(line, "/")
-			fileName := ""
-			if len(filePaths) > 1 {
-				fileName = filePaths[len(filePaths)-1]
-			}
+			fileName := filepath.Base(line)
 
 			if strings.Contains(fileName, ".so") {
 				strArray = append(strArray, fileName) // add entry to list to be bound
 				// strip off .xxx.xx prefix and add so and so.1 entries as well
 				newentry := strings.SplitAfter(fileName, ".so")
-				strArray = append(strArray, newentry[0])      // add prefix (filepath.so)
-				strArray = append(strArray, newentry[0]+".1") // add prefix +".1" (filepath.so.1)
+				strArray = append(strArray, newentry[0]) // add prefix (filepath.so)
 			}
 		}
 	}
@@ -77,7 +70,6 @@ func nvidiaContainerCli() ([]string, []string, error) {
 // generate bind list using contents of nvliblist.conf
 func nvidiaLiblist(abspath string) ([]string, error) {
 	var strArray []string
-	var commentID = regexp.MustCompile(`^#`)
 
 	// grab the entries in nvliblist.conf file
 	file, err := os.Open(abspath + "/nvliblist.conf")
@@ -89,8 +81,7 @@ func nvidiaLiblist(abspath string) ([]string, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		val := commentID.FindString(line)
-		if val == "" && line != "" {
+		if strings.HasPrefix(line, "#") && line != "" {
 			strArray = append(strArray, line)
 		}
 	}
@@ -106,7 +97,8 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	// use nvidia-container-cli if presenet
 	strArray, bindArray, err := nvidiaContainerCli()
 	if err != nil {
-		sylog.Warningf("nvidiaContainercli returned: %v", err)
+		sylog.Verbosef("nvidiaContainercli returned: %v", err)
+		sylog.Verbosef("Falling back to nvliblist.conf")
 
 		// nvidia-container-cli not present or errored out
 		// fallback is to use nvliblist.conf
@@ -152,7 +144,7 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 					ldconfigFileNames := strings.Split(ldconfigOutputSplitline[0], " ")
 					ldconfigFileName := strings.TrimSpace(string(ldconfigFileNames[0]))
 
-					if ldconfigFileName == nvidiaFileName && ldconfigFileName != lastadd { // add if not duplicate
+					if strings.HasPrefix(ldconfigFileName, nvidiaFileName) && ldconfigFileName != lastadd { // add if not duplicate
 						// this is binding the actual name found above...
 						bindString := ldconfigOutputSplitline[1] + ":/.singularity.d/libs/" + ldconfigFileName
 						bindArray = append(bindArray, bindString)
