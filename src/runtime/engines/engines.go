@@ -12,11 +12,11 @@ import (
 	"net/rpc"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
-	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity"
-	singularityRpcServer "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/server"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
+	singularityRpcServer "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/server"
 )
 
 // Engine is the combination of an EngineOperations and a config.Common. The singularity

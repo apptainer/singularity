@@ -8,7 +8,7 @@ package build
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types"
 )
 
 // validAssemblers contains of list of know Assemblers

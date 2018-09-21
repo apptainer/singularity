@@ -638,4 +638,10 @@ Enterprise Performance Computing (EPC)`
   $ singularity run-help my_container.sif
 
     Some help for this container`
+
+	InspectUse     string = `inspect [inspect options...] <image path>`
+	InspectShort   string = `Display metadata for container if available`
+	InspectLong    string = `This command will show you labels, environment variables, and scripts associated with the image.`
+	InspectExample string = `
+  $ singularity inspect ubuntu.img`
 )

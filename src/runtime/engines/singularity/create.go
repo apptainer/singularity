@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 // CreateContainer creates a container

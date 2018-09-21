@@ -8,10 +8,10 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"os"
 	"strconv"
@@ -67,6 +67,8 @@ func doKeysPushCmd(fingerprint string, url string) error {
 	if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
 		return err
 	}
+
+	fmt.Printf("public key `%v' pushed to server successfully\n", fingerprint)
 
 	return nil
 }

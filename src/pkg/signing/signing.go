@@ -13,8 +13,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"github.com/sylabs/sif/pkg/sif"
 
@@ -75,20 +75,20 @@ func descrToSign(fimg *sif.FileImage) (descr *sif.Descriptor, err error) {
 func Sign(cpath, url, authToken string) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not load private keyring: %s", err)
 	}
 
-	// Find a generate a private key usable for signing
+	// Generate a private key usable for signing
 	var entity *openpgp.Entity
 	if elist == nil {
 		resp, err := sypgp.AskQuestion("No OpenPGP signing keys found, autogenerate? [Y/n] ")
 		if err != nil {
-			return err
+			return fmt.Errorf("could not read response: %s", err)
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
 			entity, err = sypgp.GenKeyPair()
 			if err != nil {
-				return err
+				return fmt.Errorf("generating openpgp key pair failed: %s", err)
 			}
 		} else {
 			return fmt.Errorf("cannot sign without installed keys")
@@ -99,7 +99,7 @@ func Sign(cpath, url, authToken string) error {
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
 			if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
-				return err
+				return fmt.Errorf("failed while pushing public key to server: %s", err)
 			}
 			fmt.Printf("Uploaded key successfully!\n")
 		}
@@ -107,7 +107,7 @@ func Sign(cpath, url, authToken string) error {
 		if len(elist) > 1 {
 			entity, err = sypgp.SelectPrivKey(elist)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed while reading selection: %s", err)
 			}
 		} else {
 			entity = elist[0]
@@ -115,19 +115,21 @@ func Sign(cpath, url, authToken string) error {
 	}
 
 	// Decrypt key if needed
-	sypgp.DecryptKey(entity)
+	if err = sypgp.DecryptKey(entity); err != nil {
+		return fmt.Errorf("could not decrypt private key, wrong password?")
+	}
 
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load SIF container file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 
 	// figure out which descriptor has data to sign
 	descr, err := descrToSign(&fimg)
 	if err != nil {
-		return err
+		return fmt.Errorf("signing requires a primary partition: %s", err)
 	}
 
 	// signature also include data integrity check
@@ -137,20 +139,20 @@ func Sign(cpath, url, authToken string) error {
 	var signedmsg bytes.Buffer
 	plaintext, err := clearsign.Encode(&signedmsg, entity.PrivateKey, nil)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not build a signature block: %s", err)
 	}
 	_, err = plaintext.Write([]byte(sifhash))
 	if err != nil {
-		return err
+		return fmt.Errorf("failed writing hash value to signature block: %s", err)
 	}
 	if err = plaintext.Close(); err != nil {
-		return err
+		return fmt.Errorf("I/O error while wrapping up signature block: %s", err)
 	}
 
 	// finally add the signature block (for descr) as a new SIF data object
 	err = sifAddSignature(&fimg, descr, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
 	if err != nil {
-		return err
+		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
 	}
 
 	return nil
@@ -184,14 +186,14 @@ func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *si
 func Verify(cpath, url, authToken string) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to load SIF container file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
 	signatures, descr, err := getSigsForSelection(&fimg)
 	if err != nil {
-		return err
+		return fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
 
 	// the selected data object is hashed for comparison against signature block's
@@ -200,7 +202,7 @@ func Verify(cpath, url, authToken string) error {
 	// load the public keys available locally from the cache
 	elist, err := sypgp.LoadPubKeyring()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not load public keyring: %s", err)
 	}
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
@@ -210,7 +212,7 @@ func Verify(cpath, url, authToken string) error {
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
-			return fmt.Errorf("failed to decode clearsign message")
+			return fmt.Errorf("failed to parse signature block")
 		}
 
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
@@ -222,7 +224,7 @@ func Verify(cpath, url, authToken string) error {
 		// get the entity fingerprint for the signature block
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not get the signing entity fingerprint: %s", err)
 		}
 
 		// try to verify with local OpenPGP store first
@@ -232,13 +234,13 @@ func Verify(cpath, url, authToken string) error {
 			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
 			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken)
 			if err != nil {
-				return err
+				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
 			sylog.Infof("key retreived successfully!")
 
 			block, _ := clearsign.Decode(data)
 			if block == nil {
-				return fmt.Errorf("failed to decode clearsign message")
+				return fmt.Errorf("failed to parse signature block")
 			}
 
 			// try verification again with downloaded key
@@ -254,7 +256,7 @@ func Verify(cpath, url, authToken string) error {
 			}
 			if resp == "" || resp == "y" || resp == "Y" {
 				if err = sypgp.StorePubKey(netlist[0]); err != nil {
-					return err
+					return fmt.Errorf("could not store public key: %s", err)
 				}
 			}
 		}

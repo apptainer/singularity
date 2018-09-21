@@ -17,8 +17,8 @@ Build-Depends:
  uuid-dev,
 Standards-Version: 3.9.8
 Homepage: http://gmkurtzer.github.io/singularity
-Vcs-Git: https://github.com/singularityware/singularity.git
-Vcs-Browser: https://github.com/singularityware/singularity
+Vcs-Git: https://github.com/sylabs/singularity.git
+Vcs-Browser: https://github.com/sylabs/singularity
 
 # "singularity" is a packaged game (but the contents don't clash)
 Package: singularity-container
