@@ -214,7 +214,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		} else {
 			if len(NvidiaBindPaths) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
-				sylog.Warningf("You may need to edit %v/singularity/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
+				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
 				BindPaths = append(BindPaths, NvidiaBindPaths...)
 			}
