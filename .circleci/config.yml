@@ -101,6 +101,7 @@ jobs:
           command: |-
             cd /go/src/github.com/sylabs/singularity
             ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
             make -C ./builddir check
 
   unit_test:
@@ -111,7 +112,7 @@ jobs:
       - run:
           name: singularity 3.0 dependencies
           command: |-
-            apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+            apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools sudo
             curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - run:
           name: Build Source
