@@ -212,7 +212,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Infof("Unable to capture nvidia bind points: %v", err)
 		} else {
-			if len(BindPaths) == 0 {
+			if len(NvidiaBindPaths) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 				sylog.Warningf("You may need to edit %v/singularity/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
