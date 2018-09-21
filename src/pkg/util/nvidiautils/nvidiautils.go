@@ -24,14 +24,14 @@ func nvidiaContainerCli() ([]string, []string, error) {
 	// use nvidia-container-cli (if present)
 	command, err := exec.LookPath("nvidia-container-cli")
 	if err != nil {
-		return nil, nil, fmt.Errorf("no nvidia-container-cli present: %v\n", err)
+		return nil, nil, fmt.Errorf("no nvidia-container-cli present: %v", err)
 	}
 
 	// process the binaries first
 	cmd := exec.Command(command, "list", "--binaries")
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v\n", err)
+		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
 	}
 
 	for _, line := range strings.Split(string(out), "\n") {
@@ -48,7 +48,7 @@ func nvidiaContainerCli() ([]string, []string, error) {
 	cmd = exec.Command(command, "list", "--ipcs", "--libraries")
 	out, err = cmd.Output()
 	if err != nil {
-		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v\n", err)
+		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
 	}
 
 	for _, line := range strings.Split(string(out), "\n") {
