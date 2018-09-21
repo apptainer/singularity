@@ -129,7 +129,6 @@ func insertDefinition(b *types.Bundle) error {
 }
 
 func insertLabelsJSON(b *types.Bundle) (err error) {
-
 	var text []byte
 	labels := make(map[string]string)
 
@@ -191,7 +190,6 @@ func getExistingLabels(labels map[string]string, b *types.Bundle) error {
 }
 
 func addBuildLabels(labels map[string]string, b *types.Bundle) error {
-
 	// schema version
 	labels["org.label-schema.schema-version"] = "1.0"
 
