@@ -17,54 +17,36 @@ import (
 )
 
 // generate bind list using nvidia-container-cli
-func nvidiaContainerCli() ([]string, []string, error) {
+func nvidiaContainerCli() ([]string, error) {
 	var strArray []string
-	var bindArray []string
 
 	// use nvidia-container-cli (if present)
 	command, err := exec.LookPath("nvidia-container-cli")
 	if err != nil {
-		return nil, nil, fmt.Errorf("no nvidia-container-cli present: %v", err)
+		return nil, fmt.Errorf("no nvidia-container-cli present: %v", err)
 	}
 
-	// process the binaries first
-	cmd := exec.Command(command, "list", "--binaries")
+	cmd := exec.Command(command, "list", "--binaries", "--ipcs", "--libraries")
 	out, err := cmd.Output()
 	if err != nil {
-		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
-	}
-
-	for _, line := range strings.Split(string(out), "\n") {
-		if line != "" {
-			// add this in to the bind list here so we don't need to special case it
-			// when the libraries are processed later in GetNvidiaBindPath
-			// (i.e. thiese will never show up in ldconfig output, hence they would not be
-			// added in later without adding a lot of special case code)
-			bindString := line + ":" + line
-			bindArray = append(bindArray, bindString)
-		}
-	}
-
-	cmd = exec.Command(command, "list", "--ipcs", "--libraries")
-	out, err = cmd.Output()
-	if err != nil {
-		return nil, nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
+		return nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
 	}
 
 	for _, line := range strings.Split(string(out), "\n") {
 		if line != "" {
 
 			fileName := filepath.Base(line)
+			strArray = append(strArray, fileName) // add entry to list to be bound (binary OR library)
 
+			// if this is a library, then add a .so entry as well
 			if strings.Contains(fileName, ".so") {
-				strArray = append(strArray, fileName) // add entry to list to be bound
-				// strip off .xxx.xx prefix and add so and so.1 entries as well
+				// strip off .xxx.xx prefix and add so entry as well
 				newentry := strings.SplitAfter(fileName, ".so")
 				strArray = append(strArray, newentry[0]) // add prefix (filepath.so)
 			}
 		}
 	}
-	return strArray, bindArray, nil
+	return strArray, nil
 }
 
 // generate bind list using contents of nvliblist.conf
@@ -95,7 +77,7 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	var bindArray []string
 
 	// use nvidia-container-cli if presenet
-	strArray, bindArray, err := nvidiaContainerCli()
+	strArray, err := nvidiaContainerCli()
 	if err != nil {
 		sylog.Verbosef("nvidiaContainercli returned: %v", err)
 		sylog.Verbosef("Falling back to nvliblist.conf")
@@ -125,33 +107,44 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 	}
 
 	lastadd := ""
-	for _, ldconfigOutputline := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
-		if ldconfigOutputline != "" {
-			for _, nvidiaFileName := range strArray {
+	for _, nvidiaFileName := range strArray {
 
-				// sample ldconfig -p output (ldconfigOutputline)
-				// 	libnvidia-ml.so.1 (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so.1
-				//	libnvidia-ml.so (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so
+		// if the file contins a ".so", treat it as a library
+		if strings.Contains(nvidiaFileName, ".so") {
 
-				ldconfigOutputSplitline := strings.SplitN(ldconfigOutputline, "=> ", 2)
-				if len(ldconfigOutputSplitline) > 1 {
+			for _, ldconfigOutputline := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
+				if ldconfigOutputline != "" {
 
-					// ldconfigOutputSplitline[0] is the "libnvidia-ml.so[.1] (libc6,x86-64)"" (from the above example)
-					// ldconfigOutputSplitline[1] is the "/usr/lib64/nvidia/libnvidia-ml.so[.1]" (from the above example)
-					// these next 2 lines extract the "libnvdia-ml.so[.1]" (from the above example)
+					// sample ldconfig -p output (ldconfigOutputline)
+					// 	libnvidia-ml.so.1 (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so.1
+					//	libnvidia-ml.so (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so
 
-					// ldconfigFileName is "libnvidia-ml.so[.1]" (from the above example)
-					ldconfigFileNames := strings.Split(ldconfigOutputSplitline[0], " ")
-					ldconfigFileName := strings.TrimSpace(string(ldconfigFileNames[0]))
+					ldconfigOutputSplitline := strings.SplitN(ldconfigOutputline, "=> ", 2)
+					if len(ldconfigOutputSplitline) > 1 {
 
-					if strings.HasPrefix(ldconfigFileName, nvidiaFileName) && ldconfigFileName != lastadd { // add if not duplicate
-						// this is binding the actual name found above...
-						bindString := ldconfigOutputSplitline[1] + ":/.singularity.d/libs/" + ldconfigFileName
-						bindArray = append(bindArray, bindString)
-						lastadd = ldconfigFileName
+						// ldconfigOutputSplitline[0] is the "libnvidia-ml.so[.1] (libc6,x86-64)"" (from the above example)
+						// ldconfigOutputSplitline[1] is the "/usr/lib64/nvidia/libnvidia-ml.so[.1]" (from the above example)
+						// these next 2 lines extract the "libnvdia-ml.so[.1]" (from the above example)
+
+						// ldconfigFileName is "libnvidia-ml.so[.1]" (from the above example)
+						ldconfigFileNames := strings.Split(ldconfigOutputSplitline[0], " ")
+						ldconfigFileName := strings.TrimSpace(string(ldconfigFileNames[0]))
+
+						if strings.HasPrefix(ldconfigFileName, nvidiaFileName) && ldconfigFileName != lastadd { // add if not duplicate
+							// this is binding the actual name found above...
+							bindString := ldconfigOutputSplitline[1] + ":/.singularity.d/libs/" + ldconfigFileName
+							bindArray = append(bindArray, bindString)
+							lastadd = ldconfigFileName
+						}
 					}
+
 				}
 			}
+		} else {
+			// treat the file as a binary file - add it to the bind list
+			// no need to check the ldconfig output
+			bindString := nvidiaFileName + ":" + nvidiaFileName
+			bindArray = append(bindArray, bindString)
 		}
 	}
 
