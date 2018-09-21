@@ -311,6 +311,8 @@ func getcp(def types.Definition) (ConveyorPacker, error) {
 		return &sources.LocalConveyorPacker{}, nil
 	case "yum":
 		return &sources.YumConveyorPacker{}, nil
+	case "zypper":
+		return &sources.ZypperConveyorPacker{}, nil
 	default:
 		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
 	}
