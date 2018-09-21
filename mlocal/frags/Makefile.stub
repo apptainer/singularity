@@ -56,7 +56,7 @@ abs_BUILDDIR := `readlink -f $(BUILDDIR)`
 cni_builddir := $(abspath $(BUILDDIR))/cni
 cni_plugins_REPO := github.com/containernetworking/plugins/plugins
 cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir)/*)
-cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(PREFIX)/libexec/singularity/cni/$(plugin))
+cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(EXEC_PREFIX)/libexec/singularity/cni/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 
@@ -79,7 +79,7 @@ cniplugins: $(BUILDDIR)/vendors-done
 	@for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
 			echo " CNI PLUGIN" `basename $$p`; \
-			go build -o $(cni_builddir)/`basename $$p` $$p; \
+			go build -ldflags="-s" -o $(cni_builddir)/`basename $$p` $$p; \
 		fi \
 	done
 
