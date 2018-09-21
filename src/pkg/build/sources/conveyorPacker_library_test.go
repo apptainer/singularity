@@ -6,7 +6,6 @@
 package sources_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/sylabs/singularity/src/pkg/build/sources"
@@ -15,6 +14,7 @@ import (
 )
 
 const (
+	libraryURL = "https://cloud.sylabs.io/library"
 	libraryURI = "library://dtrudg/linux/alpine:latest"
 )
 
@@ -38,13 +38,13 @@ func TestLibraryConveyor(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
 
-	fmt.Println(b.Recipe)
-
-	cp := &sources.LibraryConveyorPacker{}
+	cp := &sources.LibraryConveyorPacker{
+		LibraryURL: libraryURL,
+	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
-	defer cp.CleanUp()
+	//defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)
 	}
@@ -65,7 +65,9 @@ func TestLibraryPacker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
 
-	cp := &sources.LibraryConveyorPacker{}
+	cp := &sources.LibraryConveyorPacker{
+		LibraryURL: libraryURL,
+	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
