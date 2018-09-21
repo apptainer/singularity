@@ -1,26 +1,138 @@
-version: 2.0
+version: 2
+
+defaults: &defaults
+  working_directory: /go/src/github.com/sylabs/singularity
+  docker:
+    - image: golang:latest
 
 jobs:
   build:
-    docker:
-      - image: golang:1.11
-    working_directory: ~/go/src/github.com/sylabs/singularity
+    <<: *defaults
     steps:
       - checkout
+      - restore_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
       - run:
-          name: Install Dependencies 
+          name: install dep tool
           command: |-
-            apt-get update
-            apt-get -y --force-yes install libssl-dev uuid-dev libgpgme11-dev
-            go get -u github.com/golang/dep/cmd/dep
-            echo 'export PATH=`go env GOPATH`/bin:$PATH' >> $BASH_ENV
-            source $BASH_ENV
-      - run: 
-          name: Build Singularity
+            curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: Set Up Vendor Directory
           command: |-
-            export PATH=`go env GOPATH`/bin:$PATH
-            echo $PATH
-            which dep
-            ./mconfig
-            make -C builddir/
+            if [ ! -d vendor ]; then
+              dep ensure -vendor-only
+            fi
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: install dependencies
+          command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+      - run:
+          name: build source
+          command: |-
+            yes | ./mconfig -p /usr/local
+            make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+            make -C ./builddir install
+      - run:
+          name: Run Test
+          command: make -C ./builddir testall
 
+  get_source:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: install dep tool
+          command: |-
+            curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: Set Up Vendor Directory
+          command: |-
+            if [ ! -d vendor ]; then
+              dep ensure -vendor-only
+            fi
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - persist_to_workspace:
+          root: /
+          paths:
+            - go/src/github.com/sylabs/singularity
+
+  build_source:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /
+      - run:
+          name: singularity 3.0 dependencies
+          working_directory: /go/src/github.com/sylabs/singularity
+          command: |-
+            apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+            curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: Build Source
+          working_directory: /go/src/github.com/sylabs/singularity
+          command: |-
+            yes | ./mconfig -p /usr/local
+            make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+
+  runs_checks:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /
+      - run:
+          name: Check vet & lint
+          working_directory: /go/src/github.com/sylabs/singularity
+          command: |-
+            cd /go/src/github.com/sylabs/singularity
+            make -C ./builddir check
+
+  unit_test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: /
+      - run:
+          name: singularity 3.0 dependencies
+          command: |-
+            apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+            curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: Build Source
+          working_directory: /go/src/github.com/sylabs/singularity
+          command: |-
+            yes | ./mconfig -p /usr/local
+            make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+            make -C ./builddir install
+      - run:
+          name: Run Tests
+          working_directory: /go/src/github.com/sylabs/singularity
+          command: |-
+            make -C ./builddir  test
+
+workflows:
+  version: 2
+
+  build_and_test:
+    jobs:
+      - get_source
+      - build_source:
+          requires:
+            - get_source
+      - runs_checks:
+          requires:
+            - get_source
+      - unit_test:
+          requires:
+            - get_source
