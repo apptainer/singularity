@@ -461,12 +461,12 @@
   version = "v0.1.1"
 
 [[projects]]
-  digest = "1:57234a321bf1f8f98a8a9a5122a2404cc60d0800516f4ab7a7b2375e4b2d19ea"
+  branch = "master"
+  digest = "1:0d447d4961f4f9270457fbc20d0261bba8d3056f395efd2e2480e2dfa4487a60"
   name = "github.com/opencontainers/runtime-spec"
   packages = ["specs-go"]
   pruneopts = "UT"
-  revision = "4e3b9264a330d094b0386c3703c5f379119711e8"
-  version = "v1.0.1"
+  revision = "5806c35637336642129d03657419829569abc5aa"
 
 [[projects]]
   digest = "1:8d686bce90258b770f742de1aff724002570265c8810980f1beb6c467268901b"
