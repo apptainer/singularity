@@ -6,6 +6,7 @@
 package env
 
 import (
+	"os"
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -42,6 +43,21 @@ func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDes
 
 	g.AddProcessEnv("HOME", homeDest)
 	g.AddProcessEnv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
+
+	if prependPath := os.Getenv("SINGULARITYENV_PREPEND_PATH"); prependPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", prependPath)
+		os.Unsetenv("SINGULARITYENV_PREPEND_PATH")
+	}
+
+	if appendPath := os.Getenv("SINGULARITYENV_APPEND_PATH"); appendPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", appendPath)
+		os.Unsetenv("SINGULARITYENV_APPEND_PATH")
+	}
+
+	if userPath := os.Getenv("SINGULARITYENV_PATH"); userPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_PATH", userPath)
+		os.Unsetenv("SINGULARITYENV_PATH")
+	}
 
 	// Set LANG env
 	if cleanEnv {
