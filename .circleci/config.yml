@@ -35,7 +35,7 @@ jobs:
           name: build source
           command: |-
             yes | ./mconfig -p /usr/local
-            make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+            make -j$(nproc) -C ./builddir all
             make -C ./builddir install
       - run:
           name: Run Test
@@ -75,7 +75,6 @@ jobs:
           at: /
       - run:
           name: singularity 3.0 dependencies
-          working_directory: /go/src/github.com/sylabs/singularity
           command: |-
             apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
             curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
@@ -84,7 +83,7 @@ jobs:
           working_directory: /go/src/github.com/sylabs/singularity
           command: |-
             yes | ./mconfig -p /usr/local
-            make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+            make -j$(nproc) -C ./builddir all
 
   runs_checks:
     <<: *defaults
@@ -96,6 +95,7 @@ jobs:
           working_directory: /go/src/github.com/sylabs/singularity
           command: |-
             cd /go/src/github.com/sylabs/singularity
+            yes | ./mconfig -p /usr/local
             make -C ./builddir check
 
   unit_test:
@@ -113,7 +113,7 @@ jobs:
           working_directory: /go/src/github.com/sylabs/singularity
           command: |-
             yes | ./mconfig -p /usr/local
-            make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+            make -j$(nproc) -C ./builddir all
             make -C ./builddir install
       - run:
           name: Run Tests
