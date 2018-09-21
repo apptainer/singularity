@@ -33,10 +33,10 @@ func TestSingularityEnv(t *testing.T) {
 	var overwrittenPath = "/usr/bin:/bin"
 
 	var singularityEnvTests = []struct {
-		name	string
-		image	string
-		path	string
-		env	[]string
+		name  string
+		image string
+		path  string
+		env   []string
 	}{
 		{"DefaultPath", defaultImage, defaultPath, []string{}},
 		{"CustomPath", customImage, customPath, []string{}},
