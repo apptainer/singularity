@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	libraryURL = "https://cloud.sylabs.io/library"
+	libraryURL = "https://library.sylabs.io/"
 	libraryURI = "library://dtrudg/linux/alpine:latest"
 )
 
@@ -44,7 +44,7 @@ func TestLibraryConveyor(t *testing.T) {
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
-	//defer cp.CleanUp()
+	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", libraryURI, err)
 	}

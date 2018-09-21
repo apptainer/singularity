@@ -38,6 +38,10 @@ func (cp *LibraryConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 
 	cp.b.FSObjects["libraryImg"] = f.Name()
 
+	sylog.Debugf("Download file: %v", cp.b.FSObjects["libraryImg"])
+	sylog.Debugf("LibraryURL: %v", cp.LibraryURL)
+	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
+
 	// get image from library
 	if err = client.DownloadImage(cp.b.FSObjects["libraryImg"], b.Recipe.Header["from"], cp.LibraryURL, true, cp.AuthToken); err != nil {
 		sylog.Fatalf("failed to Get from %s://%s: %v\n", cp.LibraryURL, cp.b.Recipe.Header["from"], err)
