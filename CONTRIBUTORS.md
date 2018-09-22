@@ -11,7 +11,7 @@
     - Dave Godlove <davidgodlove@gmail.com>
     - David Trudgian <david.trudgian@utsouthwestern.edu>
     - Divya Cote <divya.cote@gmail.com>
-    - Eduardo Arango <carlos.arango.gutierrez@correounivalle.edu.co>
+    - Eduardo Arango <arangogutierrez@gmail.com>
     - Jason Stover <jason.stover@gmail.com>
     - Krishna Muriki <kmuriki@lbl.gov>
     - Michael Bauer <bauerm@umich.edu>
