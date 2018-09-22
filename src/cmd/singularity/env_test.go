@@ -6,6 +6,7 @@
 package main
 
 import (
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -15,7 +16,7 @@ import (
 
 func TestSingularityEnv(t *testing.T) {
 	if !*runDisabled {
-		t.Skip("disabled until issue addressed") // TODO
+		t.Skip("disabled until issue addressed") // #2045
 	}
 
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
@@ -53,7 +54,7 @@ func TestSingularityEnv(t *testing.T) {
 			args := []string{"exec", currentTest.image, "env"}
 
 			cmd := exec.Command(cmdPath, args...)
-			cmd.Env = currentTest.env
+			cmd.Env = append(os.Environ(), currentTest.env...)
 			b, err := cmd.CombinedOutput()
 
 			out := string(b)
