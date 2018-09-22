@@ -77,7 +77,7 @@ func init() {
 // BuildCmd represents the build command
 var BuildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.ExactArgs(2),
+	Args:                  cobra.ExactArgs(2),
 
 	Use:     docs.BuildUse,
 	Short:   docs.BuildShort,
