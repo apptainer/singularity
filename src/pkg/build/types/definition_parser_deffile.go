@@ -204,7 +204,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 
 	// make sure information was valid by checking if definition is not equal to an empty one
 	emptyDef := new(Definition)
-	//labels is always initialized
+	// labels is always initialized
 	emptyDef.Labels = make(map[string]string)
 	if reflect.DeepEqual(d, emptyDef) {
 		return fmt.Errorf("parsed definition did not have any valid information")
@@ -223,7 +223,7 @@ func doHeader(h string, d *Definition) (err error) {
 			continue
 		}
 
-		//remove any comments on header lines
+		// remove any comments on header lines
 		trimLine := strings.Split(line, "#")[0]
 
 		linetoks := strings.SplitN(trimLine, ":", 2)
