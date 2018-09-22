@@ -111,7 +111,6 @@ func insertSection(b []byte, sections map[string]string) {
 }
 
 func doSections(s *bufio.Scanner, d *Definition) (err error) {
-
 	sections := make(map[string]string)
 
 	token := strings.TrimSpace(s.Text())
