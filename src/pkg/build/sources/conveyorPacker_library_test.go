@@ -50,12 +50,12 @@ func TestLibraryConveyor(t *testing.T) {
 
 // TestLibraryPacker checks if we can create a Bundle from the pulled image
 func TestLibraryPacker(t *testing.T) {
+	test.EnsurePrivilege(t)
+
 	b, err := types.NewBundle("sbuild-library")
 	if err != nil {
 		return
 	}
-
-	test.EnsurePrivilege(t)
 
 	b.Recipe, err = types.NewDefinitionFromURI(libraryURI)
 	if err != nil {
