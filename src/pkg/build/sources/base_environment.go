@@ -237,6 +237,36 @@ fi
 PS1="Singularity> "
 export LD_LIBRARY_PATH PS1
 `
+
+	// Contents of /.singularity.d/env/99-runtimevars.sh
+	base99runtimevarsShFileContent = `#!/bin/bash
+# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+#
+# This software is licensed under a customized 3-clause BSD license.  Please
+# consult LICENSE.md file distributed with the sources of this project regarding
+# your rights to use or distribute this software.
+#
+#
+
+if [ -n "${SING_USER_DEFINED_PREPEND_PATH:-}" ]; then
+	PATH="${SING_USER_DEFINED_PREPEND_PATH}:${PATH}"
+fi
+
+if [ -n "${SING_USER_DEFINED_APPEND_PATH:-}" ]; then
+	PATH="${PATH}:${SING_USER_DEFINED_APPEND_PATH}"
+fi
+
+if [ -n "${SING_USER_DEFINED_PATH:-}" ]; then
+	PATH="${SING_USER_DEFINED_PATH}"
+fi
+
+unset SING_USER_DEFINED_PREPEND_PATH \
+	  SING_USER_DEFINED_APPEND_PATH \
+	  SING_USER_DEFINED_PATH
+
+export PATH
+`
+
 	// Contents of /.singularity.d/runscript
 	runscriptFileContent = `#!/bin/sh
 
@@ -361,6 +391,9 @@ func makeFiles(rootPath string) (err error) {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "99-base.sh"), 0755, base99ShFileContent); err != nil {
+		return
+	}
+	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "99-runtimevars.sh"), 0755, base99runtimevarsShFileContent); err != nil {
 		return
 	}
 	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "runscript"), 0755, runscriptFileContent); err != nil {
