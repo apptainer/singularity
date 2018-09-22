@@ -19,6 +19,10 @@ jobs:
           command: |-
             curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
       - run:
+          name: install lint tool
+          command: |-
+            go get -u golang.org/x/lint/golint
+      - run:
           name: Set Up Vendor Directory
           command: |-
             if [ ! -d vendor ]; then
