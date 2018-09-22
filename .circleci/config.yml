@@ -34,7 +34,7 @@ jobs:
       - run:
           name: build source
           command: |-
-            yes | ./mconfig -p /usr/local
+            ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
       - run:
           name: Run checks
