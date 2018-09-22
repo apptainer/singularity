@@ -45,7 +45,7 @@ type YumConveyorPacker struct {
 func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 	c.b = b
 
-	//check for dnf or yum on system
+	// check for dnf or yum on system
 	var installCommandPath string
 	if installCommandPath, err = exec.LookPath("dnf"); err == nil {
 		sylog.Debugf("Found dnf at: %v", installCommandPath)
@@ -60,7 +60,7 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 		return
 	}
 
-	//check for rpm on system
+	// check for rpm on system
 	err = c.getRPMPath()
 	if err != nil {
 		return fmt.Errorf("While checking rpm path: %v", err)
@@ -84,16 +84,16 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 	args := []string{`--noplugins`, `-c`, filepath.Join(c.b.Rootfs(), yumConf), `--installroot`, c.b.Rootfs(), `--releasever=` + c.osversion, `-y`, `install`}
 	args = append(args, strings.Fields(c.include)...)
 
-	//Do the install
+	// Do the install
 	sylog.Debugf("\n\tInstall Command Path: %s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n\tUpdateURL: %s\n\tIncludes: %s\n", installCommandPath, runtime.GOARCH, c.osversion, c.mirrorurl, c.updateurl, c.include)
 	cmd := exec.Command(installCommandPath, args...)
-	//cmd.Stdout = os.Stdout
+	// cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("While bootstrapping: %v", err)
 	}
 
-	//clean up bootstrap packages
+	// clean up bootstrap packages
 	os.RemoveAll(filepath.Join(c.b.Rootfs(), "/var/cache/yum-bootstrap"))
 
 	return nil
@@ -133,9 +133,9 @@ func (c *YumConveyor) getRPMPath() (err error) {
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
-		//search for dbpath from showrc output
+		// search for dbpath from showrc output
 		if strings.Contains(scanner.Text(), "_dbpath\t") {
-			//second field in the string is the path
+			// second field in the string is the path
 			rpmDBPath = strings.Fields(scanner.Text())[2]
 		}
 	}
@@ -161,11 +161,11 @@ func (c *YumConveyor) getRPMPath() (err error) {
 func (c *YumConveyor) getBootstrapOptions() (err error) {
 	var ok bool
 
-	//look for http_proxy and gpg environment vars
+	// look for http_proxy and gpg environment vars
 	c.gpg = os.Getenv("GPG")
 	c.httpProxy = os.Getenv("http_proxy")
 
-	//get mirrorURL, updateURL, OSVerison, and Includes components to definition
+	// get mirrorURL, updateURL, OSVerison, and Includes components to definition
 	c.mirrorurl, ok = c.b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid yum header, no MirrorURL specified")
@@ -173,7 +173,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 
 	c.updateurl, _ = c.b.Recipe.Header["updateurl"]
 
-	//look for an OS version if a mirror specifies it
+	// look for an OS version if a mirror specifies it
 	c.osversion = ""
 	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) || strings.Contains(c.updateurl, `%{OSVERSION}`) {
 		c.osversion, ok = c.b.Recipe.Header["osversion"]
@@ -186,13 +186,13 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 
 	include, _ := c.b.Recipe.Header["include"]
 
-	//check for include environment variable and add it to requires string
+	// check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")
 
-	//trim leading and trailing whitespace
+	// trim leading and trailing whitespace
 	include = strings.TrimSpace(include)
 
-	//add aa_base to start of include list by default
+	// add aa_base to start of include list by default
 	include = `/etc/redhat-release coreutils ` + include
 
 	c.include = include
@@ -202,7 +202,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 
 func (c *YumConveyor) genYumConfig() (err error) {
 	fileContent := "[main]\n"
-	//http proxy
+	// http proxy
 	if c.httpProxy != "" {
 		fileContent += "proxy=" + c.httpProxy + "\n"
 	}
@@ -213,7 +213,7 @@ func (c *YumConveyor) genYumConfig() (err error) {
 	fileContent += "syslog_device=/dev/null\n"
 	fileContent += "exactarch=1\n"
 	fileContent += "obsoletes=1\n"
-	//gpg
+	// gpg
 	if c.gpg != "" {
 		fileContent += "gpgcheck=1\n"
 	} else {
@@ -225,25 +225,25 @@ func (c *YumConveyor) genYumConfig() (err error) {
 	fileContent += "\n"
 	fileContent += "[base]\n"
 	fileContent += "name=Linux $releasever - $basearch\n"
-	//mirror
+	// mirror
 	if c.mirrorurl != "" {
 		fileContent += "baseurl=" + c.mirrorurl + "\n"
 	}
 	fileContent += "enabled=1\n"
-	//gpg
+	// gpg
 	if c.gpg != "" {
 		fileContent += "gpgcheck=1\n"
 	} else {
 		fileContent += "gpgcheck=0\n"
 	}
 
-	//add update section if updateurl is specified
+	// add update section if updateurl is specified
 	if c.updateurl != "" {
 		fileContent += "[updates]\n"
 		fileContent += "name=Linux $releasever - $basearch updates\n"
 		fileContent += "baseurl=" + c.updateurl + "\n"
 		fileContent += "enabled=1\n"
-		//gpg
+		// gpg
 		if c.gpg != "" {
 			fileContent += "gpgcheck=1\n"
 		} else {
@@ -262,7 +262,7 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), yumConf), err)
 	}
 
-	//if gpg key is specified, import it
+	// if gpg key is specified, import it
 	if c.gpg != "" {
 		err = c.importGPGKey()
 		if err != nil {
@@ -278,12 +278,12 @@ func (c *YumConveyor) genYumConfig() (err error) {
 func (c *YumConveyor) importGPGKey() (err error) {
 	sylog.Infof("We have a GPG key!  Preparing RPM database.")
 
-	//make sure gpg is being imported over https
+	// make sure gpg is being imported over https
 	if strings.HasPrefix(c.gpg, "https://") == false {
 		return fmt.Errorf("GPG key must be fetched with https")
 	}
 
-	//make sure curl is installed so rpm can import gpg key
+	// make sure curl is installed so rpm can import gpg key
 	if _, err = exec.LookPath("curl"); err != nil {
 		return fmt.Errorf("Neither yum nor dnf in PATH")
 	}
