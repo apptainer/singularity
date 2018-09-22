@@ -1,0 +1,87 @@
+version: 2.0
+
+defaults: &defaults
+  working_directory: /go/src/github.com/sylabs/singularity
+  
+jobs:
+  go1.10deb:
+    <<: *defaults
+    docker:
+      - image: golang:1.10-stretch
+    steps:
+      - checkout
+      - restore_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: Install dep
+          command: |-
+            go get -u github.com/golang/dep/cmd/dep
+      - run:
+          name: Install golint
+          command: |-
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Set Up Vendor Directory
+          command: |-
+            if [ ! -d vendor ]; then
+              dep ensure -vendor-only
+            fi
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: Install C dependencies
+          command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+      - run:
+          name: Build Singularity
+          command: |-
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
+  go1.11deb:
+    <<: *defaults
+    docker:
+      - image: golang:1.11-stretch
+    steps:
+      - checkout
+      - restore_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: Install dep
+          command: |-
+            go get -u github.com/golang/dep/cmd/dep
+      - run:
+          name: Install golint
+          command: |-
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Set Up Vendor Directory
+          command: |-
+            if [ ! -d vendor ]; then
+              dep ensure -vendor-only
+            fi
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: Install C dependencies
+          command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+      - run:
+          name: Build Singularity
+          command: |-
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
+      - run: #Only run make check on go1.11 as it introduces a new formatting rule we're following
+          name: Run checks
+          command: make -C ./builddir check
+workflows:
+  version: 2
+  test-compile:
+    jobs:
+      - go1.10deb
+      - go1.11deb
