@@ -79,7 +79,7 @@ cniplugins: $(BUILDDIR)/vendors-done
 	@for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
 			echo " CNI PLUGIN" `basename $$p`; \
-			go build -ldflags="-s" -o $(cni_builddir)/`basename $$p` $$p; \
+			go build -ldflags="-s -w" -o $(cni_builddir)/`basename $$p` $$p; \
 		fi \
 	done
 
