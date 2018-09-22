@@ -168,7 +168,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	//get mirrorURL, updateURL, OSVerison, and Includes components to definition
 	c.mirrorurl, ok = c.b.Recipe.Header["mirrorurl"]
 	if !ok {
-		return fmt.Errorf("Invalid zypper header, no MirrorURL specified")
+		return fmt.Errorf("Invalid yum header, no MirrorURL specified")
 	}
 
 	c.updateurl, _ = c.b.Recipe.Header["updateurl"]
@@ -178,7 +178,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) || strings.Contains(c.updateurl, `%{OSVERSION}`) {
 		c.osversion, ok = c.b.Recipe.Header["osversion"]
 		if !ok {
-			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
+			return fmt.Errorf("Invalid yum header, OSVersion referenced in mirror but no OSVersion specified")
 		}
 		c.mirrorurl = strings.Replace(c.mirrorurl, `%{OSVERSION}`, c.osversion, -1)
 		c.updateurl = strings.Replace(c.updateurl, `%{OSVERSION}`, c.osversion, -1)
