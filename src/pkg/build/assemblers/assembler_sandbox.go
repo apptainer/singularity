@@ -145,13 +145,17 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 
 		// add new labels to new map and check for collisions
 		for key, value := range b.Recipe.ImageData.Labels {
+			// check if label already exists
 			if _, ok := labels[key]; ok {
-				// overwrite collision if force flag is set
+				// overwrite collision if it exists and force flag is set
 				if b.Force {
 					labels[key] = value
 				} else {
 					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
 				}
+			} else {
+				// set if it doesnt
+				labels[key] = value
 			}
 		}
 	}
