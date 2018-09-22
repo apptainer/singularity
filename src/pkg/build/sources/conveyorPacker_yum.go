@@ -55,11 +55,6 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("Neither yum nor dnf in PATH")
 	}
 
-	c.b, err = types.NewBundle("sbuild-yum")
-	if err != nil {
-		return
-	}
-
 	// check for rpm on system
 	err = c.getRPMPath()
 	if err != nil {
