@@ -1,26 +1,45 @@
 version: 2.0
 
+defaults: &defaults
+  working_directory: /go/src/github.com/sylabs/singularity
+  docker:
+    - image: golang:latest
+
 jobs:
   build:
-    docker:
-      - image: golang:1.11
-    working_directory: ~/go/src/github.com/sylabs/singularity
+    <<: *defaults
     steps:
       - checkout
+      - restore_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
       - run:
-          name: Install Dependencies 
+          name: install dep tool
           command: |-
-            apt-get update
-            apt-get -y --force-yes install libssl-dev uuid-dev libgpgme11-dev
-            go get -u github.com/golang/dep/cmd/dep
-            echo 'export PATH=`go env GOPATH`/bin:$PATH' >> $BASH_ENV
-            source $BASH_ENV
-      - run: 
-          name: Build Singularity
+            curl -s https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: install lint tool
           command: |-
-            export PATH=`go env GOPATH`/bin:$PATH
-            echo $PATH
-            which dep
-            ./mconfig
-            make -C builddir/
-
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Set Up Vendor Directory
+          command: |-
+            if [ ! -d vendor ]; then
+              dep ensure -vendor-only
+            fi
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: install dependencies
+          command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
+      - run:
+          name: build source
+          command: |-
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
+      - run:
+          name: Run checks
+          command: make -C ./builddir check
