@@ -10,7 +10,6 @@ import (
 
 	"github.com/sylabs/singularity/src/pkg/build/sources"
 	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 const (
@@ -23,9 +22,6 @@ func TestLibraryConveyor(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
-
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
 
 	b, err := types.NewBundle("sbuild-library")
 	if err != nil {
@@ -51,9 +47,6 @@ func TestLibraryConveyor(t *testing.T) {
 
 // TestLibraryPacker checks if we can create a Bundle from the pulled image
 func TestLibraryPacker(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	b, err := types.NewBundle("sbuild-library")
 	if err != nil {
 		return
