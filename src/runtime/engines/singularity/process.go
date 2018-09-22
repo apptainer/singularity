@@ -63,6 +63,12 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
+	for _, fd := range engine.EngineConfig.GetOpenFd() {
+		if err := syscall.Close(fd); err != nil {
+			return fmt.Errorf("Aborting failed to close file descriptor: %s", err)
+		}
+	}
+
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
 		return fmt.Errorf("exec %s failed: %s", args[0], err)

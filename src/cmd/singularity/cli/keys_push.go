@@ -70,5 +70,7 @@ func doKeysPushCmd(fingerprint string, url string) error {
 		return err
 	}
 
+	fmt.Printf("public key `%v' pushed to server successfully\n", fingerprint)
+
 	return nil
 }
