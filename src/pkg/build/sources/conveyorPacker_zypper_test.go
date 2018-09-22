@@ -47,7 +47,7 @@ func TestZypperConveyor(t *testing.T) {
 	zc := &ZypperConveyorPacker{}
 
 	err = zc.Get(b)
-	//clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(zc.b.Path)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", zyppDef, err)
@@ -81,7 +81,7 @@ func TestZypperPacker(t *testing.T) {
 	zcp := &ZypperConveyorPacker{}
 
 	err = zcp.Get(b)
-	//clean up tmpfs since assembler isnt called
+	// clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(zcp.b.Path)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", zyppDef, err)
