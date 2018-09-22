@@ -26,7 +26,7 @@ var (
 	labels      bool
 	deffile     bool
 	runscript   bool
-	test        bool
+	testfile    bool
 	environment bool
 	helpfile    bool
 )
@@ -43,7 +43,7 @@ func init() {
 	InspectCmd.Flags().BoolVarP(&runscript, "runscript", "r", false, "Show the runscript for the image")
 	InspectCmd.Flags().SetAnnotation("runscript", "envkey", []string{"RUNSCRIPT"})
 
-	InspectCmd.Flags().BoolVarP(&test, "test", "t", false, "Show the test script for the image")
+	InspectCmd.Flags().BoolVarP(&testfile, "test", "t", false, "Show the test script for the image")
 	InspectCmd.Flags().SetAnnotation("test", "envkey", []string{"TEST"})
 
 	InspectCmd.Flags().BoolVarP(&environment, "environment", "e", false, "Show the environment settings for the image")
@@ -58,7 +58,7 @@ func init() {
 // InspectCmd represents the build command
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 
 	Use:     docs.InspectUse,
 	Short:   docs.InspectShort,
@@ -92,7 +92,7 @@ var InspectCmd = &cobra.Command{
 			a = append(a, ".singularity.d/runscript")
 		}
 
-		if test {
+		if testfile {
 			sylog.Debugf("Inspection of test selected.")
 			a = append(a, ".singularity.d/test")
 		}

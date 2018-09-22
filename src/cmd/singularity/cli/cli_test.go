@@ -10,11 +10,14 @@ import (
 
 	"github.com/magiconair/properties/assert"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 var cmd cobra.Command
 
 func TestEnvAppend(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 	var appendFlag []string
 
 	cmd.Flags().StringSliceVarP(&appendFlag, "appendFlag", "", []string{""}, "")
@@ -31,6 +34,8 @@ func TestEnvAppend(t *testing.T) {
 }
 
 func TestEnvBool(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 	var boolFlag bool
 
 	cmd.Flags().BoolVar(&boolFlag, "boolFlag", false, "")
@@ -43,6 +48,8 @@ func TestEnvBool(t *testing.T) {
 }
 
 func TestEnvStringNSlice(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 	var stringFlag string
 
 	cmd.Flags().StringVarP(&stringFlag, "stringFlag", "", "", "")
