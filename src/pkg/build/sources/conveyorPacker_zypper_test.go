@@ -17,16 +17,15 @@ import (
 const zyppDef = "../../../../examples/opensuse/Singularity"
 
 func TestZypperConveyor(t *testing.T) {
-
 	if testing.Short() {
 		t.SkipNow()
 	}
 
+	test.EnsurePrivilege(t)
+
 	if _, err := exec.LookPath("zypper"); err != nil {
 		t.Skip("skipping test, zypper not found")
 	}
-
-	test.EnsurePrivilege(t)
 
 	defFile, err := os.Open(zyppDef)
 	if err != nil {
@@ -56,12 +55,11 @@ func TestZypperConveyor(t *testing.T) {
 }
 
 func TestZypperPacker(t *testing.T) {
+	test.EnsurePrivilege(t)
 
 	if _, err := exec.LookPath("zypper"); err != nil {
 		t.Skip("skipping test, zypper not found")
 	}
-
-	test.EnsurePrivilege(t)
 
 	defFile, err := os.Open(zyppDef)
 	if err != nil {
