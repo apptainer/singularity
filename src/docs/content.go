@@ -667,10 +667,10 @@ Enterprise Performance Computing (EPC)`
 
   on the definition file set
   %test
-    echo "some test"
+    echo "hello from test" "$@"
 
-  $ singularity test /tmp/Debian.sif
-      "some test"
+  $ singularity test /tmp/Debian.sif command
+      hello from test command
 
   For additional help, please visit our public documentation pages which are
   found at:
