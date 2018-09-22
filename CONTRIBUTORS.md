@@ -4,6 +4,7 @@
 
 #Developers:
 
+    - Carl Madison <carl@sylabs.io>
     - Cedric Clerget <cedric.clerget@univ-fcomte.fr>
     - Dave Dykstra <dwd@fnal.gov>
     - Dave Godlove <davidgodlove@gmail.com>
