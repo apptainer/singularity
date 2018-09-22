@@ -36,7 +36,7 @@ func init() {
 		ExecCmd,
 		ShellCmd,
 		RunCmd,
-		testCmd,
+		TestCmd,
 	}
 
 	// TODO : the next n lines of code are repeating too much but I don't
@@ -77,7 +77,7 @@ func init() {
 	SingularityCmd.AddCommand(ExecCmd)
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
-	SingularityCmd.AddCommand(testCmd)
+	SingularityCmd.AddCommand(TestCmd)
 }
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
@@ -166,7 +166,7 @@ var RunCmd = &cobra.Command{
 }
 
 // TestCmd represents the test command
-var testCmd = &cobra.Command{
+var TestCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
