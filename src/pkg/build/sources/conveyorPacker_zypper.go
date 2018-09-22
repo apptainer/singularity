@@ -7,6 +7,7 @@ package sources
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -207,30 +208,25 @@ func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 }
 
 func rpmPathCheck() (err error) {
-	_, err = exec.LookPath("rpm")
-	if err != nil {
-		return fmt.Errorf("RPM is not in PATH: %v", err)
-	}
+	output := &bytes.Buffer{}
+	cmd := exec.Command("rpm", "--showrc")
+	cmd.Stdout = output
 
-	r, w, err := os.Pipe()
-	if err != nil {
+	if err = cmd.Run(); err != nil {
 		return
 	}
-	go func() {
-		cmd := exec.Command("bash", "-c", `rpm --showrc | grep -E ":\s_dbpath\s" | cut -f2`)
-		cmd.Stdout = w
-		defer w.Close()
-		if err = cmd.Run(); err != nil {
-			return
-		}
-	}()
 
-	reader := bufio.NewReader(r)
-	rpmDBPath, err := reader.ReadString('\n')
-	if err != nil {
-		return fmt.Errorf("Could not read rpm --showrc output")
+	rpmDBPath := ""
+	scanner := bufio.NewScanner(output)
+	scanner.Split(bufio.ScanLines)
+
+	for scanner.Scan() {
+		//search for dbpath from showrc output
+		if strings.Contains(scanner.Text(), "_dbpath\t") {
+			//second field in the string is the path
+			rpmDBPath = strings.Fields(scanner.Text())[2]
+		}
 	}
-	rpmDBPath = strings.TrimSuffix(rpmDBPath, "\n")
 
 	if rpmDBPath != `%{_var}/lib/rpm` {
 		return fmt.Errorf("RPM database is using a weird path: %s"+
