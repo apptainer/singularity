@@ -1,6 +1,6 @@
 BootStrap: yum
 OSVersion: 7
-MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/
+MirrorURL: http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/x86_64/
 Include: yum
 
 # If you want the updates (available at the bootstrap date) to be installed
