@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/src/pkg/util/nvidiautils"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
@@ -204,6 +205,20 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
 		}
 		engineConfig.SetImage(abspath)
+	}
+
+	if Nvidia {
+		NvidiaBindPaths, err := nvidiautils.GetNvidiaBindPath(buildcfg.SINGULARITY_CONFDIR)
+		if err != nil {
+			sylog.Infof("Unable to capture nvidia bind points: %v", err)
+		} else {
+			if len(NvidiaBindPaths) == 0 {
+				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
+				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
+			} else {
+				BindPaths = append(BindPaths, NvidiaBindPaths...)
+			}
+		}
 	}
 
 	engineConfig.SetBindPath(BindPaths)

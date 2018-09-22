@@ -40,6 +40,9 @@ go_INSTALL := $(singularity_INSTALL)
 bash_completion :=  $(BUILDDIR)/etc/bash_completion.d/singularity
 bash_completion_INSTALL := $(PREFIX)/etc/bash_completion.d/singularity
 
+NVIDIA_liblist := $(SOURCEDIR)/etc/nvliblist.conf
+NVIDIA_liblist_INSTALL := $(PREFIX)/etc/singularity/nvliblist.conf
+
 go_TAG += containers_image_openpgp
 
 abs_BUILDDIR := `readlink -f $(BUILDDIR)`
@@ -56,7 +59,7 @@ cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
 	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
-	$(bash_completion_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL)
+	$(bash_completion_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) $(NVIDIA_liblist_INSTALL)
 
 CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion) \
 	$(cni_plugins_EXECUTABLES)
@@ -120,6 +123,12 @@ $(bash_completion): $(go_OBJ)
 
 # install singularity CLI bash_completion file
 $(bash_completion_INSTALL): $(bash_completion)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+# install NVIDIA lib list config file
+$(NVIDIA_liblist_INSTALL): $(NVIDIA_liblist)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0644 $< $@
