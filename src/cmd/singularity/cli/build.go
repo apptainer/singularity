@@ -122,7 +122,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf(err.Error())
 			}
 
-			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest)
+			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest, libraryURL, authToken)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 			}
