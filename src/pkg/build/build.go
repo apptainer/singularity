@@ -58,26 +58,26 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
+func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
 	def, err := makeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, force, update, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest, libraryURL, authToken)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
+func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, force, update, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest, libraryURL, authToken)
 }
 
-func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool) (*Build, error) {
+func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
 	var err error
 
 	// always build a sandbox if updating an existing sandbox
@@ -106,7 +106,7 @@ func newBuild(d types.Definition, dest, format string, force, update bool, secti
 
 	// dont need to get cp if we're skipping bootstrap
 	if !update || force {
-		if c, err := getcp(b.d); err == nil {
+		if c, err := getcp(b.d, libraryURL, authToken); err == nil {
 			b.c = c
 		} else {
 			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -295,8 +295,13 @@ func (b *Build) runBuildEngine() error {
 	return nil
 }
 
-func getcp(def types.Definition) (ConveyorPacker, error) {
+func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
+	case "library":
+		return &sources.LibraryConveyorPacker{
+			LibraryURL: libraryURL,
+			AuthToken:  authToken,
+		}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
