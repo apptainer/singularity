@@ -46,9 +46,5 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cpath, url string) error {
-	if err := signing.Verify(cpath, url, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Verify(cpath, url, authToken)
 }
