@@ -367,6 +367,14 @@
   revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
 
 [[projects]]
+  digest = "1:41b00533ad3d8b3f54b6a02fc093b211feeffb068a3148a7e7084cd7aeef18ec"
+  name = "github.com/magiconair/properties"
+  packages = ["assert"]
+  pruneopts = "UT"
+  revision = "c2353362d570a7bfa228149c62842019201cfb71"
+  version = "v1.8.0"
+
+[[projects]]
   digest = "1:e2d1d410fb367567c2b53ed9e2d719d3c1f0891397bb2fa49afd747cfbf1e8e4"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
@@ -607,12 +615,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:bf9d84d0ce417b2a792a9a57db39930572311bafa740397562677787311ee894"
+  digest = "1:4654a6e1e8273be1aca70fa65e3e72caf18860e47c28b8fe7579a127fd73d772"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
   pruneopts = "UT"
-  revision = "a4f82381d252d398a7dda63a38c88f626bf68fb9"
+  revision = "a74ff54af21df5c4b791a246f05c56ff88c81c8e"
+  version = "v1.0.0"
 
 [[projects]]
   branch = "master"
@@ -762,6 +770,7 @@
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
+    "github.com/magiconair/properties/assert",
     "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/opencontainers/image-tools/image",
     "github.com/opencontainers/runtime-spec/specs-go",
