@@ -14,6 +14,7 @@ import (
 
 // validURIs contains a list of known uris
 var validURIs = map[string]bool{
+	"library":        true,
 	"shub":           true,
 	"docker":         true,
 	"docker-archive": true,

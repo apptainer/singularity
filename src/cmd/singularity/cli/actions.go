@@ -36,6 +36,7 @@ func init() {
 		ExecCmd,
 		ShellCmd,
 		RunCmd,
+		TestCmd,
 	}
 
 	// TODO : the next n lines of code are repeating too much but I don't
@@ -76,7 +77,7 @@ func init() {
 	SingularityCmd.AddCommand(ExecCmd)
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
-
+	SingularityCmd.AddCommand(TestCmd)
 }
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
@@ -97,7 +98,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true)
+		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true, "", "")
 		if err != nil {
 			sylog.Fatalf("Unable to create new build: %v", err)
 		}
@@ -162,6 +163,23 @@ var RunCmd = &cobra.Command{
 	Short:   docs.RunShort,
 	Long:    docs.RunLong,
 	Example: docs.RunExamples,
+}
+
+// TestCmd represents the test command
+var TestCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
+	Run: func(cmd *cobra.Command, args []string) {
+		a := append([]string{"/.singularity.d/test"}, args[1:]...)
+		execStarter(cmd, args[0], a, "")
+	},
+
+	Use:     docs.RunTestUse,
+	Short:   docs.RunTestShort,
+	Long:    docs.RunTestLong,
+	Example: docs.RunTestExample,
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
