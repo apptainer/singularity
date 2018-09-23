@@ -93,7 +93,7 @@ jobs:
           name: Install Singularity
           <<: *defaults
           command: |-
-            sudo PATH="/usr/local/go/bin:{PATH}" make -C builddir/ install
+            sudo PATH="/usr/local/go/bin:${PATH}" make -C builddir/ install
 
 workflows:
   version: 2
