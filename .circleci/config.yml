@@ -79,6 +79,12 @@ jobs:
     <<: *defaults
     machine: true
     steps:
+      - run:
+          name: Update VM
+          command: |-
+            mkdir -p /go/src/github.com/sylabs/singularity
+            sudo apt-get update
+            sudo apt-get install -y ca-certificates
       - attach_workspace:
           at: /
       - run:
