@@ -33,6 +33,7 @@ func init() {
 		"nv",
 		"overlay",
 		"scratch",
+		"security",
 		"userns",
 		"uts",
 		"workdir",

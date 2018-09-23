@@ -122,7 +122,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f5b1ca46c74b9de5cce0ac381105af2126ff0d3410a8f0cf7214363f8b919e1c"
+  digest = "1:acdba2970b41ea0c3e943dd3d872a11486afccf5fe4f6690ae93580dba599f98"
   name = "github.com/containers/storage"
   packages = [
     "pkg/archive",
@@ -134,6 +134,7 @@
     "pkg/mount",
     "pkg/pools",
     "pkg/promise",
+    "pkg/stringutils",
     "pkg/system",
   ]
   pruneopts = "UT"
@@ -366,6 +367,14 @@
   pruneopts = "UT"
   revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
 
+[[projects]]
+  branch = "master"
+  digest = "1:d007733e8cfb5a746602c6998ce3dcfe631a365f8f58931b0a5af9f4f5011c0e"
+  name = "github.com/kubernetes-sigs/cri-o"
+  packages = ["pkg/seccomp"]
+  pruneopts = "UT"
+  revision = "8afc34092907d146906fcc31af112b2b46e7b5cd"
+  
 [[projects]]
   digest = "1:41b00533ad3d8b3f54b6a02fc093b211feeffb068a3148a7e7084cd7aeef18ec"
   name = "github.com/magiconair/properties"
@@ -770,6 +779,7 @@
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
+    "github.com/kubernetes-sigs/cri-o/pkg/seccomp",
     "github.com/magiconair/properties/assert",
     "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/opencontainers/image-tools/image",

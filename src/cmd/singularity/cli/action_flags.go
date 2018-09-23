@@ -26,6 +26,7 @@ var (
 	Network     string
 	NetworkArgs []string
 	DNS         string
+	Security    []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -126,6 +127,10 @@ func initPathVars() {
 	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
 	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
 	actionFlags.SetAnnotation("dns", "envkey", []string{"DNS"})
+
+	// --security
+	actionFlags.StringSliceVar(&Security, "security", []string{}, "Enable security features (SELinux, Apparmor, Seccomp)")
+	actionFlags.SetAnnotation("security", "argtag", []string{""})
 }
 
 // initBoolVars initializes flags that take a boolean argument
