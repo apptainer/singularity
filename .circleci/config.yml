@@ -83,6 +83,10 @@ jobs:
       - run: #Only run make check on go1.11 as it introduces a new formatting rule we're following
           name: Run checks
           command: make -C ./builddir check
+      - persist_to_workspace:
+          root: /
+          paths:
+            - go/src/github.com/sylabs/singularity
 
   go1.11-alpine:
     <<: *defaults
@@ -107,10 +111,6 @@ jobs:
           command: |-
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
-      - persist_to_workspace:
-          root: /
-          paths:
-            - go/src/github.com/sylabs/singularity
 
 workflows:
   version: 2
