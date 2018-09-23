@@ -47,9 +47,5 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cpath, url string) error {
-	if err := signing.Sign(cpath, url, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Sign(cpath, url, authToken)
 }

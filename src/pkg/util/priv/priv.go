@@ -13,17 +13,11 @@ import (
 // Escalate escalates thread privileges
 func Escalate() error {
 	uid := os.Getuid()
-	if err := syscall.Setresuid(uid, 0, uid); err != nil {
-		return err
-	}
-	return nil
+	return syscall.Setresuid(uid, 0, uid)
 }
 
 // Drop drops thread privileges
 func Drop() error {
 	uid := os.Getuid()
-	if err := syscall.Setresuid(uid, uid, 0); err != nil {
-		return err
-	}
-	return nil
+	return syscall.Setresuid(uid, uid, 0)
 }

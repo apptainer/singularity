@@ -43,10 +43,7 @@ func imageExport(imagePath, exportPath string, tp tarProcessor) error {
 	if _, err := io.Copy(w, stdout); err != nil {
 		return err
 	}
-	if err := exportCmd.Wait(); err != nil {
-		return err
-	}
-	return nil
+	return exportCmd.Wait()
 }
 
 // imageExportTAR exports the image at imagePath, and writes the result TAR
