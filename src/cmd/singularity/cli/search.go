@@ -19,7 +19,10 @@ var (
 
 func init() {
 	SearchCmd.Flags().SetInterspersed(false)
+
 	SearchCmd.Flags().StringVar(&SearchLibraryURI, "library", "https://library.sylabs.io", "URI for library to search")
+	SearchCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
 	SingularityCmd.AddCommand(SearchCmd)
 }
 

@@ -17,7 +17,10 @@ import (
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+
 	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+
 	SingularityCmd.AddCommand(VerifyCmd)
 }
 
@@ -43,9 +46,5 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cpath, url string) error {
-	if err := signing.Verify(cpath, url, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Verify(cpath, url, authToken)
 }

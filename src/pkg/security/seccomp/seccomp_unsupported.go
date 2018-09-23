@@ -12,6 +12,7 @@ import (
 	"runtime"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-tools/generate"
 )
 
 // Enabled returns wether seccomp is enabled or not
@@ -25,4 +26,9 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 		return fmt.Errorf("can't load seccomp filter: not enabled at compilation time")
 	}
 	return fmt.Errorf("can't load seccomp filter: not supported by OS")
+}
+
+// LoadProfileFromFile does nothing for unsupported platforms
+func LoadProfileFromFile(profile string, generator *generate.Generator) error {
+	return nil
 }

@@ -17,7 +17,10 @@ import (
 
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
+
 	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	SignCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+
 	SingularityCmd.AddCommand(SignCmd)
 }
 
@@ -44,9 +47,5 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cpath, url string) error {
-	if err := signing.Sign(cpath, url, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Sign(cpath, url, authToken)
 }

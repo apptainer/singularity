@@ -32,7 +32,7 @@ type BusyBoxConveyorPacker struct {
 func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
 	c.b = b
 
-	//get mirrorURL, OSVerison, and Includes components to definition
+	// get mirrorURL, OSVerison, and Includes components to definition
 	mirrorurl, ok := b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid busybox header, no MirrurURL specified")

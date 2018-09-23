@@ -119,10 +119,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	if err := loopdev.AttachFromFile(image, arguments.Mode, reply); err != nil {
 		return err
 	}
-	if err := loopdev.SetStatus(&arguments.Info); err != nil {
-		return err
-	}
-	return nil
+	return loopdev.SetStatus(&arguments.Info)
 }
 
 // SetHostname sets hostname with the specified arguments

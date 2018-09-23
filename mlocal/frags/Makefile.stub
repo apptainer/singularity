@@ -29,6 +29,9 @@ config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
 syecl_config := $(SOURCEDIR)/src/pkg/syecl/syecl.toml.example
 syecl_config_INSTALL := $(PREFIX)/etc/singularity/ecl.toml
 
+seccomp_profile := $(SOURCEDIR)/etc/seccomp-profiles/default.json
+seccomp_profile_INSTALL := $(PREFIX)/etc/singularity/seccomp-profiles/default.json
+
 capability_JSON := $(PREFIX)/etc/singularity/capability.json
 
 sessiondir := $(PREFIX)/var/singularity/mnt/session
@@ -59,7 +62,7 @@ cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
 	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
-	$(bash_completion_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) $(NVIDIA_liblist_INSTALL)
+	$(bash_completion_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) $(seccomp_profile_INSTALL) $(NVIDIA_liblist_INSTALL)
 
 CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion) \
 	$(cni_plugins_EXECUTABLES)
@@ -153,7 +156,7 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 $(BUILDDIR)/vendors-done:
 	@echo " VENDORS"
 	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure >/dev/null 2>&1 && \
+		dep ensure >/dev/null && \
 			touch $(BUILDDIR)/.dep-done; \
 	fi
 	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
@@ -184,6 +187,11 @@ $(capability_JSON):
 	@echo " INSTALL" $@
 	$(V)touch $(capability_JSON)
 
+$(seccomp_profile_INSTALL): $(seccomp_profile)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
 .PHONY: man
 man:
 	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(EXEC_PREFIX)/share/man/man1
@@ -200,7 +208,7 @@ collect:
 	done
 
 .PHONY: check
-check:
+check: $(BUILDDIR)/vendors-done
 	@echo " CHECK go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && \
