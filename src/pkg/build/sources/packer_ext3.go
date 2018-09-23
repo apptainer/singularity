@@ -85,8 +85,5 @@ func getLoopDevice(arguments *args.LoopArgs) error {
 		return err
 	}
 
-	if err := loopdev.SetStatus(&arguments.Info); err != nil {
-		return err
-	}
-	return nil
+	return loopdev.SetStatus(&arguments.Info)
 }

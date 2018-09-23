@@ -65,9 +65,5 @@ func doVerifyCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
-	if err := signing.Verify(cpath, url, id, isGroup, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Verify(cpath, url, id, isGroup, authToken)
 }

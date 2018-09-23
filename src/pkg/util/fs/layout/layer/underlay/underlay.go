@@ -43,10 +43,7 @@ func (u *Underlay) Add(session *layout.Session, system *mount.System) error {
 	if err := u.session.AddDir(underlayDir); err != nil {
 		return err
 	}
-	if err := system.RunBeforeTag(mount.PreLayerTag, u.createUnderlay); err != nil {
-		return err
-	}
-	return nil
+	return system.RunBeforeTag(mount.PreLayerTag, u.createUnderlay)
 }
 
 func (u *Underlay) createUnderlay(system *mount.System) error {

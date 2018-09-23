@@ -94,7 +94,7 @@ var BuildCmd = &cobra.Command{
 		dest := args[0]
 		spec := args[1]
 
-		//check if target collides with existing file
+		// check if target collides with existing file
 		if ok := checkBuildTarget(dest); !ok {
 			os.Exit(1)
 		}
