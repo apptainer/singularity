@@ -110,10 +110,12 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("\n\tZypper Path: %s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n\tIncludes: %s\n", zypperPath, runtime.GOARCH, osversion, mirrorurl, include)
 
 	// run zypper
-	if err = cmd.Run(); err.Error() == "exit status 107" {
-		sylog.Errorf("*107* - *ZYPPER_EXIT_INF_RPM_SCRIPT_FAILED*::\n\t\tInstallation basically succeeded, but some of the packages %%post install scripts returned an error. These packages were successfully unpacked to disk and are registered in the rpm database, but due to the failed install script they may not work as expected. The failed scripts output might reveal what actually went wrong. Any scripts output is also logged to */var/log/zypp/history*.")
-	} else if err != nil {
-		return fmt.Errorf("While bootstrapping from zypper: %v", err)
+	if err = cmd.Run(); err != nil {
+		if err.Error() == "exit status 107" {
+			sylog.Errorf("*107* - *ZYPPER_EXIT_INF_RPM_SCRIPT_FAILED*::\n\t\tInstallation basically succeeded, but some of the packages %%post install scripts returned an error. These packages were successfully unpacked to disk and are registered in the rpm database, but due to the failed install script they may not work as expected. The failed scripts output might reveal what actually went wrong. Any scripts output is also logged to */var/log/zypp/history*.")
+		} else {
+			return fmt.Errorf("While bootstrapping from zypper: %v", err)
+		}
 	}
 
 	return nil
