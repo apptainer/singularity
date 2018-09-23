@@ -4,7 +4,7 @@ defaults: &defaults
   working_directory: /go/src/github.com/sylabs/singularity
   
 jobs:
-  go1.10deb:
+  go1.10-stretch:
     <<: *defaults
     docker:
       - image: golang:1.10-stretch
@@ -40,7 +40,7 @@ jobs:
           command: |-
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
-  go1.11deb:
+  go1.11-stretch:
     <<: *defaults
     docker:
       - image: golang:1.11-stretch
@@ -83,5 +83,5 @@ workflows:
   version: 2
   test-compile:
     jobs:
-      - go1.10deb
-      - go1.11deb
+      - go1.10-stretch
+      - go1.11-stretch
