@@ -7,21 +7,13 @@ jobs:
   get_source:
     <<: *defaults
     docker:
-      - image: golang:1.11-stretch
+      - image: sylabsio/golang:1.11-stretch
     steps:
       - checkout
       - restore_cache:
           key: dep-cache-{{ checksum "Gopkg.lock" }}
           paths:
             - vendor
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
-      - run:
-          name: Install golint
-          command: |-
-            go get -u golang.org/x/lint/golint
       - run:
           name: Set Up Vendor Directory
           command: |-
@@ -40,17 +32,10 @@ jobs:
   go1.10-stretch:
     <<: *defaults
     docker:
-      - image: golang:1.10-stretch
+      - image: sylabsio/golang:1.10-stretch
     steps:
       - attach_workspace:
           at: /
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
-      - run:
-          name: Install C dependencies
-          command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
       - run:
           name: Build Singularity
           command: |-
@@ -60,21 +45,10 @@ jobs:
   go1.11-stretch:
     <<: *defaults
     docker:
-      - image: golang:1.11-stretch
+      - image: sylabsio/golang:1.11-stretch
     steps:
       - attach_workspace:
           at: /
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
-      - run:
-          name: Install golint
-          command: |-
-            go get -u golang.org/x/lint/golint
-      - run:
-          name: Install C dependencies
-          command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
       - run:
           name: Build Singularity
           command: |-
@@ -91,21 +65,10 @@ jobs:
   go1.11-alpine:
     <<: *defaults
     docker:
-      - image: golang:1.11-alpine
+      - image: sylabsio/golang:1.11-alpine
     steps:
       - attach_workspace:
           at: /
-      - run:
-          name: Install git
-          command: |-
-            apk add --update git
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
-      - run:
-          name: Install C dependencies
-          command: apk add --update alpine-sdk automake libtool linux-headers linux-vanilla libarchive-dev util-linux-dev libuuid openssl-dev gawk
       - run:
           name: Build Singularity
           command: |-
