@@ -46,10 +46,7 @@ func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 	path, _ := o.session.GetPath(lowerDir)
 	o.lowerDirs = append(o.lowerDirs, path)
 
-	if err := system.RunBeforeTag(mount.LayerTag, o.createOverlay); err != nil {
-		return err
-	}
-	return nil
+	return system.RunBeforeTag(mount.LayerTag, o.createOverlay)
 }
 
 func (o *Overlay) createOverlay(system *mount.System) error {

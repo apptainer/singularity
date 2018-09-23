@@ -523,10 +523,7 @@ func (p *Points) AddBind(tag AuthorizedTag, source string, dest string, flags ui
 	if !strings.HasPrefix(source, "/") {
 		return fmt.Errorf("source must be an absolute path")
 	}
-	if err := p.add(tag, source, dest, "", bindFlags, options); err != nil {
-		return err
-	}
-	return nil
+	return p.add(tag, source, dest, "", bindFlags, options)
 }
 
 // GetAllBinds returns a list of all registered bind mount points
