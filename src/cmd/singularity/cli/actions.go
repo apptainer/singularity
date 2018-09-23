@@ -9,7 +9,10 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/src/pkg/util/nvidiautils"
@@ -21,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/src/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
 	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/security"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/env"
 	"github.com/sylabs/singularity/src/pkg/util/exec"
@@ -71,6 +75,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -184,6 +189,9 @@ var TestCmd = &cobra.Command{
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	targetUID := 0
+	targetGID := make([]int, 0)
+
 	procname := ""
 
 	uid := uint32(os.Getuid())
@@ -199,6 +207,35 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
+
+	uidParam := security.GetParam(Security, "uid")
+	gidParam := security.GetParam(Security, "gid")
+
+	if os.Getuid() == 0 && uidParam != "" {
+		u, err := strconv.ParseUint(uidParam, 10, 32)
+		if err != nil {
+			sylog.Fatalf("failed to parse provided UID")
+		}
+		targetUID = int(u)
+		uid = uint32(targetUID)
+	} else if uidParam != "" {
+		sylog.Warningf("uid security feature requires root privileges")
+	}
+	if os.Getuid() == 0 && gidParam != "" {
+		gids := strings.Split(gidParam, ":")
+		for _, id := range gids {
+			g, err := strconv.ParseUint(id, 10, 32)
+			if err != nil {
+				sylog.Fatalf("failed to parse provided GID")
+			}
+			targetGID = append(targetGID, int(g))
+		}
+		if len(gids) > 0 {
+			gid = uint32(targetGID[0])
+		}
+	} else if gidParam != "" {
+		sylog.Warningf("gid security feature requires root privileges")
+	}
 
 	// temporary check for development
 	// TODO: a real URI handler
@@ -252,6 +289,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+	engineConfig.SetSecurity(Security)
 
 	if IsWritable && IsWritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
@@ -395,6 +433,27 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	configData, err := json.Marshal(cfg)
 	if err != nil {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	runtime.LockOSThread()
+
+	if len(targetGID) > 0 {
+		gid := int(targetGID[0])
+		gids := targetGID[1:]
+
+		if err := syscall.Setgroups(gids); err != nil {
+			sylog.Fatalf("failed to reset groups: %s", err)
+		}
+		if err := syscall.Setresgid(gid, gid, gid); err != nil {
+			sylog.Fatalf("failed to set GID %d: %s", gid, err)
+		}
+	}
+
+	if targetUID != 0 {
+		uid := int(targetUID)
+		if err := syscall.Setresuid(uid, uid, uid); err != nil {
+			sylog.Fatalf("failed to set UID %d: %s", uid, err)
+		}
 	}
 
 	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
