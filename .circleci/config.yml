@@ -103,6 +103,8 @@ jobs:
           name: Build Singularity Image if Necessary
           command: |-
             if [ ! -f ~/go1.11-stretch.sif ]; then
+              sudo apt-get update
+              sudo apt-get install mksquashfs
               sudo /sroot/bin/singularity build ~/go1.11-stretch.sif /go/src/github.com/sylabs/singularity/.circleci/Singularity
             fi
       - save_cache:
