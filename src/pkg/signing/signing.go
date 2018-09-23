@@ -64,6 +64,8 @@ func sifAddSignature(fimg *sif.FileImage, descr []*sif.Descriptor, fingerprint [
 
 // descrToSign determines via argument or interactively which descriptor to sign
 func descrToSign(fimg *sif.FileImage) (descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
 	descr[0], _, err = fimg.GetPartPrimSys()
 	if err != nil {
 		return
@@ -77,7 +79,7 @@ func descrToSign(fimg *sif.FileImage) (descr []*sif.Descriptor, err error) {
 // location if available or helps the user by prompting with key generation
 // configuration options. In its current form, Sign also pushes, when desired,
 // public material to a key server.
-func Sign(cpath, url, authToken string) error {
+func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken string) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
@@ -109,7 +111,13 @@ func Sign(cpath, url, authToken string) error {
 			fmt.Printf("Uploaded key successfully!\n")
 		}
 	} else {
-		if len(elist) > 1 {
+		if keyIdx != -1 { // -k <idx> has been specified
+			if keyIdx >= 0 && keyIdx < len(elist) {
+				entity = elist[keyIdx]
+			} else {
+				return fmt.Errorf("specified (-k, --keyidx) key index out of range")
+			}
+		} else if len(elist) > 1 {
 			entity, err = sypgp.SelectPrivKey(elist)
 			if err != nil {
 				return fmt.Errorf("failed while reading selection: %s", err)
