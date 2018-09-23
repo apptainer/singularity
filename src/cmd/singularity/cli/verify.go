@@ -22,7 +22,9 @@ var (
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+
 	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "specify a group ID to be verified")
 	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "specify a descriptor ID to be verified")
 	SingularityCmd.AddCommand(VerifyCmd)
