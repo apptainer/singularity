@@ -104,7 +104,7 @@ jobs:
           command: |-
             if [ ! -f ~/go1.11-stretch.sif ]; then
               sudo apt-get update
-              sudo apt-get install mksquashfs
+              sudo apt-get install squashfs-tools
               sudo /sroot/bin/singularity build ~/go1.11-stretch.sif /go/src/github.com/sylabs/singularity/.circleci/Singularity
             fi
       - save_cache:

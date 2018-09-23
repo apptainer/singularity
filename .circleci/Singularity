@@ -3,8 +3,8 @@ from: sylabsio/golang:1.11-stretch
 
 %post
     echo "Set up sudo & circleci user [uid=1000][g=sudo]"
-    apt-get install sudo mksquashfs
-    useradd -u 1000 -g sudo circleci
+    apt-get install sudo
+    useradd -u 1001 -g sudo circleci
 
 # Expects /sroot to exist and /go/src/github.com/sylabs/singularity to exist from bind mounts
 %runscript
