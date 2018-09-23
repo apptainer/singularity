@@ -94,7 +94,7 @@ var InspectCmd = &cobra.Command{
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
 
-			//append to a[2] to run stuff
+			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nhelpfile';", prefix)
 			a[2] += " cat .singularity.d/runscript.help;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
@@ -103,7 +103,7 @@ var InspectCmd = &cobra.Command{
 		if deffile {
 			sylog.Debugf("Inspection of deffile selected.")
 
-			//append to a[2] to run stuff
+			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\ndeffile';", prefix)
 			a[2] += " cat .singularity.d/Singularity;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
@@ -112,7 +112,7 @@ var InspectCmd = &cobra.Command{
 		if runscript {
 			sylog.Debugf("Inspection of runscript selected.")
 
-			//append to a[2] to run stuff
+			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nrunscript';", prefix)
 			a[2] += " cat .singularity.d/runscript;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
@@ -121,7 +121,7 @@ var InspectCmd = &cobra.Command{
 		if testfile {
 			sylog.Debugf("Inspection of test selected.")
 
-			//append to a[2] to run stuff
+			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\ntest';", prefix)
 			a[2] += " cat .singularity.d/test;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
@@ -130,7 +130,7 @@ var InspectCmd = &cobra.Command{
 		if environment {
 			sylog.Debugf("Inspection of envrionment selected.")
 
-			//append to a[2] to run stuff
+			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nenvironment';", prefix)
 			a[2] += " cat .singularity.d/env/90-environment.sh;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
@@ -140,7 +140,7 @@ var InspectCmd = &cobra.Command{
 		if labels || len(a[2]) == 0 {
 			sylog.Debugf("Inspection of labels as default.")
 
-			//append to a[2] to run stuff
+			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nlabels';", prefix)
 			a[2] += " cat .singularity.d/labels.json;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
@@ -166,7 +166,7 @@ var InspectCmd = &cobra.Command{
 
 		// format that data based on --json flag
 		if jsonfmt {
-			//store this in a struct, then marshal the struct to json
+			// store this in a struct, then marshal the struct to json
 			type result struct {
 				Data map[string]string `json:"attributes"`
 				T    string            `json:"type"`
@@ -184,7 +184,7 @@ var InspectCmd = &cobra.Command{
 
 			fmt.Println(string(b))
 		} else {
-			//iterate through sections of struct and print them
+			// iterate through sections of struct and print them
 			for _, value := range attributes {
 				fmt.Println("\n" + value + "\n")
 			}
