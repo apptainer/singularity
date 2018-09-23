@@ -43,6 +43,7 @@ jobs:
             make -j$(nproc) -C ./builddir all
 
   go1.11-stretch:
+    <<: *defaults
     docker:
       - image: sylabsio/golang:1.11-stretch
     steps:
@@ -72,7 +73,6 @@ jobs:
             make -j$(nproc) -C ./builddir all
 
   singularity_tests:
-    working_directory: ~/go/src/github.com/sylabs/singularity
     machine: true
     environment:
       GOPATH: /go
@@ -86,12 +86,14 @@ jobs:
           at: /go
       - run:
           name: Install dep
+          <<: *defaults
           command: |-
             go get -u github.com/golang/dep/cmd/dep
       - run:
           name: Install Singularity
+          <<: *defaults
           command: |-
-            sudo make -C builddir/ install
+            sudo -E make -C builddir/ install
 
 workflows:
   version: 2
