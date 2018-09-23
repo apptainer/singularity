@@ -13,6 +13,7 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -32,6 +33,10 @@ var (
 	defaultTokenFile, tokenFile string
 	// authToken holds the sylabs auth token
 	authToken, authWarning string
+)
+
+const (
+	envPrefix = "SINGULARITY_"
 )
 
 func init() {
@@ -83,7 +88,7 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	PersistentPreRun:      setSylogMessageLevel,
+	PersistentPreRun:      persistentPreRun,
 	Run:                   nil,
 
 	Use:     docs.SingularityUse,
@@ -122,6 +127,33 @@ var VersionCmd = &cobra.Command{
 	Short: "Show application version",
 }
 
+func updateFlagsFromEnv(cmd *cobra.Command) {
+	cmd.Flags().VisitAll(handleEnv)
+}
+
+func handleEnv(flag *pflag.Flag) {
+	envKeys, ok := flag.Annotations["envkey"]
+	if !ok {
+		return
+	}
+
+	for _, key := range envKeys {
+		val := os.Getenv(envPrefix + key)
+		if val == "" {
+			continue
+		}
+
+		updateFn := flagEnvFuncs[flag.Name]
+		updateFn(flag, val)
+	}
+
+}
+
+func persistentPreRun(cmd *cobra.Command, args []string) {
+	setSylogMessageLevel(cmd, args)
+	updateFlagsFromEnv(cmd)
+}
+
 // sylabsToken process the authentication Token
 // priority default_file < env < file_flag
 func sylabsToken(cmd *cobra.Command, args []string) {
@@ -137,4 +169,113 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
 		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
 	}
+}
+
+// envAppend combines command line and environment var into a single argument
+func envAppend(flag *pflag.Flag, envvar string) {
+	if err := flag.Value.Set(envvar); err != nil {
+		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+	} else {
+		flag.Changed = true
+		sylog.Debugf("Update flag Value to: %s", flag.Value)
+	}
+}
+
+// envBool sets a bool flag if the CLI option is unset and env var is set
+func envBool(flag *pflag.Flag, envvar string) {
+	if flag.Changed == false && envvar != "" {
+		if err := flag.Value.Set("true"); err != nil {
+			sylog.Warningf("Unable to set %s to true", flag.Name)
+		} else {
+			flag.Changed = true
+			sylog.Debugf("Update flag Value to: %s", flag.Value)
+		}
+	}
+}
+
+// envStringNSlice writes to a string or slice flag ff CLI option/argument
+// string is unset and env var is set
+func envStringNSlice(flag *pflag.Flag, envvar string) {
+	if flag.Changed == false && envvar != "" {
+		if err := flag.Value.Set(envvar); err != nil {
+			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+		} else {
+			flag.Changed = true
+			sylog.Debugf("Update flag Value to: %s", flag.Value)
+		}
+	}
+}
+
+type envHandle func(*pflag.Flag, string)
+
+// map of functions to use to bind flags to environment variables
+var flagEnvFuncs = map[string]envHandle{
+	// action flags
+	"bind":         envAppend,
+	"home":         envStringNSlice,
+	"overlay":      envStringNSlice,
+	"scratch":      envStringNSlice,
+	"workdir":      envStringNSlice,
+	"shell":        envStringNSlice,
+	"pwd":          envStringNSlice,
+	"hostname":     envStringNSlice,
+	"network":      envStringNSlice,
+	"network-args": envStringNSlice,
+	"dns":          envStringNSlice,
+
+	"boot":       envBool,
+	"fakeroot":   envBool,
+	"cleanenv":   envBool,
+	"contain":    envBool,
+	"containall": envBool,
+	"nv":         envBool,
+	"writable":   envBool,
+	"no-home":    envBool,
+	"no-init":    envBool,
+
+	"pid":    envBool,
+	"ipc":    envBool,
+	"net":    envBool,
+	"uts":    envBool,
+	"userns": envBool,
+
+	"keep-privs":   envBool,
+	"no-privs":     envBool,
+	"add-caps":     envStringNSlice,
+	"drop-caps":    envStringNSlice,
+	"allow-setuid": envBool,
+
+	// build flags
+	"sandbox": envBool,
+	"section": envStringNSlice,
+	"json":    envBool,
+	// "writable": envBool, // set above for now
+	"force":    envBool,
+	"update":   envBool,
+	"notest":   envBool,
+	"remote":   envBool,
+	"detached": envBool,
+	"builder":  envStringNSlice,
+	"library":  envStringNSlice,
+
+	// capability flags (and others)
+	"user":  envStringNSlice,
+	"group": envStringNSlice,
+	"desc":  envBool,
+	"all":   envBool,
+
+	// instance flags
+	"signal": envStringNSlice,
+
+	// keys flags
+	"secret": envBool,
+	"url":    envStringNSlice,
+
+	// inspect flags
+	"labels":      envBool,
+	"deffile":     envBool,
+	"runscript":   envBool,
+	"test":        envBool,
+	"environment": envBool,
+	"helpfile":    envBool,
 }
