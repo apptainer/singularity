@@ -76,7 +76,6 @@ jobs:
             make -j$(nproc) -C ./builddir all
 
   singularity_tests:
-    <<: *defaults
     machine: true
     steps:
       - run:
