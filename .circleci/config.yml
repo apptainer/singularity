@@ -76,6 +76,7 @@ jobs:
     machine: true
     environment:
       GOPATH: /go
+    working_directory: ~/
     steps:
       - run:
           name: Create go path for root workspace
@@ -94,6 +95,25 @@ jobs:
           <<: *defaults
           command: |-
             sudo PATH="/usr/local/go/bin:${PATH}" make -C builddir/ install
+      - restore_cache:
+          key: singularity-go1.11-stretch-{{ checksum "/home/circleci/go/src/github.com/sylabs/singularity/.circleci/Singularity" }}
+          paths:
+            - ~/go1.11-stretch.sif
+      - run:
+          name: Build Singularity Image if Necessary
+          command: |-
+            if [ ! -f ~/go1.11-stretch.sif ]; then
+              sudo singularity build ~/go1.11-stretch.sif /home/circleci/go/src/github.com/sylabs/singularity/.circleci/Singularity
+            fi
+      - save_cache:
+          key: singularity-go1.11-stretch-{{ checksum "/home/circleci/go/src/github.com/sylabs/singularity/.circleci/Singularity" }}
+          paths:
+            - ~/go1.11-stretch.sif
+      - run:
+          name: Run Singularity Tests
+          command: |-
+            sudo singularity run --bind /home/mibauer/go/,/sroot/,/sroot/bin/singularity:/usr/local/bin/singularity \
+              --pwd / --allow-setuid --keep-privs --writable-tmpfs --scratch /tmp/ go1.11-stretch.sif
 
 workflows:
   version: 2
