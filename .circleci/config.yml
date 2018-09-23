@@ -57,7 +57,7 @@ jobs:
       - persist_to_workspace:
           root: /go
           paths:
-            - src/github.com/sylabs/singularity/builddir
+            - src/github.com/sylabs/singularity
 
   go1.11-alpine:
     <<: *defaults
@@ -93,7 +93,7 @@ jobs:
           name: Install Singularity
           <<: *defaults
           command: |-
-            sudo -E make -C builddir/ install
+            sudo PATH="/usr/local/go/bin:{PATH}" make -C builddir/ install
 
 workflows:
   version: 2
