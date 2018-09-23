@@ -22,21 +22,26 @@ import (
 	"golang.org/x/crypto/openpgp/clearsign"
 )
 
-// computeHashStr generates a hash from a data object and generates a string
+// computeHashStr generates a hash from data object(s) and generates a string
 // to be stored in the signature block
-func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
-	sum := sha512.Sum384(fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen])
+func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
+	hash := sha512.New384()
+	for _, v := range descr {
+		hash.Write(fimg.Filedata[v.Fileoff : v.Fileoff+v.Filelen])
+	}
+
+	sum := hash.Sum(nil)
 
 	return fmt.Sprintf("SIFHASH:\n%x", sum)
 }
 
 // sifAddSignature adds a signature block to a SIF file
-func sifAddSignature(fimg *sif.FileImage, descr *sif.Descriptor, fingerprint [20]byte, signature []byte) error {
+func sifAddSignature(fimg *sif.FileImage, descr []*sif.Descriptor, fingerprint [20]byte, signature []byte) error {
 	// data we need to create a signature descriptor
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
-		Groupid:  descr.Groupid,
-		Link:     descr.ID,
+		Groupid:  descr[0].Groupid,
+		Link:     descr[0].ID,
 		Fname:    "part-signature",
 		Data:     signature,
 	}
@@ -58,8 +63,8 @@ func sifAddSignature(fimg *sif.FileImage, descr *sif.Descriptor, fingerprint [20
 }
 
 // descrToSign determines via argument or interactively which descriptor to sign
-func descrToSign(fimg *sif.FileImage) (descr *sif.Descriptor, err error) {
-	descr, _, err = fimg.GetPartPrimSys()
+func descrToSign(fimg *sif.FileImage) (descr []*sif.Descriptor, err error) {
+	descr[0], _, err = fimg.GetPartPrimSys()
 	if err != nil {
 		return
 	}
@@ -159,28 +164,65 @@ func Sign(cpath, url, authToken string) error {
 }
 
 // return all signatures for the primary partition
-func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
-	descr, _, err = fimg.GetPartPrimSys()
+func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	descr[0], _, err = fimg.GetPartPrimSys()
 	if err != nil {
-		return
+		return nil, nil, fmt.Errorf("no primary partition found")
 	}
 
-	sigs, _, err = fimg.GetFromLinkedDescr(descr.ID)
+	sigs, _, err = fimg.GetFromLinkedDescr(descr[0].ID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no signature found for system partition: %s", err)
+		return nil, nil, fmt.Errorf("no signatures found for system partition")
+	}
+
+	return
+}
+
+// return all signatures for specified descriptor
+func getSigsDescr(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	descr[0], _, err = fimg.GetFromDescrID(id)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no descriptor found for id %v", id)
+	}
+
+	sigs, _, err = fimg.GetFromLinkedDescr(id)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signatures found for id %v", id)
+	}
+
+	return
+}
+
+// return all signatures for specified group
+func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	var search = sif.Descriptor{
+		Groupid: id | sif.DescrGroupMask,
+	}
+	descr, _, err = fimg.GetFromDescr(search)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no descriptors found for groupid %v", id)
+	}
+
+	sigs, _, err = fimg.GetSignFromGroup(id)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signatures found for groupid %v", id)
 	}
 
 	return
 }
 
 // return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
+func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
 	if id == 0 {
 		return getSigsPrimPart(fimg)
 	} else if isGroup {
 		return getSigsGroup(fimg, id)
 	}
-	return getSigsDesc(fimg, id)
+	return getSigsDescr(fimg, id)
 }
 
 // Verify takes a container path and look for a verification block for a

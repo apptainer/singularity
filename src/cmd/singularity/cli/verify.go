@@ -17,7 +17,7 @@ import (
 
 var (
 	sifGroupID uint32 // -g groupid specification
-	sifDescID uint32 // -i id specification
+	sifDescID  uint32 // -i id specification
 )
 
 func init() {
