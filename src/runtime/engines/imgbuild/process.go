@@ -36,11 +36,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	// append environment
-	if err := e.insertEnvScript(); err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
-	}
-
 	// insert startscript
 	if err := e.insertStartScript(); err != nil {
 		return fmt.Errorf("While inserting startscript: %v", err)
@@ -107,17 +102,6 @@ func (e *EngineOperations) CleanupContainer() error {
 
 // PostStartProcess actually does nothing for build engine
 func (e *EngineOperations) PostStartProcess(pid int) error {
-	return nil
-}
-
-func (e *EngineOperations) insertEnvScript() error {
-	if e.EngineConfig.RunSection("environment") && e.EngineConfig.Recipe.ImageData.Environment != "" {
-		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile("/.singularity.d/env/90-environment.sh", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Environment+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 

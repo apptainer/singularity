@@ -48,6 +48,12 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting definition: %v", err)
 	}
 
+	// insert environment
+	err = insertEnvScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting environment script: %v", err)
+	}
+
 	// move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
 	if _, err := os.Stat(path); err == nil {
@@ -65,6 +71,17 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		}
 	}
 
+	return nil
+}
+
+func insertEnvScript(b *types.Bundle) error {
+	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
+		sylog.Infof("Adding environment to container")
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

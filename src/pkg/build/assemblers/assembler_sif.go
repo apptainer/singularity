@@ -103,6 +103,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting definition: %v", err)
 	}
 
+	// insert environment
+	err = insertEnvScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting environment script: %v", err)
+	}
+
 	// convert definition to plain text
 	var buf bytes.Buffer
 	b.Recipe.WriteDefinitionFile(&buf)
