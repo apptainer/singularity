@@ -79,11 +79,6 @@ jobs:
     working_directory: ~/go/src/github.com/sylabs/singularity
     machine: true
     steps:
-      # - run:
-      #     name: Set Env
-      #     command: |-
-      #       echo 'export GOPATH=/sroot/go' >> ${BASH_ENV}
-      #       echo 'export GOROOT=/sroot/usr/local' >> ${BASH_ENV}
       - run:
           name: Update VM
           command: |-
@@ -98,6 +93,7 @@ jobs:
       - run:
           name: Install Singularity
           command: |-
+            find builddir/ -type f | xargs sed -i -e 's|/go/src/github.com/|/home/circleci/go/src/github.com/|g'
             sudo make -C builddir/ install
 
 workflows:
