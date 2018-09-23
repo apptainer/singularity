@@ -93,7 +93,7 @@ jobs:
       - run:
           name: Install Singularity
           command: |-
-            find builddir/ -type f | xargs sed -i -e 's|/go/src/github.com/|/home/circleci/go/src/github.com/|g'
+            sed -i -e 's|/go/src/github.com/|/home/circleci/go/src/github.com/|g' builddir/Makefile builddir/mergeddeps builddir/src/runtime/c/lib/util/*
             sudo make -C builddir/ install
 
 workflows:
