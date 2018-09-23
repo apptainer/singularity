@@ -102,6 +102,7 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
+	os.Setenv("PATH", "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin")
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
