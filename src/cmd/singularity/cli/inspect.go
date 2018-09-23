@@ -26,7 +26,7 @@ var (
 	labels      bool
 	deffile     bool
 	runscript   bool
-	test        bool
+	testfile    bool
 	environment bool
 	helpfile    bool
 )
@@ -35,11 +35,22 @@ func init() {
 	InspectCmd.Flags().SetInterspersed(false)
 
 	InspectCmd.Flags().BoolVarP(&labels, "labels", "a", false, "Show the labels associated with the image (default)")
+	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
+
 	InspectCmd.Flags().BoolVarP(&deffile, "deffile", "d", false, "Show the Singularity recipe file that was used to generate the image")
+	InspectCmd.Flags().SetAnnotation("deffile", "envkey", []string{"DEFFILE"})
+
 	InspectCmd.Flags().BoolVarP(&runscript, "runscript", "r", false, "Show the runscript for the image")
-	InspectCmd.Flags().BoolVarP(&test, "test", "t", false, "Show the test script for the image")
+	InspectCmd.Flags().SetAnnotation("runscript", "envkey", []string{"RUNSCRIPT"})
+
+	InspectCmd.Flags().BoolVarP(&testfile, "test", "t", false, "Show the test script for the image")
+	InspectCmd.Flags().SetAnnotation("test", "envkey", []string{"TEST"})
+
 	InspectCmd.Flags().BoolVarP(&environment, "environment", "e", false, "Show the environment settings for the image")
+	InspectCmd.Flags().SetAnnotation("environment", "envkey", []string{"ENVIRONMENT"})
+
 	InspectCmd.Flags().BoolVarP(&helpfile, "helpfile", "H", false, "Inspect the runscript helpfile, if it exists")
+	InspectCmd.Flags().SetAnnotation("helpfile", "envkey", []string{"HELPFILE"})
 
 	SingularityCmd.AddCommand(InspectCmd)
 }
@@ -81,7 +92,7 @@ var InspectCmd = &cobra.Command{
 			a = append(a, ".singularity.d/runscript")
 		}
 
-		if test {
+		if testfile {
 			sylog.Debugf("Inspection of test selected.")
 			a = append(a, ".singularity.d/test")
 		}
