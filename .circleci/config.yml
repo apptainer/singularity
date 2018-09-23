@@ -25,9 +25,9 @@ jobs:
           paths:
             - vendor
       - persist_to_workspace:
-          root: /
+          root: /go
           paths:
-            - go/src/github.com/sylabs/singularity
+            - src/github.com/sylabs/singularity
 
   go1.10-stretch:
     <<: *defaults
@@ -35,7 +35,7 @@ jobs:
       - image: sylabsio/golang:1.10-stretch
     steps:
       - attach_workspace:
-          at: /
+          at: /go
       - run:
           name: Build Singularity
           command: |-
@@ -48,19 +48,19 @@ jobs:
       - image: sylabsio/golang:1.11-stretch
     steps:
       - attach_workspace:
-          at: /
+          at: /go
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /singularity/
+            ./mconfig -p /sroot/usr/local
             make -j$(nproc) -C ./builddir all
       - run: #Only run make check on go1.11 as it introduces a new formatting rule we're following
           name: Run checks
           command: make -C ./builddir check
       - persist_to_workspace:
-          root: /
+          root: /go
           paths:
-            - go/src/github.com/sylabs/singularity
+            - src/github.com/sylabs/singularity/builddir
 
   go1.11-alpine:
     <<: *defaults
@@ -68,7 +68,7 @@ jobs:
       - image: sylabsio/golang:1.11-alpine
     steps:
       - attach_workspace:
-          at: /
+          at: /go
       - run:
           name: Build Singularity
           command: |-
@@ -76,16 +76,21 @@ jobs:
             make -j$(nproc) -C ./builddir all
 
   singularity_tests:
+    working_directory: ~/go/src/github.com/sylabs/singularity
     machine: true
     steps:
+      # - run:
+      #     name: Set Env
+      #     command: |-
+      #       echo 'export GOPATH=/sroot/go' >> ${BASH_ENV}
+      #       echo 'export GOROOT=/sroot/usr/local' >> ${BASH_ENV}
       - run:
           name: Update VM
           command: |-
-            mkdir -p /go/src/github.com/sylabs/singularity
             sudo apt-get update
             sudo apt-get install -y ca-certificates
       - attach_workspace:
-          at: /
+          at: ~/go
       - run:
           name: Install dep
           command: |-
