@@ -4,7 +4,7 @@ defaults: &defaults
   working_directory: /go/src/github.com/sylabs/singularity
   
 jobs:
-  go1.10deb:
+  go1.10-stretch:
     <<: *defaults
     docker:
       - image: golang:1.10-stretch
@@ -40,7 +40,7 @@ jobs:
           command: |-
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
-  go1.11deb:
+  go1.11-stretch:
     <<: *defaults
     docker:
       - image: golang:1.11-stretch
@@ -79,9 +79,53 @@ jobs:
       - run: #Only run make check on go1.11 as it introduces a new formatting rule we're following
           name: Run checks
           command: make -C ./builddir check
+  go1.11-alpine:
+    <<: *defaults
+    docker:
+      - image: golang:1.11-alpine
+    steps:
+      - run:
+          name: Install git
+          command: |-
+            apk add --update git
+      - run:
+          name: checkout
+          command: |-
+            git clone https://github.com/sylabs/singularity.git .
+      - restore_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: Install dep
+          command: |-
+            go get -u github.com/golang/dep/cmd/dep
+      - run:
+          name: Install golint
+          command: |-
+            go get -u golang.org/x/lint/golint
+      - run:
+          name: Set Up Vendor Directory
+          command: |-
+            if [ ! -d vendor ]; then
+              dep ensure -vendor-only
+            fi
+      - save_cache:
+          key: dep-cache-{{ checksum "Gopkg.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: Install C dependencies
+          command: apk add --update alpine-sdk automake libtool linux-headers linux-vanilla libarchive-dev util-linux-dev libuuid openssl-dev gawk
+      - run:
+          name: Build Singularity
+          command: |-
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
 workflows:
   version: 2
   test-compile:
     jobs:
-      - go1.10deb
-      - go1.11deb
+      - go1.10-stretch
+      - go1.11-stretch
+      - go1.11-alpine
