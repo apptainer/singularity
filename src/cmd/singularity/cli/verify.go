@@ -24,8 +24,8 @@ func init() {
 // VerifyCmd singularity verify
 var VerifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
-	PreRun:                sylabsToken,
+	Args:   cobra.ExactArgs(1),
+	PreRun: sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
@@ -43,9 +43,5 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cpath, url string) error {
-	if err := signing.Verify(cpath, url, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Verify(cpath, url, authToken)
 }

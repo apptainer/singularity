@@ -24,8 +24,8 @@ func init() {
 // SignCmd singularity sign
 var SignCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
-	PreRun:                sylabsToken,
+	Args:   cobra.ExactArgs(1),
+	PreRun: sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
@@ -44,9 +44,5 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cpath, url string) error {
-	if err := signing.Sign(cpath, url, authToken); err != nil {
-		return err
-	}
-
-	return nil
+	return signing.Sign(cpath, url, authToken)
 }
