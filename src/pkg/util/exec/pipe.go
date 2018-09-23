@@ -8,6 +8,7 @@ package exec
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"syscall"
 	"unsafe"
 )
@@ -57,4 +58,52 @@ func SetPipe(data []byte) (string, error) {
 	}
 
 	return fmt.Sprintf("PIPE_EXEC_FD=%d", pipeFd), nil
+}
+
+// PipeCommand creates an exec.Command struct which will execute the starter binary
+func PipeCommand(command string, args []string, env []string, data []byte) (*exec.Cmd, error) {
+	pipeFile, err := setPipeFile(data)
+	if err != nil {
+		return nil, err
+	}
+
+	env = append(env, fmt.Sprintf("PIPE_EXEC_FD=%d", 3))
+
+	c := &exec.Cmd{
+		Path:       command,
+		Args:       args,
+		Env:        env,
+		ExtraFiles: []*os.File{pipeFile},
+	}
+	return c, nil
+}
+
+func setPipeFile(data []byte) (*os.File, error) {
+	r, w, err := os.Pipe()
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pipe: %s", err)
+	}
+
+	rfd := r.Fd()
+	wfd := w.Fd()
+
+	pipeFd, err := syscall.Dup(*(*int)(unsafe.Pointer(&rfd)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to duplicate pipe file descriptor: %s", err)
+	}
+
+	if n, err := syscall.Write(*(*int)(unsafe.Pointer(&wfd)), data); err != nil || n != len(data) {
+		return nil, fmt.Errorf("failed to write data to stdin: %s", err)
+	}
+
+	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, rfd, syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+		return nil, fmt.Errorf("failed to set close-on-exec on read pipe: %s", err.Error())
+	}
+
+	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, wfd, syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+		return nil, fmt.Errorf("failed to set close-on-exec on write pipe: %s", err.Error())
+	}
+
+	return os.NewFile(uintptr(pipeFd), "pipefd"), nil
 }
