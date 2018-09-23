@@ -153,7 +153,7 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 $(BUILDDIR)/vendors-done:
 	@echo " VENDORS"
 	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure >/dev/null 2>&1 && \
+		dep ensure >/dev/null && \
 			touch $(BUILDDIR)/.dep-done; \
 	fi
 	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
@@ -200,7 +200,7 @@ collect:
 	done
 
 .PHONY: check
-check:
+check: $(BUILDDIR)/vendors-done
 	@echo " CHECK go fmt"
 	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
 		cd $(SOURCEDIR) && \
