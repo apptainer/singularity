@@ -13,6 +13,7 @@ import (
 
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/plugins/apps"
 )
 
 type pluginRegisterFn func(interface{}) error
@@ -73,8 +74,9 @@ func registerPlugin(pl interface{}) {
 	regWait.Wait()
 }
 
-// Init ...
-func Init() {
+// InitDynamic initializes plugins via dynamic loading. This is implemented but not
+// fully featured, so we're using a static methodology until 3.1
+func InitDynamic() {
 	var plLoadWait sync.WaitGroup
 	pls, err := loadPlugins(filepath.Join(buildcfg.LIBDIR, "singularity/plugin/*"))
 	if err != nil {
@@ -92,4 +94,9 @@ func Init() {
 	}
 
 	plLoadWait.Wait()
+}
+
+// Init initializes plugins via static linking
+func Init() {
+	registerPlugin(apps.New())
 }

@@ -172,7 +172,7 @@ func (b *Build) Full() error {
 		}
 	}
 
-	syplugin.BuildHandleBundles(bundle)
+	syplugin.BuildHandleBundles(b.b)
 	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
 
 	if hasScripts(b.d) {
@@ -327,7 +327,7 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 }
 
 // makeDef gets a definition object from a spec
-func makeDef(spec string) (types.Definition, error) {
+func makeDef(spec string) (def types.Definition, err error) {
 	if ok, err := IsValidURI(spec); ok && err == nil {
 		// URI passed as spec
 		def, err := types.NewDefinitionFromURI(spec)
