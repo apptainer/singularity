@@ -26,6 +26,7 @@ type Manager struct {
 func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 	path := cgroups.StaticPath(singularity)
 
+	// creates singularity group
 	_, err = cgroups.New(cgroups.V1, path, &specs.LinuxResources{})
 	if err != nil {
 		return err
@@ -41,6 +42,7 @@ func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 		s = &specs.LinuxResources{}
 	}
 
+	// creates subgroup in singularity group
 	m.childCgroup, err = m.parentCgroup.New(m.Name, s)
 	if err != nil {
 		return err
@@ -63,6 +65,7 @@ func (m *Manager) ApplyFromFile(path string) error {
 		return err
 	}
 
+	// convert TOML structures to OCI JSON structures
 	data, err := json.Marshal(conf)
 	if err != nil {
 		return err
@@ -77,6 +80,10 @@ func (m *Manager) ApplyFromFile(path string) error {
 
 // Remove removes ressources restriction for current managed process
 func (m *Manager) Remove() error {
+	// removes process from singularity root tasks
+	// error is ignored because process may not exists
 	m.parentCgroup.Add(cgroups.Process{Pid: m.Pid})
+
+	// deletes subgroup
 	return m.childCgroup.Delete()
 }

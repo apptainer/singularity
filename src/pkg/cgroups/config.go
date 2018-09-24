@@ -189,8 +189,3 @@ func PutConfig(config Config, confPath string) (err error) {
 
 	return ioutil.WriteFile(confPath, data, 0600)
 }
-
-// ValidateConfig makes sure elements from configs are sane
-func (config *Config) ValidateConfig() (err error) {
-	return
-}
