@@ -173,11 +173,7 @@ func copyFile(dst, src string) error {
 		return err
 	}
 
-	if err := d.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.Close()
 }
 
 func setup() error {
@@ -231,11 +227,7 @@ func setup() error {
 		return err
 	}
 	testContainer4 = filepath.Join(testEclDirPath3, filepath.Base(srcContainer3))
-	if err := copyFile(testContainer4, srcContainer3); err != nil {
-		return err
-	}
-
-	return nil
+	return copyFile(testContainer4, srcContainer3)
 }
 
 func shutdown() {

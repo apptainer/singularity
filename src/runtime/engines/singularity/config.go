@@ -89,6 +89,8 @@ type JSONConfig struct {
 	NetworkArgs   []string      `json:"networkArgs,omitempty"`
 	DNS           string        `json:"dns,omitempty"`
 	Cwd           string        `json:"cwd,omitempty"`
+	Security      []string      `json:"security,omitempty"`
+	OpenFd        []int         `json:"openFd,omitempty"`
 	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
 }
 
@@ -417,6 +419,16 @@ func (e *EngineConfig) GetCwd() string {
 	return e.JSON.Cwd
 }
 
+// SetOpenFd sets a list of open file descriptor
+func (e *EngineConfig) SetOpenFd(fds []int) {
+	e.JSON.OpenFd = fds
+}
+
+// GetOpenFd returns the list of open file descriptor
+func (e *EngineConfig) GetOpenFd() []int {
+	return e.JSON.OpenFd
+}
+
 // SetWritableTmpfs sets writable tmpfs flag
 func (e *EngineConfig) SetWritableTmpfs(writable bool) {
 	e.JSON.WritableTmpfs = writable
@@ -425,6 +437,16 @@ func (e *EngineConfig) SetWritableTmpfs(writable bool) {
 // GetWritableTmpfs returns if writable tmpfs is set or no
 func (e *EngineConfig) GetWritableTmpfs() bool {
 	return e.JSON.WritableTmpfs
+}
+
+// SetSecurity sets security feature arguments
+func (e *EngineConfig) SetSecurity(security []string) {
+	e.JSON.Security = security
+}
+
+// GetSecurity returns security feature arguments
+func (e *EngineConfig) GetSecurity() []string {
+	return e.JSON.Security
 }
 
 // SetCgroupsPath sets path to cgroups profile

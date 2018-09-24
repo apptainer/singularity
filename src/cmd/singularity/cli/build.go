@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/build"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -32,20 +33,43 @@ var (
 	sections   []string
 )
 
+var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
+
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
 
 	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
+	BuildCmd.Flags().SetAnnotation("sandbox", "envkey", []string{"SANDBOX"})
+
 	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{"all"}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
+	BuildCmd.Flags().SetAnnotation("section", "envkey", []string{"SECTION"})
+
 	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
+	BuildCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
+
 	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
+	BuildCmd.Flags().SetAnnotation("writable", "envkey", []string{"WRITABLE"})
+
 	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "Delete and overwrite an image if it currently exists")
+	BuildCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
+
 	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "Run definition over existing container")
+	BuildCmd.Flags().SetAnnotation("update", "envkey", []string{"UPDATE"})
+
 	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
+	BuildCmd.Flags().SetAnnotation("notest", "envkey", []string{"NOTEST"})
+
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
+	BuildCmd.Flags().SetAnnotation("remote", "envkey", []string{"REMOTE"})
+
 	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
+	BuildCmd.Flags().SetAnnotation("detached", "envkey", []string{"DETACHED"})
+
 	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "Remote Build Service URL")
+	BuildCmd.Flags().SetAnnotation("builder", "envkey", []string{"BUILDER"})
+
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "Container Library URL")
+	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
 	SingularityCmd.AddCommand(BuildCmd)
 }
@@ -70,7 +94,7 @@ var BuildCmd = &cobra.Command{
 		dest := args[0]
 		spec := args[1]
 
-		//check if target collides with existing file
+		// check if target collides with existing file
 		if ok := checkBuildTarget(dest); !ok {
 			os.Exit(1)
 		}
@@ -98,7 +122,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf(err.Error())
 			}
 
-			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest)
+			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest, libraryURL, authToken)
 			if err != nil {
 				sylog.Fatalf("Unable to create build: %v", err)
 			}
@@ -111,7 +135,7 @@ var BuildCmd = &cobra.Command{
 	TraverseChildren: true,
 }
 
-// checkTargetCollision makes sure output target doesnt exist, or is ok to overwrite
+// checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite
 func checkBuildTarget(path string) bool {
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {

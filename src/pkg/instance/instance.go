@@ -244,9 +244,5 @@ func SetLogFile(name string) error {
 	if err := syscall.Dup3(int(stderr.Fd()), int(os.Stderr.Fd()), 0); err != nil {
 		return err
 	}
-	if err := syscall.Dup3(int(stdout.Fd()), int(os.Stdout.Fd()), 0); err != nil {
-		return err
-	}
-
-	return nil
+	return syscall.Dup3(int(stdout.Fd()), int(os.Stdout.Fd()), 0)
 }

@@ -130,7 +130,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f5b1ca46c74b9de5cce0ac381105af2126ff0d3410a8f0cf7214363f8b919e1c"
+  digest = "1:acdba2970b41ea0c3e943dd3d872a11486afccf5fe4f6690ae93580dba599f98"
   name = "github.com/containers/storage"
   packages = [
     "pkg/archive",
@@ -142,6 +142,7 @@
     "pkg/mount",
     "pkg/pools",
     "pkg/promise",
+    "pkg/stringutils",
     "pkg/system",
   ]
   pruneopts = "UT"
@@ -390,6 +391,22 @@
   revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
 
 [[projects]]
+  branch = "master"
+  digest = "1:d007733e8cfb5a746602c6998ce3dcfe631a365f8f58931b0a5af9f4f5011c0e"
+  name = "github.com/kubernetes-sigs/cri-o"
+  packages = ["pkg/seccomp"]
+  pruneopts = "UT"
+  revision = "8afc34092907d146906fcc31af112b2b46e7b5cd"
+
+[[projects]]
+  digest = "1:41b00533ad3d8b3f54b6a02fc093b211feeffb068a3148a7e7084cd7aeef18ec"
+  name = "github.com/magiconair/properties"
+  packages = ["assert"]
+  pruneopts = "UT"
+  revision = "c2353362d570a7bfa228149c62842019201cfb71"
+  version = "v1.8.0"
+
+[[projects]]
   digest = "1:e2d1d410fb367567c2b53ed9e2d719d3c1f0891397bb2fa49afd747cfbf1e8e4"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
@@ -630,12 +647,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:bf9d84d0ce417b2a792a9a57db39930572311bafa740397562677787311ee894"
+  digest = "1:09e7bb03b8a2f75d03f3674f528330e1f937e76faf14f58042cb7376b153d849"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
   pruneopts = "UT"
-  revision = "a4f82381d252d398a7dda63a38c88f626bf68fb9"
+  revision = "177b9338f1ab9123be5b6217740be1f0ce924206"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
@@ -786,6 +803,8 @@
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
+    "github.com/kubernetes-sigs/cri-o/pkg/seccomp",
+    "github.com/magiconair/properties/assert",
     "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/opencontainers/image-tools/image",
     "github.com/opencontainers/runtime-spec/specs-go",
