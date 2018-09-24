@@ -26,6 +26,7 @@ var (
 	Network     string
 	NetworkArgs []string
 	DNS         string
+	CgroupsPath string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -115,6 +116,10 @@ func initPathVars() {
 	// --dns
 	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
 	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
+
+	// --apply-cgroups
+	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "Apply cgroups from file for container processes (requires root privileges)")
+	actionFlags.SetAnnotation("cgroups-profile", "argtag", []string{"<path>"})
 }
 
 // initBoolVars initializes flags that take a boolean argument

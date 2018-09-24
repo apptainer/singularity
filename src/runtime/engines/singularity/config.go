@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/cgroups"
 	"github.com/sylabs/singularity/src/pkg/image"
 	"github.com/sylabs/singularity/src/pkg/network"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -88,14 +89,16 @@ type JSONConfig struct {
 	NetworkArgs   []string      `json:"networkArgs,omitempty"`
 	DNS           string        `json:"dns,omitempty"`
 	Cwd           string        `json:"cwd,omitempty"`
+	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON      *JSONConfig    `json:"jsonConfig"`
-	OciConfig *oci.Config    `json:"ociConfig"`
-	File      *FileConfig    `json:"-"`
-	Network   *network.Setup `json:"-"`
+	JSON      *JSONConfig      `json:"jsonConfig"`
+	OciConfig *oci.Config      `json:"ociConfig"`
+	File      *FileConfig      `json:"-"`
+	Network   *network.Setup   `json:"-"`
+	Cgroups   *cgroups.Manager `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -422,4 +425,14 @@ func (e *EngineConfig) SetWritableTmpfs(writable bool) {
 // GetWritableTmpfs returns if writable tmpfs is set or no
 func (e *EngineConfig) GetWritableTmpfs() bool {
 	return e.JSON.WritableTmpfs
+}
+
+// SetCgroupsPath sets path to cgroups profile
+func (e *EngineConfig) SetCgroupsPath(path string) {
+	e.JSON.CgroupsPath = path
+}
+
+// GetCgroupsPath returns path to cgroups profile
+func (e *EngineConfig) GetCgroupsPath() string {
+	return e.JSON.CgroupsPath
 }

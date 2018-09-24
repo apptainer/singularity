@@ -69,6 +69,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -219,6 +220,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+
+	if os.Getuid() != 0 && CgroupsPath != "" {
+		sylog.Warningf("--apply-cgroups requires root privileges")
+	} else {
+		engineConfig.SetCgroupsPath(CgroupsPath)
+	}
 
 	if IsWritable && IsWritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
