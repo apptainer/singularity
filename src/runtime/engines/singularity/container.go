@@ -17,6 +17,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/cgroups"
 	"github.com/sylabs/singularity/src/pkg/image"
 	"github.com/sylabs/singularity/src/pkg/network"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -152,12 +153,6 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return fmt.Errorf("chroot failed: %s", err)
 	}
 
-	sylog.Debugf("Chdir into / to avoid errors\n")
-	err = syscall.Chdir("/")
-	if err != nil {
-		return fmt.Errorf("change directory failed: %s", err)
-	}
-
 	if c.netNS && !c.userNS {
 		if os.Geteuid() == 0 {
 			/* hold a reference to container network namespace for cleanup */
@@ -190,6 +185,24 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		} else {
 			return fmt.Errorf("Network requires root permissions")
 		}
+	}
+
+	if os.Geteuid() == 0 {
+		path := engine.EngineConfig.GetCgroupsPath()
+		if path != "" {
+			name := strconv.Itoa(pid)
+			manager := &cgroups.Manager{Pid: pid, Name: name}
+			if err := manager.ApplyFromFile(path); err != nil {
+				return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+			}
+			engine.EngineConfig.Cgroups = manager
+		}
+	}
+
+	sylog.Debugf("Chdir into / to avoid errors\n")
+	err = syscall.Chdir("/")
+	if err != nil {
+		return fmt.Errorf("change directory failed: %s", err)
 	}
 
 	return nil

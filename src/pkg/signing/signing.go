@@ -22,21 +22,26 @@ import (
 	"golang.org/x/crypto/openpgp/clearsign"
 )
 
-// computeHashStr generates a hash from a data object and generates a string
+// computeHashStr generates a hash from data object(s) and generates a string
 // to be stored in the signature block
-func computeHashStr(fimg *sif.FileImage, descr *sif.Descriptor) string {
-	sum := sha512.Sum384(fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen])
+func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
+	hash := sha512.New384()
+	for _, v := range descr {
+		hash.Write(fimg.Filedata[v.Fileoff : v.Fileoff+v.Filelen])
+	}
+
+	sum := hash.Sum(nil)
 
 	return fmt.Sprintf("SIFHASH:\n%x", sum)
 }
 
 // sifAddSignature adds a signature block to a SIF file
-func sifAddSignature(fimg *sif.FileImage, descr *sif.Descriptor, fingerprint [20]byte, signature []byte) error {
+func sifAddSignature(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]byte, signature []byte) error {
 	// data we need to create a signature descriptor
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
-		Groupid:  descr.Groupid,
-		Link:     descr.ID,
+		Groupid:  groupid,
+		Link:     link,
 		Fname:    "part-signature",
 		Data:     signature,
 	}
@@ -58,10 +63,27 @@ func sifAddSignature(fimg *sif.FileImage, descr *sif.Descriptor, fingerprint [20
 }
 
 // descrToSign determines via argument or interactively which descriptor to sign
-func descrToSign(fimg *sif.FileImage) (descr *sif.Descriptor, err error) {
-	descr, _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return
+func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	if id == 0 {
+		descr[0], _, err = fimg.GetPartPrimSys()
+		if err != nil {
+			return nil, fmt.Errorf("no primary partition found")
+		}
+	} else if isGroup {
+		var search = sif.Descriptor{
+			Groupid: id | sif.DescrGroupMask,
+		}
+		descr, _, err = fimg.GetFromDescr(search)
+		if err != nil {
+			return nil, fmt.Errorf("no descriptors found for groupid %v", id)
+		}
+	} else {
+		descr[0], _, err = fimg.GetFromDescrID(id)
+		if err != nil {
+			return nil, fmt.Errorf("no descriptor found for id %v", id)
+		}
 	}
 
 	return
@@ -72,7 +94,7 @@ func descrToSign(fimg *sif.FileImage) (descr *sif.Descriptor, err error) {
 // location if available or helps the user by prompting with key generation
 // configuration options. In its current form, Sign also pushes, when desired,
 // public material to a key server.
-func Sign(cpath, url, authToken string) error {
+func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken string) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
@@ -104,7 +126,13 @@ func Sign(cpath, url, authToken string) error {
 			fmt.Printf("Uploaded key successfully!\n")
 		}
 	} else {
-		if len(elist) > 1 {
+		if keyIdx != -1 { // -k <idx> has been specified
+			if keyIdx >= 0 && keyIdx < len(elist) {
+				entity = elist[keyIdx]
+			} else {
+				return fmt.Errorf("specified (-k, --keyidx) key index out of range")
+			}
+		} else if len(elist) > 1 {
 			entity, err = sypgp.SelectPrivKey(elist)
 			if err != nil {
 				return fmt.Errorf("failed while reading selection: %s", err)
@@ -127,7 +155,7 @@ func Sign(cpath, url, authToken string) error {
 	defer fimg.UnloadContainer()
 
 	// figure out which descriptor has data to sign
-	descr, err := descrToSign(&fimg)
+	descr, err := descrToSign(&fimg, id, isGroup)
 	if err != nil {
 		return fmt.Errorf("signing requires a primary partition: %s", err)
 	}
@@ -150,7 +178,15 @@ func Sign(cpath, url, authToken string) error {
 	}
 
 	// finally add the signature block (for descr) as a new SIF data object
-	err = sifAddSignature(&fimg, descr, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
+	var groupid, link uint32
+	if isGroup {
+		groupid = sif.DescrUnusedGroup
+		link = descr[0].Groupid
+	} else {
+		groupid = descr[0].Groupid
+		link = descr[0].ID
+	}
+	err = sifAddSignature(&fimg, groupid, link, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
 	if err != nil {
 		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
 	}
@@ -159,23 +195,71 @@ func Sign(cpath, url, authToken string) error {
 }
 
 // return all signatures for the primary partition
-func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
-	descr, _, err = fimg.GetPartPrimSys()
+func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	descr[0], _, err = fimg.GetPartPrimSys()
 	if err != nil {
-		return
+		return nil, nil, fmt.Errorf("no primary partition found")
 	}
 
-	sigs, _, err = fimg.GetFromLinkedDescr(descr.ID)
+	sigs, _, err = fimg.GetFromLinkedDescr(descr[0].ID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no signature found for system partition: %s", err)
+		return nil, nil, fmt.Errorf("no signatures found for system partition")
+	}
+
+	return
+}
+
+// return all signatures for specified descriptor
+func getSigsDescr(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	descr = make([]*sif.Descriptor, 1)
+
+	descr[0], _, err = fimg.GetFromDescrID(id)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no descriptor found for id %v", id)
+	}
+
+	sigs, _, err = fimg.GetFromLinkedDescr(id)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signatures found for id %v", id)
+	}
+
+	return
+}
+
+// return all signatures for specified group
+func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	// find descriptors that are part of a signing group
+	search := sif.Descriptor{
+		Groupid: id | sif.DescrGroupMask,
+	}
+	descr, _, err = fimg.GetFromDescr(search)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no descriptors found for groupid %v", id)
+	}
+
+	// find signature blocks pointing to specified group
+	search = sif.Descriptor{
+		Datatype: sif.DataSignature,
+		Link:     id | sif.DescrGroupMask,
+	}
+	sigs, _, err = fimg.GetFromDescr(search)
+	if err != nil {
+		return nil, nil, fmt.Errorf("no signatures found for groupid %v", id)
 	}
 
 	return
 }
 
 // return all signatures for "id" being unique or group id
-func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *sif.Descriptor, err error) {
-	return getSigsPrimPart(fimg)
+func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
+	if id == 0 {
+		return getSigsPrimPart(fimg)
+	} else if isGroup {
+		return getSigsGroup(fimg, id)
+	}
+	return getSigsDescr(fimg, id)
 }
 
 // Verify takes a container path and look for a verification block for a
@@ -183,7 +267,7 @@ func getSigsForSelection(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr *si
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, url, authToken string) error {
+func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return fmt.Errorf("failed to load SIF container file: %s", err)
@@ -191,7 +275,7 @@ func Verify(cpath, url, authToken string) error {
 	defer fimg.UnloadContainer()
 
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-	signatures, descr, err := getSigsForSelection(&fimg)
+	signatures, descr, err := getSigsForSelection(&fimg, id, isGroup)
 	if err != nil {
 		return fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
@@ -216,7 +300,9 @@ func Verify(cpath, url, authToken string) error {
 		}
 
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			return fmt.Errorf("hash check failed, data or signature block corrupted")
+			sylog.Infof("NOTE: group signatures will fail if new data is added to a group")
+			sylog.Infof("after the group signature is created.")
+			return fmt.Errorf("hashes differ, data may be corrupted")
 		}
 
 		// (1) Data integrity is verified, (2) now validate identify of signers
