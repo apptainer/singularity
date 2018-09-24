@@ -23,14 +23,14 @@ func TestScanDefinitionFile(t *testing.T) {
 		defPath  string
 		sections string
 	}{
-		{"Arch", "../testdata_good/arch/arch", "../testdata_good/arch/arch_sections.json"},
-		{"BusyBox", "../testdata_good/busybox/busybox", "../testdata_good/busybox/busybox_sections.json"},
-		{"Debootstrap", "../testdata_good/debootstrap/debootstrap", "../testdata_good/debootstrap/debootstrap_sections.json"},
-		{"Docker", "../testdata_good/docker/docker", "../testdata_good/docker/docker_sections.json"},
-		{"LocalImage", "../testdata_good/localimage/localimage", "../testdata_good/localimage/localimage_sections.json"},
-		{"Shub", "../testdata_good/shub/shub", "../testdata_good/shub/shub_sections.json"},
-		{"Yum", "../testdata_good/yum/yum", "../testdata_good/yum/yum_sections.json"},
-		{"Zypper", "../testdata_good/zypper/zypper", "../testdata_good/zypper/zypper_sections.json"},
+		{"Arch", "../../testdata_good/arch/arch", "../../testdata_good/arch/arch_sections.json"},
+		{"BusyBox", "../../testdata_good/busybox/busybox", "../../testdata_good/busybox/busybox_sections.json"},
+		{"Debootstrap", "../../testdata_good/debootstrap/debootstrap", "../../testdata_good/debootstrap/debootstrap_sections.json"},
+		{"Docker", "../../testdata_good/docker/docker", "../../testdata_good/docker/docker_sections.json"},
+		{"LocalImage", "../../testdata_good/localimage/localimage", "../../testdata_good/localimage/localimage_sections.json"},
+		{"Shub", "../../testdata_good/shub/shub", "../../testdata_good/shub/shub_sections.json"},
+		{"Yum", "../../testdata_good/yum/yum", "../../testdata_good/yum/yum_sections.json"},
+		{"Zypper", "../../testdata_good/zypper/zypper", "../../testdata_good/zypper/zypper_sections.json"},
 	}
 
 	for _, tt := range tests {
@@ -76,14 +76,14 @@ func TestParseDefinitionFile(t *testing.T) {
 		defPath  string
 		jsonPath string
 	}{
-		{"Docker", "../testdata_good/docker/docker", "../testdata_good/docker/docker.json"},
-		{"BusyBox", "../testdata_good/busybox/busybox", "../testdata_good/busybox/busybox.json"},
-		{"Debootstrap", "../testdata_good/debootstrap/debootstrap", "../testdata_good/debootstrap/debootstrap.json"},
-		{"Arch", "../testdata_good/arch/arch", "../testdata_good/arch/arch.json"},
-		{"LocalImage", "../testdata_good/localimage/localimage", "../testdata_good/localimage/localimage.json"},
-		{"Shub", "../testdata_good/shub/shub", "../testdata_good/shub/shub.json"},
-		{"Yum", "../testdata_good/yum/yum", "../testdata_good/yum/yum.json"},
-		{"Zypper", "../testdata_good/zypper/zypper", "../testdata_good/zypper/zypper.json"},
+		{"Arch", "../../testdata_good/arch/arch", "../../testdata_good/arch/arch.json"},
+		{"BusyBox", "../../testdata_good/busybox/busybox", "../../testdata_good/busybox/busybox.json"},
+		{"Debootstrap", "../../testdata_good/debootstrap/debootstrap", "../../testdata_good/debootstrap/debootstrap.json"},
+		{"Docker", "../../testdata_good/docker/docker", "../../testdata_good/docker/docker.json"},
+		{"LocalImage", "../../testdata_good/localimage/localimage", "../../testdata_good/localimage/localimage.json"},
+		{"Shub", "../../testdata_good/shub/shub", "../../testdata_good/shub/shub.json"},
+		{"Yum", "../../testdata_good/yum/yum", "../../testdata_good/yum/yum.json"},
+		{"Zypper", "../../testdata_good/zypper/zypper", "../../testdata_good/zypper/zypper.json"},
 	}
 
 	for _, tt := range tests {
@@ -122,10 +122,10 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 		name    string
 		defPath string
 	}{
-		{"BadSection", "../testdata_bad/bad_section"},
-		{"JSONInput1", "../testdata_bad/json_input_1"},
-		{"JSONInput2", "../testdata_bad/json_input_2"},
-		{"Empty", "../testdata_bad/empty"},
+		//{"BadSection", "../../testdata_bad/bad_section"},
+		{"JSONInput1", "../../testdata_bad/json_input_1"},
+		{"JSONInput2", "../../testdata_bad/json_input_2"},
+		{"Empty", "../../testdata_bad/empty"},
 	}
 
 	for _, tt := range tests {

@@ -327,50 +327,42 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 }
 
 // makeDef gets a definition object from a spec
-func makeDef(spec string) (def types.Definition, err error) {
+func makeDef(spec string) (types.Definition, error) {
 	if ok, err := IsValidURI(spec); ok && err == nil {
 		// URI passed as spec
-		def, err := types.NewDefinitionFromURI(spec)
-		if err != nil {
-			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
-		}
-
-		return def, nil
+		return types.NewDefinitionFromURI(spec)
 	}
 
 	// Non-URI passed as spec
-	if ok, err := parser.IsValidDefinition(spec); ok {
+	ok, err := parser.IsValidDefinition(spec)
+	if ok {
+		sylog.Debugf("Found valid definition: %s\n", spec)
 		// File exists and contains valid definition
 		defFile, err := os.Open(spec)
 		if err != nil {
-			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
+			return types.Definition{}, fmt.Errorf("unable to open file %s: %v", spec, err)
 		}
 		defer defFile.Close()
 
-		if def, err := parser.ParseDefinitionFile(defFile); err != nil {
-			return def, err
-		}
 		// must be root to build from a definition
 		if os.Getuid() != 0 {
 			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
 		}
 
-		return def, nil
+		return parser.ParseDefinitionFile(defFile)
 	} else if err == nil {
 		// File exists and does NOT contain a valid definition
 		// local image or sandbox
-		def := types.Definition{
+		return types.Definition{
 			Header: map[string]string{
 				"bootstrap": "localimage",
 				"from":      spec,
 			},
-		}
-
-		return def, nil
+		}, nil
 	}
 
 	// File does NOT exist or cannot be opened for another reason
-	return def, fmt.Errorf("unable to build from %s: %v", spec, err)
+	return types.Definition{}, fmt.Errorf("unable to build from %s: %v", spec, err)
 }
 
 func (b *Build) addOptions() {
