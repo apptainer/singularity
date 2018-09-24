@@ -374,7 +374,7 @@
   packages = ["pkg/seccomp"]
   pruneopts = "UT"
   revision = "8afc34092907d146906fcc31af112b2b46e7b5cd"
-  
+
 [[projects]]
   digest = "1:41b00533ad3d8b3f54b6a02fc093b211feeffb068a3148a7e7084cd7aeef18ec"
   name = "github.com/magiconair/properties"
@@ -624,12 +624,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:4654a6e1e8273be1aca70fa65e3e72caf18860e47c28b8fe7579a127fd73d772"
+  digest = "1:09e7bb03b8a2f75d03f3674f528330e1f937e76faf14f58042cb7376b153d849"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
   pruneopts = "UT"
-  revision = "a74ff54af21df5c4b791a246f05c56ff88c81c8e"
-  version = "v1.0.0"
+  revision = "177b9338f1ab9123be5b6217740be1f0ce924206"
+  version = "v1.0.1"
 
 [[projects]]
   branch = "master"
