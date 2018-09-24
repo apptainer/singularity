@@ -7,7 +7,6 @@ package imgbuild
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -34,21 +33,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := post.Wait(); err != nil {
 			sylog.Fatalf("post proc: %v\n", err)
 		}
-	}
-
-	// insert startscript
-	if err := e.insertStartScript(); err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
-	}
-
-	// insert runscript
-	if err := e.insertRunScript(); err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
-	}
-
-	// insert test script
-	if err := e.insertTestScript(); err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
 	if e.EngineConfig.RunSection("test") {
@@ -102,38 +86,5 @@ func (e *EngineOperations) CleanupContainer() error {
 
 // PostStartProcess actually does nothing for build engine
 func (e *EngineOperations) PostStartProcess(pid int) error {
-	return nil
-}
-
-func (e *EngineOperations) insertRunScript() error {
-	if e.EngineConfig.RunSection("runscript") && e.EngineConfig.Recipe.ImageData.Runscript != "" {
-		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile("/.singularity.d/runscript", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Runscript+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (e *EngineOperations) insertStartScript() error {
-	if e.EngineConfig.RunSection("startscript") && e.EngineConfig.Recipe.ImageData.Startscript != "" {
-		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile("/.singularity.d/startscript", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Startscript+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (e *EngineOperations) insertTestScript() error {
-	if e.EngineConfig.RunSection("test") && e.EngineConfig.Recipe.ImageData.Test != "" {
-		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile("/.singularity.d/test", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Test+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }

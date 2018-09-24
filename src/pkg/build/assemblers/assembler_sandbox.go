@@ -54,6 +54,24 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While inserting environment script: %v", err)
 	}
 
+	// insert startscript
+	err = insertStartScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting startscript: %v", err)
+	}
+
+	// insert runscript
+	err = insertRunScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting runscript: %v", err)
+	}
+
+	// insert test script
+	err = insertTestScript(b)
+	if err != nil {
+		return fmt.Errorf("While inserting test script: %v", err)
+	}
+
 	// move bundle rootfs to sandboxdir as final sandbox
 	sylog.Debugf("Moving sandbox from %v to %v", b.Rootfs(), path)
 	if _, err := os.Stat(path); err == nil {
@@ -78,6 +96,39 @@ func insertEnvScript(b *types.Bundle) error {
 	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")
 		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertRunScript(b *types.Bundle) error {
+	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript != "" {
+		sylog.Infof("Adding runscript")
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertStartScript(b *types.Bundle) error {
+	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript != "" {
+		sylog.Infof("Adding startscript")
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0775)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertTestScript(b *types.Bundle) error {
+	if b.RunSection("test") && b.Recipe.ImageData.Test != "" {
+		sylog.Infof("Adding testscript")
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
 		if err != nil {
 			return err
 		}
