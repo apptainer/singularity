@@ -36,12 +36,12 @@ func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
 }
 
 // sifAddSignature adds a signature block to a SIF file
-func sifAddSignature(fimg *sif.FileImage, descr []*sif.Descriptor, fingerprint [20]byte, signature []byte) error {
+func sifAddSignature(fimg *sif.FileImage, groupid, link uint32, fingerprint [20]byte, signature []byte) error {
 	// data we need to create a signature descriptor
 	siginput := sif.DescriptorInput{
 		Datatype: sif.DataSignature,
-		Groupid:  descr[0].Groupid,
-		Link:     descr[0].ID,
+		Groupid:  groupid,
+		Link:     link,
 		Fname:    "part-signature",
 		Data:     signature,
 	}
@@ -63,12 +63,27 @@ func sifAddSignature(fimg *sif.FileImage, descr []*sif.Descriptor, fingerprint [
 }
 
 // descrToSign determines via argument or interactively which descriptor to sign
-func descrToSign(fimg *sif.FileImage) (descr []*sif.Descriptor, err error) {
+func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Descriptor, err error) {
 	descr = make([]*sif.Descriptor, 1)
 
-	descr[0], _, err = fimg.GetPartPrimSys()
-	if err != nil {
-		return
+	if id == 0 {
+		descr[0], _, err = fimg.GetPartPrimSys()
+		if err != nil {
+			return nil, fmt.Errorf("no primary partition found")
+		}
+	} else if isGroup {
+		var search = sif.Descriptor{
+			Groupid: id | sif.DescrGroupMask,
+		}
+		descr, _, err = fimg.GetFromDescr(search)
+		if err != nil {
+			return nil, fmt.Errorf("no descriptors found for groupid %v", id)
+		}
+	} else {
+		descr[0], _, err = fimg.GetFromDescrID(id)
+		if err != nil {
+			return nil, fmt.Errorf("no descriptor found for id %v", id)
+		}
 	}
 
 	return
@@ -140,7 +155,7 @@ func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken stri
 	defer fimg.UnloadContainer()
 
 	// figure out which descriptor has data to sign
-	descr, err := descrToSign(&fimg)
+	descr, err := descrToSign(&fimg, id, isGroup)
 	if err != nil {
 		return fmt.Errorf("signing requires a primary partition: %s", err)
 	}
@@ -163,7 +178,15 @@ func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken stri
 	}
 
 	// finally add the signature block (for descr) as a new SIF data object
-	err = sifAddSignature(&fimg, descr, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
+	var groupid, link uint32
+	if isGroup {
+		groupid = sif.DescrUnusedGroup
+		link = descr[0].Groupid
+	} else {
+		groupid = descr[0].Groupid
+		link = descr[0].ID
+	}
+	err = sifAddSignature(&fimg, groupid, link, entity.PrimaryKey.Fingerprint, signedmsg.Bytes())
 	if err != nil {
 		return fmt.Errorf("failed adding signature block to SIF container file: %s", err)
 	}
@@ -207,7 +230,8 @@ func getSigsDescr(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr
 
 // return all signatures for specified group
 func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
-	var search = sif.Descriptor{
+	// find descriptors that are part of a signing group
+	search := sif.Descriptor{
 		Groupid: id | sif.DescrGroupMask,
 	}
 	descr, _, err = fimg.GetFromDescr(search)
@@ -215,7 +239,12 @@ func getSigsGroup(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr
 		return nil, nil, fmt.Errorf("no descriptors found for groupid %v", id)
 	}
 
-	sigs, _, err = fimg.GetSignFromGroup(id)
+	// find signature blocks pointing to specified group
+	search = sif.Descriptor{
+		Datatype: sif.DataSignature,
+		Link:     id | sif.DescrGroupMask,
+	}
+	sigs, _, err = fimg.GetFromDescr(search)
 	if err != nil {
 		return nil, nil, fmt.Errorf("no signatures found for groupid %v", id)
 	}
@@ -271,7 +300,9 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error 
 		}
 
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			return fmt.Errorf("hash check failed, data or signature block corrupted")
+			sylog.Infof("NOTE: group signatures will fail if new data is added to a group")
+			sylog.Infof("after the group signature is created.")
+			return fmt.Errorf("hashes differ, data may be corrupted")
 		}
 
 		// (1) Data integrity is verified, (2) now validate identify of signers
