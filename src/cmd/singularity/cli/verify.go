@@ -9,23 +9,32 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/signing"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/signing"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+)
+
+var (
+	sifGroupID uint32 // -g groupid specification
+	sifDescID  uint32 // -i id specification
 )
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
-	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+
+	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "key server URL")
+	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be verified")
+	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be verified")
 	SingularityCmd.AddCommand(VerifyCmd)
 }
 
 // VerifyCmd singularity verify
 var VerifyCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.ExactArgs(1),
-	PreRun: sylabsToken,
+	Args:                  cobra.ExactArgs(1),
+	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
@@ -43,9 +52,18 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cpath, url string) error {
-	if err := signing.Verify(cpath, url, authToken); err != nil {
-		return err
+	if sifGroupID != 0 && sifDescID != 0 {
+		return fmt.Errorf("only one of -i or -g may be set")
 	}
 
-	return nil
+	var isGroup bool
+	var id uint32
+	if sifGroupID != 0 {
+		isGroup = true
+		id = sifGroupID
+	} else {
+		id = sifDescID
+	}
+
+	return signing.Verify(cpath, url, id, isGroup, authToken)
 }

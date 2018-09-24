@@ -8,10 +8,10 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"os"
 	"strconv"
@@ -19,12 +19,14 @@ import (
 
 func init() {
 	KeysPushCmd.Flags().SetInterspersed(false)
+
 	KeysPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	KeysPushCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
 // KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
 var KeysPushCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -67,6 +69,8 @@ func doKeysPushCmd(fingerprint string, url string) error {
 	if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
 		return err
 	}
+
+	fmt.Printf("public key `%v' pushed to server successfully\n", fingerprint)
 
 	return nil
 }

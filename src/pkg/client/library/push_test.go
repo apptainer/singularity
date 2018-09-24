@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 //func postFile(baseURL string, filePath string, imageID string) error {

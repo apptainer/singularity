@@ -13,11 +13,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/loop"
+	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
 
 // Methods is a receiver type
@@ -119,10 +119,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	if err := loopdev.AttachFromFile(image, arguments.Mode, reply); err != nil {
 		return err
 	}
-	if err := loopdev.SetStatus(&arguments.Info); err != nil {
-		return err
-	}
-	return nil
+	return loopdev.SetStatus(&arguments.Info)
 }
 
 // SetHostname sets hostname with the specified arguments

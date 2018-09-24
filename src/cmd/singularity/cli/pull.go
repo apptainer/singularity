@@ -6,12 +6,11 @@
 package cli
 
 import (
-	"strings"
-
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/libexec"
-	"github.com/singularityware/singularity/src/pkg/sylog"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/libexec"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/uri"
 )
 
 const (
@@ -32,7 +31,10 @@ func init() {
 	PullCmd.Flags().SetInterspersed(false)
 
 	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "")
+	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
+	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
 	SingularityCmd.AddCommand(PullCmd)
 }
@@ -40,29 +42,27 @@ func init() {
 // PullCmd singularity pull
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: sylabsToken,
+	Args:                  cobra.RangeArgs(1, 2),
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		var uri, image string
-
-		image = ""
-
-		if len(args) == 2 {
-			uri = args[1]
-			image = args[0]
-		} else {
-			uri = args[0]
+		i := len(args) - 1 // uri is stored in args[len(args)-1]
+		transport, ref := uri.SplitURI(args[i])
+		if ref == "" {
+			sylog.Fatalf("bad uri %s", args[i])
 		}
 
-		BaseURI := strings.Split(uri, "://")
+		name := args[0]
+		if len(args) == 1 {
+			name = uri.NameFromURI(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+		}
 
-		switch BaseURI[0] {
-		case LibraryProtocol:
-			libexec.PullLibraryImage(image, uri, PullLibraryURI, force, authToken)
+		switch transport {
+		case LibraryProtocol, "":
+			libexec.PullLibraryImage(name, args[i], PullLibraryURI, force, authToken)
 		case ShubProtocol:
-			libexec.PullShubImage(image, uri, force)
+			libexec.PullShubImage(name, args[i], force)
 		default:
-			sylog.Errorf("Not a supported URI")
+			libexec.PullOciImage(name, args[i], force)
 		}
 	},
 

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
-	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 )
 
 const (
@@ -241,12 +241,8 @@ func SetLogFile(name string) error {
 	}
 	defer stdout.Close()
 
-	if err := syscall.Dup2(int(stderr.Fd()), int(os.Stderr.Fd())); err != nil {
+	if err := syscall.Dup3(int(stderr.Fd()), int(os.Stderr.Fd()), 0); err != nil {
 		return err
 	}
-	if err := syscall.Dup2(int(stdout.Fd()), int(os.Stdout.Fd())); err != nil {
-		return err
-	}
-
-	return nil
+	return syscall.Dup3(int(stdout.Fd()), int(os.Stdout.Fd()), 0)
 }

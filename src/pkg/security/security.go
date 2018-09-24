@@ -1,31 +1,23 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package security
 
 import (
 	"fmt"
+	"strings"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/security/apparmor"
-	"github.com/singularityware/singularity/src/pkg/security/seccomp"
-	"github.com/singularityware/singularity/src/pkg/security/selinux"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/security/apparmor"
+	"github.com/sylabs/singularity/src/pkg/security/seccomp"
+	"github.com/sylabs/singularity/src/pkg/security/selinux"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // Configure applies security related configuration to current process
 func Configure(config *specs.Spec) error {
-	if config.Linux != nil && config.Linux.Seccomp != nil {
-		if seccomp.Enabled() {
-			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp); err != nil {
-				return err
-			}
-		} else {
-			sylog.Warningf("seccomp requested but not enabled")
-		}
-	}
 	if config.Process != nil {
 		if config.Process.SelinuxLabel != "" && config.Process.ApparmorProfile != "" {
 			return fmt.Errorf("You can't specify both an apparmor profile and a SELinux label")
@@ -48,5 +40,29 @@ func Configure(config *specs.Spec) error {
 			}
 		}
 	}
+	if config.Linux != nil && config.Linux.Seccomp != nil {
+		if seccomp.Enabled() {
+			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp); err != nil {
+				return err
+			}
+		} else {
+			sylog.Warningf("seccomp requested but not enabled")
+		}
+	}
 	return nil
+}
+
+// GetParam iterates over security argument and returns parameters
+// for the security feature
+func GetParam(security []string, feature string) string {
+	for _, param := range security {
+		splitted := strings.SplitN(param, ":", 2)
+		if splitted[0] == feature {
+			if len(splitted) != 2 {
+				sylog.Warningf("bad format for parameter %s (format is <security>:<arg>)", param)
+			}
+			return splitted[1]
+		}
+	}
+	return ""
 }

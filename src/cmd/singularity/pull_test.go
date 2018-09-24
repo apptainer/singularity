@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
 type pullOpts struct {

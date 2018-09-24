@@ -6,9 +6,10 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 )
 
 func init() {
@@ -17,10 +18,12 @@ func init() {
 
 // KeysNewPairCmd is `singularity keys newpair' and generate a new OpenPGP key pair
 var KeysNewPairCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(0),
+	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		sypgp.GenKeyPair()
+		if _, err := sypgp.GenKeyPair(); err != nil {
+			sylog.Fatalf("creating newpair failed: %v", err)
+		}
 	},
 
 	Use:     docs.KeysNewPairUse,

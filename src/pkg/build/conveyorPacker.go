@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types"
 )
 
 // validURIs contains a list of known uris
 var validURIs = map[string]bool{
+	"library":        true,
 	"shub":           true,
 	"docker":         true,
 	"docker-archive": true,
@@ -24,7 +25,7 @@ var validURIs = map[string]bool{
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
 type Conveyor interface {
-	Get(types.Definition) error
+	Get(*types.Bundle) error
 }
 
 // Packer is the type which is responsible for installing the chroot directory,

@@ -9,31 +9,25 @@ import (
 	"io/ioutil"
 	"os"
 
-	sytypes "github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/shub/client"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	sytypes "github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/client/shub"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ShubConveyorPacker struct {
 	recipe sytypes.Definition
 	b      *sytypes.Bundle
-	localPacker
+	LocalPacker
 }
 
 // Get downloads container from Singularityhub
-func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
+func (cp *ShubConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
-	cp.recipe = recipe
+	cp.b = b
 
-	src := `shub://` + recipe.Header["from"]
-
-	//create bundle to build into
-	cp.b, err = sytypes.NewBundle("sbuild-shub")
-	if err != nil {
-		return
-	}
+	src := `shub://` + b.Recipe.Header["from"]
 
 	//create file for image download
 	f, err := ioutil.TempFile(cp.b.Path, "shub-img")
@@ -44,12 +38,12 @@ func (cp *ShubConveyorPacker) Get(recipe sytypes.Definition) (err error) {
 
 	cp.b.FSObjects["shubImg"] = f.Name()
 
-	//get image from singularity hub
+	// get image from singularity hub
 	if err = client.DownloadImage(cp.b.FSObjects["shubImg"], src, true); err != nil {
 		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
 	}
 
-	cp.localPacker, err = getLocalPacker(cp.b.FSObjects["shubImg"], cp.b)
+	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["shubImg"], cp.b)
 
 	return err
 }

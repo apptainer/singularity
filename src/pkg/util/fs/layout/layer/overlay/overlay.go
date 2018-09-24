@@ -10,9 +10,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
-	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
+	"github.com/sylabs/singularity/src/pkg/util/fs/mount"
 )
 
 const (
@@ -46,10 +46,7 @@ func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 	path, _ := o.session.GetPath(lowerDir)
 	o.lowerDirs = append(o.lowerDirs, path)
 
-	if err := system.RunBeforeTag(mount.LayerTag, o.createOverlay); err != nil {
-		return err
-	}
-	return nil
+	return system.RunBeforeTag(mount.LayerTag, o.createOverlay)
 }
 
 func (o *Overlay) createOverlay(system *mount.System) error {

@@ -10,17 +10,22 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"path/filepath"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/image"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/capabilities"
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
-	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/image"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/security"
+	"github.com/sylabs/singularity/src/pkg/security/seccomp"
+	"github.com/sylabs/singularity/src/pkg/syecl"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/capabilities"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -168,6 +173,65 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
+func (e *EngineOperations) prepareFd() {
+	fds := make([]int, 0)
+
+	if e.EngineConfig.File.UserBindControl {
+		for _, b := range e.EngineConfig.GetBindPath() {
+			splitted := strings.Split(b, ":")
+
+			src, err := filepath.Abs(splitted[0])
+			if err != nil {
+				continue
+			}
+
+			if !fs.IsDir(src) {
+				continue
+			}
+
+			sylog.Debugf("Open file descriptor for %s", src)
+			f, err := os.Open(src)
+			if err != nil {
+				continue
+			}
+			fds = append(fds, int(f.Fd()))
+		}
+	}
+
+	if !e.EngineConfig.GetContain() {
+		for _, bindpath := range e.EngineConfig.File.BindPath {
+			splitted := strings.Split(bindpath, ":")
+			src := splitted[0]
+
+			if !fs.IsDir(src) {
+				continue
+			}
+
+			sylog.Debugf("Open file descriptor for %s", src)
+			f, err := os.Open(src)
+			if err != nil {
+				continue
+			}
+			fds = append(fds, int(f.Fd()))
+		}
+	}
+
+	for _, path := range e.EngineConfig.File.AutofsBugPath {
+		if !fs.IsDir(path) {
+			continue
+		}
+
+		sylog.Debugf("Open file descriptor for %s", path)
+		f, err := os.Open(path)
+		if err != nil {
+			continue
+		}
+		fds = append(fds, int(f.Fd()))
+	}
+
+	e.EngineConfig.SetOpenFd(fds)
+}
+
 // prepareContainerConfig is responsible for getting and applying user supplied
 // configuration for container creation
 func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config) error {
@@ -211,6 +275,28 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
 		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}
+
+	param := security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
+	if param != "" {
+		sylog.Debugf("Applying SELinux context %s", param)
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(param)
+	}
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
+	if param != "" {
+		sylog.Debugf("Applying Apparmor profile %s", param)
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(param)
+	}
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
+	if param != "" {
+		sylog.Debugf("Applying seccomp rule from %s", param)
+		generator := &e.EngineConfig.OciConfig.Generator
+		if err := seccomp.LoadProfileFromFile(param, generator); err != nil {
+			return err
+		}
+	}
+
+	// open file descriptors (autofs bug path)
+	e.prepareFd()
 
 	return nil
 }
@@ -265,6 +351,41 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	} else {
 		if err := e.prepareUserCaps(); err != nil {
 			return err
+		}
+	}
+
+	// restore apparmor profile
+	param := security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
+	if param != "" {
+		sylog.Debugf("Applying Apparmor profile %s", param)
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(param)
+	} else {
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(instanceEngineConfig.OciConfig.Process.ApparmorProfile)
+	}
+
+	// restore selinux context
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
+	if param != "" {
+		sylog.Debugf("Applying SELinux context %s", param)
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(param)
+	} else {
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(instanceEngineConfig.OciConfig.Process.SelinuxLabel)
+	}
+
+	// restore security features
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
+	if param != "" {
+		sylog.Debugf("Applying seccomp rule from %s", param)
+		generator := &e.EngineConfig.OciConfig.Generator
+		if err := seccomp.LoadProfileFromFile(param, generator); err != nil {
+			return err
+		}
+	} else {
+		if instanceEngineConfig.OciConfig.Linux != nil {
+			if e.EngineConfig.OciConfig.Linux == nil {
+				e.EngineConfig.OciConfig.Linux = &specs.Linux{}
+			}
+			e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
 		}
 	}
 
@@ -334,6 +455,12 @@ func (e *EngineOperations) loadImages() error {
 	if err != nil {
 		return err
 	}
+
+	if writable && !img.Writable {
+		sylog.Warningf("Can't set writable flag on image, no write permissions")
+		e.EngineConfig.SetWritableImage(false)
+	}
+
 	// sandbox are handled differently for security reasons
 	if img.Type == image.SANDBOX {
 		if img.Path == "/" {
@@ -348,6 +475,19 @@ func (e *EngineOperations) loadImages() error {
 		}
 		if cwd != img.Path {
 			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
+		}
+	}
+	if img.Type == image.SIF {
+		// query the ECL module, proceed if an ecl config file is found
+		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
+		if err == nil {
+			if err = ecl.ValidateConfig(); err != nil {
+				return err
+			}
+			_, err := ecl.ShouldRunFp(img.File)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	img.RootFS = true

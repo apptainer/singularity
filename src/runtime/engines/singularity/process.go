@@ -18,14 +18,14 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/singularityware/singularity/src/pkg/security"
+	"github.com/sylabs/singularity/src/pkg/security"
 
-	"github.com/singularityware/singularity/src/pkg/util/mainthread"
-	"github.com/singularityware/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/pkg/util/user"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/instance"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // StartProcess starts the process
@@ -85,6 +85,12 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
+	}
+
+	for _, fd := range engine.EngineConfig.GetOpenFd() {
+		if err := syscall.Close(fd); err != nil {
+			return fmt.Errorf("Aborting failed to close file descriptor: %s", err)
+		}
 	}
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {

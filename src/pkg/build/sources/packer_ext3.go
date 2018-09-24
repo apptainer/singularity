@@ -12,10 +12,10 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	args "github.com/singularityware/singularity/src/runtime/engines/singularity/rpc"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/loop"
+	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
 
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info
@@ -85,8 +85,5 @@ func getLoopDevice(arguments *args.LoopArgs) error {
 		return err
 	}
 
-	if err := loopdev.SetStatus(&arguments.Info); err != nil {
-		return err
-	}
-	return nil
+	return loopdev.SetStatus(&arguments.Info)
 }

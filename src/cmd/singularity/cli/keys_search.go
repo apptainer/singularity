@@ -8,22 +8,24 @@ package cli
 import (
 	"fmt"
 
-	"github.com/singularityware/singularity/src/docs"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/sypgp"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/sypgp"
 
 	"os"
 )
 
 func init() {
 	KeysSearchCmd.Flags().SetInterspersed(false)
+
 	KeysSearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
+	KeysSearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
 // KeysSearchCmd is `singularity keys search' and look for public keys from a key server
 var KeysSearchCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {

@@ -10,25 +10,27 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/image"
-	"github.com/singularityware/singularity/src/pkg/syecl"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/fs"
-	"github.com/singularityware/singularity/src/pkg/util/fs/files"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout/layer/overlay"
-	"github.com/singularityware/singularity/src/pkg/util/fs/layout/layer/underlay"
-	"github.com/singularityware/singularity/src/pkg/util/fs/mount"
-	"github.com/singularityware/singularity/src/pkg/util/fs/proc"
-	"github.com/singularityware/singularity/src/pkg/util/loop"
-	"github.com/singularityware/singularity/src/pkg/util/user"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/cgroups"
+	"github.com/sylabs/singularity/src/pkg/image"
+	"github.com/sylabs/singularity/src/pkg/network"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
+	"github.com/sylabs/singularity/src/pkg/util/fs/files"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout/layer/overlay"
+	"github.com/sylabs/singularity/src/pkg/util/fs/layout/layer/underlay"
+	"github.com/sylabs/singularity/src/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/src/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/src/pkg/util/loop"
+	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
 )
 
 type container struct {
@@ -42,6 +44,7 @@ type container struct {
 	pidNS            bool
 	utsNS            bool
 	netNS            bool
+	ipcNS            bool
 	mountInfoPath    string
 	skippedMount     []string
 	suidFlag         uintptr
@@ -76,6 +79,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 				c.utsNS = true
 			case specs.NetworkNamespace:
 				c.netNS = true
+			case specs.IPCNamespace:
+				c.ipcNS = true
 			}
 		}
 	}
@@ -148,10 +153,123 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return fmt.Errorf("chroot failed: %s", err)
 	}
 
+	if c.netNS && !c.userNS {
+		if os.Geteuid() == 0 {
+			/* hold a reference to container network namespace for cleanup */
+			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+			if err != nil {
+				return fmt.Errorf("can't open network namespace: %s", err)
+			}
+			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
+
+			cniPath := &network.CNIPath{
+				Conf:   engine.EngineConfig.File.CniConfPath,
+				Plugin: engine.EngineConfig.File.CniPluginPath,
+			}
+
+			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+			if err != nil {
+				return fmt.Errorf("%s", err)
+			}
+			netargs := engine.EngineConfig.GetNetworkArgs()
+			if err := setup.SetArgs(netargs); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+
+			if err := setup.AddNetworks(); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+
+			engine.EngineConfig.Network = setup
+		} else {
+			return fmt.Errorf("Network requires root permissions")
+		}
+	}
+
+	if os.Geteuid() == 0 {
+		path := engine.EngineConfig.GetCgroupsPath()
+		if path != "" {
+			name := strconv.Itoa(pid)
+			manager := &cgroups.Manager{Pid: pid, Name: name}
+			if err := manager.ApplyFromFile(path); err != nil {
+				return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+			}
+			engine.EngineConfig.Cgroups = manager
+		}
+	}
+
 	sylog.Debugf("Chdir into / to avoid errors\n")
 	err = syscall.Chdir("/")
 	if err != nil {
 		return fmt.Errorf("change directory failed: %s", err)
+	}
+
+	return nil
+}
+
+func (c *container) setupWritableSIFImage(img *image.Image, overlayEnabled bool) error {
+	fimg, err := sif.LoadContainerFp(img.File, !img.Writable)
+	if err != nil {
+		return err
+	}
+
+	// Get the default system partition image
+	part, _, err := fimg.GetPartPrimSys()
+	if err != nil {
+		return err
+	}
+
+	// Get descriptor for group associated with system partition
+	descriptors, _, err := fimg.GetPartFromGroup(part.Groupid)
+	if err != nil {
+		return err
+	}
+
+	// Determine if an overlay partition exists
+	overlayPart := 0
+	for _, desc := range descriptors {
+		ptype, err := desc.GetPartType()
+		if err != nil {
+			return err
+		}
+		if ptype == sif.PartOverlay {
+			fstype, err := desc.GetFsType()
+			if err != nil {
+				continue
+			}
+			if fstype == sif.FsExt3 {
+				if overlayPart == 0 {
+					if !overlayEnabled {
+						return fmt.Errorf("Can't mount SIF image as read-write, overlay is not enabled")
+					}
+
+					imgCopy := *img
+
+					imgCopy.Type = image.EXT3
+					imgCopy.Offset = uint64(desc.Fileoff)
+					imgCopy.Size = uint64(desc.Filelen)
+					imgCopy.RootFS = false
+					imgCopy.Writable = true
+
+					imglist := c.engine.EngineConfig.GetImageList()
+					imglist = append(imglist, imgCopy)
+
+					c.engine.EngineConfig.SetImageList(imglist)
+
+					overlayImg := c.engine.EngineConfig.GetOverlayImage()
+					overlayImg = append(overlayImg, imgCopy.Path)
+					c.engine.EngineConfig.SetOverlayImage(overlayImg)
+				}
+				overlayPart++
+			}
+		}
+	}
+
+	if overlayPart > 1 {
+		sylog.Warningf("more than one writable overlay partition found, taking the first")
+	} else if overlayPart == 0 {
+		return fmt.Errorf("no overlay partition found")
 	}
 
 	return nil
@@ -162,17 +280,42 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existant paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
-	if c.engine.EngineConfig.GetWritableImage() {
-		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
-		return c.setupDefaultLayout(system)
-	}
+	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
+	overlayEnabled := false
 
 	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
 		switch c.engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
-			sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
-			return c.setupOverlayLayout(system)
+			overlayEnabled = true
 		}
+	}
+
+	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
+		imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
+		if err != nil {
+			return err
+		}
+
+		if imgObject.Type == image.SIF {
+			err = c.setupWritableSIFImage(imgObject, overlayEnabled)
+			if err == nil {
+				return c.setupOverlayLayout(system)
+			}
+			sylog.Warningf("%s", err)
+		} else {
+			sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
+		}
+
+		return c.setupDefaultLayout(system)
+	}
+
+	if overlayEnabled {
+		sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
+		return c.setupOverlayLayout(system)
+	}
+
+	if writableTmpfs {
+		sylog.Warningf("Ignoring --writable-tmpfs as it requires overlay support")
 	}
 
 	if c.engine.EngineConfig.File.EnableUnderlay {
@@ -464,18 +607,6 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	switch imageObject.Type {
 	case image.SIF:
-		// query the ECL module, proceed if an ecl config file is found
-		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
-		if err == nil {
-			if err = ecl.ValidateConfig(); err != nil {
-				return err
-			}
-			_, err := ecl.ShouldRun(imageObject.File.Name())
-			if err != nil {
-				return err
-			}
-		}
-
 		// Load the SIF file
 		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
 		if err != nil {
@@ -558,6 +689,29 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	ov := c.session.Layer.(*overlay.Overlay)
 	hasUpper := false
 
+	if c.engine.EngineConfig.GetWritableTmpfs() {
+		sylog.Debugf("Setup writable tmpfs overlay")
+
+		if err := c.session.AddDir("/upper"); err != nil {
+			return err
+		}
+		if err := c.session.AddDir("/work"); err != nil {
+			return err
+		}
+
+		upper, _ := c.session.GetPath("/upper")
+		work, _ := c.session.GetPath("/work")
+
+		if err := ov.SetUpperDir(upper); err != nil {
+			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+		if err := ov.SetWorkDir(work); err != nil {
+			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+
+		hasUpper = true
+	}
+
 	for _, img := range c.engine.EngineConfig.GetOverlayImage() {
 		splitted := strings.SplitN(img, ":", 2)
 
@@ -616,10 +770,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 
 		if imageObject.Writable && !hasUpper {
-			if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
-				return err
-			}
-
 			upper := filepath.Join(dst, "upper")
 			work := filepath.Join(dst, "work")
 
@@ -633,6 +783,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			hasUpper = true
 		}
 	}
+
+	if hasUpper {
+		if err := system.RunAfterTag(mount.PreLayerTag, c.overlayUpperWork); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -682,9 +839,35 @@ func (c *container) addKernelMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) bindDev(devpath string, system *mount.System) error {
-	if err := c.session.AddFile(devpath, nil); err != nil {
-		return fmt.Errorf("failed to %s session file: %s", devpath, err)
+func (c *container) addSessionDev(devpath string, system *mount.System) error {
+	fi, err := os.Lstat(devpath)
+	if err != nil {
+		return err
+	}
+
+	switch mode := fi.Mode(); {
+	case mode&os.ModeSymlink != 0:
+		target, err := os.Readlink(devpath)
+		if err != nil {
+			return err
+		}
+		if err := c.session.AddSymlink(devpath, target); err != nil {
+			return fmt.Errorf("failed to create symlink %s", devpath)
+		}
+
+		dst, _ := c.session.GetPath(devpath)
+
+		sylog.Debugf("Adding symlink device %s at %s", devpath, dst)
+
+		return nil
+	case mode.IsDir():
+		if err := c.session.AddDir(devpath); err != nil {
+			return fmt.Errorf("failed to add %s session dir: %s", devpath, err)
+		}
+	default:
+		if err := c.session.AddFile(devpath, nil); err != nil {
+			return fmt.Errorf("failed to add %s session file: %s", devpath, err)
+		}
 	}
 
 	dst, _ := c.session.GetPath(devpath)
@@ -693,6 +876,15 @@ func (c *container) bindDev(devpath string, system *mount.System) error {
 
 	if err := system.Points.AddBind(mount.DevTag, devpath, dst, syscall.MS_BIND); err != nil {
 		return fmt.Errorf("failed to add %s mount: %s", devpath, err)
+	}
+	return nil
+}
+
+func (c *container) addSessionDevMount(system *mount.System) error {
+	devPath, _ := c.session.GetPath("/dev")
+	err := system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_REC)
+	if err != nil {
+		return fmt.Errorf("unable to add dev to mount list: %s", err)
 	}
 	return nil
 }
@@ -715,6 +907,20 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("failed to add /dev/shm temporary filesystem: %s", err)
 		}
+
+		if c.ipcNS {
+			sylog.Debugf("Creating temporary staged /dev/mqueue")
+			if err := c.session.AddDir("/dev/mqueue"); err != nil {
+				return fmt.Errorf("failed to add /dev/mqueue session directory: %s", err)
+			}
+			mqueuePath, _ := c.session.GetPath("/dev/mqueue")
+			flags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV)
+			err := system.Points.AddFS(mount.DevTag, mqueuePath, "mqueue", flags, "")
+			if err != nil {
+				return fmt.Errorf("failed to add /dev/mqueue filesystem: %s", err)
+			}
+		}
+
 		if c.engine.EngineConfig.File.MountDevPts {
 			if _, err := os.Stat("/dev/pts/ptmx"); os.IsNotExist(err) {
 				return fmt.Errorf("Multiple devpts instances unsupported and /dev/pts configured")
@@ -742,7 +948,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			if err != nil {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY functionality disabled")
 			} else {
-				if err := c.bindDev("/dev/tty", system); err != nil {
+				if err := c.addSessionDev("/dev/tty", system); err != nil {
 					return err
 				}
 				if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
@@ -750,16 +956,16 @@ func (c *container) addDevMount(system *mount.System) error {
 				}
 			}
 		}
-		if err := c.bindDev("/dev/null", system); err != nil {
+		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
 		}
-		if err := c.bindDev("/dev/zero", system); err != nil {
+		if err := c.addSessionDev("/dev/zero", system); err != nil {
 			return err
 		}
-		if err := c.bindDev("/dev/random", system); err != nil {
+		if err := c.addSessionDev("/dev/random", system); err != nil {
 			return err
 		}
-		if err := c.bindDev("/dev/urandom", system); err != nil {
+		if err := c.addSessionDev("/dev/urandom", system); err != nil {
 			return err
 		}
 		if c.engine.EngineConfig.GetNv() {
@@ -769,30 +975,30 @@ func (c *container) addDevMount(system *mount.System) error {
 			}
 			for _, file := range files {
 				if strings.HasPrefix(file.Name(), "nvidia") {
-					if err := c.bindDev(filepath.Join("/dev", file.Name()), system); err != nil {
+					if err := c.addSessionDev(filepath.Join("/dev", file.Name()), system); err != nil {
 						return err
 					}
 				}
 			}
 		}
 
-		if err := c.session.AddSymlink("/dev/fd", "/proc/self/fd"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/fd")
+		if err := c.addSessionDev("/dev/fd", system); err != nil {
+			return err
 		}
-		if err := c.session.AddSymlink("/dev/stdin", "/proc/self/fd/0"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/stdin")
+		if err := c.addSessionDev("/dev/stdin", system); err != nil {
+			return err
 		}
-		if err := c.session.AddSymlink("/dev/stdout", "/proc/self/fd/1"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/stdout")
+		if err := c.addSessionDev("/dev/stdout", system); err != nil {
+			return err
 		}
-		if err := c.session.AddSymlink("/dev/stderr", "/proc/self/fd/2"); err != nil {
-			return fmt.Errorf("failed to create symlink /dev/stderr")
+		if err := c.addSessionDev("/dev/stderr", system); err != nil {
+			return err
 		}
 
-		devPath, _ := c.session.GetPath("/dev")
-		err = system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_REC)
-		if err != nil {
-			return fmt.Errorf("unable to add dev to mount list: %s", err)
+		// devices could be added in addUserbindsMount so bind session dev
+		// after that all devices have been added to the mount point list
+		if err := system.RunAfterTag(mount.LayerTag, c.addSessionDevMount); err != nil {
+			return err
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "yes" {
 		sylog.Debugf("Adding dev to mount list\n")
@@ -801,7 +1007,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
-		sylog.Verbosef("Not mounting /dev inside the container")
+		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
 	return nil
 }
@@ -980,15 +1186,11 @@ func (c *container) addHomeMount(system *mount.System) error {
 }
 
 func (c *container) addUserbindsMount(system *mount.System) error {
+	devicesMounted := 0
+	userBindControl := c.engine.EngineConfig.File.UserBindControl
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
-		return nil
-	}
-
-	sylog.Debugf("Checking for 'user bind control' in configuration file")
-	if !c.engine.EngineConfig.File.UserBindControl {
-		sylog.Warningf("Ignoring user bind request: user bind control disabled by system administrator")
 		return nil
 	}
 
@@ -1012,13 +1214,44 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 			}
 		}
 
+		// special case for /dev mount to override default mount behaviour
+		// with --contain option or 'mount dev = minimal'
+		if strings.HasPrefix(src, "/dev") {
+			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
+				if strings.HasPrefix(src, "/dev/shm/") || strings.HasPrefix(src, "/dev/mqueue/") {
+					sylog.Warningf("Skipping %s bind mount: not allowed", src)
+				} else {
+					if err := c.addSessionDev(src, system); err != nil {
+						sylog.Warningf("Skipping %s bind mount: %s", src, err)
+					} else {
+						sylog.Debugf("Adding device %s to mount list\n", src)
+					}
+				}
+				devicesMounted++
+			} else if c.engine.EngineConfig.File.MountDev == "yes" {
+				sylog.Warningf("Skipping %s bind mount: /dev is already mounted", src)
+			} else {
+				sylog.Warningf("Skipping %s bind mount: disallowed by configuration", src)
+			}
+			continue
+		} else if !userBindControl {
+			continue
+		}
+
 		sylog.Debugf("Adding %s to mount list\n", src)
+
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
 			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
 		}
 		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		flags &^= syscall.MS_RDONLY
 	}
+
+	sylog.Debugf("Checking for 'user bind control' in configuration file")
+	if !userBindControl && devicesMounted == 0 {
+		sylog.Warningf("Ignoring user bind request: user bind control disabled by system administrator")
+	}
+
 	return nil
 }
 

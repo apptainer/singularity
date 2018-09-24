@@ -6,8 +6,8 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
 )
 
 func init() {
@@ -15,20 +15,23 @@ func init() {
 	// -u|--user
 	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "Add capabilities for the given user")
 	CapabilityAddCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
+	CapabilityAddCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -g|--group
 	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "Add capabilities for the given group")
 	CapabilityAddCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
+	CapabilityAddCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
 
 	// -d|--desc
 	CapabilityAddCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
+	CapabilityAddCmd.Flags().SetAnnotation("desc", "envkey", []string{"DESC"})
 
 	CapabilityAddCmd.Flags().SetInterspersed(false)
 }
 
 // CapabilityAddCmd singularity capability add
 var CapabilityAddCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		manageCap(args[0], capAdd)

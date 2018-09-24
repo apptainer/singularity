@@ -15,15 +15,15 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/build/assemblers"
-	"github.com/singularityware/singularity/src/pkg/build/sources"
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/buildcfg"
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	syexec "github.com/singularityware/singularity/src/pkg/util/exec"
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/config/oci"
-	"github.com/singularityware/singularity/src/runtime/engines/imgbuild"
+	"github.com/sylabs/singularity/src/pkg/build/assemblers"
+	"github.com/sylabs/singularity/src/pkg/build/sources"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	syexec "github.com/sylabs/singularity/src/pkg/util/exec"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
 )
 
 // Build is an abstracted way to look at the entire build process.
@@ -41,8 +41,12 @@ type Build struct {
 	ranSections bool
 	// sections are the parts of the definition to run during the build
 	sections []string
-	// noTest indicated whether build should skip running the test script
+	// noTest indicates if build should skip running the test script
 	noTest bool
+	// force automatically deletes an existing container at build destination while performing build
+	force bool
+	// update detects and builds using an existing sandbox container at build destination
+	update bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
@@ -54,38 +58,59 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, sections []string, noTest bool) (*Build, error) {
+func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
 	def, err := makeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest, libraryURL, authToken)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string, sections []string, noTest bool) (*Build, error) {
+func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, sections, noTest)
+	return newBuild(def, dest, format, force, update, sections, noTest, libraryURL, authToken)
 }
 
-func newBuild(d types.Definition, dest, format string, sections []string, noTest bool) (*Build, error) {
-	b := &Build{
-		sections: sections,
-		noTest:   noTest,
-		dest:     dest,
-		d:        d,
-		b:        nil,
+func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
+	var err error
+
+	// always build a sandbox if updating an existing sandbox
+	if update {
+		format = "sandbox"
 	}
 
-	if c, err := getcp(b.d); err == nil {
-		b.c = c
-	} else {
-		return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+	b := &Build{
+		update:   update,
+		force:    force,
+		sections: sections,
+		noTest:   noTest,
+		format:   format,
+		dest:     dest,
+		d:        d,
+	}
+
+	b.b, err = types.NewBundle("sbuild")
+	if err != nil {
+		return nil, err
+	}
+
+	b.b.Recipe = b.d
+
+	b.addOptions()
+
+	// dont need to get cp if we're skipping bootstrap
+	if !update || force {
+		if c, err := getcp(b.d, libraryURL, authToken); err == nil {
+			b.c = c
+		} else {
+			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+		}
 	}
 
 	switch format {
@@ -114,9 +139,28 @@ func (b *Build) Full() error {
 		}
 	}
 
-	sylog.Debugf("Creating bundle")
-	if _, err := b.Bundle(); err != nil {
-		return err
+	if b.update && !b.force {
+		//if updating, extract dest container to bundle
+		sylog.Infof("Building into existing container: %s", b.dest)
+		p, err := sources.GetLocalPacker(b.dest, b.b)
+		if err != nil {
+			return err
+		}
+
+		_, err = p.Pack()
+		if err != nil {
+			return err
+		}
+	} else {
+		//if force, start build from scratch
+		if err := b.c.Get(b.b); err != nil {
+			return fmt.Errorf("conveyor failed to get: %v", err)
+		}
+
+		_, err := b.c.Pack()
+		if err != nil {
+			return fmt.Errorf("packer failed to pack: %v", err)
+		}
 	}
 
 	if b.b.RunSection("files") {
@@ -251,31 +295,13 @@ func (b *Build) runBuildEngine() error {
 	return nil
 }
 
-// Bundle creates the bundle using the ConveyorPacker and returns it. If this
-// function is called multiple times it will return the already created Bundle
-func (b *Build) Bundle() (*types.Bundle, error) {
-	if b.b != nil {
-		return b.b, nil
-	}
-
-	if err := b.c.Get(b.d); err != nil {
-		return nil, fmt.Errorf("conveyor failed to get: %v", err)
-	}
-
-	bundle, err := b.c.Pack()
-	if err != nil {
-		return nil, fmt.Errorf("packer failed to pack: %v", err)
-	}
-
-	b.b = bundle
-
-	b.addOptions()
-
-	return b.b, nil
-}
-
-func getcp(def types.Definition) (ConveyorPacker, error) {
+func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
+	case "library":
+		return &sources.LibraryConveyorPacker{
+			LibraryURL: libraryURL,
+			AuthToken:  authToken,
+		}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
@@ -305,32 +331,29 @@ func makeDef(spec string) (types.Definition, error) {
 		if err != nil {
 			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
 		}
-
-	} else if ok, err := types.IsValidDefinition(spec); ok && err == nil {
-
-		// must be root to build from a definition
-		if os.Getuid() != 0 {
-			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
-		}
-
-		// Non-URI passed as spec, check is its a definition
+	} else if _, err := os.Stat(spec); err == nil {
+		// Non-URI passed as spec
 		defFile, err := os.Open(spec)
 		if err != nil {
 			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
 		}
 		defer defFile.Close()
 
-		def, err = types.ParseDefinitionFile(defFile)
-		if err != nil {
-			return def, fmt.Errorf("failed to parse definition file %s: %v", spec, err)
-		}
-	} else if _, err := os.Stat(spec); err == nil {
-		// local image or sandbox, make sure it exists on filesystem
-		def = types.Definition{
-			Header: map[string]string{
-				"bootstrap": "localimage",
-				"from":      spec,
-			},
+		if d, err := types.ParseDefinitionFile(defFile); err == nil {
+			// must be root to build from a definition
+			if os.Getuid() != 0 {
+				sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+			}
+			//definition used as input
+			def = d
+		} else {
+			//local image or sandbox, make sure it exists on filesystem
+			def = types.Definition{
+				Header: map[string]string{
+					"bootstrap": "localimage",
+					"from":      spec,
+				},
+			}
 		}
 	} else {
 		return def, fmt.Errorf("unable to build from %s: %v", spec, err)
@@ -340,6 +363,8 @@ func makeDef(spec string) (types.Definition, error) {
 }
 
 func (b *Build) addOptions() {
+	b.b.Update = b.update
+	b.b.Force = b.force
 	b.b.NoTest = b.noTest
 	b.b.Sections = b.sections
 }

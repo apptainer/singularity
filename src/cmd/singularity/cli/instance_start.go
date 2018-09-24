@@ -6,13 +6,12 @@
 package cli
 
 import (
-	"github.com/singularityware/singularity/src/docs"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/src/docs"
 )
 
 func init() {
-
-	options := [22]string{
+	options := []string{
 		"add-caps",
 		"allow-setuid",
 		"bind",
@@ -20,21 +19,26 @@ func init() {
 		"contain",
 		"containall",
 		"cleanenv",
+		"dns",
 		"drop-caps",
 		"fakeroot",
 		"home",
 		"hostname",
 		"keep-privs",
 		"net",
+		"network",
+		"network-args",
 		"no-home",
 		"no-privs",
 		"nv",
 		"overlay",
 		"scratch",
+		"security",
 		"userns",
 		"uts",
 		"workdir",
 		"writable",
+		"writable-tmpfs",
 	}
 
 	for _, opt := range options {
@@ -46,7 +50,7 @@ func init() {
 
 // InstanceStartCmd singularity instance start
 var InstanceStartCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(2),
+	Args:                  cobra.MinimumNArgs(2),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/start"}

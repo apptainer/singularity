@@ -12,13 +12,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
 type DebootstrapConveyorPacker struct {
-	recipe    types.Definition
 	b         *types.Bundle
 	mirrorurl string
 	osversion string
@@ -26,10 +25,10 @@ type DebootstrapConveyorPacker struct {
 }
 
 // Get downloads container information from the specified source
-func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
-	cp.recipe = recipe
+func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
+	cp.b = b
 
-	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
+	// check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
 	if err != nil {
 		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it: %v", err)
@@ -43,19 +42,14 @@ func (cp *DebootstrapConveyorPacker) Get(recipe types.Definition) (err error) {
 		return fmt.Errorf("You must be root to build with debootstrap")
 	}
 
-	cp.b, err = types.NewBundle("sbuild-debootstrap")
-	if err != nil {
-		return
-	}
-
-	//run debootstrap command
+	// run debootstrap command
 	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.Rootfs(), cp.mirrorurl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, cp.include, runtime.GOARCH, cp.osversion, cp.mirrorurl)
 
-	//run debootstrap
+	// run debootstrap
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("While debootstrapping: %v", err)
 	}
@@ -88,17 +82,17 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 	var ok bool
 
 	//get mirrorURL, OSVerison, and Includes components to definition
-	cp.mirrorurl, ok = cp.recipe.Header["mirrorurl"]
+	cp.mirrorurl, ok = cp.b.Recipe.Header["mirrorurl"]
 	if !ok {
 		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
 	}
 
-	cp.osversion, ok = cp.recipe.Header["osversion"]
+	cp.osversion, ok = cp.b.Recipe.Header["osversion"]
 	if !ok {
 		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
 	}
 
-	include, _ := cp.recipe.Header["include"]
+	include, _ := cp.b.Recipe.Header["include"]
 
 	//check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")

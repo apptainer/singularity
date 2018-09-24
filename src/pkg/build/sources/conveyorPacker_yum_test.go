@@ -10,11 +10,11 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/singularityware/singularity/src/pkg/build/types"
-	"github.com/singularityware/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/test"
 )
 
-const yumDef = "./testdata_good/yum/yum"
+const yumDef = "../testdata_good/yum/yum"
 
 func TestYumConveyor(t *testing.T) {
 	if testing.Short() {
@@ -35,15 +35,21 @@ func TestYumConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	// create bundle to build into
+	b, err := types.NewBundle("sbuild-yum")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}
 
 	yc := &YumConveyor{}
 
-	err = yc.Get(def)
-	//clean up bundle since assembler isnt called
+	err = yc.Get(b)
+	// clean up bundle since assembler isnt called
 	defer os.RemoveAll(yc.b.Path)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
@@ -65,15 +71,21 @@ func TestYumPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	def, err := types.ParseDefinitionFile(defFile)
+	// create bundle to build into
+	b, err := types.NewBundle("sbuild-yum")
+	if err != nil {
+		return
+	}
+
+	b.Recipe, err = types.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}
 
 	ycp := &YumConveyorPacker{}
 
-	err = ycp.Get(def)
-	//clean up tmpfs since assembler isnt called
+	err = ycp.Get(b)
+	// clean up tmpfs since assembler isnt called
 	defer os.RemoveAll(ycp.b.Path)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)

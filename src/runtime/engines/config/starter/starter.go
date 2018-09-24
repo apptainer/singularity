@@ -19,7 +19,7 @@ import (
 	"unsafe"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/singularityware/singularity/src/pkg/util/capabilities"
+	"github.com/sylabs/singularity/src/pkg/util/capabilities"
 )
 
 // CConfig is the common type for C.struct_cConfig

@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package main
@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/singularityware/singularity/src/runtime/engines/config"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 func main() {

@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/singularityware/singularity/src/pkg/sylog"
-	"github.com/singularityware/singularity/src/pkg/util/user-agent"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
