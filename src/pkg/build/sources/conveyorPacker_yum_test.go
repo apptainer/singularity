@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/singularity/src/pkg/test"
 )
 
-const yumDef = "./testdata_good/yum/yum"
+const yumDef = "../testdata_good/yum/yum"
 
 func TestYumConveyor(t *testing.T) {
 	if testing.Short() {
