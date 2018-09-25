@@ -12,7 +12,9 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -40,6 +42,28 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
+
+	if args[0] == "/.singularity.d/actions/exec" {
+		if _, err := os.Stat(args[0]); os.IsNotExist(err) {
+			// for backward compatibility with old images
+			if !filepath.IsAbs(args[1]) {
+				// match old behavior of searching path
+				oldpath := os.Getenv("PATH")
+				for _, keyval := range env {
+					if strings.HasPrefix(keyval, "PATH=") {
+						os.Setenv("PATH", keyval[5:])
+						break
+					}
+				}
+				if p, err := exec.LookPath(args[1]); err == nil {
+					args[1] = p
+				}
+				os.Setenv("PATH", oldpath)
+			}
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
+			args = args[1:]
+		}
+	}
 
 	if engine.EngineConfig.OciConfig.Linux != nil {
 		namespaces := engine.EngineConfig.OciConfig.Linux.Namespaces

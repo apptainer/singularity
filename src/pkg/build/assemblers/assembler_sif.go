@@ -17,6 +17,7 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -85,27 +86,9 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Creating SIF file...")
 
-	// insert help
-	err = insertHelpScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting help script: %v", err)
-	}
-
-	// insert labels
-	err = insertLabelsJSON(b)
-	if err != nil {
-		return fmt.Errorf("While inserting labels JSON: %v", err)
-	}
-
-	// insert definition
-	err = insertDefinition(b)
-	if err != nil {
-		return fmt.Errorf("While inserting definition: %v", err)
-	}
-
 	// convert definition to plain text
 	var buf bytes.Buffer
-	b.Recipe.WriteDefinitionFile(&buf)
+	parser.WriteDefinitionFile(&(b.Recipe), &buf)
 	def := buf.Bytes()
 
 	// make system partition image

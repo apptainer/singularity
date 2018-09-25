@@ -15,6 +15,7 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
+	AppName     string
 	BindPaths   []string
 	HomePath    string
 	OverlayPath []string
@@ -27,6 +28,7 @@ var (
 	NetworkArgs []string
 	DNS         string
 	Security    []string
+	CgroupsPath string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -73,6 +75,9 @@ func init() {
 
 // initPathVars initializes flags that take a string argument
 func initPathVars() {
+	// --app
+	actionFlags.StringVar(&AppName, "app", "", "Set container app to run")
+
 	// -B|--bind
 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
 	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
@@ -125,12 +130,15 @@ func initPathVars() {
 
 	// --dns
 	actionFlags.StringVar(&DNS, "dns", "", "List of DNS server separated by commas to add in resolv.conf")
-	actionFlags.SetAnnotation("dns", "argtag", []string{"<ip>"})
 	actionFlags.SetAnnotation("dns", "envkey", []string{"DNS"})
 
 	// --security
 	actionFlags.StringSliceVar(&Security, "security", []string{}, "Enable security features (SELinux, Apparmor, Seccomp)")
 	actionFlags.SetAnnotation("security", "argtag", []string{""})
+
+	// --apply-cgroups
+	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "Apply cgroups from file for container processes (requires root privileges)")
+	actionFlags.SetAnnotation("cgroups-profile", "argtag", []string{"<path>"})
 }
 
 // initBoolVars initializes flags that take a boolean argument

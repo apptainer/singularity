@@ -76,6 +76,8 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -291,6 +293,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 
+	if os.Getuid() != 0 && CgroupsPath != "" {
+		sylog.Warningf("--apply-cgroups requires root privileges")
+	} else {
+		engineConfig.SetCgroupsPath(CgroupsPath)
+	}
+
 	if IsWritable && IsWritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
 		engineConfig.SetWritableTmpfs(false)
@@ -423,6 +431,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
+
+	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 
 	cfg := &config.Common{
 		EngineName:   singularity.Name,

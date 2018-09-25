@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package types
+package parser
 
 import (
 	"bufio"
@@ -12,11 +12,15 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"unicode"
 
+	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
@@ -57,14 +61,9 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 		// Check if the first word starts with % sign
 		if word != nil && word[0] == '%' {
 			// If the word starts with %, it's a section identifier
-			_, ok := validSections[string(word[1:])] // Validate that the section identifier is valid
 
-			if !ok {
-				// Invalid Section Identifier
-				return 0, nil, fmt.Errorf("invalid section identifier found: %s", string(word))
-			}
-
-			// Valid Section Identifier
+			// We no longer check if the word is a valid section identifier here, since we want to move to
+			// a more modular approach where we can parse arbitrary sections
 			if inSection {
 				// Here we found the end of the section
 				return advance, retbuf.Bytes(), nil
@@ -72,7 +71,7 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 				// When advance == 0 and we found a section identifier, that means we have already
 				// parsed the header out and left the % as the first character in the data. This means
 				// we can now parse into sections.
-				retbuf.Write(word[1:])
+				retbuf.Write(line[1:])
 				retbuf.WriteString("\n")
 				inSection = true
 			} else {
@@ -101,48 +100,109 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 }
 
-func insertSection(b []byte, sections map[string]string) {
-	for i := 0; i < len(b); i++ {
-		if b[i] == '\n' {
-			sections[string(b[:i])] = strings.TrimRightFunc(string(b[i+1:]), unicode.IsSpace)
-			break
-		}
+func isValidSection(key string) bool {
+	if _, ok := validSections[key]; !ok {
+		return false
 	}
+
+	return true
 }
 
-func doSections(s *bufio.Scanner, d *Definition) (err error) {
-	sections := make(map[string]string)
+func getSectionName(line string) string {
+	lineSplit := strings.SplitN(strings.ToLower(line), " ", 2)
 
-	token := strings.TrimSpace(s.Text())
+	return lineSplit[0]
+}
+
+// splitToken splits tok -> identline & content pair (sep on \n)
+func splitToken(tok string) (ident string, content string) {
+	tokSplit := strings.SplitN(tok, "\n", 2)
+	if len(tokSplit) == 1 {
+		content = ""
+	} else {
+		content = tokSplit[1]
+	}
+
+	return strings.ToLower(tokSplit[0]), content
+
+}
+
+var sectionsMutex = &sync.Mutex{}
+
+// parseTokenSection splits the token into maximum 2 strings separated by a newline,
+// and then inserts the section into the sections map
+//
+// goroutine safe
+func parseTokenSection(tok string, sections map[string]string) {
+	split := strings.SplitN(tok, "\n", 2)
+	if len(split) != 2 {
+		return
+	}
+
+	key := getSectionName(split[0])
+	if !isValidSection(key) {
+		return
+	}
+
+	sectionsMutex.Lock()
+	sections[key] = strings.TrimRightFunc(split[1], unicode.IsSpace)
+	sectionsMutex.Unlock()
+}
+
+func doSections(s *bufio.Scanner, d *types.Definition) error {
+	sectionsMap := make(map[string]string)
+
+	var wg sync.WaitGroup
+
+	tok := strings.TrimSpace(s.Text())
 	//check if first thing parsed is a header or just a section
-	if strings.ToLower(token[0:9]) == "bootstrap" {
-		if err = doHeader(token, d); err != nil {
+	if strings.ToLower(tok[0:9]) == "bootstrap" {
+		if err := doHeader(tok, d); err != nil {
 			sylog.Warningf("failed to parse DefFile header: %v\n", err)
-			return
+			return err
 		}
 	} else {
 		//this is a section
-		insertSection([]byte(token), sections)
+		parseTokenSection(tok, sectionsMap)
+		syplugin.BuildHandleSections(splitToken(tok))
 	}
 
 	//parse remaining sections while scanner can advance
 	for s.Scan() {
-		if err = s.Err(); err != nil {
-			return
+		if err := s.Err(); err != nil {
+			return err
 		}
 
-		b := s.Bytes()
-		insertSection(b, sections)
+		tok := s.Text()
+
+		// Parse each token -> section
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			parseTokenSection(tok, sectionsMap)
+		}()
+
+		// Process any custom section handling
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			syplugin.BuildHandleSections(splitToken(tok))
+		}()
 	}
 
-	if err = s.Err(); err != nil {
-		return
+	if err := s.Err(); err != nil {
+		return err
 	}
 
+	wg.Wait()
+	return populateDefinition(sectionsMap, d)
+}
+
+func populateDefinition(sections map[string]string, d *types.Definition) error {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
-	var files []FileTransport
+	var files []types.FileTransport
 
 	for _, line := range subs {
 
@@ -159,7 +219,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 			dst = strings.TrimSpace(lineSubs[1])
 		}
 
-		files = append(files, FileTransport{src, dst})
+		files = append(files, types.FileTransport{Src: src, Dst: dst})
 	}
 
 	// labels are parsed as a map[string]string
@@ -184,8 +244,8 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		labels[key] = val
 	}
 
-	d.ImageData = ImageData{
-		ImageScripts: ImageScripts{
+	d.ImageData = types.ImageData{
+		ImageScripts: types.ImageScripts{
 			Help:        sections["help"],
 			Environment: sections["environment"],
 			Runscript:   sections["runscript"],
@@ -195,7 +255,7 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 		Labels: labels,
 	}
 	d.BuildData.Files = files
-	d.BuildData.Scripts = Scripts{
+	d.BuildData.Scripts = types.Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
@@ -203,17 +263,17 @@ func doSections(s *bufio.Scanner, d *Definition) (err error) {
 	}
 
 	// make sure information was valid by checking if definition is not equal to an empty one
-	emptyDef := new(Definition)
+	emptyDef := new(types.Definition)
 	// labels is always initialized
 	emptyDef.Labels = make(map[string]string)
 	if reflect.DeepEqual(d, emptyDef) {
 		return fmt.Errorf("parsed definition did not have any valid information")
 	}
 
-	return
+	return nil
 }
 
-func doHeader(h string, d *Definition) (err error) {
+func doHeader(h string, d *types.Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	d.Header = make(map[string]string)
@@ -240,7 +300,7 @@ func doHeader(h string, d *Definition) (err error) {
 // ParseDefinitionFile recieves a reader from a definition file
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
-func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
+func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
 
@@ -262,7 +322,7 @@ func ParseDefinitionFile(r io.Reader) (d Definition, err error) {
 }
 
 func canGetHeader(r io.Reader) (ok bool, err error) {
-	var d Definition
+	var d types.Definition
 
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
@@ -279,7 +339,7 @@ func canGetHeader(r io.Reader) (ok bool, err error) {
 
 	if err = doHeader(s.Text(), &d); err != nil {
 		sylog.Warningf("failed to parse DefFile header: %v\n", err)
-		return
+		return false, nil
 	}
 
 	return true, nil
@@ -295,7 +355,7 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 	}
 }
 
-func writeFilesIfExists(w io.Writer, f []FileTransport) {
+func writeFilesIfExists(w io.Writer, f []types.FileTransport) {
 
 	if len(f) > 0 {
 
@@ -335,7 +395,7 @@ func writeLabelsIfExists(w io.Writer, l map[string]string) {
 
 // WriteDefinitionFile is a helper func to output a Definition struct
 // into a definition file.
-func (d *Definition) WriteDefinitionFile(w io.Writer) {
+func WriteDefinitionFile(d *types.Definition, w io.Writer) {
 	for k, v := range d.Header {
 		w.Write([]byte(k))
 		w.Write([]byte(": "))
@@ -355,4 +415,43 @@ func (d *Definition) WriteDefinitionFile(w io.Writer) {
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)
+}
+
+// IsValidDefinition returns whether or not the given file is a valid definition
+func IsValidDefinition(source string) (valid bool, err error) {
+	defFile, err := os.Open(source)
+	if err != nil {
+		return false, err
+	}
+	defer defFile.Close()
+
+	ok, _ := canGetHeader(defFile)
+
+	return ok, nil
+}
+
+// validSections just contains a list of all the valid sections a definition file
+// could contain. If any others are found, an error will generate
+var validSections = map[string]bool{
+	"help":        true,
+	"setup":       true,
+	"files":       true,
+	"labels":      true,
+	"environment": true,
+	"pre":         true,
+	"post":        true,
+	"runscript":   true,
+	"test":        true,
+	"startscript": true,
+}
+
+// validHeaders just contains a list of all the valid headers a definition file
+// could contain. If any others are found, an error will generate
+var validHeaders = map[string]bool{
+	"bootstrap":  true,
+	"from":       true,
+	"includecmd": true,
+	"mirrorurl":  true,
+	"osversion":  true,
+	"include":    true,
 }
