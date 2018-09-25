@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"syscall"
@@ -28,6 +27,80 @@ import (
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
+func (engine *EngineOperations) checkExec() error {
+	args := engine.EngineConfig.OciConfig.Process.Args
+	env := engine.EngineConfig.OciConfig.Process.Env
+
+	// match old behavior of searching path
+	oldpath := os.Getenv("PATH")
+	defer func() {
+		os.Setenv("PATH", oldpath)
+		engine.EngineConfig.OciConfig.Process.Args = args
+		engine.EngineConfig.OciConfig.Process.Env = env
+	}()
+
+	for _, keyval := range env {
+		if strings.HasPrefix(keyval, "PATH=") {
+			os.Setenv("PATH", keyval[5:])
+			break
+		}
+	}
+
+	if _, err := exec.LookPath(args[0]); err == nil {
+		return nil
+	}
+
+	switch args[0] {
+	case "/.singularity.d/actions/exec":
+		if p, err := exec.LookPath("/.exec"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath(args[1]); err == nil {
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
+			args[1] = p
+			args = args[1:]
+			return nil
+		}
+		return fmt.Errorf("no executable %s found", args[1])
+	case "/.singularity.d/actions/shell":
+		if p, err := exec.LookPath("/.shell"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath("/bin/sh"); err == nil {
+			sylog.Warningf("container does not have %s, calling /bin/sh directly", args[0])
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no /bin/sh found inside container")
+	case "/.singularity.d/actions/run":
+		if p, err := exec.LookPath("/.run"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath("/singularity"); err == nil {
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no run driver found inside container")
+	case "/.singularity.d/actions/start":
+		if _, err := exec.LookPath("/bin/sh"); err != nil {
+			return fmt.Errorf("no /bin/sh found inside container, can't run instance")
+		}
+		args = []string{"/bin/sh", "-c", `echo "instance start script not found"`}
+		return nil
+	case "/.singularity.d/actions/test":
+		if p, err := exec.LookPath("/.test"); err == nil {
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no test driver found inside container")
+	}
+
+	return fmt.Errorf("no %s found inside container", args[0])
+}
+
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	isInstance := engine.EngineConfig.GetInstance()
@@ -40,30 +113,12 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
+	if err := engine.checkExec(); err != nil {
+		return err
+	}
+
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
-
-	if args[0] == "/.singularity.d/actions/exec" {
-		if _, err := os.Stat(args[0]); os.IsNotExist(err) {
-			// for backward compatibility with old images
-			if !filepath.IsAbs(args[1]) {
-				// match old behavior of searching path
-				oldpath := os.Getenv("PATH")
-				for _, keyval := range env {
-					if strings.HasPrefix(keyval, "PATH=") {
-						os.Setenv("PATH", keyval[5:])
-						break
-					}
-				}
-				if p, err := exec.LookPath(args[1]); err == nil {
-					args[1] = p
-				}
-				os.Setenv("PATH", oldpath)
-			}
-			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
-			args = args[1:]
-		}
-	}
 
 	if engine.EngineConfig.OciConfig.Linux != nil {
 		namespaces := engine.EngineConfig.OciConfig.Linux.Namespaces
@@ -99,7 +154,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	// Spawn and wait container process, signal handler
-	cmd := exec.Command(args[0], args...)
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
