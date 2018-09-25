@@ -15,10 +15,6 @@ import (
 )
 
 func TestSingularityEnv(t *testing.T) {
-	if !*runDisabled {
-		t.Skip("disabled until issue addressed") // #2045
-	}
-
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
 	var defaultImage = "docker://alpine:3.8"
 	var defaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
