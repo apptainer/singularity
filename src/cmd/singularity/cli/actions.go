@@ -77,6 +77,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -430,6 +431,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
+
+	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 
 	cfg := &config.Common{
 		EngineName:   singularity.Name,

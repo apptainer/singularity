@@ -21,8 +21,10 @@ import (
 	"github.com/sylabs/singularity/src/pkg/build/assemblers"
 	"github.com/sylabs/singularity/src/pkg/build/sources"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/syplugin"
 	syexec "github.com/sylabs/singularity/src/pkg/util/exec"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
@@ -172,6 +174,9 @@ func (b *Build) Full() error {
 			return fmt.Errorf("unable to copy files to container fs: %v", err)
 		}
 	}
+
+	syplugin.BuildHandleBundles(b.b)
+	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
 
 	if hasScripts(b.d) {
 		if syscall.Getuid() == 0 {
@@ -377,43 +382,41 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 
 // makeDef gets a definition object from a spec
 func makeDef(spec string) (types.Definition, error) {
-	var def types.Definition
-
 	if ok, err := IsValidURI(spec); ok && err == nil {
 		// URI passed as spec
-		def, err = types.NewDefinitionFromURI(spec)
-		if err != nil {
-			return def, fmt.Errorf("unable to parse URI %s: %v", spec, err)
-		}
-	} else if _, err := os.Stat(spec); err == nil {
-		// Non-URI passed as spec
+		return types.NewDefinitionFromURI(spec)
+	}
+
+	// Non-URI passed as spec
+	ok, err := parser.IsValidDefinition(spec)
+	if ok {
+		sylog.Debugf("Found valid definition: %s\n", spec)
+		// File exists and contains valid definition
 		defFile, err := os.Open(spec)
 		if err != nil {
-			return def, fmt.Errorf("unable to open file %s: %v", spec, err)
+			return types.Definition{}, fmt.Errorf("unable to open file %s: %v", spec, err)
 		}
 		defer defFile.Close()
 
-		if d, err := types.ParseDefinitionFile(defFile); err == nil {
-			// must be root to build from a definition
-			if os.Getuid() != 0 {
-				sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
-			}
-			//definition used as input
-			def = d
-		} else {
-			//local image or sandbox, make sure it exists on filesystem
-			def = types.Definition{
-				Header: map[string]string{
-					"bootstrap": "localimage",
-					"from":      spec,
-				},
-			}
+		// must be root to build from a definition
+		if os.Getuid() != 0 {
+			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
 		}
-	} else {
-		return def, fmt.Errorf("unable to build from %s: %v", spec, err)
+
+		return parser.ParseDefinitionFile(defFile)
+	} else if err == nil {
+		// File exists and does NOT contain a valid definition
+		// local image or sandbox
+		return types.Definition{
+			Header: map[string]string{
+				"bootstrap": "localimage",
+				"from":      spec,
+			},
+		}, nil
 	}
 
-	return def, nil
+	// File does NOT exist or cannot be opened for another reason
+	return types.Definition{}, fmt.Errorf("unable to build from %s: %v", spec, err)
 }
 
 func (b *Build) addOptions() {
@@ -545,7 +548,7 @@ func insertDefinition(b *types.Bundle) error {
 		return err
 	}
 
-	b.Recipe.WriteDefinitionFile(f)
+	parser.WriteDefinitionFile(&b.Recipe, f)
 
 	return nil
 }

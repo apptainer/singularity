@@ -15,6 +15,7 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
+	AppName     string
 	BindPaths   []string
 	HomePath    string
 	OverlayPath []string
@@ -74,6 +75,9 @@ func init() {
 
 // initPathVars initializes flags that take a string argument
 func initPathVars() {
+	// --app
+	actionFlags.StringVar(&AppName, "app", "", "Set container app to run")
+
 	// -B|--bind
 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
 	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
