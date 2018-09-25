@@ -548,7 +548,7 @@ func insertDefinition(b *types.Bundle) error {
 		return err
 	}
 
-	b.Recipe.WriteDefinitionFile(f)
+	parser.WriteDefinitionFile(&b.Recipe, f)
 
 	return nil
 }
