@@ -46,10 +46,14 @@ func (engine *EngineOperations) checkExec() error {
 		}
 	}
 
+	// If args[0] is an absolute path, exec.LookPath() looks for
+	// this file directly instead of within PATH
 	if _, err := exec.LookPath(args[0]); err == nil {
 		return nil
 	}
 
+	// If args[0] isn't executable (either via PATH or absolute path),
+	// look for alternative approaches to handling it
 	switch args[0] {
 	case "/.singularity.d/actions/exec":
 		if p, err := exec.LookPath("/.exec"); err == nil {
