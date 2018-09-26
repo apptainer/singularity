@@ -5,6 +5,11 @@
 
 package cache
 
+const (
+	// ShubDir is the directory inside the cache.Dir where shub images are cached
+	ShubDir = "shub"
+)
+
 // Shub returns the directory inside the cache.Dir() where shub images are cached
 func Shub() string {
 	return updateCacheSubdir(ShubDir)

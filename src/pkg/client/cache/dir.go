@@ -27,11 +27,6 @@ const (
 	// Uses "~/.singularity/cache" which will not clash with any 2.x cache
 	// directory.
 	RootDefault = ".singularity/cache"
-
-	// LibraryDir is the directory inside the cache.Dir where library images are cached
-	LibraryDir = "library"
-	// ShubDir is the directory inside the cache.Dir where shub images are cached
-	ShubDir = "shub"
 )
 
 var root string
