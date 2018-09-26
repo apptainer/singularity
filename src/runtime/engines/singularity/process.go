@@ -28,6 +28,12 @@ import (
 )
 
 func (engine *EngineOperations) checkExec() error {
+	shell := engine.EngineConfig.GetShell()
+
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
 
@@ -72,12 +78,12 @@ func (engine *EngineOperations) checkExec() error {
 			args[0] = p
 			return nil
 		}
-		if p, err := exec.LookPath("/bin/sh"); err == nil {
-			sylog.Warningf("container does not have %s, calling /bin/sh directly", args[0])
+		if p, err := exec.LookPath(shell); err == nil {
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], shell)
 			args[0] = p
 			return nil
 		}
-		return fmt.Errorf("no /bin/sh found inside container")
+		return fmt.Errorf("no %s found inside container", shell)
 	case "/.singularity.d/actions/run":
 		if p, err := exec.LookPath("/.run"); err == nil {
 			args[0] = p
@@ -89,10 +95,10 @@ func (engine *EngineOperations) checkExec() error {
 		}
 		return fmt.Errorf("no run driver found inside container")
 	case "/.singularity.d/actions/start":
-		if _, err := exec.LookPath("/bin/sh"); err != nil {
-			return fmt.Errorf("no /bin/sh found inside container, can't run instance")
+		if _, err := exec.LookPath(shell); err != nil {
+			return fmt.Errorf("no %s found inside container, can't run instance", shell)
 		}
-		args = []string{"/bin/sh", "-c", `echo "instance start script not found"`}
+		args = []string{shell, "-c", `echo "instance start script not found"`}
 		return nil
 	case "/.singularity.d/actions/test":
 		if p, err := exec.LookPath("/.test"); err == nil {

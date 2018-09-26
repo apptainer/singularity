@@ -78,6 +78,9 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
+		if cmd == ShellCmd {
+			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
+		}
 		cmd.Flags().SetInterspersed(false)
 	}
 
@@ -292,6 +295,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
+	engineConfig.SetShell(ShellPath)
+
+	if ShellPath != "" {
+		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
+	}
 
 	if os.Getuid() != 0 && CgroupsPath != "" {
 		sylog.Warningf("--apply-cgroups requires root privileges")
