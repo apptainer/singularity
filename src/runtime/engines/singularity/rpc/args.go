@@ -46,6 +46,7 @@ type HostnameArgs struct {
 // HasNamespaceArgs defines the arguments to compare host namespace
 // and RPC process
 type HasNamespaceArgs struct {
+	Pid    int
 	NsType string
 }
 

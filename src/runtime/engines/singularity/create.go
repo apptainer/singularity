@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/rpc"
+	"os"
 	"path/filepath"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -35,25 +36,40 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	if engine.EngineConfig.GetInstance() {
 		namespaces := []struct {
-			nstype string
-			ns     specs.LinuxNamespaceType
+			nstype       string
+			ns           specs.LinuxNamespaceType
+			checkEnabled bool
 		}{
-			{"pid", specs.PIDNamespace},
-			{"uts", specs.UTSNamespace},
-			{"ipc", specs.IPCNamespace},
-			{"mnt", specs.MountNamespace},
-			{"cgroup", specs.CgroupNamespace},
-			{"net", specs.NetworkNamespace},
-			{"user", specs.UserNamespace},
+			{"pid", specs.PIDNamespace, false},
+			{"uts", specs.UTSNamespace, false},
+			{"ipc", specs.IPCNamespace, false},
+			{"mnt", specs.MountNamespace, false},
+			{"cgroup", specs.CgroupNamespace, false},
+			{"net", specs.NetworkNamespace, false},
+			{"user", specs.UserNamespace, true},
 		}
 
 		path := fmt.Sprintf("/proc/%d/ns", pid)
+		ppid := os.Getpid()
 
 		for _, n := range namespaces {
-			has, err := rpcOps.HasNamespace(n.nstype)
-			if err == nil && has {
-				nspath := filepath.Join(path, n.nstype)
-				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+			has, err := rpcOps.HasNamespace(ppid, n.nstype)
+			if err == nil && (has || n.checkEnabled) {
+				enabled := false
+				if n.checkEnabled {
+					if engine.EngineConfig.OciConfig.Linux != nil {
+						for _, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+							if n.ns == namespace.Type {
+								enabled = true
+								break
+							}
+						}
+					}
+				}
+				if has || enabled {
+					nspath := filepath.Join(path, n.nstype)
+					engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+				}
 			} else if err != nil {
 				return fmt.Errorf("failed to check %s root and container namespace: %s", n.ns, err)
 			}

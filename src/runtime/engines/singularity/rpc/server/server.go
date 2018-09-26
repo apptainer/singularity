@@ -133,20 +133,26 @@ func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) err
 	var st1 syscall.Stat_t
 	var st2 syscall.Stat_t
 
-	processOne := fmt.Sprintf("/proc/1/ns/%s", arguments.NsType)
+	processOne := fmt.Sprintf("/proc/%d/ns/%s", arguments.Pid, arguments.NsType)
 	processTwo := fmt.Sprintf("/proc/self/ns/%s", arguments.NsType)
 
+	*reply = 0
+
 	if err := syscall.Stat(processOne, &st1); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 	if err := syscall.Stat(processTwo, &st2); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 
 	if st1.Ino != st2.Ino {
 		*reply = 1
-	} else {
-		*reply = 0
 	}
 
 	return nil
