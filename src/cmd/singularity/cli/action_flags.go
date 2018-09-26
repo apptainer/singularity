@@ -194,7 +194,7 @@ func initNamespaceVars() {
 	actionFlags.SetAnnotation("ipc", "envkey", []string{"IPC", "UNSHARE_IPC"})
 
 	// -n|--net
-	actionFlags.BoolVarP(&NetNamespace, "net", "n", false, "Run container in a new network namespace (loopback is the only network device active).")
+	actionFlags.BoolVarP(&NetNamespace, "net", "n", false, "Run container in a new network namespace (setup a bridge network interface by default).")
 	actionFlags.SetAnnotation("net", "envkey", []string{"NET", "UNSHARE_NET"})
 
 	// --uts
