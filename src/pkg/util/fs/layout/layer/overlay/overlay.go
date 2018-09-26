@@ -50,10 +50,11 @@ func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 }
 
 func (o *Overlay) createOverlay(system *mount.System) error {
+	flags := uintptr(syscall.MS_NODEV)
 	o.lowerDirs = append(o.lowerDirs, o.session.RootFsPath())
 
 	lowerdir := strings.Join(o.lowerDirs, ":")
-	err := system.Points.AddOverlay(mount.LayerTag, o.session.FinalPath(), 0, lowerdir, o.upperDir, o.workDir)
+	err := system.Points.AddOverlay(mount.LayerTag, o.session.FinalPath(), flags, lowerdir, o.upperDir, o.workDir)
 	if err != nil {
 		return err
 	}
