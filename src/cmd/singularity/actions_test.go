@@ -62,7 +62,7 @@ func testSingularityRun(t *testing.T) {
 		{cmdPath, "true", []string{"run", imagePath, "true"}, 0},
 		{cmdPath, "false", []string{"run", imagePath, "false"}, 1},
 		// Testing run command properly hands arguments
-		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", imagePath)}, 0},
+		{"sh", "arguments", []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", imagePath)}, 0},
 	}
 
 	for _, tt := range tests {
@@ -103,7 +103,7 @@ func testSingularityExec(t *testing.T) {
 		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | singularity exec %s grep hi", imagePath)}, 0},
 		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | singularity exec %s grep hi", imagePath)}, 1},
 		// Checking permissions
-		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", imagePath)}, 0},
+		{"sh", "permissions", []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", imagePath)}, 0},
 	}
 
 	for _, tt := range tests {
