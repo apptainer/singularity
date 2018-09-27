@@ -7,74 +7,48 @@ package cache
 
 import (
 	"os"
-	"path/filepath"
+	"os/user"
+	"path"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
-func Test_Root(t *testing.T) {
+var cacheDefault string
+
+const cacheCustom = "/tmp/customcachedir"
+
+func TestMain(m *testing.M) {
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Errorf("Couldn't determine user home directory: %v", err)
+		os.Exit(1)
+	}
+	cacheDefault = path.Join(usr.HomeDir, RootDefault)
+
+	os.Exit(m.Run())
+}
+
+func TestRoot(t *testing.T) {
 	tests := []struct {
 		name     string
 		env      string
 		expected string
 	}{
-		{"Default root", test.CacheDirUnpriv, test.CacheDirUnpriv},
-		{"Custom root", "/tmp/CustomCacheDir", "/tmp/CustomCacheDir"},
+		{"Default root", "", cacheDefault},
+		{"Custom root", cacheCustom, cacheCustom},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			defer Clean()
-			os.Setenv("SINGULARITY_CACHEDIR", tt.env)
+			defer os.Unsetenv(DirEnv)
+
+			os.Setenv(DirEnv, tt.env)
 
 			if r := Root(); r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
-		}))
-	}
-}
-
-func Test_OciBlob(t *testing.T) {
-	tests := []struct {
-		name     string
-		env      string
-		expected string
-	}{
-		{"Default OCI blob", test.CacheDirUnpriv, filepath.Join(test.CacheDirUnpriv, "oci")},
-		{"Custom OCI blob", "/tmp/CustomCacheDir", "/tmp/CustomCacheDir/oci"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			defer Clean()
-			os.Setenv("SINGULARITY_CACHEDIR", tt.env)
-
-			if r := OciBlob(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
-			}
-		}))
-	}
-}
-
-func Test_OciTemp(t *testing.T) {
-	tests := []struct {
-		name     string
-		env      string
-		expected string
-	}{
-		{"Default OCI temp", test.CacheDirUnpriv, filepath.Join(test.CacheDirUnpriv, "oci-tmp")},
-		{"Custom OCI temp", "/tmp/CustomCacheDir", "/tmp/CustomCacheDir/oci-tmp"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			defer Clean()
-			os.Setenv("SINGULARITY_CACHEDIR", tt.env)
-
-			if r := OciTemp(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
-			}
-		}))
+		})
 	}
 }

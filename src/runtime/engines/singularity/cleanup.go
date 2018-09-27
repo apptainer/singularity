@@ -31,6 +31,12 @@ func (engine *EngineOperations) CleanupContainer() error {
 		}
 	}
 
+	if engine.EngineConfig.Cgroups != nil {
+		if err := engine.EngineConfig.Cgroups.Remove(); err != nil {
+			sylog.Errorf("%s", err)
+		}
+	}
+
 	if engine.EngineConfig.GetInstance() {
 		uid := os.Getuid()
 

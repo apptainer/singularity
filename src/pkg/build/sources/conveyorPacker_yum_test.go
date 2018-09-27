@@ -11,10 +11,11 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/test"
 )
 
-const yumDef = "./testdata_good/yum/yum"
+const yumDef = "../testdata_good/yum/yum"
 
 func TestYumConveyor(t *testing.T) {
 	if testing.Short() {
@@ -41,7 +42,7 @@ func TestYumConveyor(t *testing.T) {
 		return
 	}
 
-	b.Recipe, err = types.ParseDefinitionFile(defFile)
+	b.Recipe, err = parser.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}
@@ -77,7 +78,7 @@ func TestYumPacker(t *testing.T) {
 		return
 	}
 
-	b.Recipe, err = types.ParseDefinitionFile(defFile)
+	b.Recipe, err = parser.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
 	}

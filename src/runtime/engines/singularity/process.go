@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"reflect"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -26,6 +27,90 @@ import (
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
+func (engine *EngineOperations) checkExec() error {
+	shell := engine.EngineConfig.GetShell()
+
+	if shell == "" {
+		shell = "/bin/sh"
+	}
+
+	args := engine.EngineConfig.OciConfig.Process.Args
+	env := engine.EngineConfig.OciConfig.Process.Env
+
+	// match old behavior of searching path
+	oldpath := os.Getenv("PATH")
+	defer func() {
+		os.Setenv("PATH", oldpath)
+		engine.EngineConfig.OciConfig.Process.Args = args
+		engine.EngineConfig.OciConfig.Process.Env = env
+	}()
+
+	for _, keyval := range env {
+		if strings.HasPrefix(keyval, "PATH=") {
+			os.Setenv("PATH", keyval[5:])
+			break
+		}
+	}
+
+	// If args[0] is an absolute path, exec.LookPath() looks for
+	// this file directly instead of within PATH
+	if _, err := exec.LookPath(args[0]); err == nil {
+		return nil
+	}
+
+	// If args[0] isn't executable (either via PATH or absolute path),
+	// look for alternative approaches to handling it
+	switch args[0] {
+	case "/.singularity.d/actions/exec":
+		if p, err := exec.LookPath("/.exec"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath(args[1]); err == nil {
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], args[1])
+			args[1] = p
+			args = args[1:]
+			return nil
+		}
+		return fmt.Errorf("no executable %s found", args[1])
+	case "/.singularity.d/actions/shell":
+		if p, err := exec.LookPath("/.shell"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath(shell); err == nil {
+			sylog.Warningf("container does not have %s, calling %s directly", args[0], shell)
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no %s found inside container", shell)
+	case "/.singularity.d/actions/run":
+		if p, err := exec.LookPath("/.run"); err == nil {
+			args[0] = p
+			return nil
+		}
+		if p, err := exec.LookPath("/singularity"); err == nil {
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no run driver found inside container")
+	case "/.singularity.d/actions/start":
+		if _, err := exec.LookPath(shell); err != nil {
+			return fmt.Errorf("no %s found inside container, can't run instance", shell)
+		}
+		args = []string{shell, "-c", `echo "instance start script not found"`}
+		return nil
+	case "/.singularity.d/actions/test":
+		if p, err := exec.LookPath("/.test"); err == nil {
+			args[0] = p
+			return nil
+		}
+		return fmt.Errorf("no test driver found inside container")
+	}
+
+	return fmt.Errorf("no %s found inside container", args[0])
+}
+
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	isInstance := engine.EngineConfig.GetInstance()
@@ -36,6 +121,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := os.Chdir(engine.EngineConfig.GetHomeDest()); err != nil {
 			os.Chdir("/")
 		}
+	}
+
+	if err := engine.checkExec(); err != nil {
+		return err
 	}
 
 	args := engine.EngineConfig.OciConfig.Process.Args
@@ -75,7 +164,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	// Spawn and wait container process, signal handler
-	cmd := exec.Command(args[0], args...)
+	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

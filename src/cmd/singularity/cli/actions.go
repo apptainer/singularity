@@ -7,19 +7,27 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/src/pkg/libexec"
+	"github.com/sylabs/singularity/src/pkg/util/nvidiautils"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/build"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/client/cache"
+	library "github.com/sylabs/singularity/src/pkg/client/library"
 	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
 	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/security"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/env"
 	"github.com/sylabs/singularity/src/pkg/util/exec"
@@ -35,6 +43,7 @@ func init() {
 		ExecCmd,
 		ShellCmd,
 		RunCmd,
+		TestCmd,
 	}
 
 	// TODO : the next n lines of code are repeating too much but I don't
@@ -69,46 +78,105 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
+		if cmd == ShellCmd {
+			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
+		}
 		cmd.Flags().SetInterspersed(false)
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
-
+	SingularityCmd.AddCommand(TestCmd)
 }
 
-func replaceURIWithImage(cmd *cobra.Command, args []string) {
-	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
-	if t, _ := uri.SplitURI(args[0]); t == "instance" || t == "" {
-		return
-	}
-
-	sum, err := ociclient.ImageSHA(args[0])
+func handleOCI(u string) (string, error) {
+	sum, err := ociclient.ImageSHA(u)
 	if err != nil {
-		sylog.Fatalf("Failed to get SHA of %v: %v", args[0], err)
+		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
 
-	name := uri.NameFromURI(args[0])
+	name := uri.NameFromURI(u)
 	imgabs := cache.OciTempImage(sum, name)
 
 	if exists, err := cache.OciTempExists(sum, name); err != nil {
-		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
+		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true)
+		b, err := build.NewBuild(u, imgabs, "sif", false, false, nil, true, "", "")
 		if err != nil {
-			sylog.Fatalf("Unable to create new build: %v", err)
+			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
 
 		if err := b.Full(); err != nil {
-			sylog.Fatalf("Unable to build: %v", err)
+			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
 		sylog.Infof("Image cached as SIF at %s", imgabs)
 	}
 
-	args[0] = imgabs
+	return imgabs, nil
+}
+
+func handleLibrary(u string) (string, error) {
+	libraryImage, err := library.GetImage("https://library.sylabs.io", authToken, u)
+	if err != nil {
+		return "", err
+	}
+
+	imageName := uri.NameFromURI(u)
+	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+
+	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	} else if !exists {
+		sylog.Infof("Downloading library image")
+		libexec.PullLibraryImage(imagePath, u, "https://library.sylabs.io", false, authToken)
+	}
+
+	return imagePath, nil
+}
+
+func handleShub(u string) (string, error) {
+	imageName := uri.NameFromURI(u)
+	imagePath := cache.ShubImage("hash", imageName)
+
+	libexec.PullShubImage(imagePath, u, true)
+
+	return imagePath, nil
+}
+
+func replaceURIWithImage(cmd *cobra.Command, args []string) {
+	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
+	t, _ := uri.SplitURI(args[0])
+	if t == "instance" || t == "" {
+		return
+	}
+
+	var image string
+	var err error
+
+	switch t {
+	case uri.Library:
+		sylabsToken(cmd, args) // Fetch Auth Token for library access
+
+		image, err = handleLibrary(args[0])
+	case uri.Shub:
+		image, err = handleShub(args[0])
+	case ociclient.IsSupported(t):
+		image, err = handleOCI(args[0])
+	default:
+		sylog.Fatalf("Unsupported transport type: %s", t)
+	}
+
+	if err != nil {
+		sylog.Fatalf("Unable to handle %s uri: %v", args[0], err)
+	}
+
+	args[0] = image
 	return
 }
 
@@ -163,8 +231,28 @@ var RunCmd = &cobra.Command{
 	Example: docs.RunExamples,
 }
 
+// TestCmd represents the test command
+var TestCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
+	Run: func(cmd *cobra.Command, args []string) {
+		a := append([]string{"/.singularity.d/test"}, args[1:]...)
+		execStarter(cmd, args[0], a, "")
+	},
+
+	Use:     docs.RunTestUse,
+	Short:   docs.RunTestShort,
+	Long:    docs.RunTestLong,
+	Example: docs.RunTestExample,
+}
+
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	targetUID := 0
+	targetGID := make([]int, 0)
+
 	procname := ""
 
 	uid := uint32(os.Getuid())
@@ -180,6 +268,35 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
+
+	uidParam := security.GetParam(Security, "uid")
+	gidParam := security.GetParam(Security, "gid")
+
+	if os.Getuid() == 0 && uidParam != "" {
+		u, err := strconv.ParseUint(uidParam, 10, 32)
+		if err != nil {
+			sylog.Fatalf("failed to parse provided UID")
+		}
+		targetUID = int(u)
+		uid = uint32(targetUID)
+	} else if uidParam != "" {
+		sylog.Warningf("uid security feature requires root privileges")
+	}
+	if os.Getuid() == 0 && gidParam != "" {
+		gids := strings.Split(gidParam, ":")
+		for _, id := range gids {
+			g, err := strconv.ParseUint(id, 10, 32)
+			if err != nil {
+				sylog.Fatalf("failed to parse provided GID")
+			}
+			targetGID = append(targetGID, int(g))
+		}
+		if len(gids) > 0 {
+			gid = uint32(targetGID[0])
+		}
+	} else if gidParam != "" {
+		sylog.Warningf("gid security feature requires root privileges")
+	}
 
 	// temporary check for development
 	// TODO: a real URI handler
@@ -206,6 +323,20 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetImage(abspath)
 	}
 
+	if Nvidia {
+		NvidiaBindPaths, err := nvidiautils.GetNvidiaBindPath(buildcfg.SINGULARITY_CONFDIR)
+		if err != nil {
+			sylog.Infof("Unable to capture nvidia bind points: %v", err)
+		} else {
+			if len(NvidiaBindPaths) == 0 {
+				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
+				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
+			} else {
+				BindPaths = append(BindPaths, NvidiaBindPaths...)
+			}
+		}
+	}
+
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetNetwork(Network)
 	engineConfig.SetDNS(DNS)
@@ -219,6 +350,18 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+	engineConfig.SetSecurity(Security)
+	engineConfig.SetShell(ShellPath)
+
+	if ShellPath != "" {
+		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
+	}
+
+	if os.Getuid() != 0 && CgroupsPath != "" {
+		sylog.Warningf("--apply-cgroups requires root privileges")
+	} else {
+		engineConfig.SetCgroupsPath(CgroupsPath)
+	}
 
 	if IsWritable && IsWritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
@@ -353,6 +496,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
+	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
+
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
 		ContainerID:  name,
@@ -362,6 +507,27 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	configData, err := json.Marshal(cfg)
 	if err != nil {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	runtime.LockOSThread()
+
+	if len(targetGID) > 0 {
+		gid := int(targetGID[0])
+		gids := targetGID[1:]
+
+		if err := syscall.Setgroups(gids); err != nil {
+			sylog.Fatalf("failed to reset groups: %s", err)
+		}
+		if err := syscall.Setresgid(gid, gid, gid); err != nil {
+			sylog.Fatalf("failed to set GID %d: %s", gid, err)
+		}
+	}
+
+	if targetUID != 0 {
+		uid := int(targetUID)
+		if err := syscall.Setresuid(uid, uid, uid); err != nil {
+			sylog.Fatalf("failed to set UID %d: %s", uid, err)
+		}
 	}
 
 	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {

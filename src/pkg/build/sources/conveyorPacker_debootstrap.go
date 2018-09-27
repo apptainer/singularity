@@ -28,7 +28,7 @@ type DebootstrapConveyorPacker struct {
 func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 	cp.b = b
 
-	//check for debootstrap on system(script using "singularity_which" not sure about its importance)
+	// check for debootstrap on system(script using "singularity_which" not sure about its importance)
 	debootstrapPath, err := exec.LookPath("debootstrap")
 	if err != nil {
 		return fmt.Errorf("debootstrap is not in PATH... Perhaps 'apt-get install' it: %v", err)
@@ -42,14 +42,14 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("You must be root to build with debootstrap")
 	}
 
-	//run debootstrap command
+	// run debootstrap command
 	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.Rootfs(), cp.mirrorurl)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, cp.include, runtime.GOARCH, cp.osversion, cp.mirrorurl)
 
-	//run debootstrap
+	// run debootstrap
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("While debootstrapping: %v", err)
 	}

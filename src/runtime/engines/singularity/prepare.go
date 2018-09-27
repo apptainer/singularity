@@ -16,6 +16,8 @@ import (
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/image"
 	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/security"
+	"github.com/sylabs/singularity/src/pkg/security/seccomp"
 	"github.com/sylabs/singularity/src/pkg/syecl"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/capabilities"
@@ -274,6 +276,25 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}
 
+	param := security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
+	if param != "" {
+		sylog.Debugf("Applying SELinux context %s", param)
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(param)
+	}
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
+	if param != "" {
+		sylog.Debugf("Applying Apparmor profile %s", param)
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(param)
+	}
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
+	if param != "" {
+		sylog.Debugf("Applying seccomp rule from %s", param)
+		generator := &e.EngineConfig.OciConfig.Generator
+		if err := seccomp.LoadProfileFromFile(param, generator); err != nil {
+			return err
+		}
+	}
+
 	// open file descriptors (autofs bug path)
 	e.prepareFd()
 
@@ -330,6 +351,41 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	} else {
 		if err := e.prepareUserCaps(); err != nil {
 			return err
+		}
+	}
+
+	// restore apparmor profile
+	param := security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
+	if param != "" {
+		sylog.Debugf("Applying Apparmor profile %s", param)
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(param)
+	} else {
+		e.EngineConfig.OciConfig.SetProcessApparmorProfile(instanceEngineConfig.OciConfig.Process.ApparmorProfile)
+	}
+
+	// restore selinux context
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
+	if param != "" {
+		sylog.Debugf("Applying SELinux context %s", param)
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(param)
+	} else {
+		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(instanceEngineConfig.OciConfig.Process.SelinuxLabel)
+	}
+
+	// restore security features
+	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
+	if param != "" {
+		sylog.Debugf("Applying seccomp rule from %s", param)
+		generator := &e.EngineConfig.OciConfig.Generator
+		if err := seccomp.LoadProfileFromFile(param, generator); err != nil {
+			return err
+		}
+	} else {
+		if instanceEngineConfig.OciConfig.Linux != nil {
+			if e.EngineConfig.OciConfig.Linux == nil {
+				e.EngineConfig.OciConfig.Linux = &specs.Linux{}
+			}
+			e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
 		}
 	}
 
