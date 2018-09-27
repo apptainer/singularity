@@ -14,6 +14,7 @@ Any new features should be targeted to the master branch (which used to be
 called development-3.0)._
 
 [![Build Status](https://travis-ci.org/sylabs/singularity.svg?branch=master)](https://travis-ci.org/sylabs/singularity)
+[![Go Report Card](https://goreportcard.com/badge/github.com/sylabs/singularity)](https://goreportcard.com/report/github.com/sylabs/singularity)
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
