@@ -48,6 +48,7 @@ type container struct {
 	mountInfoPath    string
 	skippedMount     []string
 	suidFlag         uintptr
+	devSourcePath    string
 }
 
 func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
@@ -881,8 +882,10 @@ func (c *container) addSessionDev(devpath string, system *mount.System) error {
 }
 
 func (c *container) addSessionDevMount(system *mount.System) error {
-	devPath, _ := c.session.GetPath("/dev")
-	err := system.Points.AddBind(mount.DevTag, devPath, "/dev", syscall.MS_BIND|syscall.MS_REC)
+	if c.devSourcePath == "" {
+		c.devSourcePath, _ = c.session.GetPath("/dev")
+	}
+	err := system.Points.AddBind(mount.DevTag, c.devSourcePath, "/dev", syscall.MS_BIND|syscall.MS_REC)
 	if err != nil {
 		return fmt.Errorf("unable to add dev to mount list: %s", err)
 	}
@@ -1187,6 +1190,7 @@ func (c *container) addHomeMount(system *mount.System) error {
 
 func (c *container) addUserbindsMount(system *mount.System) error {
 	devicesMounted := 0
+	devPrefix := "/dev"
 	userBindControl := c.engine.EngineConfig.File.UserBindControl
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
@@ -1216,16 +1220,20 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		// special case for /dev mount to override default mount behaviour
 		// with --contain option or 'mount dev = minimal'
-		if strings.HasPrefix(src, "/dev") {
+		if strings.HasPrefix(src, devPrefix) {
 			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
 				if strings.HasPrefix(src, "/dev/shm/") || strings.HasPrefix(src, "/dev/mqueue/") {
 					sylog.Warningf("Skipping %s bind mount: not allowed", src)
 				} else {
-					if err := c.addSessionDev(src, system); err != nil {
-						sylog.Warningf("Skipping %s bind mount: %s", src, err)
-					} else {
-						sylog.Debugf("Adding device %s to mount list\n", src)
+					if src != devPrefix {
+						if err := c.addSessionDev(src, system); err != nil {
+							sylog.Warningf("Skipping %s bind mount: %s", src, err)
+						}
+					} else {)
+						system.Points.RemoveByTag(mount.DevTag)
+						c.devSourcePath = devPrefix
 					}
+					sylog.Debugf("Adding device %s to mount list\n", src)
 				}
 				devicesMounted++
 			} else if c.engine.EngineConfig.File.MountDev == "yes" {
