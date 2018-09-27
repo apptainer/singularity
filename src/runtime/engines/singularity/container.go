@@ -1229,7 +1229,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 						if err := c.addSessionDev(src, system); err != nil {
 							sylog.Warningf("Skipping %s bind mount: %s", src, err)
 						}
-					} else {)
+					} else {
 						system.Points.RemoveByTag(mount.DevTag)
 						c.devSourcePath = devPrefix
 					}
