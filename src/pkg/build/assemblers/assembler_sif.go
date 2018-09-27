@@ -13,6 +13,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
+	"syscall"
 
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
@@ -75,6 +77,14 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// test container creation with two partition input descriptors
 	if _, err := sif.CreateContainer(cinfo); err != nil {
 		return fmt.Errorf("while creating container: %s", err)
+	}
+
+	// chown the sif file to the calling user
+	if syscall.Getuid() == 0 {
+		uID, _ := strconv.Atoi(os.Getenv("SUDO_UID"))
+		gID, _ := strconv.Atoi(os.Getenv("SUDO_GID"))
+
+		return os.Chown(path, uID, gID)
 	}
 
 	return nil
