@@ -42,7 +42,7 @@ func stopInstance(instance string) ([]byte, error) {
 }
 
 func TestInstance(t *testing.T) {
-	var defaultDefinition = "testdata/instance_test/Singularity"
+	var defaultDefinition = "../../../examples/busybox/Singularity"
 	var defaultImage = "Default.sif"
 
 	buildImageOutput, buildImageError := buildImage(defaultDefinition, defaultImage)
