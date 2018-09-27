@@ -6,6 +6,8 @@
 package assemblers
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -15,6 +17,7 @@ import (
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -22,7 +25,7 @@ import (
 type SIFAssembler struct {
 }
 
-func createSIFSinglePart(path string, squashfile string) (err error) {
+func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -30,6 +33,18 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 		Sifversion: sif.HdrVersion,
 		ID:         uuid.NewV4(),
 	}
+
+	// data we need to create a definition file descriptor
+	definput := sif.DescriptorInput{
+		Datatype: sif.DataDeffile,
+		Groupid:  sif.DescrDefaultGroup,
+		Link:     sif.DescrUnusedLink,
+		Data:     definition,
+	}
+	definput.Size = int64(binary.Size(definput.Data))
+
+	// add this descriptor input element to creation descriptor slice
+	cinfo.InputDescr = append(cinfo.InputDescr, definput)
 
 	// data we need to create a system partition descriptor
 	parinput := sif.DescriptorInput{
@@ -71,24 +86,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Creating SIF file...")
 
-	// insert help
-	err = insertHelpScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting help script: %v", err)
-	}
+	// convert definition to plain text
+	var buf bytes.Buffer
+	parser.WriteDefinitionFile(&(b.Recipe), &buf)
+	def := buf.Bytes()
 
-	// insert labels
-	err = insertLabelsJSON(b)
-	if err != nil {
-		return fmt.Errorf("While inserting labels JSON: %v", err)
-	}
-
-	// insert definition
-	err = insertDefinition(b)
-	if err != nil {
-		return fmt.Errorf("While inserting definition: %v", err)
-	}
-
+	// make system partition image
 	mksquashfs, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		sylog.Errorf("mksquashfs is not installed on this system")
@@ -108,7 +111,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return
 	}
 
-	err = createSIFSinglePart(path, squashfsPath)
+	err = createSIF(path, def, squashfsPath)
 	if err != nil {
 		return
 	}

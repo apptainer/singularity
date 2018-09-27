@@ -7,8 +7,11 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
@@ -26,20 +29,35 @@ var (
 	labels      bool
 	deffile     bool
 	runscript   bool
-	test        bool
+	testfile    bool
 	environment bool
 	helpfile    bool
+	jsonfmt     bool
 )
 
 func init() {
 	InspectCmd.Flags().SetInterspersed(false)
 
-	InspectCmd.Flags().BoolVarP(&labels, "labels", "a", false, "Show the labels associated with the image (default)")
+	InspectCmd.Flags().BoolVarP(&labels, "labels", "l", false, "Show the labels associated with the image (default)")
+	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
+
 	InspectCmd.Flags().BoolVarP(&deffile, "deffile", "d", false, "Show the Singularity recipe file that was used to generate the image")
+	InspectCmd.Flags().SetAnnotation("deffile", "envkey", []string{"DEFFILE"})
+
 	InspectCmd.Flags().BoolVarP(&runscript, "runscript", "r", false, "Show the runscript for the image")
-	InspectCmd.Flags().BoolVarP(&test, "test", "t", false, "Show the test script for the image")
+	InspectCmd.Flags().SetAnnotation("runscript", "envkey", []string{"RUNSCRIPT"})
+
+	InspectCmd.Flags().BoolVarP(&testfile, "test", "t", false, "Show the test script for the image")
+	InspectCmd.Flags().SetAnnotation("test", "envkey", []string{"TEST"})
+
 	InspectCmd.Flags().BoolVarP(&environment, "environment", "e", false, "Show the environment settings for the image")
+	InspectCmd.Flags().SetAnnotation("environment", "envkey", []string{"ENVIRONMENT"})
+
 	InspectCmd.Flags().BoolVarP(&helpfile, "helpfile", "H", false, "Inspect the runscript helpfile, if it exists")
+	InspectCmd.Flags().SetAnnotation("helpfile", "envkey", []string{"HELPFILE"})
+
+	InspectCmd.Flags().BoolVarP(&jsonfmt, "json", "j", false, "Print structured json instead of sections")
+	InspectCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
 
 	SingularityCmd.AddCommand(InspectCmd)
 }
@@ -62,67 +80,155 @@ var InspectCmd = &cobra.Command{
 		}
 
 		abspath, err := filepath.Abs(args[0])
+		if err != nil {
+			sylog.Fatalf("While determining absolute file path: %v", err)
+		}
 		name := filepath.Base(abspath)
 
-		a := []string{"/bin/cat"}
+		attributes := make(map[string]string)
+
+		a := []string{"/bin/sh", "-c", ""}
+		prefix := "@@@start"
+		delimiter := "@@@end"
 
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
-			a = append(a, ".singularity.d/runscript.help")
+
+			// append to a[2] to run commands in container
+			a[2] += fmt.Sprintf(" echo '%v\nhelpfile';", prefix)
+			a[2] += " cat .singularity.d/runscript.help;"
+			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
 		if deffile {
 			sylog.Debugf("Inspection of deffile selected.")
-			a = append(a, ".singularity.d/Singularity")
+
+			// append to a[2] to run commands in container
+			a[2] += fmt.Sprintf(" echo '%v\ndeffile';", prefix)
+			a[2] += " cat .singularity.d/Singularity;"
+			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
 		if runscript {
 			sylog.Debugf("Inspection of runscript selected.")
-			a = append(a, ".singularity.d/runscript")
+
+			// append to a[2] to run commands in container
+			a[2] += fmt.Sprintf(" echo '%v\nrunscript';", prefix)
+			a[2] += " cat .singularity.d/runscript;"
+			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
-		if test {
+		if testfile {
 			sylog.Debugf("Inspection of test selected.")
-			a = append(a, ".singularity.d/test")
+
+			// append to a[2] to run commands in container
+			a[2] += fmt.Sprintf(" echo '%v\ntest';", prefix)
+			a[2] += " cat .singularity.d/test;"
+			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
 		if environment {
 			sylog.Debugf("Inspection of envrionment selected.")
-			a = append(a, ".singularity.d/env/90-environment.sh")
+
+			// append to a[2] to run commands in container
+			a[2] += fmt.Sprintf(" echo '%v\nenvironment';", prefix)
+			a[2] += " cat .singularity.d/env/90-environment.sh;"
+			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
 		// default to labels if nothing was appended
-		if labels || len(a) == 1 {
+		if labels || len(a[2]) == 0 {
 			sylog.Debugf("Inspection of labels as default.")
-			a = append(a, ".singularity.d/labels.json")
+
+			// append to a[2] to run commands in container
+			a[2] += fmt.Sprintf(" echo '%v\nlabels';", prefix)
+			a[2] += " cat .singularity.d/labels.json;"
+			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
-		starter := buildcfg.SBINDIR + "/starter-suid"
-		procname := "Singularity inspect"
-		Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
-
-		engineConfig := singularity.NewConfig()
-		ociConfig := &oci.Config{}
-		generator := generate.Generator{Config: &ociConfig.Spec}
-		engineConfig.OciConfig = ociConfig
-
-		generator.SetProcessArgs(a)
-		engineConfig.SetImage(abspath)
-
-		cfg := &config.Common{
-			EngineName:   singularity.Name,
-			ContainerID:  name,
-			EngineConfig: engineConfig,
-		}
-
-		configData, err := json.Marshal(cfg)
+		fileContents, err := getFileContent(abspath, name, a)
 		if err != nil {
-			sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+			sylog.Fatalf("While getting helpfile: %v", err)
 		}
 
-		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-			sylog.Fatalf("%s", err)
+		contentSlice := strings.Split(fileContents, delimiter)
+		for _, s := range contentSlice {
+			s = strings.TrimSpace(s)
+			if strings.HasPrefix(s, prefix) {
+				split := strings.SplitN(s, "\n", 3)
+				if len(split) == 3 {
+					attributes[split[1]] = split[2]
+				} else if len(split) == 2 {
+					sylog.Warningf("%v metadata was not found.", split[1])
+				}
+			}
 		}
+
+		// format that data based on --json flag
+		if jsonfmt {
+			// store this in a struct, then marshal the struct to json
+			type result struct {
+				Data map[string]string `json:"attributes"`
+				T    string            `json:"type"`
+			}
+
+			d := result{
+				Data: attributes,
+				T:    "container",
+			}
+
+			b, err := json.MarshalIndent(d, "", "\t")
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(string(b))
+		} else {
+			// iterate through sections of struct and print them
+			for _, value := range attributes {
+				fmt.Println("\n" + value + "\n")
+			}
+		}
+
 	},
 	TraverseChildren: true,
+}
+
+func getFileContent(abspath, name string, args []string) (string, error) {
+	starter := buildcfg.SBINDIR + "/starter-suid"
+	procname := "Singularity inspect"
+	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
+
+	engineConfig := singularity.NewConfig()
+	ociConfig := &oci.Config{}
+	generator := generate.Generator{Config: &ociConfig.Spec}
+	engineConfig.OciConfig = ociConfig
+
+	generator.SetProcessArgs(args)
+	engineConfig.SetImage(abspath)
+
+	cfg := &config.Common{
+		EngineName:   singularity.Name,
+		ContainerID:  name,
+		EngineConfig: engineConfig,
+	}
+
+	configData, err := json.Marshal(cfg)
+	if err != nil {
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	//record from stdout and store as a string to return as the contents of the file?
+
+	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
+	if err != nil {
+		sylog.Fatalf("%s", err)
+	}
+
+	b, err := cmd.Output()
+	if err != nil {
+		sylog.Fatalf("%s", err)
+	}
+
+	return string(b), nil
 }
