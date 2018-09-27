@@ -141,7 +141,12 @@ func handleLibrary(u string) (string, error) {
 }
 
 func handleShub(u string) (string, error) {
-	return "", fmt.Errorf("not implemented yet")
+	imageName := uri.NameFromURI(u)
+	imagePath := cache.ShubImage("hash", imageName)
+
+	libexec.PullShubImage(imagePath, u, true)
+
+	return imagePath, nil
 }
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
