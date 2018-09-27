@@ -80,11 +80,11 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	}
 
 	// chown the sif file to the calling user
-	if syscall.Getuid() == 0 {
-		uID, _ := strconv.Atoi(os.Getenv("SUDO_UID"))
-		gID, _ := strconv.Atoi(os.Getenv("SUDO_GID"))
+	if syscall.Getuid() == 0 && os.Getenv("USERNAME") != "root" {
+		uid, _ := strconv.Atoi(os.Getenv("SUDO_UID"))
+		gid, _ := strconv.Atoi(os.Getenv("SUDO_GID"))
 
-		return os.Chown(path, uID, gID)
+		return os.Chown(path, uid, gid)
 	}
 
 	return nil
