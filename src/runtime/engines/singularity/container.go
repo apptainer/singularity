@@ -279,7 +279,7 @@ func (c *container) setupWritableSIFImage(img *image.Image, overlayEnabled bool)
 // setupSessionLayout will create the session layout according to the capabilities of Singularity
 // on the system. It will first attempt to use "overlay", followed by "underlay", and if neither
 // are available it will not use either. If neither are used, we will not be able to bind mount
-// to non-existant paths within the container
+// to non-existent paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
 	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
 	overlayEnabled := false
@@ -767,7 +767,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				ov.AddLowerDir(dst)
 			}
 		default:
-			return fmt.Errorf("unkown image format")
+			return fmt.Errorf("unknown image format")
 		}
 
 		if imageObject.Writable && !hasUpper {
