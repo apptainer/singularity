@@ -73,6 +73,7 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 
 	cmd := exec.Command(cmdPath, argv...)
 	cmd.Env = opts.env
+
 	return cmd.CombinedOutput()
 }
 

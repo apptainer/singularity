@@ -297,7 +297,7 @@ func doHeader(h string, d *types.Definition) (err error) {
 	return
 }
 
-// ParseDefinitionFile recieves a reader from a definition file
+// ParseDefinitionFile receives a reader from a definition file
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
 func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
