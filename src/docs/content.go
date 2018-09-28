@@ -532,7 +532,7 @@ Enterprise Performance Computing (EPC)`
 	RunLong  string = `
   This command will launch a Singularity container and execute a runscript
   if one is defined for that container. The runscript is a metadata file within
-  the container that containes shell commands. If the file is present (and
+  the container that contains shell commands. If the file is present (and
   executable) then this command will execute that file within the container
   automatically. All arguments following the container name will be passed
   directly to the runscript.
