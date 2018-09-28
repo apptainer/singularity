@@ -56,19 +56,16 @@ func TestInstance(t *testing.T) {
 		var defaultInstance = "www"
 
 		startInstanceOutput, startInstanceError := startInstance(defaultImage, defaultInstance)
-
 		if startInstanceError != nil {
 			t.Fatalf("Error starting instance from an image: %v. Output follows.\n%s", startInstanceError, string(startInstanceOutput))
 		}
 
 		listInstanceOutput, listInstanceError := listInstance()
-
 		if listInstanceError != nil {
 			t.Fatalf("Error listing instances: %v. Output follows.\n%s", listInstanceError, string(listInstanceOutput))
 		}
 
 		stopInstanceOutput, stopInstanceError := stopInstance(defaultInstance)
-
 		if stopInstanceError != nil {
 			t.Fatalf("Error stopping instance by name: %v. Output follows.\n%s", stopInstanceError, string(stopInstanceOutput))
 		}
