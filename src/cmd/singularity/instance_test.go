@@ -13,13 +13,6 @@ import (
 	"github.com/sylabs/singularity/src/pkg/test"
 )
 
-func buildImage(definition string, image string) ([]byte, error) {
-	args := []string{"build", "--force", image, definition}
-	cmd := exec.Command(cmdPath, args...)
-
-	return cmd.CombinedOutput()
-}
-
 func startInstance(image string, instance string) ([]byte, error) {
 	args := []string{"instance", "start", image, instance}
 	cmd := exec.Command(cmdPath, args...)
