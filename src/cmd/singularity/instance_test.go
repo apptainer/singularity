@@ -13,13 +13,6 @@ import (
 	"github.com/sylabs/singularity/src/pkg/test"
 )
 
-func buildImage(definition string, image string) ([]byte, error) {
-	args := []string{"build", image, definition}
-	cmd := exec.Command(cmdPath, args...)
-
-	return cmd.CombinedOutput()
-}
-
 func startInstance(image string, instance string) ([]byte, error) {
 	args := []string{"instance", "start", image, instance}
 	cmd := exec.Command(cmdPath, args...)
@@ -41,33 +34,40 @@ func stopInstance(instance string) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
+// TestInstance tests singularity instance cmd
+// start, list, stop
 func TestInstance(t *testing.T) {
-	var defaultDefinition = "../../../examples/busybox/Singularity"
-	var defaultImage = "Default.sif"
+	var definition = "../../../examples/busybox/Singularity"
+	var imagePath = "./instance_tests.sif"
 
-	buildImageOutput, buildImageError := buildImage(defaultDefinition, defaultImage)
-	defer os.Remove(defaultImage)
-
-	if buildImageError != nil {
-		t.Fatalf("Error building an image from a definition: %v. Output follows.\n%s", buildImageError, string(buildImageOutput))
+	opts := buildOpts{
+		force:    true,
+		sandbox:  false,
+		writable: false,
 	}
+	if b, err := imageBuild(opts, imagePath, definition); err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+	imageVerify(t, imagePath, true)
+	defer os.RemoveAll(imagePath)
 
 	t.Run("StartListStop", test.WithoutPrivilege(func(t *testing.T) {
 		var defaultInstance = "www"
 
-		startInstanceOutput, startInstanceError := startInstance(defaultImage, defaultInstance)
-		if startInstanceError != nil {
-			t.Fatalf("Error starting instance from an image: %v. Output follows.\n%s", startInstanceError, string(startInstanceOutput))
+		startInstanceOutput, err := startInstance(imagePath, defaultInstance)
+		if err != nil {
+			t.Fatalf("Error starting instance from an image: %v. Output follows.\n%s", err, string(startInstanceOutput))
 		}
 
-		listInstanceOutput, listInstanceError := listInstance()
-		if listInstanceError != nil {
-			t.Fatalf("Error listing instances: %v. Output follows.\n%s", listInstanceError, string(listInstanceOutput))
+		listInstanceOutput, err := listInstance()
+		if err != nil {
+			t.Fatalf("Error listing instances: %v. Output follows.\n%s", err, string(listInstanceOutput))
 		}
 
-		stopInstanceOutput, stopInstanceError := stopInstance(defaultInstance)
-		if stopInstanceError != nil {
-			t.Fatalf("Error stopping instance by name: %v. Output follows.\n%s", stopInstanceError, string(stopInstanceOutput))
+		stopInstanceOutput, err := stopInstance(defaultInstance)
+		if err != nil {
+			t.Fatalf("Error stopping instance by name: %v. Output follows.\n%s", err, string(stopInstanceOutput))
 		}
 	}))
 }
