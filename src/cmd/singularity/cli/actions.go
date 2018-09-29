@@ -17,6 +17,7 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/src/pkg/libexec"
+	"github.com/sylabs/singularity/src/pkg/util/arrayhelper"
 	"github.com/sylabs/singularity/src/pkg/util/nvidiautils"
 
 	"github.com/spf13/cobra"
@@ -438,19 +439,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		procname = "Singularity runtime parent"
 	}
 
-	// does "user" appear in the namespace array?
-	userns := false
-	for _, ns := range Namespace {
-		if ns == "user" {
-			userns = true
-		}
-	}
-	if !userns {
+	if userns := arrayhelper.IsIn(Namespace, "user"); !userns {
 		if _, err := os.Stat(starter); os.IsNotExist(err) {
 			sylog.Verbosef("starter-suid not found, using user namespace")
 			Namespace = append(Namespace, "user")
 		}
 	}
+
+	Namespace = arrayhelper.Unique(Namespace)
+	fmt.Printf("%v\n", Namespace)
 
 	for _, ns := range Namespace {
 		switch ns {
