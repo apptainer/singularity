@@ -25,7 +25,6 @@ func init() {
 		"home",
 		"hostname",
 		"keep-privs",
-		"net",
 		"network",
 		"network-args",
 		"no-home",
@@ -34,8 +33,6 @@ func init() {
 		"overlay",
 		"scratch",
 		"security",
-		"userns",
-		"uts",
 		"workdir",
 		"writable",
 		"writable-tmpfs",
@@ -50,7 +47,7 @@ func init() {
 
 // InstanceStartCmd singularity instance start
 var InstanceStartCmd = &cobra.Command{
-	Args:                  cobra.MinimumNArgs(2),
+	Args: cobra.MinimumNArgs(2),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/start"}

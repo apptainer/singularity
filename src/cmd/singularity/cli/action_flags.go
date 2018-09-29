@@ -29,6 +29,7 @@ var (
 	DNS         string
 	Security    []string
 	CgroupsPath string
+	Namespace   []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -40,12 +41,6 @@ var (
 	Nvidia          bool
 	NoHome          bool
 	NoInit          bool
-
-	NetNamespace  bool
-	UtsNamespace  bool
-	UserNamespace bool
-	PidNamespace  bool
-	IpcNamespace  bool
 
 	AllowSUID bool
 	KeepPrivs bool
@@ -69,7 +64,6 @@ func getHomeDir() string {
 func init() {
 	initPathVars()
 	initBoolVars()
-	initNamespaceVars()
 	initPrivilegeVars()
 }
 
@@ -139,6 +133,10 @@ func initPathVars() {
 	// --apply-cgroups
 	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "Apply cgroups from file for container processes (requires root privileges)")
 	actionFlags.SetAnnotation("cgroups-profile", "argtag", []string{"<path>"})
+
+	// --namespace
+	actionFlags.StringSliceVarP(&Namespace, "namespace", "n", []string{}, "List of namespaces (pid,ipc,network,uts,user) for container to join separated by commas")
+	actionFlags.SetAnnotation("namespace", "argtag", []string{"<list>"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
@@ -181,29 +179,6 @@ func initBoolVars() {
 	// --no-init
 	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
 	actionFlags.SetAnnotation("no-init", "envkey", []string{"NO_INIT", "NOSHIMINIT"})
-}
-
-// initNamespaceVars initializes flags that take toggle namespace support
-func initNamespaceVars() {
-	// -p|--pid
-	actionFlags.BoolVarP(&PidNamespace, "pid", "p", false, "Run container in a new PID namespace")
-	actionFlags.SetAnnotation("pid", "envkey", []string{"PID", "UNSHARE_PID"})
-
-	// -i|--ipc
-	actionFlags.BoolVarP(&IpcNamespace, "ipc", "i", false, "Run container in a new IPC namespace")
-	actionFlags.SetAnnotation("ipc", "envkey", []string{"IPC", "UNSHARE_IPC"})
-
-	// -n|--net
-	actionFlags.BoolVarP(&NetNamespace, "net", "n", false, "Run container in a new network namespace (sets up a bridge network interface by default).")
-	actionFlags.SetAnnotation("net", "envkey", []string{"NET", "UNSHARE_NET"})
-
-	// --uts
-	actionFlags.BoolVar(&UtsNamespace, "uts", false, "Run container in a new UTS namespace")
-	actionFlags.SetAnnotation("uts", "envkey", []string{"UTS", "UNSHARE_UTS"})
-
-	// -u|--userns
-	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "Run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity.")
-	actionFlags.SetAnnotation("userns", "envkey", []string{"USERNS", "UNSHARE_USERNS"})
 }
 
 // initPrivilegeVars initializes flags that manipulate privileges

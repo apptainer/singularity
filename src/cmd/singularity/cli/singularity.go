@@ -236,12 +236,6 @@ var flagEnvFuncs = map[string]envHandle{
 	"no-home":    envBool,
 	"no-init":    envBool,
 
-	"pid":    envBool,
-	"ipc":    envBool,
-	"net":    envBool,
-	"uts":    envBool,
-	"userns": envBool,
-
 	"keep-privs":   envBool,
 	"no-privs":     envBool,
 	"add-caps":     envStringNSlice,

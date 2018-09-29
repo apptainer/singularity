@@ -54,18 +54,13 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("containall"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("cleanenv"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("network"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("pwd"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
@@ -81,6 +76,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("namespace"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
@@ -307,7 +303,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("%s", err)
 		}
 		if !file.Privileged {
-			UserNamespace = true
+			Namespace = append(Namespace, "user")
 		}
 		generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
 		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
@@ -374,7 +370,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetCustomHome(homeFlag.Changed)
 
 	if Hostname != "" {
-		UtsNamespace = true
+		Namespace = append(Namespace, "uts")
 		engineConfig.SetHostname(Hostname)
 	}
 
@@ -382,8 +378,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetContain(true)
 
 		if IsContainAll {
-			PidNamespace = true
-			IpcNamespace = true
+			Namespace = append(Namespace, "pid")
+			Namespace = append(Namespace, "ipc")
 			IsCleanEnv = true
 		}
 	}
@@ -405,13 +401,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if IsFakeroot {
-		UserNamespace = true
+		Namespace = append(Namespace, "user")
 	}
 
 	/* if name submitted, run as instance */
 	if name != "" {
-		PidNamespace = true
-		IpcNamespace = true
+		Namespace = append(Namespace, "pid")
+		Namespace = append(Namespace, "ipc")
 		engineConfig.SetInstance(true)
 		engineConfig.SetBootInstance(IsBoot)
 
@@ -424,8 +420,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		if IsBoot {
-			UtsNamespace = true
-			NetNamespace = true
+			Namespace = append(Namespace, "uts")
+			Namespace = append(Namespace, "network")
 			if Hostname == "" {
 				engineConfig.SetHostname(name)
 			}
@@ -442,35 +438,36 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		procname = "Singularity runtime parent"
 	}
 
-	if NetNamespace {
-		generator.AddOrReplaceLinuxNamespace("network", "")
-	}
-	if UtsNamespace {
-		generator.AddOrReplaceLinuxNamespace("uts", "")
-	}
-	if PidNamespace {
-		generator.AddOrReplaceLinuxNamespace("pid", "")
-		engineConfig.SetNoInit(NoInit)
-	}
-	if IpcNamespace {
-		generator.AddOrReplaceLinuxNamespace("ipc", "")
-	}
-	if !UserNamespace {
-		if _, err := os.Stat(starter); os.IsNotExist(err) {
-			sylog.Verbosef("starter-suid not found, using user namespace")
-			UserNamespace = true
+	// does "user" appear in the namespace array?
+	userns := false
+	for _, ns := range Namespace {
+		if ns == "user" {
+			userns = true
 		}
 	}
-	if UserNamespace {
-		generator.AddOrReplaceLinuxNamespace("user", "")
-		starter = buildcfg.SBINDIR + "/starter"
+	if !userns {
+		if _, err := os.Stat(starter); os.IsNotExist(err) {
+			sylog.Verbosef("starter-suid not found, using user namespace")
+			Namespace = append(Namespace, "user")
+		}
+	}
 
-		if IsFakeroot {
-			generator.AddLinuxUIDMapping(uid, 0, 1)
-			generator.AddLinuxGIDMapping(gid, 0, 1)
-		} else {
-			generator.AddLinuxUIDMapping(uid, uid, 1)
-			generator.AddLinuxGIDMapping(gid, gid, 1)
+	for _, ns := range Namespace {
+		switch ns {
+		case "uts", "pid", "network", "ipc":
+			generator.AddOrReplaceLinuxNamespace(ns, "")
+		case "user":
+			generator.AddOrReplaceLinuxNamespace("user", "")
+			starter = buildcfg.SBINDIR + "/starter"
+			if IsFakeroot {
+				generator.AddLinuxUIDMapping(uid, 0, 1)
+				generator.AddLinuxGIDMapping(gid, 0, 1)
+			} else {
+				generator.AddLinuxUIDMapping(uid, uid, 1)
+				generator.AddLinuxGIDMapping(gid, gid, 1)
+			}
+		default:
+			sylog.Warningf("Unknown --namespace argument \"%s\". Doing nothing.", ns)
 		}
 	}
 
