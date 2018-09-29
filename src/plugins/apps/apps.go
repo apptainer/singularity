@@ -31,6 +31,17 @@ const (
 	sectionRun     = "apprun"
 )
 
+var (
+	sections = map[string]bool{
+		sectionInstall: true,
+		sectionFiles:   true,
+		sectionEnv:     true,
+		sectionTest:    true,
+		sectionHelp:    true,
+		sectionRun:     true,
+	}
+)
+
 const (
 	globalEnv94Base = `## App Global Exports For: %[1]s
 	
@@ -158,6 +169,10 @@ func getAppAndSection(ident string) (appName string, sectionName string) {
 	identSplit := strings.Split(ident, " ")
 
 	if len(identSplit) < 2 {
+		return "", ""
+	}
+
+	if _, ok := sections[identSplit[0]]; !ok {
 		return "", ""
 	}
 

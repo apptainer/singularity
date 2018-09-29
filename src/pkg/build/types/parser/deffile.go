@@ -287,6 +287,10 @@ func doHeader(h string, d *types.Definition) (err error) {
 		trimLine := strings.Split(line, "#")[0]
 
 		linetoks := strings.SplitN(trimLine, ":", 2)
+		if len(linetoks) == 1 {
+			return fmt.Errorf("header key %s had no val", linetoks[0])
+		}
+
 		key, val := strings.ToLower(strings.TrimSpace(linetoks[0])), strings.TrimSpace(linetoks[1])
 		if _, ok := validHeaders[key]; !ok {
 			return fmt.Errorf("invalid header keyword found: %s", key)
@@ -423,6 +427,13 @@ func IsValidDefinition(source string) (valid bool, err error) {
 	if err != nil {
 		return false, err
 	}
+
+	if s, err := defFile.Stat(); err != nil {
+		return false, fmt.Errorf("unable to stat file: %v", err)
+	} else if s.IsDir() {
+		return false, nil
+	}
+
 	defer defFile.Close()
 
 	ok, _ := canGetHeader(defFile)

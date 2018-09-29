@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/build"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
 var (
@@ -83,7 +84,10 @@ var BuildCmd = &cobra.Command{
 	Short:   docs.BuildShort,
 	Long:    docs.BuildLong,
 	Example: docs.BuildExample,
-	PreRun:  sylabsToken,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		sylabsToken(cmd, args)
+		syplugin.Init()
+	},
 	// TODO: Can we plz move this to another file to keep the CLI the CLI
 	Run: func(cmd *cobra.Command, args []string) {
 		buildFormat := "sif"
