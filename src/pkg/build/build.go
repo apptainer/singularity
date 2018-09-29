@@ -318,31 +318,15 @@ func (b *Build) runBuildEngine() error {
 		return fmt.Errorf("failed to marshal config.Common: %s", err)
 	}
 
-	// Set PIPE_EXEC_FD
-	pipefd, err := syexec.SetPipe(configData)
+	starterCmd, err := syexec.PipeCommand(starter, progname, env, configData)
 	if err != nil {
-		return fmt.Errorf("failed to set PIPE_EXEC_FD: %v", err)
+		return fmt.Errorf("failed to create cmd type: %v", err)
 	}
 
-	env = append(env, pipefd)
+	starterCmd.Stdout = os.Stdout
+	starterCmd.Stderr = os.Stderr
 
-	// Create os/exec.Command to run starter and return control once finished
-	starterCmd := &exec.Cmd{
-		Path:   starter,
-		Args:   progname,
-		Env:    env,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-
-	if err := starterCmd.Start(); err != nil {
-		return fmt.Errorf("failed to start starter proc: %v", err)
-	}
-	if err := starterCmd.Wait(); err != nil {
-		return fmt.Errorf("starter proc failed: %v", err)
-	}
-
-	return nil
+	return starterCmd.Run()
 }
 
 func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {

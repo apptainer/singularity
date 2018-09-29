@@ -65,7 +65,7 @@ func registerPlugin(pl interface{}) {
 			sylog.Debugf("Registering plugin as type %s", plType)
 
 			if err := regFn(pl); err != nil {
-				sylog.Fatalf("Unable to register plugin??")
+				sylog.Fatalf("Unable to register plugin: %s", err)
 			}
 			regWait.Done()
 		}(plType, regFn)
