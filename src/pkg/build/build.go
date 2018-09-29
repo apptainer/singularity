@@ -166,13 +166,8 @@ func (b *Build) Full() error {
 	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
 
 	if engineRequired(b.d) {
-		if syscall.Getuid() == 0 {
-			sylog.Debugf("Starting build engine")
-			if err := b.runBuildEngine(); err != nil {
-				return fmt.Errorf("unable to run scripts: %v", err)
-			}
-		} else {
-			sylog.Errorf("Attempted to build with scripts as non-root user")
+		if err := b.runBuildEngine(); err != nil {
+			return fmt.Errorf("while running engine: %v", err)
 		}
 	}
 
@@ -268,21 +263,21 @@ func (b *Build) insertMetadata() (err error) {
 
 func (b *Build) runPreScript() error {
 	if b.runPre() && b.d.BuildData.Pre != "" {
-		if syscall.Getuid() == 0 {
-			// Run %pre script here
-			pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
-			pre.Stdout = os.Stdout
-			pre.Stderr = os.Stderr
+		if syscall.Getuid() != 0 {
+			return fmt.Errorf("Attempted to build with scripts as non-root user")
+		}
 
-			sylog.Infof("Running pre scriptlet\n")
-			if err := pre.Start(); err != nil {
-				sylog.Fatalf("failed to start %%pre proc: %v\n", err)
-			}
-			if err := pre.Wait(); err != nil {
-				sylog.Fatalf("pre proc: %v\n", err)
-			}
-		} else {
-			sylog.Errorf("Attempted to build with scripts as non-root user")
+		// Run %pre script here
+		pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
+		pre.Stdout = os.Stdout
+		pre.Stderr = os.Stderr
+
+		sylog.Infof("Running pre scriptlet\n")
+		if err := pre.Start(); err != nil {
+			return fmt.Errorf("failed to start %%pre proc: %v", err)
+		}
+		if err := pre.Wait(); err != nil {
+			return fmt.Errorf("pre proc: %v", err)
 		}
 	}
 	return nil
@@ -290,6 +285,11 @@ func (b *Build) runPreScript() error {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func (b *Build) runBuildEngine() error {
+	if syscall.Getuid() != 0 {
+		return fmt.Errorf("Attempted to build with scripts as non-root user")
+	}
+
+	sylog.Debugf("Starting build engine")
 	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
 	starter := filepath.Join(buildcfg.SBINDIR, "/starter")
 	progname := []string{"singularity image-build"}
