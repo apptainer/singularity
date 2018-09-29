@@ -38,12 +38,12 @@ func imageVerify(t *testing.T, imagePath string, labels bool) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imageExec(execOpts{}, imagePath, tt.execArgs)
-			if tt.expectSuccess && (err != nil) {
-				t.Log(string(b))
+			_, stderr, exitCode, err := imageExec(t, "exec", execOpts{}, imagePath, tt.execArgs)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
-			} else if !tt.expectSuccess && (err == nil) {
-				t.Log(string(b))
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
 			}
 		}))
