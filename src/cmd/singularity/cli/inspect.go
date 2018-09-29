@@ -128,7 +128,7 @@ var InspectCmd = &cobra.Command{
 		}
 
 		if environment {
-			sylog.Debugf("Inspection of envrionment selected.")
+			sylog.Debugf("Inspection of environment selected.")
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nenvironment';", prefix)

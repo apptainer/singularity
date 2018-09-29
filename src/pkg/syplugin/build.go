@@ -110,8 +110,3 @@ type BuildPlugin interface {
 	HandleBundle(*types.Bundle)
 	HandlePost() string
 }
-
-// func init() {
-// 	appPl := apps.New()
-// 	RegisterBuildPlugin(&appPl)
-// }
