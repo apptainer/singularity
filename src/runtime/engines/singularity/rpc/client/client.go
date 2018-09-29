@@ -77,8 +77,9 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 }
 
 // HasNamespace calls the HasNamespace RPC using the supplied arguments
-func (t *RPC) HasNamespace(nstype string) (bool, error) {
+func (t *RPC) HasNamespace(pid int, nstype string) (bool, error) {
 	arguments := &args.HasNamespaceArgs{
+		Pid:    pid,
 		NsType: nstype,
 	}
 	var reply int

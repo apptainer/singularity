@@ -73,6 +73,7 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 
 	cmd := exec.Command(cmdPath, argv...)
 	cmd.Env = opts.env
+
 	return cmd.CombinedOutput()
 }
 
@@ -92,6 +93,7 @@ func TestBuild(t *testing.T) {
 		{"DockerDefFile", "", "../../../examples/docker/Singularity", true, false},
 		{"SHubURI", "", "shub://GodloveD/busybox", true, false},
 		{"SHubDefFile", "", "../../../examples/shub/Singularity", true, false},
+		{"LibraryDefFile", "", "../../../examples/library/Singularity", true, false},
 		{"Yum", "yum", "../../../examples/centos/Singularity", true, false},
 		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", true, false},
 	}

@@ -10,6 +10,7 @@ package apps
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,6 +29,17 @@ const (
 	sectionTest    = "apptest"
 	sectionHelp    = "apphelp"
 	sectionRun     = "apprun"
+)
+
+var (
+	sections = map[string]bool{
+		sectionInstall: true,
+		sectionFiles:   true,
+		sectionEnv:     true,
+		sectionTest:    true,
+		sectionHelp:    true,
+		sectionRun:     true,
+	}
 )
 
 const (
@@ -160,6 +172,10 @@ func getAppAndSection(ident string) (appName string, sectionName string) {
 		return "", ""
 	}
 
+	if _, ok := sections[identSplit[0]]; !ok {
+		return "", ""
+	}
+
 	return identSplit[1], identSplit[0]
 }
 
@@ -194,7 +210,7 @@ func (pl *BuildPlugin) createAllApps(b *types.Bundle) error {
 		globalEnv94 += globalAppEnv(b, app)
 	}
 
-	return writeFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/94-appsbase.sh"), 0755, globalEnv94)
+	return ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0755)
 }
 
 func createAppRoot(b *types.Bundle, a *App) error {
@@ -232,7 +248,7 @@ func createAppRoot(b *types.Bundle, a *App) error {
 // %appenv and 01-base.sh
 func writeEnvFile(b *types.Bundle, a *App) error {
 	content := fmt.Sprintf(scifEnv01Base, a.Name)
-	if err := writeFile(filepath.Join(appMeta(b, a), "/env/01-base.sh"), 0755, content); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(appMeta(b, a), "/env/01-base.sh"), []byte(content), 0755); err != nil {
 		return err
 	}
 
@@ -240,7 +256,7 @@ func writeEnvFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return writeFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), 0755, a.Env)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), []byte(a.Env), 0755)
 }
 
 func globalAppEnv(b *types.Bundle, a *App) string {
@@ -264,7 +280,7 @@ func writeRunscriptFile(b *types.Bundle, a *App) error {
 	}
 
 	content := fmt.Sprintf(scifRunscriptBase, a.Run)
-	return writeFile(filepath.Join(appMeta(b, a), "/runscript"), 0755, content)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0755)
 }
 
 // %apphelp
@@ -273,7 +289,7 @@ func writeHelpFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return writeFile(filepath.Join(appMeta(b, a), "/runscript.help"), 0755, a.Help)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0755)
 }
 
 //util funcs
@@ -288,17 +304,6 @@ func appMeta(b *types.Bundle, a *App) string {
 
 func appData(b *types.Bundle, a *App) string {
 	return filepath.Join(b.Rootfs(), "/scif/data/", a.Name)
-}
-
-func writeFile(path string, perm os.FileMode, s string) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	_, err = f.WriteString(s)
-	return err
 }
 
 // HandlePost returns a script that should run after %post

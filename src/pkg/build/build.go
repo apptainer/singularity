@@ -56,7 +56,7 @@ type Build struct {
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
 	a Assembler
-	// b is an intermediate stucture that encapsulates all information for the container, e.g., metadata, filesystems
+	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems
 	b *types.Bundle
 	// d describes how a container is to be built, including actions to be run in the container to reach its final state
 	d types.Definition
@@ -217,7 +217,7 @@ func (b *Build) copyFiles() error {
 			sylog.Warningf("Attempt to copy file with no name...")
 			continue
 		}
-		// dest = source if not specifed
+		// dest = source if not specified
 		if transfer.Dst == "" {
 			transfer.Dst = transfer.Src
 		}
@@ -327,31 +327,15 @@ func (b *Build) runBuildEngine() error {
 		return fmt.Errorf("failed to marshal config.Common: %s", err)
 	}
 
-	// Set PIPE_EXEC_FD
-	pipefd, err := syexec.SetPipe(configData)
+	starterCmd, err := syexec.PipeCommand(starter, progname, env, configData)
 	if err != nil {
-		return fmt.Errorf("failed to set PIPE_EXEC_FD: %v", err)
+		return fmt.Errorf("failed to create cmd type: %v", err)
 	}
 
-	env = append(env, pipefd)
+	starterCmd.Stdout = os.Stdout
+	starterCmd.Stderr = os.Stderr
 
-	// Create os/exec.Command to run starter and return control once finished
-	starterCmd := &exec.Cmd{
-		Path:   starter,
-		Args:   progname,
-		Env:    env,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-
-	if err := starterCmd.Start(); err != nil {
-		return fmt.Errorf("failed to start starter proc: %v", err)
-	}
-	if err := starterCmd.Wait(); err != nil {
-		return fmt.Errorf("starter proc failed: %v", err)
-	}
-
-	return nil
+	return starterCmd.Run()
 }
 
 func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
@@ -525,7 +509,7 @@ func insertDefinition(b *types.Bundle) error {
 			// look at number of files in bootstrap_history to give correct file name
 			files, err := ioutil.ReadDir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"))
 
-			// name is "Singularity" concatinated with an index based on number of other files in bootstrap_history
+			// name is "Singularity" concatenated with an index based on number of other files in bootstrap_history
 			len := strconv.Itoa(len(files))
 
 			histName := "Singularity" + len

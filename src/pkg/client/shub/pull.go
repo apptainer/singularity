@@ -28,7 +28,7 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 
 	// use custom parser to make sure we have a valid shub URI
 	if ok := isShubPullRef(shubRef); !ok {
-		sylog.Fatalf("Invalid shub URI: %v", err)
+		sylog.Fatalf("Invalid shub URI")
 	}
 
 	ShubURI, err := shubParseReference(shubRef)

@@ -189,7 +189,7 @@ func (f *File) ListGroupCaps(group string) []string {
 	return f.data.Groups[group]
 }
 
-// ListAllCaps returns capabilitiy list for both authorized users and groups
+// ListAllCaps returns capability list for both authorized users and groups
 func (f *File) ListAllCaps() (Caplist, Caplist) {
 	return f.data.Users, f.data.Groups
 }

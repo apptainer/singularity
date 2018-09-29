@@ -35,14 +35,17 @@ func nvidiaContainerCli() ([]string, error) {
 	for _, line := range strings.Split(string(out), "\n") {
 		if line != "" {
 
-			fileName := filepath.Base(line)
-			strArray = append(strArray, fileName) // add entry to list to be bound (binary OR library)
-
 			// if this is a library, then add a .so entry as well
-			if strings.Contains(fileName, ".so") {
+			if strings.Contains(line, ".so") {
+				fileName := filepath.Base(line)
+				strArray = append(strArray, fileName) // add entry to list to be bound
+
 				// strip off .xxx.xx prefix and add so entry as well
 				newentry := strings.SplitAfter(fileName, ".so")
 				strArray = append(strArray, newentry[0]) // add prefix (filepath.so)
+			} else {
+				// Assume we're a binary and need the full path
+				strArray = append(strArray, line)
 			}
 		}
 	}
