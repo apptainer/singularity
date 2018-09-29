@@ -38,7 +38,7 @@ func nvidiaContainerCli() ([]string, error) {
 			// if this is a library, then add a .so entry as well
 			if strings.Contains(line, ".so") {
 				fileName := filepath.Base(line)
-				strArray = append(strArray, fileName) // add entry to list to be bound (binary OR library)
+				strArray = append(strArray, fileName) // add entry to list to be bound
 
 				// strip off .xxx.xx prefix and add so entry as well
 				newentry := strings.SplitAfter(fileName, ".so")
