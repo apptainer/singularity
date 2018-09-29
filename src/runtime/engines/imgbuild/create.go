@@ -114,6 +114,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
+	if engine.EngineConfig.RunSection("files") {
+		sylog.Debugf("Copying files from host")
+		if err := engine.EngineConfig.copyFiles(); err != nil {
+			return fmt.Errorf("unable to copy files to container fs: %v", err)
+		}
+	}
+
 	sylog.Debugf("Chdir into %s\n", buildcfg.SESSIONDIR)
 	err = syscall.Chdir(buildcfg.SESSIONDIR)
 	if err != nil {
@@ -133,6 +140,30 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 	if err := rpcOps.Client.Close(); err != nil {
 		return fmt.Errorf("can't close connection with rpc server: %s", err)
+	}
+
+	return nil
+}
+
+func (e *EngineConfig) copyFiles() error {
+	// iterate through filetransfers
+	for _, transfer := range e.Recipe.BuildData.Files {
+		// sanity
+		if transfer.Src == "" {
+			sylog.Warningf("Attempt to copy file with no name...")
+			continue
+		}
+		// dest = source if not specified
+		if transfer.Dst == "" {
+			transfer.Dst = transfer.Src
+		}
+		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
+		// copy each file into bundle rootfs
+		transfer.Dst = filepath.Join(e.Rootfs(), transfer.Dst)
+		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
+		if err := copy.Run(); err != nil {
+			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
+		}
 	}
 
 	return nil

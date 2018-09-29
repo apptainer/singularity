@@ -134,14 +134,8 @@ func newBuild(d types.Definition, dest, format string, force, update bool, secti
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
-	if hasScripts(b.d) {
-		if syscall.Getuid() == 0 {
-			if err := b.runPreScript(); err != nil {
-				return err
-			}
-		} else {
-			sylog.Errorf("Attempted to build with scripts as non-root user")
-		}
+	if err := b.runPreScript(); err != nil {
+		return err
 	}
 
 	if b.update && !b.force {
@@ -168,17 +162,10 @@ func (b *Build) Full() error {
 		}
 	}
 
-	if b.b.RunSection("files") {
-		sylog.Debugf("Copying files from host")
-		if err := b.copyFiles(); err != nil {
-			return fmt.Errorf("unable to copy files to container fs: %v", err)
-		}
-	}
-
 	syplugin.BuildHandleBundles(b.b)
 	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
 
-	if hasScripts(b.d) {
+	if engineRequired(b.d) {
 		if syscall.Getuid() == 0 {
 			sylog.Debugf("Starting build engine")
 			if err := b.runBuildEngine(); err != nil {
@@ -203,9 +190,9 @@ func (b *Build) Full() error {
 	return nil
 }
 
-// hasScripts returns true if build definition is requesting to run scripts in image
-func hasScripts(def types.Definition) bool {
-	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != "" || def.BuildData.Test != ""
+// engineRequired returns true if build definition is requesting to run scripts or copy files
+func engineRequired(def types.Definition) bool {
+	return def.BuildData.Post != "" || def.BuildData.Setup != "" || def.BuildData.Test != "" || len(def.BuildData.Files) != 0
 }
 
 func (b *Build) copyFiles() error {
@@ -281,17 +268,21 @@ func (b *Build) insertMetadata() (err error) {
 
 func (b *Build) runPreScript() error {
 	if b.runPre() && b.d.BuildData.Pre != "" {
-		// Run %pre script here
-		pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
-		pre.Stdout = os.Stdout
-		pre.Stderr = os.Stderr
+		if syscall.Getuid() == 0 {
+			// Run %pre script here
+			pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
+			pre.Stdout = os.Stdout
+			pre.Stderr = os.Stderr
 
-		sylog.Infof("Running pre scriptlet\n")
-		if err := pre.Start(); err != nil {
-			sylog.Fatalf("failed to start %%pre proc: %v\n", err)
-		}
-		if err := pre.Wait(); err != nil {
-			sylog.Fatalf("pre proc: %v\n", err)
+			sylog.Infof("Running pre scriptlet\n")
+			if err := pre.Start(); err != nil {
+				sylog.Fatalf("failed to start %%pre proc: %v\n", err)
+			}
+			if err := pre.Wait(); err != nil {
+				sylog.Fatalf("pre proc: %v\n", err)
+			}
+		} else {
+			sylog.Errorf("Attempted to build with scripts as non-root user")
 		}
 	}
 	return nil
