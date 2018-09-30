@@ -29,6 +29,13 @@ func (cp *LibraryConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 
 	cp.b = b
 
+	// check for custom library from definition
+	customLib, ok := b.Recipe.Header["library"]
+	if ok {
+		sylog.Debugf("Using custom library: %v", customLib)
+		cp.LibraryURL = customLib
+	}
+
 	// create file for image download
 	f, err := ioutil.TempFile(cp.b.Path, "library-img")
 	if err != nil {

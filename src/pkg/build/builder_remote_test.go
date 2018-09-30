@@ -76,7 +76,7 @@ func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRe
 }
 
 func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Set the respone body, depending on the type of operation
+	// Set the response body, depending on the type of operation
 	if r.Method == http.MethodPost && r.RequestURI == buildPath {
 		// Mock new build endpoint
 		var rd types.RequestData
