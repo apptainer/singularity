@@ -383,12 +383,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				HomePath = pwd.Dir
 				engineConfig.SetCustomHome(true)
 			} else {
-				sylog.Verbosef("Home directory for UID %d not found, no home will be mounted", targetUID, err)
+				sylog.Verbosef("Home directory for UID %d not found, home won't be mounted", targetUID)
 				engineConfig.SetNoHome(true)
 				HomePath = "/"
 			}
 		} else {
-			sylog.Verbosef("System UID %d requested, no home will be mounted", targetUID)
+			sylog.Verbosef("System UID %d requested, home won't be mounted", targetUID)
 			engineConfig.SetNoHome(true)
 			HomePath = "/"
 		}
