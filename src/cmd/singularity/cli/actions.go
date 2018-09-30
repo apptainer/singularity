@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	osexec "os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -533,21 +532,14 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
 
-		pipefd, err := exec.SetPipe(configData)
-		if err != nil {
-			sylog.Fatalf("failed to set pipe communication: %s", err)
-		}
-
-		cmd := osexec.Command(starter, "")
 		start, err := stderr.Seek(0, os.SEEK_END)
 		if err != nil {
 			sylog.Warningf("failed to get standard error stream offset: %s", err)
 		}
 
+		cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
-		cmd.Env = append(Env, pipefd)
-		cmd.Args[0] = procname
 
 		cmdErr := cmd.Run()
 
