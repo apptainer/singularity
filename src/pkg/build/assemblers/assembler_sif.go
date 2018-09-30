@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"syscall"
 
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
@@ -104,7 +105,14 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(f.Name())
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
+	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
+
+	// build squashfs with all-root flag when building as a user
+	if syscall.Getuid() != 0 {
+		args = append(args, "-all-root")
+	}
+
+	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {
