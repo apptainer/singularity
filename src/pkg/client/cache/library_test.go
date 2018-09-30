@@ -7,36 +7,18 @@ package cache
 
 import (
 	"os"
-	"os/user"
-	"path"
+	"path/filepath"
 	"testing"
-
-	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
-var cacheDefault string
-
-const cacheCustom = "/tmp/customcachedir"
-
-func TestMain(m *testing.M) {
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Errorf("Couldn't determine user home directory: %v", err)
-		os.Exit(1)
-	}
-	cacheDefault = path.Join(usr.HomeDir, RootDefault)
-
-	os.Exit(m.Run())
-}
-
-func TestRoot(t *testing.T) {
+func TestLibrary(t *testing.T) {
 	tests := []struct {
 		name     string
 		env      string
 		expected string
 	}{
-		{"Default root", "", cacheDefault},
-		{"Custom root", cacheCustom, cacheCustom},
+		{"Default Library", "", filepath.Join(cacheDefault, "library")},
+		{"Custom Library", cacheCustom, filepath.Join(cacheCustom, "library")},
 	}
 
 	for _, tt := range tests {
@@ -46,9 +28,23 @@ func TestRoot(t *testing.T) {
 
 			os.Setenv(DirEnv, tt.env)
 
-			if r := Root(); r != tt.expected {
+			if r := Library(); r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
 	}
 }
+
+// Will come back to after functionality exists
+// func TestLibraryImageExists(t *testing.T) {
+// 	tests := []struct {
+// 		name     string
+// 		env      string
+// 		expected string
+// 		file     []struct {
+// 			create bool
+// 			sum    string
+// 			name   string
+// 		}
+// 	}{}
+// }

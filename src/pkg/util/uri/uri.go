@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+const (
+	// Library is the keyword for a library ref
+	Library = "library"
+	// Shub is the keyword for a shub ref
+	Shub = "shub"
+)
+
 // NameFromURI turns a transport:ref URI into a name containing the top-level identifier
 // of the image. For example, docker://godlovedc/lolcow returns lolcow
 //
