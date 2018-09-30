@@ -18,7 +18,7 @@ func init() {
 
 // KeysNewPairCmd is `singularity keys newpair' and generate a new OpenPGP key pair
 var KeysNewPairCmd = &cobra.Command{
-	Args: cobra.ExactArgs(0),
+	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if _, err := sypgp.GenKeyPair(); err != nil {

@@ -29,7 +29,7 @@ func init() {
 
 // KeysCmd is the 'keys' command that allows management of key stores
 var KeysCmd = &cobra.Command{
-	Run: nil,
+	Run:                   nil,
 	DisableFlagsInUseLine: true,
 
 	Use:     docs.KeysUse,

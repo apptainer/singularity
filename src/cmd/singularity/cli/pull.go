@@ -42,8 +42,8 @@ func init() {
 // PullCmd singularity pull
 var PullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: sylabsToken,
+	Args:                  cobra.RangeArgs(1, 2),
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		i := len(args) - 1 // uri is stored in args[len(args)-1]
 		transport, ref := uri.SplitURI(args[i])

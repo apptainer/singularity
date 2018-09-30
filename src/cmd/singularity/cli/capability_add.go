@@ -31,7 +31,7 @@ func init() {
 
 // CapabilityAddCmd singularity capability add
 var CapabilityAddCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		manageCap(args[0], capAdd)

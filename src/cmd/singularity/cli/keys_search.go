@@ -25,7 +25,7 @@ func init() {
 
 // KeysSearchCmd is `singularity keys search' and look for public keys from a key server
 var KeysSearchCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
