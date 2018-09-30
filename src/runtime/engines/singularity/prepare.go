@@ -63,7 +63,8 @@ func (e *EngineOperations) prepareUserCaps() error {
 	for _, g := range groups {
 		gr, err := user.GetGrGID(uint32(g))
 		if err != nil {
-			return err
+			sylog.Debugf("Ignoring group %d: %s", g, err)
+			continue
 		}
 		authorizedCaps, _ := file.CheckGroupCaps(gr.Name, caps)
 		if len(authorizedCaps) > 0 {
@@ -135,7 +136,8 @@ func (e *EngineOperations) prepareRootCaps() error {
 		for _, g := range groups {
 			gr, err := user.GetGrGID(uint32(g))
 			if err != nil {
-				return err
+				sylog.Debugf("Ignoring group %d: %s", g, err)
+				continue
 			}
 			caps := file.ListGroupCaps(gr.Name)
 			commonCaps = append(commonCaps, caps...)
