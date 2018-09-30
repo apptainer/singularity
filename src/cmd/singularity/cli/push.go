@@ -29,8 +29,8 @@ func init() {
 // PushCmd singularity push
 var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(2),
-	PreRun:                sylabsToken,
+	Args:   cobra.ExactArgs(2),
+	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Push to library requires a valid authToken
 		if authToken != "" {
