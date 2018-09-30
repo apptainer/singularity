@@ -92,6 +92,8 @@ type JSONConfig struct {
 	Security      []string      `json:"security,omitempty"`
 	OpenFd        []int         `json:"openFd,omitempty"`
 	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
+	TargetUID     int           `json:"targetUID,omitempty"`
+	TargetGID     []int         `json:"targetGID,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -457,4 +459,24 @@ func (e *EngineConfig) SetCgroupsPath(path string) {
 // GetCgroupsPath returns path to cgroups profile
 func (e *EngineConfig) GetCgroupsPath() string {
 	return e.JSON.CgroupsPath
+}
+
+// SetTargetUID sets target UID to execute container process as
+func (e *EngineConfig) SetTargetUID(uid int) {
+	e.JSON.TargetUID = uid
+}
+
+// GetTargetUID returns the target UID
+func (e *EngineConfig) GetTargetUID() int {
+	return e.JSON.TargetUID
+}
+
+// SetTargetGID sets target GIDs to execute container process as
+func (e *EngineConfig) SetTargetGID(gid []int) {
+	e.JSON.TargetGID = gid
+}
+
+// GetTargetGID returns the target GIDs
+func (e *EngineConfig) GetTargetGID() []int {
+	return e.JSON.TargetGID
 }

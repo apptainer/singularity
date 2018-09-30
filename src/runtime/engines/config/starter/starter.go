@@ -18,6 +18,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/sylabs/singularity/src/pkg/sylog"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/src/pkg/util/capabilities"
 )
@@ -247,5 +249,23 @@ func (c *Config) SetCapabilities(ctype string, caps []string) {
 		for _, v := range caps {
 			c.config.capAmbient |= C.ulonglong(1 << capabilities.Map[v].Value)
 		}
+	}
+}
+
+// SetTargetUID sets target UID to execute container process
+func (c *Config) SetTargetUID(uid int) {
+	c.config.targetUID = C.uid_t(uid)
+}
+
+// SetTargetGID sets target GID to execute container process
+func (c *Config) SetTargetGID(gids []int) {
+	c.config.numGID = C.int(len(gids))
+
+	for i, gid := range gids {
+		if i > C.MAX_GID {
+			sylog.Warningf("you can't specify more than %d group IDs", C.MAX_GID)
+			break
+		}
+		c.config.targetGID[i] = C.gid_t(gid)
 	}
 }
