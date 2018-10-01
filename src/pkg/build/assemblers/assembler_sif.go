@@ -73,6 +73,9 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
+	// remove anything that may exist at the build destination at last moment
+	os.RemoveAll(path)
+
 	// test container creation with two partition input descriptors
 	if _, err := sif.CreateContainer(cinfo); err != nil {
 		return fmt.Errorf("while creating container: %s", err)
