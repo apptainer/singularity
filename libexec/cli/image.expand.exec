@@ -112,15 +112,30 @@ if ! dd if=/dev/zero bs=1M count=${SINGULARITY_IMAGESIZE:-768} status=${DDSTATUS
     exit 1
 fi
 
+message 1 "Create loop device\n"
+SINGULARITY_LOOP_DEVICE=$(losetup --show -o 31 -f $SINGULARITY_IMAGE 2> /dev/null)
+if [ $? -ne 0 ]; then
+       exit 1
+fi
+
+
 message 1 "Checking image's file system\n"
-if ! /sbin/e2fsck -fy "$SINGULARITY_IMAGE"; then
+if ! /sbin/e2fsck -fy "$SINGULARITY_LOOP_DEVICE"; then
+    umount "$SINGULARITY_LOOP_DEVICE"
     exit 1
 fi
 
 message 1 "Resizing image's file system\n"
-if ! /sbin/resize2fs "$SINGULARITY_IMAGE"; then
+if ! /sbin/resize2fs "$SINGULARITY_LOOP_DEVICE"; then
+    umount "$SINGULARITY_LOOP_DEVICE"
     exit 1
 fi
 
+#For some reason without this dummy sleep sometimes umount failed for me with "device busy"
+sleep 3
+message 1 "Unmounting loop device: $SINGULARITY_LOOP_DEVICE\n"
+losetup -d  "$SINGULARITY_LOOP_DEVICE"
+
 message 1 "Image is done: $SINGULARITY_IMAGE\n"
 exit 0
+
