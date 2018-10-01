@@ -13,7 +13,7 @@ Pull requests adding features to the 2.x series will no longer be reviewed.
 Any new features should be targeted to the master branch (which used to be
 called development-3.0)._
 
-| **Build** | **CircleCI** | **Go Report Card** |
+| **Travis** | **CircleCI** | **Go Report Card** |
 |-----------|--------------|--------------------|
 | [![Build Status](https://travis-ci.org/sylabs/singularity.svg?branch=master)](https://travis-ci.org/sylabs/singularity) | [![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/master) | [![Go Report Card](https://goreportcard.com/badge/github.com/sylabs/singularity)](https://goreportcard.com/report/github.com/sylabs/singularity) |
 
