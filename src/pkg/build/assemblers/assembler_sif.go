@@ -146,7 +146,7 @@ func changeOwner() (int, int, bool) {
 		return 0, 0, false
 	}
 
-	if syscall.Getuid() == 0 && os.Getenv("SUDO_USER") == "root" {
+	if os.Getenv("SUDO_USER") == "" || syscall.Getuid() != 0 {
 		return 0, 0, false
 	}
 
