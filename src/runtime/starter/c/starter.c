@@ -1063,8 +1063,22 @@ __attribute__((constructor)) static void init(void) {
         close(rpc_socket[0]);
 
         if ( get_nspath(mnt) == NULL ) {
-            singularity_message(VERBOSE, "Spawn RPC server\n");
-            execute = RPC_SERVER;
+            /*
+             * fork is a convenient way to apply capabilities and privileges drop
+             * from single thread context before entering in stage 2
+             */
+            if ( fork() == 0 ) {
+                singularity_message(VERBOSE, "Spawn RPC server\n");
+                execute = RPC_SERVER;
+            } else {
+                int status;
+                if ( wait(&status) < 0 ) {
+                    singularity_message(ERROR, "Failed to wait RPC server: %s\n", strerror(errno));
+                    exit(1);
+                }
+                prepare_scontainer_stage(SCONTAINER_STAGE2);
+                execute = SCONTAINER_STAGE2;
+            }
         } else {
             singularity_message(VERBOSE, "Don't execute RPC server, joining instance\n");
             prepare_scontainer_stage(SCONTAINER_STAGE2);
