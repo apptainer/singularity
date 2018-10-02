@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"syscall"
 
@@ -94,9 +95,15 @@ func getMksquashfsPath() (string, error) {
 		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}
 
-	// look for admin defined mksquashfs location
+	// look in admin defined mksquashfs location
 	if c.MksquashfsPath != "" {
-		return c.MksquashfsPath, nil
+		mksquashfs := filepath.Join(c.MksquashfsPath, "mksquashfs")
+
+		if _, err := os.Stat(mksquashfs); os.IsNotExist(err) {
+			return "", fmt.Errorf("mksquashfs cannot be found at custom location: %v", c.MksquashfsPath)
+		}
+
+		return mksquashfs, nil
 	}
 
 	// look for mksquashfs in standard locations
@@ -119,7 +126,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	parser.WriteDefinitionFile(&(b.Recipe), &buf)
 	def := buf.Bytes()
 
-	mksquashfsPath, err := getMksquashfsPath()
+	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
 		return
 	}
@@ -137,7 +144,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		args = append(args, "-all-root")
 	}
 
-	mksquashfsCmd := exec.Command(mksquashfsPath, args...)
+	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {
