@@ -163,24 +163,15 @@ func startup() {
 		SContainer(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), starterConfig, jsonBytes)
 	case C.SCONTAINER_STAGE2:
 		sylog.Verbosef("Execute scontainer stage 2\n")
-		SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), starterConfig, jsonBytes)
+		mainthread.Execute(func() {
+			SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), starterConfig, jsonBytes)
+		})
 	case C.SMASTER:
 		sylog.Verbosef("Execute smaster process\n")
 		SMaster(int(C.rpc_socket[0]), int(C.master_socket[0]), starterConfig, jsonBytes)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 		RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
-
-		syscall.Close(int(C.rpc_socket[1]))
-
-		// that's the only way to ensure to be executed in a specific thread
-		// since prepare_scontainer_stage modify capabilities and IDs and we
-		// need to execute container process with requested security settings
-		sylog.Verbosef("Execute scontainer stage 2\n")
-		mainthread.Execute(func() {
-			C.prepare_scontainer_stage(C.SCONTAINER_STAGE2)
-			SContainer(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), starterConfig, jsonBytes)
-		})
 	}
 	sylog.Fatalf("You should not be there\n")
 }

@@ -7,6 +7,7 @@ package files
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"github.com/sylabs/singularity/src/pkg/test"
@@ -16,11 +17,14 @@ func TestGroup(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	_, err := Group("/fake")
+	var gids []int
+	uid := os.Getuid()
+
+	_, err := Group("/fake", uid, gids)
 	if err == nil {
 		t.Errorf("should have failed with bad group file")
 	}
-	_, err = Group("/etc/group")
+	_, err = Group("/etc/group", uid, gids)
 	if err != nil {
 		t.Errorf("should have passed with correct group file")
 	}
@@ -30,11 +34,13 @@ func TestPasswd(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	_, err := Passwd("/fake", "")
+	uid := os.Getuid()
+
+	_, err := Passwd("/fake", "/fake", uid)
 	if err == nil {
 		t.Errorf("should have failed with bad passwd file")
 	}
-	_, err = Passwd("/etc/passwd", "")
+	_, err = Passwd("/etc/passwd", "/home", uid)
 	if err != nil {
 		t.Errorf("should have passed with correct passwd file")
 	}
