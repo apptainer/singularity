@@ -52,6 +52,7 @@ func Parser(filepath string, f interface{}) error {
 
 	val := reflect.ValueOf(f).Elem()
 
+	// Iterate over the fields of f and handle each type
 	for i := 0; i < val.NumField(); i++ {
 		valueField := val.Field(i)
 		typeField := val.Type().Field(i)
@@ -113,11 +114,18 @@ func Parser(filepath string, f interface{}) error {
 		case reflect.String:
 			found := false
 			if directives[dir] != nil {
-				for _, a := range authorized {
-					if a == directives[dir][0] {
-						valueField.SetString(a)
-						found = true
-						break
+				// To allow for string fields which are intended to be set to *any* value, we must
+				// handle the case where authorized isn't set (implies any value is acceptable)
+				if len(authorized) == 1 && authorized[0] == "" {
+					valueField.SetString(directives[dir][0])
+					found = true
+				} else {
+					for _, a := range authorized {
+						if a == directives[dir][0] {
+							valueField.SetString(a)
+							found = true
+							break
+						}
 					}
 				}
 				if found == false {
