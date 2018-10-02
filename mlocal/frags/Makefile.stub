@@ -211,7 +211,7 @@ collect:
 	done
 
 .PHONY: check
-check: $(BUILDDIR)/vendors-done
+check: $(BUILDDIR)/vendors-done $(libruntime)
 	@echo " CHECK go fmt"
 	$(V)cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
