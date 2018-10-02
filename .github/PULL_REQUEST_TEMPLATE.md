@@ -12,11 +12,11 @@ fixing or enhancing.
 
 **Checkoff for all PRs:**
 
-- [ ] I have read the [Guidelines for Contributing](https://github.com/sylabs/singularity/blob/master/CONTRIBUTING.md), and this PR conforms to the stated requirements.
-- [ ] I have added changes to the [CHANGELOG](https://github.com/sylabs/singularity/blob/development/CHANGELOG.md) and and documentation updates to the [user](https://www.github.com/sylabs/singularity-userdocs) and [administrator](https://www.github.com/sylabs/singularity-admindocs) documentation bases.
+- [ ] I have read the [Guidelines for Contributing](../CONTRIBUTING.md), and this PR conforms to the stated requirements.
+- [ ] I have added changes to the [CHANGELOG](../CHANGELOG.md) if necessary
 - [ ] I have tested this PR locally with a `make testall`
-- [ ] This PR is against the project's master branch
-- [ ] I have added myself as a contributor to the [contributors's file](https://github.com/sylabs/singularity/blob/master/CONTRIBUTORS.md)
+- [ ] This PR is against the appropriate branch according to the [Contribution Guidelines](../CONTRIBUTING.md)
+- [ ] I have added myself as a contributor to the [Contributors File](../CONTRIBUTORS.md)
 - [ ] This PR is ready for review and/or merge
 
 
