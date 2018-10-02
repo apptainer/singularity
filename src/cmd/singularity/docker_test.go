@@ -62,22 +62,22 @@ func TestDockerAUFS(t *testing.T) {
 
 	fileTests := []struct {
 		name          string
-		command       []string
+		execArgs      []string
 		expectSuccess bool
 	}{
 		{"File2", []string{"ls", "/test/whiteout-dir/file2", "/test/whiteout-file/file2", "/test/normal-dir/file2"}, true},
 		{"File1", []string{"ls", "/test/whiteout-dir/file1", "/test/whiteout-file/file1"}, false},
 		{"Glob", []string{"ls", "/test/*/.wh*"}, false},
 	}
-	for _, ft := range fileTests {
-		t.Run(ft.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imageExec(execOpts{}, imagePath, ft.command)
-			if ft.expectSuccess && (err != nil) {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
-			} else if !ft.expectSuccess && (err == nil) {
-				t.Log(string(b))
-				t.Fatalf("unexpected success")
+	for _, tt := range fileTests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			_, stderr, exitCode, err := imageExec(t, "exec", execOpts{}, imagePath, tt.execArgs)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
+				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
+				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
 			}
 		}))
 	}
@@ -99,21 +99,21 @@ func TestDockerPermissions(t *testing.T) {
 
 	fileTests := []struct {
 		name          string
-		command       []string
+		execArgs      []string
 		expectSuccess bool
 	}{
 		{"TestDir", []string{"ls", "/testdir/"}, true},
 		{"TestDirFile", []string{"ls", "/testdir/testfile"}, false},
 	}
-	for _, ft := range fileTests {
-		t.Run(ft.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imageExec(execOpts{}, imagePath, ft.command)
-			if ft.expectSuccess && (err != nil) {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
-			} else if !ft.expectSuccess && (err == nil) {
-				t.Log(string(b))
-				t.Fatalf("unexpected success")
+	for _, tt := range fileTests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			_, stderr, exitCode, err := imageExec(t, "exec", execOpts{}, imagePath, tt.execArgs)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
+				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
+				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
 			}
 		}))
 	}
