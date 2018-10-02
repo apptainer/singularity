@@ -252,12 +252,12 @@ func (c *Config) SetCapabilities(ctype string, caps []string) {
 	}
 }
 
-// SetTargetUID sets target UID to execute container process
+// SetTargetUID sets target UID to execute the container process as user ID
 func (c *Config) SetTargetUID(uid int) {
 	c.config.targetUID = C.uid_t(uid)
 }
 
-// SetTargetGID sets target GID to execute container process
+// SetTargetGID sets target GIDs to execute container process as group IDs
 func (c *Config) SetTargetGID(gids []int) {
 	c.config.numGID = C.int(len(gids))
 

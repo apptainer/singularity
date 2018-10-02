@@ -461,7 +461,7 @@ func (e *EngineConfig) GetCgroupsPath() string {
 	return e.JSON.CgroupsPath
 }
 
-// SetTargetUID sets target UID to execute container process as
+// SetTargetUID sets target UID to execute the container process as user ID
 func (e *EngineConfig) SetTargetUID(uid int) {
 	e.JSON.TargetUID = uid
 }
@@ -471,7 +471,7 @@ func (e *EngineConfig) GetTargetUID() int {
 	return e.JSON.TargetUID
 }
 
-// SetTargetGID sets target GIDs to execute container process as
+// SetTargetGID sets target GIDs to execute container process as group IDs
 func (e *EngineConfig) SetTargetGID(gid []int) {
 	e.JSON.TargetGID = gid
 }
