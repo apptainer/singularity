@@ -1067,17 +1067,24 @@ __attribute__((constructor)) static void init(void) {
              * fork is a convenient way to apply capabilities and privileges drop
              * from single thread context before entering in stage 2
              */
-            if ( fork() == 0 ) {
+            int process = fork();
+
+            if ( process == 0 ) {
                 singularity_message(VERBOSE, "Spawn RPC server\n");
                 execute = RPC_SERVER;
-            } else {
+            } else if ( process > 0 ) {
                 int status;
-                if ( wait(&status) < 0 ) {
-                    singularity_message(ERROR, "Failed to wait RPC server: %s\n", strerror(errno));
+
+                if ( wait(&status) != process ) {
+                    singularity_message(ERROR, "Error while waiting RPC server: %s\n", strerror(errno));
                     exit(1);
                 }
+
                 prepare_scontainer_stage(SCONTAINER_STAGE2);
                 execute = SCONTAINER_STAGE2;
+            } else {
+                singularity_message(ERROR, "fork failed: %s", strerror(errno));
+                exit(1);
             }
         } else {
             singularity_message(VERBOSE, "Don't execute RPC server, joining instance\n");
