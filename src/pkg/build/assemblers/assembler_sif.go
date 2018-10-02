@@ -140,37 +140,36 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 // changeOwner check the command being called with sudo with the environment
 // variable SUDO_COMMAND. Pattern match that for the singularity bin
 func changeOwner() (int, int, bool) {
-	var uid, gid int
-	var chown bool
-	var err error
-
 	r := regexp.MustCompile("(singularity)")
 	sudoCmd := os.Getenv("SUDO_COMMAND")
-	if r.MatchString(sudoCmd) {
-		if syscall.Getuid() == 0 && os.Getenv("SUDO_USER") != "root" {
-			_uid := os.Getenv("SUDO_UID")
-			_gid := os.Getenv("SUDO_GID")
-			if _uid == "" || _gid == "" {
-				sylog.Errorf("Env vars SUDO_UID or SUDO_GID are not set, won't call chown over built SIF")
-
-				return 0, 0, false
-			}
-
-			uid, err = strconv.Atoi(_uid)
-			if err != nil {
-				sylog.Errorf("Error while calling strconv: %v", err)
-
-				return 0, 0, false
-			}
-			gid, err = strconv.Atoi(_gid)
-			if err != nil {
-				sylog.Errorf("Error while calling strconv : %v", err)
-
-				return 0, 0, false
-			}
-			chown = true
-		}
+	if !r.MatchString(sudoCmd) {
+		return 0, 0, false
 	}
 
-	return uid, gid, chown
+	if syscall.Getuid() == 0 && os.Getenv("SUDO_USER") == "root" {
+		return 0, 0, false
+	}
+
+	_uid := os.Getenv("SUDO_UID")
+	_gid := os.Getenv("SUDO_GID")
+	if _uid == "" || _gid == "" {
+		sylog.Warningf("Env vars SUDO_UID or SUDO_GID are not set, won't call chown over built SIF")
+
+		return 0, 0, false
+	}
+
+	uid, err := strconv.Atoi(_uid)
+	if err != nil {
+		sylog.Warningf("Error while calling strconv: %v", err)
+
+		return 0, 0, false
+	}
+	gid, err := strconv.Atoi(_gid)
+	if err != nil {
+		sylog.Warningf("Error while calling strconv : %v", err)
+
+		return 0, 0, false
+	}
+
+	return uid, gid, true
 }
