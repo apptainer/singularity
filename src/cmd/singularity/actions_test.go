@@ -151,6 +151,10 @@ func testSTDINPipe(t *testing.T) {
 		{"sh", "permissions", []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", imagePath)}, 0},
 		// testing run command properly hands arguments
 		{"sh", "arguments", []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", imagePath)}, 0},
+		// Stdin to URI based image
+		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
+		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
+		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
 	}
 
 	for _, tt := range tests {
@@ -174,8 +178,8 @@ func testSTDINPipe(t *testing.T) {
 	}
 }
 
-// TestRunFromURI tests min fuctionality for singularity run/exec URI://
-func TestRunFromURI(t *testing.T) {
+// testRunFromURI tests min fuctionality for singularity run/exec URI://
+func testRunFromURI(t *testing.T) {
 	tests := []struct {
 		name   string
 		image  string
@@ -190,12 +194,12 @@ func TestRunFromURI(t *testing.T) {
 		{"RunFromLibrary", "library://sylabsed/examples/lolcow:latest", "run", []string{}, execOpts{}, 0, true},
 		{"RunFromShub", "shub://GodloveD/lolcow", "run", []string{}, execOpts{}, 0, true},
 		// exec from a supported URI's and check the exit code
-		{"true", "docker://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
-		{"true", "library://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
-		{"true", "shub://singularityhub/busybox", "exec", []string{"true"}, execOpts{}, 0, true},
-		{"false", "docker://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
-		{"false", "library://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
-		{"false", "shub://singularityhub/busybox", "exec", []string{"false"}, execOpts{}, 1, false},
+		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
+		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
+		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, execOpts{}, 0, true},
+		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
+		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
+		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, execOpts{}, 1, false},
 	}
 
 	for _, tt := range tests {
@@ -231,4 +235,6 @@ func TestSingularityActions(t *testing.T) {
 	t.Run("exec", testSingularityExec)
 	// stdin pipe
 	t.Run("STDIN", testSTDINPipe)
+	// action_URI
+	t.Run("action_URI", testRunFromURI)
 }
