@@ -174,6 +174,44 @@ func testSTDINPipe(t *testing.T) {
 	}
 }
 
+// TestRunFromURI tests min fuctionality for singularity run/exec URI://
+func TestRunFromURI(t *testing.T) {
+	tests := []struct {
+		name   string
+		image  string
+		action string
+		argv   []string
+		execOpts
+		exit          int
+		expectSuccess bool
+	}{
+		// Run from supported URI's and check the runscript call works
+		{"RunFromDocker", "docker://godlovedc/lolcow", "run", []string{}, execOpts{}, 0, true},
+		{"RunFromLibrary", "library://sylabsed/examples/lolcow:latest", "run", []string{}, execOpts{}, 0, true},
+		{"RunFromShub", "shub://GodloveD/lolcow", "run", []string{}, execOpts{}, 0, true},
+		// exec from a supported URI's and check the exit code
+		{"true", "docker://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
+		{"true", "library://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
+		{"true", "shub://singularityhub/busybox", "exec", []string{"true"}, execOpts{}, 0, true},
+		{"false", "docker://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
+		{"false", "library://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
+		{"false", "shub://singularityhub/busybox", "exec", []string{"false"}, execOpts{}, 1, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			_, stderr, exitCode, err := imageExec(t, tt.action, tt.execOpts, tt.image, tt.argv)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
+				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
+				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
+			}
+		}))
+	}
+}
+
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
 	opts := buildOpts{
