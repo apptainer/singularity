@@ -74,6 +74,9 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
+	// remove anything that may exist at the build destination at last moment
+	os.RemoveAll(path)
+
 	// test container creation with two partition input descriptors
 	if _, err := sif.CreateContainer(cinfo); err != nil {
 		return fmt.Errorf("while creating container: %s", err)
@@ -114,7 +117,14 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(f.Name())
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
+	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
+
+	// build squashfs with all-root flag when building as a user
+	if syscall.Getuid() != 0 {
+		args = append(args, "-all-root")
+	}
+
+	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {

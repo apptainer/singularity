@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/src/pkg/libexec"
@@ -298,8 +299,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Warningf("gid security feature requires root privileges")
 	}
 
-	// temporary check for development
-	// TODO: a real URI handler
 	if strings.HasPrefix(image, "instance://") {
 		instanceName := instance.ExtractName(image)
 		file, err := instance.Get(instanceName)
@@ -419,9 +418,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err == nil {
 			sylog.Fatalf("instance %s already exists", name)
 		}
-		if err := instance.SetLogFile(name); err != nil {
-			sylog.Fatalf("failed to create instance log files: %s", err)
-		}
 
 		if IsBoot {
 			UtsNamespace = true
@@ -530,7 +526,49 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
-	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-		sylog.Fatalf("%s", err)
+	if engineConfig.GetInstance() {
+		stdout, stderr, err := instance.SetLogFile(name)
+		if err != nil {
+			sylog.Fatalf("failed to create instance log files: %s", err)
+		}
+
+		start, err := stderr.Seek(0, os.SEEK_END)
+		if err != nil {
+			sylog.Warningf("failed to get standard error stream offset: %s", err)
+		}
+
+		cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+
+		cmdErr := cmd.Run()
+
+		if sylog.GetLevel() != 0 {
+			// starter can exit a bit before all errors has been reported
+			// by instance process, wait a bit to catch all errors
+			time.Sleep(50 * time.Millisecond)
+
+			end, err := stderr.Seek(0, os.SEEK_END)
+			if err != nil {
+				sylog.Warningf("failed to get standard error stream offset: %s", err)
+			}
+			if end-start > 0 {
+				output := make([]byte, end-start)
+				stderr.ReadAt(output, start)
+				fmt.Println(string(output))
+			}
+		}
+
+		if cmdErr != nil {
+			sylog.Fatalf("failed to start instance: %s", cmdErr)
+		} else {
+			sylog.Infof("you will find instance output here: %s", stdout.Name())
+			sylog.Infof("you will find instance error here: %s", stderr.Name())
+			sylog.Infof("instance started successfully")
+		}
+	} else {
+		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	}
 }
