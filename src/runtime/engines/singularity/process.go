@@ -148,14 +148,14 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
-	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
-		return fmt.Errorf("failed to apply security configuration: %s", err)
-	}
-
 	for _, fd := range engine.EngineConfig.GetOpenFd() {
 		if err := syscall.Close(fd); err != nil {
 			return fmt.Errorf("Aborting failed to close file descriptor: %s", err)
 		}
+	}
+
+	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {

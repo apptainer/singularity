@@ -13,6 +13,7 @@
 #define MAX_JSON_SIZE   128*1024
 #define JOKER           42
 #define MAX_ID_MAPPING  5
+#define MAX_GID         32
 
 struct fdlist {
     int *fds;
@@ -52,6 +53,9 @@ struct cConfig {
     unsigned char noNewPrivs;
     struct uidMapping uidMapping[MAX_ID_MAPPING];
     struct gidMapping gidMapping[MAX_ID_MAPPING];
+    uid_t targetUID;
+    gid_t targetGID[MAX_GID];
+    int numGID;
     unsigned int jsonConfSize;
     unsigned int nsPathSize;
 };
