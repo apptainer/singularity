@@ -19,7 +19,10 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/build/types/parser"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 // SIFAssembler doesnt store anything
@@ -84,6 +87,27 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	return nil
 }
 
+func getMksquashfsPath() (string, error) {
+	// parse singularity configuration file
+	c := &singularity.FileConfig{}
+	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
+		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+	}
+
+	// look for admin defined mksquashfs location
+	if c.MksquashfsPath != "" {
+		return c.MksquashfsPath, nil
+	}
+
+	// look for mksquashfs in standard locations
+	mksquashfs, err := exec.LookPath("mksquashfs")
+	if err != nil {
+		return "", fmt.Errorf("mksquashfs cannot be found on this system")
+	}
+
+	return mksquashfs, nil
+}
+
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
@@ -95,10 +119,8 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	parser.WriteDefinitionFile(&(b.Recipe), &buf)
 	def := buf.Bytes()
 
-	// make system partition image
-	mksquashfs, err := exec.LookPath("mksquashfs")
+	mksquashfsPath, err := getMksquashfsPath()
 	if err != nil {
-		sylog.Errorf("mksquashfs is not installed on this system")
 		return
 	}
 
@@ -115,7 +137,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		args = append(args, "-all-root")
 	}
 
-	mksquashfsCmd := exec.Command(mksquashfs, args...)
+	mksquashfsCmd := exec.Command(mksquashfsPath, args...)
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {
