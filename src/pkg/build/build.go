@@ -313,9 +313,6 @@ func (b *Build) runBuildEngine() error {
 	// surface build specific environment variables for scripts
 	generator.AddProcessEnv("SINGULARITY_ROOTFS", b.b.Rootfs())
 	generator.AddProcessEnv("SINGULARITY_ENVIRONMENT", "/.singularity.d/env/91-environment.sh")
-	// sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
-	// sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
-	// ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
 
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
