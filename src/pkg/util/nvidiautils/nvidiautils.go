@@ -141,7 +141,7 @@ func GetNvidiaPath(abspath string) (libraries []string, binaries []string, err e
 
 			lib, err := elf.Open(val)
 			if err != nil {
-				sylog.Debugf("ignore library %s: %s", err)
+				sylog.Debugf("ignore library %s: %s", key, err)
 				continue
 			}
 
