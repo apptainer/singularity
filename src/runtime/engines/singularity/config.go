@@ -92,6 +92,7 @@ type JSONConfig struct {
 	Security      []string      `json:"security,omitempty"`
 	OpenFd        []int         `json:"openFd,omitempty"`
 	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
+	LibrariesPath []string      `json:"librariesPath,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -457,4 +458,16 @@ func (e *EngineConfig) SetCgroupsPath(path string) {
 // GetCgroupsPath returns path to cgroups profile
 func (e *EngineConfig) GetCgroupsPath() string {
 	return e.JSON.CgroupsPath
+}
+
+// SetLibrariesPath sets libraries to bind in container
+// /.singularity.d/libs directory
+func (e *EngineConfig) SetLibrariesPath(libraries []string) {
+	e.JSON.LibrariesPath = libraries
+}
+
+// GetLibrariesPath returns libraries to bind in container
+// /.singularity.d/libs directory
+func (e *EngineConfig) GetLibrariesPath() []string {
+	return e.JSON.LibrariesPath
 }
