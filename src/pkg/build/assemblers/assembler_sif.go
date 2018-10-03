@@ -17,6 +17,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/build/types/parser"
@@ -96,7 +97,7 @@ func getMksquashfsPath() (string, error) {
 	}
 
 	// p is either "" or the string value in the conf file
-	p = c.MksquashfsPath
+	p := c.MksquashfsPath
 
 	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
 	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
@@ -120,7 +121,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
-		return
+		return fmt.Errorf("While searching for mksquashfs: %v", err)
 	}
 
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
