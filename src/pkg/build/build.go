@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
 	syexec "github.com/sylabs/singularity/src/pkg/util/exec"
+	"github.com/sylabs/singularity/src/pkg/util/uri"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
@@ -357,7 +358,7 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 
 // makeDef gets a definition object from a spec
 func makeDef(spec string, remote bool) (types.Definition, error) {
-	if ok, err := IsValidURI(spec); ok && err == nil {
+	if ok, err := uri.IsValidURI(spec); ok && err == nil {
 		// URI passed as spec
 		return types.NewDefinitionFromURI(spec)
 	}

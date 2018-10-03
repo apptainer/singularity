@@ -17,6 +17,33 @@ const (
 	Shub = "shub"
 )
 
+// validURIs contains a list of known uris
+var validURIs = map[string]bool{
+	"library":        true,
+	"shub":           true,
+	"docker":         true,
+	"docker-archive": true,
+	"docker-daemon":  true,
+	"oci":            true,
+	"oci-archive":    true,
+}
+
+// IsValidURI returns whether or not the given source is valid
+func IsValidURI(source string) (valid bool, err error) {
+
+	u := strings.SplitN(source, ":", 2)
+
+	if len(u) != 2 {
+		return false, fmt.Errorf("Invalid URI %s", source)
+	}
+
+	if _, ok := validURIs[u[0]]; ok {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("Invalid URI %s", source)
+}
+
 // NameFromURI turns a transport:ref URI into a name containing the top-level identifier
 // of the image. For example, docker://godlovedc/lolcow returns lolcow
 //
