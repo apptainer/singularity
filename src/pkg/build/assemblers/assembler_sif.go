@@ -12,16 +12,21 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/build/types/parser"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 // SIFAssembler doesnt store anything
@@ -93,6 +98,25 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	return nil
 }
 
+func getMksquashfsPath() (string, error) {
+	// Parse singularity configuration file
+	c := &singularity.FileConfig{}
+	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
+		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+	}
+
+	// p is either "" or the string value in the conf file
+	p := c.MksquashfsPath
+
+	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
+	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
+		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
+	}
+
+	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
+	return exec.LookPath(p)
+}
+
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	defer os.RemoveAll(b.Path)
@@ -104,11 +128,9 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	parser.WriteDefinitionFile(&(b.Recipe), &buf)
 	def := buf.Bytes()
 
-	// make system partition image
-	mksquashfs, err := exec.LookPath("mksquashfs")
+	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
-		sylog.Errorf("mksquashfs is not installed on this system")
-		return
+		return fmt.Errorf("While searching for mksquashfs: %v", err)
 	}
 
 	f, err := ioutil.TempFile(b.Path, "squashfs-")

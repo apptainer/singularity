@@ -1423,7 +1423,7 @@ func (c *container) addLibsMount(system *mount.System) error {
 }
 
 func (c *container) addIdentityMount(system *mount.System) error {
-	if os.Geteuid() == 0 {
+	if os.Geteuid() == 0 && c.engine.EngineConfig.GetTargetUID() == 0 {
 		sylog.Verbosef("Not updating passwd/group files, running as root!")
 		return nil
 	}
@@ -1431,13 +1431,18 @@ func (c *container) addIdentityMount(system *mount.System) error {
 	rootfs := c.session.RootFsPath()
 	defer c.session.Update()
 
+	uid := os.Getuid()
+	if uid == 0 && c.engine.EngineConfig.GetTargetUID() != 0 {
+		uid = c.engine.EngineConfig.GetTargetUID()
+	}
+
 	if c.engine.EngineConfig.File.ConfigPasswd {
 		passwd := filepath.Join(rootfs, "/etc/passwd")
 		_, home, err := c.getHomePaths()
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
-			content, err := files.Passwd(passwd, home)
+			content, err := files.Passwd(passwd, home, uid)
 			if err != nil {
 				sylog.Warningf("%s", err)
 			} else {
@@ -1459,7 +1464,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 
 	if c.engine.EngineConfig.File.ConfigGroup {
 		group := filepath.Join(rootfs, "/etc/group")
-		content, err := files.Group(group)
+		content, err := files.Group(group, uid, c.engine.EngineConfig.GetTargetGID())
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
@@ -1485,25 +1490,36 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 	resolvConf := "/etc/resolv.conf"
 
 	if c.engine.EngineConfig.File.ConfigResolvConf {
-		if !c.netNS {
+		var err error
+		var content []byte
+
+		dns := c.engine.EngineConfig.GetDNS()
+
+		if dns == "" {
 			r, err := os.Open(resolvConf)
 			if err != nil {
 				return err
 			}
-			content, err := ioutil.ReadAll(r)
+			content, err = ioutil.ReadAll(r)
 			if err != nil {
 				return err
 			}
-			if err := c.session.AddFile(resolvConf, content); err != nil {
-				sylog.Warningf("failed to add resolv.conf session file: %s", err)
-			}
-			sessionFile, _ := c.session.GetPath(resolvConf)
-
-			sylog.Debugf("Adding %s to mount list\n", resolvConf)
-			err = system.Points.AddBind(mount.FilesTag, sessionFile, resolvConf, syscall.MS_BIND)
+		} else {
+			dns = strings.Replace(dns, " ", "", -1)
+			content, err = files.ResolvConf(strings.Split(dns, ","))
 			if err != nil {
-				return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
+				return err
 			}
+		}
+		if err := c.session.AddFile(resolvConf, content); err != nil {
+			sylog.Warningf("failed to add resolv.conf session file: %s", err)
+		}
+		sessionFile, _ := c.session.GetPath(resolvConf)
+
+		sylog.Debugf("Adding %s to mount list\n", resolvConf)
+		err = system.Points.AddBind(mount.FilesTag, sessionFile, resolvConf, syscall.MS_BIND)
+		if err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
 		}
 	} else {
 		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)

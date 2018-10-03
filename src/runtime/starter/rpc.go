@@ -24,4 +24,6 @@ func RPCServer(socket int, runtime string) {
 	comm.Close()
 
 	engines.ServeRuntimeEngineRequests(runtime, conn)
+
+	os.Exit(0)
 }
