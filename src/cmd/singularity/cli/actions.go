@@ -10,10 +10,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -273,6 +271,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	uidParam := security.GetParam(Security, "uid")
 	gidParam := security.GetParam(Security, "gid")
 
+	// handle target UID/GID for root user
 	if os.Getuid() == 0 && uidParam != "" {
 		u, err := strconv.ParseUint(uidParam, 10, 32)
 		if err != nil {
@@ -280,6 +279,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 		targetUID = int(u)
 		uid = uint32(targetUID)
+
+		engineConfig.SetTargetUID(targetUID)
 	} else if uidParam != "" {
 		sylog.Warningf("uid security feature requires root privileges")
 	}
@@ -295,6 +296,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if len(gids) > 0 {
 			gid = uint32(targetGID[0])
 		}
+
+		engineConfig.SetTargetGID(targetGID)
 	} else if gidParam != "" {
 		sylog.Warningf("gid security feature requires root privileges")
 	}
@@ -380,6 +383,25 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
 
+	// set home directory for the targeted UID if it exists on host system
+	if !homeFlag.Changed && targetUID != 0 {
+		if targetUID > 500 {
+			if pwd, err := user.GetPwUID(uint32(targetUID)); err == nil {
+				sylog.Debugf("Target UID requested, set home directory to %s", pwd.Dir)
+				HomePath = pwd.Dir
+				engineConfig.SetCustomHome(true)
+			} else {
+				sylog.Verbosef("Home directory for UID %d not found, home won't be mounted", targetUID)
+				engineConfig.SetNoHome(true)
+				HomePath = "/"
+			}
+		} else {
+			sylog.Verbosef("System UID %d requested, home won't be mounted", targetUID)
+			engineConfig.SetNoHome(true)
+			HomePath = "/"
+		}
+	}
+
 	if Hostname != "" {
 		UtsNamespace = true
 		engineConfig.SetHostname(Hostname)
@@ -436,9 +458,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
 			generator.SetProcessArgs([]string{"/sbin/init"})
 		}
-		pwd, err := user.GetPwUID(uid)
+		pwd, err := user.GetPwUID(uint32(os.Getuid()))
 		if err != nil {
-			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
+			sylog.Fatalf("failed to retrieve user information for UID %d: %s", os.Getuid(), err)
 		}
 		procname = instance.ProcName(name, pwd.Name)
 	} else {
@@ -511,27 +533,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	configData, err := json.Marshal(cfg)
 	if err != nil {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-	}
-
-	runtime.LockOSThread()
-
-	if len(targetGID) > 0 {
-		gid := int(targetGID[0])
-		gids := targetGID[1:]
-
-		if err := syscall.Setgroups(gids); err != nil {
-			sylog.Fatalf("failed to reset groups: %s", err)
-		}
-		if err := syscall.Setresgid(gid, gid, gid); err != nil {
-			sylog.Fatalf("failed to set GID %d: %s", gid, err)
-		}
-	}
-
-	if targetUID != 0 {
-		uid := int(targetUID)
-		if err := syscall.Setresuid(uid, uid, uid); err != nil {
-			sylog.Fatalf("failed to set UID %d: %s", uid, err)
-		}
 	}
 
 	if engineConfig.GetInstance() {
