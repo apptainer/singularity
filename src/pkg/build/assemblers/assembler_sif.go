@@ -85,7 +85,9 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 
 	// chown the sif file to the calling user
 	if uid, gid, ok := changeOwner(); ok {
-		os.Chown(path, uid, gid)
+		if err := os.Chown(path, uid, gid); err != nil {
+			return fmt.Errorf("while changing image ownership: %s", err)
+		}
 	}
 
 	return nil
