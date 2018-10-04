@@ -181,7 +181,7 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	sylog.Infof("Build complete!")
+	sylog.Infof("Build complete: %s", b.dest)
 	return nil
 }
 
