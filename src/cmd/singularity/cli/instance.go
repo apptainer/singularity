@@ -85,20 +85,21 @@ func listInstance() {
 func killInstance(file *instance.File, sig syscall.Signal, fileChan chan *instance.File) {
 	syscall.Kill(file.Pid, sig)
 
-	for sig != syscall.SIGKILL {
-		if childs, err := proc.CountChilds(file.Pid); childs == 0 {
+	for {
+		if err := syscall.Kill(file.Pid, 0); err == syscall.ESRCH {
+			fileChan <- file
+			break
+		} else if childs, err := proc.CountChilds(file.Pid); childs == 0 {
 			if err == nil {
 				syscall.Kill(file.Pid, syscall.SIGKILL)
 			}
-			fileChan <- file
-			break
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
 func stopInstance(name string) {
-	sig := syscall.SIGTERM
+	sig := syscall.SIGINT
 	uid := os.Getuid()
 	fileChan := make(chan *instance.File, 1)
 	stopped := make([]int, 0)

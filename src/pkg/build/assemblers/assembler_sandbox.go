@@ -6,9 +6,10 @@
 package assemblers
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 
-	"github.com/otiai10/copy"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
@@ -28,16 +29,9 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	if _, err := os.Stat(path); err == nil {
 		os.RemoveAll(path)
 	}
-	if err := os.Rename(b.Rootfs(), path); err != nil {
-		if err := copy.Copy(b.Rootfs(), path); err != nil {
-			sylog.Errorf("Sandbox Assemble Failed: %s", err)
-			return err
-		}
-
-		if err := os.RemoveAll(b.Rootfs()); err != nil {
-			sylog.Errorf("Unable to remove Bundle directory: %s", err)
-			return err
-		}
+	cmd := exec.Command("mv", b.Rootfs(), path)
+	if err = cmd.Run(); err != nil {
+		return fmt.Errorf("Sandbox Assemble Failed: %s", err)
 	}
 
 	return nil
