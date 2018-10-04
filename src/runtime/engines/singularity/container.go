@@ -387,6 +387,10 @@ func (c *container) mount(point *mount.Point) error {
 			if flags&syscall.MS_REMOUNT != 0 {
 				return fmt.Errorf("can't remount %s: %s", point.Destination, err)
 			}
+			// mount error for filesystems is considered fatal
+			if point.Type != "" {
+				return fmt.Errorf("can't mount %s filesystem to %s: %s", point.Type, point.Destination, err)
+			}
 			sylog.Verbosef("can't mount %s: %s", point.Source, err)
 			return nil
 		}
