@@ -17,7 +17,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opencontainers/runtime-tools/generate"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/src/pkg/build/assemblers"
 	"github.com/sylabs/singularity/src/pkg/build/sources"
 	"github.com/sylabs/singularity/src/pkg/build/types"
@@ -25,7 +25,6 @@ import (
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
-	"github.com/sylabs/singularity/src/pkg/util/env"
 	syexec "github.com/sylabs/singularity/src/pkg/util/exec"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
@@ -291,19 +290,10 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	sylog.Debugf("Starting build engine")
-
-	ociConfig := &oci.Config{}
-	generator := generate.Generator{Config: &ociConfig.Spec}
-
-	// Copy and cache environment
-	environment := os.Environ()
-
-	// Clean environment
-	env.SetContainerEnv(&generator, environment, true, "")
-
 	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
 	starter := filepath.Join(buildcfg.SBINDIR, "/starter")
 	progname := []string{"singularity image-build"}
+	ociConfig := &oci.Config{}
 
 	engineConfig := &imgbuild.EngineConfig{
 		Bundle:    *b.b,
@@ -311,8 +301,11 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	// surface build specific environment variables for scripts
-	generator.AddProcessEnv("SINGULARITY_ROOTFS", b.b.Rootfs())
-	generator.AddProcessEnv("SINGULARITY_ENVIRONMENT", "/.singularity.d/env/91-environment.sh")
+	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
+	sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
+
+	ociConfig.Process = &specs.Process{}
+	ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
 
 	config := &config.Common{
 		EngineName:   imgbuild.Name,
