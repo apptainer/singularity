@@ -13,15 +13,15 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// main singularity command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SingularityUse   string = `singularity [global options...]`
+	SingularityUse   string = `singularity [global options...] [command]`
 	SingularityShort string = `
 Linux container platform optimized for High Performance Computing (HPC) and
 Enterprise Performance Computing (EPC)`
 	SingularityLong string = `
   Singularity containers provide an application virtualization layer enabling
   mobility of compute via both application and environment portability. With
-  Singularity one is capable of building a root file system and running that
-  root file system on any other Linux system where Singularity is installed.`
+  Singularity one is capable of building a root file system that runs on any 
+  other Linux system where Singularity is installed.`
 	SingularityExample string = `
   $ singularity help <command>
       Additional help for any Singularity subcommand can be seen by appending
