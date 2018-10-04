@@ -18,6 +18,7 @@ func init() {
 		"boot",
 		"contain",
 		"containall",
+		"containlibs",
 		"cleanenv",
 		"dns",
 		"drop-caps",
