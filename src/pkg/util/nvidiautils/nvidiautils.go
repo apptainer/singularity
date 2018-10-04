@@ -85,6 +85,8 @@ func nvidiaLiblist(abspath string) ([]string, error) {
 func GetNvidiaPath(abspath string, envPath string) (libraries []string, binaries []string, err error) {
 	var strArray []string
 
+	// replace PATH with custom environment variable
+	// and restore it when returning
 	if envPath != "" {
 		oldPath := os.Getenv("PATH")
 		os.Setenv("PATH", envPath)
@@ -141,17 +143,17 @@ func GetNvidiaPath(abspath string, envPath string) (libraries []string, binaries
 
 	for _, match := range r.FindAllSubmatch(out, -1) {
 		if match != nil {
-			// key is the "libnvidia-ml.so.1" (from the above example)
-			// val is the "/usr/lib64/nvidia/libnvidia-ml.so.1" (from the above example)
-			key := strings.TrimSpace(string(match[1]))
-			val := strings.TrimSpace(string(match[2]))
+			// libName is the "libnvidia-ml.so.1" (from the above example)
+			// libPath is the "/usr/lib64/nvidia/libnvidia-ml.so.1" (from the above example)
+			libName := strings.TrimSpace(string(match[1]))
+			libPath := strings.TrimSpace(string(match[2]))
 
-			ldCache[val] = key
+			ldCache[libPath] = libName
 		}
 	}
 
 	for _, nvidiaFileName := range strArray {
-		// if the file contins a ".so", treat it as a library
+		// if the file contains a ".so", treat it as a library
 		if strings.Contains(nvidiaFileName, ".so") {
 			for libPath, lib := range ldCache {
 				if strings.HasPrefix(lib, nvidiaFileName) {
