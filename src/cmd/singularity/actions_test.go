@@ -57,7 +57,6 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 		t.Fatalf("cmd.Start: %v", err)
 	}
 
-	err = cmd.Run()
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
