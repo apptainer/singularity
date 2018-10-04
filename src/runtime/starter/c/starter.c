@@ -1074,7 +1074,7 @@ __attribute__((constructor)) static void init(void) {
              * fork is a convenient way to apply capabilities and privileges drop
              * from single thread context before entering in stage 2
              */
-            int process = fork();
+            int process = fork_ns(CLONE_FS);
 
             if ( process == 0 ) {
                 singularity_message(VERBOSE, "Spawn RPC server\n");
