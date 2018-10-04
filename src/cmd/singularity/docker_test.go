@@ -71,7 +71,7 @@ func TestDockerAUFS(t *testing.T) {
 	}
 	for _, tt := range fileTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := imageExec(t, "exec", execOpts{}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
@@ -107,7 +107,7 @@ func TestDockerPermissions(t *testing.T) {
 	}
 	for _, tt := range fileTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := imageExec(t, "exec", execOpts{}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
