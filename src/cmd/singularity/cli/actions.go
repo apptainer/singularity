@@ -528,7 +528,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if engineConfig.GetInstance() {
-		stdout, stderr, err := instance.SetLogFile(name)
+		stdout, stderr, err := instance.SetLogFile(name, int(uid))
 		if err != nil {
 			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
@@ -547,7 +547,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if sylog.GetLevel() != 0 {
 			// starter can exit a bit before all errors has been reported
 			// by instance process, wait a bit to catch all errors
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 
 			end, err := stderr.Seek(0, os.SEEK_END)
 			if err != nil {
@@ -563,8 +563,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if cmdErr != nil {
 			sylog.Fatalf("failed to start instance: %s", cmdErr)
 		} else {
-			sylog.Infof("you will find instance output here: %s", stdout.Name())
-			sylog.Infof("you will find instance error here: %s", stderr.Name())
+			sylog.Verbosef("you will find instance output here: %s", stdout.Name())
+			sylog.Verbosef("you will find instance error here: %s", stderr.Name())
 			sylog.Infof("instance started successfully")
 		}
 	} else {

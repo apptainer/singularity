@@ -211,7 +211,7 @@ func (i *File) Update() error {
 
 // SetLogFile replaces stdout/stderr streams and redirect content
 // to log file
-func SetLogFile(name string) (*os.File, *os.File, error) {
+func SetLogFile(name string, uid int) (*os.File, *os.File, error) {
 	path, err := getPath(false, "")
 	if err != nil {
 		return nil, nil, err
@@ -237,6 +237,15 @@ func SetLogFile(name string) (*os.File, *os.File, error) {
 	stdout, err := os.OpenFile(stdoutPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if uid != os.Getuid() {
+		if err := os.Chown(stderrPath, uid, os.Getgid()); err != nil {
+			return nil, nil, err
+		}
+		if err := os.Chown(stdoutPath, uid, os.Getgid()); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return stdout, stderr, nil
