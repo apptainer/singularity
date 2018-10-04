@@ -509,14 +509,6 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
-  branch = "master"
-  digest = "1:6d4d9067e639d96a804ee9a30fa89c7233c5c5edbfe736072ff00d48c97bccc4"
-  name = "github.com/otiai10/copy"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "7e9a647135a142c2669943d4a4d29be015ce9392"
-
-[[projects]]
   digest = "1:95741de3af260a92cc5c7f3f3061e85273f5a81b5db20d4bd68da74bd521675e"
   name = "github.com/pelletier/go-toml"
   packages = ["."]
@@ -810,7 +802,6 @@
     "github.com/opencontainers/runtime-spec/specs-go",
     "github.com/opencontainers/runtime-tools/generate",
     "github.com/opencontainers/selinux/go-selinux",
-    "github.com/otiai10/copy",
     "github.com/pelletier/go-toml",
     "github.com/pkg/errors",
     "github.com/satori/go.uuid",
