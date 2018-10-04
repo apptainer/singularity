@@ -20,7 +20,7 @@ import (
 //build base image for tests
 const imagePath = "./container.img"
 
-type execOpts struct {
+type opts struct {
 	binds   []string
 	contain bool
 	home    string
@@ -30,7 +30,7 @@ type execOpts struct {
 
 // imageExec can be used to run/exec/shell a Singularity image
 // it return the exitCode and err of the execution
-func imageExec(t *testing.T, action string, opts execOpts, imagePath string, command []string) (stdout string, stderr string, exitCode int, err error) {
+func imageExec(t *testing.T, action string, opts opts, imagePath string, command []string) (stdout string, stderr string, exitCode int, err error) {
 	// action can be run/exec/shell
 	argv := []string{action}
 	for _, bind := range opts.binds {
@@ -82,18 +82,18 @@ func testSingularityRun(t *testing.T) {
 		image  string
 		action string
 		argv   []string
-		execOpts
+		opts
 		exit          int
 		expectSuccess bool
 	}{
-		{"NoCommand", imagePath, "run", []string{}, execOpts{}, 0, true},
-		{"true", imagePath, "run", []string{"true"}, execOpts{}, 0, true},
-		{"false", imagePath, "run", []string{"false"}, execOpts{}, 1, false},
+		{"NoCommand", imagePath, "run", []string{}, opts{}, 0, true},
+		{"true", imagePath, "run", []string{"true"}, opts{}, 0, true},
+		{"false", imagePath, "run", []string{"false"}, opts{}, 1, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := imageExec(t, tt.action, tt.execOpts, tt.image, tt.argv)
+			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
@@ -112,20 +112,20 @@ func testSingularityExec(t *testing.T) {
 		image  string
 		action string
 		argv   []string
-		execOpts
+		opts
 		exit          int
 		expectSuccess bool
 	}{
-		{"NoCommand", imagePath, "exec", []string{}, execOpts{}, 1, false},
-		{"true", imagePath, "exec", []string{"true"}, execOpts{}, 0, true},
-		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, execOpts{}, 0, true},
-		{"false", imagePath, "exec", []string{"false"}, execOpts{}, 1, false},
-		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, execOpts{}, 1, false},
+		{"NoCommand", imagePath, "exec", []string{}, opts{}, 1, false},
+		{"true", imagePath, "exec", []string{"true"}, opts{}, 0, true},
+		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, opts{}, 0, true},
+		{"false", imagePath, "exec", []string{"false"}, opts{}, 1, false},
+		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, opts{}, 1, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := imageExec(t, tt.action, tt.execOpts, tt.image, tt.argv)
+			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
@@ -185,26 +185,26 @@ func testRunFromURI(t *testing.T) {
 		image  string
 		action string
 		argv   []string
-		execOpts
+		opts
 		exit          int
 		expectSuccess bool
 	}{
 		// Run from supported URI's and check the runscript call works
-		{"RunFromDocker", "docker://godlovedc/lolcow", "run", []string{}, execOpts{}, 0, true},
-		{"RunFromLibrary", "library://sylabsed/examples/lolcow:latest", "run", []string{}, execOpts{}, 0, true},
-		{"RunFromShub", "shub://GodloveD/lolcow", "run", []string{}, execOpts{}, 0, true},
+		{"RunFromDocker", "docker://godlovedc/lolcow", "run", []string{}, opts{}, 0, true},
+		{"RunFromLibrary", "library://sylabsed/examples/lolcow:latest", "run", []string{}, opts{}, 0, true},
+		{"RunFromShub", "shub://GodloveD/lolcow", "run", []string{}, opts{}, 0, true},
 		// exec from a supported URI's and check the exit code
-		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
-		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, execOpts{}, 0, true},
-		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, execOpts{}, 0, true},
-		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
-		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, execOpts{}, 1, false},
-		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, execOpts{}, 1, false},
+		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, opts{}, 0, true},
+		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, opts{}, 0, true},
+		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{}, 0, true},
+		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, opts{}, 1, false},
+		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, opts{}, 1, false},
+		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{}, 1, false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := imageExec(t, tt.action, tt.execOpts, tt.image, tt.argv)
+			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
