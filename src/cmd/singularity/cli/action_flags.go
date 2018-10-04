@@ -41,6 +41,7 @@ var (
 	Nvidia          bool
 	NoHome          bool
 	NoInit          bool
+	NoNvidia        bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -78,6 +79,7 @@ func init() {
 func initPathVars() {
 	// --app
 	actionFlags.StringVar(&AppName, "app", "", "Set container app to run")
+	actionFlags.SetAnnotation("app", "envkey", []string{"APP"})
 
 	// -B|--bind
 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
@@ -136,10 +138,12 @@ func initPathVars() {
 	// --security
 	actionFlags.StringSliceVar(&Security, "security", []string{}, "Enable security features (SELinux, Apparmor, Seccomp)")
 	actionFlags.SetAnnotation("security", "argtag", []string{""})
+	actionFlags.SetAnnotation("security", "envkey", []string{"SECURITY"})
 
 	// --apply-cgroups
 	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "Apply cgroups from file for container processes (requires root privileges)")
-	actionFlags.SetAnnotation("cgroups-profile", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("apply-cgroups", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
 
 	// hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
 	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
@@ -179,6 +183,7 @@ func initBoolVars() {
 
 	// --writable-tmpfs
 	actionFlags.BoolVar(&IsWritableTmpfs, "writable-tmpfs", false, "Makes the file system accessible as read-write with non persistent data (with overlay support only).")
+	actionFlags.SetAnnotation("writable-tmpfs", "envkey", []string{"WRITABLE_TMPFS"})
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")
@@ -187,6 +192,11 @@ func initBoolVars() {
 	// --no-init
 	actionFlags.BoolVar(&NoInit, "no-init", false, "Do NOT start shim process with --pid.")
 	actionFlags.SetAnnotation("no-init", "envkey", []string{"NO_INIT", "NOSHIMINIT"})
+
+	// hidden flag to disable nvidia bindings when 'always use nv = yes'
+	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
+	actionFlags.Lookup("no-nv").Hidden = true
+	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
