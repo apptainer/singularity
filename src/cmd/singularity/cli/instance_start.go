@@ -14,6 +14,7 @@ func init() {
 	options := []string{
 		"add-caps",
 		"allow-setuid",
+		"apply-cgroups",
 		"bind",
 		"boot",
 		"contain",
