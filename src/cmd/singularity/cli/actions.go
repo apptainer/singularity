@@ -327,7 +327,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if Nvidia || engineConfig.File.AlwaysUseNv {
-		libs, bins, err := nvidiautils.GetNvidiaPath(buildcfg.SINGULARITY_CONFDIR)
+		userPath := os.Getenv("USER_PATH")
+
+		libs, bins, err := nvidiautils.GetNvidiaPath(buildcfg.SINGULARITY_CONFDIR, userPath)
 		if err != nil {
 			sylog.Infof("Unable to capture nvidia bind points: %v", err)
 		} else {

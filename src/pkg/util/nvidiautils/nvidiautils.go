@@ -82,8 +82,15 @@ func nvidiaLiblist(abspath string) ([]string, error) {
 
 // GetNvidiaPath returns a string array consisting of filepaths of nvidia
 // related files to be added to the BindPaths
-func GetNvidiaPath(abspath string) (libraries []string, binaries []string, err error) {
+func GetNvidiaPath(abspath string, envPath string) (libraries []string, binaries []string, err error) {
 	var strArray []string
+
+	if envPath != "" {
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", envPath)
+
+		defer os.Setenv("PATH", oldPath)
+	}
 
 	// use nvidia-container-cli if present
 	strArray, err = nvidiaContainerCli()
@@ -139,40 +146,41 @@ func GetNvidiaPath(abspath string) (libraries []string, binaries []string, err e
 			key := strings.TrimSpace(string(match[1]))
 			val := strings.TrimSpace(string(match[2]))
 
-			lib, err := elf.Open(val)
-			if err != nil {
-				sylog.Debugf("ignore library %s: %s", key, err)
-				continue
-			}
-
-			if lib.Machine == machine {
-				ldCache[key] = val
-			}
-
-			lib.Close()
+			ldCache[val] = key
 		}
 	}
 
 	for _, nvidiaFileName := range strArray {
 		// if the file contins a ".so", treat it as a library
 		if strings.Contains(nvidiaFileName, ".so") {
-			for lib, libPath := range ldCache {
+			for libPath, lib := range ldCache {
 				if strings.HasPrefix(lib, nvidiaFileName) {
 					if _, ok := libs[lib]; !ok {
-						libs[lib] = libPath
-						libraries = append(libraries, libPath)
+						elib, err := elf.Open(libPath)
+						if err != nil {
+							sylog.Debugf("ignore library %s: %s", lib, err)
+							continue
+						}
+
+						if elib.Machine == machine {
+							libs[lib] = libPath
+							libraries = append(libraries, libPath)
+						}
+
+						elib.Close()
 					}
 				}
 			}
 		} else {
 			// treat the file as a binary file - add it to the bind list
 			// no need to check the ldconfig output
-			if _, ok := bins[nvidiaFileName]; !ok {
-				if _, err := os.Stat(nvidiaFileName); os.IsNotExist(err) {
-					continue
-				}
-				bins[nvidiaFileName] = nvidiaFileName
-				binaries = append(binaries, nvidiaFileName)
+			binary, err := exec.LookPath(nvidiaFileName)
+			if err != nil {
+				continue
+			}
+			if _, ok := bins[binary]; !ok {
+				bins[binary] = binary
+				binaries = append(binaries, binary)
 			}
 		}
 	}
