@@ -459,7 +459,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	}
 
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
-		dest = c.session.FinalPath() + mnt.Destination
+		dest = filepath.Join(c.session.FinalPath(), mnt.Destination)
 		if _, err := os.Stat(dest); os.IsNotExist(err) {
 			c.skippedMount = append(c.skippedMount, mnt.Destination)
 			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
@@ -476,9 +476,11 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 		if resolved != dest {
 			if !strings.HasPrefix(resolved, sessionPath) {
-				dest = c.session.FinalPath() + resolved
-			} else {
+				dest = filepath.Join(c.session.FinalPath(), resolved)
+			} else if filepath.IsAbs(resolved) {
 				dest = resolved
+			} else {
+				sylog.Debugf("Ignoring path '%s' resolved to '%s'", dest, resolved)
 			}
 		}
 	} else {
