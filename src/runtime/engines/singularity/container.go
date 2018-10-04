@@ -1422,6 +1422,7 @@ func (c *container) addLibsMount(system *mount.System) error {
 	sylog.Debugf("Checking for 'user bind control' in configuration file")
 	if !c.engine.EngineConfig.File.UserBindControl {
 		sylog.Warningf("Ignoring libraries bind request: user bind control disabled by system administrator")
+		return nil
 	}
 
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY | syscall.MS_REC)

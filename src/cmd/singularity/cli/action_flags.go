@@ -15,20 +15,21 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	AppName     string
-	BindPaths   []string
-	HomePath    string
-	OverlayPath []string
-	ScratchPath []string
-	WorkdirPath string
-	PwdPath     string
-	ShellPath   string
-	Hostname    string
-	Network     string
-	NetworkArgs []string
-	DNS         string
-	Security    []string
-	CgroupsPath string
+	AppName         string
+	BindPaths       []string
+	HomePath        string
+	OverlayPath     []string
+	ScratchPath     []string
+	WorkdirPath     string
+	PwdPath         string
+	ShellPath       string
+	Hostname        string
+	Network         string
+	NetworkArgs     []string
+	DNS             string
+	Security        []string
+	CgroupsPath     string
+	ContainLibsPath []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -139,6 +140,11 @@ func initPathVars() {
 	// --apply-cgroups
 	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "Apply cgroups from file for container processes (requires root privileges)")
 	actionFlags.SetAnnotation("cgroups-profile", "argtag", []string{"<path>"})
+
+	// hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
+	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
+	actionFlags.Lookup("containlibs").Hidden = true
+	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
 }
 
 // initBoolVars initializes flags that take a boolean argument

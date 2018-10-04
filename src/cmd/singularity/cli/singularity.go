@@ -223,6 +223,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"network":      envStringNSlice,
 	"network-args": envStringNSlice,
 	"dns":          envStringNSlice,
+	"containlibs":  envStringNSlice,
 
 	"boot":       envBool,
 	"fakeroot":   envBool,

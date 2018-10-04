@@ -80,6 +80,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
@@ -342,7 +343,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
-				engineConfig.SetLibrariesPath(libs)
+				ContainLibsPath = append(ContainLibsPath, libs...)
 			}
 		}
 	}
@@ -362,6 +363,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
+	engineConfig.SetLibrariesPath(ContainLibsPath)
 
 	if ShellPath != "" {
 		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
