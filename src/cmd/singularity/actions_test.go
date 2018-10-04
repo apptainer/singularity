@@ -53,12 +53,13 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 
 	var outbuf, errbuf bytes.Buffer
 	cmd := exec.Command(cmdPath, argv...)
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("cmd.Start: %v", err)
-	}
 
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
+
+	if err := cmd.Start(); err != nil {
+		t.Fatalf("cmd.Start: %v", err)
+	}
 
 	// retrieve exit code
 	if err := cmd.Wait(); err != nil {
