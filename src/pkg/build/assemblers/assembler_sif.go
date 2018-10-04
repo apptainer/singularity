@@ -12,13 +12,19 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strings"
+	"syscall"
 
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/build/types/parser"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 // SIFAssembler doesnt store anything
@@ -72,12 +78,34 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
+	// remove anything that may exist at the build destination at last moment
+	os.RemoveAll(path)
+
 	// test container creation with two partition input descriptors
 	if _, err := sif.CreateContainer(cinfo); err != nil {
 		return fmt.Errorf("while creating container: %s", err)
 	}
 
 	return nil
+}
+
+func getMksquashfsPath() (string, error) {
+	// Parse singularity configuration file
+	c := &singularity.FileConfig{}
+	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
+		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+	}
+
+	// p is either "" or the string value in the conf file
+	p := c.MksquashfsPath
+
+	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
+	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
+		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
+	}
+
+	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
+	return exec.LookPath(p)
 }
 
 // Assemble creates a SIF image from a Bundle
@@ -91,11 +119,9 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	parser.WriteDefinitionFile(&(b.Recipe), &buf)
 	def := buf.Bytes()
 
-	// make system partition image
-	mksquashfs, err := exec.LookPath("mksquashfs")
+	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
-		sylog.Errorf("mksquashfs is not installed on this system")
-		return
+		return fmt.Errorf("While searching for mksquashfs: %v", err)
 	}
 
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
@@ -104,7 +130,14 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(f.Name())
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
+	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
+
+	// build squashfs with all-root flag when building as a user
+	if syscall.Getuid() != 0 {
+		args = append(args, "-all-root")
+	}
+
+	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {

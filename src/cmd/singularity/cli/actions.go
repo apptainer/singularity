@@ -10,10 +10,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
+	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/src/pkg/libexec"
@@ -272,6 +271,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	uidParam := security.GetParam(Security, "uid")
 	gidParam := security.GetParam(Security, "gid")
 
+	// handle target UID/GID for root user
 	if os.Getuid() == 0 && uidParam != "" {
 		u, err := strconv.ParseUint(uidParam, 10, 32)
 		if err != nil {
@@ -279,6 +279,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 		targetUID = int(u)
 		uid = uint32(targetUID)
+
+		engineConfig.SetTargetUID(targetUID)
 	} else if uidParam != "" {
 		sylog.Warningf("uid security feature requires root privileges")
 	}
@@ -294,12 +296,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if len(gids) > 0 {
 			gid = uint32(targetGID[0])
 		}
+
+		engineConfig.SetTargetGID(targetGID)
 	} else if gidParam != "" {
 		sylog.Warningf("gid security feature requires root privileges")
 	}
 
-	// temporary check for development
-	// TODO: a real URI handler
 	if strings.HasPrefix(image, "instance://") {
 		instanceName := instance.ExtractName(image)
 		file, err := instance.Get(instanceName)
@@ -373,6 +375,25 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
 
+	// set home directory for the targeted UID if it exists on host system
+	if !homeFlag.Changed && targetUID != 0 {
+		if targetUID > 500 {
+			if pwd, err := user.GetPwUID(uint32(targetUID)); err == nil {
+				sylog.Debugf("Target UID requested, set home directory to %s", pwd.Dir)
+				HomePath = pwd.Dir
+				engineConfig.SetCustomHome(true)
+			} else {
+				sylog.Verbosef("Home directory for UID %d not found, home won't be mounted", targetUID)
+				engineConfig.SetNoHome(true)
+				HomePath = "/"
+			}
+		} else {
+			sylog.Verbosef("System UID %d requested, home won't be mounted", targetUID)
+			engineConfig.SetNoHome(true)
+			HomePath = "/"
+		}
+	}
+
 	if Hostname != "" {
 		UtsNamespace = true
 		engineConfig.SetHostname(Hostname)
@@ -419,9 +440,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err == nil {
 			sylog.Fatalf("instance %s already exists", name)
 		}
-		if err := instance.SetLogFile(name); err != nil {
-			sylog.Fatalf("failed to create instance log files: %s", err)
-		}
 
 		if IsBoot {
 			UtsNamespace = true
@@ -432,9 +450,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
 			generator.SetProcessArgs([]string{"/sbin/init"})
 		}
-		pwd, err := user.GetPwUID(uid)
+		pwd, err := user.GetPwUID(uint32(os.Getuid()))
 		if err != nil {
-			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
+			sylog.Fatalf("failed to retrieve user information for UID %d: %s", os.Getuid(), err)
 		}
 		procname = instance.ProcName(name, pwd.Name)
 	} else {
@@ -509,28 +527,49 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	runtime.LockOSThread()
-
-	if len(targetGID) > 0 {
-		gid := int(targetGID[0])
-		gids := targetGID[1:]
-
-		if err := syscall.Setgroups(gids); err != nil {
-			sylog.Fatalf("failed to reset groups: %s", err)
+	if engineConfig.GetInstance() {
+		stdout, stderr, err := instance.SetLogFile(name)
+		if err != nil {
+			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
-		if err := syscall.Setresgid(gid, gid, gid); err != nil {
-			sylog.Fatalf("failed to set GID %d: %s", gid, err)
-		}
-	}
 
-	if targetUID != 0 {
-		uid := int(targetUID)
-		if err := syscall.Setresuid(uid, uid, uid); err != nil {
-			sylog.Fatalf("failed to set UID %d: %s", uid, err)
+		start, err := stderr.Seek(0, os.SEEK_END)
+		if err != nil {
+			sylog.Warningf("failed to get standard error stream offset: %s", err)
 		}
-	}
 
-	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-		sylog.Fatalf("%s", err)
+		cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+
+		cmdErr := cmd.Run()
+
+		if sylog.GetLevel() != 0 {
+			// starter can exit a bit before all errors has been reported
+			// by instance process, wait a bit to catch all errors
+			time.Sleep(50 * time.Millisecond)
+
+			end, err := stderr.Seek(0, os.SEEK_END)
+			if err != nil {
+				sylog.Warningf("failed to get standard error stream offset: %s", err)
+			}
+			if end-start > 0 {
+				output := make([]byte, end-start)
+				stderr.ReadAt(output, start)
+				fmt.Println(string(output))
+			}
+		}
+
+		if cmdErr != nil {
+			sylog.Fatalf("failed to start instance: %s", cmdErr)
+		} else {
+			sylog.Infof("you will find instance output here: %s", stdout.Name())
+			sylog.Infof("you will find instance error here: %s", stderr.Name())
+			sylog.Infof("instance started successfully")
+		}
+	} else {
+		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	}
 }

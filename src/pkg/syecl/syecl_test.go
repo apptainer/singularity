@@ -96,7 +96,7 @@ func TestValidateConfig(t *testing.T) {
 		t.Error(`LoadConfig(testEclFileName2):`, err)
 	}
 	if err = ecl.ValidateConfig(); err == nil {
-		t.Error(`ecl.ValidateConfig(): Sould have detected duplicated dirpaths`, err)
+		t.Error(`ecl.ValidateConfig(): Should have detected duplicated dirpaths`, err)
 	}
 }
 

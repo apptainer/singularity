@@ -13,12 +13,16 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/src/pkg/util/mainthread"
-
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/loop"
+	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
+
+var singularityConf *singularity.FileConfig
 
 // Methods is a receiver type
 type Methods int
@@ -43,7 +47,7 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 
 // Chroot performs a chroot with the specified arguments
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
-	// idea taken from libcontainer (and also LXC developpers) to avoid
+	// idea taken from libcontainer (and also LXC developers) to avoid
 	// creation of temporary directory or use of existing directory
 	// for pivot_root
 
@@ -90,6 +94,7 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	var image *os.File
 	loopdev := new(loop.Device)
+	loopdev.MaxLoopDevices = int(singularityConf.MaxLoopDevices)
 
 	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
 		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
@@ -165,4 +170,11 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 		syscall.Setfsgid(arguments.GID)
 	})
 	return nil
+}
+
+func init() {
+	singularityConf = &singularity.FileConfig{}
+	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", singularityConf); err != nil {
+		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+	}
 }

@@ -17,7 +17,6 @@ import (
 	"github.com/sylabs/singularity/src/docs"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/sylabs/singularity/src/pkg/syplugin"
 	"github.com/sylabs/singularity/src/pkg/util/auth"
 )
 
@@ -154,7 +153,6 @@ func handleEnv(flag *pflag.Flag) {
 func persistentPreRun(cmd *cobra.Command, args []string) {
 	setSylogMessageLevel(cmd, args)
 	updateFlagsFromEnv(cmd)
-	syplugin.Init()
 }
 
 // sylabsToken process the authentication Token

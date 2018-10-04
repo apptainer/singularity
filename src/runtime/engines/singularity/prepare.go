@@ -63,7 +63,8 @@ func (e *EngineOperations) prepareUserCaps() error {
 	for _, g := range groups {
 		gr, err := user.GetGrGID(uint32(g))
 		if err != nil {
-			return err
+			sylog.Debugf("Ignoring group %d: %s", g, err)
+			continue
 		}
 		authorizedCaps, _ := file.CheckGroupCaps(gr.Name, caps)
 		if len(authorizedCaps) > 0 {
@@ -100,6 +101,13 @@ func (e *EngineOperations) prepareRootCaps() error {
 	commonCaps := make([]string, 0)
 	defaultCapabilities := e.EngineConfig.File.RootDefaultCapabilities
 
+	uid := e.EngineConfig.GetTargetUID()
+	gids := e.EngineConfig.GetTargetGID()
+
+	if uid != 0 || len(gids) > 0 {
+		defaultCapabilities = "no"
+	}
+
 	// is no-privs/keep-privs set on command line
 	if e.EngineConfig.GetNoPrivs() {
 		sylog.Debugf("--no-privs requested")
@@ -128,7 +136,8 @@ func (e *EngineOperations) prepareRootCaps() error {
 		for _, g := range groups {
 			gr, err := user.GetGrGID(uint32(g))
 			if err != nil {
-				return err
+				sylog.Debugf("Ignoring group %d: %s", g, err)
+				continue
 			}
 			caps := file.ListGroupCaps(gr.Name)
 			commonCaps = append(commonCaps, caps...)
@@ -418,6 +427,15 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	}
 	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
 		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
+	}
+
+	uid := e.EngineConfig.GetTargetUID()
+	gids := e.EngineConfig.GetTargetGID()
+
+	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
+		starterConfig.SetTargetUID(uid)
+		starterConfig.SetTargetGID(gids)
+		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	}
 
 	if e.EngineConfig.GetInstanceJoin() {

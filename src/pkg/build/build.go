@@ -56,7 +56,7 @@ type Build struct {
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
 	a Assembler
-	// b is an intermediate stucture that encapsulates all information for the container, e.g., metadata, filesystems
+	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems
 	b *types.Bundle
 	// d describes how a container is to be built, including actions to be run in the container to reach its final state
 	d types.Definition
@@ -134,14 +134,8 @@ func newBuild(d types.Definition, dest, format string, force, update bool, secti
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
 
-	if hasScripts(b.d) {
-		if syscall.Getuid() == 0 {
-			if err := b.runPreScript(); err != nil {
-				return err
-			}
-		} else {
-			sylog.Errorf("Attempted to build with scripts as non-root user")
-		}
+	if err := b.runPreScript(); err != nil {
+		return err
 	}
 
 	if b.update && !b.force {
@@ -168,24 +162,12 @@ func (b *Build) Full() error {
 		}
 	}
 
-	if b.b.RunSection("files") {
-		sylog.Debugf("Copying files from host")
-		if err := b.copyFiles(); err != nil {
-			return fmt.Errorf("unable to copy files to container fs: %v", err)
-		}
-	}
-
 	syplugin.BuildHandleBundles(b.b)
 	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
 
-	if hasScripts(b.d) {
-		if syscall.Getuid() == 0 {
-			sylog.Debugf("Starting build engine")
-			if err := b.runBuildEngine(); err != nil {
-				return fmt.Errorf("unable to run scripts: %v", err)
-			}
-		} else {
-			sylog.Errorf("Attempted to build with scripts as non-root user")
+	if engineRequired(b.d) {
+		if err := b.runBuildEngine(); err != nil {
+			return fmt.Errorf("while running engine: %v", err)
 		}
 	}
 
@@ -199,13 +181,13 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	sylog.Infof("Build complete!")
+	sylog.Infof("Build complete: %s", b.dest)
 	return nil
 }
 
-// hasScripts returns true if build definition is requesting to run scripts in image
-func hasScripts(def types.Definition) bool {
-	return def.BuildData.Post != "" || def.BuildData.Pre != "" || def.BuildData.Setup != "" || def.BuildData.Test != ""
+// engineRequired returns true if build definition is requesting to run scripts or copy files
+func engineRequired(def types.Definition) bool {
+	return def.BuildData.Post != "" || def.BuildData.Setup != "" || def.BuildData.Test != "" || len(def.BuildData.Files) != 0
 }
 
 func (b *Build) copyFiles() error {
@@ -217,7 +199,7 @@ func (b *Build) copyFiles() error {
 			sylog.Warningf("Attempt to copy file with no name...")
 			continue
 		}
-		// dest = source if not specifed
+		// dest = source if not specified
 		if transfer.Dst == "" {
 			transfer.Dst = transfer.Src
 		}
@@ -281,6 +263,10 @@ func (b *Build) insertMetadata() (err error) {
 
 func (b *Build) runPreScript() error {
 	if b.runPre() && b.d.BuildData.Pre != "" {
+		if syscall.Getuid() != 0 {
+			return fmt.Errorf("Attempted to build with scripts as non-root user")
+		}
+
 		// Run %pre script here
 		pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
 		pre.Stdout = os.Stdout
@@ -288,10 +274,10 @@ func (b *Build) runPreScript() error {
 
 		sylog.Infof("Running pre scriptlet\n")
 		if err := pre.Start(); err != nil {
-			sylog.Fatalf("failed to start %%pre proc: %v\n", err)
+			return fmt.Errorf("failed to start %%pre proc: %v", err)
 		}
 		if err := pre.Wait(); err != nil {
-			sylog.Fatalf("pre proc: %v\n", err)
+			return fmt.Errorf("pre proc: %v", err)
 		}
 	}
 	return nil
@@ -299,6 +285,11 @@ func (b *Build) runPreScript() error {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func (b *Build) runBuildEngine() error {
+	if syscall.Getuid() != 0 {
+		return fmt.Errorf("Attempted to build with scripts as non-root user")
+	}
+
+	sylog.Debugf("Starting build engine")
 	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
 	starter := filepath.Join(buildcfg.SBINDIR, "/starter")
 	progname := []string{"singularity image-build"}
@@ -327,31 +318,15 @@ func (b *Build) runBuildEngine() error {
 		return fmt.Errorf("failed to marshal config.Common: %s", err)
 	}
 
-	// Set PIPE_EXEC_FD
-	pipefd, err := syexec.SetPipe(configData)
+	starterCmd, err := syexec.PipeCommand(starter, progname, env, configData)
 	if err != nil {
-		return fmt.Errorf("failed to set PIPE_EXEC_FD: %v", err)
+		return fmt.Errorf("failed to create cmd type: %v", err)
 	}
 
-	env = append(env, pipefd)
+	starterCmd.Stdout = os.Stdout
+	starterCmd.Stderr = os.Stderr
 
-	// Create os/exec.Command to run starter and return control once finished
-	starterCmd := &exec.Cmd{
-		Path:   starter,
-		Args:   progname,
-		Env:    env,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-	}
-
-	if err := starterCmd.Start(); err != nil {
-		return fmt.Errorf("failed to start starter proc: %v", err)
-	}
-	if err := starterCmd.Wait(); err != nil {
-		return fmt.Errorf("starter proc failed: %v", err)
-	}
-
-	return nil
+	return starterCmd.Run()
 }
 
 func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
@@ -525,7 +500,7 @@ func insertDefinition(b *types.Bundle) error {
 			// look at number of files in bootstrap_history to give correct file name
 			files, err := ioutil.ReadDir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"))
 
-			// name is "Singularity" concatinated with an index based on number of other files in bootstrap_history
+			// name is "Singularity" concatenated with an index based on number of other files in bootstrap_history
 			len := strconv.Itoa(len(files))
 
 			histName := "Singularity" + len

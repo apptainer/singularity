@@ -17,8 +17,9 @@ import (
 
 // Group creates a group template based on content of file provided in path,
 // updates content with current user information and returns content
-func Group(path string) (content []byte, err error) {
+func Group(path string, uid int, gids []int) (content []byte, err error) {
 	duplicate := false
+	groups := make([]int, 0)
 
 	sylog.Verbosef("Checking for template group file: %s\n", path)
 	if fs.IsFile(path) == false {
@@ -32,17 +33,21 @@ func Group(path string) (content []byte, err error) {
 	}
 	defer groupFile.Close()
 
-	pwInfo, err := user.GetPwUID(uint32(os.Getuid()))
+	pwInfo, err := user.GetPwUID(uint32(uid))
 	if err != nil || pwInfo == nil {
 		return content, err
 	}
-	grInfo, err := user.GetGrGID(pwInfo.GID)
-	if err != nil || grInfo == nil {
-		return content, err
-	}
-	groups, err := os.Getgroups()
-	if err != nil {
-		return content, err
+	if len(gids) == 0 {
+		grInfo, err := user.GetGrGID(pwInfo.GID)
+		if err != nil || grInfo == nil {
+			return content, err
+		}
+		groups, err = os.Getgroups()
+		if err != nil {
+			return content, err
+		}
+	} else {
+		groups = gids
 	}
 	for _, gid := range groups {
 		if gid == int(pwInfo.GID) {
@@ -51,7 +56,9 @@ func Group(path string) (content []byte, err error) {
 		}
 	}
 	if duplicate == false {
-		groups = append(groups, int(pwInfo.GID))
+		if len(gids) == 0 {
+			groups = append(groups, int(pwInfo.GID))
+		}
 	}
 	content, err = ioutil.ReadAll(groupFile)
 	if err != nil {
