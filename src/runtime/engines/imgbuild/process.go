@@ -22,7 +22,7 @@ import (
 // StartProcess runs the %post script
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
-	// clean environment that post script is run in
+	// clean environment in which %post and %test scripts are run in
 	e.EngineConfig.cleanEnv()
 
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
