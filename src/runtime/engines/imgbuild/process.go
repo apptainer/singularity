@@ -11,13 +11,19 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 
+	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/env"
 )
 
 // StartProcess runs the %post script
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+
+	// clean environment that post script is run in
+	e.EngineConfig.cleanEnv()
 
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
 		// Run %post script here
@@ -87,4 +93,27 @@ func (e *EngineOperations) CleanupContainer() error {
 // PostStartProcess actually does nothing for build engine
 func (e *EngineOperations) PostStartProcess(pid int) error {
 	return nil
+}
+
+func (e *EngineConfig) cleanEnv() {
+	generator := generate.Generator{Config: &e.OciConfig.Spec}
+
+	// copy and cache environment
+	environment := e.OciConfig.Spec.Process.Env
+
+	// clean environment
+	e.OciConfig.Spec.Process.Env = nil
+
+	// add relevant environment variables back
+	env.SetContainerEnv(&generator, environment, true, "")
+
+	// expose build specific environment variables for scripts
+	for _, envVar := range environment {
+		e := strings.SplitN(envVar, "=", 2)
+		if e[0] == "SINGULARITY_ROOTFS" || e[0] == "SINGULARITY_ENVIRONMENT" {
+			generator.Config.Process.Env = append(generator.Config.Process.Env, envVar)
+		}
+
+	}
+
 }
