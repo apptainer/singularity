@@ -1,0 +1,23 @@
+#!/bin/sh
+
+for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+if test -n "${SINGULARITY_APPNAME:-}"; then
+
+    if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript"; then
+        exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript" "$@"
+    else
+        echo "No Singularity runscript for contained app: ${SINGULARITY_APPNAME:-}"
+        exit 1
+    fi
+
+elif test -x "/.singularity.d/runscript"; then
+    exec "/.singularity.d/runscript" "$@"
+else
+    echo "No Singularity runscript found, executing /bin/sh"
+    exec /bin/sh "$@"
+fi
