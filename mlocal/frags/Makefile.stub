@@ -1,9 +1,3 @@
-# include may contain conditional variables set in mlocal/checks/project.mk
-# like go_TAG / WRAPPER_LIBS
-include Makefile.cond
-
-EXEC_PREFIX := $(PREFIX)
-
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
 starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/smaster.go)
@@ -49,19 +43,12 @@ bash_completion_INSTALL := $(PREFIX)/etc/bash_completion.d/singularity
 NVIDIA_liblist := $(SOURCEDIR)/etc/nvliblist.conf
 NVIDIA_liblist_INSTALL := $(PREFIX)/etc/singularity/nvliblist.conf
 
-go_TAG += containers_image_openpgp
-
-abs_BUILDDIR := `readlink -f $(BUILDDIR)`
-
-cni_builddir := $(abspath $(BUILDDIR))/cni
+cni_builddir := $(BUILDDIR_ABSPATH)/cni
 cni_plugins_REPO := github.com/containernetworking/plugins/plugins
 cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir)/*)
 cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(PREFIX)/libexec/singularity/cni/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
-
-cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
-cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
 
 INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
 	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
@@ -79,7 +66,7 @@ cniplugins: $(BUILDDIR)/vendors-done
 	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
 			echo " CNI PLUGIN" `basename $$p`; \
-			go build -o $(cni_builddir)/`basename $$p` $$p; \
+			go build $(GO_TAGS) $(GO_LDFLAGS) -o $(cni_builddir)/`basename $$p` $$p; \
 		fi \
 	done
 
@@ -101,8 +88,7 @@ $(libruntime): $(libutil_OBJ)
 # starter
 $(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
+	$(V)go build $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
 		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
 		$(SOURCEDIR)/src/runtime/starter/smaster.go \
 		$(SOURCEDIR)/src/runtime/starter/rpc.go
@@ -110,8 +96,7 @@ $(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+	$(V)go build $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
@@ -126,7 +111,7 @@ $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
 $(bash_completion): $(go_OBJ)
 	$(V)rm -f $@
 	$(V)mkdir -p $(@D)
-	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
 
 # install singularity CLI bash_completion file
 $(bash_completion_INSTALL): $(bash_completion)
@@ -203,7 +188,7 @@ $(cgroups_config_INSTALL): $(cgroups_config)
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(EXEC_PREFIX)/share/man/man1
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(EXEC_PREFIX)/share/man/man1
 
 .PHONY: collect
 collect:
@@ -219,27 +204,23 @@ collect:
 .PHONY: check
 check: $(BUILDDIR)/vendors-done
 	@echo " CHECK go fmt"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && \
+	$(V)cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
 		   ( echo "The above files have formatting errors."; \
 		     echo "Use 'go fmt github.com/sylabs/singularity/...' to correct the errors."; \
 		     false ) >&2 )
 	@echo "       PASS"
 	@echo " CHECK go vet"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go vet -tags "$(go_TAG)" -all ./...
+	$(V)cd $(SOURCEDIR) && go vet $(GO_TAGS) -all ./...
 	@echo "       PASS"
 	@echo " CHECK go lint"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
+	$(V)cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
 
 .PHONY: test
 test:
 	@echo " TEST sudo go test"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
+	$(V)cd $(SOURCEDIR) && sudo -E `which go` test -count=1 $(GO_TAGS) -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: testall

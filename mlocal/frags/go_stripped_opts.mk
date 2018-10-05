@@ -1,1 +1,1 @@
-GO_LDFLAGS += -s -w
+GO_LDFLAGS += -ldflags="-s -w"

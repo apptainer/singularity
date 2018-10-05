@@ -1,5 +1,6 @@
 # go tool default build options
-GO_TAGS := containers_image_openpgp
+GO_TAGS := -tags "containers_image_openpgp apparmor selinux"
+GO_LDFLAGS :=
 
 CGO_CPPFLAGS := -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib
 CGO_CPPFLAGS += -include $(BUILDDIR_ABSPATH)/config.h
