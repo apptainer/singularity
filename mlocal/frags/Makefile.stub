@@ -46,7 +46,7 @@ NVIDIA_liblist_INSTALL := $(PREFIX)/etc/singularity/nvliblist.conf
 cni_builddir := $(BUILDDIR_ABSPATH)/cni
 cni_plugins_REPO := github.com/containernetworking/plugins/plugins
 cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir)/*)
-cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(PREFIX)/libexec/singularity/cni/$(plugin))
+cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(EXEC_PREFIX)/libexec/singularity/cni/$(plugin))
 cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
 cni_config_INSTALL := $(PREFIX)/etc/singularity/network
 

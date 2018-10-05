@@ -459,11 +459,29 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	}
 
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
-		dest = c.session.FinalPath() + mnt.Destination
+		dest = filepath.Join(c.session.FinalPath(), mnt.Destination)
 		if _, err := os.Stat(dest); os.IsNotExist(err) {
 			c.skippedMount = append(c.skippedMount, mnt.Destination)
 			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
 			return nil
+		}
+
+		// evaluate destination path to resolve possible symlink and modify
+		// destination accordingly in order to always mount destination
+		// in container
+		resolved, err := filepath.EvalSymlinks(dest)
+		if err != nil {
+			sylog.Debugf("Skipping mount, can't evaluate %s: %s", dest, err)
+			return nil
+		}
+		if resolved != dest {
+			if !strings.HasPrefix(resolved, sessionPath) {
+				dest = filepath.Join(c.session.FinalPath(), resolved)
+			} else if filepath.IsAbs(resolved) {
+				dest = resolved
+			} else {
+				sylog.Debugf("Ignoring path '%s' resolved to '%s'", dest, resolved)
+			}
 		}
 	} else {
 		dest = mnt.Destination
