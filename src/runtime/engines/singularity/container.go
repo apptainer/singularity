@@ -1593,7 +1593,6 @@ func (c *container) addActionsMount(system *mount.System) error {
 	if err != nil {
 		return fmt.Errorf("unable to add %s to mount list: %s", containerDir, err)
 	}
-	system.Points.AddRemount(mount.BindsTag, containerDir, flags)
 
-	return nil
+	return system.Points.AddRemount(mount.BindsTag, containerDir, flags)
 }
