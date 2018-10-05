@@ -13,7 +13,7 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// main singularity command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SingularityUse   string = `singularity [global options...] [command]`
+	SingularityUse   string = `singularity [global options...]`
 	SingularityShort string = `
 Linux container platform optimized for High Performance Computing (HPC) and
 Enterprise Performance Computing (EPC)`
@@ -40,24 +40,21 @@ Enterprise Performance Computing (EPC)`
 
       default:    The compressed Singularity read only image format (default)
       sandbox:    This is a read-write container within a directory structure
-      writable:   Legacy writable image format
 
-  note: It is a  common workflow to use the "sandbox" mode for development of
-  the  container, and then build it as a default Singularity image for
-  production use. The default format is immutable.
+  note: It is a common workflow to use the "sandbox" mode for development of the
+  container, and then build it as a default Singularity image for production 
+  use. The default format is immutable.
 
   BUILD SPEC:
 
-  The build spec target is a definition, local image, archive, or URI that can
-  be used to create a Singularity container. Several different local target
+  The build spec target is a definition (def) file, local image, or URI that can 
+  be used to create a Singularity container. Several different local target 
   formats exist:
 
       def file  : This is a recipe for building a container (examples below)
       directory:  A directory structure containing a (ch)root file system
-      image:      A local image on your machine (will convert to squashfs if
-                  it is legacy or writable format)
-      tar/tar.gz: An archive file which contains the above directory format
-                  (must have .tar in the filename!)
+      image:      A local image on your machine (will convert to sif if
+                  it is legacy format)
 
   Targets can also be remote and defined by a URI of the following formats:
 

@@ -48,9 +48,6 @@ func init() {
 	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
 	BuildCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
 
-	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
-	BuildCmd.Flags().SetAnnotation("writable", "envkey", []string{"WRITABLE"})
-
 	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "Delete and overwrite an image if it currently exists")
 	BuildCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
