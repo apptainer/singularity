@@ -77,6 +77,14 @@ required = [
   name = "github.com/spf13/pflag"
   version = "1.0.0"
 
+[[constraint]]
+  name = "github.com/opencontainers/selinux"
+  version = "v1.0.0-rc1"
+
+[[constraint]]
+  name = "github.com/seccomp/libseccomp-golang"
+  version = "v0.9.0"
+
 [prune]
   go-tests = true
   unused-packages = true
