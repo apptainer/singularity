@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -180,9 +181,19 @@ func testSTDINPipe(t *testing.T) {
 
 // testRunFromURI tests min fuctionality for singularity run/exec URI://
 func testRunFromURI(t *testing.T) {
+	runScript := "testdata/runscript.sh"
+	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
+
 	runOpts := opts{
-		binds: []string{"testdata/runscript.sh:/.singularity.d/runscript"},
+		binds: []string{bind},
 	}
+
+	fi, err := os.Stat(runScript)
+	if err != nil {
+		t.Fatalf("can't find %s", runScript)
+	}
+	size := strconv.Itoa(int(fi.Size()))
+
 	tests := []struct {
 		name   string
 		image  string
@@ -192,12 +203,12 @@ func testRunFromURI(t *testing.T) {
 		expectSuccess bool
 	}{
 		// Run from supported URI's and check the runscript call works
-		{"RunFromDockerOK", "docker://busybox:latest", "run", []string{"ls", "/"}, runOpts, true},
-		{"RunFromLibraryOK", "library://busybox:latest", "run", []string{"ls", "/"}, runOpts, true},
-		{"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{"ls", "/"}, runOpts, true},
-		{"RunFromDockerKO", "docker://busybox:latest", "run", []string{"ls", "/fakedir"}, runOpts, false},
-		{"RunFromLibraryKO", "library://busybox:latest", "run", []string{"ls", "/fakedir"}, runOpts, false},
-		{"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"ls", "/fakedir"}, runOpts, false},
+		{"RunFromDockerOK", "docker://busybox:latest", "run", []string{size}, runOpts, true},
+		{"RunFromLibraryOK", "library://busybox:latest", "run", []string{size}, runOpts, true},
+		{"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{size}, runOpts, true},
+		{"RunFromDockerKO", "docker://busybox:latest", "run", []string{"0"}, runOpts, false},
+		{"RunFromLibraryKO", "library://busybox:latest", "run", []string{"0"}, runOpts, false},
+		{"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"0"}, runOpts, false},
 		// exec from a supported URI's and check the exit code
 		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, opts{}, true},
 		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, opts{}, true},
