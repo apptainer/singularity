@@ -9,7 +9,7 @@ prefix="/usr/local"
 # exec_prefix will be set again later
 exec_prefix=""
 verbose=0
-debug=0
+profile=release
 hstcc=
 hstcc_opts="cc gcc clang i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc"
 hstcxx=
@@ -20,6 +20,7 @@ tgtcxx=
 tgtcxx_opts=$hstcxx_opts
 hststatic=0
 tgtstatic=0
+appsec=0
 package_version=`git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || echo "" | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
 
@@ -29,30 +30,35 @@ usage () {
 }
 
 usage_args () {
-	echo "Usage: ${0##*/}: [-dvsS] [-p prefix] [-e exec_prefix] [-b builddir] [-c hstcc]"
-	echo "                 [-C tgtcc] [-V version] [-x hstcxx] [-X tgtcxx]"
+	echo "Usage: ${0##*/}: [-dvsS] [-p prefix] [-P profile] [-e exec_prefix] [-b builddir]"
+	echo "                 [-c hstcc] [-C tgtcc] [-V version] [-x hstcxx] [-X tgtcxx]"
 	echo "       -v build project with verbose flags on"
-	echo "       -d build project with debug flags on"
 	echo "       -s build final host project binary statically"
 	echo "       -S build final target project binary statically"
 	echo "       -p install project in \`prefix'"
+	echo "       -P use config profile to configure the project:"
+	echo "           release             (DEFAULT) normal release mode (production)"
+	echo "           release-stripped    release mode, stripped symbols (rpm packaging)"
+	echo "           debug               C portion of CGO built unoptimized, with symbols"
 	echo "       -e install project executables in \`exec_prefix'"
 	echo "       -b build project in \`builddir'"
 	echo "       -c build project with host C \`compiler'"
 	echo "       -C build project with target C\`compiler'"
 	echo "       -V build project with given version"
 	echo "       -x build project with host C++ \`compiler'"
+	echo "       -X build project with target C++ \`compiler'"
 	echo "       -h this help"
 	echo "\`host C compiler': $hstcc_opts"
 	echo "\`host C++ compiler': $hstcxx_opts"
 	echo "\`target C compiler': $tgtcc_opts"
+	echo "\`target C++ compiler': $tgtcxx_opts"
 }
 
 # save the command line
 cmdline="`readlink -f $0` $*"
 
 # check line options
-args=`getopt p:e:b:c:C:dsSvV:x:h $*`
+args=`getopt p:P:e:b:c:C:sSvV:x:X:h $*`
 if [ $? -ne 0 ]; then
 	usage_args
 	exit 2
@@ -61,12 +67,13 @@ eval set -- "$args"
 while [ $# -ne 0 ]; do
  case $1 in
   -p) prefix="$2"; shift; shift;;
+  -P) profile="$2"; shift; shift;;
   -e) exec_prefix="$2"; shift; shift;;
   -b) builddir="$2"; shift; shift;;
   -c) hstcc="$2"; shift; shift;;
   -C) tgtcc="$2"; shift; shift;;
   -x) hstcxx="$2"; shift; shift;;
-  -d) debug=1; shift;;
+  -X) tgtcxx="$2"; shift; shift;;
   -s) hststatic=1; shift;;
   -S) tgtstatic=1; shift;;
   -v) verbose=1; shift;;
@@ -91,10 +98,23 @@ sourcedir=`readlink -f .`
 mfragsdir=$sourcedir/mlocal/frags
 mchecksdir=$sourcedir/mlocal/checks
 
+# config profile validation
+case $profile in
+	release);;
+	release-stripped);;
+	debug);;
+	*) echo "$profile: no such config profile"
+	   echo "       -P use config profile to configure the project:"
+	   echo "           release             (DEFAULT) normal release mode (production)"
+	   echo "           release-stripped    release mode, stripped symbols (rpm packaging)"
+	   echo "           debug               C portion of CGO built unoptimized, with symbols"
+	   exit 2;;
+esac
+
 
 
 #######################################################################
-# System build tool configuration and debug/verbose flags 
+# System build tool configuration
 #######################################################################
 if [ -f $mchecksdir/basechecks.chk ]; then
 	echo "=> running base system checks ..."
@@ -157,6 +177,7 @@ echo >> $genmk
 cat >> $genmk << EOF
 # source/build locations
 BUILDDIR := .
+BUILDDIR_ABSPATH := `readlink -f $builddir`
 SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
@@ -242,8 +263,6 @@ EOF
 $topdir/genmod.awk modfile=$genconfdir/module.lst \
 	topdir=$sourcedir \
 	host=$host \
-	verbose=$verbose \
-	debug=$debug \
 	genconfdir=$genconfdir \
 	tmpldir=$topdir/tmpl
 
@@ -272,13 +291,35 @@ cat $genmk >> $output
 drawline $mfragsdir/common_opts.mk
 cat $mfragsdir/common_opts.mk >> $output
 
-if [ "$debug" != 1 ]; then
-	drawline $mfragsdir/release_opts.mk
-	cat $mfragsdir/release_opts.mk >> $output
+
+if [ "$appsec" = "1" ]; then
+	drawline $mfragsdir/go_appsec_opts.mk
+	cat $mfragsdir/go_appsec_opts.mk >> $output
 else
-	drawline $mfragsdir/debug_opts.mk
-	cat $mfragsdir/debug_opts.mk >> $output
+	drawline $mfragsdir/go_common_opts.mk
+	cat $mfragsdir/go_common_opts.mk >> $output
 fi
+
+case $profile in
+	release)
+		drawline $mfragsdir/release_opts.mk
+		cat $mfragsdir/release_opts.mk >> $output
+		drawline $mfragsdir/go_normal_opts.mk
+		cat $mfragsdir/go_normal_opts.mk >> $output
+		;;
+	release-stripped)
+		drawline $mfragsdir/release_opts.mk
+		cat $mfragsdir/release_opts.mk >> $output
+		drawline $mfragsdir/go_stripped_opts.mk
+		cat $mfragsdir/go_stripped_opts.mk >> $output
+		;;
+	debug)
+		drawline $mfragsdir/debug_opts.mk
+		cat $mfragsdir/debug_opts.mk >> $output
+		drawline $mfragsdir/go_normal_opts.mk
+		cat $mfragsdir/go_normal_opts.mk >> $output
+		;;
+esac
 
 if [ -f "$mfragsdir/arch_${tgt_arch}_opts.mk" ]; then
 	drawline $mfragsdir/arch_${tgt_arch}_opts.mk
@@ -328,15 +369,11 @@ echo "    - target wordsize: ${tgt_word}-bit"
 echo "    - host arch: $hst_arch"
 echo "    - host wordsize: ${hst_word}-bit"
 echo "    - host system: $host"
+echo "    - config profile: $profile"
 if [ "$verbose" = 1 ]; then
 	echo "    - verbose: yes"
 else
 	echo "    - verbose: no"
-fi
-if [ "$debug" = 1 ]; then
-	echo "    - debug: yes"
-else
-	echo "    - debug: no"
 fi
 
 echo "=> $builddir/Makefile ready, try:"

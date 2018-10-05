@@ -4,9 +4,6 @@
 #
 set -e
 
-makecond="$builddir/Makefile.cond"
-echo "go_TAG += $BUILDTAG" > $makecond
-
 config_add_def PACKAGE_NAME \"singularity\"
 config_add_def PACKAGE_TARNAME \"singularity\"
 config_add_def PACKAGE_VERSION \"$package_version\"
@@ -14,17 +11,20 @@ config_add_def PACKAGE_STRING \"singularity $package_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
+# load configurable paths
+. $mfragsdir/paths.stub
+
 config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
 config_add_def EXECPREFIX \"$exec_prefix\"
-config_add_def BINDIR EXECPREFIX \"/bin\"
-config_add_def LIBEXECDIR EXECPREFIX \"/libexec\"
-config_add_def SBINDIR LIBEXECDIR \"/singularity/bin\"
+config_add_def BINDIR \"$bindir\"
+config_add_def LIBEXECDIR \"$libexecdir\"
+config_add_def SBINDIR \"$sbindir\"
 config_add_def DATAROOTDIR EXECPREFIX \"/share\"
 config_add_def DATADIR DATAROOTDIR
-config_add_def SYSCONFDIR PREFIX \"/etc\"
-config_add_def SHAREDSTARTEDIR PREFIX \"/com\"
-config_add_def LOCALSTATEDIR PREFIX \"/var\"
+config_add_def SYSCONFDIR \"$sysconfdir\"
+config_add_def SHAREDSTATEDIR \"$sharedstatedir\"
+config_add_def LOCALSTATEDIR \"$localstatedir\"
 config_add_def INCLUDEDIR PREFIX \"/include\"
 config_add_def OLDINCLUDEDIR \"/usr/include\"
 config_add_def DOCDIR DATAROOTDIR \"/doc/\" PACKAGE_TARNAME
@@ -33,7 +33,7 @@ config_add_def HTMLDIR DOCDIR
 config_add_def DVIDIR DOCDIR
 config_add_def PDFDIR DOCDIR
 config_add_def PSDIR DOCDIR
-config_add_def LIBDIR EXECPREFIX \"/lib\"
+config_add_def LIBDIR \"$libdir\"
 config_add_def LOCALEDIR DATAROOTDIR \"/locale\"
 config_add_def MANDIR DATAROOTDIR \"/man\"
 config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
@@ -324,13 +324,8 @@ if ! printf "#include <seccomp.h>\nint main() { }" | \
     tgtstatic=0
     echo "no"
 else
-    case "${BUILDTAG}" in
-        *seccomp*)
-            echo "yes"
-            echo "WRAPPER_LIBS += -lseccomp" >> $makecond ;;
-        *)
-            echo "yes (not configured)" ;;
-    esac
+    echo "yes"
+    appsec=1
 fi
 
-echo "INFO: userns and disable_suid are disabled. (mchecks/base.chk)"
+echo "INFO: userns and disable_suid are disabled. (mlocal/checks/basechecks.chk)"
