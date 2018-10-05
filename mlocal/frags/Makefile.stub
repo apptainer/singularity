@@ -66,7 +66,7 @@ cniplugins: $(BUILDDIR)/vendors-done
 	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
 			echo " CNI PLUGIN" `basename $$p`; \
-			go build $(GO_TAGS) $(GO_LDFLAGS) -o $(cni_builddir)/`basename $$p` $$p; \
+			go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(cni_builddir)/`basename $$p` $$p; \
 		fi \
 	done
 
@@ -88,7 +88,7 @@ $(libruntime): $(libutil_OBJ)
 # starter
 $(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
-	$(V)go build $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
+	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
 		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
 		$(SOURCEDIR)/src/runtime/starter/smaster.go \
 		$(SOURCEDIR)/src/runtime/starter/rpc.go
@@ -96,7 +96,7 @@ $(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
-	$(V)go build $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
