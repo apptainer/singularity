@@ -1587,11 +1587,13 @@ func (c *container) addHostnameMount(system *mount.System) error {
 func (c *container) addActionsMount(system *mount.System) error {
 	hostDir := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/actions")
 	containerDir := "/.singularity.d/actions"
+	flags := uintptr(syscall.MS_BIND | syscall.MS_RDONLY | syscall.MS_NOSUID | syscall.MS_NODEV)
 
-	err := system.Points.AddBind(mount.BindsTag, hostDir, containerDir, syscall.MS_BIND)
+	err := system.Points.AddBind(mount.BindsTag, hostDir, containerDir, flags)
 	if err != nil {
 		return fmt.Errorf("unable to add %s to mount list: %s", containerDir, err)
 	}
+	system.Points.AddRemount(mount.BindsTag, containerDir, flags)
 
 	return nil
 }
