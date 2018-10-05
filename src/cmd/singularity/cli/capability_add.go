@@ -13,17 +13,17 @@ import (
 func init() {
 
 	// -u|--user
-	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "Add capabilities for the given user")
+	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "add capabilities for the given user")
 	CapabilityAddCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
 	CapabilityAddCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -g|--group
-	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "Add capabilities for the given group")
+	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "add capabilities for the given group")
 	CapabilityAddCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 	CapabilityAddCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
 
 	// -d|--desc
-	CapabilityAddCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "Print capabilities description")
+	CapabilityAddCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "print capabilities description")
 	CapabilityAddCmd.Flags().SetAnnotation("desc", "envkey", []string{"DESC"})
 
 	CapabilityAddCmd.Flags().SetInterspersed(false)
