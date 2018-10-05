@@ -177,13 +177,15 @@ static void prepare_scontainer_stage(int stage) {
     }
 
     if ( !(config.nsFlags & CLONE_NEWUSER) ) {
-        if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
-            singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
-            exit(1);
-        }
-
         /* apply target UID/GID for root user */
         if ( uid == 0 ) {
+            if ( config.numGID != 0 || config.targetUID != 0 ) {
+                if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
+                    singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
+                    exit(1);
+                }
+            }
+
             if ( config.numGID != 0 ) {
                 singularity_message(DEBUG, "Clear additional group IDs\n");
 
@@ -222,6 +224,11 @@ static void prepare_scontainer_stage(int stage) {
                 }
             }
         } else if ( config.isSuid ) {
+            if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
+                singularity_message(ERROR, "Failed to set securebits: %s\n", strerror(errno));
+                exit(1);
+            }
+
             if ( setresuid(uid, uid, uid) < 0 ) {
                 singularity_message(ERROR, "Faile to drop privileges: %s\n", strerror(errno));
                 exit(1);
@@ -1067,7 +1074,7 @@ __attribute__((constructor)) static void init(void) {
              * fork is a convenient way to apply capabilities and privileges drop
              * from single thread context before entering in stage 2
              */
-            int process = fork();
+            int process = fork_ns(CLONE_FS|CLONE_FILES);
 
             if ( process == 0 ) {
                 singularity_message(VERBOSE, "Spawn RPC server\n");

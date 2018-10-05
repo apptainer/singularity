@@ -90,6 +90,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/*
 %dir %{_libexecdir}/singularity
 %{_libexecdir}/singularity/bin/starter
+%{_libexecdir}/singularity/cni/*
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
 %dir %{_sysconfdir}/bash_completion.d
