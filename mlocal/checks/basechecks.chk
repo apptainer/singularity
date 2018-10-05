@@ -11,13 +11,13 @@ if [ "$builddir" = "" ]; then
 	builddir=builddir
 fi
 if [ -e $builddir -a $builddir != "." -a $builddir != ".." ]; then
-	printf "$builddir already exist, remove ? [N/y] "
+	printf "$builddir already exist, remove ? [Y/n] "
 	read var
-	if [ "$var" = "y" -o "$var" = "Y" ]; then
-		rm -rf $builddir
-	else
+	if [ "$var" = "n" -o "$var" = "N" ]; then
 		echo "error: choose another build directory"
 		exit 2
+	else
+		rm -rf $builddir
 	fi
 fi
 mkdir -p $builddir
@@ -273,15 +273,3 @@ else
 	usage
 	exit 1
 fi
-
-
-########################
-# verbose
-########################
-echo " checking: verbose flag... $verbose"
-
-
-########################
-# debug
-########################
-echo " checking: debug flag... $debug"
