@@ -75,8 +75,8 @@ all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completi
 
 .PHONY: cniplugins
 cniplugins: $(BUILDDIR)/vendors-done
-	@install -d $(cni_builddir)
-	@for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
+	$(V)install -d $(cni_builddir)
+	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
 			echo " CNI PLUGIN" `basename $$p`; \
 			go build -o $(cni_builddir)/`basename $$p` $$p; \
@@ -95,7 +95,7 @@ $(cni_config_INSTALL): $(cni_config_LIST)
 
 $(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
-	@mkdir -p $(@D)
+	$(V)mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
 # starter
@@ -119,13 +119,13 @@ $(singularity_INSTALL): $(singularity)
 
 # config.go
 $(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
-	@rm -f $(go_OBJ)
+	$(V)rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
 # bash_completion file
 $(bash_completion): $(go_OBJ)
-	@rm -f $@
-	@mkdir -p $(@D)
+	$(V)rm -f $@
+	$(V)mkdir -p $(@D)
 	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
 
 # install singularity CLI bash_completion file
@@ -159,11 +159,11 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 # generate the vendor folder with dep and patch when necessary
 $(BUILDDIR)/vendors-done:
 	@echo " VENDORS"
-	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+	$(V)if [ ! -f $(BUILDDIR)/.dep-done ]; then \
 		dep ensure >/dev/null && \
 			touch $(BUILDDIR)/.dep-done; \
 	fi
-	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+	$(V)if [ ! -f $(BUILDDIR)/.patch-done ]; then \
 		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
 		(cd $(SOURCEDIR)/vendor/golang.org/x/crypto && patch --silent -b -p0 < $(SOURCEDIR)/patches/privkey-encryption.patch) && \
 			touch $(BUILDDIR)/.patch-done; \
