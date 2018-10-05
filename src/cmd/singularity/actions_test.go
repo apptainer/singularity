@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -180,26 +181,41 @@ func testSTDINPipe(t *testing.T) {
 
 // testRunFromURI tests min fuctionality for singularity run/exec URI://
 func testRunFromURI(t *testing.T) {
+	runScript := "testdata/runscript.sh"
+	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
+
+	runOpts := opts{
+		binds: []string{bind},
+	}
+
+	fi, err := os.Stat(runScript)
+	if err != nil {
+		t.Fatalf("can't find %s", runScript)
+	}
+	size := strconv.Itoa(int(fi.Size()))
+
 	tests := []struct {
 		name   string
 		image  string
 		action string
 		argv   []string
 		opts
-		exit          int
 		expectSuccess bool
 	}{
 		// Run from supported URI's and check the runscript call works
-		{"RunFromDocker", "docker://godlovedc/lolcow", "run", []string{}, opts{}, 0, true},
-		{"RunFromLibrary", "library://sylabsed/examples/lolcow:latest", "run", []string{}, opts{}, 0, true},
-		{"RunFromShub", "shub://GodloveD/lolcow", "run", []string{}, opts{}, 0, true},
+		{"RunFromDockerOK", "docker://busybox:latest", "run", []string{size}, runOpts, true},
+		{"RunFromLibraryOK", "library://busybox:latest", "run", []string{size}, runOpts, true},
+		{"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{size}, runOpts, true},
+		{"RunFromDockerKO", "docker://busybox:latest", "run", []string{"0"}, runOpts, false},
+		{"RunFromLibraryKO", "library://busybox:latest", "run", []string{"0"}, runOpts, false},
+		{"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"0"}, runOpts, false},
 		// exec from a supported URI's and check the exit code
-		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, opts{}, 0, true},
-		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, opts{}, 0, true},
-		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{}, 0, true},
-		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, opts{}, 1, false},
-		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, opts{}, 1, false},
-		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{}, 1, false},
+		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, opts{}, true},
+		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, opts{}, true},
+		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{}, true},
+		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, opts{}, false},
+		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, opts{}, false},
+		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{}, false},
 	}
 
 	for _, tt := range tests {
