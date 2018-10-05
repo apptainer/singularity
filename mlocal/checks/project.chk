@@ -321,7 +321,8 @@ if ! printf "#include <seccomp.h>\nint main() { }" | \
     tgtstatic=0
     echo "no"
 else
-   appsec=1
+    echo "yes"
+    appsec=1
 fi
 
-echo "INFO: userns and disable_suid are disabled. (mchecks/base.chk)"
+echo "INFO: userns and disable_suid are disabled. (mlocal/checks/basechecks.chk)"
