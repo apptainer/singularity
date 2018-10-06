@@ -6,7 +6,6 @@
 package main
 
 import (
-	"compress/gzip"
 	"os"
 	"os/exec"
 	"path"
@@ -38,12 +37,12 @@ func imageVerify(t *testing.T, imagePath string, labels bool) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imageExec(execOpts{}, imagePath, tt.execArgs)
-			if tt.expectSuccess && (err != nil) {
-				t.Log(string(b))
+			_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, tt.execArgs)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
-			} else if !tt.expectSuccess && (err == nil) {
-				t.Log(string(b))
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
 			}
 		}))
@@ -73,6 +72,7 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 
 	cmd := exec.Command(cmdPath, argv...)
 	cmd.Env = opts.env
+
 	return cmd.CombinedOutput()
 }
 
@@ -92,6 +92,7 @@ func TestBuild(t *testing.T) {
 		{"DockerDefFile", "", "../../../examples/docker/Singularity", true, false},
 		{"SHubURI", "", "shub://GodloveD/busybox", true, false},
 		{"SHubDefFile", "", "../../../examples/shub/Singularity", true, false},
+		{"LibraryDefFile", "", "../../../examples/library/Singularity", true, false},
 		{"Yum", "yum", "../../../examples/centos/Singularity", true, false},
 		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", true, false},
 	}
@@ -203,57 +204,6 @@ func TestBuildMultiStage(t *testing.T) {
 					imageVerify(t, ts.imagePath, ts.labels)
 				}))
 			}
-		}))
-	}
-}
-
-func TestBuildTar(t *testing.T) {
-	if !*runDisabled {
-		t.Skip("disabled until issue addressed") // TODO
-	}
-
-	test.EnsurePrivilege(t)
-
-	// Build base image
-	baseImage := path.Join(testDir, "base-container")
-	b, err := imageBuild(buildOpts{}, baseImage, "../../../examples/busybox/Singularity")
-	if err != nil {
-		t.Log(string(b))
-		t.Fatalf("unexpected failure: %v", err)
-	}
-	defer os.Remove(baseImage)
-
-	tests := []struct {
-		name       string
-		exportPath string
-		gzip       bool
-	}{
-		{"TAR", path.Join(testDir, "container.tar"), false},
-		{"TGZ", path.Join(testDir, "container.tgz"), true},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
-			if !tt.gzip {
-				if err := imageExportTAR(baseImage, tt.exportPath); err != nil {
-					t.Fatalf("failed to export TAR: %v", err)
-				}
-			} else {
-				if err := imageExportTGZ(baseImage, tt.exportPath, gzip.BestCompression); err != nil {
-					t.Fatalf("failed to export TGZ: %v", err)
-				}
-			}
-			defer os.Remove(tt.exportPath)
-
-			imagePath := path.Join(testDir, "container")
-			defer os.Remove(imagePath)
-
-			b, err = imageBuild(buildOpts{}, imagePath, tt.exportPath)
-			if err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
-			}
-			imageVerify(t, imagePath, false)
 		}))
 	}
 }

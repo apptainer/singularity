@@ -46,8 +46,8 @@ required = [
   version = "1.2.0"
 
 [[constraint]]
-  branch = "master"
   name = "github.com/sylabs/sif"
+  version = "1.0.1"
 
 [[constraint]]
   branch = "master"
@@ -62,8 +62,12 @@ required = [
   name = "github.com/opencontainers/image-spec"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/containerd/cgroups"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/opencontainers/runtime-spec"
-  version = "1.0.1"
 
 [[constraint]]
   branch = "master"
@@ -72,6 +76,14 @@ required = [
 [[constraint]]
   name = "github.com/spf13/pflag"
   version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/opencontainers/selinux"
+  version = "v1.0.0-rc1"
+
+[[constraint]]
+  name = "github.com/seccomp/libseccomp-golang"
+  version = "v0.9.0"
 
 [prune]
   go-tests = true
@@ -92,7 +104,3 @@ required = [
 [[override]]
   revision = "da99009bbb1165d1ac5688b5c81d2f589d418341"
   name = "github.com/docker/docker"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/otiai10/copy"

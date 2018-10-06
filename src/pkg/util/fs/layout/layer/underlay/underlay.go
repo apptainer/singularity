@@ -43,10 +43,7 @@ func (u *Underlay) Add(session *layout.Session, system *mount.System) error {
 	if err := u.session.AddDir(underlayDir); err != nil {
 		return err
 	}
-	if err := system.RunBeforeTag(mount.PreLayerTag, u.createUnderlay); err != nil {
-		return err
-	}
-	return nil
+	return system.RunBeforeTag(mount.PreLayerTag, u.createUnderlay)
 }
 
 func (u *Underlay) createUnderlay(system *mount.System) error {
@@ -113,14 +110,14 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 						return err
 					}
 				}
-				if err := u.duplicateDir(p, system); err != nil {
+				if err := u.duplicateDir(p, system, pl.path); err != nil {
 					return err
 				}
 			}
 		}
 	}
 
-	if err := u.duplicateDir("/", system); err != nil {
+	if err := u.duplicateDir("/", system, ""); err != nil {
 		return err
 	}
 
@@ -139,7 +136,8 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 	return u.session.Update()
 }
 
-func (u *Underlay) duplicateDir(dir string, system *mount.System) error {
+func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath string) error {
+	binds := 0
 	path := filepath.Clean(u.session.RootFsPath() + dir)
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -162,6 +160,7 @@ func (u *Underlay) duplicateDir(dir string, system *mount.System) error {
 			if err := system.Points.AddBind(mount.PreLayerTag, src, dst, syscall.MS_BIND); err != nil {
 				return fmt.Errorf("can't add bind mount point: %s", err)
 			}
+			binds++
 		} else if file.Mode()&os.ModeSymlink != 0 {
 			tgt, err := os.Readlink(src)
 			if err != nil {
@@ -178,7 +177,11 @@ func (u *Underlay) duplicateDir(dir string, system *mount.System) error {
 			if err := system.Points.AddBind(mount.PreLayerTag, src, dst, syscall.MS_BIND); err != nil {
 				return fmt.Errorf("can't add bind mount point: %s", err)
 			}
+			binds++
 		}
+	}
+	if binds > 50 && existingPath != "" {
+		sylog.Warningf("underlay of %s required more than 50 (%d) bind mounts", existingPath, binds)
 	}
 	return nil
 }

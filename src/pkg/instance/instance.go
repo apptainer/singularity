@@ -211,10 +211,10 @@ func (i *File) Update() error {
 
 // SetLogFile replaces stdout/stderr streams and redirect content
 // to log file
-func SetLogFile(name string) error {
+func SetLogFile(name string, uid int) (*os.File, *os.File, error) {
 	path, err := getPath(false, "")
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	stderrPath := filepath.Join(path, name+".err")
 	stdoutPath := filepath.Join(path, name+".out")
@@ -223,30 +223,30 @@ func SetLogFile(name string) error {
 	defer syscall.Umask(oldumask)
 
 	if err := os.MkdirAll(filepath.Dir(stderrPath), 0755); err != nil {
-		return err
+		return nil, nil, err
 	}
 	if err := os.MkdirAll(filepath.Dir(stdoutPath), 0755); err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	stderr, err := os.OpenFile(stderrPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	defer stderr.Close()
 
 	stdout, err := os.OpenFile(stdoutPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
-		return err
-	}
-	defer stdout.Close()
-
-	if err := syscall.Dup3(int(stderr.Fd()), int(os.Stderr.Fd()), 0); err != nil {
-		return err
-	}
-	if err := syscall.Dup3(int(stdout.Fd()), int(os.Stdout.Fd()), 0); err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return nil
+	if uid != os.Getuid() {
+		if err := os.Chown(stderrPath, uid, os.Getgid()); err != nil {
+			return nil, nil, err
+		}
+		if err := os.Chown(stdoutPath, uid, os.Getgid()); err != nil {
+			return nil, nil, err
+		}
+	}
+
+	return stdout, stderr, nil
 }

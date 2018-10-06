@@ -13,12 +13,10 @@ import (
 	"unsafe"
 )
 
-// MaxLoopDevices is the maxiumum number of loop devices that are supported
-const MaxLoopDevices = 256
-
 // Device describes a loop device
 type Device struct {
-	file *os.File
+	MaxLoopDevices int
+	file           *os.File
 }
 
 // AttachFromFile finds a free loop device, opens it, and stores file descriptor
@@ -26,7 +24,7 @@ type Device struct {
 func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error {
 	var path string
 
-	for device := 0; device < MaxLoopDevices; device++ {
+	for device := 0; device < loop.MaxLoopDevices; device++ {
 		path = fmt.Sprintf("/dev/loop%d", device)
 		if fi, err := os.Stat(path); err != nil {
 			dev := int((7 << 8) | device)
@@ -48,7 +46,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			loopDev.Close()
 			continue
 		}
-		if device == MaxLoopDevices {
+		if device == loop.MaxLoopDevices {
 			break
 		}
 		loop.file = loopDev

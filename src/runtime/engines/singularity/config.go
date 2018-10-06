@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/cgroups"
 	"github.com/sylabs/singularity/src/pkg/image"
 	"github.com/sylabs/singularity/src/pkg/network"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -52,6 +53,7 @@ type FileConfig struct {
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
+	MksquashfsPath          string   `directive:"mksquashfs path"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
@@ -88,15 +90,20 @@ type JSONConfig struct {
 	NetworkArgs   []string      `json:"networkArgs,omitempty"`
 	DNS           string        `json:"dns,omitempty"`
 	Cwd           string        `json:"cwd,omitempty"`
+	Security      []string      `json:"security,omitempty"`
 	OpenFd        []int         `json:"openFd,omitempty"`
+	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
+	TargetUID     int           `json:"targetUID,omitempty"`
+	TargetGID     []int         `json:"targetGID,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
 type EngineConfig struct {
-	JSON      *JSONConfig    `json:"jsonConfig"`
-	OciConfig *oci.Config    `json:"ociConfig"`
-	File      *FileConfig    `json:"-"`
-	Network   *network.Setup `json:"-"`
+	JSON      *JSONConfig      `json:"jsonConfig"`
+	OciConfig *oci.Config      `json:"ociConfig"`
+	File      *FileConfig      `json:"-"`
+	Network   *network.Setup   `json:"-"`
+	Cgroups   *cgroups.Manager `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -433,4 +440,44 @@ func (e *EngineConfig) SetWritableTmpfs(writable bool) {
 // GetWritableTmpfs returns if writable tmpfs is set or no
 func (e *EngineConfig) GetWritableTmpfs() bool {
 	return e.JSON.WritableTmpfs
+}
+
+// SetSecurity sets security feature arguments
+func (e *EngineConfig) SetSecurity(security []string) {
+	e.JSON.Security = security
+}
+
+// GetSecurity returns security feature arguments
+func (e *EngineConfig) GetSecurity() []string {
+	return e.JSON.Security
+}
+
+// SetCgroupsPath sets path to cgroups profile
+func (e *EngineConfig) SetCgroupsPath(path string) {
+	e.JSON.CgroupsPath = path
+}
+
+// GetCgroupsPath returns path to cgroups profile
+func (e *EngineConfig) GetCgroupsPath() string {
+	return e.JSON.CgroupsPath
+}
+
+// SetTargetUID sets target UID to execute the container process as user ID
+func (e *EngineConfig) SetTargetUID(uid int) {
+	e.JSON.TargetUID = uid
+}
+
+// GetTargetUID returns the target UID
+func (e *EngineConfig) GetTargetUID() int {
+	return e.JSON.TargetUID
+}
+
+// SetTargetGID sets target GIDs to execute container process as group IDs
+func (e *EngineConfig) SetTargetGID(gid []int) {
+	e.JSON.TargetGID = gid
+}
+
+// GetTargetGID returns the target GIDs
+func (e *EngineConfig) GetTargetGID() []int {
+	return e.JSON.TargetGID
 }

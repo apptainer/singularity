@@ -1,19 +1,12 @@
-_Please note recent changes in the github repo branch structure.  If you want
-to install a stable release of Singularity, please use a tag or a [release
-tarball](https://github.com/sylabs/singularity/releases).  If you are
-a developer who would like to contribute to Singularity and you want to know
-which branch to submit your pull request to, please see notes on the branch
-reorganization [here](https://www.sylabs.io/2018/03/managing-singularity-branches/).
+_Please note recent changes in the github repo branch structure.  If you want to install a stable release of Singularity, please use a tag or a [release tarball](https://github.com/sylabs/singularity/releases).  If you are a developer who would like to contribute to Singularity and you want to know which branch to submit your pull request to, please see notes on the branch reorganization [here](https://www.sylabs.io/2018/03/managing-singularity-branches/)._
 
-Please also note that 2.6.0 is expected to be the final feature release in the
-2.x series. While bug fixes may be added via point releases (for example 2.6.1)
-no new features releases (for example 2.7.0) are planned.
+_Please also note that 2.6.0 is expected to be the final feature release in the 2.x series. While bug fixes may be added via point releases (for example 2.6.1) no new features releases (for example 2.7.0) are planned._
 
-Pull requests adding features to the 2.x series will no longer be reviewed.
-Any new features should be targeted to the master branch (which used to be
-called development-3.0)._
+_Pull requests adding features to the 2.x series will no longer be reviewed. Any new features should be targeted to the master branch (which used to be called development-3.0)._
 
-[![Build Status](https://travis-ci.org/sylabs/singularity.svg?branch=master)](https://travis-ci.org/sylabs/singularity)
+| **Travis** | **CircleCI** | **Go Report Card** |
+|-----------|--------------|--------------------|
+| [![Build Status](https://travis-ci.org/sylabs/singularity.svg?branch=master)](https://travis-ci.org/sylabs/singularity) | [![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/master) | [![Go Report Card](https://goreportcard.com/badge/github.com/sylabs/singularity)](https://goreportcard.com/report/github.com/sylabs/singularity) |
 
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
@@ -35,7 +28,7 @@ environment!
 # About
 
 Singularity is a container platform focused on supporting "Mobility of
-Compute" 
+Compute"
 
 Mobility of Compute encapsulates the development to compute model where
 developers can work in an environment of their choosing and creation and
@@ -70,19 +63,19 @@ A Singularity container can be launched in a variety of different ways
 depending on what you wanted to do with it. A simple method might be to
 launch an interactive shell within the container image as follows:
 
-    [gmk@centos7-x64 demo]$ singularity shell /tmp/Centos-7.img 
+    [gmk@centos7-x64 demo]$ singularity shell /tmp/Centos-7.img
     gmk@Centos-7.img demo> echo "Hello from within the container"
     Hello from within the container
     gmk@Centos-7.img demo> whoami
     gmk
-    gmk@Centos-7.img demo> 
+    gmk@Centos-7.img demo>
 
 And if you wanted to do the same thing as root:
 
-    [gmk@centos7-x64 demo]$ sudo singularity shell -w /tmp/Centos-7.img 
+    [gmk@centos7-x64 demo]$ sudo singularity shell -w /tmp/Centos-7.img
     root@Centos-7.img demo> whoami
     root
-    root@Centos-7.img demo> 
+    root@Centos-7.img demo>
 
 *note: By default, Singularity launches the container image in read
 only mode (so it can be easily launched in parallel). The -w option
@@ -96,7 +89,7 @@ follows:
     [gmk@centos7-x64 demo]$ pwd
     /home/gmk/demo
     [gmk@centos7-x64 demo]$ echo "world" > hello
-    [gmk@centos7-x64 demo]$ singularity shell /tmp/Centos-7.img 
+    [gmk@centos7-x64 demo]$ singularity shell /tmp/Centos-7.img
     gmk@Centos-7.img demo> pwd
     /home/gmk/demo
     gmk@Centos-7.img demo> cat hello
@@ -148,13 +141,13 @@ bootstrapping using your definition file:
 
 From there we can immediately start using the container:
 
-    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img cat /etc/redhat-release 
-    CentOS Linux release 7.2.1511 (Core) 
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img cat /etc/redhat-release
+    CentOS Linux release 7.2.1511 (Core)
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python --version
     Python 2.7.5
-    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python hello.py 
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-7.img python hello.py
     hello world
-    [gmk@centos7-x64 demo]$ 
+    [gmk@centos7-x64 demo]$
 
 And if I do this same process again, while changing the **OSVersion**
 variable in the bootstrap definition to **6** (where previously it was
@@ -162,13 +155,13 @@ automatically ascertained by querying the RPM database), we can
 essentially build a CentOS-6 image in exactly the same manner as
 above. Doing so reveals this:
 
-    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img cat /etc/redhat-release 
+    [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img cat /etc/redhat-release
     CentOS release 6.7 (Final)
     [gmk@centos7-x64 demo]$ singularity exec /tmp/Centos-6.img python --version
     Python 2.6.6
-    [gmk@centos7-x64 demo]$ 
+    [gmk@centos7-x64 demo]$
 
-And as expected, the Python version we now see is what comes from by 
+And as expected, the Python version we now see is what comes from by
 default in CentOS-6.
 
 

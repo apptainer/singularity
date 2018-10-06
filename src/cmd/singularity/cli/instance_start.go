@@ -14,6 +14,7 @@ func init() {
 	options := []string{
 		"add-caps",
 		"allow-setuid",
+		"apply-cgroups",
 		"bind",
 		"boot",
 		"contain",
@@ -33,6 +34,7 @@ func init() {
 		"nv",
 		"overlay",
 		"scratch",
+		"security",
 		"userns",
 		"uts",
 		"workdir",
@@ -50,6 +52,7 @@ func init() {
 // InstanceStartCmd singularity instance start
 var InstanceStartCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
+	PreRun:                replaceURIWithImage,
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/start"}

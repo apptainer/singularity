@@ -7,11 +7,15 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/src/pkg/libexec"
 	"github.com/sylabs/singularity/src/pkg/util/nvidiautils"
 
 	"github.com/spf13/cobra"
@@ -19,8 +23,10 @@ import (
 	"github.com/sylabs/singularity/src/pkg/build"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/client/cache"
+	library "github.com/sylabs/singularity/src/pkg/client/library"
 	ociclient "github.com/sylabs/singularity/src/pkg/client/oci"
 	"github.com/sylabs/singularity/src/pkg/instance"
+	"github.com/sylabs/singularity/src/pkg/security"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/env"
 	"github.com/sylabs/singularity/src/pkg/util/exec"
@@ -36,6 +42,7 @@ func init() {
 		ExecCmd,
 		ShellCmd,
 		RunCmd,
+		TestCmd,
 	}
 
 	// TODO : the next n lines of code are repeating too much but I don't
@@ -70,46 +77,105 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
+		if cmd == ShellCmd {
+			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
+		}
 		cmd.Flags().SetInterspersed(false)
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
-
+	SingularityCmd.AddCommand(TestCmd)
 }
 
-func replaceURIWithImage(cmd *cobra.Command, args []string) {
-	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
-	if t, _ := uri.SplitURI(args[0]); t == "instance" || t == "" {
-		return
-	}
-
-	sum, err := ociclient.ImageSHA(args[0])
+func handleOCI(u string) (string, error) {
+	sum, err := ociclient.ImageSHA(u)
 	if err != nil {
-		sylog.Fatalf("Failed to get SHA of %v: %v", args[0], err)
+		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
 
-	name := uri.NameFromURI(args[0])
+	name := uri.NameFromURI(u)
 	imgabs := cache.OciTempImage(sum, name)
 
 	if exists, err := cache.OciTempExists(sum, name); err != nil {
-		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
+		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(args[0], imgabs, "sif", false, false, nil, true, "", "")
+		b, err := build.NewBuild(u, imgabs, "sif", false, false, nil, true, "", "")
 		if err != nil {
-			sylog.Fatalf("Unable to create new build: %v", err)
+			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
 
 		if err := b.Full(); err != nil {
-			sylog.Fatalf("Unable to build: %v", err)
+			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
 		sylog.Infof("Image cached as SIF at %s", imgabs)
 	}
 
-	args[0] = imgabs
+	return imgabs, nil
+}
+
+func handleLibrary(u string) (string, error) {
+	libraryImage, err := library.GetImage("https://library.sylabs.io", authToken, u)
+	if err != nil {
+		return "", err
+	}
+
+	imageName := uri.NameFromURI(u)
+	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+
+	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	} else if !exists {
+		sylog.Infof("Downloading library image")
+		libexec.PullLibraryImage(imagePath, u, "https://library.sylabs.io", false, authToken)
+	}
+
+	return imagePath, nil
+}
+
+func handleShub(u string) (string, error) {
+	imageName := uri.NameFromURI(u)
+	imagePath := cache.ShubImage("hash", imageName)
+
+	libexec.PullShubImage(imagePath, u, true)
+
+	return imagePath, nil
+}
+
+func replaceURIWithImage(cmd *cobra.Command, args []string) {
+	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
+	t, _ := uri.SplitURI(args[0])
+	if t == "instance" || t == "" {
+		return
+	}
+
+	var image string
+	var err error
+
+	switch t {
+	case uri.Library:
+		sylabsToken(cmd, args) // Fetch Auth Token for library access
+
+		image, err = handleLibrary(args[0])
+	case uri.Shub:
+		image, err = handleShub(args[0])
+	case ociclient.IsSupported(t):
+		image, err = handleOCI(args[0])
+	default:
+		sylog.Fatalf("Unsupported transport type: %s", t)
+	}
+
+	if err != nil {
+		sylog.Fatalf("Unable to handle %s uri: %v", args[0], err)
+	}
+
+	args[0] = image
 	return
 }
 
@@ -164,8 +230,28 @@ var RunCmd = &cobra.Command{
 	Example: docs.RunExamples,
 }
 
+// TestCmd represents the test command
+var TestCmd = &cobra.Command{
+	DisableFlagsInUseLine: true,
+	TraverseChildren:      true,
+	Args:                  cobra.MinimumNArgs(1),
+	PreRun:                replaceURIWithImage,
+	Run: func(cmd *cobra.Command, args []string) {
+		a := append([]string{"/.singularity.d/test"}, args[1:]...)
+		execStarter(cmd, args[0], a, "")
+	},
+
+	Use:     docs.RunTestUse,
+	Short:   docs.RunTestShort,
+	Long:    docs.RunTestLong,
+	Example: docs.RunTestExample,
+}
+
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	targetUID := 0
+	targetGID := make([]int, 0)
+
 	procname := ""
 
 	uid := uint32(os.Getuid())
@@ -182,8 +268,40 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	generator.SetProcessArgs(args)
 
-	// temporary check for development
-	// TODO: a real URI handler
+	uidParam := security.GetParam(Security, "uid")
+	gidParam := security.GetParam(Security, "gid")
+
+	// handle target UID/GID for root user
+	if os.Getuid() == 0 && uidParam != "" {
+		u, err := strconv.ParseUint(uidParam, 10, 32)
+		if err != nil {
+			sylog.Fatalf("failed to parse provided UID")
+		}
+		targetUID = int(u)
+		uid = uint32(targetUID)
+
+		engineConfig.SetTargetUID(targetUID)
+	} else if uidParam != "" {
+		sylog.Warningf("uid security feature requires root privileges")
+	}
+	if os.Getuid() == 0 && gidParam != "" {
+		gids := strings.Split(gidParam, ":")
+		for _, id := range gids {
+			g, err := strconv.ParseUint(id, 10, 32)
+			if err != nil {
+				sylog.Fatalf("failed to parse provided GID")
+			}
+			targetGID = append(targetGID, int(g))
+		}
+		if len(gids) > 0 {
+			gid = uint32(targetGID[0])
+		}
+
+		engineConfig.SetTargetGID(targetGID)
+	} else if gidParam != "" {
+		sylog.Warningf("gid security feature requires root privileges")
+	}
+
 	if strings.HasPrefix(image, "instance://") {
 		instanceName := instance.ExtractName(image)
 		file, err := instance.Get(instanceName)
@@ -234,6 +352,18 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetAllowSUID(AllowSUID)
 	engineConfig.SetKeepPrivs(KeepPrivs)
 	engineConfig.SetNoPrivs(NoPrivs)
+	engineConfig.SetSecurity(Security)
+	engineConfig.SetShell(ShellPath)
+
+	if ShellPath != "" {
+		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
+	}
+
+	if os.Getuid() != 0 && CgroupsPath != "" {
+		sylog.Warningf("--apply-cgroups requires root privileges")
+	} else {
+		engineConfig.SetCgroupsPath(CgroupsPath)
+	}
 
 	if IsWritable && IsWritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
@@ -244,6 +374,25 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
+
+	// set home directory for the targeted UID if it exists on host system
+	if !homeFlag.Changed && targetUID != 0 {
+		if targetUID > 500 {
+			if pwd, err := user.GetPwUID(uint32(targetUID)); err == nil {
+				sylog.Debugf("Target UID requested, set home directory to %s", pwd.Dir)
+				HomePath = pwd.Dir
+				engineConfig.SetCustomHome(true)
+			} else {
+				sylog.Verbosef("Home directory for UID %d not found, home won't be mounted", targetUID)
+				engineConfig.SetNoHome(true)
+				HomePath = "/"
+			}
+		} else {
+			sylog.Verbosef("System UID %d requested, home won't be mounted", targetUID)
+			engineConfig.SetNoHome(true)
+			HomePath = "/"
+		}
+	}
 
 	if Hostname != "" {
 		UtsNamespace = true
@@ -291,9 +440,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err == nil {
 			sylog.Fatalf("instance %s already exists", name)
 		}
-		if err := instance.SetLogFile(name); err != nil {
-			sylog.Fatalf("failed to create instance log files: %s", err)
-		}
 
 		if IsBoot {
 			UtsNamespace = true
@@ -304,9 +450,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
 			generator.SetProcessArgs([]string{"/sbin/init"})
 		}
-		pwd, err := user.GetPwUID(uid)
+		pwd, err := user.GetPwUID(uint32(os.Getuid()))
 		if err != nil {
-			sylog.Fatalf("failed to retrieve user information for UID %d: %s", uid, err)
+			sylog.Fatalf("failed to retrieve user information for UID %d: %s", os.Getuid(), err)
 		}
 		procname = instance.ProcName(name, pwd.Name)
 	} else {
@@ -368,6 +514,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
+	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
+
 	cfg := &config.Common{
 		EngineName:   singularity.Name,
 		ContainerID:  name,
@@ -379,7 +527,49 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-		sylog.Fatalf("%s", err)
+	if engineConfig.GetInstance() {
+		stdout, stderr, err := instance.SetLogFile(name, int(uid))
+		if err != nil {
+			sylog.Fatalf("failed to create instance log files: %s", err)
+		}
+
+		start, err := stderr.Seek(0, os.SEEK_END)
+		if err != nil {
+			sylog.Warningf("failed to get standard error stream offset: %s", err)
+		}
+
+		cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+
+		cmdErr := cmd.Run()
+
+		if sylog.GetLevel() != 0 {
+			// starter can exit a bit before all errors has been reported
+			// by instance process, wait a bit to catch all errors
+			time.Sleep(100 * time.Millisecond)
+
+			end, err := stderr.Seek(0, os.SEEK_END)
+			if err != nil {
+				sylog.Warningf("failed to get standard error stream offset: %s", err)
+			}
+			if end-start > 0 {
+				output := make([]byte, end-start)
+				stderr.ReadAt(output, start)
+				fmt.Println(string(output))
+			}
+		}
+
+		if cmdErr != nil {
+			sylog.Fatalf("failed to start instance: %s", cmdErr)
+		} else {
+			sylog.Verbosef("you will find instance output here: %s", stdout.Name())
+			sylog.Verbosef("you will find instance error here: %s", stderr.Name())
+			sylog.Infof("instance started successfully")
+		}
+	} else {
+		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	}
 }

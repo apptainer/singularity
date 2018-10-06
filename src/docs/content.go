@@ -496,7 +496,7 @@ Enterprise Performance Computing (EPC)`
      `
 	PullExample string = `
   From Sylabs cloud library
-  $ singularity pull library://dtrudg/demo/alpine:latest
+  $ singularity pull library://alpine:latest
 
   From Shub
   $ singularity pull shub://vsoch/singularity-images
@@ -532,7 +532,7 @@ Enterprise Performance Computing (EPC)`
 	RunLong  string = `
   This command will launch a Singularity container and execute a runscript
   if one is defined for that container. The runscript is a metadata file within
-  the container that containes shell commands. If the file is present (and
+  the container that contains shell commands. If the file is present (and
   executable) then this command will execute that file within the container
   automatically. All arguments following the container name will be passed
   directly to the runscript.
@@ -638,10 +638,42 @@ Enterprise Performance Computing (EPC)`
   $ singularity run-help my_container.sif
 
     Some help for this container`
-
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Inspect
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	InspectUse     string = `inspect [inspect options...] <image path>`
 	InspectShort   string = `Display metadata for container if available`
 	InspectLong    string = `This command will show you labels, environment variables, and scripts associated with the image.`
 	InspectExample string = `
   $ singularity inspect ubuntu.img`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Test
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	RunTestUse   string = `test [exec options...] <image path>`
+	RunTestShort string = `Run defined tests for this particular container`
+	RunTestLong  string = `
+  USAGE: singularity [...] test [exec options...] <container path>
+
+  Run defined tests for this particular container.
+
+  NOTE:
+      for instances if there is a daemon process running inside the container,
+      then subsequent container commands will all run within the same namespaces.
+      This means that the --writable and --contain options will not be honored
+      as the namespaces have already been configured by the 'singularity start' command.
+`
+	RunTestExample string = `
+  EXAMPLES:
+
+  on the definition file set
+  %test
+    echo "hello from test" "$@"
+
+  $ singularity test /tmp/Debian.sif command
+      hello from test command
+
+  For additional help, please visit our public documentation pages which are
+  found at:
+
+      https://www.sylabs.io/docs/`
 )

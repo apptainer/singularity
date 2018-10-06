@@ -11,6 +11,7 @@ import (
 
 	"github.com/sylabs/singularity/src/pkg/build/sources"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/test"
 )
 
@@ -36,7 +37,7 @@ func TestBusyBoxConveyor(t *testing.T) {
 		return
 	}
 
-	b.Recipe, err = types.ParseDefinitionFile(defFile)
+	b.Recipe, err = parser.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}
@@ -66,7 +67,7 @@ func TestBusyBoxPacker(t *testing.T) {
 		return
 	}
 
-	b.Recipe, err = types.ParseDefinitionFile(defFile)
+	b.Recipe, err = parser.ParseDefinitionFile(defFile)
 	if err != nil {
 		t.Fatalf("failed to parse definition file %s: %v\n", busyBoxDef, err)
 	}

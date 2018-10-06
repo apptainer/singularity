@@ -7,18 +7,23 @@ package imgbuild
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 
+	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/env"
 )
 
 // StartProcess runs the %post script
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+
+	// clean environment in which %post and %test scripts are run in
+	e.EngineConfig.cleanEnv()
 
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
 		// Run %post script here
@@ -34,26 +39,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := post.Wait(); err != nil {
 			sylog.Fatalf("post proc: %v\n", err)
 		}
-	}
-
-	// append environment
-	if err := e.insertEnvScript(); err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
-	}
-
-	// insert startscript
-	if err := e.insertStartScript(); err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
-	}
-
-	// insert runscript
-	if err := e.insertRunScript(); err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
-	}
-
-	// insert test script
-	if err := e.insertTestScript(); err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
 	}
 
 	if e.EngineConfig.RunSection("test") {
@@ -110,46 +95,25 @@ func (e *EngineOperations) PostStartProcess(pid int) error {
 	return nil
 }
 
-func (e *EngineOperations) insertEnvScript() error {
-	if e.EngineConfig.RunSection("environment") && e.EngineConfig.Recipe.ImageData.Environment != "" {
-		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile("/.singularity.d/env/90-environment.sh", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Environment+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+func (e *EngineConfig) cleanEnv() {
+	generator := generate.Generator{Config: &e.OciConfig.Spec}
 
-func (e *EngineOperations) insertRunScript() error {
-	if e.EngineConfig.RunSection("runscript") && e.EngineConfig.Recipe.ImageData.Runscript != "" {
-		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile("/.singularity.d/runscript", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Runscript+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+	// copy and cache environment
+	environment := e.OciConfig.Spec.Process.Env
 
-func (e *EngineOperations) insertStartScript() error {
-	if e.EngineConfig.RunSection("startscript") && e.EngineConfig.Recipe.ImageData.Startscript != "" {
-		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile("/.singularity.d/startscript", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Startscript+"\n"), 0775)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
+	// clean environment
+	e.OciConfig.Spec.Process.Env = nil
 
-func (e *EngineOperations) insertTestScript() error {
-	if e.EngineConfig.RunSection("test") && e.EngineConfig.Recipe.ImageData.Test != "" {
-		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile("/.singularity.d/test", []byte("#!/bin/sh\n\n"+e.EngineConfig.Recipe.ImageData.Test+"\n"), 0775)
-		if err != nil {
-			return err
+	// add relevant environment variables back
+	env.SetContainerEnv(&generator, environment, true, "")
+
+	// expose build specific environment variables for scripts
+	for _, envVar := range environment {
+		e := strings.SplitN(envVar, "=", 2)
+		if e[0] == "SINGULARITY_ROOTFS" || e[0] == "SINGULARITY_ENVIRONMENT" {
+			generator.Config.Process.Env = append(generator.Config.Process.Env, envVar)
 		}
+
 	}
-	return nil
+
 }

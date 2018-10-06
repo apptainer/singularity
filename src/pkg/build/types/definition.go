@@ -92,30 +92,3 @@ func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
 
 	return d, nil
 }
-
-// validSections just contains a list of all the valid sections a definition file
-// could contain. If any others are found, an error will generate
-var validSections = map[string]bool{
-	"help":        true,
-	"setup":       true,
-	"files":       true,
-	"labels":      true,
-	"environment": true,
-	"pre":         true,
-	"post":        true,
-	"runscript":   true,
-	"test":        true,
-	"startscript": true,
-}
-
-// validHeaders just contains a list of all the valid headers a definition file
-// could contain. If any others are found, an error will generate
-var validHeaders = map[string]bool{
-	"bootstrap":  true,
-	"from":       true,
-	"includecmd": true,
-	"mirrorurl":  true,
-	"updateurl":  true,
-	"osversion":  true,
-	"include":    true,
-}

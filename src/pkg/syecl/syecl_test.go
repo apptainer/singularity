@@ -96,7 +96,7 @@ func TestValidateConfig(t *testing.T) {
 		t.Error(`LoadConfig(testEclFileName2):`, err)
 	}
 	if err = ecl.ValidateConfig(); err == nil {
-		t.Error(`ecl.ValidateConfig(): Sould have detected duplicated dirpaths`, err)
+		t.Error(`ecl.ValidateConfig(): Should have detected duplicated dirpaths`, err)
 	}
 }
 
@@ -173,11 +173,7 @@ func copyFile(dst, src string) error {
 		return err
 	}
 
-	if err := d.Close(); err != nil {
-		return err
-	}
-
-	return nil
+	return d.Close()
 }
 
 func setup() error {
@@ -231,11 +227,7 @@ func setup() error {
 		return err
 	}
 	testContainer4 = filepath.Join(testEclDirPath3, filepath.Base(srcContainer3))
-	if err := copyFile(testContainer4, srcContainer3); err != nil {
-		return err
-	}
-
-	return nil
+	return copyFile(testContainer4, srcContainer3)
 }
 
 func shutdown() {

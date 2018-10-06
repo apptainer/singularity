@@ -6,23 +6,34 @@
 package assemblers
 
 import (
+	"bytes"
+	"encoding/binary"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
+	"strings"
+	"syscall"
 
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
+	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/runtime/engines/config"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 )
 
 // SIFAssembler doesnt store anything
 type SIFAssembler struct {
 }
 
-func createSIFSinglePart(path string, squashfile string) (err error) {
+func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -30,6 +41,18 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 		Sifversion: sif.HdrVersion,
 		ID:         uuid.NewV4(),
 	}
+
+	// data we need to create a definition file descriptor
+	definput := sif.DescriptorInput{
+		Datatype: sif.DataDeffile,
+		Groupid:  sif.DescrDefaultGroup,
+		Link:     sif.DescrUnusedLink,
+		Data:     definition,
+	}
+	definput.Size = int64(binary.Size(definput.Data))
+
+	// add this descriptor input element to creation descriptor slice
+	cinfo.InputDescr = append(cinfo.InputDescr, definput)
 
 	// data we need to create a system partition descriptor
 	parinput := sif.DescriptorInput{
@@ -57,12 +80,41 @@ func createSIFSinglePart(path string, squashfile string) (err error) {
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
 
+	// remove anything that may exist at the build destination at last moment
+	os.RemoveAll(path)
+
 	// test container creation with two partition input descriptors
 	if _, err := sif.CreateContainer(cinfo); err != nil {
 		return fmt.Errorf("while creating container: %s", err)
 	}
 
+	// chown the sif file to the calling user
+	if uid, gid, ok := changeOwner(); ok {
+		if err := os.Chown(path, uid, gid); err != nil {
+			return fmt.Errorf("while changing image ownership: %s", err)
+		}
+	}
+
 	return nil
+}
+
+func getMksquashfsPath() (string, error) {
+	// Parse singularity configuration file
+	c := &singularity.FileConfig{}
+	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
+		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+	}
+
+	// p is either "" or the string value in the conf file
+	p := c.MksquashfsPath
+
+	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
+	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
+		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
+	}
+
+	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
+	return exec.LookPath(p)
 }
 
 // Assemble creates a SIF image from a Bundle
@@ -71,28 +123,14 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Creating SIF file...")
 
-	// insert help
-	err = insertHelpScript(b)
-	if err != nil {
-		return fmt.Errorf("While inserting help script: %v", err)
-	}
+	// convert definition to plain text
+	var buf bytes.Buffer
+	parser.WriteDefinitionFile(&(b.Recipe), &buf)
+	def := buf.Bytes()
 
-	// insert labels
-	err = insertLabelsJSON(b)
+	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
-		return fmt.Errorf("While inserting labels JSON: %v", err)
-	}
-
-	// insert definition
-	err = insertDefinition(b)
-	if err != nil {
-		return fmt.Errorf("While inserting definition: %v", err)
-	}
-
-	mksquashfs, err := exec.LookPath("mksquashfs")
-	if err != nil {
-		sylog.Errorf("mksquashfs is not installed on this system")
-		return
+		return fmt.Errorf("While searching for mksquashfs: %v", err)
 	}
 
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
@@ -101,17 +139,61 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(f.Name())
 	os.Remove(squashfsPath)
 
-	mksquashfsCmd := exec.Command(mksquashfs, b.Rootfs(), squashfsPath, "-noappend")
+	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
+
+	// build squashfs with all-root flag when building as a user
+	if syscall.Getuid() != 0 {
+		args = append(args, "-all-root")
+	}
+
+	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	err = mksquashfsCmd.Run()
 	defer os.Remove(squashfsPath)
 	if err != nil {
 		return
 	}
 
-	err = createSIFSinglePart(path, squashfsPath)
+	err = createSIF(path, def, squashfsPath)
 	if err != nil {
 		return
 	}
 
 	return
+}
+
+// changeOwner check the command being called with sudo with the environment
+// variable SUDO_COMMAND. Pattern match that for the singularity bin
+func changeOwner() (int, int, bool) {
+	r := regexp.MustCompile("(singularity)")
+	sudoCmd := os.Getenv("SUDO_COMMAND")
+	if !r.MatchString(sudoCmd) {
+		return 0, 0, false
+	}
+
+	if os.Getenv("SUDO_USER") == "" || syscall.Getuid() != 0 {
+		return 0, 0, false
+	}
+
+	_uid := os.Getenv("SUDO_UID")
+	_gid := os.Getenv("SUDO_GID")
+	if _uid == "" || _gid == "" {
+		sylog.Warningf("Env vars SUDO_UID or SUDO_GID are not set, won't call chown over built SIF")
+
+		return 0, 0, false
+	}
+
+	uid, err := strconv.Atoi(_uid)
+	if err != nil {
+		sylog.Warningf("Error while calling strconv: %v", err)
+
+		return 0, 0, false
+	}
+	gid, err := strconv.Atoi(_gid)
+	if err != nil {
+		sylog.Warningf("Error while calling strconv : %v", err)
+
+		return 0, 0, false
+	}
+
+	return uid, gid, true
 }
