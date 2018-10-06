@@ -496,7 +496,7 @@ Enterprise Performance Computing (EPC)`
      `
 	PullExample string = `
   From Sylabs cloud library
-  $ singularity pull library://dtrudg/demo/alpine:latest
+  $ singularity pull library://alpine:latest
 
   From Shub
   $ singularity pull shub://vsoch/singularity-images
