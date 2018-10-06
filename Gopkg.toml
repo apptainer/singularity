@@ -93,9 +93,17 @@ required = [
     name = "github.com/containernetworking/plugins"
     unused-packages = false
 
+# patched fork from github.com/opencontainers/image-tools
 [[override]]
   branch = "master"
   name = "github.com/opencontainers/image-tools"
+  source = "https://github.com/sylabs/image-tools"
+
+# patched fork from github.com/golang/crypto
+[[override]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  source = "https://github.com/sylabs/golang-x-crypto"
 
 [[override]]
   branch = "master"
