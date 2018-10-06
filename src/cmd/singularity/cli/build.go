@@ -54,7 +54,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "run definition over existing container (skips header)")
 	BuildCmd.Flags().SetAnnotation("update", "envkey", []string{"UPDATE"})
 
-	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "bootstrap without running tests in %test section")
+	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "build without running tests in %test section")
 	BuildCmd.Flags().SetAnnotation("notest", "envkey", []string{"NOTEST"})
 
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "build image remotely (does not require root)")
