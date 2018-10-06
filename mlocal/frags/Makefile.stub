@@ -54,6 +54,9 @@ actions_LIST := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(SOU
 	$(SOURCEDIR)/etc/actions/start $(SOURCEDIR)/etc/actions/test
 actions_INSTALL := $(PREFIX)/etc/singularity/actions
 
+vendor_done := $(SOURCEDIR)/vendor/.vendor-done
+patch_done = $(SOURCEDIR)/vendor/.patch-done
+
 INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
 	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
 	$(bash_completion_INSTALL) $(actions_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) \
@@ -65,7 +68,7 @@ CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash
 all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completion) cniplugins
 
 .PHONY: cniplugins
-cniplugins: $(BUILDDIR)/vendors-done
+cniplugins: $(vendor_done)
 	$(V)install -d $(cni_builddir)
 	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
@@ -107,7 +110,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(vendor_done) $(libruntime) $(BUILDDIR)/config.h
 	$(V)rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -146,18 +149,17 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
 # generate the vendor folder with dep and patch when necessary
-$(BUILDDIR)/vendors-done:
-	@echo " VENDORS"
-	$(V)if [ ! -f $(BUILDDIR)/.dep-done ]; then \
+$(vendor_done):
+	@echo " VENDOR"
+	$(V)if [ ! -f $(vendor_done) ]; then \
 		dep ensure >/dev/null && \
-			touch $(BUILDDIR)/.dep-done; \
+			touch $(vendor_done); \
 	fi
-	$(V)if [ ! -f $(BUILDDIR)/.patch-done ]; then \
+	$(V)if [ ! -f $(patch_done) ]; then \
 		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
 		(cd $(SOURCEDIR)/vendor/golang.org/x/crypto && patch --silent -b -p0 < $(SOURCEDIR)/patches/privkey-encryption.patch) && \
-			touch $(BUILDDIR)/.patch-done; \
+			touch $(patch_done); \
 	fi
-	$(V)touch $@
 
 $(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
 	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
@@ -211,7 +213,7 @@ collect:
 	done
 
 .PHONY: check
-check: $(BUILDDIR)/vendors-done
+check: $(vendor_done)
 	@echo " CHECK go fmt"
 	$(V)cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
@@ -249,5 +251,8 @@ clean:
 .PHONY: install
 install: $(INSTALLFILES)
 	@echo " DONE"
+
+.PHONY: vendor
+vendor: $(vendor_done)
 
 -include $(BUILDDIR)/mergeddeps

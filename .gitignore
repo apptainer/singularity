@@ -10,6 +10,8 @@ generate_docs
 
 .vscode
 vendor/
+Gopkg.toml
+Gopkg.lock
 builddir/
 src/pkg/buildcfg/config.go
 trash.lock
