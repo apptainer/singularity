@@ -237,6 +237,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"contain":        envBool,
 	"containall":     envBool,
 	"nv":             envBool,
+	"no-nv":          envBool,
 	"writable":       envBool,
 	"writable-tmpfs": envBool,
 	"no-home":        envBool,

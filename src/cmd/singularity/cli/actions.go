@@ -81,6 +81,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}

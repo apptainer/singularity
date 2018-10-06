@@ -31,6 +31,7 @@ func init() {
 		"network",
 		"network-args",
 		"no-home",
+		"no-nv",
 		"no-privs",
 		"nv",
 		"overlay",

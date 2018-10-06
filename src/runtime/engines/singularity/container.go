@@ -1459,7 +1459,9 @@ func (c *container) addLibsMount(system *mount.System) error {
 		return err
 	}
 
-	for _, lib := range c.engine.EngineConfig.GetLibrariesPath() {
+	libraries := c.engine.EngineConfig.GetLibrariesPath()
+
+	for _, lib := range libraries {
 		sylog.Debugf("Add library %s to mount list", lib)
 
 		file := filepath.Base(lib)
@@ -1479,14 +1481,18 @@ func (c *container) addLibsMount(system *mount.System) error {
 		system.Points.AddRemount(mount.FilesTag, sessionFilePath, flags)
 	}
 
-	sessionDirPath, _ := c.session.GetPath(sessionDir)
+	if len(libraries) > 0 {
+		sessionDirPath, _ := c.session.GetPath(sessionDir)
 
-	err := system.Points.AddBind(mount.FilesTag, sessionDirPath, containerDir, flags)
-	if err != nil {
-		return fmt.Errorf("unable to add %s to mount list: %s", sessionDirPath, err)
+		err := system.Points.AddBind(mount.FilesTag, sessionDirPath, containerDir, flags)
+		if err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", sessionDirPath, err)
+		}
+
+		return system.Points.AddRemount(mount.FilesTag, containerDir, flags)
 	}
 
-	return system.Points.AddRemount(mount.FilesTag, containerDir, flags)
+	return nil
 }
 
 func (c *container) addIdentityMount(system *mount.System) error {
