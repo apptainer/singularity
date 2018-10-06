@@ -53,8 +53,7 @@ all your interactions with the project members and users.
     - Deprecated / removed commands
     - Changed defaults / behaviors
     - Backwards incompatible changes
-    - Migration guidance
-    - New features / functionalities (*e.g. a new flag for a command*)
+    - New features / functionalities
 12. PRs which introduce a new Golang dependency to the project via `dep` must include a justification for introducing the dependency. Ideally, newly introduced dependencies should also be pinned to a specific version.
 
 ## Documentation
