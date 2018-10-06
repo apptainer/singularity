@@ -13,7 +13,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -86,6 +88,13 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 		return fmt.Errorf("while creating container: %s", err)
 	}
 
+	// chown the sif file to the calling user
+	if uid, gid, ok := changeOwner(); ok {
+		if err := os.Chown(path, uid, gid); err != nil {
+			return fmt.Errorf("while changing image ownership: %s", err)
+		}
+	}
+
 	return nil
 }
 
@@ -150,4 +159,41 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	}
 
 	return
+}
+
+// changeOwner check the command being called with sudo with the environment
+// variable SUDO_COMMAND. Pattern match that for the singularity bin
+func changeOwner() (int, int, bool) {
+	r := regexp.MustCompile("(singularity)")
+	sudoCmd := os.Getenv("SUDO_COMMAND")
+	if !r.MatchString(sudoCmd) {
+		return 0, 0, false
+	}
+
+	if os.Getenv("SUDO_USER") == "" || syscall.Getuid() != 0 {
+		return 0, 0, false
+	}
+
+	_uid := os.Getenv("SUDO_UID")
+	_gid := os.Getenv("SUDO_GID")
+	if _uid == "" || _gid == "" {
+		sylog.Warningf("Env vars SUDO_UID or SUDO_GID are not set, won't call chown over built SIF")
+
+		return 0, 0, false
+	}
+
+	uid, err := strconv.Atoi(_uid)
+	if err != nil {
+		sylog.Warningf("Error while calling strconv: %v", err)
+
+		return 0, 0, false
+	}
+	gid, err := strconv.Atoi(_gid)
+	if err != nil {
+		sylog.Warningf("Error while calling strconv : %v", err)
+
+		return 0, 0, false
+	}
+
+	return uid, gid, true
 }
