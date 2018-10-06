@@ -64,7 +64,7 @@ type Build struct {
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
 func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
-	def, err := makeDef(spec)
+	def, err := makeDef(spec, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
@@ -356,7 +356,7 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 }
 
 // makeDef gets a definition object from a spec
-func makeDef(spec string) (types.Definition, error) {
+func makeDef(spec string, remote bool) (types.Definition, error) {
 	if ok, err := IsValidURI(spec); ok && err == nil {
 		// URI passed as spec
 		return types.NewDefinitionFromURI(spec)
@@ -374,7 +374,7 @@ func makeDef(spec string) (types.Definition, error) {
 		defer defFile.Close()
 
 		// must be root to build from a definition
-		if os.Getuid() != 0 {
+		if os.Getuid() != 0 && !remote {
 			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
 		}
 
@@ -415,8 +415,8 @@ func (b Build) runPre() bool {
 }
 
 // MakeDef gets a definition object from a spec
-func MakeDef(spec string) (types.Definition, error) {
-	return makeDef(spec)
+func MakeDef(spec string, remote bool) (types.Definition, error) {
+	return makeDef(spec, remote)
 }
 
 // Assemble assembles the bundle to the specified path

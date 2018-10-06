@@ -109,7 +109,7 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
 
-			def, err := build.MakeDef(spec)
+			def, err := build.MakeDef(spec, remote)
 			if err != nil {
 				return
 			}
@@ -120,7 +120,6 @@ var BuildCmd = &cobra.Command{
 			}
 			b.Build(context.TODO())
 		} else {
-
 			err := checkSections()
 			if err != nil {
 				sylog.Fatalf(err.Error())
