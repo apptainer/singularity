@@ -15,7 +15,7 @@ import (
 
 const (
 	libraryURL = "https://library.sylabs.io/"
-	libraryURI = "library://dtrudg/linux/alpine:latest"
+	libraryURI = "library://alpine:latest"
 )
 
 // TestLibraryConveyor tests if we can pull an image from singularity hub
