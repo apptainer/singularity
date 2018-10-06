@@ -508,7 +508,7 @@ Enterprise Performance Computing (EPC)`
       shub://user/image:tag`
 	PullExample string = `
   From Sylabs cloud library
-  $ singularity pull library://dtrudg/demo/alpine:latest
+  $ singularity pull library://alpine:latest
 
   From Docker
   $ singularity pull docker://tensorflow/tensorflow:latest
