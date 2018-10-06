@@ -394,10 +394,18 @@ func Split(caps string) ([]string, []string) {
 	included := make([]string, 0)
 	excluded := make([]string, 0)
 
-	capabilities := strings.Split(caps, ",")
+	capabilities := strings.Split(strings.ToUpper(caps), ",")
 
 	for _, capability := range capabilities {
-		c := strings.ToUpper(strings.TrimSpace(capability))
+		c := strings.TrimSpace(capability)
+		if c == "ALL" {
+			excluded = nil
+			included = nil
+			for cap := range Map {
+				included = append(included, cap)
+			}
+			break
+		}
 		if !strings.HasPrefix(c, "CAP_") {
 			c = "CAP_" + c
 		}
