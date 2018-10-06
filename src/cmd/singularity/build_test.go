@@ -50,10 +50,9 @@ func imageVerify(t *testing.T, imagePath string, labels bool) {
 }
 
 type buildOpts struct {
-	force    bool
-	sandbox  bool
-	writable bool
-	env      []string
+	force   bool
+	sandbox bool
+	env     []string
 }
 
 func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
@@ -64,9 +63,6 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 	}
 	if opts.sandbox {
 		argv = append(argv, "--sandbox")
-	}
-	if opts.writable {
-		argv = append(argv, "--writable")
 	}
 	argv = append(argv, imagePath, buildSpec)
 
@@ -82,19 +78,17 @@ func TestBuild(t *testing.T) {
 		dependency string
 		buildSpec  string
 		sandbox    bool
-		writable   bool
 	}{
-		{"BusyBox", "", "../../../examples/busybox/Singularity", false, false},
-		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true, false},
-		{"BusyBoxWritable", "", "../../../examples/busybox/Singularity", true, true},
-		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", true, false},
-		{"DockerURI", "", "docker://busybox", true, false},
-		{"DockerDefFile", "", "../../../examples/docker/Singularity", true, false},
-		{"SHubURI", "", "shub://GodloveD/busybox", true, false},
-		{"SHubDefFile", "", "../../../examples/shub/Singularity", true, false},
-		{"LibraryDefFile", "", "../../../examples/library/Singularity", true, false},
-		{"Yum", "yum", "../../../examples/centos/Singularity", true, false},
-		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", true, false},
+		{"BusyBox", "", "../../../examples/busybox/Singularity", false},
+		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true},
+		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", true},
+		{"DockerURI", "", "docker://busybox", true},
+		{"DockerDefFile", "", "../../../examples/docker/Singularity", true},
+		{"SHubURI", "", "shub://GodloveD/busybox", true},
+		{"SHubDefFile", "", "../../../examples/shub/Singularity", true},
+		{"LibraryDefFile", "", "../../../examples/library/Singularity", true},
+		{"Yum", "yum", "../../../examples/centos/Singularity", true},
+		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
@@ -106,8 +100,7 @@ func TestBuild(t *testing.T) {
 			}
 
 			opts := buildOpts{
-				sandbox:  tt.sandbox,
-				writable: tt.writable,
+				sandbox: tt.sandbox,
 			}
 
 			imagePath := path.Join(testDir, "container")
@@ -148,7 +141,6 @@ func TestBuildMultiStage(t *testing.T) {
 		buildSpec string
 		force     bool
 		sandbox   bool
-		writable  bool
 		labels    bool
 	}
 
@@ -157,29 +149,21 @@ func TestBuildMultiStage(t *testing.T) {
 		steps []testSpec
 	}{
 		{"SIFToSIF", []testSpec{
-			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false, false},
-			{"SIF", imagePath2, imagePath1, false, false, false, false},
+			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false},
+			{"SIF", imagePath2, imagePath1, false, false, false},
 		}},
 		{"SandboxToSIF", []testSpec{
-			{"BusyBoxSandbox", imagePath1, "../../../examples/busybox/Singularity", false, true, false, false},
-			{"SIF", imagePath2, imagePath1, false, false, false, false},
-		}},
-		{"WritableToSIF", []testSpec{
-			{"BusyBoxWritable", imagePath1, "../../../examples/busybox/Singularity", false, false, true, false},
-			{"SIF", imagePath2, imagePath1, false, false, false, false},
+			{"BusyBoxSandbox", imagePath1, "../../../examples/busybox/Singularity", false, true, false},
+			{"SIF", imagePath2, imagePath1, false, false, false},
 		}},
 		{"LocalImage", []testSpec{
-			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false, false},
-			{"LocalImage", imagePath2, liDefFile, false, false, false, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
+			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false},
+			{"LocalImage", imagePath2, liDefFile, false, false, false},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
 		}},
 		{"LocalImageSandbox", []testSpec{
-			{"BusyBoxSandbox", imagePath2, "../../../examples/busybox/Singularity", true, true, false, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
-		}},
-		{"LocalImageWritable", []testSpec{
-			{"BusyBoxWritable", imagePath2, "../../../examples/busybox/Singularity", false, false, true, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, false, true},
+			{"BusyBoxSandbox", imagePath2, "../../../examples/busybox/Singularity", true, true, false},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
 		}},
 	}
 
@@ -192,9 +176,8 @@ func TestBuildMultiStage(t *testing.T) {
 			for _, ts := range tt.steps {
 				t.Run(ts.name, test.WithPrivilege(func(t *testing.T) {
 					opts := buildOpts{
-						force:    ts.force,
-						sandbox:  ts.sandbox,
-						writable: ts.writable,
+						force:   ts.force,
+						sandbox: ts.sandbox,
 					}
 
 					if b, err := imageBuild(opts, ts.imagePath, ts.buildSpec); err != nil {
