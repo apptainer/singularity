@@ -68,7 +68,7 @@ CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash
 all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completion) cniplugins
 
 .PHONY: cniplugins
-cniplugins: $(patch_vendor_done)
+cniplugins: $(vendor_done)
 	$(V)install -d $(cni_builddir)
 	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
@@ -110,7 +110,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(patch_vendor_done) $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(vendor_done) $(libruntime) $(BUILDDIR)/config.h
 	$(V)rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -154,14 +154,6 @@ $(vendor_done):
 	$(V)if [ ! -f $(vendor_done) ]; then \
 		dep ensure >/dev/null && \
 			touch $(vendor_done); \
-	fi
-
-$(patch_vendor_done):
-	@echo " PATCH VENDOR"
-	$(V)if [ ! -f $(patch_vendor_done) ]; then \
-		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
-		(cd $(SOURCEDIR)/vendor/golang.org/x/crypto && patch --silent -b -p0 < $(SOURCEDIR)/patches/privkey-encryption.patch) && \
-			touch $(patch_vendor_done); \
 	fi
 
 $(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
@@ -216,7 +208,7 @@ collect:
 	done
 
 .PHONY: check
-check: $(patch_vendor_done)
+check: $(vendor_done)
 	@echo " CHECK go fmt"
 	$(V)cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
@@ -256,9 +248,6 @@ install: $(INSTALLFILES)
 	@echo " DONE"
 
 .PHONY: vendor
-vendor: $(vendor_done) $(patch_vendor_done)
-
-.PHONY: patch-vendor
-patch-vendor: $(patch_vendor_done)
+vendor: $(vendor_done)
 
 -include $(BUILDDIR)/mergeddeps
