@@ -110,7 +110,8 @@ func (e *EngineOperations) prepareRootCaps() error {
 
 	// is no-privs/keep-privs set on command line
 	if e.EngineConfig.GetNoPrivs() {
-		sylog.Debugf("--no-privs requested")
+		sylog.Debugf("--no-privs requested, no new privileges enabled")
+		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 		defaultCapabilities = "no"
 	} else if e.EngineConfig.GetKeepPrivs() {
 		sylog.Debugf("--keep-privs requested")
