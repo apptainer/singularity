@@ -25,6 +25,9 @@ import (
 	"github.com/sylabs/singularity/src/pkg/util/user-agent"
 )
 
+// CloudURI holds the URI of the Library web front-end.
+const CloudURI = "https://cloud.sylabs.io"
+
 // RemoteBuilder contains the build request and response
 type RemoteBuilder struct {
 	Client     http.Client
@@ -87,7 +90,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	if rb.IsDetached {
 		fmt.Printf("Build submitted! Once it is complete, the image can be retrieved by running:\n")
 		fmt.Printf("\tsingularity pull --library %v library://%v\n\n", rd.LibraryURL, libraryRefRaw)
-		fmt.Printf("Alternatively, you can access it from a browser at:\n\t%v/library/%v\n", rd.LibraryURL, libraryRefRaw)
+		fmt.Printf("Alternatively, you can access it from a browser at:\n\t%v/library/%v\n", CloudURI, libraryRefRaw)
 	}
 
 	// If we're doing an attached build, stream output and then download the resulting file
