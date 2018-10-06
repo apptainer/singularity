@@ -54,7 +54,7 @@ Dependencies are managed using [`dep`](https://github.com/golang/dep). You can
 use `go get` to install it like so:
 
 ```
-$ go get -u -v github.com/golang/dep/cmd/dep
+$ go get -u github.com/golang/dep/cmd/dep
 ```
 
 ## Compile the Singularity binary
@@ -67,6 +67,12 @@ $ ./mconfig
 $ cd ./builddir
 $ make
 $ sudo make install
+```
+
+To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
+
+```
+$ git checkout v3.0.0
 ```
 
 To build in a different folder and to set the install prefix to a different path:
