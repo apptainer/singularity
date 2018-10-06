@@ -10,28 +10,10 @@ jobs:
       - image: golang:1.10-stretch
     steps:
       - checkout
-      - restore_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
       - run:
           name: Install golint
           command: |-
             go get -u golang.org/x/lint/golint
-      - run:
-          name: Set Up Vendor Directory
-          command: |-
-            if [ ! -d vendor ]; then
-              dep ensure -vendor-only
-            fi
-      - save_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
       - run:
           name: Install C dependencies
           command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
@@ -46,28 +28,10 @@ jobs:
       - image: golang:1.11-stretch
     steps:
       - checkout
-      - restore_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
       - run:
           name: Install golint
           command: |-
             go get -u golang.org/x/lint/golint
-      - run:
-          name: Set Up Vendor Directory
-          command: |-
-            if [ ! -d vendor ]; then
-              dep ensure -vendor-only
-            fi
-      - save_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
       - run:
           name: Install C dependencies
           command: apt-get update && apt-get install -y build-essential libssl-dev uuid-dev squashfs-tools
@@ -92,28 +56,10 @@ jobs:
           name: checkout
           command: |-
             git clone https://github.com/sylabs/singularity.git .
-      - restore_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
-      - run:
-          name: Install dep
-          command: |-
-            go get -u github.com/golang/dep/cmd/dep
       - run:
           name: Install golint
           command: |-
             go get -u golang.org/x/lint/golint
-      - run:
-          name: Set Up Vendor Directory
-          command: |-
-            if [ ! -d vendor ]; then
-              dep ensure -vendor-only
-            fi
-      - save_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
       - run:
           name: Install C dependencies
           command: apk add --update alpine-sdk automake libtool linux-headers linux-vanilla libarchive-dev util-linux-dev libuuid openssl-dev gawk
