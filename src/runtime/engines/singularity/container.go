@@ -142,6 +142,9 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if err := c.addHostnameMount(system); err != nil {
 		return err
 	}
+	if err := c.addActionsMount(system); err != nil {
+		return err
+	}
 
 	sylog.Debugf("Mount all")
 	if err := system.MountAll(); err != nil {
@@ -387,6 +390,10 @@ func (c *container) mount(point *mount.Point) error {
 			if flags&syscall.MS_REMOUNT != 0 {
 				return fmt.Errorf("can't remount %s: %s", point.Destination, err)
 			}
+			// mount error for filesystems is considered fatal
+			if point.Type != "" {
+				return fmt.Errorf("can't mount %s filesystem to %s: %s", point.Type, point.Destination, err)
+			}
 			sylog.Verbosef("can't mount %s: %s", point.Source, err)
 			return nil
 		}
@@ -459,11 +466,29 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	}
 
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
-		dest = c.session.FinalPath() + mnt.Destination
+		dest = filepath.Join(c.session.FinalPath(), mnt.Destination)
 		if _, err := os.Stat(dest); os.IsNotExist(err) {
 			c.skippedMount = append(c.skippedMount, mnt.Destination)
 			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
 			return nil
+		}
+
+		// evaluate destination path to resolve possible symlink and modify
+		// destination accordingly in order to always mount destination
+		// in container
+		resolved, err := filepath.EvalSymlinks(dest)
+		if err != nil {
+			sylog.Debugf("Skipping mount, can't evaluate %s: %s", dest, err)
+			return nil
+		}
+		if resolved != dest {
+			if !strings.HasPrefix(resolved, sessionPath) {
+				dest = filepath.Join(c.session.FinalPath(), resolved)
+			} else if filepath.IsAbs(resolved) {
+				dest = resolved
+			} else {
+				sylog.Debugf("Ignoring path '%s' resolved to '%s'", dest, resolved)
+			}
 		}
 	} else {
 		dest = mnt.Destination
@@ -1423,7 +1448,7 @@ func (c *container) addLibsMount(system *mount.System) error {
 }
 
 func (c *container) addIdentityMount(system *mount.System) error {
-	if os.Geteuid() == 0 {
+	if os.Geteuid() == 0 && c.engine.EngineConfig.GetTargetUID() == 0 {
 		sylog.Verbosef("Not updating passwd/group files, running as root!")
 		return nil
 	}
@@ -1431,13 +1456,18 @@ func (c *container) addIdentityMount(system *mount.System) error {
 	rootfs := c.session.RootFsPath()
 	defer c.session.Update()
 
+	uid := os.Getuid()
+	if uid == 0 && c.engine.EngineConfig.GetTargetUID() != 0 {
+		uid = c.engine.EngineConfig.GetTargetUID()
+	}
+
 	if c.engine.EngineConfig.File.ConfigPasswd {
 		passwd := filepath.Join(rootfs, "/etc/passwd")
 		_, home, err := c.getHomePaths()
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
-			content, err := files.Passwd(passwd, home)
+			content, err := files.Passwd(passwd, home, uid)
 			if err != nil {
 				sylog.Warningf("%s", err)
 			} else {
@@ -1459,7 +1489,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 
 	if c.engine.EngineConfig.File.ConfigGroup {
 		group := filepath.Join(rootfs, "/etc/group")
-		content, err := files.Group(group)
+		content, err := files.Group(group, uid, c.engine.EngineConfig.GetTargetGID())
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
@@ -1485,25 +1515,36 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 	resolvConf := "/etc/resolv.conf"
 
 	if c.engine.EngineConfig.File.ConfigResolvConf {
-		if !c.netNS {
+		var err error
+		var content []byte
+
+		dns := c.engine.EngineConfig.GetDNS()
+
+		if dns == "" {
 			r, err := os.Open(resolvConf)
 			if err != nil {
 				return err
 			}
-			content, err := ioutil.ReadAll(r)
+			content, err = ioutil.ReadAll(r)
 			if err != nil {
 				return err
 			}
-			if err := c.session.AddFile(resolvConf, content); err != nil {
-				sylog.Warningf("failed to add resolv.conf session file: %s", err)
-			}
-			sessionFile, _ := c.session.GetPath(resolvConf)
-
-			sylog.Debugf("Adding %s to mount list\n", resolvConf)
-			err = system.Points.AddBind(mount.FilesTag, sessionFile, resolvConf, syscall.MS_BIND)
+		} else {
+			dns = strings.Replace(dns, " ", "", -1)
+			content, err = files.ResolvConf(strings.Split(dns, ","))
 			if err != nil {
-				return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
+				return err
 			}
+		}
+		if err := c.session.AddFile(resolvConf, content); err != nil {
+			sylog.Warningf("failed to add resolv.conf session file: %s", err)
+		}
+		sessionFile, _ := c.session.GetPath(resolvConf)
+
+		sylog.Debugf("Adding %s to mount list\n", resolvConf)
+		err = system.Points.AddBind(mount.FilesTag, sessionFile, resolvConf, syscall.MS_BIND)
+		if err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
 		}
 	} else {
 		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)
@@ -1541,4 +1582,17 @@ func (c *container) addHostnameMount(system *mount.System) error {
 		sylog.Debugf("Skipping hostname mount, not virtualizing UTS namespace on user request")
 	}
 	return nil
+}
+
+func (c *container) addActionsMount(system *mount.System) error {
+	hostDir := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/actions")
+	containerDir := "/.singularity.d/actions"
+	flags := uintptr(syscall.MS_BIND | syscall.MS_RDONLY | syscall.MS_NOSUID | syscall.MS_NODEV)
+
+	err := system.Points.AddBind(mount.BindsTag, hostDir, containerDir, flags)
+	if err != nil {
+		return fmt.Errorf("unable to add %s to mount list: %s", containerDir, err)
+	}
+
+	return system.Points.AddRemount(mount.BindsTag, containerDir, flags)
 }

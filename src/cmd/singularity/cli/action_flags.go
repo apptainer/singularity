@@ -77,6 +77,7 @@ func init() {
 func initPathVars() {
 	// --app
 	actionFlags.StringVar(&AppName, "app", "", "Set container app to run")
+	actionFlags.SetAnnotation("app", "envkey", []string{"APP", "APPNAME"})
 
 	// -B|--bind
 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "A user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
@@ -135,10 +136,12 @@ func initPathVars() {
 	// --security
 	actionFlags.StringSliceVar(&Security, "security", []string{}, "Enable security features (SELinux, Apparmor, Seccomp)")
 	actionFlags.SetAnnotation("security", "argtag", []string{""})
+	actionFlags.SetAnnotation("security", "envkey", []string{"SECURITY"})
 
 	// --apply-cgroups
 	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "Apply cgroups from file for container processes (requires root privileges)")
-	actionFlags.SetAnnotation("cgroups-profile", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("apply-cgroups", "argtag", []string{"<path>"})
+	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
@@ -173,6 +176,7 @@ func initBoolVars() {
 
 	// --writable-tmpfs
 	actionFlags.BoolVar(&IsWritableTmpfs, "writable-tmpfs", false, "Makes the file system accessible as read-write with non persistent data (with overlay support only).")
+	actionFlags.SetAnnotation("writable-tmpfs", "envkey", []string{"WRITABLE_TMPFS"})
 
 	// --no-home
 	actionFlags.BoolVar(&NoHome, "no-home", false, "Do NOT mount users home directory if home is not the current working directory.")

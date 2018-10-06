@@ -21,8 +21,9 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/jsonresp"
 	"github.com/sylabs/singularity/src/pkg/test"
-	useragent "github.com/sylabs/singularity/src/pkg/util/user-agent"
+	"github.com/sylabs/singularity/src/pkg/util/user-agent"
 )
 
 const (
@@ -83,10 +84,11 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewDecoder(r.Body).Decode(&rd); err != nil {
 			m.t.Fatalf("failed to parse request: %v", err)
 		}
-		w.WriteHeader(m.buildResponseCode)
 		if m.buildResponseCode == http.StatusCreated {
 			id := bson.NewObjectId()
-			json.NewEncoder(w).Encode(newResponse(m, id, rd.Definition, rd.LibraryRef))
+			jsonresp.WriteResponse(w, newResponse(m, id, rd.Definition, rd.LibraryRef), m.buildResponseCode)
+		} else {
+			jsonresp.WriteError(w, "", m.buildResponseCode)
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, buildPath) {
 		// Mock status endpoint
@@ -94,17 +96,19 @@ func (m *mockService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !bson.IsObjectIdHex(id) {
 			m.t.Fatalf("failed to parse ID '%v'", id)
 		}
-		w.WriteHeader(m.statusResponseCode)
 		if m.statusResponseCode == http.StatusOK {
-			json.NewEncoder(w).Encode(newResponse(m, bson.ObjectIdHex(id), types.Definition{}, ""))
+			jsonresp.WriteResponse(w, newResponse(m, bson.ObjectIdHex(id), types.Definition{}, ""), m.statusResponseCode)
+		} else {
+			jsonresp.WriteError(w, "", m.statusResponseCode)
 		}
 	} else if r.Method == http.MethodGet && strings.HasPrefix(r.RequestURI, imagePath) {
 		// Mock get image endpoint
-		w.WriteHeader(m.imageResponseCode)
 		if m.imageResponseCode == http.StatusOK {
 			if _, err := strings.NewReader(imageContents).WriteTo(w); err != nil {
 				m.t.Fatalf("failed to write image")
 			}
+		} else {
+			jsonresp.WriteError(w, "", m.imageResponseCode)
 		}
 	} else {
 		w.WriteHeader(http.StatusNotFound)
