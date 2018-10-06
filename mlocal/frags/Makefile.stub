@@ -147,7 +147,7 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
-# generate the vendor folder with dep and patch when necessary
+# generate the vendor folder with dep
 $(vendor_done):
 	@echo " VENDOR"
 	$(V)if [ ! -f $(vendor_done) ]; then \
