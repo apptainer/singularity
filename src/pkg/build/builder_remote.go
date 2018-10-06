@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/client/library"
+	"github.com/sylabs/singularity/src/pkg/jsonresp"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/user-agent"
 )
@@ -191,12 +192,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d types.Definition,
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusCreated {
-		err = errors.New(res.Status)
-		return
-	}
-
-	err = json.NewDecoder(res.Body).Decode(&rd)
+	err = jsonresp.ReadResponse(res.Body, &rd)
 	return
 }
 
@@ -216,11 +212,6 @@ func (rb *RemoteBuilder) doStatusRequest(ctx context.Context, id bson.ObjectId) 
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		err = errors.New(res.Status)
-		return
-	}
-
-	err = json.NewDecoder(res.Body).Decode(&rd)
+	err = jsonresp.ReadResponse(res.Body, &rd)
 	return
 }
