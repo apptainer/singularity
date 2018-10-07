@@ -111,7 +111,7 @@ var BuildCmd = &cobra.Command{
 				return
 			}
 
-			b, err := build.NewRemoteBuilder(dest, libraryURL, def, detached, builderURL, authToken)
+			b, err := build.NewRemoteBuilder(dest, libraryURL, def, detached, force, builderURL, authToken)
 			if err != nil {
 				sylog.Fatalf("failed to create builder: %v", err)
 			}

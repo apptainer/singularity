@@ -47,7 +47,7 @@ func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewRemoteBuilder(imagePath, libraryURL string, d types.Definition, isDetached bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
+func NewRemoteBuilder(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
 	builderURL, err := url.Parse(builderAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse builder address")
@@ -58,6 +58,7 @@ func NewRemoteBuilder(imagePath, libraryURL string, d types.Definition, isDetach
 			Timeout: 30 * time.Second,
 		},
 		ImagePath:  imagePath,
+		Force:      force,
 		LibraryURL: libraryURL,
 		Definition: d,
 		IsDetached: isDetached,
