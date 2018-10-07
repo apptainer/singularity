@@ -7,10 +7,13 @@ package nvidiautils
 
 import (
 	"bufio"
+	"bytes"
+	"debug/elf"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -32,9 +35,13 @@ func nvidiaContainerCli() ([]string, error) {
 		return nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
 	}
 
-	for _, line := range strings.Split(string(out), "\n") {
-		if line != "" {
+	reader := bytes.NewReader(out)
+	scanner := bufio.NewScanner(reader)
 
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		if line != "" {
 			// if this is a library, then add a .so entry as well
 			if strings.Contains(line, ".so") {
 				fileName := filepath.Base(line)
@@ -61,11 +68,11 @@ func nvidiaLiblist(abspath string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
-
 	defer file.Close()
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := strings.TrimSpace(scanner.Text())
 		if !strings.HasPrefix(line, "#") && line != "" {
 			strArray = append(strArray, line)
 		}
@@ -73,14 +80,22 @@ func nvidiaLiblist(abspath string) ([]string, error) {
 	return strArray, nil
 }
 
-// GetNvidiaBindPath returns a string array consisting of filepaths of nvidia
+// GetNvidiaPath returns a string array consisting of filepaths of nvidia
 // related files to be added to the BindPaths
-func GetNvidiaBindPath(abspath string) ([]string, error) {
+func GetNvidiaPath(abspath string, envPath string) (libraries []string, binaries []string, err error) {
 	var strArray []string
-	var bindArray []string
 
-	// use nvidia-container-cli if presenet
-	strArray, err := nvidiaContainerCli()
+	// replace PATH with custom environment variable
+	// and restore it when returning
+	if envPath != "" {
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", envPath)
+
+		defer os.Setenv("PATH", oldPath)
+	}
+
+	// use nvidia-container-cli if present
+	strArray, err = nvidiaContainerCli()
 	if err != nil {
 		sylog.Verbosef("nvidiaContainercli returned: %v", err)
 		sylog.Verbosef("Falling back to nvliblist.conf")
@@ -90,66 +105,87 @@ func GetNvidiaBindPath(abspath string) ([]string, error) {
 		strArray, err = nvidiaLiblist(abspath)
 		if err != nil {
 			sylog.Warningf("nvidiaLiblist returned: %v", err)
-			return nil, err
+			return
 		}
 	}
 
 	// walk thru the ldconfig output and add entries which contain the filenames
 	// returned by nvidia-container-cli OR the nvliblist.conf file contents
-	command, err := exec.LookPath("ldconfig")
-	if err != nil {
-		sylog.Warningf("ldconfig not found: %v", err)
-		return nil, nil
-	}
-
-	cmd := exec.Command(command, "-p")
+	cmd := exec.Command("ldconfig", "-p")
 	out, err := cmd.Output()
 	if err != nil {
 		sylog.Warningf("ldconfig execution error: %v", err)
-		return nil, nil
+		return
 	}
 
-	lastadd := ""
+	// store library name with associated path
+	ldCache := make(map[string]string)
+
+	// store binaries/libraries path
+	bins := make(map[string]string)
+	libs := make(map[string]string)
+
+	// sample ldconfig -p output:
+	//  libnvidia-ml.so.1 (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so.1
+	r, err := regexp.Compile(`(?m)^(.*)\s*\(.*\)\s*=>\s*(.*)$`)
+	if err != nil {
+		return
+	}
+
+	// get elf machine to match correct libraries during ldconfig lookup
+	self, err := elf.Open("/proc/self/exe")
+	if err != nil {
+		return
+	}
+
+	machine := self.Machine
+	self.Close()
+
+	for _, match := range r.FindAllSubmatch(out, -1) {
+		if match != nil {
+			// libName is the "libnvidia-ml.so.1" (from the above example)
+			// libPath is the "/usr/lib64/nvidia/libnvidia-ml.so.1" (from the above example)
+			libName := strings.TrimSpace(string(match[1]))
+			libPath := strings.TrimSpace(string(match[2]))
+
+			ldCache[libPath] = libName
+		}
+	}
+
 	for _, nvidiaFileName := range strArray {
-
-		// if the file contins a ".so", treat it as a library
+		// if the file contains a ".so", treat it as a library
 		if strings.Contains(nvidiaFileName, ".so") {
-
-			for _, ldconfigOutputline := range strings.Split(strings.TrimSuffix(string(out), "\n"), "\n") {
-				if ldconfigOutputline != "" {
-
-					// sample ldconfig -p output (ldconfigOutputline)
-					// 	libnvidia-ml.so.1 (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so.1
-					//	libnvidia-ml.so (libc6,x86-64) => /usr/lib64/nvidia/libnvidia-ml.so
-
-					ldconfigOutputSplitline := strings.SplitN(ldconfigOutputline, "=> ", 2)
-					if len(ldconfigOutputSplitline) > 1 {
-
-						// ldconfigOutputSplitline[0] is the "libnvidia-ml.so[.1] (libc6,x86-64)"" (from the above example)
-						// ldconfigOutputSplitline[1] is the "/usr/lib64/nvidia/libnvidia-ml.so[.1]" (from the above example)
-						// these next 2 lines extract the "libnvdia-ml.so[.1]" (from the above example)
-
-						// ldconfigFileName is "libnvidia-ml.so[.1]" (from the above example)
-						ldconfigFileNames := strings.Split(ldconfigOutputSplitline[0], " ")
-						ldconfigFileName := strings.TrimSpace(string(ldconfigFileNames[0]))
-
-						if strings.HasPrefix(ldconfigFileName, nvidiaFileName) && ldconfigFileName != lastadd { // add if not duplicate
-							// this is binding the actual name found above...
-							bindString := ldconfigOutputSplitline[1] + ":/.singularity.d/libs/" + ldconfigFileName
-							bindArray = append(bindArray, bindString)
-							lastadd = ldconfigFileName
+			for libPath, lib := range ldCache {
+				if strings.HasPrefix(lib, nvidiaFileName) {
+					if _, ok := libs[lib]; !ok {
+						elib, err := elf.Open(libPath)
+						if err != nil {
+							sylog.Debugf("ignore library %s: %s", lib, err)
+							continue
 						}
-					}
 
+						if elib.Machine == machine {
+							libs[lib] = libPath
+							libraries = append(libraries, libPath)
+						}
+
+						elib.Close()
+					}
 				}
 			}
 		} else {
 			// treat the file as a binary file - add it to the bind list
 			// no need to check the ldconfig output
-			bindString := nvidiaFileName + ":" + nvidiaFileName
-			bindArray = append(bindArray, bindString)
+			binary, err := exec.LookPath(nvidiaFileName)
+			if err != nil {
+				continue
+			}
+			if _, ok := bins[binary]; !ok {
+				bins[binary] = binary
+				binaries = append(binaries, binary)
+			}
 		}
 	}
 
-	return bindArray, nil
+	return
 }

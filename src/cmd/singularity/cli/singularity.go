@@ -103,6 +103,9 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
+	// backup user PATH
+	os.Setenv("USER_PATH", os.Getenv("PATH"))
+
 	os.Setenv("PATH", "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin")
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -224,6 +227,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"network":       envStringNSlice,
 	"network-args":  envStringNSlice,
 	"dns":           envStringNSlice,
+	"containlibs":   envStringNSlice,
 	"security":      envStringNSlice,
 	"apply-cgroups": envStringNSlice,
 	"app":           envStringNSlice,
@@ -234,6 +238,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"contain":        envBool,
 	"containall":     envBool,
 	"nv":             envBool,
+	"no-nv":          envBool,
 	"writable":       envBool,
 	"writable-tmpfs": envBool,
 	"no-home":        envBool,

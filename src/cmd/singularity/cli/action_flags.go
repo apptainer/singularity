@@ -15,20 +15,21 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	AppName     string
-	BindPaths   []string
-	HomePath    string
-	OverlayPath []string
-	ScratchPath []string
-	WorkdirPath string
-	PwdPath     string
-	ShellPath   string
-	Hostname    string
-	Network     string
-	NetworkArgs []string
-	DNS         string
-	Security    []string
-	CgroupsPath string
+	AppName         string
+	BindPaths       []string
+	HomePath        string
+	OverlayPath     []string
+	ScratchPath     []string
+	WorkdirPath     string
+	PwdPath         string
+	ShellPath       string
+	Hostname        string
+	Network         string
+	NetworkArgs     []string
+	DNS             string
+	Security        []string
+	CgroupsPath     string
+	ContainLibsPath []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -40,6 +41,7 @@ var (
 	Nvidia          bool
 	NoHome          bool
 	NoInit          bool
+	NoNvidia        bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -142,6 +144,11 @@ func initPathVars() {
 	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "apply cgroups from file for container processes (requires root privileges)")
 	actionFlags.SetAnnotation("apply-cgroups", "argtag", []string{"<path>"})
 	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
+
+	// hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
+	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
+	actionFlags.Lookup("containlibs").Hidden = true
+	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
@@ -186,6 +193,11 @@ func initBoolVars() {
 	// --no-init
 	actionFlags.BoolVar(&NoInit, "no-init", false, "do NOT start shim process with --pid")
 	actionFlags.SetAnnotation("no-init", "envkey", []string{"NO_INIT", "NOSHIMINIT"})
+
+	// hidden flag to disable nvidia bindings when 'always use nv = yes'
+	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
+	actionFlags.Lookup("no-nv").Hidden = true
+	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
