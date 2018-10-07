@@ -219,7 +219,7 @@ test:
 	@echo "       PASS"
 
 .PHONY: testall
-testall: check test
+testall: vendor-check check test
 
 .PHONY: cscope
 cscope:
@@ -241,5 +241,10 @@ install: $(INSTALLFILES)
 vendor:
 	@echo " VENDOR"
 	$(V)dep ensure >/dev/null
+
+.PHONY: vendor-check
+vendor-check:
+	@echo " VENDOR CHECK"
+	$(V)dep check
 
 -include $(BUILDDIR)/mergeddeps
