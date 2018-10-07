@@ -51,17 +51,18 @@ func init() {
 	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
 	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
 
-	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 	usr, err := user.Current()
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
-	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "print debugging information (highest verbosity)")
+	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "only print errors")
+	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "suppress normal output")
+	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print additional information")
+	SingularityCmd.Flags().StringVarP(&tokenFile, "tokenfile", "t", defaultTokenFile, "path to the file holding your sylabs authentication token")
+
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
 }

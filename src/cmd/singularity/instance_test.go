@@ -41,9 +41,8 @@ func TestInstance(t *testing.T) {
 	var imagePath = "./instance_tests.sif"
 
 	opts := buildOpts{
-		force:    true,
-		sandbox:  false,
-		writable: false,
+		force:   true,
+		sandbox: false,
 	}
 	if b, err := imageBuild(opts, imagePath, definition); err != nil {
 		t.Log(string(b))
