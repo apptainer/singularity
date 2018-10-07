@@ -80,6 +80,8 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
@@ -325,16 +327,31 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetImage(abspath)
 	}
 
-	if Nvidia {
-		NvidiaBindPaths, err := nvidiautils.GetNvidiaBindPath(buildcfg.SINGULARITY_CONFDIR)
+	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
+		userPath := os.Getenv("USER_PATH")
+
+		if engineConfig.File.AlwaysUseNv {
+			sylog.Verbosef("'always use nv = yes' found in singularity.conf")
+			sylog.Verbosef("binding nvidia files into container")
+		}
+
+		libs, bins, err := nvidiautils.GetNvidiaPath(buildcfg.SINGULARITY_CONFDIR, userPath)
 		if err != nil {
 			sylog.Infof("Unable to capture nvidia bind points: %v", err)
 		} else {
-			if len(NvidiaBindPaths) == 0 {
+			if len(bins) == 0 {
+				sylog.Infof("Could not find any NVIDIA binaries on this host!")
+			} else {
+				if IsWritable {
+					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
+				}
+				BindPaths = append(BindPaths, bins...)
+			}
+			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 				sylog.Warningf("You may need to edit %v/nvliblist.conf", buildcfg.SINGULARITY_CONFDIR)
 			} else {
-				BindPaths = append(BindPaths, NvidiaBindPaths...)
+				ContainLibsPath = append(ContainLibsPath, libs...)
 			}
 		}
 	}
@@ -354,6 +371,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
+	engineConfig.SetLibrariesPath(ContainLibsPath)
 
 	if ShellPath != "" {
 		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
