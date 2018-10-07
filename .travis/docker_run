@@ -19,7 +19,7 @@ if [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "6" ]]; then
       "$DOCKER_HUB_URI" /bin/bash -exc "
     export DOCKER_HOST=unix:///docker.sock
     chmod o+rw /docker.sock &&
-    cd /build && # .travis/centos6_setup &&
+    cd /build &&
     .travis/build_test $OS_TYPE $OS_VERSION
 "
 elif [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "7" ]]; then
