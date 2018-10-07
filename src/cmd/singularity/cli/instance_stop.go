@@ -14,25 +14,25 @@ func init() {
 	InstanceStopCmd.Flags().SetInterspersed(false)
 
 	// -u|--user
-	InstanceStopCmd.Flags().StringVarP(&username, "user", "u", "", `If running as root, list instances from "<username>"`)
+	InstanceStopCmd.Flags().StringVarP(&username, "user", "u", "", `if running as root, list instances from "<username>"`)
 	InstanceStopCmd.Flags().SetAnnotation("user", "argtag", []string{"<username>"})
 	InstanceStopCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -a|--all
-	InstanceStopCmd.Flags().BoolVarP(&stopAll, "all", "a", false, "Stop all user's instances")
+	InstanceStopCmd.Flags().BoolVarP(&stopAll, "all", "a", false, "stop all user's instances")
 	InstanceStopCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
 	// -f|--force
-	InstanceStopCmd.Flags().BoolVarP(&forceStop, "force", "f", false, "Force kill instance")
+	InstanceStopCmd.Flags().BoolVarP(&forceStop, "force", "F", false, "force kill instance")
 	InstanceStopCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
 	// -s|--signal
-	InstanceStopCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "Signal sent to the instance")
+	InstanceStopCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "signal sent to the instance")
 	InstanceStopCmd.Flags().SetAnnotation("signal", "argtag", []string{"<signal>"})
 	InstanceStopCmd.Flags().SetAnnotation("signal", "envkey", []string{"SIGNAL"})
 
 	// -t|--timeout
-	InstanceStopCmd.Flags().IntVarP(&stopTimeout, "timeout", "t", 10, "Force kill non stopped instances after X seconds")
+	InstanceStopCmd.Flags().IntVarP(&stopTimeout, "timeout", "t", 10, "force kill non stopped instances after X seconds")
 }
 
 // InstanceStopCmd singularity instance stop

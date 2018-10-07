@@ -39,37 +39,34 @@ var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
 
-	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "Build image as sandbox format (chroot directory structure)")
+	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "build image as sandbox format (chroot directory structure)")
 	BuildCmd.Flags().SetAnnotation("sandbox", "envkey", []string{"SANDBOX"})
 
-	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{"all"}, "Only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
+	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{"all"}, "only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
 	BuildCmd.Flags().SetAnnotation("section", "envkey", []string{"SECTION"})
 
-	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "Interpret build definition as JSON")
+	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "interpret build definition as JSON")
 	BuildCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
 
-	BuildCmd.Flags().BoolVarP(&writable, "writable", "w", false, "Build image as writable (SIF with writable internal overlay)")
-	BuildCmd.Flags().SetAnnotation("writable", "envkey", []string{"WRITABLE"})
-
-	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "Delete and overwrite an image if it currently exists")
+	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "delete and overwrite an image if it currently exists")
 	BuildCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
-	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "Run definition over existing container")
+	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "run definition over existing container (skips header)")
 	BuildCmd.Flags().SetAnnotation("update", "envkey", []string{"UPDATE"})
 
-	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "Bootstrap without running tests in %test section")
+	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "build without running tests in %test section")
 	BuildCmd.Flags().SetAnnotation("notest", "envkey", []string{"NOTEST"})
 
-	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "Build image remotely")
+	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "build image remotely (does not require root)")
 	BuildCmd.Flags().SetAnnotation("remote", "envkey", []string{"REMOTE"})
 
-	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "Submit build job and print nuild ID (no real-time logs)")
+	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print nuild ID (no real-time logs and requires --remote)")
 	BuildCmd.Flags().SetAnnotation("detached", "envkey", []string{"DETACHED"})
 
-	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "Remote Build Service URL")
+	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "remote Build Service URL")
 	BuildCmd.Flags().SetAnnotation("builder", "envkey", []string{"BUILDER"})
 
-	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "Container Library URL")
+	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
 	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
 	SingularityCmd.AddCommand(BuildCmd)
@@ -109,18 +106,17 @@ var BuildCmd = &cobra.Command{
 				sylog.Fatalf("Unable to submit build job: %v", authWarning)
 			}
 
-			def, err := build.MakeDef(spec)
+			def, err := build.MakeDef(spec, remote)
 			if err != nil {
 				return
 			}
 
-			b, err := build.NewRemoteBuilder(dest, libraryURL, def, detached, builderURL, authToken)
+			b, err := build.NewRemoteBuilder(dest, libraryURL, def, detached, force, builderURL, authToken)
 			if err != nil {
 				sylog.Fatalf("failed to create builder: %v", err)
 			}
 			b.Build(context.TODO())
 		} else {
-
 			err := checkSections()
 			if err != nil {
 				sylog.Fatalf(err.Error())

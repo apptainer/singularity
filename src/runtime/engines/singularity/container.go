@@ -1444,6 +1444,54 @@ func (c *container) addCwdMount(system *mount.System) error {
 }
 
 func (c *container) addLibsMount(system *mount.System) error {
+	sylog.Debugf("Checking for 'user bind control' in configuration file")
+	if !c.engine.EngineConfig.File.UserBindControl {
+		sylog.Warningf("Ignoring libraries bind request: user bind control disabled by system administrator")
+		return nil
+	}
+
+	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_RDONLY | syscall.MS_REC)
+
+	containerDir := "/.singularity.d/libs"
+	sessionDir := "/libs"
+
+	if err := c.session.AddDir(sessionDir); err != nil {
+		return err
+	}
+
+	libraries := c.engine.EngineConfig.GetLibrariesPath()
+
+	for _, lib := range libraries {
+		sylog.Debugf("Add library %s to mount list", lib)
+
+		file := filepath.Base(lib)
+		sessionFile := filepath.Join(sessionDir, file)
+
+		if err := c.session.AddFile(sessionFile, []byte{}); err != nil {
+			return err
+		}
+
+		sessionFilePath, _ := c.session.GetPath(sessionFile)
+
+		err := system.Points.AddBind(mount.FilesTag, lib, sessionFilePath, flags)
+		if err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", lib, err)
+		}
+
+		system.Points.AddRemount(mount.FilesTag, sessionFilePath, flags)
+	}
+
+	if len(libraries) > 0 {
+		sessionDirPath, _ := c.session.GetPath(sessionDir)
+
+		err := system.Points.AddBind(mount.FilesTag, sessionDirPath, containerDir, flags)
+		if err != nil {
+			return fmt.Errorf("unable to add %s to mount list: %s", sessionDirPath, err)
+		}
+
+		return system.Points.AddRemount(mount.FilesTag, containerDir, flags)
+	}
+
 	return nil
 }
 

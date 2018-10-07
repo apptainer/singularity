@@ -95,6 +95,7 @@ type JSONConfig struct {
 	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
 	TargetUID     int           `json:"targetUID,omitempty"`
 	TargetGID     []int         `json:"targetGID,omitempty"`
+	LibrariesPath []string      `json:"librariesPath,omitempty"`
 }
 
 // EngineConfig stores both the JSONConfig and the FileConfig
@@ -480,4 +481,16 @@ func (e *EngineConfig) SetTargetGID(gid []int) {
 // GetTargetGID returns the target GIDs
 func (e *EngineConfig) GetTargetGID() []int {
 	return e.JSON.TargetGID
+}
+
+// SetLibrariesPath sets libraries to bind in container
+// /.singularity.d/libs directory
+func (e *EngineConfig) SetLibrariesPath(libraries []string) {
+	e.JSON.LibrariesPath = libraries
+}
+
+// GetLibrariesPath returns libraries to bind in container
+// /.singularity.d/libs directory
+func (e *EngineConfig) GetLibrariesPath() []string {
+	return e.JSON.LibrariesPath
 }

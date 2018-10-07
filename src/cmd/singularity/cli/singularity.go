@@ -51,17 +51,18 @@ func init() {
 	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
 	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
 
-	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Print debugging information")
-	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "Only print errors")
-	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "Suppress all normal output")
-	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Increase verbosity +1")
 	usr, err := user.Current()
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
-	SingularityCmd.Flags().StringVar(&tokenFile, "tokenfile", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "print debugging information (highest verbosity)")
+	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "only print errors")
+	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "suppress normal output")
+	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print additional information")
+	SingularityCmd.Flags().StringVarP(&tokenFile, "tokenfile", "t", defaultTokenFile, "path to the file holding your sylabs authentication token")
+
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
 }
@@ -102,6 +103,9 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
+	// backup user PATH
+	os.Setenv("USER_PATH", os.Getenv("PATH"))
+
 	os.Setenv("PATH", "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin")
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -223,6 +227,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"network":       envStringNSlice,
 	"network-args":  envStringNSlice,
 	"dns":           envStringNSlice,
+	"containlibs":   envStringNSlice,
 	"security":      envStringNSlice,
 	"apply-cgroups": envStringNSlice,
 	"app":           envStringNSlice,
@@ -233,6 +238,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"contain":        envBool,
 	"containall":     envBool,
 	"nv":             envBool,
+	"no-nv":          envBool,
 	"writable":       envBool,
 	"writable-tmpfs": envBool,
 	"no-home":        envBool,
