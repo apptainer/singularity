@@ -226,6 +226,17 @@ check: $(BUILDDIR)/vendors-done
 	$(V)cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
 
+.PHONY: dist
+dist: $(BUILDDIR)/vendors-done
+	@echo " DIST setup VERSION"
+	$(V)git describe --match 'v[0-9]*' --dirty --always > $(SOURCEDIR)/VERSION
+	@echo " DIST create tarball"
+	$(V)cd $(SOURCEDIR) && $(V) mkdir tmpdir && \
+		$(V)tar -czvf tmpdir/singularity-$(VERSION).tar.gz --exclude-vcs --exclude .mailmap \
+			--exclude .github* --exclude .travis.yml --exclude .travis* --exclude vendor* \
+			--exclude .circleci* --exclude tmpdir* --exclude builddir* . && \
+		$(V)mv tmpdir/singularity*.tar.gz . &&  $(V)rmdir tmpdir && $(V)cd - && rm -f $(SOURCEDIR)/VERSION
+
 .PHONY: test
 test:
 	@echo " TEST sudo go test"
