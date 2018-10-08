@@ -235,7 +235,7 @@ dist:
 		tar -czvf tmpdir/singularity-$(VERSION).tar.gz --exclude-vcs --exclude .mailmap \
 			--exclude .github* --exclude .travis.yml --exclude .travis* --exclude vendor* \
 			--exclude .circleci* --exclude tmpdir* --exclude builddir* . && \
-		mv tmpdir/singularity*.tar.gz . && rmdir tmpdir && cd - && rm -f $(SOURCEDIR)/VERSION
+		mv tmpdir/singularity*.tar.gz . && rmdir tmpdir && rm -f $(SOURCEDIR)/VERSION
 
 .PHONY: test
 test:
