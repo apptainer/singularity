@@ -239,11 +239,11 @@ func SetLogFile(name string, uid int) (*os.File, *os.File, error) {
 		return nil, nil, err
 	}
 
-	if uid != os.Getuid() {
-		if err := os.Chown(stderrPath, uid, os.Getgid()); err != nil {
+	if uid != os.Getuid() || uid == 0 {
+		if err := stderr.Chown(uid, os.Getgid()); err != nil {
 			return nil, nil, err
 		}
-		if err := os.Chown(stdoutPath, uid, os.Getgid()); err != nil {
+		if err := stdout.Chown(uid, os.Getgid()); err != nil {
 			return nil, nil, err
 		}
 	}
