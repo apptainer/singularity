@@ -15,8 +15,8 @@ _This file uses `v3.0.0` as an example release_
 
 ## Documentation
 Ensure that our documentation is up to date:
-  - [User Docs](https://www.sylabs.io/guides/latest/user-guide/) can be edited [here](https://github.com/sylabs/singularity-userdocs)
-  - [Admin Docs](https://www.sylabs.io/guides/latest/admin-guide/) can be edited [here](https://github.com/sylabs/singularity-admindocs)
+  - [User Docs](https://www.sylabs.io/guides/3.0/user-guide/) can be edited [here](https://github.com/sylabs/singularity-userdocs)
+  - [Admin Docs](https://www.sylabs.io/guides/3.0/admin-guide/) can be edited [here](https://github.com/sylabs/singularity-admindocs)
 
 
 ## Announcements
@@ -26,7 +26,7 @@ Release announcements should be made on:
     - **NOTE:** The GitHub release MUST contain a line about the proper installation procedure when installing from the GitHub generated tarballs. Namely, that you must build using `./mconfig [-V version]`
   - Singularity mailing list
   - Singularity [Slack channel](https://www.sylabs.io/community/)
-  - Blog post on [sylabs.io](https://www.sylabs.io/lab-notes/)
+  - Blog post on [sylabs.io](https://www.sylabs.io/category/labnotes/)
   - Various twitter channels:
     - [@SylabsIO](https://twitter.com/sylabsio)
     - [@SingularityApp](https://twitter.com/singularityapp)
