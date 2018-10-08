@@ -93,6 +93,11 @@ fi
 if [ -z "$exec_prefix" ]; then
     exec_prefix=$prefix
 fi
+if [ -z "$package_version" ]; then
+	echo "error: unable to determine \$package_version variable"
+	echo "NOTE: Try running mconfig with [-V version]"
+	exit 2
+fi
 topdir=`dirname \`readlink mconfig\`` || (echo "\`mconfig' needs to be symlinked at the top of the project."; exit 2)
 sourcedir=`readlink -f .`
 mfragsdir=$sourcedir/mlocal/frags
