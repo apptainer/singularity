@@ -21,7 +21,7 @@ tgtcxx_opts=$hstcxx_opts
 hststatic=0
 tgtstatic=0
 appsec=0
-package_version=`git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || echo "" | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+package_version=`git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "" | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
 
 
@@ -92,6 +92,12 @@ if [ $# != 0 ]; then
 fi
 if [ -z "$exec_prefix" ]; then
     exec_prefix=$prefix
+fi
+if [ -z "$package_version" ]; then
+	echo "error: unable to determine \$package_version variable"
+	echo "NOTE: Not in a git tree and VERSION file not found"
+	echo "NOTE: Try running mconfig with [-V version]"
+	exit 2
 fi
 topdir=`dirname \`readlink mconfig\`` || (echo "\`mconfig' needs to be symlinked at the top of the project."; exit 2)
 sourcedir=`readlink -f .`

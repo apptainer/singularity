@@ -235,9 +235,8 @@ func testRunFromURI(t *testing.T) {
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
 	opts := buildOpts{
-		force:    true,
-		sandbox:  false,
-		writable: false,
+		force:   true,
+		sandbox: false,
 	}
 	if b, err := imageBuild(opts, imagePath, "../../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
