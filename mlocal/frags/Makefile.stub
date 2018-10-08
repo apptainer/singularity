@@ -227,7 +227,7 @@ check: $(BUILDDIR)/vendors-done
 	@echo "       PASS"
 
 .PHONY: dist
-dist: $(BUILDDIR)/vendors-done
+dist:
 	@echo " DIST setup VERSION"
 	$(V)git describe --match 'v[0-9]*' --dirty --always > $(SOURCEDIR)/VERSION
 	@echo " DIST create tarball"
