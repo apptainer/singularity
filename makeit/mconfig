@@ -188,6 +188,7 @@ SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
 EXEC_PREFIX := $exec_prefix
+VERSION := $package_version
 
 HOSTAR := ar
 HOSTCC := $hstcc
