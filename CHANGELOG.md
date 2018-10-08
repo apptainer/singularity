@@ -9,7 +9,9 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v2.6.0
+# Changes Since v3.0.0
+
+# v3.0.0 - [2018.10.08]
 
   - Singularity is now written primarily in Go to bring better integration with the existing container ecosystem
   - Added support for new URIs (`build` & `run/exec/shell/start`):
@@ -79,3 +81,4 @@ _The old changelog can be found in the `release-2.6` branch_
     - `oci-archive`
   - The `from` keyword in the definition file now correctly parses a `docker` URI which includes the `registry` and/or `namespace` components
   - The `registry` and `namespace` keywords in the definition file are no longer supported. Instead, those values may all go into the `from` keyword
+  - Building from a tar archive of a `sandbox` no longer works

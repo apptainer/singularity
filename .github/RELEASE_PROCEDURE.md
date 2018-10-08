@@ -22,6 +22,7 @@ Ensure that our documentation is up to date:
 ## Announcements
 Release announcements should be made on:
   - GitHub [releases page](https://github.com/sylabs/singularity/releases)
+    - Run `make -C builddir/ dist` and attach the generated tarball as an asset to the release
     - **NOTE:** The GitHub release MUST contain a line about the proper installation procedure when installing from the GitHub generated tarballs. Namely, that you must build using `./mconfig [-V version]`
   - Singularity mailing list
   - Singularity [Slack channel](https://www.sylabs.io/community/)
