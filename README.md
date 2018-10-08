@@ -12,15 +12,15 @@
 
 Singularity is an open source container platform designed to be simple, fast, and secure. Singularity is optimized for EPC and HPC workloads, allowing untrusted users to run untrusted containers in a trusted way.
 
-Check out [who is using Singularity](https://www.sylabs.io/as-seen-on/) and some [use cases of Singularity](https://www.sylabs.io/category/how-tos/) on our website.
+Check out [who is using Singularity](https://www.sylabs.io/singularity/whos-using-singularity/) and some [use cases of Singularity](https://www.sylabs.io/category/how-tos/) on our website.
 
 ## Getting Started with Singularity
 
-To install Singularity from source, see the [installation instructions](INSTALL.md). For other installation options, see [our website](https://www.sylabs.io/singularity-pro/).
+To install Singularity from source, see the [installation instructions](INSTALL.md). For other installation options, see [our website](https://www.sylabs.io/singularity/download/).
 
-For system administrators, see the [administrator documentation](https://www.sylabs.io/guides/latest/admin-guide/).
+For system administrators, see the [administrator documentation](https://www.sylabs.io/guides/3.0/admin-guide/).
 
-For users, see the [user documentation](https://www.sylabs.io/guides/latest/user-guide/).
+For users, see the [user documentation](https://www.sylabs.io/guides/3.0/user-guide/).
 
 ## Contributing to Singularity
 
@@ -30,7 +30,7 @@ We also welcome contributions to our [user docs](https://github.com/sylabs/singu
 
 ## Support
 
-To get help with Singularity, check out the [Community Portal](https://www.sylabs.io/community/).
+To get help with Singularity, check out the [Community Portal](https://www.sylabs.io/join-the-community/).
 
 For additional support, [contact us](https://www.sylabs.io/contact/) to receive more information.
 
