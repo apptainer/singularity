@@ -4,14 +4,23 @@ Since you are reading this from the Singualrity source code, it will be assumed
 that you are building/compiling. 
 
 ## Install system dependencies 
-You must first install development and libraries to your host. Assuming Ubuntu 
-(apply similar to RHEL derivatives):
+You must first install development and libraries to your host. 
+Assuming Ubuntu: 
 
 ```
-$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev
+$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+```
+
+On CentOS/RHEL:
+
+```
+$ sudo yum update && sudo yum groupinstall 'Development Tools'
+
+$ sudo yum install libtool libarchive-devel openssl-devel libuuid-devel libseccomp-devel
 ```
 
 ## Install golang
+
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
 
 First, visit the [golang download page](https://golang.org/dl/) and pick a 
