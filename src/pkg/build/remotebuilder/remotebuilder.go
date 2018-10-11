@@ -46,7 +46,7 @@ func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
 	}
 }
 
-// NewRemoteBuilder creates a RemoteBuilder with the specified details.
+// New creates a RemoteBuilder with the specified details.
 func New(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
 	builderURL, err := url.Parse(builderAddr)
 	if err != nil {
