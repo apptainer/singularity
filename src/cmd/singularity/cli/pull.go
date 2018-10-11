@@ -40,6 +40,7 @@ func init() {
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
+	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
 
 	SingularityCmd.AddCommand(PullCmd)
 }
