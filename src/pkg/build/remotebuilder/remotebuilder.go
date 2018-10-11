@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package remotebuilder
 
 import (
 	"bytes"
@@ -47,7 +47,7 @@ func (rb *RemoteBuilder) setAuthHeader(h http.Header) {
 }
 
 // NewRemoteBuilder creates a RemoteBuilder with the specified details.
-func NewRemoteBuilder(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
+func New(imagePath, libraryURL string, d types.Definition, isDetached, force bool, builderAddr, authToken string) (rb *RemoteBuilder, err error) {
 	builderURL, err := url.Parse(builderAddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse builder address")

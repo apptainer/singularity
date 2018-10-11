@@ -1,0 +1,39 @@
+package cli
+
+import (
+	"github.com/spf13/cobra"
+	library "github.com/sylabs/singularity/src/pkg/client/library"
+	shub "github.com/sylabs/singularity/src/pkg/client/shub"
+	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/uri"
+)
+
+func pullRun(cmd *cobra.Command, args []string) {
+	i := len(args) - 1 // uri is stored in args[len(args)-1]
+	transport, ref := uri.SplitURI(args[i])
+	if ref == "" {
+		sylog.Fatalf("bad uri %s", args[i])
+	}
+
+	name := args[0]
+	if len(args) == 1 {
+		name = uri.NameFromURI(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+	}
+
+	switch transport {
+	case LibraryProtocol, "":
+		// would use libexec.PullLibraryImage but it pulls in build.X
+		err := library.DownloadImage(name, args[i], PullLibraryURI, force, authToken)
+		if err != nil {
+			sylog.Fatalf("%v\n", err)
+		}
+	case ShubProtocol:
+		// would use libexec.PullShubImage but it pulls in build.X
+		err := shub.DownloadImage(name, args[i], force)
+		if err != nil {
+			sylog.Fatalf("%v\n", err)
+		}
+	default:
+		sylog.Fatalf("%s unsupported on this platform", transport)
+	}
+}

@@ -1,13 +1,7 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
-// This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE.md file distributed with the sources of this project regarding your
-// rights to use or distribute this software.
-
 package cli
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -15,9 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/src/docs"
-	"github.com/sylabs/singularity/src/pkg/build"
 	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
 var (
@@ -77,66 +69,17 @@ var BuildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(2),
 
-	Use:     docs.BuildUse,
-	Short:   docs.BuildShort,
-	Long:    docs.BuildLong,
-	Example: docs.BuildExample,
-	PreRun: func(cmd *cobra.Command, args []string) {
-		sylabsToken(cmd, args)
-		syplugin.Init()
-	},
-	// TODO: Can we plz move this to another file to keep the CLI the CLI
-	Run: func(cmd *cobra.Command, args []string) {
-		buildFormat := "sif"
-		if sandbox {
-			buildFormat = "sandbox"
-		}
-
-		dest := args[0]
-		spec := args[1]
-
-		// check if target collides with existing file
-		if ok := checkBuildTarget(dest); !ok {
-			os.Exit(1)
-		}
-
-		if remote {
-			// Submiting a remote build requires a valid authToken
-			if authToken == "" {
-				sylog.Fatalf("Unable to submit build job: %v", authWarning)
-			}
-
-			def, err := build.MakeDef(spec, remote)
-			if err != nil {
-				return
-			}
-
-			b, err := build.NewRemoteBuilder(dest, libraryURL, def, detached, force, builderURL, authToken)
-			if err != nil {
-				sylog.Fatalf("failed to create builder: %v", err)
-			}
-			b.Build(context.TODO())
-		} else {
-			err := checkSections()
-			if err != nil {
-				sylog.Fatalf(err.Error())
-			}
-
-			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest, libraryURL, authToken)
-			if err != nil {
-				sylog.Fatalf("Unable to create build: %v", err)
-			}
-
-			if err = b.Full(); err != nil {
-				sylog.Fatalf("While performing build: %v", err)
-			}
-		}
-	},
+	Use:              docs.BuildUse,
+	Short:            docs.BuildShort,
+	Long:             docs.BuildLong,
+	Example:          docs.BuildExample,
+	PreRun:           preRun,
+	Run:              run,
 	TraverseChildren: true,
 }
 
 // checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite
-func checkBuildTarget(path string) bool {
+func checkBuildTarget(path string, update bool) bool {
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {
 			sylog.Fatalf("Only sandbox updating is supported.")
