@@ -8,7 +8,7 @@ You must first install development and libraries to your host.
 Assuming Ubuntu: 
 
 ```
-$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
 ```
 
 On CentOS/RHEL:
