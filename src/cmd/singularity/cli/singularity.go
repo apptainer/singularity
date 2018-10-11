@@ -260,6 +260,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"sandbox": envBool,
 	"section": envStringNSlice,
 	"json":    envBool,
+	"name":    envStringNSlice,
 	// "writable": envBool, // set above for now
 	"force":    envBool,
 	"update":   envBool,
