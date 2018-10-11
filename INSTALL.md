@@ -1,29 +1,33 @@
 # Installing Singularity development-3.0
 
-Since you are reading this from the Singualrity source code, it will be assumed 
-that you are building/compiling. 
+Since you are reading this from the Singualrity source code, it will be assumed
+that you are building/compiling.
 
-## Install system dependencies 
-You must first install development and libraries to your host. 
-Assuming Ubuntu: 
+## Install system dependencies
+You must first install development and libraries to your host.
+Assuming Ubuntu:
 
 ```
-$ sudo apt-get update && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
+$ sudo apt-get update && \
+sudo apt-get install -y build-essential \
+libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
 ```
 
 On CentOS/RHEL:
 
 ```
-$ sudo yum update && sudo yum groupinstall 'Development Tools'
+$ sudo yum update && \
+sudo yum groupinstall 'Development Tools'
 
-$ sudo yum install libtool libarchive-devel openssl-devel libuuid-devel libseccomp-devel
+$ sudo yum install -y libtool \
+libarchive-devel openssl-devel libuuid-devel libseccomp-devel
 ```
 
 ## Install golang
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
 
-First, visit the [golang download page](https://golang.org/dl/) and pick a 
+First, visit the [golang download page](https://golang.org/dl/) and pick a
 package archive to download.  Copy the link address and download with `wget`.
 
 ```
@@ -32,7 +36,7 @@ $ cd /tmp
 $ wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz
 ```
 
-Then extract the archive to `/usr/local` (or use other instructions on go 
+Then extract the archive to `/usr/local` (or use other instructions on go
 installation page).
 
 ```
@@ -58,8 +62,8 @@ $ git clone https://github.com/sylabs/singularity.git
 $ cd singularity
 ```
 
-## Install golang dependencies 
-Dependencies are managed using [`dep`](https://github.com/golang/dep). You can 
+## Install golang dependencies
+Dependencies are managed using [`dep`](https://github.com/golang/dep). You can
 use `go get` to install it like so:
 
 ```
