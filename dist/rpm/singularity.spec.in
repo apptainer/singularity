@@ -89,8 +89,12 @@ export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}/builddir
+
+# We're making an assumption here, that EXEC_PREFIX will be /usr,
+# but share/man/man1 is hard coded in Makefile.stubs. We don't have
+# an equivalent to set %{_mandir}, or what it's derived from.
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
-make PREFIX=$RPM_BUILD_ROOT%{_prefix} EXEC_PREFIX=$RPM_BUILD_ROOT%{_exec_prefix} install man
+make DESTDIR=$RPM_BUILD_ROOT install man
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -108,6 +112,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_localstatedir}/singularity
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
+# XXX: Not great since we can't control this location...
 %{_mandir}/man1/*
 
 
