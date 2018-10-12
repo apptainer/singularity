@@ -6,7 +6,7 @@ starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/sta
 
 starter := $(BUILDDIR)/src/runtime/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
-starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/libexec/singularity/bin/starter-suid
+starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
 
 
 singularity := $(BUILDDIR)/singularity
