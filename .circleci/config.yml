@@ -60,7 +60,6 @@ jobs:
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
 
-
   go1.11-alpine:
     <<: *defaults
     docker:
