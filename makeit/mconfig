@@ -180,6 +180,8 @@ echo >> $genmk
 ########################
 # build tools
 ########################
+. ${sourcedir}/mlocal/frags/paths.stub
+
 cat >> $genmk << EOF
 # source/build locations
 BUILDDIR := .
@@ -188,6 +190,14 @@ SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
 EXEC_PREFIX := $exec_prefix
+BINDIR := $bindir
+LIBEXECDIR := $libexecdir
+SBINDIR := $sbindir
+SYSCONFDIR := $sysconfdir
+SHAREDSTATEDIR := $sharedstatedir
+LOCALSTATEDIR := $localstatedir
+LIBDIR := $libdir
+
 VERSION := $package_version
 
 HOSTAR := ar
