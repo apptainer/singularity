@@ -22,6 +22,8 @@ const (
 var (
 	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
+	// PullImageName holds the name to be given to the pulled image
+	PullImageName string
 )
 
 func init() {
@@ -32,6 +34,10 @@ func init() {
 
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
+
+	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
+	PullCmd.Flags().Lookup("name").Hidden = true
+	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
 
 	SingularityCmd.AddCommand(PullCmd)
 }
