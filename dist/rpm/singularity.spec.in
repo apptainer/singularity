@@ -66,18 +66,18 @@ tar -xf $GOTAR
 
 %build
 export GOROOT=$PWD/go
-export PATH=$GOROOT/bin:$PATH
 export GOPATH=$PWD/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
 go get -u -v github.com/golang/dep/cmd/dep
-./mconfig -V %{version}-%{release} -p '""' -e /usr
+./mconfig -V %{version}-%{release} -p '""' -e /usr -P release-stripped
 cd builddir
 make
 
 %install
 export GOROOT=$PWD/go
-export PATH=$GOROOT/bin:$PATH
 export GOPATH=$PWD/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}/builddir
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
 make PREFIX=$RPM_BUILD_ROOT EXEC_PREFIX=$RPM_BUILD_ROOT/usr install man
