@@ -37,7 +37,6 @@ ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: wget
 BuildRequires: libuuid-devel
-BuildRequires: libarchive-devel
 BuildRequires: openssl-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
