@@ -55,7 +55,7 @@ jobs:
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
       - run:
-          name: check code
+          name: Check code
           command: |-
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
@@ -75,7 +75,7 @@ jobs:
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
       - run:
-          name: check code
+          name: Check code
           command: |-
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
@@ -102,21 +102,21 @@ jobs:
             sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
             sudo chown -R circleci:circleci ~/go
       - run:
-          name: fetch deps
+          name: Fetch deps
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
-          name: build & install singularity
+          name: Build & install singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: test singularity
+          name: Test singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
             make -C ./builddir test
