@@ -90,7 +90,7 @@ export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}/builddir
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
-make PREFIX=$RPM_BUILD_ROOT EXEC_PREFIX=$RPM_BUILD_ROOT/usr install man
+make PREFIX=$RPM_BUILD_ROOT%{_prefix} EXEC_PREFIX=$RPM_BUILD_ROOT%{_exec_prefix} install man
 
 %clean
 rm -rf $RPM_BUILD_ROOT
