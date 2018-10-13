@@ -223,7 +223,9 @@ func LoadProfileFromFile(profile string, generator *generate.Generator) error {
 	if generator.Config.Linux.Seccomp == nil {
 		generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
 	}
-	generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
+	if generator.Config.Process.Capabilities == nil {
+		generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
+	}
 	if err := cseccomp.LoadProfileFromBytes(data, generator); err != nil {
 		return err
 	}
