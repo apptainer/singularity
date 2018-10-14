@@ -36,6 +36,7 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: wget
+BuildRequires: git
 BuildRequires: libuuid-devel
 BuildRequires: openssl-devel
 %if "%{_target_vendor}" == "suse"
