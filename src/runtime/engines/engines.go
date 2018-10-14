@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"net/rpc"
+	"os"
 	"syscall"
 
 	"github.com/sylabs/singularity/src/runtime/engines/config"
@@ -46,7 +47,7 @@ type EngineOperations interface {
 	PostStartProcess(int) error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
 	// will typically block until the container proc exists
-	MonitorContainer(int) (syscall.WaitStatus, error)
+	MonitorContainer(int, chan os.Signal) (syscall.WaitStatus, error)
 	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
 	// for ensuring that the container has been properly torn down
 	CleanupContainer() error
