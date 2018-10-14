@@ -397,7 +397,6 @@ func GetSignEntitiesFp(fp *os.File) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fimg.UnloadContainer()
 
 	return getSignEntities(&fimg)
 }
