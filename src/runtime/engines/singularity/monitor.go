@@ -8,16 +8,12 @@ package singularity
 import (
 	"fmt"
 	"os"
-	"os/signal"
 	"syscall"
 )
 
 // MonitorContainer monitors a container
-func (engine *EngineOperations) MonitorContainer(pid int) (syscall.WaitStatus, error) {
+func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
-
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals)
 
 	for {
 		s := <-signals

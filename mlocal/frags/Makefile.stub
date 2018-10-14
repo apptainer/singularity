@@ -240,7 +240,10 @@ dist:
 .PHONY: test
 test:
 	@echo " TEST sudo go test"
-	$(V)cd $(SOURCEDIR) && sudo -E `which go` test -count=1 $(GO_TAGS) -cover -race ./...
+	@# avoid travis 10 minutes of silence timeout
+	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
+	trap "kill $$! || true" 0; \
+	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: testall
