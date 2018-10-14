@@ -78,7 +78,7 @@ sed -i \
   -e "s@\(^libdir=\).*@\1%{_libdir}@" \
   mlocal/frags/paths.stub 
 
-./mconfig -V %{version}-%{release} -p %{_prefix} -e %{_exec_prefix} -P release-stripped
+./mconfig -V %{version}-%{release} -p %{_prefix} -e %{_exec_prefix}
 
 cd builddir
 make
