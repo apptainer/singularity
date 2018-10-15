@@ -10,20 +10,6 @@ jobs:
       - image: sylabsio/golang:1.11-stretch
     steps:
       - checkout
-      - restore_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
-      - run:
-          name: Set Up Vendor Directory
-          command: |-
-            if [ ! -d vendor ]; then
-              dep ensure -vendor-only
-            fi
-      - save_cache:
-          key: dep-cache-{{ checksum "Gopkg.lock" }}
-          paths:
-            - vendor
       - persist_to_workspace:
           root: /go
           paths:
