@@ -252,7 +252,7 @@ testall: check test
 .PHONY: rpm
 rpm:
 	@echo "Build RPM"
-	$(V)cd .. && dist/rpm/buildrpm
+	$(V)cd $(SOURCEDIR) && dist/rpm/buildrpm
 
 .PHONY: cscope
 cscope:
