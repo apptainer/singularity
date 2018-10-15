@@ -10,7 +10,6 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"os/signal"
 	"strings"
 	"syscall"
 
@@ -63,11 +62,8 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 }
 
 // MonitorContainer is responsible for waiting on container process
-func (e *EngineOperations) MonitorContainer(pid int) (syscall.WaitStatus, error) {
+func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
-
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals)
 
 	for {
 		s := <-signals
