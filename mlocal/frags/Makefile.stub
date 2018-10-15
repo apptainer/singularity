@@ -197,7 +197,7 @@ collect:
 	done
 
 .PHONY: check
-check:
+check: $(go_OBJ)
 	@echo " CHECK go fmt"
 	$(V)cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
