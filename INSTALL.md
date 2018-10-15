@@ -59,14 +59,6 @@ $ git clone https://github.com/sylabs/singularity.git
 $ cd singularity
 ```
 
-## Install golang dependencies
-Dependencies are managed using [`dep`](https://github.com/golang/dep). You can
-use `go get` to install it like so:
-
-```
-$ go get -u github.com/golang/dep/cmd/dep
-```
-
 ## Compile the Singularity binary
 Now you are ready to build Singularity. Dependencies will be automatically
 downloaded. You can build Singularity using the following commands:

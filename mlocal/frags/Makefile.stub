@@ -65,7 +65,7 @@ CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash
 all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completion) cniplugins
 
 .PHONY: cniplugins
-cniplugins: $(BUILDDIR)/vendors-done
+cniplugins:
 	$(V)install -d $(cni_builddir)
 	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
 		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
@@ -107,7 +107,7 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 	$(V)rm -f $(go_OBJ)
 	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
@@ -144,20 +144,6 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
-
-# generate the vendor folder with dep and patch when necessary
-$(BUILDDIR)/vendors-done:
-	@echo " VENDORS"
-	$(V)if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure >/dev/null && \
-			touch $(BUILDDIR)/.dep-done; \
-	fi
-	$(V)if [ ! -f $(BUILDDIR)/.patch-done ]; then \
-		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
-		(cd $(SOURCEDIR)/vendor/golang.org/x/crypto && patch --silent -b -p0 < $(SOURCEDIR)/patches/privkey-encryption.patch) && \
-			touch $(BUILDDIR)/.patch-done; \
-	fi
-	$(V)touch $@
 
 $(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
 	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
@@ -211,7 +197,7 @@ collect:
 	done
 
 .PHONY: check
-check: $(BUILDDIR)/vendors-done
+check: $(go_OBJ)
 	@echo " CHECK go fmt"
 	$(V)cd $(SOURCEDIR) && \
 		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
@@ -247,7 +233,7 @@ test:
 	@echo "       PASS"
 
 .PHONY: testall
-testall: check test
+testall: vendor-check check test
 
 .PHONY: rpm
 rpm:
@@ -268,5 +254,16 @@ clean:
 .PHONY: install
 install: $(INSTALLFILES)
 	@echo " DONE"
+
+# generate the vendor folder with dep
+.PHONY: vendor
+vendor:
+	@echo " VENDOR"
+	$(V)dep ensure >/dev/null
+
+.PHONY: vendor-check
+vendor-check:
+	@echo " VENDOR CHECK"
+	$(V)dep check
 
 -include $(BUILDDIR)/mergeddeps

@@ -17,7 +17,7 @@ ln -s ../.. singularity-$VERSION
 #  the symlink will be followed, without having to use tar -h which 
 #  dereferences all symlinks.
 tar czf singularity-$VERSION.tar.gz \
-        --exclude .git --exclude builddir --exclude vendor \
+        --exclude .git --exclude builddir \
         --exclude dist/rpm/*.tar.gz --exclude dist/rpm/singularity.spec \
         --exclude dist/rpm/singularity-$VERSION \
         singularity.spec singularity-$VERSION/.??* singularity-$VERSION/*
