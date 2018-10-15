@@ -1,4 +1,4 @@
-#!/bin/sh -
+#!/bin/bash
 # Copyright (c) 2016-2018, Yannick Cote <yanick@divyan.org>. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
@@ -57,39 +57,21 @@ usage_args () {
 # save the command line
 cmdline="`readlink -f $0` $*"
 
-# check line options
-args=`getopt p:P:e:b:c:C:sSvV:x:X:h $*`
-if [ $? -ne 0 ]; then
-	usage_args
-	exit 2
-fi
-eval set -- "$args"
-while [ $# -ne 0 ]; do
+while test -n "$1"; do
  case $1 in
-  -p) prefix="$2"; shift; shift;;
-  -P) profile="$2"; shift; shift;;
-  -e) exec_prefix="$2"; shift; shift;;
-  -b) builddir="$2"; shift; shift;;
-  -c) hstcc="$2"; shift; shift;;
-  -C) tgtcc="$2"; shift; shift;;
-  -x) hstcxx="$2"; shift; shift;;
-  -X) tgtcxx="$2"; shift; shift;;
-  -s) hststatic=1; shift;;
-  -S) tgtstatic=1; shift;;
-  -v) verbose=1; shift;;
-  -V) package_version="$2"; shift; shift;;
-  -h) usage_args; exit 2;;
-  --) shift; break;;
-  ?) usage_args
-     exit 2;;
+  -p|--prefix=*)
+   if [ "$1" = "-p" -a "$2" != "" ]; then 
+    prefix=$2
+    shift
+   else
+    prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   fi
+    echo "PPP $prefix"
+    shift;;
+  *) echo $*; break;;
  esac
 done
-#
-# non-option param
-if [ $# != 0 ]; then
-	usage_args
-	exit 2
-fi
+
 if [ -z "$exec_prefix" ]; then
     exec_prefix=$prefix
 fi
