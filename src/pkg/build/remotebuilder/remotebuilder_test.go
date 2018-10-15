@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package build
+package remotebuilder
 
 import (
 	"context"
@@ -189,7 +189,7 @@ func TestBuild(t *testing.T) {
 	// Loop over test cases
 	for _, tt := range tests {
 		t.Run(tt.description, test.WithoutPrivilege(func(t *testing.T) {
-			rb, err := NewRemoteBuilder(tt.imagePath, "", types.Definition{}, tt.isDetached, false, s.URL, authToken)
+			rb, err := New(tt.imagePath, "", types.Definition{}, tt.isDetached, false, s.URL, authToken)
 			if err != nil {
 				t.Fatalf("failed to get new remote builder: %v", err)
 			}
