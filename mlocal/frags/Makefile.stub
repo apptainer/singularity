@@ -249,6 +249,11 @@ test:
 .PHONY: testall
 testall: check test
 
+.PHONY: rpm
+rpm:
+	@echo "Build RPM"
+	$(V)cd .. && dist/rpm/buildrpm
+
 .PHONY: cscope
 cscope:
 	@printf " CSCOPE\n"
