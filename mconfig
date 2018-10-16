@@ -8,19 +8,33 @@ set -e
 prefix="/usr/local"
 # exec_prefix will be set again later
 exec_prefix=""
+
 verbose=0
 profile=release
+
 hstcc=
 hstcc_opts="cc gcc clang i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc"
 hstcxx=
 hstcxx_opts="c++ g++ clang++ i686-w64-mingw32-g++ x86_64-w64-mingw32-g++"
+hstar=
+hstld=
+hstranlib=
+hstobjcopy=
+
 tgtcc=
 tgtcc_opts=$hstcc_opts
 tgtcxx=
 tgtcxx_opts=$hstcxx_opts
+tgtar=
+tgtld=
+tgtranlib=
+tgtobjcopy=
+
 hststatic=0
 tgtstatic=0
+
 appsec=0
+
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
 
@@ -200,21 +214,21 @@ LIBDIR := $libdir
 
 VERSION := $package_version
 
-HOSTAR := ar
+HOSTAR := $hstar
 HOSTCC := $hstcc
 HOSTCXX := $hstcxx
 HOSTLD := $hstcc
-HOSTRANLIB := ranlib
+HOSTRANLIB := $hstranlib
 HOSTSIZE := size
-HOSTOBJCOPY := objcopy
+HOSTOBJCOPY := $hstobjcopy
 
-AR := `(cd \`dirname \\\`$tgtcc -print-prog-name=ar\\\`\` && pwd -P || false)`/ar
+AR := $tgtar
 CC := $tgtcc
 CXX := $tgtcxx
-LD := `(cd \`dirname \\\`$tgtcc -print-prog-name=ar\\\`\` && pwd -P || false)`/ld
-RANLIB := `(cd \`dirname \\\`$tgtcc -print-prog-name=ar\\\`\` && pwd -P || false)`/ranlib
+LD := $tgtld
+RANLIB := $tgtranlib
 SIZE := size
-OBJCOPY := `(cd \`dirname \\\`$tgtcc -print-prog-name=ar\\\`\` && pwd -P || false)`/objcopy
+OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
 
