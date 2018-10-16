@@ -352,6 +352,8 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 		return &sources.LocalConveyorPacker{}, nil
 	case "yum":
 		return &sources.YumConveyorPacker{}, nil
+	case "":
+		return nil, fmt.Errorf("no bootstrap specification found")
 	default:
 		return nil, fmt.Errorf("invalid build source %s", def.Header["bootstrap"])
 	}
