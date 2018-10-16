@@ -49,12 +49,13 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 			fatalChan <- fmt.Errorf("failed to copy unix socket descriptor: %s", err)
 			return
 		}
-		defer rpcConn.Close()
 
 		runtime.LockOSThread()
 		err = engine.CreateContainer(containerPid, rpcConn)
 		if err != nil {
 			fatalChan <- fmt.Errorf("container creation failed: %s", err)
+		} else {
+			rpcConn.Close()
 		}
 		runtime.Goexit()
 	}()
