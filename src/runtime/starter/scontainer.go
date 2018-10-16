@@ -14,8 +14,8 @@ import (
 	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 )
 
-// SContainer performs container startup
-func SContainer(stage int, masterSocket int, starterConfig *starter.Config, jsonBytes []byte) {
+// SContainer performs container startup.
+func SContainer(stage, masterSocket int, starterConfig *starter.Config, jsonBytes []byte) {
 	var conn net.Conn
 	var err error
 
@@ -40,11 +40,9 @@ func SContainer(stage int, masterSocket int, starterConfig *starter.Config, json
 
 	if stage == 1 {
 		sylog.Debugf("Entering scontainer stage 1\n")
-
 		if err := engine.PrepareConfig(conn, starterConfig); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
-
 		if err := starterConfig.WritePayload(conn, engine.Common); err != nil {
 			sylog.Fatalf("%s", err)
 		}
