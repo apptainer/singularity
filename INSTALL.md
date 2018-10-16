@@ -17,10 +17,7 @@ On CentOS/RHEL:
 
 ```
 $ sudo yum update && \
-sudo yum groupinstall 'Development Tools'
-
-$ sudo yum install -y libtool \
-libarchive-devel openssl-devel libuuid-devel libseccomp-devel
+yum install -y openssl-devel libuuid-devel
 ```
 
 ## Install golang
@@ -62,14 +59,6 @@ $ git clone https://github.com/sylabs/singularity.git
 $ cd singularity
 ```
 
-## Install golang dependencies
-Dependencies are managed using [`dep`](https://github.com/golang/dep). You can
-use `go get` to install it like so:
-
-```
-$ go get -u github.com/golang/dep/cmd/dep
-```
-
 ## Compile the Singularity binary
 Now you are ready to build Singularity. Dependencies will be automatically
 downloaded. You can build Singularity using the following commands:
@@ -81,6 +70,18 @@ $ cd ./builddir
 $ make
 $ sudo make install
 ```
+
+Alternatively, to build an rpm on CentOS/RHEL use the following commands: 
+
+```
+$ cd $GOPATH/src/github.com/sylabs/singularity
+$ ./mconfig
+$ make -C builddir rpm
+```
+
+Golang doesn't have to be installed to build an rpm because the rpm
+build installs it and all golang dependencies, but it is still
+recommended for a complete development environment.
 
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 

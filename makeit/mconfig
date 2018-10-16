@@ -21,7 +21,7 @@ tgtcxx_opts=$hstcxx_opts
 hststatic=0
 tgtstatic=0
 appsec=0
-package_version=`git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "" | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
 
 
@@ -180,6 +180,8 @@ echo >> $genmk
 ########################
 # build tools
 ########################
+. ${sourcedir}/mlocal/frags/paths.stub
+
 cat >> $genmk << EOF
 # source/build locations
 BUILDDIR := .
@@ -188,6 +190,14 @@ SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
 EXEC_PREFIX := $exec_prefix
+BINDIR := $bindir
+LIBEXECDIR := $libexecdir
+SBINDIR := $sbindir
+SYSCONFDIR := $sysconfdir
+SHAREDSTATEDIR := $sharedstatedir
+LOCALSTATEDIR := $localstatedir
+LIBDIR := $libdir
+
 VERSION := $package_version
 
 HOSTAR := ar
