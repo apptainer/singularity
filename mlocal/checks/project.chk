@@ -11,9 +11,6 @@ config_add_def PACKAGE_STRING \"singularity $package_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
-# load configurable paths
-. $mfragsdir/paths.stub
-
 config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
 config_add_def EXECPREFIX \"$exec_prefix\"
