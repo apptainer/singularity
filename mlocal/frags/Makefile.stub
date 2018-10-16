@@ -109,7 +109,7 @@ $(singularity_INSTALL): $(singularity)
 # config.go
 $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 	$(V)rm -f $(go_OBJ)
-	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
+	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
 
 # bash_completion file
 $(bash_completion): $(go_OBJ)

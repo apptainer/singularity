@@ -32,7 +32,7 @@ output=$builddir/Makefile
 ########################
 # mconfig tmpfiles path
 ########################
-genconfdir=`mktemp -d -p /tmp mconfig-generated-XXXXXXXXXX`
+genconfdir=`mktemp -d /tmp/mconfig-generated-XXXXXXXXXX`
 genmk=$genconfdir/base.mk
 :>$genmk
 
