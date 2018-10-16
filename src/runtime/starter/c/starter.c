@@ -549,7 +549,13 @@ static void list_fd(struct fdlist *fl) {
 }
 
 static void fix_fsuid(uid_t uid) {
-    if ( setfsuid(uid) != 0 ) {
+    int fsuid = setfsuid(uid);
+
+    if ( fsuid == uid ) {
+        singularity_message(DEBUG, "Filesystem UID already equal to %d", uid);
+        return;
+    }
+    if ( fsuid != 0 ) {
         singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
         exit(1);
     }
