@@ -10,12 +10,12 @@ starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
 
 
 singularity := $(BUILDDIR)/singularity
-singularity_INSTALL := $(DESTDIR)$(EXEC_PREFIX)/bin/singularity
+singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
 singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
 singularity_REPO := github.com/sylabs/singularity
 
 dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
-dist_bin_SCRIPTS_INSTALL := $(DESTDIR)$(EXEC_PREFIX)/bin/run-singularity
+dist_bin_SCRIPTS_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/run-singularity
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
@@ -183,7 +183,7 @@ $(actions_INSTALL): $(actions_LIST)
 
 .PHONY: man
 man:
-	$(V)go run $(GO_TAGS) $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(DESTDIR)$(EXEC_PREFIX)/share/man/man1
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(DESTDIR)$(EXECPREFIX)/share/man/man1
 
 .PHONY: collect
 collect:

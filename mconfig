@@ -4,11 +4,6 @@
 # in the LICENSE file.
 set -e
 
-# defaults and compiler options
-prefix="/usr/local"
-# exec_prefix will be set again later
-exec_prefix=""
-
 verbose=0
 profile=release
 
@@ -37,6 +32,20 @@ appsec=0
 
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
+prefix=
+exec_prefix=
+bindir=
+sbindir=
+libexecdir=
+datadir=
+sysconfdir=
+sharedstatedir=
+localstatedir=
+libdir=
+includedir=
+oldincludedir=
+infodir=
+mandir=
 
 
 usage () {
@@ -89,8 +98,107 @@ while [ $# -ne 0 ]; do
     prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    fi
    shift;;
+  -e|--exec_prefix*)
+   if [ "$1" = "-e" ]; then
+    if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+    fi
+    prefix=$2
+    shift
+   else
+    if echo "$1" | sed -e '/^--exec_prefix=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+    fi
+    exec_prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   fi
+   shift;;
+  --bindir*)
+   if echo "$1" | sed -e '/^--bindir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   bindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --sbindir*)
+   if echo "$1" | sed -e '/^--sbindir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   sbindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --libexecdir*)
+   if echo "$1" | sed -e '/^--libexecdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   libexecdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --datadir*)
+   if echo "$1" | sed -e '/^--datadir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   datadir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --sysconfdir*)
+   if echo "$1" | sed -e '/^--sysconfdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   sysconfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --sharedstatedir*)
+   if echo "$1" | sed -e '/^--sharedstatedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   sharedstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --localstatedir*)
+   if echo "$1" | sed -e '/^--localstatedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   localstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --libdir*)
+   if echo "$1" | sed -e '/^--libdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   libdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --includedir*)
+   if echo "$1" | sed -e '/^--includedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   includedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --oldincludedir*)
+   if echo "$1" | sed -e '/^--oldincludedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   oldincludedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --infodir*)
+   if echo "$1" | sed -e '/^--infodir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   infodir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --mandir*)
+   if echo "$1" | sed -e '/^--mandir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   mandir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
   -P) profile="$2"; shift; shift;;
-  -e) exec_prefix="$2"; shift; shift;;
   -b) builddir="$2"; shift; shift;;
   -c) hstcc="$2"; shift; shift;;
   -C) tgtcc="$2"; shift; shift;;
@@ -113,9 +221,67 @@ if [ $# != 0 ]; then
 	usage_args
 	exit 2
 fi
-if [ -z "$exec_prefix" ]; then
-    exec_prefix=$prefix
+
+# defaults paths
+if [ -z "${prefix}" ]; then
+	prefix=/usr/local
 fi
+if [ -z "${exec_prefix}" ]; then
+	exec_prefix=${prefix}
+fi
+if [ -z "${bindir}" ]; then
+	bindir=${exec_prefix}/bin
+fi
+if [ -z "${sbindir}" ]; then
+	sbindir=${exec_prefix}/sbin
+fi
+if [ -z "${libexecdir}" ]; then
+	libexecdir=${exec_prefix}/libexec
+fi
+if [ -z "${datadir}" ]; then
+	datadir=${prefix}/share
+fi
+if [ -z "${sysconfdir}" ]; then
+	sysconfdir=${prefix}/etc
+fi
+if [ -z "${sharedstatedir}" ]; then
+	sharedstatedir=${prefix}/com
+fi
+if [ -z "${localstatedir}" ]; then
+	localstatedir=${prefix}/var
+fi
+if [ -z "${libdir}" ]; then
+	libdir=${exec_prefix}/lib
+fi
+if [ -z "${includedir}" ]; then
+	includedir=${prefix}/include
+fi
+if [ -z "${oldincludedir}" ]; then
+	oldincludedir=/usr/include
+fi
+if [ -z "${infodir}" ]; then
+	infodir=${prefix}/info
+fi
+if [ -z "${mandir}" ]; then
+	mandir=${prefix}/man
+fi
+
+echo "prefix=${prefix}"
+echo "exec_prefix=${exec_prefix}"
+echo "bindir=${bindir}"
+echo "sbindir=${sbindir}"
+echo "libexecdir=${libexecdir}"
+echo "datadir=${datadir}"
+echo "sysconfdir=${sysconfdir}"
+echo "sharedstatedir=${sharedstatedir}"
+echo "localstatedir=${localstatedir}"
+echo "libdir=${libdir}"
+echo "includedir=${includedir}"
+echo "oldincludedir=${oldincludedir}"
+echo "infodir=${infodir}"
+echo "mandir=${mandir}"
+
+
 if [ -z "$package_version" ]; then
 	echo "error: unable to determine \$package_version variable"
 	echo "NOTE: Not in a git tree and VERSION file not found"
@@ -203,8 +369,6 @@ echo >> $genmk
 ########################
 # build tools
 ########################
-. ${sourcedir}/mlocal/frags/paths.stub
-
 cat >> $genmk << EOF
 # source/build locations
 BUILDDIR := .
@@ -212,14 +376,19 @@ BUILDDIR_ABSPATH := `(cd $builddir && pwd -P || false)`
 SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
-EXEC_PREFIX := $exec_prefix
+EXECPREFIX := $exec_prefix
 BINDIR := $bindir
-LIBEXECDIR := $libexecdir
 SBINDIR := $sbindir
+LIBEXECDIR := $libexecdir
+DATADIR := $datadir
 SYSCONFDIR := $sysconfdir
 SHAREDSTATEDIR := $sharedstatedir
 LOCALSTATEDIR := $localstatedir
+INCLUDEDIR := $includedir
+OLDINCLUDEDIR := $oldincludedir
+INFODIR := $infodir
 LIBDIR := $libdir
+MANDIR := $mandir
 
 VERSION := $package_version
 

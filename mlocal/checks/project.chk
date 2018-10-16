@@ -18,24 +18,24 @@ config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
 config_add_def EXECPREFIX \"$exec_prefix\"
 config_add_def BINDIR \"$bindir\"
-config_add_def LIBEXECDIR \"$libexecdir\"
 config_add_def SBINDIR \"$sbindir\"
+config_add_def LIBEXECDIR \"$libexecdir\"
 config_add_def DATAROOTDIR EXECPREFIX \"/share\"
-config_add_def DATADIR DATAROOTDIR
+config_add_def DATADIR \"$datadir\"
 config_add_def SYSCONFDIR \"$sysconfdir\"
 config_add_def SHAREDSTATEDIR \"$sharedstatedir\"
 config_add_def LOCALSTATEDIR \"$localstatedir\"
-config_add_def INCLUDEDIR PREFIX \"/include\"
-config_add_def OLDINCLUDEDIR \"/usr/include\"
+config_add_def INCLUDEDIR \"$includedir\"
+config_add_def OLDINCLUDEDIR \"$oldincludedir\"
 config_add_def DOCDIR DATAROOTDIR \"/doc/\" PACKAGE_TARNAME
-config_add_def INFODIR DATAROOTDIR \"/info\"
+config_add_def INFODIR \"$infodir\"
 config_add_def HTMLDIR DOCDIR
 config_add_def DVIDIR DOCDIR
 config_add_def PDFDIR DOCDIR
 config_add_def PSDIR DOCDIR
 config_add_def LIBDIR \"$libdir\"
 config_add_def LOCALEDIR DATAROOTDIR \"/locale\"
-config_add_def MANDIR DATAROOTDIR \"/man\"
+config_add_def MANDIR \"$mandir\"
 config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
 config_add_def CAPABILITY_FILE SINGULARITY_CONFDIR \"/capability.json\"
 config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
