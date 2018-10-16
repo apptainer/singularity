@@ -36,6 +36,7 @@ tgtstatic=0
 appsec=0
 
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
 
 
 
@@ -387,7 +388,7 @@ if [ "$VERSION" = "$RELEASE" ]; then
     # $package_version has no dash
     RELEASE=1
 fi
-sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/" $RPMSPEC.in >$RPMSPEC
+sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $RPMSPEC.in >$RPMSPEC
 
 
 #######################################################################
