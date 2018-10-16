@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -103,10 +104,13 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	// backup user PATH
-	os.Setenv("USER_PATH", os.Getenv("PATH"))
+	defaultEnv := "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin"
 
-	os.Setenv("PATH", "/bin:/usr/bin:/usr/local/bin:/sbin:/usr/sbin:/usr/local/sbin")
+	// backup user PATH
+	userEnv := strings.Join([]string{os.Getenv("PATH"), defaultEnv}, ":")
+	os.Setenv("USER_PATH", userEnv)
+
+	os.Setenv("PATH", defaultEnv)
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
