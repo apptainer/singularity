@@ -42,6 +42,7 @@ func Test_SplitURI(t *testing.T) {
 		{"library basic", "library://image", "library", "//image"},
 		{"library scoped", "library://collection/image", "library", "//collection/image"},
 		{"without transport", "ubuntu", "", "ubuntu"},
+		{"without transport with colon", "ubuntu:18.04.img", "", "ubuntu:18.04.img"},
 	}
 
 	for _, tt := range tests {
