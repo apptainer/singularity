@@ -23,6 +23,7 @@ import (
 	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/image"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
 	syexec "github.com/sylabs/singularity/src/pkg/util/exec"
@@ -363,26 +364,8 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 		return types.NewDefinitionFromURI(spec)
 	}
 
-	// Non-URI passed as spec
-	ok, err := parser.IsValidDefinition(spec)
-	if ok {
-		sylog.Debugf("Found valid definition: %s\n", spec)
-		// File exists and contains valid definition
-		defFile, err := os.Open(spec)
-		if err != nil {
-			return types.Definition{}, fmt.Errorf("unable to open file %s: %v", spec, err)
-		}
-		defer defFile.Close()
-
-		// must be root to build from a definition
-		if os.Getuid() != 0 && !remote {
-			sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
-		}
-
-		return parser.ParseDefinitionFile(defFile)
-	} else if err == nil {
-		// File exists and does NOT contain a valid definition
-		// local image or sandbox
+	// Check if spec is an image/sandbox
+	if _, err := image.Init(spec, false); err == nil {
 		return types.Definition{
 			Header: map[string]string{
 				"bootstrap": "localimage",
@@ -391,8 +374,24 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 		}, nil
 	}
 
-	// File does NOT exist or cannot be opened for another reason
-	return types.Definition{}, fmt.Errorf("unable to build from %s: %v", spec, err)
+	// default to reading file as definition
+	defFile, err := os.Open(spec)
+	if err != nil {
+		return types.Definition{}, fmt.Errorf("unable to open file %s: %v", spec, err)
+	}
+	defer defFile.Close()
+
+	// must be root to build from a definition
+	if os.Getuid() != 0 && !remote {
+		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+	}
+
+	d, err := parser.ParseDefinitionFile(defFile)
+	if err != nil {
+		return types.Definition{}, fmt.Errorf("While parsing definition: %s: %v", spec, err)
+	}
+
+	return d, nil
 }
 
 func (b *Build) addOptions() {

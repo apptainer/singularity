@@ -71,7 +71,7 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 				// When advance == 0 and we found a section identifier, that means we have already
 				// parsed the header out and left the % as the first character in the data. This means
 				// we can now parse into sections.
-				retbuf.Write(line[1:])
+				retbuf.Write(line)
 				retbuf.WriteString("\n")
 				inSection = true
 			} else {
@@ -109,6 +109,8 @@ func isValidSection(key string) bool {
 }
 
 func getSectionName(line string) string {
+	// trim % prefix on section name
+	line = strings.TrimLeft(line, "%")
 	lineSplit := strings.SplitN(strings.ToLower(line), " ", 2)
 
 	return lineSplit[0]
@@ -116,6 +118,8 @@ func getSectionName(line string) string {
 
 // splitToken splits tok -> identline & content pair (sep on \n)
 func splitToken(tok string) (ident string, content string) {
+	// trim % prefix on section name
+	tok = strings.TrimLeft(tok, "%")
 	tokSplit := strings.SplitN(tok, "\n", 2)
 	if len(tokSplit) == 1 {
 		content = ""
@@ -124,7 +128,6 @@ func splitToken(tok string) (ident string, content string) {
 	}
 
 	return strings.ToLower(tokSplit[0]), content
-
 }
 
 var sectionsMutex = &sync.Mutex{}
@@ -155,11 +158,10 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	var wg sync.WaitGroup
 
 	tok := strings.TrimSpace(s.Text())
-	//check if first thing parsed is a header or just a section
-	if strings.ToLower(tok[0:9]) == "bootstrap" {
+	//check if first thing parsed is a header/comment or just a section
+	if tok[0] != '%' {
 		if err := doHeader(tok, d); err != nil {
-			sylog.Warningf("failed to parse DefFile header: %v\n", err)
-			return err
+			return fmt.Errorf("failed to parse DefFile header: %v", err)
 		}
 	} else {
 		//this is a section
@@ -279,11 +281,12 @@ func doHeader(h string, d *types.Definition) (err error) {
 	d.Header = make(map[string]string)
 
 	for _, line := range toks {
+		// skip empty or comment lines
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
 			continue
 		}
 
-		// remove any comments on header lines
+		// trim any comments on header lines
 		trimLine := strings.Split(line, "#")[0]
 
 		linetoks := strings.SplitN(trimLine, ":", 2)
@@ -308,6 +311,7 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	s := bufio.NewScanner(r)
 	s.Split(scanDefinitionFile)
 
+	// advance scanner until it returns a useful token or errors
 	for s.Scan() && s.Text() == "" && s.Err() == nil {
 	}
 
