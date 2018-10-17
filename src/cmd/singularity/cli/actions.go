@@ -102,7 +102,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
 
-	name := uri.NameFromURI(u)
+	name := uri.GetName(u)
 	imgabs := cache.OciTempImage(sum, name)
 
 	if exists, err := cache.OciTempExists(sum, name); err != nil {
@@ -130,7 +130,7 @@ func handleLibrary(u string) (string, error) {
 		return "", err
 	}
 
-	imageName := uri.NameFromURI(u)
+	imageName := uri.GetName(u)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
 	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
@@ -144,7 +144,7 @@ func handleLibrary(u string) (string, error) {
 }
 
 func handleShub(u string) (string, error) {
-	imageName := uri.NameFromURI(u)
+	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
 	libexec.PullShubImage(imagePath, u, true)
@@ -154,7 +154,7 @@ func handleShub(u string) (string, error) {
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
-	t, _ := uri.SplitURI(args[0])
+	t, _ := uri.Split(args[0])
 	if t == "instance" || t == "" {
 		return
 	}

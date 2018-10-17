@@ -548,6 +548,23 @@ static void list_fd(struct fdlist *fl) {
     close(fd_proc);
 }
 
+static void fix_fsuid(uid_t uid) {
+    int fsuid = setfsuid(uid);
+
+    if ( fsuid == uid ) {
+        singularity_message(DEBUG, "Filesystem UID already equal to %d", uid);
+        return;
+    }
+    if ( fsuid != 0 ) {
+        singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
+        exit(1);
+    }
+    if ( setfsuid(-1) != uid ) {
+        singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
+        exit(1);
+    }
+}
+
 void do_exit(int sig) {
     if ( sig == SIGUSR1 ) {
         exit(0);
@@ -934,14 +951,7 @@ __attribute__((constructor)) static void init(void) {
 
     /* Use setfsuid to address issue about root_squash filesystems option */
     if ( config.isSuid ) {
-        if ( setfsuid(uid) != 0 ) {
-            singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
-            exit(1);
-        }
-        if ( setfsuid(-1) != uid ) {
-            singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
-            exit(1);
-        }
+        fix_fsuid(uid);
     }
     if ( get_nspath(pid) ) {
         if ( enter_namespace(get_nspath(pid), CLONE_NEWPID) < 0 ) {
@@ -1078,6 +1088,9 @@ __attribute__((constructor)) static void init(void) {
 
             if ( process == 0 ) {
                 singularity_message(VERBOSE, "Spawn RPC server\n");
+                if ( config.isSuid ) {
+                    fix_fsuid(uid);
+                }
                 execute = RPC_SERVER;
             } else if ( process > 0 ) {
                 int status;

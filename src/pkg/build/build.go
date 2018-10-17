@@ -358,7 +358,7 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 
 // makeDef gets a definition object from a spec
 func makeDef(spec string, remote bool) (types.Definition, error) {
-	if ok, err := uri.IsValidURI(spec); ok && err == nil {
+	if ok, err := uri.IsValid(spec); ok && err == nil {
 		// URI passed as spec
 		return types.NewDefinitionFromURI(spec)
 	}
