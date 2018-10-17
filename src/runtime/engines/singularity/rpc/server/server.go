@@ -24,10 +24,10 @@ import (
 
 var singularityConf *singularity.FileConfig
 
-// Methods is a receiver type
+// Methods is a receiver type.
 type Methods int
 
-// Mount performs a mount with the specified arguments
+// Mount performs a mount with the specified arguments.
 func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 	mainthread.Execute(func() {
 		err = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
@@ -35,7 +35,7 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 	return err
 }
 
-// Mkdir performs a mkdir with the specified arguments
+// Mkdir performs a mkdir with the specified arguments.
 func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 	mainthread.Execute(func() {
 		oldmask := syscall.Umask(0)
@@ -45,11 +45,11 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 	return err
 }
 
-// Chroot performs a chroot with the specified arguments
+// Chroot performs a chroot with the specified arguments.
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
-	// idea taken from libcontainer (and also LXC developers) to avoid
+	// idea taken from libcontainer (and also LXC developpers) to avoid
 	// creation of temporary directory or use of existing directory
-	// for pivot_root
+	// for pivot_root.
 
 	sylog.Debugf("Hold reference to host / directory")
 	oldroot, err := os.Open("/")
@@ -90,7 +90,7 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	return nil
 }
 
-// LoopDevice attaches a loop device with the specified arguments
+// LoopDevice attaches a loop device with the specified arguments.
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	var image *os.File
 	loopdev := new(loop.Device)
@@ -100,40 +100,36 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
 		fd, err := strconv.ParseUint(strFd, 10, 32)
 		if err != nil {
-			return fmt.Errorf("failed to convert image file descriptor: %s", err)
+			return fmt.Errorf("failed to convert image file descriptor: %v", err)
 		}
 		image = os.NewFile(uintptr(fd), "")
-		if err != nil {
-			return fmt.Errorf("can't find image %s", arguments.Image)
-		}
 	} else {
 		var err error
-
 		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not open image file: %v", err)
 		}
 	}
 
 	runtime.LockOSThread()
 	syscall.Setfsuid(0)
-
 	defer runtime.UnlockOSThread()
 	defer syscall.Setfsuid(os.Getuid())
 
-	if err := loopdev.AttachFromFile(image, arguments.Mode, reply); err != nil {
-		return err
+	err := loopdev.AttachFromFile(image, arguments.Mode, reply)
+	if err != nil {
+		return fmt.Errorf("could not attach image file too loop device: %v", err)
 	}
 	return loopdev.SetStatus(&arguments.Info)
 }
 
-// SetHostname sets hostname with the specified arguments
+// SetHostname sets hostname with the specified arguments.
 func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 	return syscall.Sethostname([]byte(arguments.Hostname))
 }
 
 // HasNamespace checks if host namespace and container namespace
-// are different and sets reply to 0 or 1
+// are different and sets reply to 0 or 1.
 func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) error {
 	var st1 syscall.Stat_t
 	var st2 syscall.Stat_t
@@ -163,7 +159,7 @@ func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) err
 	return nil
 }
 
-// SetFsID sets filesystem uid and gid
+// SetFsID sets filesystem uid and gid.
 func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 	mainthread.Execute(func() {
 		syscall.Setfsuid(arguments.UID)
