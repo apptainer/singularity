@@ -7,7 +7,7 @@ package uri
 
 import "testing"
 
-func Test_NameFromURI(t *testing.T) {
+func Test_GetName(t *testing.T) {
 	tests := []struct {
 		name     string
 		uri      string
@@ -21,14 +21,14 @@ func Test_NameFromURI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if n := NameFromURI(tt.uri); n != tt.expected {
+			if n := GetName(tt.uri); n != tt.expected {
 				t.Errorf("incorrectly parsed name as \"%v\" (expected \"%s\")", n, tt.expected)
 			}
 		})
 	}
 }
 
-func Test_SplitURI(t *testing.T) {
+func Test_Split(t *testing.T) {
 	tests := []struct {
 		name      string
 		uri       string
@@ -47,7 +47,7 @@ func Test_SplitURI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tr, r := SplitURI(tt.uri); tr != tt.transport || r != tt.ref {
+			if tr, r := Split(tt.uri); tr != tt.transport || r != tt.ref {
 				t.Errorf("incorrectly parsed uri as %s : %s (expected %s : %s)", tr, r, tt.transport, tt.ref)
 			}
 		})
