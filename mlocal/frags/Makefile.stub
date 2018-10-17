@@ -280,7 +280,7 @@ testall: vendor-check check test
 
 .PHONY: rpm
 rpm:
-	@echo "Build RPM"
+	@echo " BUILD RPM"
 	$(V)cd $(SOURCEDIR) && dist/rpm/buildrpm
 
 .PHONY: cscope
