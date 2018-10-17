@@ -114,7 +114,7 @@ func (engine *EngineOperations) checkExec() error {
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	isInstance := engine.EngineConfig.GetInstance()
-	bootInstance := (isInstance && engine.EngineConfig.GetBootInstance())
+	bootInstance := isInstance && engine.EngineConfig.GetBootInstance()
 	shimProcess := false
 
 	if err := os.Chdir(engine.EngineConfig.OciConfig.Process.Cwd); err != nil {
@@ -150,7 +150,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	for _, fd := range engine.EngineConfig.GetOpenFd() {
 		if err := syscall.Close(fd); err != nil {
-			return fmt.Errorf("Aborting failed to close file descriptor: %s", err)
+			return fmt.Errorf("aborting failed to close file descriptor: %s", err)
 		}
 	}
 
