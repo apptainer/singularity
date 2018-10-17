@@ -54,28 +54,42 @@ usage () {
 }
 
 usage_args () {
-	echo "Usage: ${0##*/}: [-dvsS] [-p prefix] [-P profile] [-e exec_prefix] [-b builddir]"
-	echo "                 [-c hstcc] [-C tgtcc] [-V version] [-x hstcxx] [-X tgtcxx]"
-	echo "       -v build project with verbose flags on"
-	echo "       -s build final host project binary statically"
-	echo "       -S build final target project binary statically"
-	echo "       -p install project in \`prefix'"
-	echo "       -P use config profile to configure the project:"
-	echo "           release             (DEFAULT) normal release mode (production)"
-	echo "           release-stripped    release mode, stripped symbols (rpm packaging)"
-	echo "           debug               C portion of CGO built unoptimized, with symbols"
-	echo "       -e install project executables in \`exec_prefix'"
-	echo "       -b build project in \`builddir'"
-	echo "       -c build project with host C \`compiler'"
-	echo "       -C build project with target C\`compiler'"
-	echo "       -V build project with given version"
-	echo "       -x build project with host C++ \`compiler'"
-	echo "       -X build project with target C++ \`compiler'"
-	echo "       -h this help"
-	echo "\`host C compiler': $hstcc_opts"
-	echo "\`host C++ compiler': $hstcxx_opts"
-	echo "\`target C compiler': $tgtcc_opts"
-	echo "\`target C++ compiler': $tgtcxx_opts"
+	echo "Usage: ${0##*/}: [-vsS] [-P profile] [-b builddir] [-c hstcc] [-C tgtcc]"
+	echo "                [-V version] [-x hstcxx] [-X tgtcxx]"
+	echo "                [--INSTALLDIR=ARG (see below)]"
+	echo
+	echo "  Makeit general options:"
+	echo "     -v   build project with verbose flags on"
+	echo "     -s   build final host project binary statically"
+	echo "     -S   build final target project binary statically"
+	echo "     -P   use config profile to configure the project:"
+	echo "            *release             normal release mode (production)"
+	echo "             release-stripped    release mode, stripped symbols (rpm packaging)"
+	echo "             debug               CGO objects built unoptimized, with symbols"
+	echo "     -b   build project in \`builddir'"
+	echo "     -c   build project with host C \`compiler'"
+	echo "     -C   build project with target C\`compiler'"
+	echo "     -V   build project with given version"
+	echo "     -x   build project with host C++ \`compiler'"
+	echo "     -X   build project with target C++ \`compiler'"
+	echo "     -h   this help"
+	echo
+	echo "  Path modification options:"
+	echo "     --prefix         install project in \`prefix'"
+	echo "     --exec-prefix    install project executables in \`exec-prefix'"
+	echo "     --bindir         install user executables in \`bindir'"
+	echo "     --sbindir        install admin executables in \`sbindir'"
+	echo "     --libexecdir     install program executables in \`libexecdir'"
+	echo "     --datadir        install read-only data in \`datadir'"
+	echo "     --sysconfdir     install read-only config files in \`sysconfdir'"
+	echo "     --sharedstatedir install writable data in \`sharedstatedir'"
+	echo "     --localstatedir  install writable config files in \`localstatedir'"
+	echo "     --libdir         install libraries in \`libdir'"
+	echo "     --includedir     install header files in \`includedir'"
+	echo "     --oldincludedir  install system header files in \`oldincludedir"
+	echo "     --infodir        install info documentation in \`infodir'"
+	echo "     --mandir         install man documentation in \`mandir'"
+	echo
 }
 
 # save the command line
@@ -99,7 +113,7 @@ while [ $# -ne 0 ]; do
     prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    fi
    shift;;
-  -e|--exec_prefix*)
+  -e|--exec-prefix*)
    if [ "$1" = "-e" ]; then
     if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
      echo "error option requires an argument: $1"
@@ -108,7 +122,7 @@ while [ $# -ne 0 ]; do
     prefix=$2
     shift
    else
-    if echo "$1" | sed -e '/^--exec_prefix=.+*/q2' >/dev/null; then
+    if echo "$1" | sed -e '/^--exec-prefix=.+*/q2' >/dev/null; then
      echo "error option requires an argument: $1"
      exit
     fi
@@ -199,16 +213,54 @@ while [ $# -ne 0 ]; do
    fi
    mandir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
-  -P) profile="$2"; shift; shift;;
-  -b) builddir="$2"; shift; shift;;
-  -c) hstcc="$2"; shift; shift;;
-  -C) tgtcc="$2"; shift; shift;;
-  -x) hstcxx="$2"; shift; shift;;
-  -X) tgtcxx="$2"; shift; shift;;
-  -s) hststatic=1; shift;;
-  -S) tgtstatic=1; shift;;
-  -v) verbose=1; shift;;
-  -V) package_version="$2"; shift; shift;;
+  -P)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   profile=$2; shift; shift;;
+  -b)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   builddir="$2"; shift; shift;;
+  -c)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   hstcc="$2"; shift; shift;;
+  -C)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   tgtcc="$2"; shift; shift;;
+  -x)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   hstcxx="$2"; shift; shift;;
+  -X)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   tgtcxx="$2"; shift; shift;;
+  -s)
+   hststatic=1; shift;;
+  -S)
+   tgtstatic=1; shift;;
+  -v)
+   verbose=1; shift;;
+  -V)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   package_version="$2"; shift; shift;;
   -h) usage_args; exit 2;;
   --) shift; break;;
   ?) usage_args
@@ -266,22 +318,6 @@ fi
 if [ -z "${mandir}" ]; then
 	mandir=${prefix}/man
 fi
-
-echo "prefix=${prefix}"
-echo "exec_prefix=${exec_prefix}"
-echo "bindir=${bindir}"
-echo "sbindir=${sbindir}"
-echo "libexecdir=${libexecdir}"
-echo "datadir=${datadir}"
-echo "sysconfdir=${sysconfdir}"
-echo "sharedstatedir=${sharedstatedir}"
-echo "localstatedir=${localstatedir}"
-echo "libdir=${libdir}"
-echo "includedir=${includedir}"
-echo "oldincludedir=${oldincludedir}"
-echo "infodir=${infodir}"
-echo "mandir=${mandir}"
-
 
 if [ -z "$package_version" ]; then
 	echo "error: unable to determine \$package_version variable"
