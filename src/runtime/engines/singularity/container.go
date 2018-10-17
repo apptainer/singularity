@@ -102,6 +102,9 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if err := system.RunAfterTag(mount.LayerTag, c.addIdentityMount); err != nil {
 		return err
 	}
+	if err := system.RunAfterTag(mount.RootfsTag, c.addActionsMount); err != nil {
+		return err
+	}
 
 	if err := c.addRootfsMount(system); err != nil {
 		return err
@@ -140,9 +143,6 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 	if err := c.addHostnameMount(system); err != nil {
-		return err
-	}
-	if err := c.addActionsMount(system); err != nil {
 		return err
 	}
 
@@ -1636,6 +1636,12 @@ func (c *container) addActionsMount(system *mount.System) error {
 	hostDir := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/actions")
 	containerDir := "/.singularity.d/actions"
 	flags := uintptr(syscall.MS_BIND | syscall.MS_RDONLY | syscall.MS_NOSUID | syscall.MS_NODEV)
+
+	actionsDir := filepath.Join(c.session.RootFsPath(), containerDir)
+	if !fs.IsDir(actionsDir) {
+		sylog.Debugf("Ignoring actions mount, %s doesn't exist", actionsDir)
+		return nil
+	}
 
 	err := system.Points.AddBind(mount.BindsTag, hostDir, containerDir, flags)
 	if err != nil {

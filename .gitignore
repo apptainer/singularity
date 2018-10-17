@@ -1,7 +1,6 @@
 *~
 #*
 *#
-src/*.o
 singularity-*.tar.gz
 *.m4
 *.pyc
@@ -9,6 +8,8 @@ singularity-*.tar.gz
 generate_docs
 
 .vscode
+.DS_store
+.idea/
 builddir/
 src/pkg/buildcfg/config.go
 trash.lock
@@ -36,7 +37,6 @@ ltmain.sh
 missing
 singularity.spec
 src/util/config_defaults.h
-test.sh
 secbuildimg.sh
 
 docs/man/singularity*

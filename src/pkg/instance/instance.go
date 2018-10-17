@@ -203,6 +203,7 @@ func (i *File) Update() error {
 	}
 	defer file.Close()
 
+	b = append(b, '\n')
 	if n, err := file.Write(b); err != nil || n != len(b) {
 		return fmt.Errorf("failed to write instance file %s: %s", i.Path, err)
 	}

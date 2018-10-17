@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
 	"github.com/sylabs/singularity/src/runtime/engines/singularity"
-	singularityRpcServer "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/server"
+	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/server"
 )
 
 // Engine is the combination of an EngineOperations and a config.Common. The singularity
@@ -27,85 +27,71 @@ type Engine struct {
 	*config.Common
 }
 
-// EngineOperations is an interface describing necessary operations to launch a
-// container process.
+// EngineOperations is an interface describing necessary operations to launch a container process.
 type EngineOperations interface {
 	// Config returns the current EngineConfig, used to populate the Common struct
 	Config() config.EngineConfig
 	// InitConfig is responsible for storing the parse config.Common inside
 	// the EngineOperations implementation.
 	InitConfig(*config.Common)
-	// PrepareConfig is called in stage1 to validate and prepare container configuration
+	// PrepareConfig is called in stage1 to validate and prepare container configuration.
 	PrepareConfig(net.Conn, *starter.Config) error
 	// CreateContainer is called in smaster and does mount operations, etc... to
-	// set up the container environment for the payload proc
+	// set up the container environment for the payload proc.
 	CreateContainer(int, net.Conn) error
 	// StartProcess is called in stage2 after waiting on RPC server exit. It is
-	// responsible for exec'ing the payload proc in the container
+	// responsible for exec'ing the payload proc in the container.
 	StartProcess(net.Conn) error
-	// PostStartProcess is called in smaster after successful execution of container process
+	// PostStartProcess is called in smaster after successful execution of container process.
 	PostStartProcess(int) error
 	// MonitorContainer is called in smaster once the container proc has been spawned. It
-	// will typically block until the container proc exists
+	// will typically block until the container proc exists.
 	MonitorContainer(int, chan os.Signal) (syscall.WaitStatus, error)
 	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
-	// for ensuring that the container has been properly torn down
+	// for ensuring that the container has been properly torn down.
 	CleanupContainer() error
 }
 
-// NewEngine returns the engine described by the JSON []byte configuration
+// NewEngine returns the engine described by the JSON []byte configuration.
 func NewEngine(b []byte) (*Engine, error) {
-	// Parse json []byte into map to first grab engineName value
-	jsonMap := make(map[string]interface{})
-	if err := json.Unmarshal(b, &jsonMap); err != nil {
-		return nil, err
+	engineName := struct {
+		EngineName string `json:"engineName"`
+	}{}
+	if err := json.Unmarshal(b, &engineName); err != nil {
+		return nil, fmt.Errorf("engineName field is not found: %v", err)
 	}
 
-	// Convert engineName from interface{} to string type
-	if _, ok := jsonMap["engineName"]; !ok {
-		return nil, fmt.Errorf("engineName field not found")
-	}
-	engineName := jsonMap["engineName"].(string)
-
-	// Ensure engineName exists
-	if _, ok := registeredEngineOperations[engineName]; !ok {
-		return nil, fmt.Errorf("Engine name %s not found, failing", engineName)
+	// ensure engine with given name is registered
+	eOp, ok := registeredEngineOperations[engineName.EngineName]
+	if !ok {
+		return nil, fmt.Errorf("engine %q is not found", engineName)
 	}
 
-	// Create empty Engine object with properly initialized EngineConfig && EngineOperations
+	// create empty Engine object with properly initialized EngineConfig && EngineOperations
 	e := &Engine{
-		EngineOperations: registeredEngineOperations[engineName],
+		EngineOperations: eOp,
 		Common: &config.Common{
-			EngineConfig: registeredEngineOperations[engineName].Config(),
+			EngineConfig: eOp.Config(),
 		},
 	}
 
-	// Now parse Common JSON configuration with EngineConfig associated
-	// to corresponding engine
+	// parse received JSON configuration to specific EngineConfig
 	if err := json.Unmarshal(b, e.Common); err != nil {
-		return nil, fmt.Errorf("Unable to parse JSON into e.Common: %s", err)
+		return nil, fmt.Errorf("could not parse JSON configuration: %s", err)
 	}
 	e.InitConfig(e.Common)
 	return e, nil
 }
 
-var registeredEngineOperations map[string]EngineOperations
+var (
+	registeredEngineOperations map[string]EngineOperations
 
-func registerEngineOperations(e EngineOperations, name string) {
-	registeredEngineOperations[name] = e
-}
+	// registerEngineRPCMethods contains a map relating an Engine name to a set
+	// of RPC methods served by RPC server
+	registeredEngineRPCMethods map[string]interface{}
+)
 
-// registerEngineRPCMethods contains a map relating an Engine name to a set
-// of RPC methods served by RPC server
-var registeredEngineRPCMethods map[string]interface{}
-
-// registerEngineRPCMethods registers RPC server methods for runtime engine
-func registerEngineRPCMethods(methods interface{}, name string) {
-	registeredEngineRPCMethods[name] = methods
-}
-
-// ServeRuntimeEngineRequests serves runtime engine requests with corresponding
-// registered engine methods
+// ServeRuntimeEngineRequests serves runtime engine requests with corresponding registered engine methods.
 func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 	methods := registeredEngineRPCMethods[name]
 	rpc.RegisterName(name, methods)
@@ -114,16 +100,13 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 
 func init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
+	registeredEngineOperations[singularity.Name] = &singularity.EngineOperations{EngineConfig: singularity.NewConfig()}
+	registeredEngineOperations[imgbuild.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}
 
-	// register singularity engine
-	registerEngineOperations(&singularity.EngineOperations{EngineConfig: singularity.NewConfig()}, singularity.Name)
-	// register imgbuild engine
-	registerEngineOperations(&imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}, imgbuild.Name)
-
+	// register singularity rpc methods
+	methods := new(server.Methods)
 	registeredEngineRPCMethods = make(map[string]interface{})
+	registeredEngineRPCMethods[singularity.Name] = methods
+	registeredEngineRPCMethods[imgbuild.Name] = methods
 
-	// register singularity rpcmethods
-	methods := new(singularityRpcServer.Methods)
-	registerEngineRPCMethods(methods, singularity.Name)
-	registerEngineRPCMethods(methods, imgbuild.Name)
 }
