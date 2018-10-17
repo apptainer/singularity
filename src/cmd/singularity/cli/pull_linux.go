@@ -14,7 +14,7 @@ import (
 
 func pullRun(cmd *cobra.Command, args []string) {
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
-	transport, ref := uri.SplitURI(args[i])
+	transport, ref := uri.Split(args[i])
 	if ref == "" {
 		sylog.Fatalf("bad uri %s", args[i])
 	}
@@ -23,7 +23,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	if PullImageName == "" {
 		name = args[0]
 		if len(args) == 1 {
-			name = uri.NameFromURI(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
 		}
 	} else {
 		name = PullImageName

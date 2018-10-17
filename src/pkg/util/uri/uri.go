@@ -28,8 +28,8 @@ var validURIs = map[string]bool{
 	"oci-archive":    true,
 }
 
-// IsValidURI returns whether or not the given source is valid
-func IsValidURI(source string) (valid bool, err error) {
+// IsValid returns whether or not the given source is valid
+func IsValid(source string) (valid bool, err error) {
 
 	u := strings.SplitN(source, ":", 2)
 
@@ -44,12 +44,12 @@ func IsValidURI(source string) (valid bool, err error) {
 	return false, fmt.Errorf("Invalid URI %s", source)
 }
 
-// NameFromURI turns a transport:ref URI into a name containing the top-level identifier
+// GetName turns a transport:ref URI into a name containing the top-level identifier
 // of the image. For example, docker://godlovedc/lolcow returns lolcow
 //
 // Returns "" when not in transport:ref format
-func NameFromURI(uri string) string {
-	transport, ref := SplitURI(uri)
+func GetName(uri string) string {
+	transport, ref := Split(uri)
 	if transport == "" {
 		return ""
 	}
@@ -73,7 +73,7 @@ func NameFromURI(uri string) string {
 	return fmt.Sprintf("%s_%s.sif", container, tags[0])
 }
 
-// SplitURI splits a URI into it's components which can be used directly through containers/image
+// Split splits a URI into it's components which can be used directly through containers/image
 //
 // This can be tricky if there is no type but a file name contains a colon.
 //
@@ -83,7 +83,7 @@ func NameFromURI(uri string) string {
 //   oci-archive:path/to/archive -> oci-archive, path/to/archive
 //   ubuntu -> "", ubuntu
 //   ubuntu:18.04.img -> "", ubuntu:18.04.img
-func SplitURI(uri string) (transport string, ref string) {
+func Split(uri string) (transport string, ref string) {
 	uriSplit := strings.SplitN(uri, ":", 2)
 	if len(uriSplit) == 1 {
 		// no colon
@@ -95,7 +95,7 @@ func SplitURI(uri string) (transport string, ref string) {
 		return uriSplit[0], uriSplit[1]
 	}
 
-	if ok, err := IsValidURI(uri); ok && err == nil {
+	if ok, err := IsValid(uri); ok && err == nil {
 		// also accept recognized URIs
 		return uriSplit[0], uriSplit[1]
 	}

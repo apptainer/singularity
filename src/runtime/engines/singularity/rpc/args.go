@@ -11,20 +11,20 @@ import (
 	"github.com/sylabs/singularity/src/pkg/util/loop"
 )
 
-// MkdirArgs defines the arguments to mkdir
+// MkdirArgs defines the arguments to mkdir.
 type MkdirArgs struct {
 	Path string
 	Perm os.FileMode
 }
 
-// LoopArgs defines the arguments to create a loop device
+// LoopArgs defines the arguments to create a loop device.
 type LoopArgs struct {
 	Image string
 	Mode  int
 	Info  loop.Info64
 }
 
-// MountArgs defines the arguments to mount
+// MountArgs defines the arguments to mount.
 type MountArgs struct {
 	Source     string
 	Target     string
@@ -33,24 +33,24 @@ type MountArgs struct {
 	Data       string
 }
 
-// ChrootArgs defines the arguments to chroot
+// ChrootArgs defines the arguments to chroot.
 type ChrootArgs struct {
 	Root string
 }
 
-// HostnameArgs defines the arguments to sethostname
+// HostnameArgs defines the arguments to sethostname.
 type HostnameArgs struct {
 	Hostname string
 }
 
-// HasNamespaceArgs defines the arguments to compare host namespace
+// HasNamespaceArgs defines the arguments to compare host namespace.
 // and RPC process
 type HasNamespaceArgs struct {
 	Pid    int
 	NsType string
 }
 
-// SetFsIDArgs defines the arguments to setfsid
+// SetFsIDArgs defines the arguments to setfsid.
 type SetFsIDArgs struct {
 	UID int
 	GID int

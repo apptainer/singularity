@@ -66,10 +66,10 @@ func CheckExt3Header(b []byte) (uint64, error) {
 	if einfo.Compat&compatHasJournal == 0 {
 		return offset, fmt.Errorf(notValidExt3ImageMessage)
 	}
-	if einfo.Incompat&^(incompatFileType|incompatRecover|incompatMetabg) == 1 {
+	if einfo.Incompat&^(incompatFileType|incompatRecover|incompatMetabg) != 0 {
 		return offset, fmt.Errorf(notValidExt3ImageMessage)
 	}
-	if einfo.Rocompat&^(rocompatSparseSuper|rocompatLargeFile|rocompatBtreeDir) == 1 {
+	if einfo.Rocompat&^(rocompatSparseSuper|rocompatLargeFile|rocompatBtreeDir) != 0 {
 		return offset, fmt.Errorf(notValidExt3ImageMessage)
 	}
 	offset -= extMagicOffset
