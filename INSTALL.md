@@ -16,9 +16,10 @@ libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
 On CentOS/RHEL:
 
 ```
-$ sudo yum update && \
-yum install -y openssl-devel libuuid-devel
+$ sudo yum groupinstall -y 'Development Tools'
+$ sudo yum install -y openssl-devel libuuid-devel libseccomp-devel
 ```
+Skip libseccomp-devel on CentOS/RHEL 6.
 
 ## Install golang
 
@@ -74,14 +75,15 @@ $ sudo make install
 Alternatively, to build an rpm on CentOS/RHEL use the following commands: 
 
 ```
+$ sudo yum install -y rpm-build wget
 $ cd $GOPATH/src/github.com/sylabs/singularity
 $ ./mconfig
 $ make -C builddir rpm
 ```
 
 Golang doesn't have to be installed to build an rpm because the rpm
-build installs it and all golang dependencies, but it is still
-recommended for a complete development environment.
+build installs golang and all dependencies, but it is still recommended
+for a complete development environment.
 
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
