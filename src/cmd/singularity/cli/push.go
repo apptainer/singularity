@@ -3,14 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
-
 package cli
 
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
-	"github.com/sylabs/singularity/src/pkg/libexec"
+	client "github.com/sylabs/singularity/src/pkg/client/library"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -36,7 +34,10 @@ var PushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Push to library requires a valid authToken
 		if authToken != "" {
-			libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
+			err := client.UploadImage(args[0], args[1], PushLibraryURI, authToken)
+			if err != nil {
+				sylog.Fatalf("%v\n", err)
+			}
 		} else {
 			sylog.Fatalf("Couldn't push image to library: %v", authWarning)
 		}
