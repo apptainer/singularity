@@ -21,7 +21,7 @@
 # 
 # 
 
-%define goversion 1.11
+%define goversion @GO_VERSION@
 %define singgopath src/github.com/sylabs/singularity
 
 Summary: Application and environment virtualization
