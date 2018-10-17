@@ -44,10 +44,51 @@ NVIDIA_liblist := $(SOURCEDIR)/etc/nvliblist.conf
 NVIDIA_liblist_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/nvliblist.conf
 
 cni_builddir := $(BUILDDIR_ABSPATH)/cni
-cni_plugins_REPO := github.com/containernetworking/plugins/plugins
-cni_plugins_EXECUTABLES := $(wildcard $(cni_builddir)/*)
-cni_plugins_INSTALL := $(foreach plugin,$(notdir $(cni_plugins_EXECUTABLES)),$(DESTDIR)$(LIBEXECDIR)/singularity/cni/$(plugin))
-cni_config_LIST := $(wildcard $(SOURCEDIR)/etc/network/*.conflist)
+cni_install_DIR := $(DESTDIR)$(LIBEXECDIR)/singularity/cni
+cni_vendor_GOPATH := $(singularity_REPO)/vendor/github.com/containernetworking/plugins/plugins
+cni_plugins_GOPATH := $(cni_vendor_GOPATH)/meta/bandwidth \
+					  $(cni_vendor_GOPATH)/main/bridge \
+					  $(cni_vendor_GOPATH)/ipam/dhcp \
+					  $(cni_vendor_GOPATH)/meta/flannel \
+					  $(cni_vendor_GOPATH)/main/host-device \
+					  $(cni_vendor_GOPATH)/ipam/host-local \
+					  $(cni_vendor_GOPATH)/main/ipvlan \
+					  $(cni_vendor_GOPATH)/main/macvlan \
+					  $(cni_vendor_GOPATH)/meta/portmap \
+					  $(cni_vendor_GOPATH)/main/ptp \
+					  $(cni_vendor_GOPATH)/ipam/static \
+					  $(cni_vendor_GOPATH)/meta/tuning \
+					  $(cni_vendor_GOPATH)/main/vlan
+cni_plugins_EXECUTABLES := $(cni_builddir)/bandwidth \
+						   $(cni_builddir)/bridge \
+						   $(cni_builddir)/dhcp \
+						   $(cni_builddir)/flannel \
+						   $(cni_builddir)/host-device \
+						   $(cni_builddir)/host-local \
+						   $(cni_builddir)/ipvlan \
+						   $(cni_builddir)/macvlan \
+						   $(cni_builddir)/portmap \
+						   $(cni_builddir)/ptp \
+						   $(cni_builddir)/static \
+						   $(cni_builddir)/tuning \
+						   $(cni_builddir)/vlan
+cni_plugins_INSTALL := $(cni_install_DIR)/bandwidth \
+					   $(cni_install_DIR)/bridge \
+					   $(cni_install_DIR)/dhcp \
+					   $(cni_install_DIR)/flannel \
+					   $(cni_install_DIR)/host-device \
+					   $(cni_install_DIR)/host-local \
+					   $(cni_install_DIR)/ipvlan \
+					   $(cni_install_DIR)/macvlan \
+					   $(cni_install_DIR)/portmap \
+					   $(cni_install_DIR)/ptp \
+					   $(cni_install_DIR)/static \
+					   $(cni_install_DIR)/tuning \
+					   $(cni_install_DIR)/vlan
+cni_config_LIST := $(SOURCEDIR)/etc/network/00_bridge.conflist \
+				   $(SOURCEDIR)/etc/network/10_ptp.conflist \
+				   $(SOURCEDIR)/etc/network/20_ipvlan.conflist \
+				   $(SOURCEDIR)/etc/network/30_macvlan.conflist
 cni_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/network
 
 actions_LIST := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(SOURCEDIR)/etc/actions/shell \
@@ -67,10 +108,12 @@ all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completi
 .PHONY: cniplugins
 cniplugins:
 	$(V)install -d $(cni_builddir)
-	$(V)for p in `go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ../vendor/$(cni_plugins_REPO)/...|grep -v sample`; do \
-		if [ ! -f $(cni_builddir)/`basename $$p` ]; then \
-			echo " CNI PLUGIN" `basename $$p`; \
-			go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(cni_builddir)/`basename $$p` $$p; \
+	$(V)for p in $(cni_plugins_GOPATH); do \
+		name=`basename $$p`; \
+		cniplugin=$(cni_builddir)/$$name; \
+		if [ ! -f $$cniplugin ]; then \
+			echo " CNI PLUGIN" $$name; \
+			go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $$cniplugin $$p; \
 		fi \
 	done
 
