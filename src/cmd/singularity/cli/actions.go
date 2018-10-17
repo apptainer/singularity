@@ -349,7 +349,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				}
 				for _, binary := range bins {
 					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
-					fmt.Println(usrBinBinary)
 					bind := strings.Join([]string{binary, usrBinBinary}, ":")
 					BindPaths = append(BindPaths, bind)
 				}
