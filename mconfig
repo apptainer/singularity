@@ -136,7 +136,7 @@ while [ $# -ne 0 ]; do
      echo "error option requires an argument: $1"
      exit
     fi
-    prefix=$2
+    exec_prefix=$2
     shift
    else
     if echo "$1" | sed -e '/^--exec-prefix=.+*/q2' >/dev/null; then
