@@ -358,11 +358,11 @@ fi
 if [ -z "${bindir}" ]; then
 	bindir=${exec_prefix}/bin
 fi
-if [ -z "${sbindir}" ]; then
-	sbindir=${exec_prefix}/sbin
-fi
 if [ -z "${libexecdir}" ]; then
 	libexecdir=${exec_prefix}/libexec
+fi
+if [ -z "${sbindir}" ]; then
+	sbindir=$libexecdir/singularity/bin
 fi
 if [ -z "${datarootdir}" ]; then
 	datarootdir=${prefix}/share
