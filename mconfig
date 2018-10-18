@@ -514,16 +514,25 @@ EXECPREFIX := $exec_prefix
 BINDIR := $bindir
 SBINDIR := $sbindir
 LIBEXECDIR := $libexecdir
+DATAROOTDIR := $datarootdir
 DATADIR := $datadir
 SYSCONFDIR := $sysconfdir
 SHAREDSTATEDIR := $sharedstatedir
 LOCALSTATEDIR := $localstatedir
+RUNSTATEDIR := $runstatedir
 INCLUDEDIR := $includedir
 OLDINCLUDEDIR := $oldincludedir
+DOCDIR := $docdir
 INFODIR := $infodir
+HTMLDIR := $htmldir
+DVIDIR := $dvidir
+PDFDIR := $pdfdir
+PSDIR := $psdir
 LIBDIR := $libdir
+LOCALEDIR := $localedir
 MANDIR := $mandir
 
+NAME := $package_name
 VERSION := $package_version
 
 HOSTAR := $hstar
