@@ -19,7 +19,6 @@ import (
 	"unicode"
 
 	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
@@ -333,30 +332,6 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	return
 }
 
-func canGetHeader(r io.Reader) (ok bool, err error) {
-	var d types.Definition
-
-	s := bufio.NewScanner(r)
-	s.Split(scanDefinitionFile)
-
-	for s.Scan() && s.Text() == "" && s.Err() == nil {
-	}
-
-	if s.Err() != nil {
-		log.Println(s.Err())
-		return false, s.Err()
-	} else if s.Text() == "" {
-		return false, errors.New("Empty definition file")
-	}
-
-	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Warningf("failed to parse DefFile header: %v\n", err)
-		return false, nil
-	}
-
-	return true, nil
-}
-
 func writeSectionIfExists(w io.Writer, ident string, s string) {
 	if len(s) > 0 {
 		w.Write([]byte("%"))
@@ -444,9 +419,12 @@ func IsValidDefinition(source string) (valid bool, err error) {
 
 	defer defFile.Close()
 
-	ok, _ := canGetHeader(defFile)
+	_, err = ParseDefinitionFile(defFile)
+	if err != nil {
+		return false, err
+	}
 
-	return ok, nil
+	return true, nil
 }
 
 // validSections just contains a list of all the valid sections a definition file
