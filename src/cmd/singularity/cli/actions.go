@@ -347,7 +347,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				if IsWritable {
 					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
 				}
-				BindPaths = append(BindPaths, bins...)
+				for _, binary := range bins {
+					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
+					bind := strings.Join([]string{binary, usrBinBinary}, ":")
+					BindPaths = append(BindPaths, bind)
+				}
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")

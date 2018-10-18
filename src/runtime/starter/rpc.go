@@ -16,13 +16,11 @@ import (
 // RPCServer serves runtime engine requests
 func RPCServer(socket int, runtime string) {
 	comm := os.NewFile(uintptr(socket), "unix")
-
 	conn, err := net.FileConn(comm)
 	if err != nil {
 		sylog.Fatalf("socket communication error: %s\n", err)
 	}
 	comm.Close()
-
 	engines.ServeRuntimeEngineRequests(runtime, conn)
 
 	os.Exit(0)

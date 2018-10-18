@@ -124,7 +124,7 @@ func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
 	return nil
 }
 
-// AddUIDMappings sets user namespace UID mapping
+// AddUIDMappings sets user namespace UID mapping.
 func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) {
 	for i, uid := range uids {
 		c.config.uidMapping[i].containerID = C.uid_t(uid.ContainerID)
