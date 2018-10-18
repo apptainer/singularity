@@ -77,7 +77,7 @@ export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
 
-./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec_prefix=%{_exec_prefix} \
+./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} \
 	--bindir=%{_bindir} --libexecdir=%{_libexecdir} --sysconfdir=%{_sysconfdir} \
 	--sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} \
 	--libdir=%{_libdir}
