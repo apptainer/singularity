@@ -257,7 +257,7 @@ check: $(go_OBJ)
 
 .PHONY: dist
 dist:
-	$(V)$(SOURCEDIR)/scripts/make-dist.sh
+	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
 
 .PHONY: test
 test:
