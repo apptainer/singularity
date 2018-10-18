@@ -11,7 +11,6 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/pkg/build/remotebuilder"
-	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -37,9 +36,9 @@ func run(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Unable to submit build job: %v", authWarning)
 	}
 
-	def, err := types.NewDefinitionFromURI(spec)
+	def, err := definitionFromSpec(spec)
 	if err != nil {
-		return
+		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}
 
 	b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken)
