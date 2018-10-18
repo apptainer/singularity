@@ -158,7 +158,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	//check if first thing parsed is a header or just a section
 	if strings.ToLower(tok[0:9]) == "bootstrap" {
 		if err := doHeader(tok, d); err != nil {
-			sylog.Warningf("failed to parse DefFile header: %v\n", err)
+			sylog.Fatalf("failed to parse DefFile header: %v\n", err)
 			return err
 		}
 	} else {
@@ -342,7 +342,7 @@ func canGetHeader(r io.Reader) (ok bool, err error) {
 	}
 
 	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Warningf("failed to parse DefFile header: %v\n", err)
+		sylog.Errorf("failed to parse DefFile header: %v\n", err)
 		return false, nil
 	}
 
@@ -463,6 +463,7 @@ var validHeaders = map[string]bool{
 	"from":       true,
 	"includecmd": true,
 	"mirrorurl":  true,
+	"updateurl":  true,
 	"osversion":  true,
 	"include":    true,
 	"library":    true,
