@@ -449,6 +449,7 @@ var validHeaders = map[string]bool{
 	"from":       true,
 	"includecmd": true,
 	"mirrorurl":  true,
+	"updateurl":  true,
 	"osversion":  true,
 	"include":    true,
 	"library":    true,

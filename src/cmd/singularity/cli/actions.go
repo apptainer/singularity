@@ -261,7 +261,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
-	starter := buildcfg.SBINDIR + "/starter-suid"
+	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 
 	engineConfig := singularity.NewConfig()
 
@@ -347,7 +347,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				if IsWritable {
 					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
 				}
-				BindPaths = append(BindPaths, bins...)
+				for _, binary := range bins {
+					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
+					bind := strings.Join([]string{binary, usrBinBinary}, ":")
+					BindPaths = append(BindPaths, bind)
+				}
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
@@ -501,7 +505,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		starter = buildcfg.SBINDIR + "/starter"
+		starter = buildcfg.LIBEXECDIR + "/singularity/bin/starter"
 
 		if IsFakeroot {
 			generator.AddLinuxUIDMapping(uid, 0, 1)
