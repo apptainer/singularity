@@ -10,6 +10,7 @@ package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null ||
 echo " DIST setup VERSION"
 echo $package_version > VERSION
 git add VERSION
+git add dist/rpm/singularity.spec
 echo " DIST create tarball"
 git archive --format=tar.gz --prefix=$package_name/ `git stash create` -o $package_name-$package_version.tar.gz
-git reset VERSION
+git reset VERSION dist/rpm/singularity.spec
