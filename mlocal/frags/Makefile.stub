@@ -257,14 +257,7 @@ check: $(go_OBJ)
 
 .PHONY: dist
 dist:
-	@echo " DIST setup VERSION"
-	$(V)echo $(VERSION) > $(SOURCEDIR)/VERSION
-	@echo " DIST create tarball"
-	$(V)cd $(SOURCEDIR) &&  mkdir tmpdir && \
-		tar -czvf tmpdir/singularity-$(VERSION).tar.gz --exclude-vcs --exclude .mailmap \
-			--exclude .github* --exclude .travis.yml --exclude .travis* --exclude vendor* \
-			--exclude .circleci* --exclude tmpdir* --exclude builddir* . && \
-		mv tmpdir/singularity*.tar.gz . && rmdir tmpdir && rm -f $(SOURCEDIR)/VERSION
+	$(V)$(SOURCEDIR)/scripts/make-dist.sh
 
 .PHONY: test
 test:
