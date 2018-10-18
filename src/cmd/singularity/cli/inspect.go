@@ -197,7 +197,7 @@ var InspectCmd = &cobra.Command{
 }
 
 func getFileContent(abspath, name string, args []string) (string, error) {
-	starter := buildcfg.SBINDIR + "/starter-suid"
+	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 	procname := "Singularity inspect"
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
