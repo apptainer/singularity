@@ -158,15 +158,19 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	var wg sync.WaitGroup
 
 	tok := strings.TrimSpace(s.Text())
-	//check if first thing parsed is a header/comment or just a section
-	if tok[0] != '%' {
-		if err := doHeader(tok, d); err != nil {
-			return fmt.Errorf("failed to parse DefFile header: %v", err)
+
+	// skip initial token parsing if it is empty after trimming whitespace
+	if tok != "" {
+		//check if first thing parsed is a header/comment or just a section
+		if tok[0] != '%' {
+			if err := doHeader(tok, d); err != nil {
+				return fmt.Errorf("failed to parse DefFile header: %v", err)
+			}
+		} else {
+			//this is a section
+			parseTokenSection(tok, sectionsMap)
+			syplugin.BuildHandleSections(splitToken(tok))
 		}
-	} else {
-		//this is a section
-		parseTokenSection(tok, sectionsMap)
-		syplugin.BuildHandleSections(splitToken(tok))
 	}
 
 	//parse remaining sections while scanner can advance
