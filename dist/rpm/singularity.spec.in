@@ -76,16 +76,11 @@ export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
-sed -i \
-  -e "s@\(^bindir=\).*@\1%{_bindir}@" \
-  -e "s@\(^libexecdir=\).*@\1%{_libexecdir}@" \
-  -e "s@\(^sysconfdir=\).*@\1%{_sysconfdir}@" \
-  -e "s@\(^sharedstatedir=\).*@\1%{_sharedstatedir}@" \
-  -e "s@\(^localstatedir=\).*@\1%{_localstatedir}@" \
-  -e "s@\(^libdir=\).*@\1%{_libdir}@" \
-  mlocal/frags/paths.stub 
 
-./mconfig -V %{version}-%{release} -p %{_prefix} -e %{_exec_prefix}
+./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} \
+	--bindir=%{_bindir} --libexecdir=%{_libexecdir} --sysconfdir=%{_sysconfdir} \
+	--sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} \
+	--libdir=%{_libdir}
 
 cd builddir
 make
@@ -96,7 +91,7 @@ export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}/builddir
 
-# We're making an assumption here, that EXEC_PREFIX will be /usr,
+# We're making an assumption here, that EXECPREFIX will be /usr,
 # but share/man/man1 is hard coded in Makefile.stubs. We don't have
 # an equivalent to set %{_mandir}, or what it's derived from.
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
