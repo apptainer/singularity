@@ -44,7 +44,7 @@ var RunHelpCmd = &cobra.Command{
 		abspath, err := filepath.Abs(args[0])
 		name := filepath.Base(abspath)
 		a := []string{"/bin/cat", "/.singularity.d/runscript.help"}
-		starter := buildcfg.LIBEXECDIR + "singularity/bin/starter-suid"
+		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 		procname := "Singularity help"
 		Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 
