@@ -19,7 +19,6 @@ import (
 	"unicode"
 
 	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
@@ -158,8 +157,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	//check if first thing parsed is a header or just a section
 	if strings.ToLower(tok[0:9]) == "bootstrap" {
 		if err := doHeader(tok, d); err != nil {
-			sylog.Fatalf("failed to parse DefFile header: %v\n", err)
-			return err
+			return fmt.Errorf("failed to parse DefFile header: %v", err)
 		}
 	} else {
 		//this is a section
@@ -342,8 +340,7 @@ func canGetHeader(r io.Reader) (ok bool, err error) {
 	}
 
 	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Fatalf("failed to parse DefFile header: %v\n", err)
-		return false, nil
+		return false, fmt.Errorf("failed to parse DefFile header: %v", err)
 	}
 
 	return true, nil
