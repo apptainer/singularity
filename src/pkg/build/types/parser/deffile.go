@@ -342,7 +342,7 @@ func canGetHeader(r io.Reader) (ok bool, err error) {
 	}
 
 	if err = doHeader(s.Text(), &d); err != nil {
-		sylog.Errorf("failed to parse DefFile header: %v\n", err)
+		sylog.Fatalf("failed to parse DefFile header: %v\n", err)
 		return false, nil
 	}
 
