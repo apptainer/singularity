@@ -28,7 +28,6 @@ su testuser -c '
   export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
   PATH=$GOROOT/bin:$GOPATH/bin:$PATH
-  echo " BUILD DIR "
 
   cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test
