@@ -16,9 +16,9 @@ chown -R testuser .
 su testuser -c '
   set -x
   set -e
-  git fetch --all
   ./mconfig -v -V 0.0
   sudo yum-builddep -y dist/rpm/singularity.spec
+  git fetch --all
   git config --global user.email "community@sylabs.io"
   git config --global user.name "Travis Test"
   make -C builddir rpm
