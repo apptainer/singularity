@@ -17,9 +17,11 @@ su testuser -c '
   set -x
   ./mconfig -V 0.0
   sudo yum-builddep -y dist/rpm/singularity.spec
+  git config --global user.email "community@sylabs.io"
+  git config --global user.name "Travis Test"
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
-  BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
+  BLD=`echo $HOME/rpmbuild/BUILD/singularity*`
   export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
   PATH=$GOROOT/bin:$GOPATH/bin:$PATH
