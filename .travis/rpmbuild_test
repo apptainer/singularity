@@ -20,7 +20,6 @@ su testuser -c '
   set -e
   ./mconfig 
   sudo yum-builddep -y dist/rpm/singularity.spec
-  git fetch --all
   git config --global user.email "community@sylabs.io"
   git config --global user.name "Travis Test"
   make -C builddir rpm
