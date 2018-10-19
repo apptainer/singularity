@@ -8,6 +8,8 @@ yum install -y openssl-devel libuuid-devel
 
 # switch to an unprivileged user with sudo privileges
 yum install -y sudo
+# We need Git existing here prior to the run
+yum install -y git
 useradd -u 1000 --create-home -s /bin/bash testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
@@ -16,7 +18,6 @@ chown -R testuser .
 su testuser -c '
   set -x
   set -e
-  ls -al .
   ./mconfig 
   sudo yum-builddep -y dist/rpm/singularity.spec
   git fetch --all
