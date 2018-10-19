@@ -63,6 +63,10 @@ containers that can be used across host environments.
 %prep
 
 %build
+# Create our build root
+mkdir %{name}-%{version}
+cd %{name}-%{version}
+
 #XXX: We would like to remove the download of Go in the future
 GOTAR=go%{goversion}.linux-amd64.tar.gz
 wget https://dl.google.com/go/$GOTAR
@@ -85,6 +89,8 @@ cd builddir
 make
 
 %install
+cd %{name}-%{version}
+
 export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH

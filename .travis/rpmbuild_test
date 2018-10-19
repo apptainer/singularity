@@ -25,7 +25,7 @@ su testuser -c '
   git config --global user.name "Travis Test"
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
-  BLD=`echo $HOME/rpmbuild/BUILD`
+  BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
   export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
   PATH=$GOROOT/bin:$GOPATH/bin:$PATH
