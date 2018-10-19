@@ -15,7 +15,8 @@ chown -R testuser .
 
 su testuser -c '
   set -x
-  ./mconfig -V 0.0
+  set -e
+  ./mconfig -v -V 0.0
   sudo yum-builddep -y dist/rpm/singularity.spec
   git config --global user.email "community@sylabs.io"
   git config --global user.name "Travis Test"
