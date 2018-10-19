@@ -141,10 +141,10 @@ func TestEvalRelative(t *testing.T) {
 	// - /sbin -> usr/sbin
 	// - /usr/bin
 	// - /usr/sbin
-
 	// - /bin/bin -> /bin
 	// - /bin/sbin -> ../sbin
 	// - /sbin/sbin2 -> ../../sbin
+
 	os.Symlink("usr/bin", filepath.Join(tmpdir, "bin"))
 	os.Symlink("usr/sbin", filepath.Join(tmpdir, "sbin"))
 
