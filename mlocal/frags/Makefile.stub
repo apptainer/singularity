@@ -274,7 +274,7 @@ testall: vendor-check check test
 .PHONY: rpm
 rpm: dist
 	@echo " BUILD RPM"
-	$(V)cd $(SOURCEDIR) && rpmbuild -tb singularity-*.tar.gz
+	$(V)cd $(SOURCEDIR) && rpmbuild -tb singularity-$(SHORT_VERSION).tar.gz
 
 .PHONY: cscope
 cscope:
