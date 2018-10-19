@@ -29,6 +29,13 @@ su testuser -c '
   export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
   PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+  echo " BUILD DIR "
+  ls $HOME/rpmbuild/BUILD
+  echo " GOPATH "
+  ls $GOPATH/
+  echo " GOPATH Sylabs "
+  ls $GOPATH/src/github.com/sylabs/
+
   cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test
 '
