@@ -23,7 +23,7 @@ su testuser -c '
   git fetch --all
   git config --global user.email "community@sylabs.io"
   git config --global user.name "Travis Test"
-  make RPMCLEAN="--define '__spec_install_pre /bin/true'" -C builddir rpm
+  make RPMCLEAN="--define \'__spec_install_pre /bin/true\'" -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
   BLD=`echo $HOME/rpmbuild/BUILD/singularity*`
   export GOROOT=$BLD/go
