@@ -61,15 +61,13 @@ Singularity provides functionality to make portable
 containers that can be used across host environments.
 
 %prep
-%setup -n singularity
 
+%build
 #XXX: We would like to remove the download of Go in the future
 GOTAR=go%{goversion}.linux-amd64.tar.gz
 wget https://dl.google.com/go/$GOTAR
 tar -xf $GOTAR
 
-
-%build
 mkdir -p gopath/%{singgopath}
 tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
 
