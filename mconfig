@@ -4,11 +4,6 @@
 # in the LICENSE file.
 set -e
 
-# defaults and compiler options
-prefix="/usr/local"
-# exec_prefix will be set again later
-exec_prefix=""
-
 verbose=0
 profile=release
 
@@ -35,9 +30,33 @@ tgtstatic=0
 
 appsec=0
 
+package_name=singularity
+short_version=`(git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
 
+prefix=
+exec_prefix=
+bindir=
+sbindir=
+libexecdir=
+datarootdir=
+datadir=
+sysconfdir=
+sharedstatedir=
+localstatedir=
+runstatedir=
+includedir=
+oldincludedir=
+docdir=
+infodir=
+htmldir=
+dvidir=
+pdfdir=
+psdir=
+libdir=
+localedir=
+mandir=
 
 
 usage () {
@@ -45,58 +64,282 @@ usage () {
 }
 
 usage_args () {
-	echo "Usage: ${0##*/}: [-dvsS] [-p prefix] [-P profile] [-e exec_prefix] [-b builddir]"
-	echo "                 [-c hstcc] [-C tgtcc] [-V version] [-x hstcxx] [-X tgtcxx]"
-	echo "       -v build project with verbose flags on"
-	echo "       -s build final host project binary statically"
-	echo "       -S build final target project binary statically"
-	echo "       -p install project in \`prefix'"
-	echo "       -P use config profile to configure the project:"
-	echo "           release             (DEFAULT) normal release mode (production)"
-	echo "           release-stripped    release mode, stripped symbols (rpm packaging)"
-	echo "           debug               C portion of CGO built unoptimized, with symbols"
-	echo "       -e install project executables in \`exec_prefix'"
-	echo "       -b build project in \`builddir'"
-	echo "       -c build project with host C \`compiler'"
-	echo "       -C build project with target C\`compiler'"
-	echo "       -V build project with given version"
-	echo "       -x build project with host C++ \`compiler'"
-	echo "       -X build project with target C++ \`compiler'"
-	echo "       -h this help"
-	echo "\`host C compiler': $hstcc_opts"
-	echo "\`host C++ compiler': $hstcxx_opts"
-	echo "\`target C compiler': $tgtcc_opts"
-	echo "\`target C++ compiler': $tgtcxx_opts"
+	echo "Usage: ${0##*/}: [-vsS] [-P profile] [-b builddir] [-c hstcc] [-C tgtcc]"
+	echo "                [-V version] [-x hstcxx] [-X tgtcxx]"
+	echo "                [--INSTALLDIR=ARG (see below)]"
+	echo
+	echo "  Makeit general options:"
+	echo "     -v   build project with verbose flags on"
+	echo "     -s   build final host project binary statically"
+	echo "     -S   build final target project binary statically"
+	echo "     -P   use config profile to configure the project:"
+	echo "            *release             normal release mode (production)"
+	echo "             release-stripped    release mode, stripped symbols (rpm packaging)"
+	echo "             debug               CGO objects built unoptimized, with symbols"
+	echo "     -b   build project in \`builddir'"
+	echo "     -c   build project with host C \`compiler'"
+	echo "     -C   build project with target C\`compiler'"
+	echo "     -V   build project with given version"
+	echo "     -x   build project with host C++ \`compiler'"
+	echo "     -X   build project with target C++ \`compiler'"
+	echo "     -h   this help"
+	echo
+	echo "  Path modification options:"
+	echo "     --prefix         install project in \`prefix'"
+	echo "     --exec-prefix    install project executables in \`exec-prefix'"
+	echo "     --bindir         install user executables in \`bindir'"
+	echo "     --sbindir        install admin executables in \`sbindir'"
+	echo "     --libexecdir     install program executables in \`libexecdir'"
+	echo "     --datarootdir    install read-only rootdir data in \`datarootdir'"
+	echo "     --datadir        install read-only data in \`datadir'"
+	echo "     --sysconfdir     install read-only config files in \`sysconfdir'"
+	echo "     --sharedstatedir install writable data in \`sharedstatedir'"
+	echo "     --localstatedir  install writable config files in \`localstatedir'"
+	echo "     --runstatedir    install writable per-process data in \`runstatedir'"
+	echo "     --includedir     install header files in \`includedir'"
+	echo "     --oldincludedir  install system header files in \`oldincludedir'"
+	echo "     --docdir         install root documentation in \`docdir'"
+	echo "     --infodir        install info documentation in \`infodir'"
+	echo "     --htmldir        install html documentation in \`htmldir'"
+	echo "     --dvidir         install dvi documentation in \`dvidir'"
+	echo "     --pdfdir         install pdf documentation in \`pdfdir'"
+	echo "     --psdir          install ps documentation in \`psdir'"
+	echo "     --libdir         install libraries in \`libdir'"
+	echo "     --localedir      install locale dependent data in \`localedir'"
+	echo "     --mandir         install man documentation in \`mandir'"
+	echo
 }
 
 # save the command line
 cmdline="`pwd -P`/${0##*/} $*"
 
-# check line options
-args=`getopt p:P:e:b:c:C:sSvV:x:X:h $*`
-if [ $? -ne 0 ]; then
-	usage_args
-	exit 2
-fi
-eval set -- "$args"
 while [ $# -ne 0 ]; do
  case $1 in
-  -p) prefix="$2"; shift; shift;;
-  -P) profile="$2"; shift; shift;;
-  -e) exec_prefix="$2"; shift; shift;;
-  -b) builddir="$2"; shift; shift;;
-  -c) hstcc="$2"; shift; shift;;
-  -C) tgtcc="$2"; shift; shift;;
-  -x) hstcxx="$2"; shift; shift;;
-  -X) tgtcxx="$2"; shift; shift;;
-  -s) hststatic=1; shift;;
-  -S) tgtstatic=1; shift;;
-  -v) verbose=1; shift;;
-  -V) package_version="$2"; shift; shift;;
+  -p|--prefix*)
+   if [ "$1" = "-p" ]; then
+    if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+    fi
+    prefix=$2
+    shift
+   else
+    if echo "$1" | sed -e '/^--prefix=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+    fi
+    prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   fi
+   shift;;
+  -e|--exec-prefix*)
+   if [ "$1" = "-e" ]; then
+    if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+    fi
+    exec_prefix=$2
+    shift
+   else
+    if echo "$1" | sed -e '/^--exec-prefix=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+    fi
+    exec_prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   fi
+   shift;;
+  --bindir*)
+   if echo "$1" | sed -e '/^--bindir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   bindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --sbindir*)
+   if echo "$1" | sed -e '/^--sbindir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   sbindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --libexecdir*)
+   if echo "$1" | sed -e '/^--libexecdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   libexecdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --datarootdir*)
+   if echo "$1" | sed -e '/^--datarootdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   datarootdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --datadir*)
+   if echo "$1" | sed -e '/^--datadir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   datadir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --sysconfdir*)
+   if echo "$1" | sed -e '/^--sysconfdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   sysconfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --sharedstatedir*)
+   if echo "$1" | sed -e '/^--sharedstatedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   sharedstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --localstatedir*)
+   if echo "$1" | sed -e '/^--localstatedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   localstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --runstatedir*)
+   if echo "$1" | sed -e '/^--runstatedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   runstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --includedir*)
+   if echo "$1" | sed -e '/^--includedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   includedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --oldincludedir*)
+   if echo "$1" | sed -e '/^--oldincludedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   oldincludedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --docdir*)
+   if echo "$1" | sed -e '/^--docdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   docdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --infodir*)
+   if echo "$1" | sed -e '/^--infodir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   infodir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --htmldir*)
+   if echo "$1" | sed -e '/^--htmldir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   htmldir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --dvidir*)
+   if echo "$1" | sed -e '/^--dvidir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   dvidir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --pdfdir*)
+   if echo "$1" | sed -e '/^--pdfdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   pdfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --psdir*)
+   if echo "$1" | sed -e '/^--psdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   psdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --libdir*)
+   if echo "$1" | sed -e '/^--libdir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   libdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --localedir*)
+   if echo "$1" | sed -e '/^--localedir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   localedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  --mandir*)
+   if echo "$1" | sed -e '/^--mandir=.+*/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   mandir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
+   shift;;
+  -P)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   profile=$2; shift; shift;;
+  -b)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   builddir="$2"; shift; shift;;
+  -c)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   hstcc="$2"; shift; shift;;
+  -C)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   tgtcc="$2"; shift; shift;;
+  -x)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   hstcxx="$2"; shift; shift;;
+  -X)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   tgtcxx="$2"; shift; shift;;
+  -s)
+   hststatic=1; shift;;
+  -S)
+   tgtstatic=1; shift;;
+  -v)
+   verbose=1; shift;;
+  -V)
+   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+     echo "error option requires an argument: $1"
+     exit
+   fi
+   package_version="$2"; shift; shift;;
   -h) usage_args; exit 2;;
   --) shift; break;;
   ?) usage_args
      exit 2;;
+  *) break;;
  esac
 done
 #
@@ -105,9 +348,75 @@ if [ $# != 0 ]; then
 	usage_args
 	exit 2
 fi
-if [ -z "$exec_prefix" ]; then
-    exec_prefix=$prefix
+
+# defaults paths
+if [ -z "${prefix}" ]; then
+	prefix=/usr/local
 fi
+if [ -z "${exec_prefix}" ]; then
+	exec_prefix=${prefix}
+fi
+if [ -z "${bindir}" ]; then
+	bindir=${exec_prefix}/bin
+fi
+if [ -z "${sbindir}" ]; then
+	sbindir=${exec_prefix}/sbin
+fi
+if [ -z "${libexecdir}" ]; then
+	libexecdir=${exec_prefix}/libexec
+fi
+if [ -z "${datarootdir}" ]; then
+	datarootdir=${prefix}/share
+fi
+if [ -z "${datadir}" ]; then
+	datadir=${datarootdir}
+fi
+if [ -z "${sysconfdir}" ]; then
+	sysconfdir=${prefix}/etc
+fi
+if [ -z "${sharedstatedir}" ]; then
+	sharedstatedir=${prefix}/com
+fi
+if [ -z "${localstatedir}" ]; then
+	localstatedir=${prefix}/var
+fi
+if [ -z "${runstatedir}" ]; then
+	runstatedir=${localstatedir}/run
+fi
+if [ -z "${includedir}" ]; then
+	includedir=${prefix}/include
+fi
+if [ -z "${oldincludedir}" ]; then
+	oldincludedir=/usr/include
+fi
+if [ -z "${docdir}" ]; then
+	docdir=${datarootdir}/doc/${package_name}
+fi
+if [ -z "${infodir}" ]; then
+	infodir=${datarootdir}/info
+fi
+if [ -z "${htmldir}" ]; then
+	htmldir=${docdir}
+fi
+if [ -z "${dvidir}" ]; then
+	dvidir=${docdir}
+fi
+if [ -z "${pdfdir}" ]; then
+	pdfdir=${docdir}
+fi
+if [ -z "${psdir}" ]; then
+	psdir=${docdir}
+fi
+if [ -z "${libdir}" ]; then
+	libdir=${exec_prefix}/lib
+fi
+if [ -z "${localedir}" ]; then
+	localedir=${datarootdir}/locale
+fi
+if [ -z "${mandir}" ]; then
+	mandir=${datarootdir}/man
+fi
+
 if [ -z "$package_version" ]; then
 	echo "error: unable to determine \$package_version variable"
 	echo "NOTE: Not in a git tree and VERSION file not found"
@@ -195,8 +504,6 @@ echo >> $genmk
 ########################
 # build tools
 ########################
-. ${sourcedir}/mlocal/frags/paths.stub
-
 cat >> $genmk << EOF
 # source/build locations
 BUILDDIR := .
@@ -204,15 +511,30 @@ BUILDDIR_ABSPATH := `(cd $builddir && pwd -P || false)`
 SOURCEDIR := $sourcedir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
-EXEC_PREFIX := $exec_prefix
+EXECPREFIX := $exec_prefix
 BINDIR := $bindir
-LIBEXECDIR := $libexecdir
 SBINDIR := $sbindir
+LIBEXECDIR := $libexecdir
+DATAROOTDIR := $datarootdir
+DATADIR := $datadir
 SYSCONFDIR := $sysconfdir
 SHAREDSTATEDIR := $sharedstatedir
 LOCALSTATEDIR := $localstatedir
+RUNSTATEDIR := $runstatedir
+INCLUDEDIR := $includedir
+OLDINCLUDEDIR := $oldincludedir
+DOCDIR := $docdir
+INFODIR := $infodir
+HTMLDIR := $htmldir
+DVIDIR := $dvidir
+PDFDIR := $pdfdir
+PSDIR := $psdir
 LIBDIR := $libdir
+LOCALEDIR := $localedir
+MANDIR := $mandir
 
+NAME := $package_name
+SHORT_VERSION := $short_version
 VERSION := $package_version
 
 HOSTAR := $hstar
