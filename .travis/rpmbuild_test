@@ -16,7 +16,7 @@ chown -R testuser .
 su testuser -c '
   set -x
   set -e
-  ./mconfig -v -V 0.0
+  ./mconfig 
   sudo yum-builddep -y dist/rpm/singularity.spec
   git fetch --all
   git config --global user.email "community@sylabs.io"
