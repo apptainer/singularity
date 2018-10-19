@@ -11,14 +11,7 @@ if [ "$builddir" = "" ]; then
 	builddir=builddir
 fi
 if [ -e $builddir -a $builddir != "." -a $builddir != ".." ]; then
-	printf "$builddir already exist, remove ? [Y/n] "
-	read var
-	if [ "$var" = "n" -o "$var" = "N" ]; then
-		echo "error: choose another build directory"
-		exit 2
-	else
-		rm -rf $builddir
-	fi
+	rm -rf $builddir
 fi
 mkdir -p $builddir
 

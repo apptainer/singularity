@@ -31,6 +31,7 @@ tgtstatic=0
 appsec=0
 
 package_name=singularity
+short_version=`(git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
 
@@ -533,6 +534,7 @@ LOCALEDIR := $localedir
 MANDIR := $mandir
 
 NAME := $package_name
+SHORT_VERSION := $short_version
 VERSION := $package_version
 
 HOSTAR := $hstar

@@ -35,7 +35,6 @@ libexec/bootstrap-scripts/environment/environment.tar
 libtool
 ltmain.sh
 missing
-singularity.spec
 src/util/config_defaults.h
 secbuildimg.sh
 
