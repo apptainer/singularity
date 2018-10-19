@@ -16,6 +16,7 @@ chown -R testuser .
 su testuser -c '
   set -x
   set -e
+  ls -al .
   ./mconfig 
   sudo yum-builddep -y dist/rpm/singularity.spec
   git fetch --all
