@@ -15,7 +15,7 @@ echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
 chown -R testuser .
 
-cat << EOF | su testuser 
+su testuser -c '
   set -x
   set -e
   ./mconfig 
@@ -23,19 +23,15 @@ cat << EOF | su testuser
   git fetch --all
   git config --global user.email "community@sylabs.io"
   git config --global user.name "Travis Test"
-  make RPMCLEAN="--define '__spec_install_pre /bin/true'" -C builddir rpm
-  sudo yum install -y \$HOME/rpmbuild/RPMS/*/*.rpm
-  BLD=`echo \$HOME/rpmbuild/BUILD/singularity*`
-  export GOROOT=\$BLD/go
-  export GOPATH=\$BLD/gopath
-  PATH=\$GOROOT/bin:\$GOPATH/bin:\$PATH
+  make -C builddir rpm
+  sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
+  BLD=`echo $HOME/rpmbuild/BUILD`
+  export GOROOT=$BLD/go
+  export GOPATH=$BLD/gopath
+  PATH=$GOROOT/bin:$GOPATH/bin:$PATH
   echo " BUILD DIR "
-  ls \$HOME/rpmbuild/BUILD
-  echo " GOPATH "
-  ls \$GOPATH/
-  echo " GOPATH Sylabs "
-  ls \$GOPATH/src/github.com/sylabs/
 
-  cd \$GOPATH/src/github.com/sylabs/singularity
+  cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test
-EOF
+'
+
