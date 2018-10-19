@@ -61,17 +61,20 @@ Singularity provides functionality to make portable
 containers that can be used across host environments.
 
 %prep
-%setup
 
-mkdir -p gopath/%{singgopath}
-mv `ls -d .??* *|grep -v gopath` gopath/%{singgopath}
+%build
+# Create our build root
+mkdir %{name}-%{version}
+cd %{name}-%{version}
 
+#XXX: We would like to remove the download of Go in the future
 GOTAR=go%{goversion}.linux-amd64.tar.gz
 wget https://dl.google.com/go/$GOTAR
 tar -xf $GOTAR
 
+mkdir -p gopath/%{singgopath}
+tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
 
-%build
 export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
@@ -86,6 +89,8 @@ cd builddir
 make
 
 %install
+cd %{name}-%{version}
+
 export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
 export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
