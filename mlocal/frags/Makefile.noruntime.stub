@@ -1,0 +1,111 @@
+singularity := $(BUILDDIR)/singularity
+singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
+singularity_REPO := github.com/sylabs/singularity
+
+dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
+dist_bin_SCRIPTS_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/run-singularity
+
+config := $(BUILDDIR)/singularity.conf
+config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
+
+go_BIN := $(singularity)
+go_INSTALL := $(singularity_INSTALL)
+
+bash_completion :=  $(BUILDDIR)/etc/bash_completion.d/singularity
+bash_completion_INSTALL := $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/singularity
+
+
+INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
+	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
+	$(bash_completion_INSTALL) $(actions_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) \
+	$(seccomp_profile_INSTALL) $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
+
+CLEANFILES += $(singularity) $(go_BIN) $(bash_completion)
+
+all: $(go_BIN) $(bash_completion)
+
+# singularity
+$(singularity): $(singularity_OBJ)
+	@echo " GO" $@
+	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+$(singularity_INSTALL): $(singularity)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+
+# bash_completion file
+$(bash_completion): $(go_OBJ)
+	$(V)rm -f $@
+	$(V)mkdir -p $(@D)
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+
+# install singularity CLI bash_completion file
+$(bash_completion_INSTALL): $(bash_completion)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+# Run-Singularity bin script
+$(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
+
+.PHONY: man
+man:
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(DESTDIR)$(MANDIR)/man1
+
+.PHONY: check
+check: $(go_OBJ)
+	@echo " CHECK go fmt"
+	$(V)cd $(SOURCEDIR) && \
+		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
+		   ( echo "The above files have formatting errors."; \
+		     echo "Use 'go fmt github.com/sylabs/singularity/...' to correct the errors."; \
+		     false ) >&2 )
+	@echo "       PASS"
+	@echo " CHECK go vet"
+	$(V)cd $(SOURCEDIR) && go vet $(GO_TAGS) -all ./...
+	@echo "       PASS"
+	@echo " CHECK go lint"
+	$(V)cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
+	@echo "       PASS"
+
+.PHONY: dist
+dist:
+	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
+
+.PHONY: test
+test:
+	@echo " TEST sudo go test"
+	@# avoid travis 10 minutes of silence timeout
+	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
+	trap "kill $$! || true" 0; \
+	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race ./...
+	@echo "       PASS"
+
+.PHONY: testall
+testall: vendor-check check test
+
+.PHONY: clean
+clean:
+	@printf " CLEAN\n"
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+
+.PHONY: install
+install: $(INSTALLFILES)
+	@echo " DONE"
+
+# generate the vendor folder with dep
+.PHONY: vendor
+vendor:
+	@echo " VENDOR"
+	$(V)dep ensure >/dev/null
+
+.PHONY: vendor-check
+vendor-check:
+	@echo " VENDOR CHECK"
+	$(V)dep check
+
+-include $(BUILDDIR)/mergeddeps

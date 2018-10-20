@@ -77,12 +77,14 @@ printf " checking: namespace: CLONE_NEWNS... "
 if ! printf "#define _GNU_SOURCE\n#include <sched.h>\nint main() { unshare(CLONE_NEWNS); }" | \
    $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
 	echo "no"
-	echo
-	echo "This host does not support the CLONE_NEWNS (mount) namespace flag! You"
-	echo "really really really don't want to run Singularity containers without a"
-	echo "Separate mount name namespace!"
-	echo
-	exit 2
+	if [ "$host" = "unix" ]; then
+		echo
+		echo "This host does not support the CLONE_NEWNS (mount) namespace flag! You"
+		echo "really really really don't want to run Singularity containers without a"
+		echo "Separate mount name namespace!"
+		echo
+		exit 2
+	fi
 else
 	echo "yes"
 	config_add_def NS_CLONE_NEWNS 1
@@ -167,8 +169,10 @@ int main() {
 EOF
 if ! $tgtcc -x c -o /tmp/nnp_c ${nnp_c} >/dev/null 2>&1; then
 	echo "no"
-    echo "ERROR: Failed to compile NO_NEW_PRIVS test"
-    exit 2;
+    if [ "$host" = "unix" ]; then
+        echo "ERROR: Failed to compile NO_NEW_PRIVS test"
+        exit 2;
+    fi
 else
     if ! /tmp/nnp_c; then
         echo "ERROR: Kernel does not support NO_NEW_PRIVS. Updated Kernel is required."
@@ -200,10 +204,12 @@ printf " checking: feature: MS_REC... "
 if ! printf "#include <sys/mount.h>\n#ifndef MS_REC\n#error failed\n#endif\nint main() { }" | \
    $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
 	echo "no"
-	echo
-	echo "This host does not support the MS_REC mount option!"
-	echo
-	exit 2
+	if [ "$host" = "unix" ]; then
+	    echo
+	    echo "This host does not support the MS_REC mount option!"
+	    echo
+	    exit 2
+    fi
 else
 	echo "yes"
 fi
@@ -216,10 +222,12 @@ if ! printf "#include <sys/mount.h>\n#ifndef MS_PRIVATE\n#error failed\n#endif\n
    $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
 	tgtstatic=0
 	echo "no"
-	echo
-	echo "This host does not support the MS_PRIVATE mount option!"
-	echo
-	exit 2
+	if [ "$host" = "unix" ]; then
+    	echo
+	    echo "This host does not support the MS_PRIVATE mount option!"
+	    echo
+	    exit 2
+    fi
 else
 	echo "yes"
 fi
@@ -255,10 +263,12 @@ printf " checking: header linux/capability.h... "
 if ! printf "#include <linux/capability.h>\nint main() { }" | \
    $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
 	echo "no"
-	echo
-	echo "linux/capability.h header not found, requires kernel headers installation."
-	echo
-	exit 2
+	if [ "$host" = "unix" ]; then
+    	echo
+	    echo "linux/capability.h header not found, requires kernel headers installation."
+	    echo
+	    exit 2
+    fi
 else
 	echo "yes"
 fi
@@ -289,10 +299,12 @@ if ! printf "#include <openssl/sha.h>\nint main() { }" | \
    $tgtcc -x c -o /dev/null -lcrypto - >/dev/null 2>&1; then
 	tgtstatic=0
 	echo "no"
-	echo
-	echo "Unable to find the libssl, need package openssl-devel (libssl-dev on Debian/Ubuntu)"
-	echo
-	exit 2
+    if [ "$host" = "unix" ]; then
+	    echo
+	    echo "Unable to find the libssl, need package openssl-devel (libssl-dev on Debian/Ubuntu)"
+	    echo
+	    exit 2
+    fi
 else
 	echo "yes"
 fi
@@ -305,10 +317,12 @@ if ! printf "#include <uuid/uuid.h>\nint main() { }" | \
    $tgtcc -x c -o /dev/null -luuid - >/dev/null 2>&1; then
 	tgtstatic=0
 	echo "no"
-	echo
-	echo "unable to find the libuuid, need package libuuid-devel (uuid-dev on Debian/Ubuntu)"
-	echo
-	exit 2
+	if [ "$host" = "unix" ]; then
+    	echo
+	    echo "unable to find the libuuid, need package libuuid-devel (uuid-dev on Debian/Ubuntu)"
+	    echo
+	    exit 2
+    fi
 else
 	echo "yes"
 fi
