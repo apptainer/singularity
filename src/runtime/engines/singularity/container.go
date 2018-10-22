@@ -402,8 +402,17 @@ func (c *container) mount(point *mount.Point) error {
 }
 
 func (c *container) setSlaveMount(system *mount.System) error {
-	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
-	if _, err := c.rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, ""); err != nil {
+	pflags := uintptr(syscall.MS_REC)
+
+	if c.engine.EngineConfig.File.MountSlave {
+		sylog.Debugf("Set RPC mount propagation flag to SLAVE")
+		pflags |= syscall.MS_SLAVE
+	} else {
+		sylog.Debugf("Set RPC mount propagation flag to PRIVATE")
+		pflags |= syscall.MS_PRIVATE
+	}
+
+	if _, err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
 		return err
 	}
 	return nil
