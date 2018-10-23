@@ -21,6 +21,6 @@ cp dist/rpm/singularity.spec .
 git add singularity.spec
 echo " DIST create tarball: $package_name-$package_version_short.tar.gz"
 git archive --format=tar --prefix=$package_name/ `git stash create` -o $package_name-$package_version_short.tar
-git reset VERSION singularity.spec
+git reset VERSION singularity.spec || true
 gzip $package_name-$package_version_short.tar
 
