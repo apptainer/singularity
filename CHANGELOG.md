@@ -10,6 +10,8 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.0.0
+  
+  - Support colons in image file names
 
 # v3.0.0 - [2018.10.08]
 
