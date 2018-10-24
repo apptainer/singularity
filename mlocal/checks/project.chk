@@ -228,13 +228,25 @@ fi
 # user capabilities
 ########################
 printf " checking: user capabilities... "
-if ! printf "#include <sys/prctl.h>\n#ifndef PR_CAP_AMBIENT\n#error failed\n#endif\nint main() { }" | \
-   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
-	echo "no"
+ucap_c=`mktemp -t ucap_c_XXXXXX`
+cat > $ucap_c << "EOF"
+#include <sys/prctl.h>
+int main() {
+  if( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, 0, 0, 0) < 0 ) { return 1; }
+  return 0;
+}
+EOF
+if ! $tgtcc -x c -o /tmp/ucap_c ${ucap_c} >/dev/null 2>&1; then
+    echo "no"
 else
-	echo "yes"
-	config_add_def USER_CAPABILITIES 1
+    if ! /tmp/ucap_c; then
+        echo "no"
+    else
+        echo "yes"
+        config_add_def USER_CAPABILITIES 1
+    fi
 fi
+/bin/rm -f ${ucap_c} /tmp/ucap_c
 
 ########################
 # linux/securebits.h
