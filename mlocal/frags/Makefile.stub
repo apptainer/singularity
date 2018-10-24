@@ -7,7 +7,7 @@ starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/sta
 starter := $(BUILDDIR)/src/runtime/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
-
+starter_SOURCE := $(SOURCEDIR)/src/runtime/starter/c/starter.c
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
@@ -133,7 +133,7 @@ $(libruntime): $(libutil_OBJ)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
 # starter
-$(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
+$(starter): $(go_OBJ) $(starter_SOURCE) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
 		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
