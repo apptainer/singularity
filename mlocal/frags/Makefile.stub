@@ -132,7 +132,7 @@ $(libruntime): $(libutil_OBJ)
 	$(V)mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
-$(BUILDDIR)/.clean-starter: $(SOURCEDIR)/src/runtime/starter/c/starter.c
+$(BUILDDIR)/.clean-starter: $(starter_SOURCE)
 	$(V)(go clean -cache 2>/dev/null || true)
 	$(V)touch $@
 
