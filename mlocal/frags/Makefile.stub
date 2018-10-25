@@ -132,8 +132,12 @@ $(libruntime): $(libutil_OBJ)
 	$(V)mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
+$(BUILDDIR)/.clean-starter: $(SOURCEDIR)/src/runtime/starter/c/starter.c
+	$(V)(go clean -cache 2>/dev/null || true)
+	$(V)touch $@
+
 # starter
-$(starter): $(go_OBJ) $(starter_SOURCE) $(starter_OBJ) $(libruntime)
+$(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
 		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
