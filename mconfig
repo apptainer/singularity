@@ -117,14 +117,14 @@ while [ $# -ne 0 ]; do
  case $1 in
   -p|--prefix*)
    if [ "$1" = "-p" ]; then
-    if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
     fi
     prefix=$2
     shift
    else
-    if echo "$1" | sed -e '/^--prefix=.+*/q2' >/dev/null; then
+    if echo "$1" | awk '/^--prefix=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
     fi
@@ -133,14 +133,14 @@ while [ $# -ne 0 ]; do
    shift;;
   -e|--exec-prefix*)
    if [ "$1" = "-e" ]; then
-    if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
     fi
     exec_prefix=$2
     shift
    else
-    if echo "$1" | sed -e '/^--exec-prefix=.+*/q2' >/dev/null; then
+    if echo "$1" | awk '/^--exec-prefix=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
     fi
@@ -148,177 +148,177 @@ while [ $# -ne 0 ]; do
    fi
    shift;;
   --bindir*)
-   if echo "$1" | sed -e '/^--bindir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--bindir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    bindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --sbindir*)
-   if echo "$1" | sed -e '/^--sbindir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--sbindir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    sbindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --libexecdir*)
-   if echo "$1" | sed -e '/^--libexecdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--libexecdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    libexecdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --datarootdir*)
-   if echo "$1" | sed -e '/^--datarootdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--datarootdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    datarootdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --datadir*)
-   if echo "$1" | sed -e '/^--datadir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--datadir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    datadir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --sysconfdir*)
-   if echo "$1" | sed -e '/^--sysconfdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--sysconfdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    sysconfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --sharedstatedir*)
-   if echo "$1" | sed -e '/^--sharedstatedir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--sharedstatedir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    sharedstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --localstatedir*)
-   if echo "$1" | sed -e '/^--localstatedir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--localstatedir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    localstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --runstatedir*)
-   if echo "$1" | sed -e '/^--runstatedir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--runstatedir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    runstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --includedir*)
-   if echo "$1" | sed -e '/^--includedir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--includedir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    includedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --oldincludedir*)
-   if echo "$1" | sed -e '/^--oldincludedir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--oldincludedir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    oldincludedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --docdir*)
-   if echo "$1" | sed -e '/^--docdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--docdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    docdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --infodir*)
-   if echo "$1" | sed -e '/^--infodir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--infodir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    infodir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --htmldir*)
-   if echo "$1" | sed -e '/^--htmldir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--htmldir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    htmldir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --dvidir*)
-   if echo "$1" | sed -e '/^--dvidir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--dvidir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    dvidir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --pdfdir*)
-   if echo "$1" | sed -e '/^--pdfdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--pdfdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    pdfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --psdir*)
-   if echo "$1" | sed -e '/^--psdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--psdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    psdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --libdir*)
-   if echo "$1" | sed -e '/^--libdir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--libdir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    libdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --localedir*)
-   if echo "$1" | sed -e '/^--localedir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--localedir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    localedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --mandir*)
-   if echo "$1" | sed -e '/^--mandir=.+*/q2' >/dev/null; then
+   if echo "$1" | awk '/^--mandir=.+$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    mandir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   -P)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    profile=$2; shift; shift;;
   -b)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    builddir="$2"; shift; shift;;
   -c)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    hstcc="$2"; shift; shift;;
   -C)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    tgtcc="$2"; shift; shift;;
   -x)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
    hstcxx="$2"; shift; shift;;
   -X)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi
@@ -330,7 +330,7 @@ while [ $# -ne 0 ]; do
   -v)
    verbose=1; shift;;
   -V)
-   if ! echo "$2" | sed -e '/^-.*/q2; /^$/q2' >/dev/null; then
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error option requires an argument: $1"
      exit
    fi

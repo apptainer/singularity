@@ -14,6 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -126,4 +128,46 @@ func checkSections() error {
 	}
 
 	return nil
+}
+
+func definitionFromSpec(spec string) (def types.Definition, err error) {
+
+	// Try spec as URI first
+	def, err = types.NewDefinitionFromURI(spec)
+	if err == nil {
+		return
+	}
+
+	// Try spec as local file
+	var isValid bool
+	isValid, err = parser.IsValidDefinition(spec)
+	if err != nil {
+		return
+	}
+
+	if isValid {
+		sylog.Debugf("Found valid definition: %s\n", spec)
+		// File exists and contains valid definition
+		var defFile *os.File
+		defFile, err = os.Open(spec)
+		if err != nil {
+			return
+		}
+
+		defer defFile.Close()
+		def, err = parser.ParseDefinitionFile(defFile)
+
+		return
+	}
+
+	// File exists and does NOT contain a valid definition
+	// local image or sandbox
+	def = types.Definition{
+		Header: map[string]string{
+			"bootstrap": "localimage",
+			"from":      spec,
+		},
+	}
+
+	return
 }
