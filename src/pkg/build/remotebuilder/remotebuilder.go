@@ -113,12 +113,10 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 		// Do not try to download image if not complete or image size is 0
 		if !rd.IsComplete {
-			sylog.Debugf("build has not completed")
-			return nil
+			return errors.New("build has not completed")
 		}
 		if rd.ImageSize <= 0 {
-			sylog.Debugf("built image size <= 0")
-			return nil
+			return errors.New("build image size <= 0")
 		}
 
 		// If image destination is local file, pull image.
