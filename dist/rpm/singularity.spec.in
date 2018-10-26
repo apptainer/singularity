@@ -60,6 +60,8 @@ Obsoletes: %{name}-runtime
 Singularity provides functionality to make portable
 containers that can be used across host environments.
 
+%debug_package
+
 %prep
 # Create our build root
 rm -rf %{name}-%{version}
