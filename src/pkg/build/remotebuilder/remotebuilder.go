@@ -111,6 +111,16 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 			return err
 		}
 
+		// Do not try to download image if not complete or image size is 0
+		if !rd.IsComplete {
+			sylog.Debugf("build has not completed")
+			return nil
+		}
+		if rd.ImageSize <= 0 {
+			sylog.Debugf("built image size <= 0")
+			return nil
+		}
+
 		// If image destination is local file, pull image.
 		if !strings.HasPrefix(rb.ImagePath, "library://") {
 			err = client.DownloadImage(rb.ImagePath, rd.LibraryRef, rd.LibraryURL, rb.Force, rb.AuthToken)
@@ -131,8 +141,9 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 	rb.setAuthHeader(h)
 	h.Set("User-Agent", useragent.Value())
 
-	c, _, err := websocket.DefaultDialer.Dial(url, h)
+	c, resp, err := websocket.DefaultDialer.Dial(url, h)
 	if err != nil {
+		sylog.Debugf("websocket dial err - %s, partial response: %+v", err, resp)
 		return err
 	}
 	defer c.Close()
@@ -151,6 +162,7 @@ func (rb *RemoteBuilder) streamOutput(ctx context.Context, url string) (err erro
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
 				return nil
 			}
+			sylog.Debugf("websocket read message err - %s", err)
 			return err
 		}
 
@@ -189,6 +201,7 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d types.Definition,
 	rb.setAuthHeader(req.Header)
 	req.Header.Set("User-Agent", useragent.Value())
 	req.Header.Set("Content-Type", "application/json")
+	sylog.Debugf("Sending build request to %s", req.URL.String())
 
 	res, err := rb.Client.Do(req)
 	if err != nil {
@@ -197,6 +210,10 @@ func (rb *RemoteBuilder) doBuildRequest(ctx context.Context, d types.Definition,
 	defer res.Body.Close()
 
 	err = jsonresp.ReadResponse(res.Body, &rd)
+	if err == nil {
+		sylog.Debugf("Build response - id: %s, wsurl: %s, libref: %s",
+			rd.ID.Hex(), rd.WSURL, rd.LibraryRef)
+	}
 	return
 }
 
