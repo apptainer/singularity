@@ -423,8 +423,8 @@ if [ -z "$package_version" ]; then
 	echo "NOTE: Try running mconfig with [-V version]"
 	exit 2
 fi
-makeitdir=makeit
 sourcedir=`pwd -P`
+makeitdir=$sourcedir/makeit
 mfragsdir=$sourcedir/mlocal/frags
 mchecksdir=$sourcedir/mlocal/checks
 
