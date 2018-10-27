@@ -8,6 +8,8 @@ yum install -y openssl-devel libuuid-devel
 
 # switch to an unprivileged user with sudo privileges
 yum install -y sudo
+# We need Git existing here prior to the run
+yum install -y git
 useradd -u 1000 --create-home -s /bin/bash testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
@@ -15,14 +17,19 @@ chown -R testuser .
 
 su testuser -c '
   set -x
-  ./mconfig -V 0.0
+  set -e
+  ./mconfig 
   sudo yum-builddep -y dist/rpm/singularity.spec
+  git config --global user.email "community@sylabs.io"
+  git config --global user.name "Travis Test"
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
   BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
   export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
   PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+
   cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test
 '
+
