@@ -152,9 +152,13 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	}
 
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
-	_, err = c.rpcOps.Chroot(c.session.FinalPath())
+	_, err = c.rpcOps.Chroot(c.session.FinalPath(), true)
 	if err != nil {
-		return fmt.Errorf("chroot failed: %s", err)
+		sylog.Debugf("Fallback to move/chroot")
+		_, err = c.rpcOps.Chroot(c.session.FinalPath(), false)
+		if err != nil {
+			return fmt.Errorf("chroot failed: %s", err)
+		}
 	}
 
 	if c.netNS && !c.userNS {

@@ -47,40 +47,54 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 
 // Chroot performs a chroot with the specified arguments.
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
-	// idea taken from libcontainer (and also LXC developpers) to avoid
-	// creation of temporary directory or use of existing directory
-	// for pivot_root.
+	root := arguments.Root
 
-	sylog.Debugf("Hold reference to host / directory")
-	oldroot, err := os.Open("/")
-	if err != nil {
-		return fmt.Errorf("failed to open host root directory: %s", err)
-	}
-	defer oldroot.Close()
-
-	sylog.Debugf("Change current directory to %s", arguments.Root)
-	if err := syscall.Chdir(arguments.Root); err != nil {
-		return fmt.Errorf("failed to change directory to %s", arguments.Root)
+	sylog.Debugf("Change current directory to %s", root)
+	if err := syscall.Chdir(root); err != nil {
+		return fmt.Errorf("failed to change directory to %s", root)
 	}
 
-	sylog.Debugf("Called pivot_root on %s\n", arguments.Root)
-	if err := syscall.PivotRoot(".", "."); err != nil {
-		return fmt.Errorf("pivot_root %s: %s", arguments.Root, err)
-	}
+	if arguments.UsePivot {
+		// idea taken from libcontainer (and also LXC developpers) to avoid
+		// creation of temporary directory or use of existing directory
+		// for pivot_root.
 
-	sylog.Debugf("Change current directory to host / directory")
-	if err := syscall.Fchdir(int(oldroot.Fd())); err != nil {
-		return fmt.Errorf("failed to change directory to old root: %s", err)
-	}
+		sylog.Debugf("Hold reference to host / directory")
+		oldroot, err := os.Open("/")
+		if err != nil {
+			return fmt.Errorf("failed to open host root directory: %s", err)
+		}
+		defer oldroot.Close()
 
-	sylog.Debugf("Apply slave mount propagation for host / directory")
-	if err := syscall.Mount("", ".", "", syscall.MS_SLAVE|syscall.MS_REC, ""); err != nil {
-		return fmt.Errorf("failed to apply slave mount propagation for host / directory: %s", err)
-	}
+		sylog.Debugf("Called pivot_root on %s\n", root)
+		if err := syscall.PivotRoot(".", "."); err != nil {
+			return fmt.Errorf("pivot_root %s: %s", root, err)
+		}
 
-	sylog.Debugf("Called unmount(/, syscall.MNT_DETACH)\n")
-	if err := syscall.Unmount(".", syscall.MNT_DETACH); err != nil {
-		return fmt.Errorf("unmount pivot_root dir %s", err)
+		sylog.Debugf("Change current directory to host / directory")
+		if err := syscall.Fchdir(int(oldroot.Fd())); err != nil {
+			return fmt.Errorf("failed to change directory to old root: %s", err)
+		}
+
+		sylog.Debugf("Apply slave mount propagation for host / directory")
+		if err := syscall.Mount("", ".", "", syscall.MS_SLAVE|syscall.MS_REC, ""); err != nil {
+			return fmt.Errorf("failed to apply slave mount propagation for host / directory: %s", err)
+		}
+
+		sylog.Debugf("Called unmount(/, syscall.MNT_DETACH)\n")
+		if err := syscall.Unmount(".", syscall.MNT_DETACH); err != nil {
+			return fmt.Errorf("unmount pivot_root dir %s", err)
+		}
+	} else {
+		sylog.Debugf("Move %s as / directory", root)
+		if err := syscall.Mount(".", "/", "", syscall.MS_MOVE, ""); err != nil {
+			return fmt.Errorf("failed to move %s as / directory: %s", root, err)
+		}
+
+		sylog.Debugf("Chroot to %s", root)
+		if err := syscall.Chroot("."); err != nil {
+			return fmt.Errorf("chroot failed: %s", err)
+		}
 	}
 
 	sylog.Debugf("Changing directory to / to avoid getpwd issues\n")
