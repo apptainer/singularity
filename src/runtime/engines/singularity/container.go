@@ -475,29 +475,14 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	}
 
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
-		dest = filepath.Join(c.session.FinalPath(), mnt.Destination)
+		dest = fs.EvalRelative(mnt.Destination, c.session.FinalPath())
+
+		dest = filepath.Join(c.session.FinalPath(), dest)
+
 		if _, err := os.Stat(dest); os.IsNotExist(err) {
 			c.skippedMount = append(c.skippedMount, mnt.Destination)
 			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
 			return nil
-		}
-
-		// evaluate destination path to resolve possible symlink and modify
-		// destination accordingly in order to always mount destination
-		// in container
-		resolved, err := filepath.EvalSymlinks(dest)
-		if err != nil {
-			sylog.Debugf("Skipping mount, can't evaluate %s: %s", dest, err)
-			return nil
-		}
-		if resolved != dest {
-			if !strings.HasPrefix(resolved, sessionPath) {
-				dest = filepath.Join(c.session.FinalPath(), resolved)
-			} else if filepath.IsAbs(resolved) {
-				dest = resolved
-			} else {
-				sylog.Debugf("Ignoring path '%s' resolved to '%s'", dest, resolved)
-			}
 		}
 	} else {
 		dest = mnt.Destination
@@ -770,7 +755,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 
 			if !imageObject.Writable {
 				flags |= syscall.MS_RDONLY
-				ov.AddLowerDir(dst)
+				ov.AddLowerDir(filepath.Join(dst, "upper"))
 			}
 
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, imageObject.Offset, imageObject.Size)
@@ -798,7 +783,11 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
 
 			if !imageObject.Writable {
-				ov.AddLowerDir(dst)
+				if fs.IsDir(filepath.Join(imageObject.Path, "upper")) {
+					ov.AddLowerDir(filepath.Join(dst, "upper"))
+				} else {
+					ov.AddLowerDir(dst)
+				}
 			}
 		default:
 			return fmt.Errorf("unknown image format")
