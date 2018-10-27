@@ -549,16 +549,9 @@ static void list_fd(struct fdlist *fl) {
 }
 
 static void fix_fsuid(uid_t uid) {
-    int fsuid = setfsuid(uid);
+    setfsuid(uid);
 
-    if ( fsuid == uid ) {
-        singularity_message(DEBUG, "Filesystem UID already equal to %d", uid);
-        return;
-    }
-    if ( fsuid != 0 ) {
-        singularity_message(DEBUG, "Previous filesystem UID was not 0: %d\n", fsuid);
-    }
-    if ( setfsuid(-1) != uid ) {
+    if ( setfsuid(uid) != uid ) {
         singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
         exit(1);
     }
@@ -1087,9 +1080,6 @@ __attribute__((constructor)) static void init(void) {
 
             if ( process == 0 ) {
                 singularity_message(VERBOSE, "Spawn RPC server\n");
-                if ( config.isSuid ) {
-                    fix_fsuid(uid);
-                }
                 execute = RPC_SERVER;
             } else if ( process > 0 ) {
                 int status;
