@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
+	"github.com/sylabs/singularity/src/runtime/engines/oci"
 	"github.com/sylabs/singularity/src/runtime/engines/singularity"
 	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/server"
 )
@@ -102,11 +103,12 @@ func init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
 	registeredEngineOperations[singularity.Name] = &singularity.EngineOperations{EngineConfig: singularity.NewConfig()}
 	registeredEngineOperations[imgbuild.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}
+	registeredEngineOperations[oci.Name] = &oci.EngineOperations{EngineConfig: &oci.EngineConfig{}}
 
 	// register singularity rpc methods
 	methods := new(server.Methods)
 	registeredEngineRPCMethods = make(map[string]interface{})
 	registeredEngineRPCMethods[singularity.Name] = methods
 	registeredEngineRPCMethods[imgbuild.Name] = methods
-
+	registeredEngineRPCMethods[oci.Name] = methods
 }
