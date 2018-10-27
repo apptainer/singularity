@@ -1,2 +1,0 @@
-CFLAGS += -Ofast
-LDFLAGS += -s
