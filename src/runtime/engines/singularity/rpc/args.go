@@ -35,7 +35,8 @@ type MountArgs struct {
 
 // ChrootArgs defines the arguments to chroot.
 type ChrootArgs struct {
-	Root string
+	Root     string
+	UsePivot bool
 }
 
 // HostnameArgs defines the arguments to sethostname.
