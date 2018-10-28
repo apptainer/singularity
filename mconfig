@@ -417,16 +417,13 @@ if [ -z "${mandir}" ]; then
 	mandir=${datarootdir}/man
 fi
 
+# determine package version
 if [ -z "$package_version" ]; then
 	echo "error: unable to determine \$package_version variable"
 	echo "NOTE: Not in a git tree and VERSION file not found"
 	echo "NOTE: Try running mconfig with [-V version]"
 	exit 2
 fi
-sourcedir=`pwd -P`
-makeitdir=$sourcedir/makeit
-mfragsdir=$sourcedir/mlocal/frags
-mchecksdir=$sourcedir/mlocal/checks
 
 # config profile validation
 case $profile in
@@ -441,16 +438,42 @@ case $profile in
 	   exit 2;;
 esac
 
+# sourcedir and builddir
+sourcedir=`pwd -P`
+if [ "$builddir" = "" ]; then
+	builddir=builddir
+fi
+if [ -e $builddir -a $builddir != "." -a $builddir != ".." ]; then
+	rm -rf $builddir
+fi
+
+# setup some makeit base directories
+makeit_dir=$sourcedir/makeit
+makeit_fragsdir=$sourcedir/mlocal/frags
+makeit_checksdir=$sourcedir/mlocal/checks
+# mconfig tmpfiles path
+makeit_interdir=$builddir/makeit-intermediate
+makeit_testprogdir=$makeit_interdir/testprogs
+# final generated Makefile
+makeit_makefile=$builddir/Makefile
+makeit_makefile_base=$makeit_interdir/base.mk
+
+# work directory and file creation
+mkdir -p $builddir
+mkdir -p $makeit_interdir
+mkdir -p $makeit_testprogdir
+:>$makeit_makefile_base
+
 
 
 #######################################################################
 # System build tool configuration
 #######################################################################
-if [ -f $mchecksdir/basechecks.chk ]; then
+if [ -f $makeit_checksdir/basechecks.chk ]; then
 	echo "=> running base system checks ..."
-	. $mchecksdir/basechecks.chk
+	. $makeit_checksdir/basechecks.chk
 else
-	echo "error: file $mchecksdir/basechecks.chk needs to be present"
+	echo "error: file $makeit_checksdir/basechecks.chk needs to be present"
 	exit 2
 fi
 
@@ -469,20 +492,20 @@ config_add_def ()
 }
 
 rm -rf $builddir/config.h
-if [ -f $mchecksdir/project.chk ]; then
+if [ -f $makeit_checksdir/project.chk ]; then
 	echo "=> running project specific checks ..."
-	. $mchecksdir/project.chk
+	. $makeit_checksdir/project.chk
 fi
 
 
 
 #######################################################################
-# Generated fragments
+# Generate fragments
 #######################################################################
 echo "=> generating fragments ..."
-if [ ! -d $mfragsdir ]; then
-	echo "error: $mfragsdir should be populated with Makefile fragments."
-	echo "NOTE: Fragments may be copied from examples found in $makeitdir/examples/<project>/* "
+if [ ! -d $makeit_fragsdir ]; then
+	echo "error: $makeit_fragsdir should be populated with Makefile fragments."
+	echo "NOTE: Fragments may be copied from examples or existing projects"
 	echo "NOTE: to $sourcedir/mlocal/* and tweak for your project."
 	exit 2
 fi
@@ -492,19 +515,19 @@ fi
 # verbosity
 ########################
 if [ "$verbose" = 1 ]; then
-	echo "# build with verbose flag on" >> $genmk
-	echo "V :=" >> $genmk
+	echo "# build with verbose flag on" >> $makeit_makefile_base
+	echo "V :=" >> $makeit_makefile_base
 else
-	echo "# silent build" >> $genmk
-	echo "V := @" >> $genmk
+	echo "# silent build" >> $makeit_makefile_base
+	echo "V := @" >> $makeit_makefile_base
 fi
-echo >> $genmk
+echo >> $makeit_makefile_base
 
 
 ########################
 # build tools
 ########################
-cat >> $genmk << EOF
+cat >> $makeit_makefile_base << EOF
 # source/build locations
 BUILDDIR := .
 BUILDDIR_ABSPATH := `(cd $builddir && pwd -P || false)`
@@ -561,7 +584,7 @@ EOF
 ########################
 # modules
 ########################
-:>$genconfdir/module.lst
+:>$makeit_interdir/module.lst
 
 found_modules=`(cat modules | awk '{ printf("%s ", $0) }') \
 		2>/dev/null || true`
@@ -577,7 +600,7 @@ if [ "$found_modules" = "" ]; then
 	fi
 fi
 echo " found build modules:"
-echo "CPPFLAGS :=" >> $genmk
+echo "CPPFLAGS :=" >> $makeit_makefile_base
 # NOTE: parsed module (*.mconf) files only substitute var tgt_arch for now
 for m in $found_modules; do
 	mod=`eval echo ${m##*./}`
@@ -591,34 +614,34 @@ for m in $found_modules; do
 	fi
 
 	echo "   +-> $mod"
-	echo "$modpath `eval basename $mod`" >> $genconfdir/module.lst
-	mkdir -p $genconfdir/$modpath
+	echo "$modpath `eval basename $mod`" >> $makeit_interdir/module.lst
+	mkdir -p $makeit_interdir/$modpath
 	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, \
-				tgt_arch); print }' > $genconfdir/${mod}.parsed
-#	echo "CPPFLAGS += -iquote\$(SOURCEDIR)/$modpath" >> $genmk
+				tgt_arch); print }' > $makeit_interdir/${mod}.parsed
+#	echo "CPPFLAGS += -iquote\$(SOURCEDIR)/$modpath" >> $makeit_makefile_base
 done
-echo >> $genmk
+echo >> $makeit_makefile_base
 
 # init LDFLAGS if static builds are supported
 if [ "$hststatic" = "1" -a "$tgtstatic" = "1" ]; then
-	echo "LDFLAGS := -static" >> $genmk
+	echo "LDFLAGS := -static" >> $makeit_makefile_base
 else
-	echo "LDFLAGS :=" >> $genmk
+	echo "LDFLAGS :=" >> $makeit_makefile_base
 fi
-echo >> $genmk
+echo >> $makeit_makefile_base
 
-cat >> $genmk << EOF
+cat >> $makeit_makefile_base << EOF
 # make sure \`all' is the first rule
 all:
 EOF
 
 
 # call genmod.awk, generating Makefile components
-$makeitdir/genmod.awk modfile=$genconfdir/module.lst \
+$makeit_dir/genmod.awk modfile=$makeit_interdir/module.lst \
 	makeitdir=$sourcedir \
 	host=$host \
-	genconfdir=$genconfdir \
-	tmpldir=$makeitdir/tmpl
+	genconfdir=$makeit_interdir \
+	tmpldir=$makeit_dir/tmpl
 
 
 
@@ -626,74 +649,71 @@ $makeitdir/genmod.awk modfile=$genconfdir/module.lst \
 # Target Makefile
 #######################################################################
 drawline () {
-	echo >> $output
-	printf "# [ Embedding file : %50s ] #\n" $1 >> $output
-	echo >> $output
+	echo >> $makeit_makefile
+	printf "# [ Embedding file : %50s ] #\n" $1 >> $makeit_makefile
+	echo >> $makeit_makefile
 }
 
 echo "=> building Makefile ..."
 
-:> $output
-echo "#" >> $output
-echo "# Non-recursive Makefile GENERATED by \`${0##*/}' -- `date`" >> $output
-echo "# configured: $cmdline" >> $output
-echo "#" >> $output
+:> $makeit_makefile
+echo "#" >> $makeit_makefile
+echo "# Non-recursive Makefile GENERATED by \`${0##*/}' -- `date`" >> $makeit_makefile
+echo "# configured: $cmdline" >> $makeit_makefile
+echo "#" >> $makeit_makefile
 
-drawline $genmk
-cat $genmk >> $output
+drawline $makeit_makefile_base
+cat $makeit_makefile_base >> $makeit_makefile
 
-drawline $mfragsdir/common_opts.mk
-cat $mfragsdir/common_opts.mk >> $output
+drawline $makeit_fragsdir/common_opts.mk
+cat $makeit_fragsdir/common_opts.mk >> $makeit_makefile
 
 
 if [ "$appsec" = "1" ]; then
-	drawline $mfragsdir/go_appsec_opts.mk
-	cat $mfragsdir/go_appsec_opts.mk >> $output
+	drawline $makeit_fragsdir/go_appsec_opts.mk
+	cat $makeit_fragsdir/go_appsec_opts.mk >> $makeit_makefile
 else
-	drawline $mfragsdir/go_common_opts.mk
-	cat $mfragsdir/go_common_opts.mk >> $output
+	drawline $makeit_fragsdir/go_common_opts.mk
+	cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
 fi
 
 case $profile in
 	release)
-		drawline $mfragsdir/release_opts.mk
-		cat $mfragsdir/release_opts.mk >> $output
-		drawline $mfragsdir/go_normal_opts.mk
-		cat $mfragsdir/go_normal_opts.mk >> $output
+		drawline $makeit_fragsdir/release_opts.mk
+		cat $makeit_fragsdir/release_opts.mk >> $makeit_makefile
+		drawline $makeit_fragsdir/go_normal_opts.mk
+		cat $makeit_fragsdir/go_normal_opts.mk >> $makeit_makefile
 		;;
 	release-stripped)
-		drawline $mfragsdir/release_opts.mk
-		cat $mfragsdir/release_opts.mk >> $output
-		drawline $mfragsdir/go_stripped_opts.mk
-		cat $mfragsdir/go_stripped_opts.mk >> $output
+		drawline $makeit_fragsdir/release_opts.mk
+		cat $makeit_fragsdir/release_opts.mk >> $makeit_makefile
+		drawline $makeit_fragsdir/go_stripped_opts.mk
+		cat $makeit_fragsdir/go_stripped_opts.mk >> $makeit_makefile
 		;;
 	debug)
-		drawline $mfragsdir/debug_opts.mk
-		cat $mfragsdir/debug_opts.mk >> $output
-		drawline $mfragsdir/go_normal_opts.mk
-		cat $mfragsdir/go_normal_opts.mk >> $output
+		drawline $makeit_fragsdir/debug_opts.mk
+		cat $makeit_fragsdir/debug_opts.mk >> $makeit_makefile
+		drawline $makeit_fragsdir/go_normal_opts.mk
+		cat $makeit_fragsdir/go_normal_opts.mk >> $makeit_makefile
 		;;
 esac
 
-if [ -f "$mfragsdir/arch_${tgt_arch}_opts.mk" ]; then
-	drawline $mfragsdir/arch_${tgt_arch}_opts.mk
-	cat $mfragsdir/arch_${tgt_arch}_opts.mk >> $output
+if [ -f "$makeit_fragsdir/arch_${tgt_arch}_opts.mk" ]; then
+	drawline $makeit_fragsdir/arch_${tgt_arch}_opts.mk
+	cat $makeit_fragsdir/arch_${tgt_arch}_opts.mk >> $makeit_makefile
 fi
 
-drawline $genconfdir/modules.mk
-cat $genconfdir/modules.mk >> $output
+drawline $makeit_interdir/modules.mk
+cat $makeit_interdir/modules.mk >> $makeit_makefile
 
-drawline $genconfdir/all.mk
-cat $genconfdir/all.mk >> $output
+drawline $makeit_interdir/all.mk
+cat $makeit_interdir/all.mk >> $makeit_makefile
 
-drawline $mfragsdir/Makefile.stub
+drawline $makeit_fragsdir/Makefile.stub
 # here, `depends' need to happen after all other rules; at the very end
-final_all=`cat $genconfdir/all.mk | awk 'BEGIN { FS="all: " } { print $2 }'`
-cat $mfragsdir/Makefile.stub | awk \
-	"{ gsub(/^collect:/, \"collect: $final_all\"); print }" >> $output
-
-
-rm -rf $genconfdir
+final_all=`cat $makeit_interdir/all.mk | awk 'BEGIN { FS="all: " } { print $2 }'`
+cat $makeit_fragsdir/Makefile.stub | awk \
+	"{ gsub(/^collect:/, \"collect: $final_all\"); print }" >> $makeit_makefile
 
 
 
@@ -711,6 +731,7 @@ if [ "$VERSION" = "$RELEASE" ]; then
     RELEASE=1
 fi
 sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $RPMSPEC.in >$RPMSPEC
+
 
 
 #######################################################################
