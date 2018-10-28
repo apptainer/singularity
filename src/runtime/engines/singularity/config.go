@@ -48,8 +48,6 @@ type FileConfig struct {
 	AutofsBugPath           []string `directive:"autofs bug path"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
-	AllowRootCapabilities   bool     `default:"yes" authorized:"yes,no" directive:"allow root capabilities"`
-	AllowUserCapabilities   bool     `default:"no" authorized:"yes,no" directive:"allow user capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
