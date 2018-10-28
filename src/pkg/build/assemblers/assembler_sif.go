@@ -163,7 +163,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	}
 
 	if err := mksquashfsCmd.Wait(); err != nil {
-		return fmt.Errorf("While running mksquashfs: %v: %s", err, errOut)
+		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
 	err = createSIF(path, def, squashfsPath)
