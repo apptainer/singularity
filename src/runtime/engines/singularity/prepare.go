@@ -111,7 +111,6 @@ func (e *EngineOperations) prepareRootCaps() error {
 	// is no-privs/keep-privs set on command line
 	if e.EngineConfig.GetNoPrivs() {
 		sylog.Debugf("--no-privs requested, no new privileges enabled")
-		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 		defaultCapabilities = "no"
 	} else if e.EngineConfig.GetKeepPrivs() {
 		sylog.Debugf("--keep-privs requested")
@@ -144,6 +143,8 @@ func (e *EngineOperations) prepareRootCaps() error {
 			commonCaps = append(commonCaps, caps...)
 			sylog.Debugf("%s group capabilities %v added", gr.Name, caps)
 		}
+	default:
+		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	}
 
 	caps, _ := capabilities.Split(e.EngineConfig.GetAddCaps())

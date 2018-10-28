@@ -7,10 +7,12 @@ package overlay
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/src/pkg/util/fs"
 	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/src/pkg/util/fs/mount"
 )
@@ -128,7 +130,10 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 					continue
 				}
 			}
-			dest := lowerDir + point.Destination
+
+			dest := fs.EvalRelative(point.Destination, rootFsPath)
+
+			dest = filepath.Join(lowerDir, dest)
 			if _, err := o.session.GetPath(dest); err == nil {
 				continue
 			}
