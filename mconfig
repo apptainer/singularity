@@ -449,6 +449,7 @@ fi
 
 # setup some makeit base directories
 makeit_dir=$sourcedir/makeit
+makeit_mconflist=$sourcedir/mlocal/mconflist
 makeit_fragsdir=$sourcedir/mlocal/frags
 makeit_checksdir=$sourcedir/mlocal/checks
 # mconfig tmpfiles path
@@ -586,8 +587,7 @@ EOF
 ########################
 :>$makeit_interdir/module.lst
 
-found_modules=`(cat modules | awk '{ printf("%s ", $0) }') \
-		2>/dev/null || true`
+found_modules=`(cat $makeit_mconflist | awk '{ printf("%s ", $0) }') 2>/dev/null || true`
 if [ "$found_modules" = "" ]; then
 	found_modules=`find . -name '*.mconf' -print`
 	if [ "$found_modules" = "" ]; then
@@ -605,12 +605,12 @@ echo "CPPFLAGS :=" >> $makeit_makefile_base
 for m in $found_modules; do
 	mod=`eval echo ${m##*./}`
 	modpath=`eval echo ${mod%/*}`
-	if [ `(cd "$modpath" && pwd -P || false)` = $sourcedir ]; then
-		modpath="."
-	fi
 	if [ ! -f $mod ]; then
 		echo "error: module file \`$mod' not found!"
 		exit 2
+	fi
+	if [ `(cd "$modpath" && pwd -P || false)` = $sourcedir ]; then
+		modpath="."
 	fi
 
 	echo "   +-> $mod"
