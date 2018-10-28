@@ -1,6 +1,6 @@
 [  
    {  
-      "Header":"Bootstrap: docker\nFrom: <registry>/<namespace>/<container>:<tag>@<digest>\nIncludeCmd: yes\n\n# Some dummy comment 1\n",
+      "Header":"# some comment before header\nBootstrap: docker   # some comment on header line\nFrom: <registry>/<namespace>/<container>:<tag>@<digest>\nIncludeCmd: yes\n\n# Some dummy comment 1\n",
       "Help":"%help\nHello Help!\n# # double Hashtag comment\n",
       "Setup":"%setup\n\ttouch ${SINGULARITY_ROOTFS}/mock.txt\n\ttouch mock.txt\n\n# Some dummy comment 2",
       "Files":"%files\nmock1.txt\nmock2.txt /opt\n\n# Some dummy comment 3",

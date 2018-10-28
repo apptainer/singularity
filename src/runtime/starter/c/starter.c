@@ -552,12 +552,11 @@ static void fix_fsuid(uid_t uid) {
     int fsuid = setfsuid(uid);
 
     if ( fsuid == uid ) {
-        singularity_message(DEBUG, "Filesystem UID already equal to %d", uid);
+        singularity_message(DEBUG, "Filesystem UID already equal to %d\n", uid);
         return;
     }
     if ( fsuid != 0 ) {
-        singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
-        exit(1);
+        singularity_message(DEBUG, "Previous filesystem UID was not 0: %d\n", fsuid);
     }
     if ( setfsuid(-1) != uid ) {
         singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
