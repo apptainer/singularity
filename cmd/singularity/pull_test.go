@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func imagePull(library string, imagePath string, sourceSpec string, force bool) ([]byte, error) {

@@ -11,7 +11,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 func (e *Error) Error() string {

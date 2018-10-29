@@ -8,8 +8,8 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
-	client "github.com/sylabs/singularity/src/pkg/client/library"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	client "github.com/sylabs/singularity/internal/pkg/client/library"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 var (

@@ -17,14 +17,14 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/sylabs/singularity/src/pkg/security"
+	"github.com/sylabs/singularity/internal/pkg/security"
 
-	"github.com/sylabs/singularity/src/pkg/util/mainthread"
-	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/src/pkg/instance"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 func (engine *EngineOperations) checkExec() error {

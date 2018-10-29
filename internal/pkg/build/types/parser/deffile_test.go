@@ -13,8 +13,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestScanDefinitionFile(t *testing.T) {

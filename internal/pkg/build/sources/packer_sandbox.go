@@ -8,8 +8,8 @@ package sources
 import (
 	"os/exec"
 
-	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // SandboxPacker holds the locations of where to pack from and to

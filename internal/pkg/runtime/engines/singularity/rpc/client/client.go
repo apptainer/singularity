@@ -9,7 +9,7 @@ import (
 	"net/rpc"
 	"os"
 
-	"github.com/sylabs/singularity/src/pkg/util/loop"
+	"github.com/sylabs/singularity/internal/pkg/util/loop"
 	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
 

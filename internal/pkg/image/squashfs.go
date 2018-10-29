@@ -12,7 +12,7 @@ import (
 	"os"
 	"unsafe"
 
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // SQUASHFS defines constant for squashfs format

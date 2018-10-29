@@ -9,7 +9,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/src/runtime/engines"
 )
 

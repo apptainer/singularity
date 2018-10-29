@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestPutConfig(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/globalsign/mgo/bson"
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func Test_isLibraryPullRef(t *testing.T) {

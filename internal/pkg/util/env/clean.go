@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (

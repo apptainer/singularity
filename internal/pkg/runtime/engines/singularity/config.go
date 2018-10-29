@@ -6,11 +6,11 @@
 package singularity
 
 import (
-	"github.com/sylabs/singularity/src/pkg/buildcfg"
-	"github.com/sylabs/singularity/src/pkg/cgroups"
-	"github.com/sylabs/singularity/src/pkg/image"
-	"github.com/sylabs/singularity/src/pkg/network"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/cgroups"
+	"github.com/sylabs/singularity/internal/pkg/image"
+	"github.com/sylabs/singularity/internal/pkg/network"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 )

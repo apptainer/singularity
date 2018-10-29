@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 
 	"github.com/pelletier/go-toml"
-	"github.com/sylabs/singularity/src/pkg/signing"
+	"github.com/sylabs/singularity/internal/pkg/signing"
 )
 
 // EclConfig describes the structure of an execution control list configuration file

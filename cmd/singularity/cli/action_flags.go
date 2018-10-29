@@ -12,7 +12,7 @@ import (
 	"os"
 
 	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/src/pkg/util/user"
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
 // actionflags.go contains flag variables for action-like commands to draw from

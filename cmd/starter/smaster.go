@@ -22,8 +22,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/src/runtime/engines"
 	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 )

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 )
 

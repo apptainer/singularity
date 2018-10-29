@@ -10,10 +10,10 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/src/pkg/util/mainthread"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 
-	"github.com/sylabs/singularity/src/pkg/instance"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 /*

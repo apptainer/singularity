@@ -14,8 +14,8 @@ import (
 	"syscall"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/sylabs/singularity/src/pkg/util/env"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/env"
 )
 
 // StartProcess runs the %post script

@@ -18,8 +18,8 @@ import (
 	"github.com/containers/image/signature"
 	"github.com/containers/image/transports"
 	"github.com/containers/image/types"
-	"github.com/sylabs/singularity/src/pkg/client/cache"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // ImageReference wraps containers/image ImageReference type

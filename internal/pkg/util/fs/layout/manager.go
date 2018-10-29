@@ -12,7 +12,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/src/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 const (

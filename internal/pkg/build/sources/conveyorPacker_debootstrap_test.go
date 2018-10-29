@@ -9,9 +9,9 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/build/sources"
-	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestDebootstrapConveyor(t *testing.T) {

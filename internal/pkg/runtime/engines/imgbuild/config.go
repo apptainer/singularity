@@ -6,7 +6,7 @@
 package imgbuild
 
 import (
-	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 )
 

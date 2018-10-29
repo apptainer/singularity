@@ -14,8 +14,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/sylabs/singularity/src/pkg/buildcfg"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
 )
 

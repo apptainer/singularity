@@ -6,7 +6,7 @@
 package build
 
 import (
-	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
 )
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)

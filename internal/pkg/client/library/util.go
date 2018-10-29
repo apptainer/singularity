@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/globalsign/mgo/bson"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // IsLibraryPullRef returns true if the provided string is a valid library

@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	sytypes "github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/client/shub"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/client/shub"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack

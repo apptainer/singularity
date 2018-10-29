@@ -11,7 +11,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 var cacheDefault string

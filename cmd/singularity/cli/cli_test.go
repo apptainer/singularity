@@ -10,7 +10,7 @@ import (
 
 	"github.com/magiconair/properties/assert"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var cmd cobra.Command
