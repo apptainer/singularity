@@ -21,22 +21,22 @@ import (
 	"github.com/sylabs/singularity/src/runtime/engines/oci"
 )
 
-var ociName = ""
+var bundlePath = ""
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
 
 	OciCreateCmd.Flags().SetInterspersed(false)
-	OciCreateCmd.Flags().StringVar(&ociName, "container", "", "specify the OCI name")
-	OciCreateCmd.Flags().SetAnnotation("container", "envkey", []string{"CONTAINER"})
+	OciCreateCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
+	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 
 	OciStartCmd.Flags().SetInterspersed(false)
-	OciStartCmd.Flags().StringVar(&ociName, "container", "", "specify the OCI name")
-	OciStartCmd.Flags().SetAnnotation("container", "envkey", []string{"CONTAINER"})
+	OciStartCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
+	OciStartCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 
 	OciRunCmd.Flags().SetInterspersed(false)
-	OciRunCmd.Flags().StringVar(&ociName, "container", "", "specify the OCI name")
-	OciRunCmd.Flags().SetAnnotation("container", "envkey", []string{"CONTAINER"})
+	OciRunCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
+	OciRunCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 
 	OciCmd.AddCommand(OciStartCmd)
 	OciCmd.AddCommand(OciCreateCmd)
@@ -48,7 +48,9 @@ var OciCreateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		execOciStarter()
+		if err := execOciStarter(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	},
 	Use:     "create",
 	Short:   "oci create",
@@ -61,7 +63,9 @@ var OciRunCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		execOciStarter()
+		if err := execOciStarter(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	},
 	Use:     "run",
 	Short:   "oci run",
@@ -71,10 +75,12 @@ var OciRunCmd = &cobra.Command{
 
 // OciStartCmd represents oci start command
 var OciStartCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		execOciStarter()
+		if err := execOciStarter(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	},
 	Use:     "start",
 	Short:   "oci start",
@@ -100,10 +106,9 @@ func execOciStarter() error {
 
 	engineConfig := oci.NewConfig()
 	generator := generate.Generator{Config: &engineConfig.OciConfig.Spec}
-	engineConfig.SetBundlePath("/tmp")
+	engineConfig.SetBundlePath(bundlePath)
 
 	// load config.json from bundle path
-	bundlePath := engineConfig.GetBundlePath()
 	configJSON := filepath.Join(bundlePath, "config.json")
 	fb, err := os.Open(configJSON)
 	if err != nil {
@@ -122,7 +127,7 @@ func execOciStarter() error {
 	}
 
 	os.Setenv("SRUNTIME", "oci")
-	os.Setenv("SINGULARITY_MESSAGELEVEL", "0")
+	os.Setenv("SINGULARITY_MESSAGELEVEL", "5")
 
 	commonConfig := &config.Common{
 		ContainerID:  "test",

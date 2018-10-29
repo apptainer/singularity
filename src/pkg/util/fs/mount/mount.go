@@ -129,6 +129,7 @@ var authorizedFS = map[string]fsContext{
 	"sysfs":   {false},
 	"proc":    {false},
 	"mqueue":  {false},
+	"cgroup":  {false},
 }
 
 var internalOptions = []string{"loop", "offset", "sizelimit"}
@@ -181,12 +182,15 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 			switch m.Type {
 			case "overlay":
 				tag = LayerTag
-			case "proc", "sysfs":
+			case "proc", "sysfs", "cgroup":
 				tag = KernelTag
 			case "devpts", "mqueue":
 				tag = DevTag
 			default:
 				tag = OtherTag
+			}
+			if strings.HasPrefix(m.Destination, "/dev") {
+				tag = DevTag
 			}
 		} else {
 			tag = BindsTag
