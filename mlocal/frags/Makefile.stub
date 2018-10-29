@@ -1,10 +1,10 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/smaster.go)
-starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/scontainer.go)
-starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/rpc.go)
+starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/smaster.go)
+starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/scontainer.go)
+starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/rpc.go)
 
-starter := $(BUILDDIR)/src/runtime/starter/c/starter
+starter := $(BUILDDIR)/cmd/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
 
@@ -136,9 +136,9 @@ $(libruntime): $(libutil_OBJ)
 $(starter): $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
-		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
-		$(SOURCEDIR)/src/runtime/starter/smaster.go \
-		$(SOURCEDIR)/src/runtime/starter/rpc.go
+		$(SOURCEDIR)/cmd/starter/scontainer.go \
+		$(SOURCEDIR)/cmd/starter/smaster.go \
+		$(SOURCEDIR)/cmd/starter/rpc.go
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
@@ -188,8 +188,8 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
-$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
-	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@

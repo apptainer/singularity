@@ -1,5 +1,5 @@
 name := libutil
 lib := util
-csrc :=	src/runtime/c/lib/util/capability.c
-	src/runtime/c/lib/util/message.c
-	src/runtime/c/lib/util/setns.c
+csrc :=	internal/pkg/runtime/c/lib/util/capability.c
+	internal/pkg/runtime/c/lib/util/message.c
+	internal/pkg/runtime/c/lib/util/setns.c
