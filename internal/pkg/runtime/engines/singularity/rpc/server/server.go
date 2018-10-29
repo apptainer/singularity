@@ -17,9 +17,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/loop"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/singularity"
-	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 )
 
 var singularityConf *singularity.FileConfig

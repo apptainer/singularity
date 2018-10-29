@@ -12,7 +12,7 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 )
 
 func TestSetContainerEnv(t *testing.T) {

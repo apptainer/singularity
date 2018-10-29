@@ -34,9 +34,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/src/runtime/engines/singularity"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 )
 
 func init() {

@@ -11,8 +11,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/network"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 )
 
 // Name is the name of the runtime.

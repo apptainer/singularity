@@ -24,8 +24,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )

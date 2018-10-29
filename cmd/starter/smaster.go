@@ -24,8 +24,8 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
-	"github.com/sylabs/singularity/src/runtime/engines"
-	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 )
 
 // SMaster initializes a runtime engine and runs it

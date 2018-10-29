@@ -11,8 +11,8 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 )
 
 // EngineOperations implements the engines.EngineOperations interface for

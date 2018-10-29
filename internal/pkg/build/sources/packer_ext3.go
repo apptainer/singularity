@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/loop"
-	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
+	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 )
 
 // Ext3Packer holds the locations of where to back from and to, aswell as image offset info

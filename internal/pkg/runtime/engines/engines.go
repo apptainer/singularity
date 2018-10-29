@@ -13,11 +13,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/src/runtime/engines/imgbuild"
-	"github.com/sylabs/singularity/src/runtime/engines/singularity"
-	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/server"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 )
 
 // Engine is the combination of an EngineOperations and a config.Common. The singularity

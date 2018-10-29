@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/util/loop"
-	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
+	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 )
 
 // RPC holds the state necessary for remote procedure calls.

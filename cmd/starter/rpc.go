@@ -10,7 +10,7 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/src/runtime/engines"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 )
 
 // RPCServer serves runtime engine requests

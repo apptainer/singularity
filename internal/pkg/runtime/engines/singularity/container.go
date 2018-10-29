@@ -30,7 +30,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/loop"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/src/runtime/engines/singularity/rpc/client"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 )
 
 type container struct {
