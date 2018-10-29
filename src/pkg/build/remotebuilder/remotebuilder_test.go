@@ -73,6 +73,8 @@ func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRe
 		WSURL:      wsURL.String(),
 		LibraryURL: libraryURL.String(),
 		LibraryRef: libraryRef,
+		IsComplete: true,
+		ImageSize:  1,
 	}
 }
 
