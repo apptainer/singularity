@@ -39,7 +39,7 @@
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
 #else
-#  include "c/lib/util/securebits.h"
+#  include "util/securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
 
 #ifndef PR_SET_NO_NEW_PRIVS
@@ -58,10 +58,10 @@
 #define CLONE_NEWCGROUP     0x02000000
 #endif
 
-#include "c/lib/util/capability.h"
-#include "c/lib/util/message.h"
+#include "util/capability.h"
+#include "util/message.h"
 
-#include "starter/c/starter.h"
+#include "starter.h"
 
 #define CLONE_STACK_SIZE    1024*1024
 #define BUFSIZE             512

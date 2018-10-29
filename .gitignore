@@ -11,7 +11,7 @@ generate_docs
 .DS_store
 .idea/
 builddir/
-src/pkg/buildcfg/config.go
+internal/pkg/buildcfg/config.go
 trash.lock
 Makefile.in
 autom4te.cache/
