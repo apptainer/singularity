@@ -4,9 +4,6 @@
 # in the LICENSE file.
 set -e
 
-# spec file needs to be at the root of the project
-cp dist/rpm/singularity.spec .
-
 package_name=singularity
 package_version_short="`sed -n 's/^Version: //p' singularity.spec`"
 tree_version="$package_version_short-`sed -n 's/^Release: \([^%]*\).*/\1/p' singularity.spec`"
@@ -18,4 +15,4 @@ echo " DIST create tarball: $tarball"
 rm -f $tarball
 (echo VERSION; echo singularity.spec; git ls-files) | \
         tar -T - --xform "s,^,$package_name/," -czf $tarball
-rm -f VERSION singularity.spec
+rm -f VERSION

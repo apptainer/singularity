@@ -721,7 +721,7 @@ cat $makeit_fragsdir/Makefile.stub | awk \
 # Rpm spec for project package
 #######################################################################
 
-RPMSPEC=dist/rpm/singularity.spec
+RPMSPEC=singularity.spec
 echo "=> generating $RPMSPEC ..."
 rm -f $RPMSPEC
 VERSION="`echo "$package_version"|sed 's/-.*//'`"
@@ -730,7 +730,7 @@ if [ "$VERSION" = "$RELEASE" ]; then
     # $package_version has no dash
     RELEASE=1
 fi
-sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $RPMSPEC.in >$RPMSPEC
+sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" dist/rpm/$RPMSPEC.in >$RPMSPEC
 
 
 
