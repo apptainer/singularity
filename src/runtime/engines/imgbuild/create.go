@@ -128,9 +128,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
-	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR)
+	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, true)
 	if err != nil {
-		return fmt.Errorf("chroot failed: %s", err)
+		sylog.Debugf("Fallback to move/chroot")
+		_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, false)
+		if err != nil {
+			return fmt.Errorf("chroot failed: %s", err)
+		}
 	}
 
 	sylog.Debugf("Chdir into / to avoid errors\n")

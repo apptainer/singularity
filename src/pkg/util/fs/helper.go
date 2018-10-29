@@ -8,6 +8,7 @@ package fs
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -89,4 +90,34 @@ func RootDir(path string) string {
 	}
 
 	return p
+}
+
+// EvalRelative evaluates symlinks in path relative to root path. This
+// function doesn't return error but always returns an evaluated path
+func EvalRelative(path string, root string) string {
+	splitted := strings.Split(filepath.Clean(path), string(os.PathSeparator))
+	dest := string(os.PathSeparator)
+
+	for i := 1; i < len(splitted); i++ {
+		s := splitted[i : i+1][0]
+		dest = filepath.Join(dest, s)
+
+		if s != "" {
+			rootDestPath := filepath.Join(root, dest)
+			for {
+				target, err := filepath.EvalSymlinks(rootDestPath)
+				if err != nil {
+					break
+				}
+				if !strings.HasPrefix(target, root) {
+					rootDestPath = filepath.Join(root, target)
+					continue
+				}
+				dest = strings.Replace(target, root, "", 1)
+				break
+			}
+		}
+	}
+
+	return dest
 }
