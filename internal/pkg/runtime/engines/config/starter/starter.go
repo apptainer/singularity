@@ -7,7 +7,7 @@ package starter
 
 /*
 #include <sys/types.h>
-#include "starter/c/starter.h"
+#include "starter.h"
 */
 // #cgo CFLAGS: -I../../..
 import "C"
