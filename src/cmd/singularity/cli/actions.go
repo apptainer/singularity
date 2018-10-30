@@ -522,6 +522,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	// Clean environment
 	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
 
+	// force to use getwd syscall
+	os.Unsetenv("PWD")
+
 	if pwd, err := os.Getwd(); err == nil {
 		if PwdPath != "" {
 			generator.SetProcessCwd(PwdPath)
@@ -529,10 +532,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			if engineConfig.GetContain() {
 				generator.SetProcessCwd(engineConfig.GetHomeDest())
 			} else {
-				pwd, err := filepath.EvalSymlinks(pwd)
-				if err != nil {
-					sylog.Fatalf("Failed to evaluate current working directory %s: %s", pwd, err)
-				}
 				generator.SetProcessCwd(pwd)
 			}
 		}
