@@ -340,5 +340,4 @@ func TestSingularityActions(t *testing.T) {
 	// Security
 	t.Run("Security_unpriv", testSecurityPriv)
 	t.Run("Security_priv", testSecurityUnpriv)
-
 }
