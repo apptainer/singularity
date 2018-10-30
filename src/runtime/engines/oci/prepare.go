@@ -35,6 +35,18 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		return fmt.Errorf("empty OCI process configuration")
 	}
 
+	var gids []int
+	uid := int(e.EngineConfig.OciConfig.Process.User.UID)
+
+	gids = append(gids, int(e.EngineConfig.OciConfig.Process.User.GID))
+	for _, g := range e.EngineConfig.OciConfig.Process.User.AdditionalGids {
+		gids = append(gids, int(g))
+	}
+
+	starterConfig.SetTargetUID(uid)
+	starterConfig.SetTargetGID(gids)
+	starterConfig.SetInstance(true)
+
 	if e.EngineConfig.OciConfig.Linux != nil {
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)

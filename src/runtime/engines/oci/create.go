@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/cgroups"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/src/pkg/util/fs/layout/layer/overlay"
@@ -67,6 +68,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, "tmpfs", -1, system, overlay.New()); err != nil {
 		return err
 	}
+
+	manager := &cgroups.Manager{Pid: pid, Name: engine.CommonConfig.ContainerID}
+	if err := manager.ApplyFromSpec(engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
+		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+	}
+	engine.EngineConfig.Cgroups = manager
 
 	// import OCI mount spec
 	if err := p.ImportFromSpec(engine.EngineConfig.OciConfig.Config.Mounts); err != nil {
@@ -136,7 +143,16 @@ func (c *container) addOverlayMount(system *mount.System) error {
 
 func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | syscall.MS_REC)
-	return system.Points.AddBind(mount.RootfsTag, c.rootfs, c.session.RootFsPath(), flags)
+	if c.engine.EngineConfig.OciConfig.Root.Readonly {
+		flags |= syscall.MS_RDONLY
+	}
+	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.session.RootFsPath(), flags); err != nil {
+		return err
+	}
+	if flags&syscall.MS_RDONLY != 0 {
+		return system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
+	}
+	return nil
 }
 
 func (c *container) mount(point *mount.Point) error {
@@ -168,7 +184,6 @@ func (c *container) mount(point *mount.Point) error {
 					}
 				}
 			}
-			return nil
 		}
 	} else {
 		if _, err := os.Stat(dest); os.IsNotExist(err) {

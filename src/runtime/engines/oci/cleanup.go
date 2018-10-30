@@ -7,5 +7,8 @@ package oci
 
 // CleanupContainer cleans up the container
 func (engine *EngineOperations) CleanupContainer() error {
+	if engine.EngineConfig.Cgroups != nil {
+		engine.EngineConfig.Cgroups.Remove()
+	}
 	return nil
 }

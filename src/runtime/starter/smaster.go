@@ -70,7 +70,7 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 		}
 		defer conn.Close()
 
-		_, err = conn.Read(data)
+		n, err := conn.Read(data)
 		if err != nil && err != io.EOF {
 			if starterConfig.GetInstance() && os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
@@ -78,6 +78,32 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 			fatalChan <- fmt.Errorf("failed to start process: %s", err)
 			return
 		}
+
+		// special path for engines which needs to stop before executing
+		// container process
+		if n != 0 {
+			if starterConfig.GetInstance() {
+				if os.Getppid() == ppid {
+					syscall.Kill(ppid, syscall.SIGUSR1)
+				}
+			}
+
+			// stop container process
+			syscall.Kill(containerPid, syscall.SIGSTOP)
+
+			// since paused process block on read, send it an
+			// ACK so when it will receive SIGCONT, the process
+			// will continue execution normally
+			if _, err := conn.Write([]byte("s")); err != nil {
+				fatalChan <- fmt.Errorf("failed to send ACK to start process: %s", err)
+			}
+
+			// wait container process execution
+			if _, err := conn.Read(data); err != io.EOF {
+				return
+			}
+		}
+
 		err = engine.PostStartProcess(containerPid)
 		if err != nil {
 			if starterConfig.GetInstance() && os.Getppid() == ppid {
@@ -86,7 +112,7 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
-		if starterConfig.GetInstance() {
+		if n == 0 && starterConfig.GetInstance() {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
 			if os.Getppid() == ppid {

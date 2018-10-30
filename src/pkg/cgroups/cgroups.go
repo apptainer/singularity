@@ -7,12 +7,16 @@ package cgroups
 
 import (
 	"encoding/json"
+	"path/filepath"
 
 	"github.com/containerd/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
-const singularity = "/singularity"
+const (
+	singularity = "/singularity"
+	sysFsPath   = "/sys/fs/cgroup"
+)
 
 // Manager manage container cgroup resources restriction
 type Manager struct {
@@ -20,6 +24,22 @@ type Manager struct {
 	Pid          int
 	parentCgroup cgroups.Cgroup
 	childCgroup  cgroups.Cgroup
+}
+
+// GetPaths returns all cgroup subsystem path for mount purpose
+func (m *Manager) GetPaths() []string {
+	var paths []string
+
+	if m.childCgroup == nil {
+		return paths
+	}
+
+	for _, sub := range m.childCgroup.Subsystems() {
+		subPath := filepath.Join(sysFsPath, string(sub.Name()), singularity, m.Name)
+		paths = append(paths, subPath)
+	}
+
+	return paths
 }
 
 // ApplyFromSpec applies cgroups ressources restriction from OCI specification

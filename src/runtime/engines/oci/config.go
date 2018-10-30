@@ -7,6 +7,7 @@ package oci
 
 import (
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/src/pkg/cgroups"
 	"github.com/sylabs/singularity/src/runtime/engines/config/oci"
 )
 
@@ -15,9 +16,10 @@ const Name = "oci"
 
 // EngineConfig is the config for the OCI engine.
 type EngineConfig struct {
-	BundlePath string      `json:"bundlePath"`
-	OciConfig  *oci.Config `json:"ociConfig"`
-	State      specs.State `json:"state"`
+	BundlePath string           `json:"bundlePath"`
+	OciConfig  *oci.Config      `json:"ociConfig"`
+	State      specs.State      `json:"state"`
+	Cgroups    *cgroups.Manager `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
