@@ -529,6 +529,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			if engineConfig.GetContain() {
 				generator.SetProcessCwd(engineConfig.GetHomeDest())
 			} else {
+				pwd, err := filepath.EvalSymlinks(pwd)
+				if err != nil {
+					sylog.Fatalf("Failed to evaluate current working directory %s: %s", pwd, err)
+				}
 				generator.SetProcessCwd(pwd)
 			}
 		}

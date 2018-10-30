@@ -1420,7 +1420,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 	}
 	cwd = c.engine.EngineConfig.OciConfig.Process.Cwd
 	if err := os.Chdir(cwd); err != nil {
-		sylog.Debugf("can't go to container working directory: %s", err)
+		sylog.Warningf("Could not set container working directory %s: %s", cwd, err)
 		return nil
 	}
 	current, err := os.Getwd()
