@@ -236,6 +236,9 @@ if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
 	-e __arm64__; then
 	hst_arch=aarch64
 fi
+if echo | $hstcc -E -dM - | grep -qs -e __ARCH_PPC64 -e __PPC64__; then
+	hst_arch=ppc64
+fi
 if [ "$hst_arch" != "" ]; then
 	echo $hst_arch
 else
@@ -263,6 +266,9 @@ fi
 if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
 	-e __arm64__; then
 	tgt_arch=aarch64
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __ARCH_PPC64 -e __PPC64__; then
+	tgt_arch=ppc64
 fi
 if [ "$tgt_arch" != "" ]; then
 	echo $tgt_arch
@@ -292,6 +298,9 @@ if echo | $hstcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
 	-e __arm64__; then
 	hst_word=64
 fi
+if echo | $hstcc -E -dM - | grep -qs -e __ARCH_PPC64 -e __PPC64__; then
+	hst_word=64
+fi
 if [ "$hst_word" != "" ]; then
 	echo $hst_word
 else
@@ -318,6 +327,9 @@ if echo | $tgtcc -E -dM - | grep -qs -e __arm__; then
 fi
 if echo | $tgtcc -E -dM - | grep -qs -e __aarch64 -e __aarch64__ -e __arm64 \
 	-e __arm64__; then
+	tgt_word=64
+fi
+if echo | $tgtcc -E -dM - | grep -qs -e __ARCH_PPC64 -e __PPC64__; then
 	tgt_word=64
 fi
 if [ "$tgt_word" != "" ]; then
