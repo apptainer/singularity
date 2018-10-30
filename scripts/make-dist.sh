@@ -21,11 +21,8 @@ tarball="$package_name-$package_version_short.tar.gz"
 echo " DIST create tarball: $tarball"
 rm -f $tarball
 pathtop="$package_name"
-thisdir="`basename $PWD`"
-if [ "$thisdir" != "$pathtop" ]; then
-    ln -fs $thisdir ../$pathtop
-    rmfiles="$rmfiles ../$pathtop"
-fi
+ln -sf .. builddir/$pathtop
+rmfiles="$rmfiles builddir/$pathtop"
 trap "rm -f $rmfiles" 0
 (echo VERSION; echo $package_name.spec; git ls-files) | \
-    sed "s,^,$pathtop/," | tar -C .. -T - -czf $tarball
+    sed "s,^,$pathtop/," | tar -C builddir -T - -czf $tarball
