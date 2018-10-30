@@ -227,25 +227,24 @@ fi
 # user capabilities
 ########################
 printf " checking: user capabilities... "
-ucap_c=`mktemp -t ucap_c_XXXXXX`
-cat > $ucap_c << "EOF"
+testprog=$makeit_testprogdir/test_ucap
+cat > ${testprog}.c << "EOF"
 #include <sys/prctl.h>
 int main() {
   if( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, 0, 0, 0) < 0 ) { return 1; }
   return 0;
 }
 EOF
-if ! $tgtcc -x c -o /tmp/ucap_c ${ucap_c} >/dev/null 2>&1; then
+if ! $tgtcc -x c -o $testprog ${testprog}.c >/dev/null 2>&1; then
     echo "no"
 else
-    if ! /tmp/ucap_c; then
+    if ! $testprog; then
         echo "no"
     else
         echo "yes"
         config_add_def USER_CAPABILITIES 1
     fi
 fi
-/bin/rm -f ${ucap_c} /tmp/ucap_c
 
 ########################
 # linux/securebits.h
