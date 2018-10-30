@@ -5,8 +5,14 @@
 set -e
 
 package_name=singularity
-package_version_short="`sed -n 's/^Version: //p' singularity.spec`"
-tree_version="$package_version_short-`sed -n 's/^Release: \([^%]*\).*/\1/p' singularity.spec`"
+
+if [ ! -f $package_name.spec ]; then
+    echo "Run this from the top of the source tree after mconfig" >&2
+    exit 1
+fi
+
+package_version_short="`sed -n 's/^Version: //p' $package_name.spec`"
+tree_version="$package_version_short-`sed -n 's/^Release: \([^%]*\).*/\1/p' $package_name.spec`"
 
 echo " DIST setup VERSION: $tree_version"
 echo $tree_version > VERSION
@@ -21,5 +27,5 @@ if [ "$thisdir" != "$pathtop" ]; then
     rmfiles="$rmfiles ../$pathtop"
 fi
 trap "rm -f $rmfiles" 0
-(echo VERSION; echo singularity.spec; git ls-files) | \
+(echo VERSION; echo $package_name.spec; git ls-files) | \
     sed "s,^,$pathtop/," | tar -C .. -T - -czf $tarball
