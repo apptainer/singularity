@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/rpc"
@@ -14,8 +15,10 @@ import (
 	"strings"
 	"syscall"
 
+	specs "github.com/opencontainers/image-spec/specs-go"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/cgroups"
+	"github.com/sylabs/singularity/src/pkg/instance"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/src/pkg/util/fs/layout/layer/overlay"
@@ -28,6 +31,49 @@ type container struct {
 	rpcOps  *client.RPC
 	session *layout.Session
 	rootfs  string
+}
+
+func (engine *EngineOperations) createState(pid int) error {
+	name := engine.CommonConfig.ContainerID
+
+	file, err := instance.Add(name, true)
+	if err != nil {
+		return err
+	}
+
+	engine.EngineConfig.State.Version = specs.Version
+	engine.EngineConfig.State.Bundle = engine.EngineConfig.GetBundlePath()
+	engine.EngineConfig.State.ID = engine.CommonConfig.ContainerID
+	engine.EngineConfig.State.Pid = pid
+	engine.EngineConfig.State.Status = "creating"
+
+	file.Config, err = json.Marshal(engine.CommonConfig)
+	if err != nil {
+		return err
+	}
+
+	file.User = "root"
+	file.Pid = pid
+	file.PPid = os.Getpid()
+	file.Image = filepath.Join(engine.EngineConfig.GetBundlePath(), engine.EngineConfig.OciConfig.Root.Path)
+
+	return file.Update()
+}
+
+func (engine *EngineOperations) updateState(status string) error {
+	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	if err != nil {
+		return err
+	}
+
+	engine.EngineConfig.State.Status = status
+
+	file.Config, err = json.Marshal(engine.CommonConfig)
+	if err != nil {
+		return err
+	}
+
+	return file.Update()
 }
 
 // CreateContainer creates a container
@@ -44,6 +90,10 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
+	}
+
+	if err := engine.createState(pid); err != nil {
+		return err
 	}
 
 	rootfs := filepath.Join(engine.EngineConfig.GetBundlePath(), engine.EngineConfig.OciConfig.Root.Path)

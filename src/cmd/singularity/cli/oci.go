@@ -11,12 +11,16 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
+	"github.com/sylabs/singularity/src/pkg/instance"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/util/exec"
+	"github.com/sylabs/singularity/src/pkg/util/signal"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/oci"
 )
@@ -31,8 +35,11 @@ func init() {
 	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 
 	OciStartCmd.Flags().SetInterspersed(false)
-	OciStartCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
-	OciStartCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
+	OciDeleteCmd.Flags().SetInterspersed(false)
+	OciStateCmd.Flags().SetInterspersed(false)
+
+	OciKillCmd.Flags().SetInterspersed(false)
+	OciKillCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "signal sent to the container (default SIGTERM)")
 
 	OciRunCmd.Flags().SetInterspersed(false)
 	OciRunCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
@@ -41,14 +48,17 @@ func init() {
 	OciCmd.AddCommand(OciStartCmd)
 	OciCmd.AddCommand(OciCreateCmd)
 	OciCmd.AddCommand(OciRunCmd)
+	OciCmd.AddCommand(OciDeleteCmd)
+	OciCmd.AddCommand(OciKillCmd)
+	OciCmd.AddCommand(OciStateCmd)
 }
 
 // OciCreateCmd represents oci create command
 var OciCreateCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := execOciStarter(); err != nil {
+		if err := ociCreate(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -60,10 +70,10 @@ var OciCreateCmd = &cobra.Command{
 
 // OciRunCmd allow to create/start in row
 var OciRunCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := execOciStarter(); err != nil {
+		if err := ociRun(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -75,10 +85,10 @@ var OciRunCmd = &cobra.Command{
 
 // OciStartCmd represents oci start command
 var OciStartCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := execOciStarter(); err != nil {
+		if err := ociStart(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -86,6 +96,51 @@ var OciStartCmd = &cobra.Command{
 	Short:   "oci start",
 	Long:    "oci start",
 	Example: "oci start",
+}
+
+// OciDeleteCmd represents oci start command
+var OciDeleteCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociDelete(args[0]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "delete",
+	Short:   "oci delete",
+	Long:    "oci delete",
+	Example: "oci delete",
+}
+
+// OciKillCmd represents oci start command
+var OciKillCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociKill(args[0]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "kill",
+	Short:   "oci kill",
+	Long:    "oci kill",
+	Example: "oci kill",
+}
+
+// OciStateCmd represents oci start command
+var OciStateCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociState(args[0]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "state",
+	Short:   "oci state",
+	Long:    "oci state",
+	Example: "oci state",
 }
 
 // OciCmd singularity oci runtime
@@ -99,7 +154,87 @@ var OciCmd = &cobra.Command{
 	Example: "oci",
 }
 
-func execOciStarter() error {
+func getState(containerID string) (*specs.State, error) {
+	commonConfig := config.Common{
+		EngineConfig: &oci.EngineConfig{},
+	}
+
+	file, err := instance.Get(containerID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(file.Config, &commonConfig); err != nil {
+		return nil, err
+	}
+
+	engineConfig := commonConfig.EngineConfig.(*oci.EngineConfig)
+
+	return &engineConfig.State, nil
+}
+
+func ociRun(containerID string) error {
+	if err := ociCreate(containerID); err != nil {
+		return err
+	}
+	return ociStart(containerID)
+}
+
+func ociStart(containerID string) error {
+	// send SIGCONT signal to the instance
+	state, err := getState(containerID)
+	if err != nil {
+		return err
+	}
+	if err := syscall.Kill(state.Pid, syscall.SIGCONT); err != nil {
+		return err
+	}
+	return nil
+}
+
+func ociKill(containerID string) error {
+	// send signal to the instance
+	state, err := getState(containerID)
+	if err != nil {
+		return err
+	}
+
+	sig := syscall.SIGTERM
+
+	if stopSignal != "" {
+		sig, err = signal.Convert(stopSignal)
+		if err != nil {
+			return err
+		}
+	}
+
+	return syscall.Kill(state.Pid, sig)
+}
+
+func ociDelete(containerID string) error {
+	// remove instance files
+	file, err := instance.Get(containerID)
+	if err != nil {
+		return err
+	}
+	return file.Delete()
+}
+
+func ociState(containerID string) error {
+	// query instance files and returns state
+	state, err := getState(containerID)
+	if err != nil {
+		return err
+	}
+	c, err := json.MarshalIndent(state, "", "\t")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(c))
+	return nil
+}
+
+func ociCreate(containerID string) error {
 	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter"
 
 	os.Clearenv()
@@ -126,11 +261,10 @@ func execOciStarter() error {
 		return fmt.Errorf("failed to parse %s: %s", configJSON, err)
 	}
 
-	os.Setenv("SRUNTIME", "oci")
-	os.Setenv("SINGULARITY_MESSAGELEVEL", "5")
+	Env := []string{sylog.GetEnvVar(), "SRUNTIME=oci"}
 
 	commonConfig := &config.Common{
-		ContainerID:  "test",
+		ContainerID:  containerID,
 		EngineName:   "oci",
 		EngineConfig: engineConfig,
 	}
@@ -140,7 +274,7 @@ func execOciStarter() error {
 		sylog.Fatalf("%s", err)
 	}
 
-	cmd, err := exec.PipeCommand(starter, []string{"OCI"}, os.Environ(), configData)
+	cmd, err := exec.PipeCommand(starter, []string{"OCI"}, Env, configData)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

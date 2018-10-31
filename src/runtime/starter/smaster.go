@@ -91,6 +91,13 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 			// stop container process
 			syscall.Kill(containerPid, syscall.SIGSTOP)
 
+			if obj, ok := engine.EngineOperations.(interface{ PreStartProcess() error }); ok {
+				if err := obj.PreStartProcess(); err != nil {
+					fatalChan <- fmt.Errorf("pre start process failed: %s", err)
+					return
+				}
+			}
+
 			// since paused process block on read, send it an
 			// ACK so when it will receive SIGCONT, the process
 			// will continue execution normally

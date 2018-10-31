@@ -8,9 +8,9 @@ package oci
 import (
 	"fmt"
 	"net"
+	"os"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
-
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/src/pkg/util/capabilities"
 	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
 )
@@ -25,15 +25,12 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}
 
-	// initialize container state
-	e.EngineConfig.State.Version = specs.Version
-	e.EngineConfig.State.Bundle = e.EngineConfig.GetBundlePath()
-	e.EngineConfig.State.ID = e.CommonConfig.ContainerID
-	e.EngineConfig.State.Status = "creating"
-
 	if e.EngineConfig.OciConfig.Process == nil {
 		return fmt.Errorf("empty OCI process configuration")
 	}
+
+	// reset state config that could be passed to engine
+	e.EngineConfig.State = specs.State{}
 
 	var gids []int
 	uid := int(e.EngineConfig.OciConfig.Process.User.UID)
@@ -48,6 +45,17 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	starterConfig.SetInstance(true)
 
 	if e.EngineConfig.OciConfig.Linux != nil {
+		userNS := false
+		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
+			if ns.Type == specs.UserNamespace {
+				userNS = true
+				break
+			}
+		}
+		if !userNS && os.Getuid() != 0 {
+			return fmt.Errorf("you can't run without root privileges, use user namespace rather")
+		}
+
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
 		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)

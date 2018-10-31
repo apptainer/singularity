@@ -6,11 +6,14 @@
 package oci
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
+	osexec "os/exec"
 	"syscall"
+
+	"github.com/sylabs/singularity/src/pkg/util/exec"
 
 	"github.com/sylabs/singularity/src/pkg/security"
 	"github.com/sylabs/singularity/src/pkg/sylog"
@@ -23,7 +26,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	os.Setenv("PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
 
-	bpath, err := exec.LookPath(args[0])
+	bpath, err := osexec.LookPath(args[0])
 	if err != nil {
 		return fmt.Errorf("%s", err)
 	}
@@ -56,9 +59,75 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	return fmt.Errorf("exec %s failed: %s", args[0], err)
 }
 
+// PreStartProcess will be executed in smaster context
+func (engine *EngineOperations) PreStartProcess() error {
+	if err := engine.updateState("created"); err != nil {
+		return err
+	}
+
+	socketKey := "io.sylabs.oci.runtime.cri-sync-socket"
+
+	if socketPath, ok := engine.EngineConfig.OciConfig.Annotations[socketKey]; ok {
+		c, err := net.Dial("unix", socketPath)
+		if err != nil {
+			sylog.Warningf("failed to connect to cri sync socket: %s", err)
+		} else {
+			defer c.Close()
+
+			data, err := json.Marshal(engine.EngineConfig.State)
+			if err != nil {
+				sylog.Warningf("failed to marshal state data: %s", err)
+			} else if _, err := c.Write(data); err != nil {
+				sylog.Warningf("failed to send state over socket: %s", err)
+			}
+		}
+	}
+
+	hooks := engine.EngineConfig.OciConfig.Hooks
+	if hooks != nil {
+		for _, h := range hooks.Prestart {
+			if err := exec.Hook(&h, &engine.EngineConfig.State); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 // PostStartProcess will execute code in smaster context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
-	sylog.Debugf("BINGO!!!")
+	if err := engine.updateState("running"); err != nil {
+		return err
+	}
+
+	socketKey := "io.sylabs.oci.runtime.cri-sync-socket"
+
+	if socketPath, ok := engine.EngineConfig.OciConfig.Annotations[socketKey]; ok {
+		c, err := net.Dial("unix", socketPath)
+		if err != nil {
+			sylog.Warningf("failed to connect to cri sync socket: %s", err)
+		} else {
+			defer c.Close()
+
+			data, err := json.Marshal(engine.EngineConfig.State)
+			if err != nil {
+				sylog.Warningf("failed to marshal state data: %s", err)
+			} else if _, err := c.Write(data); err != nil {
+				sylog.Warningf("failed to send state over socket: %s", err)
+			}
+		}
+	}
+
+	hooks := engine.EngineConfig.OciConfig.Hooks
+	if hooks != nil {
+		for _, h := range hooks.Poststart {
+			if err := exec.Hook(&h, &engine.EngineConfig.State); err != nil {
+				sylog.Warningf("%s", err)
+			}
+		}
+	}
+
 	return nil
 }
