@@ -19,9 +19,7 @@ su testuser -c '
   set -x
   set -e
   ./mconfig 
-  sudo yum-builddep -y dist/rpm/singularity.spec
-  git config --global user.email "community@sylabs.io"
-  git config --global user.name "Travis Test"
+  sudo yum-builddep -y singularity.spec
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
   BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
