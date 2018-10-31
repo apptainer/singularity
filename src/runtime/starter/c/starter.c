@@ -965,11 +965,6 @@ __attribute__((constructor)) static void init(void) {
 
         set_parent_death_signal(SIGKILL);
 
-        if ( isatty(STDIN_FILENO) && setpgrp() < 0 ) {
-            singularity_message(ERROR, "Failed to set child process group: %s", strerror(errno));
-            exit(1);
-        };
-
         close(master_socket[0]);
 
         singularity_message(VERBOSE, "Spawn scontainer stage 2\n");
@@ -1108,9 +1103,15 @@ __attribute__((constructor)) static void init(void) {
     } else if ( stage_pid > 0 ) {
         config.containerPid = stage_pid;
 
-        if ( isatty(STDIN_FILENO) && tcsetpgrp(STDIN_FILENO, stage_pid) < 0 ) {
-            singularity_message(ERROR, "Failed to set terminal foreground process group: %s", strerror(errno));
-            exit(1);
+        if ( isatty(STDIN_FILENO) ) {
+            if ( setpgid(stage_pid, stage_pid) < 0 ) {
+                singularity_message(ERROR, "Failed to set child process group: %s", strerror(errno));
+                exit(1);
+            }
+            if ( tcsetpgrp(STDIN_FILENO, stage_pid) < 0 ) {
+                singularity_message(ERROR, "Failed to set child as foreground process: %s", strerror(errno));
+                exit(1);
+            }
         }
 
         singularity_message(VERBOSE, "Spawn smaster process\n");
