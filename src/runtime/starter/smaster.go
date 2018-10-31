@@ -96,7 +96,7 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 	}()
 
 	go func() {
-		// catch all signals and let default handler for SIGWINCH, SIGCONT, SIGTSTP
+		// catch all signals
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals)
 
