@@ -158,7 +158,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	_, err = rpcOps.Chroot(c.session.FinalPath())
+	_, err = rpcOps.Chroot(c.session.FinalPath(), true)
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
 	}
