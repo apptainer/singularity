@@ -98,15 +98,7 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 	go func() {
 		// catch all signals and let default handler for SIGWINCH, SIGCONT, SIGTSTP
 		signals := make(chan os.Signal, 1)
-		handledSignals := make([]os.Signal, 0)
-		for i := 0; i < 256; i++ {
-			sig := syscall.Signal(i)
-			if sig == syscall.SIGWINCH || sig == syscall.SIGCONT || sig == syscall.SIGTSTP {
-				continue
-			}
-			handledSignals = append(handledSignals, sig)
-		}
-		signal.Notify(signals, handledSignals...)
+		signal.Notify(signals)
 
 		status, err = engine.MonitorContainer(containerPid, signals)
 		fatalChan <- err
