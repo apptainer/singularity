@@ -264,7 +264,4 @@ func TestSingularityActions(t *testing.T) {
 	t.Run("STDIN", testSTDINPipe)
 	// action_URI
 	t.Run("action_URI", testRunFromURI)
-	// Security
-	t.Run("Security_unpriv", testSecurityPriv)
-	t.Run("Security_priv", testSecurityUnpriv)
 }

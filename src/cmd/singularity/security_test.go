@@ -3,11 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build !seccomp OR !linux
+// +build seccomp
 
 package main
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -85,4 +86,21 @@ func testSecurityPriv(t *testing.T) {
 			}
 		}))
 	}
+}
+
+func TestSingularityActions(t *testing.T) {
+	test.EnsurePrivilege(t)
+	opts := buildOpts{
+		force:   true,
+		sandbox: false,
+	}
+	if b, err := imageBuild(opts, imagePath, "../../../examples/busybox/Singularity"); err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+	defer os.Remove(imagePath)
+
+	// Security
+	t.Run("Security_unpriv", testSecurityPriv)
+	t.Run("Security_priv", testSecurityUnpriv)
 }
