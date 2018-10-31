@@ -88,7 +88,7 @@ func testSecurityPriv(t *testing.T) {
 	}
 }
 
-func TestSingularityActions(t *testing.T) {
+func TestSecurity(t *testing.T) {
 	test.EnsurePrivilege(t)
 	opts := buildOpts{
 		force:   true,
