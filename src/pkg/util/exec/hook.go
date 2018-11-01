@@ -1,0 +1,67 @@
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
+package exec
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"os/exec"
+	"time"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
+)
+
+// Hook execute an OCI hook command and pass state over stdin.
+func Hook(hook *specs.Hook, state *specs.State) error {
+	var ctx context.Context
+	var cancel context.CancelFunc
+	var timeout time.Duration
+	var cmd *exec.Cmd
+
+	if hook.Timeout != nil {
+		timeout = time.Duration(*hook.Timeout) * 1000 * time.Millisecond
+	}
+
+	if timeout != 0 {
+		ctx, cancel = context.WithTimeout(context.Background(), timeout)
+		defer cancel()
+	}
+
+	if ctx != nil {
+		cmd = exec.CommandContext(ctx, hook.Path, hook.Args...)
+	} else {
+		cmd = exec.Command(hook.Path, hook.Args...)
+	}
+
+	cmd.Env = hook.Env
+	stdin, err := cmd.StdinPipe()
+
+	data, err := json.Marshal(state)
+	if err != nil {
+		return fmt.Errorf("failed to marshal state data: %s", err)
+	}
+
+	stdin.Write(data)
+
+	err = cmd.Start()
+	if err != nil {
+		return fmt.Errorf("failed to execute hook: %s", err)
+	}
+
+	stdin.Close()
+
+	err = cmd.Wait()
+	if err != nil {
+		return fmt.Errorf("failed to execute hook: %s", err)
+	}
+
+	if ctx != nil && ctx.Err() == context.DeadlineExceeded {
+		return fmt.Errorf("hook time out")
+	}
+
+	return err
+}

@@ -163,6 +163,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("chroot failed: %s", err)
 	}
 
+	if engine.EngineConfig.SlavePts != -1 {
+		if err := syscall.Close(engine.EngineConfig.SlavePts); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

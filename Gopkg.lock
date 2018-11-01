@@ -391,6 +391,14 @@
   revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
 
 [[projects]]
+  digest = "1:29d28429a93b076908a36420a7ecb2bf429d24c15a4b5e2c220ea00fc84b71af"
+  name = "github.com/kr/pty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "db8e3cd836b82e82e0a9c8edc6896967dd31374f"
+  version = "v1.1.3"
+
+[[projects]]
   branch = "master"
   digest = "1:d007733e8cfb5a746602c6998ce3dcfe631a365f8f58931b0a5af9f4f5011c0e"
   name = "github.com/kubernetes-sigs/cri-o"
@@ -797,8 +805,10 @@
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
+    "github.com/kr/pty",
     "github.com/kubernetes-sigs/cri-o/pkg/seccomp",
     "github.com/magiconair/properties/assert",
+    "github.com/opencontainers/image-spec/specs-go",
     "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/opencontainers/image-tools/image",
     "github.com/opencontainers/runtime-spec/specs-go",

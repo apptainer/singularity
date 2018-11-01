@@ -19,6 +19,8 @@ type EngineConfig struct {
 	BundlePath string           `json:"bundlePath"`
 	OciConfig  *oci.Config      `json:"ociConfig"`
 	State      specs.State      `json:"state"`
+	MasterPts  int              `json:"masterPts"`
+	SlavePts   int              `json:"slavePts"`
 	Cgroups    *cgroups.Manager `json:"-"`
 }
 

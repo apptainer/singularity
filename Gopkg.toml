@@ -85,6 +85,10 @@ required = [
   name = "github.com/seccomp/libseccomp-golang"
   version = "v0.9.0"
 
+[[constraint]]
+  name = "github.com/kr/pty"
+  version = "v1.1.3"
+
 [prune]
   go-tests = true
   unused-packages = true

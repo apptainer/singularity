@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/src/pkg/util/capabilities"
 	"github.com/sylabs/singularity/src/runtime/engines/config/starter"
@@ -72,6 +73,18 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
 		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
+	}
+
+	if e.EngineConfig.OciConfig.Process.Terminal {
+		master, slave, err := pty.Open()
+		if err != nil {
+			return err
+		}
+		e.EngineConfig.MasterPts = int(master.Fd())
+		e.EngineConfig.SlavePts = int(slave.Fd())
+	} else {
+		e.EngineConfig.MasterPts = -1
+		e.EngineConfig.SlavePts = -1
 	}
 
 	return nil

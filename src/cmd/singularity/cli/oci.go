@@ -8,10 +8,14 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
+	"sync"
 	"syscall"
+	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
@@ -23,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/src/pkg/util/signal"
 	"github.com/sylabs/singularity/src/runtime/engines/config"
 	"github.com/sylabs/singularity/src/runtime/engines/oci"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var bundlePath = ""
@@ -177,7 +182,47 @@ func ociRun(containerID string) error {
 	if err := ociCreate(containerID); err != nil {
 		return err
 	}
-	return ociStart(containerID)
+	if err := ociStart(containerID); err != nil {
+		return err
+	}
+
+	file, err := instance.Get(containerID)
+	if err != nil {
+		return err
+	}
+
+	socket := filepath.Join(filepath.Dir(file.Path), containerID+".sock")
+
+	time.Sleep(100 * time.Millisecond)
+
+	channel := os.Stdout
+
+	f, err := net.Dial("unix", socket)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	ostate, _ := terminal.MakeRaw(0)
+
+	var once sync.Once
+	close := func() {
+		terminal.Restore(0, ostate)
+		os.Remove(socket)
+		ociDelete(containerID)
+		os.Exit(0)
+	}
+
+	// Pipe session to bash and visa-versa
+	go func() {
+		io.Copy(channel, f)
+		once.Do(close)
+	}()
+
+	io.Copy(f, channel)
+	once.Do(close)
+
+	return nil
 }
 
 func ociStart(containerID string) error {
@@ -277,7 +322,6 @@ func ociCreate(containerID string) error {
 	cmd, err := exec.PipeCommand(starter, []string{"OCI"}, Env, configData)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
 
 	return cmd.Run()
 }
