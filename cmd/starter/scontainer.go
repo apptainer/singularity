@@ -9,9 +9,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // SContainer performs container startup.

@@ -10,9 +10,9 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 )
 
 // EngineOperations implements the engines.EngineOperations interface for

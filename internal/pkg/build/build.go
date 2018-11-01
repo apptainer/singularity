@@ -24,13 +24,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/types/parser"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/syplugin"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
 )
 
 // Build is an abstracted way to look at the entire build process.
