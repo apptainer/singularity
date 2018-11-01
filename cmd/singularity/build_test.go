@@ -79,16 +79,16 @@ func TestBuild(t *testing.T) {
 		buildSpec  string
 		sandbox    bool
 	}{
-		{"BusyBox", "", "../../../examples/busybox/Singularity", false},
-		{"BusyBoxSandbox", "", "../../../examples/busybox/Singularity", true},
-		{"Debootstrap", "debootstrap", "../../../examples/debian/Singularity", true},
+		{"BusyBox", "", "../../examples/busybox/Singularity", false},
+		{"BusyBoxSandbox", "", "../../examples/busybox/Singularity", true},
+		{"Debootstrap", "debootstrap", "../../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
-		{"DockerDefFile", "", "../../../examples/docker/Singularity", true},
+		{"DockerDefFile", "", "../../examples/docker/Singularity", true},
 		{"SHubURI", "", "shub://GodloveD/busybox", true},
-		{"SHubDefFile", "", "../../../examples/shub/Singularity", true},
-		{"LibraryDefFile", "", "../../../examples/library/Singularity", true},
-		{"Yum", "yum", "../../../examples/centos/Singularity", true},
-		{"Zypper", "zypper", "../../../examples/opensuse/Singularity", true},
+		{"SHubDefFile", "", "../../examples/shub/Singularity", true},
+		{"LibraryDefFile", "", "../../examples/library/Singularity", true},
+		{"Yum", "yum", "../../examples/centos/Singularity", true},
+		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
@@ -149,20 +149,20 @@ func TestBuildMultiStage(t *testing.T) {
 		steps []testSpec
 	}{
 		{"SIFToSIF", []testSpec{
-			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false},
+			{"BusyBox", imagePath1, "../../examples/busybox/Singularity", false, false, false},
 			{"SIF", imagePath2, imagePath1, false, false, false},
 		}},
 		{"SandboxToSIF", []testSpec{
-			{"BusyBoxSandbox", imagePath1, "../../../examples/busybox/Singularity", false, true, false},
+			{"BusyBoxSandbox", imagePath1, "../../examples/busybox/Singularity", false, true, false},
 			{"SIF", imagePath2, imagePath1, false, false, false},
 		}},
 		{"LocalImage", []testSpec{
-			{"BusyBox", imagePath1, "../../../examples/busybox/Singularity", false, false, false},
+			{"BusyBox", imagePath1, "../../examples/busybox/Singularity", false, false, false},
 			{"LocalImage", imagePath2, liDefFile, false, false, false},
 			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
 		}},
 		{"LocalImageSandbox", []testSpec{
-			{"BusyBoxSandbox", imagePath2, "../../../examples/busybox/Singularity", true, true, false},
+			{"BusyBoxSandbox", imagePath2, "../../examples/busybox/Singularity", true, true, false},
 			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
 		}},
 	}

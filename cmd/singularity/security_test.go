@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/src/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 // testSecurityUnpriv tests security flag fuctionality for singularity exec without elevated privileges
@@ -94,7 +94,7 @@ func TestSecurity(t *testing.T) {
 		force:   true,
 		sandbox: false,
 	}
-	if b, err := imageBuild(opts, imagePath, "../../../examples/busybox/Singularity"); err != nil {
+	if b, err := imageBuild(opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}

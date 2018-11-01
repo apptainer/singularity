@@ -99,4 +99,4 @@ src/*/*/*/*/.dirstamp
 build/*
 runtime/cli
 
-src/pkg/library/client/test[0-9]*
+pkg/library/client/test[0-9]*

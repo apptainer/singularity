@@ -250,7 +250,7 @@ func TestSingularityActions(t *testing.T) {
 		force:   true,
 		sandbox: false,
 	}
-	if b, err := imageBuild(opts, imagePath, "../../../examples/busybox/Singularity"); err != nil {
+	if b, err := imageBuild(opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}

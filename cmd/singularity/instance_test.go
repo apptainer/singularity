@@ -37,7 +37,7 @@ func stopInstance(instance string) ([]byte, error) {
 // TestInstance tests singularity instance cmd
 // start, list, stop
 func TestInstance(t *testing.T) {
-	var definition = "../../../examples/busybox/Singularity"
+	var definition = "../../examples/busybox/Singularity"
 	var imagePath = "./instance_tests.sif"
 
 	opts := buildOpts{
