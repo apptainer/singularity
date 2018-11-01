@@ -60,11 +60,14 @@ Obsoletes: %{name}-runtime
 Singularity provides functionality to make portable
 containers that can be used across host environments.
 
+%debug_package
+
 %prep
+# Create our build root
+rm -rf %{name}-%{version}
+mkdir %{name}-%{version}
 
 %build
-# Create our build root
-mkdir %{name}-%{version}
 cd %{name}-%{version}
 
 #XXX: We would like to remove the download of Go in the future

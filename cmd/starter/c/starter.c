@@ -1103,6 +1103,17 @@ __attribute__((constructor)) static void init(void) {
     } else if ( stage_pid > 0 ) {
         config.containerPid = stage_pid;
 
+        if ( isatty(STDIN_FILENO) ) {
+            if ( setpgid(stage_pid, stage_pid) < 0 ) {
+                singularity_message(ERROR, "Failed to set child process group: %s", strerror(errno));
+                exit(1);
+            }
+            if ( tcsetpgrp(STDIN_FILENO, stage_pid) < 0 ) {
+                singularity_message(ERROR, "Failed to set child as foreground process: %s", strerror(errno));
+                exit(1);
+            }
+        }
+
         singularity_message(VERBOSE, "Spawn smaster process\n");
 
         close(master_socket[1]);

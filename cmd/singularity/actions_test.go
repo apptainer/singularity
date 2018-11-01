@@ -22,11 +22,14 @@ import (
 const imagePath = "./container.img"
 
 type opts struct {
-	binds   []string
-	contain bool
-	home    string
-	workdir string
-	pwd     string
+	binds     []string
+	security  []string
+	keepPrivs bool
+	dropCaps  string
+	contain   bool
+	home      string
+	workdir   string
+	pwd       string
 }
 
 // imageExec can be used to run/exec/shell a Singularity image
@@ -36,6 +39,15 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	argv := []string{action}
 	for _, bind := range opts.binds {
 		argv = append(argv, "--bind", bind)
+	}
+	for _, sec := range opts.security {
+		argv = append(argv, "--security", sec)
+	}
+	if opts.keepPrivs {
+		argv = append(argv, "--keep-privs")
+	}
+	if opts.dropCaps != "" {
+		argv = append(argv, "--drop-caps", opts.dropCaps)
 	}
 	if opts.contain {
 		argv = append(argv, "--contain")
