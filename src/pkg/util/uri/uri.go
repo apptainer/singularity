@@ -17,18 +17,45 @@ const (
 	Shub = "shub"
 )
 
-// NameFromURI turns a transport:ref URI into a name containing the top-level identifier
+// validURIs contains a list of known uris
+var validURIs = map[string]bool{
+	"library":        true,
+	"shub":           true,
+	"docker":         true,
+	"docker-archive": true,
+	"docker-daemon":  true,
+	"oci":            true,
+	"oci-archive":    true,
+}
+
+// IsValid returns whether or not the given source is valid
+func IsValid(source string) (valid bool, err error) {
+
+	u := strings.SplitN(source, ":", 2)
+
+	if len(u) != 2 {
+		return false, fmt.Errorf("Invalid URI %s", source)
+	}
+
+	if _, ok := validURIs[u[0]]; ok {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("Invalid URI %s", source)
+}
+
+// GetName turns a transport:ref URI into a name containing the top-level identifier
 // of the image. For example, docker://godlovedc/lolcow returns lolcow
 //
 // Returns "" when not in transport:ref format
-func NameFromURI(uri string) string {
-	uriSplit := strings.SplitN(uri, ":", 2) // split URI into transport:ref:tag
-	if len(uriSplit) == 1 {
+func GetName(uri string) string {
+	transport, ref := Split(uri)
+	if transport == "" {
 		return ""
 	}
 
-	ref := strings.TrimLeft(uriSplit[1], "/") // Trim leading "/" characters
-	refSplit := strings.Split(ref, "/")       // Split ref into parts
+	ref = strings.TrimLeft(ref, "/")    // Trim leading "/" characters
+	refSplit := strings.Split(ref, "/") // Split ref into parts
 
 	// Default tag is latest
 	tags := []string{"latest"}
@@ -46,18 +73,32 @@ func NameFromURI(uri string) string {
 	return fmt.Sprintf("%s_%s.sif", container, tags[0])
 }
 
-// SplitURI splits a URI into it's components which can be used directly through containers/image
+// Split splits a URI into it's components which can be used directly through containers/image
+//
+// This can be tricky if there is no type but a file name contains a colon.
 //
 // Examples:
 //   docker://ubuntu -> docker, //ubuntu
 //   docker://ubuntu:18.04 -> docker, //ubuntu:18.04
 //   oci-archive:path/to/archive -> oci-archive, path/to/archive
 //   ubuntu -> "", ubuntu
-func SplitURI(uri string) (transport string, ref string) {
+//   ubuntu:18.04.img -> "", ubuntu:18.04.img
+func Split(uri string) (transport string, ref string) {
 	uriSplit := strings.SplitN(uri, ":", 2)
 	if len(uriSplit) == 1 {
-		return "", uriSplit[0]
+		// no colon
+		return "", uri
 	}
 
-	return uriSplit[0], uriSplit[1]
+	if uriSplit[1][0:1] == "//" {
+		// the format was ://, so try it whether or not valid URI
+		return uriSplit[0], uriSplit[1]
+	}
+
+	if ok, err := IsValid(uri); ok && err == nil {
+		// also accept recognized URIs
+		return uriSplit[0], uriSplit[1]
+	}
+
+	return "", uri
 }

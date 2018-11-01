@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build linux
+
 package cli
 
 import (
@@ -100,7 +102,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
 
-	name := uri.NameFromURI(u)
+	name := uri.GetName(u)
 	imgabs := cache.OciTempImage(sum, name)
 
 	if exists, err := cache.OciTempExists(sum, name); err != nil {
@@ -128,7 +130,7 @@ func handleLibrary(u string) (string, error) {
 		return "", err
 	}
 
-	imageName := uri.NameFromURI(u)
+	imageName := uri.GetName(u)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
 	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
@@ -142,7 +144,7 @@ func handleLibrary(u string) (string, error) {
 }
 
 func handleShub(u string) (string, error) {
-	imageName := uri.NameFromURI(u)
+	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
 	libexec.PullShubImage(imagePath, u, true)
@@ -151,8 +153,8 @@ func handleShub(u string) (string, error) {
 }
 
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
-	// If args[0] is not transport:ref (ex. intance://...) formatted return, not a URI
-	t, _ := uri.SplitURI(args[0])
+	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
+	t, _ := uri.Split(args[0])
 	if t == "instance" || t == "" {
 		return
 	}
@@ -259,7 +261,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
-	starter := buildcfg.SBINDIR + "/starter-suid"
+	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 
 	engineConfig := singularity.NewConfig()
 
@@ -345,7 +347,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				if IsWritable {
 					sylog.Warningf("NVIDIA binaries may not be bound with --writable")
 				}
-				BindPaths = append(BindPaths, bins...)
+				for _, binary := range bins {
+					usrBinBinary := filepath.Join("/usr/bin", filepath.Base(binary))
+					bind := strings.Join([]string{binary, usrBinBinary}, ":")
+					BindPaths = append(BindPaths, bind)
+				}
 			}
 			if len(libs) == 0 {
 				sylog.Warningf("Could not find any NVIDIA libraries on this host!")
@@ -499,7 +505,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		starter = buildcfg.SBINDIR + "/starter"
+		starter = buildcfg.LIBEXECDIR + "/singularity/bin/starter"
 
 		if IsFakeroot {
 			generator.AddLinuxUIDMapping(uid, 0, 1)
@@ -515,6 +521,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	// Clean environment
 	env.SetContainerEnv(&generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
+
+	// force to use getwd syscall
+	os.Unsetenv("PWD")
 
 	if pwd, err := os.Getwd(); err == nil {
 		if PwdPath != "" {

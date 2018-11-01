@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build linux
+
 package cli
 
 import (
@@ -42,7 +44,7 @@ var RunHelpCmd = &cobra.Command{
 		abspath, err := filepath.Abs(args[0])
 		name := filepath.Base(abspath)
 		a := []string{"/bin/cat", "/.singularity.d/runscript.help"}
-		starter := buildcfg.SBINDIR + "/starter-suid"
+		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 		procname := "Singularity help"
 		Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
 

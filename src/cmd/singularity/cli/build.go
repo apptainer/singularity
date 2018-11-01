@@ -7,7 +7,6 @@ package cli
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -15,9 +14,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/src/docs"
-	"github.com/sylabs/singularity/src/pkg/build"
+	"github.com/sylabs/singularity/src/pkg/build/types"
+	"github.com/sylabs/singularity/src/pkg/build/types/parser"
 	"github.com/sylabs/singularity/src/pkg/sylog"
-	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
 
 var (
@@ -77,66 +76,17 @@ var BuildCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(2),
 
-	Use:     docs.BuildUse,
-	Short:   docs.BuildShort,
-	Long:    docs.BuildLong,
-	Example: docs.BuildExample,
-	PreRun: func(cmd *cobra.Command, args []string) {
-		sylabsToken(cmd, args)
-		syplugin.Init()
-	},
-	// TODO: Can we plz move this to another file to keep the CLI the CLI
-	Run: func(cmd *cobra.Command, args []string) {
-		buildFormat := "sif"
-		if sandbox {
-			buildFormat = "sandbox"
-		}
-
-		dest := args[0]
-		spec := args[1]
-
-		// check if target collides with existing file
-		if ok := checkBuildTarget(dest); !ok {
-			os.Exit(1)
-		}
-
-		if remote {
-			// Submiting a remote build requires a valid authToken
-			if authToken == "" {
-				sylog.Fatalf("Unable to submit build job: %v", authWarning)
-			}
-
-			def, err := build.MakeDef(spec, remote)
-			if err != nil {
-				return
-			}
-
-			b, err := build.NewRemoteBuilder(dest, libraryURL, def, detached, force, builderURL, authToken)
-			if err != nil {
-				sylog.Fatalf("failed to create builder: %v", err)
-			}
-			b.Build(context.TODO())
-		} else {
-			err := checkSections()
-			if err != nil {
-				sylog.Fatalf(err.Error())
-			}
-
-			b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest, libraryURL, authToken)
-			if err != nil {
-				sylog.Fatalf("Unable to create build: %v", err)
-			}
-
-			if err = b.Full(); err != nil {
-				sylog.Fatalf("While performing build: %v", err)
-			}
-		}
-	},
+	Use:              docs.BuildUse,
+	Short:            docs.BuildShort,
+	Long:             docs.BuildLong,
+	Example:          docs.BuildExample,
+	PreRun:           preRun,
+	Run:              run,
 	TraverseChildren: true,
 }
 
 // checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite
-func checkBuildTarget(path string) bool {
+func checkBuildTarget(path string, update bool) bool {
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {
 			sylog.Fatalf("Only sandbox updating is supported.")
@@ -178,4 +128,46 @@ func checkSections() error {
 	}
 
 	return nil
+}
+
+func definitionFromSpec(spec string) (def types.Definition, err error) {
+
+	// Try spec as URI first
+	def, err = types.NewDefinitionFromURI(spec)
+	if err == nil {
+		return
+	}
+
+	// Try spec as local file
+	var isValid bool
+	isValid, err = parser.IsValidDefinition(spec)
+	if err != nil {
+		return
+	}
+
+	if isValid {
+		sylog.Debugf("Found valid definition: %s\n", spec)
+		// File exists and contains valid definition
+		var defFile *os.File
+		defFile, err = os.Open(spec)
+		if err != nil {
+			return
+		}
+
+		defer defFile.Close()
+		def, err = parser.ParseDefinitionFile(defFile)
+
+		return
+	}
+
+	// File exists and does NOT contain a valid definition
+	// local image or sandbox
+	def = types.Definition{
+		Header: map[string]string{
+			"bootstrap": "localimage",
+			"from":      spec,
+		},
+	}
+
+	return
 }

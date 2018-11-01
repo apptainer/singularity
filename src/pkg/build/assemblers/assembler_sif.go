@@ -138,6 +138,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	f.Close()
 	os.Remove(f.Name())
 	os.Remove(squashfsPath)
+	defer os.Remove(squashfsPath)
 
 	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
 
@@ -147,15 +148,27 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	}
 
 	mksquashfsCmd := exec.Command(mksquashfs, args...)
-	err = mksquashfsCmd.Run()
-	defer os.Remove(squashfsPath)
+	stderr, err := mksquashfsCmd.StderrPipe()
 	if err != nil {
-		return
+		return fmt.Errorf("While setting up stderr pipe: %v", err)
+	}
+
+	if err := mksquashfsCmd.Start(); err != nil {
+		return fmt.Errorf("While starting mksquashfs: %v", err)
+	}
+
+	errOut, err := ioutil.ReadAll(stderr)
+	if err != nil {
+		return fmt.Errorf("While reading mksquashfs stderr: %v", err)
+	}
+
+	if err := mksquashfsCmd.Wait(); err != nil {
+		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
 	err = createSIF(path, def, squashfsPath)
 	if err != nil {
-		return
+		return fmt.Errorf("While creating SIF: %v", err)
 	}
 
 	return

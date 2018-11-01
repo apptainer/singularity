@@ -1,4 +1,5 @@
-Bootstrap: docker
+# some comment before header
+Bootstrap: docker   # some comment on header line
 From: <registry>/<namespace>/<container>:<tag>@<digest>
 IncludeCmd: yes
 

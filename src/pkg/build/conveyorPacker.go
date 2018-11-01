@@ -6,22 +6,8 @@
 package build
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/sylabs/singularity/src/pkg/build/types"
 )
-
-// validURIs contains a list of known uris
-var validURIs = map[string]bool{
-	"library":        true,
-	"shub":           true,
-	"docker":         true,
-	"docker-archive": true,
-	"docker-daemon":  true,
-	"oci":            true,
-	"oci-archive":    true,
-}
 
 // Conveyor is responsible for downloading from remote sources (library, shub, docker...)
 type Conveyor interface {
@@ -38,20 +24,4 @@ type Packer interface {
 type ConveyorPacker interface {
 	Conveyor
 	Packer
-}
-
-// IsValidURI returns whether or not the given source is valid
-func IsValidURI(source string) (valid bool, err error) {
-
-	u := strings.SplitN(source, ":", 2)
-
-	if len(u) != 2 {
-		return false, fmt.Errorf("Invalid URI %s", source)
-	}
-
-	if _, ok := validURIs[u[0]]; ok {
-		return true, nil
-	}
-
-	return false, fmt.Errorf("Invalid URI %s", source)
 }

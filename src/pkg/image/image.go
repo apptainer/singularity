@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	launchString = "singularity"
+	launchString = " run-singularity"
 	bufferSize   = 2048
 )
 

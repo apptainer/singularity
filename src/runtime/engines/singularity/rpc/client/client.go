@@ -13,13 +13,13 @@ import (
 	args "github.com/sylabs/singularity/src/runtime/engines/singularity/rpc"
 )
 
-// RPC holds the state necessary for remote procedure calls
+// RPC holds the state necessary for remote procedure calls.
 type RPC struct {
 	Client *rpc.Client
 	Name   string
 }
 
-// Mount calls tme mount RPC using the supplied arguments
+// Mount calls tme mount RPC using the supplied arguments.
 func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
 	arguments := &args.MountArgs{
 		Source:     source,
@@ -33,7 +33,7 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 	return reply, err
 }
 
-// Mkdir calls the mkdir RPC using the supplied arguments
+// Mkdir calls the mkdir RPC using the supplied arguments.
 func (t *RPC) Mkdir(path string, perm os.FileMode) (int, error) {
 	arguments := &args.MkdirArgs{
 		Path: path,
@@ -44,17 +44,18 @@ func (t *RPC) Mkdir(path string, perm os.FileMode) (int, error) {
 	return reply, err
 }
 
-// Chroot calls the chroot RPC using the supplied arguments
-func (t *RPC) Chroot(root string) (int, error) {
+// Chroot calls the chroot RPC using the supplied arguments.
+func (t *RPC) Chroot(root string, usePivot bool) (int, error) {
 	arguments := &args.ChrootArgs{
-		Root: root,
+		Root:     root,
+		UsePivot: usePivot,
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".Chroot", arguments, &reply)
 	return reply, err
 }
 
-// LoopDevice calls the loop device RPC using the supplied arguments
+// LoopDevice calls the loop device RPC using the supplied arguments.
 func (t *RPC) LoopDevice(image string, mode int, info loop.Info64) (int, error) {
 	arguments := &args.LoopArgs{
 		Image: image,
@@ -66,7 +67,7 @@ func (t *RPC) LoopDevice(image string, mode int, info loop.Info64) (int, error) 
 	return reply, err
 }
 
-// SetHostname calls the sethostname RPC using the supplied arguments
+// SetHostname calls the sethostname RPC using the supplied arguments.
 func (t *RPC) SetHostname(hostname string) (int, error) {
 	arguments := &args.HostnameArgs{
 		Hostname: hostname,
@@ -76,7 +77,7 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 	return reply, err
 }
 
-// HasNamespace calls the HasNamespace RPC using the supplied arguments
+// HasNamespace calls the HasNamespace RPC using the supplied arguments.
 func (t *RPC) HasNamespace(pid int, nstype string) (bool, error) {
 	arguments := &args.HasNamespaceArgs{
 		Pid:    pid,
@@ -93,7 +94,7 @@ func (t *RPC) HasNamespace(pid int, nstype string) (bool, error) {
 	return false, err
 }
 
-// SetFsID calls the setfsid RPC using the supplied arguments
+// SetFsID calls the setfsid RPC using the supplied arguments.
 func (t *RPC) SetFsID(uid int, gid int) (int, error) {
 	arguments := &args.SetFsIDArgs{
 		UID: uid,

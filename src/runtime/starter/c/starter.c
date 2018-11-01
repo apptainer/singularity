@@ -548,6 +548,15 @@ static void list_fd(struct fdlist *fl) {
     close(fd_proc);
 }
 
+static void fix_fsuid(uid_t uid) {
+    setfsuid(uid);
+
+    if ( setfsuid(uid) != uid ) {
+        singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
+        exit(1);
+    }
+}
+
 void do_exit(int sig) {
     if ( sig == SIGUSR1 ) {
         exit(0);
@@ -934,14 +943,7 @@ __attribute__((constructor)) static void init(void) {
 
     /* Use setfsuid to address issue about root_squash filesystems option */
     if ( config.isSuid ) {
-        if ( setfsuid(uid) != 0 ) {
-            singularity_message(ERROR, "Previous filesystem UID is not equal to 0\n");
-            exit(1);
-        }
-        if ( setfsuid(-1) != uid ) {
-            singularity_message(ERROR, "Failed to set filesystem uid to %d\n", uid);
-            exit(1);
-        }
+        fix_fsuid(uid);
     }
     if ( get_nspath(pid) ) {
         if ( enter_namespace(get_nspath(pid), CLONE_NEWPID) < 0 ) {
@@ -1100,6 +1102,17 @@ __attribute__((constructor)) static void init(void) {
         return;
     } else if ( stage_pid > 0 ) {
         config.containerPid = stage_pid;
+
+        if ( isatty(STDIN_FILENO) ) {
+            if ( setpgid(stage_pid, stage_pid) < 0 ) {
+                singularity_message(ERROR, "Failed to set child process group: %s", strerror(errno));
+                exit(1);
+            }
+            if ( tcsetpgrp(STDIN_FILENO, stage_pid) < 0 ) {
+                singularity_message(ERROR, "Failed to set child as foreground process: %s", strerror(errno));
+                exit(1);
+            }
+        }
 
         singularity_message(VERBOSE, "Spawn smaster process\n");
 

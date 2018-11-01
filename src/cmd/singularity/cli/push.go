@@ -8,7 +8,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
-	"github.com/sylabs/singularity/src/pkg/libexec"
+	client "github.com/sylabs/singularity/src/pkg/client/library"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 )
 
@@ -21,7 +21,7 @@ func init() {
 	PushCmd.Flags().SetInterspersed(false)
 
 	PushCmd.Flags().StringVar(&PushLibraryURI, "library", "https://library.sylabs.io", "the library to push to")
-	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+	PushCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
 	SingularityCmd.AddCommand(PushCmd)
 }
@@ -34,7 +34,10 @@ var PushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Push to library requires a valid authToken
 		if authToken != "" {
-			libexec.PushImage(args[0], args[1], PushLibraryURI, authToken)
+			err := client.UploadImage(args[0], args[1], PushLibraryURI, authToken)
+			if err != nil {
+				sylog.Fatalf("%v\n", err)
+			}
 		} else {
 			sylog.Fatalf("Couldn't push image to library: %v", authWarning)
 		}
