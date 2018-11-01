@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/src/runtime/engines/config"
-	"github.com/sylabs/singularity/src/runtime/engines/singularity"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 )
 
 func main() {
