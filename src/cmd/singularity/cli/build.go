@@ -31,6 +31,7 @@ var (
 	update     bool
 	noTest     bool
 	sections   []string
+	noHTTPS    bool
 )
 
 var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
@@ -67,6 +68,11 @@ func init() {
 
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
 	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
+	// hidden flag to handle SINGULARITY_NOHTTPS environment variable
+	BuildCmd.Flags().BoolVar(&noHTTPS, "no-https", false, "")
+	BuildCmd.Flags().Lookup("no-https").Hidden = true
+	BuildCmd.Flags().SetAnnotation("no-https", "envkey", []string{"NOHTTPS"})
 
 	SingularityCmd.AddCommand(BuildCmd)
 }

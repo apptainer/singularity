@@ -200,6 +200,11 @@ func initBoolVars() {
 	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
 	actionFlags.Lookup("no-nv").Hidden = true
 	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
+
+	// hidden flag to handle SINGULARITY_NOHTTPS environment variable, noHTTPS defined in build.go
+	actionFlags.BoolVar(&noHTTPS, "no-https", false, "")
+	actionFlags.Lookup("no-https").Hidden = true
+	actionFlags.SetAnnotation("no-https", "envkey", []string{"NOHTTPS"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support

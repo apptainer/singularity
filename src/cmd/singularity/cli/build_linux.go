@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/pkg/build"
 	"github.com/sylabs/singularity/src/pkg/build/remotebuilder"
+	"github.com/sylabs/singularity/src/pkg/build/types"
 	"github.com/sylabs/singularity/src/pkg/sylog"
 	"github.com/sylabs/singularity/src/pkg/syplugin"
 )
@@ -61,7 +62,19 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf(err.Error())
 		}
 
-		b, err := build.NewBuild(spec, dest, buildFormat, force, update, sections, noTest, libraryURL, authToken)
+		b, err := build.NewBuild(
+			spec,
+			dest,
+			buildFormat,
+			libraryURL,
+			authToken,
+			types.Options{
+				Update:   update,
+				Force:    force,
+				Sections: sections,
+				NoTest:   noTest,
+				NoHTTPS:  noHTTPS,
+			})
 		if err != nil {
 			sylog.Fatalf("Unable to create build: %v", err)
 		}
