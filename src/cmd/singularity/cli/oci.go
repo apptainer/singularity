@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
 	"sync"
 	"syscall"
-	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
@@ -47,6 +47,7 @@ func init() {
 	OciStartCmd.Flags().SetInterspersed(false)
 	OciDeleteCmd.Flags().SetInterspersed(false)
 	OciStateCmd.Flags().SetInterspersed(false)
+	OciAttachCmd.Flags().SetInterspersed(false)
 
 	OciKillCmd.Flags().SetInterspersed(false)
 	OciKillCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "signal sent to the container (default SIGTERM)")
@@ -61,6 +62,7 @@ func init() {
 	OciCmd.AddCommand(OciDeleteCmd)
 	OciCmd.AddCommand(OciKillCmd)
 	OciCmd.AddCommand(OciStateCmd)
+	OciCmd.AddCommand(OciAttachCmd)
 }
 
 // OciCreateCmd represents oci create command
@@ -153,6 +155,21 @@ var OciStateCmd = &cobra.Command{
 	Example: "oci state",
 }
 
+// OciAttachCmd represents oci start command
+var OciAttachCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociAttach(args[0]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "attach",
+	Short:   "oci attach",
+	Long:    "oci attach",
+	Example: "oci attach",
+}
+
 // OciCmd singularity oci runtime
 var OciCmd = &cobra.Command{
 	Run:                   nil,
@@ -183,28 +200,12 @@ func getState(containerID string) (*specs.State, error) {
 	return &engineConfig.State, nil
 }
 
-func ociRun(containerID string) error {
-	if err := ociCreate(containerID); err != nil {
-		return err
-	}
-	if err := ociStart(containerID); err != nil {
-		return err
-	}
-
-	file, err := instance.Get(containerID)
-	if err != nil {
-		return err
-	}
-
-	socket := filepath.Join(filepath.Dir(file.Path), containerID+".sock")
-
-	time.Sleep(20 * time.Millisecond)
-
+func attach(socket string, exitFunc func()) error {
 	channel := os.Stdout
 
 	f, err := net.Dial("unix", socket)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	defer f.Close()
 
@@ -213,9 +214,7 @@ func ociRun(containerID string) error {
 	var once sync.Once
 	close := func() {
 		terminal.Restore(0, ostate)
-		os.Remove(socket)
-		ociDelete(containerID)
-		os.Exit(0)
+		exitFunc()
 	}
 
 	// Pipe session to bash and visa-versa
@@ -228,6 +227,80 @@ func ociRun(containerID string) error {
 	once.Do(close)
 
 	return nil
+}
+
+func ociRun(containerID string) error {
+	syncSocketPath = filepath.Join("/tmp", containerID+".sock")
+
+	defer os.Remove(syncSocketPath)
+
+	l, err := net.Listen("unix", syncSocketPath)
+	if err != nil {
+		return err
+	}
+	defer l.Close()
+
+	if err := ociCreate(containerID); err != nil {
+		return err
+	}
+
+	start := make(chan string, 1)
+
+	go func() {
+		var state specs.State
+
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				return
+			}
+
+			dec := json.NewDecoder(c)
+			if err := dec.Decode(&state); err != nil {
+				return
+			}
+
+			c.Close()
+
+			switch state.Status {
+			case "created":
+				if err := ociStart(containerID); err != nil {
+					return
+				}
+			case "running":
+				start <- state.Annotations["io.sylabs.runtime.oci.attach-socket"]
+			case "stopped":
+				return
+			}
+		}
+	}()
+
+	socket := <-start
+
+	return attach(socket, func() {
+		if err := ociDelete(containerID); err != nil {
+			return
+		}
+		os.Remove(syncSocketPath)
+
+		os.Exit(0)
+	})
+}
+
+func ociAttach(containerID string) error {
+	state, err := getState(containerID)
+	if err != nil {
+		return err
+	}
+
+	socket, ok := state.Annotations["io.sylabs.runtime.oci.attach-socket"]
+	if !ok {
+		return fmt.Errorf("attach socket not available, container state: %s", state.Status)
+	}
+
+	return attach(socket, func() {
+		os.Exit(0)
+	})
 }
 
 func ociStart(containerID string) error {
@@ -286,6 +359,11 @@ func ociState(containerID string) error {
 
 func ociCreate(containerID string) error {
 	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter"
+
+	_, err := getState(containerID)
+	if err == nil {
+		return fmt.Errorf("%s already exists", containerID)
+	}
 
 	os.Clearenv()
 

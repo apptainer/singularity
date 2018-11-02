@@ -50,7 +50,7 @@ type EngineOperations interface {
 	MonitorContainer(int, chan os.Signal) (syscall.WaitStatus, error)
 	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
 	// for ensuring that the container has been properly torn down.
-	CleanupContainer() error
+	CleanupContainer(error, syscall.WaitStatus) error
 }
 
 // NewEngine returns the engine described by the JSON []byte configuration.

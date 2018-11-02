@@ -139,7 +139,7 @@ func SMaster(rpcSocket, masterSocket int, starterConfig *starter.Config, jsonByt
 	fatal = <-fatalChan
 
 	runtime.LockOSThread()
-	if err := engine.CleanupContainer(); err != nil {
+	if err := engine.CleanupContainer(fatal, status); err != nil {
 		sylog.Errorf("container cleanup failed: %s", err)
 	}
 	runtime.UnlockOSThread()

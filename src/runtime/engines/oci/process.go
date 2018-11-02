@@ -124,9 +124,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 // PreStartProcess will be executed in smaster context
 func (engine *EngineOperations) PreStartProcess() error {
-	if err := engine.updateState("created"); err != nil {
-		return err
-	}
+	var master *os.File
 
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
@@ -137,14 +135,6 @@ func (engine *EngineOperations) PreStartProcess() error {
 		}
 	}
 
-	return nil
-}
-
-// PostStartProcess will execute code in smaster context after execution of container
-// process, typically to write instance state/config files or execute post start OCI hook
-func (engine *EngineOperations) PostStartProcess(pid int) error {
-	var master *os.File
-
 	if engine.EngineConfig.MasterPts != -1 {
 		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "master-pts")
 	} else {
@@ -153,12 +143,25 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
 	socket := filepath.Join(filepath.Dir(file.Path), engine.CommonConfig.ContainerID+".sock")
+	engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.attach-socket"] = socket
 
 	l, err := net.Listen("unix", socket)
 	if err != nil {
 		return err
 	}
 
+	if err := engine.updateState("created"); err != nil {
+		return err
+	}
+
+	go engine.handleStream(master, l)
+
+	return nil
+}
+
+// PostStartProcess will execute code in smaster context after execution of container
+// process, typically to write instance state/config files or execute post start OCI hook
+func (engine *EngineOperations) PostStartProcess(pid int) error {
 	if err := engine.updateState("running"); err != nil {
 		return err
 	}
@@ -171,8 +174,6 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			}
 		}
 	}
-
-	go engine.handleStream(master, l)
 
 	return nil
 }

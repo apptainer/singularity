@@ -49,6 +49,10 @@ func (engine *EngineOperations) createState(pid int) error {
 	engine.EngineConfig.State.Pid = pid
 	engine.EngineConfig.State.Status = "creating"
 
+	if engine.EngineConfig.State.Annotations == nil {
+		engine.EngineConfig.State.Annotations = make(map[string]string)
+	}
+
 	file.Config, err = json.Marshal(engine.CommonConfig)
 	if err != nil {
 		return err
@@ -89,10 +93,6 @@ func (engine *EngineOperations) updateState(status string) error {
 	engine.EngineConfig.State.Status = status
 
 	t := time.Now().UnixNano()
-
-	if engine.EngineConfig.State.Annotations == nil {
-		engine.EngineConfig.State.Annotations = make(map[string]string)
-	}
 
 	switch status {
 	case "created":
@@ -149,7 +149,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	rootfs := filepath.Join(engine.EngineConfig.GetBundlePath(), engine.EngineConfig.OciConfig.Root.Path)
+	rootfs := engine.EngineConfig.OciConfig.Root.Path
+
+	if !filepath.IsAbs(rootfs) {
+		rootfs = filepath.Join(engine.EngineConfig.GetBundlePath(), rootfs)
+	}
 
 	c := &container{
 		engine: engine,

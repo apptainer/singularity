@@ -22,7 +22,7 @@ import (
  */
 
 // CleanupContainer cleans up the container
-func (engine *EngineOperations) CleanupContainer() error {
+func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 	sylog.Debugf("Cleanup container")
 
 	if engine.EngineConfig.Network != nil {
