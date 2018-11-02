@@ -6,13 +6,12 @@
 package oci
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"os"
 	osexec "os/exec"
+	"os/signal"
 	"path/filepath"
 	"sync"
 	"syscall"
@@ -26,6 +25,40 @@ import (
 
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
+	if engine.EngineConfig.EmptyProcess {
+		// pause process, by sending data to Smaster the process will
+		// be paused with SIGSTOP signal
+		if _, err := masterConn.Write([]byte("t")); err != nil {
+			return fmt.Errorf("failed to pause process: %s", err)
+		}
+
+		// block on read waiting SIGCONT signal
+		data := make([]byte, 1)
+		if _, err := masterConn.Read(data); err != nil {
+			return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+		}
+
+		masterConn.Close()
+
+		var status syscall.WaitStatus
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
+
+		for {
+			s := <-signals
+			switch s {
+			case syscall.SIGCHLD:
+				for {
+					if pid, _ := syscall.Wait4(-1, &status, syscall.WNOHANG, nil); pid <= 0 {
+						break
+					}
+				}
+			case syscall.SIGINT, syscall.SIGTERM:
+				os.Exit(0)
+			}
+		}
+	}
+
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
 
@@ -95,24 +128,6 @@ func (engine *EngineOperations) PreStartProcess() error {
 		return err
 	}
 
-	socketKey := "io.sylabs.oci.runtime.cri-sync-socket"
-
-	if socketPath, ok := engine.EngineConfig.OciConfig.Annotations[socketKey]; ok {
-		c, err := net.Dial("unix", socketPath)
-		if err != nil {
-			sylog.Warningf("failed to connect to cri sync socket: %s", err)
-		} else {
-			defer c.Close()
-
-			data, err := json.Marshal(engine.EngineConfig.State)
-			if err != nil {
-				sylog.Warningf("failed to marshal state data: %s", err)
-			} else if _, err := c.Write(data); err != nil {
-				sylog.Warningf("failed to send state over socket: %s", err)
-			}
-		}
-	}
-
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
 		for _, h := range hooks.Prestart {
@@ -128,26 +143,24 @@ func (engine *EngineOperations) PreStartProcess() error {
 // PostStartProcess will execute code in smaster context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
-	if err := engine.updateState("running"); err != nil {
+	var master *os.File
+
+	if engine.EngineConfig.MasterPts != -1 {
+		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "master-pts")
+	} else {
+		master = os.Stdin
+	}
+
+	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	socket := filepath.Join(filepath.Dir(file.Path), engine.CommonConfig.ContainerID+".sock")
+
+	l, err := net.Listen("unix", socket)
+	if err != nil {
 		return err
 	}
 
-	socketKey := "io.sylabs.oci.runtime.cri-sync-socket"
-
-	if socketPath, ok := engine.EngineConfig.OciConfig.Annotations[socketKey]; ok {
-		c, err := net.Dial("unix", socketPath)
-		if err != nil {
-			sylog.Warningf("failed to connect to cri sync socket: %s", err)
-		} else {
-			defer c.Close()
-
-			data, err := json.Marshal(engine.EngineConfig.State)
-			if err != nil {
-				sylog.Warningf("failed to marshal state data: %s", err)
-			} else if _, err := c.Write(data); err != nil {
-				sylog.Warningf("failed to send state over socket: %s", err)
-			}
-		}
+	if err := engine.updateState("running"); err != nil {
+		return err
 	}
 
 	hooks := engine.EngineConfig.OciConfig.Hooks
@@ -159,7 +172,7 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		}
 	}
 
-	go engine.handleStream()
+	go engine.handleStream(master, l)
 
 	return nil
 }
@@ -212,28 +225,15 @@ func (t *TestWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (engine *EngineOperations) handleStream() {
-	var master *os.File
+func (engine *EngineOperations) handleStream(master *os.File, l net.Listener) {
+	var err error
+
+	defer l.Close()
 
 	numClient := -1
 	maxClient := 10
 	a := make([]net.Conn, maxClient)
 	var mw *multiWriter
-
-	if engine.EngineConfig.MasterPts != -1 {
-		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "master-pts")
-	} else {
-		master = os.Stdin
-	}
-
-	file, err := instance.Get(engine.CommonConfig.ContainerID)
-	socket := filepath.Join(filepath.Dir(file.Path), engine.CommonConfig.ContainerID+".sock")
-
-	l, err := net.Listen("unix", socket)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer l.Close()
 
 	tee := io.TeeReader(master, &TestWriter{})
 
@@ -244,7 +244,7 @@ func (engine *EngineOperations) handleStream() {
 		}
 		a[numClient], err = l.Accept()
 		if err != nil {
-			log.Fatal(err)
+			sylog.Fatalf("%s", err)
 		}
 
 		b := a[numClient]

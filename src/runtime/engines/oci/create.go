@@ -12,10 +12,12 @@ import (
 	"net/rpc"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
-	specs "github.com/opencontainers/image-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/src/pkg/buildcfg"
 	"github.com/sylabs/singularity/src/pkg/cgroups"
 	"github.com/sylabs/singularity/src/pkg/instance"
@@ -57,6 +59,24 @@ func (engine *EngineOperations) createState(pid int) error {
 	file.PPid = os.Getpid()
 	file.Image = filepath.Join(engine.EngineConfig.GetBundlePath(), engine.EngineConfig.OciConfig.Root.Path)
 
+	socketPath := engine.EngineConfig.SyncSocket
+
+	if socketPath != "" {
+		c, err := net.Dial("unix", socketPath)
+		if err != nil {
+			sylog.Warningf("failed to connect to cri sync socket: %s", err)
+		} else {
+			defer c.Close()
+
+			data, err := json.Marshal(engine.EngineConfig.State)
+			if err != nil {
+				sylog.Warningf("failed to marshal state data: %s", err)
+			} else if _, err := c.Write(data); err != nil {
+				sylog.Warningf("failed to send state over socket: %s", err)
+			}
+		}
+	}
+
 	return file.Update()
 }
 
@@ -68,9 +88,42 @@ func (engine *EngineOperations) updateState(status string) error {
 
 	engine.EngineConfig.State.Status = status
 
+	t := time.Now().UnixNano()
+
+	if engine.EngineConfig.State.Annotations == nil {
+		engine.EngineConfig.State.Annotations = make(map[string]string)
+	}
+
+	switch status {
+	case "created":
+		engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.created_at"] = strconv.FormatInt(t, 10)
+	case "running":
+		engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.starter_at"] = strconv.FormatInt(t, 10)
+	case "stopped":
+		engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.finished_at"] = strconv.FormatInt(t, 10)
+	}
+
 	file.Config, err = json.Marshal(engine.CommonConfig)
 	if err != nil {
 		return err
+	}
+
+	socketPath := engine.EngineConfig.SyncSocket
+
+	if socketPath != "" {
+		c, err := net.Dial("unix", socketPath)
+		if err != nil {
+			sylog.Warningf("failed to connect to cri sync socket: %s", err)
+		} else {
+			defer c.Close()
+
+			data, err := json.Marshal(engine.EngineConfig.State)
+			if err != nil {
+				sylog.Warningf("failed to marshal state data: %s", err)
+			} else if _, err := c.Write(data); err != nil {
+				sylog.Warningf("failed to send state over socket: %s", err)
+			}
+		}
 	}
 
 	return file.Update()

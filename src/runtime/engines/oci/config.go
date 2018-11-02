@@ -16,12 +16,14 @@ const Name = "oci"
 
 // EngineConfig is the config for the OCI engine.
 type EngineConfig struct {
-	BundlePath string           `json:"bundlePath"`
-	OciConfig  *oci.Config      `json:"ociConfig"`
-	State      specs.State      `json:"state"`
-	MasterPts  int              `json:"masterPts"`
-	SlavePts   int              `json:"slavePts"`
-	Cgroups    *cgroups.Manager `json:"-"`
+	BundlePath   string           `json:"bundlePath"`
+	OciConfig    *oci.Config      `json:"ociConfig"`
+	State        specs.State      `json:"state"`
+	MasterPts    int              `json:"masterPts"`
+	SlavePts     int              `json:"slavePts"`
+	SyncSocket   string           `json:"syncSocket"`
+	EmptyProcess bool             `json:"emptyProcess"`
+	Cgroups      *cgroups.Manager `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig

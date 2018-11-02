@@ -30,7 +30,9 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-var bundlePath = ""
+var bundlePath string
+var syncSocketPath string
+var emptyProcess bool
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
@@ -38,6 +40,9 @@ func init() {
 	OciCreateCmd.Flags().SetInterspersed(false)
 	OciCreateCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
 	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
+	OciCreateCmd.Flags().StringVarP(&syncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
+	OciCreateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
+	OciCreateCmd.Flags().BoolVar(&emptyProcess, "empty-process", false, "run container without executing container process (eg: for POD container)")
 
 	OciStartCmd.Flags().SetInterspersed(false)
 	OciDeleteCmd.Flags().SetInterspersed(false)
@@ -193,7 +198,7 @@ func ociRun(containerID string) error {
 
 	socket := filepath.Join(filepath.Dir(file.Path), containerID+".sock")
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 
 	channel := os.Stdout
 
@@ -307,6 +312,9 @@ func ociCreate(containerID string) error {
 	}
 
 	Env := []string{sylog.GetEnvVar(), "SRUNTIME=oci"}
+
+	engineConfig.EmptyProcess = emptyProcess
+	engineConfig.SyncSocket = syncSocketPath
 
 	commonConfig := &config.Common{
 		ContainerID:  containerID,
