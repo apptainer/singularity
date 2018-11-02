@@ -460,11 +460,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2def9759555f7eafd51b82e19bd54d1b6aaec4d13902badddabf06f6ec1d17bc"
+  digest = "1:424b050a94341c4f95826c0b5b00df12d2fdb367250989b551c586525d1a43ee"
   name = "github.com/opencontainers/image-tools"
   packages = ["image"]
   pruneopts = "UT"
-  revision = "c95f76cbae7433449f3a09f329ef816a1a0d16b3"
+  revision = "2814f498056809a9d5baaf76d1d82312180a5888"
+  source = "https://github.com/sylabs/image-tools"
 
 [[projects]]
   digest = "1:1869683e323ebff2bdf8adcb560f82bf6f8d94019d35099e3403f7df12e9c07e"
@@ -707,7 +708,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b519c5a33c1459e753da0f447d09fc888c201dc400c43e29b0aee3ad68912ece"
+  digest = "1:38a6ed00cbcb6b2a674637db12af42a3d47e5577f0a6ec1a5a469b511da43b54"
   name = "golang.org/x/crypto"
   packages = [
     "cast5",
@@ -721,7 +722,8 @@
     "ssh/terminal",
   ]
   pruneopts = "UT"
-  revision = "027cca12c2d63e3d62b670d901e8a2c95854feec"
+  revision = "4bce89e8e9a9f84a4cf02b9842c3eaff2af0a856"
+  source = "https://github.com/sylabs/golang-x-crypto"
 
 [[projects]]
   branch = "master"

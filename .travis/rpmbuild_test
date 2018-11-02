@@ -2,40 +2,31 @@
 
 # this script runs as root under docker
 
-OS_VERSION="$1"
-
 # build and install
-yum install -y libtool rpm-build make yum-utils squashfs-tools
-./autogen.sh
-yum-builddep -y singularity.spec
-./configure
-make dist
-rpmbuild -ta *.tar.gz
-rpm -iv ~/rpmbuild/RPMS/*/*.rpm
+yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
+yum install -y openssl-devel libuuid-devel libseccomp-devel
 
-if [ "$OS_VERSION" = 6 ]; then
-    echo "the test suite has not yet been ported to centos6 python, skipping."
-    exit
-fi
-
-# Install python 3 and pylint
-yum install -y epel-release
-yum install -y python34 python34-pip python34-setuptools docker
-yum install -y pylint
-
-# run the test suite
-yum install -y libtool sudo which e2fsprogs
-sed -i 's,^prefix=.*,prefix=/usr,' test.sh
-sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' test.sh
-sed -i 's,^localstatedir=.*,localstatedir=/var,' test.sh
-useradd testuser
+# switch to an unprivileged user with sudo privileges
+yum install -y sudo
+# We need Git existing here prior to the run
+yum install -y git
+useradd -u 1000 --create-home -s /bin/bash testuser
 echo "Defaults:testuser env_keep=DOCKER_HOST" >>/etc/sudoers
 echo "testuser ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers
+chown -R testuser .
 
-# build image for isolated builds
-sed -i 's,^prefix=.*,prefix=/usr,' secbuildimg.sh
-sed -i 's,^sysconfdir=.*,sysconfdir=/etc,' secbuildimg.sh
-sed -i 's,^localstatedir=.*,localstatedir=/var,' secbuildimg.sh
-make secbuildimg
+su testuser -c '
+  set -x
+  set -e
+  ./mconfig
+  sudo yum-builddep -y singularity.spec
+  make -C builddir rpm
+  sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
+  BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
+  export GOROOT=$BLD/go
+  export GOPATH=$BLD/gopath
+  PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
-su testuser -c "make test"
+  cd $GOPATH/src/github.com/sylabs/singularity
+  make -C builddir test
+'

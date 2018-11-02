@@ -21,8 +21,12 @@
 # 
 # 
 
-%define goversion 1.11
+%define goversion @GO_VERSION@
 %define singgopath src/github.com/sylabs/singularity
+
+# Disable debugsource packages; otherwise it ends up with an empty %files
+#   file in debugsourcefiles.list on Fedora
+%undefine _debugsource_packages
 
 Summary: Application and environment virtualization
 Name: singularity
@@ -36,9 +40,14 @@ Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: wget
+BuildRequires: git
+BuildRequires: gcc
+BuildRequires: make
 BuildRequires: libuuid-devel
-BuildRequires: libarchive-devel
 BuildRequires: openssl-devel
+%if ! 0%{?el6}
+BuildRequires: libseccomp-devel
+%endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
@@ -53,34 +62,50 @@ Obsoletes: %{name}-runtime
 Singularity provides functionality to make portable
 containers that can be used across host environments.
 
+%debug_package
+
 %prep
-%setup
+# Create our build root
+rm -rf %{name}-%{version}
+mkdir %{name}-%{version}
 
-mkdir -p gopath/%{singgopath}
-mv `ls -d .??* *|grep -v gopath` gopath/%{singgopath}
+%build
+cd %{name}-%{version}
 
+#XXX: We would like to remove the download of Go in the future
 GOTAR=go%{goversion}.linux-amd64.tar.gz
 wget https://dl.google.com/go/$GOTAR
 tar -xf $GOTAR
 
+mkdir -p gopath/%{singgopath}
+tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
 
-%build
 export GOROOT=$PWD/go
-export PATH=$GOROOT/bin:$PATH
 export GOPATH=$PWD/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
-go get -u -v github.com/golang/dep/cmd/dep
-./mconfig -V %{version}-%{release} -p '""' -e /usr
+
+./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} \
+	--bindir=%{_bindir} --libexecdir=%{_libexecdir} --sysconfdir=%{_sysconfdir} \
+	--sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} \
+	--libdir=%{_libdir}
+
 cd builddir
 make
 
 %install
+cd %{name}-%{version}
+
 export GOROOT=$PWD/go
-export PATH=$GOROOT/bin:$PATH
 export GOPATH=$PWD/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}/builddir
+
+# We're making an assumption here, that EXECPREFIX will be /usr,
+# but share/man/man1 is hard coded in Makefile.stubs. We don't have
+# an equivalent to set %{_mandir}, or what it's derived from.
 mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
-make PREFIX=$RPM_BUILD_ROOT EXEC_PREFIX=$RPM_BUILD_ROOT/usr install man
+make DESTDIR=$RPM_BUILD_ROOT install man
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -98,6 +123,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{_localstatedir}/singularity
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
+# XXX: Not great since we can't control this location...
 %{_mandir}/man1/*
 
 

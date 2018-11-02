@@ -1,7 +1,6 @@
 *~
 #*
 *#
-src/*.o
 singularity-*.tar.gz
 *.m4
 *.pyc
@@ -9,9 +8,11 @@ singularity-*.tar.gz
 generate_docs
 
 .vscode
-vendor/
+.DS_store
+.idea/
 builddir/
-src/pkg/buildcfg/config.go
+internal/pkg/buildcfg/config.go
+singularity.spec
 trash.lock
 Makefile.in
 autom4te.cache/
@@ -35,9 +36,7 @@ libexec/bootstrap-scripts/environment/environment.tar
 libtool
 ltmain.sh
 missing
-singularity.spec
 src/util/config_defaults.h
-test.sh
 secbuildimg.sh
 
 docs/man/singularity*
@@ -100,4 +99,4 @@ src/*/*/*/*/.dirstamp
 build/*
 runtime/cli
 
-src/pkg/library/client/test[0-9]*
+pkg/library/client/test[0-9]*
