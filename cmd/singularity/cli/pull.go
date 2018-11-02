@@ -39,6 +39,11 @@ func init() {
 	PullCmd.Flags().Lookup("name").Hidden = true
 	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
 
+	// hidden flag to handle SINGULARITY_NOHTTPS environment variable
+	PullCmd.Flags().BoolVar(&noHTTPS, "no-https", false, "")
+	PullCmd.Flags().Lookup("no-https").Hidden = true
+	PullCmd.Flags().SetAnnotation("no-https", "envkey", []string{"NOHTTPS"})
+
 	SingularityCmd.AddCommand(PullCmd)
 }
 
