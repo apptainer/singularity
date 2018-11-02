@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -37,7 +35,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force)
 	default:
-		fmt.Println("NOHTTPS:", noHTTPS)
 		libexec.PullOciImage(name, args[i], force, noHTTPS)
 	}
 }
