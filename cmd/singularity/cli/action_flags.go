@@ -196,15 +196,15 @@ func initBoolVars() {
 	actionFlags.BoolVar(&NoInit, "no-init", false, "do NOT start shim process with --pid")
 	actionFlags.SetAnnotation("no-init", "envkey", []string{"NO_INIT", "NOSHIMINIT"})
 
+	// --nohttps
+	actionFlags.BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
+	actionFlags.SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
+
 	// hidden flag to disable nvidia bindings when 'always use nv = yes'
 	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
 	actionFlags.Lookup("no-nv").Hidden = true
 	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
 
-	// hidden flag to handle SINGULARITY_NOHTTPS environment variable, noHTTPS defined in build.go
-	actionFlags.BoolVar(&noHTTPS, "no-https", false, "")
-	actionFlags.Lookup("no-https").Hidden = true
-	actionFlags.SetAnnotation("no-https", "envkey", []string{"NOHTTPS"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support

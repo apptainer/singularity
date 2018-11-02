@@ -69,10 +69,8 @@ func init() {
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
 	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
-	// hidden flag to handle SINGULARITY_NOHTTPS environment variable
-	BuildCmd.Flags().BoolVar(&noHTTPS, "no-https", false, "")
-	BuildCmd.Flags().Lookup("no-https").Hidden = true
-	BuildCmd.Flags().SetAnnotation("no-https", "envkey", []string{"NOHTTPS"})
+	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
+	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
 	SingularityCmd.AddCommand(BuildCmd)
 }
