@@ -1,8 +1,6 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/smaster.go)
-starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/scontainer.go)
-starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/rpc.go)
+starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main.go)
 
 starter := $(BUILDDIR)/cmd/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
@@ -140,9 +138,7 @@ $(BUILDDIR)/.clean-starter: $(starter_SOURCE)
 $(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
-		$(SOURCEDIR)/cmd/starter/scontainer.go \
-		$(SOURCEDIR)/cmd/starter/smaster.go \
-		$(SOURCEDIR)/cmd/starter/rpc.go
+		$(SOURCEDIR)/cmd/starter/main.go
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)

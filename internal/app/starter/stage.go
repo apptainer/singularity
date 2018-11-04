@@ -3,19 +3,19 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package main
+package starter
 
 import (
 	"net"
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	sarterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// SContainer performs container startup.
-func SContainer(stage, masterSocket int, starterConfig *starter.Config, jsonBytes []byte) {
+// Stage performs container startup.
+func Stage(stage, masterSocket int, sconfig *sarterConfig.Config, jsonBytes []byte) {
 	var conn net.Conn
 	var err error
 
@@ -40,10 +40,10 @@ func SContainer(stage, masterSocket int, starterConfig *starter.Config, jsonByte
 
 	if stage == 1 {
 		sylog.Debugf("Entering scontainer stage 1\n")
-		if err := engine.PrepareConfig(conn, starterConfig); err != nil {
+		if err := engine.PrepareConfig(conn, sconfig); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
-		if err := starterConfig.WritePayload(conn, engine.Common); err != nil {
+		if err := sconfig.WritePayload(conn, engine.Common); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 		conn.Close()
