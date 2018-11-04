@@ -35,6 +35,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force)
 	default:
-		libexec.PullOciImage(name, args[i], force)
+		libexec.PullOciImage(name, args[i], force, noHTTPS)
 	}
 }

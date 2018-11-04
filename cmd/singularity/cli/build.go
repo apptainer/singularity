@@ -31,6 +31,7 @@ var (
 	update     bool
 	noTest     bool
 	sections   []string
+	noHTTPS    bool
 )
 
 var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
@@ -67,6 +68,9 @@ func init() {
 
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
 	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
+	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
+	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
 	SingularityCmd.AddCommand(BuildCmd)
 }

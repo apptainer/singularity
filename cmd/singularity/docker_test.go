@@ -216,10 +216,6 @@ func killRegistry(t *testing.T) {
 }
 
 func TestDockerRegistry(t *testing.T) {
-	if !*runDisabled {
-		t.Skip("disabled until issue addressed") // TODO
-	}
-
 	test.EnsurePrivilege(t)
 
 	if _, err := exec.LookPath("docker"); err != nil {
@@ -238,16 +234,16 @@ func TestDockerRegistry(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "localhost:5000/my-busybox",
 		}},
-		{"BusyBoxRegistry", false, DefFileDetail{
+		{"BusyBoxRegistry", true, DefFileDetail{
 			Bootstrap: "docker",
 			From:      "my-busybox",
 			Registry:  "localhost:5000",
 		}},
-		{"BusyBoxNamespace", true, DefFileDetail{
+		{"BusyBoxNamespace", false, DefFileDetail{
 			Bootstrap: "docker",
 			From:      "my-busybox",
 			Registry:  "localhost:5000",
-			Namespace: " ",
+			Namespace: "not-a-namespace",
 		}},
 	}
 

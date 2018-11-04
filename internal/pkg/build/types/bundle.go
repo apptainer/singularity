@@ -35,10 +35,21 @@ type Bundle struct {
 	Recipe      Definition        `json:"rawDeffile"`
 	BindPath    []string          `json:"bindPath"`
 	Path        string            `json:"bundlePath"`
-	Force       bool              `json:"force"`
-	Update      bool              `json:"update"`
-	NoTest      bool              `json:"noTest"`
-	Sections    []string          `json:"sections"`
+	Opts        Options           `json:"opts"`
+}
+
+// Options ...
+type Options struct {
+	// sections are the parts of the definition to run during the build
+	Sections []string `json:"sections"`
+	// noTest indicates if build should skip running the test script
+	NoTest bool `json:"noTest"`
+	// force automatically deletes an existing container at build destination while performing build
+	Force bool `json:"force"`
+	// update detects and builds using an existing sandbox container at build destination
+	Update bool `json:"update"`
+	// noHTTPS
+	NoHTTPS bool `json:"noHTTPS"`
 }
 
 // NewBundle creates a Bundle environment
@@ -77,7 +88,7 @@ func (b *Bundle) Rootfs() string {
 // and returns true if the given string, s, is a section of the
 // definition that should be executed during the build process
 func (b Bundle) RunSection(s string) bool {
-	for _, section := range b.Sections {
+	for _, section := range b.Opts.Sections {
 		if section == "none" {
 			return false
 		}

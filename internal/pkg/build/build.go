@@ -44,16 +44,6 @@ type Build struct {
 	dest string
 	// format is the format of built container, e.g., SIF, sandbox
 	format string
-	// ranSections reflects if sections of the definition were run on container
-	ranSections bool
-	// sections are the parts of the definition to run during the build
-	sections []string
-	// noTest indicates if build should skip running the test script
-	noTest bool
-	// force automatically deletes an existing container at build destination while performing build
-	force bool
-	// update detects and builds using an existing sandbox container at build destination
-	update bool
 	// c Gets and Packs data needed to build a container into a Bundle from various sources
 	c ConveyorPacker
 	// a Assembles a container from the information stored in a Bundle into various formats
@@ -65,41 +55,37 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
+func NewBuild(spec, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
 	def, err := makeDef(spec, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, force, update, sections, noTest, libraryURL, authToken)
+	return newBuild(def, dest, format, libraryURL, authToken, opts)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
+func NewBuildJSON(r io.Reader, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, force, update, sections, noTest, libraryURL, authToken)
+	return newBuild(def, dest, format, libraryURL, authToken, opts)
 }
 
-func newBuild(d types.Definition, dest, format string, force, update bool, sections []string, noTest bool, libraryURL, authToken string) (*Build, error) {
+func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
 	var err error
 
 	// always build a sandbox if updating an existing sandbox
-	if update {
+	if opts.Update {
 		format = "sandbox"
 	}
 
 	b := &Build{
-		update:   update,
-		force:    force,
-		sections: sections,
-		noTest:   noTest,
-		format:   format,
-		dest:     dest,
-		d:        d,
+		format: format,
+		dest:   dest,
+		d:      d,
 	}
 
 	b.b, err = types.NewBundle("sbuild")
@@ -108,11 +94,10 @@ func newBuild(d types.Definition, dest, format string, force, update bool, secti
 	}
 
 	b.b.Recipe = b.d
-
-	b.addOptions()
+	b.b.Opts = opts
 
 	// dont need to get cp if we're skipping bootstrap
-	if !update || force {
+	if !opts.Update || opts.Force {
 		if c, err := getcp(b.d, libraryURL, authToken); err == nil {
 			b.c = c
 		} else {
@@ -140,7 +125,7 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	if b.update && !b.force {
+	if b.b.Opts.Update && !b.b.Opts.Force {
 		//if updating, extract dest container to bundle
 		sylog.Infof("Building into existing container: %s", b.dest)
 		p, err := sources.GetLocalPacker(b.dest, b.b)
@@ -396,16 +381,9 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 	return d, nil
 }
 
-func (b *Build) addOptions() {
-	b.b.Update = b.update
-	b.b.Force = b.force
-	b.b.NoTest = b.noTest
-	b.b.Sections = b.sections
-}
-
 // runPre determines if %pre section was specified to be run from the CLI
 func (b Build) runPre() bool {
-	for _, section := range b.sections {
+	for _, section := range b.b.Opts.Sections {
 		if section == "none" {
 			return false
 		}
@@ -473,7 +451,7 @@ func insertTestScript(b *types.Bundle) error {
 func insertHelpScript(b *types.Bundle) error {
 	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
 		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
-		if err != nil || b.Force {
+		if err != nil || b.Opts.Force {
 			sylog.Infof("Adding help info")
 			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
 			if err != nil {
@@ -489,7 +467,7 @@ func insertHelpScript(b *types.Bundle) error {
 func insertDefinition(b *types.Bundle) error {
 
 	// if update, check for existing definition and move it to bootstrap history
-	if b.Update {
+	if b.Opts.Update {
 		if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity")); err == nil {
 			// make bootstrap_history directory if it doesnt exist
 			if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history")); err != nil {
@@ -550,7 +528,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 			// check if label already exists
 			if _, ok := labels[key]; ok {
 				// overwrite collision if it exists and force flag is set
-				if b.Force {
+				if b.Opts.Force {
 					labels[key] = value
 				} else {
 					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
@@ -619,7 +597,7 @@ func addBuildLabels(labels map[string]string, b *types.Bundle) error {
 	}
 
 	// bootstrap header info, only if this build actually bootstrapped
-	if !b.Update || b.Force {
+	if !b.Opts.Update || b.Opts.Force {
 		for key, value := range b.Recipe.Header {
 			labels["org.label-schema.usage.singularity.deffile."+key] = value
 		}
