@@ -273,7 +273,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"detached": envBool,
 	"builder":  envStringNSlice,
 	"library":  envStringNSlice,
-	"no-https": envBool,
+	"nohttps":  envBool,
 
 	// capability flags (and others)
 	"user":  envStringNSlice,
