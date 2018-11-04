@@ -25,6 +25,10 @@ import (
 
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
+	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
+	}
+
 	if engine.EngineConfig.EmptyProcess {
 		// pause process, by sending data to Smaster the process will
 		// be paused with SIGSTOP signal
@@ -69,10 +73,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		return fmt.Errorf("%s", err)
 	}
 	args[0] = bpath
-
-	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
-		return fmt.Errorf("failed to apply security configuration: %s", err)
-	}
 
 	if engine.EngineConfig.MasterPts != -1 {
 		slaveFd := engine.EngineConfig.SlavePts
