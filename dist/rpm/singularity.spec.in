@@ -41,6 +41,8 @@ ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
 BuildRequires: wget
 BuildRequires: git
+BuildRequires: gcc
+BuildRequires: make
 BuildRequires: libuuid-devel
 BuildRequires: openssl-devel
 %if ! 0%{?el6}
