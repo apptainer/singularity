@@ -99,7 +99,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("While refreshing gpg keys: %v", err)
 	}
 
-	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.Rootfs(), zypperConf), `--root`, cp.b.Rootfs(), `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`}
+	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.Rootfs(), zypperConf), `--root`, cp.b.Rootfs(), `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`}
 	args = append(args, strings.Fields(include)...)
 
 	// Zypper install command
@@ -227,8 +227,7 @@ func rpmPathCheck() (err error) {
 	}
 
 	if rpmDBPath != `%{_var}/lib/rpm` {
-		return fmt.Errorf("RPM database is using a weird path: %s"+
-			"You are probably running this bootstrap on Debian or Ubuntu.\n"+
+		return fmt.Errorf("RPM database is using a non-standard path: %s\n"+
 			"There is a way to work around this problem:\n"+
 			"Create a file at path %s/.rpmmacros.\n"+
 			"Place the following lines into the '.rpmmacros' file:\n"+
