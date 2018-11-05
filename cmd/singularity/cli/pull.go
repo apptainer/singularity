@@ -39,6 +39,9 @@ func init() {
 	PullCmd.Flags().Lookup("name").Hidden = true
 	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
 
+	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
+	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
+
 	SingularityCmd.AddCommand(PullCmd)
 }
 

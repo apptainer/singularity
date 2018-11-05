@@ -27,7 +27,7 @@ import (
 func computeHashStr(fimg *sif.FileImage, descr []*sif.Descriptor) string {
 	hash := sha512.New384()
 	for _, v := range descr {
-		hash.Write(fimg.Filedata[v.Fileoff : v.Fileoff+v.Filelen])
+		hash.Write(v.GetData(fimg))
 	}
 
 	sum := hash.Sum(nil)

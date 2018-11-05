@@ -41,6 +41,7 @@ type OCIConveyorPacker struct {
 	tmpfsRef  types.ImageReference
 	policyCtx *signature.PolicyContext
 	imgConfig imgspecv1.ImageConfig
+	sysCtx    *types.SystemContext
 }
 
 // Get downloads container information from the specified source
@@ -54,20 +55,37 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		return err
 	}
 
+	if cp.b.Opts.NoHTTPS {
+		cp.sysCtx = &types.SystemContext{
+			OCIInsecureSkipTLSVerify:    true,
+			DockerInsecureSkipTLSVerify: true,
+		}
+	}
+
+	// add registry and namespace to reference if specified
+	ref := b.Recipe.Header["from"]
+	if b.Recipe.Header["namespace"] != "" {
+		ref = b.Recipe.Header["namespace"] + "/" + ref
+	}
+	if b.Recipe.Header["registry"] != "" {
+		ref = b.Recipe.Header["registry"] + "/" + ref
+	}
+	sylog.Debugf("Reference: %v", ref)
+
 	switch b.Recipe.Header["bootstrap"] {
 	case "docker":
-		ref := "//" + b.Recipe.Header["from"]
+		ref = "//" + ref
 		cp.srcRef, err = docker.ParseReference(ref)
 	case "docker-archive":
-		cp.srcRef, err = dockerarchive.ParseReference(b.Recipe.Header["from"])
+		cp.srcRef, err = dockerarchive.ParseReference(ref)
 	case "docker-daemon":
-		cp.srcRef, err = dockerdaemon.ParseReference(b.Recipe.Header["from"])
+		cp.srcRef, err = dockerdaemon.ParseReference(ref)
 	case "oci":
-		cp.srcRef, err = oci.ParseReference(b.Recipe.Header["from"])
+		cp.srcRef, err = oci.ParseReference(ref)
 	case "oci-archive":
 		if os.Geteuid() == 0 {
 			// As root, the direct oci-archive handling will work
-			cp.srcRef, err = ociarchive.ParseReference(b.Recipe.Header["from"])
+			cp.srcRef, err = ociarchive.ParseReference(ref)
 		} else {
 			// As non-root we need to do a dumb tar extraction first
 			tmpDir, err := ioutil.TempDir("", "temp-oci-")
@@ -98,7 +116,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	}
 
 	// Grab the modified source ref from the cache
-	cp.srcRef, err = ociclient.ConvertReference(cp.srcRef)
+	cp.srcRef, err = ociclient.ConvertReference(cp.srcRef, cp.sysCtx)
 	if err != nil {
 		return err
 	}
@@ -149,6 +167,7 @@ func (cp *OCIConveyorPacker) fetch() (err error) {
 	// cp.srcRef contains the cache source reference
 	err = copy.Image(context.Background(), cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
 		ReportWriter: ioutil.Discard,
+		SourceCtx:    cp.sysCtx,
 	})
 	if err != nil {
 		return err
@@ -158,7 +177,7 @@ func (cp *OCIConveyorPacker) fetch() (err error) {
 }
 
 func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
-	img, err := cp.srcRef.NewImage(context.Background(), nil)
+	img, err := cp.srcRef.NewImage(context.Background(), cp.sysCtx)
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}

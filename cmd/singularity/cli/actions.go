@@ -17,9 +17,11 @@ import (
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -84,6 +86,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
@@ -97,7 +100,15 @@ func init() {
 }
 
 func handleOCI(u string) (string, error) {
-	sum, err := ociclient.ImageSHA(u)
+	var sysCtx *ocitypes.SystemContext
+	if noHTTPS {
+		sysCtx = &ocitypes.SystemContext{
+			OCIInsecureSkipTLSVerify:    true,
+			DockerInsecureSkipTLSVerify: true,
+		}
+	}
+
+	sum, err := ociclient.ImageSHA(u, sysCtx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
 	}
@@ -109,7 +120,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", false, false, nil, true, "", "")
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{NoTest: true, NoHTTPS: noHTTPS})
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
