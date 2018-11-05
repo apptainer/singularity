@@ -453,4 +453,6 @@ var validHeaders = map[string]bool{
 	"osversion":  true,
 	"include":    true,
 	"library":    true,
+	"registry":   true,
+	"namespace":  true,
 }
