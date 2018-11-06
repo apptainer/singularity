@@ -27,7 +27,7 @@ func NetImage(sum, name string) string {
 	return filepath.Join(Net(), sum, name)
 }
 
-// NetImageExists returns whether the image with the SHA sum exists in the ShubImage cache
+// NetImageExists returns whether the image with the SHA sum exists in the net cache
 func NetImageExists(sum, name string) (bool, error) {
 	_, err := os.Stat(NetImage(sum, name))
 	if os.IsNotExist(err) {

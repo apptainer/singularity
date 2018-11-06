@@ -167,8 +167,17 @@ func handleNet(u string) (string, error) {
 	refParts := strings.Split(u, "/")
 	imageName := refParts[len(refParts)-1]
 	imagePath := cache.NetImage("hash", imageName)
-	sylog.Infof("Downloading network image")
-	libexec.PullNetImage(imagePath, u, true)
+
+	exists, err := cache.NetImageExists("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading network image")
+		libexec.PullNetImage(imagePath, u, true)
+	} else {
+		sylog.Infof("Use image from cache")
+	}
 
 	return imagePath, nil
 }
