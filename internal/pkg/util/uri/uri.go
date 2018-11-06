@@ -15,6 +15,10 @@ const (
 	Library = "library"
 	// Shub is the keyword for a shub ref
 	Shub = "shub"
+	// Http is the keyword for http ref
+	Http = "http"
+	// Https is the keyword for https ref
+	Https = "https"
 )
 
 // validURIs contains a list of known uris
@@ -26,6 +30,8 @@ var validURIs = map[string]bool{
 	"docker-daemon":  true,
 	"oci":            true,
 	"oci-archive":    true,
+	"http":           true,
+	"https":          true,
 }
 
 // IsValid returns whether or not the given source is valid

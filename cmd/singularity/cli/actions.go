@@ -163,6 +163,16 @@ func handleShub(u string) (string, error) {
 	return imagePath, nil
 }
 
+func handleNet(u string) (string, error) {
+	refParts := strings.Split(u, "/")
+	imageName := refParts[len(refParts)-1]
+	imagePath := cache.NetImage("hash", imageName)
+
+	libexec.PullNetImage(imagePath, u, true)
+
+	return imagePath, nil
+}
+
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
@@ -182,6 +192,10 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
 		image, err = handleOCI(args[0])
+	case uri.Http:
+		image, err = handleNet(args[0])
+	case uri.Https:
+		image, err = handleNet(args[0])
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}
