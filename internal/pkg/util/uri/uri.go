@@ -63,6 +63,11 @@ func GetName(uri string) string {
 	ref = strings.TrimLeft(ref, "/")    // Trim leading "/" characters
 	refSplit := strings.Split(ref, "/") // Split ref into parts
 
+	if transport == Http || transport == Https {
+		imageName := refSplit[len(refSplit)-1]
+		return imageName
+	}
+
 	// Default tag is latest
 	tags := []string{"latest"}
 	container := refSplit[len(refSplit)-1]

@@ -167,7 +167,7 @@ func handleNet(u string) (string, error) {
 	refParts := strings.Split(u, "/")
 	imageName := refParts[len(refParts)-1]
 	imagePath := cache.NetImage("hash", imageName)
-
+	sylog.Infof("Downloading network image")
 	libexec.PullNetImage(imagePath, u, true)
 
 	return imagePath, nil
