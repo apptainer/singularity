@@ -55,7 +55,7 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	}
 
 	if arguments.UsePivot {
-		// idea taken from libcontainer (and also LXC developpers) to avoid
+		// idea taken from libcontainer (and also LXC developers) to avoid
 		// creation of temporary directory or use of existing directory
 		// for pivot_root.
 

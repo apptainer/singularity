@@ -37,7 +37,7 @@ func (p *SIFPacker) Pack() (*types.Bundle, error) {
 }
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files
-// unpackSIF parses throught the sif file and places each component in the sandbox
+// unpackSIF parses through the sif file and places each component in the sandbox
 func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 
 	// load the container
