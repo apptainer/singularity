@@ -16,6 +16,8 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/unix"
+
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 
@@ -145,7 +147,7 @@ func (engine *EngineOperations) PreStartProcess() error {
 	socket := filepath.Join(filepath.Dir(file.Path), engine.CommonConfig.ContainerID+".sock")
 	engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.attach-socket"] = socket
 
-	l, err := net.Listen("unix", socket)
+	l, err := unix.CreateSocket(socket)
 	if err != nil {
 		return err
 	}

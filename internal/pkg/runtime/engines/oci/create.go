@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/internal/pkg/util/unix"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -66,18 +68,11 @@ func (engine *EngineOperations) createState(pid int) error {
 	socketPath := engine.EngineConfig.SyncSocket
 
 	if socketPath != "" {
-		c, err := net.Dial("unix", socketPath)
+		data, err := json.Marshal(engine.EngineConfig.State)
 		if err != nil {
-			sylog.Warningf("failed to connect to cri sync socket: %s", err)
-		} else {
-			defer c.Close()
-
-			data, err := json.Marshal(engine.EngineConfig.State)
-			if err != nil {
-				sylog.Warningf("failed to marshal state data: %s", err)
-			} else if _, err := c.Write(data); err != nil {
-				sylog.Warningf("failed to send state over socket: %s", err)
-			}
+			sylog.Warningf("failed to marshal state data: %s", err)
+		} else if err := unix.WriteSocket(socketPath, data); err != nil {
+			sylog.Warningf("%s", err)
 		}
 	}
 
@@ -111,18 +106,11 @@ func (engine *EngineOperations) updateState(status string) error {
 	socketPath := engine.EngineConfig.SyncSocket
 
 	if socketPath != "" {
-		c, err := net.Dial("unix", socketPath)
+		data, err := json.Marshal(engine.EngineConfig.State)
 		if err != nil {
-			sylog.Warningf("failed to connect to cri sync socket: %s", err)
-		} else {
-			defer c.Close()
-
-			data, err := json.Marshal(engine.EngineConfig.State)
-			if err != nil {
-				sylog.Warningf("failed to marshal state data: %s", err)
-			} else if _, err := c.Write(data); err != nil {
-				sylog.Warningf("failed to send state over socket: %s", err)
-			}
+			sylog.Warningf("failed to marshal state data: %s", err)
+		} else if err := unix.WriteSocket(socketPath, data); err != nil {
+			sylog.Warningf("%s", err)
 		}
 	}
 

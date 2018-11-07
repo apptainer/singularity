@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
+	"github.com/sylabs/singularity/internal/pkg/util/unix"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -46,8 +47,11 @@ func init() {
 
 	OciStartCmd.Flags().SetInterspersed(false)
 	OciDeleteCmd.Flags().SetInterspersed(false)
-	OciStateCmd.Flags().SetInterspersed(false)
 	OciAttachCmd.Flags().SetInterspersed(false)
+
+	OciStateCmd.Flags().SetInterspersed(false)
+	OciStateCmd.Flags().StringVarP(&syncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
+	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 
 	OciKillCmd.Flags().SetInterspersed(false)
 	OciKillCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "signal sent to the container (default SIGTERM)")
@@ -353,7 +357,16 @@ func ociState(containerID string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(c))
+	if syncSocketPath != "" {
+		data, err := json.Marshal(state)
+		if err != nil {
+			return fmt.Errorf("failed to marshal state data: %s", err)
+		} else if err := unix.WriteSocket(syncSocketPath, data); err != nil {
+			return err
+		}
+	} else {
+		fmt.Println(string(c))
+	}
 	return nil
 }
 
