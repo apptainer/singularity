@@ -13,7 +13,10 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - changed behaviour (recipe sections work differently)
 
 ## [v2.6.0]
-    
+
+### Bug fixes
+ - Fix image expand functionality by additional losetup/mount -o bind,offset=31     
+
 ### Implemented enhancements
  - Allow admin to specify a non-standard location for mksquashfs binary at 
    build time with `--with-mksquashfs` option #1662
