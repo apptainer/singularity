@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
 
@@ -204,21 +204,25 @@ func getState(containerID string) (*specs.State, error) {
 	return &engineConfig.State, nil
 }
 
-func attach(socket string, exitFunc func()) error {
+func attach(socket string) error {
 	channel := os.Stdout
 
 	f, err := net.Dial("unix", socket)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer f.Close()
 
 	ostate, _ := terminal.MakeRaw(0)
 
 	var once sync.Once
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+
 	close := func() {
 		terminal.Restore(0, ostate)
-		exitFunc()
+		wg.Done()
 	}
 
 	// Pipe session to bash and visa-versa
@@ -227,10 +231,39 @@ func attach(socket string, exitFunc func()) error {
 		once.Do(close)
 	}()
 
-	io.Copy(f, channel)
-	once.Do(close)
+	go func() {
+		io.Copy(f, channel)
+	}()
+
+	wg.Wait()
 
 	return nil
+}
+
+func exitContainer(containerID string, syncSocketPath string) {
+	state, err := getState(containerID)
+	if err != nil {
+		sylog.Errorf("%s", err)
+		os.Exit(1)
+	}
+
+	if _, ok := state.Annotations["io.sylabs.runtime.oci.exit-code"]; ok {
+		code := state.Annotations["io.sylabs.runtime.oci.exit-code"]
+		exitCode, err := strconv.Atoi(code)
+		if err != nil {
+			sylog.Errorf("%s", err)
+			defer os.Exit(1)
+		} else {
+			defer os.Exit(exitCode)
+		}
+	}
+
+	if syncSocketPath != "" {
+		if err := ociDelete(containerID); err != nil {
+			sylog.Errorf("%s", err)
+		}
+		os.Remove(syncSocketPath)
+	}
 }
 
 func ociRun(containerID string) error {
@@ -247,6 +280,7 @@ func ociRun(containerID string) error {
 	if err := ociCreate(containerID); err != nil {
 		return err
 	}
+	defer exitContainer(containerID, syncSocketPath)
 
 	start := make(chan string, 1)
 
@@ -281,14 +315,7 @@ func ociRun(containerID string) error {
 
 	socket := <-start
 
-	return attach(socket, func() {
-		if err := ociDelete(containerID); err != nil {
-			return
-		}
-		os.Remove(syncSocketPath)
-
-		os.Exit(0)
-	})
+	return attach(socket)
 }
 
 func ociAttach(containerID string) error {
@@ -302,9 +329,9 @@ func ociAttach(containerID string) error {
 		return fmt.Errorf("attach socket not available, container state: %s", state.Status)
 	}
 
-	return attach(socket, func() {
-		os.Exit(0)
-	})
+	defer exitContainer(containerID, "")
+
+	return attach(socket)
 }
 
 func ociStart(containerID string) error {
@@ -353,10 +380,6 @@ func ociState(containerID string) error {
 	if err != nil {
 		return err
 	}
-	c, err := json.MarshalIndent(state, "", "\t")
-	if err != nil {
-		return err
-	}
 	if syncSocketPath != "" {
 		data, err := json.Marshal(state)
 		if err != nil {
@@ -365,6 +388,10 @@ func ociState(containerID string) error {
 			return err
 		}
 	} else {
+		c, err := json.MarshalIndent(state, "", "\t")
+		if err != nil {
+			return err
+		}
 		fmt.Println(string(c))
 	}
 	return nil
@@ -418,7 +445,8 @@ func ociCreate(containerID string) error {
 		sylog.Fatalf("%s", err)
 	}
 
-	cmd, err := exec.PipeCommand(starter, []string{"OCI"}, Env, configData)
+	procName := fmt.Sprintf("Singularity OCI %s", containerID)
+	cmd, err := exec.PipeCommand(starter, []string{procName}, Env, configData)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

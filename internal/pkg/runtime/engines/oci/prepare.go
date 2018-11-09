@@ -80,6 +80,20 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		if err != nil {
 			return err
 		}
+		consoleSize := e.EngineConfig.OciConfig.Process.ConsoleSize
+		if consoleSize != nil {
+			var size pty.Winsize
+
+			size.Cols = uint16(consoleSize.Width)
+			size.Rows = uint16(consoleSize.Height)
+			if err := pty.Setsize(slave, &size); err != nil {
+				return err
+			}
+		} else {
+			if err := pty.InheritSize(master, slave); err != nil {
+				return err
+			}
+		}
 		e.EngineConfig.MasterPts = int(master.Fd())
 		e.EngineConfig.SlavePts = int(slave.Fd())
 	} else {
