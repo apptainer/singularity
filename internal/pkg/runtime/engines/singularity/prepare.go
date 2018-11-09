@@ -277,6 +277,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.SetMountPropagation("private")
 	}
 
+	starterConfig.SetSharedMount(true)
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
 	starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)

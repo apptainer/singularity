@@ -905,27 +905,29 @@ __attribute__((constructor)) static void init(void) {
     free(target);
 
     if ( get_nspath(mnt) == NULL ) {
-        unsigned long propagation = config.mountPropagation;
+        if ( config.sharedMount ) {
+            unsigned long propagation = config.mountPropagation;
 
-        if ( propagation == 0 ) {
-            propagation = MS_PRIVATE | MS_REC;
-        }
-        if ( unshare(CLONE_FS) < 0 ) {
-            singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
-            exit(1);
-        }
-        if ( create_namespace(CLONE_NEWNS) < 0 ) {
-            singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
-            exit(1);
-        }
-        if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
-            singularity_message(ERROR, "Failed to set mount propagation: %s\n", strerror(errno));
-            exit(1);
-        }
-        /* set shared mount propagation to share mount points between smaster and container process */
-        if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
-            singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
-            exit(1);
+            if ( propagation == 0 ) {
+                propagation = MS_PRIVATE | MS_REC;
+            }
+            if ( unshare(CLONE_FS) < 0 ) {
+                singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
+                exit(1);
+            }
+            if ( create_namespace(CLONE_NEWNS) < 0 ) {
+                singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+            if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to set mount propagation: %s\n", strerror(errno));
+                exit(1);
+            }
+            /* set shared mount propagation to share mount points between smaster and container process */
+            if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+                singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+                exit(1);
+            }
         }
         /* sync smaster and near child with an eventfd */
         syncfd = eventfd(0, 0);
@@ -1042,18 +1044,37 @@ __attribute__((constructor)) static void init(void) {
             }
         }
         if ( get_nspath(mnt) == NULL ) {
-            /* create a namespace for container process to separate smaster during pivot_root */
-            if ( create_namespace(CLONE_NEWNS) < 0 ) {
-                singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
-                exit(1);
-            }
+            if ( !config.sharedMount ) {
+                unsigned long propagation = config.mountPropagation;
 
-            /* set shared propagation to propagate few mount points to smaster */
-            if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
-                singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
-                exit(1);
-            }
+                if ( propagation == 0 ) {
+                    propagation = MS_PRIVATE | MS_REC;
+                }
+                if ( unshare(CLONE_FS) < 0 ) {
+                    singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
+                    exit(1);
+                }
+                if ( create_namespace(CLONE_NEWNS) < 0 ) {
+                    singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+                    exit(1);
+                }
+                if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to set mount propagation: %s\n", strerror(errno));
+                    exit(1);
+                }
+            } else {
+                /* create a namespace for container process to separate smaster during pivot_root */
+                if ( create_namespace(CLONE_NEWNS) < 0 ) {
+                    singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
+                    exit(1);
+                }
 
+                /* set shared propagation to propagate few mount points to smaster */
+                if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+                    singularity_message(ERROR, "Failed to propagate as SHARED: %s\n", strerror(errno));
+                    exit(1);
+                }
+            }
             if ( syncfd >= 0 ) {
                 unsigned long long counter = 1;
                 if ( write(syncfd, &counter, sizeof(counter)) != sizeof(counter) ) {

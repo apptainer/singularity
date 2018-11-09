@@ -86,6 +86,23 @@ func (c *Config) GetNoNewPrivs() bool {
 	return false
 }
 
+// SetSharedMount sets if master/container shares mount point
+func (c *Config) SetSharedMount(shared bool) {
+	if shared {
+		c.config.sharedMount = C.uchar(1)
+	} else {
+		c.config.sharedMount = C.uchar(0)
+	}
+}
+
+// GetSharedMount returns if master/container shares mount point or not
+func (c *Config) GetSharedMount() bool {
+	if c.config.sharedMount == 1 {
+		return true
+	}
+	return false
+}
+
 // SetMountPropagation sets root filesystem mount propagation
 func (c *Config) SetMountPropagation(propagation string) {
 	switch propagation {

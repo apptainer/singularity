@@ -225,11 +225,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
-	if _, err := rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, ""); err != nil {
-		return err
-	}
-
 	_, err = rpcOps.Chroot(c.finalPath, true)
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
@@ -248,10 +243,10 @@ func (c *container) addSessionDir(system *mount.System) error {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
-	if err := os.Mkdir(c.nullPath, 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(c.rpcRoot, c.nullPath), 0755); err != nil {
 		return err
 	}
-	if err := os.Mkdir(c.finalPath, 0755); err != nil {
+	if err := os.Mkdir(filepath.Join(c.rpcRoot, c.finalPath), 0755); err != nil {
 		return err
 	}
 	return nil
@@ -286,32 +281,32 @@ func (c *container) addRootfsMount(system *mount.System) error {
 }
 
 func (c *container) addDevices(system *mount.System) error {
-	path := filepath.Join(c.finalPath, "dev", "fd")
+	path := filepath.Join(c.rpcRoot, c.finalPath, "dev", "fd")
 	if err := os.Symlink("/proc/self/fd", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.finalPath, "dev", "core")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "core")
 	if err := os.Symlink("/proc/kcore", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.finalPath, "dev", "ptmx")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "ptmx")
 	if err := os.Symlink("pts/ptmx", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.finalPath, "dev", "stdin")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "stdin")
 	if err := os.Symlink("/proc/self/fd/0", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.finalPath, "dev", "stdout")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "stdout")
 	if err := os.Symlink("/proc/self/fd/1", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.finalPath, "dev", "stderr")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "stderr")
 	if err := os.Symlink("/proc/self/fd/2", path); err != nil {
 		return err
 	}
 	if c.engine.EngineConfig.OciConfig.Process.Terminal {
-		path = filepath.Join(c.finalPath, "dev", "console")
+		path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "console")
 		if err := fs.Touch(path); err != nil {
 			return err
 		}
@@ -325,32 +320,32 @@ func (c *container) addDevices(system *mount.System) error {
 		}
 	}
 	dev := int((1 << 8) | 7)
-	path = filepath.Join(c.finalPath, "dev", "full")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "full")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 3)
-	path = filepath.Join(c.finalPath, "dev", "null")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "null")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 8)
-	path = filepath.Join(c.finalPath, "dev", "random")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "random")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((5 << 8) | 0)
-	path = filepath.Join(c.finalPath, "dev", "tty")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "tty")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 9)
-	path = filepath.Join(c.finalPath, "dev", "urandom")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "urandom")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 5)
-	path = filepath.Join(c.finalPath, "dev", "zero")
+	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "zero")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
