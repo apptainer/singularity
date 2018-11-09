@@ -89,10 +89,6 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 			if err := pty.Setsize(slave, &size); err != nil {
 				return err
 			}
-		} else {
-			if err := pty.InheritSize(master, slave); err != nil {
-				return err
-			}
 		}
 		e.EngineConfig.MasterPts = int(master.Fd())
 		e.EngineConfig.SlavePts = int(slave.Fd())
