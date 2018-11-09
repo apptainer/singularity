@@ -58,8 +58,10 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		}
 
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+		if userNS {
+			starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+			starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+		}
 	} else {
 		return fmt.Errorf("empty OCI linux configuration")
 	}
