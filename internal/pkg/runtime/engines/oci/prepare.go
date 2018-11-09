@@ -64,8 +64,8 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		return fmt.Errorf("empty OCI linux configuration")
 	}
 
+	starterConfig.SetMountPropagation(e.EngineConfig.OciConfig.Linux.RootfsPropagation)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
-	starterConfig.SetMountPropagation("private")
 
 	if e.EngineConfig.OciConfig.Process.Capabilities != nil {
 		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)

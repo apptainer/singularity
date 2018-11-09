@@ -277,10 +277,11 @@ func ociRun(containerID string) error {
 	}
 	defer l.Close()
 
+	defer exitContainer(containerID, syncSocketPath)
+
 	if err := ociCreate(containerID); err != nil {
 		return err
 	}
-	defer exitContainer(containerID, syncSocketPath)
 
 	start := make(chan string, 1)
 

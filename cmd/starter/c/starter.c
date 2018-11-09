@@ -1047,9 +1047,6 @@ __attribute__((constructor)) static void init(void) {
             if ( !config.sharedMount ) {
                 unsigned long propagation = config.mountPropagation;
 
-                if ( propagation == 0 ) {
-                    propagation = MS_PRIVATE | MS_REC;
-                }
                 if ( unshare(CLONE_FS) < 0 ) {
                     singularity_message(ERROR, "Failed to unshare root file system: %s\n", strerror(errno));
                     exit(1);
@@ -1058,7 +1055,7 @@ __attribute__((constructor)) static void init(void) {
                     singularity_message(ERROR, "Failed to create mount namespace: %s\n", strerror(errno));
                     exit(1);
                 }
-                if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
+                if ( propagation && mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
                     singularity_message(ERROR, "Failed to set mount propagation: %s\n", strerror(errno));
                     exit(1);
                 }

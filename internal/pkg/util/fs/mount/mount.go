@@ -41,15 +41,23 @@ var mountFlags = []struct {
 	{"norelatime", 0},
 	{"nostrictatime", 0},
 	{"nosuid", syscall.MS_NOSUID},
+	{"private", syscall.MS_PRIVATE},
 	{"rbind", syscall.MS_BIND | syscall.MS_REC},
+	{"rprivate", syscall.MS_PRIVATE | syscall.MS_REC},
+	{"rslave", syscall.MS_SLAVE | syscall.MS_REC},
+	{"rshared", syscall.MS_SHARED | syscall.MS_REC},
+	{"runbindable", syscall.MS_UNBINDABLE | syscall.MS_REC},
 	{"relatime", 0},
 	{"remount", syscall.MS_REMOUNT},
 	{"ro", syscall.MS_RDONLY},
 	{"rw", 0},
+	{"shared", syscall.MS_SHARED},
+	{"slave", syscall.MS_SLAVE},
 	{"silent", syscall.MS_SILENT},
 	{"strictatime", 0},
 	{"suid", 0},
 	{"sync", 0},
+	{"unbindable", syscall.MS_UNBINDABLE},
 }
 
 type fsContext struct {
@@ -172,8 +180,12 @@ func ConvertOptions(options []string) (uintptr, []string) {
 // ConvertSpec converts an OCI Mount spec into an importable mount points list
 func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 	var tag AuthorizedTag
+
 	points := make(map[AuthorizedTag][]Point)
 	for _, m := range mounts {
+		var options []string
+		var propagationOption string
+
 		tag = ""
 		if m.Type != "" {
 			if _, ok := authorizedFS[m.Type]; !ok {
@@ -192,7 +204,23 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 			if strings.HasPrefix(m.Destination, "/dev") {
 				tag = DevTag
 			}
+			options = append(options, m.Options...)
 		} else {
+			for _, opt := range m.Options {
+				switch opt {
+				case "shared",
+					"rshared",
+					"slave",
+					"rslave",
+					"private",
+					"rprivate",
+					"unbindable",
+					"runbindable":
+					propagationOption = opt
+				default:
+					options = append(options, opt)
+				}
+			}
 			tag = BindsTag
 		}
 		points[tag] = append(points[tag], Point{
@@ -200,9 +228,31 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 				Source:      m.Source,
 				Destination: m.Destination,
 				Type:        m.Type,
-				Options:     m.Options,
+				Options:     options,
 			},
 		})
+
+		if len(options) > 1 && tag == BindsTag {
+			options = append(options, "remount")
+			points[tag] = append(points[tag], Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: m.Destination,
+					Type:        "",
+					Options:     options,
+				},
+			})
+		}
+		if propagationOption != "" {
+			points[tag] = append(points[tag], Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: m.Destination,
+					Type:        "",
+					Options:     []string{propagationOption},
+				},
+			})
+		}
 	}
 	return points, nil
 }
@@ -240,6 +290,24 @@ func GetSizeLimit(options []string) (uint64, error) {
 	return 0, fmt.Errorf("sizelimit option not found")
 }
 
+func hasRemountFlag(flags uintptr) bool {
+	if flags&syscall.MS_REMOUNT == 0 {
+		return false
+	}
+	return true
+}
+
+func hasPropagationFlag(flags uintptr) bool {
+	if flags&getPropagationFlags() == 0 {
+		return false
+	}
+	return true
+}
+
+func getPropagationFlags() uintptr {
+	return (syscall.MS_UNBINDABLE | syscall.MS_SHARED | syscall.MS_PRIVATE | syscall.MS_SLAVE)
+}
+
 func (p *Points) init() {
 	if p.points == nil {
 		p.points = make(map[AuthorizedTag][]Point)
@@ -263,7 +331,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 	if _, ok := authorizedTags[tag]; !ok {
 		return fmt.Errorf("tag %s is not a recognized tag", tag)
 	}
-	if (flags & syscall.MS_REMOUNT) == 0 {
+	if !hasRemountFlag(flags) && !hasPropagationFlag(flags) {
 		present := false
 		for _, point := range p.points[tag] {
 			if point.Destination == dest {
@@ -418,8 +486,13 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 
 			flags, options := ConvertOptions(point.Options)
 			// check if this is a mount point to remount
-			if flags&syscall.MS_REMOUNT != 0 {
+			if hasRemountFlag(flags) {
 				if err = p.AddRemount(tag, point.Destination, flags); err == nil {
+					continue
+				}
+			}
+			if hasPropagationFlag(flags) {
+				if err = p.AddPropagation(tag, point.Destination, flags); err == nil {
 					continue
 				}
 			}
@@ -619,8 +692,20 @@ func (p *Points) GetAllFS() []Point {
 
 // AddRemount adds a mount point to remount
 func (p *Points) AddRemount(tag AuthorizedTag, dest string, flags uintptr) error {
-	remountFlags := flags | syscall.MS_REMOUNT
+	remountFlags := (flags &^ getPropagationFlags()) | syscall.MS_REMOUNT
 	return p.add(tag, "", dest, "", remountFlags, "")
+}
+
+// AddPropagation adds a mount propagation for mount point
+func (p *Points) AddPropagation(tag AuthorizedTag, dest string, flags uintptr) error {
+	finalFlags := flags & getPropagationFlags()
+	if !hasPropagationFlag(finalFlags) {
+		return fmt.Errorf("no mount propagation flag found")
+	}
+	if flags&syscall.MS_REC != 0 {
+		finalFlags |= syscall.MS_REC
+	}
+	return p.add(tag, "", dest, "", finalFlags, "")
 }
 
 // SetContext sets SELinux mount context, once set it can't be modified

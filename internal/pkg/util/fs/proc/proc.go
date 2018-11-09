@@ -59,6 +59,41 @@ func ParseMountInfo(path string) (map[string][]string, error) {
 	return mp, nil
 }
 
+// ParentMount parses mountinfo and return the path of parent
+// mount point for which the provided path is mounted in
+func ParentMount(path string) (string, error) {
+	var mountPoints []string
+	parent := "/"
+
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return parent, err
+	}
+
+	p, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		return parent, fmt.Errorf("can't open /proc/self/mountinfo: %s", err)
+	}
+	defer p.Close()
+
+	scanner := bufio.NewScanner(p)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		mountPoints = append(mountPoints, fields[4])
+	}
+
+	for resolved != "/" {
+		for _, point := range mountPoints {
+			if point == resolved {
+				return point, nil
+			}
+		}
+		resolved = filepath.Dir(resolved)
+	}
+
+	return parent, nil
+}
+
 // ExtractPid returns a pid extracted from path of type "/proc/1"
 func ExtractPid(path string) (pid uint, err error) {
 	n, err := fmt.Sscanf(path, "/proc/%d", &pid)

@@ -186,3 +186,34 @@ func TestReadIDMap(t *testing.T) {
 		t.Errorf("")
 	}
 }
+
+func TestParentMount(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	list := []struct {
+		path   string
+		parent string
+		fail   bool
+	}{
+		{"/proc_", "", true},
+		{"/proc", "/proc", false},
+		{"/dev/null", "/dev", false},
+		{"/proc/self", "/proc", false},
+		{"/proc/fake", "", true},
+	}
+
+	for _, l := range list {
+		parent, err := ParentMount(l.path)
+		if l.fail && err == nil {
+			t.Errorf("%s should fail", l.path)
+		} else if !l.fail {
+			if err != nil {
+				t.Error(err)
+			} else if parent != l.parent {
+				t.Errorf("mount parent of %s should be %s not %s", l.path, l.parent, parent)
+			}
+		}
+
+	}
+}

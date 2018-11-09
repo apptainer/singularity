@@ -272,9 +272,9 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if e.EngineConfig.File.MountSlave {
-		starterConfig.SetMountPropagation("slave")
+		starterConfig.SetMountPropagation("rslave")
 	} else {
-		starterConfig.SetMountPropagation("private")
+		starterConfig.SetMountPropagation("rprivate")
 	}
 
 	starterConfig.SetSharedMount(true)

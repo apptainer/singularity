@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"syscall"
 	"unsafe"
 
@@ -105,14 +106,23 @@ func (c *Config) GetSharedMount() bool {
 
 // SetMountPropagation sets root filesystem mount propagation
 func (c *Config) SetMountPropagation(propagation string) {
+	var flags uintptr
+
 	switch propagation {
-	case "shared":
-		c.config.mountPropagation = C.ulong(syscall.MS_SHARED | syscall.MS_REC)
-	case "slave":
-		c.config.mountPropagation = C.ulong(syscall.MS_SLAVE | syscall.MS_REC)
-	case "private":
-		c.config.mountPropagation = C.ulong(syscall.MS_PRIVATE | syscall.MS_REC)
+	case "shared", "rshared":
+		flags = syscall.MS_SHARED
+	case "slave", "rslave":
+		flags = syscall.MS_SLAVE
+	case "private", "rprivate":
+		flags = syscall.MS_SHARED
+	case "unbindable", "runbindable":
+		flags = syscall.MS_UNBINDABLE
 	}
+
+	if strings.HasPrefix(propagation, "r") {
+		flags |= syscall.MS_REC
+	}
+	c.config.mountPropagation = C.ulong(flags)
 }
 
 // GetJSONConfSize returns size of JSON configuration sent

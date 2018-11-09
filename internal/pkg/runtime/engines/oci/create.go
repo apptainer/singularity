@@ -21,24 +21,21 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/unix"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 )
 
 type container struct {
-	engine      *EngineOperations
-	rpcOps      *client.RPC
-	sessionPath string
-	finalPath   string
-	nullPath    string
-	rootfs      string
-	rpcRoot     string
-	bindDev     bool
-	bindCgroup  bool
+	engine     *EngineOperations
+	rpcOps     *client.RPC
+	rootfs     string
+	rpcRoot    string
+	bindDev    bool
+	bindCgroup bool
 }
 
 func (engine *EngineOperations) createState(pid int) error {
@@ -148,13 +145,10 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	c := &container{
-		engine:      engine,
-		rpcOps:      rpcOps,
-		rootfs:      rootfs,
-		sessionPath: buildcfg.SESSIONDIR,
-		finalPath:   filepath.Join(buildcfg.SESSIONDIR, "rootfs"),
-		nullPath:    filepath.Join(buildcfg.SESSIONDIR, "null"),
-		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
+		engine:  engine,
+		rpcOps:  rpcOps,
+		rootfs:  rootfs,
+		rpcRoot: fmt.Sprintf("/proc/%d/root", pid),
 	}
 
 	p := &mount.Points{}
@@ -194,19 +188,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	// setup overlay layout sets up the session with overlay filesystem
-	sylog.Debugf("Creating overlay SESSIONDIR layout\n")
-
-	sessionFlags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_NOEXEC)
-	if err := system.Points.AddFS(mount.SessionTag, c.sessionPath, "tmpfs", sessionFlags, ""); err != nil {
-		return err
-	}
-
 	if err := c.addRootfsMount(system); err != nil {
-		return err
-	}
-
-	if err := system.RunAfterTag(mount.SessionTag, c.addSessionDir); err != nil {
 		return err
 	}
 
@@ -225,7 +207,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	_, err = rpcOps.Chroot(c.finalPath, true)
+	_, err = rpcOps.Chroot(c.rootfs, true)
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
 	}
@@ -236,19 +218,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	return nil
-}
-
-func (c *container) addSessionDir(system *mount.System) error {
-	oldmask := syscall.Umask(0)
-	defer syscall.Umask(oldmask)
-
-	if err := os.Mkdir(filepath.Join(c.rpcRoot, c.nullPath), 0755); err != nil {
-		return err
-	}
-	if err := os.Mkdir(filepath.Join(c.rpcRoot, c.finalPath), 0755); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -268,45 +237,56 @@ func (c *container) addAllPaths(system *mount.System) error {
 
 func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND)
+
 	if c.engine.EngineConfig.OciConfig.Root.Readonly {
 		flags |= syscall.MS_RDONLY
 	}
-	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.finalPath, flags); err != nil {
+
+	parentRootfs, err := proc.ParentMount(c.rootfs)
+	if err != nil {
+		return err
+	}
+
+	if _, err := c.rpcOps.Mount("", parentRootfs, "", syscall.MS_PRIVATE, ""); err != nil {
+		return err
+	}
+
+	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.rootfs, flags); err != nil {
 		return err
 	}
 	if flags&syscall.MS_RDONLY != 0 {
-		return system.Points.AddRemount(mount.FinalTag, c.finalPath, flags)
+		return system.Points.AddRemount(mount.FinalTag, c.rootfs, flags)
 	}
 	return nil
 }
 
 func (c *container) addDevices(system *mount.System) error {
-	path := filepath.Join(c.rpcRoot, c.finalPath, "dev", "fd")
+	path := filepath.Join(c.rpcRoot, c.rootfs, "dev", "fd")
 	if err := os.Symlink("/proc/self/fd", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "core")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "core")
 	if err := os.Symlink("/proc/kcore", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "ptmx")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "ptmx")
 	if err := os.Symlink("pts/ptmx", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "stdin")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "stdin")
 	if err := os.Symlink("/proc/self/fd/0", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "stdout")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "stdout")
 	if err := os.Symlink("/proc/self/fd/1", path); err != nil {
 		return err
 	}
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "stderr")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "stderr")
 	if err := os.Symlink("/proc/self/fd/2", path); err != nil {
 		return err
 	}
 	if c.engine.EngineConfig.OciConfig.Process.Terminal {
-		path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "console")
+		path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "console")
 		if err := fs.Touch(path); err != nil {
 			return err
 		}
@@ -320,32 +300,32 @@ func (c *container) addDevices(system *mount.System) error {
 		}
 	}
 	dev := int((1 << 8) | 7)
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "full")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "full")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 3)
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "null")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "null")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 8)
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "random")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "random")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((5 << 8) | 0)
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "tty")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "tty")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 9)
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "urandom")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "urandom")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
 	dev = int((1 << 8) | 5)
-	path = filepath.Join(c.rpcRoot, c.finalPath, "dev", "zero")
+	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "zero")
 	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 		return err
 	}
@@ -355,6 +335,17 @@ func (c *container) addDevices(system *mount.System) error {
 func (c *container) addMaskedPathsMount(system *mount.System) error {
 	paths := c.engine.EngineConfig.OciConfig.Linux.MaskedPaths
 
+	nullPath := filepath.Join(c.engine.EngineConfig.GetBundlePath(), "null")
+
+	if _, err := os.Stat(nullPath); os.IsNotExist(err) {
+		oldmask := syscall.Umask(0)
+		defer syscall.Umask(oldmask)
+
+		if err := os.Mkdir(nullPath, 0755); err != nil {
+			return err
+		}
+	}
+
 	for _, path := range paths {
 		fi, err := os.Stat(path)
 		if err != nil {
@@ -362,7 +353,7 @@ func (c *container) addMaskedPathsMount(system *mount.System) error {
 			continue
 		}
 		if fi.IsDir() {
-			if err := system.Points.AddBind(mount.OtherTag, c.nullPath, path, syscall.MS_BIND); err != nil {
+			if err := system.Points.AddBind(mount.OtherTag, nullPath, path, syscall.MS_BIND); err != nil {
 				return err
 			}
 		} else if err := system.Points.AddBind(mount.OtherTag, "/dev/null", path, syscall.MS_BIND); err != nil {
@@ -391,18 +382,18 @@ func (c *container) mount(point *mount.Point) error {
 	dest := point.Destination
 	flags, opts := mount.ConvertOptions(point.Options)
 	optsString := strings.Join(opts, ",")
-	remount := false
+	ignore := false
 
 	if flags&syscall.MS_REMOUNT != 0 {
-		remount = true
+		ignore = true
 	}
 
-	if !strings.HasPrefix(dest, c.sessionPath) {
-		dest = filepath.Join(c.finalPath, dest)
+	if !strings.HasPrefix(dest, c.rootfs) {
+		dest = filepath.Join(c.rootfs, dest)
 
 		procDest := filepath.Join(c.rpcRoot, dest)
 
-		if _, err := os.Stat(procDest); os.IsNotExist(err) && !remount {
+		if _, err := os.Stat(procDest); os.IsNotExist(err) && !ignore {
 			oldmask := syscall.Umask(0)
 			defer syscall.Umask(oldmask)
 
@@ -441,8 +432,8 @@ func (c *container) mount(point *mount.Point) error {
 		}
 	}
 
-	if remount {
-		sylog.Debugf("remount %s", dest)
+	if ignore {
+		sylog.Debugf("(re)mount %s", dest)
 	} else {
 		sylog.Debugf("mount %s to %s : %s [%s]", source, dest, point.Type, optsString)
 	}

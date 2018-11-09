@@ -290,6 +290,25 @@ func TestRemount(t *testing.T) {
 	points.RemoveAll()
 }
 
+func TestAddPropagation(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	points := &Points{}
+
+	if err := points.AddPropagation(UserbindsTag, "", 0); err == nil {
+		t.Errorf("should have failed with empty destination")
+	}
+	if err := points.AddPropagation(UserbindsTag, "/mnt", 0); err == nil {
+		t.Errorf("should have failed with no propagation flag found")
+	}
+	if err := points.AddPropagation(UserbindsTag, "/mnt", syscall.MS_SHARED|syscall.MS_REC); err != nil {
+		t.Error(err)
+	}
+
+	points.RemoveAll()
+}
+
 func TestImport(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -546,7 +565,7 @@ func TestImport(t *testing.T) {
 			Source:      "",
 			Destination: "/mnt",
 			Type:        "",
-			Options:     []string{"rbind", "nosuid", "remount"},
+			Options:     []string{"rbind", "nosuid", "remount", "rshared"},
 		},
 		{
 			Source:      "",

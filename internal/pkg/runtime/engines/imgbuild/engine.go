@@ -58,5 +58,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
 
+	starterConfig.SetMountPropagation("rslave")
+
 	return nil
 }
