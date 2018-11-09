@@ -656,7 +656,7 @@ func Test_createImage(t *testing.T) {
 
 			m.Run()
 
-			image, err := createImage(m.baseURI, testToken, tt.imageRef, bson.NewObjectId().Hex())
+			image, err := createImage(m.baseURI, testToken, tt.imageRef, bson.NewObjectId().Hex(), "No Description")
 
 			if err != nil && !tt.expectError {
 				t.Errorf("Unexpected error: %v", err)

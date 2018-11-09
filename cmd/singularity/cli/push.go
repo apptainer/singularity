@@ -34,7 +34,7 @@ var PushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// Push to library requires a valid authToken
 		if authToken != "" {
-			err := client.UploadImage(args[0], args[1], PushLibraryURI, authToken)
+			err := client.UploadImage(args[0], args[1], PushLibraryURI, authToken, "No Description")
 			if err != nil {
 				sylog.Fatalf("%v\n", err)
 			}
