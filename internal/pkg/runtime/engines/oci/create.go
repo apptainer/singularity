@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/unix"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -25,16 +26,19 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/layout"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 )
 
 type container struct {
-	engine  *EngineOperations
-	rpcOps  *client.RPC
-	session *layout.Session
-	rootfs  string
+	engine      *EngineOperations
+	rpcOps      *client.RPC
+	sessionPath string
+	finalPath   string
+	nullPath    string
+	rootfs      string
+	rpcRoot     string
+	bindDev     bool
+	bindCgroup  bool
 }
 
 func (engine *EngineOperations) createState(pid int) error {
@@ -144,9 +148,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	c := &container{
-		engine: engine,
-		rpcOps: rpcOps,
-		rootfs: rootfs,
+		engine:      engine,
+		rpcOps:      rpcOps,
+		rootfs:      rootfs,
+		sessionPath: buildcfg.SESSIONDIR,
+		finalPath:   filepath.Join(buildcfg.SESSIONDIR, "rootfs"),
+		nullPath:    filepath.Join(buildcfg.SESSIONDIR, "null"),
+		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
 	}
 
 	p := &mount.Points{}
@@ -158,12 +166,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	system := &mount.System{Points: p, Mount: c.mount}
 
-	// setup overlay layout sets up the session with overlay filesystem
-	sylog.Debugf("Creating overlay SESSIONDIR layout\n")
-	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, "tmpfs", -1, system, overlay.New()); err != nil {
-		return err
-	}
-
 	manager := &cgroups.Manager{Pid: pid, Name: engine.CommonConfig.ContainerID}
 	if err := manager.ApplyFromSpec(engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
 		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
@@ -171,25 +173,50 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	engine.EngineConfig.Cgroups = manager
 
 	// import OCI mount spec
-	if err := p.ImportFromSpec(engine.EngineConfig.OciConfig.Config.Mounts); err != nil {
+	if err := system.Points.ImportFromSpec(engine.EngineConfig.OciConfig.Config.Mounts); err != nil {
 		return err
 	}
 
-	// add masked path
-	if err := p.AddMaskedPaths(engine.EngineConfig.OciConfig.Linux.MaskedPaths); err != nil {
-		return err
+	for _, point := range system.Points.GetByTag(mount.DevTag) {
+		if point.Destination == "/dev" && point.Type == "" {
+			flags, _ := mount.ConvertOptions(point.Options)
+			if flags&syscall.MS_REC != 0 {
+				c.bindDev = true
+			}
+			break
+		}
 	}
 
-	// add read-only path
-	if err := p.AddReadonlyPaths(engine.EngineConfig.OciConfig.Linux.ReadonlyPaths); err != nil {
-		return err
+	for _, point := range system.Points.GetByTag(mount.KernelTag) {
+		if point.Type == "cgroup" {
+			c.bindCgroup = true
+			break
+		}
 	}
 
-	if err := c.addOverlayMount(system); err != nil {
+	// setup overlay layout sets up the session with overlay filesystem
+	sylog.Debugf("Creating overlay SESSIONDIR layout\n")
+
+	sessionFlags := uintptr(syscall.MS_NOSUID | syscall.MS_NODEV | syscall.MS_NOEXEC)
+	if err := system.Points.AddFS(mount.SessionTag, c.sessionPath, "tmpfs", sessionFlags, ""); err != nil {
 		return err
 	}
 
 	if err := c.addRootfsMount(system); err != nil {
+		return err
+	}
+
+	if err := system.RunAfterTag(mount.SessionTag, c.addSessionDir); err != nil {
+		return err
+	}
+
+	if !c.bindDev {
+		if err := system.RunAfterTag(mount.DevTag, c.addDevices); err != nil {
+			return err
+		}
+	}
+
+	if err := system.RunAfterTag(mount.RootfsTag, c.addAllPaths); err != nil {
 		return err
 	}
 
@@ -203,7 +230,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	_, err = rpcOps.Chroot(c.session.FinalPath(), true)
+	_, err = rpcOps.Chroot(c.finalPath, true)
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
 	}
@@ -217,79 +244,212 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	return nil
 }
 
-func (c *container) addOverlayMount(system *mount.System) error {
-	ov := c.session.Layer.(*overlay.Overlay)
+func (c *container) addSessionDir(system *mount.System) error {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
 
-	sylog.Debugf("Setup writable tmpfs overlay")
-
-	if err := c.session.AddDir("/upper"); err != nil {
+	if err := os.Mkdir(c.nullPath, 0755); err != nil {
 		return err
 	}
-	if err := c.session.AddDir("/work"); err != nil {
+	if err := os.Mkdir(c.finalPath, 0755); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *container) addAllPaths(system *mount.System) error {
+	// add masked path
+	if err := c.addMaskedPathsMount(system); err != nil {
 		return err
 	}
 
-	upper, _ := c.session.GetPath("/upper")
-	work, _ := c.session.GetPath("/work")
-
-	if err := ov.SetUpperDir(upper); err != nil {
-		return fmt.Errorf("failed to add overlay upper: %s", err)
-	}
-	if err := ov.SetWorkDir(work); err != nil {
-		return fmt.Errorf("failed to add overlay upper: %s", err)
+	// add read-only path
+	if err := c.addReadonlyPathsMount(system); err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func (c *container) addRootfsMount(system *mount.System) error {
-	flags := uintptr(syscall.MS_BIND | syscall.MS_REC)
+	flags := uintptr(syscall.MS_BIND)
 	if c.engine.EngineConfig.OciConfig.Root.Readonly {
 		flags |= syscall.MS_RDONLY
 	}
-	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.session.RootFsPath(), flags); err != nil {
+	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.finalPath, flags); err != nil {
 		return err
 	}
 	if flags&syscall.MS_RDONLY != 0 {
-		return system.Points.AddRemount(mount.RootfsTag, c.session.RootFsPath(), flags)
+		return system.Points.AddRemount(mount.FinalTag, c.finalPath, flags)
+	}
+	return nil
+}
+
+func (c *container) addDevices(system *mount.System) error {
+	path := filepath.Join(c.finalPath, "dev", "fd")
+	if err := os.Symlink("/proc/self/fd", path); err != nil {
+		return err
+	}
+	path = filepath.Join(c.finalPath, "dev", "core")
+	if err := os.Symlink("/proc/kcore", path); err != nil {
+		return err
+	}
+	path = filepath.Join(c.finalPath, "dev", "ptmx")
+	if err := os.Symlink("pts/ptmx", path); err != nil {
+		return err
+	}
+	path = filepath.Join(c.finalPath, "dev", "stdin")
+	if err := os.Symlink("/proc/self/fd/0", path); err != nil {
+		return err
+	}
+	path = filepath.Join(c.finalPath, "dev", "stdout")
+	if err := os.Symlink("/proc/self/fd/1", path); err != nil {
+		return err
+	}
+	path = filepath.Join(c.finalPath, "dev", "stderr")
+	if err := os.Symlink("/proc/self/fd/2", path); err != nil {
+		return err
+	}
+	if c.engine.EngineConfig.OciConfig.Process.Terminal {
+		path = filepath.Join(c.finalPath, "dev", "console")
+		if err := fs.Touch(path); err != nil {
+			return err
+		}
+		path = fmt.Sprintf("/proc/self/fd/%d", c.engine.EngineConfig.SlavePts)
+		console, err := os.Readlink(path)
+		if err != nil {
+			return err
+		}
+		if err := system.Points.AddBind(mount.OtherTag, console, "/dev/console", syscall.MS_BIND); err != nil {
+			return err
+		}
+	}
+	dev := int((1 << 8) | 7)
+	path = filepath.Join(c.finalPath, "dev", "full")
+	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+		return err
+	}
+	dev = int((1 << 8) | 3)
+	path = filepath.Join(c.finalPath, "dev", "null")
+	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+		return err
+	}
+	dev = int((1 << 8) | 8)
+	path = filepath.Join(c.finalPath, "dev", "random")
+	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+		return err
+	}
+	dev = int((5 << 8) | 0)
+	path = filepath.Join(c.finalPath, "dev", "tty")
+	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+		return err
+	}
+	dev = int((1 << 8) | 9)
+	path = filepath.Join(c.finalPath, "dev", "urandom")
+	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+		return err
+	}
+	dev = int((1 << 8) | 5)
+	path = filepath.Join(c.finalPath, "dev", "zero")
+	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *container) addMaskedPathsMount(system *mount.System) error {
+	paths := c.engine.EngineConfig.OciConfig.Linux.MaskedPaths
+
+	for _, path := range paths {
+		fi, err := os.Stat(path)
+		if err != nil {
+			sylog.Debugf("ignoring masked path %s: %s", path, err)
+			continue
+		}
+		if fi.IsDir() {
+			if err := system.Points.AddBind(mount.OtherTag, c.nullPath, path, syscall.MS_BIND); err != nil {
+				return err
+			}
+		} else if err := system.Points.AddBind(mount.OtherTag, "/dev/null", path, syscall.MS_BIND); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (c *container) addReadonlyPathsMount(system *mount.System) error {
+	paths := c.engine.EngineConfig.OciConfig.Linux.ReadonlyPaths
+
+	for _, path := range paths {
+		if err := system.Points.AddBind(mount.OtherTag, path, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
+		if err := system.Points.AddRemount(mount.OtherTag, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 func (c *container) mount(point *mount.Point) error {
-	sylog.Debugf("mount %s to %s : %s %s", point.Source, point.Destination, point.Type, point.Options)
 	source := point.Source
 	dest := point.Destination
 	flags, opts := mount.ConvertOptions(point.Options)
 	optsString := strings.Join(opts, ",")
-	sessionPath := c.session.Path()
 	remount := false
 
 	if flags&syscall.MS_REMOUNT != 0 {
 		remount = true
 	}
 
-	if !strings.HasPrefix(dest, sessionPath) {
-		dest = filepath.Join(c.session.FinalPath(), dest)
+	if !strings.HasPrefix(dest, c.sessionPath) {
+		dest = filepath.Join(c.finalPath, dest)
 
-		if _, err := os.Stat(dest); os.IsNotExist(err) {
-			if !remount {
-				if point.Type != "" {
-					if err := os.MkdirAll(dest, 0755); err != nil {
+		procDest := filepath.Join(c.rpcRoot, dest)
+
+		if _, err := os.Stat(procDest); os.IsNotExist(err) && !remount {
+			oldmask := syscall.Umask(0)
+			defer syscall.Umask(oldmask)
+
+			if point.Type != "" {
+				if err := os.MkdirAll(procDest, 0755); err != nil {
+					return err
+				}
+			} else {
+				var st syscall.Stat_t
+
+				dir := filepath.Dir(procDest)
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					return err
+				}
+				if err := syscall.Stat(source, &st); err != nil {
+					sylog.Debugf("ignoring %s: %s", source, err)
+					return nil
+				}
+				switch st.Mode & syscall.S_IFMT {
+				case syscall.S_IFDIR:
+					if err := os.Mkdir(procDest, 0755); err != nil {
 						return err
 					}
-				} else {
-					dir := filepath.Dir(dest)
-					if err := os.MkdirAll(dir, 0755); err != nil {
+				case syscall.S_IFREG:
+					if err := fs.Touch(procDest); err != nil {
 						return err
 					}
 				}
 			}
 		}
 	} else {
-		if _, err := os.Stat(dest); os.IsNotExist(err) {
+		procDest := filepath.Join(c.rpcRoot, dest)
+
+		if _, err := os.Stat(procDest); os.IsNotExist(err) {
 			return fmt.Errorf("destination %s doesn't exist", dest)
 		}
+	}
+
+	if remount {
+		sylog.Debugf("remount %s", dest)
+	} else {
+		sylog.Debugf("mount %s to %s : %s [%s]", source, dest, point.Type, optsString)
 	}
 
 	_, err := c.rpcOps.Mount(source, dest, point.Type, flags, optsString)

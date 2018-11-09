@@ -182,3 +182,28 @@ func TestEvalRelative(t *testing.T) {
 		}
 	}
 }
+
+func TestTouch(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpdir, err := ioutil.TempDir("", "evalrelative")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := Touch(tmpdir); err == nil {
+		t.Errorf("touch can't take a directory")
+	}
+
+	testing := filepath.Join(tmpdir, "testing")
+
+	if err := Touch(testing); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := os.Stat(testing); os.IsNotExist(err) {
+		t.Errorf("creation of %s failed", testing)
+	}
+}

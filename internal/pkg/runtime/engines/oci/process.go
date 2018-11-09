@@ -27,10 +27,6 @@ import (
 
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
-	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
-		return fmt.Errorf("failed to apply security configuration: %s", err)
-	}
-
 	if engine.EngineConfig.EmptyProcess {
 		// pause process, by sending data to Smaster the process will
 		// be paused with SIGSTOP signal
@@ -49,6 +45,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		var status syscall.WaitStatus
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
+
+		if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+			return fmt.Errorf("failed to apply security configuration: %s", err)
+		}
 
 		for {
 			s := <-signals
@@ -111,6 +111,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	data := make([]byte, 1)
 	if _, err := masterConn.Read(data); err != nil {
 		return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+	}
+
+	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
 
 	err = syscall.Exec(args[0], args, env)

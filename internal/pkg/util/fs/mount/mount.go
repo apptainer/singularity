@@ -636,26 +636,3 @@ func (p *Points) SetContext(context string) error {
 func (p *Points) GetContext() string {
 	return p.context
 }
-
-// AddMaskedPaths adds mount points that will masked will /dev/null
-func (p *Points) AddMaskedPaths(paths []string) error {
-	for _, path := range paths {
-		if err := p.AddBind(OtherTag, "/dev/null", path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// AddReadonlyPaths adds bind mount points that will be mounted in read-only mode
-func (p *Points) AddReadonlyPaths(paths []string) error {
-	for _, path := range paths {
-		if err := p.AddBind(OtherTag, path, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
-			return err
-		}
-		if err := p.AddRemount(OtherTag, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
-			return err
-		}
-	}
-	return nil
-}
