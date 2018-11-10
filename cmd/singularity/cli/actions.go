@@ -201,9 +201,9 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
 		image, err = handleOCI(args[0])
-	case uri.Http:
+	case uri.HTTP:
 		image, err = handleNet(args[0])
-	case uri.Https:
+	case uri.HTTPS:
 		image, err = handleNet(args[0])
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)

@@ -15,10 +15,10 @@ const (
 	Library = "library"
 	// Shub is the keyword for a shub ref
 	Shub = "shub"
-	// Http is the keyword for http ref
-	Http = "http"
-	// Https is the keyword for https ref
-	Https = "https"
+	// HTTP is the keyword for http ref
+	HTTP = "http"
+	// HTTPS is the keyword for https ref
+	HTTPS = "https"
 )
 
 // validURIs contains a list of known uris
@@ -63,7 +63,7 @@ func GetName(uri string) string {
 	ref = strings.TrimLeft(ref, "/")    // Trim leading "/" characters
 	refSplit := strings.Split(ref, "/") // Split ref into parts
 
-	if transport == Http || transport == Https {
+	if transport == HTTP || transport == HTTPS {
 		imageName := refSplit[len(refSplit)-1]
 		return imageName
 	}
