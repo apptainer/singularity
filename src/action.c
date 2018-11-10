@@ -81,6 +81,8 @@ int main(int argc, char **argv) {
 
     singularity_runtime_autofs();
 
+    singularity_registry_set("DAEMON_START", NULL);
+
     singularity_daemon_init();
 
     if ( singularity_registry_get("WRITABLE") != NULL ) {

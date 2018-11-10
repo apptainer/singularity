@@ -72,6 +72,9 @@ int main(int argc, char **argv) {
         ABORT(255);
     }
 
+    singularity_registry_set("DAEMON_START", NULL);
+    singularity_registry_set("DAEMON_JOIN", NULL);
+
     singularity_runtime_ns(SR_NS_MNT);
 
     singularity_image_mount(&image, CONTAINER_FINALDIR);
