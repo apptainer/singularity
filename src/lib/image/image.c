@@ -163,6 +163,7 @@ int singularity_image_writable(struct image_object *image) {
 int singularity_image_mount(struct image_object *image, char *mount_point) {
     if ( singularity_registry_get("DAEMON_JOIN") ) {
         singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+        ABORT(255);
     }
 
     singularity_message(DEBUG, "Figuring out which mount module to use...\n");

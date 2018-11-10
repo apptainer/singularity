@@ -65,6 +65,7 @@ int singularity_runtime_ns(unsigned int flags) {
 int singularity_runtime_overlayfs(void) {
     if ( singularity_registry_get("DAEMON_JOIN") ) {
         singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+        ABORT(255);
     }
 
     return(_singularity_runtime_overlayfs());
@@ -77,6 +78,7 @@ int singularity_runtime_environment(void) {
 int singularity_runtime_mounts(void) {
     if ( singularity_registry_get("DAEMON_JOIN") ) {
         singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+        ABORT(255);
     }
 
     return(_singularity_runtime_mounts());
@@ -85,6 +87,7 @@ int singularity_runtime_mounts(void) {
 int singularity_runtime_files(void) {
     if ( singularity_registry_get("DAEMON_JOIN") ) {
         singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+        ABORT(255);
     }
 
     return(_singularity_runtime_files());

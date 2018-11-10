@@ -53,6 +53,7 @@ int singularity_cleanupd(void) {
     
     if ( singularity_registry_get("DAEMON_JOIN") ) {
         singularity_message(ERROR, "Internal Error - This function should not be called when joining an instance\n");
+        ABORT(255);
     }
 
     if ( ( singularity_registry_get("NOSESSIONCLEANUP") != NULL ) || ( singularity_registry_get("NOCLEANUP") != NULL ) ) {
