@@ -127,8 +127,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 		}
 	}
 
-	gr, err := user.GetGrNam("disk")
-	if err == nil {
+	if gr, err := user.GetGrNam("disk"); err == nil {
 		diskGID = int(gr.GID)
 	} else {
 		diskGID = 0
