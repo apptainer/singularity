@@ -23,7 +23,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
-var diskGID int
+var diskGID = -1
 var singularityConf *singularity.FileConfig
 
 // Methods is a receiver type.
@@ -127,10 +127,12 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 		}
 	}
 
-	if gr, err := user.GetGrNam("disk"); err == nil {
-		diskGID = int(gr.GID)
-	} else {
-		diskGID = 0
+	if diskGID == -1 {
+		if gr, err := user.GetGrNam("disk"); err == nil {
+			diskGID = int(gr.GID)
+		} else {
+			diskGID = 0
+		}
 	}
 
 	runtime.LockOSThread()
