@@ -127,6 +127,13 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 		}
 	}
 
+	gr, err := user.GetGrNam("disk")
+	if err == nil {
+		diskGID = int(gr.GID)
+	} else {
+		diskGID = 0
+	}
+
 	runtime.LockOSThread()
 	syscall.Setfsuid(0)
 	syscall.Setfsgid(diskGID)
@@ -187,11 +194,6 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 }
 
 func init() {
-	gr, err := user.GetGrNam("disk")
-	if err == nil {
-		diskGID = int(gr.GID)
-	}
-
 	singularityConf = &singularity.FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", singularityConf); err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
