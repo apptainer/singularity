@@ -17,6 +17,7 @@ import (
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/app/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
@@ -68,6 +69,9 @@ func init() {
 }
 
 func main() {
+	// initialize runtime engines
+	engines.Init()
+
 	go startup()
 
 	// run functions requiring execution in main thread
