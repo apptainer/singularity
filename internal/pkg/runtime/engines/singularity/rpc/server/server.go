@@ -20,8 +20,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/loop"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
+var diskGID int
 var singularityConf *singularity.FileConfig
 
 // Methods is a receiver type.
@@ -127,7 +129,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 
 	runtime.LockOSThread()
 	syscall.Setfsuid(0)
-	syscall.Setfsgid(0)
+	syscall.Setfsgid(diskGID)
 	defer runtime.UnlockOSThread()
 	defer syscall.Setfsuid(os.Getuid())
 	defer syscall.Setfsgid(os.Getgid())
@@ -185,6 +187,11 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 }
 
 func init() {
+	gr, err := user.GetGrNam("disk")
+	if err == nil {
+		diskGID = int(gr.GID)
+	}
+
 	singularityConf = &singularity.FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", singularityConf); err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)

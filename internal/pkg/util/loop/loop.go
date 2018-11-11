@@ -28,7 +28,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		path = fmt.Sprintf("/dev/loop%d", device)
 		if fi, err := os.Stat(path); err != nil {
 			dev := int((7 << 8) | device)
-			esys := syscall.Mknod(path, syscall.S_IFBLK|0600, dev)
+			esys := syscall.Mknod(path, syscall.S_IFBLK|0660, dev)
 			if errno, ok := esys.(syscall.Errno); ok {
 				if errno != syscall.EEXIST {
 					return esys
