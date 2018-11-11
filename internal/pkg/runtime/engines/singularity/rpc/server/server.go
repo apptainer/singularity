@@ -127,8 +127,10 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 
 	runtime.LockOSThread()
 	syscall.Setfsuid(0)
+	syscall.Setfsgid(0)
 	defer runtime.UnlockOSThread()
 	defer syscall.Setfsuid(os.Getuid())
+	defer syscall.Setfsgid(os.Getgid())
 
 	err := loopdev.AttachFromFile(image, arguments.Mode, reply)
 	if err != nil {

@@ -29,14 +29,15 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		if fi, err := os.Stat(path); err != nil {
 			dev := int((7 << 8) | device)
 			esys := syscall.Mknod(path, syscall.S_IFBLK|0600, dev)
-			if esys != nil {
-				return esys
+			if errno, ok := esys.(syscall.Errno); ok {
+				if errno != syscall.EEXIST {
+					return esys
+				}
 			}
-		} else {
-			if (fi.Mode() & os.ModeDevice) == 0 {
-				return fmt.Errorf("%s is not a block device", path)
-			}
+		} else if fi.Mode()&os.ModeDevice == 0 {
+			return fmt.Errorf("%s is not a block device", path)
 		}
+
 		loopDev, err := os.OpenFile(path, mode, 0600)
 		if err != nil {
 			continue
