@@ -14,9 +14,10 @@ import (
 
 // Definition describes how to build an image.
 type Definition struct {
-	Header    map[string]string `json:"header"`
-	ImageData `json:"imageData"`
-	BuildData Data `json:"buildData"`
+	Header     map[string]string `json:"header"`
+	ImageData  `json:"imageData"`
+	BuildData  Data              `json:"buildData"`
+	CustomData map[string]string `json:"customData"`
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be

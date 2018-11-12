@@ -19,8 +19,33 @@ import (
 	"unicode"
 
 	"github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/syplugin"
 )
+
+var (
+	errInvalidSection  = errors.New("invalid section(s) specified")
+	errEmptyDefinition = errors.New("Empty definition file")
+)
+
+// InvalidSectionError records an error and the sections that caused it.
+type InvalidSectionError struct {
+	Sections []string
+	Err      error
+}
+
+func (e *InvalidSectionError) Error() string {
+	return e.Err.Error() + ": " + strings.Join(e.Sections, ", ")
+}
+
+// IsInvalidSectionError returns a boolean indicating whether the error
+// is reporting if a section of the definition is not a standard section
+func IsInvalidSectionError(err error) bool {
+	switch err.(type) {
+	case *InvalidSectionError:
+		return true
+	}
+
+	return false
+}
 
 // scanDefinitionFile is the SplitFunc for the scanner that will parse the deffile. It will split into tokens
 // that designated by a line starting with %
@@ -99,14 +124,6 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 
 }
 
-func isValidSection(key string) bool {
-	if _, ok := validSections[key]; !ok {
-		return false
-	}
-
-	return true
-}
-
 func getSectionName(line string) string {
 	// trim % prefix on section name
 	line = strings.TrimLeft(line, "%")
@@ -142,9 +159,6 @@ func parseTokenSection(tok string, sections map[string]string) {
 	}
 
 	key := getSectionName(split[0])
-	if !isValidSection(key) {
-		return
-	}
 
 	sectionsMutex.Lock()
 	sections[key] = strings.TrimRightFunc(split[1], unicode.IsSpace)
@@ -168,7 +182,6 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		} else {
 			//this is a section
 			parseTokenSection(tok, sectionsMap)
-			syplugin.BuildHandleSections(splitToken(tok))
 		}
 	}
 
@@ -187,12 +200,6 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 			parseTokenSection(tok, sectionsMap)
 		}()
 
-		// Process any custom section handling
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			syplugin.BuildHandleSections(splitToken(tok))
-		}()
 	}
 
 	if err := s.Err(); err != nil {
@@ -203,7 +210,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	return populateDefinition(sectionsMap, d)
 }
 
-func populateDefinition(sections map[string]string, d *types.Definition) error {
+func populateDefinition(sections map[string]string, d *types.Definition) (err error) {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
@@ -267,6 +274,21 @@ func populateDefinition(sections map[string]string, d *types.Definition) error {
 		Test:  sections["test"],
 	}
 
+	// remove standard sections from map
+	for s := range validSections {
+		delete(sections, s)
+	}
+
+	// add remaining sections to CustomData and throw error for invalid section(s)
+	if len(sections) != 0 {
+		d.CustomData = sections
+		var keys []string
+		for k := range sections {
+			keys = append(keys, k)
+		}
+		return &InvalidSectionError{keys, errInvalidSection}
+	}
+
 	// make sure information was valid by checking if definition is not equal to an empty one
 	emptyDef := new(types.Definition)
 	// labels is always initialized
@@ -275,7 +297,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) error {
 		return fmt.Errorf("parsed definition did not have any valid information")
 	}
 
-	return nil
+	return err
 }
 
 func doHeader(h string, d *types.Definition) (err error) {
@@ -322,11 +344,11 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 		log.Println(s.Err())
 		return d, s.Err()
 	} else if s.Text() == "" {
-		return d, errors.New("Empty definition file")
+		return d, errEmptyDefinition
 	}
 
 	if err = doSections(s, &d); err != nil {
-		return d, fmt.Errorf("failed to parse DefFile sections: %v", err)
+		return d, err
 	}
 
 	return

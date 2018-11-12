@@ -125,7 +125,7 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 		name    string
 		defPath string
 	}{
-		//{"BadSection", "../../testdata_bad/bad_section"},
+		{"BadSection", "../../testdata_bad/bad_section"},
 		{"JSONInput1", "../../testdata_bad/json_input_1"},
 		{"JSONInput2", "../../testdata_bad/json_input_2"},
 		{"Empty", "../../testdata_bad/empty"},
