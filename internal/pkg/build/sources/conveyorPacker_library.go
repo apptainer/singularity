@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls

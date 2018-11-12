@@ -13,8 +13,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 func TestScanDefinitionFile(t *testing.T) {
@@ -23,14 +23,14 @@ func TestScanDefinitionFile(t *testing.T) {
 		defPath  string
 		sections string
 	}{
-		{"Arch", "../../testdata_good/arch/arch", "../../testdata_good/arch/arch_sections.json"},
-		{"BusyBox", "../../testdata_good/busybox/busybox", "../../testdata_good/busybox/busybox_sections.json"},
-		{"Debootstrap", "../../testdata_good/debootstrap/debootstrap", "../../testdata_good/debootstrap/debootstrap_sections.json"},
-		{"Docker", "../../testdata_good/docker/docker", "../../testdata_good/docker/docker_sections.json"},
-		{"LocalImage", "../../testdata_good/localimage/localimage", "../../testdata_good/localimage/localimage_sections.json"},
-		{"Shub", "../../testdata_good/shub/shub", "../../testdata_good/shub/shub_sections.json"},
-		{"Yum", "../../testdata_good/yum/yum", "../../testdata_good/yum/yum_sections.json"},
-		{"Zypper", "../../testdata_good/zypper/zypper", "../../testdata_good/zypper/zypper_sections.json"},
+		{"Arch", "../../../../internal/pkg/build/testdata_good/arch/arch", "../../../../internal/pkg/build/testdata_good/arch/arch_sections.json"},
+		{"BusyBox", "../../../../internal/pkg/build/testdata_good/busybox/busybox", "../../../../internal/pkg/build/testdata_good/busybox/busybox_sections.json"},
+		{"Debootstrap", "../../../../internal/pkg/build/testdata_good/debootstrap/debootstrap", "../../../../internal/pkg/build/testdata_good/debootstrap/debootstrap_sections.json"},
+		{"Docker", "../../../../internal/pkg/build/testdata_good/docker/docker", "../../../../internal/pkg/build/testdata_good/docker/docker_sections.json"},
+		{"LocalImage", "../../../../internal/pkg/build/testdata_good/localimage/localimage", "../../../../internal/pkg/build/testdata_good/localimage/localimage_sections.json"},
+		{"Shub", "../../../../internal/pkg/build/testdata_good/shub/shub", "../../../../internal/pkg/build/testdata_good/shub/shub_sections.json"},
+		{"Yum", "../../../../internal/pkg/build/testdata_good/yum/yum", "../../../../internal/pkg/build/testdata_good/yum/yum_sections.json"},
+		{"Zypper", "../../../../internal/pkg/build/testdata_good/zypper/zypper", "../../../../internal/pkg/build/testdata_good/zypper/zypper_sections.json"},
 	}
 
 	for _, tt := range tests {
@@ -76,17 +76,17 @@ func TestParseDefinitionFile(t *testing.T) {
 		defPath  string
 		jsonPath string
 	}{
-		{"Arch", "../../testdata_good/arch/arch", "../../testdata_good/arch/arch.json"},
-		{"BusyBox", "../../testdata_good/busybox/busybox", "../../testdata_good/busybox/busybox.json"},
-		{"Debootstrap", "../../testdata_good/debootstrap/debootstrap", "../../testdata_good/debootstrap/debootstrap.json"},
-		{"Docker", "../../testdata_good/docker/docker", "../../testdata_good/docker/docker.json"},
-		{"LocalImage", "../../testdata_good/localimage/localimage", "../../testdata_good/localimage/localimage.json"},
-		{"Shub", "../../testdata_good/shub/shub", "../../testdata_good/shub/shub.json"},
-		{"Yum", "../../testdata_good/yum/yum", "../../testdata_good/yum/yum.json"},
-		{"Zypper", "../../testdata_good/zypper/zypper", "../../testdata_good/zypper/zypper.json"},
-		{"NoHeader", "../../testdata_good/noheader/noheader", "../../testdata_good/noheader/noheader.json"},
-		{"NoHeaderComments", "../../testdata_good/noheadercomments/noheadercomments", "../../testdata_good/noheadercomments/noheadercomments.json"},
-		{"NoHeaderWhiteSpace", "../../testdata_good/noheaderwhitespace/noheaderwhitespace", "../../testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
+		{"Arch", "../../../../internal/pkg/build/testdata_good/arch/arch", "../../../../internal/pkg/build/testdata_good/arch/arch.json"},
+		{"BusyBox", "../../../../internal/pkg/build/testdata_good/busybox/busybox", "../../../../internal/pkg/build/testdata_good/busybox/busybox.json"},
+		{"Debootstrap", "../../../../internal/pkg/build/testdata_good/debootstrap/debootstrap", "../../../../internal/pkg/build/testdata_good/debootstrap/debootstrap.json"},
+		{"Docker", "../../../../internal/pkg/build/testdata_good/docker/docker", "../../../../internal/pkg/build/testdata_good/docker/docker.json"},
+		{"LocalImage", "../../../../internal/pkg/build/testdata_good/localimage/localimage", "../../../../internal/pkg/build/testdata_good/localimage/localimage.json"},
+		{"Shub", "../../../../internal/pkg/build/testdata_good/shub/shub", "../../../../internal/pkg/build/testdata_good/shub/shub.json"},
+		{"Yum", "../../../../internal/pkg/build/testdata_good/yum/yum", "../../../../internal/pkg/build/testdata_good/yum/yum.json"},
+		{"Zypper", "../../../../internal/pkg/build/testdata_good/zypper/zypper", "../../../../internal/pkg/build/testdata_good/zypper/zypper.json"},
+		{"NoHeader", "../../../../internal/pkg/build/testdata_good/noheader/noheader", "../../../../internal/pkg/build/testdata_good/noheader/noheader.json"},
+		{"NoHeaderComments", "../../../../internal/pkg/build/testdata_good/noheadercomments/noheadercomments", "../../../../internal/pkg/build/testdata_good/noheadercomments/noheadercomments.json"},
+		{"NoHeaderWhiteSpace", "../../../../internal/pkg/build/testdata_good/noheaderwhitespace/noheaderwhitespace", "../../../../internal/pkg/build/testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
 	}
 
 	for _, tt := range tests {
@@ -125,10 +125,10 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 		name    string
 		defPath string
 	}{
-		{"BadSection", "../../testdata_bad/bad_section"},
-		{"JSONInput1", "../../testdata_bad/json_input_1"},
-		{"JSONInput2", "../../testdata_bad/json_input_2"},
-		{"Empty", "../../testdata_bad/empty"},
+		{"BadSection", "../../../../internal/pkg/build/testdata_bad/bad_section"},
+		{"JSONInput1", "../../../../internal/pkg/build/testdata_bad/json_input_1"},
+		{"JSONInput2", "../../../../internal/pkg/build/testdata_bad/json_input_2"},
+		{"Empty", "../../../../internal/pkg/build/testdata_bad/empty"},
 	}
 
 	for _, tt := range tests {

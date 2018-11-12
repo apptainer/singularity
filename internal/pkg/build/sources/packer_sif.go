@@ -13,9 +13,9 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // SIFPacker holds the locations of where to pack from and to

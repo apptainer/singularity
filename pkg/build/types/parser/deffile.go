@@ -18,7 +18,7 @@ import (
 	"sync"
 	"unicode"
 
-	"github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 var (

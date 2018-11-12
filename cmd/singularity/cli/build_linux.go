@@ -12,9 +12,9 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/syplugin"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 func preRun(cmd *cobra.Command, args []string) {
