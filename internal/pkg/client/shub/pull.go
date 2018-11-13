@@ -14,7 +14,7 @@ import (
 
 	util "github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
