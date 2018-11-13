@@ -260,33 +260,36 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) addDevices(system *mount.System) error {
-	path := filepath.Join(c.rpcRoot, c.rootfs, "dev", "fd")
-	if err := os.Symlink("/proc/self/fd", path); err != nil {
-		return err
+func (c *container) addDefaultDevices(system *mount.System) error {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	devPath := filepath.Join(c.rpcRoot, c.rootfs, "dev")
+	if _, err := os.Stat(devPath); os.IsNotExist(err) {
+		if err := os.Mkdir(devPath, 0755); err != nil {
+			return err
+		}
 	}
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "core")
-	if err := os.Symlink("/proc/kcore", path); err != nil {
-		return err
+
+	for _, symlink := range []struct {
+		old string
+		new string
+	}{
+		{"/proc/self/fd", "/dev/fd"},
+		{"/proc/kcore", "/dev/core"},
+		{"pts/ptmx", "/dev/ptmx"},
+		{"/proc/self/fd/0", "/dev/stdin"},
+		{"/proc/self/fd/1", "/dev/stdout"},
+		{"/proc/self/fd/2", "/dev/stderr"},
+	} {
+		path := filepath.Join(c.rpcRoot, c.rootfs, symlink.new)
+		if err := os.Symlink(symlink.old, path); err != nil {
+			return err
+		}
 	}
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "ptmx")
-	if err := os.Symlink("pts/ptmx", path); err != nil {
-		return err
-	}
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "stdin")
-	if err := os.Symlink("/proc/self/fd/0", path); err != nil {
-		return err
-	}
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "stdout")
-	if err := os.Symlink("/proc/self/fd/1", path); err != nil {
-		return err
-	}
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "stderr")
-	if err := os.Symlink("/proc/self/fd/2", path); err != nil {
-		return err
-	}
+
 	if c.engine.EngineConfig.OciConfig.Process.Terminal {
-		path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "console")
+		path := filepath.Join(c.rpcRoot, c.rootfs, "dev", "console")
 		if err := fs.Touch(path); err != nil {
 			return err
 		}
@@ -299,34 +302,30 @@ func (c *container) addDevices(system *mount.System) error {
 			return err
 		}
 	}
-	dev := int((1 << 8) | 7)
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "full")
-	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
-		return err
+
+	for _, charDevice := range []struct {
+		major uint16
+		minor uint16
+		path  string
+	}{
+		{1, 7, "/dev/full"},
+		{1, 3, "/dev/null"},
+		{1, 8, "/dev/random"},
+		{5, 0, "/dev/tty"},
+		{1, 9, "/dev/urandom"},
+		{1, 5, "/dev/zero"},
+	} {
+		dev := int((charDevice.major << 8) | charDevice.minor)
+		path := filepath.Join(c.rpcRoot, c.rootfs, charDevice.path)
+		if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+			return err
+		}
 	}
-	dev = int((1 << 8) | 3)
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "null")
-	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
-		return err
-	}
-	dev = int((1 << 8) | 8)
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "random")
-	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
-		return err
-	}
-	dev = int((5 << 8) | 0)
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "tty")
-	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
-		return err
-	}
-	dev = int((1 << 8) | 9)
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "urandom")
-	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
-		return err
-	}
-	dev = int((1 << 8) | 5)
-	path = filepath.Join(c.rpcRoot, c.rootfs, "dev", "zero")
-	if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+	return nil
+}
+
+func (c *container) addDevices(system *mount.System) error {
+	if err := c.addDefaultDevices(system); err != nil {
 		return err
 	}
 	return nil
