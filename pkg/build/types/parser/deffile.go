@@ -15,7 +15,6 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"sync"
 
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -145,8 +144,6 @@ func splitToken(tok string) (ident string, content string) {
 	return strings.ToLower(tokSplit[0]), content
 }
 
-var sectionsMutex = &sync.Mutex{}
-
 // parseTokenSection splits the token into maximum 2 strings separated by a newline,
 // and then inserts the section into the sections map
 //
@@ -159,15 +156,11 @@ func parseTokenSection(tok string, sections map[string]string) {
 
 	key := getSectionName(split[0])
 
-	sectionsMutex.Lock()
 	sections[key] += split[1]
-	sectionsMutex.Unlock()
 }
 
 func doSections(s *bufio.Scanner, d *types.Definition) error {
 	sectionsMap := make(map[string]string)
-
-	var wg sync.WaitGroup
 
 	tok := strings.TrimSpace(s.Text())
 
@@ -193,19 +186,13 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		tok := s.Text()
 
 		// Parse each token -> section
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			parseTokenSection(tok, sectionsMap)
-		}()
-
+		parseTokenSection(tok, sectionsMap)
 	}
 
 	if err := s.Err(); err != nil {
 		return err
 	}
 
-	wg.Wait()
 	return populateDefinition(sectionsMap, d)
 }
 
