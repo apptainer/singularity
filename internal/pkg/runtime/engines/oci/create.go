@@ -392,11 +392,13 @@ func (c *container) mount(point *mount.Point) error {
 
 		procDest := filepath.Join(c.rpcRoot, dest)
 
+		sylog.Debugf("Checking if %s exists", procDest)
 		if _, err := os.Stat(procDest); os.IsNotExist(err) && !ignore {
 			oldmask := syscall.Umask(0)
 			defer syscall.Umask(oldmask)
 
 			if point.Type != "" {
+				sylog.Debugf("Creating %s", procDest)
 				if err := os.MkdirAll(procDest, 0755); err != nil {
 					return err
 				}
@@ -404,19 +406,22 @@ func (c *container) mount(point *mount.Point) error {
 				var st syscall.Stat_t
 
 				dir := filepath.Dir(procDest)
+				sylog.Debugf("Creating parent %s", dir)
 				if err := os.MkdirAll(dir, 0755); err != nil {
 					return err
 				}
 				if err := syscall.Stat(source, &st); err != nil {
-					sylog.Debugf("ignoring %s: %s", source, err)
+					sylog.Debugf("Ignoring %s: %s", source, err)
 					return nil
 				}
 				switch st.Mode & syscall.S_IFMT {
 				case syscall.S_IFDIR:
+					sylog.Debugf("Creating dir %s", filepath.Base(procDest))
 					if err := os.Mkdir(procDest, 0755); err != nil {
 						return err
 					}
 				case syscall.S_IFREG:
+					sylog.Debugf("Creating file %s", filepath.Base(procDest))
 					if err := fs.Touch(procDest); err != nil {
 						return err
 					}
@@ -426,6 +431,7 @@ func (c *container) mount(point *mount.Point) error {
 	} else {
 		procDest := filepath.Join(c.rpcRoot, dest)
 
+		sylog.Debugf("Checking if %s exists", procDest)
 		if _, err := os.Stat(procDest); os.IsNotExist(err) {
 			return fmt.Errorf("destination %s doesn't exist", dest)
 		}
@@ -434,9 +440,12 @@ func (c *container) mount(point *mount.Point) error {
 	if ignore {
 		sylog.Debugf("(re)mount %s", dest)
 	} else {
-		sylog.Debugf("mount %s to %s : %s [%s]", source, dest, point.Type, optsString)
+		sylog.Debugf("Mount %s to %s : %s [%s]", source, dest, point.Type, optsString)
 	}
 
 	_, err := c.rpcOps.Mount(source, dest, point.Type, flags, optsString)
+	if err != nil {
+		sylog.Debugf("RPC mount error: %s", err)
+	}
 	return err
 }
