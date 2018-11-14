@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: <registry>/<namespace>/<container>:<tag>@<digest>
+IncludeCmd: yes
+
+%setup
+    touch ${SINGULARITY_ROOTFS}/mock.txt
+    touch mock.txt
+
+%post
+    echo 'this is a command so long that the user had to' \
+    'add a new line'
+    echo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT
+
+%runscript
+    echo "Mock!"
+
+
+%setup
+    touch ${SINGULARITY_ROOTFS}/secondmock.txt
+    touch secondmock.txt
+
+%post
+    echo 'this is a command so long that the user had to' \
+    'add a new line again'
+    echo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT
+
+%runscript
+    echo "SecondMock!"
+    echo "Arguments received: $*" # This is a very long comment
+    exec echo "$@"
