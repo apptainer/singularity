@@ -161,7 +161,7 @@ func parseTokenSection(tok string, sections map[string]string) {
 	key := getSectionName(split[0])
 
 	sectionsMutex.Lock()
-	sections[key] = strings.TrimRightFunc(split[1], unicode.IsSpace)
+	sections[key] += strings.TrimRightFunc(split[1], unicode.IsSpace)
 	sectionsMutex.Unlock()
 }
 
