@@ -1102,8 +1102,10 @@ __attribute__((constructor)) static void init(void) {
         return;
     } else if ( stage_pid > 0 ) {
         config.containerPid = stage_pid;
+        pid_t ppgid = getpgid(getppid());
+        pid_t pgid = getpgid(0);
 
-        if ( isatty(STDIN_FILENO) ) {
+        if ( tcpgrp == pgid ) {
             if ( setpgid(stage_pid, stage_pid) < 0 ) {
                 singularity_message(ERROR, "Failed to set child process group: %s", strerror(errno));
                 exit(1);
