@@ -197,6 +197,6 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 func init() {
 	singularityConf = &singularity.FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", singularityConf); err != nil {
-		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+		sylog.Fatalf("RPC server unable to parse singularity.conf file: %s", err)
 	}
 }
