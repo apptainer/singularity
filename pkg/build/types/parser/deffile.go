@@ -16,7 +16,6 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"unicode"
 
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -161,7 +160,7 @@ func parseTokenSection(tok string, sections map[string]string) {
 	key := getSectionName(split[0])
 
 	sectionsMutex.Lock()
-	sections[key] += strings.TrimRightFunc(split[1], unicode.IsSpace)
+	sections[key] += split[1]
 	sectionsMutex.Unlock()
 }
 

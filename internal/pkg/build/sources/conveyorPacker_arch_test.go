@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
-const archDef = "../testdata_good/arch/arch"
+const archDef = "../../../../examples/arch/Singularity"
 
 func TestArchConveyor(t *testing.T) {
 

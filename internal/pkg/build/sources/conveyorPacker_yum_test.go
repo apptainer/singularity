@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
-const yumDef = "../testdata_good/yum/yum"
+const yumDef = "../../../../examples/centos/Singularity"
 
 func TestYumConveyor(t *testing.T) {
 	if testing.Short() {

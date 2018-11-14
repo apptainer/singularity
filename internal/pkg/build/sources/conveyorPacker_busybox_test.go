@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
-const busyBoxDef = "../testdata_good/busybox/busybox"
+const busyBoxDef = "../../../../examples/busybox/Singularity"
 
 func TestBusyBoxConveyor(t *testing.T) {
 
