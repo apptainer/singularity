@@ -29,8 +29,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/internal/pkg/util/loop"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 type container struct {
