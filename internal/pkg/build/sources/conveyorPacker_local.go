@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // LocalConveyor only needs to hold the conveyor to have the needed data to pack

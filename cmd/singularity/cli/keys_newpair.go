@@ -8,7 +8,7 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/pkg/sypgp"
 	"github.com/sylabs/singularity/src/docs"
 )
 

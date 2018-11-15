@@ -41,6 +41,7 @@ secbuildimg.sh
 
 docs/man/singularity*
 
+src/pkg/buildcfg
 src/action
 src/action-suid
 src/start

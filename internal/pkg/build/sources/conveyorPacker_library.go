@@ -10,8 +10,8 @@ import (
 	"os"
 
 	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/client/library"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
