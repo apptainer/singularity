@@ -12,8 +12,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
 	"github.com/sylabs/singularity/pkg/build/types"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 const (
