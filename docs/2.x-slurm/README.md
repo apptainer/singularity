@@ -1,12 +1,12 @@
 
-Singularity plugin for SLURM
+Singularity plugin for Slurm
 ============================
 
-This plugin allows users to execute their SLURM jobs within a Singularity container without
+This plugin allows users to execute their Slurm jobs within a Singularity container without
 having to execute Singularity directly.  This assists in simplifying the invocation of the
 container and hiding the implementation details.
 
-To enable the plugin, add the following line to the SLURM plugin configuration (`/etc/slurm/plugstack.conf`):
+To enable the plugin, add the following line to the Slurm plugin configuration (`/etc/slurm/plugstack.conf`):
 
 ```
 required singularity.so
