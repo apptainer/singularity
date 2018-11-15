@@ -535,6 +535,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 
 // mount image via loop
 func (c *container) mountImage(mnt *mount.Point) error {
+	maxDevices := int(c.engine.EngineConfig.File.MaxLoopDevices)
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 
@@ -562,7 +563,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info)
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
