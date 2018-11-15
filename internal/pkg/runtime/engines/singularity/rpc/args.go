@@ -8,7 +8,7 @@ package rpc
 import (
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // MkdirArgs defines the arguments to mkdir.
