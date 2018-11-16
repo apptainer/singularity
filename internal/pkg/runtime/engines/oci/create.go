@@ -272,7 +272,9 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
-	devPath := filepath.Join(c.rpcRoot, c.rootfs, "dev")
+	rootfsPath := filepath.Join(c.rpcRoot, c.rootfs)
+
+	devPath := fs.EvalRelative("/dev", rootfsPath)
 	if _, err := os.Stat(devPath); os.IsNotExist(err) {
 		if err := os.Mkdir(devPath, 0755); err != nil {
 			return err
@@ -290,14 +292,14 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 		{"/proc/self/fd/1", "/dev/stdout"},
 		{"/proc/self/fd/2", "/dev/stderr"},
 	} {
-		path := filepath.Join(c.rpcRoot, c.rootfs, symlink.new)
+		path := filepath.Join(rootfsPath, symlink.new)
 		if err := os.Symlink(symlink.old, path); err != nil {
 			return err
 		}
 	}
 
 	if c.engine.EngineConfig.OciConfig.Process.Terminal {
-		path := filepath.Join(c.rpcRoot, c.rootfs, "dev", "console")
+		path := filepath.Join(rootfsPath, "dev", "console")
 		if err := fs.Touch(path); err != nil {
 			return err
 		}
@@ -324,7 +326,7 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 		{1, 5, "/dev/zero"},
 	} {
 		dev := int((charDevice.major << 8) | charDevice.minor)
-		path := filepath.Join(c.rpcRoot, c.rootfs, charDevice.path)
+		path := filepath.Join(rootfsPath, charDevice.path)
 		if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
 			return err
 		}
@@ -396,9 +398,10 @@ func (c *container) mount(point *mount.Point) error {
 	}
 
 	if !strings.HasPrefix(dest, c.rootfs) {
-		dest = filepath.Join(c.rootfs, dest)
+		rootfsPath := filepath.Join(c.rpcRoot, c.rootfs)
+		procDest := filepath.Join(rootfsPath, fs.EvalRelative(dest, rootfsPath))
 
-		procDest := filepath.Join(c.rpcRoot, dest)
+		dest = filepath.Join(c.rootfs, dest)
 
 		sylog.Debugf("Checking if %s exists", procDest)
 		if _, err := os.Stat(procDest); os.IsNotExist(err) && !ignore {
