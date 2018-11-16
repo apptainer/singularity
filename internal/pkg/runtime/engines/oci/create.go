@@ -144,10 +144,15 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		rootfs = filepath.Join(engine.EngineConfig.GetBundlePath(), rootfs)
 	}
 
+	resolvedRootfs, err := filepath.EvalSymlinks(rootfs)
+	if err != nil {
+		return fmt.Errorf("failed to resolve %s path: %s", rootfs, err)
+	}
+
 	c := &container{
 		engine:  engine,
 		rpcOps:  rpcOps,
-		rootfs:  rootfs,
+		rootfs:  resolvedRootfs,
 		rpcRoot: fmt.Sprintf("/proc/%d/root", pid),
 	}
 
@@ -239,6 +244,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND)
 
 	if c.engine.EngineConfig.OciConfig.Root.Readonly {
+		sylog.Debugf("Mounted read-only")
 		flags |= syscall.MS_RDONLY
 	}
 
@@ -247,16 +253,18 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		return err
 	}
 
+	sylog.Debugf("Parent rootfs: %s", parentRootfs)
+
 	if _, err := c.rpcOps.Mount("", parentRootfs, "", syscall.MS_PRIVATE, ""); err != nil {
 		return err
 	}
-
 	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.rootfs, flags); err != nil {
 		return err
 	}
 	if flags&syscall.MS_RDONLY != 0 {
 		return system.Points.AddRemount(mount.FinalTag, c.rootfs, flags)
 	}
+
 	return nil
 }
 
@@ -406,10 +414,13 @@ func (c *container) mount(point *mount.Point) error {
 				var st syscall.Stat_t
 
 				dir := filepath.Dir(procDest)
-				sylog.Debugf("Creating parent %s", dir)
-				if err := os.MkdirAll(dir, 0755); err != nil {
-					return err
+				if _, err := os.Stat(dir); os.IsNotExist(err) {
+					sylog.Debugf("Creating parent %s", dir)
+					if err := os.MkdirAll(dir, 0755); err != nil {
+						return err
+					}
 				}
+
 				if err := syscall.Stat(source, &st); err != nil {
 					sylog.Debugf("Ignoring %s: %s", source, err)
 					return nil
@@ -447,5 +458,6 @@ func (c *container) mount(point *mount.Point) error {
 	if err != nil {
 		sylog.Debugf("RPC mount error: %s", err)
 	}
+
 	return err
 }
