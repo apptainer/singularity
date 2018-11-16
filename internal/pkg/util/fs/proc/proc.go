@@ -157,3 +157,21 @@ func ReadIDMap(path string) (uint32, uint32, error) {
 
 	return uint32(containerID), uint32(hostID), nil
 }
+
+// SetOOMScoreAdj sets OOM score for process with pid
+func SetOOMScoreAdj(pid int, score *int) error {
+	if score != nil {
+		path := fmt.Sprintf("/proc/%d/oom_score_adj", pid)
+
+		f, err := os.OpenFile(path, os.O_WRONLY, 0)
+		if err != nil {
+			return fmt.Errorf("failed to open oom_score_adj: %s", err)
+		}
+		if _, err := fmt.Fprintf(f, "%d", *score); err != nil {
+			return fmt.Errorf("failed to set oom_score_adj: %s", err)
+		}
+
+		f.Close()
+	}
+	return nil
+}

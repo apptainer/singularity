@@ -207,6 +207,10 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
+	if err := proc.SetOOMScoreAdj(pid, engine.EngineConfig.OciConfig.Process.OOMScoreAdj); err != nil {
+		return err
+	}
+
 	sylog.Debugf("Mount all")
 	if err := system.MountAll(); err != nil {
 		return err

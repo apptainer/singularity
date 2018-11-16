@@ -217,3 +217,30 @@ func TestParentMount(t *testing.T) {
 
 	}
 }
+
+func TestSetOOMScoreAdj(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	pid := os.Getpid()
+
+	list := []struct {
+		pid   int
+		score int
+		fail  bool
+	}{
+		{pid, 0, false},
+		{pid, 10, false},
+		{0, 0, true},
+		{pid, -1, true},
+	}
+
+	for _, l := range list {
+		err := SetOOMScoreAdj(l.pid, &l.score)
+		if l.fail && err == nil {
+			t.Errorf("writing %d in /proc/%d/oom_score_adj should have failed", l.score, l.pid)
+		} else if !l.fail && err != nil {
+			t.Error(err)
+		}
+	}
+}
