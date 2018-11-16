@@ -13,6 +13,7 @@ import (
 	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -82,7 +83,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
 
-	os.Setenv("PATH", "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
+	for _, e := range engine.EngineConfig.OciConfig.Process.Env {
+		if strings.HasPrefix(e, "PATH=") {
+			os.Setenv("PATH", e[5:])
+		}
+	}
 
 	bpath, err := osexec.LookPath(args[0])
 	if err != nil {
