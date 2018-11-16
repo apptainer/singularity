@@ -12,9 +12,9 @@ import (
 	"os"
 	"time"
 
-	util "github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	util "github.com/sylabs/singularity/pkg/client/library"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 

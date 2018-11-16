@@ -26,7 +26,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	library "github.com/sylabs/singularity/internal/pkg/client/library"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -38,6 +37,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	library "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/src/docs"
 )
 

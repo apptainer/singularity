@@ -16,7 +16,7 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	"github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // HTTP timeout in seconds
@@ -136,10 +136,10 @@ func createContainer(baseURL string, authToken string, name string, collectionID
 	return res.Data, nil
 }
 
-func createImage(baseURL string, authToken string, hash string, containerID string) (image Image, err error) {
+func createImage(baseURL string, authToken string, hash string, containerID string, description string) (image Image, err error) {
 	i := Image{
 		Hash:        hash,
-		Description: "No description",
+		Description: description,
 		Container:   bson.ObjectIdHex(containerID),
 	}
 	imgJSON, err := apiCreate(i, baseURL+"/v1/images", authToken)

@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 var (
