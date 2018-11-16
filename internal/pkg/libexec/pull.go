@@ -10,7 +10,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	library "github.com/sylabs/singularity/pkg/client/library"
-	net "github.com/sylabs/singularity/internal/pkg/client/net"
+	net "github.com/sylabs/singularity/pkg/client/net"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
 
