@@ -1092,7 +1092,7 @@ __attribute__((constructor)) static void init(void) {
                 prepare_scontainer_stage(SCONTAINER_STAGE2);
                 execute = SCONTAINER_STAGE2;
             } else {
-                singularity_message(ERROR, "fork failed: %s", strerror(errno));
+                singularity_message(ERROR, "fork failed: %s\n", strerror(errno));
                 exit(1);
             }
         } else {
@@ -1101,18 +1101,24 @@ __attribute__((constructor)) static void init(void) {
         }
         return;
     } else if ( stage_pid > 0 ) {
-        config.containerPid = stage_pid;
+        pid_t parent_pgrp = getpgid(getppid());
+        pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
+        pid_t pgrp = getpgrp();
 
-        if ( isatty(STDIN_FILENO) ) {
+        if ( tcpgrp == pgrp && parent_pgrp != pgrp ) {
+            singularity_message(DEBUG, "Pass terminal control to child\n");
+
             if ( setpgid(stage_pid, stage_pid) < 0 ) {
-                singularity_message(ERROR, "Failed to set child process group: %s", strerror(errno));
+                singularity_message(ERROR, "Failed to set child process group: %s\n", strerror(errno));
                 exit(1);
             }
             if ( tcsetpgrp(STDIN_FILENO, stage_pid) < 0 ) {
-                singularity_message(ERROR, "Failed to set child as foreground process: %s", strerror(errno));
+                singularity_message(ERROR, "Failed to set child as foreground process: %s\n", strerror(errno));
                 exit(1);
             }
         }
+
+        config.containerPid = stage_pid;
 
         singularity_message(VERBOSE, "Spawn smaster process\n");
 

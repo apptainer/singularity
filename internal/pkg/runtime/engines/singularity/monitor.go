@@ -26,7 +26,9 @@ func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal
 			}
 			return status, nil
 		default:
-			return status, fmt.Errorf("interrupted by signal %s", s.String())
+			if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {
+				return status, fmt.Errorf("interrupted by signal %s", s.String())
+			}
 		}
 	}
 }

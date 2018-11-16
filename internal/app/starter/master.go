@@ -115,10 +115,10 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 
 	if status.Signaled() {
 		sylog.Debugf("Child exited due to signal %d", status.Signal())
-		if os.Getppid() == ppid {
+		if sconfig.GetInstance() && os.Getppid() == ppid {
 			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
-		syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
+		os.Exit(128 + int(status.Signal()))
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
 		if sconfig.GetInstance() {
