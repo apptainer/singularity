@@ -411,6 +411,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		return fmt.Errorf("incorrect engine")
 	}
 
+	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
+		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+	}
+
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}

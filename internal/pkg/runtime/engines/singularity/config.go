@@ -6,13 +6,10 @@
 package singularity
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/network"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // Name is the name of the runtime.
@@ -107,15 +104,10 @@ type EngineConfig struct {
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
 func NewConfig() *EngineConfig {
-	c := &FileConfig{}
-	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
-	}
-
 	ret := &EngineConfig{
 		JSON:      &JSONConfig{},
 		OciConfig: &oci.Config{},
-		File:      c,
+		File:      &FileConfig{},
 	}
 
 	return ret
