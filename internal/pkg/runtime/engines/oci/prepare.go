@@ -12,9 +12,57 @@ import (
 
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-tools/specerror"
+	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 )
+
+func (e *EngineOperations) validateConfig() error {
+	v, err := validate.NewValidator(e.EngineConfig.OciConfig.Config, e.EngineConfig.GetBundlePath(), true, "linux")
+	if err != nil {
+		return err
+	}
+
+	err = v.CheckMandatoryFields()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckPlatform()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckRoot()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckSemVer()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckMounts()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckProcess()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckLinux()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckAnnotations()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+	err = v.CheckHooks()
+	if specerror.FindError(err, specerror.NonError) != specerror.NonError {
+		return err
+	}
+
+	return nil
+}
 
 // PrepareConfig checks and prepares the runtime engine config
 func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
@@ -28,6 +76,14 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 
 	if e.EngineConfig.OciConfig.Process == nil {
 		return fmt.Errorf("empty OCI process configuration")
+	}
+
+	if e.EngineConfig.OciConfig.Linux == nil {
+		return fmt.Errorf("empty OCI linux configuration")
+	}
+
+	if err := e.validateConfig(); err != nil {
+		return err
 	}
 
 	// reset state config that could be passed to engine
@@ -48,25 +104,21 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 
 	starterConfig.SetInstance(true)
 
-	if e.EngineConfig.OciConfig.Linux != nil {
-		userNS := false
-		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
-			if ns.Type == specs.UserNamespace {
-				userNS = true
-				break
-			}
+	userNS := false
+	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
+		if ns.Type == specs.UserNamespace {
+			userNS = true
+			break
 		}
-		if !userNS && os.Getuid() != 0 {
-			return fmt.Errorf("you can't run without root privileges, use user namespace rather")
-		}
+	}
+	if !userNS && os.Getuid() != 0 {
+		return fmt.Errorf("you can't run without root privileges, use user namespace rather")
+	}
 
-		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
-		if userNS {
-			starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-			starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
-		}
-	} else {
-		return fmt.Errorf("empty OCI linux configuration")
+	starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
+	if userNS {
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}
 
 	if e.EngineConfig.OciConfig.Linux.RootfsPropagation != "" {

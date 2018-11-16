@@ -148,8 +148,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 }
 
 // PreStartProcess will be executed in smaster context
-func (engine *EngineOperations) PreStartProcess() error {
+func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn) error {
 	var master *os.File
+
+	// stop container process
+	syscall.Kill(pid, syscall.SIGSTOP)
 
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
@@ -180,6 +183,20 @@ func (engine *EngineOperations) PreStartProcess() error {
 	}
 
 	go engine.handleStream(master, l)
+
+	// since paused process block on read, send it an
+	// ACK so when it will receive SIGCONT, the process
+	// will continue execution normally
+	if _, err := masterConn.Write([]byte("s")); err != nil {
+		return fmt.Errorf("failed to send ACK to start process: %s", err)
+	}
+
+	// wait container process execution
+	data := make([]byte, 1)
+
+	if _, err := masterConn.Read(data); err != io.EOF {
+		return err
+	}
 
 	return nil
 }

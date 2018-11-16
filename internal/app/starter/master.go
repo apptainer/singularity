@@ -80,26 +80,11 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 				}
 			}
 
-			// stop container process
-			syscall.Kill(containerPid, syscall.SIGSTOP)
-
-			if obj, ok := engine.EngineOperations.(interface{ PreStartProcess() error }); ok {
-				if err := obj.PreStartProcess(); err != nil {
+			if obj, ok := engine.EngineOperations.(interface{ PreStartProcess(int, net.Conn) error }); ok {
+				if err := obj.PreStartProcess(containerPid, conn); err != nil {
 					fatalChan <- fmt.Errorf("pre start process failed: %s", err)
 					return
 				}
-			}
-
-			// since paused process block on read, send it an
-			// ACK so when it will receive SIGCONT, the process
-			// will continue execution normally
-			if _, err := conn.Write([]byte("s")); err != nil {
-				fatalChan <- fmt.Errorf("failed to send ACK to start process: %s", err)
-			}
-
-			// wait container process execution
-			if _, err := conn.Read(data); err != io.EOF {
-				return
 			}
 		}
 
