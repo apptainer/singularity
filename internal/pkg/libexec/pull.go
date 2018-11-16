@@ -8,10 +8,19 @@ package libexec
 import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
-	library "github.com/sylabs/singularity/internal/pkg/client/library"
-	shub "github.com/sylabs/singularity/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	library "github.com/sylabs/singularity/pkg/client/library"
+	net "github.com/sylabs/singularity/pkg/client/net"
+	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
+
+// PullNetImage is the function that is responsible for pulling an image from http remote url.
+func PullNetImage(image, libraryURL string, force bool) {
+	err := net.DownloadImage(image, libraryURL, force)
+	if err != nil {
+		sylog.Fatalf("%v\n", err)
+	}
+}
 
 // PullLibraryImage is the function that is responsible for pulling an image from a Sylabs library.
 func PullLibraryImage(image, libraryRef, libraryURL string, force bool, authToken string) {

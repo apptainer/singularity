@@ -19,10 +19,10 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	"github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/jsonresp"
+	"github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // CloudURI holds the URI of the Library web front-end.

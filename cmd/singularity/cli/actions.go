@@ -26,7 +26,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	library "github.com/sylabs/singularity/internal/pkg/client/library"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -38,6 +37,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	library "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/src/docs"
 )
 
@@ -163,6 +163,25 @@ func handleShub(u string) (string, error) {
 	return imagePath, nil
 }
 
+func handleNet(u string) (string, error) {
+	refParts := strings.Split(u, "/")
+	imageName := refParts[len(refParts)-1]
+	imagePath := cache.NetImage("hash", imageName)
+
+	exists, err := cache.NetImageExists("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading network image")
+		libexec.PullNetImage(imagePath, u, true)
+	} else {
+		sylog.Infof("Use image from cache")
+	}
+
+	return imagePath, nil
+}
+
 func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
@@ -182,6 +201,10 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
 		image, err = handleOCI(args[0])
+	case uri.HTTP:
+		image, err = handleNet(args[0])
+	case uri.HTTPS:
+		image, err = handleNet(args[0])
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}

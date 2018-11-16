@@ -17,6 +17,10 @@ const (
 	// ShubProtocol holds singularity hub base URI
 	// for more info refer to https://singularity-hub.org/
 	ShubProtocol = "shub"
+	// HTTPProtocol holds the remote http base URI
+	HTTPProtocol = "http"
+	// HTTPSProtocol holds the remote https base URI
+	HTTPSProtocol = "https"
 )
 
 var (
