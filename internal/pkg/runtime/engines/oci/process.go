@@ -27,6 +27,20 @@ import (
 
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
+	cwd := engine.EngineConfig.OciConfig.Process.Cwd
+
+	if cwd == "" {
+		cwd = "/"
+	}
+
+	if !filepath.IsAbs(cwd) {
+		return fmt.Errorf("cwd property must be an absolute path")
+	}
+
+	if err := os.Chdir(cwd); err != nil {
+		return fmt.Errorf("can't enter in current working directory: %s", err)
+	}
+
 	if engine.EngineConfig.EmptyProcess {
 		// pause process, by sending data to Smaster the process will
 		// be paused with SIGSTOP signal
