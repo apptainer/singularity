@@ -408,9 +408,18 @@ func ociCreate(containerID string) error {
 
 	os.Clearenv()
 
+	absBundle, err := filepath.Abs(bundlePath)
+	if err != nil {
+		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
+	}
+
+	if err := os.Chdir(absBundle); err != nil {
+		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
+	}
+
 	engineConfig := oci.NewConfig()
 	generator := generate.Generator{Config: &engineConfig.OciConfig.Spec}
-	engineConfig.SetBundlePath(bundlePath)
+	engineConfig.SetBundlePath(absBundle)
 
 	// load config.json from bundle path
 	configJSON := filepath.Join(bundlePath, "config.json")

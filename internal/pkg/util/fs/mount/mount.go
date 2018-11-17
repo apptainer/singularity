@@ -7,6 +7,7 @@ package mount
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -185,6 +186,8 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 	for _, m := range mounts {
 		var options []string
 		var propagationOption string
+		var source string
+		var err error
 
 		tag = ""
 		if m.Type != "" {
@@ -206,6 +209,11 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 			}
 			options = append(options, m.Options...)
 		} else {
+			source, err = filepath.Abs(m.Source)
+			if err != nil {
+				return points, fmt.Errorf("failed to determine absolute path for %s: %s", m.Source, err)
+			}
+
 			for _, opt := range m.Options {
 				switch opt {
 				case "shared",
@@ -225,7 +233,7 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 		}
 		points[tag] = append(points[tag], Point{
 			Mount: specs.Mount{
-				Source:      m.Source,
+				Source:      source,
 				Destination: m.Destination,
 				Type:        m.Type,
 				Options:     options,
