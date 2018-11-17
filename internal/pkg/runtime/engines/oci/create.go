@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/pkg/util/sysctl"
+
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/unix"
 
@@ -205,6 +207,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	if err := proc.SetOOMScoreAdj(pid, engine.EngineConfig.OciConfig.Process.OOMScoreAdj); err != nil {
 		return err
+	}
+
+	for key, value := range engine.EngineConfig.OciConfig.Linux.Sysctl {
+		if err := sysctl.Set(key, value); err != nil {
+			return err
+		}
 	}
 
 	sylog.Debugf("Mount all")
