@@ -11,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -186,61 +188,54 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 	for _, m := range mounts {
 		var options []string
 		var propagationOption string
-		var source string
 		var err error
+		source := m.Source
+		mountType := m.Type
 
 		tag = ""
-		if m.Type != "" {
-			if _, ok := authorizedFS[m.Type]; !ok {
-				return points, fmt.Errorf("%s filesystem type is not authorized", m.Type)
+		if mountType != "" && mountType != "none" {
+			if _, ok := authorizedFS[mountType]; !ok {
+				return points, fmt.Errorf("%s filesystem type is not authorized", mountType)
 			}
-			switch m.Type {
-			case "overlay":
-				tag = LayerTag
-			case "proc", "sysfs", "cgroup":
-				tag = KernelTag
-			case "devpts", "mqueue":
-				tag = DevTag
-			default:
-				tag = OtherTag
+			if has, err := proc.HasFilesystem(mountType); err != nil || !has {
+				return points, fmt.Errorf("%s filesystem not supported", mountType)
 			}
-			if strings.HasPrefix(m.Destination, "/dev") {
-				tag = DevTag
-			}
-			options = append(options, m.Options...)
+			tag = KernelTag
 		} else {
 			source, err = filepath.Abs(m.Source)
 			if err != nil {
 				return points, fmt.Errorf("failed to determine absolute path for %s: %s", m.Source, err)
 			}
-
-			for _, opt := range m.Options {
-				switch opt {
-				case "shared",
-					"rshared",
-					"slave",
-					"rslave",
-					"private",
-					"rprivate",
-					"unbindable",
-					"runbindable":
-					propagationOption = opt
-				default:
-					options = append(options, opt)
-				}
-			}
-			tag = BindsTag
+			tag = UserbindsTag
+			mountType = ""
 		}
+
+		for _, opt := range m.Options {
+			switch opt {
+			case "shared",
+				"rshared",
+				"slave",
+				"rslave",
+				"private",
+				"rprivate",
+				"unbindable",
+				"runbindable":
+				propagationOption = opt
+			default:
+				options = append(options, opt)
+			}
+		}
+
 		points[tag] = append(points[tag], Point{
 			Mount: specs.Mount{
 				Source:      source,
 				Destination: m.Destination,
-				Type:        m.Type,
+				Type:        mountType,
 				Options:     options,
 			},
 		})
 
-		if len(options) > 1 && tag == BindsTag {
+		if len(options) > 1 && tag == UserbindsTag {
 			options = append(options, "remount")
 			points[tag] = append(points[tag], Point{
 				Mount: specs.Mount{

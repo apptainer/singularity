@@ -176,20 +176,16 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	for _, point := range system.Points.GetByTag(mount.DevTag) {
+	for _, point := range system.Points.GetByTag(mount.KernelTag) {
+		if point.Type == "cgroup" {
+			c.bindCgroup = true
+			continue
+		}
 		if point.Destination == "/dev" && point.Type == "" {
 			flags, _ := mount.ConvertOptions(point.Options)
 			if flags&syscall.MS_REC != 0 {
 				c.bindDev = true
 			}
-			break
-		}
-	}
-
-	for _, point := range system.Points.GetByTag(mount.KernelTag) {
-		if point.Type == "cgroup" {
-			c.bindCgroup = true
-			break
 		}
 	}
 
@@ -198,7 +194,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	if !c.bindDev {
-		if err := system.RunAfterTag(mount.DevTag, c.addDevices); err != nil {
+		if err := system.RunAfterTag(mount.KernelTag, c.addDevices); err != nil {
 			return err
 		}
 	}
