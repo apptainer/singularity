@@ -193,7 +193,7 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 		mountType := m.Type
 
 		tag = ""
-		if mountType != "" && mountType != "none" {
+		if mountType != "" && mountType != "bind" {
 			if _, ok := authorizedFS[mountType]; !ok {
 				return points, fmt.Errorf("%s filesystem type is not authorized", mountType)
 			}
@@ -499,6 +499,15 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 					continue
 				}
 			}
+			// check if this is a bind mount point
+			if flags&syscall.MS_BIND != 0 {
+				if err = p.AddBind(tag, point.Source, point.Destination, flags); err == nil {
+					continue
+				} else {
+					fmt.Println(err)
+				}
+			}
+
 			for _, option := range point.InternalOptions {
 				if strings.HasPrefix(option, "offset=") {
 					fmt.Sscanf(option, "offset=%d", &offset)
@@ -507,12 +516,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 					fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 				}
 			}
-			// check if this is a bind mount point
-			if flags&syscall.MS_BIND != 0 {
-				if err = p.AddBind(tag, point.Source, point.Destination, flags); err == nil {
-					continue
-				}
-			}
+
 			// check if this is an image mount point
 			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
 				continue

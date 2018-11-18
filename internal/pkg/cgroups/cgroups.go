@@ -7,7 +7,9 @@ package cgroups
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/containerd/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -15,44 +17,53 @@ import (
 
 const (
 	singularity = "/singularity"
-	sysFsPath   = "/sys/fs/cgroup"
 )
 
 // Manager manage container cgroup resources restriction
 type Manager struct {
+	ParentPath   string
 	Name         string
 	Pid          int
 	parentCgroup cgroups.Cgroup
 	childCgroup  cgroups.Cgroup
 }
 
-// GetPaths returns all cgroup subsystem path for mount purpose
-func (m *Manager) GetPaths() []string {
-	var paths []string
+// GetCgroupRootPath returns cgroup root path
+func (m *Manager) GetCgroupRootPath() string {
+	path := ""
 
 	if m.childCgroup == nil {
-		return paths
+		return path
 	}
 
 	for _, sub := range m.childCgroup.Subsystems() {
-		subPath := filepath.Join(sysFsPath, string(sub.Name()), singularity, m.Name)
-		paths = append(paths, subPath)
+		processes, err := m.childCgroup.Processes(sub.Name(), false)
+		if len(processes) == 0 || err != nil {
+			continue
+		}
+		process := processes[0]
+		cgroupPath := strings.Split(process.Path, string(sub.Name()))[0]
+		return filepath.Clean(cgroupPath)
 	}
 
-	return paths
+	return path
 }
 
 // ApplyFromSpec applies cgroups ressources restriction from OCI specification
 func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
-	path := cgroups.StaticPath(singularity)
+	var path cgroups.Path
 
-	// creates singularity group
-	_, err = cgroups.New(cgroups.V1, path, &specs.LinuxResources{})
-	if err != nil {
-		return err
+	if m.ParentPath == "" {
+		path = cgroups.StaticPath(singularity)
+	} else {
+		if !filepath.IsAbs(m.ParentPath) {
+			return fmt.Errorf("parent path must be an absolute path")
+		}
+		path = cgroups.StaticPath(m.ParentPath)
 	}
 
-	m.parentCgroup, err = cgroups.Load(cgroups.V1, path)
+	// creates singularity group
+	m.parentCgroup, err = cgroups.New(cgroups.V1, path, &specs.LinuxResources{})
 	if err != nil {
 		return err
 	}
@@ -100,10 +111,6 @@ func (m *Manager) ApplyFromFile(path string) error {
 
 // Remove removes ressources restriction for current managed process
 func (m *Manager) Remove() error {
-	// removes process from singularity root tasks
-	// error is ignored because process may not exists
-	m.parentCgroup.Add(cgroups.Process{Pid: m.Pid})
-
 	// deletes subgroup
 	return m.childCgroup.Delete()
 }

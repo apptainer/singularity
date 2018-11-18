@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -32,12 +33,12 @@ import (
 )
 
 type container struct {
-	engine     *EngineOperations
-	rpcOps     *client.RPC
-	rootfs     string
-	rpcRoot    string
-	bindDev    bool
-	bindCgroup bool
+	engine      *EngineOperations
+	rpcOps      *client.RPC
+	rootfs      string
+	rpcRoot     string
+	bindDev     bool
+	cgroupIndex int
 }
 
 func (engine *EngineOperations) createState(pid int) error {
@@ -152,10 +153,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	c := &container{
-		engine:  engine,
-		rpcOps:  rpcOps,
-		rootfs:  resolvedRootfs,
-		rpcRoot: fmt.Sprintf("/proc/%d/root", pid),
+		engine:      engine,
+		rpcOps:      rpcOps,
+		rootfs:      resolvedRootfs,
+		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
+		cgroupIndex: -1,
 	}
 
 	p := &mount.Points{}
@@ -167,20 +169,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	system := &mount.System{Points: p, Mount: c.mount}
 
-	manager := &cgroups.Manager{Pid: pid, Name: engine.CommonConfig.ContainerID}
-	if err := manager.ApplyFromSpec(engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
-		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
-	}
-	engine.EngineConfig.Cgroups = manager
-
-	// import OCI mount spec
-	if err := system.Points.ImportFromSpec(engine.EngineConfig.OciConfig.Config.Mounts); err != nil {
-		return err
-	}
-
-	for _, point := range system.Points.GetByTag(mount.KernelTag) {
+	for i, point := range engine.EngineConfig.OciConfig.Config.Mounts {
 		if point.Type == "cgroup" {
-			c.bindCgroup = true
+			c.cgroupIndex = i
 			continue
 		}
 		if point.Destination == "/dev" && point.Type == "" {
@@ -189,6 +180,15 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 				c.bindDev = true
 			}
 		}
+	}
+
+	if err := c.addCgroups(pid, system); err != nil {
+		return err
+	}
+
+	// import OCI mount spec
+	if err := system.Points.ImportFromSpec(engine.EngineConfig.OciConfig.Config.Mounts); err != nil {
+		return err
 	}
 
 	if err := c.addRootfsMount(system); err != nil {
@@ -230,6 +230,108 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (c *container) addCgroups(pid int, system *mount.System) error {
+	name := c.engine.CommonConfig.ContainerID
+	cgroupsPath := c.engine.EngineConfig.OciConfig.Linux.CgroupsPath
+	parent := "/singularity-oci"
+
+	if cgroupsPath != "" {
+		if filepath.IsAbs(cgroupsPath) {
+			dir := filepath.Dir(cgroupsPath)
+			name = filepath.Base(cgroupsPath)
+			if dir != "/" {
+				parent = dir
+			}
+		} else {
+			name = cgroupsPath
+		}
+	}
+
+	manager := &cgroups.Manager{ParentPath: parent, Pid: pid, Name: name}
+
+	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
+		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+	}
+
+	if c.cgroupIndex >= 0 {
+		m := c.engine.EngineConfig.OciConfig.Config.Mounts[c.cgroupIndex]
+		c.engine.EngineConfig.OciConfig.Config.Mounts = append(
+			c.engine.EngineConfig.OciConfig.Config.Mounts[:c.cgroupIndex],
+			c.engine.EngineConfig.OciConfig.Config.Mounts[c.cgroupIndex+1:]...,
+		)
+
+		cgroupRootPath := manager.GetCgroupRootPath()
+		if cgroupRootPath == "" {
+			return fmt.Errorf("failed to determine cgroup root path")
+		}
+
+		flags, opt := mount.ConvertOptions(m.Options)
+		options := strings.Join(opt, ",")
+
+		readOnly := false
+		if flags&syscall.MS_RDONLY != 0 {
+			readOnly = true
+			flags &^= uintptr(syscall.MS_RDONLY)
+		}
+
+		hasMode := false
+		for _, o := range opt {
+			if strings.HasPrefix(o, "mode=") {
+				hasMode = true
+				break
+			}
+		}
+		if !hasMode {
+			options += ",mode=755"
+		}
+
+		if err := system.Points.AddFS(mount.OtherTag, m.Destination, "tmpfs", flags, options); err != nil {
+			return err
+		}
+
+		f, err := os.Open(fmt.Sprintf("/proc/%d/cgroup", pid))
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		flags |= uintptr(syscall.MS_BIND)
+		if readOnly {
+			flags |= syscall.MS_RDONLY
+		}
+
+		scanner := bufio.NewScanner(f)
+		for scanner.Scan() {
+			cgroupLine := strings.Split(scanner.Text(), ":")
+			if strings.HasPrefix(cgroupLine[1], "name=") {
+				cgroupLine[1] = strings.Replace(cgroupLine[1], "name=", "", 1)
+			}
+			if cgroupLine[1] != "" {
+				source := filepath.Join(cgroupRootPath, cgroupLine[1], cgroupLine[2])
+				dest := filepath.Join(m.Destination, cgroupLine[1])
+				if err := system.Points.AddBind(mount.OtherTag, source, dest, flags); err != nil {
+					return err
+				}
+				if readOnly {
+					if err := system.Points.AddRemount(mount.OtherTag, dest, flags); err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		if readOnly {
+			if err := system.Points.AddRemount(mount.FinalTag, m.Destination, flags); err != nil {
+				return err
+			}
+		}
+	}
+
+	c.engine.EngineConfig.Cgroups = manager
 
 	return nil
 }
