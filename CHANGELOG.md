@@ -11,6 +11,8 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.0.1
 
+  - Add http/https protocols for singularity run/pull commands
+
 # v3.0.1 - [2018.10.31]
 
   - Improved RPM packaging procedure via makeit
