@@ -94,7 +94,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	uid := int(e.EngineConfig.OciConfig.Process.User.UID)
 	gid := e.EngineConfig.OciConfig.Process.User.GID
 
-	gids = append(gids, int(gid), int(gid))
+	gids = append(gids, int(gid))
 	for _, g := range e.EngineConfig.OciConfig.Process.User.AdditionalGids {
 		gids = append(gids, int(g))
 	}
