@@ -55,7 +55,6 @@ func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error
 		Timeout: 30 * time.Second,
 	}
 
-	//var registry string
 	if uri.registry != defaultRegistry+shubAPIRoute {
 		uri.registry = "https://" + uri.registry
 	}
