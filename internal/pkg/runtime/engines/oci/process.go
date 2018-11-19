@@ -26,6 +26,44 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+func (engine *EngineOperations) emptyProcess(masterConn net.Conn) error {
+	// pause process, by sending data to Smaster the process will
+	// be paused with SIGSTOP signal
+	if _, err := masterConn.Write([]byte("t")); err != nil {
+		return fmt.Errorf("failed to pause process: %s", err)
+	}
+
+	// block on read waiting SIGCONT signal
+	data := make([]byte, 1)
+	if _, err := masterConn.Read(data); err != nil {
+		return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+	}
+
+	masterConn.Close()
+
+	var status syscall.WaitStatus
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
+
+	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
+		return fmt.Errorf("failed to apply security configuration: %s", err)
+	}
+
+	for {
+		s := <-signals
+		switch s {
+		case syscall.SIGCHLD:
+			for {
+				if pid, _ := syscall.Wait4(-1, &status, syscall.WNOHANG, nil); pid <= 0 {
+					break
+				}
+			}
+		case syscall.SIGINT, syscall.SIGTERM:
+			os.Exit(0)
+		}
+	}
+}
+
 // StartProcess starts the process
 func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	cwd := engine.EngineConfig.OciConfig.Process.Cwd
@@ -43,41 +81,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	if engine.EngineConfig.EmptyProcess {
-		// pause process, by sending data to Smaster the process will
-		// be paused with SIGSTOP signal
-		if _, err := masterConn.Write([]byte("t")); err != nil {
-			return fmt.Errorf("failed to pause process: %s", err)
-		}
-
-		// block on read waiting SIGCONT signal
-		data := make([]byte, 1)
-		if _, err := masterConn.Read(data); err != nil {
-			return fmt.Errorf("failed to receive ack from Smaster: %s", err)
-		}
-
-		masterConn.Close()
-
-		var status syscall.WaitStatus
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
-
-		if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
-			return fmt.Errorf("failed to apply security configuration: %s", err)
-		}
-
-		for {
-			s := <-signals
-			switch s {
-			case syscall.SIGCHLD:
-				for {
-					if pid, _ := syscall.Wait4(-1, &status, syscall.WNOHANG, nil); pid <= 0 {
-						break
-					}
-				}
-			case syscall.SIGINT, syscall.SIGTERM:
-				os.Exit(0)
-			}
-		}
+		return engine.emptyProcess(masterConn)
 	}
 
 	args := engine.EngineConfig.OciConfig.Process.Args
