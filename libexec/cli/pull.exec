@@ -160,7 +160,7 @@ case "$SINGULARITY_CONTAINER" in
              ${SINGULARITY_bindir}/singularity ${DBGFLAG} build ${SINGULARITY_IMAGE} ${SINGULARITY_CONTAINER}
              RETVAL=$?
          else
-             message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
+             message ERROR "Could not locate the Singularity binary: $SINGULARITY_bindir/singularity\n"
              exit 1
          fi
     ;;

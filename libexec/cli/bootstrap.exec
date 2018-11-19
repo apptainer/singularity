@@ -119,7 +119,7 @@ elif [ -x "${SINGULARITY_bindir}/singularity" ]; then
     ${SINGULARITY_bindir}/singularity build -w  ${SINGULARITY_IMAGE} ${SINGULARITY_BUILDDEF}
     exit 0
 else
-    message ERROR "Could not locate the Singularity binary: $SINGULARITY_home/singularity\n"
+    message ERROR "Could not locate the Singularity binary: $SINGULARITY_bindir/singularity\n"
     exit 1
 fi
 
