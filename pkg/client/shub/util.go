@@ -76,5 +76,9 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 	// container name is left over after other parts are split from it
 	uri.container = src
 
+	if uri.tag == "" && uri.digest == "" {
+		uri.tag = ":latest"
+	}
+
 	return uri, nil
 }

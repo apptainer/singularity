@@ -31,8 +31,8 @@ func PullLibraryImage(image, libraryRef, libraryURL string, force bool, authToke
 }
 
 // PullShubImage is the function that is responsible for pulling an image from a Singularity Hub.
-func PullShubImage(filePath, shubRef string, force bool) {
-	err := shub.DownloadImage(filePath, shubRef, force)
+func PullShubImage(filePath, shubRef string, force, noHTTPS bool) {
+	err := shub.DownloadImage(filePath, shubRef, force, noHTTPS)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}

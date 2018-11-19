@@ -27,7 +27,7 @@ func TestDownloadImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	err := DownloadImage(shubImgPath, shubURI, false)
+	err := DownloadImage(shubImgPath, shubURI, false, false)
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", shubURI, err)
 	}
