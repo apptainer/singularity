@@ -37,6 +37,7 @@ type container struct {
 	rpcOps      *client.RPC
 	rootfs      string
 	rpcRoot     string
+	userNS      bool
 	bindDev     bool
 	cgroupIndex int
 }
@@ -158,6 +159,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		rootfs:      resolvedRootfs,
 		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
 		cgroupIndex: -1,
+	}
+
+	for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+		if ns.Type == specs.UserNamespace {
+			c.userNS = true
+			break
+		}
 	}
 
 	p := &mount.Points{}
@@ -343,8 +351,10 @@ func (c *container) addAllPaths(system *mount.System) error {
 	}
 
 	// add read-only path
-	if err := c.addReadonlyPathsMount(system); err != nil {
-		return err
+	if !c.userNS {
+		if err := c.addReadonlyPathsMount(system); err != nil {
+			return err
+		}
 	}
 
 	return nil
