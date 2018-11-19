@@ -60,16 +60,22 @@ void daemon_file_write(int fd, char *key, char *val) {
     }
 }
 
-int daemon_is_owner(char *pid_path) {
+int daemon_is_owner(int proc_fd) {
     int retval = 0;
-    char *proc_status = joinpath(pid_path, "/status");
     char *uid_check = (char *)malloc(2048);
     char *line = (char *)malloc(2048);
-    FILE *status = fopen(proc_status, "r");
+    int status_fd;
+    FILE *status;
     pid_t uid = singularity_priv_getuid();
 
+    if ( ( status_fd = openat(proc_fd, "status", O_RDONLY) ) < 0 ) {
+        singularity_message(ERROR, "Failed to open proc status: %s\n", strerror(errno));
+        ABORT(255);
+    }
+
+    status = fdopen(status_fd, "r");
     if ( status == NULL ) {
-        singularity_message(ERROR, "Failed to open %s to check instance owner\n", proc_status);
+        singularity_message(ERROR, "Failed to open status to check instance owner\n");
         ABORT(255);
     }
 
@@ -85,16 +91,15 @@ int daemon_is_owner(char *pid_path) {
 
     free(uid_check);
     free(line);
-    free(proc_status);
     fclose(status);
 
     return(retval);
 }
 
 void daemon_init_join(void) {
-    char *ns_path, *ns_fd_str;
+    char *ns_fd_str;
     char *pid_path;
-    int lock_result, ns_fd;
+    int lock_result, proc_fd, ns_fd;
     int *lock_fd = malloc(sizeof(int));
     char *daemon_file = singularity_registry_get("DAEMON_FILE");
     char *daemon_name = singularity_registry_get("DAEMON_NAME");
@@ -130,24 +135,27 @@ void daemon_init_join(void) {
         }
         snprintf(pid_path, PATH_MAX-1, "/proc/%lu", pid); //Flawfinder: ignore
 
-        if ( daemon_is_owner(pid_path) == 0 ) {
-            singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
+        if ( ( proc_fd = open(pid_path, O_RDONLY) ) < 0 ) {
+            singularity_message(ERROR, "Unable to open %s directory: %s\n", pid_path, strerror(errno));
             ABORT(255);
         }
 
-        ns_path = joinpath(pid_path, "/ns");
+        if ( daemon_is_owner(proc_fd) == 0 ) {
+            singularity_message(ERROR, "Unable to join instance: you are not the owner\n");
+            ABORT(255);
+        }
 
         free(pid_path);
 
         /* Open FD to /proc/[PID]/ns directory to call openat() for ns files */
         singularity_priv_escalate();
-        if ( ( ns_fd = open(ns_path, O_RDONLY | O_CLOEXEC) ) == -1 ) {
+        if ( ( ns_fd = openat(proc_fd, "ns", O_RDONLY | O_CLOEXEC) ) < 0 ) {
             singularity_message(ERROR, "Unable to open ns directory of PID in daemon file: %s\n", strerror(errno));
             ABORT(255);
         }
         singularity_priv_drop();
 
-        free(ns_path);
+        close(proc_fd);
 
         ns_fd_str = int2str(ns_fd);
 
