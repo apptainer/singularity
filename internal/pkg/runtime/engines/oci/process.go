@@ -17,7 +17,9 @@ import (
 	"sync"
 	"syscall"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/util/unix"
+	"github.com/sylabs/singularity/pkg/util/rlimit"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
@@ -25,6 +27,24 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
+
+func setRlimit(rlimits []specs.POSIXRlimit) error {
+	var resources []string
+
+	for _, rl := range rlimits {
+		if err := rlimit.Set(rl.Type, rl.Soft, rl.Hard); err != nil {
+			return err
+		}
+		for _, t := range resources {
+			if t == rl.Type {
+				return fmt.Errorf("%s was already set", t)
+			}
+		}
+		resources = append(resources, rl.Type)
+	}
+
+	return nil
+}
 
 func (engine *EngineOperations) emptyProcess(masterConn net.Conn) error {
 	// pause process, by sending data to Smaster the process will
@@ -78,6 +98,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if err := os.Chdir(cwd); err != nil {
 		return fmt.Errorf("can't enter in current working directory: %s", err)
+	}
+
+	if err := setRlimit(engine.EngineConfig.OciConfig.Process.Rlimits); err != nil {
+		return err
 	}
 
 	if engine.EngineConfig.EmptyProcess {
