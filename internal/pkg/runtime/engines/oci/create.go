@@ -38,6 +38,7 @@ type container struct {
 	rootfs      string
 	rpcRoot     string
 	userNS      bool
+	utsNS       bool
 	bindDev     bool
 	cgroupIndex int
 }
@@ -162,9 +163,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
-		if ns.Type == specs.UserNamespace {
+		switch ns.Type {
+		case specs.UserNamespace:
 			c.userNS = true
-			break
+		case specs.UTSNamespace:
+			c.utsNS = true
 		}
 	}
 
@@ -226,6 +229,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	sylog.Debugf("Mount all")
 	if err := system.MountAll(); err != nil {
 		return err
+	}
+
+	if c.utsNS && engine.EngineConfig.OciConfig.Hostname != "" {
+		if _, err := rpcOps.SetHostname(engine.EngineConfig.OciConfig.Hostname); err != nil {
+			return err
+		}
 	}
 
 	_, err = rpcOps.Chroot(c.rootfs, true)
