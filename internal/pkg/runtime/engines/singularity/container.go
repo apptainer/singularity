@@ -199,7 +199,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		path := engine.EngineConfig.GetCgroupsPath()
 		if path != "" {
 			name := strconv.Itoa(pid)
-			manager := &cgroups.Manager{Pid: pid, Name: name}
+			path := filepath.Join("/singularity", name)
+			manager := &cgroups.Manager{Pid: pid, Path: path}
 			if err := manager.ApplyFromFile(path); err != nil {
 				return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
 			}

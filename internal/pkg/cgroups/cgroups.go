@@ -21,23 +21,21 @@ const (
 
 // Manager manage container cgroup resources restriction
 type Manager struct {
-	ParentPath   string
-	Name         string
-	Pid          int
-	parentCgroup cgroups.Cgroup
-	childCgroup  cgroups.Cgroup
+	Path   string
+	Pid    int
+	cgroup cgroups.Cgroup
 }
 
 // GetCgroupRootPath returns cgroup root path
 func (m *Manager) GetCgroupRootPath() string {
 	path := ""
 
-	if m.childCgroup == nil {
+	if m.cgroup == nil {
 		return path
 	}
 
-	for _, sub := range m.childCgroup.Subsystems() {
-		processes, err := m.childCgroup.Processes(sub.Name(), false)
+	for _, sub := range m.cgroup.Subsystems() {
+		processes, err := m.cgroup.Processes(sub.Name(), false)
 		if len(processes) == 0 || err != nil {
 			continue
 		}
@@ -53,33 +51,24 @@ func (m *Manager) GetCgroupRootPath() string {
 func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 	var path cgroups.Path
 
-	if m.ParentPath == "" {
-		path = cgroups.StaticPath(singularity)
-	} else {
-		if !filepath.IsAbs(m.ParentPath) {
-			return fmt.Errorf("parent path must be an absolute path")
-		}
-		path = cgroups.StaticPath(m.ParentPath)
+	if !filepath.IsAbs(m.Path) {
+		return fmt.Errorf("cgroup path must be an absolute path")
 	}
 
-	// creates singularity group
-	m.parentCgroup, err = cgroups.New(cgroups.V1, path, &specs.LinuxResources{})
-	if err != nil {
-		return err
-	}
+	path = cgroups.StaticPath(m.Path)
 
 	s := spec
 	if s == nil {
 		s = &specs.LinuxResources{}
 	}
 
-	// creates subgroup in singularity group
-	m.childCgroup, err = m.parentCgroup.New(m.Name, s)
+	// creates cgroup
+	m.cgroup, err = cgroups.New(cgroups.V1, path, s)
 	if err != nil {
 		return err
 	}
 
-	if err := m.childCgroup.Add(cgroups.Process{Pid: m.Pid}); err != nil {
+	if err := m.cgroup.Add(cgroups.Process{Pid: m.Pid}); err != nil {
 		return err
 	}
 
@@ -112,5 +101,5 @@ func (m *Manager) ApplyFromFile(path string) error {
 // Remove removes ressources restriction for current managed process
 func (m *Manager) Remove() error {
 	// deletes subgroup
-	return m.childCgroup.Delete()
+	return m.cgroup.Delete()
 }

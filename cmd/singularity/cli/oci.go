@@ -131,9 +131,12 @@ var OciDeleteCmd = &cobra.Command{
 
 // OciKillCmd represents oci start command
 var OciKillCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) > 1 && args[1] != "" {
+			stopSignal = args[1]
+		}
 		if err := ociKill(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}

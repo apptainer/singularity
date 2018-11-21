@@ -178,21 +178,23 @@ func (c *Config) SetNsFlags(flags int) {
 func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 	c.config.nsFlags = 0
 	for _, namespace := range namespaces {
-		switch namespace.Type {
-		case specs.UserNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWUSER
-		case specs.IPCNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWIPC
-		case specs.UTSNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWUTS
-		case specs.PIDNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWPID
-		case specs.NetworkNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWNET
-		case specs.MountNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWNS
-		case specs.CgroupNamespace:
-			c.config.nsFlags |= 0x2000000
+		if namespace.Path == "" {
+			switch namespace.Type {
+			case specs.UserNamespace:
+				c.config.nsFlags |= syscall.CLONE_NEWUSER
+			case specs.IPCNamespace:
+				c.config.nsFlags |= syscall.CLONE_NEWIPC
+			case specs.UTSNamespace:
+				c.config.nsFlags |= syscall.CLONE_NEWUTS
+			case specs.PIDNamespace:
+				c.config.nsFlags |= syscall.CLONE_NEWPID
+			case specs.NetworkNamespace:
+				c.config.nsFlags |= syscall.CLONE_NEWNET
+			case specs.MountNamespace:
+				c.config.nsFlags |= syscall.CLONE_NEWNS
+			case specs.CgroupNamespace:
+				c.config.nsFlags |= 0x2000000
+			}
 		}
 	}
 }
@@ -224,26 +226,28 @@ func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) {
 // SetNsPathFromSpec sets corresponding namespace to be joined from OCI spec
 func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) {
 	for _, namespace := range namespaces {
-		nullified := namespace.Path + "\x00"
+		if namespace.Path != "" {
+			nullified := namespace.Path + "\x00"
 
-		switch namespace.Type {
-		case specs.UserNamespace:
-			c.config.userNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.IPCNamespace:
-			c.config.ipcNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.UTSNamespace:
-			c.config.utsNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.PIDNamespace:
-			c.config.pidNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.NetworkNamespace:
-			c.config.netNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.MountNamespace:
-			c.config.mntNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.CgroupNamespace:
-			c.config.cgroupNsPathOffset = C.off_t(len(c.nsPath))
+			switch namespace.Type {
+			case specs.UserNamespace:
+				c.config.userNsPathOffset = C.off_t(len(c.nsPath))
+			case specs.IPCNamespace:
+				c.config.ipcNsPathOffset = C.off_t(len(c.nsPath))
+			case specs.UTSNamespace:
+				c.config.utsNsPathOffset = C.off_t(len(c.nsPath))
+			case specs.PIDNamespace:
+				c.config.pidNsPathOffset = C.off_t(len(c.nsPath))
+			case specs.NetworkNamespace:
+				c.config.netNsPathOffset = C.off_t(len(c.nsPath))
+			case specs.MountNamespace:
+				c.config.mntNsPathOffset = C.off_t(len(c.nsPath))
+			case specs.CgroupNamespace:
+				c.config.cgroupNsPathOffset = C.off_t(len(c.nsPath))
+			}
+
+			c.nsPath = append(c.nsPath, nullified...)
 		}
-
-		c.nsPath = append(c.nsPath, nullified...)
 	}
 }
 

@@ -254,21 +254,16 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 func (c *container) addCgroups(pid int, system *mount.System) error {
 	name := c.engine.CommonConfig.ContainerID
 	cgroupsPath := c.engine.EngineConfig.OciConfig.Linux.CgroupsPath
-	parent := "/singularity-oci"
 
-	if cgroupsPath != "" {
-		if filepath.IsAbs(cgroupsPath) {
-			dir := filepath.Dir(cgroupsPath)
-			name = filepath.Base(cgroupsPath)
-			if dir != "/" {
-				parent = dir
-			}
+	if !filepath.IsAbs(cgroupsPath) {
+		if cgroupsPath == "" {
+			cgroupsPath = filepath.Join("/singularity-oci", name)
 		} else {
-			name = cgroupsPath
+			cgroupsPath = filepath.Join("/singularity-oci", cgroupsPath)
 		}
 	}
 
-	manager := &cgroups.Manager{ParentPath: parent, Pid: pid, Name: name}
+	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
 
 	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
 		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)

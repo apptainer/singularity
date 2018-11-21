@@ -7,6 +7,7 @@ package cgroups
 
 import (
 	"os"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -18,8 +19,9 @@ func TestPutConfig(t *testing.T) {
 
 	pid := os.Getpid()
 	strPid := strconv.Itoa(pid)
+	path := filepath.Join("/singularity", strPid)
 
-	manager := &Manager{Pid: pid, Name: strPid}
+	manager := &Manager{Pid: pid, Path: path}
 	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
 		t.Errorf("%s", err)
 	}
