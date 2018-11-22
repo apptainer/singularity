@@ -44,17 +44,92 @@ var symlinkDevices = []struct {
 	{"/proc/self/fd/2", "/dev/stderr"},
 }
 
-var charDevices = []struct {
+type device struct {
 	major uint16
 	minor uint16
 	path  string
-}{
-	{1, 7, "/dev/full"},
-	{1, 3, "/dev/null"},
-	{1, 8, "/dev/random"},
-	{5, 0, "/dev/tty"},
-	{1, 9, "/dev/urandom"},
-	{1, 5, "/dev/zero"},
+	mode  os.FileMode
+	uid   int
+	gid   int
+}
+
+var devices = []device{
+	{1, 7, "/dev/full", syscall.S_IFCHR | 0666, 0, 0},
+	{1, 3, "/dev/null", syscall.S_IFCHR | 0666, 0, 0},
+	{1, 8, "/dev/random", syscall.S_IFCHR | 0666, 0, 0},
+	{5, 0, "/dev/tty", syscall.S_IFCHR | 0666, 0, 0},
+	{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666, 0, 0},
+	{1, 5, "/dev/zero", syscall.S_IFCHR | 0666, 0, 0},
+}
+
+func int64ptr(i int) *int64 {
+	t := int64(i)
+	return &t
+}
+
+var cgroupDevices = []specs.LinuxDeviceCgroup{
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(1),
+		Minor:  int64ptr(7),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(1),
+		Minor:  int64ptr(3),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(1),
+		Minor:  int64ptr(8),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(5),
+		Minor:  int64ptr(0),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(1),
+		Minor:  int64ptr(9),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(1),
+		Minor:  int64ptr(5),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(136),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(5),
+		Minor:  int64ptr(1),
+		Access: "rwm",
+	},
+	{
+		Allow:  true,
+		Type:   "c",
+		Major:  int64ptr(5),
+		Minor:  int64ptr(2),
+		Access: "rwm",
+	},
 }
 
 type container struct {
@@ -207,11 +282,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	system := &mount.System{Points: p, Mount: c.mount}
 
 	for i, point := range engine.EngineConfig.OciConfig.Config.Mounts {
+		// cgroup creation
 		if point.Type == "cgroup" {
 			c.cgroupIndex = i
 			continue
 		}
-		if point.Destination == "/dev" && point.Source == "/dev" {
+		// dev creation
+		if point.Destination == "/dev" && point.Type == "tmpfs" {
 			c.devIndex = i
 		}
 	}
@@ -445,30 +522,109 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 			if err := fs.Touch(path); err != nil {
 				return err
 			}
-		}
-		path = fmt.Sprintf("/proc/self/fd/%d", c.engine.EngineConfig.SlavePts)
-		console, err := os.Readlink(path)
-		if err != nil {
-			return err
-		}
-		if err := system.Points.AddBind(mount.OtherTag, console, "/dev/console", syscall.MS_BIND); err != nil {
-			return err
-		}
-	}
-
-	for _, charDevice := range charDevices {
-		dev := int((charDevice.major << 8) | charDevice.minor)
-		path := filepath.Join(rootfsPath, charDevice.path)
-		if _, err := os.Lstat(path); os.IsNotExist(err) {
-			if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+			path = fmt.Sprintf("/proc/self/fd/%d", c.engine.EngineConfig.SlavePts)
+			console, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			if err := system.Points.AddBind(mount.OtherTag, console, "/dev/console", syscall.MS_BIND); err != nil {
 				return err
 			}
 		}
 	}
+
+	for _, device := range devices {
+		dev := int((device.major << 8) | device.minor)
+		path := filepath.Join(rootfsPath, device.path)
+		if _, err := os.Lstat(path); os.IsNotExist(err) {
+			if err := syscall.Mknod(path, uint32(device.mode), dev); err != nil {
+				return err
+			}
+			if device.uid != 0 || device.gid != 0 {
+				if err := os.Chown(path, device.uid, device.gid); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
 func (c *container) addDevices(system *mount.System) error {
+	for _, d := range c.engine.EngineConfig.OciConfig.Linux.Devices {
+		var dev device
+
+		if d.Path == "" {
+			return fmt.Errorf("device path required")
+		}
+		dev.path = d.Path
+
+		if d.FileMode != nil {
+			dev.mode = *d.FileMode
+		} else {
+			dev.mode = 0644
+		}
+
+		switch d.Type {
+		case "c", "u":
+			dev.mode |= syscall.S_IFCHR
+			dev.major = uint16(d.Major)
+			dev.minor = uint16(d.Minor)
+		case "b":
+			dev.mode |= syscall.S_IFBLK
+			dev.major = uint16(d.Major)
+			dev.minor = uint16(d.Minor)
+		case "p":
+			dev.mode |= syscall.S_IFIFO
+		default:
+			return fmt.Errorf("device type unknown for %s", d.Path)
+		}
+
+		if d.UID != nil {
+			dev.uid = int(*d.UID)
+		}
+		if d.GID != nil {
+			dev.gid = int(*d.GID)
+		}
+
+		devices = append(devices, dev)
+	}
+
+	if c.devIndex >= 0 {
+		m := &c.engine.EngineConfig.OciConfig.Config.Mounts[c.devIndex]
+
+		flags, _ := mount.ConvertOptions(m.Options)
+
+		readOnly := false
+		if flags&syscall.MS_RDONLY != 0 {
+			readOnly = true
+		}
+
+		flags |= uintptr(syscall.MS_BIND)
+		if readOnly {
+			flags |= syscall.MS_RDONLY
+		}
+
+		if readOnly {
+			if err := system.Points.AddRemount(mount.FinalTag, m.Destination, flags); err != nil {
+				return err
+			}
+		}
+
+		for i := len(m.Options) - 1; i >= 0; i-- {
+			if m.Options[i] == "ro" {
+				m.Options = append(m.Options[:i], m.Options[i+1:]...)
+			}
+		}
+
+		if c.engine.EngineConfig.OciConfig.Linux.Resources == nil {
+			c.engine.EngineConfig.OciConfig.Linux.Resources = &specs.LinuxResources{}
+		}
+
+		c.engine.EngineConfig.OciConfig.Linux.Resources.Devices = append(c.engine.EngineConfig.OciConfig.Linux.Resources.Devices, cgroupDevices...)
+	}
+
 	return nil
 }
 
