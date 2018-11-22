@@ -224,20 +224,14 @@ func attach(socket string) error {
 
 	ostate, _ := terminal.MakeRaw(0)
 
-	var once sync.Once
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 
-	close := func() {
-		terminal.Restore(0, ostate)
-		wg.Done()
-	}
-
 	// Pipe session to bash and visa-versa
 	go func() {
 		io.Copy(channel, f)
-		once.Do(close)
+		wg.Done()
 	}()
 
 	go func() {
@@ -246,7 +240,9 @@ func attach(socket string) error {
 
 	wg.Wait()
 
-	return nil
+	fmt.Printf("\r")
+
+	return terminal.Restore(0, ostate)
 }
 
 func exitContainer(containerID string, syncSocketPath string) {
@@ -271,22 +267,25 @@ func exitContainer(containerID string, syncSocketPath string) {
 		if err := ociDelete(containerID); err != nil {
 			sylog.Errorf("%s", err)
 		}
-		os.Remove(syncSocketPath)
 	}
 }
 
 func ociRun(containerID string) error {
-	syncSocketPath = filepath.Join("/tmp", containerID+".sock")
-
-	defer os.Remove(syncSocketPath)
-
-	l, err := net.Listen("unix", syncSocketPath)
+	dir, err := ioutil.TempDir("/var/run/singularity", containerID)
 	if err != nil {
 		return err
 	}
-	defer l.Close()
+	syncSocketPath = filepath.Join(dir, "run.sock")
 
+	l, err := net.Listen("unix", syncSocketPath)
+	if err != nil {
+		os.RemoveAll(dir)
+		return err
+	}
+
+	defer l.Close()
 	defer exitContainer(containerID, syncSocketPath)
+	defer os.RemoveAll(dir)
 
 	if err := ociCreate(containerID); err != nil {
 		return err
@@ -323,9 +322,7 @@ func ociRun(containerID string) error {
 		}
 	}()
 
-	socket := <-start
-
-	return attach(socket)
+	return attach(<-start)
 }
 
 func ociAttach(containerID string) error {

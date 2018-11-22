@@ -194,7 +194,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn) er
 	if engine.EngineConfig.MasterPts != -1 {
 		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "master-pts")
 	} else {
-		master = os.Stdin
+		master = os.Stdout
 	}
 
 	file, err := instance.Get(engine.CommonConfig.ContainerID)

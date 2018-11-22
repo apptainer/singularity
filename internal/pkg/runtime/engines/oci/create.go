@@ -604,25 +604,16 @@ func (c *container) addDevices(system *mount.System) error {
 
 		flags, _ := mount.ConvertOptions(m.Options)
 
-		readOnly := false
-		if flags&syscall.MS_RDONLY != 0 {
-			readOnly = true
-		}
-
 		flags |= uintptr(syscall.MS_BIND)
-		if readOnly {
-			flags |= syscall.MS_RDONLY
-		}
-
-		if readOnly {
+		if flags&syscall.MS_RDONLY != 0 {
 			if err := system.Points.AddRemount(mount.FinalTag, m.Destination, flags); err != nil {
 				return err
 			}
-		}
-
-		for i := len(m.Options) - 1; i >= 0; i-- {
-			if m.Options[i] == "ro" {
-				m.Options = append(m.Options[:i], m.Options[i+1:]...)
+			for i := len(m.Options) - 1; i >= 0; i-- {
+				if m.Options[i] == "ro" {
+					m.Options = append(m.Options[:i], m.Options[i+1:]...)
+					break
+				}
 			}
 		}
 
