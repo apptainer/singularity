@@ -37,7 +37,6 @@ func startup() {
 
 	// free allocated buffer
 	C.free(unsafe.Pointer(C.json_stdin))
-	C.free(unsafe.Pointer(C.config))
 	if unsafe.Pointer(C.nspath) != nil {
 		C.free(unsafe.Pointer(C.nspath))
 	}
