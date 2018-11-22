@@ -9,6 +9,13 @@
 #ifndef _SINGULARITY_STARTER_H
 #define _SINGULARITY_STARTER_H
 
+#define fatalf(b...)     singularity_message(ERROR, b); \
+                         exit(1)
+#define debugf(b...)     singularity_message(DEBUG, b)
+#define verbosef(b...)   singularity_message(VERBOSE, b)
+#define warningf(b...)   singularity_message(WARNING, b)
+#define errorf(b...)     singularity_message(ERROR, b)
+
 #define MAX_NSPATH_SIZE PATH_MAX*7
 #define MAX_JSON_SIZE   128*1024
 #define JOKER           42

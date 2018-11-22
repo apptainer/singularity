@@ -31,12 +31,13 @@ func startup() {
 		}
 	}
 
-	cconf := unsafe.Pointer(&C.config)
+	cconf := unsafe.Pointer(C.config)
 	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
 	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(sconfig.GetJSONConfSize()))
 
 	// free allocated buffer
 	C.free(unsafe.Pointer(C.json_stdin))
+	C.free(unsafe.Pointer(C.config))
 	if unsafe.Pointer(C.nspath) != nil {
 		C.free(unsafe.Pointer(C.nspath))
 	}
