@@ -139,6 +139,7 @@ type container struct {
 	rpcRoot     string
 	userNS      bool
 	utsNS       bool
+	mntNS       bool
 	devIndex    int
 	cgroupIndex int
 }
@@ -269,6 +270,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 			c.userNS = true
 		case specs.UTSNamespace:
 			c.utsNS = true
+		case specs.MountNamespace:
+			c.mntNS = true
 		}
 	}
 
@@ -339,7 +342,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	_, err = rpcOps.Chroot(c.rootfs, true)
+	method := "pivot"
+	if !c.mntNS {
+		method = "chroot"
+	}
+
+	_, err = rpcOps.Chroot(c.rootfs, method)
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
 	}

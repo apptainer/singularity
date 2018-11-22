@@ -45,10 +45,10 @@ func (t *RPC) Mkdir(path string, perm os.FileMode) (int, error) {
 }
 
 // Chroot calls the chroot RPC using the supplied arguments.
-func (t *RPC) Chroot(root string, usePivot bool) (int, error) {
+func (t *RPC) Chroot(root string, method string) (int, error) {
 	arguments := &args.ChrootArgs{
-		Root:     root,
-		UsePivot: usePivot,
+		Root:   root,
+		Method: method,
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".Chroot", arguments, &reply)

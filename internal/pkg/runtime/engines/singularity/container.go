@@ -152,10 +152,10 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	}
 
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
-	_, err = c.rpcOps.Chroot(c.session.FinalPath(), true)
+	_, err = c.rpcOps.Chroot(c.session.FinalPath(), "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = c.rpcOps.Chroot(c.session.FinalPath(), false)
+		_, err = c.rpcOps.Chroot(c.session.FinalPath(), "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}

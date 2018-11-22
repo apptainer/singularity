@@ -188,7 +188,7 @@ var OciCmd = &cobra.Command{
 	Example: "oci",
 }
 
-func getState(containerID string) (*specs.State, error) {
+func getConfig(containerID string) (*oci.EngineConfig, error) {
 	commonConfig := config.Common{
 		EngineConfig: &oci.EngineConfig{},
 	}
@@ -202,8 +202,14 @@ func getState(containerID string) (*specs.State, error) {
 		return nil, err
 	}
 
-	engineConfig := commonConfig.EngineConfig.(*oci.EngineConfig)
+	return commonConfig.EngineConfig.(*oci.EngineConfig), nil
+}
 
+func getState(containerID string) (*specs.State, error) {
+	engineConfig, err := getConfig(containerID)
+	if err != nil {
+		return nil, err
+	}
 	return &engineConfig.State, nil
 }
 
@@ -339,11 +345,16 @@ func ociAttach(containerID string) error {
 }
 
 func ociStart(containerID string) error {
-	// send SIGCONT signal to the instance
 	state, err := getState(containerID)
 	if err != nil {
 		return err
 	}
+
+	if state.Status != "created" {
+		return fmt.Errorf("container %s is not created", containerID)
+	}
+
+	// send SIGCONT signal to the instance
 	if err := syscall.Kill(state.Pid, syscall.SIGCONT); err != nil {
 		return err
 	}
@@ -355,6 +366,10 @@ func ociKill(containerID string) error {
 	state, err := getState(containerID)
 	if err != nil {
 		return err
+	}
+
+	if state.Status != "created" && state.Status != "running" {
+		return fmt.Errorf("container %s is nor created nor running", containerID)
 	}
 
 	sig := syscall.SIGTERM
@@ -370,6 +385,24 @@ func ociKill(containerID string) error {
 }
 
 func ociDelete(containerID string) error {
+	engineConfig, err := getConfig(containerID)
+	if err != nil {
+		return err
+	}
+
+	if engineConfig.State.Status != "stopped" {
+		return fmt.Errorf("container is not stopped")
+	}
+
+	hooks := engineConfig.OciConfig.Hooks
+	if hooks != nil {
+		for _, h := range hooks.Poststop {
+			if err := exec.Hook(&h, &engineConfig.State); err != nil {
+				sylog.Warningf("%s", err)
+			}
+		}
+	}
+
 	// remove instance files
 	file, err := instance.Get(containerID)
 	if err != nil {
