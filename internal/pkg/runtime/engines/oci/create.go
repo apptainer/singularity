@@ -32,6 +32,31 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 )
 
+var symlinkDevices = []struct {
+	old string
+	new string
+}{
+	{"/proc/self/fd", "/dev/fd"},
+	{"/proc/kcore", "/dev/core"},
+	{"pts/ptmx", "/dev/ptmx"},
+	{"/proc/self/fd/0", "/dev/stdin"},
+	{"/proc/self/fd/1", "/dev/stdout"},
+	{"/proc/self/fd/2", "/dev/stderr"},
+}
+
+var charDevices = []struct {
+	major uint16
+	minor uint16
+	path  string
+}{
+	{1, 7, "/dev/full"},
+	{1, 3, "/dev/null"},
+	{1, 8, "/dev/random"},
+	{5, 0, "/dev/tty"},
+	{1, 9, "/dev/urandom"},
+	{1, 5, "/dev/zero"},
+}
+
 type container struct {
 	engine      *EngineOperations
 	rpcOps      *client.RPC
@@ -39,7 +64,7 @@ type container struct {
 	rpcRoot     string
 	userNS      bool
 	utsNS       bool
-	bindDev     bool
+	devIndex    int
 	cgroupIndex int
 }
 
@@ -160,6 +185,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		rootfs:      resolvedRootfs,
 		rpcRoot:     fmt.Sprintf("/proc/%d/root", pid),
 		cgroupIndex: -1,
+		devIndex:    -1,
 	}
 
 	for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
@@ -185,12 +211,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 			c.cgroupIndex = i
 			continue
 		}
-		if point.Destination == "/dev" && point.Type == "" {
-			flags, _ := mount.ConvertOptions(point.Options)
-			if flags&syscall.MS_REC != 0 {
-				c.bindDev = true
-			}
+		if point.Destination == "/dev" && point.Source == "/dev" {
+			c.devIndex = i
 		}
+	}
+
+	if err := c.addDevices(system); err != nil {
+		return err
 	}
 
 	if err := c.addCgroups(pid, system); err != nil {
@@ -206,10 +233,8 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	if !c.bindDev {
-		if err := system.RunAfterTag(mount.KernelTag, c.addDevices); err != nil {
-			return err
-		}
+	if err := system.RunAfterTag(mount.KernelTag, c.addDefaultDevices); err != nil {
+		return err
 	}
 
 	if err := system.RunAfterTag(mount.RootfsTag, c.addAllPaths); err != nil {
@@ -398,34 +423,28 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 
 	rootfsPath := filepath.Join(c.rpcRoot, c.rootfs)
 
-	devPath := fs.EvalRelative("/dev", rootfsPath)
-	if _, err := os.Stat(devPath); os.IsNotExist(err) {
+	devPath := filepath.Join(rootfsPath, fs.EvalRelative("/dev", rootfsPath))
+	if _, err := os.Lstat(devPath); os.IsNotExist(err) {
 		if err := os.Mkdir(devPath, 0755); err != nil {
 			return err
 		}
 	}
 
-	for _, symlink := range []struct {
-		old string
-		new string
-	}{
-		{"/proc/self/fd", "/dev/fd"},
-		{"/proc/kcore", "/dev/core"},
-		{"pts/ptmx", "/dev/ptmx"},
-		{"/proc/self/fd/0", "/dev/stdin"},
-		{"/proc/self/fd/1", "/dev/stdout"},
-		{"/proc/self/fd/2", "/dev/stderr"},
-	} {
+	for _, symlink := range symlinkDevices {
 		path := filepath.Join(rootfsPath, symlink.new)
-		if err := os.Symlink(symlink.old, path); err != nil {
-			return err
+		if _, err := os.Lstat(path); os.IsNotExist(err) {
+			if err := os.Symlink(symlink.old, path); err != nil {
+				return err
+			}
 		}
 	}
 
 	if c.engine.EngineConfig.OciConfig.Process.Terminal {
 		path := filepath.Join(rootfsPath, "dev", "console")
-		if err := fs.Touch(path); err != nil {
-			return err
+		if _, err := os.Lstat(path); os.IsNotExist(err) {
+			if err := fs.Touch(path); err != nil {
+				return err
+			}
 		}
 		path = fmt.Sprintf("/proc/self/fd/%d", c.engine.EngineConfig.SlavePts)
 		console, err := os.Readlink(path)
@@ -437,31 +456,19 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 		}
 	}
 
-	for _, charDevice := range []struct {
-		major uint16
-		minor uint16
-		path  string
-	}{
-		{1, 7, "/dev/full"},
-		{1, 3, "/dev/null"},
-		{1, 8, "/dev/random"},
-		{5, 0, "/dev/tty"},
-		{1, 9, "/dev/urandom"},
-		{1, 5, "/dev/zero"},
-	} {
+	for _, charDevice := range charDevices {
 		dev := int((charDevice.major << 8) | charDevice.minor)
 		path := filepath.Join(rootfsPath, charDevice.path)
-		if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
-			return err
+		if _, err := os.Lstat(path); os.IsNotExist(err) {
+			if err := syscall.Mknod(path, syscall.S_IFCHR|0666, dev); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
 func (c *container) addDevices(system *mount.System) error {
-	if err := c.addDefaultDevices(system); err != nil {
-		return err
-	}
 	return nil
 }
 
