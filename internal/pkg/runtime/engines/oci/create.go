@@ -237,7 +237,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		Name:   engine.CommonConfig.EngineName,
 	}
 	if rpcOps.Client == nil {
-		return fmt.Errorf("failed to initialiaze RPC client")
+		return fmt.Errorf("failed to initialize RPC client")
 	}
 
 	if err := engine.createState(pid); err != nil {
@@ -350,6 +350,47 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	_, err = rpcOps.Chroot(c.rootfs, method)
 	if err != nil {
 		return fmt.Errorf("chroot failed: %s", err)
+	}
+
+	// update namespaces configuration path
+	namespaces := []struct {
+		nstype       string
+		ns           specs.LinuxNamespaceType
+		checkEnabled bool
+	}{
+		{"pid", specs.PIDNamespace, false},
+		{"uts", specs.UTSNamespace, false},
+		{"ipc", specs.IPCNamespace, false},
+		{"mnt", specs.MountNamespace, false},
+		{"cgroup", specs.CgroupNamespace, false},
+		{"net", specs.NetworkNamespace, false},
+		{"user", specs.UserNamespace, true},
+	}
+
+	path := fmt.Sprintf("/proc/%d/ns", pid)
+	ppid := os.Getpid()
+
+	for _, n := range namespaces {
+		has, err := rpcOps.HasNamespace(ppid, n.nstype)
+		if err == nil && (has || n.checkEnabled) {
+			enabled := false
+			if n.checkEnabled {
+				if engine.EngineConfig.OciConfig.Linux != nil {
+					for _, namespace := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+						if n.ns == namespace.Type {
+							enabled = true
+							break
+						}
+					}
+				}
+			}
+			if has || enabled {
+				nspath := filepath.Join(path, n.nstype)
+				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+			}
+		} else if err != nil {
+			return fmt.Errorf("failed to check %s root and container namespace: %s", n.ns, err)
+		}
 	}
 
 	if engine.EngineConfig.SlavePts != -1 {
