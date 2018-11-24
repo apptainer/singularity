@@ -7,3 +7,14 @@ MirrorURL: https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch
 %runscript
     echo "Running command: $*"
     exec "$@"
+
+%appenv testapp
+    TESTAPP=testapp
+    export TESTAPP
+
+%appinstall testapp
+    echo 'echo $TESTAPP' > $SINGULARITY_APPROOT/bin/testapp.sh
+    chmod 0755 $SINGULARITY_APPROOT/bin/testapp.sh
+
+%apprun testapp
+    $TESTAPP.sh

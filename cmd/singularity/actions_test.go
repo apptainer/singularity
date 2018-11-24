@@ -30,6 +30,7 @@ type opts struct {
 	home      string
 	workdir   string
 	pwd       string
+	app       string
 }
 
 // imageExec can be used to run/exec/shell a Singularity image
@@ -60,6 +61,9 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	}
 	if opts.pwd != "" {
 		argv = append(argv, "--pwd", opts.pwd)
+	}
+	if opts.app != "" {
+		argv = append(argv, "--app", opts.app)
 	}
 	argv = append(argv, imagePath)
 	argv = append(argv, command...)
@@ -102,6 +106,8 @@ func testSingularityRun(t *testing.T) {
 		{"NoCommand", imagePath, "run", []string{}, opts{}, 0, true},
 		{"true", imagePath, "run", []string{"true"}, opts{}, 0, true},
 		{"false", imagePath, "run", []string{"false"}, opts{}, 1, false},
+		{"ScifTestAppGood", imagePath, "run", []string{}, opts{app: "testapp"}, 0, true},
+		{"ScifTestAppBad", imagePath, "run", []string{}, opts{app: "fakeapp"}, 1, false},
 	}
 
 	for _, tt := range tests {
@@ -134,6 +140,8 @@ func testSingularityExec(t *testing.T) {
 		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, opts{}, 0, true},
 		{"false", imagePath, "exec", []string{"false"}, opts{}, 1, false},
 		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, opts{}, 1, false},
+		{"ScifTestAppGood", imagePath, "exec", []string{"testapp.sh"}, opts{app: "testapp"}, 0, true},
+		{"ScifTestAppBad", imagePath, "exec", []string{"testapp.sh"}, opts{app: "fakeapp"}, 1, false},
 	}
 
 	for _, tt := range tests {
