@@ -8,10 +8,14 @@ package unix
 import (
 	"fmt"
 	"net"
+	"syscall"
 )
 
 // CreateSocket creates an unix socket and returns connection listener.
 func CreateSocket(path string) (net.Listener, error) {
+	oldmask := syscall.Umask(0177)
+	defer syscall.Umask(oldmask)
+
 	return net.Listen("unix", path)
 }
 

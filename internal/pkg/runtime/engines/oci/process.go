@@ -6,6 +6,9 @@
 package oci
 
 import (
+	"bufio"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -16,9 +19,15 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
+
+	"github.com/kr/pty"
+
+	"golang.org/x/crypto/ssh/terminal"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/util/unix"
+	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -140,24 +149,34 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := syscall.Close(slaveFd); err != nil {
 			return err
 		}
-		if _, err := syscall.Setsid(); err != nil {
+		if terminal.IsTerminal(int(os.Stdin.Fd())) {
+			if _, err := syscall.Setsid(); err != nil {
+				return err
+			}
+			if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSCTTY), 1); err != 0 {
+				return fmt.Errorf("failed to set crontrolling terminal: %s", err.Error())
+			}
+		} else {
+			os.Stdin.Close()
+		}
+	} else {
+		if err := syscall.Dup3(int(os.Stdout.Fd()), int(os.Stderr.Fd()), 0); err != nil {
 			return err
 		}
-		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSCTTY), 1); err != 0 {
-			return fmt.Errorf("failed to set crontrolling terminal: %s", err.Error())
+	}
+
+	if !engine.EngineConfig.Exec {
+		// pause process, by sending data to Smaster the process will
+		// be paused with SIGSTOP signal
+		if _, err := masterConn.Write([]byte("t")); err != nil {
+			return fmt.Errorf("failed to pause process: %s", err)
 		}
-	}
 
-	// pause process, by sending data to Smaster the process will
-	// be paused with SIGSTOP signal
-	if _, err := masterConn.Write([]byte("t")); err != nil {
-		return fmt.Errorf("failed to pause process: %s", err)
-	}
-
-	// block on read waiting SIGCONT signal
-	data := make([]byte, 1)
-	if _, err := masterConn.Read(data); err != nil {
-		return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+		// block on read waiting SIGCONT signal
+		data := make([]byte, 1)
+		if _, err := masterConn.Read(data); err != nil {
+			return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+		}
 	}
 
 	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
@@ -166,17 +185,19 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	err = syscall.Exec(args[0], args, env)
 
-	// write data to just tell Smaster to not execute PostStartProcess
-	// in case of failure
-	if _, err := masterConn.Write([]byte("t")); err != nil {
-		sylog.Errorf("fail to send data to Smaster: %s", err)
+	if !engine.EngineConfig.Exec {
+		// write data to just tell Smaster to not execute PostStartProcess
+		// in case of failure
+		if _, err := masterConn.Write([]byte("t")); err != nil {
+			sylog.Errorf("fail to send data to Smaster: %s", err)
+		}
 	}
 
 	return fmt.Errorf("exec %s failed: %s", args[0], err)
 }
 
 // PreStartProcess will be executed in smaster context
-func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn) error {
+func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
 	var master *os.File
 
 	// stop container process
@@ -198,10 +219,17 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn) er
 	}
 
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
-	socket := filepath.Join(filepath.Dir(file.Path), engine.CommonConfig.ContainerID+".sock")
-	engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.attach-socket"] = socket
+	socket := filepath.Join(filepath.Dir(file.Path), "attach.sock")
+	engine.EngineConfig.State.Annotations[ociruntime.AnnotationAttachSocket] = socket
 
-	l, err := unix.CreateSocket(socket)
+	attach, err := unix.CreateSocket(socket)
+	if err != nil {
+		return err
+	}
+
+	socket = filepath.Join(filepath.Dir(file.Path), "control.sock")
+	engine.EngineConfig.State.Annotations[ociruntime.AnnotationControlSocket] = socket
+	control, err := unix.CreateSocket(socket)
 	if err != nil {
 		return err
 	}
@@ -210,7 +238,23 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn) er
 		return err
 	}
 
-	go engine.handleStream(master, l)
+	logPath := engine.EngineConfig.GetLogPath()
+	if logPath == "" {
+		containerID := engine.CommonConfig.ContainerID
+		dir, err := instance.GetDirPrivileged(containerID)
+		if err != nil {
+			return err
+		}
+		logPath = filepath.Join(dir, containerID+".log")
+	}
+
+	logger, err := NewLogger(logPath)
+	if err != nil {
+		return err
+	}
+
+	go engine.handleControl(master, control, logger, fatalChan)
+	go engine.handleStream(master, attach, logger, fatalChan)
 
 	// since paused process block on read, send it an
 	// ACK so when it will receive SIGCONT, the process
@@ -249,89 +293,194 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 }
 
 type multiWriter struct {
-	mux     sync.Mutex
+	sync.Mutex
 	writers []io.Writer
 }
 
 func (mw *multiWriter) Write(p []byte) (n int, err error) {
-	mw.mux.Lock()
-	defer mw.mux.Unlock()
+	mw.Lock()
+	defer mw.Unlock()
+
+	l := len(p)
 
 	for _, w := range mw.writers {
 		n, err = w.Write(p)
 		if err != nil {
 			return
 		}
-		if n != len(p) {
+		if n != l {
 			err = io.ErrShortWrite
 			return
 		}
 	}
-	return len(p), nil
+
+	return l, nil
 }
 
 func (mw *multiWriter) Add(writer io.Writer) {
-	mw.mux.Lock()
+	mw.Lock()
 	mw.writers = append(mw.writers, writer)
-	mw.mux.Unlock()
+	mw.Unlock()
 }
 
-func MultiWriter(writers ...io.Writer) *multiWriter {
-	allwriters := make([]io.Writer, 0, len(writers))
-
-	for _, w := range writers {
-		if mw, ok := w.(*multiWriter); ok {
-			allwriters = append(allwriters, mw.writers...)
-		} else {
-			allwriters = append(allwriters, w)
+func (mw *multiWriter) Del(writer io.Writer) {
+	mw.Lock()
+	for i, w := range mw.writers {
+		if writer == w {
+			mw.writers = append(mw.writers[:i], mw.writers[i+1:]...)
+			break
 		}
 	}
-	return &multiWriter{writers: allwriters}
+	mw.Unlock()
 }
 
-type TestWriter struct{}
-
-func (t *TestWriter) Write(p []byte) (n int, err error) {
-	// duplicate stream example
-	return len(p), nil
+type Logger struct {
+	reader      *io.PipeReader
+	writer      *io.PipeWriter
+	buffer      []byte
+	bufferMutex sync.Mutex
+	file        *os.File
+	fileMutex   sync.Mutex
 }
 
-func (engine *EngineOperations) handleStream(master *os.File, l net.Listener) {
-	var err error
+func NewLogger(logPath string) (*Logger, error) {
+	logger := &Logger{}
+	logger.reader, logger.writer = io.Pipe()
 
+	if err := logger.openFile(logPath); err != nil {
+		return nil, err
+	}
+
+	go logger.scan()
+
+	return logger, nil
+}
+
+func (l *Logger) openFile(path string) (err error) {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+
+	return err
+}
+
+func (l *Logger) ScanOutput(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	length := len(data)
+
+	if atEOF && length == 0 {
+		return 0, nil, nil
+	}
+
+	l.bufferMutex.Lock()
+	defer l.bufferMutex.Unlock()
+	l.buffer = data
+
+	if i := bytes.IndexByte(data, '\n'); i >= 0 {
+		l.buffer = nil
+		return i + 1, data[0 : i+1], nil
+	}
+
+	if atEOF {
+		return length, data[0:length], nil
+	}
+
+	return 0, nil, nil
+}
+
+func (l *Logger) GetBuffer() []byte {
+	l.bufferMutex.Lock()
+	defer l.bufferMutex.Unlock()
+
+	return l.buffer
+}
+
+func (l *Logger) GetWriter() *io.PipeWriter {
+	return l.writer
+}
+
+func (l *Logger) scan() {
+	scanner := bufio.NewScanner(l.reader)
+	scanner.Split(l.ScanOutput)
+
+	for scanner.Scan() {
+		l.fileMutex.Lock()
+		fmt.Fprintf(l.file, "%s stdout F %s", time.Now().Format(time.RFC3339Nano), scanner.Text())
+		l.fileMutex.Unlock()
+	}
+
+	l.reader.Close()
+	l.writer.Close()
+	l.file.Close()
+}
+
+func (l *Logger) ReOpenFile() {
+	l.fileMutex.Lock()
+	defer l.fileMutex.Unlock()
+
+	path := l.file.Name()
+
+	l.file.Close()
+
+	l.openFile(path)
+}
+
+func (engine *EngineOperations) handleStream(master *os.File, l net.Listener, logger *Logger, fatalChan chan error) {
 	defer l.Close()
 
-	numClient := -1
-	maxClient := 10
-	a := make([]net.Conn, maxClient)
-	var mw *multiWriter
+	mw := &multiWriter{}
+	mw.Add(logger.GetWriter())
 
-	tee := io.TeeReader(master, &TestWriter{})
+	go func() {
+		io.Copy(mw, master)
+	}()
 
 	for {
-		numClient++
-		if numClient == maxClient {
-			continue
-		}
-		a[numClient], err = l.Accept()
+		c, err := l.Accept()
 		if err != nil {
-			sylog.Fatalf("%s", err)
-		}
-
-		b := a[numClient]
-
-		if mw == nil {
-			mw = MultiWriter(b)
-			go func() {
-				io.Copy(mw, tee)
-			}()
-		} else {
-			mw.Add(b)
+			fatalChan <- err
+			return
 		}
 
 		go func() {
-			io.Copy(master, b)
-			b.Close()
+			mw.Add(c)
+			c.Write(logger.GetBuffer())
+			io.Copy(master, c)
+			mw.Del(c)
+			c.Close()
 		}()
+	}
+}
+
+func (engine *EngineOperations) handleControl(master *os.File, l net.Listener, logger *Logger, fatalChan chan error) {
+	for {
+		ctrl := &ociruntime.Control{}
+
+		c, err := l.Accept()
+		if err != nil {
+			fatalChan <- err
+			return
+		}
+		dec := json.NewDecoder(c)
+		if err := dec.Decode(ctrl); err != nil {
+			fatalChan <- err
+			return
+		}
+
+		c.Close()
+
+		if ctrl.ConsoleSize != nil {
+			size := &pty.Winsize{
+				Cols: uint16(ctrl.ConsoleSize.Width),
+				Rows: uint16(ctrl.ConsoleSize.Height),
+			}
+			if err := pty.Setsize(master, size); err != nil {
+				fatalChan <- err
+				return
+			}
+		}
+		if ctrl.ReopenLog {
+			logger.ReOpenFile()
+		}
 	}
 }

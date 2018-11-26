@@ -12,10 +12,13 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	osignal "os/signal"
 	"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
+
+	"github.com/kr/pty"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
@@ -28,10 +31,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
 	"github.com/sylabs/singularity/internal/pkg/util/unix"
+	"github.com/sylabs/singularity/pkg/ociruntime"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 var bundlePath string
+var logPath string
 var syncSocketPath string
 var emptyProcess bool
 
@@ -44,10 +49,13 @@ func init() {
 	OciCreateCmd.Flags().StringVarP(&syncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
 	OciCreateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 	OciCreateCmd.Flags().BoolVar(&emptyProcess, "empty-process", false, "run container without executing container process (eg: for POD container)")
+	OciCreateCmd.Flags().StringVarP(&logPath, "log-path", "l", "", "specify the log file path")
+	OciCreateCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
 
 	OciStartCmd.Flags().SetInterspersed(false)
 	OciDeleteCmd.Flags().SetInterspersed(false)
 	OciAttachCmd.Flags().SetInterspersed(false)
+	OciExecCmd.Flags().SetInterspersed(false)
 
 	OciStateCmd.Flags().SetInterspersed(false)
 	OciStateCmd.Flags().StringVarP(&syncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
@@ -59,6 +67,8 @@ func init() {
 	OciRunCmd.Flags().SetInterspersed(false)
 	OciRunCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
 	OciRunCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
+	OciRunCmd.Flags().StringVarP(&logPath, "log-path", "l", "", "specify the log file path")
+	OciRunCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
 
 	OciCmd.AddCommand(OciStartCmd)
 	OciCmd.AddCommand(OciCreateCmd)
@@ -67,6 +77,7 @@ func init() {
 	OciCmd.AddCommand(OciKillCmd)
 	OciCmd.AddCommand(OciStateCmd)
 	OciCmd.AddCommand(OciAttachCmd)
+	OciCmd.AddCommand(OciExecCmd)
 }
 
 // OciCreateCmd represents oci create command
@@ -177,6 +188,21 @@ var OciAttachCmd = &cobra.Command{
 	Example: "oci attach",
 }
 
+// OciExecCmd represents oci exec command
+var OciExecCmd = &cobra.Command{
+	Args:                  cobra.MinimumNArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociExec(args[0], args[1:]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "exec",
+	Short:   "oci exec",
+	Long:    "oci exec",
+	Example: "oci exec",
+}
+
 // OciCmd singularity oci runtime
 var OciCmd = &cobra.Command{
 	Run:                   nil,
@@ -188,7 +214,24 @@ var OciCmd = &cobra.Command{
 	Example: "oci",
 }
 
-func getConfig(containerID string) (*oci.EngineConfig, error) {
+func getCommonConfig(containerID string) (*config.Common, error) {
+	commonConfig := config.Common{
+		EngineConfig: &oci.EngineConfig{},
+	}
+
+	file, err := instance.Get(containerID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(file.Config, &commonConfig); err != nil {
+		return nil, err
+	}
+
+	return &commonConfig, nil
+}
+
+func getEngineConfig(containerID string) (*oci.EngineConfig, error) {
 	commonConfig := config.Common{
 		EngineConfig: &oci.EngineConfig{},
 	}
@@ -206,23 +249,88 @@ func getConfig(containerID string) (*oci.EngineConfig, error) {
 }
 
 func getState(containerID string) (*specs.State, error) {
-	engineConfig, err := getConfig(containerID)
+	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return nil, err
 	}
 	return &engineConfig.State, nil
 }
 
-func attach(socket string) error {
-	channel := os.Stdout
+func resize(controlSocket string, oversized bool) {
+	ctrl := &ociruntime.Control{}
+	ctrl.ConsoleSize = &specs.Box{}
 
-	f, err := net.Dial("unix", socket)
+	c, err := net.Dial("unix", controlSocket)
+	if err != nil {
+		sylog.Errorf("failed to connect to control socket")
+		return
+	}
+	defer c.Close()
+
+	rows, cols, err := pty.Getsize(os.Stdin)
+	if err != nil {
+		sylog.Errorf("terminal resize error: %s", err)
+		return
+	}
+
+	ctrl.ConsoleSize.Height = uint(rows)
+	ctrl.ConsoleSize.Width = uint(cols)
+
+	if oversized {
+		ctrl.ConsoleSize.Height++
+		ctrl.ConsoleSize.Width++
+	}
+
+	enc := json.NewEncoder(c)
+	if err != nil {
+		sylog.Errorf("%s", err)
+		return
+	}
+
+	if err := enc.Encode(ctrl); err != nil {
+		sylog.Errorf("%s", err)
+		return
+	}
+}
+
+func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig) error {
+	var ostate *terminal.State
+	hasTerminal := engineConfig.OciConfig.Process.Terminal
+
+	a, err := net.Dial("unix", attachSocket)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer a.Close()
 
-	ostate, _ := terminal.MakeRaw(0)
+	if hasTerminal {
+		ostate, _ = terminal.MakeRaw(0)
+		resize(controlSocket, true)
+		resize(controlSocket, false)
+
+		go func() {
+			// catch SIGWINCH signal for terminal resize
+			signals := make(chan os.Signal, 1)
+			osignal.Notify(signals, syscall.SIGWINCH)
+
+			for {
+				<-signals
+				resize(controlSocket, false)
+			}
+		}()
+	} else {
+		go func() {
+			// catch all signals and forward to container process
+			signals := make(chan os.Signal, 1)
+			pid := engineConfig.State.Pid
+			osignal.Notify(signals)
+
+			for {
+				s := <-signals
+				syscall.Kill(pid, s.(syscall.Signal))
+			}
+		}()
+	}
 
 	var wg sync.WaitGroup
 
@@ -230,19 +338,22 @@ func attach(socket string) error {
 
 	// Pipe session to bash and visa-versa
 	go func() {
-		io.Copy(channel, f)
+		io.Copy(os.Stdout, a)
 		wg.Done()
 	}()
 
 	go func() {
-		io.Copy(f, channel)
+		io.Copy(a, os.Stdout)
 	}()
 
 	wg.Wait()
 
-	fmt.Printf("\r")
+	if hasTerminal {
+		fmt.Printf("\r")
+		return terminal.Restore(0, ostate)
+	}
 
-	return terminal.Restore(0, ostate)
+	return nil
 }
 
 func exitContainer(containerID string, syncSocketPath string) {
@@ -252,8 +363,8 @@ func exitContainer(containerID string, syncSocketPath string) {
 		os.Exit(1)
 	}
 
-	if _, ok := state.Annotations["io.sylabs.runtime.oci.exit-code"]; ok {
-		code := state.Annotations["io.sylabs.runtime.oci.exit-code"]
+	if _, ok := state.Annotations[ociruntime.AnnotationExitCode]; ok {
+		code := state.Annotations[ociruntime.AnnotationExitCode]
 		exitCode, err := strconv.Atoi(code)
 		if err != nil {
 			sylog.Errorf("%s", err)
@@ -271,21 +382,24 @@ func exitContainer(containerID string, syncSocketPath string) {
 }
 
 func ociRun(containerID string) error {
-	dir, err := ioutil.TempDir("/var/run/singularity", containerID)
+	dir, err := instance.GetDirPrivileged(containerID)
 	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
 	syncSocketPath = filepath.Join(dir, "run.sock")
 
 	l, err := net.Listen("unix", syncSocketPath)
 	if err != nil {
-		os.RemoveAll(dir)
+		os.Remove(syncSocketPath)
 		return err
 	}
 
 	defer l.Close()
 	defer exitContainer(containerID, syncSocketPath)
-	defer os.RemoveAll(dir)
+	defer os.Remove(syncSocketPath)
 
 	if err := ociCreate(containerID); err != nil {
 		return err
@@ -315,30 +429,48 @@ func ociRun(containerID string) error {
 					return
 				}
 			case "running":
-				start <- state.Annotations["io.sylabs.runtime.oci.attach-socket"]
+				start <- state.Annotations[ociruntime.AnnotationAttachSocket]
 			case "stopped":
 				return
 			}
 		}
 	}()
 
-	return attach(<-start)
-}
+	attachSocket := <-start
 
-func ociAttach(containerID string) error {
-	state, err := getState(containerID)
+	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return err
 	}
 
-	socket, ok := state.Annotations["io.sylabs.runtime.oci.attach-socket"]
+	controlSocket, ok := engineConfig.State.Annotations[ociruntime.AnnotationControlSocket]
+	if !ok {
+		return fmt.Errorf("control socket not available, container state: %s", engineConfig.State.Status)
+	}
+
+	return attach(attachSocket, controlSocket, engineConfig)
+}
+
+func ociAttach(containerID string) error {
+	engineConfig, err := getEngineConfig(containerID)
+	if err != nil {
+		return err
+	}
+
+	state := engineConfig.GetState()
+
+	attachSocket, ok := state.Annotations[ociruntime.AnnotationAttachSocket]
 	if !ok {
 		return fmt.Errorf("attach socket not available, container state: %s", state.Status)
+	}
+	controlSocket, ok := state.Annotations[ociruntime.AnnotationControlSocket]
+	if !ok {
+		return fmt.Errorf("control socket not available, container state: %s", state.Status)
 	}
 
 	defer exitContainer(containerID, "")
 
-	return attach(socket)
+	return attach(attachSocket, controlSocket, engineConfig)
 }
 
 func ociStart(containerID string) error {
@@ -382,7 +514,7 @@ func ociKill(containerID string) error {
 }
 
 func ociDelete(containerID string) error {
-	engineConfig, err := getConfig(containerID)
+	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return err
 	}
@@ -453,6 +585,7 @@ func ociCreate(containerID string) error {
 	engineConfig := oci.NewConfig()
 	generator := generate.Generator{Config: &engineConfig.OciConfig.Spec}
 	engineConfig.SetBundlePath(absBundle)
+	engineConfig.SetLogPath(logPath)
 
 	// load config.json from bundle path
 	configJSON := filepath.Join(bundlePath, "config.json")
@@ -494,4 +627,30 @@ func ociCreate(containerID string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+func ociExec(containerID string, cmdArgs []string) error {
+	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter"
+
+	commonConfig, err := getCommonConfig(containerID)
+	if err != nil {
+		return fmt.Errorf("%s doesn't exist", containerID)
+	}
+
+	engineConfig := commonConfig.EngineConfig.(*oci.EngineConfig)
+
+	engineConfig.Exec = true
+	engineConfig.OciConfig.SetProcessArgs(cmdArgs)
+
+	os.Clearenv()
+
+	configData, err := json.Marshal(commonConfig)
+	if err != nil {
+		sylog.Fatalf("%s", err)
+	}
+
+	Env := []string{sylog.GetEnvVar(), "SRUNTIME=oci"}
+
+	procName := fmt.Sprintf("Singularity OCI %s", containerID)
+	return exec.Pipe(starter, []string{procName}, Env, configData)
 }

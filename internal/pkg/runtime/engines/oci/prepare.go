@@ -50,7 +50,9 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	starterConfig.SetTargetUID(uid)
 	starterConfig.SetTargetGID(gids)
 
-	starterConfig.SetInstance(true)
+	if !e.EngineConfig.Exec {
+		starterConfig.SetInstance(true)
+	}
 
 	userNS := false
 	for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
@@ -87,23 +89,32 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
 
-	if e.EngineConfig.OciConfig.Process.Terminal {
-		master, slave, err := pty.Open()
-		if err != nil {
-			return err
-		}
-		consoleSize := e.EngineConfig.OciConfig.Process.ConsoleSize
-		if consoleSize != nil {
-			var size pty.Winsize
-
-			size.Cols = uint16(consoleSize.Width)
-			size.Rows = uint16(consoleSize.Height)
-			if err := pty.Setsize(slave, &size); err != nil {
+	if !e.EngineConfig.Exec {
+		if e.EngineConfig.OciConfig.Process.Terminal {
+			master, slave, err := pty.Open()
+			if err != nil {
 				return err
 			}
+			consoleSize := e.EngineConfig.OciConfig.Process.ConsoleSize
+			if consoleSize != nil {
+				var size pty.Winsize
+
+				size.Cols = uint16(consoleSize.Width)
+				size.Rows = uint16(consoleSize.Height)
+				if err := pty.Setsize(slave, &size); err != nil {
+					return err
+				}
+			}
+			e.EngineConfig.MasterPts = int(master.Fd())
+			e.EngineConfig.SlavePts = int(slave.Fd())
+		} else {
+			r, w, err := os.Pipe()
+			if err != nil {
+				return err
+			}
+			e.EngineConfig.MasterPts = int(r.Fd())
+			e.EngineConfig.SlavePts = int(w.Fd())
 		}
-		e.EngineConfig.MasterPts = int(master.Fd())
-		e.EngineConfig.SlavePts = int(slave.Fd())
 	} else {
 		e.EngineConfig.MasterPts = -1
 		e.EngineConfig.SlavePts = -1

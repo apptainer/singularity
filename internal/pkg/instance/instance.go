@@ -95,6 +95,29 @@ func getPath(privileged bool, username string) (string, error) {
 	return path, nil
 }
 
+func getDir(privileged bool, name string) (string, error) {
+	if err := CheckName(name); err != nil {
+		return "", err
+	}
+	path, err := getPath(privileged, "")
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(path, name), nil
+}
+
+// GetDirPrivileged returns directory where instances file will be stored
+// if instance is run with privileges
+func GetDirPrivileged(name string) (string, error) {
+	return getDir(true, name)
+}
+
+// GetDirUnprivileged returns directory where instances file will be stored
+// if instance is run without privileges
+func GetDirUnprivileged(name string) (string, error) {
+	return getDir(false, name)
+}
+
 // Get returns the instance file corresponding to instance name
 func Get(name string) (*File, error) {
 	if err := CheckName(name); err != nil {
@@ -126,7 +149,7 @@ func Add(name string, privileged bool) (*File, error) {
 		return nil, err
 	}
 	jsonFile := name + ".json"
-	i.Path = filepath.Join(i.Path, jsonFile)
+	i.Path = filepath.Join(i.Path, name, jsonFile)
 	return i, nil
 }
 
@@ -140,7 +163,7 @@ func List(username string, name string) ([]*File, error) {
 		if err != nil {
 			return nil, err
 		}
-		pattern := filepath.Join(path, name+".json")
+		pattern := filepath.Join(path, name, name+".json")
 		files, err := filepath.Glob(pattern)
 		if err != nil {
 			return nil, err
@@ -180,7 +203,8 @@ func (i *File) PrivilegedPath() bool {
 
 // Delete deletes instance file
 func (i *File) Delete() error {
-	return os.Remove(i.Path)
+	path := filepath.Dir(i.Path)
+	return os.RemoveAll(path)
 }
 
 // Update stores instance information in associated instance file

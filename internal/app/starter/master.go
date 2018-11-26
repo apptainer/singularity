@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -80,8 +81,10 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 				}
 			}
 
-			if obj, ok := engine.EngineOperations.(interface{ PreStartProcess(int, net.Conn) error }); ok {
-				if err := obj.PreStartProcess(containerPid, conn); err != nil {
+			if obj, ok := engine.EngineOperations.(interface {
+				PreStartProcess(int, net.Conn, chan error) error
+			}); ok {
+				if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
 					fatalChan <- fmt.Errorf("pre start process failed: %s", err)
 					return
 				}
@@ -120,6 +123,23 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 		sylog.Errorf("container cleanup failed: %s", err)
 	}
 	runtime.UnlockOSThread()
+
+	if !sconfig.GetInstance() {
+		pgrp := syscall.Getpgrp()
+		tcpgrp := 0
+
+		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCGPGRP), uintptr(unsafe.Pointer(&tcpgrp))); err != 0 {
+			sylog.Errorf("failed to get crontrolling terminal group: %s", err.Error())
+		}
+
+		if tcpgrp > 0 && pgrp != tcpgrp {
+			signal.Ignore(syscall.SIGTTOU)
+
+			if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp))); err != 0 {
+				sylog.Errorf("failed to set crontrolling terminal group: %s", err.Error())
+			}
+		}
+	}
 
 	if fatal != nil {
 		if sconfig.GetInstance() {

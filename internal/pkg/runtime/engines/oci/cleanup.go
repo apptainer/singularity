@@ -10,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"syscall"
+
+	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 // CleanupContainer cleans up the container
@@ -32,14 +34,15 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		exitCode = strconv.FormatInt(int64(status.ExitStatus()), 10)
 	}
 
-	engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.exit-code"] = exitCode
-	engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.exit-desc"] = desc
+	engine.EngineConfig.State.Annotations[ociruntime.AnnotationExitCode] = exitCode
+	engine.EngineConfig.State.Annotations[ociruntime.AnnotationExitDesc] = desc
 
 	if err := engine.updateState("stopped"); err != nil {
 		return err
 	}
 
-	os.Remove(engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.attach-socket"])
+	os.Remove(engine.EngineConfig.State.Annotations[ociruntime.AnnotationAttachSocket])
+	os.Remove(engine.EngineConfig.State.Annotations[ociruntime.AnnotationControlSocket])
 
 	return nil
 }

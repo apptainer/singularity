@@ -17,12 +17,14 @@ const Name = "oci"
 // EngineConfig is the config for the OCI engine.
 type EngineConfig struct {
 	BundlePath   string           `json:"bundlePath"`
+	LogPath      string           `json:"logPath"`
 	OciConfig    *oci.Config      `json:"ociConfig"`
 	State        specs.State      `json:"state"`
 	MasterPts    int              `json:"masterPts"`
 	SlavePts     int              `json:"slavePts"`
 	SyncSocket   string           `json:"syncSocket"`
 	EmptyProcess bool             `json:"emptyProcess"`
+	Exec         bool             `json:"exec"`
 	Cgroups      *cgroups.Manager `json:"-"`
 }
 
@@ -55,4 +57,14 @@ func (e *EngineConfig) SetState(state *specs.State) {
 // specification
 func (e *EngineConfig) GetState() *specs.State {
 	return &e.State
+}
+
+// SetLogPath sets the container log path.
+func (e *EngineConfig) SetLogPath(path string) {
+	e.LogPath = path
+}
+
+// GetLogPath returns the container log path.
+func (e *EngineConfig) GetLogPath() string {
+	return e.LogPath
 }

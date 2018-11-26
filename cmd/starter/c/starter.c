@@ -789,7 +789,9 @@ static void cleanup_fd(struct fdlist *fd_before, struct fdlist *fd_after) {
             continue;
         }
         /* fd pointing to /dev/tty or anonymous inodes are closed */
-        if ( strcmp(target, "/dev/tty") == 0 || stat(target, &st) < 0 ) {
+        debugf("Check file descriptor %s pointing to %s\n", source, target);
+        if ( strcmp(target, "/dev/tty") == 0 || strncmp(target, "anon_", 5) == 0 ) {
+            debugf("Closing %s\n", source);
             close(fd_after->fds[i]);
             continue;
         }
@@ -814,11 +816,10 @@ static void cleanup_fd(struct fdlist *fd_before, struct fdlist *fd_after) {
 }
 
 static void set_terminal_control(pid_t pid) {
-    pid_t parent_pgrp = getpgid(getppid());
     pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
     pid_t pgrp = getpgrp();
 
-    if ( tcpgrp == pgrp && parent_pgrp != pgrp ) {
+    if ( tcpgrp == pgrp ) {
         debugf("Pass terminal control to child\n");
 
         if ( setpgid(pid, pid) < 0 ) {
@@ -1235,6 +1236,19 @@ __attribute__((constructor)) static void init(void) {
             }
             debugf("Wait scontainer stage 2 child process\n");
             waitpid(stage_pid, &status, 0);
+
+		    pid_t pgrp = getpgrp();
+            pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
+
+            if ( tcpgrp > 0 && pgrp != tcpgrp ) {
+                if ( signal(SIGTTOU, SIG_IGN) == SIG_ERR ) {
+                    fatalf("failed to ignore SIGTTOU signal: %s\n", strerror(errno));
+                }
+                if ( tcsetpgrp(STDIN_FILENO, pgrp) < 0 ) {
+                    fatalf("Failed to set parent as foreground process: %s\n", strerror(errno));
+                }
+            }
+
             if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
                 verbosef("scontainer stage 2 exited with status %d\n", WEXITSTATUS(status));
                 exit(WEXITSTATUS(status));

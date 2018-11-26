@@ -18,6 +18,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/pkg/ociruntime"
+
 	"github.com/sylabs/singularity/pkg/util/sysctl"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -198,11 +200,11 @@ func (engine *EngineOperations) updateState(status string) error {
 
 	switch status {
 	case "created":
-		engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.created_at"] = strconv.FormatInt(t, 10)
+		engine.EngineConfig.State.Annotations[ociruntime.AnnotationCreatedAt] = strconv.FormatInt(t, 10)
 	case "running":
-		engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.starter_at"] = strconv.FormatInt(t, 10)
+		engine.EngineConfig.State.Annotations[ociruntime.AnnotationStartedAt] = strconv.FormatInt(t, 10)
 	case "stopped":
-		engine.EngineConfig.State.Annotations["io.sylabs.runtime.oci.finished_at"] = strconv.FormatInt(t, 10)
+		engine.EngineConfig.State.Annotations[ociruntime.AnnotationFinishedAt] = strconv.FormatInt(t, 10)
 	}
 
 	file.Config, err = json.Marshal(engine.CommonConfig)
@@ -342,16 +344,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	method := "pivot"
-	if !c.mntNS {
-		method = "chroot"
-	}
-
-	_, err = rpcOps.Chroot(c.rootfs, method)
-	if err != nil {
-		return fmt.Errorf("chroot failed: %s", err)
-	}
-
 	// update namespaces configuration path
 	namespaces := []struct {
 		nstype       string
@@ -393,9 +385,19 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
+	method := "pivot"
+	if !c.mntNS {
+		method = "chroot"
+	}
+
+	_, err = rpcOps.Chroot(c.rootfs, method)
+	if err != nil {
+		return fmt.Errorf("chroot failed: %s", err)
+	}
+
 	if engine.EngineConfig.SlavePts != -1 {
 		if err := syscall.Close(engine.EngineConfig.SlavePts); err != nil {
-			return err
+			return fmt.Errorf("failed to close slave part: %s", err)
 		}
 	}
 
@@ -671,7 +673,11 @@ func (c *container) addDevices(system *mount.System) error {
 func (c *container) addMaskedPathsMount(system *mount.System) error {
 	paths := c.engine.EngineConfig.OciConfig.Linux.MaskedPaths
 
-	nullPath := filepath.Join(c.engine.EngineConfig.GetBundlePath(), "null")
+	dir, err := instance.GetDirPrivileged(c.engine.CommonConfig.ContainerID)
+	if err != nil {
+		return err
+	}
+	nullPath := filepath.Join(dir, "null")
 
 	if _, err := os.Stat(nullPath); os.IsNotExist(err) {
 		oldmask := syscall.Umask(0)
