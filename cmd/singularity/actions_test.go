@@ -160,7 +160,6 @@ func testSingularityExec(t *testing.T) {
 		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, opts{}, 0, true},
 		{"false", imagePath, "exec", []string{"false"}, opts{}, 1, false},
 		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, opts{}, 1, false},
-<<<<<<< HEAD
 		{"WorkdirContain", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata", contain: true}, 0, false},
 		{"Workdir", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata"}, 0, true},
 		{"pwdGood", imagePath, "exec", []string{"true"}, opts{pwd: "/etc"}, 0, true},
@@ -168,10 +167,8 @@ func testSingularityExec(t *testing.T) {
 		{"homePath", imagePath, "exec", []string{"test", "-f", "/home/" + testfile.Name()}, opts{home: fmt.Sprintf("%s/testdata:/home", pwd)}, 0, true},
 		{"homeTmp", imagePath, "exec", []string{"true"}, opts{home: "/tmp"}, 0, true},
 		{"homeTmpExplicit", imagePath, "exec", []string{"true"}, opts{home: "/tmp:/home"}, 0, true},
-=======
 		{"ScifTestAppGood", imagePath, "exec", []string{"testapp.sh"}, opts{app: "testapp"}, 0, true},
 		{"ScifTestAppBad", imagePath, "exec", []string{"testapp.sh"}, opts{app: "fakeapp"}, 1, false},
->>>>>>> ce4d76505bdb445602925af734e6523e6b49fa8b
 	}
 
 	for _, tt := range tests {
