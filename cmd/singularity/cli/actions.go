@@ -88,6 +88,8 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
