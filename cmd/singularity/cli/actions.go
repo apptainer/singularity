@@ -159,7 +159,7 @@ func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
-	libexec.PullShubImage(imagePath, u, true)
+	libexec.PullShubImage(imagePath, u, true, noHTTPS)
 
 	return imagePath, nil
 }

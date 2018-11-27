@@ -33,7 +33,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		libexec.PullLibraryImage(name, args[i], PullLibraryURI, force, authToken)
 	case ShubProtocol:
-		libexec.PullShubImage(name, args[i], force)
+		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	default:
