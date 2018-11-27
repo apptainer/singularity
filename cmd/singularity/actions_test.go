@@ -311,11 +311,11 @@ func TestSingularityActions(t *testing.T) {
 	defer os.Remove(imagePath)
 
 	// singularity run
-	//t.Run("run", testSingularityRun)
+	t.Run("run", testSingularityRun)
 	// singularity exec
 	t.Run("exec", testSingularityExec)
 	// stdin pipe
-	//t.Run("STDIN", testSTDINPipe)
+	t.Run("STDIN", testSTDINPipe)
 	// action_URI
-	//t.Run("action_URI", testRunFromURI)
+	t.Run("action_URI", testRunFromURI)
 }
