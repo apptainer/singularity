@@ -32,6 +32,7 @@ type opts struct {
 	home      string
 	workdir   string
 	pwd       string
+	app       string
 }
 
 // imageExec can be used to run/exec/shell a Singularity image
@@ -65,6 +66,9 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	}
 	if opts.pwd != "" {
 		argv = append(argv, "--pwd", opts.pwd)
+	}
+	if opts.app != "" {
+		argv = append(argv, "--app", opts.app)
 	}
 	argv = append(argv, imagePath)
 	argv = append(argv, command...)
@@ -107,6 +111,8 @@ func testSingularityRun(t *testing.T) {
 		{"NoCommand", imagePath, "run", []string{}, opts{}, 0, true},
 		{"true", imagePath, "run", []string{"true"}, opts{}, 0, true},
 		{"false", imagePath, "run", []string{"false"}, opts{}, 1, false},
+		{"ScifTestAppGood", imagePath, "run", []string{}, opts{app: "testapp"}, 0, true},
+		{"ScifTestAppBad", imagePath, "run", []string{}, opts{app: "fakeapp"}, 1, false},
 	}
 
 	for _, tt := range tests {
@@ -154,6 +160,7 @@ func testSingularityExec(t *testing.T) {
 		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, opts{}, 0, true},
 		{"false", imagePath, "exec", []string{"false"}, opts{}, 1, false},
 		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, opts{}, 1, false},
+<<<<<<< HEAD
 		{"WorkdirContain", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata", contain: true}, 0, false},
 		{"Workdir", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata"}, 0, true},
 		{"pwdGood", imagePath, "exec", []string{"true"}, opts{pwd: "/etc"}, 0, true},
@@ -161,6 +168,10 @@ func testSingularityExec(t *testing.T) {
 		{"homePath", imagePath, "exec", []string{"test", "-f", "/home/" + testfile.Name()}, opts{home: fmt.Sprintf("%s/testdata:/home", pwd)}, 0, true},
 		{"homeTmp", imagePath, "exec", []string{"true"}, opts{home: "/tmp"}, 0, true},
 		{"homeTmpExplicit", imagePath, "exec", []string{"true"}, opts{home: "/tmp:/home"}, 0, true},
+=======
+		{"ScifTestAppGood", imagePath, "exec", []string{"testapp.sh"}, opts{app: "testapp"}, 0, true},
+		{"ScifTestAppBad", imagePath, "exec", []string{"testapp.sh"}, opts{app: "fakeapp"}, 1, false},
+>>>>>>> ce4d76505bdb445602925af734e6523e6b49fa8b
 	}
 
 	for _, tt := range tests {
