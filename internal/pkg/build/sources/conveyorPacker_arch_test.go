@@ -37,7 +37,7 @@ func TestArchConveyor(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("sbuild-arch")
+	b, err := types.NewBundle("", "sbuild-arch")
 	if err != nil {
 		return
 	}
@@ -71,7 +71,7 @@ func TestArchPacker(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("sbuild-arch")
+	b, err := types.NewBundle("", "sbuild-arch")
 	if err != nil {
 		return
 	}
