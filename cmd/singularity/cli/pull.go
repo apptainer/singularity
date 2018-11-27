@@ -46,6 +46,14 @@ func init() {
 	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
+	PullCmd.Flags().StringVar(&dockerUsername, "docker-username", "", "specify a username for docker authentication")
+	PullCmd.Flags().Lookup("docker-username").Hidden = true
+	PullCmd.Flags().SetAnnotation("docker-username", "envkey", []string{"DOCKER_USERNAME"})
+
+	PullCmd.Flags().StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
+	PullCmd.Flags().Lookup("docker-password").Hidden = true
+	PullCmd.Flags().SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
+
 	SingularityCmd.AddCommand(PullCmd)
 }
 

@@ -101,12 +101,18 @@ func init() {
 }
 
 func handleOCI(u string) (string, error) {
-	var sysCtx *ocitypes.SystemContext
-	if noHTTPS {
-		sysCtx = &ocitypes.SystemContext{
-			OCIInsecureSkipTLSVerify:    true,
-			DockerInsecureSkipTLSVerify: true,
+	var authConf *ocitypes.DockerAuthConfig
+	if dockerUsername != "" && dockerPassword != "" {
+		authConf = &ocitypes.DockerAuthConfig{
+			Username: dockerUsername,
+			Password: dockerPassword,
 		}
+	}
+
+	sysCtx := &ocitypes.SystemContext{
+		OCIInsecureSkipTLSVerify:    noHTTPS,
+		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerAuthConfig:            authConf,
 	}
 
 	sum, err := ociclient.ImageSHA(u, sysCtx)
@@ -121,7 +127,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{NoTest: true, NoHTTPS: noHTTPS})
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{NoTest: true, NoHTTPS: noHTTPS, DockerAuthConfig: authConf})
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}

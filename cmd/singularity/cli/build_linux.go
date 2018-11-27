@@ -9,6 +9,7 @@ import (
 	"context"
 	"os"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
@@ -62,6 +63,14 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf(err.Error())
 		}
 
+		var authConf *ocitypes.DockerAuthConfig
+		if dockerUsername != "" && dockerPassword != "" {
+			authConf = &ocitypes.DockerAuthConfig{
+				Username: dockerUsername,
+				Password: dockerPassword,
+			}
+		}
+
 		b, err := build.NewBuild(
 			spec,
 			dest,
@@ -69,11 +78,12 @@ func run(cmd *cobra.Command, args []string) {
 			libraryURL,
 			authToken,
 			types.Options{
-				Update:   update,
-				Force:    force,
-				Sections: sections,
-				NoTest:   noTest,
-				NoHTTPS:  noHTTPS,
+				Update:           update,
+				Force:            force,
+				Sections:         sections,
+				NoTest:           noTest,
+				NoHTTPS:          noHTTPS,
+				DockerAuthConfig: authConf,
 			})
 		if err != nil {
 			sylog.Fatalf("Unable to create build: %v", err)

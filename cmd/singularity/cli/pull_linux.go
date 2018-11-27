@@ -6,6 +6,7 @@
 package cli
 
 import (
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -37,6 +38,13 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	default:
-		libexec.PullOciImage(name, args[i], force, noHTTPS)
+		var authConf *ocitypes.DockerAuthConfig
+		if dockerUsername != "" && dockerPassword != "" {
+			authConf = &ocitypes.DockerAuthConfig{
+				Username: dockerUsername,
+				Password: dockerPassword,
+			}
+		}
+		libexec.PullOciImage(name, args[i], force, noHTTPS, authConf)
 	}
 }

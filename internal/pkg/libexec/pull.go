@@ -6,6 +6,7 @@
 package libexec
 
 import (
+	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -39,8 +40,8 @@ func PullShubImage(filePath, shubRef string, force bool) {
 }
 
 // PullOciImage pulls an OCI image to a sif
-func PullOciImage(path, uri string, force, noHTTPS bool) {
-	b, err := build.NewBuild(uri, path, "sif", "", "", types.Options{Force: force, NoHTTPS: noHTTPS})
+func PullOciImage(path, uri string, force, noHTTPS bool, authConfig *ocitypes.DockerAuthConfig) {
+	b, err := build.NewBuild(uri, path, "sif", "", "", types.Options{Force: force, NoHTTPS: noHTTPS, DockerAuthConfig: authConfig})
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", uri, err)
 	}

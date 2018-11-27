@@ -151,6 +151,15 @@ func initPathVars() {
 	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
 	actionFlags.Lookup("containlibs").Hidden = true
 	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
+
+	// hidden flags to handle docker credentials
+	actionFlags.StringVar(&dockerUsername, "docker-username", "", "specify a username for docker authentication")
+	actionFlags.Lookup("docker-username").Hidden = true
+	actionFlags.SetAnnotation("docker-username", "envkey", []string{"DOCKER_USERNAME"})
+
+	actionFlags.StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
+	actionFlags.Lookup("docker-password").Hidden = true
+	actionFlags.SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
