@@ -8,6 +8,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strconv"
@@ -27,6 +28,7 @@ type opts struct {
 	keepPrivs bool
 	dropCaps  string
 	contain   bool
+	noHome    bool
 	home      string
 	workdir   string
 	pwd       string
@@ -51,6 +53,9 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	}
 	if opts.contain {
 		argv = append(argv, "--contain")
+	}
+	if opts.noHome {
+		argv = append(argv, "--no-home")
 	}
 	if opts.home != "" {
 		argv = append(argv, "--home", opts.home)
@@ -120,6 +125,21 @@ func testSingularityRun(t *testing.T) {
 
 // testSingularityExec tests min fuctionality for singularity exec
 func testSingularityExec(t *testing.T) {
+	// Create a temp testfile
+	tmpfile, err := ioutil.TempFile("testdata", "testfile.tmp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testfile, err := tmpfile.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name   string
 		image  string
@@ -134,6 +154,13 @@ func testSingularityExec(t *testing.T) {
 		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, opts{}, 0, true},
 		{"false", imagePath, "exec", []string{"false"}, opts{}, 1, false},
 		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, opts{}, 1, false},
+		{"WorkdirContain", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata", contain: true}, 0, false},
+		{"Workdir", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata"}, 0, true},
+		{"pwdGood", imagePath, "exec", []string{"true"}, opts{pwd: "/etc"}, 0, true},
+		{"home", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{home: pwd + "testdata"}, 0, true},
+		{"homePath", imagePath, "exec", []string{"test", "-f", "/home/" + testfile.Name()}, opts{home: fmt.Sprintf("%s/testdata:/home", pwd)}, 0, true},
+		{"homeTmp", imagePath, "exec", []string{"true"}, opts{home: "/tmp"}, 0, true},
+		{"homeTmpExplicit", imagePath, "exec", []string{"true"}, opts{home: "/tmp:/home"}, 0, true},
 	}
 
 	for _, tt := range tests {
@@ -147,6 +174,30 @@ func testSingularityExec(t *testing.T) {
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
 			}
 		}))
+	}
+
+	// Clean up
+	err = os.Remove(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// test --no-home option
+	err = os.Chdir("/tmp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Run("noHome", test.WithoutPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{noHome: true}, pwd+"/container.img", []string{"ls", "ld", "$HOME"})
+		if exitCode != 1 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"ls", "ld", "$HOME"}, " "))
+		}
+	}))
+	// return to test SOURCEDIR
+	err = os.Chdir(pwd)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -168,6 +219,9 @@ func testSTDINPipe(t *testing.T) {
 		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
 		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
 		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
+		// Test a Bad target pwd
+		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", imagePath)}, 0},
+		{"sh", "falsePwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /bad/path %s pwd | egrep '^/etc'", imagePath)}, 1},
 	}
 
 	for _, tt := range tests {
@@ -257,11 +311,11 @@ func TestSingularityActions(t *testing.T) {
 	defer os.Remove(imagePath)
 
 	// singularity run
-	t.Run("run", testSingularityRun)
+	//t.Run("run", testSingularityRun)
 	// singularity exec
 	t.Run("exec", testSingularityExec)
 	// stdin pipe
-	t.Run("STDIN", testSTDINPipe)
+	//t.Run("STDIN", testSTDINPipe)
 	// action_URI
-	t.Run("action_URI", testRunFromURI)
+	//t.Run("action_URI", testRunFromURI)
 }
