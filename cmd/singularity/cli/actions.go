@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -294,6 +295,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
+
+	syscall.Umask(0022)
 
 	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 
