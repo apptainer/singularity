@@ -260,7 +260,7 @@ func resize(controlSocket string, oversized bool) {
 	ctrl := &ociruntime.Control{}
 	ctrl.ConsoleSize = &specs.Box{}
 
-	c, err := net.Dial("unix", controlSocket)
+	c, err := unix.Dial(controlSocket)
 	if err != nil {
 		sylog.Errorf("failed to connect to control socket")
 		return
@@ -297,7 +297,7 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig) 
 	var ostate *terminal.State
 	hasTerminal := engineConfig.OciConfig.Process.Terminal
 
-	a, err := net.Dial("unix", attachSocket)
+	a, err := unix.Dial(attachSocket)
 	if err != nil {
 		return err
 	}
