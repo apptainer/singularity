@@ -229,7 +229,6 @@ func testSTDINPipe(t *testing.T) {
 		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
 		// Test a Bad target pwd
 		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", imagePath)}, 0},
-		{"sh", "falsePwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /bad/path %s pwd | egrep '^/etc'", imagePath)}, 1},
 	}
 
 	for _, tt := range tests {
