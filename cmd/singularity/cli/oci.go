@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net"
 	"os"
 	osignal "os/signal"
 	"path/filepath"
@@ -391,7 +390,7 @@ func ociRun(containerID string) error {
 	}
 	syncSocketPath = filepath.Join(dir, "run.sock")
 
-	l, err := net.Listen("unix", syncSocketPath)
+	l, err := unix.CreateSocket(syncSocketPath)
 	if err != nil {
 		os.Remove(syncSocketPath)
 		return err
