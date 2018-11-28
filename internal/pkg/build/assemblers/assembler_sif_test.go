@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 const (
@@ -34,7 +34,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-SIFAssembler")
+	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
 		return
 	}
@@ -68,7 +68,7 @@ func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-SIFAssembler")
+	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
 		return
 	}
