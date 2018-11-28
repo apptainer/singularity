@@ -459,6 +459,8 @@ func (engine *EngineOperations) handleStream(master *os.File, l net.Listener, lo
 }
 
 func (engine *EngineOperations) handleControl(master *os.File, l net.Listener, logger *Logger, fatalChan chan error) {
+	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
+
 	for {
 		ctrl := &ociruntime.Control{}
 
@@ -475,7 +477,7 @@ func (engine *EngineOperations) handleControl(master *os.File, l net.Listener, l
 
 		c.Close()
 
-		if ctrl.ConsoleSize != nil {
+		if ctrl.ConsoleSize != nil && hasTerminal {
 			size := &pty.Winsize{
 				Cols: uint16(ctrl.ConsoleSize.Width),
 				Rows: uint16(ctrl.ConsoleSize.Height),
