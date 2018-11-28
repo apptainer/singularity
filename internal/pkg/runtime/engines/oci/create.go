@@ -398,6 +398,16 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 			return fmt.Errorf("failed to close slave part: %s", err)
 		}
 	}
+	if engine.EngineConfig.OutputStreams[0] != -1 {
+		if err := syscall.Close(engine.EngineConfig.OutputStreams[1]); err != nil {
+			return fmt.Errorf("failed to close write output stream: %s", err)
+		}
+	}
+	if engine.EngineConfig.ErrorStreams[0] != -1 {
+		if err := syscall.Close(engine.EngineConfig.ErrorStreams[1]); err != nil {
+			return fmt.Errorf("failed to close write error stream: %s", err)
+		}
+	}
 
 	return nil
 }

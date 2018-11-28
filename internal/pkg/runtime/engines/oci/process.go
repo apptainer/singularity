@@ -24,8 +24,6 @@ import (
 
 	"github.com/kr/pty"
 
-	"golang.org/x/crypto/ssh/terminal"
-
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
@@ -150,20 +148,33 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := syscall.Close(slaveFd); err != nil {
 			return err
 		}
-		if terminal.IsTerminal(int(os.Stdin.Fd())) {
-			if _, err := syscall.Setsid(); err != nil {
-				return err
-			}
-			if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSCTTY), 1); err != 0 {
-				return fmt.Errorf("failed to set crontrolling terminal: %s", err.Error())
-			}
-		} else {
-			os.Stdin.Close()
-		}
-	} else {
-		if err := syscall.Dup3(int(os.Stdout.Fd()), int(os.Stderr.Fd()), 0); err != nil {
+		if _, err := syscall.Setsid(); err != nil {
 			return err
 		}
+		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSCTTY), 1); err != 0 {
+			return fmt.Errorf("failed to set crontrolling terminal: %s", err.Error())
+		}
+	} else if engine.EngineConfig.OutputStreams[1] != -1 && engine.EngineConfig.ErrorStreams[1] != -1 {
+		if err := syscall.Dup3(engine.EngineConfig.OutputStreams[1], int(os.Stdout.Fd()), 0); err != nil {
+			return err
+		}
+		if err := syscall.Close(engine.EngineConfig.OutputStreams[1]); err != nil {
+			return err
+		}
+		if err := syscall.Close(engine.EngineConfig.OutputStreams[0]); err != nil {
+			return err
+		}
+
+		if err := syscall.Dup3(engine.EngineConfig.ErrorStreams[1], int(os.Stderr.Fd()), 0); err != nil {
+			return err
+		}
+		if err := syscall.Close(engine.EngineConfig.ErrorStreams[1]); err != nil {
+			return err
+		}
+		if err := syscall.Close(engine.EngineConfig.ErrorStreams[0]); err != nil {
+			return err
+		}
+		os.Stdin.Close()
 	}
 
 	if !engine.EngineConfig.Exec {
@@ -199,8 +210,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 // PreStartProcess will be executed in smaster context
 func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
-	var master *os.File
-
 	// stop container process
 	syscall.Kill(pid, syscall.SIGSTOP)
 
@@ -211,12 +220,6 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 				return err
 			}
 		}
-	}
-
-	if engine.EngineConfig.MasterPts != -1 {
-		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "master-pts")
-	} else {
-		master = os.Stdout
 	}
 
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
@@ -254,8 +257,8 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
-	go engine.handleControl(master, control, logger, fatalChan)
-	go engine.handleStream(master, attach, logger, fatalChan)
+	go engine.handleControl(control, logger, fatalChan)
+	go engine.handleStream(attach, logger, fatalChan)
 
 	// since paused process block on read, send it an
 	// ACK so when it will receive SIGCONT, the process
@@ -336,8 +339,6 @@ func (mw *multiWriter) Del(writer io.Writer) {
 }
 
 type Logger struct {
-	reader      *io.PipeReader
-	writer      *io.PipeWriter
 	buffer      []byte
 	bufferMutex sync.Mutex
 	file        *os.File
@@ -346,13 +347,10 @@ type Logger struct {
 
 func NewLogger(logPath string) (*Logger, error) {
 	logger := &Logger{}
-	logger.reader, logger.writer = io.Pipe()
 
 	if err := logger.openFile(logPath); err != nil {
 		return nil, err
 	}
-
-	go logger.scan()
 
 	return logger, nil
 }
@@ -396,23 +394,24 @@ func (l *Logger) GetBuffer() []byte {
 	return l.buffer
 }
 
-func (l *Logger) GetWriter() *io.PipeWriter {
-	return l.writer
+func (l *Logger) NewWriter(stream string) *io.PipeWriter {
+	reader, writer := io.Pipe()
+	go l.scan(stream, reader, writer)
+	return writer
 }
 
-func (l *Logger) scan() {
-	scanner := bufio.NewScanner(l.reader)
+func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter) {
+	scanner := bufio.NewScanner(pr)
 	scanner.Split(l.ScanOutput)
 
 	for scanner.Scan() {
 		l.fileMutex.Lock()
-		fmt.Fprintf(l.file, "%s stdout F %s", time.Now().Format(time.RFC3339Nano), scanner.Text())
+		fmt.Fprintf(l.file, "%s %s F %s", time.Now().Format(time.RFC3339Nano), stream, scanner.Text())
 		l.fileMutex.Unlock()
 	}
 
-	l.reader.Close()
-	l.writer.Close()
-	l.file.Close()
+	pr.Close()
+	pw.Close()
 }
 
 func (l *Logger) ReOpenFile() {
@@ -426,16 +425,42 @@ func (l *Logger) ReOpenFile() {
 	l.openFile(path)
 }
 
-func (engine *EngineOperations) handleStream(master *os.File, l net.Listener, logger *Logger, fatalChan chan error) {
+func (engine *EngineOperations) handleStream(l net.Listener, logger *Logger, fatalChan chan error) {
+	var master *os.File
+	var stdout io.Reader
+	var stderr io.Reader
+	var outputWriters *multiWriter
+	var errorWriters *multiWriter
+
 	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
+
 	defer l.Close()
 
-	mw := &multiWriter{}
-	mw.Add(logger.GetWriter())
+	if hasTerminal {
+		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "stream-master-pts")
+		stdout = master
+	} else {
+		outputStream := os.NewFile(uintptr(engine.EngineConfig.OutputStreams[0]), "stdout-stream")
+		errorStream := os.NewFile(uintptr(engine.EngineConfig.ErrorStreams[0]), "error-stream")
+		stdout = outputStream
+		stderr = errorStream
+	}
+
+	outputWriters = &multiWriter{}
+	outputWriters.Add(logger.NewWriter("stdout"))
 
 	go func() {
-		io.Copy(mw, master)
+		io.Copy(outputWriters, stdout)
 	}()
+
+	if stderr != nil {
+		errorWriters = &multiWriter{}
+		errorWriters.Add(logger.NewWriter("stderr"))
+
+		go func() {
+			io.Copy(errorWriters, stderr)
+		}()
+	}
 
 	for {
 		c, err := l.Accept()
@@ -445,21 +470,31 @@ func (engine *EngineOperations) handleStream(master *os.File, l net.Listener, lo
 		}
 
 		go func() {
-			mw.Add(c)
-			c.Write(logger.GetBuffer())
+			outputWriters.Add(c)
+			if errorWriters != nil {
+				errorWriters.Add(c)
+			}
 			if hasTerminal {
+				c.Write(logger.GetBuffer())
 				io.Copy(master, c)
 			} else {
 				io.Copy(ioutil.Discard, c)
 			}
-			mw.Del(c)
+			outputWriters.Del(c)
+			if errorWriters != nil {
+				errorWriters.Del(c)
+			}
 			c.Close()
 		}()
 	}
 }
 
-func (engine *EngineOperations) handleControl(master *os.File, l net.Listener, logger *Logger, fatalChan chan error) {
-	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
+func (engine *EngineOperations) handleControl(l net.Listener, logger *Logger, fatalChan chan error) {
+	var master *os.File
+
+	if engine.EngineConfig.OciConfig.Process.Terminal {
+		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "control-master-pts")
+	}
 
 	for {
 		ctrl := &ociruntime.Control{}
@@ -477,7 +512,7 @@ func (engine *EngineOperations) handleControl(master *os.File, l net.Listener, l
 
 		c.Close()
 
-		if ctrl.ConsoleSize != nil && hasTerminal {
+		if ctrl.ConsoleSize != nil && master != nil {
 			size := &pty.Winsize{
 				Cols: uint16(ctrl.ConsoleSize.Width),
 				Rows: uint16(ctrl.ConsoleSize.Height),

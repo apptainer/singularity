@@ -89,6 +89,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
 
+	e.EngineConfig.MasterPts = -1
+	e.EngineConfig.SlavePts = -1
+	e.EngineConfig.OutputStreams = [2]int{-1, -1}
+	e.EngineConfig.ErrorStreams = [2]int{-1, -1}
+
 	if !e.EngineConfig.Exec {
 		if e.EngineConfig.OciConfig.Process.Terminal {
 			master, slave, err := pty.Open()
@@ -112,12 +117,13 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 			if err != nil {
 				return err
 			}
-			e.EngineConfig.MasterPts = int(r.Fd())
-			e.EngineConfig.SlavePts = int(w.Fd())
+			e.EngineConfig.OutputStreams = [2]int{int(r.Fd()), int(w.Fd())}
+			r, w, err = os.Pipe()
+			if err != nil {
+				return err
+			}
+			e.EngineConfig.ErrorStreams = [2]int{int(r.Fd()), int(w.Fd())}
 		}
-	} else {
-		e.EngineConfig.MasterPts = -1
-		e.EngineConfig.SlavePts = -1
 	}
 
 	return nil
