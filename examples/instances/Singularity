@@ -1,0 +1,12 @@
+BootStrap: busybox
+MirrorURL: https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64
+
+%startscript
+    port=11372
+    while true; do
+        nc -ll -p $port -e /bin/cat 2>/dev/null
+        if [ $? -eq 0 ]; then
+            exit 0
+        fi
+        port=$((port + 1))
+    done
