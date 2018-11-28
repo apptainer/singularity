@@ -132,10 +132,12 @@ func testSingularityRun(t *testing.T) {
 // testSingularityExec tests min fuctionality for singularity exec
 func testSingularityExec(t *testing.T) {
 	// Create a temp testfile
-	tmpfile, err := ioutil.TempFile("testdata", "testfile.tmp")
+	tmpfile, err := ioutil.TempFile("", "testSingularityExec.tmp")
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.Remove(tmpfile.Name()) // clean up
+
 	testfile, err := tmpfile.Stat()
 	if err != nil {
 		t.Fatal(err)
@@ -164,7 +166,7 @@ func testSingularityExec(t *testing.T) {
 		{"Workdir", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata"}, 0, true},
 		{"pwdGood", imagePath, "exec", []string{"true"}, opts{pwd: "/etc"}, 0, true},
 		{"home", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{home: pwd + "testdata"}, 0, true},
-		{"homePath", imagePath, "exec", []string{"test", "-f", "/home/" + testfile.Name()}, opts{home: fmt.Sprintf("%s/testdata:/home", pwd)}, 0, true},
+		{"homePath", imagePath, "exec", []string{"test", "-f", "/home/" + testfile.Name()}, opts{home: "/tmp:/home"}, 0, true},
 		{"homeTmp", imagePath, "exec", []string{"true"}, opts{home: "/tmp"}, 0, true},
 		{"homeTmpExplicit", imagePath, "exec", []string{"true"}, opts{home: "/tmp:/home"}, 0, true},
 		{"ScifTestAppGood", imagePath, "exec", []string{"testapp.sh"}, opts{app: "testapp"}, 0, true},
@@ -184,22 +186,16 @@ func testSingularityExec(t *testing.T) {
 		}))
 	}
 
-	// Clean up
-	err = os.Remove(tmpfile.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// test --no-home option
 	err = os.Chdir("/tmp")
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Run("noHome", test.WithoutPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{noHome: true}, pwd+"/container.img", []string{"ls", "ld", "$HOME"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{noHome: true}, pwd+"/container.img", []string{"ls", "-ld", "$HOME"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"ls", "ld", "$HOME"}, " "))
+			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"ls", "-ld", "$HOME"}, " "))
 		}
 	}))
 	// return to test SOURCEDIR
