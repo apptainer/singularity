@@ -87,7 +87,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("local-cachedir"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
@@ -122,7 +122,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS})
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: LocalCacheDir, NoTest: true, NoHTTPS: noHTTPS})
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}

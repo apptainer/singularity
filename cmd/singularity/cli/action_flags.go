@@ -32,6 +32,7 @@ var (
 	Security        []string
 	CgroupsPath     string
 	ContainLibsPath []string
+	LocalCacheDir   string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -152,10 +153,10 @@ func initPathVars() {
 	actionFlags.Lookup("containlibs").Hidden = true
 	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
 
-	// hidden flag to handle SINGULARITY_TMPDIR environment variable
-	actionFlags.StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
-	actionFlags.Lookup("tmpdir").Hidden = true
-	actionFlags.SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
+	// hidden flag to handle SINGULARITY_LOCALCACHE environment variable
+	actionFlags.StringVar(&LocalCacheDir, "local-cachedir", "", "specify a temporary directory to generate runtime images on the fly")
+	actionFlags.Lookup("local-cachedir").Hidden = true
+	actionFlags.SetAnnotation("local-cachedir", "envkey", []string{"LOCALCACHEDIR"})
 }
 
 // initBoolVars initializes flags that take a boolean argument
