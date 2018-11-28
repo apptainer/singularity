@@ -171,6 +171,8 @@ func testSingularityExec(t *testing.T) {
 		{"homeTmpExplicit", imagePath, "exec", []string{"true"}, opts{home: "/tmp:/home"}, 0, true},
 		{"ScifTestAppGood", imagePath, "exec", []string{"testapp.sh"}, opts{app: "testapp"}, 0, true},
 		{"ScifTestAppBad", imagePath, "exec", []string{"testapp.sh"}, opts{app: "fakeapp"}, 1, false},
+		//
+		{"userBind", imagePath, "exec", []string{"test", "-f", "/var/tmp/" + testfile.Name()}, opts{binds: []string{"/tmp:/var/tmp"}}, 0, true},
 	}
 
 	for _, tt := range tests {
