@@ -39,8 +39,8 @@ func PullShubImage(filePath, shubRef string, force, noHTTPS bool) {
 }
 
 // PullOciImage pulls an OCI image to a sif
-func PullOciImage(path, uri string, force, noHTTPS bool) {
-	b, err := build.NewBuild(uri, path, "sif", "", "", types.Options{Force: force, NoHTTPS: noHTTPS})
+func PullOciImage(path, uri string, opts types.Options) {
+	b, err := build.NewBuild(uri, path, "sif", "", "", opts)
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", uri, err)
 	}

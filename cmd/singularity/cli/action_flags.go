@@ -151,6 +151,11 @@ func initPathVars() {
 	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
 	actionFlags.Lookup("containlibs").Hidden = true
 	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
+
+	// hidden flag to handle SINGULARITY_TMPDIR environment variable
+	actionFlags.StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
+	actionFlags.Lookup("tmpdir").Hidden = true
+	actionFlags.SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
 }
 
 // initBoolVars initializes flags that take a boolean argument

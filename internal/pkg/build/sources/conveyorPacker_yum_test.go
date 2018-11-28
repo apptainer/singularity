@@ -37,7 +37,7 @@ func TestYumConveyor(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("sbuild-yum")
+	b, err := types.NewBundle("", "sbuild-yum")
 	if err != nil {
 		return
 	}
@@ -73,7 +73,7 @@ func TestYumPacker(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("sbuild-yum")
+	b, err := types.NewBundle("", "sbuild-yum")
 	if err != nil {
 		return
 	}
