@@ -27,9 +27,9 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/util/unix"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/rlimit"
+	"github.com/sylabs/singularity/pkg/util/unix"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"

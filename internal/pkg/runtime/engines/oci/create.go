@@ -19,17 +19,15 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/pkg/ociruntime"
-
 	"github.com/sylabs/singularity/pkg/util/sysctl"
-
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/unix"
+	"github.com/sylabs/singularity/pkg/util/unix"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 )

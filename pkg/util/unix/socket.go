@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 )
 
@@ -18,6 +19,9 @@ func Listen(path string) (net.Listener, error) {
 	socket := path
 
 	if len(path) >= 108 {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current working directory: %s", err)
@@ -40,6 +44,9 @@ func Dial(path string) (net.Conn, error) {
 	socket := path
 
 	if len(path) >= 108 {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
 		cwd, err := os.Getwd()
 		if err != nil {
 			return nil, fmt.Errorf("failed to get current working directory: %s", err)

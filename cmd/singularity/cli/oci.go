@@ -30,8 +30,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
-	"github.com/sylabs/singularity/internal/pkg/util/unix"
 	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/pkg/util/unix"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
