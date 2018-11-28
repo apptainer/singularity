@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"os"
 	osexec "os/exec"
@@ -426,6 +427,7 @@ func (l *Logger) ReOpenFile() {
 }
 
 func (engine *EngineOperations) handleStream(master *os.File, l net.Listener, logger *Logger, fatalChan chan error) {
+	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
 	defer l.Close()
 
 	mw := &multiWriter{}
@@ -445,7 +447,11 @@ func (engine *EngineOperations) handleStream(master *os.File, l net.Listener, lo
 		go func() {
 			mw.Add(c)
 			c.Write(logger.GetBuffer())
-			io.Copy(master, c)
+			if hasTerminal {
+				io.Copy(master, c)
+			} else {
+				io.Copy(ioutil.Discard, c)
+			}
 			mw.Del(c)
 			c.Close()
 		}()
