@@ -239,9 +239,8 @@ func testSTDINPipe(t *testing.T) {
 		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
 		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
 		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
-		// test apps help
-		{"sh", "appsHelpFoo", []string{"-c", fmt.Sprintf("singularity help --app foo %s | grep 'This is the help for foo!'", appsImage)}, 0},
-		{"sh", "appsHelpbar", []string{"-c", fmt.Sprintf("singularity help --app bar %s | grep 'No runscript help is defined for this application.'", appsImage)}, 0},
+		// Test apps
+		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", appsImage)}, 0},
 		// Test target pwd
 		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", imagePath)}, 0},
 	}
