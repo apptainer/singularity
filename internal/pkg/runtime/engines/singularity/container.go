@@ -29,8 +29,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/internal/pkg/util/loop"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 type container struct {
@@ -535,6 +535,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 
 // mount image via loop
 func (c *container) mountImage(mnt *mount.Point) error {
+	maxDevices := int(c.engine.EngineConfig.File.MaxLoopDevices)
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 
@@ -562,7 +563,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info)
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}

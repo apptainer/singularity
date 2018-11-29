@@ -7,12 +7,11 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/pkg/sypgp"
 	"github.com/sylabs/singularity/src/docs"
-
-	"os"
 )
 
 var secret bool

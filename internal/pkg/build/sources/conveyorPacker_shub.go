@@ -10,8 +10,8 @@ import (
 	"os"
 
 	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/client/shub"
 )
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
@@ -39,7 +39,7 @@ func (cp *ShubConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	cp.b.FSObjects["shubImg"] = f.Name()
 
 	// get image from singularity hub
-	if err = client.DownloadImage(cp.b.FSObjects["shubImg"], src, true); err != nil {
+	if err = client.DownloadImage(cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
 		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
 	}
 

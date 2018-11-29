@@ -12,9 +12,9 @@ import (
 	"os"
 	"time"
 
-	util "github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	util "github.com/sylabs/singularity/pkg/client/library"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -23,7 +23,7 @@ const pullTimeout = 7200
 
 // DownloadImage will retrieve an image from the Container Singularityhub,
 // saving it into the specified file
-func DownloadImage(filePath string, shubRef string, force bool) (err error) {
+func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
 	sylog.Debugf("Downloading container from Shub")
 
 	// use custom parser to make sure we have a valid shub URI
@@ -48,7 +48,7 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 	}
 
 	// Get the image manifest
-	manifest, err := getManifest(ShubURI)
+	manifest, err := getManifest(ShubURI, noHTTPS)
 	if err != nil {
 		return fmt.Errorf("Failed to get manifest from Shub: %v", err)
 	}
@@ -63,6 +63,10 @@ func DownloadImage(filePath string, shubRef string, force bool) (err error) {
 		return err
 	}
 	req.Header.Set("User-Agent", useragent.Value())
+
+	if noHTTPS {
+		req.URL.Scheme = "http"
+	}
 
 	// Do the request, if status isn't success, return error
 	resp, err := httpc.Do(req)

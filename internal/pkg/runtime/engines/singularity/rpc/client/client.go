@@ -10,7 +10,7 @@ import (
 	"os"
 
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
-	"github.com/sylabs/singularity/internal/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // RPC holds the state necessary for remote procedure calls.
@@ -56,11 +56,12 @@ func (t *RPC) Chroot(root string, usePivot bool) (int, error) {
 }
 
 // LoopDevice calls the loop device RPC using the supplied arguments.
-func (t *RPC) LoopDevice(image string, mode int, info loop.Info64) (int, error) {
+func (t *RPC) LoopDevice(image string, mode int, info loop.Info64, maxDevices int) (int, error) {
 	arguments := &args.LoopArgs{
-		Image: image,
-		Mode:  mode,
-		Info:  info,
+		Image:      image,
+		Mode:       mode,
+		Info:       info,
+		MaxDevices: maxDevices,
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".LoopDevice", arguments, &reply)
