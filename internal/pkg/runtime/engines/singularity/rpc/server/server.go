@@ -13,9 +13,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
@@ -24,7 +21,6 @@ import (
 )
 
 var diskGID = -1
-var singularityConf *singularity.FileConfig
 
 // Methods is a receiver type.
 type Methods int
@@ -109,8 +105,9 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 // LoopDevice attaches a loop device with the specified arguments.
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	var image *os.File
+
 	loopdev := new(loop.Device)
-	loopdev.MaxLoopDevices = int(singularityConf.MaxLoopDevices)
+	loopdev.MaxLoopDevices = arguments.MaxDevices
 
 	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
 		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
@@ -192,11 +189,4 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 		syscall.Setfsgid(arguments.GID)
 	})
 	return nil
-}
-
-func init() {
-	singularityConf = &singularity.FileConfig{}
-	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", singularityConf); err != nil {
-		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
-	}
 }
