@@ -19,22 +19,21 @@ import (
 
 // Parser parses configuration found in the file with the specified path.
 func Parser(filepath string, f interface{}) error {
+	var c *os.File
 	var b []byte
 	directives := make(map[string][]string)
 
-	// If the configuration file isn't found, continue with sensible defaults
-	c, err := os.Open(filepath)
-	if err == nil {
+	if filepath != "" {
+		c, err := os.Open(filepath)
+		if err != nil {
+			return err
+		}
 		b, err = ioutil.ReadAll(c)
 		if err != nil {
 			return err
 		}
 
 		c.Close()
-	} else if os.IsNotExist(err) || filepath == "" {
-		b = []byte{}
-	} else {
-		return err
 	}
 
 	r, err := regexp.Compile(`(?m)^\s*([a-zA-Z _]+)\s*=\s*(.*)$`)
