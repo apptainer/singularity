@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -86,6 +87,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
@@ -120,7 +122,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{NoTest: true, NoHTTPS: noHTTPS})
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS})
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
@@ -158,7 +160,26 @@ func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
-	libexec.PullShubImage(imagePath, u, true)
+	libexec.PullShubImage(imagePath, u, true, noHTTPS)
+
+	return imagePath, nil
+}
+
+func handleNet(u string) (string, error) {
+	refParts := strings.Split(u, "/")
+	imageName := refParts[len(refParts)-1]
+	imagePath := cache.NetImage("hash", imageName)
+
+	exists, err := cache.NetImageExists("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading network image")
+		libexec.PullNetImage(imagePath, u, true)
+	} else {
+		sylog.Infof("Use image from cache")
+	}
 
 	return imagePath, nil
 }
@@ -182,6 +203,10 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
 		image, err = handleOCI(args[0])
+	case uri.HTTP:
+		image, err = handleNet(args[0])
+	case uri.HTTPS:
+		image, err = handleNet(args[0])
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}
@@ -272,9 +297,16 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
+	syscall.Umask(0022)
+
 	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 
 	engineConfig := singularity.NewConfig()
+
+	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
+		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+	}
 
 	ociConfig := &oci.Config{}
 	generator := generate.Generator{Config: &ociConfig.Spec}

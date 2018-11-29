@@ -25,7 +25,7 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-sandboxAssembler")
+	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
 		return
 	}
@@ -59,7 +59,7 @@ func TestSandboxAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-sandboxAssembler")
+	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
 		return
 	}

@@ -39,7 +39,7 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	cp.b.FSObjects["shubImg"] = f.Name()
 
 	// get image from singularity hub
-	if err = client.DownloadImage(cp.b.FSObjects["shubImg"], src, true); err != nil {
+	if err = client.DownloadImage(cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
 		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
 	}
 

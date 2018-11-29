@@ -31,6 +31,7 @@ var (
 	update     bool
 	noTest     bool
 	sections   []string
+	tmpDir     string
 	noHTTPS    bool
 )
 
@@ -68,6 +69,9 @@ func init() {
 
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
 	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
+	BuildCmd.Flags().StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
+	BuildCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
 
 	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})

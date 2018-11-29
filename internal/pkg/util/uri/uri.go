@@ -15,6 +15,10 @@ const (
 	Library = "library"
 	// Shub is the keyword for a shub ref
 	Shub = "shub"
+	// HTTP is the keyword for http ref
+	HTTP = "http"
+	// HTTPS is the keyword for https ref
+	HTTPS = "https"
 )
 
 // validURIs contains a list of known uris
@@ -26,6 +30,8 @@ var validURIs = map[string]bool{
 	"docker-daemon":  true,
 	"oci":            true,
 	"oci-archive":    true,
+	"http":           true,
+	"https":          true,
 }
 
 // IsValid returns whether or not the given source is valid
@@ -56,6 +62,11 @@ func GetName(uri string) string {
 
 	ref = strings.TrimLeft(ref, "/")    // Trim leading "/" characters
 	refSplit := strings.Split(ref, "/") // Split ref into parts
+
+	if transport == HTTP || transport == HTTPS {
+		imageName := refSplit[len(refSplit)-1]
+		return imageName
+	}
 
 	// Default tag is latest
 	tags := []string{"latest"}
