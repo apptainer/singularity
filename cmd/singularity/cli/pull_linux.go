@@ -7,10 +7,10 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 func pullRun(cmd *cobra.Command, args []string) {
