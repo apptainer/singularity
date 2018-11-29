@@ -10,19 +10,19 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	sytypes "github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/client/shub"
 )
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ShubConveyorPacker struct {
-	recipe sytypes.Definition
-	b      *sytypes.Bundle
+	recipe types.Definition
+	b      *types.Bundle
 	LocalPacker
 }
 
 // Get downloads container from Singularityhub
-func (cp *ShubConveyorPacker) Get(b *sytypes.Bundle) (err error) {
+func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Shub")
 
 	cp.b = b

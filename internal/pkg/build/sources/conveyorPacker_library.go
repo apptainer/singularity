@@ -10,21 +10,21 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	sytypes "github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/client/library"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
 // as well as extra information about the library it's pulling from
 type LibraryConveyorPacker struct {
-	b *sytypes.Bundle
+	b *types.Bundle
 	LocalPacker
 	LibraryURL string
 	AuthToken  string
 }
 
 // Get downloads container from Singularityhub
-func (cp *LibraryConveyorPacker) Get(b *sytypes.Bundle) (err error) {
+func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
 	cp.b = b
