@@ -19,6 +19,7 @@ type EngineConfig struct {
 	BundlePath    string           `json:"bundlePath"`
 	LogPath       string           `json:"logPath"`
 	LogFormat     string           `json:"logFormat"`
+	PidFile       string           `json:"pidFile"`
 	OciConfig     *oci.Config      `json:"ociConfig"`
 	State         specs.State      `json:"state"`
 	MasterPts     int              `json:"masterPts"`
@@ -80,4 +81,14 @@ func (e *EngineConfig) SetLogFormat(format string) {
 // GetLogFormat returns the container log format.
 func (e *EngineConfig) GetLogFormat() string {
 	return e.LogFormat
+}
+
+// SetPidFile sets the pid file path.
+func (e *EngineConfig) SetPidFile(path string) {
+	e.PidFile = path
+}
+
+// GetPidFile gets the pid file path.
+func (e *EngineConfig) GetPidFile() string {
+	return e.PidFile
 }

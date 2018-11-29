@@ -20,6 +20,11 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		engine.EngineConfig.Cgroups.Remove()
 	}
 
+	pidFile := engine.EngineConfig.GetPidFile()
+	if pidFile != "" {
+		os.Remove(pidFile)
+	}
+
 	exitCode := "0"
 	desc := "exited normally"
 

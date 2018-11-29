@@ -15,6 +15,7 @@ import (
 	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -263,6 +264,13 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 
 	go engine.handleControl(control, logger, fatalChan)
 	go engine.handleStream(attach, logger, fatalChan)
+
+	pidFile := engine.EngineConfig.GetPidFile()
+	if pidFile != "" {
+		if err := ioutil.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644); err != nil {
+			return err
+		}
+	}
 
 	// since paused process block on read, send it an
 	// ACK so when it will receive SIGCONT, the process

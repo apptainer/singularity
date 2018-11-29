@@ -39,6 +39,7 @@ var logPath string
 var logFormat string
 var syncSocketPath string
 var emptyProcess bool
+var pidFile string
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
@@ -53,6 +54,8 @@ func init() {
 	OciCreateCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
 	OciCreateCmd.Flags().StringVar(&logFormat, "log-format", "kubernetes", "specify the log file format")
 	OciCreateCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
+	OciCreateCmd.Flags().StringVar(&pidFile, "pid-file", "", "specify the pid file")
+	OciCreateCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
 
 	OciStartCmd.Flags().SetInterspersed(false)
 	OciDeleteCmd.Flags().SetInterspersed(false)
@@ -73,6 +76,8 @@ func init() {
 	OciRunCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
 	OciRunCmd.Flags().StringVar(&logFormat, "log-format", "kubernetes", "specify the log file format")
 	OciRunCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
+	OciRunCmd.Flags().StringVar(&pidFile, "pid-file", "", "specify the pid file")
+	OciRunCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
 
 	OciCmd.AddCommand(OciStartCmd)
 	OciCmd.AddCommand(OciCreateCmd)
@@ -591,6 +596,7 @@ func ociCreate(containerID string) error {
 	engineConfig.SetBundlePath(absBundle)
 	engineConfig.SetLogPath(logPath)
 	engineConfig.SetLogFormat(logFormat)
+	engineConfig.SetPidFile(pidFile)
 
 	// load config.json from bundle path
 	configJSON := filepath.Join(bundlePath, "config.json")
