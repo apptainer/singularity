@@ -18,6 +18,7 @@ type Definition struct {
 	ImageData  `json:"imageData"`
 	BuildData  Data              `json:"buildData"`
 	CustomData map[string]string `json:"customData"`
+	RawDefData []byte            `json:"rawDefData"`
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be

@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -319,7 +320,12 @@ func doHeader(h string, d *types.Definition) (err error) {
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
 func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
-	s := bufio.NewScanner(r)
+	d.RawDefData, err = ioutil.ReadAll(r)
+	if err != nil {
+		return d, fmt.Errorf("While attempting to read in definition: %v", err)
+	}
+
+	s := bufio.NewScanner(bytes.NewReader(d.RawDefData))
 	s.Split(scanDefinitionFile)
 
 	// advance scanner until it returns a useful token or errors

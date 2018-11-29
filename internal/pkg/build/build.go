@@ -493,17 +493,11 @@ func insertDefinition(b *types.Bundle) error {
 		}
 
 	}
-	f, err := os.Create(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"))
+
+	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), b.Recipe.RawDefData, 0644)
 	if err != nil {
 		return err
 	}
-
-	err = f.Chmod(0644)
-	if err != nil {
-		return err
-	}
-
-	parser.WriteDefinitionFile(&b.Recipe, f)
 
 	return nil
 }
