@@ -1249,9 +1249,12 @@ __attribute__((constructor)) static void init(void) {
                 }
             }
 
-            if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
+            if ( WIFEXITED(status) ) {
                 verbosef("scontainer stage 2 exited with status %d\n", WEXITSTATUS(status));
                 exit(WEXITSTATUS(status));
+            } else if ( WIFSIGNALED(status) ) {
+                verbosef("scontainer stage 2 interrupted by signal number %d\n", WTERMSIG(status));
+                kill(getpid(), WTERMSIG(status));
             }
             fatalf("Child exit with unknown status\n");
         } else {
