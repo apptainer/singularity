@@ -90,7 +90,7 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 		d:      d,
 	}
 
-	b.b, err = types.NewBundle("sbuild")
+	b.b, err = types.NewBundle(opts.TmpDir, "sbuild")
 	if err != nil {
 		return nil, err
 	}
