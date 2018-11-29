@@ -6,8 +6,6 @@
 package oci
 
 import (
-	"bufio"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,9 +16,9 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
-	"sync"
 	"syscall"
-	"time"
+
+	"github.com/sylabs/singularity/pkg/util/copy"
 
 	"github.com/kr/pty"
 
@@ -252,7 +250,13 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		logPath = filepath.Join(dir, containerID+".log")
 	}
 
-	logger, err := NewLogger(logPath)
+	format := engine.EngineConfig.GetLogFormat()
+	formatter, ok := instance.LogFormats[format]
+	if !ok {
+		return fmt.Errorf("log format %s is not supported", format)
+	}
+
+	logger, err := instance.NewLogger(logPath, formatter)
 	if err != nil {
 		return err
 	}
@@ -296,149 +300,24 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 	return nil
 }
 
-type multiWriter struct {
-	sync.Mutex
-	writers []io.Writer
-}
-
-func (mw *multiWriter) Write(p []byte) (n int, err error) {
-	mw.Lock()
-	defer mw.Unlock()
-
-	l := len(p)
-
-	for _, w := range mw.writers {
-		n, err = w.Write(p)
-		if err != nil {
-			return
-		}
-		if n != l {
-			err = io.ErrShortWrite
-			return
-		}
-	}
-
-	return l, nil
-}
-
-func (mw *multiWriter) Add(writer io.Writer) {
-	mw.Lock()
-	mw.writers = append(mw.writers, writer)
-	mw.Unlock()
-}
-
-func (mw *multiWriter) Del(writer io.Writer) {
-	mw.Lock()
-	for i, w := range mw.writers {
-		if writer == w {
-			mw.writers = append(mw.writers[:i], mw.writers[i+1:]...)
-			break
-		}
-	}
-	mw.Unlock()
-}
-
-type Logger struct {
-	buffer      []byte
-	bufferMutex sync.Mutex
-	file        *os.File
-	fileMutex   sync.Mutex
-}
-
-func NewLogger(logPath string) (*Logger, error) {
-	logger := &Logger{}
-
-	if err := logger.openFile(logPath); err != nil {
-		return nil, err
-	}
-
-	return logger, nil
-}
-
-func (l *Logger) openFile(path string) (err error) {
-	oldmask := syscall.Umask(0)
-	defer syscall.Umask(oldmask)
-
-	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-
-	return err
-}
-
-func (l *Logger) ScanOutput(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	length := len(data)
-
-	if atEOF && length == 0 {
-		return 0, nil, nil
-	}
-
-	l.bufferMutex.Lock()
-	defer l.bufferMutex.Unlock()
-	l.buffer = data
-
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		l.buffer = nil
-		return i + 1, data[0 : i+1], nil
-	}
-
-	if atEOF {
-		return length, data[0:length], nil
-	}
-
-	return 0, nil, nil
-}
-
-func (l *Logger) GetBuffer() []byte {
-	l.bufferMutex.Lock()
-	defer l.bufferMutex.Unlock()
-
-	return l.buffer
-}
-
-func (l *Logger) NewWriter(stream string) *io.PipeWriter {
-	reader, writer := io.Pipe()
-	go l.scan(stream, reader, writer)
-	return writer
-}
-
-func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter) {
-	scanner := bufio.NewScanner(pr)
-	scanner.Split(l.ScanOutput)
-
-	for scanner.Scan() {
-		l.fileMutex.Lock()
-		fmt.Fprintf(l.file, "%s %s F %s", time.Now().Format(time.RFC3339Nano), stream, scanner.Text())
-		l.fileMutex.Unlock()
-	}
-
-	pr.Close()
-	pw.Close()
-}
-
-func (l *Logger) ReOpenFile() {
-	l.fileMutex.Lock()
-	defer l.fileMutex.Unlock()
-
-	path := l.file.Name()
-
-	l.file.Close()
-
-	l.openFile(path)
-}
-
-func (engine *EngineOperations) handleStream(l net.Listener, logger *Logger, fatalChan chan error) {
-	var master *os.File
-	var stdout io.Reader
+func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Logger, fatalChan chan error) {
+	var stdout io.ReadWriter
 	var stderr io.Reader
-	var outputWriters *multiWriter
-	var errorWriters *multiWriter
+	var outputWriters *copy.MultiWriter
+	var errorWriters *copy.MultiWriter
+	var tbuf *copy.TerminalBuffer
 
 	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
 
 	defer l.Close()
 
+	outputWriters = &copy.MultiWriter{}
+	outputWriters.Add(logger.NewWriter("stdout", false))
+
 	if hasTerminal {
-		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "stream-master-pts")
-		stdout = master
+		stdout = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "stream-master-pts")
+		tbuf = copy.NewTerminalBuffer()
+		outputWriters.Add(tbuf)
 	} else {
 		outputStream := os.NewFile(uintptr(engine.EngineConfig.OutputStreams[0]), "stdout-stream")
 		errorStream := os.NewFile(uintptr(engine.EngineConfig.ErrorStreams[0]), "error-stream")
@@ -446,16 +325,13 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *Logger, fat
 		stderr = errorStream
 	}
 
-	outputWriters = &multiWriter{}
-	outputWriters.Add(logger.NewWriter("stdout"))
-
 	go func() {
 		io.Copy(outputWriters, stdout)
 	}()
 
 	if stderr != nil {
-		errorWriters = &multiWriter{}
-		errorWriters.Add(logger.NewWriter("stderr"))
+		errorWriters = &copy.MultiWriter{}
+		errorWriters.Add(logger.NewWriter("stderr", false))
 
 		go func() {
 			io.Copy(errorWriters, stderr)
@@ -475,8 +351,10 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *Logger, fat
 				errorWriters.Add(c)
 			}
 			if hasTerminal {
-				c.Write(logger.GetBuffer())
-				io.Copy(master, c)
+				tbuf.Lock()
+				c.Write(tbuf.Line())
+				tbuf.Unlock()
+				io.Copy(stdout, c)
 			} else {
 				io.Copy(ioutil.Discard, c)
 			}
@@ -489,7 +367,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *Logger, fat
 	}
 }
 
-func (engine *EngineOperations) handleControl(l net.Listener, logger *Logger, fatalChan chan error) {
+func (engine *EngineOperations) handleControl(l net.Listener, logger *instance.Logger, fatalChan chan error) {
 	var master *os.File
 
 	if engine.EngineConfig.OciConfig.Process.Terminal {

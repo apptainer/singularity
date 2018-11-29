@@ -18,6 +18,7 @@ const Name = "oci"
 type EngineConfig struct {
 	BundlePath    string           `json:"bundlePath"`
 	LogPath       string           `json:"logPath"`
+	LogFormat     string           `json:"logFormat"`
 	OciConfig     *oci.Config      `json:"ociConfig"`
 	State         specs.State      `json:"state"`
 	MasterPts     int              `json:"masterPts"`
@@ -69,4 +70,14 @@ func (e *EngineConfig) SetLogPath(path string) {
 // GetLogPath returns the container log path.
 func (e *EngineConfig) GetLogPath() string {
 	return e.LogPath
+}
+
+// SetLogFormat sets the container log format.
+func (e *EngineConfig) SetLogFormat(format string) {
+	e.LogFormat = format
+}
+
+// GetLogFormat returns the container log format.
+func (e *EngineConfig) GetLogFormat() string {
+	return e.LogFormat
 }

@@ -36,6 +36,7 @@ import (
 
 var bundlePath string
 var logPath string
+var logFormat string
 var syncSocketPath string
 var emptyProcess bool
 
@@ -50,6 +51,8 @@ func init() {
 	OciCreateCmd.Flags().BoolVar(&emptyProcess, "empty-process", false, "run container without executing container process (eg: for POD container)")
 	OciCreateCmd.Flags().StringVarP(&logPath, "log-path", "l", "", "specify the log file path")
 	OciCreateCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
+	OciCreateCmd.Flags().StringVar(&logFormat, "log-format", "kubernetes", "specify the log file format")
+	OciCreateCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
 
 	OciStartCmd.Flags().SetInterspersed(false)
 	OciDeleteCmd.Flags().SetInterspersed(false)
@@ -68,6 +71,8 @@ func init() {
 	OciRunCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 	OciRunCmd.Flags().StringVarP(&logPath, "log-path", "l", "", "specify the log file path")
 	OciRunCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
+	OciRunCmd.Flags().StringVar(&logFormat, "log-format", "kubernetes", "specify the log file format")
+	OciRunCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
 
 	OciCmd.AddCommand(OciStartCmd)
 	OciCmd.AddCommand(OciCreateCmd)
@@ -294,7 +299,7 @@ func resize(controlSocket string, oversized bool) {
 
 func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig) error {
 	var ostate *terminal.State
-	hasTerminal := engineConfig.OciConfig.Process.Terminal
+	hasTerminal := terminal.IsTerminal(1) && engineConfig.OciConfig.Process.Terminal
 
 	a, err := unix.Dial(attachSocket)
 	if err != nil {
@@ -303,7 +308,7 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig) 
 	defer a.Close()
 
 	if hasTerminal {
-		ostate, _ = terminal.MakeRaw(0)
+		ostate, _ = terminal.MakeRaw(1)
 		resize(controlSocket, true)
 		resize(controlSocket, false)
 
@@ -349,7 +354,7 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig) 
 
 	if hasTerminal {
 		fmt.Printf("\r")
-		return terminal.Restore(0, ostate)
+		return terminal.Restore(1, ostate)
 	}
 
 	return nil
@@ -585,6 +590,7 @@ func ociCreate(containerID string) error {
 	generator := generate.Generator{Config: &engineConfig.OciConfig.Spec}
 	engineConfig.SetBundlePath(absBundle)
 	engineConfig.SetLogPath(logPath)
+	engineConfig.SetLogFormat(logFormat)
 
 	// load config.json from bundle path
 	configJSON := filepath.Join(bundlePath, "config.json")
