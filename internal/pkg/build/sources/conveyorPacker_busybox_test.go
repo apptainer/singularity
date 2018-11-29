@@ -32,7 +32,7 @@ func TestBusyBoxConveyor(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	b, err := types.NewBundle("sbuild-busybox")
+	b, err := types.NewBundle("", "sbuild-busybox")
 	if err != nil {
 		return
 	}
@@ -62,7 +62,7 @@ func TestBusyBoxPacker(t *testing.T) {
 	}
 	defer defFile.Close()
 
-	b, err := types.NewBundle("sbuild-busybox")
+	b, err := types.NewBundle("", "sbuild-busybox")
 	if err != nil {
 		return
 	}

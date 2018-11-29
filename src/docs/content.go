@@ -492,7 +492,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PullUse   string = `pull [pull options...] <URI>`
+	PullUse   string = `pull [pull options...] [output file] <URI>`
 	PullShort string = `Pull a container from a URI`
 	PullLong  string = `
   The 'pull' command allows you to download or build a container from a given
@@ -508,13 +508,13 @@ Enterprise Performance Computing (EPC)`
       shub://user/image:tag`
 	PullExample string = `
   From Sylabs cloud library
-  $ singularity pull library://alpine:latest
+  $ singularity pull alpine.sif library://alpine:latest
 
   From Docker
-  $ singularity pull docker://tensorflow/tensorflow:latest
+  $ singularity pull tensorflow.sif docker://tensorflow/tensorflow:latest
 
   From Shub
-  $ singularity pull shub://vsoch/singularity-images`
+  $ singularity pull singularity-images.sif shub://vsoch/singularity-images`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push

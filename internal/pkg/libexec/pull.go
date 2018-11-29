@@ -31,16 +31,16 @@ func PullLibraryImage(image, libraryRef, libraryURL string, force bool, authToke
 }
 
 // PullShubImage is the function that is responsible for pulling an image from a Singularity Hub.
-func PullShubImage(filePath, shubRef string, force bool) {
-	err := shub.DownloadImage(filePath, shubRef, force)
+func PullShubImage(filePath, shubRef string, force, noHTTPS bool) {
+	err := shub.DownloadImage(filePath, shubRef, force, noHTTPS)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}
 }
 
 // PullOciImage pulls an OCI image to a sif
-func PullOciImage(path, uri string, force, noHTTPS bool) {
-	b, err := build.NewBuild(uri, path, "sif", "", "", types.Options{Force: force, NoHTTPS: noHTTPS})
+func PullOciImage(path, uri string, opts types.Options) {
+	b, err := build.NewBuild(uri, path, "sif", "", "", opts)
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", uri, err)
 	}

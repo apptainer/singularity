@@ -639,7 +639,6 @@ func doPushRequest(w *bytes.Buffer, keyserverURI, authToken string) (*http.Reque
 		return nil, err
 	}
 	u.Path = "pks/add"
-	u.RawQuery = v.Encode()
 
 	r, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(v.Encode()))
 	if err != nil {
