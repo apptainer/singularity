@@ -18,7 +18,6 @@
 
 #define MAX_NSPATH_SIZE PATH_MAX*7
 #define MAX_JSON_SIZE   128*1024
-#define JOKER           42
 #define MAX_ID_MAPPING  5
 #define MAX_GID         32
 
