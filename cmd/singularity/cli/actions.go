@@ -87,6 +87,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
@@ -121,7 +122,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{NoTest: true, NoHTTPS: noHTTPS})
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS})
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
@@ -159,7 +160,7 @@ func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
-	libexec.PullShubImage(imagePath, u, true)
+	libexec.PullShubImage(imagePath, u, true, noHTTPS)
 
 	return imagePath, nil
 }
@@ -301,6 +302,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 
 	engineConfig := singularity.NewConfig()
+
+	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
+		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+	}
 
 	ociConfig := &oci.Config{}
 	generator := generate.Generator{Config: &ociConfig.Spec}

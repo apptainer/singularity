@@ -26,7 +26,7 @@ func TestDebootstrapConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("sbuild-debootstrap")
+	b, err := types.NewBundle("", "sbuild-debootstrap")
 	if err != nil {
 		return
 	}
@@ -56,7 +56,7 @@ func TestDebootstrapPacker(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("sbuild-debootstrap")
+	b, err := types.NewBundle("", "sbuild-debootstrap")
 	if err != nil {
 		return
 	}

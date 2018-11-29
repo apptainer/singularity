@@ -40,6 +40,8 @@ type Bundle struct {
 
 // Options ...
 type Options struct {
+	// TmpDir specifies a non-standard temporary location to perform a build
+	TmpDir string
 	// sections are the parts of the definition to run during the build
 	Sections []string `json:"sections"`
 	// noTest indicates if build should skip running the test script
@@ -53,14 +55,14 @@ type Options struct {
 }
 
 // NewBundle creates a Bundle environment
-func NewBundle(directoryPrefix string) (b *Bundle, err error) {
+func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
 
-	if directoryPrefix == "" {
-		directoryPrefix = "sbuild-"
+	if bundlePrefix == "" {
+		bundlePrefix = "sbuild-"
 	}
 
-	b.Path, err = ioutil.TempDir("", directoryPrefix+"-")
+	b.Path, err = ioutil.TempDir(bundleDir, bundlePrefix+"-")
 	if err != nil {
 		return nil, err
 	}

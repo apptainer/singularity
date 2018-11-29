@@ -48,33 +48,34 @@ type ShubAPIResponse struct {
 
 // getManifest will return the image manifest for a container uri
 // from Singularity Hub.
-func getManifest(uri ShubURI) (manifest ShubAPIResponse, err error) {
+func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error) {
 
 	// Create a new http Hub client
 	httpc := http.Client{
 		Timeout: 30 * time.Second,
 	}
 
-	// TODO: support custom registry URI's
-	if uri.registry != fmt.Sprintf("%s%s", defaultRegistry, shubAPIRoute) {
-		return ShubAPIResponse{}, errors.New(URINotSupported)
+	if uri.registry != defaultRegistry+shubAPIRoute {
+		uri.registry = "https://" + uri.registry
 	}
 
 	// Create the request, add headers context
-	url, err := url.Parse(defaultRegistry)
-	if err != nil {
-		return ShubAPIResponse{}, err
-	}
-	rel, err := url.Parse(shubAPIRoute + uri.user + "/" + uri.container + uri.tag + uri.digest)
+	url, err := url.Parse(uri.registry + uri.user + "/" + uri.container + uri.tag + uri.digest)
 	if err != nil {
 		return ShubAPIResponse{}, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, rel.String(), nil)
+	if noHTTPS {
+		url.Scheme = "http"
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return ShubAPIResponse{}, err
 	}
 	req.Header.Set("User-Agent", useragent.Value())
+
+	sylog.Debugf("shub request: %s", req.URL.String())
 
 	// Do the request, if status isn't success, return error
 	res, err := httpc.Do(req)
