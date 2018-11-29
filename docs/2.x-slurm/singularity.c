@@ -175,7 +175,7 @@ static int setup_container(spank_t spank)
     singularity_priv_init();
     singularity_priv_drop();
 
-    singularity_message(VERBOSE, "Running SLURM/Singularity integration "
+    singularity_message(VERBOSE, "Running Slurm/Singularity integration "
                         "plugin\n");
 
     if ((rc = singularity_config_init()) != 0) {
@@ -233,7 +233,7 @@ static int setup_container(spank_t spank)
     singularity_message(LOG, "USER=%s, IMAGE='%s', COMMAND='%s'\n", singularity_priv_getuser(), singularity_image_name(&image), singularity_registry_get("COMMAND"));
 
     // At this point, the current process is in the runtime container environment.
-    // Return control flow back to SLURM: when execv is invoked, it'll be done from
+    // Return control flow back to Slurm: when execv is invoked, it'll be done from
     // within the container.
 
     return 0;

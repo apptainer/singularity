@@ -34,7 +34,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-SIFAssembler")
+	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
 		return
 	}
@@ -68,7 +68,7 @@ func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-SIFAssembler")
+	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
 		return
 	}

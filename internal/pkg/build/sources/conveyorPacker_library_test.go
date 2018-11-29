@@ -26,7 +26,7 @@ func TestLibraryConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("sbuild-library")
+	b, err := types.NewBundle("", "sbuild-library")
 	if err != nil {
 		return
 	}
@@ -52,7 +52,7 @@ func TestLibraryConveyor(t *testing.T) {
 func TestLibraryPacker(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	b, err := types.NewBundle("sbuild-library")
+	b, err := types.NewBundle("", "sbuild-library")
 	if err != nil {
 		return
 	}
