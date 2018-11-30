@@ -268,6 +268,10 @@ func testCreateManyInstances(t *testing.T) {
 			t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 		}
 	}
+	// Verify all instances started.
+	if num_started := getNumberOfInstances(t); num_started != n {
+		t.Fatalf("Expected %d instances, but only see %d.", n, num_started)
+	}
 	// Echo all n instances.
 	for i := 0; i < n; i++ {
 		echo(t, instanceStartPort+i)
