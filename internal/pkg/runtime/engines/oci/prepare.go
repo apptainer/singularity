@@ -10,6 +10,8 @@ import (
 	"net"
 	"os"
 
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -93,6 +95,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	e.EngineConfig.SlavePts = -1
 	e.EngineConfig.OutputStreams = [2]int{-1, -1}
 	e.EngineConfig.ErrorStreams = [2]int{-1, -1}
+
+	if e.EngineConfig.GetLogFormat() == "" {
+		sylog.Debugf("No log format specified, setting kubernetes log format by default")
+		e.EngineConfig.SetLogFormat("kubernetes")
+	}
 
 	if !e.EngineConfig.Exec {
 		if e.EngineConfig.OciConfig.Process.Terminal {
