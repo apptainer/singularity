@@ -523,7 +523,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 			}
 			// check if this is a filesystem or overlay mount point
 			if point.Type != "overlay" {
-				if err = p.AddFS(tag, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
+				if err = p.AddFSWithSource(tag, point.Source, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
 					continue
 				}
 			} else {
@@ -672,13 +672,18 @@ func (p *Points) GetAllOverlays() []Point {
 
 // AddFS adds a filesystem mount point
 func (p *Points) AddFS(tag AuthorizedTag, dest string, fstype string, flags uintptr, options string) error {
+	return p.AddFSWithSource(tag, fstype, dest, fstype, flags, options)
+}
+
+// AddFSWithSource adds a filesystem mount point
+func (p *Points) AddFSWithSource(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, options string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for FS mount points")
 	}
 	if _, ok := authorizedFS[fstype]; !ok {
 		return fmt.Errorf("mount %s file system is not authorized", fstype)
 	}
-	return p.add(tag, fstype, dest, fstype, flags, options)
+	return p.add(tag, source, dest, fstype, flags, options)
 }
 
 // GetAllFS returns a list of all registered filesystem mount points

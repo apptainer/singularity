@@ -18,6 +18,35 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 )
 
+func (e *EngineOperations) checkCapabilities() error {
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Permitted {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("Unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Effective {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("Unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Inheritable {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("Unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Bounding {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("Unrecognized capabilities %s", cap)
+		}
+	}
+	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Ambient {
+		if _, ok := capabilities.Map[cap]; !ok {
+			return fmt.Errorf("Unrecognized capabilities %s", cap)
+		}
+	}
+	return nil
+}
+
 // PrepareConfig checks and prepares the runtime engine config
 func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
@@ -84,6 +113,9 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process.Capabilities != nil {
+		if err := e.checkCapabilities(); err != nil {
+			return err
+		}
 		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
 		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
 		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)

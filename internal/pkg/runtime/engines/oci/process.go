@@ -329,6 +329,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	} else {
 		outputStream := os.NewFile(uintptr(engine.EngineConfig.OutputStreams[0]), "stdout-stream")
 		errorStream := os.NewFile(uintptr(engine.EngineConfig.ErrorStreams[0]), "error-stream")
+		outputWriters.Add(os.Stdout)
 		stdout = outputStream
 		stderr = errorStream
 	}
@@ -340,6 +341,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	if stderr != nil {
 		errorWriters = &copy.MultiWriter{}
 		errorWriters.Add(logger.NewWriter("stderr", false))
+		errorWriters.Add(os.Stderr)
 
 		go func() {
 			io.Copy(errorWriters, stderr)
