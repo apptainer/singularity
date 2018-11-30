@@ -6,6 +6,7 @@
 package types
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -77,6 +78,10 @@ func NewDefinitionFromURI(uri string) (d Definition, err error) {
 		},
 	}
 
+	var buf bytes.Buffer
+	WriteDefinitionFile(&d, &buf)
+	d.RawDefData = buf.Bytes()
+
 	return d, nil
 }
 
@@ -92,5 +97,84 @@ func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
 		}
 	}
 
+	// if JSON definition doesn't have a raw data section, add it
+	if len(d.RawDefData) == 0 {
+		var buf bytes.Buffer
+		WriteDefinitionFile(&d, &buf)
+		d.RawDefData = buf.Bytes()
+	}
+
 	return d, nil
+}
+
+func writeSectionIfExists(w io.Writer, ident string, s string) {
+	if len(s) > 0 {
+		w.Write([]byte("%"))
+		w.Write([]byte(ident))
+		w.Write([]byte("\n"))
+		w.Write([]byte(s))
+		w.Write([]byte("\n\n"))
+	}
+}
+
+func writeFilesIfExists(w io.Writer, f []FileTransport) {
+
+	if len(f) > 0 {
+
+		w.Write([]byte("%"))
+		w.Write([]byte("files"))
+		w.Write([]byte("\n"))
+
+		for _, ft := range f {
+			w.Write([]byte("\t"))
+			w.Write([]byte(ft.Src))
+			w.Write([]byte("\t"))
+			w.Write([]byte(ft.Dst))
+			w.Write([]byte("\n"))
+		}
+		w.Write([]byte("\n"))
+	}
+}
+
+func writeLabelsIfExists(w io.Writer, l map[string]string) {
+
+	if len(l) > 0 {
+
+		w.Write([]byte("%"))
+		w.Write([]byte("labels"))
+		w.Write([]byte("\n"))
+
+		for k, v := range l {
+			w.Write([]byte("\t"))
+			w.Write([]byte(k))
+			w.Write([]byte(" "))
+			w.Write([]byte(v))
+			w.Write([]byte("\n"))
+		}
+		w.Write([]byte("\n"))
+	}
+}
+
+// WriteDefinitionFile is a helper func to output a Definition struct
+// into a definition file.
+func WriteDefinitionFile(d *Definition, w io.Writer) {
+	for k, v := range d.Header {
+		w.Write([]byte(k))
+		w.Write([]byte(": "))
+		w.Write([]byte(v))
+		w.Write([]byte("\n"))
+	}
+	w.Write([]byte("\n"))
+
+	writeLabelsIfExists(w, d.ImageData.Labels)
+	writeFilesIfExists(w, d.BuildData.Files)
+
+	writeSectionIfExists(w, "help", d.ImageData.Help)
+	writeSectionIfExists(w, "environment", d.ImageData.Environment)
+	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
+	writeSectionIfExists(w, "test", d.ImageData.Test)
+	writeSectionIfExists(w, "startscript", d.ImageData.Startscript)
+	writeSectionIfExists(w, "pre", d.BuildData.Pre)
+	writeSectionIfExists(w, "setup", d.BuildData.Setup)
+	writeSectionIfExists(w, "post", d.BuildData.Post)
 }

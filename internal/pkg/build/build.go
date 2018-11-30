@@ -355,12 +355,7 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 
 	// Check if spec is an image/sandbox
 	if _, err := image.Init(spec, false); err == nil {
-		return types.Definition{
-			Header: map[string]string{
-				"bootstrap": "localimage",
-				"from":      spec,
-			},
-		}, nil
+		return types.NewDefinitionFromURI("localimage" + "://" + spec)
 	}
 
 	// default to reading file as definition
