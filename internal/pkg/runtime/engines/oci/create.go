@@ -317,7 +317,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	if err := system.RunAfterTag(mount.RootfsTag, c.addAllPaths); err != nil {
+	if err := system.RunAfterTag(mount.KernelTag, c.addAllPaths); err != nil {
 		return err
 	}
 
@@ -697,16 +697,18 @@ func (c *container) addMaskedPathsMount(system *mount.System) error {
 	}
 
 	for _, path := range paths {
-		fi, err := os.Stat(path)
+		relativePath := filepath.Join(c.rootfs, path)
+		rpcPath := filepath.Join(c.rpcRoot, path)
+		fi, err := os.Stat(rpcPath)
 		if err != nil {
 			sylog.Debugf("ignoring masked path %s: %s", path, err)
 			continue
 		}
 		if fi.IsDir() {
-			if err := system.Points.AddBind(mount.OtherTag, nullPath, path, syscall.MS_BIND); err != nil {
+			if err := system.Points.AddBind(mount.OtherTag, nullPath, relativePath, syscall.MS_BIND); err != nil {
 				return err
 			}
-		} else if err := system.Points.AddBind(mount.OtherTag, "/dev/null", path, syscall.MS_BIND); err != nil {
+		} else if err := system.Points.AddBind(mount.OtherTag, "/dev/null", relativePath, syscall.MS_BIND); err != nil {
 			return err
 		}
 	}
@@ -717,10 +719,11 @@ func (c *container) addReadonlyPathsMount(system *mount.System) error {
 	paths := c.engine.EngineConfig.OciConfig.Linux.ReadonlyPaths
 
 	for _, path := range paths {
-		if err := system.Points.AddBind(mount.OtherTag, path, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+		relativePath := filepath.Join(c.rootfs, path)
+		if err := system.Points.AddBind(mount.OtherTag, relativePath, relativePath, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
 			return err
 		}
-		if err := system.Points.AddRemount(mount.OtherTag, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
+		if err := system.Points.AddRemount(mount.OtherTag, relativePath, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
 			return err
 		}
 	}
