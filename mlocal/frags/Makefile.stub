@@ -222,7 +222,7 @@ $(cgroups_config_INSTALL): $(cgroups_config)
 $(actions_INSTALL): $(actions_LIST)
 	@echo " INSTALL" $@
 	$(V)install -d $(actions_INSTALL)
-	$(V)install -m 755 $? $@
+	$(V)install -m 0755 $? $@
 
 .PHONY: man
 man:
