@@ -78,6 +78,7 @@ func run(cmd *cobra.Command, args []string) {
 			libraryURL,
 			authToken,
 			types.Options{
+				TmpDir:           tmpDir,
 				Update:           update,
 				Force:            force,
 				Sections:         sections,

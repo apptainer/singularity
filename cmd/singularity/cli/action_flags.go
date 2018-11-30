@@ -160,6 +160,11 @@ func initPathVars() {
 	actionFlags.StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
 	actionFlags.Lookup("docker-password").Hidden = true
 	actionFlags.SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
+
+	// hidden flag to handle SINGULARITY_TMPDIR environment variable
+	actionFlags.StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
+	actionFlags.Lookup("tmpdir").Hidden = true
+	actionFlags.SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
 }
 
 // initBoolVars initializes flags that take a boolean argument

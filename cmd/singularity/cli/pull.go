@@ -43,6 +43,10 @@ func init() {
 	PullCmd.Flags().Lookup("name").Hidden = true
 	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
 
+	PullCmd.Flags().StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
+	PullCmd.Flags().Lookup("tmpdir").Hidden = true
+	PullCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
+
 	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
