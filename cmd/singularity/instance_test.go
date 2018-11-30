@@ -6,12 +6,21 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"net"
 	"os"
 	"os/exec"
+	"strconv"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
+
+const instanceStartPort = 11372
+const instanceDefinition = "../../examples/instances/Singularity"
+const instanceImagePath = "./instance_tests.sif"
 
 type startOpts struct {
 	add_caps       string
@@ -50,11 +59,22 @@ type listOpts struct {
 }
 
 type stopOpts struct {
-	all     bool
-	force   bool
-	signal  string
-	timeout string
-	user    string
+	all      bool
+	force    bool
+	signal   string
+	timeout  string
+	user     string
+	instance string
+}
+
+type instance struct {
+	Instance string `json:"instance"`
+	Pid      int    `json:"pid"`
+	Image    string `json:"img"`
+}
+
+type instanceList struct {
+	Instances []instance `json:"instances"`
 }
 
 func startInstance(image string, instance string, opts startOpts) ([]byte, error) {
@@ -160,7 +180,7 @@ func listInstance(opts listOpts) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
-func stopInstance(instance string, opts stopOpts) ([]byte, error) {
+func stopInstance(opts stopOpts) ([]byte, error) {
 	args := []string{"instance", "stop"}
 	if opts.all {
 		args = append(args, "--all")
@@ -177,44 +197,119 @@ func stopInstance(instance string, opts stopOpts) ([]byte, error) {
 	if opts.user != "" {
 		args = append(args, "--user", opts.user)
 	}
-	args = append(args, instance)
+	if opts.instance != "" {
+		args = append(args, opts.instance)
+	}
 	cmd := exec.Command(cmdPath, args...)
 	return cmd.CombinedOutput()
 }
 
-// TestInstance tests singularity instance cmd
-// start, list, stop
-func TestInstance(t *testing.T) {
-	var definition = "../../examples/busybox/Singularity"
-	var imagePath = "./instance_tests.sif"
-
-	opts := buildOpts{
-		force:   true,
-		sandbox: false,
+// Sends a deterministic message to an echo server and expects the same message
+// in response.
+func echo(t *testing.T, port int) {
+	const message = "b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
+	sock, sock_err := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
+	if sock_err != nil {
+		t.Fatalf("Failed to dial echo server: %v", sock_err)
 	}
-	if b, err := imageBuild(opts, imagePath, definition); err != nil {
+	fmt.Fprintf(sock, message)
+	response, response_err := bufio.NewReader(sock).ReadString('\n')
+	if response_err != nil || response != message {
+		t.Fatalf("Bad response: err = %v, response = %v", response_err, response)
+	}
+}
+
+// Return the number of currently running instances.
+func getNumberOfInstances(t *testing.T) int {
+	output, err := listInstance(listOpts{json: true})
+	if err != nil {
+		t.Fatalf("Error listing instances: %v. Output:\n%s", err, string(output))
+	}
+	var instances instanceList
+	if err = json.Unmarshal(output, &instances); err != nil {
+		t.Fatalf("Error decoding JSON from listInstance: %v", err)
+	}
+	return len(instances.Instances)
+}
+
+// Test that no instances are running.
+func testNoInstances(t *testing.T) {
+	if n := getNumberOfInstances(t); n != 0 {
+		t.Fatalf("There are %d instances running, but there should be 0.\n", n)
+	}
+}
+
+// Test that a basic echo server instance can be started, communicated with,
+// and stopped.
+func testBasicEchoServer(t *testing.T) {
+	const instanceName = "echo1"
+	// Start the instance.
+	_, err := startInstance(instanceImagePath, instanceName, startOpts{})
+	if err != nil {
+		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
+	}
+	// Try to contact the instance.
+	echo(t, instanceStartPort)
+	// Stop the instance.
+	_, err = stopInstance(stopOpts{instance: instanceName})
+	if err != nil {
+		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
+	}
+}
+
+// Test creating many instances, but don't stop them.
+func testCreateManyInstances(t *testing.T) {
+	const n = 10
+	// Start n instances.
+	for i := 0; i < n; i++ {
+		instanceName := "echo" + strconv.Itoa(i+1)
+		_, err := startInstance(instanceImagePath, instanceName, startOpts{})
+		if err != nil {
+			t.Fatalf("Failed to start instance %s: %v", instanceName, err)
+		}
+	}
+	// Echo all n instances.
+	for i := 0; i < n; i++ {
+		echo(t, instanceStartPort+i)
+	}
+}
+
+// Test stopping all running instances.
+func testStopAll(t *testing.T) {
+	_, err := stopInstance(stopOpts{all: true})
+	if err != nil {
+		t.Fatalf("Failed to stop all instances: %v", err)
+	}
+}
+
+// Bootstrap to run all instance tests.
+func TestInstance(t *testing.T) {
+	// Build a basic Singularity image to test instances.
+	if b, err := imageBuild(buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
-	imageVerify(t, imagePath, true)
-	defer os.RemoveAll(imagePath)
-
-	t.Run("StartListStop", test.WithoutPrivilege(func(t *testing.T) {
-		var defaultInstance = "www"
-
-		startInstanceOutput, err := startInstance(imagePath, defaultInstance, startOpts{})
-		if err != nil {
-			t.Fatalf("Error starting instance from an image: %v. Output follows.\n%s", err, string(startInstanceOutput))
+	imageVerify(t, instanceImagePath, true)
+	defer os.RemoveAll(instanceImagePath)
+	// Define and loop through tests.
+	tests := []struct {
+		name       string
+		function   func(*testing.T)
+		privileged bool
+	}{
+		{"InitialNoInstances", testNoInstances, false},
+		{"BasicEchoServer", testBasicEchoServer, false},
+		{"CreateManyInstances", testCreateManyInstances, false},
+		{"StopAll", testStopAll, false},
+		{"FinalNoInstances", testNoInstances, false},
+	}
+	for _, currentTest := range tests {
+		var wrappedFn func(*testing.T)
+		if currentTest.privileged {
+			wrappedFn = test.WithPrivilege(currentTest.function)
+		} else {
+			wrappedFn = test.WithoutPrivilege(currentTest.function)
 		}
-
-		listInstanceOutput, err := listInstance(listOpts{})
-		if err != nil {
-			t.Fatalf("Error listing instances: %v. Output follows.\n%s", err, string(listInstanceOutput))
-		}
-
-		stopInstanceOutput, err := stopInstance(defaultInstance, stopOpts{})
-		if err != nil {
-			t.Fatalf("Error stopping instance by name: %v. Output follows.\n%s", err, string(stopInstanceOutput))
-		}
-	}))
+		t.Run(currentTest.name, wrappedFn)
+	}
 }
