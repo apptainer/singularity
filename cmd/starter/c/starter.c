@@ -636,8 +636,6 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
-    list_fd(&fd_before);
-
     if ( config.isSuid ) {
         singularity_message(DEBUG, "Drop privileges\n");
         if ( setegid(gid) < 0 || seteuid(uid) < 0 ) {
@@ -645,6 +643,8 @@ __attribute__((constructor)) static void init(void) {
             exit(1);
         }
     }
+
+    list_fd(&fd_before);
 
     /* reset environment variables */
     clearenv();
@@ -828,23 +828,6 @@ __attribute__((constructor)) static void init(void) {
     /* relinquish CPU to apply current directory change for current thread */
     sched_yield();
 
-    if ( (config.nsFlags & CLONE_NEWUSER) == 0 && get_nspath(user) == NULL ) {
-        priv_escalate();
-    } else {
-        if ( config.isSuid ) {
-            singularity_message(ERROR, "Running setuid workflow with user namespace is not allowed\n");
-            exit(1);
-        }
-        if ( get_nspath(user) ) {
-            if ( enter_namespace(get_nspath(user), CLONE_NEWUSER) < 0 ) {
-                singularity_message(ERROR, "Failed to enter in user namespace: %s\n", strerror(errno));
-                exit(1);
-            }
-        } else {
-            setup_userns(&config.uidMapping[0], &config.gidMapping[0]);
-        }
-    }
-
     list_fd(&fd_after);
 
     source = (char *)malloc(PATH_MAX);
@@ -903,6 +886,23 @@ __attribute__((constructor)) static void init(void) {
 
     free(source);
     free(target);
+
+    if ( (config.nsFlags & CLONE_NEWUSER) == 0 && get_nspath(user) == NULL ) {
+        priv_escalate();
+    } else {
+        if ( config.isSuid ) {
+            singularity_message(ERROR, "Running setuid workflow with user namespace is not allowed\n");
+            exit(1);
+        }
+        if ( get_nspath(user) ) {
+            if ( enter_namespace(get_nspath(user), CLONE_NEWUSER) < 0 ) {
+                singularity_message(ERROR, "Failed to enter in user namespace: %s\n", strerror(errno));
+                exit(1);
+            }
+        } else {
+            setup_userns(&config.uidMapping[0], &config.gidMapping[0]);
+        }
+    }
 
     if ( get_nspath(mnt) == NULL ) {
         unsigned long propagation = config.mountPropagation;
