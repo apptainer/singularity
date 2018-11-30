@@ -303,6 +303,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	engineConfig := singularity.NewConfig()
 
+	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
+		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
+	}
+
 	ociConfig := &oci.Config{}
 	generator := generate.Generator{Config: &ociConfig.Spec}
 
