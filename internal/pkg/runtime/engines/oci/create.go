@@ -408,6 +408,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 			return fmt.Errorf("failed to close write error stream: %s", err)
 		}
 	}
+	if engine.EngineConfig.InputStreams[0] != -1 {
+		if err := syscall.Close(engine.EngineConfig.InputStreams[1]); err != nil {
+			return fmt.Errorf("failed to close write input stream: %s", err)
+		}
+	}
 
 	return nil
 }

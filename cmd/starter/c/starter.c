@@ -816,7 +816,7 @@ static void cleanup_fd(struct fdlist *fd_before, struct fdlist *fd_after) {
 }
 
 static void set_terminal_control(pid_t pid) {
-    pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
+    pid_t tcpgrp = tcgetpgrp(STDOUT_FILENO);
     pid_t pgrp = getpgrp();
 
     if ( tcpgrp == pgrp ) {
@@ -1238,13 +1238,13 @@ __attribute__((constructor)) static void init(void) {
             waitpid(stage_pid, &status, 0);
 
 		    pid_t pgrp = getpgrp();
-            pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
+            pid_t tcpgrp = tcgetpgrp(STDOUT_FILENO);
 
             if ( tcpgrp > 0 && pgrp != tcpgrp ) {
                 if ( signal(SIGTTOU, SIG_IGN) == SIG_ERR ) {
                     fatalf("failed to ignore SIGTTOU signal: %s\n", strerror(errno));
                 }
-                if ( tcsetpgrp(STDIN_FILENO, pgrp) < 0 ) {
+                if ( tcsetpgrp(STDOUT_FILENO, pgrp) < 0 ) {
                     fatalf("Failed to set parent as foreground process: %s\n", strerror(errno));
                 }
             }

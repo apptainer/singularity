@@ -26,6 +26,7 @@ type EngineConfig struct {
 	SlavePts      int              `json:"slavePts"`
 	OutputStreams [2]int           `json:"outputStreams"`
 	ErrorStreams  [2]int           `json:"errorStreams"`
+	InputStreams  [2]int           `json:"inputStreams"`
 	SyncSocket    string           `json:"syncSocket"`
 	EmptyProcess  bool             `json:"emptyProcess"`
 	Exec          bool             `json:"exec"`

@@ -133,6 +133,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	e.EngineConfig.SlavePts = -1
 	e.EngineConfig.OutputStreams = [2]int{-1, -1}
 	e.EngineConfig.ErrorStreams = [2]int{-1, -1}
+	e.EngineConfig.InputStreams = [2]int{-1, -1}
 
 	if e.EngineConfig.GetLogFormat() == "" {
 		sylog.Debugf("No log format specified, setting kubernetes log format by default")
@@ -168,6 +169,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 				return err
 			}
 			e.EngineConfig.ErrorStreams = [2]int{int(r.Fd()), int(w.Fd())}
+			r, w, err = os.Pipe()
+			if err != nil {
+				return err
+			}
+			e.EngineConfig.InputStreams = [2]int{int(w.Fd()), int(r.Fd())}
 		}
 	}
 

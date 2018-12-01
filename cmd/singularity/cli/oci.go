@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"os"
 	osignal "os/signal"
 	"path/filepath"
@@ -302,64 +303,66 @@ func resize(controlSocket string, oversized bool) {
 	}
 }
 
-func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig) error {
+func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig, run bool) error {
 	var ostate *terminal.State
-	hasTerminal := terminal.IsTerminal(1) && engineConfig.OciConfig.Process.Terminal
+	var conn net.Conn
+	var wg sync.WaitGroup
 
-	a, err := unix.Dial(attachSocket)
+	hasTerminal := engineConfig.OciConfig.Process.Terminal && terminal.IsTerminal(0)
+
+	var err error
+	conn, err = unix.Dial(attachSocket)
 	if err != nil {
 		return err
 	}
-	defer a.Close()
+	defer conn.Close()
 
 	if hasTerminal {
-		ostate, _ = terminal.MakeRaw(1)
+		ostate, _ = terminal.MakeRaw(0)
 		resize(controlSocket, true)
 		resize(controlSocket, false)
-
-		go func() {
-			// catch SIGWINCH signal for terminal resize
-			signals := make(chan os.Signal, 1)
-			osignal.Notify(signals, syscall.SIGWINCH)
-
-			for {
-				<-signals
-				resize(controlSocket, false)
-			}
-		}()
-	} else {
-		go func() {
-			// catch all signals and forward to container process
-			signals := make(chan os.Signal, 1)
-			pid := engineConfig.State.Pid
-			osignal.Notify(signals)
-
-			for {
-				s := <-signals
-				syscall.Kill(pid, s.(syscall.Signal))
-			}
-		}()
 	}
-
-	var wg sync.WaitGroup
 
 	wg.Add(1)
 
+	go func() {
+		// catch SIGWINCH signal for terminal resize
+		signals := make(chan os.Signal, 1)
+		pid := engineConfig.State.Pid
+		osignal.Notify(signals)
+
+		for {
+			s := <-signals
+			switch s {
+			case syscall.SIGWINCH:
+				if hasTerminal {
+					resize(controlSocket, false)
+				}
+			default:
+				syscall.Kill(pid, s.(syscall.Signal))
+			}
+		}
+	}()
+
 	// Pipe session to bash and visa-versa
 	go func() {
-		io.Copy(os.Stdout, a)
+		if !run {
+			io.Copy(os.Stdout, conn)
+		} else {
+			io.Copy(ioutil.Discard, conn)
+		}
 		wg.Done()
 	}()
 
 	go func() {
-		io.Copy(a, os.Stdout)
+		io.Copy(conn, os.Stdin)
 	}()
 
 	wg.Wait()
 
 	if hasTerminal {
 		fmt.Printf("\r")
-		return terminal.Restore(1, ostate)
+		return terminal.Restore(0, ostate)
 	}
 
 	return nil
@@ -457,7 +460,7 @@ func ociRun(containerID string) error {
 		return fmt.Errorf("control socket not available, container state: %s", engineConfig.State.Status)
 	}
 
-	return attach(attachSocket, controlSocket, engineConfig)
+	return attach(attachSocket, controlSocket, engineConfig, true)
 }
 
 func ociAttach(containerID string) error {
@@ -479,7 +482,7 @@ func ociAttach(containerID string) error {
 
 	defer exitContainer(containerID, "")
 
-	return attach(attachSocket, controlSocket, engineConfig)
+	return attach(attachSocket, controlSocket, engineConfig, false)
 }
 
 func ociStart(containerID string) error {
@@ -636,6 +639,7 @@ func ociCreate(containerID string) error {
 	cmd, err := exec.PipeCommand(starter, []string{procName}, Env, configData)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
 
 	return cmd.Run()
 }

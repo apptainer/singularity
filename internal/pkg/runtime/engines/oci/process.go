@@ -17,9 +17,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/sylabs/singularity/pkg/util/copy"
+	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/kr/pty"
 
@@ -153,7 +155,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSCTTY), 1); err != 0 {
 			return fmt.Errorf("failed to set crontrolling terminal: %s", err.Error())
 		}
-	} else if engine.EngineConfig.OutputStreams[1] != -1 && engine.EngineConfig.ErrorStreams[1] != -1 {
+	} else if engine.EngineConfig.OutputStreams[1] != -1 {
 		if err := syscall.Dup3(engine.EngineConfig.OutputStreams[1], int(os.Stdout.Fd()), 0); err != nil {
 			return err
 		}
@@ -173,7 +175,16 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		if err := syscall.Close(engine.EngineConfig.ErrorStreams[0]); err != nil {
 			return err
 		}
-		os.Stdin.Close()
+
+		if err := syscall.Dup3(engine.EngineConfig.InputStreams[1], int(os.Stdin.Fd()), 0); err != nil {
+			return err
+		}
+		if err := syscall.Close(engine.EngineConfig.InputStreams[1]); err != nil {
+			return err
+		}
+		if err := syscall.Close(engine.EngineConfig.InputStreams[0]); err != nil {
+			return err
+		}
 	}
 
 	if !engine.EngineConfig.Exec {
@@ -309,11 +320,14 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 }
 
 func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Logger, fatalChan chan error) {
+	var wg sync.WaitGroup
 	var stdout io.ReadWriter
 	var stderr io.Reader
+	var stdin io.Writer
 	var outputWriters *copy.MultiWriter
 	var errorWriters *copy.MultiWriter
 	var tbuf *copy.TerminalBuffer
+	var inputTerminal bool
 
 	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
 
@@ -329,52 +343,70 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	} else {
 		outputStream := os.NewFile(uintptr(engine.EngineConfig.OutputStreams[0]), "stdout-stream")
 		errorStream := os.NewFile(uintptr(engine.EngineConfig.ErrorStreams[0]), "error-stream")
-		outputWriters.Add(os.Stdout)
+		inputStream := os.NewFile(uintptr(engine.EngineConfig.InputStreams[0]), "input-stream")
 		stdout = outputStream
 		stderr = errorStream
+		stdin = inputStream
+		inputTerminal = terminal.IsTerminal(0)
 	}
+
+	outputWriters.Add(os.Stdout)
+
+	if stderr != nil {
+		errorWriters = &copy.MultiWriter{}
+		errorWriters.Add(logger.NewWriter("stderr", false))
+		errorWriters.Add(os.Stderr)
+	}
+
+	wg.Add(1)
+
+	go func() {
+		for {
+			c, err := l.Accept()
+			if err != nil {
+				fatalChan <- err
+				return
+			}
+
+			go func() {
+				outputWriters.Add(c)
+				if stderr != nil {
+					errorWriters.Add(c)
+				}
+
+				if tbuf != nil {
+					tbuf.Lock()
+					c.Write(tbuf.Line())
+					tbuf.Unlock()
+				}
+
+				io.Copy(stdout, c)
+
+				outputWriters.Del(c)
+				if stderr != nil {
+					errorWriters.Del(c)
+				}
+				c.Close()
+			}()
+		}
+	}()
 
 	go func() {
 		io.Copy(outputWriters, stdout)
 	}()
 
 	if stderr != nil {
-		errorWriters = &copy.MultiWriter{}
-		errorWriters.Add(logger.NewWriter("stderr", false))
-		errorWriters.Add(os.Stderr)
-
 		go func() {
 			io.Copy(errorWriters, stderr)
 		}()
 	}
-
-	for {
-		c, err := l.Accept()
-		if err != nil {
-			fatalChan <- err
-			return
-		}
-
+	if stdin != nil && inputTerminal {
 		go func() {
-			outputWriters.Add(c)
-			if errorWriters != nil {
-				errorWriters.Add(c)
-			}
-			if hasTerminal {
-				tbuf.Lock()
-				c.Write(tbuf.Line())
-				tbuf.Unlock()
-				io.Copy(stdout, c)
-			} else {
-				io.Copy(ioutil.Discard, c)
-			}
-			outputWriters.Del(c)
-			if errorWriters != nil {
-				errorWriters.Del(c)
-			}
-			c.Close()
+			io.Copy(stdin, os.Stdin)
 		}()
 	}
+
+	wg.Wait()
 }
 
 func (engine *EngineOperations) handleControl(l net.Listener, logger *instance.Logger, fatalChan chan error) {

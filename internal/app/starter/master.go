@@ -128,15 +128,13 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 		pgrp := syscall.Getpgrp()
 		tcpgrp := 0
 
-		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCGPGRP), uintptr(unsafe.Pointer(&tcpgrp))); err != 0 {
-			sylog.Errorf("failed to get crontrolling terminal group: %s", err.Error())
-		}
+		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCGPGRP), uintptr(unsafe.Pointer(&tcpgrp))); err == 0 {
+			if tcpgrp > 0 && pgrp != tcpgrp {
+				signal.Ignore(syscall.SIGTTOU)
 
-		if tcpgrp > 0 && pgrp != tcpgrp {
-			signal.Ignore(syscall.SIGTTOU)
-
-			if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, os.Stdin.Fd(), uintptr(syscall.TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp))); err != 0 {
-				sylog.Errorf("failed to set crontrolling terminal group: %s", err.Error())
+				if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp))); err != 0 {
+					sylog.Errorf("failed to set crontrolling terminal group: %s", err.Error())
+				}
 			}
 		}
 	}

@@ -10,6 +10,8 @@ import (
 	"net"
 	"syscall"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
+
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
@@ -46,6 +48,11 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	}
 
 	e.EngineConfig.OciConfig.SetupPrivileged(true)
+
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(specs.PIDNamespace), "")
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UTSNamespace, "")
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.IPCNamespace, "")
 
 	if e.EngineConfig.OciConfig.Linux != nil {
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
