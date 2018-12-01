@@ -76,7 +76,7 @@ func Enabled() bool {
 }
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process
-func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
+func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	supportCondition := true
 
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
@@ -108,6 +108,10 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 	filter, err := lseccomp.NewFilter(scmpAction)
 	if err != nil {
 		return fmt.Errorf("error creating new filter: %s", err)
+	}
+
+	if err := filter.SetNoNewPrivsBit(noNewPrivs); err != nil {
+		return fmt.Errorf("failed to set no new priv flag: %s", err)
 	}
 
 	for _, arch := range config.Architectures {

@@ -237,10 +237,6 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
-	if err := engine.updateState("created"); err != nil {
-		return err
-	}
-
 	logPath := engine.EngineConfig.GetLogPath()
 	if logPath == "" {
 		containerID := engine.CommonConfig.ContainerID
@@ -270,6 +266,10 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		if err := ioutil.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644); err != nil {
 			return err
 		}
+	}
+
+	if err := engine.updateState("created"); err != nil {
+		return err
 	}
 
 	// since paused process block on read, send it an

@@ -198,10 +198,10 @@ func TestLoadSeccompConfig(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if err := LoadSeccompConfig(nil); err == nil {
+	if err := LoadSeccompConfig(nil, false); err == nil {
 		t.Errorf("shoud have failed with an empty config")
 	}
-	if err := LoadSeccompConfig(defaultProfile()); err != nil {
+	if err := LoadSeccompConfig(defaultProfile(), true); err != nil {
 		t.Errorf("%s", err)
 	}
 	if hasConditionSupport() {

@@ -116,8 +116,14 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		if err := e.checkCapabilities(); err != nil {
 			return err
 		}
-		starterConfig.SetCapabilities(capabilities.Permitted, e.EngineConfig.OciConfig.Process.Capabilities.Permitted)
-		starterConfig.SetCapabilities(capabilities.Effective, e.EngineConfig.OciConfig.Process.Capabilities.Effective)
+
+		// force cap_sys_admin for seccomp and no_new_priv flag
+		caps := append(e.EngineConfig.OciConfig.Process.Capabilities.Effective, "CAP_SYS_ADMIN")
+		starterConfig.SetCapabilities(capabilities.Effective, caps)
+
+		caps = append(e.EngineConfig.OciConfig.Process.Capabilities.Permitted, "CAP_SYS_ADMIN")
+		starterConfig.SetCapabilities(capabilities.Permitted, caps)
+
 		starterConfig.SetCapabilities(capabilities.Inheritable, e.EngineConfig.OciConfig.Process.Capabilities.Inheritable)
 		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
