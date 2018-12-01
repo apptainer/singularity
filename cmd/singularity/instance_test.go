@@ -7,11 +7,14 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"testing"
 
@@ -204,6 +207,13 @@ func stopInstance(opts stopOpts) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
+func execInstance(instance string, execCmd ...string) ([]byte, error) {
+	args := []string{"exec", "instance://" + instance}
+	args = append(args, execCmd...)
+	cmd := exec.Command(cmdPath, args...)
+	return cmd.CombinedOutput()
+}
+
 // Sends a deterministic message to an echo server and expects the same message
 // in response.
 func echo(t *testing.T, port int) {
@@ -270,7 +280,7 @@ func testCreateManyInstances(t *testing.T) {
 	}
 	// Verify all instances started.
 	if num_started := getNumberOfInstances(t); num_started != n {
-		t.Fatalf("Expected %d instances, but only see %d.", n, num_started)
+		t.Fatalf("Expected %d instances, but see %d.", n, num_started)
 	}
 	// Echo all n instances.
 	for i := 0; i < n; i++ {
@@ -283,6 +293,100 @@ func testStopAll(t *testing.T) {
 	_, err := stopInstance(stopOpts{all: true})
 	if err != nil {
 		t.Fatalf("Failed to stop all instances: %v", err)
+	}
+}
+
+// Test basic options like mounting a custom home directory, changing the
+// hostname, etc.
+func testBasicOptions(t *testing.T) {
+	const fileName = "hello"
+	const instanceName = "testbasic"
+	const testHostname = "echoserver99"
+	fileContents := []byte("world")
+	// Set an environment variable canary.
+	os.Setenv("BHUSHAN", "ROCKS")
+	// Create a temporary directory to serve as a home directory.
+	dir, err := ioutil.TempDir("", "TestInstance")
+	if err != nil {
+		t.Fatalf("Failed to create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(dir)
+	// Create and populate a temporary file.
+	tempFile := filepath.Join(dir, fileName)
+	err = ioutil.WriteFile(tempFile, fileContents, 0644)
+	if err != nil {
+		t.Fatalf("Failed to create file %s: %v", tempFile, err)
+	}
+	instanceOpts := startOpts{
+		home:     dir + ":/home/temp",
+		hostname: testHostname,
+		cleanenv: true,
+	}
+	// Start an instance with the temporary directory as the home directory.
+	_, err = startInstance(instanceImagePath, instanceName, instanceOpts)
+	if err != nil {
+		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
+	}
+	// Verify we can see the file's contents from within the container.
+	output, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
+	if err != nil {
+		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
+	}
+	if !bytes.Equal(fileContents, output) {
+		t.Fatalf("File contents were %s, but expected %s", output, fileContents)
+	}
+	// Verify that the hostname has been set correctly.
+	output, err = execInstance(instanceName, "hostname")
+	if err != nil {
+		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
+	}
+	if !bytes.Equal([]byte(testHostname+"\n"), output) {
+		t.Fatalf("Hostname is %s, but expected %s", output, testHostname)
+	}
+	// Test that the environment has been cleared.
+	_, err = execInstance(instanceName, "cat", "/home/temp/bhushan")
+	if err == nil {
+		t.Fatal("Environment file exists, but it shouldn't.")
+	}
+	// Stop the container.
+	_, err = stopInstance(stopOpts{instance: instanceName})
+	if err != nil {
+		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
+	}
+}
+
+// Test that contain works.
+func testContain(t *testing.T) {
+	const instanceName = "testcontain"
+	const fileName = "thegreattestfile"
+	// Create a temporary directory to serve as a contain directory.
+	dir, err := ioutil.TempDir("", "TestInstance")
+	if err != nil {
+		t.Fatalf("Failed to create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(dir)
+	instanceOpts := startOpts{
+		contain: true,
+		workdir: dir,
+	}
+	// Start an instance with the temporary directory as the home directory.
+	_, err = startInstance(instanceImagePath, instanceName, instanceOpts)
+	if err != nil {
+		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
+	}
+	// Touch a file within /tmp.
+	_, err = execInstance(instanceName, "touch", "/tmp/"+fileName)
+	if err != nil {
+		t.Fatalf("Failed to touch a file: %v", err)
+	}
+	// Stop the container.
+	_, err = stopInstance(stopOpts{instance: instanceName})
+	if err != nil {
+		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
+	}
+	// Verify that the touched file exists outside the container.
+	if _, err = os.Stat(filepath.Join(dir, "tmp", fileName)); os.IsNotExist(err) {
+		t.Fatal("The temp file doesn't exist.")
 	}
 }
 
@@ -303,6 +407,8 @@ func TestInstance(t *testing.T) {
 	}{
 		{"InitialNoInstances", testNoInstances, false},
 		{"BasicEchoServer", testBasicEchoServer, false},
+		{"BasicOptions", testBasicOptions, false},
+		{"Contain", testContain, false},
 		{"CreateManyInstances", testCreateManyInstances, false},
 		{"StopAll", testStopAll, false},
 		{"FinalNoInstances", testNoInstances, false},
