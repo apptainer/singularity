@@ -26,33 +26,33 @@ const instanceDefinition = "../../examples/instances/Singularity"
 const instanceImagePath = "./instance_tests.sif"
 
 type startOpts struct {
-	add_caps       string
-	allow_setuid   bool
-	apply_cgroups  string
-	bind           string
-	boot           bool
-	cleanenv       bool
-	contain        bool
-	containall     bool
-	dns            string
-	drop_caps      string
-	home           string
-	hostname       string
-	keep_privs     bool
-	net            bool
-	network        string
-	network_args   string
-	no_home        bool
-	no_privs       bool
-	nv             bool
-	overlay        string
-	scratch        string
-	security       string
-	userns         bool
-	uts            bool
-	workdir        string
-	writable       bool
-	writable_tmpfs bool
+	addCaps       string
+	allowSetuid   bool
+	applyCgroups  string
+	bind          string
+	boot          bool
+	cleanenv      bool
+	contain       bool
+	containall    bool
+	dns           string
+	dropCaps      string
+	home          string
+	hostname      string
+	keepPrivs     bool
+	net           bool
+	network       string
+	networkArgs   string
+	noHome        bool
+	noPrivs       bool
+	nv            bool
+	overlay       string
+	scratch       string
+	security      string
+	userns        bool
+	uts           bool
+	workdir       string
+	writable      bool
+	writableTmpfs bool
 }
 
 type listOpts struct {
@@ -82,14 +82,14 @@ type instanceList struct {
 
 func startInstance(image string, instance string, opts startOpts) ([]byte, error) {
 	args := []string{"instance", "start"}
-	if opts.add_caps != "" {
-		args = append(args, "--add-caps", opts.add_caps)
+	if opts.addCaps != "" {
+		args = append(args, "--add-caps", opts.addCaps)
 	}
-	if opts.allow_setuid {
+	if opts.allowSetuid {
 		args = append(args, "--allow-setuid")
 	}
-	if opts.apply_cgroups != "" {
-		args = append(args, "--apply-cgroups", opts.apply_cgroups)
+	if opts.applyCgroups != "" {
+		args = append(args, "--apply-cgroups", opts.applyCgroups)
 	}
 	if opts.bind != "" {
 		args = append(args, "--bind", opts.bind)
@@ -109,8 +109,8 @@ func startInstance(image string, instance string, opts startOpts) ([]byte, error
 	if opts.dns != "" {
 		args = append(args, "--dns", opts.dns)
 	}
-	if opts.drop_caps != "" {
-		args = append(args, "--drop-caps", opts.drop_caps)
+	if opts.dropCaps != "" {
+		args = append(args, "--drop-caps", opts.dropCaps)
 	}
 	if opts.home != "" {
 		args = append(args, "--home", opts.home)
@@ -118,7 +118,7 @@ func startInstance(image string, instance string, opts startOpts) ([]byte, error
 	if opts.hostname != "" {
 		args = append(args, "--hostname", opts.hostname)
 	}
-	if opts.keep_privs {
+	if opts.keepPrivs {
 		args = append(args, "--keep-privs")
 	}
 	if opts.net {
@@ -127,13 +127,13 @@ func startInstance(image string, instance string, opts startOpts) ([]byte, error
 	if opts.network != "" {
 		args = append(args, "--network", opts.network)
 	}
-	if opts.network_args != "" {
-		args = append(args, "--network-args", opts.network_args)
+	if opts.networkArgs != "" {
+		args = append(args, "--network-args", opts.networkArgs)
 	}
-	if opts.no_home {
+	if opts.noHome {
 		args = append(args, "--no-home")
 	}
-	if opts.no_privs {
+	if opts.noPrivs {
 		args = append(args, "--no-privs")
 	}
 	if opts.nv {
@@ -160,7 +160,7 @@ func startInstance(image string, instance string, opts startOpts) ([]byte, error
 	if opts.writable {
 		args = append(args, "--writable")
 	}
-	if opts.writable_tmpfs {
+	if opts.writableTmpfs {
 		args = append(args, "--writable-tmpfs")
 	}
 	args = append(args, image, instance)
@@ -218,14 +218,14 @@ func execInstance(instance string, execCmd ...string) ([]byte, error) {
 // in response.
 func echo(t *testing.T, port int) {
 	const message = "b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
-	sock, sock_err := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
-	if sock_err != nil {
-		t.Fatalf("Failed to dial echo server: %v", sock_err)
+	sock, sockErr := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
+	if sockErr != nil {
+		t.Fatalf("Failed to dial echo server: %v", sockErr)
 	}
 	fmt.Fprintf(sock, message)
-	response, response_err := bufio.NewReader(sock).ReadString('\n')
-	if response_err != nil || response != message {
-		t.Fatalf("Bad response: err = %v, response = %v", response_err, response)
+	response, responseErr := bufio.NewReader(sock).ReadString('\n')
+	if responseErr != nil || response != message {
+		t.Fatalf("Bad response: err = %v, response = %v", responseErr, response)
 	}
 }
 
@@ -279,8 +279,8 @@ func testCreateManyInstances(t *testing.T) {
 		}
 	}
 	// Verify all instances started.
-	if num_started := getNumberOfInstances(t); num_started != n {
-		t.Fatalf("Expected %d instances, but see %d.", n, num_started)
+	if numStarted := getNumberOfInstances(t); numStarted != n {
+		t.Fatalf("Expected %d instances, but see %d.", n, numStarted)
 	}
 	// Echo all n instances.
 	for i := 0; i < n; i++ {
