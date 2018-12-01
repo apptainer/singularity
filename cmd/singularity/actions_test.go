@@ -20,7 +20,8 @@ import (
 )
 
 //build base image for tests
-const imagePath = "./container.img"
+const imagePath = "./container.sif"
+const appsImage = "./appsImage.sif"
 
 type opts struct {
 	binds     []string
@@ -162,6 +163,19 @@ func testSingularityExec(t *testing.T) {
 		{"trueAbsPAth", imagePath, "exec", []string{"/bin/true"}, opts{}, 0, true},
 		{"false", imagePath, "exec", []string{"false"}, opts{}, 1, false},
 		{"falseAbsPath", imagePath, "exec", []string{"/bin/false"}, opts{}, 1, false},
+		// Scif apps tests
+		{"ScifTestAppGood", imagePath, "exec", []string{"testapp.sh"}, opts{app: "testapp"}, 0, true},
+		{"ScifTestAppBad", imagePath, "exec", []string{"testapp.sh"}, opts{app: "fakeapp"}, 1, false},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/apps"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/data"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/apps/foo"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/apps/bar"}, opts{}, 0, true},
+		// blocked by issue [scif-apps] Files created at install step fall into an unexpected path #2404
+		//{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-f", "/scif/apps/foo/filefoo.exec"}, opts{}, 0, true},
+		//{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-f", "/scif/apps/bar/filebar.exec"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/data/foo/output"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/data/foo/input"}, opts{}, 0, true},
 		{"WorkdirContain", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata", contain: true}, 0, false},
 		{"Workdir", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata"}, 0, true},
 		{"pwdGood", imagePath, "exec", []string{"true"}, opts{pwd: "/etc"}, 0, true},
@@ -225,6 +239,8 @@ func testSTDINPipe(t *testing.T) {
 		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
 		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
 		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
+		// Test apps
+		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", appsImage)}, 0},
 		// Test target pwd
 		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", imagePath)}, 0},
 	}
@@ -314,6 +330,11 @@ func TestSingularityActions(t *testing.T) {
 		t.Fatalf("unexpected failure: %v", err)
 	}
 	defer os.Remove(imagePath)
+	if b, err := imageBuild(opts, appsImage, "../../examples/apps/Singularity"); err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+	defer os.Remove(appsImage)
 
 	// singularity run
 	t.Run("run", testSingularityRun)

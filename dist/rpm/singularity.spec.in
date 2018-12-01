@@ -103,6 +103,7 @@ cd $GOPATH/%{singgopath}/builddir
 
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 make DESTDIR=$RPM_BUILD_ROOT install man
+chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/singularity/actions/*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -115,6 +116,11 @@ rm -rf $RPM_BUILD_ROOT
 %{_libexecdir}/singularity/cni/*
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/exec
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/run
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/shell
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/start
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/test
 %dir %{_sysconfdir}/bash_completion.d
 %{_sysconfdir}/bash_completion.d/*
 %dir %{_localstatedir}/singularity

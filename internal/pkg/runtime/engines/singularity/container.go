@@ -161,8 +161,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		}
 	}
 
-	if c.netNS && !c.userNS {
-		if os.Geteuid() == 0 {
+	if c.netNS {
+		if os.Geteuid() == 0 && !c.userNS {
 			/* hold a reference to container network namespace for cleanup */
 			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
 			if err != nil {
@@ -190,8 +190,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			}
 
 			engine.EngineConfig.Network = setup
-		} else {
-			return fmt.Errorf("Network requires root permissions")
+		} else if engine.EngineConfig.GetNetwork() != "none" {
+			return fmt.Errorf("Network requires root permissions or --network=none argument as user")
 		}
 	}
 
