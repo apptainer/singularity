@@ -8,13 +8,11 @@ package oci
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
-	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 // CleanupContainer cleans up the container
@@ -28,29 +26,29 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		os.Remove(pidFile)
 	}
 
-	exitCode := "0"
+	exitCode := 0
 	desc := ""
 
 	if fatal != nil {
-		exitCode = strconv.FormatInt(int64(255), 10)
+		exitCode = 255
 		desc = fatal.Error()
 	} else if status.Signaled() {
 		s := status.Signal()
-		exitCode = fmt.Sprintf("%d", s+128)
+		exitCode = int(s) + 128
 		desc = fmt.Sprintf("interrupted by signal %s", s.String())
 	} else {
-		exitCode = strconv.FormatInt(int64(status.ExitStatus()), 10)
+		exitCode = status.ExitStatus()
 		desc = fmt.Sprintf("exited with code %d", status.ExitStatus())
 	}
 
-	engine.EngineConfig.State.Annotations[ociruntime.AnnotationExitCode] = exitCode
-	engine.EngineConfig.State.Annotations[ociruntime.AnnotationExitDesc] = desc
+	engine.EngineConfig.State.ExitCode = &exitCode
+	engine.EngineConfig.State.ExitDesc = desc
 
 	if engine.EngineConfig.State.Status != "running" {
 		hooks := engine.EngineConfig.OciConfig.Hooks
 		if hooks != nil {
 			for _, h := range hooks.Poststop {
-				if err := exec.Hook(&h, &engine.EngineConfig.State); err != nil {
+				if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
 					sylog.Warningf("%s", err)
 				}
 			}
@@ -67,8 +65,12 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		return err
 	}
 
-	os.Remove(engine.EngineConfig.State.Annotations[ociruntime.AnnotationAttachSocket])
-	os.Remove(engine.EngineConfig.State.Annotations[ociruntime.AnnotationControlSocket])
+	if engine.EngineConfig.State.AttachSocket != "" {
+		os.Remove(engine.EngineConfig.State.AttachSocket)
+	}
+	if engine.EngineConfig.State.ControlSocket != "" {
+		os.Remove(engine.EngineConfig.State.ControlSocket)
+	}
 
 	return nil
 }

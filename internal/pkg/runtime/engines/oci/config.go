@@ -6,9 +6,9 @@
 package oci
 
 import (
-	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 // Name of the engine
@@ -21,7 +21,7 @@ type EngineConfig struct {
 	LogFormat     string           `json:"logFormat"`
 	PidFile       string           `json:"pidFile"`
 	OciConfig     *oci.Config      `json:"ociConfig"`
-	State         specs.State      `json:"state"`
+	State         ociruntime.State `json:"state"`
 	MasterPts     int              `json:"masterPts"`
 	SlavePts      int              `json:"slavePts"`
 	OutputStreams [2]int           `json:"outputStreams"`
@@ -54,13 +54,13 @@ func (e *EngineConfig) GetBundlePath() string {
 
 // SetState sets the container state as defined by OCI state
 // specification
-func (e *EngineConfig) SetState(state *specs.State) {
+func (e *EngineConfig) SetState(state *ociruntime.State) {
 	e.State = *state
 }
 
 // GetState returns the container state as defined by OCI state
 // specification
-func (e *EngineConfig) GetState() *specs.State {
+func (e *EngineConfig) GetState() *ociruntime.State {
 	return &e.State
 }
 

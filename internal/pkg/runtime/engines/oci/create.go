@@ -13,12 +13,10 @@ import (
 	"net/rpc"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/sysctl"
 	"github.com/sylabs/singularity/pkg/util/unix"
 
@@ -157,10 +155,7 @@ func (engine *EngineOperations) createState(pid int) error {
 	engine.EngineConfig.State.ID = engine.CommonConfig.ContainerID
 	engine.EngineConfig.State.Pid = pid
 	engine.EngineConfig.State.Status = "creating"
-
-	if engine.EngineConfig.State.Annotations == nil {
-		engine.EngineConfig.State.Annotations = make(map[string]string)
-	}
+	engine.EngineConfig.State.Annotations = engine.EngineConfig.OciConfig.Annotations
 
 	file.Config, err = json.Marshal(engine.CommonConfig)
 	if err != nil {
@@ -202,11 +197,11 @@ func (engine *EngineOperations) updateState(status string) error {
 
 	switch status {
 	case "created":
-		engine.EngineConfig.State.Annotations[ociruntime.AnnotationCreatedAt] = strconv.FormatInt(t, 10)
+		engine.EngineConfig.State.CreatedAt = &t
 	case "running":
-		engine.EngineConfig.State.Annotations[ociruntime.AnnotationStartedAt] = strconv.FormatInt(t, 10)
+		engine.EngineConfig.State.StartedAt = &t
 	case "stopped":
-		engine.EngineConfig.State.Annotations[ociruntime.AnnotationFinishedAt] = strconv.FormatInt(t, 10)
+		engine.EngineConfig.State.FinishedAt = &t
 	}
 
 	file.Config, err = json.Marshal(engine.CommonConfig)

@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/ociruntime"
 
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -66,7 +67,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	}
 
 	// reset state config that could be passed to engine
-	e.EngineConfig.State = specs.State{}
+	e.EngineConfig.State = ociruntime.State{}
 
 	var gids []int
 

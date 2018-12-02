@@ -217,27 +217,17 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 // PreStartProcess will be executed in smaster context
 func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
-	hooks := engine.EngineConfig.OciConfig.Hooks
-	if hooks != nil {
-		for _, h := range hooks.Prestart {
-			if err := exec.Hook(&h, &engine.EngineConfig.State); err != nil {
-				return err
-			}
-		}
-	}
-
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
-	socket := filepath.Join(filepath.Dir(file.Path), "attach.sock")
-	engine.EngineConfig.State.Annotations[ociruntime.AnnotationAttachSocket] = socket
+	engine.EngineConfig.State.AttachSocket = filepath.Join(filepath.Dir(file.Path), "attach.sock")
 
-	attach, err := unix.CreateSocket(socket)
+	attach, err := unix.CreateSocket(engine.EngineConfig.State.AttachSocket)
 	if err != nil {
 		return err
 	}
 
-	socket = filepath.Join(filepath.Dir(file.Path), "control.sock")
-	engine.EngineConfig.State.Annotations[ociruntime.AnnotationControlSocket] = socket
-	control, err := unix.CreateSocket(socket)
+	engine.EngineConfig.State.ControlSocket = filepath.Join(filepath.Dir(file.Path), "control.sock")
+
+	control, err := unix.CreateSocket(engine.EngineConfig.State.ControlSocket)
 	if err != nil {
 		return err
 	}
@@ -279,6 +269,15 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
+	hooks := engine.EngineConfig.OciConfig.Hooks
+	if hooks != nil {
+		for _, h := range hooks.Prestart {
+			if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
+				return err
+			}
+		}
+	}
+
 	// detach process
 	syscall.Kill(os.Getppid(), syscall.SIGUSR1)
 
@@ -303,7 +302,7 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
 		for _, h := range hooks.Poststart {
-			if err := exec.Hook(&h, &engine.EngineConfig.State); err != nil {
+			if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
 				sylog.Warningf("%s", err)
 			}
 		}

@@ -6,6 +6,7 @@
 package exec
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -32,31 +33,27 @@ func Hook(hook *specs.Hook, state *specs.State) error {
 	}
 
 	if ctx != nil {
-		cmd = exec.CommandContext(ctx, hook.Path, hook.Args...)
+		cmd = exec.CommandContext(ctx, hook.Path, hook.Args[1:]...)
 	} else {
-		cmd = exec.Command(hook.Path, hook.Args...)
+		cmd = exec.Command(hook.Path, hook.Args[1:]...)
 	}
-
-	cmd.Env = hook.Env
-	stdin, err := cmd.StdinPipe()
 
 	data, err := json.Marshal(state)
 	if err != nil {
 		return fmt.Errorf("failed to marshal state data: %s", err)
 	}
 
-	stdin.Write(data)
+	cmd.Stdin = bytes.NewReader(data)
+	cmd.Env = hook.Env
 
 	err = cmd.Start()
 	if err != nil {
-		return fmt.Errorf("failed to execute hook: %s", err)
+		return fmt.Errorf("failed to execute hook %s: %s", hook.Path, err)
 	}
-
-	stdin.Close()
 
 	err = cmd.Wait()
 	if err != nil {
-		return fmt.Errorf("failed to execute hook: %s", err)
+		return fmt.Errorf("hook execution failed: %s", err)
 	}
 
 	if ctx != nil && ctx.Err() == context.DeadlineExceeded {

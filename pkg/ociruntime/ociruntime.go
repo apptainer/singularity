@@ -9,22 +9,17 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-const (
-	// AnnotationCreatedAt is used to pass creation timestamp in annotations.
-	AnnotationCreatedAt = "io.sylabs.runtime.oci.created_at"
-	// AnnotationStartedAt is used to pass startup timestamp in annotations.
-	AnnotationStartedAt = "io.sylabs.runtime.oci.starter_at"
-	// AnnotationFinishedAt is used to pass finished timestamp in annotations.
-	AnnotationFinishedAt = "io.sylabs.runtime.oci.finished_at"
-	// AnnotationExitCode is used to pass exit code in annotations.
-	AnnotationExitCode = "io.sylabs.runtime.oci.exit-code"
-	// AnnotationExitDesc is used to pass exit descrition (e.g. reson) in annotations.
-	AnnotationExitDesc = "io.sylabs.runtime.oci.exit-desc"
-	// AnnotationAttachSocket is used to pass attach socket path in annotations.
-	AnnotationAttachSocket = "io.sylabs.runtime.oci.attach-socket"
-	// AnnotationControlSocket is used to pass control socket path in annotations.
-	AnnotationControlSocket = "io.sylabs.runtime.oci.control-socket"
-)
+// State represents the state of the container
+type State struct {
+	specs.State
+	CreatedAt     *int64 `json:"createdAt,omitempty"`
+	StartedAt     *int64 `json:"startedAt,omitempty"`
+	FinishedAt    *int64 `json:"finishedAt,omitempty"`
+	ExitCode      *int   `json:"exitCode,omitempty"`
+	ExitDesc      string `json:"exitDesc,omitempty"`
+	AttachSocket  string `json:"attachSocket,omitempty"`
+	ControlSocket string `json:"controlSocket,omitempty"`
+}
 
 // Control is used to pass information for container control
 // like terminal resize or log file reopen

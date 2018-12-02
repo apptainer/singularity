@@ -14,7 +14,6 @@ import (
 	"os"
 	osignal "os/signal"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"syscall"
 
@@ -258,7 +257,7 @@ func getEngineConfig(containerID string) (*oci.EngineConfig, error) {
 	return commonConfig.EngineConfig.(*oci.EngineConfig), nil
 }
 
-func getState(containerID string) (*specs.State, error) {
+func getState(containerID string) (*ociruntime.State, error) {
 	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return nil, err
@@ -303,15 +302,24 @@ func resize(controlSocket string, oversized bool) {
 	}
 }
 
-func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig, run bool) error {
+func attach(engineConfig *oci.EngineConfig, run bool) error {
 	var ostate *terminal.State
 	var conn net.Conn
 	var wg sync.WaitGroup
 
+	state := &engineConfig.State
+
+	if state.AttachSocket == "" {
+		return fmt.Errorf("attach socket not available, container state: %s", state.Status)
+	}
+	if state.ControlSocket == "" {
+		return fmt.Errorf("control socket not available, container state: %s", state.Status)
+	}
+
 	hasTerminal := engineConfig.OciConfig.Process.Terminal && terminal.IsTerminal(0)
 
 	var err error
-	conn, err = unix.Dial(attachSocket)
+	conn, err = unix.Dial(state.AttachSocket)
 	if err != nil {
 		return err
 	}
@@ -319,8 +327,8 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig, 
 
 	if hasTerminal {
 		ostate, _ = terminal.MakeRaw(0)
-		resize(controlSocket, true)
-		resize(controlSocket, false)
+		resize(state.ControlSocket, true)
+		resize(state.ControlSocket, false)
 	}
 
 	wg.Add(1)
@@ -328,7 +336,7 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig, 
 	go func() {
 		// catch SIGWINCH signal for terminal resize
 		signals := make(chan os.Signal, 1)
-		pid := engineConfig.State.Pid
+		pid := state.Pid
 		osignal.Notify(signals)
 
 		for {
@@ -336,7 +344,7 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig, 
 			switch s {
 			case syscall.SIGWINCH:
 				if hasTerminal {
-					resize(controlSocket, false)
+					resize(state.ControlSocket, false)
 				}
 			default:
 				syscall.Kill(pid, s.(syscall.Signal))
@@ -378,15 +386,8 @@ func exitContainer(containerID string, delete bool) {
 		return
 	}
 
-	if _, ok := state.Annotations[ociruntime.AnnotationExitCode]; ok {
-		code := state.Annotations[ociruntime.AnnotationExitCode]
-		exitCode, err := strconv.Atoi(code)
-		if err != nil {
-			sylog.Errorf("%s", err)
-			defer os.Exit(1)
-		} else {
-			defer os.Exit(exitCode)
-		}
+	if state.ExitCode != nil {
+		defer os.Exit(*state.ExitCode)
 	}
 
 	if delete {
@@ -465,17 +466,7 @@ func ociRun(containerID string) error {
 		return err
 	}
 
-	attachSocket, ok := engineConfig.State.Annotations[ociruntime.AnnotationAttachSocket]
-	if !ok {
-		return fmt.Errorf("attach socket not available, container state: %s", engineConfig.State.Status)
-	}
-
-	controlSocket, ok := engineConfig.State.Annotations[ociruntime.AnnotationControlSocket]
-	if !ok {
-		return fmt.Errorf("control socket not available, container state: %s", engineConfig.State.Status)
-	}
-
-	if err := attach(attachSocket, controlSocket, engineConfig, true); err != nil {
+	if err := attach(engineConfig, true); err != nil {
 		return err
 	}
 
@@ -494,20 +485,9 @@ func ociAttach(containerID string) error {
 		return err
 	}
 
-	state := engineConfig.GetState()
-
-	attachSocket, ok := state.Annotations[ociruntime.AnnotationAttachSocket]
-	if !ok {
-		return fmt.Errorf("attach socket not available, container state: %s", state.Status)
-	}
-	controlSocket, ok := state.Annotations[ociruntime.AnnotationControlSocket]
-	if !ok {
-		return fmt.Errorf("control socket not available, container state: %s", state.Status)
-	}
-
 	defer exitContainer(containerID, false)
 
-	return attach(attachSocket, controlSocket, engineConfig, false)
+	return attach(engineConfig, false)
 }
 
 func ociStart(containerID string) error {
@@ -520,16 +500,14 @@ func ociStart(containerID string) error {
 		return fmt.Errorf("container %s is not created", containerID)
 	}
 
-	if _, ok := state.Annotations[ociruntime.AnnotationControlSocket]; !ok {
+	if state.ControlSocket == "" {
 		return fmt.Errorf("can't find control socket")
 	}
-
-	controlSocket := state.Annotations[ociruntime.AnnotationControlSocket]
 
 	ctrl := &ociruntime.Control{}
 	ctrl.StartContainer = true
 
-	c, err := unix.Dial(controlSocket)
+	c, err := unix.Dial(state.ControlSocket)
 	if err != nil {
 		return fmt.Errorf("failed to connect to control socket")
 	}
@@ -579,7 +557,7 @@ func ociDelete(containerID string) error {
 		hooks := engineConfig.OciConfig.Hooks
 		if hooks != nil {
 			for _, h := range hooks.Poststop {
-				if err := exec.Hook(&h, &engineConfig.State); err != nil {
+				if err := exec.Hook(&h, &engineConfig.State.State); err != nil {
 					sylog.Warningf("%s", err)
 				}
 			}
