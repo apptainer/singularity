@@ -21,7 +21,6 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/pkg/util/copy"
-	"golang.org/x/crypto/ssh/terminal"
 
 	"github.com/kr/pty"
 
@@ -56,13 +55,12 @@ func setRlimit(rlimits []specs.POSIXRlimit) error {
 }
 
 func (engine *EngineOperations) emptyProcess(masterConn net.Conn) error {
-	// pause process, by sending data to Smaster the process will
-	// be paused with SIGSTOP signal
+	// pause process on next read
 	if _, err := masterConn.Write([]byte("t")); err != nil {
 		return fmt.Errorf("failed to pause process: %s", err)
 	}
 
-	// block on read waiting SIGCONT signal
+	// block on read start given
 	data := make([]byte, 1)
 	if _, err := masterConn.Read(data); err != nil {
 		return fmt.Errorf("failed to receive ack from Smaster: %s", err)
@@ -188,16 +186,15 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	if !engine.EngineConfig.Exec {
-		// pause process, by sending data to Smaster the process will
-		// be paused with SIGSTOP signal
+		// pause process on next read
 		if _, err := masterConn.Write([]byte("t")); err != nil {
 			return fmt.Errorf("failed to pause process: %s", err)
 		}
 
-		// block on read waiting SIGCONT signal
+		// block on read start given
 		data := make([]byte, 1)
 		if _, err := masterConn.Read(data); err != nil {
-			return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+			return fmt.Errorf("failed to receive start signal: %s", err)
 		}
 	}
 
@@ -220,9 +217,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 // PreStartProcess will be executed in smaster context
 func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
-	// stop container process
-	syscall.Kill(pid, syscall.SIGSTOP)
-
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
 		for _, h := range hooks.Prestart {
@@ -269,7 +263,9 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
-	go engine.handleControl(control, logger, fatalChan)
+	start := make(chan bool, 1)
+
+	go engine.handleControl(masterConn, control, logger, start, fatalChan)
 	go engine.handleStream(attach, logger, fatalChan)
 
 	pidFile := engine.EngineConfig.GetPidFile()
@@ -283,16 +279,13 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
-	// since paused process block on read, send it an
-	// ACK so when it will receive SIGCONT, the process
-	// will continue execution normally
-	if _, err := masterConn.Write([]byte("s")); err != nil {
-		return fmt.Errorf("failed to send ACK to start process: %s", err)
-	}
+	// detach process
+	syscall.Kill(os.Getppid(), syscall.SIGUSR1)
+
+	<-start
 
 	// wait container process execution
 	data := make([]byte, 1)
-
 	if _, err := masterConn.Read(data); err != io.EOF {
 		return err
 	}
@@ -327,7 +320,6 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	var outputWriters *copy.MultiWriter
 	var errorWriters *copy.MultiWriter
 	var tbuf *copy.TerminalBuffer
-	var inputTerminal bool
 
 	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
 
@@ -347,7 +339,6 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 		stdout = outputStream
 		stderr = errorStream
 		stdin = inputStream
-		inputTerminal = terminal.IsTerminal(0)
 	}
 
 	outputWriters.Add(os.Stdout)
@@ -400,7 +391,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 			io.Copy(errorWriters, stderr)
 		}()
 	}
-	if stdin != nil && inputTerminal {
+	if stdin != nil {
 		go func() {
 			io.Copy(stdin, os.Stdin)
 		}()
@@ -409,16 +400,16 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	wg.Wait()
 }
 
-func (engine *EngineOperations) handleControl(l net.Listener, logger *instance.Logger, fatalChan chan error) {
+func (engine *EngineOperations) handleControl(masterConn net.Conn, l net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
 	var master *os.File
+	started := false
+	ctrl := &ociruntime.Control{}
 
 	if engine.EngineConfig.OciConfig.Process.Terminal {
 		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "control-master-pts")
 	}
 
 	for {
-		ctrl := &ociruntime.Control{}
-
 		c, err := l.Accept()
 		if err != nil {
 			fatalChan <- err
@@ -432,6 +423,17 @@ func (engine *EngineOperations) handleControl(l net.Listener, logger *instance.L
 
 		c.Close()
 
+		if ctrl.StartContainer && !started {
+			started = true
+			// since container process block on read, send it an
+			// ACK so when it will receive data, the container
+			// process will be executed
+			if _, err := masterConn.Write([]byte("s")); err != nil {
+				fatalChan <- fmt.Errorf("failed to send ACK to start process: %s", err)
+				return
+			}
+			start <- true
+		}
 		if ctrl.ConsoleSize != nil && master != nil {
 			size := &pty.Winsize{
 				Cols: uint16(ctrl.ConsoleSize.Width),

@@ -172,6 +172,10 @@ func (engine *EngineOperations) createState(pid int) error {
 	file.PPid = os.Getpid()
 	file.Image = filepath.Join(engine.EngineConfig.GetBundlePath(), engine.EngineConfig.OciConfig.Root.Path)
 
+	if err := file.Update(); err != nil {
+		return err
+	}
+
 	socketPath := engine.EngineConfig.SyncSocket
 
 	if socketPath != "" {
@@ -183,7 +187,7 @@ func (engine *EngineOperations) createState(pid int) error {
 		}
 	}
 
-	return file.Update()
+	return nil
 }
 
 func (engine *EngineOperations) updateState(status string) error {
@@ -210,6 +214,10 @@ func (engine *EngineOperations) updateState(status string) error {
 		return err
 	}
 
+	if err := file.Update(); err != nil {
+		return err
+	}
+
 	socketPath := engine.EngineConfig.SyncSocket
 
 	if socketPath != "" {
@@ -221,7 +229,7 @@ func (engine *EngineOperations) updateState(status string) error {
 		}
 	}
 
-	return file.Update()
+	return nil
 }
 
 // CreateContainer creates a container

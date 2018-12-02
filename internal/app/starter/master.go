@@ -75,12 +75,6 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 		// special path for engines which needs to stop before executing
 		// container process
 		if n != 0 {
-			if sconfig.GetInstance() {
-				if os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR1)
-				}
-			}
-
 			if obj, ok := engine.EngineOperations.(interface {
 				PreStartProcess(int, net.Conn, chan error) error
 			}); ok {

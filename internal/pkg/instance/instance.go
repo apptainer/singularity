@@ -231,7 +231,8 @@ func (i *File) Update() error {
 	if n, err := file.Write(b); err != nil || n != len(b) {
 		return fmt.Errorf("failed to write instance file %s: %s", i.Path, err)
 	}
-	return nil
+
+	return file.Sync()
 }
 
 // SetLogFile replaces stdout/stderr streams and redirect content

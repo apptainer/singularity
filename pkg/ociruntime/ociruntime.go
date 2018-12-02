@@ -29,6 +29,7 @@ const (
 // Control is used to pass information for container control
 // like terminal resize or log file reopen
 type Control struct {
-	ConsoleSize *specs.Box `json:"consoleSize,omitempty"`
-	ReopenLog   bool       `json:"reopenLog,omitempty"`
+	ConsoleSize    *specs.Box `json:"consoleSize,omitempty"`
+	ReopenLog      bool       `json:"reopenLog,omitempty"`
+	StartContainer bool       `json:"startContainer,omitempty"`
 }

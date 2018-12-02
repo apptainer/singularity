@@ -368,11 +368,14 @@ func attach(attachSocket, controlSocket string, engineConfig *oci.EngineConfig, 
 	return nil
 }
 
-func exitContainer(containerID string, syncSocketPath string) {
+func exitContainer(containerID string, delete bool) {
 	state, err := getState(containerID)
 	if err != nil {
-		sylog.Errorf("%s", err)
-		os.Exit(1)
+		if !delete {
+			sylog.Errorf("%s", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	if _, ok := state.Annotations[ociruntime.AnnotationExitCode]; ok {
@@ -386,7 +389,7 @@ func exitContainer(containerID string, syncSocketPath string) {
 		}
 	}
 
-	if syncSocketPath != "" {
+	if delete {
 		if err := ociDelete(containerID); err != nil {
 			sylog.Errorf("%s", err)
 		}
@@ -410,14 +413,16 @@ func ociRun(containerID string) error {
 	}
 
 	defer l.Close()
-	defer exitContainer(containerID, syncSocketPath)
-	defer os.Remove(syncSocketPath)
+
+	status := make(chan string, 1)
 
 	if err := ociCreate(containerID); err != nil {
+		os.Remove(syncSocketPath)
 		return err
 	}
 
-	start := make(chan string, 1)
+	defer exitContainer(containerID, true)
+	defer os.Remove(syncSocketPath)
 
 	go func() {
 		var state specs.State
@@ -425,11 +430,13 @@ func ociRun(containerID string) error {
 		for {
 			c, err := l.Accept()
 			if err != nil {
+				status <- err.Error()
 				return
 			}
 
 			dec := json.NewDecoder(c)
 			if err := dec.Decode(&state); err != nil {
+				status <- err.Error()
 				return
 			}
 
@@ -437,22 +444,30 @@ func ociRun(containerID string) error {
 
 			switch state.Status {
 			case "created":
-				if err := ociStart(containerID); err != nil {
-					return
-				}
+				// ignore error there and wait for stopped status
+				ociStart(containerID)
 			case "running":
-				start <- state.Annotations[ociruntime.AnnotationAttachSocket]
+				status <- state.Status
 			case "stopped":
-				return
+				status <- state.Status
 			}
 		}
 	}()
 
-	attachSocket := <-start
+	// wait running status
+	s := <-status
+	if s != "running" {
+		return fmt.Errorf("%s", s)
+	}
 
 	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return err
+	}
+
+	attachSocket, ok := engineConfig.State.Annotations[ociruntime.AnnotationAttachSocket]
+	if !ok {
+		return fmt.Errorf("attach socket not available, container state: %s", engineConfig.State.Status)
 	}
 
 	controlSocket, ok := engineConfig.State.Annotations[ociruntime.AnnotationControlSocket]
@@ -460,7 +475,17 @@ func ociRun(containerID string) error {
 		return fmt.Errorf("control socket not available, container state: %s", engineConfig.State.Status)
 	}
 
-	return attach(attachSocket, controlSocket, engineConfig, true)
+	if err := attach(attachSocket, controlSocket, engineConfig, true); err != nil {
+		return err
+	}
+
+	// wait stopped status
+	s = <-status
+	if s != "stopped" {
+		return fmt.Errorf("%s", s)
+	}
+
+	return nil
 }
 
 func ociAttach(containerID string) error {
@@ -480,7 +505,7 @@ func ociAttach(containerID string) error {
 		return fmt.Errorf("control socket not available, container state: %s", state.Status)
 	}
 
-	defer exitContainer(containerID, "")
+	defer exitContainer(containerID, false)
 
 	return attach(attachSocket, controlSocket, engineConfig, false)
 }
@@ -495,11 +520,27 @@ func ociStart(containerID string) error {
 		return fmt.Errorf("container %s is not created", containerID)
 	}
 
-	// send SIGCONT signal to the instance
-	if err := syscall.Kill(state.Pid, syscall.SIGCONT); err != nil {
+	if _, ok := state.Annotations[ociruntime.AnnotationControlSocket]; !ok {
+		return fmt.Errorf("can't find control socket")
+	}
+
+	controlSocket := state.Annotations[ociruntime.AnnotationControlSocket]
+
+	ctrl := &ociruntime.Control{}
+	ctrl.StartContainer = true
+
+	c, err := unix.Dial(controlSocket)
+	if err != nil {
+		return fmt.Errorf("failed to connect to control socket")
+	}
+	defer c.Close()
+
+	enc := json.NewEncoder(c)
+	if err != nil {
 		return err
 	}
-	return nil
+
+	return enc.Encode(ctrl)
 }
 
 func ociKill(containerID string) error {
@@ -531,25 +572,30 @@ func ociDelete(containerID string) error {
 		return err
 	}
 
-	if engineConfig.State.Status != "stopped" {
-		return fmt.Errorf("container is not stopped")
-	}
-
-	hooks := engineConfig.OciConfig.Hooks
-	if hooks != nil {
-		for _, h := range hooks.Poststop {
-			if err := exec.Hook(&h, &engineConfig.State); err != nil {
-				sylog.Warningf("%s", err)
+	switch engineConfig.State.Status {
+	case "running":
+		return fmt.Errorf("container is not stopped: running")
+	case "stopped":
+		hooks := engineConfig.OciConfig.Hooks
+		if hooks != nil {
+			for _, h := range hooks.Poststop {
+				if err := exec.Hook(&h, &engineConfig.State); err != nil {
+					sylog.Warningf("%s", err)
+				}
 			}
 		}
+
+		// remove instance files
+		file, err := instance.Get(containerID)
+		if err != nil {
+			return err
+		}
+		return file.Delete()
+	case "created":
+		return ociKill(containerID)
 	}
 
-	// remove instance files
-	file, err := instance.Get(containerID)
-	if err != nil {
-		return err
-	}
-	return file.Delete()
+	return nil
 }
 
 func ociState(containerID string) error {
