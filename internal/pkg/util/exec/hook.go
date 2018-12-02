@@ -33,9 +33,9 @@ func Hook(hook *specs.Hook, state *specs.State) error {
 	}
 
 	if ctx != nil {
-		cmd = exec.CommandContext(ctx, hook.Path, hook.Args[1:]...)
+		cmd = exec.CommandContext(ctx, hook.Path)
 	} else {
-		cmd = exec.Command(hook.Path, hook.Args[1:]...)
+		cmd = exec.Command(hook.Path)
 	}
 
 	data, err := json.Marshal(state)
@@ -45,6 +45,7 @@ func Hook(hook *specs.Hook, state *specs.State) error {
 
 	cmd.Stdin = bytes.NewReader(data)
 	cmd.Env = hook.Env
+	cmd.Args = hook.Args
 
 	err = cmd.Start()
 	if err != nil {
