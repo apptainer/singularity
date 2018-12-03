@@ -361,10 +361,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	path := fmt.Sprintf("/proc/%d/ns", pid)
-	ppid := os.Getpid()
 
 	for _, n := range namespaces {
-		has, err := proc.HasNamespace(ppid, n.nstype)
+		has, err := proc.HasNamespace(pid, n.nstype)
 		if err == nil && (has || n.checkEnabled) {
 			enabled := false
 			if n.checkEnabled {
