@@ -6,7 +6,7 @@
 package cgroups
 
 import (
-	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -17,7 +17,17 @@ import (
 func TestPutConfig(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	pid := os.Getpid()
+	cmd := exec.Command("/bin/cat")
+	pipe, err := cmd.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	pid := cmd.Process.Pid
 	strPid := strconv.Itoa(pid)
 	path := filepath.Join("/singularity", strPid)
 
@@ -25,6 +35,10 @@ func TestPutConfig(t *testing.T) {
 	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
 		t.Errorf("%s", err)
 	}
+
+	pipe.Close()
+
+	cmd.Wait()
 
 	if err := manager.Remove(); err != nil {
 		t.Errorf("%s", err)
