@@ -32,6 +32,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/unix"
+	"github.com/sylabs/singularity/src/docs"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -99,10 +100,10 @@ var OciCreateCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "create",
-	Short:   "oci create",
-	Long:    "oci create",
-	Example: "oci create",
+	Use:     docs.OciCreateUse,
+	Short:   docs.OciCreateShort,
+	Long:    docs.OciCreateLong,
+	Example: docs.OciCreateExample,
 }
 
 // OciRunCmd allow to create/start in row
@@ -114,10 +115,10 @@ var OciRunCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "run",
-	Short:   "oci run",
-	Long:    "oci run",
-	Example: "oci run",
+	Use:     docs.OciRunUse,
+	Short:   docs.OciRunShort,
+	Long:    docs.OciRunLong,
+	Example: docs.OciRunExample,
 }
 
 // OciStartCmd represents oci start command
@@ -129,10 +130,10 @@ var OciStartCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "start",
-	Short:   "oci start",
-	Long:    "oci start",
-	Example: "oci start",
+	Use:     docs.OciStartUse,
+	Short:   docs.OciStartShort,
+	Long:    docs.OciStartLong,
+	Example: docs.OciStartExample,
 }
 
 // OciDeleteCmd represents oci start command
@@ -144,10 +145,10 @@ var OciDeleteCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "delete",
-	Short:   "oci delete",
-	Long:    "oci delete",
-	Example: "oci delete",
+	Use:     docs.OciDeleteUse,
+	Short:   docs.OciDeleteShort,
+	Long:    docs.OciDeleteLong,
+	Example: docs.OciDeleteExample,
 }
 
 // OciKillCmd represents oci start command
@@ -162,10 +163,10 @@ var OciKillCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "kill",
-	Short:   "oci kill",
-	Long:    "oci kill",
-	Example: "oci kill",
+	Use:     docs.OciKillUse,
+	Short:   docs.OciKillShort,
+	Long:    docs.OciKillLong,
+	Example: docs.OciKillExample,
 }
 
 // OciStateCmd represents oci start command
@@ -177,10 +178,10 @@ var OciStateCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "state",
-	Short:   "oci state",
-	Long:    "oci state",
-	Example: "oci state",
+	Use:     docs.OciStateUse,
+	Short:   docs.OciStateShort,
+	Long:    docs.OciStateLong,
+	Example: docs.OciStateExample,
 }
 
 // OciAttachCmd represents oci start command
@@ -192,10 +193,10 @@ var OciAttachCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "attach",
-	Short:   "oci attach",
-	Long:    "oci attach",
-	Example: "oci attach",
+	Use:     docs.OciAttachUse,
+	Short:   docs.OciAttachShort,
+	Long:    docs.OciAttachLong,
+	Example: docs.OciAttachExample,
 }
 
 // OciExecCmd represents oci exec command
@@ -207,10 +208,10 @@ var OciExecCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "exec",
-	Short:   "oci exec",
-	Long:    "oci exec",
-	Example: "oci exec",
+	Use:     docs.OciExecUse,
+	Short:   docs.OciExecShort,
+	Long:    docs.OciExecLong,
+	Example: docs.OciExecExample,
 }
 
 // OciCmd singularity oci runtime
@@ -218,10 +219,10 @@ var OciCmd = &cobra.Command{
 	Run:                   nil,
 	DisableFlagsInUseLine: true,
 
-	Use:     "oci",
-	Short:   "oci",
-	Long:    "oci",
-	Example: "oci",
+	Use:     docs.OciUse,
+	Short:   docs.OciShort,
+	Long:    docs.OciLong,
+	Example: docs.OciExample,
 }
 
 func getCommonConfig(containerID string) (*config.Common, error) {

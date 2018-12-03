@@ -688,4 +688,81 @@ Enterprise Performance Computing (EPC)`
   found at:
 
       https://www.sylabs.io/docs/`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// OCI
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	OciUse   string = `oci <subcommand>`
+	OciShort string = `Manage OCI containers`
+	OciLong  string = `
+  Allow you to manage containers from OCI bundle directories.`
+	OciExample string = `
+  All group commands have their own help output:
+
+  $ singularity oci create -b ~/bundle mycontainer
+  $ singularity oci start mycontainer`
+
+	OciCreateUse   string = `create [create options...] <container_ID>`
+	OciCreateShort string = `Create a container from a bundle directory`
+	OciCreateLong  string = `
+  Create invoke create operation to create a container instance from an OCI bundle directory`
+	OciCreateExample string = `
+  $ singularity create -b ~/bundle mycontainer`
+
+	OciStartUse   string = `start <container_ID>`
+	OciStartShort string = `Start container process`
+	OciStartLong  string = `
+  Start invoke start operation to start a previously created container identified by container ID.`
+	OciStartExample string = `
+  $ singularity start mycontainer`
+
+	OciStateUse   string = `state <container_ID>`
+	OciStateShort string = `Query state of a container`
+	OciStateLong  string = `
+  State invoke state operation to query state of a created/running/stopped container identified by container ID.`
+	OciStateExample string = `
+  $ singularity state mycontainer`
+
+	OciKillUse   string = `kill <container_ID> [-s] signal`
+	OciKillShort string = `Kill a container`
+	OciKillLong  string = `
+  Kill invoke kill operation to kill processes running within container identified by container ID.`
+	OciKillExample string = `
+  $ singularity kill mycontainer INT
+  $ singularity kill mycontainer -s INT`
+
+	OciDeleteUse   string = `delete <container_ID>`
+	OciDeleteShort string = `Delete container`
+	OciDeleteLong  string = `
+  Delete invoke delete operation to delete resources that were created for container identified by container ID.`
+	OciDeleteExample string = `
+  $ singularity delete mycontainer`
+
+	OciAttachUse   string = `attach <container_ID>`
+	OciAttachShort string = `Attach console to a running container process`
+	OciAttachLong  string = `
+  Attach will attach console to a running container process running within container identified by container ID.`
+	OciAttachExample string = `
+  $ singularity attach mycontainer`
+
+	OciExecUse   string = `exec <container_ID> <command> <args>`
+	OciExecShort string = `Execute a command within container`
+	OciExecLong  string = `
+  Exec will execute the provided command/arguments within container identified by container ID.`
+	OciExecExample string = `
+  $ singularity exec mycontainer id`
+
+	OciRunUse   string = `run [run options...] <container_ID>`
+	OciRunShort string = `Create/start/attach/delete a container from a bundle directory`
+	OciRunLong  string = `
+  Run will invoke equivalent of create/start/attach/delete commands in a row.`
+	OciRunExample string = `
+  $ singularity oci run -b ~/bundle mycontainer
+
+  is equivalent to :
+
+  $ singularity oci create -b ~/bundle mycontainer
+  $ singularity oci start mycontainer
+  $ singularity oci attach mycontainer
+  $ singularity oci delete mycontainer`
 )
