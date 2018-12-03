@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 )
@@ -29,11 +30,14 @@ func init() {
 
 // KeysCmd is the 'keys' command that allows management of key stores
 var KeysCmd = &cobra.Command{
-	Run:                   nil,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return errors.New("Invalid command")
+	},
 	DisableFlagsInUseLine: true,
 
-	Use:     docs.KeysUse,
-	Short:   docs.KeysShort,
-	Long:    docs.KeysLong,
-	Example: docs.KeysExample,
+	Use:           docs.KeysUse,
+	Short:         docs.KeysShort,
+	Long:          docs.KeysLong,
+	Example:       docs.KeysExample,
+	SilenceErrors: true,
 }
