@@ -5,13 +5,13 @@
 
 package rpc
 
-// pending args
-
+// SymlinkArgs defines the arguments to symlink.
 type SymlinkArgs struct {
 	Old string
 	New string
 }
 
+// TouchArgs defines the arguments to touch.
 type TouchArgs struct {
 	Path string
 }
