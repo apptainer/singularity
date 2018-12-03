@@ -10,12 +10,14 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 	"github.com/sylabs/singularity/src/docs"
@@ -66,6 +68,11 @@ func init() {
 
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
+
+	plugin.Initialize(filepath.Join(buildcfg.LIBEXECDIR, "singularity/plugin"))
+
+	plugin.AddCommands(SingularityCmd)
+	plugin.AddRootFlags(SingularityCmd)
 }
 
 func setSylogMessageLevel(cmd *cobra.Command, args []string) {
