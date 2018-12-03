@@ -808,7 +808,6 @@
     "github.com/kr/pty",
     "github.com/kubernetes-sigs/cri-o/pkg/seccomp",
     "github.com/magiconair/properties/assert",
-    "github.com/opencontainers/image-spec/specs-go",
     "github.com/opencontainers/image-spec/specs-go/v1",
     "github.com/opencontainers/image-tools/image",
     "github.com/opencontainers/runtime-spec/specs-go",
