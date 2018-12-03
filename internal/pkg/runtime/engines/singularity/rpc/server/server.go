@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -162,31 +163,14 @@ func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 // HasNamespace checks if host namespace and container namespace
 // are different and sets reply to 0 or 1.
 func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) error {
-	var st1 syscall.Stat_t
-	var st2 syscall.Stat_t
-
-	processOne := fmt.Sprintf("/proc/%d/ns/%s", arguments.Pid, arguments.NsType)
-	processTwo := fmt.Sprintf("/proc/self/ns/%s", arguments.NsType)
-
 	*reply = 0
-
-	if err := syscall.Stat(processOne, &st1); err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
+	has, err := proc.HasNamespace(arguments.Pid, arguments.NsType)
+	if err != nil {
 		return err
 	}
-	if err := syscall.Stat(processTwo, &st2); err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-
-	if st1.Ino != st2.Ino {
+	if has {
 		*reply = 1
 	}
-
 	return nil
 }
 

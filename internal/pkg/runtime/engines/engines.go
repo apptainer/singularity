@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
+	ociserver "github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/server"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 )
@@ -110,5 +111,8 @@ func init() {
 	registeredEngineRPCMethods = make(map[string]interface{})
 	registeredEngineRPCMethods[singularity.Name] = methods
 	registeredEngineRPCMethods[imgbuild.Name] = methods
-	registeredEngineRPCMethods[oci.Name] = methods
+
+	ocimethods := new(ociserver.Methods)
+	ocimethods.Methods = methods
+	registeredEngineRPCMethods[oci.Name] = ocimethods
 }

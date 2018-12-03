@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 // HasFilesystem returns whether kernel support filesystem or not
@@ -174,4 +175,35 @@ func SetOOMScoreAdj(pid int, score *int) error {
 		f.Close()
 	}
 	return nil
+}
+
+// HasNamespace checks if host namespace and container namespace
+// are different.
+func HasNamespace(pid int, nstype string) (bool, error) {
+	var st1 syscall.Stat_t
+	var st2 syscall.Stat_t
+
+	has := false
+
+	processOne := fmt.Sprintf("/proc/%d/ns/%s", pid, nstype)
+	processTwo := fmt.Sprintf("/proc/self/ns/%s", nstype)
+
+	if err := syscall.Stat(processOne, &st1); err != nil {
+		if os.IsNotExist(err) {
+			return has, nil
+		}
+		return has, err
+	}
+	if err := syscall.Stat(processTwo, &st2); err != nil {
+		if os.IsNotExist(err) {
+			return has, nil
+		}
+		return has, err
+	}
+
+	if st1.Ino != st2.Ino {
+		has = true
+	}
+
+	return has, nil
 }

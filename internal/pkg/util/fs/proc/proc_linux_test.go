@@ -8,6 +8,8 @@ package proc
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -219,8 +221,7 @@ func TestParentMount(t *testing.T) {
 }
 
 func TestSetOOMScoreAdj(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
+	test.EnsurePrivilege(t)
 
 	pid := os.Getpid()
 
@@ -232,7 +233,6 @@ func TestSetOOMScoreAdj(t *testing.T) {
 		{pid, 0, false},
 		{pid, 10, false},
 		{0, 0, true},
-		{pid, -1, true},
 	}
 
 	for _, l := range list {
@@ -243,4 +243,39 @@ func TestSetOOMScoreAdj(t *testing.T) {
 			t.Error(err)
 		}
 	}
+}
+
+func TestHasNamespace(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	ppid := os.Getppid()
+	has, err := HasNamespace(ppid, "net")
+	if err != nil {
+		t.Error(err)
+	}
+	if has {
+		t.Errorf("namespaces should be identical")
+	}
+
+	cmd := exec.Command("/bin/cat")
+	pipe, err := cmd.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Cloneflags = syscall.CLONE_NEWPID
+
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	has, err = HasNamespace(cmd.Process.Pid, "pid")
+	if !has {
+		t.Errorf("pid namespace should be different")
+	}
+
+	pipe.Close()
+
+	cmd.Wait()
 }

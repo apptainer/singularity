@@ -378,14 +378,14 @@ static int enter_namespace(char *nspath, int nstype) {
     return(0);
 }
 
-static void setup_userns_mappings(const struct uidMapping *uidMapping, const struct gidMapping *gidMapping, pid_t pid) {
+static void setup_userns_mappings(const struct uidMapping *uidMapping, const struct gidMapping *gidMapping, pid_t pid, const char *setgroup) {
     FILE *map_fp;
     int i;
     struct uidMapping *uidmap;
     struct gidMapping *gidmap;
     char *path = (char *)malloc(PATH_MAX);
 
-    debugf("Write deny to set group file\n");
+    debugf("Write %s to set group file\n", setgroup);
     memset(path, 0, PATH_MAX);
     if ( snprintf(path, PATH_MAX-1, "/proc/%d/setgroups", pid) < 0 ) {
         fatalf("Failed to write path /proc/%d/setgroups in buffer\n", pid);
@@ -393,9 +393,9 @@ static void setup_userns_mappings(const struct uidMapping *uidMapping, const str
 
     map_fp = fopen(path, "w+"); // Flawfinder: ignore
     if ( map_fp != NULL ) {
-        fprintf(map_fp, "deny\n");
+        fprintf(map_fp, "%s\n", setgroup);
         if ( fclose(map_fp) < 0 ) {
-            fatalf("Failed to write deny to setgroup file: %s\n", strerror(errno));
+            fatalf("Failed to write %s to setgroup file: %s\n", setgroup, strerror(errno));
         }
     } else {
         fatalf("Could not write info to setgroups: %s\n", strerror(errno));
@@ -437,6 +437,7 @@ static void setup_userns_mappings(const struct uidMapping *uidMapping, const str
         }
         map_fp = fopen(path, "w+"); // Flawfinder: ignore
         if ( map_fp != NULL ) {
+            debugf("Write line '%i %i %i' to uid_map\n", uidmap->containerID, uidmap->hostID, uidmap->size);
             fprintf(map_fp, "%i %i %i\n", uidmap->containerID, uidmap->hostID, uidmap->size);
             if ( fclose(map_fp) < 0 ) {
                 fatalf("Failed to write to UID map: %s\n", strerror(errno));
@@ -467,7 +468,7 @@ static void user_namespace_init(struct cConfig *config, int *fork_flags) {
                 fatalf("Failed to create user namespace\n");
             }
 
-            setup_userns_mappings(&config->uidMapping[0], &config->gidMapping[0], getpid());
+            setup_userns_mappings(&config->uidMapping[0], &config->gidMapping[0], getpid(), "deny");
         } else {
             *fork_flags |= CLONE_NEWUSER;
             priv_escalate();
@@ -825,7 +826,7 @@ static void set_terminal_control(pid_t pid) {
         if ( setpgid(pid, pid) < 0 ) {
             fatalf("Failed to set child process group: %s\n", strerror(errno));
         }
-        if ( tcsetpgrp(STDIN_FILENO, pid) < 0 ) {
+        if ( tcsetpgrp(STDOUT_FILENO, pid) < 0 ) {
             fatalf("Failed to set child as foreground process: %s\n", strerror(errno));
         }
     }
@@ -882,12 +883,12 @@ __attribute__((constructor)) static void init(void) {
     char *loglevel;
     char *pipe_fd_env;
     int status;
-    int syncfd = -1;
     int forkfd = -1;
     int pipe_fd = -1;
     int sfd;
     int fork_flags = 0;
     int join_chroot = 0;
+    int sync_pipe[2];
     struct pollfd fds[2];
     struct fdlist *fd_before;
     struct fdlist *fd_after;
@@ -1126,12 +1127,6 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
-    /* sync smaster and near child with an eventfd */
-    syncfd = eventfd(0, 0);
-    if ( syncfd < 0 ) {
-        fatalf("Failed to create sync pipe between smaster and child: %s\n", strerror(errno));
-    }
-
     join_chroot = is_chrooted(config);
 
     debugf("Create RPC socketpair for communication between scontainer and RPC server\n");
@@ -1144,20 +1139,40 @@ __attribute__((constructor)) static void init(void) {
         fix_fsuid(uid);
     }
 
+    /* sync smaster and near child with an eventfd */
+    if ( pipe(sync_pipe) < 0 ) {
+        fatalf("Failed to create sync pipe: %s\n", strerror(errno));
+    }
+
     pid_namespace_init(config, &fork_flags);
 
     stage_pid = fork_ns(fork_flags);
 
     if ( stage_pid == 0 ) {
         /* at this stage we are PID 1 if PID namespace requested */
+        set_parent_death_signal(SIGKILL);
 
         if ( forkfd >= 0 ) {
+            uid_t uidMap = config->uidMapping[0].containerID;
+            gid_t gidMap = config->gidMapping[0].containerID;
+
             // wait parent write user namespace mappings
             event_stop(forkfd);
             close(forkfd);
-        }
 
-        set_parent_death_signal(SIGKILL);
+            if ( setresgid(gidMap, gidMap, gidMap) < 0 ) {
+                fatalf("Failed to change namespace group identity: %s\n", strerror(errno));
+            }
+            if ( setresuid(uidMap, uidMap, uidMap) < 0 ) {
+                fatalf("Failed to change namespace user identity: %s\n", strerror(errno));
+            }
+
+            // apply user identity for prepare_scontainer_stage
+            config->targetUID = uidMap;
+            config->numGID = 1;
+            config->targetGID[0] = gidMap;
+            config->nsFlags &= ~CLONE_NEWUSER;
+        }
 
         close(master_socket[0]);
 
@@ -1173,8 +1188,12 @@ __attribute__((constructor)) static void init(void) {
 
         close(rpc_socket[0]);
 
-        event_start(syncfd);
-        close(syncfd);
+        close(sync_pipe[0]);
+        sync_pipe[0] = 0;
+        if ( write(sync_pipe[1], &sync_pipe[0], sizeof(int)) < 0 ) {
+            fatalf("Failed to send sync event: %s\n", strerror(errno));
+        }
+        close(sync_pipe[1]);
 
         if ( !join_chroot ) {
             /*
@@ -1211,7 +1230,7 @@ __attribute__((constructor)) static void init(void) {
         }
 
         if ( forkfd >= 0 ) {
-            setup_userns_mappings(&config->uidMapping[0], &config->gidMapping[0], stage_pid);
+            setup_userns_mappings(&config->uidMapping[0], &config->gidMapping[0], stage_pid, "allow");
 
             event_start(forkfd);
             close(forkfd);
@@ -1227,8 +1246,24 @@ __attribute__((constructor)) static void init(void) {
         close(rpc_socket[1]);
 
         // wait child finish namespaces initialization
-        event_stop(syncfd);
-        close(syncfd);
+        close(sync_pipe[1]);
+        sync_pipe[1] = -1;
+        if ( read(sync_pipe[0], &sync_pipe[1], sizeof(int)) < 0 ) {
+            fatalf("Failed to receive sync event: %s\n", strerror(errno));
+        }
+        close(sync_pipe[0]);
+
+        // value not set, child has exited before sending data
+        if ( sync_pipe[1] == -1 ) {
+            waitpid(stage_pid, &status, 0);
+            if ( WIFEXITED(status) ) {
+                verbosef("stage 2 exited with status %d\n", WEXITSTATUS(status));
+                exit(WEXITSTATUS(status));
+            } else if ( WIFSIGNALED(status) ) {
+                verbosef("stage 2 interrupted by signal number %d\n", WTERMSIG(status));
+                kill(getpid(), WTERMSIG(status));
+            }
+        }
 
         if ( join_chroot ) {
             if ( config->isSuid && setresuid(uid, uid, uid) < 0 ) {

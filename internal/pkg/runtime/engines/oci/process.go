@@ -255,8 +255,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 
 	start := make(chan bool, 1)
 
-	go engine.handleControl(masterConn, control, logger, start, fatalChan)
-	go engine.handleStream(attach, logger, fatalChan)
+	go engine.handleControl(masterConn, attach, control, logger, start, fatalChan)
 
 	pidFile := engine.EngineConfig.GetPidFile()
 	if pidFile != "" {
@@ -281,13 +280,8 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	// detach process
 	syscall.Kill(os.Getppid(), syscall.SIGUSR1)
 
+	// wait start event
 	<-start
-
-	// wait container process execution
-	data := make([]byte, 1)
-	if _, err := masterConn.Read(data); err != io.EOF {
-		return err
-	}
 
 	return nil
 }
@@ -295,19 +289,16 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 // PostStartProcess will execute code in smaster context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
-	if err := engine.updateState("running"); err != nil {
-		return err
-	}
-
-	hooks := engine.EngineConfig.OciConfig.Hooks
-	if hooks != nil {
-		for _, h := range hooks.Poststart {
-			if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
-				sylog.Warningf("%s", err)
+	if engine.EngineConfig.State.Status == "running" {
+		hooks := engine.EngineConfig.OciConfig.Hooks
+		if hooks != nil {
+			for _, h := range hooks.Poststart {
+				if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
+					sylog.Warningf("%s", err)
+				}
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -399,7 +390,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	wg.Wait()
 }
 
-func (engine *EngineOperations) handleControl(masterConn net.Conn, l net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
+func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
 	var master *os.File
 	started := false
 	ctrl := &ociruntime.Control{}
@@ -409,7 +400,7 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, l net.Listene
 	}
 
 	for {
-		c, err := l.Accept()
+		c, err := control.Accept()
 		if err != nil {
 			fatalChan <- err
 			return
@@ -420,15 +411,26 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, l net.Listene
 			return
 		}
 
-		c.Close()
-
 		if ctrl.StartContainer && !started {
 			started = true
+
+			go engine.handleStream(attach, logger, fatalChan)
+
 			// since container process block on read, send it an
 			// ACK so when it will receive data, the container
 			// process will be executed
 			if _, err := masterConn.Write([]byte("s")); err != nil {
 				fatalChan <- fmt.Errorf("failed to send ACK to start process: %s", err)
+				return
+			}
+			// wait container process execution
+			data := make([]byte, 1)
+			if _, err := masterConn.Read(data); err != io.EOF {
+				fatalChan <- err
+				return
+			}
+			if err := engine.updateState("running"); err != nil {
+				fatalChan <- err
 				return
 			}
 			start <- true
@@ -446,5 +448,7 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, l net.Listene
 		if ctrl.ReopenLog {
 			logger.ReOpenFile()
 		}
+
+		c.Close()
 	}
 }

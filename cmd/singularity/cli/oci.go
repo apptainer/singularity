@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/kr/pty"
 
@@ -518,7 +519,17 @@ func ociStart(containerID string) error {
 		return err
 	}
 
-	return enc.Encode(ctrl)
+	if err := enc.Encode(ctrl); err != nil {
+		return err
+	}
+
+	// wait runtime close socket connection for ACK
+	d := make([]byte, 1)
+	if _, err := c.Read(d); err != io.EOF {
+		return err
+	}
+
+	return nil
 }
 
 func ociKill(containerID string) error {
@@ -541,7 +552,33 @@ func ociKill(containerID string) error {
 		}
 	}
 
-	return syscall.Kill(state.Pid, sig)
+	c, err := unix.Dial(state.ControlSocket)
+	if err != nil {
+		return fmt.Errorf("failed to connect to control socket")
+	}
+	defer c.Close()
+
+	killed := make(chan bool, 1)
+
+	go func() {
+		// wait runtime close socket connection for ACK
+		d := make([]byte, 1)
+		if _, err := c.Read(d); err == io.EOF {
+			killed <- true
+		}
+	}()
+
+	if err := syscall.Kill(state.Pid, sig); err != nil {
+		return err
+	}
+
+	select {
+	case <-killed:
+	case <-time.After(2 * time.Second):
+		return syscall.Kill(state.Pid, syscall.SIGKILL)
+	}
+
+	return nil
 }
 
 func ociDelete(containerID string) error {
@@ -554,26 +591,31 @@ func ociDelete(containerID string) error {
 	case "running":
 		return fmt.Errorf("container is not stopped: running")
 	case "stopped":
-		hooks := engineConfig.OciConfig.Hooks
-		if hooks != nil {
-			for _, h := range hooks.Poststop {
-				if err := exec.Hook(&h, &engineConfig.State.State); err != nil {
-					sylog.Warningf("%s", err)
-				}
-			}
+	case "created":
+		if err := ociKill(containerID); err != nil {
+			return err
 		}
-
-		// remove instance files
-		file, err := instance.Get(containerID)
+		engineConfig, err = getEngineConfig(containerID)
 		if err != nil {
 			return err
 		}
-		return file.Delete()
-	case "created":
-		return ociKill(containerID)
 	}
 
-	return nil
+	hooks := engineConfig.OciConfig.Hooks
+	if hooks != nil {
+		for _, h := range hooks.Poststop {
+			if err := exec.Hook(&h, &engineConfig.State.State); err != nil {
+				sylog.Warningf("%s", err)
+			}
+		}
+	}
+
+	// remove instance files
+	file, err := instance.Get(containerID)
+	if err != nil {
+		return err
+	}
+	return file.Delete()
 }
 
 func ociState(containerID string) error {

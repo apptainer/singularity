@@ -101,6 +101,12 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	starterConfig.SetNsPathFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 
 	if userNS {
+		if len(e.EngineConfig.OciConfig.Linux.UIDMappings) == 0 {
+			return fmt.Errorf("user namespace invoked without uid mapping")
+		}
+		if len(e.EngineConfig.OciConfig.Linux.GIDMappings) == 0 {
+			return fmt.Errorf("user namespace invoked without gid mapping")
+		}
 		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
 		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 	}

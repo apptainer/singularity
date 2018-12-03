@@ -23,7 +23,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
@@ -43,8 +43,8 @@ var symlinkDevices = []struct {
 }
 
 type device struct {
-	major uint16
-	minor uint16
+	major int64
+	minor int64
 	path  string
 	mode  os.FileMode
 	uid   int
@@ -235,10 +235,10 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
-	rpcOps := &client.RPC{
-		Client: rpc.NewClient(rpcConn),
-		Name:   engine.CommonConfig.EngineName,
-	}
+	rpcOps := &client.RPC{}
+	rpcOps.Client = rpc.NewClient(rpcConn)
+	rpcOps.Name = engine.CommonConfig.EngineName
+
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialize RPC client")
 	}
@@ -364,7 +364,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	ppid := os.Getpid()
 
 	for _, n := range namespaces {
-		has, err := rpcOps.HasNamespace(ppid, n.nstype)
+		has, err := proc.HasNamespace(ppid, n.nstype)
 		if err == nil && (has || n.checkEnabled) {
 			enabled := false
 			if n.checkEnabled {
@@ -428,7 +428,7 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 		if cgroupsPath == "" {
 			cgroupsPath = filepath.Join("/singularity-oci", name)
 		} else {
-			cgroupsPath = filepath.Join("/singularity-oci", cgroupsPath)
+			cgroupsPath = filepath.Join("/", cgroupsPath)
 		}
 	}
 
@@ -577,8 +577,15 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 	for _, symlink := range symlinkDevices {
 		path := filepath.Join(rootfsPath, symlink.new)
 		if _, err := os.Lstat(path); os.IsNotExist(err) {
-			if err := os.Symlink(symlink.old, path); err != nil {
-				return err
+			if c.userNS {
+				path = filepath.Join(c.rootfs, symlink.new)
+				if _, err := c.rpcOps.Symlink(symlink.old, path); err != nil {
+					return err
+				}
+			} else {
+				if err := os.Symlink(symlink.old, path); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -586,8 +593,14 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 	if c.engine.EngineConfig.OciConfig.Process.Terminal {
 		path := filepath.Join(rootfsPath, "dev", "console")
 		if _, err := os.Lstat(path); os.IsNotExist(err) {
-			if err := fs.Touch(path); err != nil {
-				return err
+			if c.userNS {
+				if _, err := c.rpcOps.Touch(filepath.Join(c.rootfs, "dev", "console")); err != nil {
+					return err
+				}
+			} else {
+				if err := fs.Touch(path); err != nil {
+					return err
+				}
 			}
 			path = fmt.Sprintf("/proc/self/fd/%d", c.engine.EngineConfig.SlavePts)
 			console, err := os.Readlink(path)
@@ -601,15 +614,29 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 	}
 
 	for _, device := range devices {
-		dev := int((device.major << 8) | device.minor)
+		dev := int((device.major << 8) | (device.minor & 0xff) | ((device.minor & 0xfff00) << 12))
 		path := filepath.Join(rootfsPath, device.path)
 		if _, err := os.Lstat(path); os.IsNotExist(err) {
-			if err := syscall.Mknod(path, uint32(device.mode), dev); err != nil {
-				return err
-			}
-			if device.uid != 0 || device.gid != 0 {
-				if err := os.Chown(path, device.uid, device.gid); err != nil {
+			if c.userNS {
+				path = filepath.Join(c.rootfs, device.path)
+				if _, err := os.Stat(device.path); os.IsNotExist(err) {
+					sylog.Debugf("skipping mount, %s doesn't exists", device.path)
+					continue
+				}
+				if _, err := c.rpcOps.Touch(path); err != nil {
 					return err
+				}
+				if _, err := c.rpcOps.Mount(device.path, path, "", syscall.MS_BIND, ""); err != nil {
+					return err
+				}
+			} else {
+				if err := syscall.Mknod(path, uint32(device.mode), dev); err != nil {
+					return fmt.Errorf("mknod: %s", err)
+				}
+				if device.uid != 0 || device.gid != 0 {
+					if err := os.Chown(path, device.uid, device.gid); err != nil {
+						return err
+					}
 				}
 			}
 		}
@@ -636,12 +663,12 @@ func (c *container) addDevices(system *mount.System) error {
 		switch d.Type {
 		case "c", "u":
 			dev.mode |= syscall.S_IFCHR
-			dev.major = uint16(d.Major)
-			dev.minor = uint16(d.Minor)
+			dev.major = d.Major
+			dev.minor = d.Minor
 		case "b":
 			dev.mode |= syscall.S_IFBLK
-			dev.major = uint16(d.Major)
-			dev.minor = uint16(d.Minor)
+			dev.major = d.Major
+			dev.minor = d.Minor
 		case "p":
 			dev.mode |= syscall.S_IFIFO
 		default:
@@ -762,8 +789,14 @@ func (c *container) mount(point *mount.Point) error {
 
 			if point.Type != "" {
 				sylog.Debugf("Creating %s", procDest)
-				if err := os.MkdirAll(procDest, 0755); err != nil {
-					return err
+				if c.userNS {
+					if _, err := c.rpcOps.MkdirAll(dest, 0755); err != nil {
+						return err
+					}
+				} else {
+					if err := os.MkdirAll(procDest, 0755); err != nil {
+						return err
+					}
 				}
 			} else {
 				var st syscall.Stat_t
@@ -771,8 +804,14 @@ func (c *container) mount(point *mount.Point) error {
 				dir := filepath.Dir(procDest)
 				if _, err := os.Stat(dir); os.IsNotExist(err) {
 					sylog.Debugf("Creating parent %s", dir)
-					if err := os.MkdirAll(dir, 0755); err != nil {
-						return err
+					if c.userNS {
+						if _, err := c.rpcOps.Mkdir(filepath.Dir(dest), 0755); err != nil {
+							return err
+						}
+					} else {
+						if err := os.MkdirAll(dir, 0755); err != nil {
+							return err
+						}
 					}
 				}
 
@@ -783,13 +822,25 @@ func (c *container) mount(point *mount.Point) error {
 				switch st.Mode & syscall.S_IFMT {
 				case syscall.S_IFDIR:
 					sylog.Debugf("Creating dir %s", filepath.Base(procDest))
-					if err := os.Mkdir(procDest, 0755); err != nil {
-						return err
+					if c.userNS {
+						if _, err := c.rpcOps.Mkdir(dest, 0755); err != nil {
+							return err
+						}
+					} else {
+						if err := os.Mkdir(procDest, 0755); err != nil {
+							return err
+						}
 					}
 				case syscall.S_IFREG:
 					sylog.Debugf("Creating file %s", filepath.Base(procDest))
-					if err := fs.Touch(procDest); err != nil {
-						return err
+					if c.userNS {
+						if _, err := c.rpcOps.Touch(dest); err != nil {
+							return err
+						}
+					} else {
+						if err := fs.Touch(procDest); err != nil {
+							return err
+						}
 					}
 				}
 			}
