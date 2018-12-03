@@ -29,9 +29,9 @@ func TestSelfTest(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	cmd := exec.Command(cmdPath, "selftest")
-	if b, err := cmd.CombinedOutput(); err != nil {
+	if b, err := cmd.CombinedOutput(); err == nil {
 		t.Log(string(b))
-		t.Fatalf("unexpected failure running selftest: %v", err)
+		t.Fatal("selftest passed, but it isn't implemented?")
 	}
 }
 

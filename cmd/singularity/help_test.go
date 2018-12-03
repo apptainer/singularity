@@ -15,21 +15,26 @@ import (
 
 func TestHelpSingularity(t *testing.T) {
 	tests := []struct {
-		name string
-		argv []string
+		name       string
+		argv       []string
+		shouldPass bool
 	}{
-		{"NoCommand", []string{}},
-		{"FlagShort", []string{"-h"}},
-		{"FlagLong", []string{"--help"}},
-		{"Command", []string{"help"}},
+		{"NoCommand", []string{}, false},
+		{"FlagShort", []string{"-h"}, true},
+		{"FlagLong", []string{"--help"}, true},
+		{"Command", []string{"help"}, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			cmd := exec.Command(cmdPath, tt.argv...)
-			if b, err := cmd.CombinedOutput(); err != nil {
+			b, err := cmd.CombinedOutput()
+			if err != nil && tt.shouldPass {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
+			} else if err == nil && !tt.shouldPass {
+				t.Log(string(b))
+				t.Fatalf("Test %s passed, but was expected to fail.", tt.name)
 			}
 		}))
 	}
