@@ -161,8 +161,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		}
 	}
 
-	if c.netNS && !c.userNS {
-		if os.Geteuid() == 0 {
+	if c.netNS {
+		if os.Geteuid() == 0 && !c.userNS {
 			/* hold a reference to container network namespace for cleanup */
 			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
 			if err != nil {
@@ -190,8 +190,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			}
 
 			engine.EngineConfig.Network = setup
-		} else {
-			return fmt.Errorf("Network requires root permissions")
+		} else if engine.EngineConfig.GetNetwork() != "none" {
+			return fmt.Errorf("Network requires root permissions or --network=none argument as user")
 		}
 	}
 
@@ -292,6 +292,11 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
 	overlayEnabled := false
 
+	sessionPath, err := filepath.EvalSymlinks(buildcfg.SESSIONDIR)
+	if err != nil {
+		return fmt.Errorf("failed to resolved session directory %s: %s", buildcfg.SESSIONDIR, err)
+	}
+
 	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
 		switch c.engine.EngineConfig.File.EnableOverlay {
 		case "yes", "try":
@@ -308,19 +313,19 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 		if imgObject.Type == image.SIF {
 			err = c.setupWritableSIFImage(imgObject, overlayEnabled)
 			if err == nil {
-				return c.setupOverlayLayout(system)
+				return c.setupOverlayLayout(system, sessionPath)
 			}
 			sylog.Warningf("%s", err)
 		} else {
 			sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
 		}
 
-		return c.setupDefaultLayout(system)
+		return c.setupDefaultLayout(system, sessionPath)
 	}
 
 	if overlayEnabled {
 		sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
-		return c.setupOverlayLayout(system)
+		return c.setupOverlayLayout(system, sessionPath)
 	}
 
 	if writableTmpfs {
@@ -329,17 +334,17 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 
 	if c.engine.EngineConfig.File.EnableUnderlay {
 		sylog.Debugf("Attempting to use underlay (enable underlay = yes)\n")
-		return c.setupUnderlayLayout(system)
+		return c.setupUnderlayLayout(system, sessionPath)
 	}
 
 	sylog.Debugf("Not attempting to use underlay or overlay\n")
-	return c.setupDefaultLayout(system)
+	return c.setupDefaultLayout(system, sessionPath)
 }
 
 // setupOverlayLayout sets up the session with overlay filesystem
-func (c *container) setupOverlayLayout(system *mount.System) (err error) {
+func (c *container) setupOverlayLayout(system *mount.System, sessionPath string) (err error) {
 	sylog.Debugf("Creating overlay SESSIONDIR layout\n")
-	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, c.sessionFsType, c.sessionSize, system, overlay.New()); err != nil {
+	if c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, overlay.New()); err != nil {
 		return err
 	}
 
@@ -352,9 +357,9 @@ func (c *container) setupOverlayLayout(system *mount.System) (err error) {
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
-func (c *container) setupUnderlayLayout(system *mount.System) (err error) {
+func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string) (err error) {
 	sylog.Debugf("Creating underlay SESSIONDIR layout\n")
-	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, c.sessionFsType, c.sessionSize, system, underlay.New()); err != nil {
+	if c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, underlay.New()); err != nil {
 		return err
 	}
 
@@ -363,9 +368,9 @@ func (c *container) setupUnderlayLayout(system *mount.System) (err error) {
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
-func (c *container) setupDefaultLayout(system *mount.System) (err error) {
+func (c *container) setupDefaultLayout(system *mount.System, sessionPath string) (err error) {
 	sylog.Debugf("Creating default SESSIONDIR layout\n")
-	if c.session, err = layout.NewSession(buildcfg.SESSIONDIR, c.sessionFsType, c.sessionSize, system, nil); err != nil {
+	if c.session, err = layout.NewSession(sessionPath, c.sessionFsType, c.sessionSize, system, nil); err != nil {
 		return err
 	}
 
@@ -536,6 +541,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 
 // mount image via loop
 func (c *container) mountImage(mnt *mount.Point) error {
+	maxDevices := int(c.engine.EngineConfig.File.MaxLoopDevices)
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 
@@ -563,7 +569,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info)
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
