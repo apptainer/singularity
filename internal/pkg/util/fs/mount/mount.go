@@ -504,7 +504,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 				if err = p.AddBind(tag, point.Source, point.Destination, flags); err == nil {
 					continue
 				} else {
-					fmt.Println(err)
+					return err
 				}
 			}
 

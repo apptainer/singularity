@@ -333,15 +333,7 @@ func TestImport(t *testing.T) {
 					Source:      "/",
 					Destination: "/mnt",
 					Type:        "",
-					Options:     []string{"rbind"},
-				},
-			},
-			{
-				Mount: specs.Mount{
-					Source:      "",
-					Destination: "/mnt",
-					Type:        "",
-					Options:     []string{"rbind", "nosuid", "remount"},
+					Options:     []string{"rbind", "nosuid"},
 				},
 			},
 		},
@@ -410,7 +402,7 @@ func TestImport(t *testing.T) {
 		t.Errorf("wrong number of overlay mount point found")
 	}
 	bind := points.GetAllBinds()
-	if len(bind) != 2 {
+	if len(bind) != 1 {
 		t.Errorf("wrong number of bind mount point found")
 	}
 	fs := points.GetAllFS()
@@ -468,14 +460,6 @@ func TestImport(t *testing.T) {
 
 	invalidImport := map[AuthorizedTag][]Point{
 		UserbindsTag: {
-			{
-				Mount: specs.Mount{
-					Source:      "/",
-					Destination: "/mnt",
-					Type:        "",
-					Options:     []string{"rbind"},
-				},
-			},
 			{
 				Mount: specs.Mount{
 					Source:      "",
@@ -559,13 +543,7 @@ func TestImport(t *testing.T) {
 			Source:      "/",
 			Destination: "/mnt",
 			Type:        "",
-			Options:     []string{"rbind"},
-		},
-		{
-			Source:      "",
-			Destination: "/mnt",
-			Type:        "",
-			Options:     []string{"rbind", "nosuid", "remount", "rshared"},
+			Options:     []string{"rbind", "nosuid", "rshared"},
 		},
 		{
 			Source:      "",
@@ -595,8 +573,11 @@ func TestImport(t *testing.T) {
 	if err := points.ImportFromSpec(validSpecs); err != nil {
 		t.Error(err)
 	}
-	if len(points.GetAll()) != 5 {
-		t.Errorf("returned a wrong number of mount points %d instead of 5", len(points.GetAll()))
+	if len(points.GetByTag(KernelTag)) != 4 {
+		t.Errorf("returned a wrong number of mount kernel mount points %d instead of 4", len(points.GetByTag(KernelTag)))
+	}
+	if len(points.GetByTag(UserbindsTag)) != 3 {
+		t.Errorf("returned a wrong number of mount kernel mount points %d instead of 3", len(points.GetByTag(UserbindsTag)))
 	}
 	points.RemoveAll()
 
