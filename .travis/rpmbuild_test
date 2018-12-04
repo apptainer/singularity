@@ -3,7 +3,7 @@
 # this script runs as root under docker
 
 # build and install
-yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
+yum install -y rpm-build make golang yum-utils gcc binutils util-linux-ng which
 yum install -y openssl-devel libuuid-devel libseccomp-devel e2fsprogs
 
 # switch to an unprivileged user with sudo privileges
@@ -23,9 +23,8 @@ su testuser -c '
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
   BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
-  export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
-  PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+  PATH=$GOPATH/bin:$PATH
 
   cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test
