@@ -277,7 +277,6 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.SetMountPropagation("rprivate")
 	}
 
-	starterConfig.SetSharedMount(true)
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
 	starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
@@ -459,6 +458,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		}
 	}
 
+	starterConfig.SetSharedMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
