@@ -39,6 +39,7 @@ URL: https://www.sylabs.io/singularity/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
+BuildRequires: golang
 BuildRequires: wget
 BuildRequires: git
 BuildRequires: gcc
@@ -72,17 +73,11 @@ mkdir %{name}-%{version}
 %build
 cd %{name}-%{version}
 
-#XXX: We would like to remove the download of Go in the future
-GOTAR=go%{goversion}.linux-amd64.tar.gz
-wget https://dl.google.com/go/$GOTAR
-tar -xf $GOTAR
-
 mkdir -p gopath/%{singgopath}
 tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
 
-export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
-export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+export PATH=$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
 
 ./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} \
@@ -96,9 +91,8 @@ make old_config=
 %install
 cd %{name}-%{version}
 
-export GOROOT=$PWD/go
 export GOPATH=$PWD/gopath
-export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+export PATH=$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}/builddir
 
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
