@@ -450,6 +450,21 @@ static void setup_userns_mappings(const struct uidMapping *uidMapping, const str
     free(path);
 }
 
+static void setup_userns_identity(struct cConfig *config) {
+    uid_t uidMap = config->uidMapping[0].containerID;
+    gid_t gidMap = config->gidMapping[0].containerID;
+
+    if ( setgroups(0, NULL) < 0 ) {
+        fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
+    }
+    if ( setresgid(gidMap, gidMap, gidMap) < 0 ) {
+        fatalf("Failed to change namespace group identity: %s\n", strerror(errno));
+    }
+    if ( setresuid(uidMap, uidMap, uidMap) < 0 ) {
+        fatalf("Failed to change namespace user identity: %s\n", strerror(errno));
+    }
+}
+
 static void user_namespace_init(struct cConfig *config, int *fork_flags) {
     if ( (config->nsFlags & CLONE_NEWUSER) == 0 && get_nspath(config, user) == NULL ) {
         priv_escalate();
@@ -460,6 +475,9 @@ static void user_namespace_init(struct cConfig *config, int *fork_flags) {
         if ( get_nspath(config, user) ) {
             if ( enter_namespace(get_nspath(config, user), CLONE_NEWUSER) < 0 ) {
                 fatalf("Failed to enter in user namespace: %s\n", strerror(errno));
+            }
+            if ( !config->sharedMount ) {
+                setup_userns_identity(config);
             }
         } else if ( config->sharedMount ) {
             verbosef("Create user namespace\n");
@@ -1153,25 +1171,11 @@ __attribute__((constructor)) static void init(void) {
         set_parent_death_signal(SIGKILL);
 
         if ( forkfd >= 0 ) {
-            uid_t uidMap = config->uidMapping[0].containerID;
-            gid_t gidMap = config->gidMapping[0].containerID;
-
             // wait parent write user namespace mappings
             event_stop(forkfd);
             close(forkfd);
 
-            if ( setresgid(gidMap, gidMap, gidMap) < 0 ) {
-                fatalf("Failed to change namespace group identity: %s\n", strerror(errno));
-            }
-            if ( setresuid(uidMap, uidMap, uidMap) < 0 ) {
-                fatalf("Failed to change namespace user identity: %s\n", strerror(errno));
-            }
-
-            // apply user identity for prepare_scontainer_stage
-            config->targetUID = uidMap;
-            config->numGID = 1;
-            config->targetGID[0] = gidMap;
-            config->nsFlags &= ~CLONE_NEWUSER;
+            setup_userns_identity(config);
         }
 
         close(master_socket[0]);
