@@ -31,7 +31,7 @@ func TestSelfTest(t *testing.T) {
 	cmd := exec.Command(cmdPath, "selftest")
 	if b, err := cmd.CombinedOutput(); err == nil {
 		t.Log(string(b))
-		t.Fatal("selftest passed, but it isn't implemented?")
+		t.Fatal("unexpected success running selftest")
 	}
 }
 

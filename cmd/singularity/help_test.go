@@ -34,7 +34,7 @@ func TestHelpSingularity(t *testing.T) {
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
 			} else if err == nil && !tt.shouldPass {
 				t.Log(string(b))
-				t.Fatalf("Test %s passed, but was expected to fail.", tt.name)
+				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
 			}
 		}))
 	}
