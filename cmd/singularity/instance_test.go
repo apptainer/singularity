@@ -21,9 +21,11 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
-const instanceStartPort = 11372
-const instanceDefinition = "../../examples/instances/Singularity"
-const instanceImagePath = "./instance_tests.sif"
+const (
+	instanceStartPort = 11372
+	instanceDefinition = "../../examples/instances/Singularity"
+	instanceImagePath = "./instance_tests.sif"
+)
 
 type startOpts struct {
 	addCaps       string
@@ -413,13 +415,13 @@ func TestInstance(t *testing.T) {
 		{"StopAll", testStopAll, false},
 		{"FinalNoInstances", testNoInstances, false},
 	}
-	for _, currentTest := range tests {
+	for _, tt := range tests {
 		var wrappedFn func(*testing.T)
-		if currentTest.privileged {
-			wrappedFn = test.WithPrivilege(currentTest.function)
+		if tt.privileged {
+			wrappedFn = test.WithPrivilege(tt.function)
 		} else {
-			wrappedFn = test.WithoutPrivilege(currentTest.function)
+			wrappedFn = test.WithoutPrivilege(tt.function)
 		}
-		t.Run(currentTest.name, wrappedFn)
+		t.Run(tt.name, wrappedFn)
 	}
 }
