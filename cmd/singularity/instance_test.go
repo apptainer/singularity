@@ -22,9 +22,9 @@ import (
 )
 
 const (
-	instanceStartPort = 11372
+	instanceStartPort  = 11372
 	instanceDefinition = "../../examples/instances/Singularity"
-	instanceImagePath = "./instance_tests.sif"
+	instanceImagePath  = "./instance_tests.sif"
 )
 
 type startOpts struct {
