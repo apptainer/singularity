@@ -32,12 +32,6 @@ hststatic=0
 tgtstatic=0
 
 package_name=singularity
-
-short_version=`(git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
-if echo $short_version | grep -q '\-rc'; then
-    short_version=$(echo $short_version | rev | cut -f 2- -d '-' | rev)
-fi
-
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
 
@@ -361,6 +355,7 @@ while [ $# -ne 0 ]; do
   *) break;;
  esac
 done
+short_version="`echo "$package_version"|sed 's/-.*//'`"
 #
 # non-option param
 if [ $# != 0 ]; then
@@ -781,13 +776,12 @@ if [ "$host" = "unix" ]; then
 	RPMSPEC=singularity.spec
 	echo "=> generating $RPMSPEC ..."
 	rm -f $sourcedir/$RPMSPEC
-	VERSION="`echo "$package_version"|sed 's/-.*//'`"
-	RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
-	if [ "$VERSION" = "$RELEASE" ]; then
-		# $package_version has no dash
-		RELEASE=1
-	fi
-	sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
+        release="`echo "$package_version"|sed 's/[^-]*-//'`"
+        if [ "$short_version" = "$release" ]; then
+            # $package_version has no dash
+            release=1
+        fi
+        sed "s/@PACKAGE_VERSION@/$short_version/;s/@PACKAGE_RELEASE@/$release/;s/@GO_VERSION@/$go_version/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
 
 
