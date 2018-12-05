@@ -98,7 +98,8 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 	rpc.ServeConn(conn)
 }
 
-func init() {
+// Init initializes registered runtime engines
+func Init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
 	registeredEngineOperations[singularity.Name] = &singularity.EngineOperations{EngineConfig: singularity.NewConfig()}
 	registeredEngineOperations[imgbuild.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}
