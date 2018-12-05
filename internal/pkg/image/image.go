@@ -148,9 +148,9 @@ func Init(path string, writable bool) (*Image, error) {
 		if mode&os.O_RDWR != 0 {
 			if err := syscall.Access(resolvedPath, 2); err != nil {
 				sylog.Debugf("Opening %s in read-only mode: no write permissions", path)
-				mode = os.O_RDONLY
-				img.Writable = false
 			}
+			mode = os.O_RDONLY
+			img.Writable = false
 		}
 
 		img.File, err = os.OpenFile(resolvedPath, mode, 0)
