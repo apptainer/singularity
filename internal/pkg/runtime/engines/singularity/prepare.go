@@ -283,8 +283,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 
 	// user namespace ID mappings
 	if e.EngineConfig.OciConfig.Linux != nil {
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+		if err := starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings); err != nil {
+			return err
+		}
+		if err := starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings); err != nil {
+			return err
+		}
 	}
 
 	param := security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
