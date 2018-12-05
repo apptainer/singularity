@@ -31,7 +31,7 @@ type startOpts struct {
 	addCaps       string
 	allowSetuid   bool
 	applyCgroups  string
-	bind          string
+	binds         []string
 	boot          bool
 	cleanenv      bool
 	contain       bool
@@ -93,8 +93,8 @@ func startInstance(image string, instance string, opts startOpts) ([]byte, error
 	if opts.applyCgroups != "" {
 		args = append(args, "--apply-cgroups", opts.applyCgroups)
 	}
-	if opts.bind != "" {
-		args = append(args, "--bind", opts.bind)
+	for _, bind := range opts.binds {
+		args = append(args, "--bind", bind)
 	}
 	if opts.boot {
 		args = append(args, "--boot")
