@@ -202,7 +202,7 @@ func envBool(flag *pflag.Flag, envvar string) {
 	}
 }
 
-// envStringNSlice writes to a string or slice flag ff CLI option/argument
+// envStringNSlice writes to a string or slice flag if CLI option/argument
 // string is unset and env var is set
 func envStringNSlice(flag *pflag.Flag, envvar string) {
 	if flag.Changed == false {
