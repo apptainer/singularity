@@ -468,13 +468,10 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 	sessionPath := c.session.Path()
-	remount := false
+	remount := mount.HasRemountFlag(flags)
+	propagation := mount.HasPropagationFlag(flags)
 	source := mnt.Source
 	dest := ""
-
-	if flags&syscall.MS_REMOUNT != 0 {
-		remount = true
-	}
 
 	if flags&syscall.MS_BIND != 0 && !remount {
 		if _, err := os.Stat(source); os.IsNotExist(err) {
@@ -501,7 +498,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 	}
 
-	if remount {
+	if remount || propagation {
 		for _, skipped := range c.skippedMount {
 			if skipped == mnt.Destination {
 				return nil
@@ -774,6 +771,11 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				return err
 			}
 			flags &^= syscall.MS_RDONLY
+
+			err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
+			if err != nil {
+				return err
+			}
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)

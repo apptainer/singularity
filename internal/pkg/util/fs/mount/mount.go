@@ -293,14 +293,16 @@ func GetSizeLimit(options []string) (uint64, error) {
 	return 0, fmt.Errorf("sizelimit option not found")
 }
 
-func hasRemountFlag(flags uintptr) bool {
+// HasRemountFlag checks if remount flag is set or not.
+func HasRemountFlag(flags uintptr) bool {
 	if flags&syscall.MS_REMOUNT == 0 {
 		return false
 	}
 	return true
 }
 
-func hasPropagationFlag(flags uintptr) bool {
+// HasPropagationFlag checks if a propagation flag is set or not.
+func HasPropagationFlag(flags uintptr) bool {
 	if flags&getPropagationFlags() == 0 {
 		return false
 	}
@@ -334,7 +336,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 	if _, ok := authorizedTags[tag]; !ok {
 		return fmt.Errorf("tag %s is not a recognized tag", tag)
 	}
-	if !hasRemountFlag(flags) && !hasPropagationFlag(flags) {
+	if !HasRemountFlag(flags) && !HasPropagationFlag(flags) {
 		present := false
 		for _, point := range p.points[tag] {
 			if point.Destination == dest {
@@ -489,12 +491,12 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 
 			flags, options := ConvertOptions(point.Options)
 			// check if this is a mount point to remount
-			if hasRemountFlag(flags) {
+			if HasRemountFlag(flags) {
 				if err = p.AddRemount(tag, point.Destination, flags); err == nil {
 					continue
 				}
 			}
-			if hasPropagationFlag(flags) {
+			if HasPropagationFlag(flags) {
 				if err = p.AddPropagation(tag, point.Destination, flags); err == nil {
 					continue
 				}
@@ -711,7 +713,7 @@ func (p *Points) AddRemount(tag AuthorizedTag, dest string, flags uintptr) error
 // AddPropagation adds a mount propagation for mount point
 func (p *Points) AddPropagation(tag AuthorizedTag, dest string, flags uintptr) error {
 	finalFlags := flags & getPropagationFlags()
-	if !hasPropagationFlag(finalFlags) {
+	if !HasPropagationFlag(finalFlags) {
 		return fmt.Errorf("no mount propagation flag found")
 	}
 	if flags&syscall.MS_REC != 0 {
