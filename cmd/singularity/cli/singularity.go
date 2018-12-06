@@ -147,8 +147,8 @@ func handleEnv(flag *pflag.Flag) {
 	}
 
 	for _, key := range envKeys {
-		val := os.Getenv(envPrefix + key)
-		if val == "" {
+		val, set := os.LookupEnv(envPrefix + key)
+		if !set {
 			continue
 		}
 
@@ -192,7 +192,7 @@ func envAppend(flag *pflag.Flag, envvar string) {
 
 // envBool sets a bool flag if the CLI option is unset and env var is set
 func envBool(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false && envvar != "" {
+	if flag.Changed == false {
 		if err := flag.Value.Set("true"); err != nil {
 			sylog.Warningf("Unable to set %s to true", flag.Name)
 		} else {
@@ -205,7 +205,7 @@ func envBool(flag *pflag.Flag, envvar string) {
 // envStringNSlice writes to a string or slice flag ff CLI option/argument
 // string is unset and env var is set
 func envStringNSlice(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false && envvar != "" {
+	if flag.Changed == false {
 		if err := flag.Value.Set(envvar); err != nil {
 			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
 		} else {

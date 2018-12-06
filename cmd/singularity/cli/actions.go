@@ -104,8 +104,8 @@ func init() {
 	SingularityCmd.AddCommand(TestCmd)
 }
 
-func handleOCI(u string) (string, error) {
-	authConf, err := makeDockerCredentials(dockerLogin)
+func handleOCI(cmd *cobra.Command, u string) (string, error) {
+	authConf, err := makeDockerCredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
@@ -208,7 +208,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
-		image, err = handleOCI(args[0])
+		image, err = handleOCI(cmd, args[0])
 	case uri.HTTP:
 		image, err = handleNet(args[0])
 	case uri.HTTPS:
