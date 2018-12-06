@@ -15,7 +15,7 @@ import (
 // Enter enters in provided process namespace.
 func Enter(pid int, namespace string) error {
 	if runtime.GOOS != "linux" {
-		return fmt.Errorf("unsupported platform")
+		return fmt.Errorf("%s system is unsupported", runtime.GOOS)
 	}
-	return fmt.Errorf("was compiled with go version < 1.10")
+	return fmt.Errorf("using setns requires a compilation with Go version >= 1.10")
 }
