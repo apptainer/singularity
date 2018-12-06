@@ -58,6 +58,9 @@ func init() {
 	PullCmd.Flags().Lookup("docker-password").Hidden = true
 	PullCmd.Flags().SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
 
+	PullCmd.Flags().BoolVar(&dockerLogin, "docker-login", false, "interactive prompt for docker authentication")
+	PullCmd.Flags().SetAnnotation("docker-login", "envkey", []string{"DOCKER_LOGIN"})
+
 	SingularityCmd.AddCommand(PullCmd)
 }
 

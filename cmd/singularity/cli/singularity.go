@@ -277,6 +277,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"tmpdir":          envStringNSlice,
 	"docker-username": envStringNSlice,
 	"docker-password": envStringNSlice,
+	"docker-login":    envBool,
 
 	// capability flags (and others)
 	"user":  envStringNSlice,

@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/syplugin"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 func preRun(cmd *cobra.Command, args []string) {
@@ -63,12 +64,9 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf(err.Error())
 		}
 
-		var authConf *ocitypes.DockerAuthConfig
-		if dockerUsername != "" && dockerPassword != "" {
-			authConf = &ocitypes.DockerAuthConfig{
-				Username: dockerUsername,
-				Password: dockerPassword,
-			}
+		authConf, err := makeDockerCredentials(dockerLogin)
+		if err != nil {
+			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
 		b, err := build.NewBuild(
@@ -94,4 +92,29 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	}
+}
+
+func makeDockerCredentials(dockerLogin bool) (authConf *ocitypes.DockerAuthConfig, err error) {
+	if dockerLogin {
+		if dockerUsername == "" {
+			dockerUsername, err = sypgp.AskQuestion("Enter Docker Username: ")
+			if err != nil {
+				return
+			}
+		}
+
+		dockerPassword, err = sypgp.AskQuestionNoEcho("Enter Docker Password: ")
+		if err != nil {
+			return
+		}
+	}
+
+	if dockerUsername != "" && dockerPassword != "" {
+		authConf = &ocitypes.DockerAuthConfig{
+			Username: dockerUsername,
+			Password: dockerPassword,
+		}
+	}
+
+	return
 }
