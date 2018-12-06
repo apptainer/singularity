@@ -175,9 +175,6 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
-	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
-		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
-	}
 }
 
 // envAppend combines command line and environment var into a single argument

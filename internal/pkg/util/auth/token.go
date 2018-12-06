@@ -22,7 +22,7 @@ const (
 	// WarningEmptyToken Warning return for empty token string
 	WarningEmptyToken = "Token file is empty"
 	// WarningTokenFileNotFound token file not found
-	WarningTokenFileNotFound = "Authentication token file not found"
+	WarningTokenFileNotFound = "Authentication token file not found. To generate a token, visit cloud.sylabs.io/auth"
 	// WarningCouldntReadFile Warning return for issues when reading file
 	WarningCouldntReadFile = "Couldn't read your Sylabs authentication token"
 )
