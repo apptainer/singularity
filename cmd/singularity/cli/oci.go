@@ -420,7 +420,13 @@ func ociRun(containerID string) error {
 	status := make(chan string, 1)
 
 	if err := ociCreate(containerID); err != nil {
-		os.Remove(syncSocketPath)
+		defer os.Remove(syncSocketPath)
+		if _, err1 := getState(containerID); err1 != nil {
+			return err
+		}
+		if err := ociDelete(containerID); err != nil {
+			sylog.Warningf("can't delete container %s", containerID)
+		}
 		return err
 	}
 

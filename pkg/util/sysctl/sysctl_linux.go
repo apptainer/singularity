@@ -6,8 +6,8 @@
 package sysctl
 
 import (
-	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,51 +30,28 @@ func getPath(key string) (string, error) {
 // Get retrieves and returns sysctl key value
 func Get(key string) (string, error) {
 	var path string
-	var file *os.File
 
 	path, err := getPath(key)
 	if err != nil {
 		return "", fmt.Errorf("can't retrieve key %s: %s", key, err)
 	}
 
-	file, err = os.OpenFile(path, os.O_RDONLY, 0)
+	value, err := ioutil.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("can't retrieve value for key %s: %s", key, err)
 	}
-	defer file.Close()
 
-	reader := bufio.NewReader(file)
-
-	value, err := reader.ReadString('\n')
-	if err != nil {
-		return "", fmt.Errorf("can't read value for key %s: %s", key, err)
-	}
-
-	return strings.TrimSuffix(value, "\n"), nil
+	return strings.TrimSuffix(string(value), "\n"), nil
 }
 
 // Set sets value for sysctl key value
 func Set(key string, value string) error {
 	var path string
-	var file *os.File
 
 	path, err := getPath(key)
 	if err != nil {
 		return fmt.Errorf("can't retrieve key %s: %s", key, err)
 	}
 
-	file, err = os.OpenFile(path, os.O_WRONLY, 0)
-	if err != nil {
-		return fmt.Errorf("can't set value for key %s: %s", key, err)
-	}
-	defer file.Close()
-
-	writer := bufio.NewWriter(file)
-
-	_, err = writer.WriteString(value)
-	if err != nil {
-		return fmt.Errorf("can't set value for key %s: %s", key, err)
-	}
-
-	return nil
+	return ioutil.WriteFile(path, []byte(value), 0000)
 }

@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/sysctl"
 	"github.com/sylabs/singularity/pkg/util/unix"
 
@@ -328,8 +329,26 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
+	if c.userNS {
+		if err := namespaces.Enter(pid, "ipc"); err != nil {
+			return err
+		}
+		if err := namespaces.Enter(pid, "net"); err != nil {
+			return err
+		}
+	}
+
 	for key, value := range engine.EngineConfig.OciConfig.Linux.Sysctl {
 		if err := sysctl.Set(key, value); err != nil {
+			return err
+		}
+	}
+
+	if c.userNS {
+		if err := namespaces.Enter(os.Getpid(), "ipc"); err != nil {
+			return err
+		}
+		if err := namespaces.Enter(os.Getpid(), "net"); err != nil {
 			return err
 		}
 	}
