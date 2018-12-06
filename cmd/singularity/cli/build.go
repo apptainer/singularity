@@ -35,6 +35,7 @@ var (
 	tmpDir         string
 	dockerUsername string
 	dockerPassword string
+	dockerLogin    bool
 )
 
 var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
@@ -85,6 +86,9 @@ func init() {
 	BuildCmd.Flags().StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
 	BuildCmd.Flags().Lookup("docker-password").Hidden = true
 	BuildCmd.Flags().SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
+
+	BuildCmd.Flags().BoolVar(&dockerLogin, "docker-login", false, "interactive prompt for docker authentication")
+	BuildCmd.Flags().SetAnnotation("docker-login", "envkey", []string{"DOCKER_LOGIN"})
 
 	SingularityCmd.AddCommand(BuildCmd)
 }

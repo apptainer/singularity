@@ -91,6 +91,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
@@ -104,12 +105,9 @@ func init() {
 }
 
 func handleOCI(u string) (string, error) {
-	var authConf *ocitypes.DockerAuthConfig
-	if dockerUsername != "" && dockerPassword != "" {
-		authConf = &ocitypes.DockerAuthConfig{
-			Username: dockerUsername,
-			Password: dockerPassword,
-		}
+	authConf, err := makeDockerCredentials(dockerLogin)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
 
 	sysCtx := &ocitypes.SystemContext{
