@@ -259,17 +259,29 @@ check: $(go_OBJ)
 dist:
 	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
 
-.PHONY: test
-test:
-	@echo " TEST sudo go test"
+.PHONY: unit-test
+unit-test: 
+	@echo " UNIT TEST sudo go test"
 	@# avoid travis 10 minutes of silence timeout
 	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
 	trap "kill $$! || true" 0; \
-	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race ./...
+	cd $(SOURCEDIR) && \
+	sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race github.com/sylabs/singularity/pkg/... && \
+	sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race github.com/sylabs/singularity/internal/...
 	@echo "       PASS"
 
+.PHONY: integration-test
+integration-test: 
+	@echo " INTEGRATION TEST sudo go test"
+	@# avoid travis 10 minutes of silence timeout
+	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
+	trap "kill $$! || true" 0; \
+	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race github.com/sylabs/singularity/cmd/singularity/...
+	@echo "       PASS"
+
+
 .PHONY: testall
-testall: vendor-check check test
+testall: vendor-check check unit-test  integration-test
 
 .PHONY: rpm
 rpm: dist

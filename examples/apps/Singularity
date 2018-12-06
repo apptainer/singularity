@@ -1,5 +1,5 @@
-Bootstrap: docker
-From: ubuntu:14.04
+Bootstrap: library
+From: alpine:3.7
 
 %setup
     echo "SETUP"

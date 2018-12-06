@@ -66,7 +66,7 @@ jobs:
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
 
-  singularity_test:
+  unit_test:
     machine: true
     steps:
       - attach_workspace:
@@ -91,8 +91,6 @@ jobs:
           name: Fetch deps
           working_directory: /tmp
           command: |-
-            mkdir -p ${GOBIN}
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build & install singularity
@@ -105,11 +103,50 @@ jobs:
           name: Test singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            make -C ./builddir test
+            make -C ./builddir unit-test
+
+  CI_test:
+    machine: true
+    steps:
+      - attach_workspace:
+          at: ~/go
+      - run:
+          name: Setup environment
+          command: |-
+            echo 'export  GOPATH=$HOME/go' >> $BASH_ENV
+            echo 'export  GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export  GOBIN=$HOME/go/bin' >> $BASH_ENV
+            echo 'export  GOCACHE=off' >> $BASH_ENV
+            echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
+      - run:
+          name: Update Go to 1.11
+          working_directory: /tmp
+          command: |-
+            wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
+            sudo chown -R circleci:circleci ~/go
+      - run:
+          name: Fetch deps
+          working_directory: /tmp
+          command: |-
+            sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+      - run:
+          name: Build & install singularity
+          command: |-
+            cd $HOME/go/src/github.com/sylabs/singularity
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
+            sudo make -C ./builddir install
+      - run:
+          name: Test singularity
+          command: |-
+            cd $HOME/go/src/github.com/sylabs/singularity
+            make -C ./builddir testall
 
 workflows:
   version: 2
-  test-compile:
+  push_request:
     jobs:
       - get_source
       - go1.10-stretch:
@@ -121,6 +158,29 @@ workflows:
       - go1.11-alpine:
           requires:
             - get_source
-      - singularity_test:
+      - unit_test:
+          requires:
+            - get_source
+  daily_CI:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+                - /release-*/
+    jobs:
+      - get_source
+      - go1.10-stretch:
+          requires:
+            - get_source
+      - go1.11-stretch:
+          requires:
+            - get_source
+      - go1.11-alpine:
+          requires:
+            - get_source
+      - CI_test:
           requires:
             - get_source

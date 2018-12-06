@@ -36,7 +36,6 @@ func TestSelfTest(t *testing.T) {
 }
 
 func run(m *testing.M) int {
-
 	// Ensure binary is in $PATH
 	path, err := exec.LookPath("singularity")
 	if err != nil {
