@@ -26,7 +26,6 @@ import (
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/types"
-	ocitypes "github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
 	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
@@ -56,7 +55,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		return err
 	}
 
-	cp.sysCtx = &ocitypes.SystemContext{
+	cp.sysCtx = &types.SystemContext{
 		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
 		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
