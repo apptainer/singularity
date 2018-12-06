@@ -8,6 +8,7 @@
 package cli
 
 import (
+	"errors"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/src/docs"
 )
@@ -40,13 +41,15 @@ func init() {
 // InstanceStopCmd singularity instance stop
 var InstanceStopCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if len(args) > 0 && !stopAll {
 			stopInstance(args[0])
+			return nil
 		} else if stopAll {
 			stopInstance("*")
+			return nil
 		} else {
-			cmd.Usage()
+			return errors.New("Invalid command")
 		}
 	},
 
