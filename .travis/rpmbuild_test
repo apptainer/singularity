@@ -28,5 +28,5 @@ su testuser -c '
   PATH=$GOROOT/bin:$GOPATH/bin:$PATH
 
   cd $GOPATH/src/github.com/sylabs/singularity
-  make -C builddir test
+  make -C builddir integration-test
 '

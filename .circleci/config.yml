@@ -100,7 +100,7 @@ jobs:
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: Test singularity
+          name: unit tests
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
             make -C ./builddir unit-test
@@ -139,7 +139,7 @@ jobs:
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: Test singularity
+          name: integration tests
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
             make -C ./builddir testall
