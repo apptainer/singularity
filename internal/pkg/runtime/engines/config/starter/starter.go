@@ -140,7 +140,7 @@ func (c *Config) Write(payload interface{}) error {
 	}
 	size := len(jsonConf)
 	maxSize := C.MAX_JSON_SIZE - 1
-	c.config.json.size = C.ulong(size)
+	c.config.json.size = C.size_t(size)
 
 	if size >= maxSize {
 		return fmt.Errorf("json configuration too big %d > %d", size, maxSize)
@@ -171,7 +171,7 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 
 	if l > 0 {
 		cpath := unsafe.Pointer(C.CString(uidMap))
-		size := C.ulong(l)
+		size := C.size_t(l)
 
 		C.memcpy(unsafe.Pointer(&c.config.container.uidMap[0]), cpath, size)
 		C.free(cpath)
@@ -197,7 +197,7 @@ func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 
 	if l > 0 {
 		cpath := unsafe.Pointer(C.CString(gidMap))
-		size := C.ulong(l)
+		size := C.size_t(l)
 
 		C.memcpy(unsafe.Pointer(&c.config.container.gidMap[0]), cpath, size)
 		C.free(cpath)
@@ -240,7 +240,7 @@ func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
 func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
 	cpath := unsafe.Pointer(C.CString(path))
 	l := len(path)
-	size := C.ulong(l)
+	size := C.size_t(l)
 
 	if l > C.MAX_NS_PATH_SIZE-1 {
 		return fmt.Errorf("%s namespace path too big", nstype)
@@ -274,7 +274,7 @@ func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) error {
 		if namespace.Path != "" {
 			cpath := unsafe.Pointer(C.CString(namespace.Path))
 			l := len(namespace.Path)
-			size := C.ulong(l)
+			size := C.size_t(l)
 
 			if l > C.MAX_NS_PATH_SIZE-1 {
 				return fmt.Errorf("%s namespace path too big", namespace.Type)
