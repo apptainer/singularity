@@ -15,7 +15,7 @@ import (
 )
 
 // Stage performs container startup.
-func Stage(stage, masterSocket int, sconfig *sarterConfig.Config, jsonBytes []byte) {
+func Stage(stage, masterSocket int, sconfig *sarterConfig.Config, jsonConfig []byte) {
 	var conn net.Conn
 	var err error
 
@@ -26,14 +26,12 @@ func Stage(stage, masterSocket int, sconfig *sarterConfig.Config, jsonBytes []by
 			sylog.Fatalf("failed to copy master unix socket descriptor: %s", err)
 			return
 		}
-		if stage == 2 {
-			comm.Close()
-		}
+		comm.Close()
 	} else {
 		conn = nil
 	}
 
-	engine, err := engines.NewEngine(jsonBytes)
+	engine, err := engines.NewEngine(jsonConfig)
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime engine: %s\n", err)
 	}
@@ -43,10 +41,9 @@ func Stage(stage, masterSocket int, sconfig *sarterConfig.Config, jsonBytes []by
 		if err := engine.PrepareConfig(conn, sconfig); err != nil {
 			sylog.Fatalf("%s\n", err)
 		}
-		if err := sconfig.WritePayload(conn, engine.Common); err != nil {
+		if err := sconfig.Write(engine.Common); err != nil {
 			sylog.Fatalf("%s", err)
 		}
-		conn.Close()
 		os.Exit(0)
 	} else {
 		if err := engine.StartProcess(conn); err != nil {

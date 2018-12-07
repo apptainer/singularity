@@ -329,13 +329,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return err
 	}
 
-	if c.userNS {
-		if err := namespaces.Enter(pid, "ipc"); err != nil {
-			return err
-		}
-		if err := namespaces.Enter(pid, "net"); err != nil {
-			return err
-		}
+	if err := namespaces.Enter(pid, "ipc"); err != nil {
+		return err
+	}
+	if err := namespaces.Enter(pid, "net"); err != nil {
+		return err
 	}
 
 	for key, value := range engine.EngineConfig.OciConfig.Linux.Sysctl {
@@ -344,13 +342,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		}
 	}
 
-	if c.userNS {
-		if err := namespaces.Enter(os.Getpid(), "ipc"); err != nil {
-			return err
-		}
-		if err := namespaces.Enter(os.Getpid(), "net"); err != nil {
-			return err
-		}
+	if err := namespaces.Enter(os.Getpid(), "ipc"); err != nil {
+		return err
+	}
+	if err := namespaces.Enter(os.Getpid(), "net"); err != nil {
+		return err
 	}
 
 	sylog.Debugf("Mount all")

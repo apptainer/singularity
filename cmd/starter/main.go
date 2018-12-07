@@ -34,28 +34,39 @@ func startup() {
 
 	cconf := unsafe.Pointer(C.config)
 	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
-	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(sconfig.GetJSONConfSize()))
-
-	// free allocated buffer
-	C.free(unsafe.Pointer(C.json_stdin))
-	if unsafe.Pointer(C.nspath) != nil {
-		C.free(unsafe.Pointer(C.nspath))
-	}
+	jsonConfig := sconfig.GetJSONConfig()
 
 	switch C.execute {
 	case C.SCONTAINER_STAGE1:
 		sylog.Verbosef("Execute scontainer stage 1\n")
-		starter.Stage(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), sconfig, jsonBytes)
+		starter.Stage(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), sconfig, jsonConfig)
 	case C.SCONTAINER_STAGE2:
 		sylog.Verbosef("Execute scontainer stage 2\n")
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
 		mainthread.Execute(func() {
-			starter.Stage(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), sconfig, jsonBytes)
+			starter.Stage(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), sconfig, jsonConfig)
 		})
 	case C.SMASTER:
 		sylog.Verbosef("Execute smaster process\n")
-		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), sconfig, jsonBytes)
+
+		isInstance := sconfig.GetInstance()
+		pid := sconfig.GetContainerPid()
+
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
+		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, jsonConfig)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
+
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
 		starter.RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
 	}
 	sylog.Fatalf("You should not be there\n")

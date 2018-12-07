@@ -17,19 +17,18 @@ import (
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // Master initializes a runtime engine and runs it
-func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonBytes []byte) {
+func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, jsonConfig []byte) {
 	var fatal error
 	var status syscall.WaitStatus
 
 	fatalChan := make(chan error, 1)
 	ppid := os.Getppid()
-	containerPid := sconfig.GetContainerPid()
-	engine, err := engines.NewEngine(jsonBytes)
+
+	engine, err := engines.NewEngine(jsonConfig)
 	if err != nil {
 		sylog.Fatalf("failed to initialize runtime: %s\n", err)
 	}
@@ -65,7 +64,7 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 
 		n, err := conn.Read(data)
 		if err != nil && err != io.EOF {
-			if sconfig.GetInstance() && os.Getppid() == ppid {
+			if isInstance && os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
 			fatalChan <- fmt.Errorf("failed to start process: %s", err)
@@ -87,13 +86,13 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 
 		err = engine.PostStartProcess(containerPid)
 		if err != nil {
-			if sconfig.GetInstance() && os.Getppid() == ppid {
+			if isInstance && os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
-		if n == 0 && sconfig.GetInstance() {
+		if n == 0 && isInstance {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
 			if os.Getppid() == ppid {
@@ -118,7 +117,7 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 	}
 	runtime.UnlockOSThread()
 
-	if !sconfig.GetInstance() {
+	if !isInstance {
 		pgrp := syscall.Getpgrp()
 		tcpgrp := 0
 
@@ -134,7 +133,7 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 	}
 
 	if fatal != nil {
-		if sconfig.GetInstance() {
+		if isInstance {
 			if os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
@@ -145,13 +144,13 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 
 	if status.Signaled() {
 		sylog.Debugf("Child exited due to signal %d", status.Signal())
-		if sconfig.GetInstance() && os.Getppid() == ppid {
+		if isInstance && os.Getppid() == ppid {
 			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
 		os.Exit(128 + int(status.Signal()))
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if sconfig.GetInstance() {
+		if isInstance {
 			if status.ExitStatus() != 0 {
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)

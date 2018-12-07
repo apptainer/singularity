@@ -98,7 +98,9 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 	}
 
 	starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
-	starterConfig.SetNsPathFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
+	if err := starterConfig.SetNsPathFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
 
 	if userNS {
 		if len(e.EngineConfig.OciConfig.Linux.UIDMappings) == 0 {
@@ -107,8 +109,12 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		if len(e.EngineConfig.OciConfig.Linux.GIDMappings) == 0 {
 			return fmt.Errorf("user namespace invoked without gid mapping")
 		}
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+		if err := starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings); err != nil {
+			return err
+		}
+		if err := starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings); err != nil {
+			return err
+		}
 	}
 
 	if e.EngineConfig.OciConfig.Linux.RootfsPropagation != "" {

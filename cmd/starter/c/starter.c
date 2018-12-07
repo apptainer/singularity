@@ -19,10 +19,10 @@
 #include <poll.h>
 #include <grp.h>
 #include <link.h>
-#include <limits.h>
 #include <dirent.h>
 #include <libgen.h>
-#include <sys/signalfd.h>
+#include <limits.h>
+#include <sys/mman.h>
 #include <sys/fsuid.h>
 #include <sys/mount.h>
 #include <sys/wait.h>
@@ -31,7 +31,6 @@
 #include <sys/stat.h>
 #include <signal.h>
 #include <sched.h>
-#include <sys/socket.h>
 #include <setjmp.h>
 #include <sys/syscall.h>
 #include <net/if.h>
@@ -69,10 +68,6 @@
 
 /* C and JSON configuration */
 struct cConfig *config;
-char *json_stdin;
-char *nspath;
-
-#define get_nspath(config, nstype) (config->nstype##NsPathOffset == 0 ? NULL : &nspath[config->nstype##NsPathOffset])
 
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
@@ -145,12 +140,12 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
         fatalf("Failed to get processus capabilities\n");
     }
 
-    data[1].inheritable = (__u32)(config->capInheritable >> 32);
-    data[0].inheritable = (__u32)(config->capInheritable & 0xFFFFFFFF);
-    data[1].permitted = (__u32)(config->capPermitted >> 32);
-    data[0].permitted = (__u32)(config->capPermitted & 0xFFFFFFFF);
-    data[1].effective = (__u32)(config->capEffective >> 32);
-    data[0].effective = (__u32)(config->capEffective & 0xFFFFFFFF);
+    data[1].inheritable = (__u32)(config->capabilities.inheritable >> 32);
+    data[0].inheritable = (__u32)(config->capabilities.inheritable & 0xFFFFFFFF);
+    data[1].permitted = (__u32)(config->capabilities.permitted >> 32);
+    data[0].permitted = (__u32)(config->capabilities.permitted & 0xFFFFFFFF);
+    data[1].effective = (__u32)(config->capabilities.effective >> 32);
+    data[0].effective = (__u32)(config->capabilities.effective & 0xFFFFFFFF);
 
     int last_cap;
     for ( last_cap = CAPSET_MAX; ; last_cap-- ) {
@@ -161,23 +156,23 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
 
     int caps_index;
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
-        if ( !(config->capBounding & (1ULL << caps_index)) ) {
+        if ( !(config->capabilities.bounding & (1ULL << caps_index)) ) {
             if ( prctl(PR_CAPBSET_DROP, caps_index) < 0 ) {
                 fatalf("Failed to drop bounding capabilities set: %s\n", strerror(errno));
             }
         }
     }
 
-    if ( !(config->nsFlags & CLONE_NEWUSER) ) {
+    if ( !(config->namespace.flags & CLONE_NEWUSER) ) {
         /* apply target UID/GID for root user */
         if ( uid == 0 ) {
-            if ( config->numGID != 0 || config->targetUID != 0 ) {
+            if ( config->container.numGID != 0 || config->container.targetUID != 0 ) {
                 if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
                     fatalf("Failed to set securebits: %s\n", strerror(errno));
                 }
             }
 
-            if ( config->numGID != 0 ) {
+            if ( config->container.numGID != 0 ) {
                 debugf("Clear additional group IDs\n");
 
                 if ( setgroups(0, NULL) < 0 ) {
@@ -185,15 +180,15 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
                 }
             }
 
-            if ( config->numGID >= 2 ) {
+            if ( config->container.numGID >= 2 ) {
                 debugf("Set additional group IDs\n");
 
-                if ( setgroups(config->numGID-1, &config->targetGID[1]) < 0 ) {
+                if ( setgroups(config->container.numGID-1, &config->container.targetGID[1]) < 0 ) {
                     fatalf("Failed to set additional groups: %s\n", strerror(errno));
                 }
             }
-            if ( config->numGID >= 1 ) {
-                gid_t targetGID = config->targetGID[0];
+            if ( config->container.numGID >= 1 ) {
+                gid_t targetGID = config->container.targetGID[0];
 
                 debugf("Set main group ID\n");
 
@@ -201,8 +196,8 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
                     fatalf("Failed to set GID %d: %s\n", targetGID, strerror(errno));
                 }
             }
-            if ( config->targetUID != 0 ) {
-                uid_t targetUID = config->targetUID;
+            if ( config->container.targetUID != 0 ) {
+                uid_t targetUID = config->container.targetUID;
 
                 debugf("Set user ID to %d\n", targetUID);
 
@@ -210,7 +205,7 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
                     fatalf("Failed to drop privileges: %s\n", strerror(errno));
                 }
             }
-        } else if ( config->isSuid ) {
+        } else if ( config->container.isSuid ) {
             if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
                 fatalf("Failed to set securebits: %s\n", strerror(errno));
             }
@@ -223,7 +218,7 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
         set_parent_death_signal(SIGKILL);
     }
 
-    if ( config->noNewPrivs ) {
+    if ( config->container.noNewPrivs ) {
         if ( prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) < 0 ) {
             fatalf("Failed to set no new privs flag: %s\n", strerror(errno));
         }
@@ -239,7 +234,7 @@ static int prepare_scontainer_stage(int stage, struct cConfig *config) {
 #ifdef USER_CAPABILITIES
     // set ambient capabilities if supported
     for ( caps_index = 0; caps_index <= last_cap; caps_index++ ) {
-        if ( (config->capAmbient & (1ULL << caps_index)) ) {
+        if ( (config->capabilities.ambient & (1ULL << caps_index)) ) {
             if ( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_RAISE, caps_index, 0, 0) < 0 ) {
                 fatalf("Failed to set ambient capability: %s\n", strerror(errno));
             }
@@ -378,11 +373,11 @@ static int enter_namespace(char *nspath, int nstype) {
     return(0);
 }
 
-static void setup_userns_mappings(const struct uidMapping *uidMapping, const struct gidMapping *gidMapping, pid_t pid, const char *setgroup) {
+static void setup_userns_mappings(struct cConfig *config, pid_t pid, const char *setgroup) {
     FILE *map_fp;
     int i;
-    struct uidMapping *uidmap;
-    struct gidMapping *gidmap;
+    struct idMapping *uidmap;
+    struct idMapping *gidmap;
     char *path = (char *)malloc(PATH_MAX);
 
     debugf("Write %s to set group file\n", setgroup);
@@ -407,21 +402,14 @@ static void setup_userns_mappings(const struct uidMapping *uidMapping, const str
         fatalf("Failed to write path /proc/%d/gid_map in buffer\n", pid);
     }
 
-    for ( i = 0; i < MAX_ID_MAPPING; i++ ) {
-        gidmap = (struct gidMapping *)&gidMapping[i];
-        if ( gidmap->size == 0 ) {
-            break;
+    map_fp = fopen(path, "w+"); // Flawfinder: ignore
+    if ( map_fp != NULL ) {
+        fprintf(map_fp, "%s", config->container.gidMap);
+        if ( fclose(map_fp) < 0 ) {
+            fatalf("Failed to write to GID map: %s\n", strerror(errno));
         }
-        map_fp = fopen(path, "w+"); // Flawfinder: ignore
-        if ( map_fp != NULL ) {
-            debugf("Write line '%i %i %i' to gid_map\n", gidmap->containerID, gidmap->hostID, gidmap->size);
-            fprintf(map_fp, "%i %i %i\n", gidmap->containerID, gidmap->hostID, gidmap->size);
-            if ( fclose(map_fp) < 0 ) {
-                fatalf("Failed to write to GID map: %s\n", strerror(errno));
-            }
-        } else {
-            fatalf("Could not write parent info to gid_map: %s\n", strerror(errno));
-        }
+    } else {
+        fatalf("Could not write parent info to gid_map: %s\n", strerror(errno));
     }
 
     debugf("Write to UID map\n");
@@ -430,29 +418,22 @@ static void setup_userns_mappings(const struct uidMapping *uidMapping, const str
         fatalf("Failed to write path /proc/%d/uid_map in buffer\n", pid);
     }
 
-    for ( i = 0; i < MAX_ID_MAPPING; i++ ) {
-        uidmap = (struct uidMapping *)&uidMapping[i];
-        if ( uidmap->size == 0 ) {
-            break;
+    map_fp = fopen(path, "w+"); // Flawfinder: ignore
+    if ( map_fp != NULL ) {
+        fprintf(map_fp, "%s", config->container.gidMap);
+        if ( fclose(map_fp) < 0 ) {
+            fatalf("Failed to write to UID map: %s\n", strerror(errno));
         }
-        map_fp = fopen(path, "w+"); // Flawfinder: ignore
-        if ( map_fp != NULL ) {
-            debugf("Write line '%i %i %i' to uid_map\n", uidmap->containerID, uidmap->hostID, uidmap->size);
-            fprintf(map_fp, "%i %i %i\n", uidmap->containerID, uidmap->hostID, uidmap->size);
-            if ( fclose(map_fp) < 0 ) {
-                fatalf("Failed to write to UID map: %s\n", strerror(errno));
-            }
-        } else {
-            fatalf("Could not write parent info to uid_map: %s\n", strerror(errno));
-        }
+    } else {
+        fatalf("Could not write parent info to uid_map: %s\n", strerror(errno));
     }
 
     free(path);
 }
 
 static void setup_userns_identity(struct cConfig *config) {
-    uid_t uidMap = config->uidMapping[0].containerID;
-    gid_t gidMap = config->gidMapping[0].containerID;
+    uid_t uidMap = config->container.targetUID;
+    gid_t gidMap = config->container.targetGID[0];
 
     if ( setgroups(0, NULL) < 0 ) {
         fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
@@ -466,27 +447,27 @@ static void setup_userns_identity(struct cConfig *config) {
 }
 
 static void user_namespace_init(struct cConfig *config, int *fork_flags) {
-    if ( (config->nsFlags & CLONE_NEWUSER) == 0 && get_nspath(config, user) == NULL ) {
+    if ( (config->namespace.flags & CLONE_NEWUSER) == 0 && config->namespace.user[0] == 0 ) {
         priv_escalate();
     } else {
-        if ( config->isSuid ) {
+        if ( config->container.isSuid ) {
             fatalf("Running setuid workflow with user namespace is not allowed\n");
         }
-        if ( get_nspath(config, user) ) {
-            if ( enter_namespace(get_nspath(config, user), CLONE_NEWUSER) < 0 ) {
+        if ( config->namespace.user[0] != 0 ) {
+            if ( enter_namespace(config->namespace.user, CLONE_NEWUSER) < 0 ) {
                 fatalf("Failed to enter in user namespace: %s\n", strerror(errno));
             }
-            if ( !config->sharedMount ) {
+            if ( !config->container.sharedMount ) {
                 setup_userns_identity(config);
             }
-        } else if ( config->sharedMount ) {
+        } else if ( config->container.sharedMount ) {
             verbosef("Create user namespace\n");
 
             if ( unshare(CLONE_NEWUSER) < 0 ) {
                 fatalf("Failed to create user namespace\n");
             }
 
-            setup_userns_mappings(&config->uidMapping[0], &config->gidMapping[0], getpid(), "deny");
+            setup_userns_mappings(config, getpid(), "deny");
         } else {
             *fork_flags |= CLONE_NEWUSER;
             priv_escalate();
@@ -495,8 +476,8 @@ static void user_namespace_init(struct cConfig *config, int *fork_flags) {
 }
 
 static char *shared_mount_namespace_init(struct cConfig *config) {
-    if ( get_nspath(config, mnt) == NULL && config->sharedMount ) {
-        unsigned long propagation = config->mountPropagation;
+    if ( config->namespace.mount[0] == 0 && config->container.sharedMount ) {
+        unsigned long propagation = config->container.mountPropagation;
 
         if ( propagation == 0 ) {
             propagation = MS_PRIVATE | MS_REC;
@@ -518,22 +499,22 @@ static char *shared_mount_namespace_init(struct cConfig *config) {
 }
 
 static void pid_namespace_init(struct cConfig *config, int *fork_flags) {
-    if ( get_nspath(config, pid) ) {
-        if ( enter_namespace(get_nspath(config, pid), CLONE_NEWPID) < 0 ) {
+    if ( config->namespace.pid[0] != 0 ) {
+        if ( enter_namespace(config->namespace.pid, CLONE_NEWPID) < 0 ) {
             fatalf("Failed to enter in pid namespace: %s\n", strerror(errno));
         }
-    } else if ( config->nsFlags & CLONE_NEWPID ) {
+    } else if ( config->namespace.flags & CLONE_NEWPID ) {
         verbosef("Create pid namespace\n");
         *fork_flags |= CLONE_NEWPID;
     }
 }
 
 static void network_namespace_init(struct cConfig *config) {
-    if ( get_nspath(config, net) ) {
-        if ( enter_namespace(get_nspath(config, net), CLONE_NEWNET) < 0 ) {
+    if ( config->namespace.network[0] != 0 ) {
+        if ( enter_namespace(config->namespace.network, CLONE_NEWNET) < 0 ) {
             fatalf("Failed to enter in network namespace: %s\n", strerror(errno));
         }
-    } else if ( config->nsFlags & CLONE_NEWNET ) {
+    } else if ( config->namespace.flags & CLONE_NEWNET ) {
         if ( create_namespace(CLONE_NEWNET) < 0 ) {
             fatalf("Failed to create network namespace: %s\n", strerror(errno));
         }
@@ -559,11 +540,11 @@ static void network_namespace_init(struct cConfig *config) {
 }
 
 static void uts_namespace_init(struct cConfig *config) {
-    if ( get_nspath(config, uts) ) {
-        if ( enter_namespace(get_nspath(config, uts), CLONE_NEWUTS) < 0 ) {
+    if ( config->namespace.uts[0] != 0 ) {
+        if ( enter_namespace(config->namespace.uts, CLONE_NEWUTS) < 0 ) {
             fatalf("Failed to enter in uts namespace: %s\n", strerror(errno));
         }
-    } else if ( config->nsFlags & CLONE_NEWUTS ) {
+    } else if ( config->namespace.flags & CLONE_NEWUTS ) {
         if ( create_namespace(CLONE_NEWUTS) < 0 ) {
             fatalf("Failed to create uts namespace: %s\n", strerror(errno));
         }
@@ -571,11 +552,11 @@ static void uts_namespace_init(struct cConfig *config) {
 }
 
 static void ipc_namespace_init(struct cConfig *config) {
-    if ( get_nspath(config, ipc) ) {
-        if ( enter_namespace(get_nspath(config, ipc), CLONE_NEWIPC) < 0 ) {
+    if ( config->namespace.ipc[0] != 0 ) {
+        if ( enter_namespace(config->namespace.ipc, CLONE_NEWIPC) < 0 ) {
             fatalf("Failed to enter in ipc namespace: %s\n", strerror(errno));
         }
-    } else if ( config->nsFlags & CLONE_NEWIPC ) {
+    } else if ( config->namespace.flags & CLONE_NEWIPC ) {
         if ( create_namespace(CLONE_NEWIPC) < 0 ) {
             fatalf("Failed to create ipc namespace: %s\n", strerror(errno));
         }
@@ -583,11 +564,11 @@ static void ipc_namespace_init(struct cConfig *config) {
 }
 
 static void cgroup_namespace_init(struct cConfig *config) {
-    if ( get_nspath(config, cgroup) ) {
-        if ( enter_namespace(get_nspath(config, cgroup), CLONE_NEWCGROUP) < 0 ) {
+    if ( config->namespace.cgroup[0] != 0 ) {
+        if ( enter_namespace(config->namespace.cgroup, CLONE_NEWCGROUP) < 0 ) {
             fatalf("Failed to enter in cgroup namespace: %s\n", strerror(errno));
         }
-    } else if ( config->nsFlags & CLONE_NEWCGROUP ) {
+    } else if ( config->namespace.flags & CLONE_NEWCGROUP ) {
         if ( create_namespace(CLONE_NEWCGROUP) < 0 ) {
             fatalf("Failed to create cgroup namespace: %s\n", strerror(errno));
         }
@@ -595,13 +576,13 @@ static void cgroup_namespace_init(struct cConfig *config) {
 }
 
 static void mount_namespace_init(struct cConfig *config) {
-    if ( get_nspath(config, mnt) ) {
-        if ( enter_namespace(get_nspath(config, mnt), CLONE_NEWNS) < 0 ) {
+    if ( config->namespace.mount[0] != 0 ) {
+        if ( enter_namespace(config->namespace.mount, CLONE_NEWNS) < 0 ) {
             fatalf("Failed to enter in mount namespace: %s\n", strerror(errno));
         }
-    } else if ( config->nsFlags & CLONE_NEWNS ) {
-        if ( !config->sharedMount ) {
-            unsigned long propagation = config->mountPropagation;
+    } else if ( config->namespace.flags & CLONE_NEWNS ) {
+        if ( !config->container.sharedMount ) {
+            unsigned long propagation = config->container.mountPropagation;
 
             if ( unshare(CLONE_FS) < 0 ) {
                 fatalf("Failed to unshare root file system: %s\n", strerror(errno));
@@ -632,9 +613,9 @@ static unsigned char is_chrooted(struct cConfig *config) {
     struct stat self_st;
     char *nsdir;
     char *root_path;
-    char *path = get_nspath(config, mnt);
+    char *path = config->namespace.mount;
 
-    if ( path == NULL ) {
+    if ( path[0] == 0 ) {
         return chrooted;
     }
 
@@ -886,6 +867,17 @@ static char *dupenv(const char *env) {
     return NULL;
 }
 
+static void exit_with_status(const char *name, int status) {
+    if ( WIFEXITED(status) ) {
+        verbosef("%s exited with status %d\n", name, WEXITSTATUS(status));
+        exit(WEXITSTATUS(status));
+    } else if ( WIFSIGNALED(status) ) {
+        verbosef("%s interrupted by signal number %d\n", name, WTERMSIG(status));
+        kill(getpid(), WTERMSIG(status));
+    }
+    fatalf("%s exited with unknown status\n", name);
+}
+
 void do_exit(int sig) {
     if ( sig == SIGUSR1 ) {
         exit(0);
@@ -903,19 +895,12 @@ __attribute__((constructor)) static void init(void) {
     int status;
     int forkfd = -1;
     int pipe_fd = -1;
-    int sfd;
     int fork_flags = 0;
     int join_chroot = 0;
     int sync_pipe[2];
     struct pollfd fds[2];
     struct fdlist *fd_before;
     struct fdlist *fd_after;
-
-    config = (struct cConfig *)malloc(sizeof(struct cConfig));
-
-    if ( config == NULL ) {
-        fatalf("Failed to allocate configuration memory: %s\n", strerror(errno));
-    }
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
     fatalf("Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
@@ -939,11 +924,15 @@ __attribute__((constructor)) static void init(void) {
 
     verbosef("Container runtime\n");
 
-    memset(config, 0, sizeof(struct cConfig));
+    // initialize starter configuration and share it with child processes
+    config = (struct cConfig *)mmap(NULL, sizeof(struct cConfig), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
+    if ( config == MAP_FAILED ) {
+        fatalf("Memory allocation failed: %s\n", strerror(errno));
+    }
 
-    config->isSuid = is_suid();
+    config->container.isSuid = is_suid();
 
-    if ( config->isSuid || geteuid() == 0 ) {
+    if ( config->container.isSuid || geteuid() == 0 ) {
         /* force kernel to load overlay module to ease detection later */
         if ( mount("none", "/", "overlay", MS_SILENT, "") < 0 ) {
             if ( errno != EINVAL ) {
@@ -954,7 +943,7 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
-    if ( config->isSuid ) {
+    if ( config->container.isSuid ) {
         debugf("Drop privileges\n");
         if ( setegid(gid) < 0 || seteuid(uid) < 0 ) {
             fatalf("Failed to drop privileges: %s\n", strerror(errno));
@@ -972,13 +961,7 @@ __attribute__((constructor)) static void init(void) {
     /* read json configuration from stdin */
     debugf("Read json configuration from pipe\n");
 
-    json_stdin = (char *)malloc(MAX_JSON_SIZE);
-    if ( json_stdin == NULL ) {
-        fatalf("Memory allocation failed: %s\n", strerror(errno));
-    }
-
-    memset(json_stdin, 0, MAX_JSON_SIZE);
-    if ( ( config->jsonConfSize = read(pipe_fd, json_stdin, MAX_JSON_SIZE - 1) ) <= 0 ) {
+    if ( ( config->json.size = read(pipe_fd, config->json.config, MAX_JSON_SIZE - 1) ) <= 0 ) {
         fatalf("Read JSON configuration from pipe failed: %s\n", strerror(errno));
     }
     close(pipe_fd);
@@ -991,17 +974,6 @@ __attribute__((constructor)) static void init(void) {
     sigaddset(&mask, SIGCHLD);
     if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
         fatalf("Blocked signals error: %s\n", strerror(errno));
-    }
-
-    /* poll on SIGCHLD signal to exit properly if scontainer exit without returning configuration */
-    sfd = signalfd(-1, &mask, 0);
-    if (sfd == -1) {
-        fatalf("Signalfd failed: %s\n", strerror(errno));
-    }
-
-    debugf("Create socketpair for smaster communication channel\n");
-    if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, master_socket) < 0 ) {
-        fatalf("Failed to create communication socket: %s\n", strerror(errno));
     }
 
     /*
@@ -1017,7 +989,7 @@ __attribute__((constructor)) static void init(void) {
          *  stage1 is responsible for singularity configuration file parsing, handle user input,
          *  read capabilities, check what namespaces is required.
          */
-        if ( config->isSuid ) {
+        if ( config->container.isSuid ) {
             priv_escalate();
             execute = prepare_scontainer_stage(SCONTAINER_STAGE1, config);
         } else {
@@ -1031,62 +1003,25 @@ __attribute__((constructor)) static void init(void) {
         fatalf("Failed to spawn scontainer stage 1\n");
     }
 
-    fds[0].fd = master_socket[0];
-    fds[0].events = POLLIN;
-    fds[0].revents = 0;
-
-    fds[1].fd = sfd;
-    fds[1].events = POLLIN;
-    fds[1].revents = 0;
-
-    debugf("Wait C and JSON runtime configuration from scontainer stage 1\n");
-
-    while ( poll(fds, 2, -1) >= 0 ) {
-        if ( fds[0].revents & POLLIN ) {
-            int ret;
-            debugf("Receiving configuration from scontainer stage 1\n");
-            if ( (ret = read(fds[0].fd, config, sizeof(struct cConfig))) != sizeof(struct cConfig) ) {
-                fatalf("Failed to read C configuration socket: %s\n", strerror(errno));
-            }
-            if ( config->nsPathSize >= MAX_NSPATH_SIZE ) {
-                fatalf("Namespace path too long > %d", MAX_NSPATH_SIZE);
-            }
-            nspath = (char *)malloc(MAX_NSPATH_SIZE);
-            if ( nspath == NULL ) {
-                fatalf("Memory allocation failed: %s\n", strerror(errno));
-            }
-            if ( (ret = read(fds[0].fd, nspath, config->nsPathSize)) != config->nsPathSize ) {
-                fatalf("Failed to read namespace path from socket: %s\n", strerror(errno));
-            }
-            if ( config->jsonConfSize >= MAX_JSON_SIZE ) {
-                fatalf("JSON configuration too big\n");
-            }
-            if ( (ret = read(fds[0].fd, json_stdin, config->jsonConfSize)) != config->jsonConfSize ) {
-                fatalf("Failed to read JSON configuration from socket: %s\n", strerror(errno));
-            }
-            json_stdin[config->jsonConfSize] = '\0';
-            break;
-        }
-        if ( fds[1].revents & POLLIN ) {
-            break;
-        }
-    }
-
-    close(sfd);
-
     debugf("Wait completion of scontainer stage1\n");
     if ( wait(&status) != stage_pid ) {
         fatalf("Can't wait child\n");
     }
 
-    if ( WIFEXITED(status) || WIFSIGNALED(status) ) {
-        if ( WEXITSTATUS(status) != 0 ) {
-            errorf("Child exit with status %d\n", WEXITSTATUS(status));
-            exit(WEXITSTATUS(status));
-        }
+    if ( WIFEXITED(status) && WEXITSTATUS(status) != 0 ) {
+        verbosef("stage 1 exited with status %d\n", WEXITSTATUS(status));
+        exit(WEXITSTATUS(status));
+    } else if ( WIFSIGNALED(status) ) {
+        verbosef("stage 1 interrupted by signal number %d\n", WTERMSIG(status));
+        kill(getpid(), WTERMSIG(status));
     }
 
-    if ( config->isInstance ) {
+    debugf("Create socketpair for smaster communication channel\n");
+    if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, master_socket) < 0 ) {
+        fatalf("Failed to create communication socket: %s\n", strerror(errno));
+    }
+
+    if ( config->container.isInstance ) {
         verbosef("Run as instance\n");
         int forked = fork();
         if ( forked == 0 ) {
@@ -1123,7 +1058,7 @@ __attribute__((constructor)) static void init(void) {
             while ( waitpid(forked, &status, 0) <= 0 ) {
                 continue;
             }
-            exit(WEXITSTATUS(status));
+            exit_with_status("instance", status);
         }
     }
 
@@ -1153,7 +1088,7 @@ __attribute__((constructor)) static void init(void) {
     }
 
     /* Use setfsuid to address issue about root_squash filesystems option */
-    if ( config->isSuid ) {
+    if ( config->container.isSuid ) {
         fix_fsuid(uid);
     }
 
@@ -1204,7 +1139,7 @@ __attribute__((constructor)) static void init(void) {
              * fork is a convenient way to apply capabilities and privileges drop
              * from single thread context before entering in stage 2
              */
-            int process = fork_ns(CLONE_FS|CLONE_FILES);
+            int process = fork_ns(CLONE_FS);
 
             if ( process == 0 ) {
                 verbosef("Spawn RPC server\n");
@@ -1227,14 +1162,14 @@ __attribute__((constructor)) static void init(void) {
         }
         return;
     } else if ( stage_pid > 0 ) {
-        if ( get_nspath(config, pid) && config->nsFlags & CLONE_NEWNS ) {
+        if ( config->namespace.pid[0] != 0 && config->namespace.flags & CLONE_NEWNS ) {
             if ( enter_namespace("/proc/self/ns/pid", CLONE_NEWPID) < 0 ) {
                 fatalf("Failed to enter in pid namespace: %s\n", strerror(errno));
             }
         }
 
         if ( forkfd >= 0 ) {
-            setup_userns_mappings(&config->uidMapping[0], &config->gidMapping[0], stage_pid, "allow");
+            setup_userns_mappings(config, stage_pid, "allow");
 
             event_start(forkfd);
             close(forkfd);
@@ -1242,7 +1177,7 @@ __attribute__((constructor)) static void init(void) {
 
         set_terminal_control(stage_pid);
 
-        config->containerPid = stage_pid;
+        config->container.pid = stage_pid;
 
         verbosef("Spawn smaster process\n");
 
@@ -1260,17 +1195,11 @@ __attribute__((constructor)) static void init(void) {
         // value not set, child has exited before sending data
         if ( sync_pipe[1] == -1 ) {
             waitpid(stage_pid, &status, 0);
-            if ( WIFEXITED(status) ) {
-                verbosef("stage 2 exited with status %d\n", WEXITSTATUS(status));
-                exit(WEXITSTATUS(status));
-            } else if ( WIFSIGNALED(status) ) {
-                verbosef("stage 2 interrupted by signal number %d\n", WTERMSIG(status));
-                kill(getpid(), WTERMSIG(status));
-            }
+            exit_with_status("stage 2", status);
         }
 
         if ( join_chroot ) {
-            if ( config->isSuid && setresuid(uid, uid, uid) < 0 ) {
+            if ( config->container.isSuid && setresuid(uid, uid, uid) < 0 ) {
                 fatalf("Failed to drop privileges permanently\n");
             }
             debugf("Wait scontainer stage 2 child process\n");
@@ -1287,17 +1216,9 @@ __attribute__((constructor)) static void init(void) {
                     fatalf("Failed to set parent as foreground process: %s\n", strerror(errno));
                 }
             }
-
-            if ( WIFEXITED(status) ) {
-                verbosef("scontainer stage 2 exited with status %d\n", WEXITSTATUS(status));
-                exit(WEXITSTATUS(status));
-            } else if ( WIFSIGNALED(status) ) {
-                verbosef("scontainer stage 2 interrupted by signal number %d\n", WTERMSIG(status));
-                kill(getpid(), WTERMSIG(status));
-            }
-            fatalf("Child exit with unknown status\n");
+            exit_with_status("stage 2", status);
         } else {
-            if ( config->isSuid && setresuid(uid, uid, 0) < 0 ) {
+            if ( config->container.isSuid && setresuid(uid, uid, 0) < 0 ) {
                 fatalf("Failed to drop privileges\n");
             }
             execute = SMASTER;
