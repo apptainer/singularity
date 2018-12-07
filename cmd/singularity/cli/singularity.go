@@ -192,27 +192,33 @@ func envAppend(flag *pflag.Flag, envvar string) {
 
 // envBool sets a bool flag if the CLI option is unset and env var is set
 func envBool(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false {
-		if err := flag.Value.Set("true"); err != nil {
-			sylog.Warningf("Unable to set %s to true", flag.Name)
-		} else {
-			flag.Changed = true
-			sylog.Debugf("Update flag Value to: %s", flag.Value)
-		}
+	if flag.Changed == true || envvar == "" {
+		return
 	}
+
+	if err := flag.Value.Set(envvar); err != nil {
+		sylog.Warningf("Unable to set %s to %s: %s", flag.Name, envvar, err)
+		return
+	}
+
+	flag.Changed = true
+	sylog.Debugf("Set %s Value to: %s", flag.Name, flag.Value)
 }
 
 // envStringNSlice writes to a string or slice flag if CLI option/argument
 // string is unset and env var is set
 func envStringNSlice(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false {
-		if err := flag.Value.Set(envvar); err != nil {
-			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
-		} else {
-			flag.Changed = true
-			sylog.Debugf("Update flag Value to: %s", flag.Value)
-		}
+	if flag.Changed == true {
+		return
 	}
+
+	if err := flag.Value.Set(envvar); err != nil {
+		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+		return
+	}
+
+	flag.Changed = true
+	sylog.Debugf("Update flag Value to: %s", flag.Value)
 }
 
 type envHandle func(*pflag.Flag, string)

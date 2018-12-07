@@ -79,16 +79,9 @@ func init() {
 	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
-	BuildCmd.Flags().StringVar(&dockerUsername, "docker-username", "", "specify a username for docker authentication")
-	BuildCmd.Flags().Lookup("docker-username").Hidden = true
-	BuildCmd.Flags().SetAnnotation("docker-username", "envkey", []string{"DOCKER_USERNAME"})
-
-	BuildCmd.Flags().StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
-	BuildCmd.Flags().Lookup("docker-password").Hidden = true
-	BuildCmd.Flags().SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
-
-	BuildCmd.Flags().BoolVar(&dockerLogin, "docker-login", false, "interactive prompt for docker authentication")
-	BuildCmd.Flags().SetAnnotation("docker-login", "envkey", []string{"DOCKER_LOGIN"})
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 
 	SingularityCmd.AddCommand(BuildCmd)
 }

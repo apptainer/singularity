@@ -95,25 +95,28 @@ func run(cmd *cobra.Command, args []string) {
 }
 
 func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
+	usernameFlag := cmd.Flags().Lookup("docker-username")
+	passwordFlag := cmd.Flags().Lookup("docker-password")
+
 	if dockerLogin {
-		if !cmd.Flags().Lookup("docker-username").Changed {
+		if !usernameFlag.Changed {
 			dockerUsername, err = sypgp.AskQuestion("Enter Docker Username: ")
 			if err != nil {
 				return
 			}
-			cmd.Flags().Lookup("docker-username").Value.Set(dockerUsername)
-			cmd.Flags().Lookup("docker-username").Changed = true
+			usernameFlag.Value.Set(dockerUsername)
+			usernameFlag.Changed = true
 		}
 
 		dockerPassword, err = sypgp.AskQuestionNoEcho("Enter Docker Password: ")
 		if err != nil {
 			return
 		}
-		cmd.Flags().Lookup("docker-password").Value.Set(dockerPassword)
-		cmd.Flags().Lookup("docker-password").Changed = true
+		passwordFlag.Value.Set(dockerPassword)
+		passwordFlag.Changed = true
 	}
 
-	if cmd.Flags().Lookup("docker-username").Changed && cmd.Flags().Lookup("docker-password").Changed {
+	if usernameFlag.Changed && passwordFlag.Changed {
 		authConf = &ocitypes.DockerAuthConfig{
 			Username: dockerUsername,
 			Password: dockerPassword,
