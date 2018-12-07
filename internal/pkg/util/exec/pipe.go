@@ -10,6 +10,8 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
+
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // Pipe execute a command with arguments and pass data over pipe
@@ -51,6 +53,16 @@ func setPipe(data []byte) (*os.File, error) {
 	fd, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM|syscall.SOCK_CLOEXEC, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create communication pipe: %s", err)
+	}
+
+	if curSize, err := syscall.GetsockoptInt(fd[0], syscall.SOL_SOCKET, syscall.SO_SNDBUF); err == nil {
+		if curSize <= 65536 {
+			sylog.Warningf("current buffer size is %d, you may encounter some issues", curSize)
+			sylog.Warningf("the minimum recomanded value is 65536, you can adjust this value with:")
+			sylog.Warningf("\"echo 65536 > /proc/sys/net/core/wmem_default\"")
+		}
+	} else {
+		return nil, fmt.Errorf("failed to determine current pipe size: %s", err)
 	}
 
 	pipeFd, err := syscall.Dup(fd[1])
