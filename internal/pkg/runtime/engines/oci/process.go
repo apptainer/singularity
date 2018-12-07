@@ -63,7 +63,7 @@ func (engine *EngineOperations) emptyProcess(masterConn net.Conn) error {
 	// block on read start given
 	data := make([]byte, 1)
 	if _, err := masterConn.Read(data); err != nil {
-		return fmt.Errorf("failed to receive ack from Smaster: %s", err)
+		return fmt.Errorf("failed to receive ack from master: %s", err)
 	}
 
 	masterConn.Close()
@@ -205,17 +205,17 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	err = syscall.Exec(args[0], args, env)
 
 	if !engine.EngineConfig.Exec {
-		// write data to just tell Smaster to not execute PostStartProcess
+		// write data to just tell master to not execute PostStartProcess
 		// in case of failure
 		if _, err := masterConn.Write([]byte("t")); err != nil {
-			sylog.Errorf("fail to send data to Smaster: %s", err)
+			sylog.Errorf("fail to send data to master: %s", err)
 		}
 	}
 
 	return fmt.Errorf("exec %s failed: %s", args[0], err)
 }
 
-// PreStartProcess will be executed in smaster context
+// PreStartProcess will be executed in master context
 func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
 	engine.EngineConfig.State.AttachSocket = filepath.Join(filepath.Dir(file.Path), "attach.sock")
@@ -286,7 +286,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	return nil
 }
 
-// PostStartProcess will execute code in smaster context after execution of container
+// PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
 	if engine.EngineConfig.State.Status == "running" {

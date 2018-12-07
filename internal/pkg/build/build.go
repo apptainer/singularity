@@ -279,7 +279,7 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	sylog.Debugf("Starting build engine")
-	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
+	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}

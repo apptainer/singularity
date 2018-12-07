@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"syscall"
-	"unsafe"
 )
 
 // Pipe execute a command with arguments and pass data over pipe
@@ -47,32 +46,20 @@ func PipeCommand(command string, args []string, env []string, data []byte) (*exe
 }
 
 // setPipe sets a pipe communication channel for JSON configuration data and returns
-// the file pointer to the read pipe
+// the file pointer of the read side
 func setPipe(data []byte) (*os.File, error) {
-	r, w, err := os.Pipe()
-
+	fd, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM|syscall.SOCK_CLOEXEC, 0)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create pipe: %s", err)
+		return nil, fmt.Errorf("failed to create communication pipe: %s", err)
 	}
 
-	rfd := r.Fd()
-	wfd := w.Fd()
-
-	pipeFd, err := syscall.Dup(*(*int)(unsafe.Pointer(&rfd)))
+	pipeFd, err := syscall.Dup(fd[1])
 	if err != nil {
 		return nil, fmt.Errorf("failed to duplicate pipe file descriptor: %s", err)
 	}
 
-	if n, err := syscall.Write(*(*int)(unsafe.Pointer(&wfd)), data); err != nil || n != len(data) {
+	if n, err := syscall.Write(fd[0], data); err != nil || n != len(data) {
 		return nil, fmt.Errorf("failed to write data to stdin: %s", err)
-	}
-
-	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, rfd, syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
-		return nil, fmt.Errorf("failed to set close-on-exec on read pipe: %s", err.Error())
-	}
-
-	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, wfd, syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
-		return nil, fmt.Errorf("failed to set close-on-exec on write pipe: %s", err.Error())
 	}
 
 	return os.NewFile(uintptr(pipeFd), "pipefd"), err

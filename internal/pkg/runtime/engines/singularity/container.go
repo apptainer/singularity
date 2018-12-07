@@ -518,7 +518,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
 
-		// in scontainer stage 1 we changed current working directory to
+		// in stage 1 we changed current working directory to
 		// sandbox image directory, just pass "." as source argument to
 		// be sure RPC mount the right sandbox image
 		if dest == c.session.RootFsPath() && flags&syscall.MS_BIND != 0 {

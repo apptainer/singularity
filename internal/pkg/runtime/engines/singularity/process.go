@@ -245,7 +245,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 }
 
-// PostStartProcess will execute code in smaster context after execution of container
+// PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")

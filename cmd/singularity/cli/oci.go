@@ -692,14 +692,14 @@ func ociCreate(containerID string) error {
 		return fmt.Errorf("failed to parse %s: %s", configJSON, err)
 	}
 
-	Env := []string{sylog.GetEnvVar(), "SRUNTIME=oci"}
+	Env := []string{sylog.GetEnvVar()}
 
 	engineConfig.EmptyProcess = emptyProcess
 	engineConfig.SyncSocket = syncSocketPath
 
 	commonConfig := &config.Common{
 		ContainerID:  containerID,
-		EngineName:   "oci",
+		EngineName:   oci.Name,
 		EngineConfig: engineConfig,
 	}
 
@@ -737,7 +737,7 @@ func ociExec(containerID string, cmdArgs []string) error {
 		sylog.Fatalf("%s", err)
 	}
 
-	Env := []string{sylog.GetEnvVar(), "SRUNTIME=oci"}
+	Env := []string{sylog.GetEnvVar()}
 
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
 	return exec.Pipe(starter, []string{procName}, Env, configData)

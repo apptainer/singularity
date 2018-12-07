@@ -73,13 +73,12 @@ struct cConfig *config;
 int rpc_socket[2] = {-1, -1};
 int master_socket[2] = {-1, -1};
 
-#define SCONTAINER_STAGE1   1
-#define SCONTAINER_STAGE2   2
-#define SMASTER             4
-#define RPC_SERVER          5
+#define STAGE1      1
+#define STAGE2      2
+#define MASTER      4
+#define RPC_SERVER  5
 
 unsigned char execute;
-char *sruntime;
 
 typedef struct fork_state_s {
     sigjmp_buf env;
@@ -124,14 +123,14 @@ static void set_parent_death_signal(int signo) {
     }
 }
 
-static int prepare_scontainer_stage(int stage, struct cConfig *config) {
+static int prepare_stage(int stage, struct cConfig *config) {
     uid_t uid = getuid();
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
 
     set_parent_death_signal(SIGKILL);
 
-    debugf("Entering in scontainer stage %d\n", stage);
+    debugf("Entering in stage %d\n", stage);
 
     header.version = LINUX_CAPABILITY_VERSION;
     header.pid = 0;
@@ -491,7 +490,7 @@ static char *shared_mount_namespace_init(struct cConfig *config) {
         if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
             fatalf("Failed to set mount propagation: %s\n", strerror(errno));
         }
-        /* set shared mount propagation to share mount points between smaster and container process */
+        /* set shared mount propagation to share mount points between master and container process */
         if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
             fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
         }
@@ -594,12 +593,12 @@ static void mount_namespace_init(struct cConfig *config) {
                 fatalf("Failed to set mount propagation: %s\n", strerror(errno));
             }
         } else {
-            /* create a namespace for container process to separate smaster during pivot_root */
+            /* create a namespace for container process to separate master during pivot_root */
             if ( create_namespace(CLONE_NEWNS) < 0 ) {
                 fatalf("Failed to create mount namespace: %s\n", strerror(errno));
             }
 
-            /* set shared propagation to propagate few mount points to smaster */
+            /* set shared propagation to propagate few mount points to master */
             if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
                 fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
             }
@@ -757,7 +756,7 @@ static void cleanup_fd(struct fdlist *fd_before, struct fdlist *fd_after) {
     }
 
     /*
-     *  close unattended file descriptors opened during scontainer stage 1
+     *  close unattended file descriptors opened during stage 1
      *  execution, that may not be accurate depending of fs operations done
      *  in stage 1, but should work for most engines.
      */
@@ -843,7 +842,7 @@ static void event_start(int fd) {
     unsigned long long counter = 1;
 
     if ( write(fd, &counter, sizeof(counter)) != sizeof(counter) ) {
-        fatalf("Failed to synchronize with smaster: %s\n", strerror(errno));
+        fatalf("Failed to synchronize with master: %s\n", strerror(errno));
     }
 }
 
@@ -907,7 +906,6 @@ __attribute__((constructor)) static void init(void) {
 #endif
 
     loglevel = dupenv("SINGULARITY_MESSAGELEVEL");
-    sruntime = dupenv("SRUNTIME");
 
     pipe_fd_env = getenv("PIPE_EXEC_FD");
     if ( pipe_fd_env != NULL ) {
@@ -968,7 +966,7 @@ __attribute__((constructor)) static void init(void) {
 
     fd_before = list_fd();
 
-    /* block SIGCHLD signal handled later by scontainer/smaster */
+    /* block SIGCHLD signal handled later by stage 2/master */
     debugf("Set child signal mask\n");
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
@@ -991,19 +989,19 @@ __attribute__((constructor)) static void init(void) {
          */
         if ( config->container.isSuid ) {
             priv_escalate();
-            execute = prepare_scontainer_stage(SCONTAINER_STAGE1, config);
+            execute = prepare_stage(STAGE1, config);
         } else {
             set_parent_death_signal(SIGKILL);
-            execute = SCONTAINER_STAGE1;
+            execute = STAGE1;
         }
 
-        verbosef("Spawn scontainer stage 1\n");
+        verbosef("Spawn stage 1\n");
         return;
     } else if ( stage_pid < 0 ) {
-        fatalf("Failed to spawn scontainer stage 1\n");
+        fatalf("Failed to spawn stage 1\n");
     }
 
-    debugf("Wait completion of scontainer stage1\n");
+    debugf("Wait completion of stage1\n");
     if ( wait(&status) != stage_pid ) {
         fatalf("Can't wait child\n");
     }
@@ -1016,7 +1014,7 @@ __attribute__((constructor)) static void init(void) {
         kill(getpid(), WTERMSIG(status));
     }
 
-    debugf("Create socketpair for smaster communication channel\n");
+    debugf("Create socketpair for master communication channel\n");
     if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, master_socket) < 0 ) {
         fatalf("Failed to create communication socket: %s\n", strerror(errno));
     }
@@ -1076,15 +1074,17 @@ __attribute__((constructor)) static void init(void) {
     if ( fork_flags == CLONE_NEWUSER ) {
         forkfd = eventfd(0, 0);
         if ( forkfd < 0 ) {
-            fatalf("Failed to create fork sync pipe between smaster and child: %s\n", strerror(errno));
+            fatalf("Failed to create fork sync pipe between master and child: %s\n", strerror(errno));
         }
     }
 
     join_chroot = is_chrooted(config);
 
-    debugf("Create RPC socketpair for communication between scontainer and RPC server\n");
-    if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
-        fatalf("Failed to create communication socket: %s\n", strerror(errno));
+    if ( !join_chroot ) {
+        debugf("Create RPC socketpair for communication between stage 2 and RPC server\n");
+        if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
+            fatalf("Failed to create communication socket: %s\n", strerror(errno));
+        }
     }
 
     /* Use setfsuid to address issue about root_squash filesystems option */
@@ -1092,7 +1092,7 @@ __attribute__((constructor)) static void init(void) {
         fix_fsuid(uid);
     }
 
-    /* sync smaster and near child with an eventfd */
+    /* sync master and near child with an eventfd */
     if ( pipe(sync_pipe) < 0 ) {
         fatalf("Failed to create sync pipe: %s\n", strerror(errno));
     }
@@ -1125,8 +1125,6 @@ __attribute__((constructor)) static void init(void) {
 
         mount_namespace_init(config);
 
-        close(rpc_socket[0]);
-
         close(sync_pipe[0]);
         sync_pipe[0] = 0;
         if ( write(sync_pipe[1], &sync_pipe[0], sizeof(int)) < 0 ) {
@@ -1135,6 +1133,8 @@ __attribute__((constructor)) static void init(void) {
         close(sync_pipe[1]);
 
         if ( !join_chroot ) {
+            close(rpc_socket[0]);
+
             /*
              * fork is a convenient way to apply capabilities and privileges drop
              * from single thread context before entering in stage 2
@@ -1147,18 +1147,21 @@ __attribute__((constructor)) static void init(void) {
             } else if ( process > 0 ) {
                 int status;
 
-                execute = prepare_scontainer_stage(SCONTAINER_STAGE2, config);
+                execute = prepare_stage(STAGE2, config);
 
                 if ( wait(&status) != process ) {
                     fatalf("Error while waiting RPC server: %s\n", strerror(errno));
+                }
+                if ( rpc_socket[1] != -1 ) {
+                    close(rpc_socket[1]);
                 }
             } else {
                 fatalf("Fork failed: %s\n", strerror(errno));
             }
         } else {
-            verbosef("Spawn scontainer stage 2\n");
+            verbosef("Spawn stage 2\n");
             verbosef("Don't execute RPC server, joining instance\n");
-            execute = prepare_scontainer_stage(SCONTAINER_STAGE2, config);
+            execute = prepare_stage(STAGE2, config);
         }
         return;
     } else if ( stage_pid > 0 ) {
@@ -1179,10 +1182,9 @@ __attribute__((constructor)) static void init(void) {
 
         config->container.pid = stage_pid;
 
-        verbosef("Spawn smaster process\n");
+        verbosef("Spawn master process\n");
 
         close(master_socket[1]);
-        close(rpc_socket[1]);
 
         // wait child finish namespaces initialization
         close(sync_pipe[1]);
@@ -1202,7 +1204,7 @@ __attribute__((constructor)) static void init(void) {
             if ( config->container.isSuid && setresuid(uid, uid, uid) < 0 ) {
                 fatalf("Failed to drop privileges permanently\n");
             }
-            debugf("Wait scontainer stage 2 child process\n");
+            debugf("Wait stage 2 child process\n");
             waitpid(stage_pid, &status, 0);
 
 		    pid_t pgrp = getpgrp();
@@ -1218,10 +1220,12 @@ __attribute__((constructor)) static void init(void) {
             }
             exit_with_status("stage 2", status);
         } else {
+            close(rpc_socket[1]);
+
             if ( config->container.isSuid && setresuid(uid, uid, 0) < 0 ) {
                 fatalf("Failed to drop privileges\n");
             }
-            execute = SMASTER;
+            execute = MASTER;
             return;
         }
     }

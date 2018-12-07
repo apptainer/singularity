@@ -8,7 +8,6 @@ package singularity
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -412,7 +411,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 }
 
 // PrepareConfig checks and prepares the runtime engine config
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
 	}

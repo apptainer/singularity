@@ -21,17 +21,12 @@ import (
 )
 
 // Master initializes a runtime engine and runs it
-func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, jsonConfig []byte) {
+func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engine *engines.Engine) {
 	var fatal error
 	var status syscall.WaitStatus
 
 	fatalChan := make(chan error, 1)
 	ppid := os.Getppid()
-
-	engine, err := engines.NewEngine(jsonConfig)
-	if err != nil {
-		sylog.Fatalf("failed to initialize runtime: %s\n", err)
-	}
 
 	go func() {
 		comm := os.NewFile(uintptr(rpcSocket), "socket")
@@ -102,6 +97,8 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, json
 	}()
 
 	go func() {
+		var err error
+
 		// catch all signals
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals)

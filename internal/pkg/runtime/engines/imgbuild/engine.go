@@ -7,7 +7,6 @@ package imgbuild
 
 import (
 	"fmt"
-	"net"
 	"syscall"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -35,7 +34,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 }
 
 // PrepareConfig validates/prepares EngineConfig setup
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 

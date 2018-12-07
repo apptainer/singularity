@@ -23,6 +23,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
+func getEngine(jsonConfig []byte) *engines.Engine {
+	engine, err := engines.NewEngine(jsonConfig)
+	if err != nil {
+		sylog.Fatalf("failed to initialize runtime: %s\n", err)
+	}
+	return engine
+}
+
 func startup() {
 	loglevel := os.Getenv("SINGULARITY_MESSAGELEVEL")
 	os.Clearenv()
@@ -37,20 +45,20 @@ func startup() {
 	jsonConfig := sconfig.GetJSONConfig()
 
 	switch C.execute {
-	case C.SCONTAINER_STAGE1:
-		sylog.Verbosef("Execute scontainer stage 1\n")
-		starter.Stage(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), sconfig, jsonConfig)
-	case C.SCONTAINER_STAGE2:
-		sylog.Verbosef("Execute scontainer stage 2\n")
+	case C.STAGE1:
+		sylog.Verbosef("Execute stage 1\n")
+		starter.Stage(int(C.STAGE1), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
+	case C.STAGE2:
+		sylog.Verbosef("Execute stage 2\n")
 		if err := sconfig.Release(); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 
 		mainthread.Execute(func() {
-			starter.Stage(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), sconfig, jsonConfig)
+			starter.Stage(int(C.STAGE2), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
 		})
-	case C.SMASTER:
-		sylog.Verbosef("Execute smaster process\n")
+	case C.MASTER:
+		sylog.Verbosef("Execute master process\n")
 
 		isInstance := sconfig.GetInstance()
 		pid := sconfig.GetContainerPid()
@@ -59,7 +67,7 @@ func startup() {
 			sylog.Fatalf("%s", err)
 		}
 
-		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, jsonConfig)
+		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, getEngine(jsonConfig))
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 
@@ -67,7 +75,8 @@ func startup() {
 			sylog.Fatalf("%s", err)
 		}
 
-		starter.RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
+		name := engines.GetName(jsonConfig)
+		starter.RPCServer(int(C.rpc_socket[1]), name)
 	}
 	sylog.Fatalf("You should not be there\n")
 }
