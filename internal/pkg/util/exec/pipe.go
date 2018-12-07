@@ -58,7 +58,7 @@ func setPipe(data []byte) (*os.File, error) {
 	if curSize, err := syscall.GetsockoptInt(fd[0], syscall.SOL_SOCKET, syscall.SO_SNDBUF); err == nil {
 		if curSize <= 65536 {
 			sylog.Warningf("current buffer size is %d, you may encounter some issues", curSize)
-			sylog.Warningf("the minimum recomanded value is 65536, you can adjust this value with:")
+			sylog.Warningf("the minimum recommended value is 65536, you can adjust this value with:")
 			sylog.Warningf("\"echo 65536 > /proc/sys/net/core/wmem_default\"")
 		}
 	} else {
