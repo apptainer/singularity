@@ -196,8 +196,8 @@ func envBool(flag *pflag.Flag, envvar string) {
 		return
 	}
 
-	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Warningf("Unable to set %s to %s: %s", flag.Name, envvar, err)
+	if err := flag.Value.Set("true"); err != nil {
+		sylog.Warningf("Unable to set %s to true", flag.Name)
 		return
 	}
 
