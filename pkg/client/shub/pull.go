@@ -98,6 +98,9 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 
 	bodySize := resp.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
+	if sylog.GetLevel() < 0 {
+		bar.NotPrint = true
+	}
 	bar.ShowTimeLeft = true
 	bar.ShowSpeed = true
 	bar.Start()
