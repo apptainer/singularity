@@ -201,9 +201,9 @@ func envBool(flag *pflag.Flag, envvar string) {
 	}
 
 	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Debugf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+		sylog.Debugf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
 		if err := flag.Value.Set("true"); err != nil {
-			sylog.Warningf("Unable to set %s to true", flag.Name)
+			sylog.Warningf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
 			return
 		}
 	}
@@ -220,12 +220,12 @@ func envStringNSlice(flag *pflag.Flag, envvar string) {
 	}
 
 	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+		sylog.Debugf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
 		return
 	}
 
 	flag.Changed = true
-	sylog.Debugf("Update flag Value to: %s", flag.Value)
+	sylog.Debugf("Set %s Value to: %s", flag.Name, flag.Value)
 }
 
 type envHandle func(*pflag.Flag, string)
