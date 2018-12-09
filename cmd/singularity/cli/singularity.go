@@ -220,7 +220,7 @@ func envStringNSlice(flag *pflag.Flag, envvar string) {
 	}
 
 	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Debugf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
+		sylog.Warningf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
 		return
 	}
 
