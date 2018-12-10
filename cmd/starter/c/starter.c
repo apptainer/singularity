@@ -419,7 +419,7 @@ static void setup_userns_mappings(struct cConfig *config, pid_t pid, const char 
 
     map_fp = fopen(path, "w+"); // Flawfinder: ignore
     if ( map_fp != NULL ) {
-        fprintf(map_fp, "%s", config->container.gidMap);
+        fprintf(map_fp, "%s", config->container.uidMap);
         if ( fclose(map_fp) < 0 ) {
             fatalf("Failed to write to UID map: %s\n", strerror(errno));
         }
