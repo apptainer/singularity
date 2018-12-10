@@ -19,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image"
-	"github.com/sylabs/singularity/internal/pkg/network"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -30,8 +29,15 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
+
+// defaultCNIConfPath is the default directory to CNI network configuration files
+var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
+
+// defaultCNIPluginPath is the default directory to CNI plugins executables
+var defaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
 type container struct {
 	engine           *EngineOperations
@@ -171,9 +177,17 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
 			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
 
-			cniPath := &network.CNIPath{
-				Conf:   engine.EngineConfig.File.CniConfPath,
-				Plugin: engine.EngineConfig.File.CniPluginPath,
+			cniPath := &network.CNIPath{}
+
+			if engine.EngineConfig.File.CniConfPath != "" {
+				cniPath.Conf = engine.EngineConfig.File.CniConfPath
+			} else {
+				cniPath.Conf = defaultCNIConfPath
+			}
+			if engine.EngineConfig.File.CniPluginPath != "" {
+				cniPath.Plugin = engine.EngineConfig.File.CniPluginPath
+			} else {
+				cniPath.Plugin = defaultCNIPluginPath
 			}
 
 			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)

@@ -3,15 +3,24 @@ package network
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/types"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
+)
+
+type netError string
+
+func (e netError) Error() string { return string(e) }
+
+const (
+	// NoCniConfError corresponds to a missing CNI configuration path
+	NoCniConfError = netError("no CNI configuration path provided")
+	// NoCniPluginError corresponds to a missing CNI plugin path
+	NoCniPluginError = netError("no CNI plugin path provided")
 )
 
 // CNIPath contains path to CNI configuration directory and path to executable
@@ -46,27 +55,23 @@ type portMap struct {
 	protocol      string
 }
 
-// DefaultCNIConfPath is the default directory to CNI network configuration files
-var DefaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
-
-// DefaultCNIPluginPath is the default directory to CNI plugins executables
-var DefaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
-
 // AvailableNetworks lists configured networks in configuration path directory
 // provided by cniPath
 func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 	networks := make([]string, 0)
-	cniConfPath := DefaultCNIConfPath
 
-	if cniPath != nil {
-		cniConfPath = cniPath.Conf
+	if cniPath == nil {
+		return networks, NoCniConfError
+	}
+	if cniPath.Conf == "" {
+		return networks, NoCniConfError
 	}
 
-	files, err := libcni.ConfFiles(cniConfPath, []string{".conf", ".json", ".conflist"})
+	files, err := libcni.ConfFiles(cniPath.Conf, []string{".conf", ".json", ".conflist"})
 	if err != nil {
 		return nil, err
 	} else if len(files) == 0 {
-		return nil, libcni.NoConfigsFoundError{Dir: cniConfPath}
+		return nil, libcni.NoConfigsFoundError{Dir: cniPath.Conf}
 	}
 	sort.Strings(files)
 
@@ -92,23 +97,20 @@ func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 // network interfaces in container
 func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIPath) (*Setup, error) {
 	nlist := make([]config, 0)
-	finalCNIPath := &CNIPath{
-		Conf:   DefaultCNIConfPath,
-		Plugin: DefaultCNIPluginPath,
-	}
 	id := containerID
 
 	if id == "" {
 		id = strconv.Itoa(os.Getpid())
 	}
 
-	if cniPath != nil {
-		if cniPath.Conf != "" {
-			finalCNIPath.Conf = cniPath.Conf
-		}
-		if cniPath.Plugin != "" {
-			finalCNIPath.Plugin = cniPath.Plugin
-		}
+	if cniPath == nil {
+		return nil, NoCniConfError
+	}
+	if cniPath.Conf == "" {
+		return nil, NoCniConfError
+	}
+	if cniPath.Plugin == "" {
+		return nil, NoCniPluginError
 	}
 
 	for _, network := range networks {
@@ -121,7 +123,7 @@ func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIP
 
 	return &Setup{
 			configs:     nlist,
-			cniPath:     finalCNIPath,
+			cniPath:     cniPath,
 			netNS:       netNS,
 			containerID: id,
 		},
