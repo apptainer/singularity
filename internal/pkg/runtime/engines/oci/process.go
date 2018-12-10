@@ -316,7 +316,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	defer l.Close()
 
 	outputWriters = &copy.MultiWriter{}
-	outputWriters.Add(logger.NewWriter("stdout", false))
+	outputWriters.Add(logger.NewWriter("stdout", true))
 
 	if hasTerminal {
 		stdout = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "stream-master-pts")
@@ -335,7 +335,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 
 	if stderr != nil {
 		errorWriters = &copy.MultiWriter{}
-		errorWriters.Add(logger.NewWriter("stderr", false))
+		errorWriters.Add(logger.NewWriter("stderr", true))
 		errorWriters.Add(os.Stderr)
 	}
 
