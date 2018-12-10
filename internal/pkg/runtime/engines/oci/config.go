@@ -33,7 +33,7 @@ type EngineConfig struct {
 	Cgroups       *cgroups.Manager `json:"-"`
 }
 
-// NewConfig returns singularity.EngineConfig with a parsed FileConfig
+// NewConfig returns an oci.EngineConfig.
 func NewConfig() *EngineConfig {
 	ret := &EngineConfig{
 		OciConfig: &oci.Config{},
