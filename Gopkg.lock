@@ -35,11 +35,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1b2bc2c6b2b5032cf8d833256ea17fec3e904478b51467ca107f8fe42fd10eea"
+  digest = "1:184144d72965bf3851a318c1cc6667c67f8eb84af4f426705e3d01833699dfbe"
   name = "github.com/containerd/cgroups"
   packages = ["."]
   pruneopts = "UT"
-  revision = "3bc6dde829bc2dc8d4097ce8ad5acc275de3df06"
+  revision = "65ce98b3dfeb0a9a8fecd7e4ebffb24ad0bfe28f"
 
 [[projects]]
   branch = "master"
