@@ -70,6 +70,7 @@ struct container {
     unsigned char isInstance;
     unsigned long mountPropagation;
     unsigned char sharedMount;
+    unsigned char joinMount;
 };
 
 struct json {

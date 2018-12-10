@@ -339,7 +339,13 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	starterConfig.SetJoinMount(true)
+
 	// set namespaces to join
+	if err := file.GetNamespaces(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
+
 	if err := starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
 		return err
 	}

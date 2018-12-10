@@ -106,6 +106,23 @@ func (c *Config) GetSharedMount() bool {
 	return false
 }
 
+// SetJoinMount sets if container process join a mount namespace
+func (c *Config) SetJoinMount(join bool) {
+	if join {
+		c.config.container.joinMount = C.uchar(1)
+	} else {
+		c.config.container.joinMount = C.uchar(0)
+	}
+}
+
+// GetJoinMount returns if container process join a mount namespace
+func (c *Config) GetJoinMount() bool {
+	if c.config.container.joinMount == 1 {
+		return true
+	}
+	return false
+}
+
 // SetMountPropagation sets root filesystem mount propagation
 func (c *Config) SetMountPropagation(propagation string) {
 	var flags uintptr
@@ -182,12 +199,15 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 
 // AddGIDMappings sets user namespace GID mapping
 func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
+	var targetGids []int
 	gidMap := ""
-	for i, gid := range gids {
-		if i == 0 {
-			c.SetTargetGID([]int{int(gid.ContainerID)})
-		}
+	for _, gid := range gids {
+		targetGids = append(targetGids, int(gid.ContainerID))
 		gidMap = gidMap + fmt.Sprintf("%d %d %d\n", gid.ContainerID, gid.HostID, gid.Size)
+	}
+
+	if len(targetGids) != 0 {
+		c.SetTargetGID(targetGids)
 	}
 
 	l := len(gidMap)

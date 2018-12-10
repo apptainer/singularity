@@ -187,6 +187,8 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 			}
 			e.EngineConfig.InputStreams = [2]int{int(w.Fd()), int(r.Fd())}
 		}
+	} else {
+		starterConfig.SetJoinMount(true)
 	}
 
 	return nil

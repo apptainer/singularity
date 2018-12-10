@@ -303,6 +303,9 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 				if err = file.Update(); err != nil {
 					return
 				}
+				if err = file.MountNamespaces(); err != nil {
+					return
+				}
 				if err = syscall.Setresgid(gid, gid, 0); err != nil {
 					err = fmt.Errorf("failed to escalate gid privileges")
 					return
@@ -316,7 +319,10 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		return file.Update()
+		if err := file.Update(); err != nil {
+			return err
+		}
+		return file.MountNamespaces()
 	}
 	return nil
 }

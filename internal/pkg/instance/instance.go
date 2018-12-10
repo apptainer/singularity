@@ -15,6 +15,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
+
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
@@ -204,6 +208,14 @@ func (i *File) PrivilegedPath() bool {
 // Delete deletes instance file
 func (i *File) Delete() error {
 	path := filepath.Dir(i.Path)
+
+	nspath := filepath.Join(path, "ns")
+	if _, err := os.Stat(nspath); err == nil {
+		if err := syscall.Unmount(nspath, syscall.MNT_DETACH); err != nil {
+			sylog.Errorf("can't umount %s: %s", nspath, err)
+		}
+	}
+
 	return os.RemoveAll(path)
 }
 
@@ -213,6 +225,7 @@ func (i *File) Update() error {
 	if err != nil {
 		return err
 	}
+
 	path := filepath.Dir(i.Path)
 
 	oldumask := syscall.Umask(0)
@@ -233,6 +246,96 @@ func (i *File) Update() error {
 	}
 
 	return file.Sync()
+}
+
+// MountNamespaces binds /proc/<pid>/ns directory into instance folder
+func (i *File) MountNamespaces() error {
+	path := filepath.Join(filepath.Dir(i.Path), "ns")
+
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	if err := os.Mkdir(path, 0755); err != nil {
+		return err
+	}
+
+	nspath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return err
+	}
+
+	src := fmt.Sprintf("/proc/%d/ns", i.Pid)
+	if err := syscall.Mount(src, nspath, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("mounting %s in instance folder failed: %s", src, err)
+	}
+
+	return nil
+}
+
+// GetNamespaces fills instance namespaces path
+func (i *File) GetNamespaces(configNs []specs.LinuxNamespace) error {
+	path := filepath.Join(filepath.Dir(i.Path), "ns")
+	nspath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return err
+	}
+	nsBase := filepath.Join(fmt.Sprintf("/proc/%d/root", i.PPid), nspath)
+
+	procPath := fmt.Sprintf("/proc/%d/cmdline", i.PPid)
+
+	if i.PrivilegedPath() {
+		var st syscall.Stat_t
+
+		if err := syscall.Stat(procPath, &st); err != nil {
+			return err
+		}
+		if st.Uid != 0 || st.Gid != 0 {
+			return fmt.Errorf("not an instance process")
+		}
+
+		uid := os.Geteuid()
+		taskPath := fmt.Sprintf("/proc/%d/task", i.PPid)
+		if err := syscall.Stat(taskPath, &st); err != nil {
+			return err
+		}
+		if int(st.Uid) != uid {
+			return fmt.Errorf("you doesn't own the instance")
+		}
+	}
+
+	data, err := ioutil.ReadFile(procPath)
+	if err != nil {
+		return err
+	}
+
+	cmdline := string(data[:len(data)-1])
+	procName := ProcName(i.Name, i.User)
+	if cmdline != procName {
+		return fmt.Errorf("no command line match found")
+	}
+
+	nsMap := map[specs.LinuxNamespaceType]string{
+		specs.PIDNamespace:     "pid",
+		specs.UTSNamespace:     "uts",
+		specs.IPCNamespace:     "ipc",
+		specs.MountNamespace:   "mnt",
+		specs.CgroupNamespace:  "cgroup",
+		specs.NetworkNamespace: "net",
+		specs.UserNamespace:    "user",
+	}
+
+	for i, n := range configNs {
+		ns, ok := nsMap[n.Type]
+		if !ok {
+			configNs[i].Path = ""
+			continue
+		}
+		if n.Path != "" {
+			configNs[i].Path = filepath.Join(nsBase, ns)
+		}
+	}
+
+	return nil
 }
 
 // SetLogFile replaces stdout/stderr streams and redirect content

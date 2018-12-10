@@ -679,7 +679,23 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return system.Points.AddImage(mount.RootfsTag, imageObject.Source, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+	if err := system.Points.AddImage(
+		mount.RootfsTag,
+		imageObject.Source,
+		c.session.RootFsPath(),
+		mountType,
+		flags,
+		imageObject.Offset,
+		imageObject.Size,
+	); err != nil {
+		return err
+	}
+
+	if imageObject.Writable {
+		return system.Points.AddPropagation(mount.DevTag, c.session.RootFsPath(), syscall.MS_UNBINDABLE)
+	}
+
+	return nil
 }
 
 func (c *container) overlayUpperWork(system *mount.System) error {
@@ -771,11 +787,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				return err
 			}
 			flags &^= syscall.MS_RDONLY
-
-			err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
-			if err != nil {
-				return err
-			}
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
@@ -806,6 +817,11 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			return fmt.Errorf("unknown image format")
 		}
 
+		err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
+		if err != nil {
+			return err
+		}
+
 		if imageObject.Writable && !hasUpper {
 			upper := filepath.Join(dst, "upper")
 			work := filepath.Join(dst, "work")
@@ -827,7 +843,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 	}
 
-	return nil
+	return system.Points.AddPropagation(mount.DevTag, c.session.FinalPath(), syscall.MS_UNBINDABLE)
 }
 
 func (c *container) addKernelMount(system *mount.System) error {

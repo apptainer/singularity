@@ -606,54 +606,6 @@ static void mount_namespace_init(struct cConfig *config) {
     }
 }
 
-static unsigned char is_chrooted(struct cConfig *config) {
-    unsigned char chrooted = 0;
-    struct stat root_st;
-    struct stat self_st;
-    char *nsdir;
-    char *root_path;
-    char *path = config->namespace.mount;
-
-    if ( path[0] == 0 ) {
-        return chrooted;
-    }
-
-    nsdir = strdup(path);
-
-    if ( nsdir == NULL ) {
-        fatalf("Failed to allocate memory: %s\n", strerror(errno));
-    }
-
-    root_path = (char *)malloc(PATH_MAX);
-
-    if ( root_path == NULL ) {
-        fatalf("Failed to allocate memory: %s\n", strerror(errno));
-    }
-
-    memset(root_path, 0, PATH_MAX);
-
-    if ( snprintf(root_path, PATH_MAX-1, "%s/../root", dirname(nsdir)) < 0 ) {
-        fatalf("Failed to compute path for chroot check\n");
-    }
-
-    if ( stat("/proc/self/root", &self_st) == 0 ) {
-        if ( stat(root_path, &root_st) == 0 ) {
-            if ( self_st.st_dev != root_st.st_dev || self_st.st_ino != root_st.st_ino ) {
-                chrooted = 1;
-            }
-        } else {
-            fatalf("Stat on %s failed: %s\n", root_path, strerror(errno));
-        }
-    } else {
-        fatalf("Stat on /proc/self/root failed: %s\n", strerror(errno));
-    }
-
-    free(nsdir);
-    free(root_path);
-
-    return chrooted;
-}
-
 static unsigned char is_suid(void) {
     ElfW(auxv_t) *auxv;
     unsigned char suid = 0;
@@ -1078,9 +1030,7 @@ __attribute__((constructor)) static void init(void) {
         }
     }
 
-    join_chroot = is_chrooted(config);
-
-    if ( !join_chroot ) {
+    if ( !config->container.joinMount ) {
         debugf("Create RPC socketpair for communication between stage 2 and RPC server\n");
         if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, rpc_socket) < 0 ) {
             fatalf("Failed to create communication socket: %s\n", strerror(errno));
@@ -1132,7 +1082,7 @@ __attribute__((constructor)) static void init(void) {
         }
         close(sync_pipe[1]);
 
-        if ( !join_chroot ) {
+        if ( !config->container.joinMount ) {
             close(rpc_socket[0]);
 
             /*
@@ -1200,7 +1150,7 @@ __attribute__((constructor)) static void init(void) {
             exit_with_status("stage 2", status);
         }
 
-        if ( join_chroot ) {
+        if ( config->container.joinMount ) {
             if ( config->container.isSuid && setresuid(uid, uid, uid) < 0 ) {
                 fatalf("Failed to drop privileges permanently\n");
             }
