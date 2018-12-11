@@ -1424,7 +1424,11 @@ func (c *container) addCwdMount(system *mount.System) error {
 	if c.engine.EngineConfig.OciConfig.Process == nil {
 		return nil
 	}
-	cwd = c.engine.EngineConfig.OciConfig.Process.Cwd
+	cwd, err := os.Getwd()
+	if err != nil {
+		sylog.Warningf("Could not get container working driectory: %s", err)
+		return nil
+	}
 	if err := os.Chdir(cwd); err != nil {
 		sylog.Warningf("Could not set container working directory %s: %s", cwd, err)
 		return nil
