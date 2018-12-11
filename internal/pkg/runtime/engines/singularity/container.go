@@ -1433,10 +1433,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Warningf("Could not set container working directory %s: %s", cwd, err)
 		return nil
 	}
-	current, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("could not obtain current directory path: %s", err)
-	}
+	cwd = c.engine.EngineConfig.OciConfig.Process.Cwd
 	switch current {
 	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin":
 		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)
