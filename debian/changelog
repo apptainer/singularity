@@ -1,3 +1,10 @@
+singularity-container (2.6.1-1) unstable; urgency=high
+
+  * disables instance features for mount commands, disables instance join for 
+    start command, and disables daemon start for action commands
+
+ -- Gregory M. Kurtzer <gmkurtzer@gmail.com>  Tue, 11 Dec 2018 09:25:53 -0700
+ 
 singularity-container (2.6.0-1) unstable; urgency=high
 
   * Allow admin to specify a non-standard location for mksquashfs binary at

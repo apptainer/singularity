@@ -12,6 +12,12 @@ and changes prior to that are (unfortunately) done retrospectively. Critical ite
  - migration guidance (how to convert images?)
  - changed behaviour (recipe sections work differently)
 
+## [v2.6.1]
+
+### [Security related fixes](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2018-1929)
+ - disables instance features for mount commands, disables instance join for 
+   start command, and disables daemon start for action commands
+
 ## [v2.6.0]
 
 ### Bug fixes
