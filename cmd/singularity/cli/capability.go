@@ -8,6 +8,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -43,13 +44,16 @@ func init() {
 
 // CapabilityCmd is the capability command
 var CapabilityCmd = &cobra.Command{
-	Run:                   nil,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return errors.New("Invalid command")
+	},
 	DisableFlagsInUseLine: true,
 
-	Use:     docs.CapabilityUse,
-	Short:   docs.CapabilityShort,
-	Long:    docs.CapabilityLong,
-	Example: docs.CapabilityExample,
+	Use:           docs.CapabilityUse,
+	Short:         docs.CapabilityShort,
+	Long:          docs.CapabilityLong,
+	Example:       docs.CapabilityExample,
+	SilenceErrors: true,
 }
 
 func manageCap(capStr string, cmd int) {
