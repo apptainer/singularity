@@ -97,6 +97,9 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 
 	bodySize := res.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
+	if sylog.GetLevel() < 0 {
+		bar.NotPrint = true
+	}
 	bar.ShowTimeLeft = true
 	bar.ShowSpeed = true
 	bar.Start()
