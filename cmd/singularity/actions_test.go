@@ -336,6 +336,7 @@ func testPersistentOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
+
 	// Create dirfs for squashfs
 	squashDir, err := ioutil.TempDir(cwd, "overlay_test")
 	if err != nil {
@@ -364,6 +365,7 @@ func testPersistentOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(squashfsImage)
+
 	//  Create the overlay ext3 fs
 	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
 	cmd.Stdout = &out
@@ -378,6 +380,7 @@ func testPersistentOverlay(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer os.Remove("ext3_fs.img")
+
 	// create a file dir
 	t.Run("overlay_create", test.WithPrivilege(func(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"touch", "/dir_overlay"})
@@ -463,20 +466,20 @@ func TestSingularityActions(t *testing.T) {
 		t.Fatalf("unexpected failure: %v", err)
 	}
 	defer os.Remove(imagePath)
-	// if b, err := imageBuild(opts, appsImage, "../../examples/apps/Singularity"); err != nil {
-	// 	t.Log(string(b))
-	// 	t.Fatalf("unexpected failure: %v", err)
-	// }
-	// defer os.Remove(appsImage)
+	if b, err := imageBuild(opts, appsImage, "../../examples/apps/Singularity"); err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+	defer os.Remove(appsImage)
 
-	// // singularity run
-	// t.Run("run", testSingularityRun)
-	// // singularity exec
-	// t.Run("exec", testSingularityExec)
-	// // stdin pipe
-	// t.Run("STDIN", testSTDINPipe)
-	// // action_URI
-	// t.Run("action_URI", testRunFromURI)
+	// singularity run
+	t.Run("run", testSingularityRun)
+	// singularity exec
+	t.Run("exec", testSingularityExec)
+	// stdin pipe
+	t.Run("STDIN", testSTDINPipe)
+	// action_URI
+	t.Run("action_URI", testRunFromURI)
 	// Persistent Overlay
 	t.Run("Persistent_Overlay", testPersistentOverlay)
 }
