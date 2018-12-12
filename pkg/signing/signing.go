@@ -13,11 +13,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
-
 	"github.com/sylabs/sif/pkg/sif"
-
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
 )
@@ -322,7 +320,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error 
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
-			sylog.Infof("key retreived successfully!")
+			sylog.Infof("key retrieved successfully!")
 
 			block, _ := clearsign.Decode(data)
 			if block == nil {

@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	"github.com/sylabs/singularity/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -21,7 +21,7 @@ import (
 const pushTimeout = 1800
 
 // UploadImage will push a specified image up to the Container Library,
-func UploadImage(filePath string, libraryRef string, libraryURL string, authToken string) error {
+func UploadImage(filePath string, libraryRef string, libraryURL string, authToken string, description string) error {
 
 	if !IsLibraryPushRef(libraryRef) {
 		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
@@ -81,7 +81,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 	}
 	if !found {
 		sylog.Verbosef("Image %s does not exist in library - creating it.\n", imageHash)
-		image, err = createImage(libraryURL, authToken, imageHash, container.GetID().Hex())
+		image, err = createImage(libraryURL, authToken, imageHash, container.GetID().Hex(), description)
 		if err != nil {
 			return err
 		}
@@ -127,6 +127,9 @@ func postFile(baseURL string, authToken string, filePath string, imageID string)
 
 	// create and start bar
 	bar := pb.New(int(fileSize)).SetUnits(pb.U_BYTES)
+	if sylog.GetLevel() < 0 {
+		bar.NotPrint = true
+	}
 	bar.ShowTimeLeft = true
 	bar.ShowSpeed = true
 	bar.Start()

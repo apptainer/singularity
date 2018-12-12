@@ -84,16 +84,33 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 
 	fimg.Filedata, err = syscall.Mmap(int(fimg.Fp.Fd()), 0, int(size), prot, flags)
 	if err != nil {
-		return fmt.Errorf("while trying to call mmap on SIF file")
+		// mmap failed, use sequential read() instead for top of file
+		siflog.Printf("mmap on %s failed, reading buffer sequentially...", fimg.Fp.Name())
+		fimg.Filedata = make([]byte, DataStartOffset)
+
+		// start by positioning us to the start of the file
+		_, err := fimg.Fp.Seek(0, 0)
+		if err != nil {
+			return fmt.Errorf("seek() setting to start of file: %s", err)
+		}
+
+		if n, err := fimg.Fp.Read(fimg.Filedata); n != DataStartOffset {
+			return fmt.Errorf("short read while reading top of file: %v", err)
+
+		}
+		fimg.Amodebuf = true
 	}
 
-	// create and associate a new bytes.Reader on top of mmap'ed data from file
+	// create and associate a new bytes.Reader on top of mmap'ed or buffered data from file
 	fimg.Reader = bytes.NewReader(fimg.Filedata)
 
 	return nil
 }
 
 func (fimg *FileImage) unmapFile() error {
+	if fimg.Amodebuf == true {
+		return nil
+	}
 	if err := syscall.Munmap(fimg.Filedata); err != nil {
 		return fmt.Errorf("while calling unmapping SIF file")
 	}

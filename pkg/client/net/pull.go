@@ -6,43 +6,44 @@
 package client
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	"github.com/sylabs/singularity/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
 const pullTimeout = 1800
 
+// IsNetPullRef returns true if the provided string is a valid url
+// reference for a pull operation.
+func IsNetPullRef(libraryRef string) bool {
+	match, _ := regexp.MatchString("^http(s)?://", libraryRef)
+	return match
+}
+
 // DownloadImage will retrieve an image from the Container Library,
 // saving it into the specified file
-func DownloadImage(filePath string, libraryRef string, libraryURL string, Force bool, authToken string) error {
+func DownloadImage(filePath string, libraryURL string, Force bool) error {
 
-	if !IsLibraryPullRef(libraryRef) {
-		return fmt.Errorf("Not a valid library reference: %s", libraryRef)
+	if !IsNetPullRef(libraryURL) {
+		return fmt.Errorf("Not a valid url reference: %s", libraryURL)
 	}
-
 	if filePath == "" {
-		_, _, container, tags := parseLibraryRef(libraryRef)
-		filePath = fmt.Sprintf("%s_%s.sif", container, tags[0])
+		refParts := strings.Split(libraryURL, "/")
+		filePath = fmt.Sprintf("%s", refParts[len(refParts)-1])
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 
-	libraryRef = strings.TrimPrefix(libraryRef, "library://")
-
-	if strings.Index(libraryRef, ":") == -1 {
-		libraryRef += ":latest"
-	}
-
-	url := libraryURL + "/v1/imagefile/" + libraryRef
-
+	url := libraryURL
 	sylog.Debugf("Pulling from URL: %s\n", url)
 
 	if !Force {
@@ -60,9 +61,6 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 		return err
 	}
 
-	if authToken != "" {
-		req.Header.Set("Authorization", "Bearer "+authToken)
-	}
 	req.Header.Set("User-Agent", useragent.Value())
 
 	res, err := client.Do(req)
@@ -76,12 +74,11 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	}
 
 	if res.StatusCode != http.StatusOK {
-		jRes, err := ParseErrorBody(res.Body)
-		if err != nil {
-			jRes = ParseErrorResponse(res)
-		}
-		return fmt.Errorf("Download did not succeed: %d %s\n\t%v",
-			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(res.Body)
+		s := buf.String()
+		return fmt.Errorf("Download did not succeed: %d %s\n\t",
+			res.StatusCode, s)
 	}
 
 	sylog.Debugf("OK response received, beginning body download\n")
@@ -97,6 +94,9 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 
 	bodySize := res.ContentLength
 	bar := pb.New(int(bodySize)).SetUnits(pb.U_BYTES)
+	if sylog.GetLevel() < 0 {
+		bar.NotPrint = true
+	}
 	bar.ShowTimeLeft = true
 	bar.ShowSpeed = true
 	bar.Start()

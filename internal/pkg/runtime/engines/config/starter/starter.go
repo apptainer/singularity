@@ -9,7 +9,7 @@ package starter
 #include <sys/types.h>
 #include "starter.h"
 */
-// #cgo CFLAGS: -I../../..
+// #cgo CFLAGS: -I../../../../../../cmd/starter/c
 import "C"
 import (
 	"encoding/json"
@@ -125,21 +125,29 @@ func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
 }
 
 // AddUIDMappings sets user namespace UID mapping.
-func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) {
+func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 	for i, uid := range uids {
+		if i >= C.MAX_ID_MAPPING {
+			return fmt.Errorf("Maximum of %d uid mapping allowed", C.MAX_ID_MAPPING)
+		}
 		c.config.uidMapping[i].containerID = C.uid_t(uid.ContainerID)
 		c.config.uidMapping[i].hostID = C.uid_t(uid.HostID)
 		c.config.uidMapping[i].size = C.uint(uid.Size)
 	}
+	return nil
 }
 
 // AddGIDMappings sets user namespace GID mapping
-func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) {
+func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 	for i, gid := range gids {
+		if i >= C.MAX_ID_MAPPING {
+			return fmt.Errorf("Maximum of %d gid mapping allowed", C.MAX_ID_MAPPING)
+		}
 		c.config.gidMapping[i].containerID = C.gid_t(gid.ContainerID)
 		c.config.gidMapping[i].hostID = C.gid_t(gid.HostID)
 		c.config.gidMapping[i].size = C.uint(gid.Size)
 	}
+	return nil
 }
 
 // SetNsFlags sets namespaces flag directly from flags argument

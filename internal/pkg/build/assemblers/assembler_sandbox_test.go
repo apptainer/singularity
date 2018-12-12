@@ -20,12 +20,12 @@ const (
 	assemblerShubDestDir   = "/tmp/shub_alpine_assemble_test"
 )
 
-// TestAssembler sees if we can build a SIF image from a docke based kitchen to /tmp
+// TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
 func TestSandboxAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-sandboxAssembler")
+	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
 		return
 	}
@@ -55,11 +55,13 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 
 	defer os.RemoveAll(assemblerDockerDestDir)
 }
+
+// TestSandboxAssemblerShub sees if we can build a sandbox from an image from a Singularity registry
 func TestSandboxAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-sandboxAssembler")
+	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
 		return
 	}

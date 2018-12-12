@@ -77,6 +77,8 @@ func NewBuildJSON(r io.Reader, dest, format string, libraryURL, authToken string
 func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
 	var err error
 
+	syscall.Umask(0002)
+
 	// always build a sandbox if updating an existing sandbox
 	if opts.Update {
 		format = "sandbox"
@@ -88,7 +90,7 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 		d:      d,
 	}
 
-	b.b, err = types.NewBundle("sbuild")
+	b.b, err = types.NewBundle(opts.TmpDir, "sbuild")
 	if err != nil {
 		return nil, err
 	}

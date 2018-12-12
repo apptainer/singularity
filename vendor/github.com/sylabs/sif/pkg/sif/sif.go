@@ -249,6 +249,7 @@ type FileImage struct {
 	Fp         *os.File      // file pointer of opened SIF file
 	Filesize   int64         // file size of the opened SIF file
 	Filedata   []byte        // the content of the opened file
+	Amodebuf   bool          // access mode: mmap = false, buffered = true
 	Reader     *bytes.Reader // reader on top of Mapdata
 	DescrArr   []Descriptor  // slice of loaded descriptors from SIF file
 	PrimPartID uint32        // ID of primary system partition if present

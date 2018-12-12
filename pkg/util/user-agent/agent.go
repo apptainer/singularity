@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+var value string
+
 // Value contains the Singularity user agent.
 //
 // For example, "Singularity/3.0.0 (linux amd64) Go/1.10.3".
@@ -22,9 +24,8 @@ func Value() string {
 	return value
 }
 
-var value string
-
-// InitValue does ...
+// InitValue sets value that will be returned when
+// user queries singularity version.
 func InitValue(name, version string) {
 	value = fmt.Sprintf("%v (%v %v) %v",
 		singularityVersion(name, version),

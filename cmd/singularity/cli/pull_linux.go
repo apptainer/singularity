@@ -7,6 +7,7 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -33,8 +34,14 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		libexec.PullLibraryImage(name, args[i], PullLibraryURI, force, authToken)
 	case ShubProtocol:
-		libexec.PullShubImage(name, args[i], force)
+		libexec.PullShubImage(name, args[i], force, noHTTPS)
+	case HTTPProtocol, HTTPSProtocol:
+		libexec.PullNetImage(name, args[i], force)
 	default:
-		libexec.PullOciImage(name, args[i], force, noHTTPS)
+		libexec.PullOciImage(name, args[i], types.Options{
+			TmpDir:  tmpDir,
+			Force:   force,
+			NoHTTPS: noHTTPS,
+		})
 	}
 }

@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
 // SIFPacker holds the locations of where to pack from and to
@@ -37,7 +37,7 @@ func (p *SIFPacker) Pack() (*types.Bundle, error) {
 }
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files
-// unpackSIF parses throught the sif file and places each component in the sandbox
+// unpackSIF parses through the sif file and places each component in the sandbox
 func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 
 	// load the container

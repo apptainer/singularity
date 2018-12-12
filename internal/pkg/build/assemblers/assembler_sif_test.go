@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 const (
@@ -29,12 +29,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// TestAssembler sees if we can build a SIF image from a docke based kitchen to /tmp
+// TestSIFAssemblerDocker sees if we can build a SIF image from an image from a Docker registry
 func TestSIFAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-SIFAssembler")
+	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
 		return
 	}
@@ -64,11 +64,13 @@ func TestSIFAssemblerDocker(t *testing.T) {
 
 	defer os.Remove(assemblerDockerDest)
 }
+
+// TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
 func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-SIFAssembler")
+	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
 		return
 	}

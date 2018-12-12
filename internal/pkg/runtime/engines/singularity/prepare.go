@@ -283,8 +283,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 
 	// user namespace ID mappings
 	if e.EngineConfig.OciConfig.Linux != nil {
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+		if err := starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings); err != nil {
+			return err
+		}
+		if err := starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings); err != nil {
+			return err
+		}
 	}
 
 	param := security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
@@ -409,6 +413,11 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
+	}
+
+	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
+		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}
 
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {

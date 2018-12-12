@@ -17,6 +17,10 @@ const (
 	// ShubProtocol holds singularity hub base URI
 	// for more info refer to https://singularity-hub.org/
 	ShubProtocol = "shub"
+	// HTTPProtocol holds the remote http base URI
+	HTTPProtocol = "http"
+	// HTTPSProtocol holds the remote https base URI
+	HTTPSProtocol = "https"
 )
 
 var (
@@ -38,6 +42,10 @@ func init() {
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
 	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
+
+	PullCmd.Flags().StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
+	PullCmd.Flags().Lookup("tmpdir").Hidden = true
+	PullCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
 
 	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})

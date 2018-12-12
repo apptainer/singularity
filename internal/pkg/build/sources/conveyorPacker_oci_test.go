@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/internal/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 const (
@@ -38,7 +38,7 @@ func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-oci")
+	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
 	}
@@ -70,7 +70,7 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	}
 	defer os.Remove(archive)
 
-	b, err := types.NewBundle("sbuild-oci")
+	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
 	}
@@ -111,7 +111,7 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 		return
 	}
 
-	b, err := types.NewBundle("sbuild-oci")
+	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
 	}
@@ -144,7 +144,7 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	}
 	defer os.Remove(archive)
 
-	b, err := types.NewBundle("sbuild-oci")
+	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
 	}
@@ -190,7 +190,7 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 		t.Fatalf("Error extracting oci archive to layout: %v", err)
 	}
 
-	b, err := types.NewBundle("sbuild-oci")
+	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
 	}
@@ -216,7 +216,7 @@ func TestOCIPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	b, err := types.NewBundle("sbuild-oci")
+	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
 	}

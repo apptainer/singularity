@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -91,13 +92,16 @@ var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	PersistentPreRun:      persistentPreRun,
-	Run:                   nil,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return errors.New("Invalid command")
+	},
 
-	Use:     docs.SingularityUse,
-	Version: buildcfg.PACKAGE_VERSION,
-	Short:   docs.SingularityShort,
-	Long:    docs.SingularityLong,
-	Example: docs.SingularityExample,
+	Use:           docs.SingularityUse,
+	Version:       buildcfg.PACKAGE_VERSION,
+	Short:         docs.SingularityShort,
+	Long:          docs.SingularityLong,
+	Example:       docs.SingularityExample,
+	SilenceErrors: true,
 }
 
 // ExecuteSingularity adds all child commands to the root command and sets
@@ -273,6 +277,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"detached": envBool,
 	"builder":  envStringNSlice,
 	"library":  envStringNSlice,
+	"tmpdir":   envStringNSlice,
 	"nohttps":  envBool,
 
 	// capability flags (and others)
