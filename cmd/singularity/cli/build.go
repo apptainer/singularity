@@ -93,11 +93,8 @@ var BuildCmd = &cobra.Command{
 	TraverseChildren: true,
 }
 
-// checkTargetCollision makes sure output target doesn't exist or is ok to overwrite, & check if sandbox & remote are true
+// checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite
 func checkBuildTarget(path string, update bool) bool {
-	if sandbox && remote {
-		sylog.Fatalf("Unable to create build: Can't remote build a sandbox container.")
-	}
 	if f, err := os.Stat(path); err == nil {
 		if update && !f.IsDir() {
 			sylog.Fatalf("Only sandbox updating is supported.")
