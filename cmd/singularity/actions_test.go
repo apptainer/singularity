@@ -34,6 +34,7 @@ type opts struct {
 	workdir   string
 	pwd       string
 	app       string
+	overlay   string
 }
 
 // imageExec can be used to run/exec/shell a Singularity image
@@ -61,6 +62,9 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	}
 	if opts.home != "" {
 		argv = append(argv, "--home", opts.home)
+	}
+	if opts.overlay != "" {
+		argv = append(argv, "--overlay", opts.overlay)
 	}
 	if opts.workdir != "" {
 		argv = append(argv, "--workdir", opts.workdir)
@@ -319,6 +323,49 @@ func testRunFromURI(t *testing.T) {
 	}
 }
 
+// testPersistentOverlay test the --overlay function
+func testPersistentOverlay(t *testing.T) {
+	//  Create the overlay dir
+	err := os.Mkdir("my_overlay", 0700)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove("my_overlay")
+
+	// create a file
+	t.Run("overlay_create", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: "my_overlay"}, imagePath, []string{"touch", "/foo_overlay"})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// look for the file
+	t.Run("overlay_find", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: "my_overlay"}, imagePath, []string{"test", "-f", "/foo_overlay"})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// look for the file without root privs
+	t.Run("overlay_noroot", test.WithoutPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: "my_overlay"}, imagePath, []string{"test", "-f", "/foo_overlay"})
+		if exitCode != 1 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// look for the file without --overlay
+	t.Run("overlay_noflag", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, []string{"test", "-f", "/foo_overlay"})
+		if exitCode != 1 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+}
+
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
 	opts := buildOpts{
@@ -344,4 +391,6 @@ func TestSingularityActions(t *testing.T) {
 	t.Run("STDIN", testSTDINPipe)
 	// action_URI
 	t.Run("action_URI", testRunFromURI)
+	// Persistent Overlay
+	t.Run("Persistent_Overlay", testPersistentOverlay)
 }
