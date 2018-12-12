@@ -61,7 +61,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "build image remotely (does not require root)")
 	BuildCmd.Flags().SetAnnotation("remote", "envkey", []string{"REMOTE"})
 
-	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print nuild ID (no real-time logs and requires --remote)")
+	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print build ID (no real-time logs and requires --remote)")
 	BuildCmd.Flags().SetAnnotation("detached", "envkey", []string{"DETACHED"})
 
 	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "remote Build Service URL")
