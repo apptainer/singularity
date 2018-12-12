@@ -155,6 +155,38 @@ func parseArg(arg string) ([][2]string, error) {
 	return argList, nil
 }
 
+// SetCapability sets capability arguments for the corresponding network plugin
+// uses by a configured network
+func (m *Setup) SetCapability(network string, capName string, args interface{}) error {
+	for i := range m.networks {
+		if m.networks[i] == network {
+			hasCap := false
+			for _, plugin := range m.networkConfList[i].Plugins {
+				if plugin.Network.Capabilities[capName] {
+					hasCap = true
+					break
+				}
+			}
+
+			if !hasCap {
+				return fmt.Errorf("%s network doesn't have %s capability", capName, network)
+			}
+
+			switch args.(type) {
+			case PortMapEntry:
+				if m.runtimeConf[i].CapabilityArgs[capName] == nil {
+					m.runtimeConf[i].CapabilityArgs[capName] = make([]PortMapEntry, 0)
+				}
+				m.runtimeConf[i].CapabilityArgs[capName] = append(
+					m.runtimeConf[i].CapabilityArgs[capName].([]PortMapEntry),
+					args.(PortMapEntry),
+				)
+			}
+		}
+	}
+	return nil
+}
+
 // SetArgs affects arguments to corresponding network plugins
 func (m *Setup) SetArgs(args []string) error {
 	if len(m.networks) < 1 {
@@ -231,28 +263,8 @@ func (m *Setup) SetArgs(args []string) error {
 				} else {
 					pm.ContainerPort = pm.HostPort
 				}
-				for i := range m.networks {
-					if m.networks[i] == networkName {
-						hasPortMap := false
-						for _, plugin := range m.networkConfList[i].Plugins {
-							if plugin.Network.Capabilities["portMappings"] {
-								hasPortMap = true
-								if m.runtimeConf[i].CapabilityArgs["portMappings"] == nil {
-									m.runtimeConf[i].CapabilityArgs["portMappings"] = make([]PortMapEntry, 0)
-								}
-								break
-							}
-						}
-
-						if !hasPortMap {
-							return fmt.Errorf("%s network doesn't have portmap enabled", networkName)
-						}
-
-						m.runtimeConf[i].CapabilityArgs["portMappings"] = append(
-							m.runtimeConf[i].CapabilityArgs["portMappings"].([]PortMapEntry),
-							*pm,
-						)
-					}
+				if err := m.SetCapability(networkName, "portMappings", *pm); err != nil {
+					return err
 				}
 			} else {
 				for i := range m.networks {
