@@ -1,20 +1,27 @@
 #!/bin/bash -ex
 
-wget -q -O - https://www.mongodb.org/static/pgp/server-3.2.pub | sudo apt-key add -
-
 if [ -z "$OS_TYPE" ]; then
     # default is ubuntu
-    # install packages
-    sudo apt-get update && sudo apt-get install -y flawfinder python-pip gcc
-    # so that adjusted PATH propagates into sudo
-    sudo sed -i -e 's/^Defaults\tsecure_path.*$//' /etc/sudoers
-    # Install updated version of pylint
-    sudo pip install pylint
+    # the first 3 lines enable running travis on personal github repositories
+    cd ../..
+    if [ ! -d sylabs ]; then mv * sylabs; fi
+    cd sylabs/singularity
+    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+    go get -u golang.org/x/lint/golint
     exit
 fi
 
-sudo apt-get update
+# run docker as shown at
+#  https://djw8605.github.io/2016/05/03/building-centos-packages-on-travisci/
 
-./autogen.sh
-./configure --prefix=/usr/local
-sudo make install
+sudo apt-get update
+echo 'DOCKER_OPTS="-H tcp://127.0.0.1:2375 -H unix:///var/run/docker.sock -s devicemapper"' | \
+        sudo tee /etc/default/docker > /dev/null
+sudo service docker restart
+sleep 5
+if [[ "$OS_TYPE" = "opensuse" ]]; then
+    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
+else
+    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+fi
+sudo docker pull "$DOCKER_HUB_URI"

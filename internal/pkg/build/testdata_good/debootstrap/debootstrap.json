@@ -1,0 +1,1 @@
+{"header":{"bootstrap":"debootstrap","include":"somepackage","mirrorurl":"http://us.archive.ubuntu.com/ubuntu/","osversion":"xenial"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"","post":""}}}

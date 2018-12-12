@@ -24,18 +24,34 @@
 #   go-tests = true
 #   unused-packages = true
 
+required = [
+    "github.com/containernetworking/plugins/plugins/ipam/dhcp",
+    "github.com/containernetworking/plugins/plugins/ipam/host-local",
+    "github.com/containernetworking/plugins/plugins/ipam/static",
+    "github.com/containernetworking/plugins/plugins/main/bridge",
+    "github.com/containernetworking/plugins/plugins/main/host-device",
+    "github.com/containernetworking/plugins/plugins/main/ipvlan",
+    "github.com/containernetworking/plugins/plugins/main/loopback",
+    "github.com/containernetworking/plugins/plugins/main/macvlan",
+    "github.com/containernetworking/plugins/plugins/main/ptp",
+    "github.com/containernetworking/plugins/plugins/main/vlan",
+    "github.com/containernetworking/plugins/plugins/meta/bandwidth",
+    "github.com/containernetworking/plugins/plugins/meta/flannel",
+    "github.com/containernetworking/plugins/plugins/meta/portmap",
+    "github.com/containernetworking/plugins/plugins/meta/tuning",
+]
 
 [[constraint]]
-  branch = "master"
+  name = "github.com/pelletier/go-toml"
+  version = "1.2.0"
+
+[[constraint]]
   name = "github.com/sylabs/sif"
+  version = "1.0.2"
 
 [[constraint]]
   branch = "master"
   name = "github.com/containers/image"
-
-[[constraint]]
-  branch = "master"
-  name = "github.com/golang/glog"
 
 [[constraint]]
   name = "github.com/gorilla/websocket"
@@ -46,8 +62,12 @@
   name = "github.com/opencontainers/image-spec"
 
 [[constraint]]
+  branch = "master"
+  name = "github.com/containerd/cgroups"
+
+[[constraint]]
+  branch = "master"
   name = "github.com/opencontainers/runtime-spec"
-  version = "1.0.1"
 
 [[constraint]]
   branch = "master"
@@ -57,13 +77,33 @@
   name = "github.com/spf13/pflag"
   version = "1.0.0"
 
+[[constraint]]
+  name = "github.com/opencontainers/selinux"
+  version = "v1.0.0-rc1"
+
+[[constraint]]
+  name = "github.com/seccomp/libseccomp-golang"
+  version = "v0.9.0"
+
 [prune]
   go-tests = true
   unused-packages = true
 
+  [[prune.project]]
+    name = "github.com/containernetworking/plugins"
+    unused-packages = false
+
+# patched fork from github.com/opencontainers/image-tools
 [[override]]
   branch = "master"
   name = "github.com/opencontainers/image-tools"
+  source = "https://github.com/sylabs/image-tools"
+
+# patched fork from github.com/golang/crypto
+[[override]]
+  branch = "master"
+  name = "golang.org/x/crypto"
+  source = "https://github.com/sylabs/golang-x-crypto"
 
 [[override]]
   branch = "master"
@@ -72,4 +112,3 @@
 [[override]]
   revision = "da99009bbb1165d1ac5688b5c81d2f589d418341"
   name = "github.com/docker/docker"
-

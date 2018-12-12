@@ -1,115 +1,232 @@
-# include may contain conditional variables set in mlocal/checks/project.mk
-# like go_TAG / WRAPPER_LIBS
-include Makefile.cond
-
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-libstartup := $(BUILDDIR)/lib/libstartup.a
-libstartup_HEADER := $(BUILDDIR)/lib/libstartup.h
-libstartup_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/smaster.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/scontainer.go)
-libstartup_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/startup/rpc.go)
+starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main.go)
+
+starter := $(BUILDDIR)/cmd/starter/c/starter
+starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
+starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
+starter_SOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c
 
 singularity := $(BUILDDIR)/singularity
-singularity_INSTALL := $(PREFIX)/bin/singularity
-singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
+singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/singularity/cli.go)
+singularity_REPO := github.com/sylabs/singularity
 
-wrapper := $(BUILDDIR)/src/runtime/startup/c/wrapper
-wrapper_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper
-wrapper_suid_INSTALL := $(PREFIX)/libexec/singularity/bin/wrapper-suid
+dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
+dist_bin_SCRIPTS_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/run-singularity
 
 config := $(BUILDDIR)/singularity.conf
-config_INSTALL := $(PREFIX)/etc/singularity/singularity.conf
+config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
 
-mountdir := $(PREFIX)/var/singularity/mnt/container
-finaldir := $(PREFIX)/var/singularity/mnt/final
-overlaydir := $(PREFIX)/var/singularity/mnt/overlay
-sessiondir := $(PREFIX)/var/singularity/mnt/session
+syecl_config := $(SOURCEDIR)/internal/pkg/syecl/syecl.toml.example
+syecl_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/ecl.toml
+
+seccomp_profile := $(SOURCEDIR)/etc/seccomp-profiles/default.json
+seccomp_profile_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles/default.json
+
+cgroups_config := $(SOURCEDIR)/internal/pkg/cgroups/example/cgroups.toml
+cgroups_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups/cgroups.toml
+
+capability_JSON := $(DESTDIR)$(SYSCONFDIR)/singularity/capability.json
+
+sessiondir := $(DESTDIR)$(LOCALSTATEDIR)/singularity/mnt/session
 
 go_BIN := $(singularity)
-go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
+go_OBJ := $(SOURCEDIR)/internal/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL)
 
-go_TAG += containers_image_openpgp
+bash_completion :=  $(BUILDDIR)/etc/bash_completion.d/singularity
+bash_completion_INSTALL := $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/singularity
 
-abs_BUILDDIR := `readlink -f $(BUILDDIR)`
+NVIDIA_liblist := $(SOURCEDIR)/etc/nvliblist.conf
+NVIDIA_liblist_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/nvliblist.conf
 
-cgo_CPPFLAGS = -I$(BUILDDIR) -I$(SOURCEDIR)/src/runtime -I$(SOURCEDIR)/src/runtime/c/lib -include $(abs_BUILDDIR)/config.h
-cgo_LDFLAGS = -L$(abs_BUILDDIR)/lib -L$(BUILDDIR) -lruntime
+cni_builddir := $(BUILDDIR_ABSPATH)/cni
+cni_install_DIR := $(DESTDIR)$(LIBEXECDIR)/singularity/cni
+cni_vendor_GOPATH := $(singularity_REPO)/vendor/github.com/containernetworking/plugins/plugins
+cni_plugins_GOPATH := $(cni_vendor_GOPATH)/meta/bandwidth \
+                      $(cni_vendor_GOPATH)/main/bridge \
+                      $(cni_vendor_GOPATH)/ipam/dhcp \
+                      $(cni_vendor_GOPATH)/meta/flannel \
+                      $(cni_vendor_GOPATH)/main/host-device \
+                      $(cni_vendor_GOPATH)/ipam/host-local \
+                      $(cni_vendor_GOPATH)/main/ipvlan \
+                      $(cni_vendor_GOPATH)/main/macvlan \
+                      $(cni_vendor_GOPATH)/meta/portmap \
+                      $(cni_vendor_GOPATH)/main/ptp \
+                      $(cni_vendor_GOPATH)/ipam/static \
+                      $(cni_vendor_GOPATH)/meta/tuning \
+                      $(cni_vendor_GOPATH)/main/vlan
+cni_plugins_EXECUTABLES := $(cni_builddir)/bandwidth \
+                           $(cni_builddir)/bridge \
+                           $(cni_builddir)/dhcp \
+                           $(cni_builddir)/flannel \
+                           $(cni_builddir)/host-device \
+                           $(cni_builddir)/host-local \
+                           $(cni_builddir)/ipvlan \
+                           $(cni_builddir)/macvlan \
+                           $(cni_builddir)/portmap \
+                           $(cni_builddir)/ptp \
+                           $(cni_builddir)/static \
+                           $(cni_builddir)/tuning \
+                           $(cni_builddir)/vlan
+cni_plugins_INSTALL := $(cni_install_DIR)/bandwidth \
+                       $(cni_install_DIR)/bridge \
+                       $(cni_install_DIR)/dhcp \
+                       $(cni_install_DIR)/flannel \
+                       $(cni_install_DIR)/host-device \
+                       $(cni_install_DIR)/host-local \
+                       $(cni_install_DIR)/ipvlan \
+                       $(cni_install_DIR)/macvlan \
+                       $(cni_install_DIR)/portmap \
+                       $(cni_install_DIR)/ptp \
+                       $(cni_install_DIR)/static \
+                       $(cni_install_DIR)/tuning \
+                       $(cni_install_DIR)/vlan
+cni_config_LIST := $(SOURCEDIR)/etc/network/00_bridge.conflist \
+                   $(SOURCEDIR)/etc/network/10_ptp.conflist \
+                   $(SOURCEDIR)/etc/network/20_ipvlan.conflist \
+                   $(SOURCEDIR)/etc/network/30_macvlan.conflist
+cni_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/network
 
-INSTALLFILES := $(singularity_INSTALL) $(wrapper_INSTALL) $(wrapper_suid_INSTALL) $(sessiondir) $(config_INSTALL)
+actions_LIST := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(SOURCEDIR)/etc/actions/shell \
+	$(SOURCEDIR)/etc/actions/start $(SOURCEDIR)/etc/actions/test
+actions_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
 
-CLEANFILES += $(libruntime) $(libstartup) $(wrapper) $(singularity) $(wrapper_OBJ) $(go_BIN) $(go_OBJ)
+INSTALLFILES := $(singularity_INSTALL) $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
+	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
+	$(bash_completion_INSTALL) $(actions_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) \
+	$(seccomp_profile_INSTALL) $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL) 
 
-all: cscope collect $(libruntime) $(go_BIN) $(config) $(wrapper)
+CLEANFILES += $(libruntime) $(starter) $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion) \
+	$(cni_plugins_EXECUTABLES)
+
+all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completion) cniplugins
+
+.PHONY: cniplugins
+cniplugins:
+	$(V)install -d $(cni_builddir)
+	$(V)for p in $(cni_plugins_GOPATH); do \
+		name=`basename $$p`; \
+		cniplugin=$(cni_builddir)/$$name; \
+		if [ ! -f $$cniplugin ]; then \
+			echo " CNI PLUGIN" $$name; \
+			go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $$cniplugin $$p; \
+		fi \
+	done
+
+$(cni_plugins_INSTALL): $(cni_plugins_EXECUTABLES)
+	@echo " INSTALL CNI PLUGIN" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(cni_builddir)/$(@F) $@
+
+$(cni_config_INSTALL): $(cni_config_LIST)
+	@echo " INSTALL CNI CONFIGURATION FILES"
+	$(V)install -d $(cni_config_INSTALL)
+	$(V)install -m 0644 $? $@
 
 $(libruntime): $(libutil_OBJ)
 	@echo " AR" $@
-	@mkdir -p $(@D)
+	$(V)mkdir -p $(@D)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
-# wrapper
-$(wrapper): $(go_OBJ) $(libstartup_OBJ) $(wrapper_OBJ) $(libruntime)
+$(BUILDDIR)/.clean-starter: $(starter_SOURCE)
+	$(V)(go clean -cache 2>/dev/null || true)
+	$(V)touch $@
+
+# starter
+$(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags "$(go_TAG)" -ldflags="-s -w" -o $@ \
-		$(SOURCEDIR)/src/runtime/startup/scontainer.go \
-		$(SOURCEDIR)/src/runtime/startup/smaster.go \
-		$(SOURCEDIR)/src/runtime/startup/rpc.go
+	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
+		$(SOURCEDIR)/cmd/starter/main.go
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		go build -tags "$(go_TAG)" -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(BUILDDIR)/vendors-done $(libruntime) $(BUILDDIR)/config.h
-	@rm -f $(go_OBJ)
-	$(V)export BUILDDIR=`readlink -f $(BUILDDIR)` && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
+$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+	$(V)rm -f $(go_OBJ)
+	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/internal/pkg/buildcfg && go generate
 
-# wrappper & wrapper-suid install
-$(wrapper_INSTALL): $(wrapper)
+# bash_completion file
+$(bash_completion): $(go_OBJ)
+	$(V)rm -f $@
+	$(V)mkdir -p $(@D)
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+
+# install singularity CLI bash_completion file
+$(bash_completion_INSTALL): $(bash_completion)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
-	$(V)install -m 0755 $(wrapper) $(wrapper_INSTALL)
-$(wrapper_suid_INSTALL): $(wrapper)
+	$(V)install -m 0644 $< $@
+
+# install NVIDIA lib list config file
+$(NVIDIA_liblist_INSTALL): $(NVIDIA_liblist)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+# starter & starter-suid install
+$(starter_INSTALL): $(starter)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(starter) $(starter_INSTALL)
+$(starter_suid_INSTALL): $(starter)
 	@echo " INSTALL SUID" $@
 	$(V)install -d $(@D)
-	$(V)install -m 4755 $(wrapper) $(wrapper_suid_INSTALL)
+	$(V)install -m 4755 $(starter) $(starter_suid_INSTALL)
 
-# generate the vendor folder with dep and patch when necessary
-$(BUILDDIR)/vendors-done:
-	@echo " VENDORS"
-	@if [ ! -f $(BUILDDIR)/.dep-done ]; then \
-		dep ensure -vendor-only >/dev/null 2>&1 && \
-			touch $(BUILDDIR)/.dep-done; \
-	fi
-	@if [ ! -f $(BUILDDIR)/.patch-done ]; then \
-		patch --silent $(SOURCEDIR)/vendor/github.com/opencontainers/image-tools/image/manifest.go $(SOURCEDIR)/patches/image_tools_manifest.go.patch && \
-			touch $(BUILDDIR)/.patch-done; \
-	fi
-	$(V)touch $@
+# Run-Singularity bin script
+$(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
-$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
-	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
 	$(V)install -m 0644 $(config) $(config_INSTALL)
 
+$(syecl_config_INSTALL): $(syecl_config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
 $(sessiondir):
 	@echo " INSTALL" $@
 	$(V)install -d $(sessiondir)
 
+$(capability_JSON):
+	@echo " INSTALL" $@
+	$(V)touch $(capability_JSON)
+
+$(seccomp_profile_INSTALL): $(seccomp_profile)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+$(cgroups_config_INSTALL): $(cgroups_config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+$(actions_INSTALL): $(actions_LIST)
+	@echo " INSTALL" $@
+	$(V)install -d $(actions_INSTALL)
+	$(V)install -m 0755 $? $@
+
 .PHONY: man
 man:
-	$(V)go run -tags "$(go_TAG)" $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(PREFIX)/share/man/man1
+	$(V)go run $(GO_TAGS) $(SOURCEDIR)/src/docs/makeDocs/makeDocs.go $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: collect
 collect:
@@ -123,29 +240,41 @@ collect:
 	done
 
 .PHONY: check
-check:
+check: $(go_OBJ)
 	@echo " CHECK go fmt"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && test -z $(go fmt ./...)
+	$(V)cd $(SOURCEDIR) && \
+		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
+		   ( echo "The above files have formatting errors."; \
+		     echo "Use 'go fmt github.com/sylabs/singularity/...' to correct the errors."; \
+		     false ) >&2 )
 	@echo "       PASS"
 	@echo " CHECK go vet"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && go vet -tags "$(go_TAG)" -all ./...
+	$(V)cd $(SOURCEDIR) && go vet $(GO_TAGS) -all ./...
 	@echo "       PASS"
 	@echo " CHECK go lint"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
+	$(V)cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
 	@echo "       PASS"
+
+.PHONY: dist
+dist:
+	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
 
 .PHONY: test
 test:
 	@echo " TEST sudo go test"
-	$(V)export CGO_CPPFLAGS="$(cgo_CPPFLAGS)" CGO_LDFLAGS="$(cgo_LDFLAGS)" && \
-		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -tags "$(go_TAG)" -cover -race ./...
+	@# avoid travis 10 minutes of silence timeout
+	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
+	trap "kill $$! || true" 0; \
+	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m $(GO_TAGS) -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: testall
-testall: check test
+testall: vendor-check check test
+
+.PHONY: rpm
+rpm: dist
+	@echo " BUILD RPM"
+	$(V)(cd $(SOURCEDIR) && rpmbuild $(RPMCLEAN) -ta $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz)
 
 .PHONY: cscope
 cscope:
@@ -161,5 +290,16 @@ clean:
 .PHONY: install
 install: $(INSTALLFILES)
 	@echo " DONE"
+
+# generate the vendor folder with dep
+.PHONY: vendor
+vendor:
+	@echo " VENDOR"
+	$(V)dep ensure >/dev/null
+
+.PHONY: vendor-check
+vendor-check:
+	@echo " VENDOR CHECK"
+	$(V)dep check
 
 -include $(BUILDDIR)/mergeddeps

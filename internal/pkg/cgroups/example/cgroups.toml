@@ -1,0 +1,129 @@
+#
+# Cgroups configuration file example
+#
+
+# CPU resource restriction configuration
+# - shares: CPU shares (relative weight (ratio) vs. other cgroups with cpu shares).
+# - quotas: CPU hardcap limit (in usecs). Allowed cpu time in a given period.
+# - period: CPU period to be used for hardcapping (in usecs).
+# - realtimeRuntime: how much time realtime scheduling may use (in usecs).
+# - realtimePeriod: CPU period to be used for realtime scheduling (in usecs).
+# - cpus: CPUs to use within the cpuset. Default is to use any CPU available.
+# - mems: list of memory nodes in the cpuset. Default is to use any available memory node
+[cpu]
+#  shares = 512
+#  quotas = 0
+#  period = 0
+#  realtimeRuntime = 0
+#  realtimePeriod = 0
+  cpus = "0"
+  mems = "0"
+
+
+# Memory restriction configuration
+# - limit: memory limit (in bytes).
+# - reservation: memory reservation or soft_limit (in bytes).
+# - swap: total memory limit (memory + swap).
+# - kernel: kernel memory limit (in bytes).
+# - kernelTCP: kernel memory limit for tcp (in bytes)
+# - swappiness: how aggressive the kernel will swap memory pages.
+# - disableOOMKiller: disableOOMKiller disables the OOM killer for out of memory conditions
+# [memory]
+#   limit = 1073741824
+#   reservation = 2147483648
+#   swap = 1073741824
+#   kernel = 268435456
+#   kernelTCP = 268435456
+#   swappiness = 0
+#   disableOOMKiller = false
+
+
+# Devices configures the device whitelist.
+# - allow:  allow or deny.
+# - type:   device type, block, char, etc.
+# - major:  device's major number.
+# - minor:  device's minor number.
+# - access: cgroup access permissions format, rwm.
+[[devices]]
+  access = "rwm"
+  allow = true
+  major = 0
+  minor = 0
+  type = "a"
+
+
+# BlockIO restriction configuration
+[blockIO]
+  # Specifies tasks' weight in the given cgroup while competing with the cgroup's child cgroups, CFQ scheduler only
+  leafWeight = 10
+
+  # Specifies per cgroup weight
+  weight = 10
+
+  # Weight per cgroup per device, can override BlkioWeight
+  # - major is the device's major number.
+  # - minor is the device's minor number.
+  # - weight is the bandwidth rate for the device.
+	# - leafWeight is the bandwidth rate for the device while competing with the cgroup's child cgroups, CFQ scheduler only
+  # [[blockIO.weightDevice]]
+  #   major = 7
+  #   minor = 0
+  #   weight = 10
+  #   leafWeight = 10
+
+  # IO read rate limit per cgroup per device, bytes per second
+	# - major is the device's major number.
+	# - minor is the device's minor number.
+	# - rate is the IO rate limit per cgroup per device
+  # [[blockIO.throttleReadBpsDevice]]
+  #   major = 7
+  #   minor = 0
+  #   rate = 100
+
+  # IO write rate limit per cgroup per device, bytes per second
+  # [[blockIO.throttleWriteBpsDevice]]
+  #   major = 7
+  #   minor = 0
+  #   rate = 100
+
+  # IO read rate limit per cgroup per device, IO per second
+  # [[blockIO.throttleReadIOPSDevice]]
+  #   major = 7
+  #   minor = 0
+  #   rate = 100
+
+  # IO write rate limit per cgroup per device, IO per second
+  # [[blockIO.throttleWriteIOPSDevice]]
+  #   major = 7
+  #   minor = 0
+  #   rate = 100
+
+
+# Hugetlb limit (in bytes)
+# - pagesize: the hugepage size
+# - limit: the limit of "hugepagesize" hugetlb usage
+[[hugepageLimits]]
+  limit = 9223372036854771712
+  pageSize = "2MB"
+
+
+# Network restriction configuration
+# [network]
+#   classID = 
+#   [[network.priorities]]
+#     name = "eth0"
+#     priority = 1
+
+
+# Task resource restriction configuration.
+[pids]
+  limit = 1024
+
+
+# Rdma resource restriction configuration.
+# Limits are a set of key value pairs that define RDMA resource limits,
+# where the key is device name and value is resource limits.
+# [rdma]
+#   [[rdma.resOne]]
+#     hcaHandles = 0
+#     hcaObjects = 0

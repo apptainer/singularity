@@ -1,0 +1,48 @@
+#!/bin/bash -ex
+
+# This script starts docker and systemd and runs a test
+
+# Mount /var/run/docker.sock and set --network=host so we can call docker from inside
+# cause some tests need it. Cannot mount to /var/run/docker.sock inside cause CentOS
+# /usr/sbin/init mounts another overlayfs on top of it
+
+if [[ "$OS_TYPE" = "opensuse" ]]; then
+    DOCKER_HUB_URI="${OS_TYPE}/leap:$OS_VERSION"
+else
+    DOCKER_HUB_URI="${OS_TYPE}:$OS_VERSION"
+fi
+DOCKER_CONTAINER_NAME="test_${OS_TYPE}_${OS_VERSION}"
+
+if [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "6" ]]; then
+    docker run --privileged -ti -e "container=docker" -v /var/run/docker.sock:/docker.sock \
+      --network=host -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
+      "$DOCKER_HUB_URI" /bin/bash -exc "
+    export DOCKER_HOST=unix:///docker.sock
+    chmod o+rw /docker.sock &&
+    cd /build &&
+    .travis/build_test $OS_TYPE $OS_VERSION
+"
+elif [[ "$OS_TYPE" = "centos" ]] && [[ "$OS_VERSION" = "7" ]]; then
+    docker run --privileged -d -ti -e "container=docker" -v /var/run/docker.sock:/docker.sock \
+      --network=host -v /sys/fs/cgroup:/sys/fs/cgroup -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
+      "$DOCKER_HUB_URI" /usr/sbin/init
+    docker exec -ti "$DOCKER_CONTAINER_NAME" /bin/bash -exc "
+    export DOCKER_HOST=unix:///docker.sock
+    chmod o+rw /docker.sock &&
+    cd /build &&
+    .travis/build_test $OS_TYPE $OS_VERSION
+"
+else
+    docker run --privileged -ti -e "container=docker" -v /var/run/docker.sock:/docker.sock \
+      --network=host -v "$(pwd):/build:rw"  --name "$DOCKER_CONTAINER_NAME" \
+      "$DOCKER_HUB_URI" /bin/bash -exc "
+    export DOCKER_HOST=unix:///docker.sock
+    chmod o+rw /docker.sock &&
+    cd /build &&
+    .travis/build_test $OS_TYPE $OS_VERSION
+"
+fi
+
+docker ps -a
+docker stop "$DOCKER_CONTAINER_NAME"
+docker rm -v "$DOCKER_CONTAINER_NAME"

@@ -1,0 +1,1 @@
+{"header":{"bootstrap":"zypper","include":"somepackage","mirrorurl":"http://download.opensuse.org/distribution/leap/%{OSVERSION}/repo/oss/","osversion":"42.2"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"","post":""}}}

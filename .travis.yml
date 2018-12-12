@@ -4,7 +4,7 @@ sudo: required
 dist: trusty
 
 go:
-  - "1.10.x"
+  - "1.11"
 
 addons:
   apt:
@@ -19,15 +19,22 @@ addons:
       - libgpgme11-dev
       - libseccomp-dev
 
+matrix:
+  include:
+    - os: linux
+    - os: linux
+      env: OS_TYPE=centos OS_VERSION=6
+    - os: linux
+      env: OS_TYPE=centos OS_VERSION=7
+
+services:
+  - docker
+
 before_install:
-  - curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-  - go get -u golang.org/x/lint/golint
-  - export PATH="${GOPATH}/bin:${PATH}"
+  - .travis/before_install
 
 install:
-  - ./mconfig -p /usr/local
-  - make -j `nproc 2>/dev/null || echo 1` -C ./builddir
-  - sudo make -C ./builddir install
+  - # override the default go install target
 
 script:
-  - make -C ./builddir testall
+  - .travis/script

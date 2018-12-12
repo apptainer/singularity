@@ -1,0 +1,1 @@
+{"header":{"bootstrap":"busybox","mirrorurl":"https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"","post":""}}}

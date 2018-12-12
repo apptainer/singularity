@@ -21,154 +21,113 @@
 # 
 # 
 
+%define goversion @GO_VERSION@
+%define singgopath src/github.com/sylabs/singularity
 
-%{!?_rel:%{expand:%%global _rel 1}}
+# Disable debugsource packages; otherwise it ends up with an empty %files
+#   file in debugsourcefiles.list on Fedora
+%undefine _debugsource_packages
 
 Summary: Application and environment virtualization
 Name: singularity
 Version: @PACKAGE_VERSION@
-Release: %{_rel}%{?dist}
+Release: @PACKAGE_RELEASE@%{?dist}
 # https://spdx.org/licenses/BSD-3-Clause-LBNL.html
 License: BSD-3-Clause-LBNL
 Group: System Environment/Base
-URL: http://singularity.lbl.gov/
+URL: https://www.sylabs.io/singularity/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 BuildRoot: %{?_tmppath}%{!?_tmppath:/var/tmp}/%{name}-%{version}-%{release}-root
-BuildRequires: python
+BuildRequires: wget
+BuildRequires: git
+BuildRequires: gcc
+BuildRequires: make
 BuildRequires: libuuid-devel
-BuildRequires: libarchive-devel
 BuildRequires: openssl-devel
+%if ! 0%{?el6}
+BuildRequires: libseccomp-devel
+%endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
 Requires: squashfs-tools
 %endif
 
-Requires: %{name}-runtime = %{version}-%{release}
+
+Provides: %{name}-runtime
+Obsoletes: %{name}-runtime
 
 %description
 Singularity provides functionality to make portable
 containers that can be used across host environments.
 
-%package devel
-Summary: Development libraries for Singularity
-Group: System Environment/Development
-
-%description devel
-Development files for Singularity
-
-%package runtime
-Summary: Support for running Singularity containers
-Group: System Environment/Base
-
-%description runtime
-This package contains support for running containers created
-by the %{name} package.
+%debug_package
 
 %prep
-%setup
-
+# Create our build root
+rm -rf %{name}-%{version}
+mkdir %{name}-%{version}
 
 %build
-if [ ! -f configure ]; then
-  ./autogen.sh
-fi
+cd %{name}-%{version}
 
-%configure
-%{__make} %{?mflags}
+#XXX: We would like to remove the download of Go in the future
+GOTAR=go%{goversion}.linux-amd64.tar.gz
+wget https://dl.google.com/go/$GOTAR
+tar -xf $GOTAR
 
+mkdir -p gopath/%{singgopath}
+tar -C "gopath/src/github.com/sylabs/" -xf "%SOURCE0"
+
+export GOROOT=$PWD/go
+export GOPATH=$PWD/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+cd $GOPATH/%{singgopath}
+
+./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} \
+	--bindir=%{_bindir} --libexecdir=%{_libexecdir} --sysconfdir=%{_sysconfdir} \
+	--sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} \
+	--libdir=%{_libdir}
+
+cd builddir
+make
 
 %install
-%{__make} install DESTDIR=$RPM_BUILD_ROOT %{?mflags_install}
-rm -f $RPM_BUILD_ROOT/%{_libdir}/singularity/lib*.la
+cd %{name}-%{version}
 
-%post runtime -p /sbin/ldconfig
-%postun runtime -p /sbin/ldconfig
+export GOROOT=$PWD/go
+export GOPATH=$PWD/gopath
+export PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+cd $GOPATH/%{singgopath}/builddir
+
+mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
+make DESTDIR=$RPM_BUILD_ROOT install man
+chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/singularity/actions/*
 
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
-%doc examples CONTRIBUTORS.md CONTRIBUTING.md COPYRIGHT.md INSTALL.md LICENSE-LBNL.md LICENSE.md README.md
-%attr(0755, root, root) %dir %{_sysconfdir}/singularity
-%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/*
-%attr(0755, root, root) %dir %{_sysconfdir}/singularity/capabilities
-%attr(0644, root, root) %config(noreplace) %{_sysconfdir}/singularity/capabilities/*
-
-%{_libexecdir}/singularity/cli/apps.*
-%{_libexecdir}/singularity/cli/bootstrap.*
-%{_libexecdir}/singularity/cli/build.*
-%{_libexecdir}/singularity/cli/check.*
-%{_libexecdir}/singularity/cli/create.*
-%{_libexecdir}/singularity/cli/image.*
-%{_libexecdir}/singularity/cli/inspect.*
-%{_libexecdir}/singularity/cli/mount.*
-%{_libexecdir}/singularity/cli/pull.*
-%{_libexecdir}/singularity/cli/selftest.*
-%{_libexecdir}/singularity/helpers
-%{_libexecdir}/singularity/python
-
-# Binaries
-%{_libexecdir}/singularity/bin/builddef
-%{_libexecdir}/singularity/bin/cleanupd
-%{_libexecdir}/singularity/bin/get-configvals
-%{_libexecdir}/singularity/bin/get-section
-%{_libexecdir}/singularity/bin/mount
-%{_libexecdir}/singularity/bin/image-type
-%{_libexecdir}/singularity/bin/sif
-%{_libexecdir}/singularity/bin/docker-extract
-
-# Directories
-%{_libexecdir}/singularity/bootstrap-scripts
-
-%files runtime
+%attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
+%{_bindir}/*
 %dir %{_libexecdir}/singularity
+%{_libexecdir}/singularity/bin/starter
+%{_libexecdir}/singularity/cni/*
+%dir %{_sysconfdir}/singularity
+%config(noreplace) %{_sysconfdir}/singularity/*
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/exec
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/run
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/shell
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/start
+%attr(755, root, root) %{_sysconfdir}/singularity/actions/test
+%dir %{_sysconfdir}/bash_completion.d
+%{_sysconfdir}/bash_completion.d/*
 %dir %{_localstatedir}/singularity
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
-%dir %{_localstatedir}/singularity/mnt/container
-%dir %{_localstatedir}/singularity/mnt/overlay
-%dir %{_localstatedir}/singularity/mnt/final
-%{_bindir}/singularity
-%{_bindir}/run-singularity
-%{_libdir}/singularity/lib*.so.*
-%{_libexecdir}/singularity/cli/action_argparser.*
-%{_libexecdir}/singularity/cli/exec.*
-%{_libexecdir}/singularity/cli/help.*
-%{_libexecdir}/singularity/cli/instance.*
-%{_libexecdir}/singularity/cli/run.*
-%{_libexecdir}/singularity/cli/shell.*
-%{_libexecdir}/singularity/cli/test.*
-%{_libexecdir}/singularity/cli/capability.*
-%{_libexecdir}/singularity/cli/sign.*
-%{_libexecdir}/singularity/cli/verify.*
-%{_libexecdir}/singularity/cli/siflist.*
-%{_libexecdir}/singularity/bin/action
-%{_libexecdir}/singularity/bin/start
-%{_libexecdir}/singularity/bin/image-type
-%{_libexecdir}/singularity/bin/wrapper
-%{_libexecdir}/singularity/bin/docker-extract
-%{_libexecdir}/singularity/functions
-%{_libexecdir}/singularity/capabilities
-%{_libexecdir}/singularity/handlers
-%{_libexecdir}/singularity/image-handler.sh
-%dir %{_sysconfdir}/singularity
-%config(noreplace) %{_sysconfdir}/singularity/*
-%dir %{_sysconfdir}/singularity/capabilities
-%config(noreplace) %{_sysconfdir}/singularity/capabilities/*
-%{_mandir}/man1/singularity.1*
-%dir %{_sysconfdir}/bash_completion.d
-%{_sysconfdir}/bash_completion.d/singularity
-
-#SUID programs
-%attr(4755, root, root) %{_libexecdir}/singularity/bin/wrapper-suid
-
-%files devel
-%defattr(-, root, root)
-%{_libdir}/singularity/lib*.so
-%{_libdir}/singularity/lib*.a
-%{_includedir}/singularity/*.h
+# XXX: Not great since we can't control this location...
+%{_mandir}/man1/*
 
 
 %changelog

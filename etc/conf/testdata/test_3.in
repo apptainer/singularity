@@ -205,24 +205,6 @@ always use nv = no
 root default capabilities = full
 
 
-# ALLOW_ROOT CAPABILITIES: [BOOL]
-# DEFAULT: yes
-# This allows root to gain/drop capabilities other than those defined
-# by root default capabilities.
-# Example:
-# If root default capabilities = file and allow root capabilities = no,
-# only capabilities defined in file ${prefix}/etc/singularity/capabilities/user.root
-# could be obtained by root
-allow root capabilities = yes
-
-
-# ALLOW USER CAPABILITIES: [BOOL]
-# DEFAULT: no
-# This allows user to gain capabilities based on whitelist managed by administrator
-# (requires recent kernel >= 4.3)
-allow user capabilities = no
-
-
 # MEMORY FS TYPE: [tmpfs/ramfs]
 # DEFAULT: tmpfs
 # This feature allow to choose temporary filesystem type used by Singularity.

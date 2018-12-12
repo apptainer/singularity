@@ -1,6 +1,6 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE file distributed with the sources of this project regarding your
+// LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package main
@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/singularityware/singularity/src/runtime/engines/common/config"
-	"github.com/singularityware/singularity/src/runtime/engines/singularity"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 )
 
 func main() {
@@ -36,9 +36,13 @@ func main() {
 
 // genConf produces a singularity.conf file at out. It retains set configurations from in (leave blank for default)
 func genConf(tmpl, in, out string) {
+	inFile := in
 	// Parse current singularity.conf file into c
 	c := &singularity.FileConfig{}
-	if err := config.Parser(in, c); err != nil {
+	if _, err := os.Stat(in); os.IsNotExist(err) {
+		inFile = ""
+	}
+	if err := config.Parser(inFile, c); err != nil {
 		fmt.Printf("Unable to parse singularity.conf file: %s\n", err)
 		os.Exit(1)
 	}

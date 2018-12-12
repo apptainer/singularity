@@ -4,7 +4,7 @@ pkgname=singularity
 pkgver=2.2
 pkgrel=0
 pkgdesc="Singularity: Application containers for Linux"
-url="http://singularity.lbl.gov"
+url="https://www.sylabs.io/singularity/"
 arch="x86_64"
 license="LNL"
 depends=""
@@ -13,7 +13,7 @@ makedepends="$depends_dev"
 install=""
 subpackages="$pkgname-doc $pkgname-examples"
 #source="${pkgname}-${pkgver}.tar.gz"
-source="${pkgname}-${pkgver}.tar.gz::https://github.com/singularityware/singularity/releases/download/${pkgver}/${pkgname}-${pkgver}.tar.gz"
+source="${pkgname}-${pkgver}.tar.gz::https://github.com/sylabs/singularity/releases/download/${pkgver}/${pkgname}-${pkgver}.tar.gz"
 options="suid"
 builddir=$srcdir/${pkgname}-${pkgver}
 build() {

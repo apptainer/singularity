@@ -4,40 +4,39 @@
 #
 set -e
 
-makecond="$builddir/Makefile.cond"
-echo "" > $makecond
-
-config_add_def PACKAGE_NAME \"singularity\"
-config_add_def PACKAGE_TARNAME \"singularity\"
-config_add_def PACKAGE_VERSION \"3.0.0\"
-config_add_def PACKAGE_STRING \"singularity 3.0.0\"
+config_add_def PACKAGE_NAME \"$package_name\"
+config_add_def PACKAGE_TARNAME \"$package_name\"
+config_add_def PACKAGE_VERSION \"$package_version\"
+config_add_def PACKAGE_STRING \"singularity $package_version\"
 config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
 config_add_def BUILDDIR \"$builddir\"
 config_add_def PREFIX \"$prefix\"
-config_add_def EXECPREFIX PREFIX
-config_add_def BINDIR EXECPREFIX \"/bin\"
-config_add_def LIBEXECDIR EXECPREFIX \"/libexec\"
-config_add_def SBINDIR LIBEXECDIR \"/singularity/bin\"
-config_add_def DATAROOTDIR PREFIX \"/share\"
-config_add_def DATADIR DATAROOTDIR
-config_add_def SYSCONFDIR PREFIX \"/etc\"
-config_add_def SHAREDSTARTEDIR PREFIX \"/com\"
-config_add_def LOCALSTATEDIR PREFIX \"/var\"
-config_add_def INCLUDEDIR PREFIX \"/include\"
-config_add_def OLDINCLUDEDIR \"/usr/include\"
-config_add_def DOCDIR DATAROOTDIR \"/doc/\" PACKAGE_TARNAME
-config_add_def INFODIR DATAROOTDIR \"/info\"
-config_add_def HTMLDIR DOCDIR
-config_add_def DVIDIR DOCDIR
-config_add_def PDFDIR DOCDIR
-config_add_def PSDIR DOCDIR
-config_add_def LIBDIR EXECPREFIX \"/lib\"
-config_add_def LOCALEDIR DATAROOTDIR \"/locale\"
-config_add_def MANDIR DATAROOTDIR \"/man\"
+config_add_def EXECPREFIX \"$exec_prefix\"
+config_add_def BINDIR \"$bindir\"
+config_add_def SBINDIR \"$sbindir\"
+config_add_def LIBEXECDIR \"$libexecdir\"
+config_add_def DATAROOTDIR \"$datarootdir\"
+config_add_def DATADIR \"$datadir\"
+config_add_def SYSCONFDIR \"$sysconfdir\"
+config_add_def SHAREDSTATEDIR \"$sharedstatedir\"
+config_add_def LOCALSTATEDIR \"$localstatedir\"
+config_add_def RUNSTATEDIR \"$runstatedir\"
+config_add_def INCLUDEDIR \"$includedir\"
+config_add_def OLDINCLUDEDIR \"$oldincludedir\"
+config_add_def DOCDIR  \"$docdir\"
+config_add_def INFODIR \"$infodir\"
+config_add_def HTMLDIR \"$htmldir\"
+config_add_def DVIDIR \"$dvidir\"
+config_add_def PDFDIR \"$pdfdir\"
+config_add_def PSDIR \"$psdir\"
+config_add_def LIBDIR \"$libdir\"
+config_add_def LOCALEDIR \"$localedir\"
+config_add_def MANDIR \"$mandir\"
 config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
 config_add_def CAPABILITY_FILE SINGULARITY_CONFDIR \"/capability.json\"
+config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
 
 # config_add_def SINGULARITY_USERNS 1
 # config_add_def DISABLE_SUID 1
@@ -46,19 +45,6 @@ config_add_def CONTAINER_MOUNTDIR LOCALSTATEDIR \"/singularity/mnt/container\"
 config_add_def CONTAINER_FINALDIR LOCALSTATEDIR \"/singularity/mnt/final\"
 config_add_def CONTAINER_OVERLAY LOCALSTATEDIR \"/singularity/mnt/overlay\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
-
-########################
-# git version 
-########################
-if BRANCH=`git rev-parse --abbrev-ref HEAD 2>/dev/null`; then
-    if HASH=`git rev-parse --short HEAD 2>/dev/null`; then
-        config_add_def GIT_VERSION \"$BRANCH.$HASH\"
-    else
-        config_add_def GIT_VERSION \"$BRANCH\"
-    fi
-else
-    config_add_def GIT_VERSION \"dist\"
-fi
 
 
 ########################
@@ -167,8 +153,8 @@ fi
 # feature: NO_NEW_PRIVS
 ########################
 printf " checking: feature: NO_NEW_PRIVS... "
-nnp_c=`mktemp -t nnp_c_XXXXXX`
-cat > $nnp_c << "EOF"
+testprog=$makeit_testprogdir/test_nnp
+cat > ${testprog}.c << "EOF"
 #include <sys/prctl.h>
 #ifndef PR_SET_NO_NEW_PRIVS
 # define PR_SET_NO_NEW_PRIVS 38
@@ -180,21 +166,19 @@ int main() {
   return 0;
 }
 EOF
-if ! $tgtcc -x c -o /tmp/nnp_c ${nnp_c} >/dev/null 2>&1; then
+if ! $tgtcc -x c -o $testprog ${testprog}.c >/dev/null 2>&1; then
 	echo "no"
     echo "ERROR: Failed to compile NO_NEW_PRIVS test"
     exit 2;
 else
-    if ! /tmp/nnp_c; then
+    if ! $testprog; then
         echo "ERROR: Kernel does not support NO_NEW_PRIVS. Updated Kernel is required."
-        /bin/rm -f ${nnp_c} /tmp/nnp_c
         exit 2;
     else
 	echo "yes"
 	config_add_def SINGULARITY_NO_NEW_PRIVS 1
     fi
 fi
-/bin/rm -f ${nnp_c} /tmp/nnp_c
 
 ########################
 # feature: MS_SLAVE
@@ -243,12 +227,23 @@ fi
 # user capabilities
 ########################
 printf " checking: user capabilities... "
-if ! printf "#include <sys/prctl.h>\n#ifndef PR_CAP_AMBIENT\n#error failed\n#endif\nint main() { }" | \
-   $tgtcc -x c -o /dev/null - >/dev/null 2>&1; then
-	echo "no"
+testprog=$makeit_testprogdir/test_ucap
+cat > ${testprog}.c << "EOF"
+#include <sys/prctl.h>
+int main() {
+  if( prctl(PR_CAP_AMBIENT, PR_CAP_AMBIENT_IS_SET, 0, 0, 0) < 0 ) { return 1; }
+  return 0;
+}
+EOF
+if ! $tgtcc -x c -o $testprog ${testprog}.c >/dev/null 2>&1; then
+    echo "no"
 else
-	echo "yes"
-	config_add_def USER_CAPABILITIES 1
+    if ! $testprog; then
+        echo "no"
+    else
+        echo "yes"
+        config_add_def USER_CAPABILITIES 1
+    fi
 fi
 
 ########################
@@ -338,8 +333,7 @@ if ! printf "#include <seccomp.h>\nint main() { }" | \
     echo "no"
 else
     echo "yes"
-    echo "WRAPPER_LIBS += -lseccomp" >> $makecond
-    echo "go_TAG += seccomp" >> $makecond
+    appsec=1
 fi
 
-echo "INFO: userns and disable_suid are disabled. (mchecks/base.chk)"
+echo "INFO: userns and disable_suid are disabled. (mlocal/checks/basechecks.chk)"

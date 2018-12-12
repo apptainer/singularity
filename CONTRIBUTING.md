@@ -25,48 +25,46 @@ all your interactions with the project members and users.
 
 ## Pull Requests (PRs)
 
-### Process
-1. Essential bug fix PRs should be sent to both master and devopment branches.
-2. Small bug fix and feature enhancement PRs should be sent to development only.
-3. Follow the existing code style precedent. This does not need to be strictly
-   defined as there are many thousands of lines of examples. Note the lack
-   of tabs anywhere in the project, parentheses and spacing, curly bracket
-   locations, source code layout, variable scoping, etc. and follow the
-   project's standards.
+1. Essential bug fix PRs should be sent to both master and release branches.
+2. Small bug fix and feature enhancement PRs should be sent to master only.
+3. Follow the existing code style precedent, especially for C. For Golang, you
+   will mostly conform to the style and form enforced by the "go fmt" and
+   "golint" tools for proper formatting.
 4. Ensure any install or build dependencies are removed before doing a build
    to test your PR locally.
-5. For any new functionality, please write a test to be added to Continuous
-   Integration (Travis) to test it (tests can be found in the `tests/`
-   directory).
-6. The project's default copyright and header have been included in any new
-   source files.
-7. Make sure you have implemented a local `make test` and all tests succeed
+5. For any new functionality, please write appropriate go tests that will run
+   as part of the Continuous Integration (Circle CI and Travis) systems.
+6. Make sure that the project's default copyright and header have been included 
+   in any new source files.
+7. Make sure you have locally tested using `make test` and that all tests succeed
    before submitting the PR.
-8. Is the code human understandable? This can be accomplished via a clear code
+8. To conform to the Golang standards and idioms, make sure you have done the 
+   following:
+    - Run `go fmt ./...` to format all `.go` files. We use `go1.11`'s 
+      formatting as our standard
+    - Left a function comment on **every** new exported function and package that
+      your PR has introduced. To learn about how to properly comment Golang code, read [this post on golang.org](https://golang.org/doc/effective_go.html?#commentary)
+9. Is the code human understandable? This can be accomplished via a clear code
    style as well as documentation and/or comments.
-9. The pull request will be reviewed by others, and the final merge must be
-   done by the Singularity project lead, @gmkurtzer (or approved by him).
-10. Documentation must be provided if necessary (next section)
+10. The pull request will be reviewed by others, and finally merged when all
+   requirements are met.
+11. The `CHANGELOG.md` must be updated for any of the following changes:
+    - Renamed commands
+    - Deprecated / removed commands
+    - Changed defaults / behaviors
+    - Backwards incompatible changes
+    - New features / functionalities
+12. PRs which introduce a new Golang dependency to the project via `dep` must include a justification for introducing the dependency. Ideally, newly introduced dependencies should also be pinned to a specific version.
 
-### Documentation
-1. If you are changing any of the following:
+## Documentation
+There are a few places where documentation for the Singularity project lives. The [changelog](CHANGELOG.md) is where PRs should include documentation if necessary. When a new release is tagged, the [user-docs](https://www.sylabs.io/guides/3.0/user-guide/) and [admin-docs](https://www.sylabs.io/guides/3.0/admin-guide/) will be updated using the contents of the `CHANGELOG.md` file as reference.
 
-   - renamed commands
-   - deprecated / removed commands
-   - changed defaults
-   - backward incompatible changes (recipe file format? image file format?)
-   - migration guidance (how to convert images?)
-   - changed behaviour (recipe sections work differently)
+1. The [changelog](CHANGELOG.md) is a place to document **functional** differences between versions of Singularity. PRs which require documentation must update this file. This should be a document which can be used to explain what the new features of each version of Singularity are, and should **not** read like a commit log. Once a release is tagged (*e.g. v3.0.0*), a new top level section will be made titled **Changes Since vX.Y.Z** (*e.g. Changes Since v3.0.0*) where new changes will now be documented, leaving the previous section immutable.
+2. The [README](README.md) is a place to document critical information for new users of Singularity. It should typically not change, but in the case where a change is necessary a PR may update it.
+3. The [user-docs](https://www.github.com/sylabs/singularity-userdocs) should document anything pertinent to the usage of Singularity.
+4. The [admin-docs](https://www.github.com/sylabs/singularity-admindocs) document anything that is pertinent to a system administrator who manages a system with Singularity installed.
+5. If necessary, changes to the message displayed when running `singularity help *` can be made by editing `src/docs/content.go`.
 
-You are **required** to document it in the [changelog](CHANGELOG.md) for the next release.  
-You are also required to provide documentation or a direct pull request to
-the (upcoming) version of the [singularityware.github.io](https://www.github.io/singularityware/singularityware.github.io) docs. Ask for help if you aren't sure where your contribution
-should go.
-2. If necessary, update the README.md, and check the `*.help` scripts under
-   [libexec/cli](libexec/cli) that provide the command line helper output. If
-   you make changes to the internal Python API, make sure to check those
-   changes into the [libexec/python/README.md](libexec/python/README.md) as
-   well.
 
 # Code of Conduct
 

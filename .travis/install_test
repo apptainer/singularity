@@ -1,7 +1,8 @@
 #!/bin/bash -ex
 
-./autogen.sh
-./configure --prefix=/usr/local
-sudo make install
-sudo make secbuildimg
-make test
+export PATH="${GOPATH}/bin:${PATH}"
+./mconfig -p /usr/local
+make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
+sudo make -C ./builddir install
+
+make -C ./builddir testall

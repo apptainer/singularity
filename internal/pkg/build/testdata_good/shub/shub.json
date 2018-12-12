@@ -1,0 +1,1 @@
+{"header":{"bootstrap":"shub","from":"shub://\u003cregistry\u003e/\u003cusername\u003e/\u003ccontainer-name\u003e:\u003ctag\u003e@digest"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"","post":""}}}

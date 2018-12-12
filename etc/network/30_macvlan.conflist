@@ -1,0 +1,22 @@
+{
+    "cniVersion": "0.3.1",
+    "name": "macvlan",
+    "plugins": [
+        {
+            "type": "macvlan",
+            "master": "eth0",
+            "ipam": {
+                "type": "static",
+                "addresses": [
+                    {
+                        "address": "192.168.1.1/24",
+                        "gateway": "192.168.1.254"
+                    }
+                ],
+                "routes": [
+                    { "dst": "0.0.0.0/0" }
+                ]
+            }
+        }
+    ]
+}

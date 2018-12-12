@@ -1,0 +1,23 @@
+#!/bin/sh
+
+for script in /.singularity.d/env/*.sh; do
+    if [ -f "$script" ]; then
+        . "$script"
+    fi
+done
+
+
+if test -z "${SINGULARITY_APPNAME:-}"; then
+
+    if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test"; then
+        exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test" "$@"
+    else
+        echo "No Singularity tests for contained app: ${SINGULARITY_APPNAME:-}"
+        exit 1
+    fi
+elif test -x "/.singularity.d/test"; then
+    exec "/.singularity.d/test" "$@"
+else
+    echo "No Singularity container test found, executing /bin/sh"
+    exec /bin/sh "$@"
+fi

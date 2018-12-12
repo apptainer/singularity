@@ -1,0 +1,32 @@
+# Singularity Execution Control List config file
+#
+# This file describes execution groups in which SIF files are checked for
+# authorized loading/execution. The decision is made by validating both the
+# location of the sif file in the file system and by checking against a list of
+# signing entities.
+#
+# The current possible list modes are: whitelist, whitestrict and blacklist.
+#
+# Example:
+#
+#activated = true
+#
+#[[execgroup]]
+#  tagname = "group1"
+#  mode = "whitestrict"
+#  dirpath = "/var/cache/containers"
+#  keyfp = ["5994BE54C31CF1B5E1994F987C52CF6D055F072B","7064B1D6EFF01B1262FED3F03581D99FE87EAFD1"]
+#
+#[[execgroup]]
+#  tagname = "group2"
+#  mode = "whitelist"
+#  dirpath = "/tmp/containers"
+#  keyfp = ["7064B1D6EFF01B1262FED3F03581D99FE87EAFD1"]
+#
+# The above example defines 2 execution groups (dirpath: /var/cache/containers
+# and /tmp/containers), in which only SIF files signed with both Key IDs
+# 055F072B and E87EAFD1 may run if started from /var/cache/containers and only
+# SIF files signed with Key ID E87EAFD1 may run if started from /tmp/containers.
+#
+
+activated = false

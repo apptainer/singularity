@@ -1,0 +1,9 @@
+Bootstrap: library
+From: alpine:3.7
+
+%runscript
+    echo "$@"
+
+%post
+    echo "Hello from inside the container"
+    echo "Install additional software here"

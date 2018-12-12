@@ -162,7 +162,7 @@ function scanmod(mod, path)
 
 function usage()
 {
-	print "usage: genmod modfile=<module file> topdir=<project topdir>"
+	print "usage: genmod modfile=<module file> genconfdir=<temp confdir> host=<host type> tmpldir=<template location>"
 	exit(1)
 }
 
@@ -385,13 +385,7 @@ function checkvars(envar)
 {
 	if (envar["modfile"] == "")
 		usage()
-	if (envar["topdir"] == "")
-		usage()
 	if (envar["host"] == "")
-		usage()
-	if (envar["verbose"] == "")
-		usage()
-	if (envar["debug"] == "")
 		usage()
 	if (envar["genconfdir"] == "")
 		usage()
