@@ -373,7 +373,7 @@ func testPersistentOverlay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd = exec.Command("/sbin/mkfs.ext3", "-q", "-F", "ext3_fs.img")
+	cmd = exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img")
 	cmd.Stdout = &out
 	err = cmd.Run()
 	if err != nil {
