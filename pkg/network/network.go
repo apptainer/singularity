@@ -32,7 +32,7 @@ type CNIPath struct {
 
 // Setup contains network installation setup
 type Setup struct {
-	configs         []config
+	networks        []string
 	networkConfList []*libcni.NetworkConfigList
 	runtimeConf     []*libcni.RuntimeConf
 	result          []types.Result
@@ -41,18 +41,12 @@ type Setup struct {
 	netNS           string
 }
 
-// config describes a runtime network configuration
-type config struct {
-	name    string
-	portMap []portMap
-	args    [][2]string
-}
-
-// portMap describes a port mapping between host and container
-type portMap struct {
-	hostPort      uint16
-	containerPort uint16
-	protocol      string
+// PortMapEntry describes a port mapping between host and container
+type PortMapEntry struct {
+	HostPort      int    `json:"hostPort"`
+	ContainerPort int    `json:"containerPort"`
+	Protocol      string `json:"protocol"`
+	HostIP        string `json:"hostIP,omitempty"`
 }
 
 // AvailableNetworks lists configured networks in configuration path directory
@@ -96,7 +90,6 @@ func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 // NewSetup creates and returns a network setup to configure, add and remove
 // network interfaces in container
 func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIPath) (*Setup, error) {
-	nlist := make([]config, 0)
 	id := containerID
 
 	if id == "" {
@@ -113,19 +106,37 @@ func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIP
 		return nil, NoCniPluginError
 	}
 
+	networkConfList := make([]*libcni.NetworkConfigList, 0)
+	runtimeConf := make([]*libcni.RuntimeConf, 0)
+
+	ifIndex := 0
 	for _, network := range networks {
-		nlist = append(nlist, config{
-			name:    network,
-			portMap: make([]portMap, 0),
-			args:    make([][2]string, 0),
-		})
+		nlist, err := libcni.LoadConfList(cniPath.Conf, network)
+		if err != nil {
+			return nil, err
+		}
+
+		rt := &libcni.RuntimeConf{
+			ContainerID:    containerID,
+			NetNS:          netNS,
+			IfName:         fmt.Sprintf("eth%d", ifIndex),
+			CapabilityArgs: make(map[string]interface{}, 0),
+			Args:           make([][2]string, 0),
+		}
+
+		runtimeConf = append(runtimeConf, rt)
+		networkConfList = append(networkConfList, nlist)
+
+		ifIndex++
 	}
 
 	return &Setup{
-			configs:     nlist,
-			cniPath:     cniPath,
-			netNS:       netNS,
-			containerID: id,
+			networks:        networks,
+			networkConfList: networkConfList,
+			runtimeConf:     runtimeConf,
+			cniPath:         cniPath,
+			netNS:           netNS,
+			containerID:     id,
 		},
 		nil
 }
@@ -146,10 +157,7 @@ func parseArg(arg string) ([][2]string, error) {
 
 // SetArgs affects arguments to corresponding network plugins
 func (m *Setup) SetArgs(args []string) error {
-	var hostPort uint16
-	var containerPort uint16
-
-	if len(m.configs) < 1 {
+	if len(m.networks) < 1 {
 		return fmt.Errorf("there is no configured network in list")
 	}
 
@@ -158,7 +166,7 @@ func (m *Setup) SetArgs(args []string) error {
 		networkName := ""
 
 		if strings.IndexByte(arg, ':') > strings.IndexByte(arg, '=') {
-			splitted = []string{m.configs[0].name, arg}
+			splitted = []string{m.networks[0], arg}
 		} else {
 			splitted = strings.SplitN(arg, ":", 2)
 		}
@@ -167,13 +175,13 @@ func (m *Setup) SetArgs(args []string) error {
 		}
 		n := len(splitted) - 1
 		if n == 0 {
-			networkName = m.configs[0].name
+			networkName = m.networks[0]
 		} else {
 			networkName = splitted[0]
 		}
 		hasNetwork := false
-		for _, network := range m.configs {
-			if network.name == networkName {
+		for _, network := range m.networks {
+			if network == networkName {
 				hasNetwork = true
 				break
 			}
@@ -189,51 +197,67 @@ func (m *Setup) SetArgs(args []string) error {
 			key := kv[0]
 			value := kv[1]
 			if key == "portmap" {
+				pm := &PortMapEntry{}
+
 				splittedPort := strings.SplitN(value, "/", 2)
 				if len(splittedPort) != 2 {
 					return fmt.Errorf("badly formatted portmap argument '%s', must be of form portmap:hostPort:containerPort/protocol", splitted[1])
 				}
-				protocol := splittedPort[1]
-				if protocol != "tcp" && protocol != "udp" {
+				pm.Protocol = splittedPort[1]
+				if pm.Protocol != "tcp" && pm.Protocol != "udp" {
 					return fmt.Errorf("only tcp and udp protocol can be specified")
 				}
 				ports := strings.Split(splittedPort[0], ":")
 				if len(ports) != 1 && len(ports) != 2 {
 					return fmt.Errorf("portmap port argument is badly formatted")
 				}
-				if n, err := strconv.ParseUint(ports[0], 0, 16); err == nil {
-					hostPort = uint16(n)
-					if hostPort == 0 {
-						return fmt.Errorf("host port can't be zero")
+				if n, err := strconv.ParseInt(ports[0], 0, 16); err == nil {
+					pm.HostPort = int(n)
+					if pm.HostPort <= 0 {
+						return fmt.Errorf("host port must be greater than zero")
 					}
 				} else {
 					return fmt.Errorf("can't convert host port '%s': %s", ports[0], err)
 				}
 				if len(ports) == 2 {
-					if n, err := strconv.ParseUint(ports[1], 0, 16); err == nil {
-						containerPort = uint16(n)
-						if containerPort == 0 {
-							return fmt.Errorf("container port can't be zero")
+					if n, err := strconv.ParseInt(ports[1], 0, 16); err == nil {
+						pm.ContainerPort = int(n)
+						if pm.ContainerPort <= 0 {
+							return fmt.Errorf("container port must be greater than zero")
 						}
 					} else {
 						return fmt.Errorf("can't convert container port '%s': %s", ports[1], err)
 					}
 				} else {
-					containerPort = hostPort
+					pm.ContainerPort = pm.HostPort
 				}
-				for i := range m.configs {
-					if m.configs[i].name == networkName {
-						m.configs[i].portMap = append(m.configs[i].portMap, portMap{
-							containerPort: containerPort,
-							hostPort:      hostPort,
-							protocol:      protocol,
-						})
+				for i := range m.networks {
+					if m.networks[i] == networkName {
+						hasPortMap := false
+						for _, plugin := range m.networkConfList[i].Plugins {
+							if plugin.Network.Capabilities["portMappings"] {
+								hasPortMap = true
+								if m.runtimeConf[i].CapabilityArgs["portMappings"] == nil {
+									m.runtimeConf[i].CapabilityArgs["portMappings"] = make([]PortMapEntry, 0)
+								}
+								break
+							}
+						}
+
+						if !hasPortMap {
+							return fmt.Errorf("%s network doesn't have portmap enabled", networkName)
+						}
+
+						m.runtimeConf[i].CapabilityArgs["portMappings"] = append(
+							m.runtimeConf[i].CapabilityArgs["portMappings"].([]PortMapEntry),
+							*pm,
+						)
 					}
 				}
 			} else {
-				for i := range m.configs {
-					if m.configs[i].name == networkName {
-						m.configs[i].args = append(m.configs[i].args, kv)
+				for i := range m.networks {
+					if m.networks[i] == networkName {
+						m.runtimeConf[i].Args = append(m.runtimeConf[i].Args, kv)
 					}
 				}
 			}
@@ -258,48 +282,9 @@ func (m *Setup) command(command string) error {
 	os.Setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin")
 	defer env.SetFromList(backupEnv)
 
-	if m.networkConfList == nil {
-		m.networkConfList = make([]*libcni.NetworkConfigList, 0)
-	}
-	if m.runtimeConf == nil {
-		m.runtimeConf = make([]*libcni.RuntimeConf, 0)
-	}
 	config := &libcni.CNIConfig{Path: []string{m.cniPath.Plugin}}
 
 	if command == "ADD" {
-		ifIndex := 0
-		for _, config := range m.configs {
-			capabilityArgs := make(map[string]interface{}, 0)
-			portMappings := make([]map[string]interface{}, 0)
-
-			nlist, err := libcni.LoadConfList(m.cniPath.Conf, config.name)
-			if err != nil {
-				return err
-			}
-			m.networkConfList = append(m.networkConfList, nlist)
-			ifName := fmt.Sprintf("eth%d", ifIndex)
-
-			for _, portMap := range config.portMap {
-				portMappings = append(portMappings, map[string]interface{}{
-					"hostPort":      portMap.hostPort,
-					"containerPort": portMap.containerPort,
-					"protocol":      portMap.protocol,
-				})
-			}
-
-			if len(portMappings) > 0 {
-				capabilityArgs["portMappings"] = portMappings
-			}
-			rt := &libcni.RuntimeConf{
-				ContainerID:    m.containerID,
-				NetNS:          m.netNS,
-				IfName:         ifName,
-				CapabilityArgs: capabilityArgs,
-				Args:           config.args,
-			}
-			m.runtimeConf = append(m.runtimeConf, rt)
-			ifIndex++
-		}
 		m.result = make([]types.Result, len(m.networkConfList))
 		for i := 0; i < len(m.networkConfList); i++ {
 			var err error
