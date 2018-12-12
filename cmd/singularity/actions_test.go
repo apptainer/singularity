@@ -34,7 +34,7 @@ type opts struct {
 	workdir   string
 	pwd       string
 	app       string
-	overlay   string
+	overlay   []string
 }
 
 // imageExec can be used to run/exec/shell a Singularity image
@@ -63,8 +63,8 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	if opts.home != "" {
 		argv = append(argv, "--home", opts.home)
 	}
-	if opts.overlay != "" {
-		argv = append(argv, "--overlay", opts.overlay)
+	for _, fs := range opts.overlay {
+		argv = append(argv, "--overlay", fs)
 	}
 	if opts.workdir != "" {
 		argv = append(argv, "--workdir", opts.workdir)
@@ -325,32 +325,118 @@ func testRunFromURI(t *testing.T) {
 
 // testPersistentOverlay test the --overlay function
 func testPersistentOverlay(t *testing.T) {
+	const squashfsImage = "squashfs.simg"
 	//  Create the overlay dir
-	err := os.Mkdir("my_overlay", 0700)
+	cwd, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove("my_overlay")
+	dir, err := ioutil.TempDir(cwd, "overlay_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	// Create dirfs for squashfs
+	squashDir, err := ioutil.TempDir(cwd, "overlay_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(squashDir)
 
-	// create a file
+	content := []byte("temporary file's content")
+	tmpfile, err := ioutil.TempFile(squashDir, "bogus")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tmpfile.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tmpfile.Name())
+
+	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	err = cmd.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(squashfsImage)
+	//  Create the overlay ext3 fs
+	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
+	cmd.Stdout = &out
+	err = cmd.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd = exec.Command("/sbin/mkfs.ext3", "-q", "-F", "ext3_fs.img")
+	cmd.Stdout = &out
+	err = cmd.Run()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove("ext3_fs.img")
+	// create a file dir
 	t.Run("overlay_create", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: "my_overlay"}, imagePath, []string{"touch", "/foo_overlay"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"touch", "/dir_overlay"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
 		}
 	}))
-	// look for the file
+	// look for the file dir
 	t.Run("overlay_find", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: "my_overlay"}, imagePath, []string{"test", "-f", "/foo_overlay"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"test", "-f", "/dir_overlay"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// create a file ext3
+	t.Run("overlay_ext3_create", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img"}}, imagePath, []string{"touch", "/ext3_overlay"})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// look for the file ext3
+	t.Run("overlay_ext3_find", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img"}}, imagePath, []string{"test", "-f", "/ext3_overlay"})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// look for the file squashFs
+	t.Run("overlay_squashFS_find", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{squashfsImage}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
+		}
+	}))
+	// create a file multiple overlays
+	t.Run("overlay_multiple_create", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"touch", "/multiple_overlay_fs"})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+		}
+	}))
+	// look for the file with multiple overlays
+	t.Run("overlay_multiple_find", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"test", "-f", "/multiple_overlay_fs"})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
 		}
 	}))
 	// look for the file without root privs
 	t.Run("overlay_noroot", test.WithoutPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: "my_overlay"}, imagePath, []string{"test", "-f", "/foo_overlay"})
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"test", "-f", "/foo_overlay"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
@@ -377,20 +463,20 @@ func TestSingularityActions(t *testing.T) {
 		t.Fatalf("unexpected failure: %v", err)
 	}
 	defer os.Remove(imagePath)
-	if b, err := imageBuild(opts, appsImage, "../../examples/apps/Singularity"); err != nil {
-		t.Log(string(b))
-		t.Fatalf("unexpected failure: %v", err)
-	}
-	defer os.Remove(appsImage)
+	// if b, err := imageBuild(opts, appsImage, "../../examples/apps/Singularity"); err != nil {
+	// 	t.Log(string(b))
+	// 	t.Fatalf("unexpected failure: %v", err)
+	// }
+	// defer os.Remove(appsImage)
 
-	// singularity run
-	t.Run("run", testSingularityRun)
-	// singularity exec
-	t.Run("exec", testSingularityExec)
-	// stdin pipe
-	t.Run("STDIN", testSTDINPipe)
-	// action_URI
-	t.Run("action_URI", testRunFromURI)
+	// // singularity run
+	// t.Run("run", testSingularityRun)
+	// // singularity exec
+	// t.Run("exec", testSingularityExec)
+	// // stdin pipe
+	// t.Run("STDIN", testSTDINPipe)
+	// // action_URI
+	// t.Run("action_URI", testRunFromURI)
 	// Persistent Overlay
 	t.Run("Persistent_Overlay", testPersistentOverlay)
 }
