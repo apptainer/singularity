@@ -159,7 +159,7 @@ var OciKillCmd = &cobra.Command{
 		if len(args) > 1 && args[1] != "" {
 			stopSignal = args[1]
 		}
-		if err := ociKill(args[0]); err != nil {
+		if err := ociKill(args[0], 0); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -539,7 +539,7 @@ func ociStart(containerID string) error {
 	return nil
 }
 
-func ociKill(containerID string) error {
+func ociKill(containerID string, killTimeout int) error {
 	// send signal to the instance
 	state, err := getState(containerID)
 	if err != nil {
@@ -559,30 +559,34 @@ func ociKill(containerID string) error {
 		}
 	}
 
-	c, err := unix.Dial(state.ControlSocket)
-	if err != nil {
-		return fmt.Errorf("failed to connect to control socket")
-	}
-	defer c.Close()
-
-	killed := make(chan bool, 1)
-
-	go func() {
-		// wait runtime close socket connection for ACK
-		d := make([]byte, 1)
-		if _, err := c.Read(d); err == io.EOF {
-			killed <- true
+	if killTimeout > 0 {
+		c, err := unix.Dial(state.ControlSocket)
+		if err != nil {
+			return fmt.Errorf("failed to connect to control socket")
 		}
-	}()
+		defer c.Close()
 
-	if err := syscall.Kill(state.Pid, sig); err != nil {
-		return err
-	}
+		killed := make(chan bool, 1)
 
-	select {
-	case <-killed:
-	case <-time.After(2 * time.Second):
-		return syscall.Kill(state.Pid, syscall.SIGKILL)
+		go func() {
+			// wait runtime close socket connection for ACK
+			d := make([]byte, 1)
+			if _, err := c.Read(d); err == io.EOF {
+				killed <- true
+			}
+		}()
+
+		if err := syscall.Kill(state.Pid, sig); err != nil {
+			return err
+		}
+
+		select {
+		case <-killed:
+		case <-time.After(time.Duration(killTimeout) * time.Second):
+			return syscall.Kill(state.Pid, syscall.SIGKILL)
+		}
+	} else {
+		return syscall.Kill(state.Pid, sig)
 	}
 
 	return nil
@@ -599,7 +603,7 @@ func ociDelete(containerID string) error {
 		return fmt.Errorf("container is not stopped: running")
 	case "stopped":
 	case "created":
-		if err := ociKill(containerID); err != nil {
+		if err := ociKill(containerID, 2); err != nil {
 			return err
 		}
 		engineConfig, err = getEngineConfig(containerID)
