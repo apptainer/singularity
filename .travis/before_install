@@ -6,7 +6,6 @@ if [ -z "$OS_TYPE" ]; then
     cd ../..
     if [ ! -d sylabs ]; then mv * sylabs; fi
     cd sylabs/singularity
-    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
     go get -u golang.org/x/lint/golint
     exit
 fi
