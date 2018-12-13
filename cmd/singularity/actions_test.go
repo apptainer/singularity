@@ -386,7 +386,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"touch", "/dir_overlay"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/dir_overlay"}, " "))
 		}
 	}))
 	// look for the file dir
@@ -394,7 +394,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"test", "-f", "/dir_overlay"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/dir_overlay"}, " "))
 		}
 	}))
 	// create a file ext3
@@ -402,7 +402,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img"}}, imagePath, []string{"touch", "/ext3_overlay"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/ext3_overlay"}, " "))
 		}
 	}))
 	// look for the file ext3
@@ -410,7 +410,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img"}}, imagePath, []string{"test", "-f", "/ext3_overlay"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/ext3_overlay"}, " "))
 		}
 	}))
 	// look for the file squashFs
@@ -426,7 +426,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"touch", "/multiple_overlay_fs"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/multiple_overlay_fs"}, " "))
 		}
 	}))
 	// look for the file with multiple overlays
@@ -434,7 +434,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"test", "-f", "/multiple_overlay_fs"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "multiple_overlay_fs"}, " "))
 		}
 	}))
 	// look for the file without root privs
