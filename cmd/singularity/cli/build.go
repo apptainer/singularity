@@ -20,19 +20,22 @@ import (
 )
 
 var (
-	remote     bool
-	builderURL string
-	detached   bool
-	libraryURL string
-	isJSON     bool
-	sandbox    bool
-	writable   bool
-	force      bool
-	update     bool
-	noTest     bool
-	sections   []string
-	tmpDir     string
-	noHTTPS    bool
+	remote         bool
+	builderURL     string
+	detached       bool
+	libraryURL     string
+	isJSON         bool
+	sandbox        bool
+	writable       bool
+	force          bool
+	update         bool
+	noTest         bool
+	sections       []string
+	noHTTPS        bool
+	tmpDir         string
+	dockerUsername string
+	dockerPassword string
+	dockerLogin    bool
 )
 
 var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
@@ -75,6 +78,10 @@ func init() {
 
 	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
+
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 
 	SingularityCmd.AddCommand(BuildCmd)
 }
