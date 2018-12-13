@@ -90,6 +90,10 @@ Enterprise Performance Computing (EPC)`
           OSVersion: trusty
           MirrorURL: http://us.archive.ubuntu.com/ubuntu/
 
+      Busybox:
+          Bootstrap: busybox
+          MirrorURL: https://www.busybox.net/downloads/binaries/%{BUSYBOX_VERSION}-defconfig-multiarch/busybox-x86_64
+
       Local Image:
           Bootstrap: localimage
           From: /home/dave/starter.img
