@@ -134,7 +134,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nenvironment';", prefix)
-			a[2] += " cat .singularity.d/env/90-environment.sh;"
+			a[2] += " find .singularity.d/env -name 9*-environment.sh -exec echo -n == \\; -exec basename -z {} \\; -exec echo == \\; -exec cat {} \\; -exec echo \\;;"
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
