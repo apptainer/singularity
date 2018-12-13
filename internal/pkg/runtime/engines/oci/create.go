@@ -488,6 +488,32 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 			return err
 		}
 
+		createSymlinks := func(*mount.System) error {
+			cgroupPath := filepath.Join(c.rpcRoot, c.rootfs, m.Destination)
+			if _, err := os.Stat(filepath.Join(cgroupPath, "cpu")); err != nil && os.IsNotExist(err) {
+				if _, err := c.rpcOps.Symlink("cpu,cpuacct", filepath.Join(c.rootfs, m.Destination, "cpu")); err != nil {
+					return err
+				}
+				if _, err := c.rpcOps.Symlink("cpu,cpuacct", filepath.Join(c.rootfs, m.Destination, "cpuacct")); err != nil {
+					return err
+				}
+			}
+
+			if _, err := os.Stat(filepath.Join(cgroupPath, "net_cls")); err != nil && os.IsNotExist(err) {
+				if _, err := c.rpcOps.Symlink("net_cls,net_prio", filepath.Join(c.rootfs, m.Destination, "net_cls")); err != nil {
+					return err
+				}
+				if _, err := c.rpcOps.Symlink("net_cls,net_prio", filepath.Join(c.rootfs, m.Destination, "net_prio")); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+
+		if err := system.RunAfterTag(mount.OtherTag, createSymlinks); err != nil {
+			return err
+		}
+
 		f, err := os.Open(fmt.Sprintf("/proc/%d/cgroup", pid))
 		if err != nil {
 			return err
