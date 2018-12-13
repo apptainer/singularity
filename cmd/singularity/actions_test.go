@@ -430,11 +430,18 @@ func testPersistentOverlay(t *testing.T) {
 		}
 	}))
 	// look for the file with multiple overlays
-	t.Run("overlay_multiple_find", test.WithPrivilege(func(t *testing.T) {
+	t.Run("overlay_multiple_find_ext3", test.WithPrivilege(func(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"test", "-f", "/multiple_overlay_fs"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
 			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "multiple_overlay_fs"}, " "))
+		}
+	}))
+	t.Run("overlay_multiple_find_squashfs", test.WithPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
+		if exitCode != 0 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
 		}
 	}))
 	// look for the file without root privs
