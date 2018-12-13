@@ -426,7 +426,7 @@ func testPersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{"ext3_fs.img", squashfsImage}}, imagePath, []string{"touch", "/multiple_overlay_fs"})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/multiple_overlay_fs"}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"touch", "/multiple_overlay_fs"}, " "))
 		}
 	}))
 	// look for the file with multiple overlays
