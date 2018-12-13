@@ -75,23 +75,20 @@ func (cp *BusyBoxConveyorPacker) Pack() (b *types.Bundle, err error) {
 	return cp.b, nil
 }
 
-func (c *BusyBoxConveyor) insertBaseFiles() (err error) {
-	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0664)
-	if err != nil {
-		return
+func (c *BusyBoxConveyor) insertBaseFiles() error {
+	if err := ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0664); err != nil {
+		return err
 	}
 
-	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/group"), []byte(" root:x:0:"), 0664)
-	if err != nil {
-		return
+	if err := ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/group"), []byte(" root:x:0:"), 0664); err != nil {
+		return err
 	}
 
-	ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0664)
-	if err != nil {
-		return
+	if err := ioutil.WriteFile(filepath.Join(c.b.Rootfs(), "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0664); err != nil {
+		return err
 	}
 
-	return
+	return nil
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
@@ -134,10 +131,9 @@ func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
 	return nil
 }
 
-func (cp *BusyBoxConveyorPacker) insertRunScript() (err error) {
-	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
-	if err != nil {
-		return
+func (cp *BusyBoxConveyorPacker) insertRunScript() error {
+	if err := ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755); err != nil {
+		return err
 	}
 
 	return nil
