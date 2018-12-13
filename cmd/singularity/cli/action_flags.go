@@ -152,6 +152,15 @@ func initPathVars() {
 	actionFlags.Lookup("containlibs").Hidden = true
 	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
 
+	// hidden flags to handle docker credentials
+	actionFlags.StringVar(&dockerUsername, "docker-username", "", "specify a username for docker authentication")
+	actionFlags.Lookup("docker-username").Hidden = true
+	actionFlags.SetAnnotation("docker-username", "envkey", []string{"DOCKER_USERNAME"})
+
+	actionFlags.StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
+	actionFlags.Lookup("docker-password").Hidden = true
+	actionFlags.SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
+
 	// hidden flag to handle SINGULARITY_TMPDIR environment variable
 	actionFlags.StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
 	actionFlags.Lookup("tmpdir").Hidden = true
@@ -204,6 +213,10 @@ func initBoolVars() {
 	// --nohttps
 	actionFlags.BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	actionFlags.SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
+
+	// --docker-login
+	actionFlags.BoolVar(&dockerLogin, "docker-login", false, "interactive prompt for docker authentication")
+	actionFlags.SetAnnotation("docker-login", "envkey", []string{"DOCKER_LOGIN"})
 
 	// hidden flag to disable nvidia bindings when 'always use nv = yes'
 	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
