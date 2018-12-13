@@ -120,7 +120,7 @@ else
 fi
 `
 	// Contents of /.singularity.d/env/01-base.sh
-	baseShFileContent = `#!/bin/bash
+	baseShFileContent = `#!/bin/sh
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
@@ -139,7 +139,7 @@ fi
 # the U.S. Government has been granted for itself and others acting on its
 # behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 # to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
+# perform publicly and display publicly, and to permit other to do so.
 # 
 # 
 
@@ -151,7 +151,7 @@ fi
 
 `
 	// Contents of /.singularity.d/env/95-apps.sh
-	appsShFileContent = `#!/bin/bash
+	appsShFileContent = `#!/bin/sh
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
@@ -204,7 +204,7 @@ fi
 
 `
 	// Contents of /.singularity.d/env/99-base.sh
-	base99ShFileContent = `#!/bin/bash
+	base99ShFileContent = `#!/bin/sh
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
@@ -223,7 +223,7 @@ fi
 # the U.S. Government has been granted for itself and others acting on its
 # behalf a paid-up, nonexclusive, irrevocable, worldwide license in the Software
 # to reproduce, distribute copies to the public, prepare derivative works, and
-# perform publicly and display publicly, and to permit other to do so. 
+# perform publicly and display publicly, and to permit other to do so.
 # 
 # 
 
@@ -239,7 +239,7 @@ export LD_LIBRARY_PATH PS1
 `
 
 	// Contents of /.singularity.d/env/99-runtimevars.sh
-	base99runtimevarsShFileContent = `#!/bin/bash
+	base99runtimevarsShFileContent = `#!/bin/sh
 # Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
 #
 # This software is licensed under a customized 3-clause BSD license.  Please
