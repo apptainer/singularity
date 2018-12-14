@@ -110,15 +110,24 @@ func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIP
 			finalCNIPath.Plugin = cniPath.Plugin
 		}
 	}
-
+	hasNone := false
 	for _, network := range networks {
+		if network == "none" {
+			hasNone = true
+			break
+		}
 		nlist = append(nlist, config{
 			name:    network,
 			portMap: make([]portMap, 0),
 			args:    make([][2]string, 0),
 		})
 	}
-
+	if hasNone {
+		if len(networks) > 1 {
+			return nil, fmt.Errorf("none network can't be specified with another network")
+		}
+		return &Setup{configs: []config{}}, nil
+	}
 	return &Setup{
 			configs:     nlist,
 			cniPath:     finalCNIPath,
