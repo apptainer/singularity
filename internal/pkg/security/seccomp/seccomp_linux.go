@@ -104,6 +104,9 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	if !ok {
 		return fmt.Errorf("invalid action '%s' specified", config.DefaultAction)
 	}
+	if scmpAction == lseccomp.ActErrno {
+		scmpAction = scmpAction.SetReturnCode(1)
+	}
 
 	filter, err := lseccomp.NewFilter(scmpAction)
 	if err != nil {
@@ -133,6 +136,9 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 		scmpAction, ok = scmpActionMap[syscall.Action]
 		if !ok {
 			return fmt.Errorf("invalid action '%s' specified", syscall.Action)
+		}
+		if scmpAction == lseccomp.ActErrno {
+			scmpAction = scmpAction.SetReturnCode(1)
 		}
 
 		for _, sysName := range syscall.Names {
