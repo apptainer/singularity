@@ -5,4 +5,4 @@ Bootstrap: scratch
 
     # Download and extract alpine minirootfs.
     curl "${alpine_minirootfs_url}" \
-       | tar xz -C "${SINGULARITY_ROOTFS}" --exclude=./etc/hosts
+       | tar xz -C "${SINGULARITY_ROOTFS}" --exclude=./dev --exclude=./etc/hosts

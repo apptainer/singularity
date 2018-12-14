@@ -1,6 +1,6 @@
 [  
    {  
       "Header":"Bootstrap: scratch\n\n",
-      "Post":"    alpine_minirootfs_url='http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/alpine-minirootfs-3.8.1-x86_64.tar.gz'\n\n    # Download and extract alpine minirootfs.\n    curl \"${alpine_minirootfs_url}\" \\\n       | tar xz -C \"${SINGULARITY_ROOTFS}\" --exclude=./etc/hosts\n"
+      "Post":"    alpine_minirootfs_url='http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/alpine-minirootfs-3.8.1-x86_64.tar.gz'\n\n    # Download and extract alpine minirootfs.\n    curl \"${alpine_minirootfs_url}\" \\\n       | tar xz -C \"${SINGULARITY_ROOTFS}\" --exclude=./dev --exclude=./etc/hosts\n"
    }
 ]
