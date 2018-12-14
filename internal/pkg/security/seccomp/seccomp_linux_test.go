@@ -49,10 +49,15 @@ func testFchmod(t *testing.T) {
 	defer tmpfile.Close()
 
 	if hasConditionSupport() {
+		// all modes except 0777 are permitted
 		if err := syscall.Fchmod(int(tmpfile.Fd()), 0755); err != nil {
 			t.Errorf("fchmod syscall failed: %s", err)
 		}
 		if err := syscall.Fchmod(int(tmpfile.Fd()), 0777); err == nil {
+			t.Errorf("fchmod syscall didn't return operation not permitted")
+		}
+	} else {
+		if err := syscall.Fchmod(int(tmpfile.Fd()), 0755); err == nil {
 			t.Errorf("fchmod syscall didn't return operation not permitted")
 		}
 	}
