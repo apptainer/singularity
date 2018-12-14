@@ -8,7 +8,7 @@ verbose=0
 profile=release
 
 lang_c=1
-lang_go=0
+lang_go=1
 
 hstcc=
 hstcc_opts="cc gcc clang i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc"
