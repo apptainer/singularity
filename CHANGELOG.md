@@ -11,6 +11,9 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.0.1
 
+  - Add http/https protocols for singularity run/pull commands
+  - Update to SIF 1.0.2
+
 # v3.0.1 - [2018.10.31]
 
   - Improved RPM packaging procedure via makeit

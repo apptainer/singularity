@@ -16,8 +16,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sylabs/singularity/src/pkg/build/types"
-	"github.com/sylabs/singularity/src/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const name = "singularity_apps"

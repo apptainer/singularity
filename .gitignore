@@ -11,7 +11,7 @@ generate_docs
 .DS_store
 .idea/
 builddir/
-src/pkg/buildcfg/config.go
+internal/pkg/buildcfg/config.go
 singularity.spec
 trash.lock
 Makefile.in
@@ -41,6 +41,7 @@ secbuildimg.sh
 
 docs/man/singularity*
 
+src/pkg/buildcfg
 src/action
 src/action-suid
 src/start
@@ -99,4 +100,4 @@ src/*/*/*/*/.dirstamp
 build/*
 runtime/cli
 
-src/pkg/library/client/test[0-9]*
+pkg/library/client/test[0-9]*
