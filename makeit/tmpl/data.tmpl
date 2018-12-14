@@ -1,0 +1,7 @@
+__TARGET__ := $(BUILDDIR)/__PATH__/__TARGET__
+
+$(__TARGET__): $(__NAME___OBJ)
+	@echo " LD" $@
+	@mkdir -p $(@D)
+	$(V)$(LD) -r -b binary -o $@ $(__NAME___OBJ)
+	$(V)($(SIZE) $@ 2>/dev/null || true)

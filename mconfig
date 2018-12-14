@@ -1,11 +1,14 @@
 #!/bin/sh -
-# Copyright (c) 2016-2018, Yannick Cote <yanick@divyan.org>. All rights reserved.
+# Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
 set -e
 
 verbose=0
 profile=release
+
+lang_c=1
+lang_go=0
 
 hstcc=
 hstcc_opts="cc gcc clang i686-w64-mingw32-gcc x86_64-w64-mingw32-gcc"
@@ -28,12 +31,9 @@ tgtobjcopy=
 hststatic=0
 tgtstatic=0
 
-appsec=0
-
 package_name=singularity
-short_version=`(git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
-package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
-go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
+
+package_version=
 
 prefix=
 exec_prefix=
@@ -64,7 +64,7 @@ usage () {
 }
 
 usage_args () {
-	echo "Usage: ${0##*/}: [-vsS] [-P profile] [-b builddir] [-c hstcc] [-C tgtcc]"
+	echo "Usage: ${0##*/} [-vsS] [-P profile] [-b builddir] [-c hstcc] [-C tgtcc]"
 	echo "                [-V version] [-x hstcxx] [-X tgtcxx]"
 	echo "                [--INSTALLDIR=ARG (see below)]"
 	echo
@@ -82,6 +82,7 @@ usage_args () {
 	echo "     -V   build project with given version"
 	echo "     -x   build project with host C++ \`compiler'"
 	echo "     -X   build project with target C++ \`compiler'"
+	echo "     -l   build project with source code language (-l C -l Go ...)"
 	echo "     -h   this help"
 	echo
 	echo "  Path modification options:"
@@ -118,14 +119,14 @@ while [ $# -ne 0 ]; do
   -p|--prefix*)
    if [ "$1" = "-p" ]; then
     if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
     fi
     prefix=$2
     shift
    else
     if echo "$1" | awk '/^--prefix=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
     fi
     prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
@@ -134,14 +135,14 @@ while [ $# -ne 0 ]; do
   -e|--exec-prefix*)
    if [ "$1" = "-e" ]; then
     if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
     fi
     exec_prefix=$2
     shift
    else
     if echo "$1" | awk '/^--exec-prefix=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
     fi
     exec_prefix=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
@@ -149,177 +150,177 @@ while [ $# -ne 0 ]; do
    shift;;
   --bindir*)
    if echo "$1" | awk '/^--bindir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    bindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --sbindir*)
    if echo "$1" | awk '/^--sbindir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    sbindir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --libexecdir*)
    if echo "$1" | awk '/^--libexecdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    libexecdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --datarootdir*)
    if echo "$1" | awk '/^--datarootdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    datarootdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --datadir*)
    if echo "$1" | awk '/^--datadir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    datadir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --sysconfdir*)
    if echo "$1" | awk '/^--sysconfdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    sysconfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --sharedstatedir*)
    if echo "$1" | awk '/^--sharedstatedir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    sharedstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --localstatedir*)
    if echo "$1" | awk '/^--localstatedir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    localstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --runstatedir*)
    if echo "$1" | awk '/^--runstatedir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    runstatedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --includedir*)
    if echo "$1" | awk '/^--includedir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    includedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --oldincludedir*)
    if echo "$1" | awk '/^--oldincludedir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    oldincludedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --docdir*)
    if echo "$1" | awk '/^--docdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    docdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --infodir*)
    if echo "$1" | awk '/^--infodir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    infodir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --htmldir*)
    if echo "$1" | awk '/^--htmldir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    htmldir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --dvidir*)
    if echo "$1" | awk '/^--dvidir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    dvidir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --pdfdir*)
    if echo "$1" | awk '/^--pdfdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    pdfdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --psdir*)
    if echo "$1" | awk '/^--psdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    psdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --libdir*)
    if echo "$1" | awk '/^--libdir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    libdir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --localedir*)
    if echo "$1" | awk '/^--localedir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    localedir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   --mandir*)
    if echo "$1" | awk '/^--mandir=.+$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    mandir=`echo $1 | sed -e 's|.*\=\(.*\)|\1|'`
    shift;;
   -P)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    profile=$2; shift; shift;;
   -b)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    builddir="$2"; shift; shift;;
   -c)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    hstcc="$2"; shift; shift;;
   -C)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    tgtcc="$2"; shift; shift;;
   -x)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    hstcxx="$2"; shift; shift;;
   -X)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    tgtcxx="$2"; shift; shift;;
@@ -331,10 +332,22 @@ while [ $# -ne 0 ]; do
    verbose=1; shift;;
   -V)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
-     echo "error option requires an argument: $1"
+     echo "error: option requires an argument: $1"
      exit
    fi
    package_version="$2"; shift; shift;;
+  -l)
+   if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
+     echo "error: option requires an argument: $1"
+     exit
+   fi
+   case "$2" in
+    c|C) lang_c=1;;
+    go|GO|Go|Golang) lang_go=1;;
+    *) echo "error: language not supported: $2"
+       exit;;
+   esac
+   shift; shift;;
   -h) usage_args; exit 2;;
   --) shift; break;;
   ?) usage_args
@@ -417,11 +430,10 @@ if [ -z "${mandir}" ]; then
 	mandir=${datarootdir}/man
 fi
 
-# determine package version
-if [ -z "$package_version" ]; then
-	echo "error: unable to determine \$package_version variable"
-	echo "NOTE: Not in a git tree and VERSION file not found"
-	echo "NOTE: Try running mconfig with [-V version]"
+# check that at least a language is selected
+if [ $lang_c -eq 0 -a $lang_go -eq 0 ]; then
+	echo "error: no project source code language selected"
+	echo "NOTE: use ${0##*/} with the [-l (C,Go,...) option]"
 	exit 2
 fi
 
@@ -441,7 +453,13 @@ esac
 # sourcedir and builddir
 sourcedir=`pwd -P`
 if [ "$builddir" = "" ]; then
-	builddir=builddir
+	builddir=$sourcedir/builddir
+else
+	mkdir -p $builddir
+	if ! builddir=`(cd $builddir 2>/dev/null && pwd -P)`; then
+		echo "error: could not chdir to builddir"
+		exit 2
+	fi
 fi
 if [ -e $builddir -a $builddir != "." -a $builddir != ".." ]; then
 	rm -rf $builddir
@@ -452,6 +470,7 @@ makeit_dir=$sourcedir/makeit
 makeit_mconflist=$sourcedir/mlocal/mconflist
 makeit_fragsdir=$sourcedir/mlocal/frags
 makeit_checksdir=$sourcedir/mlocal/checks
+makeit_scriptsdir=$sourcedir/mlocal/scripts
 # mconfig tmpfiles path
 makeit_interdir=$builddir/makeit-intermediate
 makeit_testprogdir=$makeit_interdir/testprogs
@@ -466,9 +485,30 @@ mkdir -p $makeit_testprogdir
 :>$makeit_makefile_base
 
 
+# load mconfig helper scripts
+. $makeit_scriptsdir/config_h.sh #functions to add entries in config.h (C projects)
+
+
+printf "Configuring for project \`$package_name' with languages: "
+if [ $lang_c -eq 1 ]; then
+	printf "C"
+fi
+if [ $lang_go -eq 1 ]; then
+	printf ", Golang"
+fi
+echo
 
 #######################################################################
-# System build tool configuration
+# mlocal/checks/project-pre.chk -- executes before standard base checks
+#######################################################################
+if [ -f $makeit_checksdir/project-pre.chk ]; then
+	echo "=> running pre-basechecks project specific checks ..."
+	. $makeit_checksdir/project-pre.chk
+fi
+
+
+#######################################################################
+# mlocal/checks/basechecks.chk -- common to most projects
 #######################################################################
 if [ -f $makeit_checksdir/basechecks.chk ]; then
 	echo "=> running base system checks ..."
@@ -479,29 +519,17 @@ else
 fi
 
 
-
 #######################################################################
-# Extra user specified system configuration checks (mlocal/checks)
+# mlocal/checks/project-post.chk -- executes after standard base checks
 #######################################################################
-# write a "#define" definition entry into $builddir/config.h
-config_add_def ()
-{
-	if [ "$1" = "" -o "$2" = "" ]; then
-		return
-	fi
-	echo "#define $*" >> $builddir/config.h
-}
-
-rm -rf $builddir/config.h
-if [ -f $makeit_checksdir/project.chk ]; then
-	echo "=> running project specific checks ..."
-	. $makeit_checksdir/project.chk
+if [ -f $makeit_checksdir/project-post.chk ]; then
+	echo "=> running post-basechecks project specific checks ..."
+	. $makeit_checksdir/project-post.chk
 fi
 
 
-
 #######################################################################
-# Generate fragments
+# Generated fragments
 #######################################################################
 echo "=> generating fragments ..."
 if [ ! -d $makeit_fragsdir ]; then
@@ -531,8 +559,9 @@ echo >> $makeit_makefile_base
 cat >> $makeit_makefile_base << EOF
 # source/build locations
 BUILDDIR := .
-BUILDDIR_ABSPATH := `(cd $builddir && pwd -P || false)`
+BUILDDIR_ABSPATH := $builddir
 SOURCEDIR := $sourcedir
+SCRIPTSDIR := $makeit_scriptsdir
 CONTRIBDIR := $contribdir
 PREFIX := $prefix
 EXECPREFIX := $exec_prefix
@@ -609,16 +638,15 @@ for m in $found_modules; do
 		echo "error: module file \`$mod' not found!"
 		exit 2
 	fi
-	if [ `(cd "$modpath" && pwd -P || false)` = $sourcedir ]; then
+	if [ $mod = $modpath ]; then
 		modpath="."
 	fi
 
 	echo "   +-> $mod"
 	echo "$modpath `eval basename $mod`" >> $makeit_interdir/module.lst
 	mkdir -p $makeit_interdir/$modpath
-	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, \
-				tgt_arch); print }' > $makeit_interdir/${mod}.parsed
-#	echo "CPPFLAGS += -iquote\$(SOURCEDIR)/$modpath" >> $makeit_makefile_base
+	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, tgt_arch); print }' > \
+		$makeit_interdir/${mod}.parsed
 done
 echo >> $makeit_makefile_base
 
@@ -637,10 +665,9 @@ EOF
 
 
 # call genmod.awk, generating Makefile components
-$makeit_dir/genmod.awk modfile=$makeit_interdir/module.lst \
-	makeitdir=$sourcedir \
+$makeit_dir/genmod.awk mconflist=$makeit_interdir/module.lst \
 	host=$host \
-	genconfdir=$makeit_interdir \
+	makeitgendir=$makeit_interdir \
 	tmpldir=$makeit_dir/tmpl
 
 
@@ -679,22 +706,34 @@ fi
 
 case $profile in
 	release)
-		drawline $makeit_fragsdir/release_opts.mk
-		cat $makeit_fragsdir/release_opts.mk >> $makeit_makefile
-		drawline $makeit_fragsdir/go_normal_opts.mk
-		cat $makeit_fragsdir/go_normal_opts.mk >> $makeit_makefile
+		if [ $lang_c -eq 1 ]; then
+			drawline $makeit_fragsdir/release_opts.mk
+			cat $makeit_fragsdir/release_opts.mk >> $makeit_makefile
+		fi
+		if [ $lang_go -eq 1 ]; then
+			drawline $makeit_fragsdir/go_normal_opts.mk
+			cat $makeit_fragsdir/go_normal_opts.mk >> $makeit_makefile
+		fi
 		;;
 	release-stripped)
-		drawline $makeit_fragsdir/release_opts.mk
-		cat $makeit_fragsdir/release_opts.mk >> $makeit_makefile
-		drawline $makeit_fragsdir/go_stripped_opts.mk
-		cat $makeit_fragsdir/go_stripped_opts.mk >> $makeit_makefile
+		if [ $lang_c -eq 1 ]; then
+			drawline $makeit_fragsdir/release_opts.mk
+			cat $makeit_fragsdir/release_opts.mk >> $makeit_makefile
+		fi
+		if [ $lang_go -eq 1 ]; then
+			drawline $makeit_fragsdir/go_stripped_opts.mk
+			cat $makeit_fragsdir/go_stripped_opts.mk >> $makeit_makefile
+		fi
 		;;
 	debug)
-		drawline $makeit_fragsdir/debug_opts.mk
-		cat $makeit_fragsdir/debug_opts.mk >> $makeit_makefile
-		drawline $makeit_fragsdir/go_normal_opts.mk
-		cat $makeit_fragsdir/go_normal_opts.mk >> $makeit_makefile
+		if [ $lang_c -eq 1 ]; then
+			drawline $makeit_fragsdir/debug_opts.mk
+			cat $makeit_fragsdir/debug_opts.mk >> $makeit_makefile
+		fi
+		if [ $lang_go -eq 1 ]; then
+			drawline $makeit_fragsdir/go_normal_opts.mk
+			cat $makeit_fragsdir/go_normal_opts.mk >> $makeit_makefile
+		fi
 		;;
 esac
 
@@ -703,8 +742,8 @@ if [ -f "$makeit_fragsdir/arch_${tgt_arch}_opts.mk" ]; then
 	cat $makeit_fragsdir/arch_${tgt_arch}_opts.mk >> $makeit_makefile
 fi
 
-drawline $makeit_interdir/modules.mk
-cat $makeit_interdir/modules.mk >> $makeit_makefile
+drawline $makeit_interdir/combined-mconfsready.mk
+cat $makeit_interdir/combined-mconfsready.mk >> $makeit_makefile
 
 drawline $makeit_interdir/all.mk
 cat $makeit_interdir/all.mk >> $makeit_makefile
@@ -737,19 +776,25 @@ sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/
 #######################################################################
 # Configuration results
 #######################################################################
-echo "=> project setup with :"
-echo "    - target arch: $tgt_arch"
-echo "    - target compiler: $tgtcc"
-echo "    - target wordsize: ${tgt_word}-bit"
+echo "=> project $package_name setup with :"
 echo "    - host arch: $hst_arch"
 echo "    - host wordsize: ${hst_word}-bit"
+echo "    - host C compiler: $hstcc"
 echo "    - host system: $host"
+echo "      ---"
+echo "    - target arch: $tgt_arch"
+echo "    - target wordsize: ${tgt_word}-bit"
+echo "    - target C compiler: $tgtcc"
+echo "      ---"
 echo "    - config profile: $profile"
+echo "      ---"
 if [ "$verbose" = 1 ]; then
 	echo "    - verbose: yes"
 else
 	echo "    - verbose: no"
 fi
+echo "      ---"
+echo "    - version: $package_version"
 
 echo "=> $builddir/Makefile ready, try:"
 echo "   $ cd $builddir"
