@@ -389,3 +389,19 @@ else
 	usage
 	exit 1
 fi
+
+printf " checking: project short version... "
+if [ "$short_version" = "" ]; then
+	short_version=`(\
+	git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || \
+	cat VERSION 2>/dev/null || echo ""\
+	) | \
+		sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+fi
+echo "$short_version"
+
+printf " checking: golang compiler version... "
+if [ "$go_version" = "" ]; then
+	go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
+fi
+echo "$go_version"

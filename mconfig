@@ -33,7 +33,9 @@ tgtstatic=0
 
 package_name=singularity
 
+short_version=
 package_version=
+go_version=
 
 prefix=
 exec_prefix=
