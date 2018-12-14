@@ -156,10 +156,8 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 				if err != nil {
 					return err
 				}
-				for _, cond := range conditions {
-					if err := filter.AddRuleConditional(sysNr, scmpAction, cond); err != nil {
-						return fmt.Errorf("failed adding rule condition for syscall %s: %s", sysName, err)
-					}
+				if err := filter.AddRuleConditional(sysNr, scmpAction, conditions); err != nil {
+					return fmt.Errorf("failed adding rule condition for syscall %s: %s", sysName, err)
 				}
 			}
 		}
@@ -172,10 +170,9 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	return nil
 }
 
-func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([][]lseccomp.ScmpCondition, error) {
+func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([]lseccomp.ScmpCondition, error) {
 	var maxIndex uint = 6
-	conditions := make([][]lseccomp.ScmpCondition, maxIndex)
-	finalConditions := [][]lseccomp.ScmpCondition{}
+	conditions := make([]lseccomp.ScmpCondition, 0)
 
 	for _, arg := range args {
 		if arg.Index >= maxIndex {
@@ -189,28 +186,10 @@ func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([][]lseccomp.ScmpCo
 		if err != nil {
 			return conditions, fmt.Errorf("error making syscall rule condition: %s", err)
 		}
-		conditions[arg.Index] = append(conditions[arg.Index], cond)
+		conditions = append(conditions, cond)
 	}
 
-	for _, cond := range conditions {
-		if len(cond) > 1 {
-			for _, c := range cond {
-				finalConditions = append(finalConditions, []lseccomp.ScmpCondition{c})
-			}
-		}
-	}
-
-	finalConditions = append(finalConditions, []lseccomp.ScmpCondition{})
-	i := len(finalConditions) - 1
-
-	for _, cond := range conditions {
-		if len(cond) == 1 {
-			for _, c := range cond {
-				finalConditions[i] = append(finalConditions[i], c)
-			}
-		}
-	}
-	return finalConditions, nil
+	return conditions, nil
 }
 
 // LoadProfileFromFile loads seccomp rules from json file and fill in
@@ -232,6 +211,9 @@ func LoadProfileFromFile(profile string, generator *generate.Generator) error {
 	}
 	if generator.Config.Linux.Seccomp == nil {
 		generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
+	}
+	if generator.Config.Process == nil {
+		generator.Config.Process = &specs.Process{}
 	}
 	if generator.Config.Process.Capabilities == nil {
 		generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
