@@ -148,16 +148,25 @@ func splitToken(tok string) (ident string, content string) {
 // parseTokenSection splits the token into maximum 2 strings separated by a newline,
 // and then inserts the section into the sections map
 //
-// goroutine safe
-func parseTokenSection(tok string, sections map[string]string) {
+func parseTokenSection(tok string, sections map[string]string) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
-		return
+		return fmt.Errorf("Section %v: Could not be split into section name and body", split[0])
 	}
 
 	key := getSectionName(split[0])
+	if appSections[key] {
+		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
+		if len(sectionSplit) < 2 {
+			return fmt.Errorf("App Section %v: Could not be split into section name and app name", sectionSplit[0])
+		}
+
+		key = strings.Join(sectionSplit[0:2], " ")
+	}
 
 	sections[key] += split[1]
+
+	return nil
 }
 
 func doSections(s *bufio.Scanner, d *types.Definition) error {
@@ -174,7 +183,9 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 			}
 		} else {
 			//this is a section
-			parseTokenSection(tok, sectionsMap)
+			if err := parseTokenSection(tok, sectionsMap); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -187,7 +198,9 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		tok := s.Text()
 
 		// Parse each token -> section
-		parseTokenSection(tok, sectionsMap)
+		if err := parseTokenSection(tok, sectionsMap); err != nil {
+			return err
+		}
 	}
 
 	if err := s.Err(); err != nil {
@@ -271,9 +284,14 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 		d.CustomData = sections
 		var keys []string
 		for k := range sections {
-			keys = append(keys, k)
+			sectionName := strings.Split(k, " ")
+			if !appSections[sectionName[0]] {
+				keys = append(keys, k)
+			}
 		}
-		return &InvalidSectionError{keys, errInvalidSection}
+		if len(keys) > 0 {
+			return &InvalidSectionError{keys, errInvalidSection}
+		}
 	}
 
 	// make sure information was valid by checking if definition is not equal to an empty one
@@ -382,6 +400,16 @@ var validSections = map[string]bool{
 	"runscript":   true,
 	"test":        true,
 	"startscript": true,
+}
+
+var appSections = map[string]bool{
+	"appinstall": true,
+	"applabels":  true,
+	"appfiles":   true,
+	"appenv":     true,
+	"apptest":    true,
+	"apphelp":    true,
+	"apprun":     true,
 }
 
 // validHeaders just contains a list of all the valid headers a definition file

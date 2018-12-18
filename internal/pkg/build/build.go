@@ -18,6 +18,7 @@ import (
 	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -26,7 +27,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/syplugin"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -151,8 +151,14 @@ func (b *Build) Full() error {
 		}
 	}
 
-	syplugin.BuildHandleBundles(b.b)
-	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
+	// create apps in bundle
+	a := apps.New()
+	for k, v := range b.b.Recipe.CustomData {
+		a.HandleSection(k, v)
+	}
+
+	a.HandleBundle(b.b)
+	b.b.Recipe.BuildData.Post += a.HandlePost()
 
 	if engineRequired(b.d) {
 		if err := b.runBuildEngine(); err != nil {

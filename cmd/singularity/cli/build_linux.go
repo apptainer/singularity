@@ -13,13 +13,11 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/syplugin"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 func preRun(cmd *cobra.Command, args []string) {
 	sylabsToken(cmd, args)
-	syplugin.Init()
 }
 
 func run(cmd *cobra.Command, args []string) {

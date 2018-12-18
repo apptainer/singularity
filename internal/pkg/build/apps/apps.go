@@ -98,27 +98,27 @@ type App struct {
 	Run     string
 }
 
-// BuildPlugin is the type which the build system can understand
-type BuildPlugin struct {
+// BuildApp is the type which the build system can use to build an app in a bundle
+type BuildApp struct {
 	Apps map[string]*App `json:"appsDefined"`
 	sync.Mutex
 }
 
 // New returns a new BuildPlugin for the plugin registry to hold
-func New() interface{} {
-	return &BuildPlugin{
+func New() *BuildApp {
+	return &BuildApp{
 		Apps: make(map[string]*App),
 	}
 
 }
 
 // Name returns this handler's name [singularity_apps]
-func (pl *BuildPlugin) Name() string {
+func (pl *BuildApp) Name() string {
 	return name
 }
 
 // HandleSection receives a string of each section from the deffile
-func (pl *BuildPlugin) HandleSection(ident, section string) {
+func (pl *BuildApp) HandleSection(ident, section string) {
 	name, sect := getAppAndSection(ident)
 	if name == "" || sect == "" {
 		return
@@ -145,7 +145,7 @@ func (pl *BuildPlugin) HandleSection(ident, section string) {
 	}
 }
 
-func (pl *BuildPlugin) initApp(name string) {
+func (pl *BuildApp) initApp(name string) {
 	pl.Lock()
 	defer pl.Unlock()
 
@@ -180,13 +180,13 @@ func getAppAndSection(ident string) (appName string, sectionName string) {
 }
 
 // HandleBundle is a hook where we can modify the bundle
-func (pl *BuildPlugin) HandleBundle(b *types.Bundle) {
+func (pl *BuildApp) HandleBundle(b *types.Bundle) {
 	if err := pl.createAllApps(b); err != nil {
 		sylog.Fatalf("Unable to create apps: %s", err)
 	}
 }
 
-func (pl *BuildPlugin) createAllApps(b *types.Bundle) error {
+func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 	globalEnv94 := ""
 
 	for name, app := range pl.Apps {
@@ -307,7 +307,7 @@ func appData(b *types.Bundle, a *App) string {
 }
 
 // HandlePost returns a script that should run after %post
-func (pl *BuildPlugin) HandlePost() string {
+func (pl *BuildApp) HandlePost() string {
 	post := ""
 	for name, app := range pl.Apps {
 		sylog.Debugf("Building app[%s] post script section", name)
