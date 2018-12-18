@@ -161,8 +161,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		}
 	}
 
-	if c.netNS && !c.userNS {
-		if os.Geteuid() == 0 {
+	if c.netNS {
+		if os.Geteuid() == 0 && !c.userNS {
 			/* hold a reference to container network namespace for cleanup */
 			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
 			if err != nil {
@@ -190,8 +190,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			}
 
 			engine.EngineConfig.Network = setup
-		} else {
-			return fmt.Errorf("Network requires root permissions")
+		} else if engine.EngineConfig.GetNetwork() != "none" {
+			return fmt.Errorf("Network requires root permissions or --network=none argument as user")
 		}
 	}
 
@@ -722,21 +722,33 @@ func (c *container) addOverlayMount(system *mount.System) error {
 	if c.engine.EngineConfig.GetWritableTmpfs() {
 		sylog.Debugf("Setup writable tmpfs overlay")
 
-		if err := c.session.AddDir("/upper"); err != nil {
+		if err := c.session.AddDir("/tmpfs/upper"); err != nil {
 			return err
 		}
-		if err := c.session.AddDir("/work"); err != nil {
+		if err := c.session.AddDir("/tmpfs/work"); err != nil {
 			return err
 		}
 
-		upper, _ := c.session.GetPath("/upper")
-		work, _ := c.session.GetPath("/work")
+		upper, _ := c.session.GetPath("/tmpfs/upper")
+		work, _ := c.session.GetPath("/tmpfs/work")
 
 		if err := ov.SetUpperDir(upper); err != nil {
 			return fmt.Errorf("failed to add overlay upper: %s", err)
 		}
 		if err := ov.SetWorkDir(work); err != nil {
 			return fmt.Errorf("failed to add overlay upper: %s", err)
+		}
+
+		tmpfsPath := filepath.Dir(upper)
+
+		flags := uintptr(c.suidFlag | syscall.MS_NODEV)
+
+		if err := system.Points.AddBind(mount.PreLayerTag, tmpfsPath, tmpfsPath, flags); err != nil {
+			return fmt.Errorf("failed to add %s temporary filesystem: %s", tmpfsPath, err)
+		}
+
+		if err := system.Points.AddRemount(mount.PreLayerTag, tmpfsPath, flags); err != nil {
+			return fmt.Errorf("failed to add %s temporary filesystem: %s", tmpfsPath, err)
 		}
 
 		hasUpper = true

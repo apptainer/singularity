@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -91,13 +92,16 @@ var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	PersistentPreRun:      persistentPreRun,
-	Run:                   nil,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return errors.New("Invalid command")
+	},
 
-	Use:     docs.SingularityUse,
-	Version: buildcfg.PACKAGE_VERSION,
-	Short:   docs.SingularityShort,
-	Long:    docs.SingularityLong,
-	Example: docs.SingularityExample,
+	Use:           docs.SingularityUse,
+	Version:       buildcfg.PACKAGE_VERSION,
+	Short:         docs.SingularityShort,
+	Long:          docs.SingularityLong,
+	Example:       docs.SingularityExample,
+	SilenceErrors: true,
 }
 
 // ExecuteSingularity adds all child commands to the root command and sets
@@ -147,8 +151,8 @@ func handleEnv(flag *pflag.Flag) {
 	}
 
 	for _, key := range envKeys {
-		val := os.Getenv(envPrefix + key)
-		if val == "" {
+		val, set := os.LookupEnv(envPrefix + key)
+		if !set {
 			continue
 		}
 
@@ -192,27 +196,36 @@ func envAppend(flag *pflag.Flag, envvar string) {
 
 // envBool sets a bool flag if the CLI option is unset and env var is set
 func envBool(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false && envvar != "" {
+	if flag.Changed == true || envvar == "" {
+		return
+	}
+
+	if err := flag.Value.Set(envvar); err != nil {
+		sylog.Debugf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
 		if err := flag.Value.Set("true"); err != nil {
-			sylog.Warningf("Unable to set %s to true", flag.Name)
-		} else {
-			flag.Changed = true
-			sylog.Debugf("Update flag Value to: %s", flag.Value)
+			sylog.Warningf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
+			return
 		}
 	}
+
+	flag.Changed = true
+	sylog.Debugf("Set %s Value to: %s", flag.Name, flag.Value)
 }
 
-// envStringNSlice writes to a string or slice flag ff CLI option/argument
+// envStringNSlice writes to a string or slice flag if CLI option/argument
 // string is unset and env var is set
 func envStringNSlice(flag *pflag.Flag, envvar string) {
-	if flag.Changed == false && envvar != "" {
-		if err := flag.Value.Set(envvar); err != nil {
-			sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
-		} else {
-			flag.Changed = true
-			sylog.Debugf("Update flag Value to: %s", flag.Value)
-		}
+	if flag.Changed == true {
+		return
 	}
+
+	if err := flag.Value.Set(envvar); err != nil {
+		sylog.Warningf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
+		return
+	}
+
+	flag.Changed = true
+	sylog.Debugf("Set %s Value to: %s", flag.Name, flag.Value)
 }
 
 type envHandle func(*pflag.Flag, string)
@@ -266,15 +279,18 @@ var flagEnvFuncs = map[string]envHandle{
 	"json":    envBool,
 	"name":    envStringNSlice,
 	// "writable": envBool, // set above for now
-	"force":    envBool,
-	"update":   envBool,
-	"notest":   envBool,
-	"remote":   envBool,
-	"detached": envBool,
-	"builder":  envStringNSlice,
-	"library":  envStringNSlice,
-	"tmpdir":   envStringNSlice,
-	"nohttps":  envBool,
+	"force":           envBool,
+	"update":          envBool,
+	"notest":          envBool,
+	"remote":          envBool,
+	"detached":        envBool,
+	"builder":         envStringNSlice,
+	"library":         envStringNSlice,
+	"nohttps":         envBool,
+	"tmpdir":          envStringNSlice,
+	"docker-username": envStringNSlice,
+	"docker-password": envStringNSlice,
+	"docker-login":    envBool,
 
 	// capability flags (and others)
 	"user":  envStringNSlice,

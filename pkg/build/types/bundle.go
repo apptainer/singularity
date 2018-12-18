@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -52,6 +53,8 @@ type Options struct {
 	Update bool `json:"update"`
 	// noHTTPS
 	NoHTTPS bool `json:"noHTTPS"`
+	// contains docker credentials if specified
+	DockerAuthConfig *ocitypes.DockerAuthConfig
 }
 
 // NewBundle creates a Bundle environment

@@ -20,19 +20,22 @@ import (
 )
 
 var (
-	remote     bool
-	builderURL string
-	detached   bool
-	libraryURL string
-	isJSON     bool
-	sandbox    bool
-	writable   bool
-	force      bool
-	update     bool
-	noTest     bool
-	sections   []string
-	tmpDir     string
-	noHTTPS    bool
+	remote         bool
+	builderURL     string
+	detached       bool
+	libraryURL     string
+	isJSON         bool
+	sandbox        bool
+	writable       bool
+	force          bool
+	update         bool
+	noTest         bool
+	sections       []string
+	noHTTPS        bool
+	tmpDir         string
+	dockerUsername string
+	dockerPassword string
+	dockerLogin    bool
 )
 
 var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
@@ -61,7 +64,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "build image remotely (does not require root)")
 	BuildCmd.Flags().SetAnnotation("remote", "envkey", []string{"REMOTE"})
 
-	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print nuild ID (no real-time logs and requires --remote)")
+	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print build ID (no real-time logs and requires --remote)")
 	BuildCmd.Flags().SetAnnotation("detached", "envkey", []string{"DETACHED"})
 
 	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "remote Build Service URL")
@@ -75,6 +78,10 @@ func init() {
 
 	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
+
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
+	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 
 	SingularityCmd.AddCommand(BuildCmd)
 }

@@ -236,6 +236,15 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 
 // GetData return a memory mapped byte slice mirroring the data object in a SIF file.
 func (descr *Descriptor) GetData(fimg *FileImage) []byte {
+	if fimg.Amodebuf == true {
+		fimg.Fp.Seek(descr.Fileoff, 0)
+		data := make([]byte, descr.Filelen)
+		if n, _ := fimg.Fp.Read(data); int64(n) != descr.Filelen {
+			return nil
+		}
+		return data
+	}
+
 	return fimg.Filedata[descr.Fileoff : descr.Fileoff+descr.Filelen]
 }
 

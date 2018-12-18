@@ -9,6 +9,7 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"syscall"
@@ -43,13 +44,16 @@ func init() {
 
 // InstanceCmd singularity instance
 var InstanceCmd = &cobra.Command{
-	Run:                   nil,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return errors.New("Invalid command")
+	},
 	DisableFlagsInUseLine: true,
 
-	Use:     docs.InstanceUse,
-	Short:   docs.InstanceShort,
-	Long:    docs.InstanceLong,
-	Example: docs.InstanceExample,
+	Use:           docs.InstanceUse,
+	Short:         docs.InstanceShort,
+	Long:          docs.InstanceLong,
+	Example:       docs.InstanceExample,
+	SilenceErrors: true,
 }
 
 func listInstance() {

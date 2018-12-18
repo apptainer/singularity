@@ -55,11 +55,10 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		return err
 	}
 
-	if cp.b.Opts.NoHTTPS {
-		cp.sysCtx = &types.SystemContext{
-			OCIInsecureSkipTLSVerify:    true,
-			DockerInsecureSkipTLSVerify: true,
-		}
+	cp.sysCtx = &types.SystemContext{
+		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
+		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
+		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
 	}
 
 	// add registry and namespace to reference if specified
