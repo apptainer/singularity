@@ -78,7 +78,7 @@ export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_AP
 
 	scifInstallBase = `
 cd /
-. %[1]s/env/01-base.sh
+. %[1]s/scif/env/01-base.sh
 
 cd %[1]s
 %[2]s
@@ -319,5 +319,5 @@ func (pl *BuildApp) HandlePost() string {
 }
 
 func buildPost(a *App) string {
-	return fmt.Sprintf(scifInstallBase, filepath.Join("/scif/apps/", a.Name, "/scif"), a.Install)
+	return fmt.Sprintf(scifInstallBase, filepath.Join("/scif/apps/", a.Name), a.Install)
 }
