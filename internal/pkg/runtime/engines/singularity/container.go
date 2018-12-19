@@ -5,11 +5,6 @@
 
 package singularity
 
-/*
-char *ttyname(int fd);
-*/
-import "C"
-
 import (
 	"fmt"
 	"io/ioutil"
@@ -36,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type container struct {
@@ -1017,11 +1013,25 @@ func (c *container) addDevMount(system *mount.System) error {
 		}
 		// add /dev/console mount pointing to original tty if there is one
 		for fd := 0; fd <= 2; fd++ {
-			if tty := C.GoString(C.ttyname(C.int(fd))); tty != "" {
-				// found a ttyname on stdin, stdout, or stderr
-				// bind mount it at /dev/console
-				sylog.Debugf("Fd %d is tty %s; binding to /dev/console", fd, tty)
-				if err := c.addSessionDevAt(tty, "/dev/console", system); err != nil {
+			if terminal.IsTerminal(fd) {
+				// Found a tty on stdin, stdout, or stderr.
+				// Bind mount it at /dev/console.
+				// readlink from /proc/self/fd/N isn't as
+				//  reliable as ttyname() (e.g. it doesn't work
+				//  in docker), but no golang ttyname() so
+				//  use it for now.
+				procfd := fmt.Sprintf("/proc/self/fd/%d", fd)
+				ttylink, err := os.Readlink(procfd)
+				if err != nil {
+					return err
+				}
+
+				if _, err := os.Stat(ttylink); err != nil {
+					sylog.Debugf("Fd %d is tty but %s doesn't exist, skipping", fd, ttylink)
+					continue
+				}
+				sylog.Debugf("Fd %d is tty %s, linking to /dev/console", fd, ttylink)
+				if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
 					return err
 				}
 				// and also add a /dev/tty
