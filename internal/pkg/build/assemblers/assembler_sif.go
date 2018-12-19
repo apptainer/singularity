@@ -159,7 +159,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	err = createSIF(path, b.Recipe.RawDefData, squashfsPath)
+	err = createSIF(path, b.Recipe.Raw, squashfsPath)
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}

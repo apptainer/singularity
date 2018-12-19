@@ -497,7 +497,7 @@ func insertDefinition(b *types.Bundle) error {
 
 	}
 
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), b.Recipe.RawDefData, 0644)
+	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), b.Recipe.Raw, 0644)
 	if err != nil {
 		return err
 	}
