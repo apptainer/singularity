@@ -1019,7 +1019,8 @@ func (c *container) addDevMount(system *mount.System) error {
 				// readlink from /proc/self/fd/N isn't as
 				//  reliable as ttyname() (e.g. it doesn't work
 				//  in docker), but no golang ttyname() so
-				//  use it for now.
+				//  use it for now and also check the device
+				//  that docker uses, /dev/console.
 				procfd := fmt.Sprintf("/proc/self/fd/%d", fd)
 				ttylink, err := os.Readlink(procfd)
 				if err != nil {
@@ -1027,10 +1028,25 @@ func (c *container) addDevMount(system *mount.System) error {
 				}
 
 				if _, err := os.Stat(ttylink); err != nil {
-					sylog.Debugf("Fd %d is tty but %s doesn't exist, skipping", fd, ttylink)
-					continue
+					// Check if in a system like docker
+					//  using /dev/console already
+					consinfo := new(syscall.Stat_t)
+					conserr := syscall.Stat("/dev/console", consinfo)
+					fdinfo := new(syscall.Stat_t)
+					fderr := syscall.Fstat(fd, fdinfo)
+					if conserr == nil &&
+						fderr == nil &&
+						consinfo.Ino == fdinfo.Ino &&
+						consinfo.Rdev == fdinfo.Rdev {
+						sylog.Debugf("Fd %d is tty pointing to nonexistent %s but /dev/console is good", fd, ttylink)
+						ttylink = "/dev/console"
+
+					} else {
+						sylog.Debugf("Fd %d is tty but %s doesn't exist, skipping", fd, ttylink)
+						continue
+					}
 				}
-				sylog.Debugf("Fd %d is tty %s, linking to /dev/console", fd, ttylink)
+				sylog.Debugf("Fd %d is tty %s, binding to /dev/console", fd, ttylink)
 				if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
 					return err
 				}
