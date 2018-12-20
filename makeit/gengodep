@@ -2,7 +2,7 @@
 
 repo="github.com/sylabs/singularity"
 path=`(cd $1 2>/dev/null && pwd -P || cd \`dirname $1\` && pwd -P || false)`
-gofiles="$path"
+gofiles="$1"
 prefix=${path%$repo*}
 
 for dep in $(go list -f '{{ .Deps }}' $1 | tr -d '[]'); do

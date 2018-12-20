@@ -4,7 +4,7 @@
 
 # build and install
 yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
-yum install -y openssl-devel libuuid-devel
+yum install -y openssl-devel libuuid-devel libseccomp-devel e2fsprogs
 
 # switch to an unprivileged user with sudo privileges
 yum install -y sudo
@@ -18,7 +18,7 @@ chown -R testuser .
 su testuser -c '
   set -x
   set -e
-  ./mconfig 
+  ./mconfig
   sudo yum-builddep -y singularity.spec
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
@@ -30,4 +30,3 @@ su testuser -c '
   cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test
 '
-

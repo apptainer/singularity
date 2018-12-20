@@ -1,17 +1,15 @@
 libruntime := $(BUILDDIR)/lib/libruntime.a
 
-starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/smaster.go)
-starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/scontainer.go)
-starter_OBJ += $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/runtime/starter/rpc.go)
+starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main.go)
 
-starter := $(BUILDDIR)/src/runtime/starter/c/starter
+starter := $(BUILDDIR)/cmd/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
-starter_SOURCE := $(SOURCEDIR)/src/runtime/starter/c/starter.c
+starter_SOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
-singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/src/cmd/singularity/cli.go)
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/singularity/cli.go)
 singularity_REPO := github.com/sylabs/singularity
 
 dist_bin_SCRIPTS := $(SOURCEDIR)/scripts/run-singularity
@@ -20,13 +18,13 @@ dist_bin_SCRIPTS_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/run-singularity
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
 
-syecl_config := $(SOURCEDIR)/src/pkg/syecl/syecl.toml.example
+syecl_config := $(SOURCEDIR)/internal/pkg/syecl/syecl.toml.example
 syecl_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/ecl.toml
 
 seccomp_profile := $(SOURCEDIR)/etc/seccomp-profiles/default.json
 seccomp_profile_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles/default.json
 
-cgroups_config := $(SOURCEDIR)/src/pkg/cgroups/example/cgroups.toml
+cgroups_config := $(SOURCEDIR)/internal/pkg/cgroups/example/cgroups.toml
 cgroups_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups/cgroups.toml
 
 capability_JSON := $(DESTDIR)$(SYSCONFDIR)/singularity/capability.json
@@ -34,7 +32,7 @@ capability_JSON := $(DESTDIR)$(SYSCONFDIR)/singularity/capability.json
 sessiondir := $(DESTDIR)$(LOCALSTATEDIR)/singularity/mnt/session
 
 go_BIN := $(singularity)
-go_OBJ := $(SOURCEDIR)/src/pkg/buildcfg/config.go
+go_OBJ := $(SOURCEDIR)/internal/pkg/buildcfg/config.go
 go_INSTALL := $(singularity_INSTALL)
 
 bash_completion :=  $(BUILDDIR)/etc/bash_completion.d/singularity
@@ -140,14 +138,12 @@ $(BUILDDIR)/.clean-starter: $(starter_SOURCE)
 $(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ) $(libruntime)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $@ \
-		$(SOURCEDIR)/src/runtime/starter/scontainer.go \
-		$(SOURCEDIR)/src/runtime/starter/smaster.go \
-		$(SOURCEDIR)/src/runtime/starter/rpc.go
+		$(SOURCEDIR)/cmd/starter/main.go
 
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
-	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/src/cmd/singularity/cli.go
+	$(V)go build $(GO_BUILDMODE) $(GO_TAGS) $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
@@ -156,7 +152,7 @@ $(singularity_INSTALL): $(singularity)
 # config.go
 $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 	$(V)rm -f $(go_OBJ)
-	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/src/pkg/buildcfg && go generate
+	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/internal/pkg/buildcfg && go generate
 
 # bash_completion file
 $(bash_completion): $(go_OBJ)
@@ -192,8 +188,8 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
-$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/src/runtime/engines/singularity/config.go
-	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/src/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config.go
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@
