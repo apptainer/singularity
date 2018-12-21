@@ -21,7 +21,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Running a container with `--network="none"` no longer incorrectly fails with an error message
   - Commands now correctly return 1 when incorrectly executed without arguments
   - Progress bars no longer incorrectly display when running with `--quiet` or `--silent`
-  - Display contents of `91-environment.sh` file if it exists when `inspect --environment` is invoked
+  - Contents of `91-environment.sh` file are now displayed if appropriate when running `inspect --environment`
 
 # v3.0.1 - [2018.10.31]
 
