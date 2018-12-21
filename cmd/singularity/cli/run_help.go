@@ -14,13 +14,13 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
-	"github.com/sylabs/singularity/docs"
 )
 
 func init() {
