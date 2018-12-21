@@ -13,24 +13,24 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # v3.0.2 - []
 
-  -  Added build requirements to RPM spec file for easier RPM building
-  -  Replaced the `$SINGULARITY_NOHTTPS` environment variable to allow pulls from http instead of https
-  -  Replaced the `$SINGULARITY_TMPDIR` environment variable for builds performed by the build, actions and pull commands
-  -  Added the ability to pull from a private shub registry
-  -  Replaced the `$SINGULARITY_DOCKER_USERNAME` and `$SINGULARITY_DOCKER_PASSWORD` environment variables for authentication and introduced the `--docker-login` flag for interactive authentication
-  -  Made the following packages open:
+  - Added build requirements to RPM spec file for easier RPM building
+  - Replaced the `$SINGULARITY_NOHTTPS` environment variable to allow pulls from http instead of https
+  - Replaced the `$SINGULARITY_TMPDIR` environment variable for builds performed by the build, actions and pull commands
+  - Added the ability to pull from a private shub registry
+  - Replaced the `$SINGULARITY_DOCKER_USERNAME` and `$SINGULARITY_DOCKER_PASSWORD` environment variables for authentication and introduced the `--docker-login` flag for interactive authentication
+  - Made the following packages open:
     - `pkg/client/library`
     - `pkg/client/shub`
     - `pkg/signing`
     - `pkg/sypgp`
     - `pkg/util/loop`
     - `pkg/util/user-agent`
-  -  Added support for pulling directly from http and https
-  -  Add recipe file for packaging Singularity on alpine
-  -  Added option for a user to replicate the 2.x behavior of `--net` with the `--network=none` option/argument pair
-  -  Change error code to 1 on invalid/incomplete commands 
-  -  Silence progress bars when pushing or pulling with the `--quiet` or `--silent` flags
-  -  Display contents of `91-environment.sh` file if it exists when `inspect --environment` is invoked
+  - Added support for pulling directly from http and https
+  - Add recipe file for packaging Singularity on alpine
+  - Added option for a user to replicate the 2.x behavior of `--net` with the `--network=none` option/argument pair
+  - Change error code to 1 on invalid/incomplete commands 
+  - Silence progress bars when pushing or pulling with the `--quiet` or `--silent` flags
+  - Display contents of `91-environment.sh` file if it exists when `inspect --environment` is invoked
 
 # v3.0.1 - [2018.10.31]
 
