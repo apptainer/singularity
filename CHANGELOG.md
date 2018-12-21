@@ -13,11 +13,11 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # v3.0.2 - []
 
+  - Added the `--docker-login` flag to enable interactive authentication with docker registries
+  - Added support for pulling directly from HTTP and HTTPS
   - Made minor improvements to RPM packaging and added basic support for alpine packaging
   - The `$SINGULARITY_NOHTTPS`,`$SINGULARITY_TMPDIR`, and `$SINGULARITY_DOCKER_USERNAME`/`$SINGULARITY_DOCKER_PASSWORD` environment variables are now correctly respected
-  - Added the `--docker-login` flag to enable interactive authentication with docker registries
   - Pulling from a private shub registry now works as expected
-  - Added support for pulling directly from HTTP and HTTPS
   - Running a container with `--network="none"` no longer incorrectly fails with an error message
   - Commands now correctly return 1 when incorrectly executed without arguments
   - Progress bars no longer incorrectly display when running with `--quiet` or `--silent`
