@@ -30,7 +30,7 @@ We also welcome contributions to our [user docs](https://github.com/sylabs/singu
 
 ## Support
 
-To get help with Singularity, check out the [Community Portal](https://www.sylabs.io/join-the-community/).
+To get help with Singularity, check out the [Community Portal](https://www.sylabs.io/singularity/community/).
 
 For additional support, [contact us](https://www.sylabs.io/contact/) to receive more information.
 
