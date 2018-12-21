@@ -17,7 +17,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - The `$SINGULARITY_NOHTTPS`,`$SINGULARITY_TMPDIR`, and `$SINGULARITY_DOCKER_USERNAME`/`$SINGULARITY_DOCKER_PASSWORD` environment variables are now correctly respected
   - Added the `--docker-login` flag to enable interactive authentication with docker registries
   - Pulling from a private shub registry now works as expected
-  - Added support for pulling directly from http and https
+  - Added support for pulling directly from HTTP and HTTPS
   - Running a container with `--network="none"` no longer incorrectly fails with an error message
   - Commands now correctly return 1 when incorrectly executed without arguments
   - Progress bars no longer incorrectly display when running with `--quiet` or `--silent`
