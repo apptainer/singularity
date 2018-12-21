@@ -9,7 +9,19 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.0.1
+# Changes Since v3.0.2
+
+# v3.0.2 - []
+
+  - Added the `--docker-login` flag to enable interactive authentication with docker registries
+  - Added support for pulling directly from HTTP and HTTPS
+  - Made minor improvements to RPM packaging and added basic support for alpine packaging
+  - The `$SINGULARITY_NOHTTPS`,`$SINGULARITY_TMPDIR`, and `$SINGULARITY_DOCKER_USERNAME`/`$SINGULARITY_DOCKER_PASSWORD` environment variables are now correctly respected
+  - Pulling from a private shub registry now works as expected
+  - Running a container with `--network="none"` no longer incorrectly fails with an error message
+  - Commands now correctly return 1 when incorrectly executed without arguments
+  - Progress bars no longer incorrectly display when running with `--quiet` or `--silent`
+  - Contents of `91-environment.sh` file are now displayed if appropriate when running `inspect --environment`
 
 # v3.0.1 - [2018.10.31]
 
