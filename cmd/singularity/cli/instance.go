@@ -20,7 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
-	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/docs"
 )
 
 // instance list/stop options

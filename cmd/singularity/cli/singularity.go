@@ -19,7 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
-	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/docs"
 )
 
 // Global variables for singularity CLI

@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
-	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/docs"
 )
 
 var (

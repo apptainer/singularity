@@ -39,7 +39,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	library "github.com/sylabs/singularity/pkg/client/library"
-	"github.com/sylabs/singularity/src/docs"
+	"github.com/sylabs/singularity/docs"
 )
 
 func init() {
