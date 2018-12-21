@@ -32,6 +32,10 @@ appsec=0
 
 package_name=singularity
 short_version=`(git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+if echo $short_version | grep -q '\-rc'; then
+    short_version=$(echo $short_version | rev | cut -f 2- -d '-' | rev)
+fi
+
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
 
