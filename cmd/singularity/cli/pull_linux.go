@@ -7,10 +7,10 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 func pullRun(cmd *cobra.Command, args []string) {
@@ -38,10 +38,16 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	default:
+		authConf, err := makeDockerCredentials(cmd)
+		if err != nil {
+			sylog.Fatalf("While creating Docker credentials: %v", err)
+		}
+
 		libexec.PullOciImage(name, args[i], types.Options{
-			TmpDir:  tmpDir,
-			Force:   force,
-			NoHTTPS: noHTTPS,
+			TmpDir:           tmpDir,
+			Force:            force,
+			NoHTTPS:          noHTTPS,
+			DockerAuthConfig: authConf,
 		})
 	}
 }

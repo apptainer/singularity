@@ -69,7 +69,7 @@ Enterprise Performance Computing (EPC)`
       Library:
           Bootstrap: library
           From: debian:9
-  
+
       Docker:
           Bootstrap: docker
           From: tensorflow/tensorflow:latest
@@ -99,11 +99,11 @@ Enterprise Performance Computing (EPC)`
       %pre
           echo "This is a scriptlet that will be executed on the host, as root before"
           echo "the container has been bootstrapped. This section is not commonly used."
-  
+
       %setup
           echo "This is a scriptlet that will be executed on the host, as root, after"
           echo "the container has been bootstrapped. To install things into the container"
-          echo "reference the file system location with $SINGULARITY_BUILDROOT."
+          echo "reference the file system location with $SINGULARITY_ROOTFS."
 
       %post
           echo "This scriptlet section will be executed from within the container after"

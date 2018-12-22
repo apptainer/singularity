@@ -10,8 +10,8 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // SandboxAssembler doesnt store anything

@@ -18,9 +18,9 @@ import (
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
+	"github.com/sylabs/singularity/pkg/build/types"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
@@ -89,6 +89,9 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
@@ -101,13 +104,16 @@ func init() {
 	SingularityCmd.AddCommand(TestCmd)
 }
 
-func handleOCI(u string) (string, error) {
-	var sysCtx *ocitypes.SystemContext
-	if noHTTPS {
-		sysCtx = &ocitypes.SystemContext{
-			OCIInsecureSkipTLSVerify:    true,
-			DockerInsecureSkipTLSVerify: true,
-		}
+func handleOCI(cmd *cobra.Command, u string) (string, error) {
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	sysCtx := &ocitypes.SystemContext{
+		OCIInsecureSkipTLSVerify:    noHTTPS,
+		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerAuthConfig:            authConf,
 	}
 
 	sum, err := ociclient.ImageSHA(u, sysCtx)
@@ -122,7 +128,7 @@ func handleOCI(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS})
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS, DockerAuthConfig: authConf})
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
@@ -202,7 +208,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
-		image, err = handleOCI(args[0])
+		image, err = handleOCI(cmd, args[0])
 	case uri.HTTP:
 		image, err = handleNet(args[0])
 	case uri.HTTPS:

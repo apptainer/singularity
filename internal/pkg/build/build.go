@@ -18,19 +18,19 @@ import (
 	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/build/types/parser"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/syplugin"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
 // Build is an abstracted way to look at the entire build process.
@@ -151,8 +151,14 @@ func (b *Build) Full() error {
 		}
 	}
 
-	syplugin.BuildHandleBundles(b.b)
-	b.b.Recipe.BuildData.Post += syplugin.BuildHandlePosts()
+	// create apps in bundle
+	a := apps.New()
+	for k, v := range b.b.Recipe.CustomData {
+		a.HandleSection(k, v)
+	}
+
+	a.HandleBundle(b.b)
+	b.b.Recipe.BuildData.Post += a.HandlePost()
 
 	if engineRequired(b.d) {
 		if err := b.runBuildEngine(); err != nil {
@@ -355,12 +361,7 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 
 	// Check if spec is an image/sandbox
 	if _, err := image.Init(spec, false); err == nil {
-		return types.Definition{
-			Header: map[string]string{
-				"bootstrap": "localimage",
-				"from":      spec,
-			},
-		}, nil
+		return types.NewDefinitionFromURI("localimage" + "://" + spec)
 	}
 
 	// default to reading file as definition
@@ -495,17 +496,11 @@ func insertDefinition(b *types.Bundle) error {
 		}
 
 	}
-	f, err := os.Create(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"))
+
+	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), b.Recipe.Raw, 0644)
 	if err != nil {
 		return err
 	}
-
-	err = f.Chmod(0644)
-	if err != nil {
-		return err
-	}
-
-	parser.WriteDefinitionFile(&b.Recipe, f)
 
 	return nil
 }

@@ -30,6 +30,7 @@
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
     - Felix Abecassis <fabecassis@nvidia.com>
     - George Hartzell <hartzell@alerce.com>
+    - Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
     - Hakon Enger <hakonenger@github.com>
     - Hugo Meiland <hugo.meiland@microsoft.com>
     - Ian Kaneshiro <ian@sylabs.io>, <iankane@umich.edu>
@@ -49,16 +50,16 @@
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
+    - Olivier Sallou <olivier.sallou@irisa.fr>
     - Peter Steinbach <steinbach@scionics.de>
     - Petr Votava <votava.petr@gene.com>
     - Rafal Gumienny <rafal.gumienny@gmail.com>
     - Ralph Castain <rhc@open-mpi.org>
-    - Richard Neuboeck <hawk@tbi.univie.ac.at>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
+    - Richard Neuboeck <hawk@tbi.univie.ac.at>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Vanessa Sochat <vsochat@stanford.edu>
     - Westley Kurtzer <westley@sylabs.io>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Olivier Sallou <olivier.sallou@irisa.fr>

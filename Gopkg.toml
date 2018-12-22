@@ -47,7 +47,7 @@ required = [
 
 [[constraint]]
   name = "github.com/sylabs/sif"
-  version = "1.0.1"
+  version = "1.0.2"
 
 [[constraint]]
   branch = "master"
