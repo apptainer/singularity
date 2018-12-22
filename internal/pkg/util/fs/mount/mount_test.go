@@ -6,6 +6,7 @@
 package mount
 
 import (
+	"fmt"
 	"syscall"
 	"testing"
 
@@ -495,8 +496,9 @@ func TestImport(t *testing.T) {
 		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(tmp))
 	}
 	hasContext := false
+	context := fmt.Sprintf("context=%q", mountLabel)
 	for _, option := range tmp[0].Options {
-		if option == "context="+mountLabel {
+		if option == context {
 			hasContext = true
 		}
 	}
