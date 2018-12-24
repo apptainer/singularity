@@ -44,7 +44,7 @@ func doKeysPullCmd(fingerprint string, url string) error {
 	var count int
 
 	// get matching keyring
-	el, err := sypgp.FetchPubkey(fingerprint, url, authToken)
+	el, err := sypgp.FetchPubkey(fingerprint, url, authToken, false)
 	if err != nil {
 		return err
 	}
