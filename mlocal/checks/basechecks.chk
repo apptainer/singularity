@@ -1,5 +1,5 @@
 #!/bin/sh -
-# Copyright (c) 2016-2018, Yannick Cote <yanick@divyan.org>. All rights reserved.
+# Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
 set -e
@@ -64,7 +64,10 @@ if [ "$hstar" = "" ]; then
 	if test `dirname \`$hstcc -print-prog-name=ar\`` = "."; then
 		hstar="ar"
 	else
-		hstar=`(cd \`dirname \\\`$hstcc -print-prog-name=ar\\\`\` && pwd -P || false)`/ar
+		if ! hstar=`(cd \`dirname \\\`$hstcc -print-prog-name=ar\\\`\` 2>/dev/null && pwd -P)`/ar; then
+			echo "error: cannot find host \`ar' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$hstar"
@@ -74,7 +77,10 @@ if [ "$hstld" = "" ]; then
 	if test `dirname \`$hstcc -print-prog-name=ld\`` = "."; then
 		hstld="ld"
 	else
-		hstld=`(cd \`dirname \\\`$hstcc -print-prog-name=ld\\\`\` && pwd -P || false)`/ld
+		if ! hstld=`(cd \`dirname \\\`$hstcc -print-prog-name=ld\\\`\` 2>/dev/null && pwd -P)`/ld; then
+			echo "error: cannot find host \`ld' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$hstld"
@@ -84,7 +90,10 @@ if [ "$hstranlib" = "" ]; then
 	if test `dirname \`$hstcc -print-prog-name=ranlib\`` = "."; then
 		hstranlib="ranlib"
 	else
-		hstranlib=`(cd \`dirname \\\`$hstcc -print-prog-name=ranlib\\\`\` && pwd -P || false)`/ranlib
+		if ! hstranlib=`(cd \`dirname \\\`$hstcc -print-prog-name=ranlib\\\`\` 2>/dev/null && pwd -P)`/ranlib; then
+			echo "error: cannot find host \`ranlib' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$hstranlib"
@@ -94,7 +103,10 @@ if [ "$hstobjcopy" = "" ]; then
 	if test `dirname \`$hstcc -print-prog-name=objcopy\`` = "."; then
 		hstobjcopy="objcopy"
 	else
-		hstobjcopy=`(cd \`dirname \\\`$hstcc -print-prog-name=objcopy\\\`\` && pwd -P || false)`/objcopy
+		if ! hstobjcopy=`(cd \`dirname \\\`$hstcc -print-prog-name=objcopy\\\`\` 2>/dev/null && pwd -P)`/objcopy; then
+			echo "error: cannot find host \`objcopy' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$hstobjcopy"
@@ -129,6 +141,7 @@ else
 	echo "$tgtcxx cannot compile test code!"
 fi
 
+
 ########################
 # target tool paths
 ########################
@@ -137,7 +150,10 @@ if [ "$tgtar" = "" ]; then
 	if test `dirname \`$tgtcc -print-prog-name=ar\`` = "."; then
 		tgtar="ar"
 	else
-		tgtar=`(cd \`dirname \\\`$tgtcc -print-prog-name=ar\\\`\` && pwd -P || false)`/ar
+		if ! tgtar=`(cd \`dirname \\\`$tgtcc -print-prog-name=ar\\\`\` 2>/dev/null && pwd -P)`/ar; then
+			echo "error: cannot find target \`ar' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$tgtar"
@@ -147,7 +163,10 @@ if [ "$tgtld" = "" ]; then
 	if test `dirname \`$tgtcc -print-prog-name=ld\`` = "."; then
 		tgtld="ld"
 	else
-		tgtld=`(cd \`dirname \\\`$tgtcc -print-prog-name=ld\\\`\` && pwd -P || false)`/ld
+		if ! tgtld=`(cd \`dirname \\\`$tgtcc -print-prog-name=ld\\\`\` 2>/dev/null && pwd -P)`/ld; then
+			echo "error: cannot find target \`ld' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$tgtld"
@@ -157,7 +176,10 @@ if [ "$tgtranlib" = "" ]; then
 	if test `dirname \`$tgtcc -print-prog-name=ranlib\`` = "."; then
 		tgtranlib="ranlib"
 	else
-		tgtranlib=`(cd \`dirname \\\`$tgtcc -print-prog-name=ranlib\\\`\` && pwd -P || false)`/ranlib
+		if ! tgtranlib=`(cd \`dirname \\\`$tgtcc -print-prog-name=ranlib\\\`\` 2>/dev/null && pwd -P)`/ranlib; then
+			echo "error: cannot find target \`ranlib' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$tgtranlib"
@@ -167,7 +189,10 @@ if [ "$tgtobjcopy" = "" ]; then
 	if test `dirname \`$tgtcc -print-prog-name=objcopy\`` = "."; then
 		tgtobjcopy="objcopy"
 	else
-		tgtobjcopy=`(cd \`dirname \\\`$tgtcc -print-prog-name=objcopy\\\`\` && pwd -P || false)`/objcopy
+		if ! tgtobjcopy=`(cd \`dirname \\\`$tgtcc -print-prog-name=objcopy\\\`\` 2>/dev/null && pwd -P)`/objcopy; then
+			echo "error: cannot find target \`objcopy' program"
+			exit 2
+		fi
 	fi
 fi
 echo "$tgtobjcopy"
@@ -279,6 +304,7 @@ else
 fi
 
 
+
 ########################
 # host wordsize
 ########################
@@ -339,3 +365,43 @@ else
 	usage
 	exit 1
 fi
+
+
+########################
+# package version
+########################
+printf " checking: project version... "
+if [ "$package_version" = "" ]; then
+	package_version=`(\
+		git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || \
+		cat VERSION 2>/dev/null || echo "" \
+		) | \
+			sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+fi
+
+if [ "$package_version" != "" ]; then
+	echo $package_version
+else
+	echo "not found!"
+	echo "error: unable to determine \$package_version variable"
+	echo "NOTE: Not in a git tree and VERSION file not found"
+	echo "NOTE: Try running ${0##*/} with [-V version]"
+	usage
+	exit 1
+fi
+
+printf " checking: project short version... "
+if [ "$short_version" = "" ]; then
+	short_version=`(\
+	git describe --abbrev=0 --match 'v[0-9]*' --always 2>/dev/null || \
+	cat VERSION 2>/dev/null || echo ""\
+	) | \
+		sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+fi
+echo "$short_version"
+
+printf " checking: golang compiler version... "
+if [ "$go_version" = "" ]; then
+	go_version="`grep -A 1 ^go: .travis.yml 2>/dev/null|sed -n 's/.*- "//;s/"//p'`"
+fi
+echo "$go_version"
