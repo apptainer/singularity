@@ -18,12 +18,13 @@ import (
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
+	"github.com/sylabs/singularity/pkg/build/types"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -39,7 +40,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	library "github.com/sylabs/singularity/pkg/client/library"
-	"github.com/sylabs/singularity/src/docs"
 )
 
 func init() {

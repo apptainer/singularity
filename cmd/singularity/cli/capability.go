@@ -14,11 +14,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/src/docs"
 )
 
 // contains flag variables for capability commands

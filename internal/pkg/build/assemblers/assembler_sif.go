@@ -6,7 +6,6 @@
 package assemblers
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
@@ -21,12 +20,11 @@ import (
 
 	"github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/build/types/parser"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // SIFAssembler doesnt store anything
@@ -123,11 +121,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	sylog.Infof("Creating SIF file...")
 
-	// convert definition to plain text
-	var buf bytes.Buffer
-	parser.WriteDefinitionFile(&(b.Recipe), &buf)
-	def := buf.Bytes()
-
 	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
 		return fmt.Errorf("While searching for mksquashfs: %v", err)
@@ -166,7 +159,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	err = createSIF(path, def, squashfsPath)
+	err = createSIF(path, b.Recipe.Raw, squashfsPath)
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}
