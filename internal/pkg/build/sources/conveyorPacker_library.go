@@ -46,14 +46,15 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	cp.b.FSObjects["libraryImg"] = f.Name()
 
-	sylog.Debugf("Download file: %v", cp.b.FSObjects["libraryImg"])
 	sylog.Debugf("LibraryURL: %v", cp.LibraryURL)
 	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
 
-	cacheImagePath, err := cache.PullLibraryImage(b.Recipe.Header["from"], cp.LibraryURL, cp.AuthToken)
+	cacheImagePath, err := cache.PullLibraryImage("library://"+b.Recipe.Header["from"], cp.LibraryURL, cp.AuthToken)
 	if err != nil {
 		return fmt.Errorf("failed to Get from %s, %s: %v", cp.LibraryURL, cp.b.Recipe.Header["from"], err)
 	}
+
+	sylog.Debugf("Cached Image: %v", cacheImagePath)
 
 	cp.LocalPacker, err = GetLocalPacker(cacheImagePath, cp.b)
 

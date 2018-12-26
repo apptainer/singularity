@@ -45,6 +45,7 @@ func LibraryImageExists(sum, name string) (bool, error) {
 }
 
 // PullLibraryImage is the function that is responsible for pulling an image from a Sylabs library into the cache.
+// Requires libraryRef to include library://
 func PullLibraryImage(libraryRef, libraryURL string, authToken string) (string, error) {
 	libraryImage, err := library.GetImage(libraryURL, authToken, libraryRef)
 	if err != nil {
@@ -53,6 +54,9 @@ func PullLibraryImage(libraryRef, libraryURL string, authToken string) (string, 
 
 	imageName := uri.GetName(libraryRef)
 	imagePath := LibraryImage(libraryImage.Hash, imageName)
+	sylog.Debugf("Library Ref: %v", libraryRef)
+	sylog.Debugf("Image Name: %v", imageName)
+	sylog.Debugf("Image Path: %v", imagePath)
 
 	if exists, err := LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
