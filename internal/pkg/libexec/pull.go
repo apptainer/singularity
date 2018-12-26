@@ -6,10 +6,13 @@
 package libexec
 
 import (
+	"io"
+	"os"
+
 	"github.com/sylabs/singularity/internal/pkg/build"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	library "github.com/sylabs/singularity/pkg/client/library"
 	net "github.com/sylabs/singularity/pkg/client/net"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
@@ -23,8 +26,33 @@ func PullNetImage(image, libraryURL string, force bool) {
 }
 
 // PullLibraryImage is the function that is responsible for pulling an image from a Sylabs library.
-func PullLibraryImage(image, libraryRef, libraryURL string, force bool, authToken string) {
-	err := library.DownloadImage(image, libraryRef, libraryURL, force, authToken)
+func PullLibraryImage(filePath, libraryRef, libraryURL string, force bool, authToken string) {
+	cacheImagePath, err := cache.PullLibraryImage(libraryRef, libraryURL, authToken)
+	if err != nil {
+		sylog.Fatalf("%v\n", err)
+	}
+
+	if !force {
+		if _, err := os.Stat(filePath); err == nil {
+			sylog.Fatalf("image file already exists - will not overwrite")
+		}
+	}
+
+	// Perms are 777 *prior* to umask
+	dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		sylog.Fatalf("%v\n", err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.OpenFile(cacheImagePath, os.O_RDONLY, 0444)
+	if err != nil {
+		sylog.Fatalf("%v\n", err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
 		sylog.Fatalf("%v\n", err)
 	}

@@ -6,8 +6,13 @@
 package cache
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	library "github.com/sylabs/singularity/pkg/client/library"
 )
 
 const (
@@ -37,4 +42,26 @@ func LibraryImageExists(sum, name string) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// PullLibraryImage is the function that is responsible for pulling an image from a Sylabs library into the cache.
+func PullLibraryImage(libraryRef, libraryURL string, authToken string) (string, error) {
+	libraryImage, err := library.GetImage(libraryURL, authToken, libraryRef)
+	if err != nil {
+		return "", err
+	}
+
+	imageName := uri.GetName(libraryRef)
+	imagePath := LibraryImage(libraryImage.Hash, imageName)
+
+	if exists, err := LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	} else if !exists {
+		sylog.Infof("Downloading library image")
+		err := library.DownloadImage(imagePath, libraryRef, libraryURL, true, authToken)
+		if err != nil {
+			return "", err
+		}
+	}
+	return imagePath, nil
 }

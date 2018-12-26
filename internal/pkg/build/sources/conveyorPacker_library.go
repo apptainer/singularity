@@ -6,12 +6,13 @@
 package sources
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/client/library"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
@@ -49,12 +50,12 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("LibraryURL: %v", cp.LibraryURL)
 	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
 
-	// get image from library
-	if err = client.DownloadImage(cp.b.FSObjects["libraryImg"], b.Recipe.Header["from"], cp.LibraryURL, true, cp.AuthToken); err != nil {
-		sylog.Fatalf("failed to Get from %s://%s: %v\n", cp.LibraryURL, cp.b.Recipe.Header["from"], err)
+	cacheImagePath, err := cache.PullLibraryImage(b.Recipe.Header["from"], cp.LibraryURL, cp.AuthToken)
+	if err != nil {
+		return fmt.Errorf("failed to Get from %s, %s: %v", cp.LibraryURL, cp.b.Recipe.Header["from"], err)
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["libraryImg"], cp.b)
+	cp.LocalPacker, err = GetLocalPacker(cacheImagePath, cp.b)
 
 	return err
 }

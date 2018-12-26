@@ -38,7 +38,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	library "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/src/docs"
 )
 
@@ -144,22 +143,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 }
 
 func handleLibrary(u string) (string, error) {
-	libraryImage, err := library.GetImage("https://library.sylabs.io", authToken, u)
-	if err != nil {
-		return "", err
-	}
-
-	imageName := uri.GetName(u)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading library image")
-		libexec.PullLibraryImage(imagePath, u, "https://library.sylabs.io", false, authToken)
-	}
-
-	return imagePath, nil
+	return cache.PullLibraryImage(u, "https://library.sylabs.io", authToken)
 }
 
 func handleShub(u string) (string, error) {
