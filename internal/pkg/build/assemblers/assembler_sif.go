@@ -117,8 +117,6 @@ func getMksquashfsPath() (string, error) {
 
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
-	defer os.RemoveAll(b.Path)
-
 	sylog.Infof("Creating SIF file...")
 
 	mksquashfs, err := getMksquashfsPath()

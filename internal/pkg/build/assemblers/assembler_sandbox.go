@@ -20,8 +20,6 @@ type SandboxAssembler struct {
 
 // Assemble creates a Sandbox image from a Bundle
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
-	defer os.RemoveAll(b.Path)
-
 	sylog.Infof("Creating sandbox directory...")
 
 	// move bundle rootfs to sandboxdir as final sandbox
