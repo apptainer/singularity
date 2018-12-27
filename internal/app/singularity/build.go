@@ -36,6 +36,7 @@ var (
 	dockerUsername string
 	dockerPassword string
 	dockerLogin    bool
+	noCleanUp      bool
 )
 
 var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
@@ -78,6 +79,9 @@ func init() {
 
 	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
 	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
+
+	BuildCmd.Flags().BoolVar(&noCleanUp, "no-cleanup", false, "do NOT clean up bundle after failed build, can be helpul for debugging")
+	BuildCmd.Flags().SetAnnotation("no-cleanup", "envkey", []string{"NO_CLEANUP"})
 
 	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
 	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))

@@ -80,6 +80,7 @@ func run(cmd *cobra.Command, args []string) {
 				Sections:         sections,
 				NoTest:           noTest,
 				NoHTTPS:          noHTTPS,
+				NoCleanUp:        noCleanUp,
 				DockerAuthConfig: authConf,
 			})
 		if err != nil {

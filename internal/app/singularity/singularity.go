@@ -287,6 +287,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"builder":         envStringNSlice,
 	"library":         envStringNSlice,
 	"nohttps":         envBool,
+	"no-cleanup":      envBool,
 	"tmpdir":          envStringNSlice,
 	"docker-username": envStringNSlice,
 	"docker-password": envStringNSlice,
