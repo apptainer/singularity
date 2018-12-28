@@ -57,7 +57,7 @@
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Richard Neuboeck <hawk@tbi.univie.ac.at>
-    - Sasha Yakovtseva <sasha@sylabs.io> <sashayakovtseva@gmail.com>
+    - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Vanessa Sochat <vsochat@stanford.edu>
