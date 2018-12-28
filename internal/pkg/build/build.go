@@ -123,7 +123,7 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 // cleanUp removes remnants of build from file system unless NoCleanUp is specified
 func (b Build) cleanUp() {
 	if b.b.Opts.NoCleanUp {
-		sylog.Infof("Build performed with no clean up option, failed build bundle located at: %v", b.b.Path)
+		sylog.Infof("Build performed with no clean up option, build bundle located at: %v", b.b.Path)
 		return
 	}
 	sylog.Debugf("Build bundle cleanup: %v", b.b.Path)
