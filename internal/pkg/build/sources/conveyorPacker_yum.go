@@ -13,11 +13,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 const (
@@ -169,14 +170,14 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	c.updateurl, _ = c.b.Recipe.Header["updateurl"]
 
 	// look for an OS version if a mirror specifies it
-	c.osversion = ""
-	if strings.Contains(c.mirrorurl, `%{OSVERSION}`) || strings.Contains(c.updateurl, `%{OSVERSION}`) {
+	regex := regexp.MustCompile(`(?i)%{OSVERSION}`)
+	if regex.MatchString(c.mirrorurl) || regex.MatchString(c.updateurl) {
 		c.osversion, ok = c.b.Recipe.Header["osversion"]
 		if !ok {
 			return fmt.Errorf("Invalid yum header, OSVersion referenced in mirror but no OSVersion specified")
 		}
-		c.mirrorurl = strings.Replace(c.mirrorurl, `%{OSVERSION}`, c.osversion, -1)
-		c.updateurl = strings.Replace(c.updateurl, `%{OSVERSION}`, c.osversion, -1)
+		c.mirrorurl = regex.ReplaceAllString(c.mirrorurl, c.osversion)
+		c.updateurl = regex.ReplaceAllString(c.updateurl, c.osversion)
 	}
 
 	include, _ := c.b.Recipe.Header["include"]

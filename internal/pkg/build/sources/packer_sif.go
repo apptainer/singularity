@@ -13,8 +13,8 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
