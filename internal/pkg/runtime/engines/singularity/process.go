@@ -220,8 +220,9 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				}
 			default:
 				if isInstance {
-					if s != syscall.SIGCONT {
-						syscall.Kill(-1, s.(syscall.Signal))
+					if err := syscall.Kill(-1, s.(syscall.Signal)); err == syscall.ESRCH {
+						sylog.Debugf("No child process, exiting ...")
+						os.Exit(128 + int(s.(syscall.Signal)))
 					}
 				} else {
 					// kill ourself with SIGKILL whatever signal was received
