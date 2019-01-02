@@ -7,5 +7,5 @@ for script in /.singularity.d/env/*.sh; do
 done
 
 if test -x "/.singularity.d/startscript"; then
-    exec "/.singularity.d/startscript"
+    exec "/.singularity.d/startscript" "$@"
 fi
