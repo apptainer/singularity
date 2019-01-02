@@ -6,13 +6,13 @@
 package main
 
 import (
-	"github.com/sylabs/singularity/cmd/singularity/cli"
+	cli "github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 func main() {
-	// In cli/singularity.go
+	// In internal/app/singularity/singularity.go
 	cli.ExecuteSingularity()
 }
 

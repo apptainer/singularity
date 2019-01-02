@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
@@ -119,9 +120,30 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 	return b, nil
 }
 
+// cleanUp removes remnants of build from file system unless NoCleanUp is specified
+func (b Build) cleanUp() {
+	if b.b.Opts.NoCleanUp {
+		sylog.Infof("Build performed with no clean up option, build bundle located at: %v", b.b.Path)
+		return
+	}
+	sylog.Debugf("Build bundle cleanup: %v", b.b.Path)
+	os.RemoveAll(b.b.Path)
+}
+
 // Full runs a standard build from start to finish
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
+
+	// monitor build for termination signal and clean up
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		b.cleanUp()
+		os.Exit(1)
+	}()
+	// clean up build normally
+	defer b.cleanUp()
 
 	if err := b.runPreScript(); err != nil {
 		return err

@@ -530,7 +530,7 @@ func SearchPubkey(search, keyserverURI, authToken string) (string, error) {
 	if resp.StatusCode == http.StatusUnauthorized {
 		token, err := helpAuthentication()
 		if err != nil {
-			return "", fmt.Errorf("Could not obtain or install authentication token: %s", err)
+			return "", fmt.Errorf("could not obtain or install authentication token: %s", err)
 		}
 		// try request again
 		r, err := doSearchRequest(search, keyserverURI, token)
@@ -582,7 +582,7 @@ func doFetchRequest(fingerprint, keyserverURI, authToken string) (*http.Request,
 }
 
 // FetchPubkey connects to a key server and requests a specific key
-func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityList, error) {
+func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
 	r, err := doFetchRequest(fingerprint, keyserverURI, authToken)
 	if err != nil {
 		return nil, fmt.Errorf("error while preparing http request: %s", err)
@@ -596,9 +596,12 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string) (openpgp.EntityLis
 
 	// check if error is authentication failure and help user when it's the case
 	if resp.StatusCode == http.StatusUnauthorized {
+		if noPrompt {
+			return nil, fmt.Errorf("%s returned %s", keyserverURI, http.StatusText(http.StatusUnauthorized))
+		}
 		token, err := helpAuthentication()
 		if err != nil {
-			return nil, fmt.Errorf("Could not obtain or install authentication token: %s", err)
+			return nil, fmt.Errorf("could not obtain or install authentication token: %s", err)
 		}
 		// try request again
 		r, err := doFetchRequest(fingerprint, keyserverURI, token)
@@ -682,7 +685,7 @@ func PushPubkey(entity *openpgp.Entity, keyserverURI, authToken string) error {
 	if resp.StatusCode == http.StatusUnauthorized {
 		token, err := helpAuthentication()
 		if err != nil {
-			return fmt.Errorf("Could not obtain or install authentication token: %s", err)
+			return fmt.Errorf("could not obtain or install authentication token: %s", err)
 		}
 		// try request again
 		r, err := doPushRequest(w, keyserverURI, token)

@@ -63,7 +63,7 @@ There are a few places where documentation for the Singularity project lives. Th
 2. The [README](README.md) is a place to document critical information for new users of Singularity. It should typically not change, but in the case where a change is necessary a PR may update it.
 3. The [user-docs](https://www.github.com/sylabs/singularity-userdocs) should document anything pertinent to the usage of Singularity.
 4. The [admin-docs](https://www.github.com/sylabs/singularity-admindocs) document anything that is pertinent to a system administrator who manages a system with Singularity installed.
-5. If necessary, changes to the message displayed when running `singularity help *` can be made by editing `src/docs/content.go`.
+5. If necessary, changes to the message displayed when running `singularity help *` can be made by editing `docs/content.go`.
 
 
 # Code of Conduct
