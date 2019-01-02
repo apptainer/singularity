@@ -9,6 +9,17 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+const (
+	// Creating represent creating status during container lifecycle
+	Creating = "creating"
+	// Created represent created status during container lifecycle
+	Created = "created"
+	// Running represent running status during container lifecycle
+	Running = "running"
+	// Stopped represent stopped status during container lifecycle
+	Stopped = "stopped"
+)
+
 // State represents the state of the container
 type State struct {
 	specs.State

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 	"syscall"
+
+	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 // CleanupContainer cleans up the container
@@ -40,7 +42,7 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 	engine.EngineConfig.State.ExitCode = &exitCode
 	engine.EngineConfig.State.ExitDesc = desc
 
-	if err := engine.updateState("stopped"); err != nil {
+	if err := engine.updateState(ociruntime.Stopped); err != nil {
 		return err
 	}
 

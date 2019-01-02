@@ -23,6 +23,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -32,7 +33,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/unix"
-	"github.com/sylabs/singularity/src/docs"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -91,7 +91,7 @@ func init() {
 	OciCmd.AddCommand(OciExecCmd)
 }
 
-// OciCreateCmd represents oci create command
+// OciCreateCmd represents oci create command.
 var OciCreateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -106,7 +106,7 @@ var OciCreateCmd = &cobra.Command{
 	Example: docs.OciCreateExample,
 }
 
-// OciRunCmd allow to create/start in row
+// OciRunCmd allow to create/start in row.
 var OciRunCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -121,7 +121,7 @@ var OciRunCmd = &cobra.Command{
 	Example: docs.OciRunExample,
 }
 
-// OciStartCmd represents oci start command
+// OciStartCmd represents oci start command.
 var OciStartCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -136,7 +136,7 @@ var OciStartCmd = &cobra.Command{
 	Example: docs.OciStartExample,
 }
 
-// OciDeleteCmd represents oci start command
+// OciDeleteCmd represents oci delete command.
 var OciDeleteCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -151,7 +151,7 @@ var OciDeleteCmd = &cobra.Command{
 	Example: docs.OciDeleteExample,
 }
 
-// OciKillCmd represents oci start command
+// OciKillCmd represents oci kill command.
 var OciKillCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
@@ -169,7 +169,7 @@ var OciKillCmd = &cobra.Command{
 	Example: docs.OciKillExample,
 }
 
-// OciStateCmd represents oci start command
+// OciStateCmd represents oci state command.
 var OciStateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -184,7 +184,7 @@ var OciStateCmd = &cobra.Command{
 	Example: docs.OciStateExample,
 }
 
-// OciAttachCmd represents oci start command
+// OciAttachCmd represents oci attach command.
 var OciAttachCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -199,7 +199,7 @@ var OciAttachCmd = &cobra.Command{
 	Example: docs.OciAttachExample,
 }
 
-// OciExecCmd represents oci exec command
+// OciExecCmd represents oci exec command.
 var OciExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
@@ -214,7 +214,7 @@ var OciExecCmd = &cobra.Command{
 	Example: docs.OciExecExample,
 }
 
-// OciCmd singularity oci runtime
+// OciCmd singularity oci runtime.
 var OciCmd = &cobra.Command{
 	Run:                   nil,
 	DisableFlagsInUseLine: true,
@@ -452,12 +452,12 @@ func ociRun(containerID string) error {
 			c.Close()
 
 			switch state.Status {
-			case "created":
+			case ociruntime.Created:
 				// ignore error there and wait for stopped status
 				ociStart(containerID)
-			case "running":
+			case ociruntime.Running:
 				status <- state.Status
-			case "stopped":
+			case ociruntime.Stopped:
 				status <- state.Status
 			}
 		}
@@ -465,7 +465,7 @@ func ociRun(containerID string) error {
 
 	// wait running status
 	s := <-status
-	if s != "running" {
+	if s != ociruntime.Running {
 		return fmt.Errorf("%s", s)
 	}
 
@@ -480,7 +480,7 @@ func ociRun(containerID string) error {
 
 	// wait stopped status
 	s = <-status
-	if s != "stopped" {
+	if s != ociruntime.Stopped {
 		return fmt.Errorf("%s", s)
 	}
 
@@ -504,7 +504,7 @@ func ociStart(containerID string) error {
 		return err
 	}
 
-	if state.Status != "created" {
+	if state.Status != ociruntime.Created {
 		return fmt.Errorf("container %s is not created", containerID)
 	}
 
@@ -546,7 +546,7 @@ func ociKill(containerID string, killTimeout int) error {
 		return err
 	}
 
-	if state.Status != "created" && state.Status != "running" {
+	if state.Status != ociruntime.Created && state.Status != ociruntime.Running {
 		return fmt.Errorf("container %s is nor created nor running", containerID)
 	}
 
@@ -599,10 +599,10 @@ func ociDelete(containerID string) error {
 	}
 
 	switch engineConfig.State.Status {
-	case "running":
+	case ociruntime.Running:
 		return fmt.Errorf("container is not stopped: running")
-	case "stopped":
-	case "created":
+	case ociruntime.Stopped:
+	case ociruntime.Created:
 		if err := ociKill(containerID, 2); err != nil {
 			return err
 		}

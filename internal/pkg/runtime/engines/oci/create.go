@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/sysctl"
 	"github.com/sylabs/singularity/pkg/util/unix"
@@ -155,7 +156,7 @@ func (engine *EngineOperations) createState(pid int) error {
 	engine.EngineConfig.State.Bundle = engine.EngineConfig.GetBundlePath()
 	engine.EngineConfig.State.ID = engine.CommonConfig.ContainerID
 	engine.EngineConfig.State.Pid = pid
-	engine.EngineConfig.State.Status = "creating"
+	engine.EngineConfig.State.Status = ociruntime.Creating
 	engine.EngineConfig.State.Annotations = engine.EngineConfig.OciConfig.Annotations
 
 	file.Config, err = json.Marshal(engine.CommonConfig)
@@ -197,11 +198,11 @@ func (engine *EngineOperations) updateState(status string) error {
 	t := time.Now().UnixNano()
 
 	switch status {
-	case "created":
+	case ociruntime.Created:
 		engine.EngineConfig.State.CreatedAt = &t
-	case "running":
+	case ociruntime.Running:
 		engine.EngineConfig.State.StartedAt = &t
-	case "stopped":
+	case ociruntime.Stopped:
 		engine.EngineConfig.State.FinishedAt = &t
 	}
 

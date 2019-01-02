@@ -295,22 +295,16 @@ func GetSizeLimit(options []string) (uint64, error) {
 
 // HasRemountFlag checks if remount flag is set or not.
 func HasRemountFlag(flags uintptr) bool {
-	if flags&syscall.MS_REMOUNT == 0 {
-		return false
-	}
-	return true
+	return flags&syscall.MS_REMOUNT != 0
 }
 
 // HasPropagationFlag checks if a propagation flag is set or not.
 func HasPropagationFlag(flags uintptr) bool {
-	if flags&getPropagationFlags() == 0 {
-		return false
-	}
-	return true
+	return flags&getPropagationFlags() != 0
 }
 
 func getPropagationFlags() uintptr {
-	return (syscall.MS_UNBINDABLE | syscall.MS_SHARED | syscall.MS_PRIVATE | syscall.MS_SLAVE)
+	return syscall.MS_UNBINDABLE | syscall.MS_SHARED | syscall.MS_PRIVATE | syscall.MS_SLAVE
 }
 
 func (p *Points) init() {

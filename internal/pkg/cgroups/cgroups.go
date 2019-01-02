@@ -15,10 +15,6 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
-const (
-	singularity = "/singularity"
-)
-
 // Manager manage container cgroup resources restriction
 type Manager struct {
 	Path   string
@@ -28,10 +24,8 @@ type Manager struct {
 
 // GetCgroupRootPath returns cgroup root path
 func (m *Manager) GetCgroupRootPath() string {
-	path := ""
-
 	if m.cgroup == nil {
-		return path
+		return ""
 	}
 
 	for _, sub := range m.cgroup.Subsystems() {
@@ -44,7 +38,7 @@ func (m *Manager) GetCgroupRootPath() string {
 		return filepath.Clean(cgroupPath)
 	}
 
-	return path
+	return ""
 }
 
 // ApplyFromSpec applies cgroups ressources restriction from OCI specification

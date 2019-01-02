@@ -30,6 +30,16 @@ const (
 	prognameFormat  = "Singularity instance: %s [%s]"
 )
 
+var nsMap = map[specs.LinuxNamespaceType]string{
+	specs.PIDNamespace:     "pid",
+	specs.UTSNamespace:     "uts",
+	specs.IPCNamespace:     "ipc",
+	specs.MountNamespace:   "mnt",
+	specs.CgroupNamespace:  "cgroup",
+	specs.NetworkNamespace: "net",
+	specs.UserNamespace:    "user",
+}
+
 // File represents an instance file storing instance information
 type File struct {
 	Path       string `json:"-"`
@@ -272,8 +282,8 @@ func (i *File) MountNamespaces() error {
 	return nil
 }
 
-// GetNamespaces fills instance namespaces path
-func (i *File) GetNamespaces(configNs []specs.LinuxNamespace) error {
+// UpdateNamespacesPath updates namespaces path for the provided configuration
+func (i *File) UpdateNamespacesPath(configNs []specs.LinuxNamespace) error {
 	path := filepath.Join(filepath.Dir(i.Path), "ns")
 	nspath, err := filepath.EvalSymlinks(path)
 	if err != nil {
@@ -312,16 +322,6 @@ func (i *File) GetNamespaces(configNs []specs.LinuxNamespace) error {
 	procName := ProcName(i.Name, i.User)
 	if cmdline != procName {
 		return fmt.Errorf("no command line match found")
-	}
-
-	nsMap := map[specs.LinuxNamespaceType]string{
-		specs.PIDNamespace:     "pid",
-		specs.UTSNamespace:     "uts",
-		specs.IPCNamespace:     "ipc",
-		specs.MountNamespace:   "mnt",
-		specs.CgroupNamespace:  "cgroup",
-		specs.NetworkNamespace: "net",
-		specs.UserNamespace:    "user",
 	}
 
 	for i, n := range configNs {

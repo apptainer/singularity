@@ -67,15 +67,10 @@ func GetName(b []byte) string {
 
 // NewEngine returns the engine described by the JSON []byte configuration.
 func NewEngine(b []byte) (*Engine, error) {
-	engineName := struct {
-		EngineName string `json:"engineName"`
-	}{}
-	if err := json.Unmarshal(b, &engineName); err != nil {
-		return nil, fmt.Errorf("engineName field is not found: %v", err)
-	}
+	engineName := GetName(b)
 
 	// ensure engine with given name is registered
-	eOp, ok := registeredEngineOperations[engineName.EngineName]
+	eOp, ok := registeredEngineOperations[engineName]
 	if !ok {
 		return nil, fmt.Errorf("engine %q is not found", engineName)
 	}

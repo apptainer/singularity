@@ -53,7 +53,8 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 		return fmt.Errorf("failed to change directory to %s", root)
 	}
 
-	if arguments.Method == "pivot" {
+	switch arguments.Method {
+	case "pivot":
 		// idea taken from libcontainer (and also LXC developers) to avoid
 		// creation of temporary directory or use of existing directory
 		// for pivot_root.
@@ -84,7 +85,7 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 		if err := syscall.Unmount(".", syscall.MNT_DETACH); err != nil {
 			return fmt.Errorf("unmount pivot_root dir %s", err)
 		}
-	} else if arguments.Method == "move" {
+	case "move":
 		sylog.Debugf("Move %s as / directory", root)
 		if err := syscall.Mount(".", "/", "", syscall.MS_MOVE, ""); err != nil {
 			return fmt.Errorf("failed to move %s as / directory: %s", root, err)
@@ -94,7 +95,7 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 		if err := syscall.Chroot("."); err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
-	} else if arguments.Method == "chroot" {
+	case "chroot":
 		sylog.Debugf("Chroot to %s", root)
 		if err := syscall.Chroot("."); err != nil {
 			return fmt.Errorf("chroot failed: %s", err)

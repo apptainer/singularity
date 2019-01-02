@@ -264,7 +264,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		}
 	}
 
-	if err := engine.updateState("created"); err != nil {
+	if err := engine.updateState(ociruntime.Created); err != nil {
 		return err
 	}
 
@@ -289,7 +289,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 // PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
-	if engine.EngineConfig.State.Status == "running" {
+	if engine.EngineConfig.State.Status == ociruntime.Running {
 		hooks := engine.EngineConfig.OciConfig.Hooks
 		if hooks != nil {
 			for _, h := range hooks.Poststart {
@@ -429,7 +429,7 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Li
 				fatalChan <- err
 				return
 			}
-			if err := engine.updateState("running"); err != nil {
+			if err := engine.updateState(ociruntime.Running); err != nil {
 				fatalChan <- err
 				return
 			}

@@ -17,10 +17,10 @@ type netError string
 func (e netError) Error() string { return string(e) }
 
 const (
-	// NoCniConfError corresponds to a missing CNI configuration path
-	NoCniConfError = netError("no CNI configuration path provided")
-	// NoCniPluginError corresponds to a missing CNI plugin path
-	NoCniPluginError = netError("no CNI plugin path provided")
+	// ErrNoCNIConfig corresponds to a missing CNI configuration path
+	ErrNoCNIConfig = netError("no CNI configuration path provided")
+	// ErrNoCNIPlugin corresponds to a missing CNI plugin path
+	ErrNoCNIPlugin = netError("no CNI plugin path provided")
 )
 
 // CNIPath contains path to CNI configuration directory and path to executable
@@ -55,10 +55,10 @@ func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 	networks := make([]string, 0)
 
 	if cniPath == nil {
-		return networks, NoCniConfError
+		return networks, ErrNoCNIConfig
 	}
 	if cniPath.Conf == "" {
-		return networks, NoCniConfError
+		return networks, ErrNoCNIConfig
 	}
 
 	files, err := libcni.ConfFiles(cniPath.Conf, []string{".conf", ".json", ".conflist"})
@@ -97,13 +97,13 @@ func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIP
 	}
 
 	if cniPath == nil {
-		return nil, NoCniConfError
+		return nil, ErrNoCNIConfig
 	}
 	if cniPath.Conf == "" {
-		return nil, NoCniConfError
+		return nil, ErrNoCNIConfig
 	}
 	if cniPath.Plugin == "" {
-		return nil, NoCniPluginError
+		return nil, ErrNoCNIPlugin
 	}
 
 	networkConfList := make([]*libcni.NetworkConfigList, 0)
