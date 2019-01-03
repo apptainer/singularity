@@ -14,12 +14,22 @@ const (
 	PluginUse   string = `plugin [plugin options...] <subcommand>`
 	PluginShort string = `Manage singularity plugins`
 	PluginLong  string = `
-  The 'plugin' command  allows you to manage `
+  The 'plugin' command allows you to manage `
 	PluginExample string = `
   All group commands have their own help output:
 
   $ singularity help plugin compile
   $ singularity plugin list --help`
+
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// // plugin list command
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// PluginListUse   string = `list [list options...]`
+	// PluginListShort string = `List all install plugins`
+	// PluginListLong  string = `
+	// The 'plugin list' command lists all installed plugins `
+	// PluginListExample string = `
+	// $ singularity plugin list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// plugin compile command
@@ -27,10 +37,20 @@ const (
 	PluginCompileUse   string = `compile [compile options...] <host_path>`
 	PluginCompileShort string = `Compile a singularity plugin`
 	PluginCompileLong  string = `
-  The 'plugin compile' command  allows a developer to compile a plugin in the
-  expected environment. The host directory specified is the location of the plugins
-  source code folder which will be bind mounted into the compile container. Compilation
-  of a container must happen in a container due to constraints in the Go plugin package.`
+	The 'plugin compile' command allows a developer to compile a plugin in the
+	expected environment. The host directory specified is the location of the plugins
+	source code folder which will be bind mounted into the compile container. Compilation
+	of a container must happen in a container due to constraints in the Go plugin package.`
 	PluginCompileExample string = `
-  $ singularity plugin compile $PLUGIN_PATH`
+	$ singularity plugin compile $HOST_PATH`
+
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// // plugin install command
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// PluginInstallUse   string = `install [install options...] <plugin_path>`
+	// PluginInstallShort string = `Install a singularity plugin`
+	// PluginInstallLong  string = `
+	// The 'plugin install' command allows a developer to install a plugin.`
+	// PluginInstallExample string = `
+	// $ singularity plugin install $PLUGIN_PATH`
 )
