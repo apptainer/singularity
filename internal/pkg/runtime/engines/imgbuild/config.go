@@ -6,8 +6,8 @@
 package imgbuild
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // Name of the engine

@@ -36,5 +36,8 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 }
 
 func (f *sifFormat) openMode(writable bool) int {
-	return os.O_RDWR
+	if writable {
+		return os.O_RDWR
+	}
+	return os.O_RDONLY
 }
