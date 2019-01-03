@@ -14,7 +14,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -47,6 +47,7 @@ type container struct {
 	ipcNS            bool
 	mountInfoPath    string
 	skippedMount     []string
+	checkDest        []string
 	suidFlag         uintptr
 	devSourcePath    string
 }
@@ -61,6 +62,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		sessionFsType:    engine.EngineConfig.File.MemoryFSType,
 		mountInfoPath:    fmt.Sprintf("/proc/%d/mountinfo", pid),
 		skippedMount:     make([]string, 0),
+		checkDest:        make([]string, 0),
 		suidFlag:         syscall.MS_NOSUID,
 	}
 
@@ -508,14 +510,15 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
-		// detection of mounted points for underlay layer is not really a simple
-		// task, detection is disabled with this layer for the time being
-		if c.sessionLayerType != "underlay" {
-			mounted := c.checkMounted(dest)
-			if mounted != "" {
-				c.skippedMount = append(c.skippedMount, mnt.Destination)
-				sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
-				return nil
+		for _, d := range c.checkDest {
+			if d == mnt.Destination {
+				mounted := c.checkMounted(dest)
+				if mounted != "" {
+					c.skippedMount = append(c.skippedMount, mnt.Destination)
+					sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
+					return nil
+				}
+				break
 			}
 		}
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
@@ -1446,7 +1449,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 		return fmt.Errorf("could not obtain current directory path: %s", err)
 	}
 	switch current {
-	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin":
+	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin", "/lib", "/lib64":
 		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)
 		return nil
 	}
@@ -1457,6 +1460,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 	if err := system.Points.AddBind(mount.CwdTag, current, cwd, flags); err == nil {
 		system.Points.AddRemount(mount.CwdTag, cwd, flags)
+		c.checkDest = append(c.checkDest, cwd)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
 	}
