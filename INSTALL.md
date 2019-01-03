@@ -23,7 +23,7 @@ On CentOS/RHEL:
 $ sudo yum groupinstall -y 'Development Tools' && \
   sudo yum install -y openssl-devel libuuid-devel libseccomp-devel
 ```
-Skip libseccomp-devel on CentOS/RHEL 6.
+Skip `libseccomp-devel` on CentOS/RHEL 6.
 
 ## Install golang
 
