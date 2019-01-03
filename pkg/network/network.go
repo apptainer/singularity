@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"sort"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 )
 
@@ -169,7 +171,7 @@ func (m *Setup) SetCapability(network string, capName string, args interface{}) 
 			}
 
 			if !hasCap {
-				return fmt.Errorf("%s network doesn't have %s capability", capName, network)
+				return fmt.Errorf("%s network doesn't have %s capability", network, capName)
 			}
 
 			switch args.(type) {
@@ -181,6 +183,10 @@ func (m *Setup) SetCapability(network string, capName string, args interface{}) 
 					m.runtimeConf[i].CapabilityArgs[capName].([]PortMapEntry),
 					args.(PortMapEntry),
 				)
+			case []allocator.Range:
+				if m.runtimeConf[i].CapabilityArgs[capName] == nil {
+					m.runtimeConf[i].CapabilityArgs[capName] = []allocator.RangeSet{args.([]allocator.Range)}
+				}
 			}
 		}
 	}
@@ -264,6 +270,16 @@ func (m *Setup) SetArgs(args []string) error {
 					pm.ContainerPort = pm.HostPort
 				}
 				if err := m.SetCapability(networkName, "portMappings", *pm); err != nil {
+					return err
+				}
+			} else if key == "ipRange" {
+				ipRange := make([]allocator.Range, 1)
+				_, subnet, err := net.ParseCIDR(value)
+				if err != nil {
+					return err
+				}
+				ipRange[0].Subnet = types.IPNet(*subnet)
+				if err := m.SetCapability(networkName, "ipRanges", ipRange); err != nil {
 					return err
 				}
 			} else {
