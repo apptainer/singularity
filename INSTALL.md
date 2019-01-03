@@ -44,7 +44,7 @@ $ wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
   sudo tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
 ```
 
-Finally, set up your environment for go
+Finally, set up your environment for Go:
 
 ```bash
 $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
@@ -54,11 +54,11 @@ $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
 
 ## Clone the repo
 golang is a bit finicky about where things are placed. Here is the correct way
-to build Singularity from source.
+to build Singularity from source:
 
 ```bash
-$ mkdir -p $GOPATH/src/github.com/sylabs && \
-  cd $GOPATH/src/github.com/sylabs && \
+$ mkdir -p ${GOPATH}/src/github.com/sylabs && \
+  cd ${GOPATH}/src/github.com/sylabs && \
   git clone https://github.com/sylabs/singularity.git && \
   cd singularity
 ```
@@ -68,7 +68,7 @@ Now you are ready to build Singularity. Dependencies will be automatically
 downloaded. You can build Singularity using the following commands:
 
 ```bash
-$ cd $GOPATH/src/github.com/sylabs/singularity && \
+$ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   ./mconfig && \
   cd ./builddir && \
   make && \
@@ -80,7 +80,7 @@ Alternatively, to build an RPM on CentOS/RHEL use the following commands:
 ```bash
 $ sudo yum install -y rpm-build wget
 
-$ cd $GOPATH/src/github.com/sylabs/singularity && \
+$ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   ./mconfig && \
   make -C builddir rpm && \
 ```
