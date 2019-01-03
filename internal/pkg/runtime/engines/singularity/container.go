@@ -31,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // defaultCNIConfPath is the default directory to CNI network configuration files
@@ -414,9 +415,13 @@ func (c *container) mount(point *mount.Point) error {
 			if flags&syscall.MS_REMOUNT != 0 {
 				return fmt.Errorf("can't remount %s: %s", point.Destination, err)
 			}
-			// mount error for filesystems is considered fatal
 			if point.Type != "" {
-				return fmt.Errorf("can't mount %s filesystem to %s: %s", point.Type, point.Destination, err)
+				if point.Source == "devpts" {
+					sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
+				} else {
+					// mount error for other filesystems is considered fatal
+					return fmt.Errorf("can't mount %s filesystem to %s: %s", point.Type, point.Destination, err)
+				}
 			}
 			sylog.Verbosef("can't mount %s: %s", point.Source, err)
 			return nil
@@ -918,45 +923,49 @@ func (c *container) addKernelMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) addSessionDev(devpath string, system *mount.System) error {
-	fi, err := os.Lstat(devpath)
+func (c *container) addSessionDevAt(srcpath string, atpath string, system *mount.System) error {
+	fi, err := os.Lstat(srcpath)
 	if err != nil {
 		return err
 	}
 
 	switch mode := fi.Mode(); {
 	case mode&os.ModeSymlink != 0:
-		target, err := os.Readlink(devpath)
+		target, err := os.Readlink(srcpath)
 		if err != nil {
 			return err
 		}
-		if err := c.session.AddSymlink(devpath, target); err != nil {
-			return fmt.Errorf("failed to create symlink %s", devpath)
+		if err := c.session.AddSymlink(atpath, target); err != nil {
+			return fmt.Errorf("failed to create symlink %s", atpath)
 		}
 
-		dst, _ := c.session.GetPath(devpath)
+		dst, _ := c.session.GetPath(atpath)
 
-		sylog.Debugf("Adding symlink device %s at %s", devpath, dst)
+		sylog.Debugf("Adding symlink device %s to %s at %s", srcpath, target, dst)
 
 		return nil
 	case mode.IsDir():
-		if err := c.session.AddDir(devpath); err != nil {
-			return fmt.Errorf("failed to add %s session dir: %s", devpath, err)
+		if err := c.session.AddDir(atpath); err != nil {
+			return fmt.Errorf("failed to add %s session dir: %s", atpath, err)
 		}
 	default:
-		if err := c.session.AddFile(devpath, nil); err != nil {
-			return fmt.Errorf("failed to add %s session file: %s", devpath, err)
+		if err := c.session.AddFile(atpath, nil); err != nil {
+			return fmt.Errorf("failed to add %s session file: %s", atpath, err)
 		}
 	}
 
-	dst, _ := c.session.GetPath(devpath)
+	dst, _ := c.session.GetPath(atpath)
 
-	sylog.Debugf("Mounting device %s at %s", devpath, dst)
+	sylog.Debugf("Mounting device %s at %s", srcpath, dst)
 
-	if err := system.Points.AddBind(mount.DevTag, devpath, dst, syscall.MS_BIND); err != nil {
-		return fmt.Errorf("failed to add %s mount: %s", devpath, err)
+	if err := system.Points.AddBind(mount.DevTag, srcpath, dst, syscall.MS_BIND); err != nil {
+		return fmt.Errorf("failed to add %s mount: %s", srcpath, err)
 	}
 	return nil
+}
+
+func (c *container) addSessionDev(devpath string, system *mount.System) error {
+	return c.addSessionDevAt(devpath, devpath, system)
 }
 
 func (c *container) addSessionDevMount(system *mount.System) error {
@@ -1009,7 +1018,7 @@ func (c *container) addDevMount(system *mount.System) error {
 
 			sylog.Debugf("Creating temporary staged /dev/pts")
 			if err := c.session.AddDir("/dev/pts"); err != nil {
-				return fmt.Errorf("failed to /dev/pts session directory: %s", err)
+				return fmt.Errorf("failed to add /dev/pts session directory: %s", err)
 			}
 
 			options := "mode=0620,newinstance,ptmxmode=0666"
@@ -1027,15 +1036,60 @@ func (c *container) addDevMount(system *mount.System) error {
 			devptsPath, _ := c.session.GetPath("/dev/pts")
 			err = system.Points.AddFS(mount.DevTag, devptsPath, "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, options)
 			if err != nil {
-				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY functionality disabled")
-			} else {
-				if err := c.addSessionDev("/dev/tty", system); err != nil {
-					return err
-				}
-				if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
-					return fmt.Errorf("failed to create /dev/ptmx symlink: %s", err)
+				return fmt.Errorf("failed to add devpts filesystem: %s", err)
+			}
+			// add additional PTY allocation symlink
+			if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
+				return fmt.Errorf("failed to create /dev/ptmx symlink: %s", err)
+			}
+
+		}
+		// add /dev/console mount pointing to original tty if there is one
+		for fd := 0; fd <= 2; fd++ {
+			if !terminal.IsTerminal(fd) {
+				continue
+			}
+			// Found a tty on stdin, stdout, or stderr.
+			// Bind mount it at /dev/console.
+			// readlink() from /proc/self/fd/N isn't as reliable as
+			//  ttyname() (e.g. it doesn't work in docker), but
+			//  there is no golang ttyname() so use this for now
+			//  and also check the device that docker uses,
+			//  /dev/console.
+			procfd := fmt.Sprintf("/proc/self/fd/%d", fd)
+			ttylink, err := os.Readlink(procfd)
+			if err != nil {
+				return err
+			}
+
+			if _, err := os.Stat(ttylink); err != nil {
+				// Check if in a system like docker
+				//  using /dev/console already
+				consinfo := new(syscall.Stat_t)
+				conserr := syscall.Stat("/dev/console", consinfo)
+				fdinfo := new(syscall.Stat_t)
+				fderr := syscall.Fstat(fd, fdinfo)
+				if conserr == nil &&
+					fderr == nil &&
+					consinfo.Ino == fdinfo.Ino &&
+					consinfo.Rdev == fdinfo.Rdev {
+					sylog.Debugf("Fd %d is tty pointing to nonexistent %s but /dev/console is good", fd, ttylink)
+					ttylink = "/dev/console"
+
+				} else {
+					sylog.Debugf("Fd %d is tty but %s doesn't exist, skipping", fd, ttylink)
+					continue
 				}
 			}
+			sylog.Debugf("Fd %d is tty %s, binding to /dev/console", fd, ttylink)
+			if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
+				return err
+			}
+			// and also add a /dev/tty
+			if err := c.addSessionDev("/dev/tty", system); err != nil {
+				return err
+			}
+			break
 		}
 		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
