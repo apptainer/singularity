@@ -333,7 +333,12 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 				return fmt.Errorf("signature verification failed: %s", err)
 			}
 
-			if !noPrompt {
+			if noPrompt {
+				// always store key when prompts disabled
+				if err = sypgp.StorePubKey(netlist[0]); err != nil {
+					return fmt.Errorf("could not store public key: %s", err)
+				}
+			} else {
 				// Ask to store new public key
 				resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
 				if err != nil {
