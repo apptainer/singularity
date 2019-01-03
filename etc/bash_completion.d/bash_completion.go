@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/cmd/singularity/cli"
+	cli "github.com/sylabs/singularity/internal/app/singularity"
 )
 
 func main() {

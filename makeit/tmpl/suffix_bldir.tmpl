@@ -1,0 +1,4 @@
+__OBJ__: __SRC__
+	@echo " CC __GENSRC__"
+	@mkdir -p $(@D)
+	$(V)$(CC) -Wp,-MMD,__OBJ__.d -c $(ARCH_CFLAGS) $(CFLAGS) __CFLAGS__ $(CPPFLAGS) -o __OBJ__ __SRC__
