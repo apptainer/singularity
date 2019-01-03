@@ -13,6 +13,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
   - Add http/https protocols for singularity run/pull commands
   - Update to SIF 1.0.2
+  - Add _noPrompt_ parameter to `pkg/signing/Verify` function to enable silent verification
 
 # v3.0.1 - [2018.10.31]
 
