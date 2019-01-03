@@ -18,9 +18,8 @@ import (
 	"syscall"
 	"unsafe"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
