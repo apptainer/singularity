@@ -88,7 +88,7 @@ for a complete development environment.
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.0.0
+$ git checkout v3.0.2
 ```
 
 To build in a different folder and to set the install prefix to a different path:
