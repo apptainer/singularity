@@ -609,6 +609,7 @@ SIZE := size
 OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
+BUILD_RUNTIME := $build_runtime
 
 EOF
 
@@ -697,14 +698,24 @@ cat $makeit_makefile_base >> $makeit_makefile
 drawline $makeit_fragsdir/common_opts.mk
 cat $makeit_fragsdir/common_opts.mk >> $makeit_makefile
 
+drawline $makeit_fragsdir/go_common_opts.mk
+cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
+
+if [ -f "$makeit_fragsdir/go_${host}_opts.mk" ]; then
+	drawline $makeit_fragsdir/go_${host}_opts.mk
+	cat $makeit_fragsdir/go_${host}_opts.mk >> $makeit_makefile
+fi
 
 if [ "$appsec" = "1" ]; then
 	drawline $makeit_fragsdir/go_appsec_opts.mk
 	cat $makeit_fragsdir/go_appsec_opts.mk >> $makeit_makefile
-else
-	drawline $makeit_fragsdir/go_common_opts.mk
-	cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
 fi
+
+if [ "$build_runtime" = "1" ]; then
+	drawline $makeit_fragsdir/go_runtime_opts.mk
+	cat $makeit_fragsdir/go_runtime_opts.mk >> $makeit_makefile
+fi
+
 
 case $profile in
 	release)
@@ -762,16 +773,18 @@ cat $makeit_fragsdir/Makefile.stub | awk \
 # Rpm spec for project package
 #######################################################################
 
-RPMSPEC=singularity.spec
-echo "=> generating $RPMSPEC ..."
-rm -f $sourcedir/$RPMSPEC
-VERSION="`echo "$package_version"|sed 's/-.*//'`"
-RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
-if [ "$VERSION" = "$RELEASE" ]; then
-    # $package_version has no dash
-    RELEASE=1
+if [ "$host" = "unix" ]; then
+	RPMSPEC=singularity.spec
+	echo "=> generating $RPMSPEC ..."
+	rm -f $sourcedir/$RPMSPEC
+	VERSION="`echo "$package_version"|sed 's/-.*//'`"
+	RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
+	if [ "$VERSION" = "$RELEASE" ]; then
+		# $package_version has no dash
+		RELEASE=1
+	fi
+	sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
-sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 
 
 
