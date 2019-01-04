@@ -765,4 +765,16 @@ Enterprise Performance Computing (EPC)`
   $ singularity oci start mycontainer
   $ singularity oci attach mycontainer
   $ singularity oci delete mycontainer`
+
+	OciUpdateUse   string = `update [update options...] <container_ID>`
+	OciUpdateShort string = `Update container cgroups resources`
+	OciUpdateLong  string = `
+  Update will update cgroups resources for the specified container ID.
+  Container must be in a RUNNING or CREATED state.`
+	OciUpdateExample string = `
+  $ singularity oci update --from-file /tmp/cgroups-update.json mycontainer
+
+  or to update from stdin :
+
+  $ cat /tmp/cgroups-update.json | singularity oci update --from-file - mycontainer`
 )

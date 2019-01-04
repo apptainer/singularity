@@ -22,6 +22,25 @@ type Manager struct {
 	cgroup cgroups.Cgroup
 }
 
+func readSpecFromFile(path string) (spec specs.LinuxResources, err error) {
+	conf, err := LoadConfig(path)
+	if err != nil {
+		return
+	}
+
+	// convert TOML structures to OCI JSON structures
+	data, err := json.Marshal(conf)
+	if err != nil {
+		return
+	}
+
+	if err = json.Unmarshal(data, &spec); err != nil {
+		return
+	}
+
+	return
+}
+
 // GetCgroupRootPath returns cgroup root path
 func (m *Manager) GetCgroupRootPath() string {
 	if m.cgroup == nil {
@@ -69,26 +88,36 @@ func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 	return
 }
 
-// ApplyFromFile applies cgroups ressources restriction from TOML configuration
+// UpdateFromSpec updates cgroups resources restriction from OCI specification
+func (m *Manager) UpdateFromSpec(spec *specs.LinuxResources) (err error) {
+	path := cgroups.PidPath(m.Pid)
+
+	m.cgroup, err = cgroups.Load(cgroups.V1, path)
+	if err != nil {
+		return
+	}
+
+	err = m.cgroup.Update(spec)
+
+	return
+}
+
+// UpdateFromFile updates cgroups resources restriction from TOML configuration
+func (m *Manager) UpdateFromFile(path string) error {
+	spec, err := readSpecFromFile(path)
+	if err != nil {
+		return err
+	}
+	return m.UpdateFromSpec(&spec)
+}
+
+// ApplyFromFile applies cgroups resources restriction from TOML configuration
 // file
 func (m *Manager) ApplyFromFile(path string) error {
-	var spec specs.LinuxResources
-
-	conf, err := LoadConfig(path)
+	spec, err := readSpecFromFile(path)
 	if err != nil {
 		return err
 	}
-
-	// convert TOML structures to OCI JSON structures
-	data, err := json.Marshal(conf)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(data, &spec); err != nil {
-		return err
-	}
-
 	return m.ApplyFromSpec(&spec)
 }
 

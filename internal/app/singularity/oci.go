@@ -18,6 +18,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/internal/pkg/cgroups"
+
 	"github.com/kr/pty"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -42,6 +44,7 @@ var logFormat string
 var syncSocketPath string
 var emptyProcess bool
 var pidFile string
+var fromFile string
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
@@ -81,6 +84,9 @@ func init() {
 	OciRunCmd.Flags().StringVar(&pidFile, "pid-file", "", "specify the pid file")
 	OciRunCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
 
+	OciUpdateCmd.Flags().SetInterspersed(false)
+	OciUpdateCmd.Flags().StringVarP(&fromFile, "from-file", "f", "", "specify path to OCI JSON cgroups resource file ('-' to read from STDIN)")
+
 	OciCmd.AddCommand(OciStartCmd)
 	OciCmd.AddCommand(OciCreateCmd)
 	OciCmd.AddCommand(OciRunCmd)
@@ -89,6 +95,7 @@ func init() {
 	OciCmd.AddCommand(OciStateCmd)
 	OciCmd.AddCommand(OciAttachCmd)
 	OciCmd.AddCommand(OciExecCmd)
+	OciCmd.AddCommand(OciUpdateCmd)
 }
 
 // OciCreateCmd represents oci create command.
@@ -212,6 +219,21 @@ var OciExecCmd = &cobra.Command{
 	Short:   docs.OciExecShort,
 	Long:    docs.OciExecLong,
 	Example: docs.OciExecExample,
+}
+
+// OciUpdateCmd represents oci update command.
+var OciUpdateCmd = &cobra.Command{
+	Args:                  cobra.MinimumNArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociUpdate(args[0]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     docs.OciUpdateUse,
+	Short:   docs.OciUpdateShort,
+	Long:    docs.OciUpdateLong,
+	Example: docs.OciUpdateExample,
 }
 
 // OciCmd singularity oci runtime.
@@ -745,4 +767,45 @@ func ociExec(containerID string, cmdArgs []string) error {
 
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
 	return exec.Pipe(starter, []string{procName}, Env, configData)
+}
+
+func ociUpdate(containerID string) error {
+	var reader io.Reader
+
+	state, err := getState(containerID)
+	if err != nil {
+		return err
+	}
+
+	if state.State.Status != ociruntime.Running && state.State.Status != ociruntime.Created {
+		return fmt.Errorf("container %s is neither running nor created", containerID)
+	}
+
+	if fromFile == "" {
+		return fmt.Errorf("you must specify --cgroups-file")
+	}
+
+	resources := &specs.LinuxResources{}
+	manager := &cgroups.Manager{Pid: state.State.Pid}
+
+	if fromFile == "-" {
+		reader = os.Stdin
+	} else {
+		f, err := os.Open(fromFile)
+		if err != nil {
+			return err
+		}
+		reader = f
+	}
+
+	data, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return fmt.Errorf("failed to read cgroups config file: %s", err)
+	}
+
+	if err := json.Unmarshal(data, resources); err != nil {
+		return err
+	}
+
+	return manager.UpdateFromSpec(resources)
 }
