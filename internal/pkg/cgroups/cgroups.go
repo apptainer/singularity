@@ -88,6 +88,16 @@ func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 	return
 }
 
+// ApplyFromFile applies cgroups resources restriction from TOML configuration
+// file
+func (m *Manager) ApplyFromFile(path string) error {
+	spec, err := readSpecFromFile(path)
+	if err != nil {
+		return err
+	}
+	return m.ApplyFromSpec(&spec)
+}
+
 func (m *Manager) loadFromPid() (err error) {
 	if m.Pid == 0 {
 		return fmt.Errorf("no process ID specified")
@@ -99,8 +109,10 @@ func (m *Manager) loadFromPid() (err error) {
 
 // UpdateFromSpec updates cgroups resources restriction from OCI specification
 func (m *Manager) UpdateFromSpec(spec *specs.LinuxResources) (err error) {
-	if err = m.loadFromPid(); err != nil {
-		return
+	if m.cgroup == nil {
+		if err = m.loadFromPid(); err != nil {
+			return
+		}
 	}
 	err = m.cgroup.Update(spec)
 	return
@@ -115,16 +127,6 @@ func (m *Manager) UpdateFromFile(path string) error {
 	return m.UpdateFromSpec(&spec)
 }
 
-// ApplyFromFile applies cgroups resources restriction from TOML configuration
-// file
-func (m *Manager) ApplyFromFile(path string) error {
-	spec, err := readSpecFromFile(path)
-	if err != nil {
-		return err
-	}
-	return m.ApplyFromSpec(&spec)
-}
-
 // Remove removes ressources restriction for current managed process
 func (m *Manager) Remove() error {
 	// deletes subgroup
@@ -133,16 +135,20 @@ func (m *Manager) Remove() error {
 
 // Pause suspends all processes inside the container
 func (m *Manager) Pause() error {
-	if err := m.loadFromPid(); err != nil {
-		return err
+	if m.cgroup == nil {
+		if err := m.loadFromPid(); err != nil {
+			return err
+		}
 	}
 	return m.cgroup.Freeze()
 }
 
 // Resume resumes all processes that have been previously paused
 func (m *Manager) Resume() error {
-	if err := m.loadFromPid(); err != nil {
-		return err
+	if m.cgroup == nil {
+		if err := m.loadFromPid(); err != nil {
+			return err
+		}
 	}
 	return m.cgroup.Thaw()
 }
