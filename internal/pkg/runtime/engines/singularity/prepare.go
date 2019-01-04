@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -21,12 +22,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 // prepareUserCaps is responsible for checking that user's requested
