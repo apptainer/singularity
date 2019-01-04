@@ -23,6 +23,7 @@ type LoopArgs struct {
 	Mode       int
 	Info       loop.Info64
 	MaxDevices int
+	Shared     bool
 }
 
 // MountArgs defines the arguments to mount.

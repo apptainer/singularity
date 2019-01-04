@@ -113,8 +113,10 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	var image *os.File
 
-	loopdev := new(loop.Device)
+	loopdev := &loop.Device{}
 	loopdev.MaxLoopDevices = arguments.MaxDevices
+	loopdev.Info = &arguments.Info
+	loopdev.Shared = arguments.Shared
 
 	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
 		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
@@ -148,9 +150,9 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 
 	err := loopdev.AttachFromFile(image, arguments.Mode, reply)
 	if err != nil {
-		return fmt.Errorf("could not attach image file too loop device: %v", err)
+		return fmt.Errorf("could not attach image file to loop device: %v", err)
 	}
-	return loopdev.SetStatus(&arguments.Info)
+	return nil
 }
 
 // SetHostname sets hostname with the specified arguments.

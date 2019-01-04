@@ -585,7 +585,8 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices)
+	shared := c.engine.EngineConfig.File.SharedLoopDevices
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices, shared)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}

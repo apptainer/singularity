@@ -49,6 +49,7 @@ type FileConfig struct {
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
+	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
