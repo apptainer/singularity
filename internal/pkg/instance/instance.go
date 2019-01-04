@@ -17,10 +17,10 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 const (

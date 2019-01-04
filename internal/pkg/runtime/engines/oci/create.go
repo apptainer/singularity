@@ -29,7 +29,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 var symlinkDevices = []struct {
