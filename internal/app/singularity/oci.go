@@ -45,6 +45,7 @@ var syncSocketPath string
 var emptyProcess bool
 var pidFile string
 var fromFile string
+var stopSignal string
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
