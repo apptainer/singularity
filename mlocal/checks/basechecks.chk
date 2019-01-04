@@ -224,9 +224,11 @@ fi
 ########################
 printf " checking: host os type... "
 host=
-if echo | $hstcc -E -dM - | grep -qs -e __unix__ -e __unix -e unix \
-	-e __APPLE__; then
+if echo | $hstcc -E -dM - | grep -qs -e __unix__ -e __unix -e unix; then
 	host="unix"
+fi
+if echo | $hstcc -E -dM - | grep -qs -e __APPLE__; then
+	host="darwin"
 fi
 if echo | $hstcc -E -dM - | grep -qs -e _WIN32 -e _WIN64 -e __WIN32 \
 	-e __WIN64 -e __WINNT -e __WINNT__ -e __WIN32__ -e WINNT -e __WIN64__ \
