@@ -17,6 +17,8 @@ dist_bin_SCRIPTS_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/run-singularity
 
 config := $(BUILDDIR)/singularity.conf
 config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
+# override this to empty to avoid merging old configuration settings
+old_config := $(config_INSTALL)
 
 syecl_config := $(SOURCEDIR)/internal/pkg/syecl/syecl.toml.example
 syecl_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/ecl.toml
@@ -141,6 +143,7 @@ $(libruntime): $(libutil_OBJ)
 	$(V)$(AR) rcs $@ $(libutil_OBJ)
 
 $(BUILDDIR)/.clean-starter: $(starter_SOURCE)
+	@echo " GO clean -cache"
 	$(V)(go clean -cache 2>/dev/null || true)
 	$(V)touch $@
 
@@ -199,7 +202,8 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
 $(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config.go
-	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(config_INSTALL) $(config)
+	@echo " GEN $@`if [ -n "$(old_config)" ]; then echo " from $(old_config)"; fi`"
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(old_config) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@

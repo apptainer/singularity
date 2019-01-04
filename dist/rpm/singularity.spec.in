@@ -91,7 +91,7 @@ cd $GOPATH/%{singgopath}
 	--libdir=%{_libdir}
 
 cd builddir
-make
+make old_config=
 
 %install
 cd %{name}-%{version}
