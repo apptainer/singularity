@@ -817,7 +817,7 @@ func ociUpdate(containerID string) error {
 	}
 
 	if fromFile == "" {
-		return fmt.Errorf("you must specify --cgroups-file")
+		return fmt.Errorf("you must specify --from-file")
 	}
 
 	resources := &specs.LinuxResources{}
