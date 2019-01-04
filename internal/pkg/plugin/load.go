@@ -15,24 +15,33 @@ import (
 
 var loadedPlugins []*pluginapi.Plugin
 
-// Initialize loads all plugins into memory and stores their symbols
-func Initialize(path string) error {
-	paths, err := filepath.Glob(filepath.Join(path, "*"))
+// InitializeAll loads all plugins into memory and stores their symbols
+func InitializeAll(glob string) error {
+	paths, err := filepath.Glob(glob)
 	if err != nil {
-		return err
+		return fmt.Errorf("while globbing %s: %s", glob, err)
 	}
 
 	for _, path := range paths {
-		pl, err := open(path)
-		if err != nil {
-			return err
+		if _, err := Initialize(path); err != nil {
+			return fmt.Errorf("while initializing %s as plugin: %s", path, err)
 		}
-
-		loadedPlugins = append(loadedPlugins, pl)
-		pl.Init()
 	}
 
 	return nil
+}
+
+// Initialize loads the plugin located at path and returns it
+func Initialize(path string) (*pluginapi.Plugin, error) {
+	pl, err := open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	loadedPlugins = append(loadedPlugins, pl)
+	pl.Init()
+
+	return pl, nil
 }
 
 func open(path string) (*pluginapi.Plugin, error) {

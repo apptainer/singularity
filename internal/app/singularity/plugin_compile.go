@@ -36,8 +36,13 @@ func init() {
 //
 // singularity plugin compile <path> [-o name]
 var PluginCompileCmd = &cobra.Command{
-	Run: func(cmd *cobra.Command, args []string) {
-		sourceDir := args[0]
+	RunE: func(cmd *cobra.Command, args []string) error {
+		s, err := filepath.Abs(args[0])
+		if err != nil {
+			sylog.Fatalf("While sanitizing input path: %s", err)
+		}
+		sourceDir := filepath.Clean(s)
+
 		destSif := out
 
 		if destSif == "" {
@@ -45,7 +50,7 @@ var PluginCompileCmd = &cobra.Command{
 		}
 
 		sylog.Debugf("sourceDir: %s; sifPath: %s", sourceDir, destSif)
-		CompilePlugin(sourceDir, destSif)
+		return CompilePlugin(sourceDir, destSif)
 	},
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
@@ -63,6 +68,13 @@ func pluginObjPath(sourceDir string) string {
 	return filepath.Join(sourceDir, b+".so")
 }
 
+// pluginManifestPath returns the path of the .manifest file created
+// in the container after the plugin object is built
+func pluginManifestPath(sourceDir string) string {
+	b := filepath.Base(sourceDir)
+	return filepath.Join(sourceDir, b+".manifest")
+}
+
 // sifPath returns the default path where a plugin's resulting SIF file will
 // be built to when no custom -o has been set.
 //
@@ -78,11 +90,13 @@ func sifPath(sourceDir string) string {
 // location of the plugin SIF file.
 func CompilePlugin(sourceDir, destSif string) error {
 	// generate plugin object via container
-	// buildPlugin
+	if err := buildPlugin(sourceDir); err != nil {
+		return fmt.Errorf("while building plugin .so: %s", err)
+	}
 
 	// convert the built plugin object into a sif
-	if err := makeSIF(pluginObjPath(sourceDir), destSif); err != nil {
-		sylog.Fatalf("ERROR: %s", err)
+	if err := makeSIF(sourceDir, destSif); err != nil {
+		return fmt.Errorf("while making sif file: %s", err)
 	}
 
 	return nil
@@ -105,9 +119,9 @@ func buildPlugin(sourceDir string) error {
 	return scmd.Run()
 }
 
-// makeSIF takes in two arguments: objPath, the path to the .so file which was compiled;
+// makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;
 // and sifPath, the path to the final .sif file which is ready to be used
-func makeSIF(objPath, sifPath string) error {
+func makeSIF(sourceDir, sifPath string) error {
 	plCreateInfo := sif.CreateInfo{
 		Pathname:   sifPath,
 		Launchstr:  sif.HdrLaunch,
@@ -116,7 +130,7 @@ func makeSIF(objPath, sifPath string) error {
 	}
 
 	// create plugin object file descriptor
-	plObjInput, err := getPluginObjDescr(objPath)
+	plObjInput, err := getPluginObjDescr(pluginObjPath(sourceDir))
 	if err != nil {
 		return err
 	}
@@ -126,14 +140,14 @@ func makeSIF(objPath, sifPath string) error {
 	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plObjInput)
 
 	// create plugin manifest descriptor
-	// plManifestInput, err := getPluginManifestDescr(objPath)
-	// if err != nil {
-	// 	return err
-	// }
-	// defer plManifestInput.Fp.Close()
+	plManifestInput, err := getPluginManifestDescr(pluginManifestPath(sourceDir))
+	if err != nil {
+		return err
+	}
+	defer plManifestInput.Fp.Close()
 
 	// add plugin manifest descriptor to sif
-	// plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plManifestInput)
+	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plManifestInput)
 
 	os.RemoveAll(sifPath)
 
@@ -166,7 +180,6 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", objInput.Fname, err)
 	}
-	// defer objInput.Fp.Close()
 
 	// stat file to obtain size
 	fstat, err := objInput.Fp.Stat()
@@ -186,11 +199,31 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 
 // getPluginManifestDescr returns a sif.DescriptorInput which contains the manifest
 // in JSON form. Grabbing the Manifest is done by loading the .so using the plugin
-// package.
+// package, which is performed inside the container during buildPlugin() function
 //
 // Datatype: sif.DataGenericJSON
-func getPluginManifestDescr(objPath string) (sif.DescriptorInput, error) {
-	ret := sif.DescriptorInput{}
+func getPluginManifestDescr(manifestPath string) (sif.DescriptorInput, error) {
+	var err error
 
-	return ret, nil
+	manifestInput := sif.DescriptorInput{
+		Datatype: sif.DataGenericJSON,
+		Groupid:  sif.DescrDefaultGroup,
+		Link:     sif.DescrUnusedLink,
+		Fname:    manifestPath,
+	}
+
+	// open plugin object file
+	manifestInput.Fp, err = os.Open(manifestInput.Fname)
+	if err != nil {
+		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", manifestInput.Fname, err)
+	}
+
+	// stat file to obtain size
+	fstat, err := manifestInput.Fp.Stat()
+	if err != nil {
+		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", manifestInput.Fname, err)
+	}
+	manifestInput.Size = fstat.Size()
+
+	return manifestInput, nil
 }

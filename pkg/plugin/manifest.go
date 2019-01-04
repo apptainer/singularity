@@ -8,11 +8,11 @@ package plugin
 // Manifest is the plugin manifest, stored as a data object in the plugin SIF
 type Manifest struct {
 	// Name of the plugin
-	Name string
+	Name string `json:"name"`
 	// Author of the plugin
-	Author string
+	Author string `json:"author"`
 	// Version describes the SemVer of the plugin
-	Version string
+	Version string `json:"version"`
 	// Description describes the plugin
-	Description string
+	Description string `json:"description"`
 }

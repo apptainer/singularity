@@ -70,7 +70,7 @@ func init() {
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
 
-	plugin.Initialize(filepath.Join(buildcfg.LIBEXECDIR, "singularity/plugin"))
+	plugin.InitializeAll(filepath.Join(buildcfg.LIBEXECDIR, "singularity/plugin/*"))
 
 	plugin.AddCommands(SingularityCmd)
 	plugin.AddRootFlags(SingularityCmd)
