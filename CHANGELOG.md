@@ -11,7 +11,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.0.2
 
-# v3.0.2 - [2018.12.21]
+# v3.0.2 - [2019.01.04]
 
   - Added the `--docker-login` flag to enable interactive authentication with docker registries
   - Added support for pulling directly from HTTP and HTTPS
