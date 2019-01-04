@@ -45,6 +45,7 @@ var syncSocketPath string
 var emptyProcess bool
 var pidFile string
 var fromFile string
+var killSignal string
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
@@ -74,7 +75,7 @@ func init() {
 	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 
 	OciKillCmd.Flags().SetInterspersed(false)
-	OciKillCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "signal sent to the container (default SIGTERM)")
+	OciKillCmd.Flags().StringVarP(&killSignal, "signal", "s", "", "signal sent to the container (default SIGTERM)")
 
 	OciRunCmd.Flags().SetInterspersed(false)
 	OciRunCmd.Flags().StringVarP(&bundlePath, "bundle", "b", "", "specify the OCI bundle path")
@@ -168,7 +169,7 @@ var OciKillCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 1 && args[1] != "" {
-			stopSignal = args[1]
+			killSignal = args[1]
 		}
 		if err := ociKill(args[0], 0); err != nil {
 			sylog.Fatalf("%s", err)
@@ -608,8 +609,8 @@ func ociKill(containerID string, killTimeout int) error {
 
 	sig := syscall.SIGTERM
 
-	if stopSignal != "" {
-		sig, err = signal.Convert(stopSignal)
+	if killSignal != "" {
+		sig, err = signal.Convert(killSignal)
 		if err != nil {
 			return err
 		}
