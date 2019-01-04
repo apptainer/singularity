@@ -45,7 +45,6 @@ var syncSocketPath string
 var emptyProcess bool
 var pidFile string
 var fromFile string
-var stopSignal string
 
 func init() {
 	SingularityCmd.AddCommand(OciCmd)
@@ -67,6 +66,8 @@ func init() {
 	OciDeleteCmd.Flags().SetInterspersed(false)
 	OciAttachCmd.Flags().SetInterspersed(false)
 	OciExecCmd.Flags().SetInterspersed(false)
+	OciPauseCmd.Flags().SetInterspersed(false)
+	OciResumeCmd.Flags().SetInterspersed(false)
 
 	OciStateCmd.Flags().SetInterspersed(false)
 	OciStateCmd.Flags().StringVarP(&syncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
@@ -97,6 +98,8 @@ func init() {
 	OciCmd.AddCommand(OciAttachCmd)
 	OciCmd.AddCommand(OciExecCmd)
 	OciCmd.AddCommand(OciUpdateCmd)
+	OciCmd.AddCommand(OciPauseCmd)
+	OciCmd.AddCommand(OciResumeCmd)
 }
 
 // OciCreateCmd represents oci create command.
@@ -235,6 +238,36 @@ var OciUpdateCmd = &cobra.Command{
 	Short:   docs.OciUpdateShort,
 	Long:    docs.OciUpdateLong,
 	Example: docs.OciUpdateExample,
+}
+
+// OciPauseCmd represents oci pause command.
+var OciPauseCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociPauseResume(args[0], true); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     docs.OciPauseUse,
+	Short:   docs.OciPauseShort,
+	Long:    docs.OciPauseLong,
+	Example: docs.OciPauseExample,
+}
+
+// OciResumeCmd represents oci resume command.
+var OciResumeCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociPauseResume(args[0], false); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     docs.OciResumeUse,
+	Short:   docs.OciResumeShort,
+	Long:    docs.OciResumeLong,
+	Example: docs.OciResumeExample,
 }
 
 // OciCmd singularity oci runtime.
@@ -809,4 +842,23 @@ func ociUpdate(containerID string) error {
 	}
 
 	return manager.UpdateFromSpec(resources)
+}
+
+func ociPauseResume(containerID string, pause bool) error {
+	state, err := getState(containerID)
+	if err != nil {
+		return err
+	}
+
+	if state.Status != ociruntime.Running {
+		return fmt.Errorf("container %s is not running", containerID)
+	}
+
+	manager := &cgroups.Manager{Pid: state.State.Pid}
+
+	if !pause {
+		return manager.Resume()
+	}
+
+	return manager.Pause()
 }

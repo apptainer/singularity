@@ -777,4 +777,18 @@ Enterprise Performance Computing (EPC)`
   or to update from stdin :
 
   $ cat /tmp/cgroups-update.json | singularity oci update --from-file - mycontainer`
+
+	OciPauseUse   string = `pause <container_ID>`
+	OciPauseShort string = `Suspends all processes inside the container`
+	OciPauseLong  string = `
+  Pause will suspend all processes for the specified container ID.`
+	OciPauseExample string = `
+  $ singularity oci pause mycontainer`
+
+	OciResumeUse   string = `resume <container_ID>`
+	OciResumeShort string = `Resumes all processes previously paused inside the container`
+	OciResumeLong  string = `
+  Resume will resume all processes previously paused for the specified container ID.`
+	OciResumeExample string = `
+  $ singularity oci resume mycontainer`
 )

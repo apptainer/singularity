@@ -88,17 +88,21 @@ func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 	return
 }
 
+func (m *Manager) loadFromPid() (err error) {
+	if m.Pid == 0 {
+		return fmt.Errorf("no process ID specified")
+	}
+	path := cgroups.PidPath(m.Pid)
+	m.cgroup, err = cgroups.Load(cgroups.V1, path)
+	return
+}
+
 // UpdateFromSpec updates cgroups resources restriction from OCI specification
 func (m *Manager) UpdateFromSpec(spec *specs.LinuxResources) (err error) {
-	path := cgroups.PidPath(m.Pid)
-
-	m.cgroup, err = cgroups.Load(cgroups.V1, path)
-	if err != nil {
+	if err = m.loadFromPid(); err != nil {
 		return
 	}
-
 	err = m.cgroup.Update(spec)
-
 	return
 }
 
@@ -125,4 +129,20 @@ func (m *Manager) ApplyFromFile(path string) error {
 func (m *Manager) Remove() error {
 	// deletes subgroup
 	return m.cgroup.Delete()
+}
+
+// Pause suspends all processes inside the container
+func (m *Manager) Pause() error {
+	if err := m.loadFromPid(); err != nil {
+		return err
+	}
+	return m.cgroup.Freeze()
+}
+
+// Resume resumes all processes that have been previously paused
+func (m *Manager) Resume() error {
+	if err := m.loadFromPid(); err != nil {
+		return err
+	}
+	return m.cgroup.Thaw()
 }
