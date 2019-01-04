@@ -15,7 +15,7 @@ import (
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 func (e *EngineOperations) checkCapabilities() error {
