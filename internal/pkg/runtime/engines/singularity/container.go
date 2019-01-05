@@ -368,7 +368,7 @@ func (c *container) setupOverlayLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
@@ -379,7 +379,7 @@ func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string
 	}
 
 	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
@@ -390,7 +390,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.RootfsTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.RootfsTag, c.setPropagationMount)
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
@@ -430,7 +430,7 @@ func (c *container) mount(point *mount.Point) error {
 	return nil
 }
 
-func (c *container) setSlaveMount(system *mount.System) error {
+func (c *container) setPropagationMount(system *mount.System) error {
 	pflags := uintptr(syscall.MS_REC)
 
 	if c.engine.EngineConfig.File.MountSlave {
