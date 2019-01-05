@@ -42,8 +42,21 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 	}
 	defer lock.Release(fd)
 
+	freeDevice := -1
+
 	for device := 0; device <= loop.MaxLoopDevices; device++ {
 		*number = device
+
+		if device == loop.MaxLoopDevices {
+			if loop.Shared {
+				loop.Shared = false
+				if freeDevice != -1 {
+					device = freeDevice
+					continue
+				}
+			}
+			return fmt.Errorf("no loop devices available")
+		}
 
 		path = fmt.Sprintf("/dev/loop%d", device)
 		if fi, err := os.Stat(path); err != nil {
@@ -67,15 +80,17 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			if err != nil {
 				return err
 			}
+			// there is no associated image with loop device, save indice so second loop
+			// iteration will start from this device
+			if status.Inode == 0 && freeDevice == -1 {
+				freeDevice = device
+				continue
+			}
 			if status.Inode == imageIno && status.Device == imageDev &&
 				status.Flags&FlagsReadOnly == loop.Info.Flags&FlagsReadOnly &&
 				status.Offset == loop.Info.Offset && status.SizeLimit == loop.Info.SizeLimit {
 				sylog.Debugf("Found shared loop device /dev/loop%d", device)
 				return nil
-			}
-			if *number == loop.MaxLoopDevices {
-				loop.Shared = false
-				device = 0
 			}
 		} else {
 			_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetFd, image.Fd())
@@ -85,10 +100,6 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			}
 			break
 		}
-	}
-
-	if *number == loop.MaxLoopDevices {
-		return fmt.Errorf("no loop devices available")
 	}
 
 	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, loop.file.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
