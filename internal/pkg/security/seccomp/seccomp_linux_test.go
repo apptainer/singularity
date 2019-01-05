@@ -91,5 +91,9 @@ func TestLoadProfileFromFile(t *testing.T) {
 		t.Error(err)
 	}
 
+	if err := LoadSeccompConfig(gen.Config.Linux.Seccomp, true); err != nil {
+		t.Errorf("%s", err)
+	}
+
 	testFchmod(t)
 }
