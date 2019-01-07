@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"syscall"
 	"time"
 	"unsafe"
@@ -106,6 +107,10 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		status, err = engine.MonitorContainer(containerPid, signals)
 		fatalChan <- err
 	}()
+
+	// free memory as soon as possible
+	debug.FreeOSMemory()
+
 	fatal = <-fatalChan
 
 	runtime.LockOSThread()
