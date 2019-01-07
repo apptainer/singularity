@@ -153,7 +153,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					continue
 				}
 				syscall.Close(fd)
-				syscall.Dup2(consfd, fd)
+				syscall.Dup3(consfd, fd, 0)
 			}
 			consfile.Close()
 			break
