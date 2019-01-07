@@ -39,7 +39,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 	case ShubProtocol:
 		// would use libexec.PullShubImage but it pulls in build.X
-		err := shub.DownloadImage(name, args[i], force)
+		err := shub.DownloadImage(name, args[i], force, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
