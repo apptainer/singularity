@@ -14,11 +14,11 @@ import (
 
 func init() {
 	// === For Future Use ===
-	// PluginCmd.AddCommand(PluginListCommand)
-	// PluginCmd.AddCommand(PluginInstallCommand)
-	// PluginCmd.AddCommand(PluginUninstallCommand)
-	// PluginCmd.AddCommand(PluginEnableCommand)
-	// PluginCmd.AddCommand(PluginDisableCommand)
+	// PluginCmd.AddCommand(PluginListCmd)
+	PluginCmd.AddCommand(PluginInstallCmd)
+	// PluginCmd.AddCommand(PluginUninstallCmd)
+	// PluginCmd.AddCommand(PluginEnableCmd)
+	// PluginCmd.AddCommand(PluginDisableCmd)
 	PluginCmd.AddCommand(PluginCompileCmd)
 
 	SingularityCmd.AddCommand(PluginCmd)

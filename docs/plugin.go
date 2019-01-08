@@ -47,10 +47,11 @@ const (
 	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// // plugin install command
 	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// PluginInstallUse   string = `install [install options...] <plugin_path>`
-	// PluginInstallShort string = `Install a singularity plugin`
-	// PluginInstallLong  string = `
-	// The 'plugin install' command allows a developer to install a plugin.`
-	// PluginInstallExample string = `
-	// $ singularity plugin install $PLUGIN_PATH`
+	PluginInstallUse   string = `install [install options...] <plugin_path>`
+	PluginInstallShort string = `Install a singularity plugin`
+	PluginInstallLong  string = `
+	The 'plugin install' command installs the plugin found at plugin_path into the
+	appropriate directory on the host.`
+	PluginInstallExample string = `
+	$ singularity plugin install $PLUGIN_PATH`
 )

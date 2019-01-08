@@ -37,12 +37,12 @@ func (p PluginImplementation) CommandAdd() []*cobra.Command {
 	ret = append(ret, &cobra.Command{
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
-		Use:                   "plugin [args ...]",
+		Use:                   "test-cmd [args ...]",
 		Short:                 "Test test test",
 		Long:                  "Long test long test long test",
-		Example:               "singularity plugin my test",
+		Example:               "singularity test-cmd my test",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("test-plugin is printing args:", args)
+			fmt.Println("test-cmd is printing args:", args)
 		},
 		TraverseChildren: true,
 	})
