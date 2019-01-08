@@ -49,6 +49,10 @@ type Options struct {
 	Update bool `json:"update"`
 	// noHTTPS
 	NoHTTPS bool `json:"noHTTPS"`
+	// LibraryURL contains URL to library where base images can be pulled
+	LibraryURL string `json:"libraryURL"`
+	// LibraryAuthToken contains authentication token to access specified library
+	LibraryAuthToken string `json:"libraryAuthToken"`
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
