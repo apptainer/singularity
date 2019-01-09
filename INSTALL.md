@@ -11,7 +11,7 @@ For full instructions on installation, check out our
 You must first install development and libraries to your host.
 Assuming Ubuntu:
 
-```console
+```
 $ sudo apt-get update && \
   sudo apt-get install -y build-essential \
   libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
@@ -19,7 +19,7 @@ $ sudo apt-get update && \
 
 On CentOS/RHEL:
 
-```console
+```
 $ sudo yum groupinstall -y 'Development Tools' && \
   sudo yum install -y openssl-devel libuuid-devel libseccomp-devel
 ```
@@ -35,7 +35,7 @@ package archive to download. Copy the link address and download with `wget`.
 Then extract the archive to `/usr/local` (or use other instructions on go
 installation page).
 
-```console
+```
 $ export VERSION=1.11.4 OS=linux ARCH=amd64
 
 $ wget -O /tmp https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
@@ -44,7 +44,7 @@ $ wget -O /tmp https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
 
 Finally, set up your environment for Go:
 
-```console
+```
 $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
   echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
   source ~/.bashrc
@@ -54,7 +54,7 @@ $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
 golang is a bit finicky about where things are placed. Here is the correct way
 to build Singularity from source:
 
-```console
+```
 $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
   cd ${GOPATH}/src/github.com/sylabs && \
   git clone https://github.com/sylabs/singularity.git && \
@@ -63,7 +63,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
-```console
+```
 $ git checkout v3.0.2
 ```
 
@@ -71,7 +71,7 @@ $ git checkout v3.0.2
 Now you are ready to build Singularity. Dependencies will be automatically
 downloaded. You can build Singularity using the following commands:
 
-```console
+```
 $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   ./mconfig && \
   cd ./builddir && \
@@ -81,7 +81,7 @@ $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
 
 And Thats it! Now you can check you Singularity version by running:
 
-```console
+```
 $ singularity version
 ```
 
@@ -89,7 +89,7 @@ $ singularity version
 
 Alternatively, to build an RPM on CentOS/RHEL use the following commands:
 
-```console
+```
 $ sudo yum install -y rpm-build wget
 
 $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
@@ -103,6 +103,6 @@ for a complete development environment.
 
 To build in a different folder and to set the install prefix to a different path:
 
-```console
+```
 $ ./mconfig -p /usr/local -b ./buildtree
 ```
