@@ -171,7 +171,7 @@ $(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
 $(bash_completion): $(go_OBJ)
 	$(V)rm -f $@
 	$(V)mkdir -p $(@D)
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/bash_completion/bash_completion.go $@
 
 # install singularity CLI bash_completion file
 $(bash_completion_INSTALL): $(bash_completion)
@@ -240,7 +240,7 @@ $(actions_INSTALL): $(actions_LIST)
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(DESTDIR)$(MANDIR)/man1
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/man_pages/man_pages.go $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: collect
 collect:

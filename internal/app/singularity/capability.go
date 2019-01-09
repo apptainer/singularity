@@ -3,157 +3,186 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build singularity_runtime
-
-package cli
+package singularity
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
-// contains flag variables for capability commands
-var (
-	CapUser    string
-	CapGroup   string
-	CapDesc    bool
-	CapListAll bool
-)
-
-const (
-	capAdd = iota
-	capDrop
-	capList
-)
-
-func init() {
-	SingularityCmd.AddCommand(CapabilityCmd)
-	CapabilityCmd.AddCommand(CapabilityAddCmd)
-	CapabilityCmd.AddCommand(CapabilityDropCmd)
-	CapabilityCmd.AddCommand(CapabilityListCmd)
+// CapListConfig instructs CapabilityList on what to list
+type CapListConfig struct {
+	User  string
+	Group string
+	All   bool
 }
 
-// CapabilityCmd is the capability command
-var CapabilityCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("Invalid command")
-	},
-	DisableFlagsInUseLine: true,
-
-	Use:           docs.CapabilityUse,
-	Short:         docs.CapabilityShort,
-	Long:          docs.CapabilityLong,
-	Example:       docs.CapabilityExample,
-	SilenceErrors: true,
-}
-
-func manageCap(capStr string, cmd int) {
+// CapabilityList lists the capabilities based on the CapListConfig
+func CapabilityList(capFile string, c CapListConfig) error {
 	if os.Getuid() != 0 {
-		sylog.Fatalf("only root user can manage capabilities")
+		return fmt.Errorf("while listing capabilities: only root user can list capabilities")
 	}
 
-	if CapDesc {
-		caps, _ := capabilities.Split(capStr)
-		if len(caps) > 0 {
-			fmt.Printf("\n")
-		} else {
-			sylog.Fatalf("unknown %s capabilities", capStr)
-		}
-		for _, cap := range caps {
-			fmt.Printf("%s\n\n", capabilities.Map[cap].Description)
-		}
-		return
+	if c.User == "" && c.Group == "" && c.All == false {
+		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
 	}
 
-	if CapUser != "" {
-		if _, err := user.GetPwNam(CapUser); err != nil {
-			sylog.Fatalf("failed to drop user capabilities: %s", err)
-		}
-	}
-	if CapGroup != "" {
-		if _, err := user.GetGrNam(CapGroup); err != nil {
-			sylog.Fatalf("failed to drop group capabilities: %s", err)
-		}
-	}
-
-	file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, false)
+	file, err := capabilities.Open(capFile, true)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		return fmt.Errorf("while opening capability file: %s", err)
 	}
 	defer file.Close()
 
-	if cmd == capList {
-		if CapListAll {
-			users, groups := file.ListAllCaps()
-			for user, cap := range users {
-				if len(cap) > 0 {
-					fmt.Printf("%s [user]: %s\n", user, strings.Join(cap, ","))
-				}
+	// if --all specified, take priority over listing specific user/group
+	if c.All {
+		users, groups := file.ListAllCaps()
+
+		for user, cap := range users {
+			if len(cap) > 0 {
+				fmt.Printf("%s [user]: %s\n", user, strings.Join(cap, ","))
 			}
-			for group, cap := range groups {
-				if len(cap) > 0 {
-					fmt.Printf("%s [group]: %s\n", group, strings.Join(cap, ","))
-				}
-			}
-			return
 		}
-		if CapUser != "" {
-			caps := file.ListUserCaps(CapUser)
-			if len(caps) > 0 {
-				fmt.Println(strings.Join(caps, ","))
+
+		for group, cap := range groups {
+			if len(cap) > 0 {
+				fmt.Printf("%s [group]: %s\n", group, strings.Join(cap, ","))
 			}
-			return
 		}
-		if CapGroup != "" {
-			caps := file.ListGroupCaps(CapGroup)
-			if len(caps) > 0 {
-				fmt.Println(strings.Join(caps, ","))
-			}
-			return
-		}
-		return
+
+		return nil
 	}
 
-	caps, ignored := capabilities.Split(capStr)
-	if len(ignored) > 0 {
-		sylog.Warningf("unknown capabilities %s were ignored", strings.Join(ignored, ","))
-	}
+	if c.User != "" {
+		if !userExists(c.User) {
+			return fmt.Errorf("while listing user capabilities: user does not exist")
+		}
 
-	var userFunc func(string, []string) error
-	var groupFunc func(string, []string) error
-	action := ""
-
-	switch cmd {
-	case capAdd:
-		userFunc = file.AddUserCaps
-		groupFunc = file.AddGroupCaps
-		action = "add"
-	case capDrop:
-		userFunc = file.DropUserCaps
-		groupFunc = file.DropGroupCaps
-		action = "drop"
-	}
-
-	if CapUser != "" {
-		if err := userFunc(CapUser, caps); err != nil {
-			sylog.Fatalf("failed to %s %s capabilities for user %s: %s", action, capStr, CapUser, err)
+		caps := file.ListUserCaps(c.User)
+		if len(caps) > 0 {
+			fmt.Printf("%s [user]: %s\n", c.User, strings.Join(caps, ","))
 		}
 	}
-	if CapGroup != "" {
-		if err := groupFunc(CapGroup, caps); err != nil {
-			sylog.Fatalf("failed to %s %s capabilities for group %s: %s", action, capStr, CapGroup, err)
+
+	if c.Group != "" {
+		if !groupExists(c.Group) {
+			return fmt.Errorf("while listing group capabilities: group does not exist")
+		}
+
+		caps := file.ListGroupCaps(c.Group)
+		if len(caps) > 0 {
+			fmt.Printf("%s [group]: %s\n", c.Group, strings.Join(caps, ","))
+		}
+
+	}
+
+	return nil
+}
+
+// CapManageConfig specifies what capability set to edit in the capability file
+type CapManageConfig struct {
+	Caps  string
+	User  string
+	Group string
+	Desc  bool
+}
+
+type manageType struct {
+	UserFn  func(*capabilities.File, string, []string) error
+	GroupFn func(*capabilities.File, string, []string) error
+}
+
+// CapabilityAdd adds the specified capability set to the capability file
+func CapabilityAdd(capFile string, c CapManageConfig) error {
+	addType := manageType{
+		UserFn: func(f *capabilities.File, a string, b []string) error {
+			return f.AddUserCaps(a, b)
+		},
+		GroupFn: func(f *capabilities.File, a string, b []string) error {
+			return f.AddGroupCaps(a, b)
+		},
+	}
+
+	return manageCaps(capFile, c, addType)
+}
+
+// CapabilityDrop drops the specified capability set from the capability file
+func CapabilityDrop(capFile string, c CapManageConfig) error {
+	dropType := manageType{
+		UserFn: func(f *capabilities.File, a string, b []string) error {
+			return f.DropUserCaps(a, b)
+		},
+		GroupFn: func(f *capabilities.File, a string, b []string) error {
+			return f.DropGroupCaps(a, b)
+		},
+	}
+
+	return manageCaps(capFile, c, dropType)
+}
+
+func manageCaps(capFile string, c CapManageConfig, t manageType) error {
+	if os.Getuid() != 0 {
+		return fmt.Errorf("while managing capability file: only root user can manage capabilities")
+	}
+
+	file, err := capabilities.Open(capFile, false)
+	if err != nil {
+		return fmt.Errorf("while opening capability file: %s", err)
+	}
+	defer file.Close()
+
+	caps, ign := capabilities.Split(c.Caps)
+	if len(ign) > 0 {
+		sylog.Warningf("Ignoring unkown capabilities: %s", ign)
+	}
+
+	if c.Desc {
+		for _, cap := range caps {
+			fmt.Printf("%-22s %s\n\n", cap+":", capabilities.Map[cap].Description)
 		}
 	}
+
+	if c.User != "" {
+		if !userExists(c.User) {
+			return fmt.Errorf("while setting capabilities for user %s: user does not exist", c.User)
+		}
+
+		if err := t.UserFn(file, c.User, caps); err != nil {
+			return fmt.Errorf("while setting capabilities for user %s: %s", c.User, err)
+		}
+	}
+
+	if c.Group != "" {
+		if !groupExists(c.Group) {
+			return fmt.Errorf("while setting capabilities for group %s: group does not exist", c.Group)
+		}
+
+		if err := t.GroupFn(file, c.Group, caps); err != nil {
+			return fmt.Errorf("while setting capabilities for group %s: %s", c.Group, err)
+		}
+	}
+
 	if err := file.Write(); err != nil {
-		sylog.Fatalf("failed to save changes in capabilities configuration file: %s", err)
+		return fmt.Errorf("while writing capability file to disk: %s", err)
 	}
+
+	return nil
+}
+
+func userExists(usr string) bool {
+	if _, err := user.GetPwNam(usr); err != nil {
+		return false
+	}
+	return true
+}
+
+func groupExists(group string) bool {
+	if _, err := user.GetGrNam(group); err != nil {
+		return false
+	}
+	return true
 }

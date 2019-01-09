@@ -10,6 +10,9 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 func init() {
@@ -33,10 +36,21 @@ func init() {
 
 // CapabilityDropCmd singularity capability drop
 var CapabilityDropCmd = &cobra.Command{
-	Args:                  cobra.MinimumNArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		manageCap(args[0], capDrop)
+		c := singularity.CapManageConfig{
+			Caps:  args[0],
+			User:  CapUser,
+			Group: CapGroup,
+			Desc:  CapDesc,
+		}
+
+		if err := singularity.CapabilityDrop(buildcfg.CAPABILITY_FILE, c); err != nil {
+			sylog.Fatalf("Unable to drop capabilities: %s", err)
+		}
+
+		// manageCap(args[0], capDrop)
 	},
 
 	Use:     docs.CapabilityDropUse,
