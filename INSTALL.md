@@ -38,7 +38,7 @@ installation page).
 ```
 $ export VERSION=1.11.4 OS=linux ARCH=amd64
 
-$ wget -O /tmp https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
+$ wget -O /tmp/^Cttps://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go$VERSION.$OS-$ARCH.tar.gz
 ```
 
