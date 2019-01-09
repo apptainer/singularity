@@ -8,7 +8,7 @@ For full instructions on installation, check out our
 
 ## Install system dependencies
 
-You must first install development and libraries to your host.
+You must first install development tools and libraries to your host.
 Assuming Ubuntu:
 
 ```
@@ -29,11 +29,11 @@ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
 
-First, download Golang to `/tmp/`, then extract the archive to `/usr/local` (or use other instructions on Go
+First, download the Golang archive to `/tmp/`, then extract the archive to `/usr/local`: (or use other instructions on Go
 [installation page](https://golang.org/doc/install)).
 
 ```
-$ export VERSION=1.11.4 OS=linux ARCH=amd64
+$ export VERSION=1.11.4 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
