@@ -25,7 +25,7 @@ $ sudo yum groupinstall -y 'Development Tools' && \
 ```
 On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
-## Install golang
+## Install Golang
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
 
@@ -48,7 +48,8 @@ $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
 ```
 
 ## Clone the repo
-golang is a bit finicky about where things are placed. Here is the correct way
+
+Golang is a bit finicky about where things are placed. Here is the correct way
 to build Singularity from source:
 
 ```
@@ -76,7 +77,7 @@ $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   sudo make install
 ```
 
-And Thats it! Now you can check you Singularity version by running:
+And thats it! Now you can check your Singularity version by running:
 
 ```
 $ singularity version
@@ -94,9 +95,8 @@ $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
   make -C builddir rpm
 ```
 
-Golang doesn't have to be installed to build an rpm because the rpm
-build installs golang and all dependencies, but it is still recommended
-for a complete development environment.
+Golang doesn't have to be installed to build an RPM because the RPM build installs golang
+and all dependencies, but it is still recommended for a complete development environment.
 
 To build in a different folder and to set the install prefix to a different path:
 
