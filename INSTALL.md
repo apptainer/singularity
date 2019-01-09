@@ -29,17 +29,14 @@ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
 
-First, visit the [golang download page](https://golang.org/dl/) and pick a
-package archive to download. Copy the link address and download with `wget`.
-
-Then extract the archive to `/usr/local` (or use other instructions on go
-installation page).
+First, download Golang to `/tmp/`, then extract the archive to `/usr/local` (or use other instructions on Go
+[installation page](https://golang.org/doc/install)).
 
 ```
 $ export VERSION=1.11.4 OS=linux ARCH=amd64
 
-$ wget -O /tmp/^Cttps://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz && \
-  sudo tar -C /usr/local -xzf /tmp/go$VERSION.$OS-$ARCH.tar.gz
+$ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
+  sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
 ```
 
 Finally, set up your environment for Go:
