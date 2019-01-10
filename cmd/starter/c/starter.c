@@ -806,6 +806,28 @@ static void fix_fsuid(uid_t uid) {
     }
 }
 
+static void fix_streams(void) {
+    struct stat st;
+    int i = 0;
+    int null = open("/dev/null", O_RDONLY);
+
+    if ( null <= 2 ) {
+        i = null;
+    }
+
+    for ( ; i <= 2; i++ ) {
+        if ( fstat(i, &st) < 0 && errno == EBADF ) {
+            if ( dup2(null, i) < 0 ) {
+                fatalf("Error while fixing IO streams: %s", strerror(errno));
+            }
+        }
+    }
+
+    if ( null > 2 ) {
+        close(null);
+    }
+}
+
 static char *dupenv(const char *env) {
     char *var = getenv(env);
 
@@ -915,6 +937,8 @@ __attribute__((constructor)) static void init(void) {
         fatalf("Read JSON configuration from pipe failed: %s\n", strerror(errno));
     }
     close(pipe_fd);
+
+    fix_streams();
 
     fd_before = list_fd();
 
