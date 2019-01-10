@@ -71,6 +71,7 @@ struct container {
     unsigned long mountPropagation;
     unsigned char sharedMount;
     unsigned char joinMount;
+    unsigned char bringLoopbackInterface;
 };
 
 struct json {

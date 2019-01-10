@@ -122,6 +122,23 @@ func (c *Config) GetJoinMount() bool {
 	return false
 }
 
+// SetBringLoopbackInterface sets if starter bring loopback network interface
+func (c *Config) SetBringLoopbackInterface(bring bool) {
+	if bring {
+		c.config.container.bringLoopbackInterface = C.uchar(1)
+	} else {
+		c.config.container.bringLoopbackInterface = C.uchar(0)
+	}
+}
+
+// GetBringLoopbackInterface returns if starter bring loopback network interface
+func (c *Config) GetBringLoopbackInterface() bool {
+	if c.config.container.bringLoopbackInterface == 1 {
+		return true
+	}
+	return false
+}
+
 // SetMountPropagation sets root filesystem mount propagation
 func (c *Config) SetMountPropagation(propagation string) {
 	var flags uintptr

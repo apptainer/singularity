@@ -518,23 +518,25 @@ static void network_namespace_init(struct cConfig *config) {
             fatalf("Failed to create network namespace: %s\n", strerror(errno));
         }
 
-        struct ifreq req;
-        int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+        if ( config->container.bringLoopbackInterface ) {
+            struct ifreq req;
+            int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
-        if ( sockfd < 0 ) {
-            fatalf("Unable to open AF_INET socket: %s\n", strerror(errno));
+            if ( sockfd < 0 ) {
+                fatalf("Unable to open AF_INET socket: %s\n", strerror(errno));
+            }
+
+            memset(&req, 0, sizeof(req));
+            strncpy(req.ifr_name, "lo", IFNAMSIZ);
+
+            req.ifr_flags |= IFF_UP;
+
+            debugf("Bringing up network loopback interface\n");
+            if ( ioctl(sockfd, SIOCSIFFLAGS, &req) < 0 ) {
+                fatalf("Failed to set flags on interface: %s\n", strerror(errno));
+            }
+            close(sockfd);
         }
-
-        memset(&req, 0, sizeof(req));
-        strncpy(req.ifr_name, "lo", IFNAMSIZ);
-
-        req.ifr_flags |= IFF_UP;
-
-        debugf("Bringing up network loopback interface\n");
-        if ( ioctl(sockfd, SIOCSIFFLAGS, &req) < 0 ) {
-            fatalf("Failed to set flags on interface: %s\n", strerror(errno));
-        }
-        close(sockfd);
     }
 }
 

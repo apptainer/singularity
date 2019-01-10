@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -274,6 +274,8 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	} else {
 		starterConfig.SetMountPropagation("rprivate")
 	}
+
+	starterConfig.SetBringLoopbackInterface(true)
 
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
