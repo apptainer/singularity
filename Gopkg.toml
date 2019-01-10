@@ -112,3 +112,7 @@ required = [
 [[override]]
   revision = "da99009bbb1165d1ac5688b5c81d2f589d418341"
   name = "github.com/docker/docker"
+
+[[constraint]]
+  name = "github.com/sylabs/json-resp"
+  version = "0.1.0"
