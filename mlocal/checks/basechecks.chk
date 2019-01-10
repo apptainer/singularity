@@ -270,8 +270,7 @@ if [ "$hst_arch" != "" ]; then
 	echo $hst_arch
 else
 	echo "not found!"
-	usage
-	exit 1
+	hst_arch=unknown
 fi
 
 
@@ -301,8 +300,7 @@ if [ "$tgt_arch" != "" ]; then
 	echo $tgt_arch
 else
 	echo "not found!"
-	usage
-	exit 1
+	tgt_arch=unknown
 fi
 
 
@@ -333,8 +331,7 @@ if [ "$hst_word" != "" ]; then
 	echo $hst_word
 else
 	echo "not found!"
-	usage
-	exit 1
+	hst_word=unknown
 fi
 
 
@@ -364,8 +361,7 @@ if [ "$tgt_word" != "" ]; then
 	echo $tgt_word
 else
 	echo "not found!"
-	usage
-	exit 1
+	tgt_word=unknown
 fi
 
 

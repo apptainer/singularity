@@ -58,6 +58,8 @@ Requires: squashfs
 Requires: squashfs-tools
 %endif
 
+# there's no golang for ppc64, just ppc64le
+ExcludeArch: ppc64
 
 Provides: %{name}-runtime
 Obsoletes: %{name}-runtime
