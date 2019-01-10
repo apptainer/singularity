@@ -75,8 +75,8 @@ int master_socket[2] = {-1, -1};
 
 #define STAGE1      1
 #define STAGE2      2
-#define MASTER      4
-#define RPC_SERVER  5
+#define MASTER      3
+#define RPC_SERVER  4
 
 unsigned char execute;
 
