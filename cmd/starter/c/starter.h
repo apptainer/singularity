@@ -29,12 +29,6 @@ struct fdlist {
     unsigned int num;
 };
 
-struct idMapping {
-    gid_t hostID;
-    gid_t containerID;
-    unsigned int size;
-};
-
 struct capabilities {
     unsigned long long permitted;
     unsigned long long effective;
