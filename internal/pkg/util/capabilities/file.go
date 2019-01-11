@@ -42,7 +42,7 @@ func Open(path string, readonly bool) (*File, error) {
 	}
 
 	// check for ownership of capability file before reading
-	if err := config.CheckUid(path); err != nil {
+	if err := config.CheckUID(path); err != nil {
 		return nil, err
 	}
 
