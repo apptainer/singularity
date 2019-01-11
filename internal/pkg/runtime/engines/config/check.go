@@ -11,8 +11,8 @@ import (
 	"syscall"
 )
 
-// CheckUid for ownership of config file before reading it
-func CheckUid(filepath string) error {
+// CheckUID for ownership of config file before reading it
+func CheckUID(filepath string) error {
 	fmt.Println(filepath)
 	configFile, err := os.Stat(filepath)
 	if err != nil {

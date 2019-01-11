@@ -45,7 +45,7 @@ type execgroup struct {
 // LoadConfig opens an ECL config file and unmarshals it into structures
 func LoadConfig(confPath string) (ecl EclConfig, err error) {
 	// check for ownership of ecl.toml before reading
-	if err = config.CheckUid(confPath); err != nil {
+	if err = config.CheckUID(confPath); err != nil {
 		return
 	}
 
