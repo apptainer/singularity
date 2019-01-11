@@ -26,7 +26,7 @@ func Parser(filepath string, f interface{}) error {
 
 	if filepath != "" {
 		// check for ownership of singularity.conf file before reading
-		if err := CheckUid(filepath); err != nil {
+		if err := CheckUID(filepath); err != nil {
 			return err
 		}
 

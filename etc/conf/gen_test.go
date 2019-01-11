@@ -16,7 +16,7 @@ import (
 
 func TestGenConf(t *testing.T) {
 	tmpl := "testdata/test_default.tmpl"
-	var testerUid, testerGid int
+	var testerUID, testerGid int
 	files := []string{"testdata/test_2.in", "testdata/test_3.in"}
 
 	for _, conf := range files {
@@ -40,7 +40,7 @@ func TestGenConf(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			testerUid = os.Getuid()
+			testerUID = os.Getuid()
 			testerGid = os.Getgid()
 
 			defer os.Remove(tt.confOutPath)
@@ -57,7 +57,7 @@ func TestGenConf(t *testing.T) {
 
 	// Return files to default owner
 	for _, conf := range files {
-		err := os.Chown(conf, testerUid, testerGid)
+		err := os.Chown(conf, testerUID, testerGid)
 		if err != nil {
 			t.Fatal(err)
 		}
