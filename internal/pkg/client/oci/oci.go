@@ -62,10 +62,7 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 	// First we are fetching into the cache
 	err = copy.Image(context.Background(), policyCtx, t.ImageReference, t.source, &copy.Options{
 		ReportWriter: w,
-		SourceCtx: &types.SystemContext{
-			OCIInsecureSkipTLSVerify:    true,
-			DockerInsecureSkipTLSVerify: true,
-		},
+		SourceCtx:    sys,
 	})
 	if err != nil {
 		return nil, err

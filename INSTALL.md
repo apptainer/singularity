@@ -1,6 +1,6 @@
 # Installing Singularity development-3.0
 
-Since you are reading this from the Singualrity source code, it will be assumed
+Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
 
 ## Install system dependencies
@@ -72,7 +72,7 @@ $ make
 $ sudo make install
 ```
 
-Alternatively, to build an rpm on CentOS/RHEL use the following commands: 
+Alternatively, to build an rpm on CentOS/RHEL use the following commands:
 
 ```
 $ sudo yum install -y rpm-build wget
@@ -88,7 +88,7 @@ for a complete development environment.
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.0.0
+$ git checkout v3.0.2
 ```
 
 To build in a different folder and to set the install prefix to a different path:

@@ -640,12 +640,20 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:09e7bb03b8a2f75d03f3674f528330e1f937e76faf14f58042cb7376b153d849"
+  digest = "1:a6010a5c0b2580e9b401bed4a395a39136af9f2ead1c242bdc3bc77cc245ab5b"
+  name = "github.com/sylabs/json-resp"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7047a0df94bf118f6a160dffbce73cfa7606513b"
+  version = "v0.1.0"
+
+[[projects]]
+  digest = "1:89016522d62b3fe281177a0aaccf6f136aac0b053e36e908d542974ea91db675"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
   pruneopts = "UT"
-  revision = "177b9338f1ab9123be5b6217740be1f0ce924206"
-  version = "v1.0.1"
+  revision = "39d9b2aa8931c90c87fa13c28677f2296e9ad91f"
+  version = "v1.0.2"
 
 [[projects]]
   branch = "master"
@@ -811,6 +819,7 @@
     "github.com/spf13/cobra",
     "github.com/spf13/cobra/doc",
     "github.com/spf13/pflag",
+    "github.com/sylabs/json-resp",
     "github.com/sylabs/sif/pkg/sif",
     "golang.org/x/crypto/openpgp",
     "golang.org/x/crypto/openpgp/armor",
