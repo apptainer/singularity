@@ -10,6 +10,7 @@ import (
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/types"
+	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 )
@@ -51,10 +52,10 @@ type PortMapEntry struct {
 	HostIP        string `json:"hostIP,omitempty"`
 }
 
-// AvailableNetworks lists configured networks in configuration path directory
+// GetAllNetworkConfigList lists configured networks in configuration path directory
 // provided by cniPath
-func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
-	networks := make([]string, 0)
+func GetAllNetworkConfigList(cniPath *CNIPath) ([]*libcni.NetworkConfigList, error) {
+	networks := make([]*libcni.NetworkConfigList, 0)
 
 	if cniPath == nil {
 		return networks, ErrNoCNIConfig
@@ -77,15 +78,20 @@ func AvailableNetworks(cniPath *CNIPath) ([]string, error) {
 			if err != nil {
 				return nil, err
 			}
-			networks = append(networks, conf.Name)
+			networks = append(networks, conf)
 		} else {
 			conf, err := libcni.ConfFromFile(file)
 			if err != nil {
 				return nil, err
 			}
-			networks = append(networks, conf.Network.Name)
+			confList, err := libcni.ConfListFromConf(conf)
+			if err != nil {
+				return nil, err
+			}
+			networks = append(networks, confList)
 		}
 	}
+
 	return networks, nil
 }
 
@@ -128,6 +134,54 @@ func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIP
 
 		runtimeConf = append(runtimeConf, rt)
 		networkConfList = append(networkConfList, nlist)
+
+		ifIndex++
+	}
+
+	return &Setup{
+			networks:        networks,
+			networkConfList: networkConfList,
+			runtimeConf:     runtimeConf,
+			cniPath:         cniPath,
+			netNS:           netNS,
+			containerID:     id,
+		},
+		nil
+}
+
+// NewSetupFromConfig creates and returns network setup to configure from
+// a network configuration list
+func NewSetupFromConfig(networkConfList []*libcni.NetworkConfigList, containerID string, netNS string, cniPath *CNIPath) (*Setup, error) {
+	id := containerID
+
+	if id == "" {
+		id = strconv.Itoa(os.Getpid())
+	}
+
+	if cniPath == nil {
+		return nil, ErrNoCNIConfig
+	}
+	if cniPath.Conf == "" {
+		return nil, ErrNoCNIConfig
+	}
+	if cniPath.Plugin == "" {
+		return nil, ErrNoCNIPlugin
+	}
+
+	runtimeConf := make([]*libcni.RuntimeConf, len(networkConfList))
+	networks := make([]string, len(networkConfList))
+
+	ifIndex := 0
+	for i, conf := range networkConfList {
+		runtimeConf[i] = &libcni.RuntimeConf{
+			ContainerID:    containerID,
+			NetNS:          netNS,
+			IfName:         fmt.Sprintf("eth%d", ifIndex),
+			CapabilityArgs: make(map[string]interface{}, 0),
+			Args:           make([][2]string, 0),
+		}
+
+		networks[i] = conf.Name
 
 		ifIndex++
 	}
@@ -292,6 +346,33 @@ func (m *Setup) SetArgs(args []string) error {
 		}
 	}
 	return nil
+}
+
+// GetNetworkIP returns IP associated with a configured network
+func (m *Setup) GetNetworkIP(network string, version string) (net.IP, error) {
+	for i := 0; i < len(m.networkConfList); i++ {
+		if m.networkConfList[i].Name == network {
+			res, _ := current.GetResult(m.result[i])
+			for _, ipResult := range res.IPs {
+				if ipResult.Version == version {
+					return ipResult.Address.IP, nil
+				}
+			}
+			break
+		}
+	}
+	return nil, fmt.Errorf("no IP found for network %s", network)
+}
+
+// GetNetworkInterface returns container network interface associated
+// with a network
+func (m *Setup) GetNetworkInterface(network string) (string, error) {
+	for i := 0; i < len(m.networkConfList); i++ {
+		if m.networkConfList[i].Name == network {
+			return m.runtimeConf[i].IfName, nil
+		}
+	}
+	return "", fmt.Errorf("no interface found for network %s", network)
 }
 
 // AddNetworks brings up networks interface in container
