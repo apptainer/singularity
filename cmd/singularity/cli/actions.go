@@ -10,7 +10,6 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -313,10 +312,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
 	configFile, err := os.Stat(configurationFile)
 	if err != nil {
-		log.Fatalf("Error with Stat() on singularity.conf: %v", err)
+		sylog.Fatalf("Error with Stat() on singularity.conf: %v", err)
 	}
 	if configFile.Sys().(*syscall.Stat_t).Uid != 0 {
-		log.Fatalf("singularity.conf must be owned by root")
+		sylog.Fatalf("singularity.conf must be owned by root")
 	}
 
 	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
