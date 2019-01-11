@@ -25,6 +25,11 @@ func Parser(filepath string, f interface{}) error {
 	directives := make(map[string][]string)
 
 	if filepath != "" {
+		// check for ownership of singularity.conf file before reading
+		if err := CheckUid(filepath); err != nil {
+			return err
+		}
+
 		c, err = os.Open(filepath)
 		if err != nil {
 			return err

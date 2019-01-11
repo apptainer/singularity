@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"os"
 	"syscall"
+
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 )
 
 // Caplist defines a map of users/groups with associated list of capabilities
@@ -37,6 +39,11 @@ func Open(path string, readonly bool) (*File, error) {
 	flag := os.O_RDWR | os.O_CREATE
 	if readonly {
 		flag = os.O_RDONLY
+	}
+
+	// check for ownership of capability file before reading
+	if err := config.CheckUid(path); err != nil {
+		return nil, err
 	}
 
 	f, err := os.OpenFile(path, flag, 0644)
