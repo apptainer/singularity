@@ -310,14 +310,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig := singularity.NewConfig()
 
 	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
-	configFile, err := os.Stat(configurationFile)
-	if err != nil {
-		sylog.Fatalf("Error with Stat() on singularity.conf: %v", err)
-	}
-	if configFile.Sys().(*syscall.Stat_t).Uid != 0 {
-		sylog.Fatalf("singularity.conf must be owned by root")
-	}
-
 	if err := config.Parser(configurationFile, engineConfig.File); err != nil {
 		sylog.Fatalf("Unable to parse singularity.conf file: %s", err)
 	}
