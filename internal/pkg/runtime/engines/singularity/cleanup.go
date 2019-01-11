@@ -27,7 +27,7 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 
 	if engine.EngineConfig.Network != nil {
 		if err := engine.EngineConfig.Network.DelNetworks(); err != nil {
-			return err
+			sylog.Errorf("%s", err)
 		}
 	}
 
