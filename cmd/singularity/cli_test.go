@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -49,6 +50,8 @@ func run(m *testing.M) int {
 		log.Fatalf("singularity config is not installed on this system: %v", err)
 	} else if !fi.Mode().IsRegular() {
 		log.Fatalf("singularity config is not a regular file")
+	} else if fi.Sys().(*syscall.Stat_t).Uid != 0 {
+		log.Fatalf("singularity.conf must be owned by root")
 	}
 
 	// Make temp dir for tests
