@@ -200,6 +200,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 				return fmt.Errorf("%s", err)
 			}
 
+			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
+
 			if err := setup.AddNetworks(); err != nil {
 				return fmt.Errorf("%s", err)
 			}

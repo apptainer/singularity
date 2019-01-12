@@ -42,6 +42,7 @@ type Setup struct {
 	cniPath         *CNIPath
 	containerID     string
 	netNS           string
+	envPath         string
 }
 
 // PortMapEntry describes a port mapping between host and container
@@ -389,6 +390,12 @@ func (m *Setup) GetNetworkInterface(network string) (string, error) {
 	return "", fmt.Errorf("no interface found for network %s", network)
 }
 
+// SetEnvPath allows to define custom paths for PATH environment
+// variables used during CNI plugin execution
+func (m *Setup) SetEnvPath(envPath string) {
+	m.envPath = envPath
+}
+
 // AddNetworks brings up networks interface in container
 func (m *Setup) AddNetworks() error {
 	return m.command("ADD")
@@ -400,10 +407,12 @@ func (m *Setup) DelNetworks() error {
 }
 
 func (m *Setup) command(command string) error {
-	backupEnv := os.Environ()
-	os.Clearenv()
-	os.Setenv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin")
-	defer env.SetFromList(backupEnv)
+	if m.envPath != "" {
+		backupEnv := os.Environ()
+		os.Clearenv()
+		os.Setenv("PATH", m.envPath)
+		defer env.SetFromList(backupEnv)
+	}
 
 	config := &libcni.CNIConfig{Path: []string{m.cniPath.Plugin}}
 
