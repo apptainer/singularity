@@ -348,10 +348,16 @@ func (m *Setup) SetArgs(args []string) error {
 	return nil
 }
 
-// GetNetworkIP returns IP associated with a configured network
+// GetNetworkIP returns IP associated with a configured network, if network
+// is empty, the function returns IP for the first configured network
 func (m *Setup) GetNetworkIP(network string, version string) (net.IP, error) {
+	n := network
+	if n == "" && len(m.networkConfList) > 0 {
+		n = m.networkConfList[0].Name
+	}
+
 	for i := 0; i < len(m.networkConfList); i++ {
-		if m.networkConfList[i].Name == network {
+		if m.networkConfList[i].Name == n {
 			res, _ := current.GetResult(m.result[i])
 			for _, ipResult := range res.IPs {
 				if ipResult.Version == version {
@@ -361,17 +367,25 @@ func (m *Setup) GetNetworkIP(network string, version string) (net.IP, error) {
 			break
 		}
 	}
+
 	return nil, fmt.Errorf("no IP found for network %s", network)
 }
 
 // GetNetworkInterface returns container network interface associated
-// with a network
+// with a network, if network is empty, the function returns interface
+// for the first configured network
 func (m *Setup) GetNetworkInterface(network string) (string, error) {
+	n := network
+	if n == "" && len(m.networkConfList) > 0 {
+		n = m.networkConfList[0].Name
+	}
+
 	for i := 0; i < len(m.networkConfList); i++ {
 		if m.networkConfList[i].Name == network {
 			return m.runtimeConf[i].IfName, nil
 		}
 	}
+
 	return "", fmt.Errorf("no interface found for network %s", network)
 }
 
