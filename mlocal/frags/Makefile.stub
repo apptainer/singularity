@@ -318,23 +318,7 @@ vendor-check:
 
 .PHONY: uninstall
 uninstall:
-	@echo "INSTALLED PREFIX:  $(PREFIX)"
-	@echo " UNINSTALL:  $(singularity_INSTALL)"
-	@rm -rf $(singularity_INSTALL)
-	@echo " UNINSTALL:  $(LIBEXECDIR)/singularity"
-	@rm -rf $(LIBEXECDIR)/singularity
-	@echo " UNINSTALL:  $(bash_completion_INSTALL)"
-	@rm -f $(bash_completion_INSTALL)
-	@echo " UNINSTALL:  $(DOCDIR)"
-	@rm -rf $(DOCDIR)
-	@echo " UNINSTALL:  $(LOCALSTATEDIR)/singularity"
-	@rm -rf $(LOCALSTATEDIR)/singularity
-	@echo " UNINSTALL:  $(dist_bin_SCRIPTS_INSTALL)"
-	@rm -rf $(dist_bin_SCRIPTS_INSTALL)
-	@echo " UNINSTALL:  $(SYSCONFDIR)/singularity"
-	@rm -rf $(SYSCONFDIR)/singularity
-	@echo " UNINSTALL:  $(LIBEXECDIR)/singularity"
-	@rm -rf $(LIBEXECDIR)/singularity
+	@$(foreach uninstall_file, $(INSTALLFILES), echo " UNINSTALL:  $(uninstall_file)"; rm -fd $(uninstall_file);)
 	@echo "DONE"
 
 -include $(BUILDDIR)/mergeddeps
