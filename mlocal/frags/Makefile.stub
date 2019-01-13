@@ -318,6 +318,7 @@ vendor-check:
 
 .PHONY: uninstall
 uninstall:
+	@echo "INSTALLED PREFIX:  $(PREFIX)"
 	@$(foreach uninstall_file, $(INSTALLFILES), echo " UNINSTALL:  $(uninstall_file)"; rm -fd $(uninstall_file);)
 	@echo "DONE"
 
