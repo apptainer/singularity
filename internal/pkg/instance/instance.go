@@ -197,6 +197,18 @@ func (i *File) Update() error {
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
 	}
+	if i.PrivilegedPath() {
+		pw, err := user.GetPwNam(i.User)
+		if err != nil {
+			return err
+		}
+		if err := os.Chmod(path, 0550); err != nil {
+			return err
+		}
+		if err := os.Chown(path, int(pw.UID), 0); err != nil {
+			return err
+		}
+	}
 	file, err := os.OpenFile(i.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
