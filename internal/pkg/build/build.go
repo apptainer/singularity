@@ -447,7 +447,7 @@ func insertEnvScript(b *types.Bundle) error {
 			}
 			defer f.Close()
 
-			_, err = f.WriteString(b.Recipe.ImageData.Environment)
+			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
 			if err != nil {
 				return err
 			}
