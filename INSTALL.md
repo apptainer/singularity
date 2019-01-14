@@ -30,7 +30,7 @@ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).
 
 First, download the Golang archive to `/tmp/`, then extract the archive to `/usr/local`: (or use other instructions on Go
-[installation page](https://golang.org/doc/install)).
+[installation page](https://golang.org/doc/install))
 
 ```
 $ export VERSION=1.11.4 OS=linux ARCH=amd64  # change this as you need
@@ -65,7 +65,8 @@ To build a stable version of Singularity, check out a [release tag](https://gith
 $ git checkout v3.0.2
 ```
 
-## Compile the Singularity binary
+## Compiling Singularity
+
 Now you are ready to build Singularity. Dependencies will be automatically
 downloaded. You can build Singularity using the following commands:
 
