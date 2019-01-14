@@ -3,12 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
+// +build singularity_runtime
 
 package cli
 
 import (
 	"errors"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 )

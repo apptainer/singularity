@@ -25,6 +25,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func (engine *EngineOperations) checkExec() error {
@@ -127,6 +128,38 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		return err
 	}
 
+	if engine.EngineConfig.File.MountDev == "minimal" || engine.EngineConfig.GetContain() {
+		// If on a terminal, reopen /dev/console so /proc/self/fd/[0-2
+		//   will point to /dev/console.  This is needed so that tty and
+		//   ttyname() on el6 will return the correct answer.  Newer
+		//   ttyname() functions might work because they will search
+		//   /dev if the value of /proc/self/fd/X doesn't exist, but
+		//   they won't work if another /dev/pts/X is allocated in its
+		//   place.  Also, programs that don't use ttyname() and instead
+		//   directly do readlink() on /proc/self/fd/X need this.
+		for fd := 0; fd <= 2; fd++ {
+			if !terminal.IsTerminal(fd) {
+				continue
+			}
+			consfile, err := os.OpenFile("/dev/console", os.O_RDWR, 0600)
+			if err != nil {
+				sylog.Debugf("Could not open minimal /dev/console, skipping replacing tty descriptors")
+				break
+			}
+			sylog.Debugf("Replacing tty descriptors with /dev/console")
+			consfd := int(consfile.Fd())
+			for ; fd <= 2; fd++ {
+				if !terminal.IsTerminal(fd) {
+					continue
+				}
+				syscall.Close(fd)
+				syscall.Dup3(consfd, fd, 0)
+			}
+			consfile.Close()
+			break
+		}
+	}
+
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
 
@@ -206,6 +239,8 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	masterConn.Close()
 
+	var lastSignal syscall.Signal
+
 	for {
 		select {
 		case s := <-signals:
@@ -219,9 +254,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					}
 				}
 			default:
+				lastSignal = s.(syscall.Signal)
 				if isInstance {
-					if s != syscall.SIGCONT {
-						syscall.Kill(-1, s.(syscall.Signal))
+					if err := syscall.Kill(-1, lastSignal); err == syscall.ESRCH {
+						sylog.Debugf("No child process, exiting ...")
+						os.Exit(128 + int(lastSignal))
 					}
 				} else {
 					// kill ourself with SIGKILL whatever signal was received
@@ -237,6 +274,14 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					os.Exit(status.ExitStatus())
 				}
 				return fmt.Errorf("command exit with error: %s", err)
+			} else if e, ok := err.(*os.SyscallError); ok {
+				// handle possible race with Wait4 call above because command
+				// execution can return "no such processes" error which means
+				// container process execution has been interrupted by signal
+				if e.Err.(syscall.Errno) == syscall.ECHILD {
+					sylog.Debugf("No child processes, exiting ...")
+					os.Exit(128 + int(lastSignal))
+				}
 			}
 			if !isInstance {
 				os.Exit(0)

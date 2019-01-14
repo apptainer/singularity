@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
+// +build singularity_runtime
 
 package cli
 
@@ -59,7 +59,7 @@ var InstanceStartCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := []string{"/.singularity.d/actions/start"}
+		a := append([]string{"/.singularity.d/actions/start"}, args[2:]...)
 		execStarter(cmd, args[0], a, args[1])
 	},
 
