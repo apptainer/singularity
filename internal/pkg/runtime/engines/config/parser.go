@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // Parser parses configuration found in the file with the specified path.
@@ -26,8 +28,8 @@ func Parser(filepath string, f interface{}) error {
 
 	if filepath != "" {
 		// check for ownership of singularity.conf file before reading
-		if err := CheckUID(filepath); err != nil {
-			return err
+		if !fs.IsOwner(filepath, 0) {
+			return fmt.Errorf("%s must be owned by root", filepath)
 		}
 
 		c, err = os.Open(filepath)
