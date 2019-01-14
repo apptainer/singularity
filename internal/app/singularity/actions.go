@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
+// +build singularity_runtime
 
 package cli
 
@@ -498,7 +498,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetHomeDest(homeSlice[1])
 	}
 
-	if IsFakeroot {
+	if !engineConfig.File.AllowSetuid || IsFakeroot {
 		UserNamespace = true
 	}
 

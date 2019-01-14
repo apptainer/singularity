@@ -1,7 +1,7 @@
 // Copyright (c) 2018, Sylabs Inc. All rights reserved.
-// This software is licensed under a 3-clause BSD license. Please consult the
-// LICENSE.md file distributed with the sources of this project regarding your
-// rights to use or distribute this software.
+// This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
+// distributed with the sources of this project regarding your rights to use or distribute this
+// software.
 
 package jsonresp
 
@@ -10,8 +10,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 func (e *Error) Error() string {
@@ -42,9 +40,7 @@ func NewError(code int, message string) *Error {
 }
 
 // WriteError encodes the supplied error in a response, and writes to w.
-func WriteError(w http.ResponseWriter, error string, code int) {
-	sylog.Warningf("%v", error)
-
+func WriteError(w http.ResponseWriter, error string, code int) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -55,12 +51,13 @@ func WriteError(w http.ResponseWriter, error string, code int) {
 		},
 	}
 	if err := json.NewEncoder(w).Encode(jr); err != nil {
-		sylog.Warningf("failed to encode JSON response: %v", err)
+		return fmt.Errorf("jsonresp: failed to write error: %v", err)
 	}
+	return nil
 }
 
 // WriteResponse encodes the supplied data in a response, and writes to w.
-func WriteResponse(w http.ResponseWriter, data interface{}, code int) {
+func WriteResponse(w http.ResponseWriter, data interface{}, code int) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
 
@@ -68,8 +65,9 @@ func WriteResponse(w http.ResponseWriter, data interface{}, code int) {
 		Data: data,
 	}
 	if err := json.NewEncoder(w).Encode(jr); err != nil {
-		sylog.Warningf("failed to encode JSON response: %v", err)
+		return fmt.Errorf("jsonresp: failed to write response: %v", err)
 	}
+	return nil
 }
 
 // ReadResponse reads a JSON response, and unmarshals the supplied data.
@@ -79,15 +77,15 @@ func ReadResponse(r io.Reader, v interface{}) error {
 		Error *Error          `json:"error"`
 	}
 	if err := json.NewDecoder(r).Decode(&u); err != nil {
-		sylog.Warningf("failed to decode JSON response: %v", err)
-		return err
+		return fmt.Errorf("jsonresp: failed to read response: %v", err)
 	}
 	if u.Error != nil {
 		return u.Error
 	}
-	if err := json.Unmarshal(u.Data, v); err != nil {
-		sylog.Warningf("failed to decode JSON response: %v", err)
-		return err
+	if v != nil {
+		if err := json.Unmarshal(u.Data, v); err != nil {
+			return fmt.Errorf("jsonresp: failed to unmarshal response: %v", err)
+		}
 	}
 	return nil
 }
