@@ -11,6 +11,8 @@ import (
 	"io/ioutil"
 	"os"
 	"syscall"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // Caplist defines a map of users/groups with associated list of capabilities
@@ -37,6 +39,11 @@ func Open(path string, readonly bool) (*File, error) {
 	flag := os.O_RDWR | os.O_CREATE
 	if readonly {
 		flag = os.O_RDONLY
+	}
+
+	// check for ownership of capability file before reading
+	if !fs.IsOwner(path, 0) {
+		return nil, fmt.Errorf("%s must be owned by root", path)
 	}
 
 	f, err := os.OpenFile(path, flag, 0644)

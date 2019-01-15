@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 
 	"github.com/pelletier/go-toml"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/signing"
 )
 
@@ -43,6 +44,10 @@ type execgroup struct {
 
 // LoadConfig opens an ECL config file and unmarshals it into structures
 func LoadConfig(confPath string) (ecl EclConfig, err error) {
+	if !fs.IsOwner(confPath, 0) {
+		return EclConfig{}, fmt.Errorf("%s must be owned by root", confPath)
+	}
+
 	// read in the ECL config file
 	b, err := ioutil.ReadFile(confPath)
 	if err != nil {
