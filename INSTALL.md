@@ -14,15 +14,16 @@ Assuming Ubuntu:
 ```
 $ sudo apt-get update && \
   sudo apt-get install -y build-essential \
-  libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
+  libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
 ```
 
 On CentOS/RHEL:
 
 ```
 $ sudo yum groupinstall -y 'Development Tools' && \
-  sudo yum install -y openssl-devel libuuid-devel libseccomp-devel
+  sudo yum install -y openssl-devel libuuid-devel libseccomp-devel squashfs-tools
 ```
+
 On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
 ## Install Golang
