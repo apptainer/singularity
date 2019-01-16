@@ -105,3 +105,21 @@ To build in a different folder and to set the install prefix to a different path
 ```
 $ ./mconfig -p /usr/local -b ./buildtree
 ```
+
+## Install from the RPM
+
+To build the RPM, you first need to download the latest [relese tarball](https://github.com/sylabs/singularity/releases).
+Since we are building from the RPM, you don't need to install Golang, but you do need to [install the other dependencies](#install-system-dependencies).
+
+```
+$ export VERSION=3.0.2  # this is the singularity version, change as you need
+
+$ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
+    rpmbuild -tb singularity-${VERSION}.tar.gz && \
+    sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}-1.el7.x86_64.rpm && \
+    rm -rf ~/rpmbuild singularity-${VERSION}*.tar.gz
+```
+
+*NOTE: You should only atempt to build the RPM on a CentOS/RHEL system.*
+
+For more infoation on installing/updating/uninstalling the RPM, check out our [admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).
