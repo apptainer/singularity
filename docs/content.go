@@ -94,6 +94,9 @@ Enterprise Performance Computing (EPC)`
           Bootstrap: localimage
           From: /home/dave/starter.img
 
+      Scratch:
+          Bootstrap: scratch # Populate the container with a minimal rootfs in %setup
+
   DEFFILE SECTIONS:
 
       %pre
