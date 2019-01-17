@@ -319,7 +319,7 @@ func (e *EngineConfig) SetAllowSUID(allow bool) {
 	e.JSON.AllowSUID = allow
 }
 
-// GetAllowSUID returns if allow-suid is set or not.
+// GetAllowSUID returns true if allow-suid is set and false if not.
 func (e *EngineConfig) GetAllowSUID() bool {
 	return e.JSON.AllowSUID
 }
