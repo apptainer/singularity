@@ -554,6 +554,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			UserNamespace = true
 		}
 	}
+
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 		starter = buildcfg.LIBEXECDIR + "/singularity/bin/starter"

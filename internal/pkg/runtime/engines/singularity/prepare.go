@@ -432,6 +432,21 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}
 
+	if starterConfig.GetIsSUID() {
+		// check for ownership of singularity.conf
+		if !fs.IsOwner(configurationFile, 0) {
+			return fmt.Errorf("%s must be owned by root", configurationFile)
+		}
+		// check for ownership of capability.json
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
+		}
+		// check for ownership of ecl.toml
+		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
+		}
+	}
+
 	// Save the current working directory to restore it in stage 2
 	// for relative bind paths
 	if pwd, err := os.Getwd(); err == nil {
