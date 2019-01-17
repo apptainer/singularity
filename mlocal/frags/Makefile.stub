@@ -320,48 +320,48 @@ vendor-check:
 uninstall:
 	@echo "INSTALLED PREFIX:  $(PREFIX)"
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/actions/exec"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/exec
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/exec
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/actions/run"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/run
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/run
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/actions/shell"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/shell
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/shell
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/actions/start"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/start
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/start
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/actions/test"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/test
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/actions/test
 
 	@echo " UNINSTALL:  $(actions_INSTALL)"
-	@rm -fd $(actions_INSTALL)
+	@-rm -fd $(actions_INSTALL)
 
 	@echo " UNINSTALL:  $(cni_config_INSTALL)/etc/network/00_bridge.conflist"
-	@rm -fd $(cni_config_INSTALL)/00_bridge.conflist
+	@-rm -fd $(cni_config_INSTALL)/00_bridge.conflist
 	@echo " UNINSTALL:  $(cni_config_INSTALL)/etc/network/10_ptp.conflist"
-	@rm -fd $(cni_config_INSTALL)/10_ptp.conflist
+	@-rm -fd $(cni_config_INSTALL)/10_ptp.conflist
 	@echo " UNINSTALL:  $(cni_config_INSTALL)/etc/network/20_ipvlan.conflist"
-	@rm -fd $(cni_config_INSTALL)/20_ipvlan.conflist
+	@-rm -fd $(cni_config_INSTALL)/20_ipvlan.conflist
 	@echo " UNINSTALL:  $(cni_config_INSTALL)/etc/network/30_macvlan.conflist"
-	@rm -fd $(cni_config_INSTALL)/30_macvlan.conflist
+	@-rm -fd $(cni_config_INSTALL)/30_macvlan.conflist
 	@echo " UNINSTALL:  $(cni_config_INSTALL)"
-	@rm -fd $(cni_config_INSTALL)
+	@-rm -fd $(cni_config_INSTALL)
 
-	@$(foreach uninstall_file, $(INSTALLFILES), echo " UNINSTALL:  $(uninstall_file)"; rm -fd $(uninstall_file);)
+	@-$(foreach uninstall_file, $(INSTALLFILES), echo " UNINSTALL:  $(uninstall_file)"; rm -fd $(uninstall_file);)
 	@echo " UNINSTALL:  $(DESTDIR)$(LOCALSTATEDIR)/singularity/mnt"
-	@rm -fd $(DESTDIR)$(LOCALSTATEDIR)/singularity/mnt
+	@-rm -fd $(DESTDIR)$(LOCALSTATEDIR)/singularity/mnt
 	@echo " UNINSTALL:  $(DESTDIR)$(LOCALSTATEDIR)/singularity"
-	@rm -fd $(DESTDIR)$(LOCALSTATEDIR)/singularity
+	@-rm -fd $(DESTDIR)$(LOCALSTATEDIR)/singularity
 	@echo " UNINSTALL:  $(cni_install_DIR)"
-	@rm -fd $(cni_install_DIR)
+	@-rm -fd $(cni_install_DIR)
 	@echo " UNINSTALL:  $(DESTDIR)$(LIBEXECDIR)/singularity/bin"
-	@rm -fd $(DESTDIR)$(LIBEXECDIR)/singularity/bin
+	@-rm -fd $(DESTDIR)$(LIBEXECDIR)/singularity/bin
 	@echo " UNINSTALL:  $(DESTDIR)$(LIBEXECDIR)/singularity"
-	@rm -fd $(DESTDIR)$(LIBEXECDIR)/singularity
+	@-rm -fd $(DESTDIR)$(LIBEXECDIR)/singularity
 
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles"
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles
 
-	@rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity
+	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity
 
 	@echo "DONE"
 
