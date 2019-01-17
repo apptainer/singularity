@@ -45,6 +45,9 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		} else {
 			rpcConn.Close()
 		}
+
+		// force memory release
+		debug.FreeOSMemory()
 		runtime.Goexit()
 	}()
 
@@ -107,9 +110,6 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		status, err = engine.MonitorContainer(containerPid, signals)
 		fatalChan <- err
 	}()
-
-	// free memory as soon as possible
-	debug.FreeOSMemory()
 
 	fatal = <-fatalChan
 
