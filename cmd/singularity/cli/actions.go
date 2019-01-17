@@ -20,6 +20,7 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
 
 	ocitypes "github.com/containers/image/types"
@@ -551,6 +552,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Verbosef("starter-suid not found, using user namespace")
 			UserNamespace = true
 		}
+
+		// check for ownership of singularity.conf file when !UserNamespace
+		if !fs.IsOwner(configurationFile, 0) {
+			sylog.Fatalf("%s must be owned by root", configurationFile)
+		}
+
 	}
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
