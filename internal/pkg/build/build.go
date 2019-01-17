@@ -432,9 +432,25 @@ func (b *Build) Assemble(path string) error {
 func insertEnvScript(b *types.Bundle) error {
 	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
-		if err != nil {
-			return err
+		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
+		_, err := os.Stat(envScriptPath)
+		if os.IsNotExist(err) {
+			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
+			if err != nil {
+				return err
+			}
+		} else {
+			// append to script if it already exists
+			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0775)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

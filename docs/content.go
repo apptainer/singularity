@@ -439,13 +439,14 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance start
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceStartUse   string = `start [start options...] <container path> <instance name>`
+	InstanceStartUse   string = `start [start options...] <container path> <instance name> [startscript args...]`
 	InstanceStartShort string = `Start a named instance of the given container image`
 	InstanceStartLong  string = `
   The instance start command allows you to create a new named instance from an
   existing container image that will begin running in the background. If a
   startscript is defined in the container metadata the commands in that script
-  will be executed with the instance start command as well.
+  will be executed with the instance start command as well. You can optionally
+  pass arguments to startscript
 
   singularity instance start accepts the following container formats` + formats
 	InstanceStartExample string = `
