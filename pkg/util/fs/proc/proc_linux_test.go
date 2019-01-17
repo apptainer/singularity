@@ -8,6 +8,8 @@ package proc
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -185,4 +187,95 @@ func TestReadIDMap(t *testing.T) {
 	if containerID != 0 || containerID != hostID {
 		t.Errorf("")
 	}
+}
+
+func TestParentMount(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	list := []struct {
+		path   string
+		parent string
+		fail   bool
+	}{
+		{"/proc_", "", true},
+		{"/proc", "/proc", false},
+		{"/dev/null", "/dev", false},
+		{"/proc/self", "/proc", false},
+		{"/proc/fake", "", true},
+	}
+
+	for _, l := range list {
+		parent, err := ParentMount(l.path)
+		if l.fail && err == nil {
+			t.Errorf("%s should fail", l.path)
+		} else if !l.fail {
+			if err != nil {
+				t.Error(err)
+			} else if parent != l.parent {
+				t.Errorf("mount parent of %s should be %s not %s", l.path, l.parent, parent)
+			}
+		}
+
+	}
+}
+
+func TestSetOOMScoreAdj(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	pid := os.Getpid()
+
+	list := []struct {
+		pid   int
+		score int
+		fail  bool
+	}{
+		{pid, 0, false},
+		{pid, 10, false},
+		{0, 0, true},
+	}
+
+	for _, l := range list {
+		err := SetOOMScoreAdj(l.pid, &l.score)
+		if l.fail && err == nil {
+			t.Errorf("writing %d in /proc/%d/oom_score_adj should have failed", l.score, l.pid)
+		} else if !l.fail && err != nil {
+			t.Error(err)
+		}
+	}
+}
+
+func TestHasNamespace(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	ppid := os.Getppid()
+	has, err := HasNamespace(ppid, "net")
+	if err != nil {
+		t.Error(err)
+	}
+	if has {
+		t.Errorf("namespaces should be identical")
+	}
+
+	cmd := exec.Command("/bin/cat")
+	pipe, err := cmd.StdinPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Cloneflags = syscall.CLONE_NEWPID
+
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	has, err = HasNamespace(cmd.Process.Pid, "pid")
+	if !has {
+		t.Errorf("pid namespace should be different")
+	}
+
+	pipe.Close()
+
+	cmd.Wait()
 }

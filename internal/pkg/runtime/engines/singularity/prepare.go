@@ -8,12 +8,11 @@ package singularity
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -271,10 +270,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if e.EngineConfig.File.MountSlave {
-		starterConfig.SetMountPropagation("slave")
+		starterConfig.SetMountPropagation("rslave")
 	} else {
-		starterConfig.SetMountPropagation("private")
+		starterConfig.SetMountPropagation("rprivate")
 	}
+
+	starterConfig.SetBringLoopbackInterface(true)
 
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
@@ -339,8 +340,16 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	starterConfig.SetJoinMount(true)
+
 	// set namespaces to join
-	starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces)
+	if err := file.UpdateNamespacesPath(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
+
+	if err := starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
 
 	if e.EngineConfig.OciConfig.Process == nil {
 		e.EngineConfig.OciConfig.Process = &specs.Process{}
@@ -409,7 +418,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 }
 
 // PrepareConfig checks and prepares the runtime engine config
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
 	}
@@ -461,6 +470,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		}
 	}
 
+	starterConfig.SetSharedMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {

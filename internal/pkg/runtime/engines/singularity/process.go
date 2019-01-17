@@ -290,7 +290,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 }
 
-// PostStartProcess will execute code in smaster context after execution of container
+// PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
@@ -348,6 +348,9 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 				if err = file.Update(); err != nil {
 					return
 				}
+				if err = file.MountNamespaces(); err != nil {
+					return
+				}
 				if err = syscall.Setresgid(gid, gid, 0); err != nil {
 					err = fmt.Errorf("failed to escalate gid privileges")
 					return
@@ -361,7 +364,10 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		return file.Update()
+		if err := file.Update(); err != nil {
+			return err
+		}
+		return file.MountNamespaces()
 	}
 	return nil
 }
