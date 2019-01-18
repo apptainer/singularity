@@ -360,7 +360,7 @@ uninstall:
 	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/cgroups
 	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles"
 	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity/seccomp-profiles
-
+	@echo " UNINSTALL:  $(DESTDIR)$(SYSCONFDIR)/singularity"
 	@-rm -fd $(DESTDIR)$(SYSCONFDIR)/singularity
 
 	@echo "DONE"
