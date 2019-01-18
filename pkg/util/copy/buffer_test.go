@@ -15,6 +15,7 @@ func TestNewTerminalBuffer(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// Create and write some byte to terminal buffer
 	ntb := NewTerminalBuffer()
 
 	n, err := ntb.Write([]byte("te"))
@@ -24,15 +25,20 @@ func TestNewTerminalBuffer(t *testing.T) {
 	if n != 2 {
 		t.Errorf("wrong number of bytes written")
 	}
+
+	// Get the buffer content
 	line := ntb.Line()
 	if string(line) != "te" {
 		t.Errorf("wrong line returned: %s", line)
 	}
 
+	// Write content and end with a newline to clear buffer
 	n, err = ntb.Write([]byte("st\n"))
 	if err != nil {
 		t.Error(err)
 	}
+
+	// Test if buffer string is empty
 	if string(ntb.Line()) != "" {
 		t.Errorf("unexpected line returned")
 	}
