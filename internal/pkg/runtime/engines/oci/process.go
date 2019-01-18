@@ -356,9 +356,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 				}
 
 				if tbuf != nil {
-					tbuf.Lock()
 					c.Write(tbuf.Line())
-					tbuf.Unlock()
 				}
 
 				io.Copy(stdout, c)

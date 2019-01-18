@@ -41,5 +41,8 @@ func (b *TerminalBuffer) Write(p []byte) (n int, err error) {
 func (b *TerminalBuffer) Line() []byte {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
-	return b.data
+	// return a copy to avoid lock exposure
+	tmp := make([]byte, len(b.data))
+	copy(tmp, b.data)
+	return tmp
 }
