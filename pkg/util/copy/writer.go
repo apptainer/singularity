@@ -13,14 +13,14 @@ import (
 // MultiWriter creates a writer that duplicates its writes to all the provided writers,
 // writers can be added / removed dynamically.
 type MultiWriter struct {
-	sync.Mutex
+	mutex   sync.Mutex
 	writers []io.Writer
 }
 
 // Write implements the standard Write interface to duplicate data to all writers.
 func (mw *MultiWriter) Write(p []byte) (n int, err error) {
-	mw.Lock()
-	defer mw.Unlock()
+	mw.mutex.Lock()
+	defer mw.mutex.Unlock()
 
 	l := len(p)
 
@@ -40,19 +40,22 @@ func (mw *MultiWriter) Write(p []byte) (n int, err error) {
 
 // Add adds a writer.
 func (mw *MultiWriter) Add(writer io.Writer) {
-	mw.Lock()
+	if writer == nil {
+		return
+	}
+	mw.mutex.Lock()
 	mw.writers = append(mw.writers, writer)
-	mw.Unlock()
+	mw.mutex.Unlock()
 }
 
 // Del removes a writer.
 func (mw *MultiWriter) Del(writer io.Writer) {
-	mw.Lock()
+	mw.mutex.Lock()
 	for i, w := range mw.writers {
 		if writer == w {
 			mw.writers = append(mw.writers[:i], mw.writers[i+1:]...)
 			break
 		}
 	}
-	mw.Unlock()
+	mw.mutex.Unlock()
 }
