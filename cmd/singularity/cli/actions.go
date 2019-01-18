@@ -498,7 +498,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetHomeDest(homeSlice[1])
 	}
 
-	if IsFakeroot {
+	if !engineConfig.File.AllowSetuid || IsFakeroot {
 		UserNamespace = true
 	}
 
@@ -552,6 +552,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			UserNamespace = true
 		}
 	}
+
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 		starter = buildcfg.LIBEXECDIR + "/singularity/bin/starter"
