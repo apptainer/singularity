@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -33,7 +33,7 @@ func TestNewTerminalBuffer(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if ntb.Line() != nil {
+	if string(ntb.Line()) != "" {
 		t.Errorf("unexpected line returned")
 	}
 }
