@@ -82,7 +82,7 @@ type instanceList struct {
 	Instances []instance `json:"instances"`
 }
 
-func startInstance(image string, instance string, opts startOpts) ([]byte, error) {
+func startInstance(image string, instance string, portOffset int, opts startOpts) ([]byte, error) {
 	args := []string{"instance", "start"}
 	if opts.addCaps != "" {
 		args = append(args, "--add-caps", opts.addCaps)
@@ -165,7 +165,7 @@ func startInstance(image string, instance string, opts startOpts) ([]byte, error
 	if opts.writableTmpfs {
 		args = append(args, "--writable-tmpfs")
 	}
-	args = append(args, image, instance)
+	args = append(args, image, instance, strconv.Itoa(instanceStartPort+portOffset))
 	cmd := exec.Command(cmdPath, args...)
 	return cmd.CombinedOutput()
 }
@@ -256,7 +256,7 @@ func testNoInstances(t *testing.T) {
 func testBasicEchoServer(t *testing.T) {
 	const instanceName = "echo1"
 	// Start the instance.
-	_, err := startInstance(instanceImagePath, instanceName, startOpts{})
+	_, err := startInstance(instanceImagePath, instanceName, 0, startOpts{})
 	if err != nil {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
@@ -275,7 +275,7 @@ func testCreateManyInstances(t *testing.T) {
 	// Start n instances.
 	for i := 0; i < n; i++ {
 		instanceName := "echo" + strconv.Itoa(i+1)
-		_, err := startInstance(instanceImagePath, instanceName, startOpts{})
+		_, err := startInstance(instanceImagePath, instanceName, i, startOpts{})
 		if err != nil {
 			t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 		}
@@ -305,8 +305,7 @@ func testBasicOptions(t *testing.T) {
 	const instanceName = "testbasic"
 	const testHostname = "echoserver99"
 	fileContents := []byte("world")
-	// Set an environment variable canary.
-	os.Setenv("BHUSHAN", "ROCKS")
+
 	// Create a temporary directory to serve as a home directory.
 	dir, err := ioutil.TempDir("", "TestInstance")
 	if err != nil {
@@ -325,7 +324,7 @@ func testBasicOptions(t *testing.T) {
 		cleanenv: true,
 	}
 	// Start an instance with the temporary directory as the home directory.
-	_, err = startInstance(instanceImagePath, instanceName, instanceOpts)
+	_, err = startInstance(instanceImagePath, instanceName, 0, instanceOpts)
 	if err != nil {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
@@ -344,11 +343,6 @@ func testBasicOptions(t *testing.T) {
 	}
 	if !bytes.Equal([]byte(testHostname+"\n"), output) {
 		t.Fatalf("Hostname is %s, but expected %s", output, testHostname)
-	}
-	// Test that the environment has been cleared.
-	_, err = execInstance(instanceName, "cat", "/home/temp/bhushan")
-	if err == nil {
-		t.Fatal("Environment file exists, but it shouldn't.")
 	}
 	// Stop the container.
 	_, err = stopInstance(stopOpts{instance: instanceName})
@@ -372,7 +366,7 @@ func testContain(t *testing.T) {
 		workdir: dir,
 	}
 	// Start an instance with the temporary directory as the home directory.
-	_, err = startInstance(instanceImagePath, instanceName, instanceOpts)
+	_, err = startInstance(instanceImagePath, instanceName, 0, instanceOpts)
 	if err != nil {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
