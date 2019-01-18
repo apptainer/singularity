@@ -11,7 +11,6 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 )
 
@@ -27,6 +26,10 @@ type Device struct {
 // provided by image file pointer
 func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error {
 	var path string
+
+	if image == nil {
+		return fmt.Errorf("empty file pointer")
+	}
 
 	fi, err := image.Stat()
 	if err != nil {
@@ -89,7 +92,6 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			if status.Inode == imageIno && status.Device == imageDev &&
 				status.Flags&FlagsReadOnly == loop.Info.Flags&FlagsReadOnly &&
 				status.Offset == loop.Info.Offset && status.SizeLimit == loop.Info.SizeLimit {
-				sylog.Debugf("Found shared loop device /dev/loop%d", device)
 				return nil
 			}
 		} else {
