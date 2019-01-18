@@ -12,8 +12,8 @@ import (
 
 // TerminalBuffer captures the last line displayed on terminal.
 type TerminalBuffer struct {
-	data []byte
-	sync.Mutex
+	data  []byte
+	mutex sync.Mutex
 }
 
 // NewTerminalBuffer returns an instantiated TerminalBuffer.
@@ -25,8 +25,8 @@ func NewTerminalBuffer() *TerminalBuffer {
 
 // Write implements the write interface to store last terminal line.
 func (b *TerminalBuffer) Write(p []byte) (n int, err error) {
-	b.Lock()
-	defer b.Unlock()
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
 
 	if bytes.IndexByte(p, '\n') >= 0 {
 		b.data = nil
@@ -39,5 +39,10 @@ func (b *TerminalBuffer) Write(p []byte) (n int, err error) {
 
 // Line returns the last terminal line.
 func (b *TerminalBuffer) Line() []byte {
-	return b.data
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+	// return a copy to avoid lock exposure
+	tmp := make([]byte, len(b.data))
+	copy(tmp, b.data)
+	return tmp
 }
