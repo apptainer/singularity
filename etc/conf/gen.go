@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 )
 
 func main() {
@@ -38,7 +38,7 @@ func main() {
 func genConf(tmpl, in, out string) {
 	inFile := in
 	// Parse current singularity.conf file into c
-	c := &singularity.FileConfig{}
+	c := &singularityConfig.FileConfig{}
 	if _, err := os.Stat(in); os.IsNotExist(err) {
 		inFile = ""
 	}

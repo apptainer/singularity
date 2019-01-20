@@ -25,10 +25,4 @@ int capset(cap_user_header_t hdrp, const cap_user_data_t datap) {
     return syscall(__NR_capset, hdrp, datap);
 }
 
-#else
-
-int noop() {
-	return -1; // Suppresses "has no symbols" error
-}
-
 #endif /* LINUX_CAPABILITY_H */

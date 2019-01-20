@@ -39,7 +39,7 @@
 #ifdef SINGULARITY_SECUREBITS
 #  include <linux/securebits.h>
 #else
-#  include "util/securebits.h"
+#  include "securebits.h"
 #endif /* SINGULARITY_SECUREBITS */
 
 #ifndef PR_SET_NO_NEW_PRIVS
@@ -58,8 +58,8 @@
 #define CLONE_NEWCGROUP     0x02000000
 #endif
 
-#include "util/capability.h"
-#include "util/message.h"
+#include "capability.h"
+#include "message.h"
 
 #include "starter.h"
 

@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/syecl"
@@ -330,7 +331,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return fmt.Errorf("try to join unprivileged instance with SUID workflow")
 	}
 
-	instanceEngineConfig := NewConfig()
+	instanceEngineConfig := singularityConfig.NewConfig()
 
 	// extract configuration from instance file
 	instanceConfig := &config.Common{
@@ -419,7 +420,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 
 // PrepareConfig checks and prepares the runtime engine config
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != Name {
+	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("incorrect engine")
 	}
 

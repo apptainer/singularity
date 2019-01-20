@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
 	ociserver "github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/server"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 )
 
@@ -109,14 +110,14 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 // Init initializes registered runtime engines
 func Init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
-	registeredEngineOperations[singularity.Name] = &singularity.EngineOperations{EngineConfig: singularity.NewConfig()}
+	registeredEngineOperations[singularityConfig.Name] = &singularity.EngineOperations{EngineConfig: singularityConfig.NewConfig()}
 	registeredEngineOperations[imgbuild.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}
 	registeredEngineOperations[oci.Name] = &oci.EngineOperations{EngineConfig: &oci.EngineConfig{}}
 
 	// register singularity rpc methods
 	methods := new(server.Methods)
 	registeredEngineRPCMethods = make(map[string]interface{})
-	registeredEngineRPCMethods[singularity.Name] = methods
+	registeredEngineRPCMethods[singularityConfig.Name] = methods
 	registeredEngineRPCMethods[imgbuild.Name] = methods
 
 	ocimethods := new(ociserver.Methods)

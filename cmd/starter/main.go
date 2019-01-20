@@ -6,9 +6,11 @@
 package main
 
 /*
+#include "c/util/capability.c"
+#include "c/util/message.c"
+#include "c/util/setns.c"
 #include "c/starter.c"
 */
-// #cgo CFLAGS: -I..
 import "C"
 
 import (
