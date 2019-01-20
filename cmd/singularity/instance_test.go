@@ -386,6 +386,45 @@ func testContain(t *testing.T) {
 	}
 }
 
+// Test by running directly from URI
+func testInstanceFromURI(t *testing.T) {
+	instances := []struct {
+		name string
+		uri  string
+	}{
+		{
+			name: "test_from_docker",
+			uri:  "docker://busybox",
+		},
+		{
+			name: "test_from_library",
+			uri:  "library://busybox",
+		},
+		{
+			name: "test_from_shub",
+			uri:  "shub://singularityhub/busybox",
+		},
+	}
+
+	for _, i := range instances {
+		// Start an instance with the temporary directory as the home directory.
+		_, err := startInstance(i.uri, i.name, 0, startOpts{})
+		if err != nil {
+			t.Fatalf("Failed to start instance %s: %v", i.name, err)
+		}
+		// Exec id command.
+		_, err = execInstance(i.name, "id")
+		if err != nil {
+			t.Fatalf("Failed to run id command: %v", err)
+		}
+		// Stop the container.
+		_, err = stopInstance(stopOpts{instance: i.name})
+		if err != nil {
+			t.Fatalf("Failed to stop instance %s: %v", i.name, err)
+		}
+	}
+}
+
 // Bootstrap to run all instance tests.
 func TestInstance(t *testing.T) {
 	// Build a basic Singularity image to test instances.
@@ -405,6 +444,7 @@ func TestInstance(t *testing.T) {
 		{"BasicEchoServer", testBasicEchoServer, false},
 		{"BasicOptions", testBasicOptions, false},
 		{"Contain", testContain, false},
+		{"InstanceFromURI", testInstanceFromURI, false},
 		{"CreateManyInstances", testCreateManyInstances, false},
 		{"StopAll", testStopAll, false},
 		{"FinalNoInstances", testNoInstances, false},
