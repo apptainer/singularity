@@ -157,6 +157,36 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.sif /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Clear
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	ClearUse   string = `clear [clear options...] <subcommand>`
+	ClearShort string = `Clear stuff`
+	ClearLong  string = `
+  blab... blab...`
+	ClearExample string = `
+  All group commands have their own help output:
+
+  $ singularity help clear
+  $ singularity clear --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Clear Cache
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	ClearCacheUse   string = `cache [clear options...] <subcommand>`
+	ClearCacheShort string = `Clear local singularity cache`
+	ClearCacheLong  string = `
+  blab... blab...`
+	ClearCacheExample string = `
+  All group commands have their own help output:
+
+    foofoofoo
+
+  $ singularity help clear
+  $ singularity clear --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeysUse   string = `keys [keys options...] <subcommand>`
