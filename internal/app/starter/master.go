@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
-	"runtime/debug"
 	"syscall"
 	"time"
 	"unsafe"
@@ -46,8 +45,6 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 			rpcConn.Close()
 		}
 
-		// force memory release
-		debug.FreeOSMemory()
 		runtime.Goexit()
 	}()
 
