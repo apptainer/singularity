@@ -12,7 +12,7 @@ import (
 
 func CleanSingularityCache() error {
 
-	sylog.Debugf("Removeing file from: %s", cache.Root())
+//	sylog.Debugf("Removeing file from: %s", cache.Root())
 
 	err := cache.Clean()
 	if err != nil {
