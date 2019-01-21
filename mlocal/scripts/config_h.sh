@@ -132,5 +132,18 @@ config_add_def ()
         if [ "$1" = "" -o "$2" = "" ]; then
                 return
         fi
-        echo "#define $*" >> $builddir/config.h
+        echo "#define $*" >> $confh
+}
+
+config_add_header ()
+{
+	echo "#ifndef __CONFIG_H_" >> $confh
+	echo "#define __CONFIG_H_" >> $confh
+	echo >> $confh
+}
+
+config_add_footer ()
+{
+	echo >> $confh
+	echo "#endif /* __CONFIG_H_ */" >> $confh
 }

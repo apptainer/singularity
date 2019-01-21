@@ -65,7 +65,10 @@ func main() {
 	header := []Define{}
 	s := bufio.NewScanner(bytes.NewReader(inFile))
 	for s.Scan() {
-		header = append(header, parseLine(s.Text()))
+		d := parseLine(s.Text())
+		if len(d.Words) > 2 && d.Words[0] == "#define" {
+			header = append(header, d)
+		}
 	}
 
 	confgenTemplate.Execute(outFile, header)

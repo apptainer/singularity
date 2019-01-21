@@ -4,9 +4,9 @@ starter := $(BUILDDIR)/cmd/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
 starter_SOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c \
-                  $(SOURCEDIR)/cmd/starter/c/util/capability.c \
-                  $(SOURCEDIR)/cmd/starter/c/util/message.c \
-                  $(SOURCEDIR)/cmd/starter/c/util/setns.c
+                  $(SOURCEDIR)/cmd/starter/c/capability.c \
+                  $(SOURCEDIR)/cmd/starter/c/message.c \
+                  $(SOURCEDIR)/cmd/starter/c/setns.c
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
@@ -106,9 +106,9 @@ ALL := $(go_BIN) $(bash_completion)
 ifeq ($(BUILD_RUNTIME),1)
 
 CLEANFILES += $(starter)
-INSTALLFILES += $(starter_INSTALL) $(sessiondir) \
-	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
-	$(actions_INSTALL) $(seccomp_profile_INSTALL) $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
+INSTALLFILES += $(starter_INSTALL) $(sessiondir) $(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) \
+                $(capability_JSON) $(syecl_config_INSTALL) $(actions_INSTALL) $(seccomp_profile_INSTALL) \
+                $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
 ALL += $(config) $(starter)
 
 endif # build_runtime

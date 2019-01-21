@@ -6,9 +6,9 @@
 package main
 
 /*
-#include "c/util/capability.c"
-#include "c/util/message.c"
-#include "c/util/setns.c"
+#include "c/message.c"
+#include "c/capability.c"
+#include "c/setns.c"
 #include "c/starter.c"
 */
 import "C"

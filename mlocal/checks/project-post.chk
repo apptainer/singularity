@@ -4,6 +4,8 @@
 #
 set -e
 
+config_add_header
+
 config_add_def PACKAGE_NAME \"$package_name\"
 config_add_def PACKAGE_TARNAME \"$package_name\"
 config_add_def PACKAGE_VERSION \"$package_version\"
@@ -37,19 +39,11 @@ config_add_def MANDIR \"$mandir\"
 config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
 config_add_def CAPABILITY_FILE SINGULARITY_CONFDIR \"/capability.json\"
 config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
-
-# config_add_def SINGULARITY_USERNS 1
-# config_add_def DISABLE_SUID 1
-
-config_add_def CONTAINER_MOUNTDIR LOCALSTATEDIR \"/singularity/mnt/container\"
-config_add_def CONTAINER_FINALDIR LOCALSTATEDIR \"/singularity/mnt/final\"
-config_add_def CONTAINER_OVERLAY LOCALSTATEDIR \"/singularity/mnt/overlay\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
 
 build_runtime=0
 if [ "$host" = "unix" ]; then
 	build_runtime=1
-	config_add_def SINGULARITY_RUNTIME 1
 fi
 
 ########################
@@ -286,7 +280,6 @@ if ! printf "#include <linux/capability.h>\nint main() { }" | \
 	fi
 else
 	echo "yes"
-	config_add_def LINUX_CAPABILITY_H 1
 fi
 
 ########################
@@ -355,3 +348,5 @@ else
     echo "yes"
     appsec=1
 fi
+
+config_add_footer
