@@ -160,8 +160,8 @@ Enterprise Performance Computing (EPC)`
 	// Clear
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	ClearUse   string = `clear [clear options...] <subcommand>`
-	ClearShort string = `Clear stuff`
+	ClearUse   string = `clear <subcommand>`
+	ClearShort string = `Clear your local singularity files (usally cache)`
 	ClearLong  string = `
   blab... blab...`
 	ClearExample string = `
@@ -174,17 +174,15 @@ Enterprise Performance Computing (EPC)`
 	// Clear Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	ClearCacheUse   string = `cache [clear options...] <subcommand>`
-	ClearCacheShort string = `Clear local singularity cache`
+	ClearCacheUse   string = `cache`
+	ClearCacheShort string = `Clear your local singularity cache`
 	ClearCacheLong  string = `
   blab... blab...`
 	ClearCacheExample string = `
   All group commands have their own help output:
 
-    foofoofoo
-
-  $ singularity help clear
-  $ singularity clear --help`
+  $ singularity help clean cache
+  $ singularity clear cache --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys
