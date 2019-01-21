@@ -34,6 +34,8 @@ int setns(int fd, int nstype) {
 #elif defined (SINGULARITY_NO_SETNS) && !defined (SINGULARITY_SETNS_SYSCALL)
 
 int setns(int fd, int nstype) {
+    (void)fd;
+    (void)nstype;
     singularity_message(VERBOSE, "setns() not supported at compile time by kernel at time of building\n");
     errno = ENOSYS;
     return -1;

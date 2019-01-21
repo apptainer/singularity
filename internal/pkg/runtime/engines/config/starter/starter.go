@@ -12,7 +12,7 @@ package starter
 #include <sys/types.h>
 #include "starter.h"
 */
-// #cgo CFLAGS: -I../../../../../../cmd/starter/c
+// #cgo CFLAGS: -I../../../../../../cmd/starter/c/include
 import "C"
 import (
 	"encoding/json"

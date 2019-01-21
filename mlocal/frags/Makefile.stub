@@ -54,6 +54,7 @@ cni_plugins_GOPATH := $(cni_vendor_GOPATH)/meta/bandwidth \
                       $(cni_vendor_GOPATH)/main/host-device \
                       $(cni_vendor_GOPATH)/ipam/host-local \
                       $(cni_vendor_GOPATH)/main/ipvlan \
+                      $(cni_vendor_GOPATH)/main/loopback \
                       $(cni_vendor_GOPATH)/main/macvlan \
                       $(cni_vendor_GOPATH)/meta/portmap \
                       $(cni_vendor_GOPATH)/main/ptp \
@@ -67,6 +68,7 @@ cni_plugins_EXECUTABLES := $(cni_builddir)/bandwidth \
                            $(cni_builddir)/host-device \
                            $(cni_builddir)/host-local \
                            $(cni_builddir)/ipvlan \
+                           $(cni_builddir)/loopback \
                            $(cni_builddir)/macvlan \
                            $(cni_builddir)/portmap \
                            $(cni_builddir)/ptp \
@@ -80,6 +82,7 @@ cni_plugins_INSTALL := $(cni_install_DIR)/bandwidth \
                        $(cni_install_DIR)/host-device \
                        $(cni_install_DIR)/host-local \
                        $(cni_install_DIR)/ipvlan \
+                       $(cni_install_DIR)/loopback \
                        $(cni_install_DIR)/macvlan \
                        $(cni_install_DIR)/portmap \
                        $(cni_install_DIR)/ptp \
@@ -98,23 +101,33 @@ actions_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
 
 CLEANFILES += $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion)
 INSTALLFILES := $(singularity_INSTALL) $(bash_completion_INSTALL)
+ALL := $(go_BIN) $(bash_completion)
 
 ifeq ($(BUILD_RUNTIME),1)
 
-CLEANFILES += $(starter) $(cni_plugins_EXECUTABLES)
-INSTALLFILES += $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
+CLEANFILES += $(starter)
+INSTALLFILES += $(starter_INSTALL) $(sessiondir) \
 	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
-	$(actions_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) $(seccomp_profile_INSTALL) \
-	$(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
-
-all: cscope collect $(go_BIN) $(config) $(starter) $(bash_completion) cniplugins
-
-else # build_runtime
-
-all: cscope collect $(go_BIN) $(bash_completion)
+	$(actions_INSTALL) $(seccomp_profile_INSTALL) $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
+ALL += $(config) $(starter)
 
 endif # build_runtime
 
+ifeq ($(WITH_NETWORK),1)
+
+CLEANFILES += $(cni_plugins_EXECUTABLES)
+INSTALLFILES += $(cni_plugins_INSTALL) $(cni_config_INSTALL)
+ALL += cniplugins
+
+endif # with_network
+
+ifeq ($(WITH_SUID),1)
+
+INSTALLFILES += $(starter_suid_INSTALL)
+
+endif # with_suid
+
+all: $(ALL)
 
 .PHONY: cniplugins
 cniplugins:

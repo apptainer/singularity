@@ -355,5 +355,3 @@ else
     echo "yes"
     appsec=1
 fi
-
-echo "INFO: userns and disable_suid are disabled. (mlocal/checks/basechecks.chk)"
