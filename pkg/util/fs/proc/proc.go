@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 // HasFilesystem returns whether kernel support filesystem or not
@@ -57,6 +58,41 @@ func ParseMountInfo(path string) (map[string][]string, error) {
 		}
 	}
 	return mp, nil
+}
+
+// ParentMount parses mountinfo and return the path of parent
+// mount point for which the provided path is mounted in
+func ParentMount(path string) (string, error) {
+	var mountPoints []string
+	parent := "/"
+
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return parent, err
+	}
+
+	p, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		return parent, fmt.Errorf("can't open /proc/self/mountinfo: %s", err)
+	}
+	defer p.Close()
+
+	scanner := bufio.NewScanner(p)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+		mountPoints = append(mountPoints, fields[4])
+	}
+
+	for resolved != "/" {
+		for _, point := range mountPoints {
+			if point == resolved {
+				return point, nil
+			}
+		}
+		resolved = filepath.Dir(resolved)
+	}
+
+	return parent, nil
 }
 
 // ExtractPid returns a pid extracted from path of type "/proc/1"
@@ -121,4 +157,53 @@ func ReadIDMap(path string) (uint32, uint32, error) {
 	}
 
 	return uint32(containerID), uint32(hostID), nil
+}
+
+// SetOOMScoreAdj sets OOM score for process with pid
+func SetOOMScoreAdj(pid int, score *int) error {
+	if score != nil {
+		path := fmt.Sprintf("/proc/%d/oom_score_adj", pid)
+
+		f, err := os.OpenFile(path, os.O_WRONLY, 0)
+		if err != nil {
+			return fmt.Errorf("failed to open oom_score_adj: %s", err)
+		}
+		if _, err := fmt.Fprintf(f, "%d", *score); err != nil {
+			return fmt.Errorf("failed to set oom_score_adj: %s", err)
+		}
+
+		f.Close()
+	}
+	return nil
+}
+
+// HasNamespace checks if host namespace and container namespace
+// are different.
+func HasNamespace(pid int, nstype string) (bool, error) {
+	var st1 syscall.Stat_t
+	var st2 syscall.Stat_t
+
+	has := false
+
+	processOne := fmt.Sprintf("/proc/%d/ns/%s", pid, nstype)
+	processTwo := fmt.Sprintf("/proc/self/ns/%s", nstype)
+
+	if err := syscall.Stat(processOne, &st1); err != nil {
+		if os.IsNotExist(err) {
+			return has, nil
+		}
+		return has, err
+	}
+	if err := syscall.Stat(processTwo, &st2); err != nil {
+		if os.IsNotExist(err) {
+			return has, nil
+		}
+		return has, err
+	}
+
+	if st1.Ino != st2.Ino {
+		has = true
+	}
+
+	return has, nil
 }

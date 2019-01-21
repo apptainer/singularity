@@ -1,0 +1,21 @@
+Bootstrap: scratch
+
+%setup
+    busybox_url='https://www.busybox.net/downloads/binaries/1.28.1-defconfig-multiarch/busybox-x86_64'
+
+    # Create necessary config files.
+    printf 'root:!:0:0:root:/root:/bin/sh\n' > "${SINGULARITY_ROOTFS}/etc/passwd"
+    printf 'root:x:0:\n' > "${SINGULARITY_ROOTFS}/etc/group"
+
+    chmod 0644 "${SINGULARITY_ROOTFS}/etc/passwd" "${SINGULARITY_ROOTFS}/etc/group"
+
+    # Create bin directory.
+    mkdir "${SINGULARITY_ROOTFS}/bin"
+    chmod 0755 "${SINGULARITY_ROOTFS}/bin"
+
+    # Download busybox binary.
+    curl -o "${SINGULARITY_ROOTFS}/bin/busybox" "${busybox_url}"
+    chmod 0755 "${SINGULARITY_ROOTFS}/bin/busybox"
+
+    # Install busybox.
+    "${SINGULARITY_ROOTFS}/bin/busybox" --install "${SINGULARITY_ROOTFS}/bin"

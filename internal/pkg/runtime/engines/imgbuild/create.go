@@ -97,12 +97,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
-	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
-	_, err = rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("mount /etc/hosts failed: %s", err)
-	}
-
 	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
 		// Run %setup script here
 		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
@@ -132,11 +126,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("change directory failed: %s", err)
 	}
 
-	sylog.Debugf("Chroot into %s\n", sessionPath)
-	_, err = rpcOps.Chroot(sessionPath, true)
+	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
+	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = rpcOps.Chroot(sessionPath, false)
+		_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
