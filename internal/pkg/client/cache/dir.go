@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -42,8 +42,9 @@ func Root() string {
 }
 
 // Clean wipes all files in the cache directory
-func Clean() {
-	_ = os.RemoveAll(Root())
+func Clean() error {
+	err := os.RemoveAll(Root())
+	return err
 }
 
 func updateCacheRoot() {

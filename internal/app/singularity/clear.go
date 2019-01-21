@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,14 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 )
-
-//const (
-//	defaultKeysServer = "https://keys.sylabs.io"
-//)
-
-//var (
-//	keyServerURL string // -u command line option
-//)
 
 func init() {
 	SingularityCmd.AddCommand(ClearCmd)
