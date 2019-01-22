@@ -90,7 +90,7 @@ func killInstance(file *instance.File, sig syscall.Signal, fileChan chan *instan
 	syscall.Kill(file.Pid, sig)
 
 	for {
-		if err := syscall.Kill(file.Pid, 0); err == syscall.ESRCH {
+		if err := syscall.Kill(file.PPid, 0); err == syscall.ESRCH {
 			fileChan <- file
 			break
 		} else if childs, err := proc.CountChilds(file.Pid); childs == 0 {
