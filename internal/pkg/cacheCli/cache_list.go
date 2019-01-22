@@ -45,6 +45,12 @@ func ListSingularityCache() error {
 		os.Exit(255)
 	}
 
+	fmt.Printf("%-20s %-14s %s\n", "NAME", "DATE CREATED", "SIZE")
+//	for _, file := range files {
+//		fmt.Printf("%-16s %-8d %s\n", file.Name, file.Pid, file.Image)
+//	}
+
+
 	for _, f := range files {
 //		fmt.Println("dir", f.Name())
 		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
@@ -53,7 +59,8 @@ func ListSingularityCache() error {
 			os.Exit(255)
 		}
 		for _, c := range cont {
-			fmt.Println("Container: ", c.Name())
+			fmt.Printf("%-20s %-14s %s\n", c.Name(), "bar", "size")
+//			fmt.Println("Container: ", c.Name())
 		}		
 
 	}
