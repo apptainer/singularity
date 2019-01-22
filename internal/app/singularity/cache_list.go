@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/cacheCli"	
 )
 
 // ClearListCmd is `singularity cache list' and will list your local singularity cache
@@ -32,16 +32,16 @@ var CacheListCmd = &cobra.Command {
 
 func cacheListCmd() error {
 
-	sylog.Infof("HELLO WORLD FROM CACHE LIST!!!!")
+//	sylog.Infof("HELLO WORLD FROM CACHE LIST!!!!")
 
-//	sylog.Infof("OciBlob(): %v", cache.OciBlob())
+//	sylog.Infof("Library(): %v", cache.Library())
 
-//	err := cleanCache.CleanSingularityCache()
-//	if err != nil {
-//	    sylog.Fatalf("%v", err)
-//	    os.Exit(255)
-//	}
-	return nil
+	err := cacheCli.ListSingularityCache()
+	if err != nil {
+	    sylog.Fatalf("%v", err)
+	    os.Exit(255)
+	}
+	return err
 }
 
 

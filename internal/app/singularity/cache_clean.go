@@ -11,7 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/cleanCache"
+	"github.com/sylabs/singularity/internal/pkg/cacheCli"
 )
 
 
@@ -34,7 +34,7 @@ var CacheCleanCmd = &cobra.Command {
 
 //func cacheCleanCmd(cacheClean bool) error {
 func cacheCleanCmd() error {
-	err := cleanCache.CleanSingularityCache()
+	err := cacheCli.CleanSingularityCache()
 	if err != nil {
 	    sylog.Fatalf("%v", err)
 	    os.Exit(255)
