@@ -23,6 +23,8 @@ import (
 
 var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
 
+// Run is the main func for the test framework, initializes the required vars
+// and set the environment for the RunE2ETests suites
 func Run(t *testing.T) {
 	if err := goversion.Check(); err != nil {
 		log.Fatalf("%s", err)
@@ -68,6 +70,7 @@ func Run(t *testing.T) {
 	os.Setenv("E2E_IMAGE_PATH", imagePath)
 	defer os.Remove(imagePath)
 
+	// RunE2ETests by functionality
 	t.Run("BUILD", imgbuild.RunE2ETests)
 	t.Run("ACTIONS", actions.RunE2ETests)
 }
