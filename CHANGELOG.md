@@ -11,7 +11,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.0.3
 
-# v3.0.3 - [2019.01.16]
+# v3.0.3 - [2019.01.21]
   
   - Bind paths in `singularity.conf` are properly parsed and applied at runtime
   - Singularity runtime will properly fail if `singularity.conf` file is not owned by the root user
