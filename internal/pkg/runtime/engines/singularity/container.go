@@ -14,12 +14,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image"
-	"github.com/sylabs/singularity/internal/pkg/network"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -28,11 +27,18 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/network"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"golang.org/x/crypto/ssh/terminal"
 )
+
+// defaultCNIConfPath is the default directory to CNI network configuration files
+var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
+
+// defaultCNIPluginPath is the default directory to CNI plugins executables
+var defaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
 type container struct {
 	engine           *EngineOperations
@@ -153,10 +159,10 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	}
 
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
-	_, err = c.rpcOps.Chroot(c.session.FinalPath(), true)
+	_, err = c.rpcOps.Chroot(c.session.FinalPath(), "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = c.rpcOps.Chroot(c.session.FinalPath(), false)
+		_, err = c.rpcOps.Chroot(c.session.FinalPath(), "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
@@ -172,9 +178,17 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
 			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
 
-			cniPath := &network.CNIPath{
-				Conf:   engine.EngineConfig.File.CniConfPath,
-				Plugin: engine.EngineConfig.File.CniPluginPath,
+			cniPath := &network.CNIPath{}
+
+			if engine.EngineConfig.File.CniConfPath != "" {
+				cniPath.Conf = engine.EngineConfig.File.CniConfPath
+			} else {
+				cniPath.Conf = defaultCNIConfPath
+			}
+			if engine.EngineConfig.File.CniPluginPath != "" {
+				cniPath.Plugin = engine.EngineConfig.File.CniPluginPath
+			} else {
+				cniPath.Plugin = defaultCNIPluginPath
 			}
 
 			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
@@ -185,6 +199,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			if err := setup.SetArgs(netargs); err != nil {
 				return fmt.Errorf("%s", err)
 			}
+
+			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
 
 			if err := setup.AddNetworks(); err != nil {
 				return fmt.Errorf("%s", err)
@@ -200,7 +216,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		path := engine.EngineConfig.GetCgroupsPath()
 		if path != "" {
 			name := strconv.Itoa(pid)
-			manager := &cgroups.Manager{Pid: pid, Name: name}
+			path := filepath.Join("/singularity", name)
+			manager := &cgroups.Manager{Pid: pid, Path: path}
 			if err := manager.ApplyFromFile(path); err != nil {
 				return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
 			}
@@ -353,7 +370,7 @@ func (c *container) setupOverlayLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
@@ -364,7 +381,7 @@ func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string
 	}
 
 	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
@@ -375,7 +392,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.RootfsTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.RootfsTag, c.setPropagationMount)
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
@@ -415,7 +432,7 @@ func (c *container) mount(point *mount.Point) error {
 	return nil
 }
 
-func (c *container) setSlaveMount(system *mount.System) error {
+func (c *container) setPropagationMount(system *mount.System) error {
 	pflags := uintptr(syscall.MS_REC)
 
 	if c.engine.EngineConfig.File.MountSlave {
@@ -472,13 +489,10 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 	sessionPath := c.session.Path()
-	remount := false
+	remount := mount.HasRemountFlag(flags)
+	propagation := mount.HasPropagationFlag(flags)
 	source := mnt.Source
 	dest := ""
-
-	if flags&syscall.MS_REMOUNT != 0 {
-		remount = true
-	}
 
 	if flags&syscall.MS_BIND != 0 && !remount {
 		if _, err := os.Stat(source); os.IsNotExist(err) {
@@ -505,7 +519,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 	}
 
-	if remount {
+	if remount || propagation {
 		for _, skipped := range c.skippedMount {
 			if skipped == mnt.Destination {
 				return nil
@@ -525,7 +539,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
 
-		// in scontainer stage 1 we changed current working directory to
+		// in stage 1 we changed current working directory to
 		// sandbox image directory, just pass "." as source argument to
 		// be sure RPC mount the right sandbox image
 		if dest == c.session.RootFsPath() && flags&syscall.MS_BIND != 0 {
@@ -573,7 +587,8 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices)
+	shared := c.engine.EngineConfig.File.SharedLoopDevices
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices, shared)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
@@ -686,7 +701,23 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return system.Points.AddImage(mount.RootfsTag, imageObject.Source, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+	if err := system.Points.AddImage(
+		mount.RootfsTag,
+		imageObject.Source,
+		c.session.RootFsPath(),
+		mountType,
+		flags,
+		imageObject.Offset,
+		imageObject.Size,
+	); err != nil {
+		return err
+	}
+
+	if imageObject.Writable {
+		return system.Points.AddPropagation(mount.DevTag, c.session.RootFsPath(), syscall.MS_UNBINDABLE)
+	}
+
+	return nil
 }
 
 func (c *container) overlayUpperWork(system *mount.System) error {
@@ -820,6 +851,11 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			return fmt.Errorf("unknown image format")
 		}
 
+		err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
+		if err != nil {
+			return err
+		}
+
 		if imageObject.Writable && !hasUpper {
 			upper := filepath.Join(dst, "upper")
 			work := filepath.Join(dst, "work")
@@ -841,7 +877,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 	}
 
-	return nil
+	return system.Points.AddPropagation(mount.DevTag, c.session.FinalPath(), syscall.MS_UNBINDABLE)
 }
 
 func (c *container) addKernelMount(system *mount.System) error {

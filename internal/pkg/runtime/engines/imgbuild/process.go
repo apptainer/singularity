@@ -84,7 +84,7 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 }
 
 // CleanupContainer _
-func (e *EngineOperations) CleanupContainer() error {
+func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 	return nil
 }
 

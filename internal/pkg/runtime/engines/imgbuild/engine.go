@@ -7,8 +7,9 @@ package imgbuild
 
 import (
 	"fmt"
-	"net"
 	"syscall"
+
+	"github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -33,7 +34,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 }
 
 // PrepareConfig validates/prepares EngineConfig setup
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
@@ -47,6 +48,8 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 
 	e.EngineConfig.OciConfig.SetupPrivileged(true)
 
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
+
 	if e.EngineConfig.OciConfig.Linux != nil {
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 	}
@@ -57,6 +60,8 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
+
+	starterConfig.SetMountPropagation("rslave")
 
 	return nil
 }
