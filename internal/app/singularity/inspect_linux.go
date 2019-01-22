@@ -65,7 +65,7 @@ func init() {
 // InspectCmd represents the build command
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 
 	Use:     docs.InspectUse,
 	Short:   docs.InspectShort,

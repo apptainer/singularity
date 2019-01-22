@@ -105,7 +105,7 @@ func init() {
 
 // OciCreateCmd represents oci create command.
 var OciCreateCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociCreate(args[0]); err != nil {
@@ -120,7 +120,7 @@ var OciCreateCmd = &cobra.Command{
 
 // OciRunCmd allow to create/start in row.
 var OciRunCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociRun(args[0]); err != nil {
@@ -135,7 +135,7 @@ var OciRunCmd = &cobra.Command{
 
 // OciStartCmd represents oci start command.
 var OciStartCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociStart(args[0]); err != nil {
@@ -150,7 +150,7 @@ var OciStartCmd = &cobra.Command{
 
 // OciDeleteCmd represents oci delete command.
 var OciDeleteCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociDelete(args[0]); err != nil {
@@ -165,7 +165,7 @@ var OciDeleteCmd = &cobra.Command{
 
 // OciKillCmd represents oci kill command.
 var OciKillCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if len(args) > 1 && args[1] != "" {
@@ -183,7 +183,7 @@ var OciKillCmd = &cobra.Command{
 
 // OciStateCmd represents oci state command.
 var OciStateCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociState(args[0]); err != nil {
@@ -198,7 +198,7 @@ var OciStateCmd = &cobra.Command{
 
 // OciAttachCmd represents oci attach command.
 var OciAttachCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociAttach(args[0]); err != nil {
@@ -213,7 +213,7 @@ var OciAttachCmd = &cobra.Command{
 
 // OciExecCmd represents oci exec command.
 var OciExecCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociExec(args[0], args[1:]); err != nil {
@@ -228,7 +228,7 @@ var OciExecCmd = &cobra.Command{
 
 // OciUpdateCmd represents oci update command.
 var OciUpdateCmd = &cobra.Command{
-	Args: cobra.MinimumNArgs(1),
+	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociUpdate(args[0]); err != nil {
@@ -243,7 +243,7 @@ var OciUpdateCmd = &cobra.Command{
 
 // OciPauseCmd represents oci pause command.
 var OciPauseCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociPauseResume(args[0], true); err != nil {
@@ -258,7 +258,7 @@ var OciPauseCmd = &cobra.Command{
 
 // OciResumeCmd represents oci resume command.
 var OciResumeCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := ociPauseResume(args[0], false); err != nil {
@@ -273,7 +273,7 @@ var OciResumeCmd = &cobra.Command{
 
 // OciCmd singularity oci runtime.
 var OciCmd = &cobra.Command{
-	Run: nil,
+	Run:                   nil,
 	DisableFlagsInUseLine: true,
 
 	Use:     docs.OciUse,
