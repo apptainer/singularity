@@ -3,12 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
+// +build singularity_runtime
 
 package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,8 +24,16 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 )
 
+const (
+	standardHelpPath = "/.singularity.d/runscript.help"
+	appHelpPath      = "/scif/apps/%s/scif/runscript.help"
+)
+
 func init() {
 	RunHelpCmd.Flags().SetInterspersed(false)
+
+	RunHelpCmd.Flags().StringVar(&AppName, "app", "", "Get help info for specific app")
+	RunHelpCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
 
 	SingularityCmd.AddCommand(RunHelpCmd)
 }
@@ -43,10 +52,11 @@ var RunHelpCmd = &cobra.Command{
 		// Help prints (if set) the sourced %help section on the definition file
 		abspath, err := filepath.Abs(args[0])
 		name := filepath.Base(abspath)
-		a := []string{"/bin/cat", "/.singularity.d/runscript.help"}
+
+		a := []string{"/bin/cat", getHelpPath(cmd)}
 		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 		procname := "Singularity help"
-		Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
+		Env := []string{sylog.GetEnvVar()}
 
 		engineConfig := singularity.NewConfig()
 		ociConfig := &oci.Config{}
@@ -76,4 +86,13 @@ var RunHelpCmd = &cobra.Command{
 	Short:   docs.RunHelpShort,
 	Long:    docs.RunHelpLong,
 	Example: docs.RunHelpExample,
+}
+
+func getHelpPath(cmd *cobra.Command) string {
+	if cmd.Flags().Changed("app") {
+		sylog.Debugf("App specified. Looking for help section of %s", AppName)
+		return fmt.Sprintf(appHelpPath, AppName)
+	}
+
+	return standardHelpPath
 }

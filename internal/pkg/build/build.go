@@ -307,7 +307,7 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	sylog.Debugf("Starting build engine")
-	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
+	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
@@ -367,6 +367,8 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 		return &sources.LocalConveyorPacker{}, nil
 	case "yum":
 		return &sources.YumConveyorPacker{}, nil
+	case "scratch":
+		return &sources.ScratchConveyorPacker{}, nil
 	case "":
 		return nil, fmt.Errorf("no bootstrap specification found")
 	default:
@@ -432,9 +434,25 @@ func (b *Build) Assemble(path string) error {
 func insertEnvScript(b *types.Bundle) error {
 	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
-		if err != nil {
-			return err
+		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
+		_, err := os.Stat(envScriptPath)
+		if os.IsNotExist(err) {
+			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
+			if err != nil {
+				return err
+			}
+		} else {
+			// append to script if it already exists
+			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0775)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil

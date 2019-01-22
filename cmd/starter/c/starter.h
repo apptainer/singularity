@@ -9,55 +9,75 @@
 #ifndef _SINGULARITY_STARTER_H
 #define _SINGULARITY_STARTER_H
 
-#define MAX_NSPATH_SIZE PATH_MAX*7
-#define MAX_JSON_SIZE   128*1024
-#define JOKER           42
-#define MAX_ID_MAPPING  5
-#define MAX_GID         32
+#include <limits.h>
+#include <sys/user.h>
+
+#define fatalf(b...)     singularity_message(ERROR, b); \
+                         exit(1)
+#define debugf(b...)     singularity_message(DEBUG, b)
+#define verbosef(b...)   singularity_message(VERBOSE, b)
+#define warningf(b...)   singularity_message(WARNING, b)
+#define errorf(b...)     singularity_message(ERROR, b)
+
+#define MAX_JSON_SIZE       128*1024
+#define MAX_MAP_SIZE        PAGE_SIZE
+#define MAX_NS_PATH_SIZE    PATH_MAX
+#define MAX_GID             32
 
 struct fdlist {
     int *fds;
     unsigned int num;
 };
 
-struct uidMapping {
-    uid_t hostID;
-    uid_t containerID;
-    unsigned int size;
+struct capabilities {
+    unsigned long long permitted;
+    unsigned long long effective;
+    unsigned long long inheritable;
+    unsigned long long bounding;
+    unsigned long long ambient;
 };
 
-struct gidMapping {
-    gid_t hostID;
-    gid_t containerID;
-    unsigned int size;
+struct namespace {
+    unsigned int flags;
+    char network[MAX_NS_PATH_SIZE];
+    char mount[MAX_NS_PATH_SIZE];
+    char user[MAX_NS_PATH_SIZE];
+    char ipc[MAX_NS_PATH_SIZE];
+    char uts[MAX_NS_PATH_SIZE];
+    char cgroup[MAX_NS_PATH_SIZE];
+    char pid[MAX_NS_PATH_SIZE];
 };
 
-struct cConfig {
-    unsigned long long capPermitted;
-    unsigned long long capEffective;
-    unsigned long long capInheritable;
-    unsigned long long capBounding;
-    unsigned long long capAmbient;
-    unsigned long mountPropagation;
-    unsigned int nsFlags;
-    pid_t containerPid;
-    off_t netNsPathOffset;
-    off_t mntNsPathOffset;
-    off_t userNsPathOffset;
-    off_t ipcNsPathOffset;
-    off_t utsNsPathOffset;
-    off_t cgroupNsPathOffset;
-    off_t pidNsPathOffset;
+struct container {
+    pid_t pid;
+
     unsigned char isSuid;
-    unsigned char isInstance;
     unsigned char noNewPrivs;
-    struct uidMapping uidMapping[MAX_ID_MAPPING];
-    struct gidMapping gidMapping[MAX_ID_MAPPING];
+
+    char uidMap[MAX_MAP_SIZE];
+    char gidMap[MAX_MAP_SIZE];
+
     uid_t targetUID;
     gid_t targetGID[MAX_GID];
     int numGID;
-    unsigned int jsonConfSize;
-    unsigned int nsPathSize;
+
+    unsigned char isInstance;
+    unsigned long mountPropagation;
+    unsigned char sharedMount;
+    unsigned char joinMount;
+    unsigned char bringLoopbackInterface;
+};
+
+struct json {
+    char config[MAX_JSON_SIZE];
+    size_t size;
+};
+
+struct cConfig {
+    struct capabilities capabilities;
+    struct namespace namespace;
+    struct container container;
+    struct json json;
 };
 
 #endif /* _SINGULARITY_STARTER_H */

@@ -12,26 +12,22 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // Master initializes a runtime engine and runs it
-func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonBytes []byte) {
+func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engine *engines.Engine) {
 	var fatal error
 	var status syscall.WaitStatus
 
 	fatalChan := make(chan error, 1)
 	ppid := os.Getppid()
-	containerPid := sconfig.GetContainerPid()
-	engine, err := engines.NewEngine(jsonBytes)
-	if err != nil {
-		sylog.Fatalf("failed to initialize runtime: %s\n", err)
-	}
 
 	go func() {
 		comm := os.NewFile(uintptr(rpcSocket), "socket")
@@ -49,6 +45,9 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 		} else {
 			rpcConn.Close()
 		}
+
+		// force memory release
+		debug.FreeOSMemory()
 		runtime.Goexit()
 	}()
 
@@ -62,23 +61,37 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 		}
 		defer conn.Close()
 
-		_, err = conn.Read(data)
+		n, err := conn.Read(data)
 		if err != nil && err != io.EOF {
-			if sconfig.GetInstance() && os.Getppid() == ppid {
+			if isInstance && os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
 			fatalChan <- fmt.Errorf("failed to start process: %s", err)
 			return
 		}
+
+		// special path for engines which needs to stop before executing
+		// container process
+		if n != 0 {
+			if obj, ok := engine.EngineOperations.(interface {
+				PreStartProcess(int, net.Conn, chan error) error
+			}); ok {
+				if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
+					fatalChan <- fmt.Errorf("pre start process failed: %s", err)
+					return
+				}
+			}
+		}
+
 		err = engine.PostStartProcess(containerPid)
 		if err != nil {
-			if sconfig.GetInstance() && os.Getppid() == ppid {
+			if isInstance && os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
-		if sconfig.GetInstance() {
+		if n == 0 && isInstance {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
 			if os.Getppid() == ppid {
@@ -88,6 +101,8 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 	}()
 
 	go func() {
+		var err error
+
 		// catch all signals
 		signals := make(chan os.Signal, 1)
 		signal.Notify(signals)
@@ -95,16 +110,32 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 		status, err = engine.MonitorContainer(containerPid, signals)
 		fatalChan <- err
 	}()
+
 	fatal = <-fatalChan
 
 	runtime.LockOSThread()
-	if err := engine.CleanupContainer(); err != nil {
+	if err := engine.CleanupContainer(fatal, status); err != nil {
 		sylog.Errorf("container cleanup failed: %s", err)
 	}
 	runtime.UnlockOSThread()
 
+	if !isInstance {
+		pgrp := syscall.Getpgrp()
+		tcpgrp := 0
+
+		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCGPGRP), uintptr(unsafe.Pointer(&tcpgrp))); err == 0 {
+			if tcpgrp > 0 && pgrp != tcpgrp {
+				signal.Ignore(syscall.SIGTTOU)
+
+				if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp))); err != 0 {
+					sylog.Errorf("failed to set crontrolling terminal group: %s", err.Error())
+				}
+			}
+		}
+	}
+
 	if fatal != nil {
-		if sconfig.GetInstance() {
+		if isInstance {
 			if os.Getppid() == ppid {
 				syscall.Kill(ppid, syscall.SIGUSR2)
 			}
@@ -115,13 +146,13 @@ func Master(rpcSocket, masterSocket int, sconfig *starterConfig.Config, jsonByte
 
 	if status.Signaled() {
 		sylog.Debugf("Child exited due to signal %d", status.Signal())
-		if sconfig.GetInstance() && os.Getppid() == ppid {
+		if isInstance && os.Getppid() == ppid {
 			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
 		os.Exit(128 + int(status.Signal()))
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if sconfig.GetInstance() {
+		if isInstance {
 			if status.ExitStatus() != 0 {
 				if os.Getppid() == ppid {
 					syscall.Kill(ppid, syscall.SIGUSR2)

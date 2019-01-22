@@ -90,12 +90,9 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	number = 0
 	loopdev := new(loop.Device)
 	loopdev.MaxLoopDevices = 256
+	loopdev.Info = info
 
 	if err := loopdev.AttachFromPath(src, os.O_RDONLY, &number); err != nil {
-		return err
-	}
-
-	if err := loopdev.SetStatus(info); err != nil {
 		return err
 	}
 

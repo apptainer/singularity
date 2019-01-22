@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
+// +build singularity_runtime
 
 package cli
 
@@ -498,7 +498,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetHomeDest(homeSlice[1])
 	}
 
-	if IsFakeroot {
+	if !engineConfig.File.AllowSetuid || IsFakeroot {
 		UserNamespace = true
 	}
 
@@ -520,7 +520,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			if Hostname == "" {
 				engineConfig.SetHostname(name)
 			}
-			engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			if !KeepPrivs {
+				engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			}
 			generator.SetProcessArgs([]string{"/sbin/init"})
 		}
 		pwd, err := user.GetPwUID(uint32(os.Getuid()))
@@ -552,6 +554,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			UserNamespace = true
 		}
 	}
+
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
 		starter = buildcfg.LIBEXECDIR + "/singularity/bin/starter"
@@ -588,7 +591,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
 
-	Env := []string{sylog.GetEnvVar(), "SRUNTIME=singularity"}
+	Env := []string{sylog.GetEnvVar()}
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 

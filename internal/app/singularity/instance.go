@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
+// +build singularity_runtime
 
 package cli
 
@@ -19,8 +19,8 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 // instance list/stop options
@@ -92,7 +92,7 @@ func killInstance(file *instance.File, sig syscall.Signal, fileChan chan *instan
 	syscall.Kill(file.Pid, sig)
 
 	for {
-		if err := syscall.Kill(file.Pid, 0); err == syscall.ESRCH {
+		if err := syscall.Kill(file.PPid, 0); err == syscall.ESRCH {
 			fileChan <- file
 			break
 		} else if childs, err := proc.CountChilds(file.Pid); childs == 0 {

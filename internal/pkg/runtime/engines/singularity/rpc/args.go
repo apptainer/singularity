@@ -23,6 +23,7 @@ type LoopArgs struct {
 	Mode       int
 	Info       loop.Info64
 	MaxDevices int
+	Shared     bool
 }
 
 // MountArgs defines the arguments to mount.
@@ -36,8 +37,8 @@ type MountArgs struct {
 
 // ChrootArgs defines the arguments to chroot.
 type ChrootArgs struct {
-	Root     string
-	UsePivot bool
+	Root   string
+	Method string
 }
 
 // HostnameArgs defines the arguments to sethostname.

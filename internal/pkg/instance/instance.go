@@ -15,8 +15,12 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 const (
@@ -25,6 +29,16 @@ const (
 	authorizedChars = `^[a-zA-Z0-9._-]+$`
 	prognameFormat  = "Singularity instance: %s [%s]"
 )
+
+var nsMap = map[specs.LinuxNamespaceType]string{
+	specs.PIDNamespace:     "pid",
+	specs.UTSNamespace:     "uts",
+	specs.IPCNamespace:     "ipc",
+	specs.MountNamespace:   "mnt",
+	specs.CgroupNamespace:  "cgroup",
+	specs.NetworkNamespace: "net",
+	specs.UserNamespace:    "user",
+}
 
 // File represents an instance file storing instance information
 type File struct {
@@ -95,6 +109,29 @@ func getPath(privileged bool, username string) (string, error) {
 	return path, nil
 }
 
+func getDir(privileged bool, name string) (string, error) {
+	if err := CheckName(name); err != nil {
+		return "", err
+	}
+	path, err := getPath(privileged, "")
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(path, name), nil
+}
+
+// GetDirPrivileged returns directory where instances file will be stored
+// if instance is run with privileges
+func GetDirPrivileged(name string) (string, error) {
+	return getDir(true, name)
+}
+
+// GetDirUnprivileged returns directory where instances file will be stored
+// if instance is run without privileges
+func GetDirUnprivileged(name string) (string, error) {
+	return getDir(false, name)
+}
+
 // Get returns the instance file corresponding to instance name
 func Get(name string) (*File, error) {
 	if err := CheckName(name); err != nil {
@@ -126,7 +163,7 @@ func Add(name string, privileged bool) (*File, error) {
 		return nil, err
 	}
 	jsonFile := name + ".json"
-	i.Path = filepath.Join(i.Path, jsonFile)
+	i.Path = filepath.Join(i.Path, name, jsonFile)
 	return i, nil
 }
 
@@ -140,7 +177,7 @@ func List(username string, name string) ([]*File, error) {
 		if err != nil {
 			return nil, err
 		}
-		pattern := filepath.Join(path, name+".json")
+		pattern := filepath.Join(path, name, name+".json")
 		files, err := filepath.Glob(pattern)
 		if err != nil {
 			return nil, err
@@ -180,7 +217,16 @@ func (i *File) PrivilegedPath() bool {
 
 // Delete deletes instance file
 func (i *File) Delete() error {
-	return os.Remove(i.Path)
+	path := filepath.Dir(i.Path)
+
+	nspath := filepath.Join(path, "ns")
+	if _, err := os.Stat(nspath); err == nil {
+		if err := syscall.Unmount(nspath, syscall.MNT_DETACH); err != nil {
+			sylog.Errorf("can't umount %s: %s", nspath, err)
+		}
+	}
+
+	return os.RemoveAll(path)
 }
 
 // Update stores instance information in associated instance file
@@ -189,6 +235,7 @@ func (i *File) Update() error {
 	if err != nil {
 		return err
 	}
+
 	path := filepath.Dir(i.Path)
 
 	oldumask := syscall.Umask(0)
@@ -196,6 +243,18 @@ func (i *File) Update() error {
 
 	if err := os.MkdirAll(path, 0755); err != nil {
 		return err
+	}
+	if i.PrivilegedPath() {
+		pw, err := user.GetPwNam(i.User)
+		if err != nil {
+			return err
+		}
+		if err := os.Chmod(path, 0550); err != nil {
+			return err
+		}
+		if err := os.Chown(path, int(pw.UID), 0); err != nil {
+			return err
+		}
 	}
 	file, err := os.OpenFile(i.Path, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0644)
 	if err != nil {
@@ -207,6 +266,87 @@ func (i *File) Update() error {
 	if n, err := file.Write(b); err != nil || n != len(b) {
 		return fmt.Errorf("failed to write instance file %s: %s", i.Path, err)
 	}
+
+	return file.Sync()
+}
+
+// MountNamespaces binds /proc/<pid>/ns directory into instance folder
+func (i *File) MountNamespaces() error {
+	path := filepath.Join(filepath.Dir(i.Path), "ns")
+
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	if err := os.Mkdir(path, 0755); err != nil {
+		return err
+	}
+
+	nspath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return err
+	}
+
+	src := fmt.Sprintf("/proc/%d/ns", i.Pid)
+	if err := syscall.Mount(src, nspath, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("mounting %s in instance folder failed: %s", src, err)
+	}
+
+	return nil
+}
+
+// UpdateNamespacesPath updates namespaces path for the provided configuration
+func (i *File) UpdateNamespacesPath(configNs []specs.LinuxNamespace) error {
+	path := filepath.Join(filepath.Dir(i.Path), "ns")
+	nspath, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return err
+	}
+	nsBase := filepath.Join(fmt.Sprintf("/proc/%d/root", i.PPid), nspath)
+
+	procPath := fmt.Sprintf("/proc/%d/cmdline", i.PPid)
+
+	if i.PrivilegedPath() {
+		var st syscall.Stat_t
+
+		if err := syscall.Stat(procPath, &st); err != nil {
+			return err
+		}
+		if st.Uid != 0 || st.Gid != 0 {
+			return fmt.Errorf("not an instance process")
+		}
+
+		uid := os.Geteuid()
+		taskPath := fmt.Sprintf("/proc/%d/task", i.PPid)
+		if err := syscall.Stat(taskPath, &st); err != nil {
+			return err
+		}
+		if int(st.Uid) != uid {
+			return fmt.Errorf("you doesn't own the instance")
+		}
+	}
+
+	data, err := ioutil.ReadFile(procPath)
+	if err != nil {
+		return err
+	}
+
+	cmdline := string(data[:len(data)-1])
+	procName := ProcName(i.Name, i.User)
+	if cmdline != procName {
+		return fmt.Errorf("no command line match found")
+	}
+
+	for i, n := range configNs {
+		ns, ok := nsMap[n.Type]
+		if !ok {
+			configNs[i].Path = ""
+			continue
+		}
+		if n.Path != "" {
+			configNs[i].Path = filepath.Join(nsBase, ns)
+		}
+	}
+
 	return nil
 }
 

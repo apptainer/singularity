@@ -339,7 +339,10 @@ else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-eval ${SINGULARITY_OCI_RUN}
+# Evaluate shell expressions first and set arguments accordingly,
+# then execute final command as first container process
+eval "set ${SINGULARITY_OCI_RUN}"
+exec "$@"
 
 `)
 	if err != nil {

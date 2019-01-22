@@ -42,7 +42,7 @@ func Configure(config *specs.Spec) error {
 	}
 	if config.Linux != nil && config.Linux.Seccomp != nil {
 		if seccomp.Enabled() {
-			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp); err != nil {
+			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp, config.Process.NoNewPrivileges); err != nil {
 				return err
 			}
 		} else {

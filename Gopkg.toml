@@ -27,6 +27,7 @@
 required = [
     "github.com/containernetworking/plugins/plugins/ipam/dhcp",
     "github.com/containernetworking/plugins/plugins/ipam/host-local",
+    "github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator",
     "github.com/containernetworking/plugins/plugins/ipam/static",
     "github.com/containernetworking/plugins/plugins/main/bridge",
     "github.com/containernetworking/plugins/plugins/main/host-device",
@@ -85,6 +86,10 @@ required = [
   name = "github.com/seccomp/libseccomp-golang"
   version = "v0.9.0"
 
+[[constraint]]
+  name = "github.com/kr/pty"
+  version = "v1.1.3"
+
 [prune]
   go-tests = true
   unused-packages = true
@@ -112,3 +117,7 @@ required = [
 [[override]]
   revision = "da99009bbb1165d1ac5688b5c81d2f589d418341"
   name = "github.com/docker/docker"
+
+[[constraint]]
+  name = "github.com/sylabs/json-resp"
+  version = "0.1.0"

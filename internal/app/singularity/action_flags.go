@@ -3,8 +3,6 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
-
 package cli
 
 import (
@@ -244,7 +242,7 @@ func initNamespaceVars() {
 	actionFlags.SetAnnotation("uts", "envkey", []string{"UTS", "UNSHARE_UTS"})
 
 	// -u|--userns
-	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity.")
+	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity. (Sandbox image only)")
 	actionFlags.SetAnnotation("userns", "envkey", []string{"USERNS", "UNSHARE_USERNS"})
 }
 

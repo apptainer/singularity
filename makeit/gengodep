@@ -7,7 +7,7 @@ prefix=${path%$repo*}
 
 for dep in $(go list -f '{{ .Deps }}' $1 | tr -d '[]'); do
     if [ ! -n "${dep%$repo*}" ]; then
-        for gofile in $(find $prefix$dep -name "*.go"); do
+        for gofile in $(find $prefix$dep -name "*.go" 2>/dev/null); do
             gofiles="$gofiles $gofile"
         done
     fi

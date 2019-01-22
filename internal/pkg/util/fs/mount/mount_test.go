@@ -6,6 +6,7 @@
 package mount
 
 import (
+	"fmt"
 	"syscall"
 	"testing"
 
@@ -290,6 +291,25 @@ func TestRemount(t *testing.T) {
 	points.RemoveAll()
 }
 
+func TestAddPropagation(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	points := &Points{}
+
+	if err := points.AddPropagation(UserbindsTag, "", 0); err == nil {
+		t.Errorf("should have failed with empty destination")
+	}
+	if err := points.AddPropagation(UserbindsTag, "/mnt", 0); err == nil {
+		t.Errorf("should have failed with no propagation flag found")
+	}
+	if err := points.AddPropagation(UserbindsTag, "/mnt", syscall.MS_SHARED|syscall.MS_REC); err != nil {
+		t.Error(err)
+	}
+
+	points.RemoveAll()
+}
+
 func TestImport(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -314,15 +334,7 @@ func TestImport(t *testing.T) {
 					Source:      "/",
 					Destination: "/mnt",
 					Type:        "",
-					Options:     []string{"rbind"},
-				},
-			},
-			{
-				Mount: specs.Mount{
-					Source:      "",
-					Destination: "/mnt",
-					Type:        "",
-					Options:     []string{"rbind", "nosuid", "remount"},
+					Options:     []string{"rbind", "nosuid"},
 				},
 			},
 		},
@@ -391,7 +403,7 @@ func TestImport(t *testing.T) {
 		t.Errorf("wrong number of overlay mount point found")
 	}
 	bind := points.GetAllBinds()
-	if len(bind) != 2 {
+	if len(bind) != 1 {
 		t.Errorf("wrong number of bind mount point found")
 	}
 	fs := points.GetAllFS()
@@ -451,14 +463,6 @@ func TestImport(t *testing.T) {
 		UserbindsTag: {
 			{
 				Mount: specs.Mount{
-					Source:      "/",
-					Destination: "/mnt",
-					Type:        "",
-					Options:     []string{"rbind"},
-				},
-			},
-			{
-				Mount: specs.Mount{
 					Source:      "",
 					Destination: "/mnt",
 					Type:        "",
@@ -492,8 +496,9 @@ func TestImport(t *testing.T) {
 		t.Fatalf("returned a wrong number of mount points %d instead of 1", len(tmp))
 	}
 	hasContext := false
+	context := fmt.Sprintf("context=%q", mountLabel)
 	for _, option := range tmp[0].Options {
-		if option == "context="+mountLabel {
+		if option == context {
 			hasContext = true
 		}
 	}
@@ -540,13 +545,7 @@ func TestImport(t *testing.T) {
 			Source:      "/",
 			Destination: "/mnt",
 			Type:        "",
-			Options:     []string{"rbind"},
-		},
-		{
-			Source:      "",
-			Destination: "/mnt",
-			Type:        "",
-			Options:     []string{"rbind", "nosuid", "remount"},
+			Options:     []string{"rbind", "nosuid", "rshared"},
 		},
 		{
 			Source:      "",
@@ -576,8 +575,11 @@ func TestImport(t *testing.T) {
 	if err := points.ImportFromSpec(validSpecs); err != nil {
 		t.Error(err)
 	}
-	if len(points.GetAll()) != 5 {
-		t.Errorf("returned a wrong number of mount points %d instead of 5", len(points.GetAll()))
+	if len(points.GetByTag(KernelTag)) != 4 {
+		t.Errorf("returned a wrong number of mount kernel mount points %d instead of 4", len(points.GetByTag(KernelTag)))
+	}
+	if len(points.GetByTag(UserbindsTag)) != 3 {
+		t.Errorf("returned a wrong number of mount kernel mount points %d instead of 3", len(points.GetByTag(UserbindsTag)))
 	}
 	points.RemoveAll()
 
@@ -614,57 +616,5 @@ func TestTag(t *testing.T) {
 		if len(points.GetByTag(tag)) != 0 {
 			t.Fatalf("removing mount point entries by tag failed")
 		}
-	}
-}
-
-func TestPaths(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
-	points := &Points{}
-	maskedPaths := []string{
-		"/proc/kcore",
-		"/proc/latency_stats",
-	}
-	roPaths := []string{
-		"/proc/asound",
-		"/proc/bus",
-	}
-	if err := points.AddMaskedPaths(maskedPaths); err != nil {
-		t.Error(err)
-	}
-	l := len(points.GetAll())
-	if l != 1 {
-		t.Errorf("returned a wrong number of mount points %d instead of 1", l)
-	}
-	l = len(points.GetByTag(OtherTag))
-	if l != 2 {
-		t.Errorf("returned a wrong number of mount points %d instead of 2", l)
-	}
-	points.RemoveAll()
-	if err := points.AddReadonlyPaths(roPaths); err != nil {
-		t.Error(err)
-	}
-	l = len(points.GetAll())
-	if l != 1 {
-		t.Errorf("returned a wrong number of mount points %d instead of 1", l)
-	}
-	l = len(points.GetByTag(OtherTag))
-	if l != 4 {
-		t.Errorf("returned a wrong number of mount points %d instead of 4", l)
-	}
-	maskedPaths = []string{
-		"/proc/kcore",
-		"/proc/kcore",
-	}
-	if err := points.AddMaskedPaths(maskedPaths); err == nil {
-		t.Errorf("should have failed with duplicated mount point")
-	}
-	roPaths = []string{
-		"/proc/asound",
-		"/proc/asound",
-	}
-	if err := points.AddReadonlyPaths(roPaths); err == nil {
-		t.Errorf("should have failed with duplicated mount point")
 	}
 }

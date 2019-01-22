@@ -32,10 +32,7 @@ hststatic=0
 tgtstatic=0
 
 package_name=singularity
-
-short_version=
-package_version=
-go_version=
+package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
 prefix=
 exec_prefix=
@@ -357,6 +354,7 @@ while [ $# -ne 0 ]; do
   *) break;;
  esac
 done
+short_version="`echo "$package_version"|sed 's/-.*//'`"
 #
 # non-option param
 if [ $# != 0 ]; then
@@ -609,6 +607,7 @@ SIZE := size
 OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
+BUILD_RUNTIME := $build_runtime
 
 EOF
 
@@ -697,14 +696,24 @@ cat $makeit_makefile_base >> $makeit_makefile
 drawline $makeit_fragsdir/common_opts.mk
 cat $makeit_fragsdir/common_opts.mk >> $makeit_makefile
 
+drawline $makeit_fragsdir/go_common_opts.mk
+cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
+
+if [ -f "$makeit_fragsdir/go_${host}_opts.mk" ]; then
+	drawline $makeit_fragsdir/go_${host}_opts.mk
+	cat $makeit_fragsdir/go_${host}_opts.mk >> $makeit_makefile
+fi
 
 if [ "$appsec" = "1" ]; then
 	drawline $makeit_fragsdir/go_appsec_opts.mk
 	cat $makeit_fragsdir/go_appsec_opts.mk >> $makeit_makefile
-else
-	drawline $makeit_fragsdir/go_common_opts.mk
-	cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
 fi
+
+if [ "$build_runtime" = "1" ]; then
+	drawline $makeit_fragsdir/go_runtime_opts.mk
+	cat $makeit_fragsdir/go_runtime_opts.mk >> $makeit_makefile
+fi
+
 
 case $profile in
 	release)
@@ -762,16 +771,17 @@ cat $makeit_fragsdir/Makefile.stub | awk \
 # Rpm spec for project package
 #######################################################################
 
-RPMSPEC=singularity.spec
-echo "=> generating $RPMSPEC ..."
-rm -f $sourcedir/$RPMSPEC
-VERSION="`echo "$package_version"|sed 's/-.*//'`"
-RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
-if [ "$VERSION" = "$RELEASE" ]; then
-    # $package_version has no dash
-    RELEASE=1
+if [ "$host" = "unix" ]; then
+	RPMSPEC=singularity.spec
+	echo "=> generating $RPMSPEC ..."
+	rm -f $sourcedir/$RPMSPEC
+	release="`echo "$package_version"|sed 's/[^-]*-//'`"
+	if [ "$short_version" = "$release" ]; then
+	    # $package_version has no dash
+	    release=1
+	fi
+	sed "s/@PACKAGE_VERSION@/$short_version/;s/@PACKAGE_RELEASE@/$release/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
-sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 
 
 
