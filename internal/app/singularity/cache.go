@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2016???-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,21 +12,22 @@ import (
 )
 
 func init() {
-	SingularityCmd.AddCommand(ClearCmd)
-	ClearCmd.AddCommand(ClearCacheCmd)
+	SingularityCmd.AddCommand(CacheCmd)
+	CacheCmd.AddCommand(CacheCleanCmd)
+	CacheCmd.AddCommand(CacheListCmd)
 }
 
-// ClearCmd is the 'clear' command that will clear your local singularity cache
-var ClearCmd = &cobra.Command{
+var CacheCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return errors.New("Invalid command")
 	},
 	DisableFlagsInUseLine: true,
 
-	Use:           docs.ClearUse,
-	Short:         docs.ClearShort,
-	Long:          docs.ClearLong,
-	Example:       docs.ClearExample,
+	Use:           docs.CacheUse,
+	Short:         docs.CacheShort,
+	Long:          docs.CacheLong,
+	Example:       docs.CacheExample,
 	SilenceErrors: true,
 }
+
 

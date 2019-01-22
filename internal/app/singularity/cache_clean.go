@@ -14,36 +14,31 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cleanCache"
 )
 
-var singularityCache bool
 
-func init() {
-	ClearCacheCmd.Flags().SetInterspersed(false)
-	ClearCacheCmd.Flags().BoolVarP(&singularityCache, "cache", "c", false, "clear clcche")
-//	ClearCacheCmd.Flags().SetAnnotation("singularityCache", "envfoofoo", []string{"CACHE"})
-}
-
-// ClearCacheCmd is `singularity clear cache' and will clear your local singularity cache
-var ClearCacheCmd = &cobra.Command {
+// ClearCacheCmd is `singularity cache clean' and will clear your local singularity cache
+var CacheCleanCmd = &cobra.Command {
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := clearCacheCmd(singularityCache); err != nil {
+		if err := cacheCleanCmd(); err != nil {
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.ClearCacheUse,
-	Short:   docs.ClearCacheShort,
-	Long:    docs.ClearCacheLong,
-	Example: docs.ClearCacheExample,
+	Use:     docs.CacheCleanUse,
+	Short:   docs.CacheCleanShort,
+	Long:    docs.CacheCleanLong,
+	Example: docs.CacheCleanExample,
 }
 
-func clearCacheCmd(singularityCache bool) error {
+
+//func cacheCleanCmd(cacheClean bool) error {
+func cacheCleanCmd() error {
 	err := cleanCache.CleanSingularityCache()
 	if err != nil {
 	    sylog.Fatalf("%v", err)
 	    os.Exit(255)
 	}
-	return nil
+	return err
 }
 

@@ -157,32 +157,46 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.sif /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Clear
+	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	ClearUse   string = `clear <subcommand>`
-	ClearShort string = `Clear your local singularity files (usally cache)`
-	ClearLong  string = `
+	CacheUse   string = `cache <subcommand>`
+	CacheShort string = `Manage your local singularity cache`
+	CacheLong  string = `
   blab... blab...`
-	ClearExample string = `
+	CacheExample string = `
   All group commands have their own help output:
 
-  $ singularity help clear
-  $ singularity clear --help`
+  $ singularity cache
+  $ singularity cache --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Clear Cache
+	// Cache clean
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	ClearCacheUse   string = `cache`
-	ClearCacheShort string = `Clear your local singularity cache`
-	ClearCacheLong  string = `
+	CacheCleanUse   string = `clean`
+	CacheCleanShort string = `Clean your local singularity cache`
+	CacheCleanLong  string = `
   blab... blab...`
-	ClearCacheExample string = `
+	CacheCleanExample string = `
   All group commands have their own help output:
 
-  $ singularity help clean cache
-  $ singularity clear cache --help`
+  $ singularity help cache clean
+  $ singularity cache clean --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Cache List
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	CacheListUse   string = `list`
+	CacheListShort string = `List your local singularity cache`
+	CacheListLong  string = `
+  blab... blab...`
+	CacheListExample string = `
+  All group commands have their own help output:
+
+  $ singularity help cache list
+  $ singularity cache list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys
