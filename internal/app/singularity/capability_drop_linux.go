@@ -3,8 +3,6 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
-
 package cli
 
 import (
@@ -33,7 +31,7 @@ func init() {
 
 // CapabilityDropCmd singularity capability drop
 var CapabilityDropCmd = &cobra.Command{
-	Args:                  cobra.MinimumNArgs(1),
+	Args: cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		manageCap(args[0], capDrop)

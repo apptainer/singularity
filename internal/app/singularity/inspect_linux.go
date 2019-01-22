@@ -3,8 +3,6 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build linux
-
 package cli
 
 import (
@@ -67,7 +65,7 @@ func init() {
 // InspectCmd represents the build command
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 
 	Use:     docs.InspectUse,
 	Short:   docs.InspectShort,
