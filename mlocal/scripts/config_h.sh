@@ -147,3 +147,4 @@ config_add_footer ()
 	echo >> $confh
 	echo "#endif /* __CONFIG_H_ */" >> $confh
 }
+

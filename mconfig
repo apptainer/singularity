@@ -88,8 +88,8 @@ usage_args () {
 	echo "     -h   this help"
 	echo
 	echo "  Singularity options:"
-    echo "     --without-suid    do not install SUID binary (linux only)"
-    echo "     --without-network do not compile/install network plugins (linux only)"
+	echo "     --without-suid    do not install SUID binary (linux only)"
+	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo
 	echo "  Path modification options:"
 	echo "     --prefix         install project in \`prefix'"
@@ -565,8 +565,8 @@ echo >> $makeit_makefile_base
 
 # disable those options for non unix system
 if [ "$host" != "unix" ]; then
-    with_network=0
-    with_suid=0
+	with_network=0
+	with_suid=0
 fi
 
 ########################
@@ -813,14 +813,14 @@ echo "      ---"
 echo "    - config profile: $profile"
 echo "      ---"
 if [ "$with_suid" = 0 ]; then
-    echo "    - SUID install: no"
+	echo "    - SUID install: no"
 else
-    echo "    - SUID install: yes"
+	echo "    - SUID install: yes"
 fi
 if [ "$with_network" = 0 ]; then
-    echo "    - Network plugins: no"
+	echo "    - Network plugins: no"
 else
-    echo "    - Network plugins: yes"
+	echo "    - Network plugins: yes"
 fi
 echo "      ---"
 if [ "$verbose" = 1 ]; then
