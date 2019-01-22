@@ -31,7 +31,8 @@ export HELLOTHISIS
 echo "RUNNING FOO"
 
 %runscript
-    echo "RUNSCRIPT"
+    echo "Running command: $*"
+    exec "$@"
 
 %post
 echo "POST"
