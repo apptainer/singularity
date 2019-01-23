@@ -39,18 +39,13 @@ func find_size(size int64) string {
 	return "ERROR: failed to detect file size."
 }
 
-func ListSingularityCache() error {
-	sylog.Debugf("Starting list...")
-
+func listLibraryCache() {
+	// loop thrught library cache
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
 		sylog.Fatalf("Failed while opening cache folder: %v", err)
 		os.Exit(255)
 	}
-
-	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
-
-	// loop thrught library cache
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
 		if err != nil {
@@ -66,7 +61,10 @@ func ListSingularityCache() error {
 			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "Library")
 		}
 	}
+	return
+}
 
+func listOciCache() {
 	// loop thrught oci-tmp cache
 	blobs, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
@@ -87,6 +85,24 @@ func ListSingularityCache() error {
 			}
 			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "Oci Tmp")
 		}
+	}
+	return
+}
+
+func ListSingularityCache(libraryList, ociList bool) error {
+	sylog.Debugf("Starting list...")
+
+	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
+
+	if libraryList == true {
+		listLibraryCache()
+	}
+	if ociList == true {
+		listOciCache()
+	}
+	if libraryList != true && ociList != true {
+		listLibraryCache()
+		listOciCache()
 	}
 
 	return nil
