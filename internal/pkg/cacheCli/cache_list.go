@@ -24,13 +24,6 @@ func join(strs ...string) string {
     return sb.String()
 }
 
-var err error
-
-func visit(path string, f os.FileInfo, err error) error {
-	fmt.Printf("Visited: %s\n", path)
-	return nil
-}
-
 func find_size(size int64) string {
 	var size_f float64
 	if size <= 10000 {
@@ -82,22 +75,13 @@ func ListSingularityCache() error {
 		sylog.Fatalf("%v", err)
 		os.Exit(255)
 	}
-
 	for _, f := range blobs {
-
-//		fmt.Println("INFO:  ", join(cache.OciTemp(), "/blobs"))
-//		fmt.Println("BAR:  ", f.Name())
-
 		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
 		if err != nil {
 			sylog.Fatalf("%v", err)
 			os.Exit(255)
 		}
 		for _, b := range blob {
-
-//			fmt.Println("INFO1: ", join(cache.OciTemp(), "/", b.Name()))
-//			fmt.Println("INFO3: ", b.Name())
-
 			file, err := os.Stat(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
 			if err != nil {
 				fmt.Println(err)
@@ -105,7 +89,6 @@ func ListSingularityCache() error {
 			}
 			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), file.ModTime().Format("2006-01-02 15:04:05"), find_size(file.Size()), "Oci Tmp")
 		}
-
 	}
 
 	return nil
