@@ -44,7 +44,7 @@ var KeysCmd = &cobra.Command{
 		return errors.New("Invalid command")
 	},
 	DisableFlagsInUseLine: true,
-	Hidden: true,
+	Hidden:                true,
 
 	Use:           docs.KeysUse,
 	Short:         docs.KeyShort,
