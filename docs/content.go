@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -157,25 +157,10 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.sif /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysUse   string = `keys [keys options...] <subcommand>`
-	KeysShort string = `Manage OpenPGP key stores`
-	KeysLong  string = `
-  The 'keys' command  allows you to manage local OpenPGP key stores by creating
-  a new store and new keys pairs. You can also list available keys from the
-  default store. Finally, the keys command offers subcommands to communicate
-  with an HKP key server to fetch and upload public keys.`
-	KeysExample string = `
-  All group commands have their own help output:
-
-  $ singularity help keys newpair
-  $ singularity keys list --help`
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyUse   string = `key [keys options...] <subcommand>`
+	KeysUse   string = `keys [keys options...] <subcommand>`
 	KeyShort string = `Manage OpenPGP key stores`
 	KeyLong  string = `
   The 'keys' command  allows you to manage local OpenPGP key stores by creating
