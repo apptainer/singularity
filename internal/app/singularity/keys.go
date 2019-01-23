@@ -21,11 +21,17 @@ var (
 
 func init() {
 	SingularityCmd.AddCommand(KeysCmd)
+	SingularityCmd.AddCommand(KeyCmd)
 	KeysCmd.AddCommand(KeysNewPairCmd)
 	KeysCmd.AddCommand(KeysListCmd)
 	KeysCmd.AddCommand(KeysSearchCmd)
 	KeysCmd.AddCommand(KeysPullCmd)
 	KeysCmd.AddCommand(KeysPushCmd)
+	KeyCmd.AddCommand(KeysNewPairCmd)
+	KeyCmd.AddCommand(KeysListCmd)
+	KeyCmd.AddCommand(KeysSearchCmd)
+	KeyCmd.AddCommand(KeysPullCmd)
+	KeyCmd.AddCommand(KeysPushCmd)
 }
 
 // KeysCmd is the 'keys' command that allows management of key stores
@@ -34,10 +40,24 @@ var KeysCmd = &cobra.Command{
 		return errors.New("Invalid command")
 	},
 	DisableFlagsInUseLine: true,
+	Hidden: true,
 
 	Use:           docs.KeysUse,
-	Short:         docs.KeysShort,
-	Long:          docs.KeysLong,
-	Example:       docs.KeysExample,
+	Short:         docs.KeyShort,
+	Long:          docs.KeyLong,
+	Example:       docs.KeyExample,
+	SilenceErrors: true,
+}
+
+var KeyCmd = &cobra.Command{
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return errors.New("Invalid command")
+	},
+	DisableFlagsInUseLine: true,
+
+	Use:           docs.KeyUse,
+	Short:         docs.KeyShort,
+	Long:          docs.KeyLong,
+	Example:       docs.KeyExample,
 	SilenceErrors: true,
 }
