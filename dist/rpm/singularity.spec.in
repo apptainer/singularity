@@ -43,7 +43,6 @@ BuildRequires: go
 %else
 BuildRequires: golang
 %endif
-BuildRequires: wget
 BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make

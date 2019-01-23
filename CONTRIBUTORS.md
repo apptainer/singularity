@@ -38,6 +38,7 @@
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
+    - Joana Chavez <joana@sylabs.io>, <j.chavezlavalle@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Justin Riley <justin_riley@harvard.edu>
     - Krishna Muriki <kmuriki@lbl.gov>
