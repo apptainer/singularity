@@ -17,11 +17,11 @@ import (
 )
 
 func join(strs ...string) string {
-    var sb strings.Builder
-    for _, str := range strs {
-        sb.WriteString(str)
-    }
-    return sb.String()
+	var sb strings.Builder
+	for _, str := range strs {
+		sb.WriteString(str)
+	}
+	return sb.String()
 }
 
 func find_size(size int64) string {
@@ -40,54 +40,52 @@ func find_size(size int64) string {
 }
 
 func ListSingularityCache() error {
-
 	sylog.Debugf("Starting list...")
 
-
-	files, err := ioutil.ReadDir(cache.Library())
+	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		sylog.Fatalf("%v", err)
+		sylog.Fatalf("Failed while opening cache folder: %v", err)
 		os.Exit(255)
 	}
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
-	for _, f := range files {
+	// loop thrught library cache
+	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
 		if err != nil {
-			sylog.Fatalf("%v", err)
+			sylog.Fatalf("Failed while looking in cache: %v", err)
 			os.Exit(255)
 		}
 		for _, c := range cont {
-//			file, err := os.Stat(join(cache.Library(), "/", f.Name()))
-			file, err := os.Stat(join(cache.Library(), "/", f.Name(), "/", c.Name()))
+			fileInfo, err := os.Stat(join(cache.Library(), "/", f.Name(), "/", c.Name()))
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(100)
+				sylog.Fatalf("Unable to get stat: %v", err)
+				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), file.ModTime().Format("2006-01-02 15:04:05"), find_size(file.Size()), "Library")
+			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "Library")
 		}
 	}
 
-
+	// loop thrught oci-tmp cache
 	blobs, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		sylog.Fatalf("%v", err)
+		sylog.Fatalf("Failed while opening oci-tmp folder: %v", err)
 		os.Exit(255)
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
 		if err != nil {
-			sylog.Fatalf("%v", err)
+			sylog.Fatalf("Failed while looking in cache: %v", err)
 			os.Exit(255)
 		}
 		for _, b := range blob {
-			file, err := os.Stat(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
+			fileInfo, err := os.Stat(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
 			if err != nil {
-				fmt.Println(err)
-				os.Exit(100)
+				sylog.Fatalf("Unable to get stat: %v", err)
+				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), file.ModTime().Format("2006-01-02 15:04:05"), find_size(file.Size()), "Oci Tmp")
+			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "Oci Tmp")
 		}
 	}
 
