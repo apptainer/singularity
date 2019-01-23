@@ -17,31 +17,31 @@ import (
 )
 
 func init() {
-	KeysPushCmd.Flags().SetInterspersed(false)
+	KeyPushCmd.Flags().SetInterspersed(false)
 
-	KeysPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
-	KeysPushCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+	KeyPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "specify the key server URL")
+	KeyPushCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
-// KeysPushCmd is `singularity keys list' and lists local store OpenPGP keys
-var KeysPushCmd = &cobra.Command{
+// KeyPushCmd is `singularity key list' and lists local store OpenPGP keys
+var KeyPushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysPushCmd(args[0], keyServerURL); err != nil {
+		if err := doKeyPushCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.KeysPushUse,
-	Short:   docs.KeysPushShort,
-	Long:    docs.KeysPushLong,
-	Example: docs.KeysPushExample,
+	Use:     docs.KeyPushUse,
+	Short:   docs.KeyPushShort,
+	Long:    docs.KeyPushLong,
+	Example: docs.KeyPushExample,
 }
 
-func doKeysPushCmd(fingerprint string, url string) error {
+func doKeyPushCmd(fingerprint string, url string) error {
 	el, err := sypgp.LoadPubKeyring()
 	if err != nil {
 		return err

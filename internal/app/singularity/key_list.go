@@ -17,29 +17,29 @@ import (
 var secret bool
 
 func init() {
-	KeysListCmd.Flags().SetInterspersed(false)
+	KeyListCmd.Flags().SetInterspersed(false)
 
-	KeysListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
-	KeysListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
+	KeyListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
+	KeyListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
 }
 
-// KeysListCmd is `singularity keys list' and lists local store OpenPGP keys
-var KeysListCmd = &cobra.Command{
+// KeyListCmd is `singularity key list' and lists local store OpenPGP keys
+var KeyListCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysListCmd(secret); err != nil {
+		if err := doKeyListCmd(secret); err != nil {
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.KeysListUse,
-	Short:   docs.KeysListShort,
-	Long:    docs.KeysListLong,
-	Example: docs.KeysListExample,
+	Use:     docs.KeyListUse,
+	Short:   docs.KeyListShort,
+	Long:    docs.KeyListLong,
+	Example: docs.KeyListExample,
 }
 
-func doKeysListCmd(secret bool) error {
+func doKeyListCmd(secret bool) error {
 	if secret == false {
 		fmt.Printf("Public key listing (%s):\n\n", sypgp.PublicPath())
 		sypgp.PrintPubKeyring()

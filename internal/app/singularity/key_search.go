@@ -16,31 +16,31 @@ import (
 )
 
 func init() {
-	KeysSearchCmd.Flags().SetInterspersed(false)
+	KeySearchCmd.Flags().SetInterspersed(false)
 
-	KeysSearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
-	KeysSearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+	KeySearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "specify the key server URL")
+	KeySearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
-// KeysSearchCmd is `singularity keys search' and look for public keys from a key server
-var KeysSearchCmd = &cobra.Command{
+// KeySearchCmd is `singularity key search' and look for public keys from a key server
+var KeySearchCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysSearchCmd(args[0], keyServerURL); err != nil {
+		if err := doKeySearchCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.KeysSearchUse,
-	Short:   docs.KeysSearchShort,
-	Long:    docs.KeysSearchLong,
-	Example: docs.KeysSearchExample,
+	Use:     docs.KeySearchUse,
+	Short:   docs.KeySearchShort,
+	Long:    docs.KeySearchLong,
+	Example: docs.KeySearchExample,
 }
 
-func doKeysSearchCmd(search string, url string) error {
+func doKeySearchCmd(search string, url string) error {
 	// get keyring with matching search string
 	list, err := sypgp.SearchPubkey(search, url, authToken)
 	if err != nil {

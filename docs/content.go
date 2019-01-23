@@ -176,58 +176,58 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysNewPairUse   string = `newpair`
-	KeysNewPairShort string = `Create a new OpenPGP key pair`
-	KeysNewPairLong  string = `
+	KeyNewPairUse   string = `newpair`
+	KeyNewPairShort string = `Create a new OpenPGP key pair`
+	KeyNewPairLong  string = `
   The 'keys newpair' command allows you to create a new key or public/private
   keys to be stored in the default user local key store location (e.g., 
   $HOME/.singularity/sypgp).`
-	KeysNewPairExample string = `
+	KeyNewPairExample string = `
   $ singularity keys newpair`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysListUse   string = `list`
-	KeysListShort string = `List keys from the default key store`
-	KeysListLong  string = `
+	KeyListUse   string = `list`
+	KeyListShort string = `List keys from the default key store`
+	KeyListLong  string = `
   The 'keys list' command allows you to list public/private key pairs from the 
   default user local key store location (e.g., $HOME/.singularity/sypgp).`
-	KeysListExample string = `
+	KeyListExample string = `
   $ singularity keys list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysSearchUse   string = `search [search options...] <search_string>`
-	KeysSearchShort string = `Search for keys matching string argument`
-	KeysSearchLong  string = `
+	KeySearchUse   string = `search [search options...] <search_string>`
+	KeySearchShort string = `Search for keys matching string argument`
+	KeySearchLong  string = `
   The 'keys search' command allows you to connect to a key server and look for 
   public keys matching the string argument passed to the command line.`
-	KeysSearchExample string = `
+	KeySearchExample string = `
   $ singularity keys search sylabs.io`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPullUse   string = `pull [pull options...] <fingerprint>`
-	KeysPullShort string = `Fetch an OpenPGP public key from a key server`
-	KeysPullLong  string = `
+	KeyPullUse   string = `pull [pull options...] <fingerprint>`
+	KeyPullShort string = `Fetch an OpenPGP public key from a key server`
+	KeyPullLong  string = `
   The 'keys pull' command allows you to connect to a key server look for and 
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
-	KeysPullExample string = `
+	KeyPullExample string = `
   $ singularity keys pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keys push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPushUse   string = `push [push options...] <fingerprint>`
-	KeysPushShort string = `Upload an OpenPGP public key to a key server`
-	KeysPushLong  string = `
+	KeyPushUse   string = `push [push options...] <fingerprint>`
+	KeyPushShort string = `Upload an OpenPGP public key to a key server`
+	KeyPushLong  string = `
   The 'keys push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
-	KeysPushExample string = `
+	KeyPushExample string = `
   $ singularity keys push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

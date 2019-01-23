@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	defaultKeysServer = "https://keys.sylabs.io"
+	defaultKeyServer = "https://keys.sylabs.io"
 )
 
 var (
@@ -22,16 +22,20 @@ var (
 func init() {
 	SingularityCmd.AddCommand(KeysCmd)
 	SingularityCmd.AddCommand(KeyCmd)
-	KeysCmd.AddCommand(KeysNewPairCmd)
-	KeysCmd.AddCommand(KeysListCmd)
-	KeysCmd.AddCommand(KeysSearchCmd)
-	KeysCmd.AddCommand(KeysPullCmd)
-	KeysCmd.AddCommand(KeysPushCmd)
-	KeyCmd.AddCommand(KeysNewPairCmd)
-	KeyCmd.AddCommand(KeysListCmd)
-	KeyCmd.AddCommand(KeysSearchCmd)
-	KeyCmd.AddCommand(KeysPullCmd)
-	KeyCmd.AddCommand(KeysPushCmd)
+
+	// key commands
+	KeyCmd.AddCommand(KeyNewPairCmd)
+	KeyCmd.AddCommand(KeyListCmd)
+	KeyCmd.AddCommand(KeySearchCmd)
+	KeyCmd.AddCommand(KeyPullCmd)
+	KeyCmd.AddCommand(KeyPushCmd)
+
+	// keys commands
+	KeysCmd.AddCommand(KeyNewPairCmd)
+	KeysCmd.AddCommand(KeyListCmd)
+	KeysCmd.AddCommand(KeySearchCmd)
+	KeysCmd.AddCommand(KeyPullCmd)
+	KeysCmd.AddCommand(KeyPushCmd)
 }
 
 // KeysCmd is the 'keys' command that allows management of key stores

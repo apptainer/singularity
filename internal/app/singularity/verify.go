@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,7 +23,7 @@ var (
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
 
-	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "key server URL")
+	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "key server URL")
 	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be verified")
 	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be verified")
