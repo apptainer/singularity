@@ -175,7 +175,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	CacheCleanUse   string = `clean`
-	CacheCleanShort string = `Clean your local singularity cache`
+	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
   blab... blab...`
 	CacheCleanExample string = `
@@ -189,9 +189,9 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	CacheListUse   string = `list`
-	CacheListShort string = `List your local singularity cache`
+	CacheListShort string = `List your local Singularity Library cache`
 	CacheListLong  string = `
-  blab... blab...`
+  More content...`
 	CacheListExample string = `
   All group commands have their own help output:
 
