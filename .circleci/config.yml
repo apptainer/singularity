@@ -106,7 +106,8 @@ jobs:
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
             make -C ./builddir test
-
+          environment:
+            SINGULARITY_E2E: "true"
 workflows:
   version: 2
   test-compile:
