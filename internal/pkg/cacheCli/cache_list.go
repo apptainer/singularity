@@ -58,7 +58,7 @@ func listLibraryCache() {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "Library")
+			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "library")
 		}
 	}
 	return
@@ -83,7 +83,7 @@ func listOciCache() {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "Oci Tmp")
+			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "oci")
 		}
 	}
 	return

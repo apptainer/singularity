@@ -14,6 +14,24 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cacheCli"
 )
 
+var (
+	allClean bool
+	libraryClean bool
+	ociClean bool
+)
+
+func init() {
+	CacheCleanCmd.Flags().SetInterspersed(false)
+
+	CacheCleanCmd.Flags().BoolVarP(&allClean, "all", "a", false, "clean all cache (default)")
+	CacheCleanCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
+	CacheCleanCmd.Flags().BoolVarP(&libraryClean, "library", "l", false, "clean library cache")
+	CacheCleanCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
+	CacheCleanCmd.Flags().BoolVarP(&ociClean, "oci", "d", false, "clean oci/docker cache")
+	CacheCleanCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
+}
 
 // ClearCacheCmd is `singularity cache clean' and will clear your local singularity cache
 var CacheCleanCmd = &cobra.Command {
@@ -34,11 +52,12 @@ var CacheCleanCmd = &cobra.Command {
 
 //func cacheCleanCmd(cacheClean bool) error {
 func cacheCleanCmd() error {
-	err := cacheCli.CleanSingularityCache()
+	err := cacheCli.CleanSingularityCache(allClean, libraryClean, ociClean)
 	if err != nil {
-	    sylog.Fatalf("%v", err)
-	    os.Exit(255)
+		sylog.Fatalf("%v", err)
+		os.Exit(255)
 	}
+
 	return err
 }
 

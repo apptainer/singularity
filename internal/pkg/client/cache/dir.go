@@ -43,6 +43,7 @@ func Root() string {
 
 // Clean wipes all files in the cache directory
 func Clean() error {
+	sylog.Debugf("Removing: %v", Root())
 	err := os.RemoveAll(Root())
 	return err
 }

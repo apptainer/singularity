@@ -6,15 +6,43 @@
 package cacheCli
 
 import (
+	"os"
+
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
-func CleanSingularityCache() error {
+func CleanLibraryCache() error {
+	sylog.Debugf("Removing: %v", cache.Library())
 
-	err := cache.Clean()
-	if err != nil {
-		return err
+	err := os.RemoveAll(cache.Library())
+
+	return err
+}
+
+func CleanOciCache() error {
+	sylog.Debugf("Removing: %v", cache.OciTemp())
+
+	err := os.RemoveAll(cache.OciTemp())
+
+	return err
+}
+
+var err error
+
+func CleanSingularityCache(allClean, libraryClean, ociClean bool) error {
+
+	if allClean == true {
+		err = cache.Clean()
+	}
+	if libraryClean == true {
+		err = CleanLibraryCache()
+	}
+	if ociClean == true {
+		err = CleanOciCache()
+	}
+	if libraryClean != true && ociClean != true {
+		err = cache.Clean()
 	}
 
 	sylog.Debugf("DONE!")
