@@ -33,14 +33,14 @@ func buildFrom(t *testing.T) {
 	}{
 		{"BusyBox", "", "../examples/busybox/Singularity", false},
 		{"BusyBoxSandbox", "", "../examples/busybox/Singularity", true},
-		//{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
+		{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
 		{"DockerDefFile", "", "../examples/docker/Singularity", true},
 		{"SHubURI", "", "shub://GodloveD/busybox", true},
 		{"SHubDefFile", "", "../examples/shub/Singularity", true},
 		{"LibraryDefFile", "", "../examples/library/Singularity", true},
-		//{"Yum", "yum", "../examples/centos/Singularity", true},
-		//{"Zypper", "zypper", "../examples/opensuse/Singularity", true},
+		{"Yum", "yum", "../examples/centos/Singularity", true},
+		{"Zypper", "zypper", "../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
