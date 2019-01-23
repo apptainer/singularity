@@ -391,6 +391,14 @@
   revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
 
 [[projects]]
+  branch = "master"
+  digest = "1:235659fa63811a81b54b0ff11de18f054259bd91be1637d7cabe526795aee7e7"
+  name = "github.com/kelseyhightower/envconfig"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "dd1402a4d99de9ac2f396cd6fcb957bc2c695ec1"
+
+[[projects]]
   digest = "1:29d28429a93b076908a36420a7ecb2bf429d24c15a4b5e2c220ea00fc84b71af"
   name = "github.com/kr/pty"
   packages = ["."]
@@ -815,6 +823,7 @@
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
+    "github.com/kelseyhightower/envconfig",
     "github.com/kr/pty",
     "github.com/kubernetes-sigs/cri-o/pkg/seccomp",
     "github.com/magiconair/properties/assert",
