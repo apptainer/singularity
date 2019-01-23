@@ -5,7 +5,7 @@ that you are building/compiling.
 
 ## Install system dependencies
 You must first install development and libraries to your host.
-On Ubuntu or Debian:
+On Debian-based systems:
 
 ```
 $ sudo apt-get update && \
