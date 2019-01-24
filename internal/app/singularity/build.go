@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,12 +11,14 @@ import (
 	"os"
 	"strings"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (
@@ -186,6 +188,38 @@ func definitionFromSpec(spec string) (def types.Definition, err error) {
 			"bootstrap": "localimage",
 			"from":      spec,
 		},
+	}
+
+	return
+}
+
+func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
+	usernameFlag := cmd.Flags().Lookup("docker-username")
+	passwordFlag := cmd.Flags().Lookup("docker-password")
+
+	if dockerLogin {
+		if !usernameFlag.Changed {
+			dockerUsername, err = sypgp.AskQuestion("Enter Docker Username: ")
+			if err != nil {
+				return
+			}
+			usernameFlag.Value.Set(dockerUsername)
+			usernameFlag.Changed = true
+		}
+
+		dockerPassword, err = sypgp.AskQuestionNoEcho("Enter Docker Password: ")
+		if err != nil {
+			return
+		}
+		passwordFlag.Value.Set(dockerPassword)
+		passwordFlag.Changed = true
+	}
+
+	if usernameFlag.Changed && passwordFlag.Changed {
+		authConf = &ocitypes.DockerAuthConfig{
+			Username: dockerUsername,
+			Password: dockerPassword,
+		}
 	}
 
 	return

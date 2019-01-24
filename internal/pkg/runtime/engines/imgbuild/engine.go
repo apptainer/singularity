@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,18 +9,19 @@ import (
 	"fmt"
 	"syscall"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 // EngineOperations implements the engines.EngineOperations interface for
 // the image build process
 type EngineOperations struct {
-	CommonConfig *config.Common `json:"-"`
-	EngineConfig *EngineConfig  `json:"engineConfig"`
+	CommonConfig *config.Common               `json:"-"`
+	EngineConfig *imgbuildConfig.EngineConfig `json:"engineConfig"`
 }
 
 // InitConfig initializes engines config internals

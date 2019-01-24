@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,7 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -312,7 +312,7 @@ func (b *Build) runBuildEngine() error {
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
-	engineConfig := &imgbuild.EngineConfig{
+	engineConfig := &imgbuildConfig.EngineConfig{
 		Bundle:    *b.b,
 		OciConfig: ociConfig,
 	}
@@ -325,7 +325,7 @@ func (b *Build) runBuildEngine() error {
 	ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
 
 	config := &config.Common{
-		EngineName:   imgbuild.Name,
+		EngineName:   imgbuildConfig.Name,
 		ContainerID:  "image-build",
 		EngineConfig: engineConfig,
 	}

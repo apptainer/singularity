@@ -15,16 +15,8 @@ import (
 	"syscall"
 	"time"
 
-	ocitypes "github.com/containers/image/types"
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/build"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
-	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
-	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/pkg/build/types"
-	library "github.com/sylabs/singularity/pkg/client/library"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -38,92 +30,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
-
-func handleOCI(cmd *cobra.Command, u string) (string, error) {
-	authConf, err := makeDockerCredentials(cmd)
-	if err != nil {
-		sylog.Fatalf("While creating Docker credentials: %v", err)
-	}
-
-	sysCtx := &ocitypes.SystemContext{
-		OCIInsecureSkipTLSVerify:    noHTTPS,
-		DockerInsecureSkipTLSVerify: noHTTPS,
-		DockerAuthConfig:            authConf,
-	}
-
-	sum, err := ociclient.ImageSHA(u, sysCtx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
-	}
-
-	name := uri.GetName(u)
-	imgabs := cache.OciTempImage(sum, name)
-
-	if exists, err := cache.OciTempExists(sum, name); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
-	} else if !exists {
-		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS, DockerAuthConfig: authConf})
-		if err != nil {
-			return "", fmt.Errorf("unable to create new build: %v", err)
-		}
-
-		if err := b.Full(); err != nil {
-			return "", fmt.Errorf("unable to build: %v", err)
-		}
-
-		sylog.Infof("Image cached as SIF at %s", imgabs)
-	}
-
-	return imgabs, nil
-}
-
-func handleLibrary(u string) (string, error) {
-	libraryImage, err := library.GetImage("https://library.sylabs.io", authToken, u)
-	if err != nil {
-		return "", err
-	}
-
-	imageName := uri.GetName(u)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading library image")
-		libexec.PullLibraryImage(imagePath, u, "https://library.sylabs.io", false, authToken)
-	}
-
-	return imagePath, nil
-}
-
-func handleShub(u string) (string, error) {
-	imageName := uri.GetName(u)
-	imagePath := cache.ShubImage("hash", imageName)
-
-	libexec.PullShubImage(imagePath, u, true, noHTTPS)
-
-	return imagePath, nil
-}
-
-func handleNet(u string) (string, error) {
-	refParts := strings.Split(u, "/")
-	imageName := refParts[len(refParts)-1]
-	imagePath := cache.NetImage("hash", imageName)
-
-	exists, err := cache.NetImageExists("hash", imageName)
-	if err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	}
-	if !exists {
-		sylog.Infof("Downloading network image")
-		libexec.PullNetImage(imagePath, u, true)
-	} else {
-		sylog.Infof("Use image from cache")
-	}
-
-	return imagePath, nil
-}
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {

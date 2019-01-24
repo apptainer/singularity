@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,10 +6,8 @@
 package singularity
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/pkg/network"
 )
 
 // Name is the name of the runtime.
@@ -92,15 +90,6 @@ type JSONConfig struct {
 	TargetUID     int           `json:"targetUID,omitempty"`
 	TargetGID     []int         `json:"targetGID,omitempty"`
 	LibrariesPath []string      `json:"librariesPath,omitempty"`
-}
-
-// EngineConfig stores both the JSONConfig and the FileConfig
-type EngineConfig struct {
-	JSON      *JSONConfig      `json:"jsonConfig"`
-	OciConfig *oci.Config      `json:"ociConfig"`
-	File      *FileConfig      `json:"-"`
-	Network   *network.Setup   `json:"-"`
-	Cgroups   *cgroups.Manager `json:"-"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig

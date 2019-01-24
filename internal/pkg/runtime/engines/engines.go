@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
 	ociserver "github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/server"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
@@ -111,14 +112,14 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 func Init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
 	registeredEngineOperations[singularityConfig.Name] = &singularity.EngineOperations{EngineConfig: singularityConfig.NewConfig()}
-	registeredEngineOperations[imgbuild.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}
+	registeredEngineOperations[imgbuildConfig.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuildConfig.EngineConfig{}}
 	registeredEngineOperations[oci.Name] = &oci.EngineOperations{EngineConfig: &oci.EngineConfig{}}
 
 	// register singularity rpc methods
 	methods := new(server.Methods)
 	registeredEngineRPCMethods = make(map[string]interface{})
 	registeredEngineRPCMethods[singularityConfig.Name] = methods
-	registeredEngineRPCMethods[imgbuild.Name] = methods
+	registeredEngineRPCMethods[imgbuildConfig.Name] = methods
 
 	ocimethods := new(ociserver.Methods)
 	ocimethods.Methods = methods
