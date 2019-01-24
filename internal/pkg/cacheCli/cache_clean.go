@@ -56,6 +56,7 @@ func cleanLibraryCache(cacheName string) bool {
 			if c.Name() == cacheName {
 				sylog.Debugf("Removing: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
 				err = os.RemoveAll(join(cache.Library(), "/", f.Name(), "/", c.Name()))
+				sylog.Verbosef("Removed: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
 				if err != nil {
 					sylog.Fatalf("Failed while removing cache file: %v: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()), err)
 					os.Exit(255)
@@ -85,6 +86,7 @@ func cleanOciCache(cacheName string) bool {
 			if b.Name() == cacheName {
 				sylog.Debugf("Removing: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
 				err = os.RemoveAll(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
+				sylog.Verbosef("Removed: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
 				if err != nil {
 					sylog.Fatalf("Failed while removing: %v: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()), err)
 					os.Exit(255)
