@@ -76,7 +76,7 @@ func Enabled() bool {
 }
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process
-func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
+func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	supportCondition := true
 
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
@@ -104,10 +104,17 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 	if !ok {
 		return fmt.Errorf("invalid action '%s' specified", config.DefaultAction)
 	}
+	if scmpAction == lseccomp.ActErrno {
+		scmpAction = scmpAction.SetReturnCode(1)
+	}
 
 	filter, err := lseccomp.NewFilter(scmpAction)
 	if err != nil {
 		return fmt.Errorf("error creating new filter: %s", err)
+	}
+
+	if err := filter.SetNoNewPrivsBit(noNewPrivs); err != nil {
+		return fmt.Errorf("failed to set no new priv flag: %s", err)
 	}
 
 	for _, arch := range config.Architectures {
@@ -130,6 +137,9 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 		if !ok {
 			return fmt.Errorf("invalid action '%s' specified", syscall.Action)
 		}
+		if scmpAction == lseccomp.ActErrno {
+			scmpAction = scmpAction.SetReturnCode(1)
+		}
 
 		for _, sysName := range syscall.Names {
 			sysNr, err := lseccomp.GetSyscallFromName(sysName)
@@ -146,10 +156,8 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 				if err != nil {
 					return err
 				}
-				for _, cond := range conditions {
-					if err := filter.AddRuleConditional(sysNr, scmpAction, cond); err != nil {
-						return fmt.Errorf("failed adding rule condition for syscall %s: %s", sysName, err)
-					}
+				if err := filter.AddRuleConditional(sysNr, scmpAction, conditions); err != nil {
+					return fmt.Errorf("failed adding rule condition for syscall %s: %s", sysName, err)
 				}
 			}
 		}
@@ -162,10 +170,9 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp) error {
 	return nil
 }
 
-func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([][]lseccomp.ScmpCondition, error) {
+func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([]lseccomp.ScmpCondition, error) {
 	var maxIndex uint = 6
-	conditions := make([][]lseccomp.ScmpCondition, maxIndex)
-	finalConditions := [][]lseccomp.ScmpCondition{}
+	conditions := make([]lseccomp.ScmpCondition, 0)
 
 	for _, arg := range args {
 		if arg.Index >= maxIndex {
@@ -179,28 +186,10 @@ func addSyscallRuleContitions(args []specs.LinuxSeccompArg) ([][]lseccomp.ScmpCo
 		if err != nil {
 			return conditions, fmt.Errorf("error making syscall rule condition: %s", err)
 		}
-		conditions[arg.Index] = append(conditions[arg.Index], cond)
+		conditions = append(conditions, cond)
 	}
 
-	for _, cond := range conditions {
-		if len(cond) > 1 {
-			for _, c := range cond {
-				finalConditions = append(finalConditions, []lseccomp.ScmpCondition{c})
-			}
-		}
-	}
-
-	finalConditions = append(finalConditions, []lseccomp.ScmpCondition{})
-	i := len(finalConditions) - 1
-
-	for _, cond := range conditions {
-		if len(cond) == 1 {
-			for _, c := range cond {
-				finalConditions[i] = append(finalConditions[i], c)
-			}
-		}
-	}
-	return finalConditions, nil
+	return conditions, nil
 }
 
 // LoadProfileFromFile loads seccomp rules from json file and fill in
@@ -222,6 +211,9 @@ func LoadProfileFromFile(profile string, generator *generate.Generator) error {
 	}
 	if generator.Config.Linux.Seccomp == nil {
 		generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
+	}
+	if generator.Config.Process == nil {
+		generator.Config.Process = &specs.Process{}
 	}
 	if generator.Config.Process.Capabilities == nil {
 		generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}

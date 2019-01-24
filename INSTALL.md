@@ -8,8 +8,8 @@ For full instructions on installation, check out our
 
 ## Install system dependencies
 
-You must first install development tools and libraries to your host.
-Assuming Ubuntu:
+You must first install development and libraries to your host.
+On Debian-based systems:
 
 ```
 $ sudo apt-get update && \
@@ -21,14 +21,15 @@ On CentOS/RHEL:
 
 ```
 $ sudo yum groupinstall -y 'Development Tools' && \
-  sudo yum install -y openssl-devel libuuid-devel libseccomp-devel squashfs-tools
+  sudo yum install -y epel-release && \
+  sudo yum install -y golang openssl-devel libuuid-devel libseccomp-devel
 ```
 
 On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
 
 ## Install Golang
 
-This is one of several ways to [install and configure golang](https://golang.org/doc/install).
+This is one of several ways to [install and configure golang](https://golang.org/doc/install).  The CentOS/RHEL instructions above already installed it so this method is not needed there.
 
 First, download the Golang archive to `/tmp/`, then extract the archive to `/usr/local`: (or use other instructions on Go
 [installation page](https://golang.org/doc/install))
@@ -68,8 +69,7 @@ $ git checkout v3.0.2
 
 ## Compiling Singularity
 
-Now you are ready to build Singularity. Dependencies will be automatically
-downloaded. You can build Singularity using the following commands:
+You can build Singularity using the following commands:
 
 ```
 $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
@@ -82,12 +82,22 @@ $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
 And thats it! Now you can check your Singularity version by running:
 
 ```
+<<<<<<< HEAD
 $ singularity version
 ```
 
 <br>
 
 Alternatively, to build an RPM on CentOS/RHEL use the following commands:
+=======
+$ sudo yum install -y rpm-build
+$ cd $GOPATH/src/github.com/sylabs/singularity
+$ ./mconfig
+$ make -C builddir rpm
+```
+
+To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
+>>>>>>> upstream/master
 
 ```
 $ sudo yum install -y rpm-build wget

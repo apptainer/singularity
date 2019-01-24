@@ -23,6 +23,9 @@ func init() {
 		"containall",
 		"containlibs",
 		"cleanenv",
+		"docker-login",
+		"docker-username",
+		"docker-password",
 		"dns",
 		"drop-caps",
 		"fakeroot",
@@ -59,7 +62,7 @@ var InstanceStartCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := []string{"/.singularity.d/actions/start"}
+		a := append([]string{"/.singularity.d/actions/start"}, args[2:]...)
 		execStarter(cmd, args[0], a, args[1])
 	},
 

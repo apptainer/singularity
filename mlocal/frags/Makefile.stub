@@ -156,6 +156,7 @@ $(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ) $(libruntime)
 # singularity
 $(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
 	@echo " GO" $@
+	@echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
 	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
@@ -279,7 +280,7 @@ test:
 	@# avoid travis 10 minutes of silence timeout
 	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
 	trap "kill $$! || true" 0; \
-	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m -tags "$(GO_TAGS)" -cover -race ./...
+	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: testall

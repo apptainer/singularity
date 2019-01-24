@@ -81,10 +81,8 @@ func getLoopDevice(arguments *args.LoopArgs) error {
 	reply = 1
 	loopdev := new(loop.Device)
 	loopdev.MaxLoopDevices = 256
+	loopdev.Info = &arguments.Info
+	loopdev.Shared = arguments.Shared
 
-	if err := loopdev.AttachFromPath(arguments.Image, arguments.Mode, &reply); err != nil {
-		return err
-	}
-
-	return loopdev.SetStatus(&arguments.Info)
+	return loopdev.AttachFromPath(arguments.Image, arguments.Mode, &reply)
 }
