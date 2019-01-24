@@ -7,6 +7,7 @@ package cacheCli
 
 import (
 	"os"
+	"io/ioutil"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -28,9 +29,99 @@ func CleanOciCache() error {
 	return err
 }
 
+func cleanLibraryCache(cacheName string) error {
+	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
+	if err != nil {
+		sylog.Fatalf("Failed while opening cache folder: %v", err)
+		os.Exit(255)
+	}
+	for _, f := range libraryCacheFiles {
+		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
+		if err != nil {
+			sylog.Fatalf("Failed while looking in cache: %v", err)
+			os.Exit(255)
+		}
+		for _, c := range cont {
+			if c.Name() == cacheName {
+				sylog.Debugf("Removing: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
+				err = os.RemoveAll(join(cache.Library(), "/", f.Name(), "/", c.Name()))
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return err
+}
+
+func cleanOciCache(cacheName string) error {
+	blobs, err := ioutil.ReadDir(cache.OciTemp())
+	if err != nil {
+		sylog.Fatalf("Failed while opening oci-tmp folder: %v", err)
+		os.Exit(255)
+	}
+	for _, f := range blobs {
+		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
+		if err != nil {
+			sylog.Fatalf("Failed while looking in cache: %v", err)
+			os.Exit(255)
+		}
+		for _, b := range blob {
+			if b.Name() == cacheName {
+				sylog.Debugf("Removing: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
+				err = os.RemoveAll(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return err
+}
+
+func CleanCacheName(cacheName string, libraryCache, ociCache bool) error {
+	if libraryCache == true {
+		err = cleanLibraryCache(cacheName)
+		if err != nil {
+			sylog.Fatalf("%v", err)
+			return err
+		}
+	}
+	if ociCache == true {
+		err = cleanOciCache(cacheName)
+		if err != nil {
+			sylog.Fatalf("%v", err)
+			return err
+		}
+	}
+	if libraryCache != true && ociCache != true {
+		err = cleanLibraryCache(cacheName)
+		if err != nil {
+			sylog.Fatalf("%v", err)
+		}
+		err = cleanOciCache(cacheName)
+		if err != nil {
+			sylog.Fatalf("%v", err)
+			return err
+		}
+	}
+
+	return err
+}
+
 var err error
 
-func CleanSingularityCache(allClean, libraryClean, ociClean bool) error {
+func CleanSingularityCache(allClean, libraryClean, ociClean bool, cacheName string) error {
+
+	if len(cacheName) >= 1 && allClean != true {
+		err = CleanCacheName(cacheName, libraryClean, ociClean)
+		return err
+	} else {
+		sylog.Fatalf("Cant clean specific name and do other functions")
+		os.Exit(2)
+	}
 
 	if allClean == true {
 		err = cache.Clean()
