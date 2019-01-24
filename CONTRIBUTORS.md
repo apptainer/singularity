@@ -38,6 +38,7 @@
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
+    - Joana Chavez <joana@sylabs.io>, <j.chavezlavalle@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Justin Riley <justin_riley@harvard.edu>
     - Krishna Muriki <kmuriki@lbl.gov>
@@ -57,6 +58,7 @@
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Richard Neuboeck <hawk@tbi.univie.ac.at>
+    - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Vanessa Sochat <vsochat@stanford.edu>

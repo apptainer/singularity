@@ -16,6 +16,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
+	ociserver "github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/server"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 )
@@ -35,34 +37,40 @@ type EngineOperations interface {
 	// the EngineOperations implementation.
 	InitConfig(*config.Common)
 	// PrepareConfig is called in stage1 to validate and prepare container configuration.
-	PrepareConfig(net.Conn, *starter.Config) error
-	// CreateContainer is called in smaster and does mount operations, etc... to
+	PrepareConfig(*starter.Config) error
+	// CreateContainer is called in master and does mount operations, etc... to
 	// set up the container environment for the payload proc.
 	CreateContainer(int, net.Conn) error
 	// StartProcess is called in stage2 after waiting on RPC server exit. It is
 	// responsible for exec'ing the payload proc in the container.
 	StartProcess(net.Conn) error
-	// PostStartProcess is called in smaster after successful execution of container process.
+	// PostStartProcess is called in master after successful execution of container process.
 	PostStartProcess(int) error
-	// MonitorContainer is called in smaster once the container proc has been spawned. It
+	// MonitorContainer is called in master once the container proc has been spawned. It
 	// will typically block until the container proc exists.
 	MonitorContainer(int, chan os.Signal) (syscall.WaitStatus, error)
-	// CleanupContainer is called in smaster after the MontiorContainer returns. It is responsible
+	// CleanupContainer is called in master after the MontiorContainer returns. It is responsible
 	// for ensuring that the container has been properly torn down.
-	CleanupContainer() error
+	CleanupContainer(error, syscall.WaitStatus) error
 }
 
-// NewEngine returns the engine described by the JSON []byte configuration.
-func NewEngine(b []byte) (*Engine, error) {
+// GetName returns the engine name set in JSON []byte configuration.
+func GetName(b []byte) string {
 	engineName := struct {
 		EngineName string `json:"engineName"`
 	}{}
 	if err := json.Unmarshal(b, &engineName); err != nil {
-		return nil, fmt.Errorf("engineName field is not found: %v", err)
+		return ""
 	}
+	return engineName.EngineName
+}
+
+// NewEngine returns the engine described by the JSON []byte configuration.
+func NewEngine(b []byte) (*Engine, error) {
+	engineName := GetName(b)
 
 	// ensure engine with given name is registered
-	eOp, ok := registeredEngineOperations[engineName.EngineName]
+	eOp, ok := registeredEngineOperations[engineName]
 	if !ok {
 		return nil, fmt.Errorf("engine %q is not found", engineName)
 	}
@@ -103,6 +111,7 @@ func Init() {
 	registeredEngineOperations = make(map[string]EngineOperations)
 	registeredEngineOperations[singularity.Name] = &singularity.EngineOperations{EngineConfig: singularity.NewConfig()}
 	registeredEngineOperations[imgbuild.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuild.EngineConfig{}}
+	registeredEngineOperations[oci.Name] = &oci.EngineOperations{EngineConfig: &oci.EngineConfig{}}
 
 	// register singularity rpc methods
 	methods := new(server.Methods)
@@ -110,4 +119,7 @@ func Init() {
 	registeredEngineRPCMethods[singularity.Name] = methods
 	registeredEngineRPCMethods[imgbuild.Name] = methods
 
+	ocimethods := new(ociserver.Methods)
+	ocimethods.Methods = methods
+	registeredEngineRPCMethods[oci.Name] = ocimethods
 }

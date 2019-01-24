@@ -28,10 +28,10 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
+	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -339,7 +339,10 @@ else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-eval ${SINGULARITY_OCI_RUN}
+# Evaluate shell expressions first and set arguments accordingly,
+# then execute final command as first container process
+eval "set ${SINGULARITY_OCI_RUN}"
+exec "$@"
 
 `)
 	if err != nil {

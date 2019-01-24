@@ -176,8 +176,8 @@ func testSingularityExec(t *testing.T) {
 		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/apps/foo"}, opts{}, 0, true},
 		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/apps/bar"}, opts{}, 0, true},
 		// blocked by issue [scif-apps] Files created at install step fall into an unexpected path #2404
-		//{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-f", "/scif/apps/foo/filefoo.exec"}, opts{}, 0, true},
-		//{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-f", "/scif/apps/bar/filebar.exec"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-f", "/scif/apps/foo/filefoo.exec"}, opts{}, 0, true},
+		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-f", "/scif/apps/bar/filebar.exec"}, opts{}, 0, true},
 		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/data/foo/output"}, opts{}, 0, true},
 		{"ScifTestfolderOrg", appsImage, "exec", []string{"test", "-d", "/scif/data/foo/input"}, opts{}, 0, true},
 		{"WorkdirContain", imagePath, "exec", []string{"test", "-f", tmpfile.Name()}, opts{workdir: "testdata", contain: true}, 0, false},

@@ -1,0 +1,21 @@
+{
+	"defaultAction": "SCMP_ACT_ALLOW",
+	"syscalls": [
+		{
+			"names": [
+				"fchmod"
+            ],
+			"action": "SCMP_ACT_ERRNO",
+			"args": [
+                {
+					"index": 1,
+					"value": 511,
+					"op": "SCMP_CMP_EQ"
+				}
+            ],
+			"comment": "",
+			"includes": {},
+			"excludes": {}
+        }
+    ]
+}

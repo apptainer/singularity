@@ -239,6 +239,8 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	masterConn.Close()
 
+	var lastSignal syscall.Signal
+
 	for {
 		select {
 		case s := <-signals:
@@ -252,9 +254,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					}
 				}
 			default:
+				lastSignal = s.(syscall.Signal)
 				if isInstance {
-					if s != syscall.SIGCONT {
-						syscall.Kill(-1, s.(syscall.Signal))
+					if err := syscall.Kill(-1, lastSignal); err == syscall.ESRCH {
+						sylog.Debugf("No child process, exiting ...")
+						os.Exit(128 + int(lastSignal))
 					}
 				} else {
 					// kill ourself with SIGKILL whatever signal was received
@@ -270,6 +274,14 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					os.Exit(status.ExitStatus())
 				}
 				return fmt.Errorf("command exit with error: %s", err)
+			} else if e, ok := err.(*os.SyscallError); ok {
+				// handle possible race with Wait4 call above because command
+				// execution can return "no such processes" error which means
+				// container process execution has been interrupted by signal
+				if e.Err.(syscall.Errno) == syscall.ECHILD {
+					sylog.Debugf("No child processes, exiting ...")
+					os.Exit(128 + int(lastSignal))
+				}
 			}
 			if !isInstance {
 				os.Exit(0)
@@ -278,7 +290,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 }
 
-// PostStartProcess will execute code in smaster context after execution of container
+// PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
@@ -336,6 +348,9 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 				if err = file.Update(); err != nil {
 					return
 				}
+				if err = file.MountNamespaces(); err != nil {
+					return
+				}
 				if err = syscall.Setresgid(gid, gid, 0); err != nil {
 					err = fmt.Errorf("failed to escalate gid privileges")
 					return
@@ -349,7 +364,10 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		return file.Update()
+		if err := file.Update(); err != nil {
+			return err
+		}
+		return file.MountNamespaces()
 	}
 	return nil
 }
