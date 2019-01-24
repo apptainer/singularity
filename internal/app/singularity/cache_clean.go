@@ -25,7 +25,7 @@ var (
 func init() {
 	CacheCleanCmd.Flags().SetInterspersed(false)
 
-	CacheCleanCmd.Flags().BoolVarP(&allClean, "all", "a", false, "clean all cache (default)")
+	CacheCleanCmd.Flags().BoolVarP(&allClean, "all", "a", false, "clean all cache (not compatible with any other flags)")
 	CacheCleanCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
 //	CacheCleanCmd.Flags().BoolVarP(&libraryClean, "library", "l", false, "only clean cache from library")
