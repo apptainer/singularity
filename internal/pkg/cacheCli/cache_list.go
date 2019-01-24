@@ -66,12 +66,12 @@ func listLibraryCache() {
 
 func listOciCache() {
 	// loop thrught oci-tmp cache
-	blobs, err := ioutil.ReadDir(cache.OciTemp())
+	oci_tmp, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
 		sylog.Fatalf("Failed while opening oci-tmp folder: %v", err)
 		os.Exit(255)
 	}
-	for _, f := range blobs {
+	for _, f := range oci_tmp {
 		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
 		if err != nil {
 			sylog.Fatalf("Failed while looking in cache: %v", err)
@@ -89,9 +89,39 @@ func listOciCache() {
 	return
 }
 
-func ListSingularityCache(typeNameList string) error {
+func listBlobCache() {
+	// loop thrught ociBlob cache
+	_, err = os.Stat(join(cache.OciBlob(), "/blobs"))
+	if os.IsNotExist(err) {
+		return
+	}
+	blobs, err := ioutil.ReadDir(join(cache.OciBlob(), "/blobs/"))
+	if err != nil {
+		sylog.Fatalf("Failed while opening oci folder: %v", err)
+		os.Exit(255)
+	}
+	for _, f := range blobs {
+		blob, err := ioutil.ReadDir(join(cache.OciBlob(), "/blobs/", f.Name()))
+		if err != nil {
+			sylog.Fatalf("Failed while looking in cache: %v", err)
+			os.Exit(255)
+		}
+		for _, b := range blob {
+			fileInfo, err := os.Stat(join(cache.OciBlob(), "/blobs/", f.Name(), "/", b.Name()))
+			if err != nil {
+				sylog.Fatalf("Unable to get stat: %v", err)
+				os.Exit(255)
+			}
+			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "blob")
+		}
+	}
+	return
+}
+
+func ListSingularityCache(typeNameList string, allList bool) error {
 	libraryList := false
 	ociList := false
+	blobList := false
 
 	if len(typeNameList) >= 1 {
 		for _, nameType := range strings.Split(typeNameList, ",") {
@@ -99,6 +129,8 @@ func ListSingularityCache(typeNameList string) error {
 				libraryList = true
 			} else if nameType == "oci" {
 				ociList = true
+			} else if nameType == "blob" || nameType == "blob" {
+				blobList = true
 			} else {
 				sylog.Fatalf("Not a valid type: %v", typeNameList)
 				os.Exit(2)
@@ -111,13 +143,22 @@ func ListSingularityCache(typeNameList string) error {
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
+	if allList == true {
+		listLibraryCache()
+		listOciCache()
+		listBlobCache()
+		return nil
+	}
 	if libraryList == true {
 		listLibraryCache()
 	}
 	if ociList == true {
 		listOciCache()
 	}
-	if libraryList != true && ociList != true {
+	if blobList == true {
+		listBlobCache()
+	}
+	if libraryList != true && ociList != true && blobList != true {
 		listLibraryCache()
 		listOciCache()
 	}

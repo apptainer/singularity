@@ -30,6 +30,15 @@ func CleanOciCache() error {
 	return err
 }
 
+func CleanBlobCache() error {
+	sylog.Debugf("Removing: %v", cache.OciBlob())
+
+	err := os.RemoveAll(cache.OciBlob())
+
+	return err
+	
+}
+
 func cleanLibraryCache(cacheName string) bool {
 	foundMatch := false
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
@@ -108,6 +117,7 @@ var err error
 func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error {
 	libraryClean := false
 	ociClean := false
+	blobClean := false
 
 	if len(typeNameClean) >= 1 {
 		for _, nameType := range strings.Split(typeNameClean, ",") {
@@ -115,6 +125,8 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 				libraryClean = true
 			} else if nameType == "oci" {
 				ociClean = true
+			} else if nameType == "blob" || nameType == "blobs" {
+				blobClean = true
 			} else {
 				sylog.Fatalf("Not a valid type: %v", typeNameClean)
 				os.Exit(2)
@@ -133,7 +145,7 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 		}
 		return nil
 	} else if len(cacheName) >= 1 && allClean == true || len(typeNameClean) >= 1 && allClean == true {
-		sylog.Fatalf("Thughts flags are not compatible with each other")
+		sylog.Fatalf("These flags are not compatible with each other")
 		os.Exit(2)
 	}
 
@@ -146,7 +158,10 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	if ociClean == true {
 		err = CleanOciCache()
 	}
-	if libraryClean != true && ociClean != true {
+	if blobClean == true {
+		err = CleanBlobCache()
+	}
+	if libraryClean != true && ociClean != true && blobClean != true {
 		err = cache.Clean()
 	}
 

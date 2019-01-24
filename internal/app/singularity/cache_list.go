@@ -16,6 +16,7 @@ import (
 
 var (
 	typeNameList string
+	allList bool
 //	libraryList bool
 //	ociList bool
 )
@@ -25,6 +26,9 @@ func init() {
 
 	CacheListCmd.Flags().StringVarP(&typeNameList, "type", "t", "", "list cache type, choose between: library, and oci")
 	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
+
+	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
+	CacheListCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
 //	CacheListCmd.Flags().BoolVarP(&libraryList, "library", "l", false, "show only library cache")
 //	CacheListCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
@@ -59,7 +63,7 @@ func cacheListCmd() error {
 //	fmt.Println("INFO: ", libraryList)
 //	fmt.Println("INFO: ", ociList)
 
-	err := cacheCli.ListSingularityCache(typeNameList)
+	err := cacheCli.ListSingularityCache(typeNameList, allList)
 	if err != nil {
 	    sylog.Fatalf("%v", err)
 	    os.Exit(255)

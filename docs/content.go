@@ -180,7 +180,7 @@ Enterprise Performance Computing (EPC)`
   All group commands have their own help output:
 
   $ singularity help cache clean --name cache_name.sif
-  $ singularity help cache clean --library
+  $ singularity help cache clean --type=library,oci
   $ singularity cache clean --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -194,7 +194,7 @@ Enterprise Performance Computing (EPC)`
   All group commands have their own help output:
 
   $ singularity help cache list
-  $ singularity help cache list --library
+  $ singularity help cache list --type=library,oci
   $ singularity cache list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
