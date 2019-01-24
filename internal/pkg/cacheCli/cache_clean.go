@@ -8,6 +8,7 @@ package cacheCli
 import (
 	"os"
 	"io/ioutil"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -115,9 +116,25 @@ var err error
 
 //func CleanSingularityCache(allClean, libraryClean, ociClean bool, cacheName string) error {
 func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error {
-
 	libraryClean := false
 	ociClean := false
+
+	if len(typeNameClean) >= 1 {
+		for _, nameType := range strings.Split(typeNameClean, ",") {
+			if nameType == "library" {
+				libraryClean = true
+			} else if nameType == "oci" {
+				ociClean = true
+			} else {
+				sylog.Fatalf("Not a valid type: %v", typeNameClean)
+				os.Exit(2)
+			}
+
+		}
+	} else {
+		libraryClean = true
+		ociClean = true
+	}
 
 	if len(typeNameClean) >= 1 {
 		if typeNameClean == "library" {

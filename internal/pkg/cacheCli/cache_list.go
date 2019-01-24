@@ -94,13 +94,16 @@ func ListSingularityCache(typeNameList string) error {
 	ociList := false
 
 	if len(typeNameList) >= 1 {
-			if typeNameList == "library" {
-			libraryList = true
-		} else if typeNameList == "oci" {
-			ociList = true
-		} else {
-			sylog.Fatalf("Not a valid type: %v", typeNameList)
-			os.Exit(2)
+		for _, nameType := range strings.Split(typeNameList, ",") {
+			if nameType == "library" {
+				libraryList = true
+			} else if nameType == "oci" {
+				ociList = true
+			} else {
+				sylog.Fatalf("Not a valid type: %v", typeNameList)
+				os.Exit(2)
+			}
+
 		}
 	} else {
 		libraryList = true
