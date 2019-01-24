@@ -103,7 +103,6 @@ func ListSingularityCache(typeNameList string) error {
 				sylog.Fatalf("Not a valid type: %v", typeNameList)
 				os.Exit(2)
 			}
-
 		}
 	} else {
 		libraryList = true

@@ -129,22 +129,10 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 				sylog.Fatalf("Not a valid type: %v", typeNameClean)
 				os.Exit(2)
 			}
-
 		}
 	} else {
 		libraryClean = true
 		ociClean = true
-	}
-
-	if len(typeNameClean) >= 1 {
-		if typeNameClean == "library" {
-			libraryClean = true
-		} else if typeNameClean == "oci" {
-			ociClean = true
-		} else {
-			sylog.Fatalf("Not a valit type: %v", typeNameClean)
-			os.Exit(2)
-		}
 	}
 
 	if len(cacheName) >= 1 && allClean != true {
