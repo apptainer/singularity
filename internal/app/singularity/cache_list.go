@@ -15,18 +15,23 @@ import (
 )
 
 var (
-	libraryList bool
-	ociList bool
+	typeNameList string
+//	libraryList bool
+//	ociList bool
 )
 
 func init() {
 	CacheListCmd.Flags().SetInterspersed(false)
 
-	CacheListCmd.Flags().BoolVarP(&libraryList, "library", "l", false, "show only library cache")
-	CacheListCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+	CacheListCmd.Flags().StringVarP(&typeNameList, "type", "t", "", "list cache type, choose between: library, and oci")
+	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
-	CacheListCmd.Flags().BoolVarP(&ociList, "oci", "d", false, "show only oci/docker cache")
-	CacheListCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
+//	CacheListCmd.Flags().BoolVarP(&libraryList, "library", "l", false, "show only library cache")
+//	CacheListCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+//
+//	CacheListCmd.Flags().BoolVarP(&ociList, "oci", "d", false, "show only oci/docker cache")
+//	CacheListCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
+
 }
 
 // ClearListCmd is `singularity cache list' and will list your local singularity cache
@@ -54,13 +59,11 @@ func cacheListCmd() error {
 //	fmt.Println("INFO: ", libraryList)
 //	fmt.Println("INFO: ", ociList)
 
-	err := cacheCli.ListSingularityCache(libraryList, ociList)
+	err := cacheCli.ListSingularityCache(typeNameList)
 	if err != nil {
 	    sylog.Fatalf("%v", err)
 	    os.Exit(255)
 	}
 	return err
 }
-
-
 

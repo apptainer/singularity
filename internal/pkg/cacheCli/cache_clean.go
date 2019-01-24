@@ -113,14 +113,26 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) error {
 
 var err error
 
-func CleanSingularityCache(allClean, libraryClean, ociClean bool, cacheName string) error {
+//func CleanSingularityCache(allClean, libraryClean, ociClean bool, cacheName string) error {
+func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error {
+
+	libraryClean := false
+	ociClean := false
+
+	if len(typeNameClean) >= 1 {
+		if typeNameClean == "library" {
+			libraryClean = true
+		} else if typeNameClean == "oci" {
+			ociClean = true
+		} else {
+			sylog.Fatalf("Not a valit type: %v", typeNameClean)
+			os.Exit(2)
+		}
+	}
 
 	if len(cacheName) >= 1 && allClean != true {
 		err = CleanCacheName(cacheName, libraryClean, ociClean)
 		return err
-	} else {
-		sylog.Fatalf("Cant clean specific name and do other functions")
-		os.Exit(2)
 	}
 
 	if allClean == true {

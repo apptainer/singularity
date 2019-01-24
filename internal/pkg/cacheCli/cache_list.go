@@ -89,8 +89,23 @@ func listOciCache() {
 	return
 }
 
-func ListSingularityCache(libraryList, ociList bool) error {
-	sylog.Debugf("Starting list...")
+func ListSingularityCache(typeNameList string) error {
+	libraryList := false
+	ociList := false
+
+	if len(typeNameList) >= 1 {
+			if typeNameList == "library" {
+			libraryList = true
+		} else if typeNameList == "oci" {
+			ociList = true
+		} else {
+			sylog.Fatalf("Not a valid type: %v", typeNameList)
+			os.Exit(2)
+		}
+	} else {
+		libraryList = true
+		ociList = true
+	}
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 

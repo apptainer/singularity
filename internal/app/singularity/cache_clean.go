@@ -16,8 +16,9 @@ import (
 
 var (
 	allClean bool
-	libraryClean bool
-	ociClean bool
+	typeNameClean string
+//	libraryClean bool
+//	ociClean bool
 	cacheName string
 )
 
@@ -27,11 +28,14 @@ func init() {
 	CacheCleanCmd.Flags().BoolVarP(&allClean, "all", "a", false, "clean all cache (default)")
 	CacheCleanCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
-	CacheCleanCmd.Flags().BoolVarP(&libraryClean, "library", "l", false, "only clean cache from library")
-	CacheCleanCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+//	CacheCleanCmd.Flags().BoolVarP(&libraryClean, "library", "l", false, "only clean cache from library")
+//	CacheCleanCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
-	CacheCleanCmd.Flags().BoolVarP(&ociClean, "oci", "d", false, "only clean cache from docker/oci")
-	CacheCleanCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
+//	CacheCleanCmd.Flags().BoolVarP(&ociClean, "oci", "d", false, "only clean cache from docker/oci")
+//	CacheCleanCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
+
+	CacheCleanCmd.Flags().StringVarP(&typeNameClean, "type", "t", "", "specify a cache type, choose between: library, and oci")
+	CacheCleanCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
 	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "n", "", "specify a container cache to clean (will clear all cache with the same name)")
 	CacheCleanCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
@@ -57,7 +61,8 @@ var CacheCleanCmd = &cobra.Command {
 
 func cacheCleanCmd() error {
 
-	err := cacheCli.CleanSingularityCache(allClean, libraryClean, ociClean, cacheName)
+//	err := cacheCli.CleanSingularityCache(allClean, libraryClean, ociClean, cacheName)
+	err := cacheCli.CleanSingularityCache(allClean, typeNameClean, cacheName)
 	if err != nil {
 		sylog.Fatalf("%v", err)
 		os.Exit(255)
