@@ -82,22 +82,21 @@ $ cd ${GOPATH}/src/github.com/sylabs/singularity && \
 And thats it! Now you can check your Singularity version by running:
 
 ```
-<<<<<<< HEAD
 $ singularity version
 ```
 
 <br>
 
 Alternatively, to build an RPM on CentOS/RHEL use the following commands:
-=======
-$ sudo yum install -y rpm-build
-$ cd $GOPATH/src/github.com/sylabs/singularity
-$ ./mconfig
-$ make -C builddir rpm
+
+```
+$ sudo yum install -y rpm-build && \
+ cd $GOPATH/src/github.com/sylabs/singularity && \
+  ./mconfig && \
+  make -C builddir rpm
 ```
 
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
->>>>>>> upstream/master
 
 ```
 $ sudo yum install -y rpm-build wget
