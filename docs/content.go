@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -159,7 +159,6 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 	CacheUse   string = `cache <subcommand>`
 	CacheShort string = `Manage your local singularity cache`
 	CacheLong  string = `
@@ -173,29 +172,29 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Cache clean
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-	CacheCleanUse   string = `clean`
+	CacheCleanUse   string = `clean [clean options...]`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
-  blab... blab...`
+  this will clean you local cache: "${HOME}/.singularity/cache".`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
-  $ singularity help cache clean
+  $ singularity help cache clean --name cache_name.sif
+  $ singularity help cache clean --library
   $ singularity cache clean --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Cache List
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-	CacheListUse   string = `list`
+	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity Library cache`
 	CacheListLong  string = `
-  More content...`
+  this command will list your local singularity cache, located in: "${HOME}/.singularity/cache"`
 	CacheListExample string = `
   All group commands have their own help output:
 
   $ singularity help cache list
+  $ singularity help cache list --library
   $ singularity cache list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
