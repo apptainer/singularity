@@ -1,0 +1,6 @@
+INSTALLFILES += $(starter_suid_INSTALL)
+
+$(starter_suid_INSTALL): $(starter)
+	@echo " INSTALL SUID" $@
+	$(V)install -d $(@D)
+	$(V)install -m 4755 $(starter) $(starter_suid_INSTALL)

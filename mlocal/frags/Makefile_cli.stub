@@ -1,0 +1,58 @@
+singularity := $(BUILDDIR)/singularity
+singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
+singularity_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/singularity/cli.go)
+
+bash_completion := $(BUILDDIR)/etc/bash_completion.d/singularity
+bash_completion_INSTALL := $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/singularity
+
+config := $(BUILDDIR)/singularity.conf
+config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
+# override this to empty to avoid merging old configuration settings
+old_config := $(config_INSTALL)
+
+go_OBJ := $(SOURCEDIR)/internal/pkg/buildcfg/config.go
+
+CLEANFILES += $(singularity) $(bash_completion) $(go_OBJ)
+INSTALLFILES += $(singularity_INSTALL) $(bash_completion_INSTALL) $(config_INSTALL)
+
+all: $(singularity) $(bash_completion) $(config)
+
+# config.go
+$(go_OBJ): $(BUILDDIR)/config.h
+	@echo " GEN" $@
+	$(V)rm -f $(go_OBJ)
+	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/internal/pkg/buildcfg && go generate
+
+# singularity
+$(singularity): $(go_OBJ) $(singularity_OBJ)
+	@echo " GO" $@
+	@echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
+	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
+
+$(singularity_INSTALL): $(singularity)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
+
+# bash_completion file
+$(bash_completion): $(singularity_OBJ)
+	@echo " GEN" $@
+	$(V)rm -f $@
+	$(V)mkdir -p $(@D)
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+
+# install singularity CLI bash_completion file
+$(bash_completion_INSTALL): $(bash_completion)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $< $@
+
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/config.go
+	@echo " GEN $@`if [ -n "$(old_config)" ]; then echo " from $(old_config)"; fi`"
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go \
+		$(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(old_config) $(config)
+
+$(config_INSTALL): $(config)
+	@echo " INSTALL" $@
+	$(V)install -d $(@D)
+	$(V)install -m 0644 $(config) $(config_INSTALL)
