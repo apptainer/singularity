@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -32,15 +33,23 @@ func CapabilityList(capFile string, c CapListConfig) error {
 		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
 	}
 
-	file, err := capabilities.Open(capFile, true)
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	file, err := os.OpenFile(capFile, os.O_RDONLY, 0644)
 	if err != nil {
-		return fmt.Errorf("while opening capability file: %s", err)
+		return fmt.Errorf("while opening capability config file: %s", err)
 	}
 	defer file.Close()
 
+	capConfig, err := capabilities.ReadFrom(file)
+	if err != nil {
+		return fmt.Errorf("while parsing capability config data: %s", err)
+	}
+
 	// if --all specified, take priority over listing specific user/group
 	if c.All {
-		users, groups := file.ListAllCaps()
+		users, groups := capConfig.ListAllCaps()
 
 		for user, cap := range users {
 			if len(cap) > 0 {
@@ -62,7 +71,7 @@ func CapabilityList(capFile string, c CapListConfig) error {
 			return fmt.Errorf("while listing user capabilities: user does not exist")
 		}
 
-		caps := file.ListUserCaps(c.User)
+		caps := capConfig.ListUserCaps(c.User)
 		if len(caps) > 0 {
 			fmt.Printf("%s [user]: %s\n", c.User, strings.Join(caps, ","))
 		}
@@ -73,7 +82,7 @@ func CapabilityList(capFile string, c CapListConfig) error {
 			return fmt.Errorf("while listing group capabilities: group does not exist")
 		}
 
-		caps := file.ListGroupCaps(c.Group)
+		caps := capConfig.ListGroupCaps(c.Group)
 		if len(caps) > 0 {
 			fmt.Printf("%s [group]: %s\n", c.Group, strings.Join(caps, ","))
 		}
@@ -92,18 +101,18 @@ type CapManageConfig struct {
 }
 
 type manageType struct {
-	UserFn  func(*capabilities.File, string, []string) error
-	GroupFn func(*capabilities.File, string, []string) error
+	UserFn  func(*capabilities.Config, string, []string) error
+	GroupFn func(*capabilities.Config, string, []string) error
 }
 
 // CapabilityAdd adds the specified capability set to the capability file
 func CapabilityAdd(capFile string, c CapManageConfig) error {
 	addType := manageType{
-		UserFn: func(f *capabilities.File, a string, b []string) error {
-			return f.AddUserCaps(a, b)
+		UserFn: func(c *capabilities.Config, a string, b []string) error {
+			return c.AddUserCaps(a, b)
 		},
-		GroupFn: func(f *capabilities.File, a string, b []string) error {
-			return f.AddGroupCaps(a, b)
+		GroupFn: func(c *capabilities.Config, a string, b []string) error {
+			return c.AddGroupCaps(a, b)
 		},
 	}
 
@@ -113,11 +122,11 @@ func CapabilityAdd(capFile string, c CapManageConfig) error {
 // CapabilityDrop drops the specified capability set from the capability file
 func CapabilityDrop(capFile string, c CapManageConfig) error {
 	dropType := manageType{
-		UserFn: func(f *capabilities.File, a string, b []string) error {
-			return f.DropUserCaps(a, b)
+		UserFn: func(c *capabilities.Config, a string, b []string) error {
+			return c.DropUserCaps(a, b)
 		},
-		GroupFn: func(f *capabilities.File, a string, b []string) error {
-			return f.DropGroupCaps(a, b)
+		GroupFn: func(c *capabilities.Config, a string, b []string) error {
+			return c.DropGroupCaps(a, b)
 		},
 	}
 
@@ -129,11 +138,19 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 		return fmt.Errorf("while managing capability file: only root user can manage capabilities")
 	}
 
-	file, err := capabilities.Open(capFile, false)
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	file, err := os.OpenFile(capFile, os.O_RDWR|os.O_CREATE, 0644)
 	if err != nil {
-		return fmt.Errorf("while opening capability file: %s", err)
+		return fmt.Errorf("while opening capability config file: %s", err)
 	}
 	defer file.Close()
+
+	capConfig, err := capabilities.ReadFrom(file)
+	if err != nil {
+		return fmt.Errorf("while parsing capability config data: %s", err)
+	}
 
 	caps, ign := capabilities.Split(c.Caps)
 	if len(ign) > 0 {
@@ -151,7 +168,7 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 			return fmt.Errorf("while setting capabilities for user %s: user does not exist", c.User)
 		}
 
-		if err := t.UserFn(file, c.User, caps); err != nil {
+		if err := t.UserFn(capConfig, c.User, caps); err != nil {
 			return fmt.Errorf("while setting capabilities for user %s: %s", c.User, err)
 		}
 	}
@@ -161,13 +178,25 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 			return fmt.Errorf("while setting capabilities for group %s: group does not exist", c.Group)
 		}
 
-		if err := t.GroupFn(file, c.Group, caps); err != nil {
+		if err := t.GroupFn(capConfig, c.Group, caps); err != nil {
 			return fmt.Errorf("while setting capabilities for group %s: %s", c.Group, err)
 		}
 	}
 
-	if err := file.Write(); err != nil {
-		return fmt.Errorf("while writing capability file to disk: %s", err)
+	if err := file.Truncate(0); err != nil {
+		return fmt.Errorf("while truncating capability config file: %s", err)
+	}
+
+	if n, err := file.Seek(0, os.SEEK_SET); err != nil || n != 0 {
+		return fmt.Errorf("failed to reset %s cursor: %s", file.Name(), err)
+	}
+
+	if _, err := capConfig.WriteTo(file); err != nil {
+		return fmt.Errorf("while writing capability data to file: %s", err)
+	}
+
+	if err := file.Sync(); err != nil {
+		return fmt.Errorf("failed to flush capability config file %s: %s", file.Name(), err)
 	}
 
 	return nil
