@@ -59,6 +59,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
 		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
+		OSChoice:                    "linux",
 	}
 
 	// add registry and namespace to reference if specified

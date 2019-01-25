@@ -100,16 +100,16 @@ actions_LIST := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(SOU
 actions_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
 
 CLEANFILES += $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion)
-INSTALLFILES := $(singularity_INSTALL) $(bash_completion_INSTALL)
-ALL := $(go_BIN) $(bash_completion)
+INSTALLFILES := $(singularity_INSTALL) $(bash_completion_INSTALL) $(config_INSTALL)
+ALL := $(go_BIN) $(bash_completion) $(config)
 
 ifeq ($(BUILD_RUNTIME),1)
 
 CLEANFILES += $(starter)
-INSTALLFILES += $(starter_INSTALL) $(sessiondir) $(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) \
+INSTALLFILES += $(starter_INSTALL) $(sessiondir) $(dist_bin_SCRIPTS_INSTALL) \
                 $(capability_JSON) $(syecl_config_INSTALL) $(actions_INSTALL) $(seccomp_profile_INSTALL) \
                 $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
-ALL += $(config) $(starter)
+ALL += $(starter)
 
 endif # build_runtime
 
