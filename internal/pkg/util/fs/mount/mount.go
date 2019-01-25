@@ -89,8 +89,6 @@ const (
 	KernelTag = "kernel"
 	// HomeTag defines tag for home directory mount point
 	HomeTag = "home"
-	// UserbindsTag defines tag for user bind mount points
-	UserbindsTag = "userbinds"
 	// TmpTag defines tag for temporary filesystem mount points (/tmp, /var/tmp)
 	TmpTag = "tmp"
 	// ScratchTag defines tag for scratch mount points
@@ -99,6 +97,8 @@ const (
 	CwdTag = "cwd"
 	// FilesTag defines tag for file mount points (passwd, group ...)
 	FilesTag = "files"
+	// UserbindsTag defines tag for user bind mount points
+	UserbindsTag = "userbinds"
 	// OtherTag defines tag for other mount points that can't be classified
 	OtherTag = "other"
 	// FinalTag defines tag for mount points to mount/remount at the end of mount process
@@ -118,11 +118,11 @@ var authorizedTags = map[AuthorizedTag]struct {
 	BindsTag:     {true, 6},
 	KernelTag:    {true, 7},
 	HomeTag:      {false, 8},
-	UserbindsTag: {true, 9},
-	TmpTag:       {true, 10},
-	ScratchTag:   {true, 11},
-	CwdTag:       {false, 12},
-	FilesTag:     {true, 13},
+	TmpTag:       {true, 9},
+	ScratchTag:   {true, 10},
+	CwdTag:       {false, 11},
+	FilesTag:     {true, 12},
+	UserbindsTag: {true, 13},
 	OtherTag:     {true, 14},
 	FinalTag:     {true, 15},
 }
