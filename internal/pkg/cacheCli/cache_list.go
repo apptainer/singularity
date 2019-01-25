@@ -89,8 +89,11 @@ func listOciCache() {
 	return
 }
 
-func listBlobCache() {
+// printList, true = print
+func listBlobCache(printList bool) {
 	// loop thrught ociBlob cache
+
+	count := 0
 	_, err = os.Stat(join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
 		return
@@ -112,8 +115,14 @@ func listBlobCache() {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "blob")
+			if printList == true {
+				fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "blob")
+			}
+			count++
 		}
+	}
+	if printList != true && count >= 1 {
+		fmt.Printf("\nThere are: %d blob file, use: -t=blob to list\n", count)
 	}
 	return
 }
@@ -122,6 +131,9 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	libraryList := false
 	ociList := false
 	blobList := false
+	listBlobSum := false
+
+	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
 	if len(typeNameList) >= 1 {
 		for _, nameType := range strings.Split(typeNameList, ",") {
@@ -139,14 +151,15 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	} else {
 		libraryList = true
 		ociList = true
+//		listBlobCache(false)
+//		blobList = true
+		listBlobSum = true
 	}
-
-	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
 	if allList == true {
 		listLibraryCache()
 		listOciCache()
-		listBlobCache()
+		listBlobCache(true)
 		return nil
 	}
 	if libraryList == true {
@@ -156,12 +169,16 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 		listOciCache()
 	}
 	if blobList == true {
-		listBlobCache()
+		listBlobCache(true)
 	}
-	if libraryList != true && ociList != true && blobList != true {
-		listLibraryCache()
-		listOciCache()
+	if listBlobSum == true {
+		listBlobCache(false)
 	}
+//	if libraryList != true && ociList != true && blobList != true {
+//		listLibraryCache()
+//		listOciCache()
+//		listBlobCache(true)
+//	}
 
 	return nil
 }
