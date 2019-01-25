@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+ * Copyright (c) 2017-2019, SyLabs, Inc. All rights reserved.
  *
  * Copyright (c) 2016-2017, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -27,7 +27,7 @@
 #include <stdarg.h>
 #include <libgen.h>
 
-#include "message.h"
+#include "include/message.h"
 
 int messagelevel = -99;
 

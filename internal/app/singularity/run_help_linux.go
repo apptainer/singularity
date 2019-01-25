@@ -1,9 +1,7 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
-
-// +build singularity_runtime
 
 package cli
 
@@ -19,7 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 )
@@ -58,7 +56,7 @@ var RunHelpCmd = &cobra.Command{
 		procname := "Singularity help"
 		Env := []string{sylog.GetEnvVar()}
 
-		engineConfig := singularity.NewConfig()
+		engineConfig := singularityConfig.NewConfig()
 		ociConfig := &oci.Config{}
 		generator := generate.Generator{Config: &ociConfig.Spec}
 		engineConfig.OciConfig = ociConfig
@@ -67,7 +65,7 @@ var RunHelpCmd = &cobra.Command{
 		engineConfig.SetImage(abspath)
 
 		cfg := &config.Common{
-			EngineName:   singularity.Name,
+			EngineName:   singularityConfig.Name,
 			ContainerID:  name,
 			EngineConfig: engineConfig,
 		}

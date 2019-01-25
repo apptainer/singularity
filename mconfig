@@ -1,4 +1,5 @@
 #!/bin/sh -
+# Copyright (c) 2019, Sylabs Inc. All rights reserved.
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
@@ -33,6 +34,9 @@ tgtstatic=0
 
 package_name=singularity
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
+
+with_network=1
+with_suid=1
 
 prefix=
 exec_prefix=
@@ -83,6 +87,10 @@ usage_args () {
 	echo "     -X   build project with target C++ \`compiler'"
 	echo "     -l   build project with source code language (-l C -l Go ...)"
 	echo "     -h   this help"
+	echo
+	echo "  Singularity options:"
+	echo "     --without-suid    do not install SUID binary (linux only)"
+	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo
 	echo "  Path modification options:"
 	echo "     --prefix         install project in \`prefix'"
@@ -329,6 +337,10 @@ while [ $# -ne 0 ]; do
    tgtstatic=1; shift;;
   -v)
    verbose=1; shift;;
+  --without-suid)
+   with_suid=0; shift;;
+  --without-network)
+   with_network=0; shift;;
   -V)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error: option requires an argument: $1"
@@ -552,6 +564,11 @@ else
 fi
 echo >> $makeit_makefile_base
 
+# disable those options for non unix system
+if [ "$host" != "unix" ]; then
+	with_network=0
+	with_suid=0
+fi
 
 ########################
 # build tools
@@ -608,7 +625,8 @@ OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
 BUILD_RUNTIME := $build_runtime
-
+WITH_NETWORK := $with_network
+WITH_SUID := $with_suid
 EOF
 
 
@@ -620,36 +638,31 @@ EOF
 found_modules=`(cat $makeit_mconflist | awk '{ printf("%s ", $0) }') 2>/dev/null || true`
 if [ "$found_modules" = "" ]; then
 	found_modules=`find . -name '*.mconf' -print`
-	if [ "$found_modules" = "" ]; then
-		echo "error: no build modules found !"
-		echo
-		echo "You need to at least create one \`<module_name>.mconf' "
-		echo "file describing either a program, a lib, or a set of"
-		echo "objects to build."
-		exit 2
-	fi
 fi
-echo " found build modules:"
-echo "CPPFLAGS :=" >> $makeit_makefile_base
-# NOTE: parsed module (*.mconf) files only substitute var tgt_arch for now
-for m in $found_modules; do
-	mod=`eval echo ${m##*./}`
-	modpath=`eval echo ${mod%/*}`
-	if [ ! -f $mod ]; then
-		echo "error: module file \`$mod' not found!"
-		exit 2
-	fi
-	if [ $mod = $modpath ]; then
-		modpath="."
-	fi
 
-	echo "   +-> $mod"
-	echo "$modpath `eval basename $mod`" >> $makeit_interdir/module.lst
-	mkdir -p $makeit_interdir/$modpath
-	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, tgt_arch); print }' > \
-		$makeit_interdir/${mod}.parsed
-done
-echo >> $makeit_makefile_base
+if [ "$found_modules" != "" ]; then
+	echo " found build modules:"
+	echo "CPPFLAGS :=" >> $makeit_makefile_base
+	# NOTE: parsed module (*.mconf) files only substitute var tgt_arch for now
+	for m in $found_modules; do
+		mod=`eval echo ${m##*./}`
+		modpath=`eval echo ${mod%/*}`
+		if [ ! -f $mod ]; then
+			echo "error: module file \`$mod' not found!"
+			exit 2
+		fi
+		if [ $mod = $modpath ]; then
+			modpath="."
+		fi
+
+		echo "   +-> $mod"
+		echo "$modpath `eval basename $mod`" >> $makeit_interdir/module.lst
+		mkdir -p $makeit_interdir/$modpath
+		cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, tgt_arch); print }' > \
+			$makeit_interdir/${mod}.parsed
+	done
+	echo >> $makeit_makefile_base
+fi
 
 # init LDFLAGS if static builds are supported
 if [ "$hststatic" = "1" -a "$tgtstatic" = "1" ]; then
@@ -799,6 +812,17 @@ echo "    - target wordsize: ${tgt_word}-bit"
 echo "    - target C compiler: $tgtcc"
 echo "      ---"
 echo "    - config profile: $profile"
+echo "      ---"
+if [ "$with_suid" = 0 ]; then
+	echo "    - SUID install: no"
+else
+	echo "    - SUID install: yes"
+fi
+if [ "$with_network" = 0 ]; then
+	echo "    - Network plugins: no"
+else
+	echo "    - Network plugins: yes"
+fi
 echo "      ---"
 if [ "$verbose" = 1 ]; then
 	echo "    - verbose: yes"

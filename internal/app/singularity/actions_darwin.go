@@ -3,14 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package sources
+package cli
 
 import (
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/spf13/cobra"
 )
 
-// SIFPacker holds the locations of where to pack from and to
-type SIFPacker struct {
-	srcfile string
-	b       *types.Bundle
+// TODO: Let's stick this in another file so that that CLI is just CLI
+func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 }

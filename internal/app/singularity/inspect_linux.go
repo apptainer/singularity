@@ -1,9 +1,7 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
-
-// +build singularity_runtime
 
 package cli
 
@@ -24,7 +22,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 )
 
 var (
@@ -201,7 +199,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 	procname := "Singularity inspect"
 	Env := []string{sylog.GetEnvVar()}
 
-	engineConfig := singularity.NewConfig()
+	engineConfig := singularityConfig.NewConfig()
 	ociConfig := &oci.Config{}
 	generator := generate.Generator{Config: &ociConfig.Spec}
 	engineConfig.OciConfig = ociConfig
@@ -210,7 +208,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 	engineConfig.SetImage(abspath)
 
 	cfg := &config.Common{
-		EngineName:   singularity.Name,
+		EngineName:   singularityConfig.Name,
 		ContainerID:  name,
 		EngineConfig: engineConfig,
 	}

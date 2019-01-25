@@ -3,16 +3,17 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build !linux
+
 package sources
 
 import (
+	"fmt"
+
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
-// Ext3Packer holds the locations of where to back from and to, aswell as image offset info
-type Ext3Packer struct {
-	srcfile string
-	b       *types.Bundle
-	info    *loop.Info64
+// Pack puts relevant objects in a Bundle!
+func (p *SIFPacker) Pack() (*types.Bundle, error) {
+	return nil, fmt.Errorf("unsupported on this platform")
 }

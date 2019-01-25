@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -59,6 +59,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
 		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
+		OSChoice:                    "linux",
 	}
 
 	// add registry and namespace to reference if specified
