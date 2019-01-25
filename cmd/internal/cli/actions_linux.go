@@ -165,6 +165,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
 	engineConfig.SetLibrariesPath(ContainLibsPath)
+	engineConfig.SetRunUntrusted(RunUntrusted)
 
 	if ShellPath != "" {
 		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)

@@ -8,6 +8,7 @@ package singularity
 import (
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 // Name is the name of the runtime.
@@ -48,6 +49,9 @@ type FileConfig struct {
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
+	TrustedContainerPaths   []string `directive:"trusted container path"`
+	ForbiddenBindsTrusted   []string `default:"/etc/passwd,/etc/group,/etc/sudoers,/etc/sudoers.d" directive:"forbidden bind trusted"`
+	BoundingCapsTrusted     []string `directive:"bounding capability trusted"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
@@ -90,6 +94,7 @@ type JSONConfig struct {
 	TargetUID     int           `json:"targetUID,omitempty"`
 	TargetGID     []int         `json:"targetGID,omitempty"`
 	LibrariesPath []string      `json:"librariesPath,omitempty"`
+	RunUntrusted  bool          `json:"runUntrusted,omitempty"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -473,4 +478,30 @@ func (e *EngineConfig) SetLibrariesPath(libraries []string) {
 // /.singularity.d/libs directory
 func (e *EngineConfig) GetLibrariesPath() []string {
 	return e.JSON.LibrariesPath
+}
+
+// SetRunUntrusted returns true if run-untrusted is set and false if not.
+func (e *EngineConfig) SetRunUntrusted(runUntrusted bool) {
+	e.JSON.RunUntrusted = runUntrusted
+}
+
+// GetRunUntrusted returns true if run-untrusted is set and false if not.
+func (e *EngineConfig) GetRunUntrusted() bool {
+	return e.JSON.RunUntrusted
+}
+
+// GetImageTrusted returns true if the image is in a trusted paths and the user did
+// not override and false otherwise.
+func (e *EngineConfig) GetImageTrusted() (bool, error) {
+	if !e.GetRunUntrusted() {
+		isTrusted, err := fs.IsUnder(
+			e.GetImage(),
+			e.File.TrustedContainerPaths,
+			true)
+		if err != nil {
+			return false, err
+		}
+		return isTrusted, nil
+	}
+	return false, nil
 }

@@ -35,7 +35,12 @@ func (e *EngineOperations) prepareUserCaps() error {
 	uid := os.Getuid()
 	commonCaps := make([]string, 0)
 
-	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
+	imageTrusted, err := e.EngineConfig.GetImageTrusted()
+	if err != nil {
+		return err
+	}
+	// if the image is trusted the non-root process shall be able to gain privileges
+	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(!imageTrusted)
 
 	file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0644)
 	if err != nil {
@@ -89,12 +94,25 @@ func (e *EngineOperations) prepareUserCaps() error {
 			}
 		}
 	}
+	boundingCaps := append(commonCaps[:0:0], commonCaps...)
+
+	if imageTrusted {
+		trustedCaps, _ := capabilities.Normalize(e.EngineConfig.File.BoundingCapsTrusted)
+		if len(trustedCaps) == 0 {
+			sylog.Warningf("Running trusted container without additional capabilities.")
+		}
+		for _, cap := range trustedCaps {
+			sylog.Debugf("Adding to bounding set for trusted containers: %s", cap)
+		}
+		boundingCaps = append(boundingCaps, trustedCaps...)
+		boundingCaps = capabilities.RemoveDuplicated(boundingCaps)
+	}
 
 	e.EngineConfig.OciConfig.Process.Capabilities.Permitted = commonCaps
 	e.EngineConfig.OciConfig.Process.Capabilities.Effective = commonCaps
 	e.EngineConfig.OciConfig.Process.Capabilities.Inheritable = commonCaps
-	e.EngineConfig.OciConfig.Process.Capabilities.Bounding = commonCaps
 	e.EngineConfig.OciConfig.Process.Capabilities.Ambient = commonCaps
+	e.EngineConfig.OciConfig.Process.Capabilities.Bounding = boundingCaps
 
 	return nil
 }

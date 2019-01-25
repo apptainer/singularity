@@ -57,6 +57,7 @@ type container struct {
 	checkDest        []string
 	suidFlag         uintptr
 	devSourcePath    string
+	trustedImage     bool
 }
 
 func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
@@ -71,6 +72,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		skippedMount:     make([]string, 0),
 		checkDest:        make([]string, 0),
 		suidFlag:         syscall.MS_NOSUID,
+		trustedImage:     false,
 	}
 
 	cwd := engine.EngineConfig.GetCwd()
@@ -98,6 +100,17 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if os.Geteuid() != 0 {
 		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
 	} else if engine.EngineConfig.GetAllowSUID() && !c.userNS {
+		c.suidFlag = 0
+	}
+
+	trustedImage, err := engine.EngineConfig.GetImageTrusted()
+	if err != nil {
+		return err
+	}
+	c.trustedImage = trustedImage
+
+	if c.trustedImage && !c.userNS {
+		sylog.Debugf("Image in trusted container path, allowing setuid.")
 		c.suidFlag = 0
 	}
 
@@ -1349,6 +1362,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		dst := src
 		if len(splitted) > 1 {
 			dst = splitted[1]
+		}
+		if c.trustedImage && os.Getuid() != 0 {
+			if forbidden, err := fs.IsUnder(dst, c.engine.EngineConfig.File.ForbiddenBindsTrusted, false); err != nil {
+				return fmt.Errorf("Error checking for forbidden bind path while binding %s -> %s: %s", src, dst, err)
+			} else if forbidden {
+				sylog.Warningf("Not mounting to %s: Forbidden in trusted containers, skipping!", dst)
+				continue
+			}
 		}
 		if len(splitted) > 2 {
 			if splitted[2] == "ro" {

@@ -68,6 +68,29 @@ func TestIsSuid(t *testing.T) {
 	}
 }
 
+func TestIsUnder(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	dummyFolders := []string{
+		"/foo",
+		"/bar",
+		"/deadbeef/foobar",
+	}
+
+	if result, err := IsUnder("/bar", dummyFolders, false); err != nil {
+		t.Errorf("isUnder returns error: %s", err)
+	} else if !result {
+		t.Errorf("isUnder returns false for correct case.")
+	}
+
+	if result, err := IsUnder("/var/run", []string{"/run"}, true); err != nil {
+		t.Errorf("isUnder returns error: %s", err)
+	} else if !result {
+		t.Errorf("isUnder returns false for correct case using symlinks.")
+	}
+}
+
 func TestRootDir(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)

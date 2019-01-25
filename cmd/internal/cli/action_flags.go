@@ -49,11 +49,12 @@ var (
 	PidNamespace  bool
 	IpcNamespace  bool
 
-	AllowSUID bool
-	KeepPrivs bool
-	NoPrivs   bool
-	AddCaps   string
-	DropCaps  string
+	AllowSUID    bool
+	KeepPrivs    bool
+	NoPrivs      bool
+	AddCaps      string
+	DropCaps     string
+	RunUntrusted bool
 )
 
 var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
@@ -267,4 +268,8 @@ func initPrivilegeVars() {
 	// --allow-setuid
 	actionFlags.BoolVar(&AllowSUID, "allow-setuid", false, "allow setuid binaries in container (root only)")
 	actionFlags.SetAnnotation("allow-setuid", "envkey", []string{"ALLOW_SETUID"})
+
+	// --run-untrusted
+	actionFlags.BoolVar(&RunUntrusted, "run-untrusted", false, "run container in untrusted mode even if it is in a trusted location (allows for more user binds)")
+	actionFlags.SetAnnotation("run-untrusted", "envkey", []string{"RUN_UNTRUSTED"})
 }

@@ -6,6 +6,7 @@
 package fs
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -64,6 +65,38 @@ func IsSuid(name string) bool {
 		return false
 	}
 	return (info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0)
+}
+
+// IsUnder checks if given path is among a set of paths
+func IsUnder(pathToCheck string, paths []string, evalSymlinks bool) (bool, error) {
+	var err error
+	found := false
+
+	pathToCheck = filepath.Clean(pathToCheck)
+
+	if evalSymlinks {
+		pathToCheck, err = filepath.EvalSymlinks(pathToCheck)
+		if err != nil {
+			return found, fmt.Errorf("failed to resolve path %s: %s", pathToCheck, err)
+		}
+	}
+
+	for _, path := range paths {
+		var match string
+		if evalSymlinks {
+			match, err = filepath.EvalSymlinks(filepath.Clean(path))
+			if err != nil {
+				return found, fmt.Errorf("failed to resolve path %s: %s", path, err)
+			}
+		} else {
+			match = path
+		}
+		if strings.HasPrefix(pathToCheck, match) {
+			found = true
+			break
+		}
+	}
+	return found, nil
 }
 
 // MkdirAll creates a directory and parents if it doesn't exist with

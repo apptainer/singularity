@@ -10,6 +10,10 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.1.0
+  - Added `trusted container path` setting in `singularity.conf` to allow setuid binaries in designated containers to be run by non-root users
+  - Added `forbidden bind trusted` setting in `singularity.conf` to disallow some paths from user binds in trusted container to prevent exploits
+  - Added `--run-untrusted` flag to run trusted container in untrusted mode (disallowing setuid binaries but removing bind restrictions)
+  - Added `bounding capability trusted` setting in `singularity.conf` to retain some bounding capabilities in trusted container execution.
 
 # v3.1.0 - [2019.02.08]
 
