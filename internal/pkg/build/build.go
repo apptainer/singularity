@@ -437,13 +437,13 @@ func insertEnvScript(b *types.Bundle) error {
 		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
 		_, err := os.Stat(envScriptPath)
 		if os.IsNotExist(err) {
-			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
+			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0755)
 			if err != nil {
 				return err
 			}
 		} else {
 			// append to script if it already exists
-			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0775)
+			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0755)
 			if err != nil {
 				return err
 			}
@@ -461,7 +461,7 @@ func insertEnvScript(b *types.Bundle) error {
 func insertRunScript(b *types.Bundle) error {
 	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript != "" {
 		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -472,7 +472,7 @@ func insertRunScript(b *types.Bundle) error {
 func insertStartScript(b *types.Bundle) error {
 	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript != "" {
 		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -483,7 +483,7 @@ func insertStartScript(b *types.Bundle) error {
 func insertTestScript(b *types.Bundle) error {
 	if b.RunSection("test") && b.Recipe.ImageData.Test != "" {
 		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -496,7 +496,7 @@ func insertHelpScript(b *types.Bundle) error {
 		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
 		if err != nil || b.Opts.Force {
 			sylog.Infof("Adding help info")
-			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
+			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0644)
 			if err != nil {
 				return err
 			}
@@ -583,7 +583,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 		return err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
 	return err
 }
 
