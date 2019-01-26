@@ -61,6 +61,7 @@
     - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
+    - Trevor Cooper <tcooper@sdsc.edu>
     - Vanessa Sochat <vsochat@stanford.edu>
     - Westley Kurtzer <westley@sylabs.io>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>

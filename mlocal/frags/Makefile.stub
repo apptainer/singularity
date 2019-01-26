@@ -289,7 +289,30 @@ testall: vendor-check check test
 .PHONY: rpm
 rpm: dist
 	@echo " BUILD RPM"
-	$(V)(cd $(SOURCEDIR) && rpmbuild $(RPMCLEAN) -ta $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz)
+	$(V)(cd $(SOURCEDIR) && rpmbuild $(RPMCLEAN) -ta \
+	  --define "_prefix $(PREFIX)" \
+	  --define "_exec-prefix $(EXECPREFIX)" \
+	  --define "_bindir $(BINDIR)" \
+	  --define "_sbindir $(SBINDIR)" \
+	  --define "_libexecdir $(LIBEXECDIR)" \
+	  --define "_datarootdir $(DATAROOTDIR)" \
+	  --define "_datadir $(DATADIR)" \
+	  --define "_sysconfdir $(SYSCONFDIR)" \
+	  --define "_sharedstatedir $(SHAREDSTATEDIR)" \
+	  --define "_localstatedir $(LOCALSTATEDIR)" \
+	  --define "_runstatedir $(RUNSTATEDIR)" \
+	  --define "_includedir $(INCLUDEDIR)" \
+	  --define "_defaultdocdir $(DATAROOTDIR)" \
+	  --define "_docdir $(DOCDIR)" \
+	  --define "_infodir $(INFODIR)" \
+	  --define "_htmldir $(HTMLDIR)" \
+	  --define "_dvidir $(DVIDIR)" \
+	  --define "_pdfdir $(PDFDIR)" \
+	  --define "_psdir $(PSDIR)" \
+	  --define "_libdir $(LIBDIR)" \
+	  --define "_localedir $(LOCALEDIR)" \
+	  --define "_mandir $(MANDIR)" \
+	  $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz)
 
 .PHONY: cscope
 cscope:
