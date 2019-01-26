@@ -129,6 +129,9 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	ociClean := false
 	blobClean := false
 
+	// split the string for each `,` then loop throught it and find what flags are there.
+	// then see whats true/false later. heres the benefit of doing it like this; if the user
+	// specified `library` twice, it will still only be printed once.
 	if len(typeNameClean) >= 1 {
 		for _, nameType := range strings.Split(typeNameClean, ",") {
 			if nameType == "library" {
@@ -145,6 +148,7 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	} else {
 		libraryClean = true
 		ociClean = true
+		blobClean = true
 	}
 
 	if len(cacheName) >= 1 && allClean != true {
@@ -170,9 +174,6 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	}
 	if blobClean == true {
 		err = CleanBlobCache()
-	}
-	if libraryClean != true && ociClean != true && blobClean != true {
-		err = cache.Clean()
 	}
 
 	return err
