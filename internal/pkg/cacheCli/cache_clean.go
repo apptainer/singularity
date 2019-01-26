@@ -6,12 +6,12 @@
 package cacheCli
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 func CleanLibraryCache() error {
@@ -36,7 +36,7 @@ func CleanBlobCache() error {
 	err := os.RemoveAll(cache.OciBlob())
 
 	return err
-	
+
 }
 
 func cleanLibraryCache(cacheName string) bool {
@@ -169,5 +169,3 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 
 	return err
 }
-
-

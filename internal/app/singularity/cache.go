@@ -29,5 +29,3 @@ var CacheCmd = &cobra.Command{
 	Example:       docs.CacheExample,
 	SilenceErrors: true,
 }
-
-

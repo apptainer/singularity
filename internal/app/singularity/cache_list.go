@@ -10,13 +10,14 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/cacheCli"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/cacheCli"	
 )
 
 var (
 	typeNameList string
-	allList bool
+	allList      bool
+
 //	libraryList bool
 //	ociList bool
 )
@@ -30,16 +31,16 @@ func init() {
 	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
 	CacheListCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
-//	CacheListCmd.Flags().BoolVarP(&libraryList, "library", "l", false, "show only library cache")
-//	CacheListCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
-//
-//	CacheListCmd.Flags().BoolVarP(&ociList, "oci", "d", false, "show only oci/docker cache")
-//	CacheListCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
+	//	CacheListCmd.Flags().BoolVarP(&libraryList, "library", "l", false, "show only library cache")
+	//	CacheListCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+	//
+	//	CacheListCmd.Flags().BoolVarP(&ociList, "oci", "d", false, "show only oci/docker cache")
+	//	CacheListCmd.Flags().SetAnnotation("oci", "envkey", []string{"OCI"})
 
 }
 
 // ClearListCmd is `singularity cache list' and will list your local singularity cache
-var CacheListCmd = &cobra.Command {
+var CacheListCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -56,18 +57,17 @@ var CacheListCmd = &cobra.Command {
 
 func cacheListCmd() error {
 
-//	sylog.Infof("HELLO WORLD FROM CACHE LIST!!!!")
+	//	sylog.Infof("HELLO WORLD FROM CACHE LIST!!!!")
 
-//	sylog.Infof("Library(): %v", cache.Library())
+	//	sylog.Infof("Library(): %v", cache.Library())
 
-//	fmt.Println("INFO: ", libraryList)
-//	fmt.Println("INFO: ", ociList)
+	//	fmt.Println("INFO: ", libraryList)
+	//	fmt.Println("INFO: ", ociList)
 
 	err := cacheCli.ListSingularityCache(typeNameList, allList)
 	if err != nil {
-	    sylog.Fatalf("%v", err)
-	    os.Exit(255)
+		sylog.Fatalf("%v", err)
+		os.Exit(255)
 	}
 	return err
 }
-

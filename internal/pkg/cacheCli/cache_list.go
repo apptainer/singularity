@@ -7,13 +7,12 @@ package cacheCli
 
 import (
 	"fmt"
-	"strings"
 	"io/ioutil"
 	"os"
+	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
-
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 func join(strs ...string) string {
@@ -151,8 +150,8 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	} else {
 		libraryList = true
 		ociList = true
-//		listBlobCache(false)
-//		blobList = true
+		//		listBlobCache(false)
+		//		blobList = true
 		listBlobSum = true
 	}
 
@@ -174,11 +173,11 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	if listBlobSum == true {
 		listBlobCache(false)
 	}
-//	if libraryList != true && ociList != true && blobList != true {
-//		listLibraryCache()
-//		listOciCache()
-//		listBlobCache(true)
-//	}
+	//	if libraryList != true && ociList != true && blobList != true {
+	//		listLibraryCache()
+	//		listOciCache()
+	//		listBlobCache(true)
+	//	}
 
 	return nil
 }
