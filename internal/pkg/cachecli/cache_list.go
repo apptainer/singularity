@@ -88,9 +88,13 @@ func listOciCache() {
 	return
 }
 
+var totalSize int64
+
 func listBlobCache(printList bool) {
 	// loop thrught ociBlob cache
 	count := 0
+//	totalSize := 0.0
+
 	_, err = os.Stat(join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
 		return
@@ -116,10 +120,11 @@ func listBlobCache(printList bool) {
 				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "blob")
 			}
 			count++
+			totalSize += fileInfo.Size()
 		}
 	}
 	if printList != true && count >= 1 {
-		fmt.Printf("\nThere are: %d blob file, use: -t=blob to list\n", count)
+		fmt.Printf("\nThere are: %d blob file(s) using: %v of space, use: -t=blob to list\n", count, findSize(totalSize))
 	}
 	return
 }
@@ -143,6 +148,8 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 				ociList = true
 			} else if nameType == "blob" || nameType == "blobs" {
 				blobList = true
+			} else if nameType == "all" {
+				allList = true
 			} else {
 				sylog.Fatalf("Not a valid type: %v", typeNameList)
 				os.Exit(2)

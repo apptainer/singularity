@@ -140,6 +140,8 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 				ociClean = true
 			} else if nameType == "blob" || nameType == "blobs" {
 				blobClean = true
+			} else if nameType == "all" {
+				allClean = true
 			} else {
 				sylog.Fatalf("Not a valid type: %v", typeNameClean)
 				os.Exit(2)
