@@ -88,12 +88,10 @@ func listOciCache() {
 	return
 }
 
-var totalSize int64
-
 func listBlobCache(printList bool) {
 	// loop thrught ociBlob cache
 	count := 0
-//	totalSize := 0.0
+	var totalSize int64
 
 	_, err = os.Stat(join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
