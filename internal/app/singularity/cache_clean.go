@@ -17,7 +17,7 @@ import (
 var (
 	allClean      bool
 	typeNameClean string
-	cacheName string
+	cacheName     string
 )
 
 func init() {
