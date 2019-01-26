@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cacheCli
+package cachecli
 
 import (
 	"fmt"
@@ -23,17 +23,17 @@ func join(strs ...string) string {
 	return sb.String()
 }
 
-func find_size(size int64) string {
-	var size_f float64
+func findSize(size int64) string {
+	var sizeF float64
 	if size <= 10000 {
-		size_f = float64(size) / 1000
-		return join(fmt.Sprintf("%.2f", size_f), " Kb")
+		sizeF = float64(size) / 1000
+		return join(fmt.Sprintf("%.2f", sizeF), " Kb")
 	} else if size <= 1000000000 {
-		size_f = float64(size) / 1000000
-		return join(fmt.Sprintf("%.2f", size_f), " Mb")
+		sizeF = float64(size) / 1000000
+		return join(fmt.Sprintf("%.2f", sizeF), " Mb")
 	} else if size >= 1000000000 {
-		size_f = float64(size) / 1000000000
-		return join(fmt.Sprintf("%.2f", size_f), " Gb")
+		sizeF = float64(size) / 1000000000
+		return join(fmt.Sprintf("%.2f", sizeF), " Gb")
 	}
 	return "ERROR: failed to detect file size."
 }
@@ -57,7 +57,7 @@ func listLibraryCache() {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "library")
+			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "library")
 		}
 	}
 	return
@@ -65,12 +65,12 @@ func listLibraryCache() {
 
 func listOciCache() {
 	// loop thrught oci-tmp cache
-	oci_tmp, err := ioutil.ReadDir(cache.OciTemp())
+	ociTmp, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
 		sylog.Fatalf("Failed while opening oci-tmp folder: %v", err)
 		os.Exit(255)
 	}
-	for _, f := range oci_tmp {
+	for _, f := range ociTmp {
 		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
 		if err != nil {
 			sylog.Fatalf("Failed while looking in cache: %v", err)
@@ -82,16 +82,14 @@ func listOciCache() {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "oci")
+			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "oci")
 		}
 	}
 	return
 }
 
-// printList, true = print
 func listBlobCache(printList bool) {
 	// loop thrught ociBlob cache
-
 	count := 0
 	_, err = os.Stat(join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
@@ -115,7 +113,7 @@ func listBlobCache(printList bool) {
 				os.Exit(255)
 			}
 			if printList == true {
-				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), find_size(fileInfo.Size()), "blob")
+				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "blob")
 			}
 			count++
 		}
@@ -126,6 +124,8 @@ func listBlobCache(printList bool) {
 	return
 }
 
+// ListSingularityCache : list local singularity cache, typeNameList : is a string of what cache
+// to list (seprate each type with a comma; like this: library,oci,blob) allList : force list all cache.
 func ListSingularityCache(typeNameList string, allList bool) error {
 	libraryList := false
 	ociList := false
@@ -150,8 +150,6 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	} else {
 		libraryList = true
 		ociList = true
-		//		listBlobCache(false)
-		//		blobList = true
 		listBlobSum = true
 	}
 
@@ -173,11 +171,5 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	if listBlobSum == true {
 		listBlobCache(false)
 	}
-	//	if libraryList != true && ociList != true && blobList != true {
-	//		listLibraryCache()
-	//		listOciCache()
-	//		listBlobCache(true)
-	//	}
-
 	return nil
 }

@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cacheCli
+package cachecli
 
 import (
 	"io/ioutil"
@@ -14,6 +14,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+// CleanLibraryCache : clean only library cache, will return a error if one occurs
 func CleanLibraryCache() error {
 	sylog.Debugf("Removing: %v", cache.Library())
 
@@ -22,6 +23,7 @@ func CleanLibraryCache() error {
 	return err
 }
 
+// CleanOciCache : clean only oci cache, will return a error if one occurs
 func CleanOciCache() error {
 	sylog.Debugf("Removing: %v", cache.OciTemp())
 
@@ -30,6 +32,7 @@ func CleanOciCache() error {
 	return err
 }
 
+// CleanBlobCache : clean only blob cache, will return a error if one occurs
 func CleanBlobCache() error {
 	sylog.Debugf("Removing: %v", cache.OciBlob())
 
@@ -99,6 +102,8 @@ func cleanOciCache(cacheName string) bool {
 	return foundMatch
 }
 
+// CleanCacheName : clean a cache with a specific name (cacheName). if libraryCache == true; search only the
+// library. if ociCache == true; search the oci cache. returns false if no match found.
 func CleanCacheName(cacheName string, libraryCache, ociCache bool) bool {
 	foundMatch := false
 	if libraryCache == true {
@@ -116,6 +121,9 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) bool {
 
 var err error
 
+// CleanSingularityCache : the main function that drives all these other functions, if allClean == true; clean
+// all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
+// cache with that name.
 func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error {
 	libraryClean := false
 	ociClean := false
