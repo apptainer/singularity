@@ -92,3 +92,12 @@ To build in a different folder and to set the install prefix to a different path
 ```
 $ ./mconfig -p /usr/local -b ./buildtree
 ```
+
+To set the install prefix to a different path and build an rpm on CentOS/RHEL use the following commands:
+
+```
+$ sudo yum install -y rpm-build
+$ cd $GOPATH/src/github.com/sylabs/singularity
+$ ./mconfig -p /usr/local
+$ make -C builddir rpm
+```
