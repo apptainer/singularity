@@ -8,6 +8,7 @@ package oci
 import (
 	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
@@ -16,6 +17,12 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+)
+
+// make master/slave as global variable to avoid GC close file descriptor
+var (
+	master *os.File
+	slave  *os.File
 )
 
 func (e *EngineOperations) checkCapabilities() error {
@@ -154,7 +161,9 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	if !e.EngineConfig.Exec {
 		if e.EngineConfig.OciConfig.Process.Terminal {
-			master, slave, err := pty.Open()
+			var err error
+
+			master, slave, err = pty.Open()
 			if err != nil {
 				return err
 			}
@@ -171,21 +180,16 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 			e.EngineConfig.MasterPts = int(master.Fd())
 			e.EngineConfig.SlavePts = int(slave.Fd())
 		} else {
-			r, w, err := os.Pipe()
-			if err != nil {
+			flags := syscall.O_CLOEXEC
+			if err := syscall.Pipe2(e.EngineConfig.OutputStreams[0:], flags); err != nil {
 				return err
 			}
-			e.EngineConfig.OutputStreams = [2]int{int(r.Fd()), int(w.Fd())}
-			r, w, err = os.Pipe()
-			if err != nil {
+			if err := syscall.Pipe2(e.EngineConfig.ErrorStreams[0:], flags); err != nil {
 				return err
 			}
-			e.EngineConfig.ErrorStreams = [2]int{int(r.Fd()), int(w.Fd())}
-			r, w, err = os.Pipe()
-			if err != nil {
+			if err := syscall.Pipe2(e.EngineConfig.InputStreams[0:], flags); err != nil {
 				return err
 			}
-			e.EngineConfig.InputStreams = [2]int{int(w.Fd()), int(r.Fd())}
 		}
 	} else {
 		starterConfig.SetJoinMount(true)
