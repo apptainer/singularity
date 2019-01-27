@@ -159,76 +159,78 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse   string = `key [keys options...] <subcommand>`
+	KeyUse   string = `key [key options...] <subcommand>`
+
+	// keys : for the hidden `keys` command
 	KeysUse  string = `keys [keys options...] <subcommand>`
 	KeyShort string = `Manage OpenPGP key stores`
 	KeyLong  string = `
-  The 'keys' command  allows you to manage local OpenPGP key stores by creating
-  a new store and new keys pairs. You can also list available keys from the
-  default store. Finally, the keys command offers subcommands to communicate
+  The 'key' command allows you to manage local OpenPGP key stores by creating
+  a new store and new key pairs. You can also list available keys from the
+  default store. Finally, the key command offers subcommands to communicate
   with an HKP key server to fetch and upload public keys.`
 	KeyExample string = `
   All group commands have their own help output:
 
-  $ singularity help keys newpair
-  $ singularity keys list --help`
+  $ singularity help key newpair
+  $ singularity key list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys newpair
+	// key newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyNewPairUse   string = `newpair`
 	KeyNewPairShort string = `Create a new OpenPGP key pair`
 	KeyNewPairLong  string = `
-  The 'keys newpair' command allows you to create a new key or public/private
+  The 'key newpair' command allows you to create a new key or public/private
   keys to be stored in the default user local key store location (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyNewPairExample string = `
-  $ singularity keys newpair`
+  $ singularity key newpair`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys list
+	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyListUse   string = `list`
 	KeyListShort string = `List keys from the default key store`
 	KeyListLong  string = `
-  The 'keys list' command allows you to list public/private key pairs from the 
+  The 'key list' command allows you to list public/private key pairs from the 
   default user local key store location (e.g., $HOME/.singularity/sypgp).`
 	KeyListExample string = `
-  $ singularity keys list`
+  $ singularity key list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys search
+	// key search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeySearchUse   string = `search [search options...] <search_string>`
 	KeySearchShort string = `Search for keys matching string argument`
 	KeySearchLong  string = `
-  The 'keys search' command allows you to connect to a key server and look for 
+  The 'key search' command allows you to connect to a key server and look for 
   public keys matching the string argument passed to the command line.`
 	KeySearchExample string = `
-  $ singularity keys search sylabs.io`
+  $ singularity key search sylabs.io`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys pull
+	// key pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyPullUse   string = `pull [pull options...] <fingerprint>`
 	KeyPullShort string = `Fetch an OpenPGP public key from a key server`
 	KeyPullLong  string = `
-  The 'keys pull' command allows you to connect to a key server look for and 
+  The 'key pull' command allows you to connect to a key server look for and 
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyPullExample string = `
-  $ singularity keys pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys push
+	// key push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyPushUse   string = `push [push options...] <fingerprint>`
 	KeyPushShort string = `Upload an OpenPGP public key to a key server`
 	KeyPushLong  string = `
-  The 'keys push' command allows you to connect to a key server and upload 
+  The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
 	KeyPushExample string = `
-  $ singularity keys push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
