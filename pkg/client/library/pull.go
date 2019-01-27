@@ -14,8 +14,8 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
-	"gopkg.in/cheggaaa/pb.v1"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
@@ -102,10 +102,11 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	}
 	bar.ShowTimeLeft = true
 	bar.ShowSpeed = true
-	bar.Start()
 
 	// create proxy reader
 	bodyProgress := bar.NewProxyReader(res.Body)
+
+	bar.Start()
 
 	// Write the body to file
 	_, err = io.Copy(out, bodyProgress)

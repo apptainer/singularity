@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,7 +22,7 @@ import (
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	// clean environment in which %post and %test scripts are run in
-	e.EngineConfig.cleanEnv()
+	e.cleanEnv()
 
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
 		// Run %post script here
@@ -93,14 +93,14 @@ func (e *EngineOperations) PostStartProcess(pid int) error {
 	return nil
 }
 
-func (e *EngineConfig) cleanEnv() {
-	generator := generate.Generator{Config: &e.OciConfig.Spec}
+func (e *EngineOperations) cleanEnv() {
+	generator := generate.Generator{Config: &e.EngineConfig.OciConfig.Spec}
 
 	// copy and cache environment
-	environment := e.OciConfig.Spec.Process.Env
+	environment := e.EngineConfig.OciConfig.Spec.Process.Env
 
 	// clean environment
-	e.OciConfig.Spec.Process.Env = nil
+	e.EngineConfig.OciConfig.Spec.Process.Env = nil
 
 	// add relevant environment variables back
 	env.SetContainerEnv(&generator, environment, true, "")
