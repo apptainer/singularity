@@ -122,7 +122,7 @@ func listBlobCache(printList bool) {
 		}
 	}
 	if printList != true && count >= 1 {
-		fmt.Printf("\nThere are: %d blob file(s) using: %v of space. Use: -t=blob to list\n", count, findSize(totalSize))
+		fmt.Printf("\nThere are %d oci blob file(s) using %v of space. Use: '-t=blob' to list\n", count, findSize(totalSize))
 	}
 	return
 }
