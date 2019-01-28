@@ -1,11 +1,11 @@
 # Installing Singularity development-3.0
 
-Since you are reading this from the Singualrity source code, it will be assumed
+Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
 
 ## Install system dependencies
 You must first install development and libraries to your host.
-Assuming Ubuntu:
+On Debian-based systems:
 
 ```
 $ sudo apt-get update && \
@@ -17,15 +17,16 @@ On CentOS/RHEL:
 
 ```
 $ sudo yum groupinstall -y 'Development Tools'
-$ sudo yum install -y openssl-devel libuuid-devel libseccomp-devel
+$ sudo yum install -y epel-release
+$ sudo yum install -y golang openssl-devel libuuid-devel libseccomp-devel
 ```
 Skip libseccomp-devel on CentOS/RHEL 6.
 
 ## Install golang
 
-This is one of several ways to [install and configure golang](https://golang.org/doc/install).
+This is one of several ways to [install and configure golang](https://golang.org/doc/install).  The CentOS/RHEL instructions above already installed it so this method is not needed there.
 
-First, visit the [golang download page](https://golang.org/dl/) and pick a
+Visit the [golang download page](https://golang.org/dl/) and pick a
 package archive to download.  Copy the link address and download with `wget`.
 
 ```
@@ -61,8 +62,7 @@ $ cd singularity
 ```
 
 ## Compile the Singularity binary
-Now you are ready to build Singularity. Dependencies will be automatically
-downloaded. You can build Singularity using the following commands:
+You can build Singularity using the following commands:
 
 ```
 $ cd $GOPATH/src/github.com/sylabs/singularity
@@ -72,23 +72,19 @@ $ make
 $ sudo make install
 ```
 
-Alternatively, to build an rpm on CentOS/RHEL use the following commands: 
+Alternatively, to build an rpm on CentOS/RHEL use the following commands:
 
 ```
-$ sudo yum install -y rpm-build wget
+$ sudo yum install -y rpm-build
 $ cd $GOPATH/src/github.com/sylabs/singularity
 $ ./mconfig
 $ make -C builddir rpm
 ```
 
-Golang doesn't have to be installed to build an rpm because the rpm
-build installs golang and all dependencies, but it is still recommended
-for a complete development environment.
-
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.0.0
+$ git checkout v3.0.2
 ```
 
 To build in a different folder and to set the install prefix to a different path:

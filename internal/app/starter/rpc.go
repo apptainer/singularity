@@ -14,14 +14,14 @@ import (
 )
 
 // RPCServer serves runtime engine requests
-func RPCServer(socket int, runtime string) {
+func RPCServer(socket int, name string) {
 	comm := os.NewFile(uintptr(socket), "unix")
 	conn, err := net.FileConn(comm)
 	if err != nil {
 		sylog.Fatalf("socket communication error: %s\n", err)
 	}
 	comm.Close()
-	engines.ServeRuntimeEngineRequests(runtime, conn)
+	engines.ServeRuntimeEngineRequests(name, conn)
 
 	os.Exit(0)
 }

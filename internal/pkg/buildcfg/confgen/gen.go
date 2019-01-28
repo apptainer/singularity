@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -65,7 +65,10 @@ func main() {
 	header := []Define{}
 	s := bufio.NewScanner(bytes.NewReader(inFile))
 	for s.Scan() {
-		header = append(header, parseLine(s.Text()))
+		d := parseLine(s.Text())
+		if len(d.Words) > 2 && d.Words[0] == "#define" {
+			header = append(header, d)
+		}
 	}
 
 	confgenTemplate.Execute(outFile, header)

@@ -18,10 +18,10 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/client/library"
-	"github.com/sylabs/singularity/pkg/jsonresp"
 	"github.com/sylabs/singularity/pkg/util/user-agent"
 )
 

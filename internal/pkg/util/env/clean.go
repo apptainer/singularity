@@ -20,10 +20,15 @@ const (
 var alwaysPassKeys = map[string]bool{
 	"TERM":        true,
 	"http_proxy":  true,
+	"HTTP_PROXY":  true,
 	"https_proxy": true,
+	"HTTPS_PROXY": true,
 	"no_proxy":    true,
+	"NO_PROXY":    true,
 	"all_proxy":   true,
+	"ALL_PROXY":   true,
 	"ftp_proxy":   true,
+	"FTP_PROXY":   true,
 }
 
 // SetContainerEnv cleans environment variables before running the container

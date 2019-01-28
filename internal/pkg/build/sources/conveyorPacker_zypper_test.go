@@ -10,9 +10,9 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/build/types/parser"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
 const zyppDef = "../../../../examples/opensuse/Singularity"

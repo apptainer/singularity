@@ -69,7 +69,7 @@ func TestFetchPubkey(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
-			el, err := FetchPubkey(tt.fingerprint, tt.uri, tt.authToken)
+			el, err := FetchPubkey(tt.fingerprint, tt.uri, tt.authToken, false)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return

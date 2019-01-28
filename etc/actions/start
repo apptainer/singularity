@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# if we are here start notify PID 1 to continue
-# DON'T REMOVE
-kill -CONT 1
-
 for script in /.singularity.d/env/*.sh; do
     if [ -f "$script" ]; then
         . "$script"
@@ -11,5 +7,5 @@ for script in /.singularity.d/env/*.sh; do
 done
 
 if test -x "/.singularity.d/startscript"; then
-    exec "/.singularity.d/startscript"
+    exec "/.singularity.d/startscript" "$@"
 fi

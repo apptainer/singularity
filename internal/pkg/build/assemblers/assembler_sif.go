@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package assemblers
 
 import (
-	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
@@ -19,14 +18,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/build/types"
-	"github.com/sylabs/singularity/internal/pkg/build/types/parser"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // SIFAssembler doesnt store anything
@@ -100,7 +98,7 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 
 func getMksquashfsPath() (string, error) {
 	// Parse singularity configuration file
-	c := &singularity.FileConfig{}
+	c := &singularityConfig.FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
 		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}
@@ -119,14 +117,7 @@ func getMksquashfsPath() (string, error) {
 
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
-	defer os.RemoveAll(b.Path)
-
 	sylog.Infof("Creating SIF file...")
-
-	// convert definition to plain text
-	var buf bytes.Buffer
-	parser.WriteDefinitionFile(&(b.Recipe), &buf)
-	def := buf.Bytes()
 
 	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
@@ -166,7 +157,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	err = createSIF(path, def, squashfsPath)
+	err = createSIF(path, b.Recipe.Raw, squashfsPath)
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}

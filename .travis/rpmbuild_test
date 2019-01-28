@@ -4,7 +4,9 @@
 
 # build and install
 yum install -y rpm-build make yum-utils gcc binutils util-linux-ng which
-yum install -y openssl-devel libuuid-devel libseccomp-devel
+yum install -y openssl-devel libuuid-devel libseccomp-devel e2fsprogs
+yum install -y epel-release
+yum install -y golang
 
 # switch to an unprivileged user with sudo privileges
 yum install -y sudo
@@ -23,9 +25,8 @@ su testuser -c '
   make -C builddir rpm
   sudo yum install -y $HOME/rpmbuild/RPMS/*/*.rpm
   BLD=`echo $HOME/rpmbuild/BUILD/singularity-*`
-  export GOROOT=$BLD/go
   export GOPATH=$BLD/gopath
-  PATH=$GOROOT/bin:$GOPATH/bin:$PATH
+  PATH=$GOPATH/bin:$PATH
 
   cd $GOPATH/src/github.com/sylabs/singularity
   make -C builddir test

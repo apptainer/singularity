@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,10 +28,10 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
-	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
+	sytypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
@@ -55,11 +55,11 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		return err
 	}
 
-	if cp.b.Opts.NoHTTPS {
-		cp.sysCtx = &types.SystemContext{
-			OCIInsecureSkipTLSVerify:    true,
-			DockerInsecureSkipTLSVerify: true,
-		}
+	cp.sysCtx = &types.SystemContext{
+		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
+		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
+		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
+		OSChoice:                    "linux",
 	}
 
 	// add registry and namespace to reference if specified
@@ -340,7 +340,10 @@ else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-eval ${SINGULARITY_OCI_RUN}
+# Evaluate shell expressions first and set arguments accordingly,
+# then execute final command as first container process
+eval "set ${SINGULARITY_OCI_RUN}"
+exec "$@"
 
 `)
 	if err != nil {
