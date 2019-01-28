@@ -35,7 +35,7 @@ func TestZypperConveyor(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("sbuild-zypper")
+	b, err := types.NewBundle("", "sbuild-zypper")
 	if err != nil {
 		return
 	}
@@ -69,7 +69,7 @@ func TestZypperPacker(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle("sbuild-zypper")
+	b, err := types.NewBundle("", "sbuild-zypper")
 	if err != nil {
 		return
 	}
