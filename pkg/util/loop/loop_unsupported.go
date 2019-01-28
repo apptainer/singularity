@@ -24,8 +24,8 @@ func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
 	return fmt.Errorf("unsupported on this platform")
 }
 
-// GetStatusFromFile gets info status about an opened loop device
-func GetStatusFromFile(loop *os.File) (*Info64, error) {
+// GetStatusFromFd gets info status about an opened loop device
+func GetStatusFromFd(fd uintptr) (*Info64, error) {
 	return nil, fmt.Errorf("unsupported on this platform")
 }
 
