@@ -159,7 +159,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse   string = `key [key options...] <subcommand>`
+	KeyUse string = `key [key options...] <subcommand>`
 
 	// keys : for the hidden `keys` command
 	KeysUse  string = `keys [keys options...] <subcommand>`
