@@ -242,7 +242,7 @@ func initNamespaceVars() {
 	actionFlags.SetAnnotation("uts", "envkey", []string{"UTS", "UNSHARE_UTS"})
 
 	// -u|--userns
-	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This may not support every feature of Singularity.")
+	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This disables some features of Singularity, for example it only works with sandbox images.")
 	actionFlags.SetAnnotation("userns", "envkey", []string{"USERNS", "UNSHARE_USERNS"})
 }
 

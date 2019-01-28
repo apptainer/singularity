@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,17 +8,17 @@ package singularity
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/syecl"
@@ -271,10 +271,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if e.EngineConfig.File.MountSlave {
-		starterConfig.SetMountPropagation("slave")
+		starterConfig.SetMountPropagation("rslave")
 	} else {
-		starterConfig.SetMountPropagation("private")
+		starterConfig.SetMountPropagation("rprivate")
 	}
+
+	starterConfig.SetBringLoopbackInterface(true)
 
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
@@ -329,7 +331,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return fmt.Errorf("try to join unprivileged instance with SUID workflow")
 	}
 
-	instanceEngineConfig := NewConfig()
+	instanceEngineConfig := singularityConfig.NewConfig()
 
 	// extract configuration from instance file
 	instanceConfig := &config.Common{
@@ -339,8 +341,16 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	starterConfig.SetJoinMount(true)
+
 	// set namespaces to join
-	starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces)
+	if err := file.UpdateNamespacesPath(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
+
+	if err := starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
 
 	if e.EngineConfig.OciConfig.Process == nil {
 		e.EngineConfig.OciConfig.Process = &specs.Process{}
@@ -409,8 +419,8 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 }
 
 // PrepareConfig checks and prepares the runtime engine config
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != Name {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
+	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("incorrect engine")
 	}
 
@@ -421,6 +431,21 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
 		return fmt.Errorf("SUID workflow disabled by administrator")
+	}
+
+	if starterConfig.GetIsSUID() {
+		// check for ownership of singularity.conf
+		if !fs.IsOwner(configurationFile, 0) {
+			return fmt.Errorf("%s must be owned by root", configurationFile)
+		}
+		// check for ownership of capability.json
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
+		}
+		// check for ownership of ecl.toml
+		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
+		}
 	}
 
 	// Save the current working directory to restore it in stage 2
@@ -461,6 +486,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		}
 	}
 
+	starterConfig.SetSharedMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {

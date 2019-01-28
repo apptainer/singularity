@@ -1,11 +1,12 @@
-libruntime := $(BUILDDIR)/lib/libruntime.a
-
 starter_OBJ := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main.go)
 
 starter := $(BUILDDIR)/cmd/starter/c/starter
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 starter_suid_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter-suid
-starter_SOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c
+starter_SOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c \
+                  $(SOURCEDIR)/cmd/starter/c/capability.c \
+                  $(SOURCEDIR)/cmd/starter/c/message.c \
+                  $(SOURCEDIR)/cmd/starter/c/setns.c
 
 singularity := $(BUILDDIR)/singularity
 singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
@@ -53,6 +54,7 @@ cni_plugins_GOPATH := $(cni_vendor_GOPATH)/meta/bandwidth \
                       $(cni_vendor_GOPATH)/main/host-device \
                       $(cni_vendor_GOPATH)/ipam/host-local \
                       $(cni_vendor_GOPATH)/main/ipvlan \
+                      $(cni_vendor_GOPATH)/main/loopback \
                       $(cni_vendor_GOPATH)/main/macvlan \
                       $(cni_vendor_GOPATH)/meta/portmap \
                       $(cni_vendor_GOPATH)/main/ptp \
@@ -66,6 +68,7 @@ cni_plugins_EXECUTABLES := $(cni_builddir)/bandwidth \
                            $(cni_builddir)/host-device \
                            $(cni_builddir)/host-local \
                            $(cni_builddir)/ipvlan \
+                           $(cni_builddir)/loopback \
                            $(cni_builddir)/macvlan \
                            $(cni_builddir)/portmap \
                            $(cni_builddir)/ptp \
@@ -79,6 +82,7 @@ cni_plugins_INSTALL := $(cni_install_DIR)/bandwidth \
                        $(cni_install_DIR)/host-device \
                        $(cni_install_DIR)/host-local \
                        $(cni_install_DIR)/ipvlan \
+                       $(cni_install_DIR)/loopback \
                        $(cni_install_DIR)/macvlan \
                        $(cni_install_DIR)/portmap \
                        $(cni_install_DIR)/ptp \
@@ -96,24 +100,34 @@ actions_LIST := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(SOU
 actions_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
 
 CLEANFILES += $(singularity) $(go_BIN) $(go_OBJ) $(bash_completion)
-INSTALLFILES := $(singularity_INSTALL) $(bash_completion_INSTALL)
+INSTALLFILES := $(singularity_INSTALL) $(bash_completion_INSTALL) $(config_INSTALL)
+ALL := $(go_BIN) $(bash_completion) $(config)
 
 ifeq ($(BUILD_RUNTIME),1)
 
-CLEANFILES += $(libruntime) $(starter) $(cni_plugins_EXECUTABLES)
-INSTALLFILES += $(starter_INSTALL) $(starter_suid_INSTALL) $(sessiondir) \
-	$(config_INSTALL) $(dist_bin_SCRIPTS_INSTALL) $(capability_JSON) $(syecl_config_INSTALL) \
-	$(actions_INSTALL) $(cni_plugins_INSTALL) $(cni_config_INSTALL) $(seccomp_profile_INSTALL) \
-	$(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
-
-all: cscope collect $(libruntime) $(go_BIN) $(config) $(starter) $(bash_completion) cniplugins
-
-else # build_runtime
-
-all: cscope collect $(go_BIN) $(bash_completion)
+CLEANFILES += $(starter)
+INSTALLFILES += $(starter_INSTALL) $(sessiondir) $(dist_bin_SCRIPTS_INSTALL) \
+                $(capability_JSON) $(syecl_config_INSTALL) $(actions_INSTALL) $(seccomp_profile_INSTALL) \
+                $(NVIDIA_liblist_INSTALL) $(cgroups_config_INSTALL)
+ALL += $(starter)
 
 endif # build_runtime
 
+ifeq ($(WITH_NETWORK),1)
+
+CLEANFILES += $(cni_plugins_EXECUTABLES)
+INSTALLFILES += $(cni_plugins_INSTALL) $(cni_config_INSTALL)
+ALL += cniplugins
+
+endif # with_network
+
+ifeq ($(WITH_SUID),1)
+
+INSTALLFILES += $(starter_suid_INSTALL)
+
+endif # with_suid
+
+all: $(ALL)
 
 .PHONY: cniplugins
 cniplugins:
@@ -137,25 +151,21 @@ $(cni_config_INSTALL): $(cni_config_LIST)
 	$(V)install -d $(cni_config_INSTALL)
 	$(V)install -m 0644 $? $@
 
-$(libruntime): $(libutil_OBJ)
-	@echo " AR" $@
-	$(V)mkdir -p $(@D)
-	$(V)$(AR) rcs $@ $(libutil_OBJ)
-
 $(BUILDDIR)/.clean-starter: $(starter_SOURCE)
 	@echo " GO clean -cache"
 	$(V)(go clean -cache 2>/dev/null || true)
 	$(V)touch $@
 
 # starter
-$(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ) $(libruntime)
+$(starter): $(BUILDDIR)/.clean-starter $(go_OBJ) $(starter_OBJ)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $@ \
 		$(SOURCEDIR)/cmd/starter/main.go
 
 # singularity
-$(singularity): $(go_OBJ) $(libruntime) $(singularity_OBJ)
+$(singularity): $(go_OBJ) $(singularity_OBJ)
 	@echo " GO" $@
+	@echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
 	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
@@ -163,12 +173,13 @@ $(singularity_INSTALL): $(singularity)
 	$(V)install -m 0755 $(singularity) $(singularity_INSTALL) # set cp to install
 
 # config.go
-$(go_OBJ): $(libruntime) $(BUILDDIR)/config.h
+$(go_OBJ): $(BUILDDIR)/config.h
 	$(V)rm -f $(go_OBJ)
 	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/internal/pkg/buildcfg && go generate
 
 # bash_completion file
 $(bash_completion): $(go_OBJ)
+	@echo " GEN" $@
 	$(V)rm -f $@
 	$(V)mkdir -p $(@D)
 	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
@@ -201,9 +212,10 @@ $(dist_bin_SCRIPTS_INSTALL): $(dist_bin_SCRIPTS)
 	$(V)install -d $(@D)
 	$(V)install -m 0755 $(dist_bin_SCRIPTS) $(dist_bin_SCRIPTS_INSTALL)
 
-$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config.go
+$(config): $(go_OBJ) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/config.go
 	@echo " GEN $@`if [ -n "$(old_config)" ]; then echo " from $(old_config)"; fi`"
-	$(V)go run $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/data/singularity.conf $(old_config) $(config)
+	$(V)go run $(SOURCEDIR)/etc/conf/gen.go \
+		$(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(old_config) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@

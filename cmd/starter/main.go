@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,9 +6,11 @@
 package main
 
 /*
+#include "c/message.c"
+#include "c/capability.c"
+#include "c/setns.c"
 #include "c/starter.c"
 */
-// #cgo CFLAGS: -I..
 import "C"
 
 import (
@@ -24,6 +26,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
+func getEngine(jsonConfig []byte) *engines.Engine {
+	engine, err := engines.NewEngine(jsonConfig)
+	if err != nil {
+		sylog.Fatalf("failed to initialize runtime: %s\n", err)
+	}
+	return engine
+}
+
 func startup() {
 	loglevel := os.Getenv("SINGULARITY_MESSAGELEVEL")
 	os.Clearenv()
@@ -33,31 +43,43 @@ func startup() {
 		}
 	}
 
-	cconf := unsafe.Pointer(&C.config)
+	cconf := unsafe.Pointer(C.config)
 	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
-	jsonBytes := C.GoBytes(unsafe.Pointer(C.json_stdin), C.int(sconfig.GetJSONConfSize()))
-
-	// free allocated buffer
-	C.free(unsafe.Pointer(C.json_stdin))
-	if unsafe.Pointer(C.nspath) != nil {
-		C.free(unsafe.Pointer(C.nspath))
-	}
+	jsonConfig := sconfig.GetJSONConfig()
 
 	switch C.execute {
-	case C.SCONTAINER_STAGE1:
-		sylog.Verbosef("Execute scontainer stage 1\n")
-		starter.Stage(int(C.SCONTAINER_STAGE1), int(C.master_socket[1]), sconfig, jsonBytes)
-	case C.SCONTAINER_STAGE2:
-		sylog.Verbosef("Execute scontainer stage 2\n")
+	case C.STAGE1:
+		sylog.Verbosef("Execute stage 1\n")
+		starter.Stage(int(C.STAGE1), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
+	case C.STAGE2:
+		sylog.Verbosef("Execute stage 2\n")
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
 		mainthread.Execute(func() {
-			starter.Stage(int(C.SCONTAINER_STAGE2), int(C.master_socket[1]), sconfig, jsonBytes)
+			starter.Stage(int(C.STAGE2), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
 		})
-	case C.SMASTER:
-		sylog.Verbosef("Execute smaster process\n")
-		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), sconfig, jsonBytes)
+	case C.MASTER:
+		sylog.Verbosef("Execute master process\n")
+
+		isInstance := sconfig.GetInstance()
+		pid := sconfig.GetContainerPid()
+
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
+		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, getEngine(jsonConfig))
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
-		starter.RPCServer(int(C.rpc_socket[1]), C.GoString(C.sruntime))
+
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
+		name := engines.GetName(jsonConfig)
+		starter.RPCServer(int(C.rpc_socket[1]), name)
 	}
 	sylog.Fatalf("You should not be there\n")
 }

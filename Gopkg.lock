@@ -35,11 +35,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:7232b4713c5304eb2f7d3c9a79822af49183933a99ba616dca6aa48bc756af84"
+  digest = "1:184144d72965bf3851a318c1cc6667c67f8eb84af4f426705e3d01833699dfbe"
   name = "github.com/containerd/cgroups"
   packages = ["."]
   pruneopts = "UT"
-  revision = "5017d4e9a9cf2d4381db99eacd9baf84b95bfb14"
+  revision = "65ce98b3dfeb0a9a8fecd7e4ebffb24ad0bfe28f"
 
 [[projects]]
   branch = "master"
@@ -389,6 +389,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "2cf9dc699c5640a7e2c81403a44127bf28033600"
+
+[[projects]]
+  digest = "1:29d28429a93b076908a36420a7ecb2bf429d24c15a4b5e2c220ea00fc84b71af"
+  name = "github.com/kr/pty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "db8e3cd836b82e82e0a9c8edc6896967dd31374f"
+  version = "v1.1.3"
 
 [[projects]]
   branch = "master"
@@ -780,8 +788,10 @@
     "github.com/containerd/cgroups",
     "github.com/containernetworking/cni/libcni",
     "github.com/containernetworking/cni/pkg/types",
+    "github.com/containernetworking/cni/pkg/types/current",
     "github.com/containernetworking/plugins/plugins/ipam/dhcp",
     "github.com/containernetworking/plugins/plugins/ipam/host-local",
+    "github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator",
     "github.com/containernetworking/plugins/plugins/ipam/static",
     "github.com/containernetworking/plugins/plugins/main/bridge",
     "github.com/containernetworking/plugins/plugins/main/host-device",
@@ -805,6 +815,7 @@
     "github.com/containers/image/types",
     "github.com/globalsign/mgo/bson",
     "github.com/gorilla/websocket",
+    "github.com/kr/pty",
     "github.com/kubernetes-sigs/cri-o/pkg/seccomp",
     "github.com/magiconair/properties/assert",
     "github.com/opencontainers/image-spec/specs-go/v1",

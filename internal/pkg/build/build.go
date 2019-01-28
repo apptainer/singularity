@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,7 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -307,12 +307,12 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	sylog.Debugf("Starting build engine")
-	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
+	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
-	engineConfig := &imgbuild.EngineConfig{
+	engineConfig := &imgbuildConfig.EngineConfig{
 		Bundle:    *b.b,
 		OciConfig: ociConfig,
 	}
@@ -325,7 +325,7 @@ func (b *Build) runBuildEngine() error {
 	ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
 
 	config := &config.Common{
-		EngineName:   imgbuild.Name,
+		EngineName:   imgbuildConfig.Name,
 		ContainerID:  "image-build",
 		EngineConfig: engineConfig,
 	}
@@ -367,6 +367,8 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 		return &sources.LocalConveyorPacker{}, nil
 	case "yum":
 		return &sources.YumConveyorPacker{}, nil
+	case "scratch":
+		return &sources.ScratchConveyorPacker{}, nil
 	case "":
 		return nil, fmt.Errorf("no bootstrap specification found")
 	default:
@@ -432,9 +434,25 @@ func (b *Build) Assemble(path string) error {
 func insertEnvScript(b *types.Bundle) error {
 	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
-		if err != nil {
-			return err
+		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
+		_, err := os.Stat(envScriptPath)
+		if os.IsNotExist(err) {
+			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0755)
+			if err != nil {
+				return err
+			}
+		} else {
+			// append to script if it already exists
+			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0755)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -443,7 +461,7 @@ func insertEnvScript(b *types.Bundle) error {
 func insertRunScript(b *types.Bundle) error {
 	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript != "" {
 		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -454,7 +472,7 @@ func insertRunScript(b *types.Bundle) error {
 func insertStartScript(b *types.Bundle) error {
 	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript != "" {
 		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -465,7 +483,7 @@ func insertStartScript(b *types.Bundle) error {
 func insertTestScript(b *types.Bundle) error {
 	if b.RunSection("test") && b.Recipe.ImageData.Test != "" {
 		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -478,7 +496,7 @@ func insertHelpScript(b *types.Bundle) error {
 		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
 		if err != nil || b.Opts.Force {
 			sylog.Infof("Adding help info")
-			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
+			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0644)
 			if err != nil {
 				return err
 			}
@@ -565,7 +583,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 		return err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
 	return err
 }
 

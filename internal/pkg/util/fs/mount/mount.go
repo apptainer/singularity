@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,8 +7,11 @@ package mount
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
@@ -18,22 +21,22 @@ var mountFlags = []struct {
 	flag   uintptr
 }{
 	{"acl", 0},
-	{"async", 0},
+	{"async", syscall.MS_ASYNC},
 	{"atime", 0},
 	{"bind", syscall.MS_BIND},
 	{"defaults", 0},
 	{"dev", 0},
 	{"diratime", 0},
-	{"dirsync", 0},
+	{"dirsync", syscall.MS_DIRSYNC},
 	{"exec", 0},
 	{"iversion", 0},
 	{"lazytime", 0},
 	{"loud", 0},
-	{"mand", 0},
+	{"mand", syscall.MS_MANDLOCK},
 	{"noacl", 0},
-	{"noatime", 0},
+	{"noatime", syscall.MS_NOATIME},
 	{"nodev", syscall.MS_NODEV},
-	{"nodiratime", 0},
+	{"nodiratime", syscall.MS_NODIRATIME},
 	{"noexec", syscall.MS_NOEXEC},
 	{"noiversion", 0},
 	{"nolazytime", 0},
@@ -41,15 +44,23 @@ var mountFlags = []struct {
 	{"norelatime", 0},
 	{"nostrictatime", 0},
 	{"nosuid", syscall.MS_NOSUID},
+	{"private", syscall.MS_PRIVATE},
 	{"rbind", syscall.MS_BIND | syscall.MS_REC},
-	{"relatime", 0},
+	{"rprivate", syscall.MS_PRIVATE | syscall.MS_REC},
+	{"rslave", syscall.MS_SLAVE | syscall.MS_REC},
+	{"rshared", syscall.MS_SHARED | syscall.MS_REC},
+	{"runbindable", syscall.MS_UNBINDABLE | syscall.MS_REC},
+	{"relatime", syscall.MS_RELATIME},
 	{"remount", syscall.MS_REMOUNT},
 	{"ro", syscall.MS_RDONLY},
 	{"rw", 0},
+	{"shared", syscall.MS_SHARED},
+	{"slave", syscall.MS_SLAVE},
 	{"silent", syscall.MS_SILENT},
-	{"strictatime", 0},
+	{"strictatime", syscall.MS_STRICTATIME},
 	{"suid", 0},
-	{"sync", 0},
+	{"sync", syscall.MS_SYNCHRONOUS},
+	{"unbindable", syscall.MS_UNBINDABLE},
 }
 
 type fsContext struct {
@@ -78,8 +89,6 @@ const (
 	KernelTag = "kernel"
 	// HomeTag defines tag for home directory mount point
 	HomeTag = "home"
-	// UserbindsTag defines tag for user bind mount points
-	UserbindsTag = "userbinds"
 	// TmpTag defines tag for temporary filesystem mount points (/tmp, /var/tmp)
 	TmpTag = "tmp"
 	// ScratchTag defines tag for scratch mount points
@@ -88,6 +97,8 @@ const (
 	CwdTag = "cwd"
 	// FilesTag defines tag for file mount points (passwd, group ...)
 	FilesTag = "files"
+	// UserbindsTag defines tag for user bind mount points
+	UserbindsTag = "userbinds"
 	// OtherTag defines tag for other mount points that can't be classified
 	OtherTag = "other"
 	// FinalTag defines tag for mount points to mount/remount at the end of mount process
@@ -107,11 +118,11 @@ var authorizedTags = map[AuthorizedTag]struct {
 	BindsTag:     {true, 6},
 	KernelTag:    {true, 7},
 	HomeTag:      {false, 8},
-	UserbindsTag: {true, 9},
-	TmpTag:       {true, 10},
-	ScratchTag:   {true, 11},
-	CwdTag:       {false, 12},
-	FilesTag:     {true, 13},
+	TmpTag:       {true, 9},
+	ScratchTag:   {true, 10},
+	CwdTag:       {false, 11},
+	FilesTag:     {true, 12},
+	UserbindsTag: {true, 13},
 	OtherTag:     {true, 14},
 	FinalTag:     {true, 15},
 }
@@ -129,6 +140,7 @@ var authorizedFS = map[string]fsContext{
 	"sysfs":   {false},
 	"proc":    {false},
 	"mqueue":  {false},
+	"cgroup":  {false},
 }
 
 var internalOptions = []string{"loop", "offset", "sizelimit"}
@@ -171,34 +183,79 @@ func ConvertOptions(options []string) (uintptr, []string) {
 // ConvertSpec converts an OCI Mount spec into an importable mount points list
 func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 	var tag AuthorizedTag
+
 	points := make(map[AuthorizedTag][]Point)
 	for _, m := range mounts {
+		var options []string
+		var propagationOption string
+		var err error
+		source := m.Source
+		mountType := m.Type
+
 		tag = ""
-		if m.Type != "" {
-			if _, ok := authorizedFS[m.Type]; !ok {
-				return points, fmt.Errorf("%s filesystem type is not authorized", m.Type)
+		if mountType != "" && mountType != "bind" {
+			if _, ok := authorizedFS[mountType]; !ok {
+				return points, fmt.Errorf("%s filesystem type is not authorized", mountType)
 			}
-			switch m.Type {
-			case "overlay":
-				tag = LayerTag
-			case "proc", "sysfs":
-				tag = KernelTag
-			case "devpts", "mqueue":
-				tag = DevTag
-			default:
-				tag = OtherTag
+			if has, err := proc.HasFilesystem(mountType); err != nil || !has {
+				return points, fmt.Errorf("%s filesystem not supported", mountType)
 			}
+			tag = KernelTag
 		} else {
-			tag = BindsTag
+			source, err = filepath.Abs(m.Source)
+			if err != nil {
+				return points, fmt.Errorf("failed to determine absolute path for %s: %s", m.Source, err)
+			}
+			tag = UserbindsTag
+			mountType = ""
 		}
+
+		for _, opt := range m.Options {
+			switch opt {
+			case "shared",
+				"rshared",
+				"slave",
+				"rslave",
+				"private",
+				"rprivate",
+				"unbindable",
+				"runbindable":
+				propagationOption = opt
+			default:
+				options = append(options, opt)
+			}
+		}
+
 		points[tag] = append(points[tag], Point{
 			Mount: specs.Mount{
-				Source:      m.Source,
+				Source:      source,
 				Destination: m.Destination,
-				Type:        m.Type,
-				Options:     m.Options,
+				Type:        mountType,
+				Options:     options,
 			},
 		})
+
+		if len(options) > 1 && tag == UserbindsTag {
+			options = append(options, "remount")
+			points[tag] = append(points[tag], Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: m.Destination,
+					Type:        "",
+					Options:     options,
+				},
+			})
+		}
+		if propagationOption != "" {
+			points[tag] = append(points[tag], Point{
+				Mount: specs.Mount{
+					Source:      "",
+					Destination: m.Destination,
+					Type:        "",
+					Options:     []string{propagationOption},
+				},
+			})
+		}
 	}
 	return points, nil
 }
@@ -236,6 +293,20 @@ func GetSizeLimit(options []string) (uint64, error) {
 	return 0, fmt.Errorf("sizelimit option not found")
 }
 
+// HasRemountFlag checks if remount flag is set or not.
+func HasRemountFlag(flags uintptr) bool {
+	return flags&syscall.MS_REMOUNT != 0
+}
+
+// HasPropagationFlag checks if a propagation flag is set or not.
+func HasPropagationFlag(flags uintptr) bool {
+	return flags&getPropagationFlags() != 0
+}
+
+func getPropagationFlags() uintptr {
+	return syscall.MS_UNBINDABLE | syscall.MS_SHARED | syscall.MS_PRIVATE | syscall.MS_SLAVE
+}
+
 func (p *Points) init() {
 	if p.points == nil {
 		p.points = make(map[AuthorizedTag][]Point)
@@ -259,7 +330,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 	if _, ok := authorizedTags[tag]; !ok {
 		return fmt.Errorf("tag %s is not a recognized tag", tag)
 	}
-	if (flags & syscall.MS_REMOUNT) == 0 {
+	if !HasRemountFlag(flags) && !HasPropagationFlag(flags) {
 		present := false
 		for _, point := range p.points[tag] {
 			if point.Destination == dest {
@@ -310,8 +381,8 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 	if fstype != "" && setContext {
 		setContext = authorizedFS[fstype].context
 	}
-	if setContext && p.context != "" {
-		context := fmt.Sprintf("context=%s", p.context)
+	if !bind && setContext && p.context != "" {
+		context := fmt.Sprintf("context=%q", p.context)
 		mountOpts = append(mountOpts, context)
 	}
 	p.points[tag] = append(p.points[tag], Point{
@@ -414,11 +485,25 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 
 			flags, options := ConvertOptions(point.Options)
 			// check if this is a mount point to remount
-			if flags&syscall.MS_REMOUNT != 0 {
+			if HasRemountFlag(flags) {
 				if err = p.AddRemount(tag, point.Destination, flags); err == nil {
 					continue
 				}
 			}
+			if HasPropagationFlag(flags) {
+				if err = p.AddPropagation(tag, point.Destination, flags); err == nil {
+					continue
+				}
+			}
+			// check if this is a bind mount point
+			if flags&syscall.MS_BIND != 0 {
+				if err = p.AddBind(tag, point.Source, point.Destination, flags); err == nil {
+					continue
+				} else {
+					return err
+				}
+			}
+
 			for _, option := range point.InternalOptions {
 				if strings.HasPrefix(option, "offset=") {
 					fmt.Sscanf(option, "offset=%d", &offset)
@@ -427,19 +512,14 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 					fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 				}
 			}
-			// check if this is a bind mount point
-			if flags&syscall.MS_BIND != 0 {
-				if err = p.AddBind(tag, point.Source, point.Destination, flags); err == nil {
-					continue
-				}
-			}
+
 			// check if this is an image mount point
 			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
 				continue
 			}
 			// check if this is a filesystem or overlay mount point
 			if point.Type != "overlay" {
-				if err = p.AddFS(tag, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
+				if err = p.AddFSWithSource(tag, point.Source, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
 					continue
 				}
 			} else {
@@ -588,13 +668,18 @@ func (p *Points) GetAllOverlays() []Point {
 
 // AddFS adds a filesystem mount point
 func (p *Points) AddFS(tag AuthorizedTag, dest string, fstype string, flags uintptr, options string) error {
+	return p.AddFSWithSource(tag, fstype, dest, fstype, flags, options)
+}
+
+// AddFSWithSource adds a filesystem mount point
+func (p *Points) AddFSWithSource(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, options string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for FS mount points")
 	}
 	if _, ok := authorizedFS[fstype]; !ok {
 		return fmt.Errorf("mount %s file system is not authorized", fstype)
 	}
-	return p.add(tag, fstype, dest, fstype, flags, options)
+	return p.add(tag, source, dest, fstype, flags, options)
 }
 
 // GetAllFS returns a list of all registered filesystem mount points
@@ -615,8 +700,20 @@ func (p *Points) GetAllFS() []Point {
 
 // AddRemount adds a mount point to remount
 func (p *Points) AddRemount(tag AuthorizedTag, dest string, flags uintptr) error {
-	remountFlags := flags | syscall.MS_REMOUNT
+	remountFlags := (flags &^ getPropagationFlags()) | syscall.MS_REMOUNT
 	return p.add(tag, "", dest, "", remountFlags, "")
+}
+
+// AddPropagation adds a mount propagation for mount point
+func (p *Points) AddPropagation(tag AuthorizedTag, dest string, flags uintptr) error {
+	finalFlags := flags & getPropagationFlags()
+	if !HasPropagationFlag(finalFlags) {
+		return fmt.Errorf("no mount propagation flag found")
+	}
+	if flags&syscall.MS_REC != 0 {
+		finalFlags |= syscall.MS_REC
+	}
+	return p.add(tag, "", dest, "", finalFlags, "")
 }
 
 // SetContext sets SELinux mount context, once set it can't be modified
@@ -631,27 +728,4 @@ func (p *Points) SetContext(context string) error {
 // GetContext returns SELinux mount context
 func (p *Points) GetContext() string {
 	return p.context
-}
-
-// AddMaskedPaths adds mount points that will masked will /dev/null
-func (p *Points) AddMaskedPaths(paths []string) error {
-	for _, path := range paths {
-		if err := p.AddBind(OtherTag, "/dev/null", path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// AddReadonlyPaths adds bind mount points that will be mounted in read-only mode
-func (p *Points) AddReadonlyPaths(paths []string) error {
-	for _, path := range paths {
-		if err := p.AddBind(OtherTag, path, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
-			return err
-		}
-		if err := p.AddRemount(OtherTag, path, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
-			return err
-		}
-	}
-	return nil
 }
