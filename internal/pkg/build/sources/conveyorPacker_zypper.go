@@ -208,16 +208,18 @@ func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 }
 
 func rpmPathCheck() (err error) {
-	output := &bytes.Buffer{}
+	var output, stderr bytes.Buffer
+
 	cmd := exec.Command("rpm", "--showrc")
-	cmd.Stdout = output
+	cmd.Stdout = &output
+	cmd.Stderr = &stderr
 
 	if err = cmd.Run(); err != nil {
-		return
+		return fmt.Errorf("%v: %v", err, stderr)
 	}
 
 	rpmDBPath := ""
-	scanner := bufio.NewScanner(output)
+	scanner := bufio.NewScanner(&output)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
