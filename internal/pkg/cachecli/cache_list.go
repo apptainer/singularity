@@ -122,7 +122,7 @@ func listBlobCache(printList bool) {
 		}
 	}
 	if printList != true && count >= 1 {
-		fmt.Printf("\nThere are: %d blob file(s) using: %v of space, use: -t=blob to list\n", count, findSize(totalSize))
+		fmt.Printf("\nThere are: %d blob file(s) using: %v of space. Use: -t=blob to list\n", count, findSize(totalSize))
 	}
 	return
 }
@@ -167,7 +167,6 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 		listBlobCache(true)
 		return nil
 	}
-
 	if libraryList == true {
 		listLibraryCache()
 	}
