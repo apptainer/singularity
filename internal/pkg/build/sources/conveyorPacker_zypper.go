@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
@@ -53,12 +54,13 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// look for an OS version if the mirror specifies it
 	osversion := ""
-	if strings.Contains(mirrorurl, `%{OSVERSION}`) {
+	regex := regexp.MustCompile(`(?i)%{OSVERSION}`)
+	if regex.MatchString(mirrorurl) {
 		osversion, ok = cp.b.Recipe.Header["osversion"]
 		if !ok {
 			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
 		}
-		mirrorurl = strings.Replace(mirrorurl, `%{OSVERSION}`, osversion, -1)
+		mirrorurl = regex.ReplaceAllString(mirrorurl, osversion)
 	}
 
 	include, _ := cp.b.Recipe.Header["include"]
