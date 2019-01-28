@@ -85,7 +85,7 @@ action_scripts := $(SOURCEDIR)/etc/actions/exec $(SOURCEDIR)/etc/actions/run $(S
 action_scripts_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/actions
 $(action_scripts_INSTALL): $(action_scripts)
 	@echo " INSTALL" $@
-	$(V)install -d $(@D)
+	$(V)install -d $@
 	$(V)install -m 0755 $? $@
 
 INSTALLFILES += $(action_scripts_INSTALL)
