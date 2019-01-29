@@ -182,7 +182,7 @@ $(bash_completion): $(go_OBJ)
 	@echo " GEN" $@
 	$(V)rm -f $@
 	$(V)mkdir -p $(@D)
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/bash_completion/bash_completion.go $@
 
 # install singularity CLI bash_completion file
 $(bash_completion_INSTALL): $(bash_completion)
