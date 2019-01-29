@@ -624,9 +624,6 @@ SIZE := size
 OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
-BUILD_RUNTIME := $build_runtime
-WITH_NETWORK := $with_network
-WITH_SUID := $with_suid
 EOF
 
 
@@ -771,6 +768,24 @@ cat $makeit_interdir/combined-mconfsready.mk >> $makeit_makefile
 
 drawline $makeit_interdir/all.mk
 cat $makeit_interdir/all.mk >> $makeit_makefile
+
+drawline $makeit_fragsdir/build_cli.mk
+cat $makeit_fragsdir/build_cli.mk >> $makeit_makefile
+
+if [ "$build_runtime" = 1 ]; then
+	drawline $makeit_fragsdir/build_runtime.mk
+	cat $makeit_fragsdir/build_runtime.mk >> $makeit_makefile
+fi
+
+if [ "$with_suid" = 1 ]; then
+	drawline $makeit_fragsdir/build_runtime_suid.mk
+	cat $makeit_fragsdir/build_runtime_suid.mk >> $makeit_makefile
+fi
+
+if [ "$with_network" = 1 ]; then
+	drawline $makeit_fragsdir/build_network.mk
+	cat $makeit_fragsdir/build_network.mk >> $makeit_makefile
+fi
 
 drawline $makeit_fragsdir/Makefile.stub
 # here, `depends' need to happen after all other rules; at the very end

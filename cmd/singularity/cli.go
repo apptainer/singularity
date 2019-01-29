@@ -6,7 +6,7 @@
 package main
 
 import (
-	cli "github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/cmd/internal/cli"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/goversion"
@@ -18,7 +18,7 @@ func main() {
 		sylog.Fatalf("%s", err)
 	}
 
-	// In internal/app/singularity/singularity.go
+	// In cmd/internal/cli/singularity.go
 	cli.ExecuteSingularity()
 }
 

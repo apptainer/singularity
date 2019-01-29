@@ -15,6 +15,7 @@ import (
 	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -211,6 +212,8 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 			sylog.Errorf("fail to send data to master: %s", err)
 		}
 	}
+
+	runtime.KeepAlive(masterConn)
 
 	return fmt.Errorf("exec %s failed: %s", args[0], err)
 }
