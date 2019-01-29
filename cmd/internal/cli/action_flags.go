@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,6 +8,7 @@ package cli
 import (
 	"log"
 	"os"
+	"runtime"
 
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -42,6 +43,7 @@ var (
 	NoHome          bool
 	NoInit          bool
 	NoNvidia        bool
+	VM              bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -221,6 +223,13 @@ func initBoolVars() {
 	actionFlags.Lookup("no-nv").Hidden = true
 	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
 
+	// --vm
+	if runtime.GOOS == "darwin" {
+		actionFlags.BoolVar(&VM, "vm", true, "enable VM support")
+	} else {
+		actionFlags.BoolVar(&VM, "vm", false, "enable VM support")
+	}
+	actionFlags.SetAnnotation("vm", "envkey", []string{"VM"})
 }
 
 // initNamespaceVars initializes flags that take toggle namespace support
