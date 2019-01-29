@@ -62,7 +62,7 @@ func TestReadFromWriteTo(t *testing.T) {
 		})
 	}
 
-	t.Run("epty config no data", func(t *testing.T) {
+	t.Run("empty config no data", func(t *testing.T) {
 		var r bytes.Buffer
 
 		_, err := ReadFrom(&r)
@@ -197,7 +197,7 @@ func TestAddUserCaps(t *testing.T) {
 
 	t.Run(testFail.name, func(t *testing.T) {
 		if err := testFail.old.AddUserCaps(testFail.id, testFail.caps); err == nil {
-			t.Error("unexpected success adding non-existant capability")
+			t.Error("unexpected success adding non-existent capability")
 		}
 	})
 }
@@ -297,7 +297,7 @@ func TestAddGroupCaps(t *testing.T) {
 
 	t.Run(testFail.name, func(t *testing.T) {
 		if err := testFail.old.AddGroupCaps(testFail.id, testFail.caps); err == nil {
-			t.Error("unexpected success adding non-existant capability")
+			t.Error("unexpected success adding non-existent capability")
 		}
 	})
 }
@@ -391,7 +391,7 @@ func TestDropUserCaps(t *testing.T) {
 					"root": []string{"CAP_SYS_ADMIN"},
 				},
 			},
-			id:   "non_existant_user",
+			id:   "non_existent_user",
 			caps: []string{"CAP_SYS_ADMIN"},
 		},
 	}
@@ -399,7 +399,7 @@ func TestDropUserCaps(t *testing.T) {
 	for _, test := range testsFail {
 		t.Run(test.name, func(t *testing.T) {
 			if err := test.old.DropUserCaps(test.id, test.caps); err == nil {
-				t.Error("unexpected success droping non-existant capability")
+				t.Error("unexpected success dropping non-existent capability")
 			}
 		})
 	}
@@ -494,7 +494,7 @@ func TestDropGroupCaps(t *testing.T) {
 					"root": []string{"CAP_SYS_ADMIN"},
 				},
 			},
-			id:   "non_existant_group",
+			id:   "non_existent_group",
 			caps: []string{"CAP_SYS_ADMIN"},
 		},
 	}
@@ -502,7 +502,7 @@ func TestDropGroupCaps(t *testing.T) {
 	for _, test := range testsFail {
 		t.Run(test.name, func(t *testing.T) {
 			if err := test.old.DropGroupCaps(test.id, test.caps); err == nil {
-				t.Error("unexpected success droping non-existant capability")
+				t.Error("unexpected success dropping non-existent capability")
 			}
 		})
 	}

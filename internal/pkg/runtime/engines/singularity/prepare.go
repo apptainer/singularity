@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -37,9 +36,6 @@ func (e *EngineOperations) prepareUserCaps() error {
 	commonCaps := make([]string, 0)
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
-
-	oldmask := syscall.Umask(0)
-	defer syscall.Umask(oldmask)
 
 	// ensure that capability config file is in fact root owned
 	if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
@@ -138,8 +134,10 @@ func (e *EngineOperations) prepareRootCaps() error {
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
-		oldmask := syscall.Umask(0)
-		defer syscall.Umask(oldmask)
+		// ensure that capability config file is in fact root owned
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("while setting user capabilities: capability config file not owned by root")
+		}
 
 		file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0644)
 		if err != nil {
