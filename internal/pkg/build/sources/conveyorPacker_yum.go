@@ -120,7 +120,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 
 	cmd := exec.Command("rpm", "--showrc")
 	cmd.Stdout = &output
-	cmd.Stdout = &stderr
+	cmd.Stderr = &stderr
 
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("%v: %v", err, stderr)

@@ -135,7 +135,7 @@ func getPacmanBaseList() (instList []string, err error) {
 	var output, stderr bytes.Buffer
 	cmd := exec.Command("pacman", "-Sgq", "base")
 	cmd.Stdout = &output
-	cmd.Stdout = &stderr
+	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
 		return nil, fmt.Errorf("%v: %v", err, stderr)
 	}
