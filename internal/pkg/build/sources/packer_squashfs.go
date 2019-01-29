@@ -6,6 +6,8 @@
 package sources
 
 import (
+	"bytes"
+	"fmt"
 	"io/ioutil"
 	"os/exec"
 	"strconv"
@@ -37,24 +39,28 @@ func (p *SquashfsPacker) Pack() (*types.Bundle, error) {
 
 // unpackSquashfs removes the image header with dd and then unpackes image into bundle directories with unsquashfs
 func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
+	var stderr bytes.Buffer
+
 	trimfile, err := ioutil.TempFile(p.b.Path, "trim.squashfs")
+	if err != nil {
+		return fmt.Errorf("While making tmp file: %v", err)
+	}
 
 	//trim header
 	sylog.Debugf("Creating copy of %s without header at %s\n", rootfs, trimfile.Name())
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("Trimming header Failed: %s", err)
-		return err
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("Trimming header Failed: %v: %v", err, stderr)
 	}
 
 	//copy filesystem into bundle rootfs
 	sylog.Debugf("Unsquashing %s to %s in Bundle\n", trimfile.Name(), b.Rootfs())
+	stderr.Reset()
 	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("unsquashfs Failed: %s", err)
-		return err
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("unsquashfs Failed: %v: %v", err, stderr)
 	}
 
 	return err

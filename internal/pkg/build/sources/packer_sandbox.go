@@ -6,6 +6,8 @@
 package sources
 
 import (
+	"bytes"
+	"fmt"
 	"os/exec"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -25,11 +27,11 @@ func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 
 	//copy filesystem into bundle rootfs
 	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, p.b.Rootfs())
+	var stderr bytes.Buffer
 	cmd := exec.Command("cp", "-r", rootfs+`/.`, p.b.Rootfs())
-	err := cmd.Run()
-	if err != nil {
-		sylog.Errorf("cp Failed: %s", err)
-		return nil, err
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("cp Failed: %v: %v", err, stderr)
 	}
 
 	return p.b, nil

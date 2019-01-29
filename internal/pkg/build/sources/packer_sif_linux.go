@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -107,11 +108,11 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 
 	//copy filesystem into dest
 	sylog.Debugf("Copying filesystem from %s to %s\n", tmpmnt, dest)
+	var stderr bytes.Buffer
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("cp Failed: %s", err)
-		return err
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("cp Failed: %v: %v", err, stderr)
 	}
 
 	return nil

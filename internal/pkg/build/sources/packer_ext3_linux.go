@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -32,8 +33,11 @@ func (p *Ext3Packer) Pack() (*types.Bundle, error) {
 }
 
 // unpackExt3 mounts the ext3 image using a loop device and then copies its contents to the bundle
-func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) (err error) {
+func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) error {
 	tmpmnt, err := ioutil.TempDir(p.b.Path, "mnt")
+	if err != nil {
+		return fmt.Errorf("While making tmp mount point: %v", err)
+	}
 
 	var number int
 	info.Flags = loop.FlagsAutoClear
@@ -42,8 +46,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 		Mode:  os.O_RDONLY,
 		Info:  *info,
 	}
-	err = getLoopDevice(arguments)
-	if err != nil {
+	if err := getLoopDevice(arguments); err != nil {
 		return err
 	}
 
@@ -51,18 +54,17 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
 	err = syscall.Mount(path, tmpmnt, "ext3", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-		sylog.Errorf("Mount Failed: %s", err)
-		return err
+		return fmt.Errorf("While mounting image: %v", err)
 	}
 	defer syscall.Unmount(tmpmnt, 0)
 
 	//copy filesystem into bundle rootfs
 	sylog.Debugf("Copying filesystem from %s to %s in Bundle\n", tmpmnt, b.Rootfs())
+	var stderr bytes.Buffer
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
-	err = cmd.Run()
-	if err != nil {
-		sylog.Errorf("cp Failed: %s", err)
-		return err
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("While copying files: %v: %v", err, stderr)
 	}
 
 	return err

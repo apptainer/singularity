@@ -111,21 +111,23 @@ func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
 }
 
 func (c *YumConveyor) getRPMPath() (err error) {
+	var output, stderr bytes.Buffer
+
 	c.rpmPath, err = exec.LookPath("rpm")
 	if err != nil {
 		return fmt.Errorf("RPM is not in PATH: %v", err)
 	}
 
-	output := &bytes.Buffer{}
 	cmd := exec.Command("rpm", "--showrc")
-	cmd.Stdout = output
+	cmd.Stdout = &output
+	cmd.Stdout = &stderr
 
 	if err = cmd.Run(); err != nil {
-		return
+		return fmt.Errorf("%v: %v", err, stderr)
 	}
 
 	rpmDBPath := ""
-	scanner := bufio.NewScanner(output)
+	scanner := bufio.NewScanner(&output)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
