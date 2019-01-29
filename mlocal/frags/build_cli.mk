@@ -33,7 +33,7 @@ $(bash_completion): $(singularity_build_config)
 	@echo " GEN" $@
 	$(V)rm -f $@
 	$(V)mkdir -p $(@D)
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/etc/bash_completion.d/bash_completion.go $@
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/bash_completion/bash_completion.go $@
 
 bash_completion_INSTALL := $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/singularity
 $(bash_completion_INSTALL): $(bash_completion)
