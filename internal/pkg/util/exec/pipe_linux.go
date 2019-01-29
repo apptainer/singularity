@@ -7,7 +7,6 @@ package exec
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"syscall"
 
@@ -48,11 +47,11 @@ func PipeCommand(command string, args []string, env []string, data []byte) (*exe
 }
 
 // setPipe sets a pipe communication channel for JSON configuration data and returns
-// the file pointer of the read side
-func setPipe(data []byte) (*os.File, error) {
+// the file descriptor of the read side
+func setPipe(data []byte) (int, error) {
 	fd, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM|syscall.SOCK_CLOEXEC, 0)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create communication pipe: %s", err)
+		return -1, fmt.Errorf("failed to create communication pipe: %s", err)
 	}
 
 	if curSize, err := syscall.GetsockoptInt(fd[0], syscall.SOL_SOCKET, syscall.SO_SNDBUF); err == nil {
@@ -62,26 +61,26 @@ func setPipe(data []byte) (*os.File, error) {
 			sylog.Warningf("\"echo 65536 > /proc/sys/net/core/wmem_default\"")
 		}
 	} else {
-		return nil, fmt.Errorf("failed to determine current pipe size: %s", err)
+		return -1, fmt.Errorf("failed to determine current pipe size: %s", err)
 	}
 
 	pipeFd, err := syscall.Dup(fd[1])
 	if err != nil {
-		return nil, fmt.Errorf("failed to duplicate pipe file descriptor: %s", err)
+		return -1, fmt.Errorf("failed to duplicate pipe file descriptor: %s", err)
 	}
 
 	if n, err := syscall.Write(fd[0], data); err != nil || n != len(data) {
-		return nil, fmt.Errorf("failed to write data to stdin: %s", err)
+		return -1, fmt.Errorf("failed to write data to stdin: %s", err)
 	}
 
-	return os.NewFile(uintptr(pipeFd), "pipefd"), err
+	return pipeFd, err
 }
 
 // SetPipe sets the PIPE_EXEC_FD environment variable containing the JSON configuration data
 func SetPipe(data []byte) (string, error) {
-	pipe, err := setPipe(data)
+	pipeFd, err := setPipe(data)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("PIPE_EXEC_FD=%d", pipe.Fd()), nil
+	return fmt.Sprintf("PIPE_EXEC_FD=%d", pipeFd), nil
 }
