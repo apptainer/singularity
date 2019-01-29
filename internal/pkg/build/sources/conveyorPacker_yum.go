@@ -139,7 +139,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 	}
 
 	if rpmDBPath == "" {
-		return fmt.Errorf("Could find dbpath")
+		return fmt.Errorf("Could not find dbpath")
 	} else if rpmDBPath != `%{_var}/lib/rpm` {
 		return fmt.Errorf("RPM database is using a weird path: %s\n"+
 			"You are probably running this bootstrap on Debian or Ubuntu.\n"+
