@@ -189,7 +189,7 @@ Enterprise Performance Computing (EPC)`
 	// Cache List
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CacheListUse   string = `list [list options...]`
-	CacheListShort string = `List your local Singularity Library cache`
+	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
   This will list you local cache: "${HOME}/.singularity/cache". The available cache
   types are: library, oci, and blob.`
