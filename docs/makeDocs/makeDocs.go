@@ -6,45 +6,48 @@
 package main
 
 import (
-	"os"
-
+	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
-	cli "github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"golang.org/x/sys/unix"
 )
 
 func main() {
-	argv := os.Args
-	argc := len(argv)
-	dir := "/tmp" // place to save man pages
+	var dir string
+	var rootCmd = &cobra.Command{
+		ValidArgs: []string{"markdown", "man", "rest"},
+		Args:      cobra.ExactArgs(1),
+		Use:       "makeDocs {markdown | man | rest}",
+		Short:     "Generates Singularity documentation",
+		Run: func(cmd *cobra.Command, args []string) {
+			switch args[0] {
+			case "markdown":
+				sylog.Infof("Creating Singularity markdown docs at %s\n", dir)
+				if err := doc.GenMarkdownTree(cli.SingularityCmd, dir); err != nil {
+					sylog.Fatalf("Failed to create markdown docs for singularity\n")
+				}
+			case "man":
+				sylog.Infof("Creating Singularity man pages at %s\n", dir)
+				header := &doc.GenManHeader{
+					Title:   "singularity",
+					Section: "1",
+				}
 
-	if argc > 2 {
-		sylog.Fatalf("Too many arguments to %s\n", argv[1])
+				// works recursively on all sub-commands (thanks bauerm97)
+				if err := doc.GenManTree(cli.SingularityCmd, header, dir); err != nil {
+					sylog.Fatalf("Failed to create man page for singularity\n")
+				}
+			case "rest":
+				sylog.Infof("Creating Singularity ReST docs at %s\n", dir)
+				if err := doc.GenReSTTree(cli.SingularityCmd, dir); err != nil {
+					sylog.Fatalf("Failed to create markdown docs for singularity\n")
+				}
+
+			default:
+				sylog.Fatalf("Invalid output type %s\n", args[0])
+			}
+		},
 	}
-
-	// if the user supplied a directory argument try to save man pages there
-	if argc > 1 {
-		dir = argv[1]
-		// otherwise try to save in the $GOPATH if it exits (failing both of these
-		// options, default is to save into /tmp
-	} else if gopath := os.Getenv("GOPATH"); len(gopath) > 0 {
-		dir = gopath + "/src/github.com/sylabs/singularity/docs/man"
-	}
-
-	if err := unix.Access(dir, unix.W_OK); err != nil {
-		sylog.Fatalf("Given directory does not exist or is not writable by calling user.")
-	}
-
-	sylog.Infof("Creating Singularity man pages at %s\n", dir)
-
-	header := &doc.GenManHeader{
-		Title:   "singularity",
-		Section: "1",
-	}
-
-	// works recursively on all sub-commands (thanks bauerm97)
-	if err := doc.GenManTree(cli.SingularityCmd, header, dir); err != nil {
-		sylog.Fatalf("Failed to create man page for singularity\n")
-	}
+	rootCmd.Flags().StringVarP(&dir, "dir", "d", ".", "Directory in which to put the generated documentation")
+	rootCmd.Execute()
 }
