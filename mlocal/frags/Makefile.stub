@@ -252,7 +252,7 @@ $(actions_INSTALL): $(actions_LIST)
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/docs/makeDocs/makeDocs.go $(DESTDIR)$(MANDIR)/man1
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/man_pages/man_pages.go $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: collect
 collect:
