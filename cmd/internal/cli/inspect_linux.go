@@ -205,6 +205,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
+	generator.SetProcessCwd("/")
 	engineConfig.SetImage(abspath)
 
 	cfg := &config.Common{
