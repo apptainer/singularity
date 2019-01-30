@@ -36,7 +36,18 @@ matrix:
         - sudo make -C builddir install
       script:
         - sw_vers
-        - go version
+        - singularity version
+        - singularity help
+    - os: osx
+      osx_image: xcode9.2
+      before_install:
+        - # pass
+      install:
+        - ./mconfig
+        - make -C builddir
+        - sudo make -C builddir install
+      script:
+        - sw_vers
         - singularity version
         - singularity help
 
