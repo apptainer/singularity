@@ -14,6 +14,3 @@ CFLAGS += -pipe -fmessage-length=0 -fPIC
 CFLAGS += -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4
 
 LDFLAGS += -Wl,-z,relro,-z,now
-
-CPPFLAGS += -include $(BUILDDIR)/config.h -iquote\$(SOURCEDIR)/cmd/starter/c
-CPPFLAGS += -iquote\$(SOURCEDIR)/internal/pkg/runtime/c/lib
