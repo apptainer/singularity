@@ -260,6 +260,121 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 	return getSigsDescr(fimg, id)
 }
 
+// IsSigned : will return false if the givin container (foo) is
+// not signed. Likewise, will return true if the container is signed.
+func IsSigned(cpath string) bool {
+//	signedStatus := false
+
+	fimg, err := sif.LoadContainer(cpath, true)
+	if err != nil {
+		sylog.Fatalf("failed to load SIF container file: %v", err)
+		os.Exit(100)
+	}
+	defer fimg.UnloadContainer()
+
+	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
+	signatures, descr, err := getSigsForSelection(&fimg, 0, false)
+	if err != nil {
+//		sylog.Fatalf("error while searching for signature blocks: %s", err)
+		return false
+	}
+
+	// the selected data object is hashed for comparison against signature block's
+	sifhash := computeHashStr(&fimg, descr)
+
+	// load the public keys available locally from the cache
+	_, err = sypgp.LoadPubKeyring()
+	if err != nil {
+		sylog.Fatalf("could not load public keyring: %s", err)
+		os.Exit(100)
+	}
+
+	// compare freshly computed hash with hashes stored in signatures block(s)
+//	var authok string
+	for _, v := range signatures {
+		// Extract hash string from signature block
+		data := v.GetData(&fimg)
+		block, _ := clearsign.Decode(data)
+		if block == nil {
+			sylog.Fatalf("failed to parse signature block")
+			os.Exit(100)
+		}
+
+		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
+			sylog.Infof("NOTE: group signatures will fail if new data is added to a group")
+			sylog.Infof("after the group signature is created.")
+			sylog.Fatalf("hashes differ, data may be corrupted")
+			os.Exit(100)
+		}
+
+		// (1) Data integrity is verified, (2) now validate identify of signers
+
+		// get the entity fingerprint for the signature block
+		_, err := v.GetEntityString()
+		if err != nil {
+			sylog.Fatalf("could not get the signing entity fingerprint: %s", err)
+			os.Exit(100)
+		}
+
+/*		// try to verify with local OpenPGP store first
+		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+		if err != nil {
+			// verification with local keyring failed, try to fetch from key server
+			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
+			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+			if err != nil {
+				return fmt.Errorf("could not fetch public key from server: %s", err)
+			}
+			sylog.Infof("key retrieved successfully!")
+
+			block, _ := clearsign.Decode(data)
+			if block == nil {
+				return fmt.Errorf("failed to parse signature block")
+			}
+
+			// try verification again with downloaded key
+			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+			if err != nil {
+				return fmt.Errorf("signature verification failed: %s", err)
+			}
+
+			if noPrompt {
+				// always store key when prompts disabled
+				if err = sypgp.StorePubKey(netlist[0]); err != nil {
+					return fmt.Errorf("could not store public key: %s", err)
+				}
+			} else {
+				// Ask to store new public key
+				resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
+				if err != nil {
+					return err
+				}
+				if resp == "" || resp == "y" || resp == "Y" {
+					if err = sypgp.StorePubKey(netlist[0]); err != nil {
+						return fmt.Errorf("could not store public key: %s", err)
+					}
+				}
+			}
+		}*/
+
+		// Get first Identity data for convenience
+
+//		var name string
+//		for _, i := range signer.Identities {
+//			name = i.Name
+//			break
+//		}
+//		authok += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
+	}
+//	fmt.Printf("Data integrity checked, authentic and signed by:\n")
+//	fmt.Print(authok)
+
+
+//	signedStatus = true
+
+	return true
+}
+
 // Verify takes a container path and look for a verification block for a
 // specified descriptor. If found, the signature block is used to verify the
 // partition hash against the signer's version. Verify takes care of looking

@@ -65,5 +65,18 @@ func doVerifyCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
+	sylog.Infof("cpath: %v", cpath)
+	sylog.Infof("url: %v", url)
+	sylog.Infof("id: %v", id)
+	sylog.Infof("isGroup: %v", isGroup)
+	sylog.Infof("authToken: %v", authToken)
+
+//	fmt.Println("Is this container sined? ", signing.IsSigned(cpath))
+
+//	err :=  signing.Verify(cpath, url, id, isGroup, "", false)
+//	if err != nil {
+//		sylog.Warningf("ERROR: %v", err)
+//	}
+
 	return signing.Verify(cpath, url, id, isGroup, authToken, false)
 }
