@@ -6,9 +6,7 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -19,26 +17,22 @@ import (
 )
 
 func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
-	const defaultFailedCode = 1
-	var exitCode int
 
-	var stdoutBuf, stderrBuf bytes.Buffer
-	hdString := fmt.Sprintf("-hda %s", sifImage)
-
+	// Setup some needed variables
 	bzImage := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH, "/singularity/vm/syos-kernel-")
 	initramfs := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH+".gz", "/singularity/vm/initramfs_")
 	appendArgs := fmt.Sprintf("root=/dev/ram0 console=ttyS0 quiet singularity_action=%s singularity_arguments=\"%s\"", singAction, cliExtra)
 
 	defArgs := []string{""}
-	if cliExtra == "syos" && isInternal {
+	if cliExtra == "syos" {
 		//fmt.Println("defArgs - without -hda")
-		defArgs = []string{"-cpu", "host", "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-serial", "stdio", "-kernel", "%s", "-initrd", "%s", "-m", "4096", "-append", bzImage, initramfs, appendArgs}
+		defArgs = []string{"-cpu", "host", "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", "4096", "-append", appendArgs}
 	} else {
 		//fmt.Println("defArgs - with -hda")
-		defArgs = []string{"-cpu", "host", "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", hdString, "-serial", "stdio", "-kernel", "%s", "-initrd", "%s", "-m", "4096", "-append", bzImage, initramfs, appendArgs}
+		defArgs = []string{"-cpu", "host", "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", "4096", "-append", appendArgs}
 	}
 
-	pgmexec, lookErr := exec.LookPath("/usr/libexec/qemu-kvm")
+	pgmExec, lookErr := exec.LookPath("/usr/libexec/qemu-kvm")
 	if lookErr != nil {
 		sylog.Fatalf("Failed to find qemu-kvm executable at /usr/libexec/qemu-kvm")
 	}
@@ -53,43 +47,23 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("Failed to determine image absolute path for %s: %s \nPlease contact sales@sylabs.io for info on how to license SyOS. \n\n", initramfs, err)
 	}
 
-	cmd := exec.Command(pgmexec, defArgs...)
+	cmd := exec.Command(pgmExec, defArgs...)
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
-	stdoutIn, _ := cmd.StdoutPipe()
-	stderrIn, _ := cmd.StderrPipe()
+	if err := cmd.Run(); err != nil {
+		sylog.Debugf("Hypervisor exit code: %v\n", err)
 
-	var errStdout, errStderr error
-	stdout := io.MultiWriter(os.Stdout, &stdoutBuf)
-	stderr := io.MultiWriter(os.Stderr, &stderrBuf)
-
-	exitCode = defaultFailedCode
-
-	cmdErr := cmd.Run()
-	if cmdErr != nil {
-		// try to get the exit code
-		if exitError, ok := cmdErr.(*exec.ExitError); ok {
-			ws := exitError.Sys().(syscall.WaitStatus)
-			exitCode = ws.ExitStatus()
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			//Program exited with non-zero return code
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				sylog.Fatalf("Process exited with non-zero return code: %d\n", status.ExitStatus())
+			}
 		}
-	} else {
-		// success, exitCode should be 0 if go is ok
-		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		exitCode = ws.ExitStatus()
-	}
-	sylog.Debugf("command result, stdout: %v, stderr: %v, exitCode: %v", errStdout, errStderr, exitCode)
 
-	go func() {
-		_, errStdout = io.Copy(stdout, stdoutIn)
-	}()
-
-	go func() {
-		_, errStderr = io.Copy(stderr, stderrIn)
-	}()
-
-	if errStdout != nil || errStderr != nil {
-		sylog.Fatalf("failed to capture stdout or stderr\n")
+		sylog.Fatalf("Process exited with unknown error: %v\n", err)
 	}
 
 	return nil
