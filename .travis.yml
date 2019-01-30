@@ -38,7 +38,7 @@ matrix:
         - sw_vers
         - go version
         - singularity version
-        - singularity
+        - singularity help
 
 services:
   - docker
