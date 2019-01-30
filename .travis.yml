@@ -32,14 +32,14 @@ matrix:
         - # pass
       script:
         - .travis/macos/build
-	- .travis/macos/test
+        - .travis/macos/test
     - os: osx
       osx_image: xcode9.2
       before_install:
         - # pass
       script:
         - .travis/macos/build
-	- .travis/macos/test
+        - .travis/macos/test
 
 services:
   - docker
