@@ -26,6 +26,19 @@ matrix:
       env: OS_TYPE=centos OS_VERSION=6
     - os: linux
       env: OS_TYPE=centos OS_VERSION=7
+    - os: osx
+      osx_image: xcode10.1
+      before_install:
+        - # pass
+      install:
+        - ./mconfig
+        - make -C builddir
+        - sudo make -C builddir install
+      script:
+        - sw_vers
+        - go version
+        - singularity version
+        - singularity
 
 services:
   - docker
