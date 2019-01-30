@@ -137,7 +137,7 @@ func getPacmanBaseList() (instList []string, err error) {
 	cmd.Stdout = &output
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
-		return nil, fmt.Errorf("%v: %v", err, stderr)
+		return nil, fmt.Errorf("%v: %v", err, stderr.String())
 	}
 
 	var toInstall []string

@@ -64,7 +64,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("While copying files: %v: %v", err, stderr)
+		return fmt.Errorf("While copying files: %v: %v", err, stderr.String())
 	}
 
 	return err

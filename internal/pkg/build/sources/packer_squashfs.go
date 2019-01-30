@@ -51,7 +51,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("Trimming header Failed: %v: %v", err, stderr)
+		return fmt.Errorf("Trimming header Failed: %v: %v", err, stderr.String())
 	}
 
 	//copy filesystem into bundle rootfs
@@ -60,7 +60,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("unsquashfs Failed: %v: %v", err, stderr)
+		return fmt.Errorf("unsquashfs Failed: %v: %v", err, stderr.String())
 	}
 
 	return err

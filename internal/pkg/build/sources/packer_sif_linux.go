@@ -112,7 +112,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("cp Failed: %v: %v", err, stderr)
+		return fmt.Errorf("cp Failed: %v: %v", err, stderr.String())
 	}
 
 	return nil

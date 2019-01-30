@@ -123,7 +123,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 	cmd.Stderr = &stderr
 
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("%v: %v", err, stderr)
+		return fmt.Errorf("%v: %v", err, stderr.String())
 	}
 
 	rpmDBPath := ""

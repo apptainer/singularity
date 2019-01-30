@@ -31,7 +31,7 @@ func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	cmd := exec.Command("cp", "-r", rootfs+`/.`, p.b.Rootfs())
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("cp Failed: %v: %v", err, stderr)
+		return nil, fmt.Errorf("cp Failed: %v: %v", err, stderr.String())
 	}
 
 	return p.b, nil
