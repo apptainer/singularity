@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	osexec "os/exec"
 	"runtime"
 	"syscall"
 
@@ -19,8 +18,8 @@ import (
 
 func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 
+	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
-
 	bzImage := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH, "/singularity/vm/syos-kernel-")
 	initramfs := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH+".gz", "/singularity/vm/initramfs_")
 	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\"", bzImage, initramfs, singAction, cliExtra)
@@ -34,7 +33,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		defArgs = []string{"-A", "-m", "6G", "-c", "2", "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio", "-f", kexecArgs}
 	}
 
-	pgmExec, lookErr := osexec.LookPath("/usr/local/libexec/xhyve/build/xhyve")
+	pgmExec, lookErr := exec.LookPath("/usr/local/libexec/xhyve/build/xhyve")
 	if lookErr != nil {
 		sylog.Fatalf("Failed to find xhyve executable at /usr/local/libexec/xhyve/build/xhyve")
 	}
@@ -49,20 +48,24 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("Failed to determine image absolute path for %s: %s \nPlease contact sales@sylabs.io for info on how to license SyOS. \n\n", initramfs, err)
 	}
 
-	cmd := osexec.Command(pgmExec, defArgs...)
+	cmd := exec.Command(pgmExec, defArgs...)
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
 	cmd.Stdin = os.Stdin
 	cmd.Stdin = os.Stdin
 
-	cmdErr := cmd.Run()
-	if cmdErr != nil {
-		if exitErr, ok := cmdErr.(*exec.ExitError); ok {
+	if err := cmd.Run(); err != nil {
+		sylog.Debugf("Hypervisor exit code: %v\n", err)
+
+		if exitErr, ok := err.(*exec.ExitError); ok {
 			//Program exited with non-zero return code
 			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				sylog.Fatalf("Process exited with non-zero return code: %d\n", status.ExitStatus())
+				sylog.Debugf("Process exited with non-zero return code: %d\n", status.ExitStatus())
 			}
 		}
+
+		sylog.Fatalf("Process exited with unknown error: %v\n", err)
 	}
+
 	return nil
 }
