@@ -75,9 +75,13 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("vm"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("vm-ram"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("vm-cpu"))
 		plugin.AddFlagHooks(cmd.Flags())
+
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
+			cmd.Flags().AddFlag(actionFlags.Lookup("syos"))
 		}
 		cmd.Flags().SetInterspersed(false)
 

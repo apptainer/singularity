@@ -24,13 +24,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	appendArgs := fmt.Sprintf("root=/dev/ram0 console=ttyS0 quiet singularity_action=%s singularity_arguments=\"%s\"", singAction, cliExtra)
 
 	defArgs := []string{""}
-	if cliExtra == "syos" {
-		//fmt.Println("defArgs - without -hda")
-		defArgs = []string{"-cpu", "host", "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", "4096", "-append", appendArgs}
-	} else {
-		//fmt.Println("defArgs - with -hda")
-		defArgs = []string{"-cpu", "host", "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", "4096", "-append", appendArgs}
-	}
+	defArgs = []string{"-cpu", "host", "-smp", VmCpu, "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", VmRam, "-append", appendArgs}
 
 	pgmExec, lookErr := exec.LookPath("/usr/libexec/qemu-kvm")
 	if lookErr != nil {
