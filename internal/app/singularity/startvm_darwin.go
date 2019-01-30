@@ -6,9 +6,7 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	osexec "os/exec"
@@ -20,10 +18,7 @@ import (
 )
 
 func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
-	const defaultFailedCode = 1
-	var exitCode int
 
-	var stdoutBuf, stderrBuf bytes.Buffer
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
 
 	bzImage := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH, "/singularity/vm/syos-kernel-")
@@ -57,41 +52,17 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	cmd := osexec.Command(pgmExec, defArgs...)
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
-
-	stdoutIn, _ := cmd.StdoutPipe()
-	stderrIn, _ := cmd.StderrPipe()
-
-	var errStdout, errStderr error
-	stdout := io.MultiWriter(os.Stdout, &stdoutBuf)
-	stderr := io.MultiWriter(os.Stderr, &stderrBuf)
-
-	exitCode = defaultFailedCode
+	cmd.Stdin = os.Stdin
+	cmd.Stdin = os.Stdin
 
 	cmdErr := cmd.Run()
 	if cmdErr != nil {
-		// try to get the exit code
-		if exitError, ok := cmdErr.(*exec.ExitError); ok {
-			ws := exitError.Sys().(syscall.WaitStatus)
-			exitCode = ws.ExitStatus()
+		if exitErr, ok := cmdErr.(*exec.ExitError); ok {
+			//Program exited with non-zero return code
+			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
+				sylog.Fatalf("Process exited with non-zero return code: %d\n", status.ExitStatus())
+			}
 		}
-	} else {
-		// success, exitCode should be 0 if go is ok
-		ws := cmd.ProcessState.Sys().(syscall.WaitStatus)
-		exitCode = ws.ExitStatus()
 	}
-	sylog.Debugf("command result, stdout: %v, stderr: %v, exitCode: %v", errStdout, errStderr, exitCode)
-
-	go func() {
-		_, errStdout = io.Copy(stdout, stdoutIn)
-	}()
-
-	go func() {
-		_, errStderr = io.Copy(stderr, stderrIn)
-	}()
-
-	if errStdout != nil || errStderr != nil {
-		sylog.Fatalf("failed to capture stdout or stderr\n")
-	}
-
 	return nil
 }
