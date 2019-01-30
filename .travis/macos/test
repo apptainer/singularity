@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+# man 1 bash
+set -o errexit # set -e
+set -o nounset # set -u
+set -o pipefail
+set -x
+
+sw_vers
+command -v singularity
+singularity version
+singularity help
