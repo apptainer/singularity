@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
+	"github.com/sylabs/singularity/pkg/signing"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
@@ -117,6 +118,13 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	bar.Finish()
 
 	sylog.Debugf("Download complete\n")
+
+	isSigned := signing.IsSigned(filePath)
+	if isSigned != true {
+		sylog.Warningf("Pulled container **not** signed!")
+	} else {
+		sylog.Infof("Pulled container is signed.")
+	}
 
 	return nil
 

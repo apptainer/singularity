@@ -17,7 +17,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
-	"github.com/sylabs/singularity/pkg/signing"
 )
 
 const (
@@ -154,12 +153,4 @@ func pullRun(cmd *cobra.Command, args []string) {
 		})
 	}
 
-	isSigned := signing.IsSigned(name)
-	if isSigned != true {
-		sylog.Warningf("Pulled container not signed!")
-	} else {
-		sylog.Infof("Pulled container is signed, verify by: 'singularity verify %v'", name)
-	}
-
-//	sylog.Infof("name: %v", name)
 }
