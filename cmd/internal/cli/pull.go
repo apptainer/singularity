@@ -152,5 +152,4 @@ func pullRun(cmd *cobra.Command, args []string) {
 			DockerAuthConfig: authConf,
 		})
 	}
-
 }
