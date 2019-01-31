@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"

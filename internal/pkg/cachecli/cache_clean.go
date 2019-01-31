@@ -8,8 +8,8 @@ package cachecli
 import (
 	"io/ioutil"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -101,13 +101,13 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) bool {
 	if libraryCache == ociCache {
 		matchLibrary, err := cleanLibraryCache(cacheName)
 		if err != nil {
-				sylog.Fatalf("Failed while cleaning cache: %v", err)
-				os.Exit(255)
+			sylog.Fatalf("Failed while cleaning cache: %v", err)
+			os.Exit(255)
 		}
 		matchOci, err := cleanOciCache(cacheName)
 		if err != nil {
-				sylog.Fatalf("Failed while cleaning cache: %v", err)
-				os.Exit(255)
+			sylog.Fatalf("Failed while cleaning cache: %v", err)
+			os.Exit(255)
 		}
 		if matchLibrary == true || matchOci == true {
 			return true
