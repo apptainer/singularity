@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -173,11 +173,11 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if c.netNS {
 		if os.Geteuid() == 0 && !c.userNS {
 			/* hold a reference to container network namespace for cleanup */
-			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+			f, err := syscall.Open("/proc/"+strconv.Itoa(pid)+"/ns/net", os.O_RDONLY, 0)
 			if err != nil {
 				return fmt.Errorf("can't open network namespace: %s", err)
 			}
-			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f)
 			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
 
 			cniPath := &network.CNIPath{}
