@@ -85,8 +85,8 @@ export PATH=$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
 
 ./mconfig -V %{version}-%{release} \
-        --exec-prefix=%{_exec_prefix} --sysconfdir=%{_sysconfdir} \
-	--localstatedir=%{_localstatedir} --mandir=%{_mandir}
+        --sysconfdir=%{_sysconfdir} --bindir=%{_bindir} --mandir=%{_mandir} \
+        --libexecdir=%{_libexecdir} --localstatedir=%{_localstatedir} 
 
 cd builddir
 make old_config=
