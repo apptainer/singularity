@@ -47,7 +47,7 @@ INSTALLFILES += $(sessiondir_INSTALL)
 # run-singularity script
 run_singularity := $(SOURCEDIR)/scripts/run-singularity
 
-run_singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/run-singularity
+run_singularity_INSTALL := $(DESTDIR)$(BINDIR)/run-singularity
 $(run_singularity_INSTALL): $(run_singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
