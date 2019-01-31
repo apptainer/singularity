@@ -46,25 +46,19 @@ func cleanLibraryCache(cacheName string) (bool, error) {
 	foundMatch := false
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-//		sylog.Fatalf("Failed while opening cache folder: %v", err)
 		return false, err
-//		os.Exit(255)
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
 		if err != nil {
-//			sylog.Fatalf("Failed while looking in cache: %v", err)
 			return false, err
-//			os.Exit(255)
 		}
 		for _, c := range cont {
 			if c.Name() == cacheName {
 				sylog.Debugf("Removing: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
 				err = os.RemoveAll(join(cache.Library(), "/", f.Name(), "/", c.Name()))
 				if err != nil {
-//					sylog.Fatalf("Failed while removing cache file: %v: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()), err)
 					return false, err
-//					os.Exit(255)
 				}
 				foundMatch = true
 			}
