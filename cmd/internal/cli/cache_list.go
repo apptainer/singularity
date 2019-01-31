@@ -49,8 +49,8 @@ func cacheListCmd() error {
 
 	err := cachecli.ListSingularityCache(typeNameList, allList)
 	if err != nil {
-		sylog.Fatalf("Failed while listing cache: %v", err)
-		os.Exit(255)
+		sylog.Fatalf("Not listing cache; an error occured: %v", err)
+		return err
 	}
 	return err
 }

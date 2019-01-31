@@ -35,19 +35,19 @@ func listLibraryCache() error {
 	// loop thrught library cache
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		sylog.Fatalf("Failed while opening cache folder: %v", err)
+		sylog.Warningf("Unable to opening cache folder: %v", err)
 		return err
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
-			sylog.Fatalf("Failed while looking in cache: %v", err)
+			sylog.Warningf("Unable to looking in cache: %v", err)
 			return err
 		}
 		for _, c := range cont {
 			fileInfo, err := os.Stat(filepath.Join(cache.Library(), f.Name(), c.Name()))
 			if err != nil {
-				sylog.Fatalf("Unable to get stat: %v", err)
+				sylog.Warningf("Unable to get stat: %v", err)
 				return err
 			}
 			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "library")
@@ -60,19 +60,19 @@ func listOciCache() error {
 	// loop thrught oci-tmp cache
 	ociTmp, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		sylog.Fatalf("Failed while opening oci-tmp folder: %v", err)
+		sylog.Warningf("Unable to opening oci-tmp folder: %v", err)
 		return err
 	}
 	for _, f := range ociTmp {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
-			sylog.Fatalf("Failed while looking in cache: %v", err)
+			sylog.Warningf("Unable to looking in cache: %v", err)
 			return err
 		}
 		for _, b := range blob {
 			fileInfo, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 			if err != nil {
-				sylog.Fatalf("Unable to get stat: %v", err)
+				sylog.Warningf("Unable to get stat: %v", err)
 				return err
 			}
 			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "oci")
@@ -92,19 +92,19 @@ func listBlobCache(printList bool) error {
 	}
 	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
 	if err != nil {
-		sylog.Fatalf("Failed while opening oci folder: %v", err)
+		sylog.Warningf("Unable to opening oci folder: %v", err)
 		return err
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
 		if err != nil {
-			sylog.Fatalf("Failed while looking in cache: %v", err)
+			sylog.Warningf("Unable to looking in cache: %v", err)
 			return err
 		}
 		for _, b := range blob {
 			fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
 			if err != nil {
-				sylog.Fatalf("Unable to get stat: %v", err)
+				sylog.Warningf("Unable to get stat: %v", err)
 				return err
 			}
 			if printList == true {
@@ -155,43 +155,50 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
 	if allList == true {
-		err = listLibraryCache()
-		if err != nil {
-			return err
-		}
-		err = listOciCache()
-		if err != nil {
-			return err
-		}
-		err = listBlobCache(true)
-		if err != nil {
-			return err
-		}
+//		err = listLibraryCache()
+		_ = listLibraryCache()
+//		if err != nil {
+//			return err
+//		}
+//		err = listOciCache()
+		_ = listOciCache()
+//		if err != nil {
+//			return err
+//		}
+//		err = listBlobCache(true)
+		_ = listBlobCache(true)
+//		if err != nil {
+//			return err
+//		}
 		return nil
 	}
 	if libraryList == true {
-		listLibraryCache()
-		if err != nil {
-			return err
-		}
+//		err = listLibraryCache()
+		_ = listLibraryCache()
+//		if err != nil {
+//			return err
+//		}
 	}
 	if ociList == true {
-		err = listOciCache()
-		if err != nil {
-			return err
-		}
+//		err = listOciCache()
+		_ = listOciCache()
+//		if err != nil {
+//			return err
+//		}
 	}
 	if blobList == true {
-		err = listBlobCache(true)
-		if err != nil {
-			return err
-		}
+//		err = listBlobCache(true)
+		_ = listBlobCache(true)
+//		if err != nil {
+//			return err
+//		}
 	}
 	if listBlobSum == true {
-		err = listBlobCache(false)
-		if err != nil {
-			return err
-		}
+//		err = listBlobCache(false)
+		_ = listBlobCache(false)
+//		if err != nil {
+//			return err
+//		}
 	}
 	return nil
 }
