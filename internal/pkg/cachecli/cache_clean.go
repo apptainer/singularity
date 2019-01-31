@@ -42,79 +42,99 @@ func CleanBlobCache() error {
 
 }
 
-func cleanLibraryCache(cacheName string) bool {
+func cleanLibraryCache(cacheName string) (bool, error) {
 	foundMatch := false
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		sylog.Fatalf("Failed while opening cache folder: %v", err)
-		os.Exit(255)
+//		sylog.Fatalf("Failed while opening cache folder: %v", err)
+		return false, err
+//		os.Exit(255)
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
 		if err != nil {
-			sylog.Fatalf("Failed while looking in cache: %v", err)
-			os.Exit(255)
+//			sylog.Fatalf("Failed while looking in cache: %v", err)
+			return false, err
+//			os.Exit(255)
 		}
 		for _, c := range cont {
 			if c.Name() == cacheName {
 				sylog.Debugf("Removing: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
 				err = os.RemoveAll(join(cache.Library(), "/", f.Name(), "/", c.Name()))
-				sylog.Verbosef("Removed: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
 				if err != nil {
-					sylog.Fatalf("Failed while removing cache file: %v: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()), err)
-					os.Exit(255)
+//					sylog.Fatalf("Failed while removing cache file: %v: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()), err)
+					return false, err
+//					os.Exit(255)
 				}
 				foundMatch = true
 			}
 		}
 	}
 
-	return foundMatch
+	return foundMatch, nil
 }
 
-func cleanOciCache(cacheName string) bool {
+func cleanOciCache(cacheName string) (bool, error) {
 	foundMatch := false
 	blobs, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		sylog.Fatalf("Failed while opening oci-tmp folder: %v", err)
-		os.Exit(255)
+		return false, err
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
 		if err != nil {
-			sylog.Fatalf("Failed while looking in cache: %v", err)
-			os.Exit(255)
+			return false, err
 		}
 		for _, b := range blob {
 			if b.Name() == cacheName {
 				sylog.Debugf("Removing: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
 				err = os.RemoveAll(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
-				sylog.Verbosef("Removed: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
 				if err != nil {
-					sylog.Fatalf("Failed while removing: %v: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()), err)
-					os.Exit(255)
+					return false, err
 				}
 				foundMatch = true
 			}
 		}
 	}
 
-	return foundMatch
+	return foundMatch, nil
 }
 
 // CleanCacheName : clean a cache with a specific name (cacheName). if libraryCache == true; search only the
 // library. if ociCache == true; search the oci cache. returns false if no match found.
 func CleanCacheName(cacheName string, libraryCache, ociCache bool) bool {
 	if libraryCache == ociCache {
-		if cleanLibraryCache(cacheName) == true || cleanOciCache(cacheName) == true {
+		matchLibrary, err := cleanLibraryCache(cacheName)
+		if err != nil {
+				sylog.Fatalf("Failed while cleaning cache: %v", err)
+				os.Exit(255)
+		}
+		matchOci, err := cleanOciCache(cacheName)
+		if err != nil {
+				sylog.Fatalf("Failed while cleaning cache: %v", err)
+				os.Exit(255)
+		}
+		if matchLibrary == true || matchOci == true {
 			return true
 		}
 		return false
 	}
+
+	match := false
 	if libraryCache == true {
-		return cleanLibraryCache(cacheName)
+		match, err = cleanLibraryCache(cacheName)
+		if err != nil {
+			sylog.Fatalf("Failed while removing library cache: %v", err)
+			os.Exit(255)
+		}
+		return match
 	} else if ociCache == true {
-		return cleanOciCache(cacheName)
+		match, err = cleanOciCache(cacheName)
+		if err != nil {
+			sylog.Fatalf("Failed while removing oci cache: %v", err)
+			os.Exit(255)
+		}
+		return match
 	}
 	return false
 }
