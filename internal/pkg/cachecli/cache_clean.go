@@ -49,14 +49,14 @@ func cleanLibraryCache(cacheName string) (bool, error) {
 		return false, err
 	}
 	for _, f := range libraryCacheFiles {
-		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
+		cont, err := ioutil.ReadDir(strings.Join([]string{cache.Library(), "/", f.Name()}, ""))
 		if err != nil {
 			return false, err
 		}
 		for _, c := range cont {
 			if c.Name() == cacheName {
-				sylog.Debugf("Removing: %v", join(cache.Library(), "/", f.Name(), "/", c.Name()))
-				err = os.RemoveAll(join(cache.Library(), "/", f.Name(), "/", c.Name()))
+				sylog.Debugf("Removing: %v", strings.Join([]string{cache.Library(), "/", f.Name(), "/", c.Name()}, ""))
+				err = os.RemoveAll(strings.Join([]string{cache.Library(), "/", f.Name(), "/", c.Name()}, ""))
 				if err != nil {
 					return false, err
 				}
@@ -75,14 +75,14 @@ func cleanOciCache(cacheName string) (bool, error) {
 		return false, err
 	}
 	for _, f := range blobs {
-		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
+		blob, err := ioutil.ReadDir(strings.Join([]string{cache.OciTemp(), "/", f.Name()}, ""))
 		if err != nil {
 			return false, err
 		}
 		for _, b := range blob {
 			if b.Name() == cacheName {
-				sylog.Debugf("Removing: %v", join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
-				err = os.RemoveAll(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
+				sylog.Debugf("Removing: %v", strings.Join([]string{cache.OciTemp(), "/", f.Name(), "/", b.Name()}, ""))
+				err = os.RemoveAll(strings.Join([]string{cache.OciTemp(), "/", f.Name(), "/", b.Name()}, ""))
 				if err != nil {
 					return false, err
 				}
