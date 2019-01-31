@@ -10,30 +10,23 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func join(strs ...string) string {
-	var sb strings.Builder
-	for _, str := range strs {
-		sb.WriteString(str)
-	}
-	return sb.String()
-}
-
 func findSize(size int64) string {
 	var sizeF float64
 	if size <= 10000 {
 		sizeF = float64(size) / 1000
-		return join(fmt.Sprintf("%.2f", sizeF), " Kb")
+		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Kb"}, "")
 	} else if size <= 1000000000 {
 		sizeF = float64(size) / 1000000
-		return join(fmt.Sprintf("%.2f", sizeF), " Mb")
+		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Mb"}, "")
 	} else if size >= 1000000000 {
 		sizeF = float64(size) / 1000000000
-		return join(fmt.Sprintf("%.2f", sizeF), " Gb")
+		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Gb"}, "")
 	}
 	return "ERROR: failed to detect file size."
 }
@@ -46,13 +39,13 @@ func listLibraryCache() {
 		os.Exit(255)
 	}
 	for _, f := range libraryCacheFiles {
-		cont, err := ioutil.ReadDir(join(cache.Library(), "/", f.Name()))
+		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
 			sylog.Fatalf("Failed while looking in cache: %v", err)
 			os.Exit(255)
 		}
 		for _, c := range cont {
-			fileInfo, err := os.Stat(join(cache.Library(), "/", f.Name(), "/", c.Name()))
+			fileInfo, err := os.Stat(filepath.Join(cache.Library(), f.Name(), c.Name()))
 			if err != nil {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
@@ -71,13 +64,13 @@ func listOciCache() {
 		os.Exit(255)
 	}
 	for _, f := range ociTmp {
-		blob, err := ioutil.ReadDir(join(cache.OciTemp(), "/", f.Name()))
+		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
 			sylog.Fatalf("Failed while looking in cache: %v", err)
 			os.Exit(255)
 		}
 		for _, b := range blob {
-			fileInfo, err := os.Stat(join(cache.OciTemp(), "/", f.Name(), "/", b.Name()))
+			fileInfo, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 			if err != nil {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
@@ -93,23 +86,23 @@ func listBlobCache(printList bool) {
 	count := 0
 	var totalSize int64
 
-	_, err = os.Stat(join(cache.OciBlob(), "/blobs"))
+	_, err = os.Stat(filepath.Join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
 		return
 	}
-	blobs, err := ioutil.ReadDir(join(cache.OciBlob(), "/blobs/"))
+	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
 	if err != nil {
 		sylog.Fatalf("Failed while opening oci folder: %v", err)
 		os.Exit(255)
 	}
 	for _, f := range blobs {
-		blob, err := ioutil.ReadDir(join(cache.OciBlob(), "/blobs/", f.Name()))
+		blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
 		if err != nil {
 			sylog.Fatalf("Failed while looking in cache: %v", err)
 			os.Exit(255)
 		}
 		for _, b := range blob {
-			fileInfo, err := os.Stat(join(cache.OciBlob(), "/blobs/", f.Name(), "/", b.Name()))
+			fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
 			if err != nil {
 				sylog.Fatalf("Unable to get stat: %v", err)
 				os.Exit(255)
