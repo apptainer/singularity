@@ -260,11 +260,9 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 	return getSigsDescr(fimg, id)
 }
 
-// IsSigned : will return false if the givin container (foo) is
+// IsSigned : will return false if the givin container (cpath) is
 // not signed. Likewise, will return true if the container is signed.
 func IsSigned(cpath string) bool {
-//	signedStatus := false
-
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		sylog.Fatalf("failed to load SIF container file: %v", err)
@@ -275,7 +273,7 @@ func IsSigned(cpath string) bool {
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
 	signatures, descr, err := getSigsForSelection(&fimg, 0, false)
 	if err != nil {
-//		sylog.Fatalf("error while searching for signature blocks: %s", err)
+		// Not signed
 		return false
 	}
 
@@ -290,7 +288,6 @@ func IsSigned(cpath string) bool {
 	}
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
-//	var authok string
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)

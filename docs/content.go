@@ -526,8 +526,8 @@ Enterprise Performance Computing (EPC)`
 	PushUse   string = `push [push options...] <container image> library://[user[collection/[container[:tag]]]]`
 	PushShort string = `Push a container to a Library URI`
 	PushLong  string = `
-  The Singularity push command allows you to upload your sif image to a library
-  of your choosing`
+  The Singularity push command allows you to upload your container to a library.
+  Its always good practice to sign your container before pushing them to the library.`
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
@@ -627,9 +627,11 @@ Enterprise Performance Computing (EPC)`
   multiple data objects signed. By default the command searches for the primary 
   partition signature. If found, a list of all verification blocks applied on 
   the primary partition is gathered so that data integrity (hashing) and 
-  signature verification is done for all those blocks.`
+  signature verification is done for all those blocks. BE CAREFUL RUNNING RANDOM
+  CONTAINERS THAT ARE NOT SIGNED!!!`
 	VerifyExample string = `
   $ singularity verify container.sif`
+
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
