@@ -52,7 +52,7 @@ var CacheCleanCmd = &cobra.Command{
 func cacheCleanCmd() error {
 	err := cachecli.CleanSingularityCache(allClean, typeNameClean, cacheName)
 	if err != nil {
-		sylog.Fatalf("%v", err)
+		sylog.Fatalf("Failed while clean cache: %v", err)
 		os.Exit(255)
 	}
 

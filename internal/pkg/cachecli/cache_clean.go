@@ -187,16 +187,28 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 
 	if allClean == true {
 		err = cache.Clean()
+		if err != nil {
+			return err
+		}
 	}
 	if libraryClean == true {
 		err = CleanLibraryCache()
+		if err != nil {
+			return err
+		}
 	}
 	if ociClean == true {
 		err = CleanOciCache()
+		if err != nil {
+			return err
+		}
 	}
 	if blobClean == true {
 		err = CleanBlobCache()
+		if err != nil {
+			return err
+		}
 	}
 
-	return err
+	return nil
 }
