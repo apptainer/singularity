@@ -26,10 +26,10 @@ func init() {
 	CacheCleanCmd.Flags().BoolVarP(&allClean, "all", "a", false, "clean all cache (not compatible with any other flags)")
 	CacheCleanCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
-	CacheCleanCmd.Flags().StringVarP(&typeNameClean, "type", "t", "", "specify a cache type, choose between: library, and oci")
+	CacheCleanCmd.Flags().StringVarP(&typeNameClean, "type", "T", "", "specify a cache type, choose between: library, and oci")
 	CacheCleanCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
-	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "n", "", "specify a container cache to clean (will clear all cache with the same name)")
+	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "N", "", "specify a container cache to clean (will clear all cache with the same name)")
 	CacheCleanCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
 }
 

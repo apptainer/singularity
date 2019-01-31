@@ -22,7 +22,7 @@ var (
 func init() {
 	CacheListCmd.Flags().SetInterspersed(false)
 
-	CacheListCmd.Flags().StringVarP(&typeNameList, "type", "t", "", "list cache type, choose between: library, and oci")
+	CacheListCmd.Flags().StringVarP(&typeNameList, "type", "T", "", "list cache type, choose between: library, and oci")
 	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
 	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
