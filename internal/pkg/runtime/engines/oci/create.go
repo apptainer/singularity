@@ -819,9 +819,10 @@ func (c *container) mount(point *mount.Point) error {
 
 	if !strings.HasPrefix(dest, c.rootfs) {
 		rootfsPath := filepath.Join(c.rpcRoot, c.rootfs)
-		procDest := filepath.Join(rootfsPath, fs.EvalRelative(dest, rootfsPath))
+		relativeDest := fs.EvalRelative(dest, c.rootfs)
+		procDest := filepath.Join(rootfsPath, relativeDest)
 
-		dest = filepath.Join(c.rootfs, dest)
+		dest = filepath.Join(c.rootfs, relativeDest)
 
 		sylog.Debugf("Checking if %s exists", procDest)
 		if _, err := os.Stat(procDest); os.IsNotExist(err) && !ignore {
