@@ -49,6 +49,9 @@ var RunHelpCmd = &cobra.Command{
 
 		// Help prints (if set) the sourced %help section on the definition file
 		abspath, err := filepath.Abs(args[0])
+		if err != nil {
+			sylog.Fatalf("While getting absolute path: %s", err)
+		}
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/cat", getHelpPath(cmd)}

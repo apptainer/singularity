@@ -44,6 +44,9 @@ var AppsCmd = &cobra.Command{
 
 		// apps prints the apps installed in the container
 		abspath, err := filepath.Abs(args[0])
+		if err != nil {
+			sylog.Fatalf("While getting absolute path: %s", err)
+		}
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/sh", "-c", listAppsCommand}
