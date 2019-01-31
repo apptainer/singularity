@@ -105,18 +105,18 @@ func cleanOciCache(cacheName string) bool {
 // CleanCacheName : clean a cache with a specific name (cacheName). if libraryCache == true; search only the
 // library. if ociCache == true; search the oci cache. returns false if no match found.
 func CleanCacheName(cacheName string, libraryCache, ociCache bool) bool {
-	foundMatch := false
+	if libraryCache == ociCache {
+		if cleanLibraryCache(cacheName) == true || cleanOciCache(cacheName) == true {
+			return true
+		}
+		return false
+	}
 	if libraryCache == true {
-		foundMatch = cleanLibraryCache(cacheName)
+		return cleanLibraryCache(cacheName)
+	} else if ociCache == true {
+		return cleanOciCache(cacheName)
 	}
-	if ociCache == true {
-		foundMatch = cleanOciCache(cacheName)
-	}
-	if libraryCache != true && ociCache != true {
-		foundMatch = cleanLibraryCache(cacheName)
-		foundMatch = cleanOciCache(cacheName)
-	}
-	return foundMatch
+	return false
 }
 
 var err error
