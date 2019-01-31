@@ -116,12 +116,10 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 	if libraryCache == ociCache {
 		matchLibrary, err := cleanLibraryCache(cacheName)
 		if err != nil {
-//			sylog.Warningf("Unable to cleaning cache: %v", err)
 			return false, err
 		}
 		matchOci, err := cleanOciCache(cacheName)
 		if err != nil {
-//			sylog.Warningf("Unable to cleaning cache: %v", err)
 			return false, err
 		}
 		if matchLibrary == true || matchOci == true {
@@ -134,14 +132,12 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 	if libraryCache == true {
 		match, err = cleanLibraryCache(cacheName)
 		if err != nil {
-//			sylog.Warningf("Unable to removing library cache: %v", err)
 			return false, err
 		}
 		return match, nil
 	} else if ociCache == true {
 		match, err = cleanOciCache(cacheName)
 		if err != nil {
-//			sylog.Warningf("Unable to removing oci cache: %v", err)
 			return false, err
 		}
 		return match, nil
