@@ -47,11 +47,13 @@ func cleanLibraryCache(cacheName string) (bool, error) {
 	foundMatch := false
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
+		sylog.Warningf("Unable to opening cache folder: %v", err)
 		return false, err
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
+			sylog.Warningf("Unable to look in cache folder: %v", err)
 			return false, err
 		}
 		for _, c := range cont {
@@ -59,6 +61,7 @@ func cleanLibraryCache(cacheName string) (bool, error) {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.Library(), f.Name(), c.Name()))
 				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name(), c.Name()))
 				if err != nil {
+					sylog.Warningf("Unable to remove cache: %v", err)
 					return false, err
 				}
 				foundMatch = true
@@ -73,11 +76,13 @@ func cleanOciCache(cacheName string) (bool, error) {
 	foundMatch := false
 	blobs, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
+		sylog.Warningf("Unable to opening cache folder: %v", err)
 		return false, err
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
+			sylog.Warningf("Unable to look in cache folder: %v", err)
 			return false, err
 		}
 		for _, b := range blob {
@@ -85,6 +90,7 @@ func cleanOciCache(cacheName string) (bool, error) {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 				if err != nil {
+					sylog.Warningf("Unable to remove cache: %v", err)
 					return false, err
 				}
 				foundMatch = true
@@ -96,42 +102,42 @@ func cleanOciCache(cacheName string) (bool, error) {
 }
 
 // CleanCacheName : clean a cache with a specific name (cacheName). if libraryCache == true; search only the
-// library. if ociCache == true; search the oci cache. returns false if no match found.
-func CleanCacheName(cacheName string, libraryCache, ociCache bool) bool {
+// library. if ociCache == true; search the oci cache. returns false if no match found. Will return error if any occurs
+func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error) {
 	if libraryCache == ociCache {
 		matchLibrary, err := cleanLibraryCache(cacheName)
 		if err != nil {
-			sylog.Fatalf("Failed while cleaning cache: %v", err)
-			os.Exit(255)
+			sylog.Warningf("Unable to cleaning cache: %v", err)
+			return false, err
 		}
 		matchOci, err := cleanOciCache(cacheName)
 		if err != nil {
-			sylog.Fatalf("Failed while cleaning cache: %v", err)
-			os.Exit(255)
+			sylog.Warningf("Unable to cleaning cache: %v", err)
+			return false, err
 		}
 		if matchLibrary == true || matchOci == true {
-			return true
+			return true, nil
 		}
-		return false
+		return false, nil
 	}
 
 	match := false
 	if libraryCache == true {
 		match, err = cleanLibraryCache(cacheName)
 		if err != nil {
-			sylog.Fatalf("Failed while removing library cache: %v", err)
-			os.Exit(255)
+			sylog.Warningf("Unable to removing library cache: %v", err)
+			return false, err
 		}
-		return match
+		return match, nil
 	} else if ociCache == true {
 		match, err = cleanOciCache(cacheName)
 		if err != nil {
-			sylog.Fatalf("Failed while removing oci cache: %v", err)
-			os.Exit(255)
+			sylog.Warningf("Unable to removing oci cache: %v", err)
+			return false, err
 		}
-		return match
+		return match, nil
 	}
-	return false
+	return false, nil
 }
 
 var err error
@@ -169,7 +175,10 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	}
 
 	if len(cacheName) >= 1 && allClean != true {
-		foundMatch := CleanCacheName(cacheName, libraryClean, ociClean)
+		foundMatch, err := CleanCacheName(cacheName, libraryClean, ociClean)
+		if err != nil {
+			return err
+		}
 		if foundMatch != true {
 			sylog.Warningf("No cache found with givin name: %v", cacheName)
 			os.Exit(0)
