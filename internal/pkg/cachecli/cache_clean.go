@@ -20,6 +20,9 @@ func CleanLibraryCache() error {
 	sylog.Debugf("Removing: %v", cache.Library())
 
 	err := os.RemoveAll(cache.Library())
+	if err != nil {
+		sylog.Warningf("Unable to clean cache: %v", err)
+	}
 
 	return err
 }
@@ -29,6 +32,9 @@ func CleanOciCache() error {
 	sylog.Debugf("Removing: %v", cache.OciTemp())
 
 	err := os.RemoveAll(cache.OciTemp())
+	if err != nil {
+		sylog.Warningf("Unable to clean cache: %v", err)
+	}
 
 	return err
 }
@@ -38,6 +44,9 @@ func CleanBlobCache() error {
 	sylog.Debugf("Removing: %v", cache.OciBlob())
 
 	err := os.RemoveAll(cache.OciBlob())
+	if err != nil {
+		sylog.Warningf("Unable to clean cache: %v", err)
+	}
 
 	return err
 
@@ -107,12 +116,12 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 	if libraryCache == ociCache {
 		matchLibrary, err := cleanLibraryCache(cacheName)
 		if err != nil {
-			sylog.Warningf("Unable to cleaning cache: %v", err)
+//			sylog.Warningf("Unable to cleaning cache: %v", err)
 			return false, err
 		}
 		matchOci, err := cleanOciCache(cacheName)
 		if err != nil {
-			sylog.Warningf("Unable to cleaning cache: %v", err)
+//			sylog.Warningf("Unable to cleaning cache: %v", err)
 			return false, err
 		}
 		if matchLibrary == true || matchOci == true {
@@ -125,14 +134,14 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 	if libraryCache == true {
 		match, err = cleanLibraryCache(cacheName)
 		if err != nil {
-			sylog.Warningf("Unable to removing library cache: %v", err)
+//			sylog.Warningf("Unable to removing library cache: %v", err)
 			return false, err
 		}
 		return match, nil
 	} else if ociCache == true {
 		match, err = cleanOciCache(cacheName)
 		if err != nil {
-			sylog.Warningf("Unable to removing oci cache: %v", err)
+//			sylog.Warningf("Unable to removing oci cache: %v", err)
 			return false, err
 		}
 		return match, nil
@@ -185,7 +194,7 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 		}
 		return nil
 	} else if len(cacheName) >= 1 && allClean == true || len(typeNameClean) >= 1 && allClean == true {
-		sylog.Fatalf("These flags are not compatible with each other")
+		sylog.Fatalf("These flags are not compatible with each other.")
 		os.Exit(2)
 	}
 

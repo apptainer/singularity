@@ -155,50 +155,43 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
 	if allList == true {
-//		err = listLibraryCache()
-		_ = listLibraryCache()
-//		if err != nil {
-//			return err
-//		}
-//		err = listOciCache()
-		_ = listOciCache()
-//		if err != nil {
-//			return err
-//		}
-//		err = listBlobCache(true)
-		_ = listBlobCache(true)
-//		if err != nil {
-//			return err
-//		}
+		err = listLibraryCache()
+		if err != nil {
+			return err
+		}
+		err = listOciCache()
+		if err != nil {
+			return err
+		}
+		err = listBlobCache(true)
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	if libraryList == true {
-//		err = listLibraryCache()
-		_ = listLibraryCache()
-//		if err != nil {
-//			return err
-//		}
+		err = listLibraryCache()
+		if err != nil {
+			return err
+		}
 	}
 	if ociList == true {
-//		err = listOciCache()
-		_ = listOciCache()
-//		if err != nil {
-//			return err
-//		}
+		err = listOciCache()
+		if err != nil {
+			return err
+		}
 	}
 	if blobList == true {
-//		err = listBlobCache(true)
-		_ = listBlobCache(true)
-//		if err != nil {
-//			return err
-//		}
+		err = listBlobCache(true)
+		if err != nil {
+			return err
+		}
 	}
 	if listBlobSum == true {
-//		err = listBlobCache(false)
-		_ = listBlobCache(false)
-//		if err != nil {
-//			return err
-//		}
+		err = listBlobCache(false)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
