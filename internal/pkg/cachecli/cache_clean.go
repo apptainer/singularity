@@ -68,7 +68,7 @@ func cleanLibraryCache(cacheName string) (bool, error) {
 		for _, c := range cont {
 			if c.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.Library(), f.Name(), c.Name()))
-				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name(), c.Name()))
+				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name()))
 				if err != nil {
 					sylog.Warningf("Unable to remove cache: %v", err)
 					return false, err
@@ -97,7 +97,7 @@ func cleanOciCache(cacheName string) (bool, error) {
 		for _, b := range blob {
 			if b.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
+				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name()))
 				if err != nil {
 					sylog.Warningf("Unable to remove cache: %v", err)
 					return false, err
@@ -110,8 +110,9 @@ func cleanOciCache(cacheName string) (bool, error) {
 	return foundMatch, nil
 }
 
-// CleanCacheName : clean a cache with a specific name (cacheName). if libraryCache == true; search only the
-// library. if ociCache == true; search the oci cache. returns false if no match found. Will return error if any occurs
+// CleanCacheName : will clean a container with the same name as cacheName (in the cache directory).
+// if libraryCache == true; only search thrught library cache. if ociCache == true; only search the
+// oci-tmp cache. if both are false; search all cache, and if both are true; again, search all cache.
 func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error) {
 	if libraryCache == ociCache {
 		matchLibrary, err := cleanLibraryCache(cacheName)
@@ -160,17 +161,18 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	// specified `library` twice, it will still only be printed once.
 	if len(typeNameClean) >= 1 {
 		for _, nameType := range strings.Split(typeNameClean, ",") {
-			if nameType == "library" {
-				libraryClean = true
-			} else if nameType == "oci" {
-				ociClean = true
-			} else if nameType == "blob" || nameType == "blobs" {
-				blobClean = true
-			} else if nameType == "all" {
-				allClean = true
-			} else {
-				sylog.Fatalf("Not a valid type: %v", typeNameClean)
-				os.Exit(2)
+			switch nameType {
+				case "library":
+					libraryClean = true
+				case "oci":
+					ociClean = true
+				case "blob", "blobs":
+					blobClean = true
+				case "all":
+					allClean = true
+				default:
+					sylog.Fatalf("Not a valid type: %v", nameType)
+					os.Exit(2)
 			}
 		}
 	} else {
