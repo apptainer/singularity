@@ -53,11 +53,8 @@ rpm: dist
 	$(V)(set -x; cd $(SOURCEDIR) && \
 	  if [ -n "$(RPMPREFIX)" ]; then \
 	    rpmbuild $(RPMCLEAN) -ta \
+	      --define '_prefix $(RPMPREFIX)' \
 	      --define '_sysconfdir $(RPMPREFIX)/etc' \
-	      --define '_bindir $(RPMPREFIX)/bin' \
-	      --define '_libexecdir $(RPMPREFIX)/libexec' \
-	      --define '_localstatedir $(RPMPREFIX)/var' \
-	      --define '_mandir $(RPMPREFIX)/share/man' \
 	      $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz; \
 	  else \
 	    rpmbuild $(RPMCLEAN) -ta \
