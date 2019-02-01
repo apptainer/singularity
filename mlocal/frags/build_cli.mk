@@ -16,7 +16,7 @@ $(singularity): $(singularity_build_config) $(singularity_SOURCE)
 	@echo " GO" $@ "\n    [+] GO_TAGS" \"$(GO_TAGS)\"
 	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 
-singularity_INSTALL := $(DESTDIR)$(EXECPREFIX)/bin/singularity
+singularity_INSTALL := $(DESTDIR)$(BINDIR)/singularity
 $(singularity_INSTALL): $(singularity)
 	@echo " INSTALL" $@
 	$(V)install -d $(@D)
