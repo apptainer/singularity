@@ -177,7 +177,8 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
   This will clean you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob.`
+  types are: library, oci, and blob. By default cache clean will only clean blob cache,
+  use: '--all' to clean all cache.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
