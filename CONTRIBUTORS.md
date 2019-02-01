@@ -42,6 +42,7 @@
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Justin Riley <justin_riley@harvard.edu>
     - Krishna Muriki <kmuriki@lbl.gov>
+    - Kumar Sukhani <kumarsukhani@gmail.com>
     - Kundan Kumar <iamkundankumar28@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
