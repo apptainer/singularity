@@ -41,6 +41,18 @@ func Root() string {
 	return root
 }
 
+// Clean : wipes all files in the cache directory, will return a error if one occurs
+func Clean() error {
+	sylog.Debugf("Removing: %v", Root())
+
+	err := os.RemoveAll(Root())
+	if err != nil {
+		sylog.Warningf("Unable to clean cache: %v", err)
+	}
+
+	return err
+}
+
 func updateCacheRoot() {
 	usr, err := user.Current()
 	if err != nil {
