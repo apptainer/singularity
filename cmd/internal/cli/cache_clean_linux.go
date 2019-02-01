@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/cachecli"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -50,7 +50,7 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	err := cachecli.CleanSingularityCache(allClean, typeNameClean, cacheName)
+	err := singularity.CleanSingularityCache(allClean, typeNameClean, cacheName)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
 		os.Exit(255)

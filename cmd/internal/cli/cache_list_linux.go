@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/cachecli"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -47,7 +47,7 @@ var CacheListCmd = &cobra.Command{
 
 func cacheListCmd() error {
 
-	err := cachecli.ListSingularityCache(typeNameList, allList)
+	err := singularity.ListSingularityCache(typeNameList, allList)
 	if err != nil {
 		sylog.Fatalf("Not listing cache; an error occured: %v", err)
 		return err
