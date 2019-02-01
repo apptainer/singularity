@@ -38,6 +38,9 @@ var (
 func init() {
 	InspectCmd.Flags().SetInterspersed(false)
 
+	InspectCmd.Flags().StringVar(&AppName, "app", "", "inspect a specific app")
+	InspectCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
+
 	InspectCmd.Flags().BoolVarP(&labels, "labels", "l", false, "show the labels associated with the image (default)")
 	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
 
@@ -60,6 +63,46 @@ func init() {
 	InspectCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
 
 	SingularityCmd.AddCommand(InspectCmd)
+}
+
+func getLabelsFile(appName string) string {
+	if appName == "" {
+		return " cat /.singularity.d/labels.json;"
+	}
+
+	return fmt.Sprintf(" cat /scif/apps/%s/scif/labels.json;", appName)
+}
+
+func getRunscriptFile(appName string) string {
+	if appName == "" {
+		return " cat /.singularity.d/runscript;"
+	}
+
+	return fmt.Sprintf("/scif/apps/%s/scif/runscript", appName)
+}
+
+func getTestFile(appName string) string {
+	if appName == "" {
+		return " cat /.singularity.d/test;"
+	}
+
+	return fmt.Sprintf("/scif/apps/%s/scif/test", appName)
+}
+
+func getEnvFile(appName string) string {
+	if appName == "" {
+		return " find /.singularity.d/env -name 9*-environment.sh -exec echo -n == \\; -exec basename -z {} \\; -exec echo == \\; -exec cat {} \\; -exec echo \\;;"
+	}
+
+	return fmt.Sprintf(" find /scif/apps/%s/scif/env -name 9*-environment.sh -exec echo -n == \\; -exec basename -z {} \\; -exec echo == \\; -exec cat {} \\; -exec echo \\;;", appName)
+}
+
+func getHelpFile(appName string) string {
+	if appName == "" {
+		return " cat /.singularity.d/runscript.help;"
+	}
+
+	return fmt.Sprintf("/scif/apps/%s/scif/runscript.help", appName)
 }
 
 // InspectCmd represents the build command
@@ -96,7 +139,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nhelpfile';", prefix)
-			a[2] += " cat .singularity.d/runscript.help;"
+			a[2] += getHelpFile(AppName)
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
@@ -105,7 +148,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\ndeffile';", prefix)
-			a[2] += " cat .singularity.d/Singularity;"
+			a[2] += " cat .singularity.d/Singularity;" // apps share common definition file
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
@@ -114,7 +157,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nrunscript';", prefix)
-			a[2] += " cat .singularity.d/runscript;"
+			a[2] += getRunscriptFile(AppName)
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
@@ -123,7 +166,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\ntest';", prefix)
-			a[2] += " cat .singularity.d/test;"
+			a[2] += getTestFile(AppName)
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
@@ -132,7 +175,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nenvironment';", prefix)
-			a[2] += " find .singularity.d/env -name 9*-environment.sh -exec echo -n == \\; -exec basename -z {} \\; -exec echo == \\; -exec cat {} \\; -exec echo \\;;"
+			a[2] += getEnvFile(AppName)
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
@@ -142,7 +185,7 @@ var InspectCmd = &cobra.Command{
 
 			// append to a[2] to run commands in container
 			a[2] += fmt.Sprintf(" echo '%v\nlabels';", prefix)
-			a[2] += " cat .singularity.d/labels.json;"
+			a[2] += getLabelsFile(AppName)
 			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
 		}
 
@@ -205,6 +248,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 	engineConfig.OciConfig = ociConfig
 
 	generator.SetProcessArgs(args)
+	generator.SetProcessCwd("/")
 	engineConfig.SetImage(abspath)
 
 	cfg := &config.Common{
