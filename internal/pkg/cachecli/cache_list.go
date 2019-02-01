@@ -158,17 +158,17 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	if len(typeNameList) >= 1 {
 		for _, nameType := range strings.Split(typeNameList, ",") {
 			switch nameType {
-				case "library":
-					libraryList = true
-				case "oci":
-					ociList = true
-				case "blob", "blobs":
-					blobList = true
-				case "all":
-					allList = true
-				default:
-					sylog.Fatalf("Not a valid type: %v", nameType)
-					os.Exit(2)
+			case "library":
+				libraryList = true
+			case "oci":
+				ociList = true
+			case "blob", "blobs":
+				blobList = true
+			case "all":
+				allList = true
+			default:
+				sylog.Fatalf("Not a valid type: %v", nameType)
+				os.Exit(2)
 			}
 		}
 	} else {

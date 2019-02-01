@@ -174,17 +174,17 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	if len(typeNameClean) >= 1 {
 		for _, nameType := range strings.Split(typeNameClean, ",") {
 			switch nameType {
-				case "library":
-					libraryClean = true
-				case "oci":
-					ociClean = true
-				case "blob", "blobs":
-					blobClean = true
-				case "all":
-					allClean = true
-				default:
-					sylog.Fatalf("Not a valid type: %v", nameType)
-					os.Exit(2)
+			case "library":
+				libraryClean = true
+			case "oci":
+				ociClean = true
+			case "blob", "blobs":
+				blobClean = true
+			case "all":
+				allClean = true
+			default:
+				sylog.Fatalf("Not a valid type: %v", nameType)
+				os.Exit(2)
 			}
 		}
 	} else {
