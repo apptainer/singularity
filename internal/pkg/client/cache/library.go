@@ -42,7 +42,7 @@ func LibraryImageExists(sum, name string) (bool, error) {
 
 	cacheSum, err := client.ImageHash(imagePath)
 	if err != nil {
-		sylog.Debugf("Error getting ImageHash - Deleting Cached File: %s", err)
+		sylog.Debugf("Error getting ImageHash - Deleting Cached File: %v", err)
 		os.Remove(imagePath)
 		return false, nil
 	}
