@@ -18,7 +18,7 @@ import (
 
 func findSize(size int64) string {
 	var sizeF float64
-	if size <= 10000 {
+	if size <= 1000000 {
 		sizeF = float64(size) / 1000
 		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Kb"}, "")
 	} else if size <= 1000000000 {
