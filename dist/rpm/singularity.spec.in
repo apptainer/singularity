@@ -82,10 +82,22 @@ export GOPATH=$PWD/gopath
 export PATH=$GOPATH/bin:$PATH
 cd $GOPATH/%{singgopath}
 
-./mconfig -V %{version}-%{release} --prefix=%{_prefix} --exec-prefix=%{_exec_prefix} \
-	--bindir=%{_bindir} --libexecdir=%{_libexecdir} --sysconfdir=%{_sysconfdir} \
-	--sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} \
-	--libdir=%{_libdir}
+# Not all of these parameters currently have an effect, but they might be
+#  used someday.  They are the same parameters as in the configure macro.
+./mconfig -V %{version}-%{release} \
+        --prefix=%{_prefix} \
+        --exec-prefix=%{_exec_prefix} \
+        --bindir=%{_bindir} \
+        --sbindir=%{_sbindir} \
+        --sysconfdir=%{_sysconfdir} \
+        --datadir=%{_datadir} \
+        --includedir=%{_includedir} \
+        --libdir=%{_libdir} \
+        --libexecdir=%{_libexecdir} \
+        --localstatedir=%{_localstatedir} \
+        --sharedstatedir=%{_sharedstatedir} \
+        --mandir=%{_mandir} \
+        --infodir=%{_infodir}
 
 cd builddir
 make old_config=

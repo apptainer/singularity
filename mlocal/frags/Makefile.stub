@@ -50,7 +50,16 @@ testall: vendor-check check test
 .PHONY: rpm
 rpm: dist
 	@echo " BUILD RPM"
-	$(V)(cd $(SOURCEDIR) && rpmbuild $(RPMCLEAN) -ta $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz)
+	$(V)(set -x; cd $(SOURCEDIR) && \
+	  if [ -n "$(RPMPREFIX)" ]; then \
+	    rpmbuild $(RPMCLEAN) -ta \
+	      --define '_prefix $(RPMPREFIX)' \
+	      --define '_sysconfdir $(RPMPREFIX)/etc' \
+	      $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz; \
+	  else \
+	    rpmbuild $(RPMCLEAN) -ta \
+	      $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz; \
+	  fi)
 
 .PHONY: cscope
 cscope:
