@@ -174,8 +174,6 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 			}
 		}
 	} else {
-		libraryClean = true
-		ociClean = true
 		blobClean = true
 	}
 
