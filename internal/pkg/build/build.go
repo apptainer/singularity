@@ -367,6 +367,8 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 		return &sources.LocalConveyorPacker{}, nil
 	case "yum":
 		return &sources.YumConveyorPacker{}, nil
+	case "zypper":
+		return &sources.ZypperConveyorPacker{}, nil
 	case "scratch":
 		return &sources.ScratchConveyorPacker{}, nil
 	case "":
