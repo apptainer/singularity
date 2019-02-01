@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,10 +22,10 @@ func CleanLibraryCache() error {
 
 	err := os.RemoveAll(cache.Library())
 	if err != nil {
-		sylog.Warningf("Unable to clean cache: %v", err)
+		return fmt.Errorf("Unable to clean cache: %v", err)
 	}
 
-	return err
+	return nil
 }
 
 // CleanOciCache : clean only oci cache, will return a error if one occurs
@@ -33,10 +34,10 @@ func CleanOciCache() error {
 
 	err := os.RemoveAll(cache.OciTemp())
 	if err != nil {
-		sylog.Warningf("Unable to clean cache: %v", err)
+		return fmt.Errorf("Unable to clean cache: %v", err)
 	}
 
-	return err
+	return nil
 }
 
 // CleanBlobCache : clean only blob cache, will return a error if one occurs
@@ -45,10 +46,10 @@ func CleanBlobCache() error {
 
 	err := os.RemoveAll(cache.OciBlob())
 	if err != nil {
-		sylog.Warningf("Unable to clean cache: %v", err)
+		return fmt.Errorf("Unable to clean cache: %v", err)
 	}
 
-	return err
+	return nil
 
 }
 
@@ -56,22 +57,19 @@ func cleanLibraryCache(cacheName string) (bool, error) {
 	foundMatch := false
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		sylog.Warningf("Unable to opening cache folder: %v", err)
-		return false, err
+		return false, fmt.Errorf("Unable to opening cache folder: %v", err)
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
-			sylog.Warningf("Unable to look in cache folder: %v", err)
-			return false, err
+			return false, fmt.Errorf("Unable to look in cache folder: %v", err)
 		}
 		for _, c := range cont {
 			if c.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.Library(), f.Name(), c.Name()))
 				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name()))
 				if err != nil {
-					sylog.Warningf("Unable to remove cache: %v", err)
-					return false, err
+					return false, fmt.Errorf("Unable to remove cache: %v", err)
 				}
 				foundMatch = true
 			}
@@ -85,22 +83,19 @@ func cleanOciCache(cacheName string) (bool, error) {
 	foundMatch := false
 	blobs, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		sylog.Warningf("Unable to opening cache folder: %v", err)
-		return false, err
+		return false, fmt.Errorf("Unable to opening cache folder: %v", err)
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
-			sylog.Warningf("Unable to look in cache folder: %v", err)
-			return false, err
+			return false, fmt.Errorf("Unable to look in cache folder: %v", err)
 		}
 		for _, b := range blob {
 			if b.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name()))
 				if err != nil {
-					sylog.Warningf("Unable to remove cache: %v", err)
-					return false, err
+					return false, fmt.Errorf("Unable to remove cache: %v", err)
 				}
 				foundMatch = true
 			}

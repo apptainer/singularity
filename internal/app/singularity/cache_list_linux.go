@@ -35,20 +35,17 @@ func listLibraryCache() error {
 	// loop thrught library cache
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		sylog.Warningf("Unable to opening cache folder: %v", err)
-		return err
+		return fmt.Errorf("Unable to opening cache folder: %v", err)
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
-			sylog.Warningf("Unable to looking in cache: %v", err)
-			return err
+			return fmt.Errorf("Unable to looking in cache: %v", err)
 		}
 		for _, c := range cont {
 			fileInfo, err := os.Stat(filepath.Join(cache.Library(), f.Name(), c.Name()))
 			if err != nil {
-				sylog.Warningf("Unable to get stat: %v", err)
-				return err
+				return fmt.Errorf("Unable to get stat: %v", err)
 			}
 			printFileSize, err := findSize(fileInfo.Size())
 			if err != nil {
@@ -56,7 +53,6 @@ func listLibraryCache() error {
 				sylog.Warningf("%v", err)
 			}
 			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "library")
-			printFileSize = ""
 		}
 	}
 	return nil
@@ -66,20 +62,17 @@ func listOciCache() error {
 	// loop thrught oci-tmp cache
 	ociTmp, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		sylog.Warningf("Unable to opening oci-tmp folder: %v", err)
-		return err
+		return fmt.Errorf("while opening oci-tmp folder: %v", err)
 	}
 	for _, f := range ociTmp {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
-			sylog.Warningf("Unable to looking in cache: %v", err)
-			return err
+			return fmt.Errorf("Unable to looking in cache: %v", err)
 		}
 		for _, b := range blob {
 			fileInfo, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 			if err != nil {
-				sylog.Warningf("Unable to get stat: %v", err)
-				return err
+				return fmt.Errorf("Unable to get stat: %v", err)
 			}
 			printFileSize, err := findSize(fileInfo.Size())
 			if err != nil {
@@ -87,7 +80,6 @@ func listOciCache() error {
 				sylog.Warningf("%v", err)
 			}
 			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "oci")
-			printFileSize = ""
 		}
 	}
 	return nil
@@ -104,20 +96,17 @@ func listBlobCache(printList bool) error {
 	}
 	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
 	if err != nil {
-		sylog.Warningf("Unable to opening oci folder: %v", err)
-		return err
+		return fmt.Errorf("Unable to opening oci folder: %v", err)
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
 		if err != nil {
-			sylog.Warningf("Unable to looking in cache: %v", err)
-			return err
+			return fmt.Errorf("Unable to looking in cache: %v", err)
 		}
 		for _, b := range blob {
 			fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
 			if err != nil {
-				sylog.Warningf("Unable to get stat: %v", err)
-				return err
+				return fmt.Errorf("Unable to get stat: %v", err)
 			}
 			if printList == true {
 				printFileSize, err := findSize(fileInfo.Size())
@@ -126,7 +115,6 @@ func listBlobCache(printList bool) error {
 					sylog.Warningf("%v", err)
 				}
 				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "blob")
-				printFileSize = ""
 			}
 			count++
 			totalSize += fileInfo.Size()
@@ -139,7 +127,6 @@ func listBlobCache(printList bool) error {
 			sylog.Warningf("%v", err)
 		}
 		fmt.Printf("\nThere are %d oci blob file(s) using %v of space. Use: '-T=blob' to list\n", count, printFileSize)
-		printFileSize = ""
 	}
 	return nil
 }
