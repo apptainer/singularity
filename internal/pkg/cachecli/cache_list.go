@@ -16,19 +16,19 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func findSize(size int64) string {
+func findSize(size int64) (string, error) {
 	var sizeF float64
 	if size <= 1000000 {
 		sizeF = float64(size) / 1000
-		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Kb"}, "")
+		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Kb"}, ""), nil
 	} else if size <= 1000000000 {
 		sizeF = float64(size) / 1000000
-		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Mb"}, "")
+		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Mb"}, ""), nil
 	} else if size >= 1000000000 {
 		sizeF = float64(size) / 1000000000
-		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Gb"}, "")
+		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Gb"}, ""), nil
 	}
-	return "ERROR: failed to detect file size."
+	return "", fmt.Errorf("failed to detect file size")
 }
 
 func listLibraryCache() error {
@@ -50,7 +50,13 @@ func listLibraryCache() error {
 				sylog.Warningf("Unable to get stat: %v", err)
 				return err
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "library")
+			printFileSize, err := findSize(fileInfo.Size())
+			if err != nil {
+				// no need to describe the error, since it is already
+				sylog.Warningf("%v", err)
+			}
+			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "library")
+			printFileSize = ""
 		}
 	}
 	return nil
@@ -75,7 +81,13 @@ func listOciCache() error {
 				sylog.Warningf("Unable to get stat: %v", err)
 				return err
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "oci")
+			printFileSize, err := findSize(fileInfo.Size())
+			if err != nil {
+				// no need to describe the error, since it is already
+				sylog.Warningf("%v", err)
+			}
+			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "oci")
+			printFileSize = ""
 		}
 	}
 	return nil
@@ -108,14 +120,26 @@ func listBlobCache(printList bool) error {
 				return err
 			}
 			if printList == true {
-				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "blob")
+				printFileSize, err := findSize(fileInfo.Size())
+				if err != nil {
+					// no need to describe the error, since it is already
+					sylog.Warningf("%v", err)
+				}
+				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "blob")
+				printFileSize = ""
 			}
 			count++
 			totalSize += fileInfo.Size()
 		}
 	}
 	if printList != true && count >= 1 {
-		fmt.Printf("\nThere are %d oci blob file(s) using %v of space. Use: '-T=blob' to list\n", count, findSize(totalSize))
+		printFileSize, err := findSize(totalSize)
+		if err != nil {
+			// no need to describe the error, since it is already
+			sylog.Warningf("%v", err)
+		}
+		fmt.Printf("\nThere are %d oci blob file(s) using %v of space. Use: '-T=blob' to list\n", count, printFileSize)
+		printFileSize = ""
 	}
 	return nil
 }
@@ -133,17 +157,18 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 	// specified `library` twice, it will still only be printed once.
 	if len(typeNameList) >= 1 {
 		for _, nameType := range strings.Split(typeNameList, ",") {
-			if nameType == "library" {
-				libraryList = true
-			} else if nameType == "oci" {
-				ociList = true
-			} else if nameType == "blob" || nameType == "blobs" {
-				blobList = true
-			} else if nameType == "all" {
-				allList = true
-			} else {
-				sylog.Fatalf("Not a valid type: %v", typeNameList)
-				os.Exit(2)
+			switch nameType {
+				case "library":
+					libraryList = true
+				case "oci":
+					ociList = true
+				case "blob", "blobs":
+					blobList = true
+				case "all":
+					allList = true
+				default:
+					sylog.Fatalf("Not a valid type: %v", nameType)
+					os.Exit(2)
 			}
 		}
 	} else {

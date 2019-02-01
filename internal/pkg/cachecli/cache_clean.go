@@ -15,6 +15,18 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+// CleanAllCache : wipes all files in the cache directory, will return a error if one occurs
+func CleanAllCache() error {
+	sylog.Debugf("Removing: %v", cache.Root())
+
+	err := os.RemoveAll(cache.Root())
+	if err != nil {
+		sylog.Warningf("Unable to clean cache: %v", err)
+	}
+
+	return err
+}
+
 // CleanLibraryCache : clean only library cache, will return a error if one occurs
 func CleanLibraryCache() error {
 	sylog.Debugf("Removing: %v", cache.Library())
@@ -195,7 +207,7 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	}
 
 	if allClean == true {
-		err = cache.Clean()
+		err = CleanAllCache()
 		if err != nil {
 			return err
 		}
