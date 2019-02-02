@@ -19,32 +19,32 @@ func assertAccess(dir string) {
 	}
 }
 
-func markdownDocs(out_dir string) {
-	assertAccess(out_dir)
-	sylog.Infof("Creating Singularity markdown docs at %s\n", out_dir)
-	if err := doc.GenMarkdownTree(cli.SingularityCmd, out_dir); err != nil {
+func markdownDocs(outDir string) {
+	assertAccess(outDir)
+	sylog.Infof("Creating Singularity markdown docs at %s\n", outDir)
+	if err := doc.GenMarkdownTree(cli.SingularityCmd, outDir); err != nil {
 		sylog.Fatalf("Failed to create markdown docs for singularity\n")
 	}
 }
 
-func manDocs(out_dir string) {
-	assertAccess(out_dir)
-	sylog.Infof("Creating Singularity man pages at %s\n", out_dir)
+func manDocs(outDir string) {
+	assertAccess(outDir)
+	sylog.Infof("Creating Singularity man pages at %s\n", outDir)
 	header := &doc.GenManHeader{
 		Title:   "singularity",
 		Section: "1",
 	}
 
 	// works recursively on all sub-commands (thanks bauerm97)
-	if err := doc.GenManTree(cli.SingularityCmd, header, out_dir); err != nil {
+	if err := doc.GenManTree(cli.SingularityCmd, header, outDir); err != nil {
 		sylog.Fatalf("Failed to create man pages for singularity\n")
 	}
 }
 
-func rstDocs(out_dir string) {
-	assertAccess(out_dir)
-	sylog.Infof("Creating Singularity RST docs at %s\n", out_dir)
-	if err := doc.GenReSTTree(cli.SingularityCmd, out_dir); err != nil {
+func rstDocs(outDir string) {
+	assertAccess(outDir)
+	sylog.Infof("Creating Singularity RST docs at %s\n", outDir)
+	if err := doc.GenReSTTree(cli.SingularityCmd, outDir); err != nil {
 		sylog.Fatalf("Failed to create RST docs for singularity\n")
 	}
 }
