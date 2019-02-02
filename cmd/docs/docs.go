@@ -10,39 +10,60 @@ import (
 	"github.com/spf13/cobra/doc"
 	"github.com/sylabs/singularity/cmd/internal/cli"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
+
+func assertAccess(dir string) {
+	if err := unix.Access(dir, unix.W_OK); err != nil {
+		sylog.Fatalf("Given directory does not exist or is not writable by calling user.")
+	}
+}
+
+func markdownDocs(out_dir string) {
+	assertAccess(out_dir)
+	sylog.Infof("Creating Singularity markdown docs at %s\n", out_dir)
+	if err := doc.GenMarkdownTree(cli.SingularityCmd, out_dir); err != nil {
+		sylog.Fatalf("Failed to create markdown docs for singularity\n")
+	}
+}
+
+func manDocs(out_dir string) {
+	assertAccess(out_dir)
+	sylog.Infof("Creating Singularity man pages at %s\n", out_dir)
+	header := &doc.GenManHeader{
+		Title:   "singularity",
+		Section: "1",
+	}
+
+	// works recursively on all sub-commands (thanks bauerm97)
+	if err := doc.GenManTree(cli.SingularityCmd, header, out_dir); err != nil {
+		sylog.Fatalf("Failed to create man pages for singularity\n")
+	}
+}
+
+func rstDocs(out_dir string) {
+	assertAccess(out_dir)
+	sylog.Infof("Creating Singularity RST docs at %s\n", out_dir)
+	if err := doc.GenReSTTree(cli.SingularityCmd, out_dir); err != nil {
+		sylog.Fatalf("Failed to create RST docs for singularity\n")
+	}
+}
 
 func main() {
 	var dir string
 	var rootCmd = &cobra.Command{
-		ValidArgs: []string{"markdown", "man", "rest"},
+		ValidArgs: []string{"markdown", "man", "rst"},
 		Args:      cobra.ExactArgs(1),
-		Use:       "makeDocs {markdown | man | rest}",
+		Use:       "makeDocs {markdown | man | rst}",
 		Short:     "Generates Singularity documentation",
 		Run: func(cmd *cobra.Command, args []string) {
 			switch args[0] {
 			case "markdown":
-				sylog.Infof("Creating Singularity markdown docs at %s\n", dir)
-				if err := doc.GenMarkdownTree(cli.SingularityCmd, dir); err != nil {
-					sylog.Fatalf("Failed to create markdown docs for singularity\n")
-				}
+				markdownDocs(dir)
 			case "man":
-				sylog.Infof("Creating Singularity man pages at %s\n", dir)
-				header := &doc.GenManHeader{
-					Title:   "singularity",
-					Section: "1",
-				}
-
-				// works recursively on all sub-commands (thanks bauerm97)
-				if err := doc.GenManTree(cli.SingularityCmd, header, dir); err != nil {
-					sylog.Fatalf("Failed to create man page for singularity\n")
-				}
-			case "rest":
-				sylog.Infof("Creating Singularity ReST docs at %s\n", dir)
-				if err := doc.GenReSTTree(cli.SingularityCmd, dir); err != nil {
-					sylog.Fatalf("Failed to create markdown docs for singularity\n")
-				}
-
+				manDocs(dir)
+			case "rst":
+				rstDocs(dir)
 			default:
 				sylog.Fatalf("Invalid output type %s\n", args[0])
 			}
