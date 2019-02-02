@@ -132,11 +132,22 @@ func handleLibrary(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, validFile, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
+	} else if !validFile {
 		sylog.Infof("Downloading library image")
-		libexec.PullLibraryImage(imagePath, u, "https://library.sylabs.io", false, authToken)
+
+		// Force Download if File already exists
+		force := exists
+		if err = library.DownloadImage(imagePath, u, PullLibraryURI, force, authToken); err != nil {
+			return "", fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
+			return "", fmt.Errorf("Error getting ImageHash: %v", err)
+		} else if cacheFileHash != libraryImage.Hash {
+			return "", fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
 	}
 
 	return imagePath, nil

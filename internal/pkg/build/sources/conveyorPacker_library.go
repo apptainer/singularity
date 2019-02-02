@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/client/library"
+	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
@@ -50,11 +50,22 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	imageName := uri.GetName(libURI)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, validFile, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
+	} else if !validFile {
 		sylog.Infof("Downloading library image")
-		client.DownloadImage(imagePath, libURI, cp.LibraryURL, false, cp.AuthToken)
+
+		// Force Download if File already exists
+		force := exists
+		if err = client.DownloadImage(imagePath, libURI, cp.LibraryURL, force, cp.AuthToken); err != nil {
+			return fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+			return fmt.Errorf("Error getting ImageHash: %v", err)
+		} else if cacheFileHash != libraryImage.Hash {
+			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)

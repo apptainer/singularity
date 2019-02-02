@@ -110,20 +110,20 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		imageName := uri.GetName(args[i])
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-		if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		if exists, validFile, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
-		} else if !exists {
+		} else if !validFile {
 			sylog.Infof("Downloading library image")
-			err = client.DownloadImage(imagePath, args[i], PullLibraryURI, false, authToken)
-			if err != nil {
+
+			// Force Download if File already exists
+			force := exists
+			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, force, authToken); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
 			}
 
-			cacheFileHash, err := client.ImageHash(imagePath)
-			if err != nil {
+			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
 				sylog.Fatalf("Error getting ImageHash: %v", err)
-			}
-			if cacheFileHash != libraryImage.Hash {
+			} else if cacheFileHash != libraryImage.Hash {
 				sylog.Fatalf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 			}
 		}
