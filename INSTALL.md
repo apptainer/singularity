@@ -81,6 +81,12 @@ $ ./mconfig
 $ make -C builddir rpm
 ```
 
+To build an rpm with an alternative install prefix set RPMPREFIX on the
+make step, for example
+```
+$ make -C builddir rpm RPMPREFIX=/usr/local
+```
+
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
