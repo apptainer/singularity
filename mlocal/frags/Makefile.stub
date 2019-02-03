@@ -2,7 +2,7 @@ all: $(ALL)
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/man_pages/man_pages.go $(DESTDIR)$(MANDIR)/man1
+	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/docs/docs.go man --dir $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: collect
 collect:
