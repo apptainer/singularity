@@ -136,7 +136,7 @@ func handleLibrary(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = library.DownloadImage(imagePath, u, PullLibraryURI, true, authToken); err != nil {
+		if err = library.DownloadImage(imagePath, u, "https://library.sylabs.io", true, authToken); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
