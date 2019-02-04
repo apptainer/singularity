@@ -9,7 +9,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -25,13 +28,49 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\"", bzImage, initramfs, singAction, cliExtra)
 
 	defArgs := []string{""}
-	if cliExtra == "syos" && isInternal {
-		//fmt.Println("defArgs - without -hda")
-		defArgs = []string{"-A", "-m", "6G", "-c", "2", "-s", "0:0,hostbridge", "-s", "31,lpc", "-l", "com1,stdio", "-f", kexecArgs}
-	} else {
-		//fmt.Println("defArgs - with -hda")
-		defArgs = []string{"-A", "-m", "6G", "-c", "2", "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio", "-f", kexecArgs}
+	defArgs = []string{"-A", "-m", VmRam, "-c", VmCpu, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
+	//defArgs = []string{"-A", "-m", "6G", "-c", "2", "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio", "-f", kexecArgs}
+
+	slot := 5
+	function := 0
+	for _,bindpath := range BindPaths {
+		splitted := strings.Split(bindpath, ":")
+		src := splitted[0]
+		dst := ""
+		if (len(splitted) > 1) {
+			dst = splitted[1]
+		} else {
+			dst = src
+		}
+
+		mntTag := ""
+
+		sylog.Debugf("Bind path: " + src + " -> " + dst)
+		// TODO: Figure out if src is a directory or not
+		mntTag = filepath.Base(src)
+
+		pciArgs := fmt.Sprintf("%s.%s,virtio-9p,%s=%s",strconv.Itoa(slot),strconv.Itoa(function),mntTag,src)
+		//defArgs = append(defArgs,"-s")
+		//defArgs = append(defArgs, pciArgs)
+
+		sylog.Debugf("PCI: %s", pciArgs)
+
+		function++
+		if (function > 7) {
+			sylog.Fatalf("Maximum of 8 bind mounts")
+		}
 	}
+
+	// Force $HOME to be mounted
+	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used eventually
+	homeSrc := os.Getenv("HOME")
+	pciArgs := fmt.Sprintf("4.0,virtio-9p,home=%s", homeSrc)
+	sylog.Debugf("PCI: %s", pciArgs)
+	defArgs = append(defArgs, "-s")
+	defArgs = append(defArgs, pciArgs)
+
+	defArgs = append(defArgs, "-f")
+	defArgs = append(defArgs, kexecArgs)
 
 	pgmExec, lookErr := exec.LookPath("/usr/local/libexec/xhyve/build/xhyve")
 	if lookErr != nil {
@@ -48,6 +87,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("Failed to determine image absolute path for %s: %s \nPlease contact sales@sylabs.io for info on how to license SyOS. \n\n", initramfs, err)
 	}
 
+	sylog.Debugf("%s", defArgs)
 	cmd := exec.Command(pgmExec, defArgs...)
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
@@ -63,8 +103,6 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 				sylog.Debugf("Process exited with non-zero return code: %d\n", status.ExitStatus())
 			}
 		}
-
-		sylog.Fatalf("Process exited with unknown error: %v\n", err)
 	}
 
 	return nil
