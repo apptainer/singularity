@@ -8,5 +8,8 @@ set -x
 
 sw_vers
 command -v singularity
-singularity version
 singularity help
+singularity version
+
+singularity search alpine
+singularity pull library://library/default/alpine:latest && [[ -f alpine_latest.sif ]]
