@@ -6,6 +6,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 	"github.com/sylabs/singularity/cmd/internal/cli"
@@ -44,7 +45,11 @@ func manDocs(outDir string) {
 func rstDocs(outDir string) {
 	assertAccess(outDir)
 	sylog.Infof("Creating Singularity RST docs at %s\n", outDir)
-	if err := doc.GenReSTTree(cli.SingularityCmd, outDir); err != nil {
+	if err := doc.GenReSTTreeCustom(cli.SingularityCmd, outDir, func(a string) string {
+		return ""
+	}, func(name, ref string) string {
+		return fmt.Sprintf(":ref:`%s <%s>`", name, ref)
+	}); err != nil {
 		sylog.Fatalf("Failed to create RST docs for singularity\n")
 	}
 }
