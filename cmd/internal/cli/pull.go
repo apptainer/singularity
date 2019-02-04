@@ -126,7 +126,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
 		} else if !exists {
 			sylog.Infof("Downloading library image")
-			client.DownloadImage(imagePath, args[i], PullLibraryURI, false, authToken)
+			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
+				sylog.Fatalf("unable to Download Image: %v", err)
+			}
+
+			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+				sylog.Fatalf("Error getting ImageHash: %v", err)
+			} else if cacheFileHash != libraryImage.Hash {
+				sylog.Fatalf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			}
 		}
 
 		// Perms are 777 *prior* to umask
