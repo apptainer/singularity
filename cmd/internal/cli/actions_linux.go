@@ -39,7 +39,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		sylog.Debugf("Setting --vm option to true")
 		VM = true
 	}
-	if (isSyOS && !VM) {
+	if (IsSyOS && !VM) {
 		sylog.Warningf("--syos option only effective when used with the --vm option. Running in VM.")
 		VM = true
 	}

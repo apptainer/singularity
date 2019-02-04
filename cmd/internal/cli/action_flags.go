@@ -46,7 +46,7 @@ var (
 	NoInit          bool
 	NoNvidia        bool
 	VM              bool
-	isSyOS		bool
+	IsSyOS		bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -246,7 +246,7 @@ func initBoolVars() {
 
 	// --syos
 	// TODO: Keep this in production?
-	actionFlags.BoolVar(&isSyOS, "syos", false, "execute SyOS shell")
+	actionFlags.BoolVar(&IsSyOS, "syos", false, "execute SyOS shell")
 	actionFlags.SetAnnotation("syos", "envkey", []string{"SYOS"})
 
 }

@@ -76,7 +76,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	defArgs = append(defArgs, "-s")
 	defArgs = append(defArgs, pciArgs)
 
-	if (isSyOS) {
+	if (IsSyOS) {
 		cliExtra = "syos"
 	}
 
