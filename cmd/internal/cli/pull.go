@@ -8,6 +8,8 @@ package cli
 import (
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -94,6 +96,16 @@ func pullRun(cmd *cobra.Command, args []string) {
 	} else {
 		name = PullImageName
 	}
+
+	// monitor for OS signals and remove invalid file
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func(fileName string) {
+		<-c
+		sylog.Debugf("Removing incomplete file because of receiving Termination signal")
+		os.Remove(fileName)
+		os.Exit(1)
+	}(name)
 
 	switch transport {
 	case LibraryProtocol, "":
