@@ -9,9 +9,11 @@
 package apps
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -207,6 +209,10 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 			return err
 		}
 
+		if err := copyFiles(b, app); err != nil {
+			return err
+		}
+
 		globalEnv94 += globalAppEnv(b, app)
 	}
 
@@ -292,6 +298,42 @@ func writeHelpFile(b *types.Bundle, a *App) error {
 	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0755)
 }
 
+// %appfile
+func copyFiles(b *types.Bundle, a *App) error {
+	if a.Files == "" {
+		return nil
+	}
+
+	appBase := filepath.Join(b.Rootfs(), "/scif/apps/", a.Name)
+	for _, line := range strings.Split(a.Files, "\n") {
+
+		// skip empty or comment lines
+		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			continue
+		}
+
+		// trim any comments and whitespace
+		trimLine := strings.Split(strings.TrimSpace(line), "#")[0]
+		splitLine := strings.SplitN(strings.TrimSpace(trimLine), " ", 2)
+
+		// copy to dst of same name in app if no dst is specified
+		var src, dst string
+		if len(splitLine) < 2 {
+			src = splitLine[0]
+			dst = splitLine[0]
+		} else {
+			src = splitLine[0]
+			dst = splitLine[1]
+		}
+
+		if err := copy(src, filepath.Join(appBase, dst)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 //util funcs
 
 func appBase(b *types.Bundle, a *App) string {
@@ -304,6 +346,18 @@ func appMeta(b *types.Bundle, a *App) string {
 
 func appData(b *types.Bundle, a *App) string {
 	return filepath.Join(b.Rootfs(), "/scif/data/", a.Name)
+}
+
+func copy(src, dst string) error {
+	var stderr bytes.Buffer
+	copy := exec.Command("cp", "-fLr", src, dst)
+	copy.Stderr = &stderr
+	sylog.Debugf("Copying %v to %v", src, dst)
+	if err := copy.Run(); err != nil {
+		return fmt.Errorf("While copying %v to %v: %v: %v", src, dst, err, stderr.String())
+	}
+
+	return nil
 }
 
 // HandlePost returns a script that should run after %post
