@@ -20,16 +20,17 @@ import (
 )
 
 func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
-
 	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
 	bzImage := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH, "/singularity/vm/syos-kernel-")
 	initramfs := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH+".gz", "/singularity/vm/initramfs_")
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\"", bzImage, initramfs, singAction, cliExtra)
 
+	// Default xhyve Arguments
 	defArgs := []string{""}
 	defArgs = []string{"-A", "-m", VmRam, "-c", VmCpu, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
-	//defArgs = []string{"-A", "-m", "6G", "-c", "2", "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio", "-f", kexecArgs}
+
+	// Bind mounts
+	singBinds := []string{""}
 
 	slot := 5
 	function := 0
@@ -53,6 +54,9 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		//defArgs = append(defArgs,"-s")
 		//defArgs = append(defArgs, pciArgs)
 
+		localBind := fmt.Sprintf("%s:%s",mntTag,dst)
+		singBinds = append(singBinds, localBind)
+
 		sylog.Debugf("PCI: %s", pciArgs)
 
 		function++
@@ -65,10 +69,20 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used eventually
 	homeSrc := os.Getenv("HOME")
 	pciArgs := fmt.Sprintf("4.0,virtio-9p,home=%s", homeSrc)
+	homeBind := fmt.Sprintf("home:%s",homeSrc)
+	singBinds = append(singBinds, homeBind)
+
 	sylog.Debugf("PCI: %s", pciArgs)
 	defArgs = append(defArgs, "-s")
 	defArgs = append(defArgs, pciArgs)
 
+	if (isSyOS) {
+		cliExtra = "syos"
+	}
+
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\"", bzImage, initramfs, singAction, cliExtra)
+
+	// Add our actual kexec entry
 	defArgs = append(defArgs, "-f")
 	defArgs = append(defArgs, kexecArgs)
 
@@ -87,6 +101,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("Failed to determine image absolute path for %s: %s \nPlease contact sales@sylabs.io for info on how to license SyOS. \n\n", initramfs, err)
 	}
 
+	sylog.Debugf("%s", singBinds)
 	sylog.Debugf("%s", defArgs)
 	cmd := exec.Command(pgmExec, defArgs...)
 	cmd.Env = os.Environ()
