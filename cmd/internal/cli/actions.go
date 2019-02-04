@@ -132,14 +132,11 @@ func handleLibrary(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, validFile, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !validFile {
+	} else if !exists {
 		sylog.Infof("Downloading library image")
-
-		// Force Download if File already exists
-		force := exists
-		if err = library.DownloadImage(imagePath, u, PullLibraryURI, force, authToken); err != nil {
+		if err = library.DownloadImage(imagePath, u, PullLibraryURI, true, authToken); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 

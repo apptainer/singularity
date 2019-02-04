@@ -50,14 +50,11 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	imageName := uri.GetName(libURI)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, validFile, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !validFile {
+	} else if !exists {
 		sylog.Infof("Downloading library image")
-
-		// Force Download if File already exists
-		force := exists
-		if err = client.DownloadImage(imagePath, libURI, cp.LibraryURL, force, cp.AuthToken); err != nil {
+		if err = client.DownloadImage(imagePath, libURI, cp.LibraryURL, true, cp.AuthToken); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 

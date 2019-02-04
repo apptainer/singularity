@@ -31,23 +31,23 @@ func LibraryImage(sum, name string) string {
 }
 
 // LibraryImageExists returns whether the image with the SHA sum exists in the LibraryImage cache
-func LibraryImageExists(sum, name string) (bool, bool, error) {
+func LibraryImageExists(sum, name string) (bool, error) {
 	imagePath := LibraryImage(sum, name)
 	_, err := os.Stat(imagePath)
 	if os.IsNotExist(err) {
-		return false, false, nil
+		return false, nil
 	} else if err != nil {
-		return false, false, err
+		return false, err
 	}
 
 	cacheSum, err := client.ImageHash(imagePath)
 	if err != nil {
-		return false, false, err
+		return false, err
 	}
 	if cacheSum != sum {
 		sylog.Debugf("Cached File Sum(%s) and Expected Sum(%s) does not match", cacheSum, sum)
-		return true, false, nil
+		return false, nil
 	}
 
-	return true, true, nil
+	return true, nil
 }
