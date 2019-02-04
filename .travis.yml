@@ -18,6 +18,10 @@ addons:
       - libarchive-dev
       - libgpgme11-dev
       - libseccomp-dev
+  homebrew:
+    packages:
+      - squashfs
+    update: true
 
 matrix:
   include:

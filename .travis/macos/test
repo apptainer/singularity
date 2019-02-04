@@ -13,3 +13,4 @@ singularity version
 
 singularity search alpine
 singularity pull library://library/default/alpine:latest && [[ -f alpine_latest.sif ]]
+singularity pull docker://busybox:latest && [[ -f busybox_latest.sif ]]
