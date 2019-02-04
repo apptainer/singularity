@@ -49,6 +49,7 @@
     - Matt Wiens <mwiens91@gmail.com>
     - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
     - Michael Herzberg <michael@mherzberg.de>
+    - Michael Milton <ttmigueltt@gmail.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
