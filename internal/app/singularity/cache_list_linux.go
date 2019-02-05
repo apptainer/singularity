@@ -133,18 +133,20 @@ func listBlobCache(printList bool) error {
 
 // ListSingularityCache : list local singularity cache, typeNameList : is a string of what cache
 // to list (seprate each type with a comma; like this: library,oci,blob) allList : force list all cache.
-func ListSingularityCache(typeNameList string, allList bool) error {
+func ListSingularityCache(cacheListTypes []string, listAll bool) error {
+//func ListSingularityCache(typeNameList string, allList bool) error {
 	libraryList := false
 	ociList := false
 	blobList := false
 	listBlobSum := false
+	allList := false
 
 	// split the string for each `,` then loop throught it and find what flags are there.
 	// then see whats true/false later. heres the benefit of doing it like this; if the user
 	// specified `library` twice, it will still only be printed once.
-	if len(typeNameList) >= 1 {
-		for _, nameType := range strings.Split(typeNameList, ",") {
-			switch nameType {
+	if len(cacheListTypes) >= 1 {
+        for _, t := range cacheListTypes {
+			switch t {
 			case "library":
 				libraryList = true
 			case "oci":
@@ -154,14 +156,10 @@ func ListSingularityCache(typeNameList string, allList bool) error {
 			case "all":
 				allList = true
 			default:
-				sylog.Fatalf("Not a valid type: %v", nameType)
+				sylog.Fatalf("Not a valid type: %v", t)
 				os.Exit(2)
 			}
-		}
-	} else {
-		libraryList = true
-		ociList = true
-		listBlobSum = true
+        }
 	}
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
