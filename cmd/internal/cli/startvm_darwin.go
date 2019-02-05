@@ -50,9 +50,9 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		// TODO: Figure out if src is a directory or not
 		mntTag = filepath.Base(src)
 
-		pciArgs := fmt.Sprintf("%s.%s,virtio-9p,%s=%s",strconv.Itoa(slot),strconv.Itoa(function),mntTag,src)
-		//defArgs = append(defArgs,"-s")
-		//defArgs = append(defArgs, pciArgs)
+		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s",strconv.Itoa(slot),strconv.Itoa(function),mntTag,src)
+		defArgs = append(defArgs,"-s")
+		defArgs = append(defArgs, pciArgs)
 
 		localBind := fmt.Sprintf("%s:%s",mntTag,dst)
 		singBinds = append(singBinds, localBind)
@@ -68,7 +68,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	// Force $HOME to be mounted
 	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used eventually
 	homeSrc := os.Getenv("HOME")
-	pciArgs := fmt.Sprintf("4.0,virtio-9p,home=%s", homeSrc)
+	pciArgs := fmt.Sprintf("4:0,virtio-9p,home=%s", homeSrc)
 	homeBind := fmt.Sprintf("home:%s",homeSrc)
 	singBinds = append(singBinds, homeBind)
 
