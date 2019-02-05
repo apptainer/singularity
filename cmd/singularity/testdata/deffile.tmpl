@@ -1,5 +1,10 @@
+{{- if .Bootstrap}}
 Bootstrap: {{.Bootstrap}}
+{{- end}}
+
+{{- if .From}}
 From: {{.From}}
+{{- end}}
 
 {{- if .Registry}}
 Registry: {{.Registry}}
@@ -9,9 +14,75 @@ Registry: {{.Registry}}
 Namespace: {{.Namespace}}
 {{- end}}
 
+
+
+
+{{- if .Help}}
+%help
+{{- end}}
+{{- range $l := .Help}}
+    {{$l}}
+{{- end}}
+
+{{- if .Env}}
+%environment
+{{- end}}
+{{- range $l := .Env}}
+    export {{$l}}
+{{- end}}
+
 {{- if .Labels}}
 %labels
 {{- end}}
 {{- range $k, $v := .Labels}}
     {{$k}} {{$v}}
+{{- end}}
+
+{{- if .Files}}
+%files
+{{- end}}
+{{- range $f := .Files}}
+    {{$f.Src}} {{$f.Dst}}
+{{- end}}
+
+{{- if .Pre}}
+%pre
+{{- end}}
+{{- range $l := .Pre}}
+    touch {{$l}}
+{{- end}}
+
+{{- if .Setup}}
+%setup
+{{- end}}
+{{- range $l := .Setup}}
+    touch {{$l}}
+{{- end}}
+
+{{- if .Post}}
+%post
+{{- end}}
+{{- range $l := .Post}}
+    touch {{$l}}
+{{- end}}
+
+{{- if .RunScript}}
+%runscript
+{{- end}}
+{{- range $l := .RunScript}}
+    {{$l}}
+{{- end}}
+
+{{- if .Test}}
+%test
+{{- end}}
+{{- range $l := .Test}}
+    {{$l}}
+{{- end}}
+
+{{- if .StartScript}}
+%startscript
+{{- end}}
+{{- range $l := .StartScript}}
+    {{$l}}
 {{- end}}
