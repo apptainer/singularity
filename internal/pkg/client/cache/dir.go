@@ -45,12 +45,11 @@ func Root() string {
 func Clean() error {
 	sylog.Debugf("Removing: %v", Root())
 
-	err := os.RemoveAll(Root())
-	if err != nil {
-		sylog.Warningf("Unable to clean cache: %v", err)
+	if err := os.RemoveAll(Root()); err != nil {
+		return fmt.Errorf("while cleaning cache: %s", err)
 	}
 
-	return err
+	return nil
 }
 
 func updateCacheRoot() {
