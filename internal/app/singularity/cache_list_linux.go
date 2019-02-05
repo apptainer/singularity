@@ -90,7 +90,7 @@ func listBlobCache(printList bool) error {
 	count := 0
 	var totalSize int64
 
-	_, err = os.Stat(filepath.Join(cache.OciBlob(), "/blobs"))
+	_, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
 		return nil
 	}
@@ -142,64 +142,55 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 	// split the string for each `,` then loop throught it and find what flags are there.
 	// then see whats true/false later. heres the benefit of doing it like this; if the user
 	// specified `library` twice, it will still only be printed once.
-	if len(cacheListTypes) >= 1 {
-		for _, t := range cacheListTypes {
-			switch t {
-			case "library":
-				libraryList = true
-			case "oci":
-				ociList = true
-			case "blob", "blobs":
-				blobList = true
-			case "blobSum":
-				listBlobSum = true
-			case "all":
-				listAll = true
-			default:
-				sylog.Fatalf("Not a valid type: %v", t)
-				os.Exit(2)
-			}
+	for _, t := range cacheListTypes {
+		switch t {
+		case "library":
+			libraryList = true
+		case "oci":
+			ociList = true
+		case "blob", "blobs":
+			blobList = true
+		case "blobSum":
+			listBlobSum = true
+		case "all":
+			listAll = true
+		default:
+			sylog.Fatalf("Not a valid type: %v", t)
+			os.Exit(2)
 		}
 	}
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
-	if listAll == true {
-		err = listLibraryCache()
-		if err != nil {
+	if listAll {
+		if err := listLibraryCache(); err != nil {
 			return err
 		}
-		err = listOciCache()
-		if err != nil {
+		if err := listOciCache(); err != nil {
 			return err
 		}
-		err = listBlobCache(true)
-		if err != nil {
+		if err := listBlobCache(true); err != nil {
 			return err
 		}
 		return nil
 	}
-	if libraryList == true {
-		err = listLibraryCache()
-		if err != nil {
+	if libraryList {
+		if err := listLibraryCache(); err != nil {
 			return err
 		}
 	}
-	if ociList == true {
-		err = listOciCache()
-		if err != nil {
+	if ociList {
+		if err := listOciCache(); err != nil {
 			return err
 		}
 	}
-	if blobList == true {
-		err = listBlobCache(true)
-		if err != nil {
+	if blobList {
+		if err := listBlobCache(true); err != nil {
 			return err
 		}
 	}
-	if listBlobSum == true {
-		err = listBlobCache(false)
-		if err != nil {
+	if listBlobSum {
+		if err := listBlobCache(false); err != nil {
 			return err
 		}
 	}

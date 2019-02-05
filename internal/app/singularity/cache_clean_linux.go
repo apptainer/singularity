@@ -125,22 +125,20 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 
 	match := false
 	if libraryCache == true {
-		match, err = cleanLibraryCache(cacheName)
+		match, err := cleanLibraryCache(cacheName)
 		if err != nil {
 			return false, err
 		}
 		return match, nil
 	} else if ociCache == true {
-		match, err = cleanOciCache(cacheName)
+		match, err := cleanOciCache(cacheName)
 		if err != nil {
 			return false, err
 		}
 		return match, nil
 	}
-	return false, nil
+	return match, nil
 }
-
-var err error
 
 // CleanSingularityCache : the main function that drives all these other functions, if allClean == true; clean
 // all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
@@ -184,26 +182,22 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 	}
 
 	if cleanAll == true {
-		err = cache.Clean()
-		if err != nil {
+		if err := cache.Clean(); err != nil {
 			return err
 		}
 	}
 	if libraryClean == true {
-		err = CleanLibraryCache()
-		if err != nil {
+		if err := CleanLibraryCache(); err != nil {
 			return err
 		}
 	}
 	if ociClean == true {
-		err = CleanOciCache()
-		if err != nil {
+		if err := CleanOciCache(); err != nil {
 			return err
 		}
 	}
 	if blobClean == true {
-		err = CleanBlobCache()
-		if err != nil {
+		if err := CleanBlobCache(); err != nil {
 			return err
 		}
 	}
