@@ -148,24 +148,19 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 	ociClean := false
 	blobClean := false
 
-	// split the string for each `,` then loop throught it and find what flags are there.
-	// then see whats true/false later. heres the benefit of doing it like this; if the user
-	// specified `library` twice, it will still only be printed once.
-	if len(cacheCleanTypes) >= 1 {
-		for _, t := range cacheCleanTypes {
-			switch t {
-			case "library":
-				libraryClean = true
-			case "oci":
-				ociClean = true
-			case "blob", "blobs":
-				blobClean = true
-			case "all":
-				cleanAll = true
-			default:
-				sylog.Fatalf("Not a valid type: %v", t)
-				os.Exit(2)
-			}
+	for _, t := range cacheCleanTypes {
+		switch t {
+		case "library":
+			libraryClean = true
+		case "oci":
+			ociClean = true
+		case "blob", "blobs":
+			blobClean = true
+		case "all":
+			cleanAll = true
+		default:
+			sylog.Fatalf("Not a valid type: %v", t)
+			os.Exit(2)
 		}
 	}
 
@@ -186,17 +181,17 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 			return err
 		}
 	}
-	if libraryClean == true {
+	if libraryClean {
 		if err := CleanLibraryCache(); err != nil {
 			return err
 		}
 	}
-	if ociClean == true {
+	if ociClean {
 		if err := CleanOciCache(); err != nil {
 			return err
 		}
 	}
-	if blobClean == true {
+	if blobClean {
 		if err := CleanBlobCache(); err != nil {
 			return err
 		}

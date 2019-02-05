@@ -139,9 +139,6 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 	blobList := false
 	listBlobSum := false
 
-	// split the string for each `,` then loop throught it and find what flags are there.
-	// then see whats true/false later. heres the benefit of doing it like this; if the user
-	// specified `library` twice, it will still only be printed once.
 	for _, t := range cacheListTypes {
 		switch t {
 		case "library":
@@ -162,32 +159,22 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
-	if listAll {
-		if err := listLibraryCache(); err != nil {
-			return err
-		}
-		if err := listOciCache(); err != nil {
-			return err
-		}
-		if err := listBlobCache(true); err != nil {
-			return err
-		}
-		return nil
-	}
-	if libraryList {
+	if libraryList || listAll {
 		if err := listLibraryCache(); err != nil {
 			return err
 		}
 	}
-	if ociList {
+	if ociList || listAll {
 		if err := listOciCache(); err != nil {
 			return err
 		}
 	}
-	if blobList {
+	if blobList || listAll {
 		if err := listBlobCache(true); err != nil {
 			return err
 		}
+		// dont list blob summary after listing all blobs
+		listBlobSum = false
 	}
 	if listBlobSum {
 		if err := listBlobCache(false); err != nil {
