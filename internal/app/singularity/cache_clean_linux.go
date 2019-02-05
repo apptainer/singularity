@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
+//	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -146,7 +146,8 @@ var err error
 // CleanSingularityCache : the main function that drives all these other functions, if allClean == true; clean
 // all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
-func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error {
+
+func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName string) error {
 	libraryClean := false
 	ociClean := false
 	blobClean := false
@@ -154,9 +155,11 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 	// split the string for each `,` then loop throught it and find what flags are there.
 	// then see whats true/false later. heres the benefit of doing it like this; if the user
 	// specified `library` twice, it will still only be printed once.
-	if len(typeNameClean) >= 1 {
-		for _, nameType := range strings.Split(typeNameClean, ",") {
-			switch nameType {
+
+
+	if len(cacheCleanTypes) >= 1 {
+        for _, t := range cacheCleanTypes {
+			switch t {
 			case "library":
 				libraryClean = true
 			case "oci":
@@ -164,17 +167,15 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 			case "blob", "blobs":
 				blobClean = true
 			case "all":
-				allClean = true
+				cleanAll = true
 			default:
-				sylog.Fatalf("Not a valid type: %v", nameType)
+				sylog.Fatalf("Not a valid type: %v", t)
 				os.Exit(2)
 			}
-		}
-	} else {
-		blobClean = true
+        }
 	}
 
-	if len(cacheName) >= 1 && allClean != true {
+	if len(cacheName) >= 1 && cleanAll != true {
 		foundMatch, err := CleanCacheName(cacheName, libraryClean, ociClean)
 		if err != nil {
 			return err
@@ -184,12 +185,12 @@ func CleanSingularityCache(allClean bool, typeNameClean, cacheName string) error
 			os.Exit(0)
 		}
 		return nil
-	} else if len(cacheName) >= 1 && allClean == true || len(typeNameClean) >= 1 && allClean == true {
+	} else if len(cacheName) >= 1 && cleanAll == true || len(cacheCleanTypes) >= 1 && cleanAll == true {
 		sylog.Fatalf("These flags are not compatible with each other.")
 		os.Exit(2)
 	}
 
-	if allClean == true {
+	if cleanAll == true {
 		err = cache.Clean()
 		if err != nil {
 			return err

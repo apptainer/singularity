@@ -134,12 +134,10 @@ func listBlobCache(printList bool) error {
 // ListSingularityCache : list local singularity cache, typeNameList : is a string of what cache
 // to list (seprate each type with a comma; like this: library,oci,blob) allList : force list all cache.
 func ListSingularityCache(cacheListTypes []string, listAll bool) error {
-//func ListSingularityCache(typeNameList string, allList bool) error {
 	libraryList := false
 	ociList := false
 	blobList := false
 	listBlobSum := false
-	allList := false
 
 	// split the string for each `,` then loop throught it and find what flags are there.
 	// then see whats true/false later. heres the benefit of doing it like this; if the user
@@ -153,8 +151,10 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 				ociList = true
 			case "blob", "blobs":
 				blobList = true
+			case "blobSum":
+				listBlobSum = true
 			case "all":
-				allList = true
+				listAll = true
 			default:
 				sylog.Fatalf("Not a valid type: %v", t)
 				os.Exit(2)
@@ -164,7 +164,7 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 
-	if allList == true {
+	if listAll == true {
 		err = listLibraryCache()
 		if err != nil {
 			return err

@@ -15,18 +15,19 @@ import (
 )
 
 var (
-	allClean      bool
-	typeNameClean string
-	cacheName     string
+	cleanAll        bool
+	cacheCleanTypes []string
+	cacheName       string
 )
 
 func init() {
 	CacheCleanCmd.Flags().SetInterspersed(false)
 
-	CacheCleanCmd.Flags().BoolVarP(&allClean, "all", "a", false, "clean all cache (not compatible with any other flags)")
+	CacheCleanCmd.Flags().BoolVarP(&cleanAll, "all", "a", false, "clean all cache (not compatible with any other flags)")
 	CacheCleanCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
-	CacheCleanCmd.Flags().StringVarP(&typeNameClean, "type", "T", "", "specify a cache type, choose between: library, and oci")
+	CacheCleanCmd.Flags().StringSliceVarP(&cacheCleanTypes, "type", "T", []string{"blob"}, "clean cache type, choose between: library, oci, and blob (default blob)")
+//	CacheCleanCmd.Flags().StringVarP(&typeNameClean, "type", "T", "", "specify a cache type, choose between: library, and oci")
 	CacheCleanCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
 	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "N", "", "specify a container cache to clean (will clear all cache with the same name)")
@@ -50,7 +51,7 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	err := singularity.CleanSingularityCache(allClean, typeNameClean, cacheName)
+	err := singularity.CleanSingularityCache(cleanAll, cacheCleanTypes, cacheName)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
 		os.Exit(255)
