@@ -27,7 +27,6 @@ func init() {
 	CacheCleanCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
 	CacheCleanCmd.Flags().StringSliceVarP(&cacheCleanTypes, "type", "T", []string{"blob"}, "clean cache type, choose between: library, oci, and blob (default blob)")
-//	CacheCleanCmd.Flags().StringVarP(&typeNameClean, "type", "T", "", "specify a cache type, choose between: library, and oci")
 	CacheCleanCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
 	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "N", "", "specify a container cache to clean (will clear all cache with the same name)")

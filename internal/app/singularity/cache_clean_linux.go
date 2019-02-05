@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-//	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -146,7 +145,6 @@ var err error
 // CleanSingularityCache : the main function that drives all these other functions, if allClean == true; clean
 // all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
-
 func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName string) error {
 	libraryClean := false
 	ociClean := false
@@ -155,10 +153,8 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 	// split the string for each `,` then loop throught it and find what flags are there.
 	// then see whats true/false later. heres the benefit of doing it like this; if the user
 	// specified `library` twice, it will still only be printed once.
-
-
 	if len(cacheCleanTypes) >= 1 {
-        for _, t := range cacheCleanTypes {
+		for _, t := range cacheCleanTypes {
 			switch t {
 			case "library":
 				libraryClean = true
@@ -172,7 +168,7 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 				sylog.Fatalf("Not a valid type: %v", t)
 				os.Exit(2)
 			}
-        }
+		}
 	}
 
 	if len(cacheName) >= 1 && cleanAll != true {

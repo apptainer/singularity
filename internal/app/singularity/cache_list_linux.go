@@ -143,7 +143,7 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 	// then see whats true/false later. heres the benefit of doing it like this; if the user
 	// specified `library` twice, it will still only be printed once.
 	if len(cacheListTypes) >= 1 {
-        for _, t := range cacheListTypes {
+		for _, t := range cacheListTypes {
 			switch t {
 			case "library":
 				libraryList = true
@@ -159,7 +159,7 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 				sylog.Fatalf("Not a valid type: %v", t)
 				os.Exit(2)
 			}
-        }
+		}
 	}
 
 	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
