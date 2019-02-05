@@ -80,15 +80,15 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		cliExtra = "syos"
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\"", bzImage, initramfs, singAction, cliExtra)
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, singAction, cliExtra, strings.Join(singBinds,"|"))
 
 	// Add our actual kexec entry
 	defArgs = append(defArgs, "-f")
 	defArgs = append(defArgs, kexecArgs)
 
-	pgmExec, lookErr := exec.LookPath("/usr/local/libexec/xhyve/build/xhyve")
+	pgmExec, lookErr := exec.LookPath("/usr/local/libexec/singularity/vm/xhyve")
 	if lookErr != nil {
-		sylog.Fatalf("Failed to find xhyve executable at /usr/local/libexec/xhyve/build/xhyve")
+		sylog.Fatalf("Failed to find xhyve executable at /usr/local/libexec/singularity/vm/xhyve")
 	}
 
 	if _, err := os.Stat(sifImage); os.IsNotExist(err) {
