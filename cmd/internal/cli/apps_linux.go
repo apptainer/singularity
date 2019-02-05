@@ -7,7 +7,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -22,42 +21,37 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 )
 
-const (
-	standardHelpPath = "/.singularity.d/runscript.help"
-	appHelpPath      = "/scif/apps/%s/scif/runscript.help"
-	runHelpCommand   = "if [ ! -f \"%s\" ]\nthen\n    echo \"Container does not have a help file\"\nelse\n    /bin/cat %s\nfi"
-)
-
 func init() {
-	RunHelpCmd.Flags().SetInterspersed(false)
-
-	RunHelpCmd.Flags().StringVar(&AppName, "app", "", "Get help info for specific app")
-	RunHelpCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
-
-	SingularityCmd.AddCommand(RunHelpCmd)
+	SingularityCmd.AddCommand(AppsCmd)
 }
 
-// RunHelpCmd singularity run-help <image>
-var RunHelpCmd = &cobra.Command{
+const listAppsCommand = "for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename $app`\n        echo \"$APPNAME\"\n    fi\ndone"
+
+// AppsCmd singularity apps <container path>
+var AppsCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	PreRun:                sylabsToken,
-	Args:                  cobra.ExactArgs(1),
+	Use:                   docs.AppsUse,
+	Short:                 docs.AppsUse,
+	Long:                  docs.AppsUse,
+	Example:               docs.AppsUse,
+
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Sanity check
 		if _, err := os.Stat(args[0]); err != nil {
-			sylog.Fatalf("container not found: %s", err)
+			sylog.Fatalf("Container not found: %s", err)
 		}
 
-		// Help prints (if set) the sourced %help section on the definition file
+		// apps prints the apps installed in the container
 		abspath, err := filepath.Abs(args[0])
 		if err != nil {
 			sylog.Fatalf("While getting absolute path: %s", err)
 		}
 		name := filepath.Base(abspath)
 
-		a := []string{"/bin/sh", "-c", getCommand(getHelpPath(cmd))}
+		a := []string{"/bin/sh", "-c", listAppsCommand}
 		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
-		procname := "Singularity help"
+		procname := "Singularity apps"
 		Env := []string{sylog.GetEnvVar()}
 
 		engineConfig := singularityConfig.NewConfig()
@@ -84,22 +78,4 @@ var RunHelpCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-
-	Use:     docs.RunHelpUse,
-	Short:   docs.RunHelpShort,
-	Long:    docs.RunHelpLong,
-	Example: docs.RunHelpExample,
-}
-
-func getCommand(helpFile string) string {
-	return fmt.Sprintf(runHelpCommand, helpFile, helpFile)
-}
-
-func getHelpPath(cmd *cobra.Command) string {
-	if cmd.Flags().Changed("app") {
-		sylog.Debugf("App specified. Looking for help section of %s", AppName)
-		return fmt.Sprintf(appHelpPath, AppName)
-	}
-
-	return standardHelpPath
 }
