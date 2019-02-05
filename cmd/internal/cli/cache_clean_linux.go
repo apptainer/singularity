@@ -23,10 +23,10 @@ var (
 func init() {
 	CacheCleanCmd.Flags().SetInterspersed(false)
 
-	CacheCleanCmd.Flags().BoolVarP(&cleanAll, "all", "a", false, "clean all cache (not compatible with any other flags)")
+	CacheCleanCmd.Flags().BoolVarP(&cleanAll, "all", "a", false, "clean all cache (will overide all other options)")
 	CacheCleanCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
-	CacheCleanCmd.Flags().StringSliceVarP(&cacheCleanTypes, "type", "T", []string{"blob"}, "clean cache type, choose between: library, oci, and blob (default blob)")
+	CacheCleanCmd.Flags().StringSliceVarP(&cacheCleanTypes, "type", "T", []string{"blob"}, "clean cache type, choose between: library, oci, and blob")
 	CacheCleanCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
 	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "N", "", "specify a container cache to clean (will clear all cache with the same name)")

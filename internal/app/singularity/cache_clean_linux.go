@@ -181,9 +181,6 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 			os.Exit(0)
 		}
 		return nil
-	} else if len(cacheName) >= 1 && cleanAll == true || len(cacheCleanTypes) >= 1 && cleanAll == true {
-		sylog.Fatalf("These flags are not compatible with each other.")
-		os.Exit(2)
 	}
 
 	if cleanAll == true {
