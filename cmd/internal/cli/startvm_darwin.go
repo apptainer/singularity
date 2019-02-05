@@ -95,10 +95,10 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("Failed to determine image absolute path for %s: %s", sifImage, err)
 	}
 	if _, err := os.Stat(bzImage); os.IsNotExist(err) {
-		sylog.Fatalf("Failed to determine image absolute path for %s: %s \nPlease contact sales@sylabs.io for info on how to license SyOS. \n\n", bzImage, err)
+		sylog.Fatalf("This functionality is not supported")
 	}
 	if _, err := os.Stat(initramfs); os.IsNotExist(err) {
-		sylog.Fatalf("Failed to determine image absolute path for %s: %s \nPlease contact sales@sylabs.io for info on how to license SyOS. \n\n", initramfs, err)
+		sylog.Fatalf("This functionality is not supported")
 	}
 
 	sylog.Debugf("%s", singBinds)
