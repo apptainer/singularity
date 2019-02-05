@@ -77,6 +77,7 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("vm"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("vm-ram"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("vm-cpu"))
+		cmd.Flags().AddFlag(actionFlags.Lookup("vm-err"))
 		plugin.AddFlagHooks(cmd.Flags())
 
 		if cmd == ShellCmd {

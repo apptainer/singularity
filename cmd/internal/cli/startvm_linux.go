@@ -45,7 +45,9 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if VMErr || debug {
+		cmd.Stderr = os.Stderr
+	}
 
 	if err := cmd.Run(); err != nil {
 		sylog.Debugf("Hypervisor exit code: %v\n", err)

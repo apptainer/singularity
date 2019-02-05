@@ -46,6 +46,7 @@ var (
 	NoInit          bool
 	NoNvidia        bool
 	VM              bool
+	VMErr		bool
 	IsSyOS		bool
 
 	NetNamespace  bool
@@ -243,6 +244,10 @@ func initBoolVars() {
 		actionFlags.BoolVar(&VM, "vm", false, "enable VM support")
 	}
 	actionFlags.SetAnnotation("vm", "envkey", []string{"VM"})
+
+	// --vm-err
+	actionFlags.BoolVar(&VMErr, "vm-err", false, "enable attaching stderr from VM (default false)")
+	actionFlags.SetAnnotation("vm-err", "envkey", []string{"VMERROR"})
 
 	// --syos
 	// TODO: Keep this in production?
