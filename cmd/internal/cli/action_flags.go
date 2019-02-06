@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -82,7 +82,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("app", "envkey", []string{"APP", "APPNAME"})
 
 	// -B|--bind
-	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  if dest is not given, it is set equal to src.  mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default).")
+ 	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
 	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
 	actionFlags.SetAnnotation("bind", "envkey", []string{"BIND", "BINDPATH"})
 
