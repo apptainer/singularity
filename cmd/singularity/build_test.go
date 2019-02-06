@@ -326,29 +326,28 @@ func TestBuildDefinition(t *testing.T) {
 				"PostFile1",
 			},
 		}},
-		// TODO: help file is currently generated with incorrect perms
-		// {"AppHelp", false, true, DefFileDetail{
-		// 	Bootstrap: "docker",
-		// 	From:      "alpine:latest",
-		// 	Apps: []AppDetail{
-		// 		AppDetail{
-		// 			Name: "foo",
-		// 			Help: []string{
-		// 				"foo help info line 1",
-		// 				"foo help info line 2",
-		// 				"foo help info line 3",
-		// 			},
-		// 		},
-		// 		AppDetail{
-		// 			Name: "bar",
-		// 			Help: []string{
-		// 				"bar help info line 1",
-		// 				"bar help info line 2",
-		// 				"bar help info line 3",
-		// 			},
-		// 		},
-		// 	},
-		// }},
+		{"AppHelp", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Help: []string{
+						"foo help info line 1",
+						"foo help info line 2",
+						"foo help info line 3",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Help: []string{
+						"bar help info line 1",
+						"bar help info line 2",
+						"bar help info line 3",
+					},
+				},
+			},
+		}},
 		{"AppEnv", false, true, DefFileDetail{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
@@ -426,25 +425,24 @@ func TestBuildDefinition(t *testing.T) {
 				},
 			},
 		}},
-		//TODO: Bug in build.go causing this case to fail
-		// {"AppInstall", false, true, DefFileDetail{
-		// 	Bootstrap: "docker",
-		// 	From:      "alpine:latest",
-		// 	Apps: []AppDetail{
-		// 		AppDetail{
-		// 			Name: "foo",
-		// 			Install: []string{
-		// 				"FooInstallFile1",
-		// 			},
-		// 		},
-		// 		AppDetail{
-		// 			Name: "bar",
-		// 			Install: []string{
-		// 				"BarInstallFile1",
-		// 			},
-		// 		},
-		// 	},
-		// }},
+		{"AppInstall", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Install: []string{
+						"FooInstallFile1",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Install: []string{
+						"BarInstallFile1",
+					},
+				},
+			},
+		}},
 		{"AppRun", false, true, DefFileDetail{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
