@@ -389,7 +389,11 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 		if len(envParts) == 1 {
 			export = fmt.Sprintf("export %s=${%s:-}\n", envParts[0], envParts[0])
 		} else {
-			export = fmt.Sprintf("export %s=${%s:-%s}\n", envParts[0], envParts[0], envParts[1])
+			if envParts[0] == "PATH" {
+				export = fmt.Sprintf("export %s=\"%s\"\n", envParts[0], envParts[1])
+			} else {
+				export = fmt.Sprintf("export %s=${%s:-%s}\n", envParts[0], envParts[0], envParts[1])
+			}
 		}
 		_, err = f.WriteString(export)
 		if err != nil {
