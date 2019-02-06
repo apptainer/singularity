@@ -25,7 +25,7 @@ type SandboxPacker struct {
 func (p *SandboxPacker) Pack() (*types.Bundle, error) {
 	rootfs := p.srcdir
 
-	//copy filesystem into bundle rootfs
+	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, p.b.Rootfs())
 	var stderr bytes.Buffer
 	cmd := exec.Command("cp", "-r", rootfs+`/.`, p.b.Rootfs())

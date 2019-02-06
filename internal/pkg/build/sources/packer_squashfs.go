@@ -46,7 +46,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 		return fmt.Errorf("While making tmp file: %v", err)
 	}
 
-	//trim header
+	// trim header
 	sylog.Debugf("Creating copy of %s without header at %s\n", rootfs, trimfile.Name())
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
 	cmd.Stderr = &stderr
@@ -54,7 +54,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 		return fmt.Errorf("Trimming header Failed: %v: %v", err, stderr.String())
 	}
 
-	//copy filesystem into bundle rootfs
+	// copy filesystem into bundle rootfs
 	sylog.Debugf("Unsquashing %s to %s in Bundle\n", trimfile.Name(), b.Rootfs())
 	stderr.Reset()
 	cmd = exec.Command("unsquashfs", "-f", "-d", b.Rootfs(), trimfile.Name())

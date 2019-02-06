@@ -106,7 +106,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	}
 	defer syscall.Unmount(tmpmnt, 0)
 
-	//copy filesystem into dest
+	// copy filesystem into dest
 	sylog.Debugf("Copying filesystem from %s to %s\n", tmpmnt, dest)
 	var stderr bytes.Buffer
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)

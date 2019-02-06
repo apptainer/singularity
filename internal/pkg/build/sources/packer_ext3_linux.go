@@ -58,7 +58,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	}
 	defer syscall.Unmount(tmpmnt, 0)
 
-	//copy filesystem into bundle rootfs
+	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying filesystem from %s to %s in Bundle\n", tmpmnt, b.Rootfs())
 	var stderr bytes.Buffer
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
