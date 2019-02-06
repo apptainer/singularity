@@ -27,6 +27,18 @@ type DefFileDetail struct {
 	RunScript   []string
 	Test        []string
 	StartScript []string
+	Apps        []AppDetail
+}
+
+type AppDetail struct {
+	Name    string
+	Help    []string
+	Env     []string
+	Labels  map[string]string
+	Files   []FilePair
+	Install []string
+	Run     []string
+	Test    []string
 }
 
 type FilePair struct {
