@@ -387,7 +387,7 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 		export := ""
 		envParts := strings.SplitN(element, "=", 2)
 		if len(envParts) == 1 {
-			export = fmt.Sprintf("export %s=${%s:-%s}\n", envParts[0], envParts[0], envParts[0])
+			export = fmt.Sprintf("export %s=${%s:-}\n", envParts[0], envParts[0])
 		} else {
 			export = fmt.Sprintf("export %s=${%s:-%s}\n", envParts[0], envParts[0], envParts[1])
 		}
