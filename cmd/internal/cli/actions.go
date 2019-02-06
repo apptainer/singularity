@@ -271,7 +271,7 @@ var TestCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/test"}, args[1:]...)
+		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
 		execStarter(cmd, args[0], a, "")
 	},
 
