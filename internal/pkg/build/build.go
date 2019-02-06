@@ -51,8 +51,6 @@ type Build struct {
 	a Assembler
 	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems
 	b *types.Bundle
-	// d describes how a container is to be built, including actions to be run in the container to reach its final state
-	d types.Definition
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
@@ -88,7 +86,6 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 	b := &Build{
 		format: format,
 		dest:   dest,
-		d:      d,
 	}
 
 	b.b, err = types.NewBundle(opts.TmpDir, "sbuild")
@@ -96,12 +93,12 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 		return nil, err
 	}
 
-	b.b.Recipe = b.d
+	b.b.Recipe = d
 	b.b.Opts = opts
 
 	// dont need to get cp if we're skipping bootstrap
 	if !opts.Update || opts.Force {
-		if c, err := getcp(b.d, libraryURL, authToken); err == nil {
+		if c, err := getcp(b.b.Recipe, libraryURL, authToken); err == nil {
 			b.c = c
 		} else {
 			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -182,7 +179,7 @@ func (b *Build) Full() error {
 	a.HandleBundle(b.b)
 	b.b.Recipe.BuildData.Post += a.HandlePost()
 
-	if engineRequired(b.d) {
+	if engineRequired(b.b.Recipe) {
 		if err := b.runBuildEngine(); err != nil {
 			return fmt.Errorf("while running engine: %v", err)
 		}
@@ -210,7 +207,7 @@ func engineRequired(def types.Definition) bool {
 func (b *Build) copyFiles() error {
 
 	// iterate through files transfers
-	for _, transfer := range b.d.BuildData.Files {
+	for _, transfer := range b.b.Recipe.BuildData.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")
@@ -279,13 +276,13 @@ func (b *Build) insertMetadata() (err error) {
 }
 
 func (b *Build) runPreScript() error {
-	if b.runPre() && b.d.BuildData.Pre != "" {
+	if b.runPre() && b.b.Recipe.BuildData.Pre != "" {
 		if syscall.Getuid() != 0 {
 			return fmt.Errorf("Attempted to build with scripts as non-root user")
 		}
 
 		// Run %pre script here
-		pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
+		pre := exec.Command("/bin/sh", "-cex", b.b.Recipe.BuildData.Pre)
 		pre.Stdout = os.Stdout
 		pre.Stderr = os.Stderr
 
