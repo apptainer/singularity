@@ -33,6 +33,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/signal"
+	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/util/unix"
 	"golang.org/x/crypto/ssh/terminal"
@@ -101,6 +102,8 @@ func init() {
 	OciCmd.AddCommand(OciUpdateCmd)
 	OciCmd.AddCommand(OciPauseCmd)
 	OciCmd.AddCommand(OciResumeCmd)
+	OciCmd.AddCommand(OciMountCmd)
+	OciCmd.AddCommand(OciUmountCmd)
 }
 
 // OciCreateCmd represents oci create command.
@@ -266,6 +269,36 @@ var OciResumeCmd = &cobra.Command{
 		}
 	},
 	Use:     docs.OciResumeUse,
+	Short:   docs.OciResumeShort,
+	Long:    docs.OciResumeLong,
+	Example: docs.OciResumeExample,
+}
+
+// OciMountCmd represents oci mount command.
+var OciMountCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(2),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociMount(args[0], args[1]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "mount",
+	Short:   docs.OciResumeShort,
+	Long:    docs.OciResumeLong,
+	Example: docs.OciResumeExample,
+}
+
+// OciUmountCmd represents oci mount command.
+var OciUmountCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := ociUmount(args[0]); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:     "umount",
 	Short:   docs.OciResumeShort,
 	Long:    docs.OciResumeLong,
 	Example: docs.OciResumeExample,
@@ -862,4 +895,20 @@ func ociPauseResume(containerID string, pause bool) error {
 	}
 
 	return manager.Pause()
+}
+
+func ociMount(image string, bundle string) error {
+	d, err := ocibundle.FromSif(image, bundle, true)
+	if err != nil {
+		return err
+	}
+	return d.Create()
+}
+
+func ociUmount(bundle string) error {
+	d, err := ocibundle.FromSif("", bundle, true)
+	if err != nil {
+		return err
+	}
+	return d.Delete()
 }
