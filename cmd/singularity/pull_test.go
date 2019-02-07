@@ -31,7 +31,7 @@ func imagePull(library string, imagePath string, sourceSpec string, force bool) 
 }
 
 func TestPull(t *testing.T) {
-	test.EnsurePrivilege(t)
+	test.DropPrivilege(t)
 
 	imagePath := "./test_pull.sif"
 
@@ -51,7 +51,7 @@ func TestPull(t *testing.T) {
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := imagePull(tt.library, tt.imagePath, tt.sourceSpec, tt.force); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
@@ -59,17 +59,10 @@ func TestPull(t *testing.T) {
 			imageVerify(t, tt.imagePath, false)
 		}))
 	}
-
-	// test --force
-	if b, err := imagePull("", "./force_img.sif", "library://alpine:3.7", false); err == nil {
-		t.Log(string(b))
-		t.Fatalf("unexpected failure: %v", err)
-	}
-	os.Remove("./force_img.sif")
 }
 
 func TestPullNonExistent(t *testing.T) {
-	test.EnsurePrivilege(t)
+	test.DropPrivilege(t)
 
 	if b, err := imagePull("", "", "library://this_should_not/exist", false); err == nil {
 		t.Log(string(b))
