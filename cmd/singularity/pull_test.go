@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -33,7 +33,7 @@ func imagePull(library string, imagePath string, sourceSpec string, force bool) 
 func TestPull(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	imagePath := "./alpine_3.7.sif"
+	imagePath := "./test_image.sif"
 
 	tests := []struct {
 		name       string
@@ -43,7 +43,9 @@ func TestPull(t *testing.T) {
 		imagePath  string
 		success    bool
 	}{
-		{"Pull", "library://alpine:3.7", false, "", imagePath, true},
+		{"Pull_Library", "library://alpine:3.7", false, "", imagePath, true}, // https://cloud.sylabs.io/library
+		{"Pull_Docker", "docker://alpine:3.7", false, "", imagePath, true},   // https://hub.docker.com/
+		{"Pull_Shub", "shub://GodloveD/busybox", false, "", imagePath, true}, // https://singularity-hub.org/
 		{"PullWithHash", "library://alpine:sha256.af5e6b93dcfd08b7b46d6158c31ae5b6c2b4241c169b65595659ad9feac6f761", true, "", imagePath, true},
 		{"Force", "library://alpine:3.7", false, "", "./force_img.sif", true},
 	}
