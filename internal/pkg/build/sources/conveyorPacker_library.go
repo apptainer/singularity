@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/client/library"
+	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
@@ -54,7 +54,15 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		client.DownloadImage(imagePath, libURI, cp.LibraryURL, false, cp.AuthToken)
+		if err = client.DownloadImage(imagePath, libURI, cp.LibraryURL, true, cp.AuthToken); err != nil {
+			return fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+			return fmt.Errorf("Error getting ImageHash: %v", err)
+		} else if cacheFileHash != libraryImage.Hash {
+			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
