@@ -464,29 +464,28 @@ func TestBuildDefinition(t *testing.T) {
 				},
 			},
 		}},
-		// TODO: apptest needs to be implemented
-		// {"AppTest", false, true, DefFileDetail{
-		// 	Bootstrap: "docker",
-		// 	From:      "alpine:latest",
-		// 	Apps: []AppDetail{
-		// 		AppDetail{
-		// 			Name: "foo",
-		// 			Test: []string{
-		// 				"echo foo testscript line 1",
-		// 				"echo foo testscript line 2",
-		// 				"echo foo testscript line 3",
-		// 			},
-		// 		},
-		// 		AppDetail{
-		// 			Name: "bar",
-		// 			Test: []string{
-		// 				"echo bar testscript line 1",
-		// 				"echo bar testscript line 2",
-		// 				"echo bar testscript line 3",
-		// 			},
-		// 		},
-		// 	},
-		// }},
+		{"AppTest", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Test: []string{
+						"echo foo testscript line 1",
+						"echo foo testscript line 2",
+						"echo foo testscript line 3",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Test: []string{
+						"echo bar testscript line 1",
+						"echo bar testscript line 2",
+						"echo bar testscript line 3",
+					},
+				},
+			},
+		}},
 	}
 
 	for _, tt := range tests {
@@ -670,12 +669,12 @@ func definitionImageVerify(t *testing.T, imagePath string, dfd DefFileDetail) {
 
 		// %appTest
 		if app.Test != nil {
-			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "test")
+			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "scif/test")
 			if !fileExists(t, scriptPath) {
 				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, scriptPath)
 			}
 
-			if err := verifyScript(t, filepath.Join(imagePath, scriptPath), app.Test); err != nil {
+			if err := verifyScript(t, scriptPath, app.Test); err != nil {
 				t.Fatalf("unexpected failure in app %v: test script: %v", app.Name, err)
 			}
 		}
