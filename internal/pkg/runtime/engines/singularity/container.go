@@ -1147,6 +1147,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /dev/:/dev/")
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
 		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
