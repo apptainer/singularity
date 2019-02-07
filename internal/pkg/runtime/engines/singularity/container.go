@@ -1670,7 +1670,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
 			}
-			sylog.Verbosef("Default mount: /etc/groups:/etc/groups")
+			sylog.Verbosef("Default mount: /etc/group:/etc/group")
 		}
 	} else {
 		sylog.Verbosef("Skipping bind of the host's /etc/group")
