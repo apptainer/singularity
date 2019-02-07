@@ -64,12 +64,17 @@ func (s *sifBundle) Create() error {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
 
-	if err := syscall.Mount(loop, tools.RootFs(s.bundlePath).Path(), "squashfs", syscall.MS_RDONLY, "errors=remount-ro"); err != nil {
+	rootFs := tools.RootFs(s.bundlePath).Path()
+	if err := syscall.Mount(loop, rootFs, "squashfs", syscall.MS_RDONLY, "errors=remount-ro"); err != nil {
+		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to mount SIF partition: %s", err)
 	}
 
 	if s.writable {
 		if err := tools.CreateOverlay(s.bundlePath); err != nil {
+			// best effort to release loop device
+			syscall.Unmount(rootFs, syscall.MNT_DETACH)
+			tools.DeleteBundle(s.bundlePath)
 			return fmt.Errorf("failed to create overlay: %s", err)
 		}
 	}
