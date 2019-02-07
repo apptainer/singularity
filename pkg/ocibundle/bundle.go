@@ -5,8 +5,8 @@
 
 package ocibundle
 
-// Driver ...
-type Driver interface {
+// Bundle defines an OCI bundle interface to create/delete OCI bundles
+type Bundle interface {
 	Create() error
 	Delete() error
 }

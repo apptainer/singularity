@@ -13,7 +13,7 @@ func deleteDir(dir string, err error) {
 	}
 }
 
-// CreateOverlay ...
+// CreateOverlay creates a writable overlay
 func CreateOverlay(bundlePath string) (err error) {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
@@ -49,7 +49,7 @@ func CreateOverlay(bundlePath string) (err error) {
 	return
 }
 
-// DeleteOverlay ...
+// DeleteOverlay deletes overlay
 func DeleteOverlay(bundlePath string) error {
 	overlayDir := filepath.Join(bundlePath, "overlay")
 	rootFsDir := RootFs(bundlePath).Path()

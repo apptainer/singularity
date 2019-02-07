@@ -7,7 +7,8 @@ import (
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
-// CreateLoop ...
+// CreateLoop associates a file to loop device and returns
+// path of loop device used
 func CreateLoop(file *os.File, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
 		MaxLoopDevices: 256,

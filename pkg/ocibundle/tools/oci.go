@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"syscall"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/opencontainers/runtime-tools/generate"
 )
@@ -19,13 +19,15 @@ func (r RootFs) Path() string {
 	return filepath.Join(string(r), "rootfs")
 }
 
-// CreateBundle ...
+// CreateBundle generates a minimal OCI bundle directory
+// with the provided OCI configuration or a default one
+// if there is no configuration
 func CreateBundle(bundlePath string, config *specs.Spec) error {
 	var err error
 	var g generate.Generator
 
 	oldumask := syscall.Umask(0)
-	syscall.Umask(oldumask)
+	defer syscall.Umask(oldumask)
 
 	rootFsDir := RootFs(bundlePath).Path()
 	if err := os.MkdirAll(rootFsDir, 0700); err != nil {

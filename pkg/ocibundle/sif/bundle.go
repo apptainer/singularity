@@ -1,4 +1,4 @@
-package ocibundle
+package sifbundle
 
 import (
 	"fmt"
@@ -7,17 +7,19 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 )
 
-type sifDriver struct {
+type sifBundle struct {
 	image      string
 	bundlePath string
 	writable   bool
-	Driver
+	ocibundle.Bundle
 }
 
-func (s *sifDriver) Create() error {
+// Create creates an OCI bundle from a SIF image
+func (s *sifBundle) Create() error {
 	if s.image == "" {
 		return fmt.Errorf("image wasn't set, need one to create bundle")
 	}
@@ -74,7 +76,8 @@ func (s *sifDriver) Create() error {
 	return nil
 }
 
-func (s *sifDriver) Delete() error {
+// Delete erases OCI bundle create from SIF image
+func (s *sifBundle) Delete() error {
 	if s.writable {
 		if err := tools.DeleteOverlay(s.bundlePath); err != nil {
 			return err
@@ -88,11 +91,11 @@ func (s *sifDriver) Delete() error {
 	return tools.DeleteBundle(s.bundlePath)
 }
 
-// FromSif ...
-func FromSif(image, bundle string, writable bool) (Driver, error) {
+// FromSif returns a bundle interface to create/delete OCI bundle from SIF image
+func FromSif(image, bundle string, writable bool) (ocibundle.Bundle, error) {
 	var err error
 
-	s := &sifDriver{
+	s := &sifBundle{
 		writable: writable,
 	}
 	s.bundlePath, err = filepath.Abs(bundle)
