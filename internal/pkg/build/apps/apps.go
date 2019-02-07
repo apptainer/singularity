@@ -349,6 +349,9 @@ func writeLabels(b *types.Bundle, a *App) error {
 	lines := strings.Split(strings.TrimSpace(a.Labels), "\n")
 	labels := make(map[string]string)
 
+	// add default label
+	labels["SCIF_APP_NAME"] = a.Name
+
 	for _, line := range lines {
 
 		// skip empty or comment lines
