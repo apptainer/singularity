@@ -33,6 +33,11 @@ func CreateBundle(bundlePath string, config *specs.Spec) error {
 	if err := os.MkdirAll(rootFsDir, 0700); err != nil {
 		return err
 	}
+	defer func() {
+		if err != nil {
+			DeleteBundle(bundlePath)
+		}
+	}()
 
 	if config == nil {
 		// generate and write config.json in bundle
