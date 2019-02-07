@@ -62,12 +62,14 @@ func doKeysPullCmd(fingerprint string, url string) error {
 	defer fp.Close()
 
 	for _, e := range el {
+		storeKey := true
 		for _, estore := range elstore {
 			if e.PrimaryKey.KeyId == estore.PrimaryKey.KeyId {
-				e = nil // Entity is already in key store
+				storeKey = false // Entity is already in key store
+				break
 			}
 		}
-		if e != nil {
+		if storeKey {
 			if err = e.Serialize(fp); err != nil {
 				return err
 			}

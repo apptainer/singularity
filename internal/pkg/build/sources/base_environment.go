@@ -104,7 +104,7 @@ for script in /.singularity.d/env/*.sh; do
 done
 
 
-if test -z "${SINGULARITY_APPNAME:-}"; then
+if test -n "${SINGULARITY_APPNAME:-}"; then
 
     if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test"; then
         exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test" "$@"

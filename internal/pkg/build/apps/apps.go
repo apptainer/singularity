@@ -295,7 +295,7 @@ func writeHelpFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0755)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0644)
 }
 
 // %appfile
