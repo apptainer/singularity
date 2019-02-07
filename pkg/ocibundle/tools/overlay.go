@@ -28,6 +28,13 @@ func CreateOverlay(bundlePath string) (err error) {
 	if syscall.Mount(overlayDir, overlayDir, "", syscall.MS_BIND, ""); err != nil {
 		return err
 	}
+	// best effort to cleanup mount
+	defer func() {
+		if err != nil {
+			syscall.Unmount(overlayDir, syscall.MNT_DETACH)
+		}
+	}()
+
 	if syscall.Mount("", overlayDir, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
 		return err
 	}
