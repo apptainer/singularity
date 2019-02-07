@@ -110,7 +110,7 @@ func cleanOciCacheName(cacheName string) (bool, error) {
 		for _, b := range blob {
 			if b.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name()))
+				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 				if err != nil {
 					return false, fmt.Errorf("unable to remove oci-tmp cache: %v", err)
 				}
