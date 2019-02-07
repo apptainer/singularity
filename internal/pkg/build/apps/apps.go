@@ -80,6 +80,10 @@ export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_AP
 
 %s
 `
+	scifTestBase = `#!/bin/sh
+
+%s
+`
 
 	scifInstallBase = `
 cd /
@@ -211,6 +215,10 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 			return err
 		}
 
+		if err := writeTestFile(b, app); err != nil {
+			return err
+		}
+
 		if err := writeHelpFile(b, app); err != nil {
 			return err
 		}
@@ -297,6 +305,16 @@ func writeRunscriptFile(b *types.Bundle, a *App) error {
 
 	content := fmt.Sprintf(scifRunscriptBase, a.Run)
 	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0755)
+}
+
+// %apptest
+func writeTestFile(b *types.Bundle, a *App) error {
+	if a.Test == "" {
+		return nil
+	}
+
+	content := fmt.Sprintf(scifTestBase, a.Test)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/test"), []byte(content), 0755)
 }
 
 // %apphelp
