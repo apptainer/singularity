@@ -903,7 +903,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add proc to mount list: %s", err)
 		}
-		sylog.Verbosef("Default mount: /proc/:/proc/")
+		sylog.Verbosef("Default mount: /proc:/proc")
 	} else {
 		sylog.Verbosef("Skipping /proc mount")
 	}
@@ -924,7 +924,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add sys to mount list: %s", err)
 		}
-		sylog.Verbosef("Default mount: /sys/:/sys/")
+		sylog.Verbosef("Default mount: /sys:/sys")
 	} else {
 		sylog.Verbosef("Skipping /sys mount")
 	}
@@ -1149,7 +1149,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
-		sylog.Verbosef("Default mount: /dev/:/dev/")
+		sylog.Verbosef("Default mount: /dev:/dev")
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
 		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
@@ -1456,13 +1456,13 @@ func (c *container) addTmpMount(system *mount.System) error {
 
 	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
-		sylog.Verbosef("Default mount: /tmp/:/tmp/")
+		sylog.Verbosef("Default mount: /tmp:/tmp")
 	} else {
 		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
 	}
 	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, "/var/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/var/tmp", flags)
-		sylog.Verbosef("Default mount: /var/tmp/:/var/tmp/")
+		sylog.Verbosef("Default mount: /var/tmp:/var/tmp")
 	} else {
 		return fmt.Errorf("could not mount container's /var/tmp directory: %s", err)
 	}
@@ -1594,7 +1594,6 @@ func (c *container) addLibsMount(system *mount.System) error {
 		sessionFilePath, _ := c.session.GetPath(sessionFile)
 
 		err := system.Points.AddBind(mount.FilesTag, lib, sessionFilePath, flags)
-		sylog.Verbosef("Default mount: /libs:/libs")
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", lib, err)
 		}
