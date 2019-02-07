@@ -46,7 +46,7 @@ func Clean() error {
 	sylog.Debugf("Removing: %v", Root())
 
 	if err := os.RemoveAll(Root()); err != nil {
-		return fmt.Errorf("while cleaning cache: %s", err)
+		return fmt.Errorf("unable to clean all cache: %s", err)
 	}
 
 	return nil
