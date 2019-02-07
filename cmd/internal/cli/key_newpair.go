@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,11 +13,11 @@ import (
 )
 
 func init() {
-	KeysNewPairCmd.Flags().SetInterspersed(false)
+	KeyNewPairCmd.Flags().SetInterspersed(false)
 }
 
-// KeysNewPairCmd is `singularity keys newpair' and generate a new OpenPGP key pair
-var KeysNewPairCmd = &cobra.Command{
+// KeyNewPairCmd is `singularity key newpair' and generate a new OpenPGP key pair
+var KeyNewPairCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -26,8 +26,8 @@ var KeysNewPairCmd = &cobra.Command{
 		}
 	},
 
-	Use:     docs.KeysNewPairUse,
-	Short:   docs.KeysNewPairShort,
-	Long:    docs.KeysNewPairLong,
-	Example: docs.KeysNewPairExample,
+	Use:     docs.KeyNewPairUse,
+	Short:   docs.KeyNewPairShort,
+	Long:    docs.KeyNewPairLong,
+	Example: docs.KeyNewPairExample,
 }
