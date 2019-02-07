@@ -1603,7 +1603,6 @@ func (c *container) addLibsMount(system *mount.System) error {
 		sessionDirPath, _ := c.session.GetPath(sessionDir)
 
 		err := system.Points.AddBind(mount.FilesTag, sessionDirPath, containerDir, flags)
-		sylog.Verbosef("Mounting other /libs ???????")
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", sessionDirPath, err)
 		}
