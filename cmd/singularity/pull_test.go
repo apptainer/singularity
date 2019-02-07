@@ -44,8 +44,8 @@ func TestPull(t *testing.T) {
 		success    bool
 	}{
 		{"Pull_Library", "library://alpine:3.7", false, "", imagePath, true}, // https://cloud.sylabs.io/library
-		{"Pull_Docker", "docker://alpine:3.7", false, "", imagePath, true},   // https://hub.docker.com/
-		{"Pull_Shub", "shub://GodloveD/busybox", false, "", imagePath, true}, // https://singularity-hub.org/
+		{"Pull_Docker", "docker://alpine:3.7", true, "", imagePath, true},    // https://hub.docker.com/
+		{"Pull_Shub", "shub://GodloveD/busybox", true, "", imagePath, true},  // https://singularity-hub.org/
 		{"PullWithHash", "library://alpine:sha256.af5e6b93dcfd08b7b46d6158c31ae5b6c2b4241c169b65595659ad9feac6f761", true, "", imagePath, true},
 		{"Force", "library://alpine:3.7", false, "", "./force_img.sif", true},
 	}
