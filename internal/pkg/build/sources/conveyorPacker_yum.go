@@ -111,21 +111,23 @@ func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
 }
 
 func (c *YumConveyor) getRPMPath() (err error) {
+	var output, stderr bytes.Buffer
+
 	c.rpmPath, err = exec.LookPath("rpm")
 	if err != nil {
 		return fmt.Errorf("RPM is not in PATH: %v", err)
 	}
 
-	output := &bytes.Buffer{}
 	cmd := exec.Command("rpm", "--showrc")
-	cmd.Stdout = output
+	cmd.Stdout = &output
+	cmd.Stderr = &stderr
 
 	if err = cmd.Run(); err != nil {
-		return
+		return fmt.Errorf("%v: %v", err, stderr.String())
 	}
 
 	rpmDBPath := ""
-	scanner := bufio.NewScanner(output)
+	scanner := bufio.NewScanner(&output)
 	scanner.Split(bufio.ScanLines)
 
 	for scanner.Scan() {
@@ -137,7 +139,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 	}
 
 	if rpmDBPath == "" {
-		return fmt.Errorf("Could find dbpath")
+		return fmt.Errorf("Could not find dbpath")
 	} else if rpmDBPath != `%{_var}/lib/rpm` {
 		return fmt.Errorf("RPM database is using a weird path: %s\n"+
 			"You are probably running this bootstrap on Debian or Ubuntu.\n"+
