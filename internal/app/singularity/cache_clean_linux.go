@@ -20,7 +20,7 @@ func cleanLibraryCache() error {
 
 	err := os.RemoveAll(cache.Library())
 	if err != nil {
-		return fmt.Errorf("unable to clean cache: %v", err)
+		return fmt.Errorf("unable to clean library cache: %v", err)
 	}
 
 	return nil
@@ -31,7 +31,7 @@ func cleanOciCache() error {
 
 	err := os.RemoveAll(cache.OciTemp())
 	if err != nil {
-		return fmt.Errorf("unable to clean cache: %v", err)
+		return fmt.Errorf("unable to clean oci-tmp cache: %v", err)
 	}
 
 	return nil
@@ -42,7 +42,7 @@ func cleanBlobCache() error {
 
 	err := os.RemoveAll(cache.OciBlob())
 	if err != nil {
-		return fmt.Errorf("unable to clean cache: %v", err)
+		return fmt.Errorf("unable to clean oci-blob cache: %v", err)
 	}
 
 	return nil
@@ -75,19 +75,19 @@ func cleanLibraryCacheName(cacheName string) (bool, error) {
 	foundMatch := false
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		return false, fmt.Errorf("unable to opening cache folder: %v", err)
+		return false, fmt.Errorf("unable to opening library cache folder: %v", err)
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
-			return false, fmt.Errorf("unable to look in cache folder: %v", err)
+			return false, fmt.Errorf("unable to look in library cache folder: %v", err)
 		}
 		for _, c := range cont {
 			if c.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.Library(), f.Name(), c.Name()))
 				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name(), c.Name()))
 				if err != nil {
-					return false, fmt.Errorf("unable to remove cache: %v", err)
+					return false, fmt.Errorf("unable to remove library cache: %v", err)
 				}
 				foundMatch = true
 			}
@@ -100,19 +100,19 @@ func cleanOciCacheName(cacheName string) (bool, error) {
 	foundMatch := false
 	blobs, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		return false, fmt.Errorf("unable to opening cache folder: %v", err)
+		return false, fmt.Errorf("unable to opening oci-tmp cache folder: %v", err)
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
-			return false, fmt.Errorf("unable to look in cache folder: %v", err)
+			return false, fmt.Errorf("unable to look in oci-tmp cache folder: %v", err)
 		}
 		for _, b := range blob {
 			if b.Name() == cacheName {
 				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name()))
 				if err != nil {
-					return false, fmt.Errorf("unable to remove cache: %v", err)
+					return false, fmt.Errorf("unable to remove oci-tmp cache: %v", err)
 				}
 				foundMatch = true
 			}

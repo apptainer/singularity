@@ -35,17 +35,17 @@ func listLibraryCache() error {
 	// loop through library cache
 	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
 	if err != nil {
-		return fmt.Errorf("unable to opening cache folder: %v", err)
+		return fmt.Errorf("unable to open library cache folder: %v", err)
 	}
 	for _, f := range libraryCacheFiles {
 		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
 		if err != nil {
-			return fmt.Errorf("unable to looking in cache: %v", err)
+			return fmt.Errorf("unable to look in library cache: %v", err)
 		}
 		for _, c := range cont {
 			fileInfo, err := os.Stat(filepath.Join(cache.Library(), f.Name(), c.Name()))
 			if err != nil {
-				return fmt.Errorf("unable to get stat: %v", err)
+				return fmt.Errorf("unable to get stat for library cache: %v", err)
 			}
 			printFileSize, err := findSize(fileInfo.Size())
 			if err != nil {
@@ -62,17 +62,17 @@ func listOciCache() error {
 	// loop through oci-tmp cache
 	ociTmp, err := ioutil.ReadDir(cache.OciTemp())
 	if err != nil {
-		return fmt.Errorf("while opening oci-tmp folder: %v", err)
+		return fmt.Errorf("unable to open oci-tmp folder: %v", err)
 	}
 	for _, f := range ociTmp {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
 		if err != nil {
-			return fmt.Errorf("unable to looking in cache: %v", err)
+			return fmt.Errorf("unable to look in oci-tmp cache: %v", err)
 		}
 		for _, b := range blob {
 			fileInfo, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
 			if err != nil {
-				return fmt.Errorf("unable to get stat: %v", err)
+				return fmt.Errorf("unable to get stat for oci-tmp cache: %v", err)
 			}
 			printFileSize, err := findSize(fileInfo.Size())
 			if err != nil {
@@ -96,17 +96,17 @@ func listBlobCache(printList bool) error {
 	}
 	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
 	if err != nil {
-		return fmt.Errorf("unable to opening oci folder: %v", err)
+		return fmt.Errorf("unable to open oci-blob folder: %v", err)
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
 		if err != nil {
-			return fmt.Errorf("unable to looking in cache: %v", err)
+			return fmt.Errorf("unable to look in oci-blob cache: %v", err)
 		}
 		for _, b := range blob {
 			fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
 			if err != nil {
-				return fmt.Errorf("unable to get stat: %v", err)
+				return fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
 			}
 			if printList == true {
 				printFileSize, err := findSize(fileInfo.Size())
