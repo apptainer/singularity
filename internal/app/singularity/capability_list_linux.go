@@ -3,42 +3,89 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cli
+package singularity
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
+	"fmt"
+	"os"
+	"strings"
+	"syscall"
+
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
-func init() {
-
-	// -u|--user
-	CapabilityListCmd.Flags().StringVarP(&CapUser, "user", "u", "", "list capabilities for the given user")
-	CapabilityListCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
-	CapabilityListCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
-
-	// -g|--group
-	CapabilityListCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "list capabilities for the given group")
-	CapabilityListCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
-	CapabilityListCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
-
-	// -a|--all
-	CapabilityListCmd.Flags().BoolVarP(&CapListAll, "all", "a", false, "list all users and groups capabilities")
-	CapabilityListCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
-
-	CapabilityListCmd.Flags().SetInterspersed(false)
+// CapListConfig instructs CapabilityList on what to list
+type CapListConfig struct {
+	User  string
+	Group string
+	All   bool
 }
 
-// CapabilityListCmd singularity capability list
-var CapabilityListCmd = &cobra.Command{
-	Args:                  cobra.MinimumNArgs(0),
-	DisableFlagsInUseLine: true,
-	Run: func(cmd *cobra.Command, args []string) {
-		manageCap("", capList)
-	},
+// CapabilityList lists the capabilities based on the CapListConfig
+func CapabilityList(capFile string, c CapListConfig) error {
+	if os.Getuid() != 0 {
+		return fmt.Errorf("while listing capabilities: only root user can list capabilities")
+	}
 
-	Use:     docs.CapabilityListUse,
-	Short:   docs.CapabilityListShort,
-	Long:    docs.CapabilityListLong,
-	Example: docs.CapabilityListExample,
+	if c.User == "" && c.Group == "" && c.All == false {
+		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
+	}
+
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	file, err := os.OpenFile(capFile, os.O_RDONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("while opening capability config file: %s", err)
+	}
+	defer file.Close()
+
+	capConfig, err := capabilities.ReadFrom(file)
+	if err != nil {
+		return fmt.Errorf("while parsing capability config data: %s", err)
+	}
+
+	// if --all specified, take priority over listing specific user/group
+	if c.All {
+		users, groups := capConfig.ListAllCaps()
+
+		for user, cap := range users {
+			if len(cap) > 0 {
+				fmt.Printf("%s [user]: %s\n", user, strings.Join(cap, ","))
+			}
+		}
+
+		for group, cap := range groups {
+			if len(cap) > 0 {
+				fmt.Printf("%s [group]: %s\n", group, strings.Join(cap, ","))
+			}
+		}
+
+		return nil
+	}
+
+	if c.User != "" {
+		if !userExists(c.User) {
+			return fmt.Errorf("while listing user capabilities: user does not exist")
+		}
+
+		caps := capConfig.ListUserCaps(c.User)
+		if len(caps) > 0 {
+			fmt.Printf("%s [user]: %s\n", c.User, strings.Join(caps, ","))
+		}
+	}
+
+	if c.Group != "" {
+		if !groupExists(c.Group) {
+			return fmt.Errorf("while listing group capabilities: group does not exist")
+		}
+
+		caps := capConfig.ListGroupCaps(c.Group)
+		if len(caps) > 0 {
+			fmt.Printf("%s [group]: %s\n", c.Group, strings.Join(caps, ","))
+		}
+
+	}
+
+	return nil
 }
