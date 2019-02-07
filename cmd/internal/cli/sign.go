@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,7 +22,7 @@ var (
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
 
-	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "key server URL")
+	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "key server URL")
 	SignCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 	SignCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be signed")
 	SignCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be signed")
