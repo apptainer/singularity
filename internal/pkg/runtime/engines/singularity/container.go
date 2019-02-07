@@ -1453,13 +1453,13 @@ func (c *container) addTmpMount(system *mount.System) error {
 
 	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
-		sylog.Verbosef("Mounted: /tmp/:/tmp/ (default mount points)")
+		sylog.Verbosef("Default mount: /tmp/:/tmp/")
 	} else {
 		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
 	}
 	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, "/var/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/var/tmp", flags)
-		sylog.Verbosef("Mounted: /var/tmp/:/var/tmp/ (default mount points)")
+		sylog.Verbosef("Default mount: /var/tmp/:/var/tmp/")
 	} else {
 		return fmt.Errorf("could not mount container's /var/tmp directory: %s", err)
 	}
@@ -1553,7 +1553,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 	if err := system.Points.AddBind(mount.CwdTag, current, cwd, flags); err == nil {
 		system.Points.AddRemount(mount.CwdTag, cwd, flags)
 		c.checkDest = append(c.checkDest, cwd)
-		sylog.Verbosef("Mounted CWD to the container")
+		sylog.Verbosef("Default mount: %v: to the container", cwd)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
 	}
@@ -1591,7 +1591,7 @@ func (c *container) addLibsMount(system *mount.System) error {
 		sessionFilePath, _ := c.session.GetPath(sessionFile)
 
 		err := system.Points.AddBind(mount.FilesTag, lib, sessionFilePath, flags)
-		sylog.Verbosef("Mounted /libs")
+		sylog.Verbosef("Default mount: /libs:/libs")
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", lib, err)
 		}
@@ -1644,11 +1644,11 @@ func (c *container) addIdentityMount(system *mount.System) error {
 				passwd, _ = c.session.GetPath("/etc/passwd")
 
 				sylog.Debugf("Adding /etc/passwd to mount list\n")
-				sylog.Verbosef("Mounting /etc/passwd to the container")
 				err = system.Points.AddBind(mount.FilesTag, passwd, "/etc/passwd", syscall.MS_BIND)
 				if err != nil {
 					return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
 				}
+				sylog.Verbosef("Default mount: /etc/passwd:/etc/passwd")
 			}
 		}
 	} else {
@@ -1671,6 +1671,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
 			}
+			sylog.Verbosef("Default mount: /etc/groups:/etc/groups")
 		}
 	} else {
 		sylog.Verbosef("Skipping bind of the host's /etc/group")
@@ -1714,7 +1715,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
 		}
-		sylog.Verbosef("Mounted /etc/resolv.conf to the container")
+		sylog.Verbosef("Default mount: /etc/resolv.conf:/etc/resolv.conf")
 	} else {
 		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)
 	}
@@ -1743,7 +1744,7 @@ func (c *container) addHostnameMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", hostnameFile, err)
 			}
-			sylog.Verbosef("Mounted /etc/hostname in the container")
+			sylog.Verbosef("Default mount: /etc/hostname:/etc/hostname")
 			if _, err := c.rpcOps.SetHostname(hostname); err != nil {
 				return fmt.Errorf("failed to set container hostname: %s", err)
 			}
