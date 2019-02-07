@@ -903,6 +903,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add proc to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /proc/:/proc/")
 	} else {
 		sylog.Verbosef("Skipping /proc mount")
 	}
