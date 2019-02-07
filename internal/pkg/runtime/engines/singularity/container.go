@@ -924,6 +924,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add sys to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /sys/:/sys/")
 	} else {
 		sylog.Verbosef("Skipping /sys mount")
 	}
