@@ -1418,20 +1418,20 @@ func (c *container) addTmpMount(system *mount.System) error {
 				return nil
 			}
 
-			vartmpSource = "/var_tmp"
+			vartmpSource = "var_tmp"
 
 			workdir, err := filepath.Abs(filepath.Clean(workdir))
 			if err != nil {
 				sylog.Warningf("Can't determine absolute path of workdir %s", workdir)
 			}
 
-			tmpSource = workdir + tmpSource
-			vartmpSource = workdir + vartmpSource
+			tmpSource = filepath.Join(workdir, tmpSource)
+			vartmpSource = filepath.Join(workdir, vartmpSource)
 
-			if err := fs.MkdirAll(tmpSource, 0755); err != nil {
+			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil {
 				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
-			if err := fs.MkdirAll(vartmpSource, 0755); err != nil {
+			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
@@ -1439,9 +1439,15 @@ func (c *container) addTmpMount(system *mount.System) error {
 				if err := c.session.AddDir(tmpSource); err != nil {
 					return err
 				}
+				if err := c.session.Chmod(tmpSource, os.ModeSticky|0777); err != nil {
+					return err
+				}
 			}
 			if _, err := c.session.GetPath(vartmpSource); err != nil {
 				if err := c.session.AddDir(vartmpSource); err != nil {
+					return err
+				}
+				if err := c.session.Chmod(vartmpSource, os.ModeSticky|0777); err != nil {
 					return err
 				}
 			}
