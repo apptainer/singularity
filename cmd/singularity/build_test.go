@@ -370,29 +370,28 @@ func TestBuildDefinition(t *testing.T) {
 				},
 			},
 		}},
-		// TODO: applabels need to be implemented
-		// {"AppLabels", false, true, DefFileDetail{
-		// 	Bootstrap: "docker",
-		// 	From:      "alpine:latest",
-		// 	Apps: []AppDetail{
-		// 		AppDetail{
-		// 			Name: "foo",
-		// 			Labels: map[string]string{
-		// 				"customLabel1": "fooOne",
-		// 				"customLabel2": "fooTwo",
-		// 				"customLabel3": "fooThree",
-		// 			},
-		// 		},
-		// 		AppDetail{
-		// 			Name: "bar",
-		// 			Labels: map[string]string{
-		// 				"customLabel1": "barOne",
-		// 				"customLabel2": "barTwo",
-		// 				"customLabel3": "barThree",
-		// 			},
-		// 		},
-		// 	},
-		// }},
+		{"AppLabels", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Labels: map[string]string{
+						"customLabel1": "fooOne",
+						"customLabel2": "fooTwo",
+						"customLabel3": "fooThree",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Labels: map[string]string{
+						"customLabel1": "barOne",
+						"customLabel2": "barTwo",
+						"customLabel3": "barThree",
+					},
+				},
+			},
+		}},
 		{"AppFiles", false, true, DefFileDetail{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
