@@ -326,6 +326,168 @@ func TestBuildDefinition(t *testing.T) {
 				"PostFile1",
 			},
 		}},
+		{"AppHelp", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Help: []string{
+						"foo help info line 1",
+						"foo help info line 2",
+						"foo help info line 3",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Help: []string{
+						"bar help info line 1",
+						"bar help info line 2",
+						"bar help info line 3",
+					},
+				},
+			},
+		}},
+		{"AppEnv", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Env: []string{
+						"testvar1=fooOne",
+						"testvar2=fooTwo",
+						"testvar3=fooThree",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Env: []string{
+						"testvar1=barOne",
+						"testvar2=barTwo",
+						"testvar3=barThree",
+					},
+				},
+			},
+		}},
+		// TODO: applabels need to be implemented
+		// {"AppLabels", false, true, DefFileDetail{
+		// 	Bootstrap: "docker",
+		// 	From:      "alpine:latest",
+		// 	Apps: []AppDetail{
+		// 		AppDetail{
+		// 			Name: "foo",
+		// 			Labels: map[string]string{
+		// 				"customLabel1": "fooOne",
+		// 				"customLabel2": "fooTwo",
+		// 				"customLabel3": "fooThree",
+		// 			},
+		// 		},
+		// 		AppDetail{
+		// 			Name: "bar",
+		// 			Labels: map[string]string{
+		// 				"customLabel1": "barOne",
+		// 				"customLabel2": "barTwo",
+		// 				"customLabel3": "barThree",
+		// 			},
+		// 		},
+		// 	},
+		// }},
+		{"AppFiles", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Files: []FilePair{
+						FilePair{
+							Src: tmpfile.Name(),
+							Dst: "FooFile2.txt",
+						},
+						FilePair{
+							Src: tmpfile.Name(),
+							Dst: "FooFile.txt",
+						},
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Files: []FilePair{
+						FilePair{
+							Src: tmpfile.Name(),
+							Dst: "BarFile2.txt",
+						},
+						FilePair{
+							Src: tmpfile.Name(),
+							Dst: "BarFile.txt",
+						},
+					},
+				},
+			},
+		}},
+		{"AppInstall", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Install: []string{
+						"FooInstallFile1",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Install: []string{
+						"BarInstallFile1",
+					},
+				},
+			},
+		}},
+		{"AppRun", false, true, DefFileDetail{
+			Bootstrap: "docker",
+			From:      "alpine:latest",
+			Apps: []AppDetail{
+				AppDetail{
+					Name: "foo",
+					Run: []string{
+						"echo foo runscript line 1",
+						"echo foo runscript line 2",
+						"echo foo runscript line 3",
+					},
+				},
+				AppDetail{
+					Name: "bar",
+					Run: []string{
+						"echo bar runscript line 1",
+						"echo bar runscript line 2",
+						"echo bar runscript line 3",
+					},
+				},
+			},
+		}},
+		// TODO: apptest needs to be implemented
+		// {"AppTest", false, true, DefFileDetail{
+		// 	Bootstrap: "docker",
+		// 	From:      "alpine:latest",
+		// 	Apps: []AppDetail{
+		// 		AppDetail{
+		// 			Name: "foo",
+		// 			Test: []string{
+		// 				"echo foo testscript line 1",
+		// 				"echo foo testscript line 2",
+		// 				"echo foo testscript line 3",
+		// 			},
+		// 		},
+		// 		AppDetail{
+		// 			Name: "bar",
+		// 			Test: []string{
+		// 				"echo bar testscript line 1",
+		// 				"echo bar testscript line 2",
+		// 				"echo bar testscript line 3",
+		// 			},
+		// 		},
+		// 	},
+		// }},
 	}
 
 	for _, tt := range tests {
@@ -358,12 +520,12 @@ func definitionImageVerify(t *testing.T, imagePath string, dfd DefFileDetail) {
 		}
 
 		if err := verifyHelp(t, helpPath, dfd.Help); err != nil {
-			t.Fatalf("unexpected failure: runscript: %v", err)
+			t.Fatalf("unexpected failure: help message: %v", err)
 		}
 	}
 
 	if dfd.Env != nil {
-		if err := verifyEnv(t, imagePath, dfd.Env); err != nil {
+		if err := verifyEnv(t, imagePath, dfd.Env, nil); err != nil {
 			t.Fatalf("unexpected failure: Env in container is incorrect: %v", err)
 		}
 	}
@@ -419,7 +581,7 @@ func definitionImageVerify(t *testing.T, imagePath string, dfd DefFileDetail) {
 			t.Fatalf("unexpected failure: Script %v does not exist in container", scriptPath)
 		}
 
-		if err := verifyScript(t, filepath.Join(imagePath, `/.singularity.d/test`), dfd.RunScript); err != nil {
+		if err := verifyScript(t, scriptPath, dfd.Test); err != nil {
 			t.Fatalf("unexpected failure: test script: %v", err)
 		}
 	}
@@ -441,6 +603,85 @@ func definitionImageVerify(t *testing.T, imagePath string, dfd DefFileDetail) {
 			t.Fatalf("unexpected failure: %%Post generated file %v does not exist in container", file)
 		}
 	}
+
+	// Verify any apps
+	for _, app := range dfd.Apps {
+		// %apphelp
+		if app.Help != nil {
+			helpPath := filepath.Join(imagePath, `/scif/apps/`, app.Name, `/scif/runscript.help`)
+			if !fileExists(t, helpPath) {
+				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, helpPath)
+			}
+
+			if err := verifyHelp(t, helpPath, app.Help); err != nil {
+				t.Fatalf("unexpected failure in app %v: app help message: %v", app.Name, err)
+			}
+		}
+
+		// %appenv
+		if app.Env != nil {
+			if err := verifyEnv(t, imagePath, app.Env, []string{"--app", app.Name}); err != nil {
+				t.Fatalf("unexpected failure in app %v: Env in app is incorrect: %v", app.Name, err)
+			}
+		}
+
+		// %applabels
+		if app.Labels != nil {
+			if err := verifyAppLabels(t, imagePath, app.Name, app.Labels); err != nil {
+				t.Fatalf("unexpected failure in app %v: Labels in app are incorrect: %v", app.Name, err)
+			}
+		}
+
+		// %appfiles
+		for _, p := range app.Files {
+			var file string
+			if p.Src == "" {
+				file = p.Src
+			} else {
+				file = p.Dst
+			}
+
+			if !fileExists(t, filepath.Join(imagePath, "/scif/apps/", app.Name, file)) {
+				t.Fatalf("unexpected failure in app %v: File %v does not exist in app", app.Name, file)
+			}
+
+			if err := verifyFile(t, p.Src, filepath.Join(imagePath, "/scif/apps/", app.Name, file)); err != nil {
+				t.Fatalf("unexpected failure in app %v: File %v: %v", app.Name, file, err)
+			}
+		}
+
+		// %appInstall
+		for _, file := range app.Install {
+			if !fileExists(t, filepath.Join(imagePath, "/scif/apps/", app.Name, file)) {
+				t.Fatalf("unexpected failure in app %v: %%Install generated file %v does not exist in container", app.Name, file)
+			}
+		}
+
+		// %appRun
+		if app.Run != nil {
+			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "scif/runscript")
+			if !fileExists(t, scriptPath) {
+				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, scriptPath)
+			}
+
+			if err := verifyScript(t, scriptPath, app.Run); err != nil {
+				t.Fatalf("unexpected failure in app %v: runscript: %v", app.Name, err)
+			}
+		}
+
+		// %appTest
+		if app.Test != nil {
+			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "test")
+			if !fileExists(t, scriptPath) {
+				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, scriptPath)
+			}
+
+			if err := verifyScript(t, filepath.Join(imagePath, scriptPath), app.Test); err != nil {
+				t.Fatalf("unexpected failure in app %v: test script: %v", app.Name, err)
+			}
+		}
+	}
+
 }
 
 func fileExists(t *testing.T, path string) bool {
@@ -541,8 +782,12 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 	return nil
 }
 
-func verifyEnv(t *testing.T, imagePath string, env []string) error {
-	args := []string{"exec", imagePath, "env"}
+func verifyEnv(t *testing.T, imagePath string, env []string, flags []string) error {
+	args := []string{"exec"}
+	if flags != nil {
+		args = append(args, flags...)
+	}
+	args = append(args, imagePath, "env")
 
 	cmd := exec.Command(cmdPath, args...)
 	b, err := cmd.CombinedOutput()
@@ -590,6 +835,27 @@ func verifyLabels(t *testing.T, imagePath string, labels map[string]string) erro
 	for _, l := range defaultLabels {
 		if _, ok := fileLabels[l]; !ok {
 			return fmt.Errorf("Missing label: %v", l)
+		}
+	}
+
+	return nil
+}
+
+func verifyAppLabels(t *testing.T, imagePath, appName string, labels map[string]string) error {
+	var fileLabels map[string]string
+
+	b, err := ioutil.ReadFile(filepath.Join(imagePath, "/scif/apps/", appName, "/scif/labels.json"))
+	if err != nil {
+		t.Fatalf("While reading file: %v", err)
+	}
+
+	if err := json.Unmarshal(b, &fileLabels); err != nil {
+		t.Fatalf("While unmarshaling labels.json into map: %v", err)
+	}
+
+	for k, v := range labels {
+		if l, ok := fileLabels[k]; !ok || v != l {
+			return fmt.Errorf("Missing label: %v:%v", k, v)
 		}
 	}
 
