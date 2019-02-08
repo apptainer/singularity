@@ -42,12 +42,14 @@
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Justin Riley <justin_riley@harvard.edu>
     - Krishna Muriki <kmuriki@lbl.gov>
+    - Kumar Sukhani <kumarsukhani@gmail.com>
     - Kundan Kumar <iamkundankumar28@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Matt Wiens <mwiens91@gmail.com>
     - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
     - Michael Herzberg <michael@mherzberg.de>
+    - Michael Milton <ttmigueltt@gmail.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,6 +18,7 @@ import (
 // provided by image file pointer
 func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error {
 	var path string
+	var loopFd int
 
 	if image == nil {
 		return fmt.Errorf("empty file pointer")
@@ -66,12 +67,12 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 			return fmt.Errorf("%s is not a block device", path)
 		}
 
-		if loop.file, err = os.OpenFile(path, mode, 0600); err != nil {
+		if loopFd, err = syscall.Open(path, mode, 0600); err != nil {
 			continue
 		}
 		if loop.Shared {
-			status, err := GetStatusFromFile(loop.file)
-			loop.file.Close()
+			status, err := GetStatusFromFd(uintptr(loopFd))
+			syscall.Close(loopFd)
 			if err != nil {
 				return err
 			}
@@ -87,20 +88,20 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 				return nil
 			}
 		} else {
-			_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetFd, image.Fd())
+			_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
 			if esys != 0 {
-				loop.file.Close()
+				syscall.Close(loopFd)
 				continue
 			}
 			break
 		}
 	}
 
-	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, loop.file.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, uintptr(loopFd), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
 		return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
 	}
 
-	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
+	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
 		return fmt.Errorf("Failed to set loop flags on loop device: %s", syscall.Errno(err))
 	}
 
@@ -117,10 +118,10 @@ func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
 	return loop.AttachFromFile(file, mode, number)
 }
 
-// GetStatusFromFile gets info status about an opened loop device
-func GetStatusFromFile(loop *os.File) (*Info64, error) {
+// GetStatusFromFd gets info status about an opened loop device
+func GetStatusFromFd(fd uintptr) (*Info64, error) {
 	info := &Info64{}
-	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, loop.Fd(), CmdGetStatus64, uintptr(unsafe.Pointer(info)))
+	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, CmdGetStatus64, uintptr(unsafe.Pointer(info)))
 	if err != syscall.ENXIO && err != 0 {
 		return nil, fmt.Errorf("Failed to get loop flags for loop device: %s", err.Error())
 	}
@@ -133,5 +134,5 @@ func GetStatusFromPath(path string) (*Info64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open loop device %s: %s", path, err)
 	}
-	return GetStatusFromFile(loop)
+	return GetStatusFromFd(loop.Fd())
 }

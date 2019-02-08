@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -41,9 +41,15 @@ func Root() string {
 	return root
 }
 
-// Clean wipes all files in the cache directory
-func Clean() {
-	_ = os.RemoveAll(Root())
+// Clean : wipes all files in the cache directory, will return a error if one occurs
+func Clean() error {
+	sylog.Debugf("Removing: %v", Root())
+
+	if err := os.RemoveAll(Root()); err != nil {
+		return fmt.Errorf("unable to clean all cache: %s", err)
+	}
+
+	return nil
 }
 
 func updateCacheRoot() {
