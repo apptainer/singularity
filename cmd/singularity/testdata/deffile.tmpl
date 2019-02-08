@@ -86,3 +86,61 @@ Namespace: {{.Namespace}}
 {{- range $l := .StartScript}}
     {{$l}}
 {{- end}}
+
+
+
+
+
+
+{{- range $app := .Apps}}
+
+{{- if $app.Help}}
+%apphelp {{$app.Name}}
+{{- end}}
+{{- range $l := $app.Help}}
+    {{$l}}
+{{- end}}
+
+{{- if $app.Env}}
+%appenv {{$app.Name}}
+{{- end}}
+{{- range $l := $app.Env}}
+    export {{$l}}
+{{- end}}
+
+{{- if $app.Labels}}
+%applabels {{$app.Name}}
+{{- end}}
+{{- range $k, $v := $app.Labels}}
+    {{$k}} {{$v}}
+{{- end}}
+
+{{- if $app.Files}}
+%appfiles {{$app.Name}}
+{{- end}}
+{{- range $f := $app.Files}}
+    {{$f.Src}} {{$f.Dst}}
+{{- end}}
+
+{{- if $app.Install}}
+%appinstall {{$app.Name}}
+{{- end}}
+{{- range $l := $app.Install}}
+    touch {{$l}}
+{{- end}}
+
+{{- if $app.Run}}
+%apprun {{$app.Name}}
+{{- end}}
+{{- range $l := $app.Run}}
+    {{$l}}
+{{- end}}
+
+{{- if $app.Test}}
+%apptest {{$app.Name}}
+{{- end}}
+{{- range $l := $app.Test}}
+    {{$l}}
+{{- end}}
+
+{{- end}}
