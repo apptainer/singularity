@@ -15,7 +15,7 @@ func OciMount(image string, bundle string) error {
 	if err != nil {
 		return err
 	}
-	return d.Create()
+	return d.Create(nil)
 }
 
 // OciUmount umount SIF and delete OCI bundle
