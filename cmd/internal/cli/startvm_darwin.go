@@ -27,7 +27,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 
 	// Default xhyve Arguments
 	defArgs := []string{""}
-	defArgs = []string{"-A", "-m", VmRam, "-c", VmCpu, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
+	defArgs = []string{"-A", "-m", VMRAM, "-c", VMCPU, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
 
 	// Bind mounts
 	singBinds := []string{""}

@@ -30,8 +30,8 @@ var (
 	DNS             string
 	Security        []string
 	CgroupsPath     string
-	VmRam           string
-	VmCpu           string
+	VMRAM           string
+	VMCPU           string
 	ContainLibsPath []string
 
 	IsBoot          bool
@@ -152,12 +152,12 @@ func initPathVars() {
 	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
 
 	// --vm-ram
-	actionFlags.StringVar(&VmRam, "vm-ram", "1024", "Amount of RAM in MiB to allocate to Virtual Machine (implies --vm)")
+	actionFlags.StringVar(&VMRAM, "vm-ram", "1024", "Amount of RAM in MiB to allocate to Virtual Machine (implies --vm)")
 	actionFlags.SetAnnotation("vm-ram", "argtag", []string{"<size>"})
 	actionFlags.SetAnnotation("vm-ram", "envkey", []string{"VM_RAM"})
 
 	// --vm-cpu
-	actionFlags.StringVar(&VmCpu, "vm-cpu", "1", "Number of CPU cores to allocate to Virtual Machine (implies --vm)")
+	actionFlags.StringVar(&VMCPU, "vm-cpu", "1", "Number of CPU cores to allocate to Virtual Machine (implies --vm)")
 	actionFlags.SetAnnotation("vm-cpu", "argtag", []string{"<CPU #>"})
 	actionFlags.SetAnnotation("vm-cpu", "envkey", []string{"VM_CPU"})
 

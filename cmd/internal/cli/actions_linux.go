@@ -35,7 +35,7 @@ import (
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	// --vm-ram or --vm-cpu changed from default value, and --vm flag not given
-	if (VmRam != "1024" || VmCpu != "1") && !VM {
+	if (VMRAM != "1024" || VMCPU != "1") && !VM {
 		sylog.Debugf("Setting --vm option to true")
 		VM = true
 	}

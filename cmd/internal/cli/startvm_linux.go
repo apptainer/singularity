@@ -24,7 +24,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	appendArgs := fmt.Sprintf("root=/dev/ram0 console=ttyS0 quiet singularity_action=%s singularity_arguments=\"%s\"", singAction, cliExtra)
 
 	defArgs := []string{""}
-	defArgs = []string{"-cpu", "host", "-smp", VmCpu, "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", VmRam, "-append", appendArgs}
+	defArgs = []string{"-cpu", "host", "-smp", VMCPU, "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", VMRAM, "-append", appendArgs}
 
 	pgmExec, lookErr := exec.LookPath("/usr/libexec/qemu-kvm")
 	if lookErr != nil {
