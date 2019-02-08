@@ -19,19 +19,22 @@ func deleteDir(dir string, err error) {
 }
 
 // CreateOverlay creates a writable overlay
-func CreateOverlay(bundlePath string) (err error) {
+func CreateOverlay(bundlePath string) error {
+	var err error
+
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
 	overlayDir := filepath.Join(bundlePath, "overlay")
 	if err = os.Mkdir(overlayDir, 0700); err != nil {
-		return
+		return fmt.Errorf("failed to create %s: %s", overlayDir, err)
 	}
 	// delete overlay directory in case of error
 	defer deleteDir(overlayDir, err)
 
-	if syscall.Mount(overlayDir, overlayDir, "", syscall.MS_BIND, ""); err != nil {
-		return err
+	err = syscall.Mount(overlayDir, overlayDir, "", syscall.MS_BIND, "")
+	if err != nil {
+		return fmt.Errorf("failed to bind %s: %s", overlayDir, err)
 	}
 	// best effort to cleanup mount
 	defer func() {
@@ -40,25 +43,25 @@ func CreateOverlay(bundlePath string) (err error) {
 		}
 	}()
 
-	if syscall.Mount("", overlayDir, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
-		return err
+	if err = syscall.Mount("", overlayDir, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("failed to remount %s: %s", overlayDir, err)
 	}
 
 	upperDir := filepath.Join(overlayDir, "upper")
 	if err = os.Mkdir(upperDir, 0700); err != nil {
-		return
+		return fmt.Errorf("failed to create %s: %s", upperDir, err)
 	}
 	workDir := filepath.Join(overlayDir, "work")
 	if err = os.Mkdir(workDir, 0700); err != nil {
-		return
+		return fmt.Errorf("failed to create %s: %s", workDir, err)
 	}
 	rootFsDir := RootFs(bundlePath).Path()
 
 	options := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", rootFsDir, upperDir, workDir)
 	if err = syscall.Mount("overlay", rootFsDir, "overlay", 0, options); err != nil {
-		return
+		return fmt.Errorf("failed to mount %s: %s", overlayDir, err)
 	}
-	return
+	return nil
 }
 
 // DeleteOverlay deletes overlay
@@ -67,13 +70,13 @@ func DeleteOverlay(bundlePath string) error {
 	rootFsDir := RootFs(bundlePath).Path()
 
 	if err := syscall.Unmount(rootFsDir, syscall.MNT_DETACH); err != nil {
-		return err
+		return fmt.Errorf("failed to unmount %s: %s", rootFsDir, err)
 	}
 	if err := syscall.Unmount(overlayDir, syscall.MNT_DETACH); err != nil {
-		return err
+		return fmt.Errorf("failed to unmount %s: %s", overlayDir, err)
 	}
 	if err := os.RemoveAll(overlayDir); err != nil {
-		return err
+		return fmt.Errorf("failed to remove %s: %s", overlayDir, err)
 	}
 	return nil
 }

@@ -26,7 +26,7 @@ func CreateLoop(file *os.File, offset, size uint64) (string, error) {
 	}
 	idx := 0
 	if err := loopDev.AttachFromFile(file, os.O_RDONLY, &idx); err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to attach image %s: %s", file.Name(), err)
 	}
 	return fmt.Sprintf("/dev/loop%d", idx), nil
 }

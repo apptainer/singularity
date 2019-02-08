@@ -92,12 +92,13 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 func (s *sifBundle) Delete() error {
 	if s.writable {
 		if err := tools.DeleteOverlay(s.bundlePath); err != nil {
-			return err
+			return fmt.Errorf("delete error: %s", err)
 		}
 	}
 	// Umount rootfs
-	if err := syscall.Unmount(tools.RootFs(s.bundlePath).Path(), syscall.MNT_DETACH); err != nil {
-		return err
+	rootFsDir := tools.RootFs(s.bundlePath).Path()
+	if err := syscall.Unmount(rootFsDir, syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to unmount %s: %s", rootFsDir, err)
 	}
 	// delete bundle directory
 	return tools.DeleteBundle(s.bundlePath)

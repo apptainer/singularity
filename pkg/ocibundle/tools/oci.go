@@ -6,6 +6,7 @@
 package tools
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -36,7 +37,7 @@ func CreateBundle(bundlePath string, config *specs.Spec) error {
 
 	rootFsDir := RootFs(bundlePath).Path()
 	if err := os.MkdirAll(rootFsDir, 0700); err != nil {
-		return err
+		return fmt.Errorf("failed to create %s: %s", rootFsDir, err)
 	}
 	defer func() {
 		if err != nil {
@@ -48,7 +49,7 @@ func CreateBundle(bundlePath string, config *specs.Spec) error {
 		// generate and write config.json in bundle
 		g, err = generate.New(runtime.GOOS)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to generate OCI config: %s", err)
 		}
 	} else {
 		g = generate.Generator{
