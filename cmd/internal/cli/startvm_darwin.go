@@ -34,11 +34,11 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 
 	slot := 5
 	function := 0
-	for _,bindpath := range BindPaths {
+	for _, bindpath := range BindPaths {
 		splitted := strings.Split(bindpath, ":")
 		src := splitted[0]
 		dst := ""
-		if (len(splitted) > 1) {
+		if len(splitted) > 1 {
 			dst = splitted[1]
 		} else {
 			dst = src
@@ -50,17 +50,17 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		// TODO: Figure out if src is a directory or not
 		mntTag = filepath.Base(src)
 
-		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s",strconv.Itoa(slot),strconv.Itoa(function),mntTag,src)
-		defArgs = append(defArgs,"-s")
+		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(function), mntTag, src)
+		defArgs = append(defArgs, "-s")
 		defArgs = append(defArgs, pciArgs)
 
-		localBind := fmt.Sprintf("%s:%s",mntTag,dst)
+		localBind := fmt.Sprintf("%s:%s", mntTag, dst)
 		singBinds = append(singBinds, localBind)
 
 		sylog.Debugf("PCI: %s", pciArgs)
 
 		function++
-		if (function > 7) {
+		if function > 7 {
 			sylog.Fatalf("Maximum of 8 bind mounts")
 		}
 	}
@@ -69,18 +69,18 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used eventually
 	homeSrc := os.Getenv("HOME")
 	pciArgs := fmt.Sprintf("4:0,virtio-9p,home=%s", homeSrc)
-	homeBind := fmt.Sprintf("home:%s",homeSrc)
+	homeBind := fmt.Sprintf("home:%s", homeSrc)
 	singBinds = append(singBinds, homeBind)
 
 	sylog.Debugf("PCI: %s", pciArgs)
 	defArgs = append(defArgs, "-s")
 	defArgs = append(defArgs, pciArgs)
 
-	if (IsSyOS) {
+	if IsSyOS {
 		cliExtra = "syos"
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, singAction, cliExtra, strings.Join(singBinds,"|"))
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, singAction, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	defArgs = append(defArgs, "-f")

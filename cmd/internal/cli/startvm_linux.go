@@ -38,7 +38,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("This functionality is not supported.")
 	}
 	if _, err := os.Stat(initramfs); os.IsNotExist(err) {
-		sylog.Fatalf("This functionality is not supported."
+		sylog.Fatalf("This functionality is not supported.")
 	}
 
 	cmd := exec.Command(pgmExec, defArgs...)
