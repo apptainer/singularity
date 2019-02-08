@@ -73,11 +73,9 @@ func TestFromSif(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// execute something
+	// execute oci run command
 	args = []string{"oci", "run", "-b", bundlePath, filepath.Base(sifFile)}
 	cmd = exec.Command(sing, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		t.Error(err)
 	}
