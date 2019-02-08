@@ -9,10 +9,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"syscall"
 
-	"github.com/opencontainers/runtime-tools/generate"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
@@ -26,7 +26,7 @@ type sifBundle struct {
 }
 
 // Create creates an OCI bundle from a SIF image
-func (s *sifBundle) Create() error {
+func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	if s.image == "" {
 		return fmt.Errorf("image wasn't set, need one to create bundle")
 	}
@@ -59,15 +59,8 @@ func (s *sifBundle) Create() error {
 	offset := uint64(part.Fileoff)
 	size := uint64(part.Filelen)
 
-	// generate a default configuration
-	g, err := generate.New(runtime.GOOS)
-	if err != nil {
-		return err
-	}
-	g.SetProcessArgs([]string{"/.singularity.d/actions/run"})
-
 	// create OCI bundle
-	if err := tools.CreateBundle(s.bundlePath, g.Config); err != nil {
+	if err := tools.CreateBundle(s.bundlePath, ociConfig); err != nil {
 		return fmt.Errorf("failed to create OCI bundle: %s", err)
 	}
 

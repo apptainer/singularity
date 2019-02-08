@@ -5,8 +5,12 @@
 
 package ocibundle
 
+import (
+	specs "github.com/opencontainers/runtime-spec/specs-go"
+)
+
 // Bundle defines an OCI bundle interface to create/delete OCI bundles
 type Bundle interface {
-	Create() error
+	Create(*specs.Spec) error
 	Delete() error
 }
