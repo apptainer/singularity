@@ -157,6 +157,51 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.sif /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Cache
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CacheUse   string = `cache <subcommand>`
+	CacheShort string = `Manage your local singularity cache`
+	CacheLong  string = `
+  Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
+  You can list/clean using the spicific types.`
+	CacheExample string = `
+  All group commands have their own help output:
+
+  $ singularity cache
+  $ singularity cache --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Cache clean
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CacheCleanUse   string = `clean [clean options...]`
+	CacheCleanShort string = `Clean your local Singularity cache`
+	CacheCleanLong  string = `
+  This will clean you local cache: "${HOME}/.singularity/cache". The available cache
+  types are: library, oci, and blob. By default cache clean will only clean blob cache,
+  use: '--all' to clean all cache.`
+	CacheCleanExample string = `
+  All group commands have their own help output:
+
+  $ singularity help cache clean --name cache_name.sif
+  $ singularity help cache clean --type=library,oci
+  $ singularity cache clean --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Cache List
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CacheListUse   string = `list [list options...]`
+	CacheListShort string = `List your local Singularity cache`
+	CacheListLong  string = `
+  This will list you local cache: "${HOME}/.singularity/cache". The available cache
+  types are: library, oci, and blob.`
+	CacheListExample string = `
+  All group commands have their own help output:
+
+  $ singularity help cache list
+  $ singularity help cache list --type=library,oci
+  $ singularity cache list --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyUse string = `key [key options...] <subcommand>`
