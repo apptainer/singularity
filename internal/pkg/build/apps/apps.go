@@ -10,6 +10,7 @@ package apps
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -31,6 +32,7 @@ const (
 	sectionTest    = "apptest"
 	sectionHelp    = "apphelp"
 	sectionRun     = "apprun"
+	sectionLabels  = "applabels"
 )
 
 var (
@@ -41,6 +43,7 @@ var (
 		sectionTest:    true,
 		sectionHelp:    true,
 		sectionRun:     true,
+		sectionLabels:  true,
 	}
 )
 
@@ -77,6 +80,10 @@ export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_AP
 
 %s
 `
+	scifTestBase = `#!/bin/sh
+
+%s
+`
 
 	scifInstallBase = `
 cd /
@@ -98,6 +105,7 @@ type App struct {
 	Test    string
 	Help    string
 	Run     string
+	Labels  string
 }
 
 // BuildApp is the type which the build system can use to build an app in a bundle
@@ -142,6 +150,8 @@ func (pl *BuildApp) HandleSection(ident, section string) {
 		app.Help = section
 	case sectionRun:
 		app.Run = section
+	case sectionLabels:
+		app.Labels = section
 	default:
 		return
 	}
@@ -205,11 +215,19 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 			return err
 		}
 
+		if err := writeTestFile(b, app); err != nil {
+			return err
+		}
+
 		if err := writeHelpFile(b, app); err != nil {
 			return err
 		}
 
 		if err := copyFiles(b, app); err != nil {
+			return err
+		}
+
+		if err := writeLabels(b, app); err != nil {
 			return err
 		}
 
@@ -289,6 +307,16 @@ func writeRunscriptFile(b *types.Bundle, a *App) error {
 	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0755)
 }
 
+// %apptest
+func writeTestFile(b *types.Bundle, a *App) error {
+	if a.Test == "" {
+		return nil
+	}
+
+	content := fmt.Sprintf(scifTestBase, a.Test)
+	return ioutil.WriteFile(filepath.Join(appMeta(b, a), "/test"), []byte(content), 0755)
+}
+
 // %apphelp
 func writeHelpFile(b *types.Bundle, a *App) error {
 	if a.Help == "" {
@@ -332,6 +360,44 @@ func copyFiles(b *types.Bundle, a *App) error {
 	}
 
 	return nil
+}
+
+// %applabels
+func writeLabels(b *types.Bundle, a *App) error {
+	lines := strings.Split(strings.TrimSpace(a.Labels), "\n")
+	labels := make(map[string]string)
+
+	// add default label
+	labels["SCIF_APP_NAME"] = a.Name
+
+	for _, line := range lines {
+
+		// skip empty or comment lines
+		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+			continue
+		}
+		var key, val string
+		lineSubs := strings.SplitN(line, " ", 2)
+		if len(lineSubs) < 2 {
+			key = strings.TrimSpace(lineSubs[0])
+			val = ""
+		} else {
+			key = strings.TrimSpace(lineSubs[0])
+			val = strings.TrimSpace(lineSubs[1])
+		}
+
+		labels[key] = val
+	}
+
+	// make new map into json
+	text, err := json.MarshalIndent(labels, "", "\t")
+	if err != nil {
+		return err
+	}
+
+	appBase := filepath.Join(b.Rootfs(), "/scif/apps/", a.Name)
+	err = ioutil.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0644)
+	return err
 }
 
 //util funcs

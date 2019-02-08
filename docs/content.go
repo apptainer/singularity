@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -157,77 +157,80 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.sif /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys
+	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysUse   string = `keys [keys options...] <subcommand>`
-	KeysShort string = `Manage OpenPGP key stores`
-	KeysLong  string = `
-  The 'keys' command  allows you to manage local OpenPGP key stores by creating
-  a new store and new keys pairs. You can also list available keys from the
-  default store. Finally, the keys command offers subcommands to communicate
+	KeyUse string = `key [key options...] <subcommand>`
+
+	// keys : for the hidden `keys` command
+	KeysUse  string = `keys [keys options...] <subcommand>`
+	KeyShort string = `Manage OpenPGP key stores`
+	KeyLong  string = `
+  The 'key' command allows you to manage local OpenPGP key stores by creating
+  a new store and new key pairs. You can also list available keys from the
+  default store. Finally, the key command offers subcommands to communicate
   with an HKP key server to fetch and upload public keys.`
-	KeysExample string = `
+	KeyExample string = `
   All group commands have their own help output:
 
-  $ singularity help keys newpair
-  $ singularity keys list --help`
+  $ singularity help key newpair
+  $ singularity key list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys newpair
+	// key newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysNewPairUse   string = `newpair`
-	KeysNewPairShort string = `Create a new OpenPGP key pair`
-	KeysNewPairLong  string = `
-  The 'keys newpair' command allows you to create a new key or public/private
+	KeyNewPairUse   string = `newpair`
+	KeyNewPairShort string = `Create a new OpenPGP key pair`
+	KeyNewPairLong  string = `
+  The 'key newpair' command allows you to create a new key or public/private
   keys to be stored in the default user local key store location (e.g., 
   $HOME/.singularity/sypgp).`
-	KeysNewPairExample string = `
-  $ singularity keys newpair`
+	KeyNewPairExample string = `
+  $ singularity key newpair`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys list
+	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysListUse   string = `list`
-	KeysListShort string = `List keys from the default key store`
-	KeysListLong  string = `
-  The 'keys list' command allows you to list public/private key pairs from the 
+	KeyListUse   string = `list`
+	KeyListShort string = `List keys from the default key store`
+	KeyListLong  string = `
+  The 'key list' command allows you to list public/private key pairs from the 
   default user local key store location (e.g., $HOME/.singularity/sypgp).`
-	KeysListExample string = `
-  $ singularity keys list`
+	KeyListExample string = `
+  $ singularity key list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys search
+	// key search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysSearchUse   string = `search [search options...] <search_string>`
-	KeysSearchShort string = `Search for keys matching string argument`
-	KeysSearchLong  string = `
-  The 'keys search' command allows you to connect to a key server and look for 
+	KeySearchUse   string = `search [search options...] <search_string>`
+	KeySearchShort string = `Search for keys matching string argument`
+	KeySearchLong  string = `
+  The 'key search' command allows you to connect to a key server and look for 
   public keys matching the string argument passed to the command line.`
-	KeysSearchExample string = `
-  $ singularity keys search sylabs.io`
+	KeySearchExample string = `
+  $ singularity key search sylabs.io`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys pull
+	// key pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPullUse   string = `pull [pull options...] <fingerprint>`
-	KeysPullShort string = `Fetch an OpenPGP public key from a key server`
-	KeysPullLong  string = `
-  The 'keys pull' command allows you to connect to a key server look for and 
+	KeyPullUse   string = `pull [pull options...] <fingerprint>`
+	KeyPullShort string = `Fetch an OpenPGP public key from a key server`
+	KeyPullLong  string = `
+  The 'key pull' command allows you to connect to a key server look for and 
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
-	KeysPullExample string = `
-  $ singularity keys pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+	KeyPullExample string = `
+  $ singularity key pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys push
+	// key push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPushUse   string = `push [push options...] <fingerprint>`
-	KeysPushShort string = `Upload an OpenPGP public key to a key server`
-	KeysPushLong  string = `
-  The 'keys push' command allows you to connect to a key server and upload 
+	KeyPushUse   string = `push [push options...] <fingerprint>`
+	KeyPushShort string = `Upload an OpenPGP public key to a key server`
+	KeyPushLong  string = `
+  The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
-	KeysPushExample string = `
-  $ singularity keys push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+	KeyPushExample string = `
+  $ singularity key push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
@@ -837,4 +840,18 @@ found at:
   Resume will resume all processes previously paused for the specified container ID.`
 	OciResumeExample string = `
   $ singularity oci resume mycontainer`
+
+	OciMountUse   string = `mount <sif_image> <bundle_path>`
+	OciMountShort string = `Mount create an OCI bundle from SIF image`
+	OciMountLong  string = `
+  Mount will mount and create an OCI bundle from a SIF image.`
+	OciMountExample string = `
+  $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example`
+
+	OciUmountUse   string = `umount <bundle_path>`
+	OciUmountShort string = `Umount delete bundle`
+	OciUmountLong  string = `
+  Umount will umount an OCI bundle previously mounted with singularity oci mount.`
+	OciUmountExample string = `
+  $ singularity oci umount /var/lib/singularity/bundles/example`
 )
