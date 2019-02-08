@@ -66,6 +66,8 @@ func TestFromSif(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// remove seccomp filter for CI
+	g.Config.Linux.Seccomp = nil
 	g.SetProcessArgs([]string{"/.singularity.d/actions/run", "id"})
 
 	if err := bundle.Create(g.Config); err != nil {
@@ -76,7 +78,6 @@ func TestFromSif(t *testing.T) {
 	// execute oci run command
 	args = []string{"oci", "run", "-b", bundlePath, filepath.Base(sifFile)}
 	cmd = exec.Command(sing, args...)
-	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		t.Error(err)
 	}
