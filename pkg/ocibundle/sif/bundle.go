@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
+	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
@@ -52,8 +54,15 @@ func (s *sifBundle) Create() error {
 	offset := uint64(part.Fileoff)
 	size := uint64(part.Filelen)
 
+	// generate a default configuration
+	g, err := generate.New(runtime.GOOS)
+	if err != nil {
+		return err
+	}
+	g.SetProcessArgs([]string{"/.singularity.d/actions/run"})
+
 	// create OCI bundle
-	if err := tools.CreateBundle(s.bundlePath, nil); err != nil {
+	if err := tools.CreateBundle(s.bundlePath, g.Config); err != nil {
 		return fmt.Errorf("failed to create OCI bundle: %s", err)
 	}
 
