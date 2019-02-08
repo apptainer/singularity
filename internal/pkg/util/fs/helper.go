@@ -75,6 +75,15 @@ func MkdirAll(path string, mode os.FileMode) error {
 	return os.MkdirAll(path, mode)
 }
 
+// Mkdir creates a directory if it doesn't exist with
+// mode after umask reset
+func Mkdir(path string, mode os.FileMode) error {
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	return os.Mkdir(path, mode)
+}
+
 // RootDir returns the root directory of path (rootdir of /my/path is /my).
 // Returns "." if path is empty
 func RootDir(path string) string {

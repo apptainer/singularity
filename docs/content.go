@@ -885,4 +885,18 @@ found at:
   Resume will resume all processes previously paused for the specified container ID.`
 	OciResumeExample string = `
   $ singularity oci resume mycontainer`
+
+	OciMountUse   string = `mount <sif_image> <bundle_path>`
+	OciMountShort string = `Mount create an OCI bundle from SIF image`
+	OciMountLong  string = `
+  Mount will mount and create an OCI bundle from a SIF image.`
+	OciMountExample string = `
+  $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example`
+
+	OciUmountUse   string = `umount <bundle_path>`
+	OciUmountShort string = `Umount delete bundle`
+	OciUmountLong  string = `
+  Umount will umount an OCI bundle previously mounted with singularity oci mount.`
+	OciUmountExample string = `
+  $ singularity oci umount /var/lib/singularity/bundles/example`
 )
