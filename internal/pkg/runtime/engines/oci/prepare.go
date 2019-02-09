@@ -8,7 +8,6 @@ package oci
 import (
 	"fmt"
 	"os"
-	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
@@ -180,16 +179,21 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 			e.EngineConfig.MasterPts = int(master.Fd())
 			e.EngineConfig.SlavePts = int(slave.Fd())
 		} else {
-			flags := syscall.O_CLOEXEC
-			if err := syscall.Pipe2(e.EngineConfig.OutputStreams[0:], flags); err != nil {
+			r, w, err := os.Pipe()
+			if err != nil {
 				return err
 			}
-			if err := syscall.Pipe2(e.EngineConfig.ErrorStreams[0:], flags); err != nil {
+			e.EngineConfig.OutputStreams = [2]int{int(r.Fd()), int(w.Fd())}
+			r, w, err = os.Pipe()
+			if err != nil {
 				return err
 			}
-			if err := syscall.Pipe2(e.EngineConfig.InputStreams[0:], flags); err != nil {
+			e.EngineConfig.ErrorStreams = [2]int{int(r.Fd()), int(w.Fd())}
+			r, w, err = os.Pipe()
+			if err != nil {
 				return err
 			}
+			e.EngineConfig.InputStreams = [2]int{int(w.Fd()), int(r.Fd())}
 		}
 	} else {
 		starterConfig.SetJoinMount(true)
