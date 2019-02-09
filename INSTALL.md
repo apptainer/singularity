@@ -1,4 +1,4 @@
-# Installing Singularity development-3.0
+# Installing Singularity
 
 Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
@@ -90,7 +90,7 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.0.3
+$ git checkout v3.1.0
 ```
 
 To build in a different folder and to set the install prefix to a different path:
