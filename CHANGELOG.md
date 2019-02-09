@@ -9,7 +9,39 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.0.3
+# Changes Since v3.1.0
+
+# v3.1.0 - [2019.02.08]
+
+## New Commands
+  - Introduced the `oci` command group to support a new OCI compliant variant of the Singularity runtime:
+    - `attach` Attach console to a running container process
+    - `create` Create a container from a bundle directory
+    - `delete` Delete container
+    - `exec`   Execute a command within container
+    - `kill`   Kill a container
+    - `mount`  Mount create an OCI bundle from SIF image
+    - `pause`  Suspends all processes inside the container
+    - `resume` Resumes all processes previously paused inside the container
+    - `run`    Create/start/attach/delete a container from a bundle directory
+    - `start`  Start container process
+    - `state`  Query state of a container
+    - `umount` Umount delete bundle
+    - `update` Update container cgroups resources
+  - Added `cache` command group to inspect and manage cached files
+    - `clean` Clean your local Singularity cache
+    - `list`  List your local Singularity cache
+
+## New features / functionalities
+  - Can now build CLI on darwin for limited functionality on Mac
+  - Added the `scratch` bootstrap agent to build from anything
+  - Reintroduced support for zypper bootstrap agent
+  - Added the ability to overwrite a new `singularity.conf` when building from RPM if desired
+  - Fixed several regressions and omissions in [SCIF](https://sci-f.github.io/) support
+  - Added caching for containers pulled/built from the [Container Library](https://cloud.sylabs.io/library)
+  - Changed `keys` command group to `key` (retained hidden `keys` command for backward compatibility)  
+  - Created an `RPMPREFIX` variable to allow RPMs to be installed in custom locations
+  - Greatly expanded CI unit and end-to-end testing
 
 # v3.0.3 - [2019.01.21]
   
@@ -18,7 +50,6 @@ _The old changelog can be found in the `release-2.6` branch_
   - Several improvements to RPM packaging including using golang from epel, improved support for Fedora, and avoiding overwriting conf file on new RPM install
   - Unprivileged `--contain` option now properly mounts `devpts` on older kernels
   - Uppercase proxy environment variables are now rightly respected
-
   - Add http/https protocols for singularity run/pull commands
   - Update to SIF 1.0.2
   - Add _noPrompt_ parameter to `pkg/signing/Verify` function to enable silent verification

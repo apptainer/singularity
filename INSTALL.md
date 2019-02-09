@@ -1,4 +1,4 @@
-# Installing Singularity development-3.0
+# Installing Singularity
 
 Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
@@ -63,7 +63,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.0.3
+$ git checkout v3.1.0
 ```
 
 ## Compiling Singularity
@@ -106,7 +106,7 @@ Golang, but you do need to
 [install the other dependencies](#install-system-dependencies).
 
 ```
-$ export VERSION=3.0.3  # this is the singularity version, change as you need
+$ export VERSION=3.1.0  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-${VERSION}.tar.gz && \
