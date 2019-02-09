@@ -133,4 +133,4 @@ $ make -C builddir rpm RPMPREFIX=/usr/local
 ```
 
 For more information on installing/updating/uninstalling the RPM, check out our 
-admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).
+[admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).
