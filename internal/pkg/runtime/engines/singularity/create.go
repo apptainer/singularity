@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,12 +15,13 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 )
 
 // CreateContainer creates a container
 func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != Name {
+	if engine.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 

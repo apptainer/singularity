@@ -99,6 +99,13 @@ To build the RPM, you first need to install `rpm-build` and `wget`.
 $ sudo yum -y update && sudo yum install -y rpm-build wget
 ```
 
+To build an rpm with an alternative install prefix set RPMPREFIX on the
+make step, for example
+
+```
+$ make -C builddir rpm RPMPREFIX=/usr/local
+```
+
 Then download the latest 
 [release tarball](https://github.com/sylabs/singularity/releases) and use it to
 install the RPM.  Since we are building from the RPM, you don't need to install 

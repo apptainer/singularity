@@ -1,145 +1,66 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package loop
 
-import (
-	"fmt"
-	"os"
-	"syscall"
-	"unsafe"
-
-	"github.com/sylabs/singularity/pkg/util/fs/lock"
-)
-
 // Device describes a loop device
 type Device struct {
 	MaxLoopDevices int
 	Shared         bool
 	Info           *Info64
-	file           *os.File
 }
 
-// AttachFromFile finds a free loop device, opens it, and stores file descriptor
-// provided by image file pointer
-func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error {
-	var path string
+// Loop device flags values
+const (
+	FlagsReadOnly  = 1
+	FlagsAutoClear = 4
+	FlagsPartScan  = 8
+	FlagsDirectIO  = 16
+)
 
-	if image == nil {
-		return fmt.Errorf("empty file pointer")
-	}
+// Loop device encryption types
+const (
+	CryptNone      = 0
+	CryptXor       = 1
+	CryptDes       = 2
+	CryptFish2     = 3
+	CryptBlow      = 4
+	CryptCast128   = 5
+	CryptIdea      = 6
+	CryptDummy     = 9
+	CryptSkipJack  = 10
+	CryptCryptoAPI = 18
+	CryptMax       = 20
+)
 
-	fi, err := image.Stat()
-	if err != nil {
-		return err
-	}
-	st := fi.Sys().(*syscall.Stat_t)
-	imageIno := st.Ino
-	imageDev := st.Dev
+// Loop device IOCTL commands
+const (
+	CmdSetFd       = 0x4C00
+	CmdClrFd       = 0x4C01
+	CmdSetStatus   = 0x4C02
+	CmdGetStatus   = 0x4C03
+	CmdSetStatus64 = 0x4C04
+	CmdGetStatus64 = 0x4C05
+	CmdChangeFd    = 0x4C06
+	CmdSetCapacity = 0x4C07
+	CmdSetDirectIO = 0x4C08
+)
 
-	fd, err := lock.Exclusive("/dev")
-	if err != nil {
-		return err
-	}
-	defer lock.Release(fd)
-
-	freeDevice := -1
-
-	for device := 0; device <= loop.MaxLoopDevices; device++ {
-		*number = device
-
-		if device == loop.MaxLoopDevices {
-			if loop.Shared {
-				loop.Shared = false
-				if freeDevice != -1 {
-					device = freeDevice
-					continue
-				}
-			}
-			return fmt.Errorf("no loop devices available")
-		}
-
-		path = fmt.Sprintf("/dev/loop%d", device)
-		if fi, err := os.Stat(path); err != nil {
-			dev := int((7 << 8) | (device & 0xff) | ((device & 0xfff00) << 12))
-			esys := syscall.Mknod(path, syscall.S_IFBLK|0660, dev)
-			if errno, ok := esys.(syscall.Errno); ok {
-				if errno != syscall.EEXIST {
-					return esys
-				}
-			}
-		} else if fi.Mode()&os.ModeDevice == 0 {
-			return fmt.Errorf("%s is not a block device", path)
-		}
-
-		if loop.file, err = os.OpenFile(path, mode, 0600); err != nil {
-			continue
-		}
-		if loop.Shared {
-			status, err := GetStatusFromFile(loop.file)
-			loop.file.Close()
-			if err != nil {
-				return err
-			}
-			// there is no associated image with loop device, save indice so second loop
-			// iteration will start from this device
-			if status.Inode == 0 && freeDevice == -1 {
-				freeDevice = device
-				continue
-			}
-			if status.Inode == imageIno && status.Device == imageDev &&
-				status.Flags&FlagsReadOnly == loop.Info.Flags&FlagsReadOnly &&
-				status.Offset == loop.Info.Offset && status.SizeLimit == loop.Info.SizeLimit {
-				return nil
-			}
-		} else {
-			_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetFd, image.Fd())
-			if esys != 0 {
-				loop.file.Close()
-				continue
-			}
-			break
-		}
-	}
-
-	if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, loop.file.Fd(), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
-		return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
-	}
-
-	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, loop.file.Fd(), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
-		return fmt.Errorf("Failed to set loop flags on loop device: %s", syscall.Errno(err))
-	}
-
-	return nil
-}
-
-// AttachFromPath finds a free loop device, opens it, and stores file descriptor
-// of opened image path
-func (loop *Device) AttachFromPath(image string, mode int, number *int) error {
-	file, err := os.OpenFile(image, mode, 0600)
-	if err != nil {
-		return err
-	}
-	return loop.AttachFromFile(file, mode, number)
-}
-
-// GetStatusFromFile gets info status about an opened loop device
-func GetStatusFromFile(loop *os.File) (*Info64, error) {
-	info := &Info64{}
-	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, loop.Fd(), CmdGetStatus64, uintptr(unsafe.Pointer(info)))
-	if err != syscall.ENXIO && err != 0 {
-		return nil, fmt.Errorf("Failed to get loop flags for loop device: %s", err.Error())
-	}
-	return info, nil
-}
-
-// GetStatusFromPath gets info status about a loop device from path
-func GetStatusFromPath(path string) (*Info64, error) {
-	loop, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open loop device %s: %s", path, err)
-	}
-	return GetStatusFromFile(loop)
+// Info64 contains information about a loop device.
+type Info64 struct {
+	Device         uint64
+	Inode          uint64
+	Rdevice        uint64
+	Offset         uint64
+	SizeLimit      uint64
+	Number         uint32
+	EncryptType    uint32
+	EncryptKeySize uint32
+	Flags          uint32
+	FileName       [64]byte
+	CryptName      [64]byte
+	EncryptKey     [32]byte
+	Init           [2]uint64
 }

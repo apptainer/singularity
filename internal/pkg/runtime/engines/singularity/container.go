@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -54,6 +54,7 @@ type container struct {
 	ipcNS            bool
 	mountInfoPath    string
 	skippedMount     []string
+	checkDest        []string
 	suidFlag         uintptr
 	devSourcePath    string
 }
@@ -68,6 +69,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		sessionFsType:    engine.EngineConfig.File.MemoryFSType,
 		mountInfoPath:    fmt.Sprintf("/proc/%d/mountinfo", pid),
 		skippedMount:     make([]string, 0),
+		checkDest:        make([]string, 0),
 		suidFlag:         syscall.MS_NOSUID,
 	}
 
@@ -171,11 +173,11 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if c.netNS {
 		if os.Geteuid() == 0 && !c.userNS {
 			/* hold a reference to container network namespace for cleanup */
-			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+			f, err := syscall.Open("/proc/"+strconv.Itoa(pid)+"/ns/net", os.O_RDONLY, 0)
 			if err != nil {
 				return fmt.Errorf("can't open network namespace: %s", err)
 			}
-			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f)
 			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
 
 			cniPath := &network.CNIPath{}
@@ -527,14 +529,15 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
-		// detection of mounted points for underlay layer is not really a simple
-		// task, detection is disabled with this layer for the time being
-		if c.sessionLayerType != "underlay" {
-			mounted := c.checkMounted(dest)
-			if mounted != "" {
-				c.skippedMount = append(c.skippedMount, mnt.Destination)
-				sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
-				return nil
+		for _, d := range c.checkDest {
+			if d == mnt.Destination {
+				mounted := c.checkMounted(dest)
+				if mounted != "" {
+					c.skippedMount = append(c.skippedMount, mnt.Destination)
+					sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
+					return nil
+				}
+				break
 			}
 		}
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
@@ -900,6 +903,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add proc to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /proc:/proc")
 	} else {
 		sylog.Verbosef("Skipping /proc mount")
 	}
@@ -920,6 +924,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add sys to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /sys:/sys")
 	} else {
 		sylog.Verbosef("Skipping /sys mount")
 	}
@@ -1144,6 +1149,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /dev:/dev")
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
 		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
@@ -1415,20 +1421,20 @@ func (c *container) addTmpMount(system *mount.System) error {
 				return nil
 			}
 
-			vartmpSource = "/var_tmp"
+			vartmpSource = "var_tmp"
 
 			workdir, err := filepath.Abs(filepath.Clean(workdir))
 			if err != nil {
 				sylog.Warningf("Can't determine absolute path of workdir %s", workdir)
 			}
 
-			tmpSource = workdir + tmpSource
-			vartmpSource = workdir + vartmpSource
+			tmpSource = filepath.Join(workdir, tmpSource)
+			vartmpSource = filepath.Join(workdir, vartmpSource)
 
-			if err := fs.MkdirAll(tmpSource, 0755); err != nil {
+			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil {
 				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
-			if err := fs.MkdirAll(vartmpSource, 0755); err != nil {
+			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
@@ -1436,9 +1442,15 @@ func (c *container) addTmpMount(system *mount.System) error {
 				if err := c.session.AddDir(tmpSource); err != nil {
 					return err
 				}
+				if err := c.session.Chmod(tmpSource, os.ModeSticky|0777); err != nil {
+					return err
+				}
 			}
 			if _, err := c.session.GetPath(vartmpSource); err != nil {
 				if err := c.session.AddDir(vartmpSource); err != nil {
+					return err
+				}
+				if err := c.session.Chmod(vartmpSource, os.ModeSticky|0777); err != nil {
 					return err
 				}
 			}
@@ -1450,11 +1462,13 @@ func (c *container) addTmpMount(system *mount.System) error {
 
 	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
+		sylog.Verbosef("Default mount: /tmp:/tmp")
 	} else {
 		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
 	}
 	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, "/var/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/var/tmp", flags)
+		sylog.Verbosef("Default mount: /var/tmp:/var/tmp")
 	} else {
 		return fmt.Errorf("could not mount container's /var/tmp directory: %s", err)
 	}
@@ -1536,7 +1550,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 		return fmt.Errorf("could not obtain current directory path: %s", err)
 	}
 	switch current {
-	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin":
+	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin", "/lib", "/lib64":
 		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)
 		return nil
 	}
@@ -1547,6 +1561,8 @@ func (c *container) addCwdMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 	if err := system.Points.AddBind(mount.CwdTag, current, cwd, flags); err == nil {
 		system.Points.AddRemount(mount.CwdTag, cwd, flags)
+		c.checkDest = append(c.checkDest, cwd)
+		sylog.Verbosef("Default mount: %v: to the container", cwd)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
 	}
@@ -1639,6 +1655,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 				if err != nil {
 					return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
 				}
+				sylog.Verbosef("Default mount: /etc/passwd:/etc/passwd")
 			}
 		}
 	} else {
@@ -1661,6 +1678,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
 			}
+			sylog.Verbosef("Default mount: /etc/group:/etc/group")
 		}
 	} else {
 		sylog.Verbosef("Skipping bind of the host's /etc/group")
@@ -1704,6 +1722,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
 		}
+		sylog.Verbosef("Default mount: /etc/resolv.conf:/etc/resolv.conf")
 	} else {
 		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)
 	}
@@ -1732,6 +1751,7 @@ func (c *container) addHostnameMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", hostnameFile, err)
 			}
+			sylog.Verbosef("Default mount: /etc/hostname:/etc/hostname")
 			if _, err := c.rpcOps.SetHostname(hostname); err != nil {
 				return fmt.Errorf("failed to set container hostname: %s", err)
 			}

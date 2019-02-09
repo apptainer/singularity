@@ -126,6 +126,29 @@ func TestMkdirAll(t *testing.T) {
 	}
 }
 
+func TestMkdir(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpdir, err := ioutil.TempDir("", "mkdir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	test := filepath.Join(tmpdir, "test")
+	if err := Mkdir(test, 0777); err != nil {
+		t.Error(err)
+	}
+	fi, err := os.Stat(test)
+	if err != nil {
+		t.Error(err)
+	}
+	if fi.Mode().Perm() != 0777 {
+		t.Errorf("bad mode applied on %s, got %v", test, fi.Mode().Perm())
+	}
+}
+
 func TestEvalRelative(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
