@@ -32,18 +32,10 @@ matrix:
       env: OS_TYPE=centos OS_VERSION=7
     - os: osx
       osx_image: xcode10.1
-      before_install:
-        - .travis/macos/before_install
-      script:
-        - .travis/macos/build
-        - .travis/macos/test
+      env: OS_TYPE=macos XCODE_VERSION=10.1
     - os: osx
       osx_image: xcode9.2
-      before_install:
-        - # pass
-      script:
-        - .travis/macos/build
-        - .travis/macos/test
+      env: OS_TYPE=macos XCODE_VERSION=9.2
 
 services:
   - docker
