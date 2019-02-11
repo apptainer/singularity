@@ -120,7 +120,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While getting image info: %v", err)
 		}
 
-		imageName := uri.GetName(args[i])
+		var imageName string
+		if transport == "" {
+			imageName = uri.GetName("library://" + args[i])
+		} else {
+			imageName = uri.GetName(args[i])
+		}
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 		if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
@@ -138,7 +143,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// Perms are 777 *prior* to umask
-		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		dstFile, err := os.OpenFile(imageName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
