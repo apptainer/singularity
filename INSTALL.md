@@ -93,7 +93,7 @@ $ ./mconfig -p /usr/local -b ./buildtree
 
 *NOTE: You should only atempt to build the RPM on a CentOS/RHEL system.*
 
-To build the RPM, you first need to install `rpm-build` and `wget`.
+To build the RPM, you first need to install `rpm-build` and `wget`:
 
 ```
 $ sudo yum -y update && sudo yum install -y rpm-build wget
@@ -116,7 +116,7 @@ $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singu
 
 Alternatively, to build an RPM from the latest master you can 
 [clone the repo as detailed above](#clone-the-repo).  Then create your own
-tarball and use it to install Singularity.  
+tarball and use it to install Singularity:
 
 ```
 $ cd $GOPATH/src/github.com/sylabs/singularity && \
@@ -126,7 +126,7 @@ $ cd $GOPATH/src/github.com/sylabs/singularity && \
 ```
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the
-make step, for example
+make step, for example:
 
 ```
 $ make -C builddir rpm RPMPREFIX=/usr/local
