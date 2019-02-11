@@ -33,7 +33,7 @@ matrix:
     - os: osx
       osx_image: xcode10.1
       before_install:
-        - # pass
+        - .travis/macos/before_install
       script:
         - .travis/macos/build
         - .travis/macos/test
