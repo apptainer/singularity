@@ -91,7 +91,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 	if PullImageName == "" {
 		name = args[0]
 		if len(args) == 1 {
-			name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			if transport == "" {
+				name = uri.GetName("library://" + args[i])
+			} else {
+				name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			}
 		}
 	} else {
 		name = PullImageName
@@ -143,7 +147,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// Perms are 777 *prior* to umask
-		dstFile, err := os.OpenFile(imageName, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
