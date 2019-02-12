@@ -103,7 +103,8 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 
 	sylog.Debugf("%s", singBinds)
 	sylog.Debugf("%s", defArgs)
-	cmd := exec.Command(pgmExec, defArgs...)
+	cmd := exec.Command(pgmExec)
+	cmd.Args = append([]string{"Sylabs"}, defArgs...)
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
