@@ -17,8 +17,8 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 var (
@@ -115,7 +115,7 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 			} else {
 				retbuf.Write(line)
 			}
-			retbuf.WriteString("\n")			
+			retbuf.WriteString("\n")
 		}
 
 		// Shift the advance retval to the next line
