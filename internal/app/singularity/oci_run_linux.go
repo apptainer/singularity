@@ -95,6 +95,9 @@ func OciRun(containerID string, args *OciArgs) error {
 	}
 
 	if err := attach(engineConfig, true); err != nil {
+		// kill container before deletion
+		sylog.Errorf("%s", err)
+		OciKill(containerID, "SIGKILL", 1)
 		return err
 	}
 
