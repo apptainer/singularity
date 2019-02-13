@@ -82,8 +82,8 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 			return 0, nil, err
 		}
 
-		// Check if the first word starts with % sign
-		if word != nil && word[0] == '%' && word[1] != '%' {
+		// Check if the first word starts with % sign. But if theres two ('%%'); then escape
+		if word != nil && word[0] == '%' && len(word) >= 2 && word[1] != '%' {
 			// If the word starts with %, it's a section identifier
 
 			// We no longer check if the word is a valid section identifier here, since we want to move to
@@ -105,12 +105,15 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 			}
 		} else {
 			// This line is not a section identifier
-			if word != nil {
-				if line[1] == '%' {
+			// Check if theres two '%%', if there is; remove the first one
+			if len(line) >= 2 {
+				if line[0] == '%' && line[1] == '%' {
 					retbuf.Write([]byte(strings.TrimPrefix(string(line), "%")))
 				} else {
 					retbuf.Write(line)
 				}
+			} else {
+				retbuf.Write(line)
 			}
 			retbuf.WriteString("\n")			
 		}
