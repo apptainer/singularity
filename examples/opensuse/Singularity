@@ -1,5 +1,5 @@
 BootStrap: zypper
-OSVersion: 42.2
+OSVersion: 42.3
 MirrorURL: http://download.opensuse.org/distribution/leap/%{OSVERSION}/repo/oss/
 Include: zypper
 

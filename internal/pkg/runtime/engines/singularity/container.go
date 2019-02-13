@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,12 +14,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image"
-	"github.com/sylabs/singularity/internal/pkg/network"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -28,10 +27,18 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/network"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"golang.org/x/crypto/ssh/terminal"
 )
+
+// defaultCNIConfPath is the default directory to CNI network configuration files
+var defaultCNIConfPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
+
+// defaultCNIPluginPath is the default directory to CNI plugins executables
+var defaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
 type container struct {
 	engine           *EngineOperations
@@ -47,6 +54,7 @@ type container struct {
 	ipcNS            bool
 	mountInfoPath    string
 	skippedMount     []string
+	checkDest        []string
 	suidFlag         uintptr
 	devSourcePath    string
 }
@@ -61,6 +69,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		sessionFsType:    engine.EngineConfig.File.MemoryFSType,
 		mountInfoPath:    fmt.Sprintf("/proc/%d/mountinfo", pid),
 		skippedMount:     make([]string, 0),
+		checkDest:        make([]string, 0),
 		suidFlag:         syscall.MS_NOSUID,
 	}
 
@@ -152,10 +161,10 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	}
 
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
-	_, err = c.rpcOps.Chroot(c.session.FinalPath(), true)
+	_, err = c.rpcOps.Chroot(c.session.FinalPath(), "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = c.rpcOps.Chroot(c.session.FinalPath(), false)
+		_, err = c.rpcOps.Chroot(c.session.FinalPath(), "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
@@ -164,16 +173,24 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if c.netNS {
 		if os.Geteuid() == 0 && !c.userNS {
 			/* hold a reference to container network namespace for cleanup */
-			f, err := os.Open("/proc/" + strconv.Itoa(pid) + "/ns/net")
+			f, err := syscall.Open("/proc/"+strconv.Itoa(pid)+"/ns/net", os.O_RDONLY, 0)
 			if err != nil {
 				return fmt.Errorf("can't open network namespace: %s", err)
 			}
-			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f.Fd())
+			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f)
 			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
 
-			cniPath := &network.CNIPath{
-				Conf:   engine.EngineConfig.File.CniConfPath,
-				Plugin: engine.EngineConfig.File.CniPluginPath,
+			cniPath := &network.CNIPath{}
+
+			if engine.EngineConfig.File.CniConfPath != "" {
+				cniPath.Conf = engine.EngineConfig.File.CniConfPath
+			} else {
+				cniPath.Conf = defaultCNIConfPath
+			}
+			if engine.EngineConfig.File.CniPluginPath != "" {
+				cniPath.Plugin = engine.EngineConfig.File.CniPluginPath
+			} else {
+				cniPath.Plugin = defaultCNIPluginPath
 			}
 
 			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
@@ -184,6 +201,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			if err := setup.SetArgs(netargs); err != nil {
 				return fmt.Errorf("%s", err)
 			}
+
+			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
 
 			if err := setup.AddNetworks(); err != nil {
 				return fmt.Errorf("%s", err)
@@ -199,7 +218,8 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		path := engine.EngineConfig.GetCgroupsPath()
 		if path != "" {
 			name := strconv.Itoa(pid)
-			manager := &cgroups.Manager{Pid: pid, Name: name}
+			path := filepath.Join("/singularity", name)
+			manager := &cgroups.Manager{Pid: pid, Path: path}
 			if err := manager.ApplyFromFile(path); err != nil {
 				return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
 			}
@@ -352,7 +372,7 @@ func (c *container) setupOverlayLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
@@ -363,7 +383,7 @@ func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string
 	}
 
 	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.LayerTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
@@ -374,7 +394,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.RootfsTag, c.setSlaveMount)
+	return system.RunAfterTag(mount.RootfsTag, c.setPropagationMount)
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
@@ -399,9 +419,13 @@ func (c *container) mount(point *mount.Point) error {
 			if flags&syscall.MS_REMOUNT != 0 {
 				return fmt.Errorf("can't remount %s: %s", point.Destination, err)
 			}
-			// mount error for filesystems is considered fatal
 			if point.Type != "" {
-				return fmt.Errorf("can't mount %s filesystem to %s: %s", point.Type, point.Destination, err)
+				if point.Source == "devpts" {
+					sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
+				} else {
+					// mount error for other filesystems is considered fatal
+					return fmt.Errorf("can't mount %s filesystem to %s: %s", point.Type, point.Destination, err)
+				}
 			}
 			sylog.Verbosef("can't mount %s: %s", point.Source, err)
 			return nil
@@ -410,7 +434,7 @@ func (c *container) mount(point *mount.Point) error {
 	return nil
 }
 
-func (c *container) setSlaveMount(system *mount.System) error {
+func (c *container) setPropagationMount(system *mount.System) error {
 	pflags := uintptr(syscall.MS_REC)
 
 	if c.engine.EngineConfig.File.MountSlave {
@@ -467,13 +491,10 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 	flags, opts := mount.ConvertOptions(mnt.Options)
 	optsString := strings.Join(opts, ",")
 	sessionPath := c.session.Path()
-	remount := false
+	remount := mount.HasRemountFlag(flags)
+	propagation := mount.HasPropagationFlag(flags)
 	source := mnt.Source
 	dest := ""
-
-	if flags&syscall.MS_REMOUNT != 0 {
-		remount = true
-	}
 
 	if flags&syscall.MS_BIND != 0 && !remount {
 		if _, err := os.Stat(source); os.IsNotExist(err) {
@@ -500,7 +521,7 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 	}
 
-	if remount {
+	if remount || propagation {
 		for _, skipped := range c.skippedMount {
 			if skipped == mnt.Destination {
 				return nil
@@ -508,19 +529,20 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
-		// detection of mounted points for underlay layer is not really a simple
-		// task, detection is disabled with this layer for the time being
-		if c.sessionLayerType != "underlay" {
-			mounted := c.checkMounted(dest)
-			if mounted != "" {
-				c.skippedMount = append(c.skippedMount, mnt.Destination)
-				sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
-				return nil
+		for _, d := range c.checkDest {
+			if d == mnt.Destination {
+				mounted := c.checkMounted(dest)
+				if mounted != "" {
+					c.skippedMount = append(c.skippedMount, mnt.Destination)
+					sylog.Debugf("Skipping mount %s, %s already mounted", dest, mounted)
+					return nil
+				}
+				break
 			}
 		}
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
 
-		// in scontainer stage 1 we changed current working directory to
+		// in stage 1 we changed current working directory to
 		// sandbox image directory, just pass "." as source argument to
 		// be sure RPC mount the right sandbox image
 		if dest == c.session.RootFsPath() && flags&syscall.MS_BIND != 0 {
@@ -568,7 +590,8 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		Flags:     loopFlags,
 	}
 
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices)
+	shared := c.engine.EngineConfig.File.SharedLoopDevices
+	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices, shared)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}
@@ -681,7 +704,23 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	}
 
 	sylog.Debugf("Mounting block [%v] image: %v\n", mountType, rootfs)
-	return system.Points.AddImage(mount.RootfsTag, imageObject.Source, c.session.RootFsPath(), mountType, flags, imageObject.Offset, imageObject.Size)
+	if err := system.Points.AddImage(
+		mount.RootfsTag,
+		imageObject.Source,
+		c.session.RootFsPath(),
+		mountType,
+		flags,
+		imageObject.Offset,
+		imageObject.Size,
+	); err != nil {
+		return err
+	}
+
+	if imageObject.Writable {
+		return system.Points.AddPropagation(mount.DevTag, c.session.RootFsPath(), syscall.MS_UNBINDABLE)
+	}
+
+	return nil
 }
 
 func (c *container) overlayUpperWork(system *mount.System) error {
@@ -815,6 +854,11 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			return fmt.Errorf("unknown image format")
 		}
 
+		err = system.Points.AddPropagation(mount.DevTag, dst, syscall.MS_UNBINDABLE)
+		if err != nil {
+			return err
+		}
+
 		if imageObject.Writable && !hasUpper {
 			upper := filepath.Join(dst, "upper")
 			work := filepath.Join(dst, "work")
@@ -836,7 +880,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		}
 	}
 
-	return nil
+	return system.Points.AddPropagation(mount.DevTag, c.session.FinalPath(), syscall.MS_UNBINDABLE)
 }
 
 func (c *container) addKernelMount(system *mount.System) error {
@@ -859,6 +903,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add proc to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /proc:/proc")
 	} else {
 		sylog.Verbosef("Skipping /proc mount")
 	}
@@ -879,51 +924,56 @@ func (c *container) addKernelMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add sys to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /sys:/sys")
 	} else {
 		sylog.Verbosef("Skipping /sys mount")
 	}
 	return nil
 }
 
-func (c *container) addSessionDev(devpath string, system *mount.System) error {
-	fi, err := os.Lstat(devpath)
+func (c *container) addSessionDevAt(srcpath string, atpath string, system *mount.System) error {
+	fi, err := os.Lstat(srcpath)
 	if err != nil {
 		return err
 	}
 
 	switch mode := fi.Mode(); {
 	case mode&os.ModeSymlink != 0:
-		target, err := os.Readlink(devpath)
+		target, err := os.Readlink(srcpath)
 		if err != nil {
 			return err
 		}
-		if err := c.session.AddSymlink(devpath, target); err != nil {
-			return fmt.Errorf("failed to create symlink %s", devpath)
+		if err := c.session.AddSymlink(atpath, target); err != nil {
+			return fmt.Errorf("failed to create symlink %s", atpath)
 		}
 
-		dst, _ := c.session.GetPath(devpath)
+		dst, _ := c.session.GetPath(atpath)
 
-		sylog.Debugf("Adding symlink device %s at %s", devpath, dst)
+		sylog.Debugf("Adding symlink device %s to %s at %s", srcpath, target, dst)
 
 		return nil
 	case mode.IsDir():
-		if err := c.session.AddDir(devpath); err != nil {
-			return fmt.Errorf("failed to add %s session dir: %s", devpath, err)
+		if err := c.session.AddDir(atpath); err != nil {
+			return fmt.Errorf("failed to add %s session dir: %s", atpath, err)
 		}
 	default:
-		if err := c.session.AddFile(devpath, nil); err != nil {
-			return fmt.Errorf("failed to add %s session file: %s", devpath, err)
+		if err := c.session.AddFile(atpath, nil); err != nil {
+			return fmt.Errorf("failed to add %s session file: %s", atpath, err)
 		}
 	}
 
-	dst, _ := c.session.GetPath(devpath)
+	dst, _ := c.session.GetPath(atpath)
 
-	sylog.Debugf("Mounting device %s at %s", devpath, dst)
+	sylog.Debugf("Mounting device %s at %s", srcpath, dst)
 
-	if err := system.Points.AddBind(mount.DevTag, devpath, dst, syscall.MS_BIND); err != nil {
-		return fmt.Errorf("failed to add %s mount: %s", devpath, err)
+	if err := system.Points.AddBind(mount.DevTag, srcpath, dst, syscall.MS_BIND); err != nil {
+		return fmt.Errorf("failed to add %s mount: %s", srcpath, err)
 	}
 	return nil
+}
+
+func (c *container) addSessionDev(devpath string, system *mount.System) error {
+	return c.addSessionDevAt(devpath, devpath, system)
 }
 
 func (c *container) addSessionDevMount(system *mount.System) error {
@@ -976,7 +1026,7 @@ func (c *container) addDevMount(system *mount.System) error {
 
 			sylog.Debugf("Creating temporary staged /dev/pts")
 			if err := c.session.AddDir("/dev/pts"); err != nil {
-				return fmt.Errorf("failed to /dev/pts session directory: %s", err)
+				return fmt.Errorf("failed to add /dev/pts session directory: %s", err)
 			}
 
 			options := "mode=0620,newinstance,ptmxmode=0666"
@@ -994,15 +1044,60 @@ func (c *container) addDevMount(system *mount.System) error {
 			devptsPath, _ := c.session.GetPath("/dev/pts")
 			err = system.Points.AddFS(mount.DevTag, devptsPath, "devpts", syscall.MS_NOSUID|syscall.MS_NOEXEC, options)
 			if err != nil {
-				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY functionality disabled")
-			} else {
-				if err := c.addSessionDev("/dev/tty", system); err != nil {
-					return err
-				}
-				if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
-					return fmt.Errorf("failed to create /dev/ptmx symlink: %s", err)
+				return fmt.Errorf("failed to add devpts filesystem: %s", err)
+			}
+			// add additional PTY allocation symlink
+			if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
+				return fmt.Errorf("failed to create /dev/ptmx symlink: %s", err)
+			}
+
+		}
+		// add /dev/console mount pointing to original tty if there is one
+		for fd := 0; fd <= 2; fd++ {
+			if !terminal.IsTerminal(fd) {
+				continue
+			}
+			// Found a tty on stdin, stdout, or stderr.
+			// Bind mount it at /dev/console.
+			// readlink() from /proc/self/fd/N isn't as reliable as
+			//  ttyname() (e.g. it doesn't work in docker), but
+			//  there is no golang ttyname() so use this for now
+			//  and also check the device that docker uses,
+			//  /dev/console.
+			procfd := fmt.Sprintf("/proc/self/fd/%d", fd)
+			ttylink, err := os.Readlink(procfd)
+			if err != nil {
+				return err
+			}
+
+			if _, err := os.Stat(ttylink); err != nil {
+				// Check if in a system like docker
+				//  using /dev/console already
+				consinfo := new(syscall.Stat_t)
+				conserr := syscall.Stat("/dev/console", consinfo)
+				fdinfo := new(syscall.Stat_t)
+				fderr := syscall.Fstat(fd, fdinfo)
+				if conserr == nil &&
+					fderr == nil &&
+					consinfo.Ino == fdinfo.Ino &&
+					consinfo.Rdev == fdinfo.Rdev {
+					sylog.Debugf("Fd %d is tty pointing to nonexistent %s but /dev/console is good", fd, ttylink)
+					ttylink = "/dev/console"
+
+				} else {
+					sylog.Debugf("Fd %d is tty but %s doesn't exist, skipping", fd, ttylink)
+					continue
 				}
 			}
+			sylog.Debugf("Fd %d is tty %s, binding to /dev/console", fd, ttylink)
+			if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
+				return err
+			}
+			// and also add a /dev/tty
+			if err := c.addSessionDev("/dev/tty", system); err != nil {
+				return err
+			}
+			break
 		}
 		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
@@ -1054,6 +1149,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add dev to mount list: %s", err)
 		}
+		sylog.Verbosef("Default mount: /dev:/dev")
 	} else if c.engine.EngineConfig.File.MountDev == "no" {
 		sylog.Verbosef("Not mounting /dev inside the container, disallowed by configuration")
 	}
@@ -1325,20 +1421,20 @@ func (c *container) addTmpMount(system *mount.System) error {
 				return nil
 			}
 
-			vartmpSource = "/var_tmp"
+			vartmpSource = "var_tmp"
 
 			workdir, err := filepath.Abs(filepath.Clean(workdir))
 			if err != nil {
 				sylog.Warningf("Can't determine absolute path of workdir %s", workdir)
 			}
 
-			tmpSource = workdir + tmpSource
-			vartmpSource = workdir + vartmpSource
+			tmpSource = filepath.Join(workdir, tmpSource)
+			vartmpSource = filepath.Join(workdir, vartmpSource)
 
-			if err := fs.MkdirAll(tmpSource, 0755); err != nil {
+			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil {
 				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
-			if err := fs.MkdirAll(vartmpSource, 0755); err != nil {
+			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
@@ -1346,9 +1442,15 @@ func (c *container) addTmpMount(system *mount.System) error {
 				if err := c.session.AddDir(tmpSource); err != nil {
 					return err
 				}
+				if err := c.session.Chmod(tmpSource, os.ModeSticky|0777); err != nil {
+					return err
+				}
 			}
 			if _, err := c.session.GetPath(vartmpSource); err != nil {
 				if err := c.session.AddDir(vartmpSource); err != nil {
+					return err
+				}
+				if err := c.session.Chmod(vartmpSource, os.ModeSticky|0777); err != nil {
 					return err
 				}
 			}
@@ -1360,11 +1462,13 @@ func (c *container) addTmpMount(system *mount.System) error {
 
 	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
+		sylog.Verbosef("Default mount: /tmp:/tmp")
 	} else {
 		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
 	}
 	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, "/var/tmp", flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, "/var/tmp", flags)
+		sylog.Verbosef("Default mount: /var/tmp:/var/tmp")
 	} else {
 		return fmt.Errorf("could not mount container's /var/tmp directory: %s", err)
 	}
@@ -1446,7 +1550,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 		return fmt.Errorf("could not obtain current directory path: %s", err)
 	}
 	switch current {
-	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin":
+	case "/", "/etc", "/bin", "/mnt", "/usr", "/var", "/opt", "/sbin", "/lib", "/lib64":
 		sylog.Verbosef("Not mounting CWD within operating system directory: %s", current)
 		return nil
 	}
@@ -1457,6 +1561,8 @@ func (c *container) addCwdMount(system *mount.System) error {
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 	if err := system.Points.AddBind(mount.CwdTag, current, cwd, flags); err == nil {
 		system.Points.AddRemount(mount.CwdTag, cwd, flags)
+		c.checkDest = append(c.checkDest, cwd)
+		sylog.Verbosef("Default mount: %v: to the container", cwd)
 	} else {
 		sylog.Warningf("Could not bind CWD to container %s: %s", current, err)
 	}
@@ -1549,6 +1655,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 				if err != nil {
 					return fmt.Errorf("unable to add /etc/passwd to mount list: %s", err)
 				}
+				sylog.Verbosef("Default mount: /etc/passwd:/etc/passwd")
 			}
 		}
 	} else {
@@ -1571,6 +1678,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add /etc/group to mount list: %s", err)
 			}
+			sylog.Verbosef("Default mount: /etc/group:/etc/group")
 		}
 	} else {
 		sylog.Verbosef("Skipping bind of the host's /etc/group")
@@ -1614,6 +1722,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", resolvConf, err)
 		}
+		sylog.Verbosef("Default mount: /etc/resolv.conf:/etc/resolv.conf")
 	} else {
 		sylog.Verbosef("Skipping bind of the host's %s", resolvConf)
 	}
@@ -1642,6 +1751,7 @@ func (c *container) addHostnameMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", hostnameFile, err)
 			}
+			sylog.Verbosef("Default mount: /etc/hostname:/etc/hostname")
 			if _, err := c.rpcOps.SetHostname(hostname); err != nil {
 				return fmt.Errorf("failed to set container hostname: %s", err)
 			}

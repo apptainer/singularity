@@ -17,8 +17,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/sylabs/singularity/internal/pkg/build/types"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 const (
@@ -132,16 +132,16 @@ func (cp *ArchConveyorPacker) Pack() (b *types.Bundle, err error) {
 }
 
 func getPacmanBaseList() (instList []string, err error) {
-
-	output := &bytes.Buffer{}
+	var output, stderr bytes.Buffer
 	cmd := exec.Command("pacman", "-Sgq", "base")
-	cmd.Stdout = output
+	cmd.Stdout = &output
+	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
-		return
+		return nil, fmt.Errorf("%v: %v", err, stderr.String())
 	}
 
 	var toInstall []string
-	scanner := bufio.NewScanner(output)
+	scanner := bufio.NewScanner(&output)
 	scanner.Split(bufio.ScanWords)
 
 	for scanner.Scan() {

@@ -38,15 +38,18 @@
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
+    - Joana Chavez <joana@sylabs.io>, <j.chavezlavalle@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
     - Justin Riley <justin_riley@harvard.edu>
     - Krishna Muriki <kmuriki@lbl.gov>
+    - Kumar Sukhani <kumarsukhani@gmail.com>
     - Kundan Kumar <iamkundankumar28@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Matt Wiens <mwiens91@gmail.com>
     - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
     - Michael Herzberg <michael@mherzberg.de>
+    - Michael Milton <ttmigueltt@gmail.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
@@ -57,6 +60,7 @@
     - Ralph Castain <rhc@open-mpi.org>
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Richard Neuboeck <hawk@tbi.univie.ac.at>
+    - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Vanessa Sochat <vsochat@stanford.edu>

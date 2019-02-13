@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,26 +8,25 @@ package singularity
 import (
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
 
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-
-	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 // prepareUserCaps is responsible for checking that user's requested
@@ -38,11 +37,21 @@ func (e *EngineOperations) prepareUserCaps() error {
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
-	file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
+	// ensure that capability config file is in fact root owned
+	if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+		return fmt.Errorf("while setting user capabilities: capability config file not owned by root")
+	}
+
+	file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0644)
 	if err != nil {
-		return err
+		return fmt.Errorf("while opening capability config file: %s", err)
 	}
 	defer file.Close()
+
+	capConfig, err := capabilities.ReadFrom(file)
+	if err != nil {
+		return fmt.Errorf("while parsing capability config data: %s", err)
+	}
 
 	pw, err := user.GetPwUID(uint32(uid))
 	if err != nil {
@@ -52,7 +61,7 @@ func (e *EngineOperations) prepareUserCaps() error {
 	caps, _ := capabilities.Split(e.EngineConfig.GetAddCaps())
 	caps = append(caps, e.EngineConfig.OciConfig.Process.Capabilities.Permitted...)
 
-	authorizedCaps, _ := file.CheckUserCaps(pw.Name, caps)
+	authorizedCaps, _ := capConfig.CheckUserCaps(pw.Name, caps)
 
 	if len(authorizedCaps) > 0 {
 		sylog.Debugf("User capabilities %v added", authorizedCaps)
@@ -66,7 +75,7 @@ func (e *EngineOperations) prepareUserCaps() error {
 			sylog.Debugf("Ignoring group %d: %s", g, err)
 			continue
 		}
-		authorizedCaps, _ := file.CheckGroupCaps(gr.Name, caps)
+		authorizedCaps, _ := capConfig.CheckGroupCaps(gr.Name, caps)
 		if len(authorizedCaps) > 0 {
 			sylog.Debugf("%s group capabilities %v added", gr.Name, authorizedCaps)
 			commonCaps = append(commonCaps, authorizedCaps...)
@@ -125,13 +134,23 @@ func (e *EngineOperations) prepareRootCaps() error {
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
-		file, err := capabilities.Open(buildcfg.CAPABILITY_FILE, true)
+		// ensure that capability config file is in fact root owned
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("while setting user capabilities: capability config file not owned by root")
+		}
+
+		file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0644)
 		if err != nil {
-			return err
+			return fmt.Errorf("while opening capability config file: %s", err)
 		}
 		defer file.Close()
 
-		commonCaps = append(commonCaps, file.ListUserCaps("root")...)
+		capConfig, err := capabilities.ReadFrom(file)
+		if err != nil {
+			return fmt.Errorf("while parsing capability config data: %s", err)
+		}
+
+		commonCaps = append(commonCaps, capConfig.ListUserCaps("root")...)
 		groups, err := os.Getgroups()
 		for _, g := range groups {
 			gr, err := user.GetGrGID(uint32(g))
@@ -139,7 +158,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 				sylog.Debugf("Ignoring group %d: %s", g, err)
 				continue
 			}
-			caps := file.ListGroupCaps(gr.Name)
+			caps := capConfig.ListGroupCaps(gr.Name)
 			commonCaps = append(commonCaps, caps...)
 			sylog.Debugf("%s group capabilities %v added", gr.Name, caps)
 		}
@@ -272,10 +291,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if e.EngineConfig.File.MountSlave {
-		starterConfig.SetMountPropagation("slave")
+		starterConfig.SetMountPropagation("rslave")
 	} else {
-		starterConfig.SetMountPropagation("private")
+		starterConfig.SetMountPropagation("rprivate")
 	}
+
+	starterConfig.SetBringLoopbackInterface(true)
 
 	starterConfig.SetInstance(e.EngineConfig.GetInstance())
 
@@ -330,7 +351,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return fmt.Errorf("try to join unprivileged instance with SUID workflow")
 	}
 
-	instanceEngineConfig := NewConfig()
+	instanceEngineConfig := singularityConfig.NewConfig()
 
 	// extract configuration from instance file
 	instanceConfig := &config.Common{
@@ -340,8 +361,16 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	starterConfig.SetJoinMount(true)
+
 	// set namespaces to join
-	starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces)
+	if err := file.UpdateNamespacesPath(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
+
+	if err := starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
+		return err
+	}
 
 	if e.EngineConfig.OciConfig.Process == nil {
 		e.EngineConfig.OciConfig.Process = &specs.Process{}
@@ -410,8 +439,8 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 }
 
 // PrepareConfig checks and prepares the runtime engine config
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != Name {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
+	if e.CommonConfig.EngineName != singularityConfig.Name {
 		return fmt.Errorf("incorrect engine")
 	}
 
@@ -422,6 +451,21 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
 		return fmt.Errorf("SUID workflow disabled by administrator")
+	}
+
+	if starterConfig.GetIsSUID() {
+		// check for ownership of singularity.conf
+		if !fs.IsOwner(configurationFile, 0) {
+			return fmt.Errorf("%s must be owned by root", configurationFile)
+		}
+		// check for ownership of capability.json
+		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
+		}
+		// check for ownership of ecl.toml
+		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
+			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
+		}
 	}
 
 	// Save the current working directory to restore it in stage 2
@@ -462,6 +506,7 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		}
 	}
 
+	starterConfig.SetSharedMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {

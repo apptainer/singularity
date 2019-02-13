@@ -6,25 +6,27 @@
 package sources
 
 import (
-	"io/ioutil"
+	"fmt"
 	"os"
 
-	sytypes "github.com/sylabs/singularity/internal/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/build/types"
+	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
 // as well as extra information about the library it's pulling from
 type LibraryConveyorPacker struct {
-	b *sytypes.Bundle
+	b *types.Bundle
 	LocalPacker
 	LibraryURL string
 	AuthToken  string
 }
 
 // Get downloads container from Singularityhub
-func (cp *LibraryConveyorPacker) Get(b *sytypes.Bundle) (err error) {
+func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
 	cp.b = b
@@ -36,25 +38,34 @@ func (cp *LibraryConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		cp.LibraryURL = customLib
 	}
 
-	// create file for image download
-	f, err := ioutil.TempFile(cp.b.Path, "library-img")
-	if err != nil {
-		return
-	}
-	defer f.Close()
-
-	cp.b.FSObjects["libraryImg"] = f.Name()
-
-	sylog.Debugf("Download file: %v", cp.b.FSObjects["libraryImg"])
 	sylog.Debugf("LibraryURL: %v", cp.LibraryURL)
 	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
 
-	// get image from library
-	if err = client.DownloadImage(cp.b.FSObjects["libraryImg"], b.Recipe.Header["from"], cp.LibraryURL, true, cp.AuthToken); err != nil {
-		sylog.Fatalf("failed to Get from %s://%s: %v\n", cp.LibraryURL, cp.b.Recipe.Header["from"], err)
+	libURI := "library://" + b.Recipe.Header["from"]
+	libraryImage, err := client.GetImage(cp.LibraryURL, cp.AuthToken, libURI)
+	if err != nil {
+		return err
 	}
 
-	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["libraryImg"], cp.b)
+	imageName := uri.GetName(libURI)
+	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+
+	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	} else if !exists {
+		sylog.Infof("Downloading library image")
+		if err = client.DownloadImage(imagePath, libURI, cp.LibraryURL, true, cp.AuthToken); err != nil {
+			return fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+			return fmt.Errorf("Error getting ImageHash: %v", err)
+		} else if cacheFileHash != libraryImage.Hash {
+			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
+	}
+
+	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
 
 	return err
 }

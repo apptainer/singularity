@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,13 +15,14 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // CreateContainer creates a container
 func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != Name {
+	if engine.CommonConfig.EngineName != imgbuildConfig.Name {
 		return fmt.Errorf("engineName configuration doesn't match runtime name")
 	}
 
@@ -97,12 +98,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 
-	sylog.Debugf("Set RPC mount propagation flag to SLAVE")
-	_, err = rpcOps.Mount("", "/", "", syscall.MS_SLAVE|syscall.MS_REC, "")
-	if err != nil {
-		return fmt.Errorf("mount /etc/hosts failed: %s", err)
-	}
-
 	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
 		// Run %setup script here
 		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
@@ -121,7 +116,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	if engine.EngineConfig.RunSection("files") {
 		sylog.Debugf("Copying files from host")
-		if err := engine.EngineConfig.copyFiles(); err != nil {
+		if err := engine.copyFiles(); err != nil {
 			return fmt.Errorf("unable to copy files to container fs: %v", err)
 		}
 	}
@@ -132,11 +127,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("change directory failed: %s", err)
 	}
 
-	sylog.Debugf("Chroot into %s\n", sessionPath)
-	_, err = rpcOps.Chroot(sessionPath, true)
+	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
+	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = rpcOps.Chroot(sessionPath, false)
+		_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
@@ -154,9 +149,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	return nil
 }
 
-func (e *EngineConfig) copyFiles() error {
+func (engine *EngineOperations) copyFiles() error {
 	// iterate through filetransfers
-	for _, transfer := range e.Recipe.BuildData.Files {
+	for _, transfer := range engine.EngineConfig.Recipe.BuildData.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")
@@ -168,7 +163,7 @@ func (e *EngineConfig) copyFiles() error {
 		}
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		// copy each file into bundle rootfs
-		transfer.Dst = filepath.Join(e.Rootfs(), transfer.Dst)
+		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
 		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
 		if err := copy.Run(); err != nil {
 			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)

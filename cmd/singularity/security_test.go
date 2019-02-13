@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -88,6 +89,31 @@ func testSecurityPriv(t *testing.T) {
 	}
 }
 
+// testSecurityConfOwnership tests checks on config files ownerships
+func testSecurityConfOwnership(t *testing.T) {
+	configFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
+	// Change file ownership (do not try this at home)
+	err := os.Chown(configFile, 1001, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// try to run
+	t.Run("non_root_config", test.WithoutPrivilege(func(t *testing.T) {
+		_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, []string{"/bin/true"})
+		if exitCode != 1 {
+			t.Log(stderr, err)
+			t.Fatalf("unexpected success running /bin/true")
+		}
+	}))
+
+	// return file ownership to normal
+	err = os.Chown(configFile, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSecurity(t *testing.T) {
 	test.EnsurePrivilege(t)
 	opts := buildOpts{
@@ -103,4 +129,6 @@ func TestSecurity(t *testing.T) {
 	// Security
 	t.Run("Security_unpriv", testSecurityPriv)
 	t.Run("Security_priv", testSecurityUnpriv)
+	t.Run("Security_config_ownerships", testSecurityConfOwnership)
+
 }
