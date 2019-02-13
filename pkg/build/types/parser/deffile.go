@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 var (
@@ -82,7 +83,7 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 		}
 
 		// Check if the first word starts with % sign
-		if word != nil && word[0] == '%' {
+		if word != nil && word[0] == '%' && word[1] != '%' {
 			// If the word starts with %, it's a section identifier
 
 			// We no longer check if the word is a valid section identifier here, since we want to move to
@@ -104,8 +105,14 @@ func scanDefinitionFile(data []byte, atEOF bool) (advance int, token []byte, err
 			}
 		} else {
 			// This line is not a section identifier
-			retbuf.Write(line)
-			retbuf.WriteString("\n")
+			if word != nil {
+				if line[1] == '%' {
+					retbuf.Write([]byte(strings.TrimPrefix(string(line), "%")))
+				} else {
+					retbuf.Write(line)
+				}
+			}
+			retbuf.WriteString("\n")			
 		}
 
 		// Shift the advance retval to the next line
@@ -147,7 +154,6 @@ func splitToken(tok string) (ident string, content string) {
 
 // parseTokenSection splits the token into maximum 2 strings separated by a newline,
 // and then inserts the section into the sections map
-//
 func parseTokenSection(tok string, sections map[string]string) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
@@ -290,6 +296,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 			}
 		}
 		if len(keys) > 0 {
+			sylog.Infof("Hint: use double '%%' to escape")
 			return &InvalidSectionError{keys, errInvalidSection}
 		}
 	}
