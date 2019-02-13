@@ -61,6 +61,8 @@ export SCIF_APPDATA_%[1]s SCIF_APPMETA_%[1]s SCIF_APPROOT_%[1]s SCIF_APPBIN_%[1]
 
 	globalEnv94AppEnv = `export SCIF_APPENV_%[1]s="/scif/apps/%[1]s/scif/env/90-environment.sh"
 `
+	globalEnv94AppLabels = `export SCIF_APPLABELS_%[1]s="/scif/apps/%[1]s/scif/labels.json"
+`
 	globalEnv94AppRun = `export SCIF_APPRUN_%[1]s="/scif/apps/%[1]s/scif/runscript"
 `
 
@@ -288,6 +290,10 @@ func globalAppEnv(b *types.Bundle, a *App) string {
 
 	if _, err := os.Stat(filepath.Join(appMeta(b, a), "/env/90-environment.sh")); err == nil {
 		content += fmt.Sprintf(globalEnv94AppEnv, a.Name)
+	}
+
+	if _, err := os.Stat(filepath.Join(appMeta(b, a), "/labels.json")); err == nil {
+		content += fmt.Sprintf(globalEnv94AppLabels, a.Name)
 	}
 
 	if _, err := os.Stat(filepath.Join(appMeta(b, a), "/runscript")); err == nil {
