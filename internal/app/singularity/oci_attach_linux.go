@@ -77,7 +77,10 @@ func attach(engineConfig *oci.EngineConfig, run bool) error {
 		return fmt.Errorf("control socket not available, container state: %s", state.Status)
 	}
 
-	hasTerminal := engineConfig.OciConfig.Process.Terminal && terminal.IsTerminal(0)
+	hasTerminal := engineConfig.OciConfig.Process.Terminal
+	if hasTerminal && !terminal.IsTerminal(0) {
+		return fmt.Errorf("attach requires a terminal when terminal config is set to true")
+	}
 
 	var err error
 	conn, err = unix.Dial(state.AttachSocket)
@@ -113,27 +116,25 @@ func attach(engineConfig *oci.EngineConfig, run bool) error {
 		}
 	}()
 
-	// Pipe session to bash and visa-versa
-	go func() {
-		if !run {
+	if hasTerminal || !run {
+		// Pipe session to bash and visa-versa
+		go func() {
 			io.Copy(os.Stdout, conn)
-		} else {
-			io.Copy(ioutil.Discard, conn)
+			wg.Done()
+		}()
+		go func() {
+			io.Copy(conn, os.Stdin)
+		}()
+		wg.Wait()
+
+		if hasTerminal {
+			fmt.Printf("\r")
+			return terminal.Restore(0, ostate)
 		}
-		wg.Done()
-	}()
-
-	go func() {
-		io.Copy(conn, os.Stdin)
-	}()
-
-	wg.Wait()
-
-	if hasTerminal {
-		fmt.Printf("\r")
-		return terminal.Restore(0, ostate)
+		return nil
 	}
 
+	io.Copy(ioutil.Discard, conn)
 	return nil
 }
 
