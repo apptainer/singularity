@@ -193,7 +193,7 @@ func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
 		mountType := m.Type
 
 		tag = ""
-		if mountType != "" && mountType != "bind" {
+		if mountType != "" && mountType != "bind" && mountType != "none" {
 			if _, ok := authorizedFS[mountType]; !ok {
 				return points, fmt.Errorf("%s filesystem type is not authorized", mountType)
 			}
