@@ -1,94 +1,136 @@
-# Installing Singularity development-3.0
+# Installing Singularity
 
 Since you are reading this from the Singularity source code, it will be assumed
 that you are building/compiling.
 
+For full instructions on installation, check out our
+[installation guide](https://www.sylabs.io/guides/3.0/user-guide/installation.html).
+
 ## Install system dependencies
-You must first install development and libraries to your host.
+
+You must first install development tools and libraries to your host.
 On Debian-based systems:
 
 ```
 $ sudo apt-get update && \
-sudo apt-get install -y build-essential \
-libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev pkg-config
+  sudo apt-get install -y build-essential \
+  libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
 ```
 
 On CentOS/RHEL:
 
 ```
-$ sudo yum groupinstall -y 'Development Tools'
-$ sudo yum install -y epel-release
-$ sudo yum install -y golang openssl-devel libuuid-devel libseccomp-devel
+$ sudo yum groupinstall -y 'Development Tools' && \
+  sudo yum install -y epel-release && \
+  sudo yum install -y golang openssl-devel libuuid-devel libseccomp-devel squashfs-tools
 ```
-Skip libseccomp-devel on CentOS/RHEL 6.
 
-## Install golang
+On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
+
+## Install Golang
 
 This is one of several ways to [install and configure golang](https://golang.org/doc/install).  The CentOS/RHEL instructions above already installed it so this method is not needed there.
 
-Visit the [golang download page](https://golang.org/dl/) and pick a
-package archive to download.  Copy the link address and download with `wget`.
+First, download the Golang archive to `/tmp/`, then extract the archive to `/usr/local`.
 
 ```
-$ export VERSION=1.11 OS=linux ARCH=amd64
-$ cd /tmp
-$ wget https://dl.google.com/go/go$VERSION.$OS-$ARCH.tar.gz
+$ export VERSION=1.11.4 OS=linux ARCH=amd64  # change this as you need
+
+$ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
+  sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
 ```
 
-Then extract the archive to `/usr/local` (or use other instructions on go
-installation page).
+Finally, set up your environment for Go:
 
 ```
-$ sudo tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
-```
-
-Finally, set up your environment for go
-
-```
-$ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc
-$ echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc
-$ source ~/.bashrc
+$ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
+  echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
+  source ~/.bashrc
 ```
 
 ## Clone the repo
-golang is a bit finicky about where things are placed. Here is the correct way
-to build Singularity from source.
+
+Golang is a bit finicky about where things are placed. Here is the correct way
+to build Singularity from source:
 
 ```
-$ mkdir -p $GOPATH/src/github.com/sylabs
-$ cd $GOPATH/src/github.com/sylabs
-$ git clone https://github.com/sylabs/singularity.git
-$ cd singularity
-```
-
-## Compile the Singularity binary
-You can build Singularity using the following commands:
-
-```
-$ cd $GOPATH/src/github.com/sylabs/singularity
-$ ./mconfig
-$ cd ./builddir
-$ make
-$ sudo make install
-```
-
-Alternatively, to build an rpm on CentOS/RHEL use the following commands:
-
-```
-$ sudo yum install -y rpm-build
-$ cd $GOPATH/src/github.com/sylabs/singularity
-$ ./mconfig
-$ make -C builddir rpm
+$ mkdir -p ${GOPATH}/src/github.com/sylabs && \
+  cd ${GOPATH}/src/github.com/sylabs && \
+  git clone https://github.com/sylabs/singularity.git && \
+  cd singularity
 ```
 
 To build a stable version of Singularity, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.0.2
+$ git checkout v3.1.0
 ```
 
+## Compiling Singularity
+
+You can build Singularity using the following commands:
+
+```
+$ cd ${GOPATH}/src/github.com/sylabs/singularity && \
+  ./mconfig && \
+  cd ./builddir && \
+  make && \
+  sudo make install
+```
+
+And that's it! Now you can check your Singularity version by running:
+
+```
+$ singularity version
+```
 To build in a different folder and to set the install prefix to a different path:
 
 ```
 $ ./mconfig -p /usr/local -b ./buildtree
 ```
+
+## Install from the RPM
+
+*NOTE: You should only atempt to build the RPM on a CentOS/RHEL system.*
+
+To build the RPM, you first need to install `rpm-build` and `wget`.
+
+```
+$ sudo yum -y update && sudo yum install -y rpm-build wget
+```
+
+Then download the latest 
+[release tarball](https://github.com/sylabs/singularity/releases) and use it to
+install the RPM.  Since we are building from the RPM, you don't need to install 
+Golang, but you do need to 
+[install the other dependencies](#install-system-dependencies).
+
+```
+$ export VERSION=3.1.0  # this is the singularity version, change as you need
+
+$ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-${VERSION}.tar.gz && \
+    rpmbuild -tb singularity-${VERSION}.tar.gz && \
+    sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-${VERSION}-1.el7.x86_64.rpm && \
+    rm -rf ~/rpmbuild singularity-${VERSION}*.tar.gz
+```
+
+Alternatively, to build an RPM from the latest master you can 
+[clone the repo as detailed above](#clone-the-repo).  Then create your own
+tarball and use it to install Singularity.  
+
+```
+$ cd $GOPATH/src/github.com/sylabs/singularity && \
+  ./mconfig && \
+  make -C builddir rpm && \
+  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-3.0.3-687.gf3da9de.el7.x86_64.rpm # or whatever version you built
+```
+
+To build an rpm with an alternative install prefix set RPMPREFIX on the
+make step, for example
+
+```
+$ make -C builddir rpm RPMPREFIX=/usr/local
+```
+
+For more information on installing/updating/uninstalling the RPM, check out our 
+[admin docs](https://www.sylabs.io/guides/3.0/admin-guide/admin_quickstart.html).

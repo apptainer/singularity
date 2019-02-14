@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -136,7 +136,15 @@ func handleLibrary(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		libexec.PullLibraryImage(imagePath, u, "https://library.sylabs.io", false, authToken)
+		if err = library.DownloadImage(imagePath, u, "https://library.sylabs.io", true, authToken); err != nil {
+			return "", fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
+			return "", fmt.Errorf("Error getting ImageHash: %v", err)
+		} else if cacheFileHash != libraryImage.Hash {
+			return "", fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
 	}
 
 	return imagePath, nil
@@ -263,7 +271,7 @@ var TestCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
-		a := append([]string{"/.singularity.d/test"}, args[1:]...)
+		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
 		execStarter(cmd, args[0], a, "")
 	},
 

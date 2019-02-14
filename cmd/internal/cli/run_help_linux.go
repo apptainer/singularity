@@ -25,6 +25,7 @@ import (
 const (
 	standardHelpPath = "/.singularity.d/runscript.help"
 	appHelpPath      = "/scif/apps/%s/scif/runscript.help"
+	runHelpCommand   = "if [ ! -f \"%s\" ]\nthen\n    echo \"Container does not have a help file\"\nelse\n    /bin/cat %s\nfi"
 )
 
 func init() {
@@ -49,9 +50,12 @@ var RunHelpCmd = &cobra.Command{
 
 		// Help prints (if set) the sourced %help section on the definition file
 		abspath, err := filepath.Abs(args[0])
+		if err != nil {
+			sylog.Fatalf("While getting absolute path: %s", err)
+		}
 		name := filepath.Base(abspath)
 
-		a := []string{"/bin/cat", getHelpPath(cmd)}
+		a := []string{"/bin/sh", "-c", getCommand(getHelpPath(cmd))}
 		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
 		procname := "Singularity help"
 		Env := []string{sylog.GetEnvVar()}
@@ -62,6 +66,7 @@ var RunHelpCmd = &cobra.Command{
 		engineConfig.OciConfig = ociConfig
 
 		generator.SetProcessArgs(a)
+		generator.SetProcessCwd("/")
 		engineConfig.SetImage(abspath)
 
 		cfg := &config.Common{
@@ -84,6 +89,10 @@ var RunHelpCmd = &cobra.Command{
 	Short:   docs.RunHelpShort,
 	Long:    docs.RunHelpLong,
 	Example: docs.RunHelpExample,
+}
+
+func getCommand(helpFile string) string {
+	return fmt.Sprintf(runHelpCommand, helpFile, helpFile)
 }
 
 func getHelpPath(cmd *cobra.Command) string {

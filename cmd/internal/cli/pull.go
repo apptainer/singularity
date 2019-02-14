@@ -8,6 +8,8 @@ package cli
 import (
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -89,11 +91,25 @@ func pullRun(cmd *cobra.Command, args []string) {
 	if PullImageName == "" {
 		name = args[0]
 		if len(args) == 1 {
-			name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			if transport == "" {
+				name = uri.GetName("library://" + args[i])
+			} else {
+				name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			}
 		}
 	} else {
 		name = PullImageName
 	}
+
+	// monitor for OS signals and remove invalid file
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func(fileName string) {
+		<-c
+		sylog.Debugf("Removing incomplete file because of receiving Termination signal")
+		os.Remove(fileName)
+		os.Exit(1)
+	}(name)
 
 	switch transport {
 	case LibraryProtocol, "":
@@ -108,13 +124,26 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While getting image info: %v", err)
 		}
 
-		imageName := uri.GetName(args[i])
+		var imageName string
+		if transport == "" {
+			imageName = uri.GetName("library://" + args[i])
+		} else {
+			imageName = uri.GetName(args[i])
+		}
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 		if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
 		} else if !exists {
 			sylog.Infof("Downloading library image")
-			client.DownloadImage(imagePath, args[i], PullLibraryURI, false, authToken)
+			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
+				sylog.Fatalf("unable to Download Image: %v", err)
+			}
+
+			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+				sylog.Fatalf("Error getting ImageHash: %v", err)
+			} else if cacheFileHash != libraryImage.Hash {
+				sylog.Fatalf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			}
 		}
 
 		// Perms are 777 *prior* to umask

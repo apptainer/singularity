@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,31 +16,31 @@ import (
 )
 
 func init() {
-	KeysPullCmd.Flags().SetInterspersed(false)
+	KeyPullCmd.Flags().SetInterspersed(false)
 
-	KeysPullCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeysServer, "specify the key server URL")
-	KeysPullCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
+	KeyPullCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "specify the key server URL")
+	KeyPullCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
-// KeysPullCmd is `singularity keys pull' and fetches public keys from a key server
-var KeysPullCmd = &cobra.Command{
+// KeyPullCmd is `singularity key pull' and fetches public keys from a key server
+var KeyPullCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeysPullCmd(args[0], keyServerURL); err != nil {
+		if err := doKeyPullCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
 		}
 	},
 
-	Use:     docs.KeysPullUse,
-	Short:   docs.KeysPullShort,
-	Long:    docs.KeysPullLong,
-	Example: docs.KeysPullExample,
+	Use:     docs.KeyPullUse,
+	Short:   docs.KeyPullShort,
+	Long:    docs.KeyPullLong,
+	Example: docs.KeyPullExample,
 }
 
-func doKeysPullCmd(fingerprint string, url string) error {
+func doKeyPullCmd(fingerprint string, url string) error {
 	var count int
 
 	// get matching keyring
@@ -62,12 +62,14 @@ func doKeysPullCmd(fingerprint string, url string) error {
 	defer fp.Close()
 
 	for _, e := range el {
+		storeKey := true
 		for _, estore := range elstore {
 			if e.PrimaryKey.KeyId == estore.PrimaryKey.KeyId {
-				e = nil // Entity is already in key store
+				storeKey = false // Entity is already in key store
+				break
 			}
 		}
-		if e != nil {
+		if storeKey {
 			if err = e.Serialize(fp); err != nil {
 				return err
 			}
