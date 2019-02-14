@@ -13,7 +13,7 @@ singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/sing
 
 singularity := $(BUILDDIR)/singularity
 $(singularity): $(singularity_build_config) $(singularity_SOURCE)
-	@echo " GO" $@ "\n    [+] GO_TAGS" \"$(GO_TAGS)\"
+	@echo " GO" $@; echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
 	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 
 singularity_INSTALL := $(DESTDIR)$(BINDIR)/singularity

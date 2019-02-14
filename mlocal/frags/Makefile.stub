@@ -55,6 +55,8 @@ rpm: dist
 	    rpmbuild $(RPMCLEAN) -ta \
 	      --define '_prefix $(RPMPREFIX)' \
 	      --define '_sysconfdir $(RPMPREFIX)/etc' \
+	      --define '_localstatedir $(RPMPREFIX)/var' \
+	      --define '_mandir $(RPMPREFIX)/share/man' \
 	      $(SOURCEDIR)/singularity-$(SHORT_VERSION).tar.gz; \
 	  else \
 	    rpmbuild $(RPMCLEAN) -ta \

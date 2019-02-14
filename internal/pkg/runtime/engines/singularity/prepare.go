@@ -37,11 +37,6 @@ func (e *EngineOperations) prepareUserCaps() error {
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
-	// ensure that capability config file is in fact root owned
-	if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
-		return fmt.Errorf("while setting user capabilities: capability config file not owned by root")
-	}
-
 	file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("while opening capability config file: %s", err)
@@ -134,11 +129,6 @@ func (e *EngineOperations) prepareRootCaps() error {
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
-		// ensure that capability config file is in fact root owned
-		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
-			return fmt.Errorf("while setting user capabilities: capability config file not owned by root")
-		}
-
 		file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0644)
 		if err != nil {
 			return fmt.Errorf("while opening capability config file: %s", err)
