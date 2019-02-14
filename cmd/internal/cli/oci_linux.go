@@ -42,7 +42,7 @@ func init() {
 	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 
 	OciKillCmd.Flags().SetInterspersed(false)
-	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "", "signal sent to the container (default SIGTERM)")
+	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "SIGTERM", "signal sent to the container (default SIGTERM)")
 
 	OciRunCmd.Flags().SetInterspersed(false)
 	OciRunCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
@@ -140,6 +140,8 @@ var OciKillCmd = &cobra.Command{
 		killSignal := ""
 		if len(args) > 1 && args[1] != "" {
 			killSignal = args[1]
+		} else {
+			killSignal = ociArgs.KillSignal
 		}
 		if err := singularity.OciKill(args[0], killSignal, 0); err != nil {
 			sylog.Fatalf("%s", err)
