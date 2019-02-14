@@ -80,7 +80,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		cliExtra = "syos"
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, singAction, cliExtra, strings.Join(singBinds, "|"))
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), singAction, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	defArgs = append(defArgs, "-f")
