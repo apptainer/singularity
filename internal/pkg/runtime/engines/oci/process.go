@@ -307,17 +307,19 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 
 func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Logger, fatalChan chan error) {
 	var wg sync.WaitGroup
-	var stdout io.ReadWriter
-	var stderr io.Reader
-	var stdin io.Writer
+	var stdout io.ReadWriteCloser
+	var stderr io.ReadCloser
+	var stdin io.WriteCloser
 	var outputWriters *copy.MultiWriter
 	var errorWriters *copy.MultiWriter
+	var inputWriters *copy.MultiWriter
 	var tbuf *copy.TerminalBuffer
 
 	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
 
 	defer l.Close()
 
+	inputWriters = &copy.MultiWriter{}
 	outputWriters = &copy.MultiWriter{}
 	outputWriters.Add(logger.NewWriter("stdout", true))
 
@@ -325,6 +327,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 		stdout = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "stream-master-pts")
 		tbuf = copy.NewTerminalBuffer()
 		outputWriters.Add(tbuf)
+		inputWriters.Add(stdout)
 	} else {
 		outputStream := os.NewFile(uintptr(engine.EngineConfig.OutputStreams[0]), "stdout-stream")
 		errorStream := os.NewFile(uintptr(engine.EngineConfig.ErrorStreams[0]), "error-stream")
@@ -332,9 +335,9 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 		stdout = outputStream
 		stderr = errorStream
 		stdin = inputStream
+		outputWriters.Add(os.Stdout)
+		inputWriters.Add(stdin)
 	}
-
-	outputWriters.Add(os.Stdout)
 
 	if stderr != nil {
 		errorWriters = &copy.MultiWriter{}
@@ -362,7 +365,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 					c.Write(tbuf.Line())
 				}
 
-				io.Copy(stdout, c)
+				io.Copy(inputWriters, c)
 
 				outputWriters.Del(c)
 				if stderr != nil {
@@ -375,16 +378,19 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 
 	go func() {
 		io.Copy(outputWriters, stdout)
+		stdout.Close()
 	}()
 
 	if stderr != nil {
 		go func() {
 			io.Copy(errorWriters, stderr)
+			stderr.Close()
 		}()
 	}
 	if stdin != nil {
 		go func() {
-			io.Copy(stdin, os.Stdin)
+			io.Copy(inputWriters, os.Stdin)
+			stdin.Close()
 		}()
 	}
 
