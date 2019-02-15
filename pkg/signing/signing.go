@@ -270,50 +270,11 @@ func IsSigned(cpath string) bool {
 	}
 	defer fimg.UnloadContainer()
 
-	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
-	signatures, descr, err := getSigsForSelection(&fimg, 0, false)
+	_, _, err = getSigsForSelection(&fimg, 0, false)
 	if err != nil {
 		// Not signed
 		return false
 	}
-
-	// the selected data object is hashed for comparison against signature block's
-	sifhash := computeHashStr(&fimg, descr)
-
-	// load the public keys available locally from the cache
-	_, err = sypgp.LoadPubKeyring()
-	if err != nil {
-		sylog.Fatalf("could not load public keyring: %s", err)
-		os.Exit(100)
-	}
-
-	// compare freshly computed hash with hashes stored in signatures block(s)
-	for _, v := range signatures {
-		// Extract hash string from signature block
-		data := v.GetData(&fimg)
-		block, _ := clearsign.Decode(data)
-		if block == nil {
-			sylog.Fatalf("failed to parse signature block")
-			os.Exit(100)
-		}
-
-		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			sylog.Infof("NOTE: group signatures will fail if new data is added to a group")
-			sylog.Infof("after the group signature is created.")
-			sylog.Fatalf("hashes differ, data may be corrupted")
-			os.Exit(100)
-		}
-
-		// (1) Data integrity is verified, (2) now validate identify of signers
-
-		// get the entity fingerprint for the signature block
-		_, err := v.GetEntityString()
-		if err != nil {
-			sylog.Fatalf("could not get the signing entity fingerprint: %s", err)
-			os.Exit(100)
-		}
-	}
-
 	return true
 }
 
