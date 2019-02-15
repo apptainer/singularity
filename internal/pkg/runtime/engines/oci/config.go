@@ -6,6 +6,8 @@
 package oci
 
 import (
+	"sync"
+
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/pkg/ociruntime"
@@ -31,6 +33,7 @@ type EngineConfig struct {
 	EmptyProcess  bool             `json:"emptyProcess"`
 	Exec          bool             `json:"exec"`
 	Cgroups       *cgroups.Manager `json:"-"`
+	sync.Mutex    `json:"-"`
 }
 
 // NewConfig returns an oci.EngineConfig.

@@ -789,7 +789,9 @@ found at:
 	OciUse   string = `oci <subcommand>`
 	OciShort string = `Manage OCI containers`
 	OciLong  string = `
-  Allow you to manage containers from OCI bundle directories.`
+  Allow you to manage containers from OCI bundle directories.
+
+  NOTE: all oci commands requires to run as root`
 	OciExample string = `
   All group commands have their own help output:
 
@@ -797,28 +799,28 @@ found at:
   $ singularity oci start mycontainer`
 
 	OciCreateUse   string = `create [create options...] <container_ID>`
-	OciCreateShort string = `Create a container from a bundle directory`
+	OciCreateShort string = `Create a container from a bundle directory (root user only)`
 	OciCreateLong  string = `
   Create invoke create operation to create a container instance from an OCI bundle directory`
 	OciCreateExample string = `
   $ singularity create -b ~/bundle mycontainer`
 
 	OciStartUse   string = `start <container_ID>`
-	OciStartShort string = `Start container process`
+	OciStartShort string = `Start container process (root user only)`
 	OciStartLong  string = `
   Start invoke start operation to start a previously created container identified by container ID.`
 	OciStartExample string = `
   $ singularity start mycontainer`
 
 	OciStateUse   string = `state <container_ID>`
-	OciStateShort string = `Query state of a container`
+	OciStateShort string = `Query state of a container (root user only)`
 	OciStateLong  string = `
   State invoke state operation to query state of a created/running/stopped container identified by container ID.`
 	OciStateExample string = `
   $ singularity state mycontainer`
 
 	OciKillUse   string = `kill <container_ID> [-s] signal`
-	OciKillShort string = `Kill a container`
+	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
   Kill invoke kill operation to kill processes running within container identified by container ID.`
 	OciKillExample string = `
@@ -826,28 +828,28 @@ found at:
   $ singularity kill mycontainer -s INT`
 
 	OciDeleteUse   string = `delete <container_ID>`
-	OciDeleteShort string = `Delete container`
+	OciDeleteShort string = `Delete container (root user only)`
 	OciDeleteLong  string = `
   Delete invoke delete operation to delete resources that were created for container identified by container ID.`
 	OciDeleteExample string = `
   $ singularity delete mycontainer`
 
 	OciAttachUse   string = `attach <container_ID>`
-	OciAttachShort string = `Attach console to a running container process`
+	OciAttachShort string = `Attach console to a running container process (root user only)`
 	OciAttachLong  string = `
   Attach will attach console to a running container process running within container identified by container ID.`
 	OciAttachExample string = `
   $ singularity attach mycontainer`
 
 	OciExecUse   string = `exec <container_ID> <command> <args>`
-	OciExecShort string = `Execute a command within container`
+	OciExecShort string = `Execute a command within container (root user only)`
 	OciExecLong  string = `
   Exec will execute the provided command/arguments within container identified by container ID.`
 	OciExecExample string = `
   $ singularity exec mycontainer id`
 
 	OciRunUse   string = `run [run options...] <container_ID>`
-	OciRunShort string = `Create/start/attach/delete a container from a bundle directory`
+	OciRunShort string = `Create/start/attach/delete a container from a bundle directory (root user only)`
 	OciRunLong  string = `
   Run will invoke equivalent of create/start/attach/delete commands in a row.`
 	OciRunExample string = `
@@ -861,7 +863,7 @@ found at:
   $ singularity oci delete mycontainer`
 
 	OciUpdateUse   string = `update [update options...] <container_ID>`
-	OciUpdateShort string = `Update container cgroups resources`
+	OciUpdateShort string = `Update container cgroups resources (root user only)`
 	OciUpdateLong  string = `
   Update will update cgroups resources for the specified container ID.
   Container must be in a RUNNING or CREATED state.`
@@ -873,28 +875,28 @@ found at:
   $ cat /tmp/cgroups-update.json | singularity oci update --from-file - mycontainer`
 
 	OciPauseUse   string = `pause <container_ID>`
-	OciPauseShort string = `Suspends all processes inside the container`
+	OciPauseShort string = `Suspends all processes inside the container (root user only)`
 	OciPauseLong  string = `
   Pause will suspend all processes for the specified container ID.`
 	OciPauseExample string = `
   $ singularity oci pause mycontainer`
 
 	OciResumeUse   string = `resume <container_ID>`
-	OciResumeShort string = `Resumes all processes previously paused inside the container`
+	OciResumeShort string = `Resumes all processes previously paused inside the container (root user only)`
 	OciResumeLong  string = `
   Resume will resume all processes previously paused for the specified container ID.`
 	OciResumeExample string = `
   $ singularity oci resume mycontainer`
 
 	OciMountUse   string = `mount <sif_image> <bundle_path>`
-	OciMountShort string = `Mount create an OCI bundle from SIF image`
+	OciMountShort string = `Mount create an OCI bundle from SIF image (root user only)`
 	OciMountLong  string = `
   Mount will mount and create an OCI bundle from a SIF image.`
 	OciMountExample string = `
   $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example`
 
 	OciUmountUse   string = `umount <bundle_path>`
-	OciUmountShort string = `Umount delete bundle`
+	OciUmountShort string = `Umount delete bundle (root user only)`
 	OciUmountLong  string = `
   Umount will umount an OCI bundle previously mounted with singularity oci mount.`
 	OciUmountExample string = `
