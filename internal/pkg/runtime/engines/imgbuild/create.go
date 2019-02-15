@@ -127,6 +127,12 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("change directory failed: %s", err)
 	}
 
+	sylog.Debugf("Set RPC mount propagation flag to PRIVATE")
+	_, err = rpcOps.Mount("", "/", "", syscall.MS_PRIVATE, "")
+	if err != nil {
+		return err
+	}
+
 	sylog.Debugf("Chroot into %s\n", buildcfg.SESSIONDIR)
 	_, err = rpcOps.Chroot(buildcfg.SESSIONDIR, "pivot")
 	if err != nil {
@@ -161,9 +167,9 @@ func (engine *EngineOperations) copyFiles() error {
 		if transfer.Dst == "" {
 			transfer.Dst = transfer.Src
 		}
-		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		// copy each file into bundle rootfs
 		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
+		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
 		if err := copy.Run(); err != nil {
 			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
