@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
-	"github.com/sylabs/singularity/pkg/signing"
 )
 
 // Timeout in seconds for the main upload (not api calls)

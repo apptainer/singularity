@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/signing"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
-	"github.com/sylabs/singularity/pkg/signing"
 )
 
 // Timeout for an image pull in seconds - could be a large download...
