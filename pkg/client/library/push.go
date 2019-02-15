@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,7 +34,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 	}
 	sylog.Debugf("Image hash computed as %s\n", imageHash)
 
-	if signing.IsSigned(filePath) != true {
+	if !signing.IsSigned(filePath) {
 		sylog.Warningf("Your container is **not** signed! You should sign your container before pushing!")
 	}
 
