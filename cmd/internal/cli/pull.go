@@ -91,7 +91,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 	if PullImageName == "" {
 		name = args[0]
 		if len(args) == 1 {
-			name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			if transport == "" {
+				name = uri.GetName("library://" + args[i])
+			} else {
+				name = uri.GetName(args[i]) // TODO: If not library/shub & no name specified, simply put to cache
+			}
 		}
 	} else {
 		name = PullImageName
@@ -120,7 +124,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While getting image info: %v", err)
 		}
 
-		imageName := uri.GetName(args[i])
+		var imageName string
+		if transport == "" {
+			imageName = uri.GetName("library://" + args[i])
+		} else {
+			imageName = uri.GetName(args[i])
+		}
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 		if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
