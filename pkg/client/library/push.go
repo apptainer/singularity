@@ -35,7 +35,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 	sylog.Debugf("Image hash computed as %s\n", imageHash)
 
 	if !signing.IsSigned(filePath) {
-		sylog.Warningf("Your container is **not** signed! You should sign your container before pushing!")
+		sylog.Warningf("Your container is **NOT** signed! You should sign your container before pushing!")
 	}
 
 	entityName, collectionName, containerName, tags := parseLibraryRef(libraryRef)

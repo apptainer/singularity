@@ -165,7 +165,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
-		//sylog.Infof("INFO: %v", PullLibraryURI)
+
+		// check if we pulled from the library, if so; is it signed?
 		if len(PullLibraryURI) >= 1 {
 			if signing.IsSigned(name) {
 				sylog.Infof("Pulled container is signed")
