@@ -55,6 +55,9 @@ type Options struct {
 	NoHTTPS bool `json:"noHTTPS"`
 	// contains docker credentials if specified
 	DockerAuthConfig *ocitypes.DockerAuthConfig
+	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
+	// useful for debugging
+	NoCleanUp bool `json:"noCleanUp"`
 }
 
 // NewBundle creates a Bundle environment

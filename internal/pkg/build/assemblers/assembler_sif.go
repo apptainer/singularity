@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,11 +18,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
+	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -98,7 +98,7 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 
 func getMksquashfsPath() (string, error) {
 	// Parse singularity configuration file
-	c := &singularity.FileConfig{}
+	c := &singularityConfig.FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
 		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
 	}
@@ -117,8 +117,6 @@ func getMksquashfsPath() (string, error) {
 
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
-	defer os.RemoveAll(b.Path)
-
 	sylog.Infof("Creating SIF file...")
 
 	mksquashfs, err := getMksquashfsPath()

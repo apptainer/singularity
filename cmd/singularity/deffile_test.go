@@ -13,14 +13,40 @@ import (
 )
 
 type DefFileDetail struct {
-	Bootstrap string
-	From      string
-	Registry  string
-	Namespace string
-	Labels    map[string]string
+	Bootstrap   string
+	From        string
+	Registry    string
+	Namespace   string
+	Help        []string
+	Env         []string
+	Labels      map[string]string
+	Files       []FilePair
+	Pre         []string
+	Setup       []string
+	Post        []string
+	RunScript   []string
+	Test        []string
+	StartScript []string
+	Apps        []AppDetail
 }
 
-// prepareTemplate reads a template from a file, applies data to it, writes the
+type AppDetail struct {
+	Name    string
+	Help    []string
+	Env     []string
+	Labels  map[string]string
+	Files   []FilePair
+	Install []string
+	Run     []string
+	Test    []string
+}
+
+type FilePair struct {
+	Src string
+	Dst string
+}
+
+// prepareDefFile reads a template from a file, applies data to it, writes the
 // contents to disk, and returns the path.
 func prepareDefFile(dfd DefFileDetail) (outputPath string) {
 	tmpl, err := template.ParseFiles(path.Join("testdata", "deffile.tmpl"))

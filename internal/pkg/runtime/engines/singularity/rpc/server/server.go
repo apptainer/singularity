@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
@@ -52,7 +53,8 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 		return fmt.Errorf("failed to change directory to %s", root)
 	}
 
-	if arguments.UsePivot {
+	switch arguments.Method {
+	case "pivot":
 		// idea taken from libcontainer (and also LXC developers) to avoid
 		// creation of temporary directory or use of existing directory
 		// for pivot_root.
@@ -83,12 +85,17 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 		if err := syscall.Unmount(".", syscall.MNT_DETACH); err != nil {
 			return fmt.Errorf("unmount pivot_root dir %s", err)
 		}
-	} else {
+	case "move":
 		sylog.Debugf("Move %s as / directory", root)
 		if err := syscall.Mount(".", "/", "", syscall.MS_MOVE, ""); err != nil {
 			return fmt.Errorf("failed to move %s as / directory: %s", root, err)
 		}
 
+		sylog.Debugf("Chroot to %s", root)
+		if err := syscall.Chroot("."); err != nil {
+			return fmt.Errorf("chroot failed: %s", err)
+		}
+	case "chroot":
 		sylog.Debugf("Chroot to %s", root)
 		if err := syscall.Chroot("."); err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
@@ -106,8 +113,10 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	var image *os.File
 
-	loopdev := new(loop.Device)
+	loopdev := &loop.Device{}
 	loopdev.MaxLoopDevices = arguments.MaxDevices
+	loopdev.Info = &arguments.Info
+	loopdev.Shared = arguments.Shared
 
 	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
 		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
@@ -141,9 +150,9 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 
 	err := loopdev.AttachFromFile(image, arguments.Mode, reply)
 	if err != nil {
-		return fmt.Errorf("could not attach image file too loop device: %v", err)
+		return fmt.Errorf("could not attach image file to loop device: %v", err)
 	}
-	return loopdev.SetStatus(&arguments.Info)
+	return nil
 }
 
 // SetHostname sets hostname with the specified arguments.
@@ -154,31 +163,14 @@ func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 // HasNamespace checks if host namespace and container namespace
 // are different and sets reply to 0 or 1.
 func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) error {
-	var st1 syscall.Stat_t
-	var st2 syscall.Stat_t
-
-	processOne := fmt.Sprintf("/proc/%d/ns/%s", arguments.Pid, arguments.NsType)
-	processTwo := fmt.Sprintf("/proc/self/ns/%s", arguments.NsType)
-
 	*reply = 0
-
-	if err := syscall.Stat(processOne, &st1); err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
+	has, err := proc.HasNamespace(arguments.Pid, arguments.NsType)
+	if err != nil {
 		return err
 	}
-	if err := syscall.Stat(processTwo, &st2); err != nil {
-		if os.IsNotExist(err) {
-			return nil
-		}
-		return err
-	}
-
-	if st1.Ino != st2.Ino {
+	if has {
 		*reply = 1
 	}
-
 	return nil
 }
 

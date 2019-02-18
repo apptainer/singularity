@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
 	"strconv"
 	"syscall"
@@ -25,7 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	syexec "github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -50,8 +51,6 @@ type Build struct {
 	a Assembler
 	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems
 	b *types.Bundle
-	// d describes how a container is to be built, including actions to be run in the container to reach its final state
-	d types.Definition
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
@@ -87,7 +86,6 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 	b := &Build{
 		format: format,
 		dest:   dest,
-		d:      d,
 	}
 
 	b.b, err = types.NewBundle(opts.TmpDir, "sbuild")
@@ -95,12 +93,12 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 		return nil, err
 	}
 
-	b.b.Recipe = b.d
+	b.b.Recipe = d
 	b.b.Opts = opts
 
 	// dont need to get cp if we're skipping bootstrap
 	if !opts.Update || opts.Force {
-		if c, err := getcp(b.d, libraryURL, authToken); err == nil {
+		if c, err := getcp(b.b.Recipe, libraryURL, authToken); err == nil {
 			b.c = c
 		} else {
 			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -119,9 +117,30 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 	return b, nil
 }
 
+// cleanUp removes remnants of build from file system unless NoCleanUp is specified
+func (b Build) cleanUp() {
+	if b.b.Opts.NoCleanUp {
+		sylog.Infof("Build performed with no clean up option, build bundle located at: %v", b.b.Path)
+		return
+	}
+	sylog.Debugf("Build bundle cleanup: %v", b.b.Path)
+	os.RemoveAll(b.b.Path)
+}
+
 // Full runs a standard build from start to finish
 func (b *Build) Full() error {
 	sylog.Infof("Starting build...")
+
+	// monitor build for termination signal and clean up
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		b.cleanUp()
+		os.Exit(1)
+	}()
+	// clean up build normally
+	defer b.cleanUp()
 
 	if err := b.runPreScript(); err != nil {
 		return err
@@ -160,7 +179,7 @@ func (b *Build) Full() error {
 	a.HandleBundle(b.b)
 	b.b.Recipe.BuildData.Post += a.HandlePost()
 
-	if engineRequired(b.d) {
+	if engineRequired(b.b.Recipe) {
 		if err := b.runBuildEngine(); err != nil {
 			return fmt.Errorf("while running engine: %v", err)
 		}
@@ -188,7 +207,7 @@ func engineRequired(def types.Definition) bool {
 func (b *Build) copyFiles() error {
 
 	// iterate through files transfers
-	for _, transfer := range b.d.BuildData.Files {
+	for _, transfer := range b.b.Recipe.BuildData.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")
@@ -257,13 +276,13 @@ func (b *Build) insertMetadata() (err error) {
 }
 
 func (b *Build) runPreScript() error {
-	if b.runPre() && b.d.BuildData.Pre != "" {
+	if b.runPre() && b.b.Recipe.BuildData.Pre != "" {
 		if syscall.Getuid() != 0 {
 			return fmt.Errorf("Attempted to build with scripts as non-root user")
 		}
 
 		// Run %pre script here
-		pre := exec.Command("/bin/sh", "-cex", b.d.BuildData.Pre)
+		pre := exec.Command("/bin/sh", "-cex", b.b.Recipe.BuildData.Pre)
 		pre.Stdout = os.Stdout
 		pre.Stderr = os.Stderr
 
@@ -285,12 +304,12 @@ func (b *Build) runBuildEngine() error {
 	}
 
 	sylog.Debugf("Starting build engine")
-	env := []string{sylog.GetEnvVar(), "SRUNTIME=" + imgbuild.Name}
+	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
-	engineConfig := &imgbuild.EngineConfig{
+	engineConfig := &imgbuildConfig.EngineConfig{
 		Bundle:    *b.b,
 		OciConfig: ociConfig,
 	}
@@ -303,7 +322,7 @@ func (b *Build) runBuildEngine() error {
 	ociConfig.Process.Env = append(os.Environ(), sRootfs, sEnvironment)
 
 	config := &config.Common{
-		EngineName:   imgbuild.Name,
+		EngineName:   imgbuildConfig.Name,
 		ContainerID:  "image-build",
 		EngineConfig: engineConfig,
 	}
@@ -345,6 +364,10 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 		return &sources.LocalConveyorPacker{}, nil
 	case "yum":
 		return &sources.YumConveyorPacker{}, nil
+	case "zypper":
+		return &sources.ZypperConveyorPacker{}, nil
+	case "scratch":
+		return &sources.ScratchConveyorPacker{}, nil
 	case "":
 		return nil, fmt.Errorf("no bootstrap specification found")
 	default:
@@ -410,9 +433,25 @@ func (b *Build) Assemble(path string) error {
 func insertEnvScript(b *types.Bundle) error {
 	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
 		sylog.Infof("Adding environment to container")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0775)
-		if err != nil {
-			return err
+		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
+		_, err := os.Stat(envScriptPath)
+		if os.IsNotExist(err) {
+			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0755)
+			if err != nil {
+				return err
+			}
+		} else {
+			// append to script if it already exists
+			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0755)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+
+			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -421,7 +460,7 @@ func insertEnvScript(b *types.Bundle) error {
 func insertRunScript(b *types.Bundle) error {
 	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript != "" {
 		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -432,7 +471,7 @@ func insertRunScript(b *types.Bundle) error {
 func insertStartScript(b *types.Bundle) error {
 	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript != "" {
 		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -443,7 +482,7 @@ func insertStartScript(b *types.Bundle) error {
 func insertTestScript(b *types.Bundle) error {
 	if b.RunSection("test") && b.Recipe.ImageData.Test != "" {
 		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0775)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -456,7 +495,7 @@ func insertHelpScript(b *types.Bundle) error {
 		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
 		if err != nil || b.Opts.Force {
 			sylog.Infof("Adding help info")
-			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0664)
+			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0644)
 			if err != nil {
 				return err
 			}
@@ -543,7 +582,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 		return err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0664)
+	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
 	return err
 }
 

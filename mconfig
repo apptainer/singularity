@@ -1,4 +1,5 @@
 #!/bin/sh -
+# Copyright (c) 2019, Sylabs Inc. All rights reserved.
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be found
 # in the LICENSE file.
@@ -32,10 +33,10 @@ hststatic=0
 tgtstatic=0
 
 package_name=singularity
+package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
-short_version=
-package_version=
-go_version=
+with_network=1
+with_suid=1
 
 prefix=
 exec_prefix=
@@ -86,6 +87,10 @@ usage_args () {
 	echo "     -X   build project with target C++ \`compiler'"
 	echo "     -l   build project with source code language (-l C -l Go ...)"
 	echo "     -h   this help"
+	echo
+	echo "  Singularity options:"
+	echo "     --without-suid    do not install SUID binary (linux only)"
+	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo
 	echo "  Path modification options:"
 	echo "     --prefix         install project in \`prefix'"
@@ -332,6 +337,10 @@ while [ $# -ne 0 ]; do
    tgtstatic=1; shift;;
   -v)
    verbose=1; shift;;
+  --without-suid)
+   with_suid=0; shift;;
+  --without-network)
+   with_network=0; shift;;
   -V)
    if ! echo "$2" | awk '/^-.*/ || /^$/ { exit 2 }'; then
      echo "error: option requires an argument: $1"
@@ -357,6 +366,7 @@ while [ $# -ne 0 ]; do
   *) break;;
  esac
 done
+short_version="`echo "$package_version"|sed 's/-.*//'`"
 #
 # non-option param
 if [ $# != 0 ]; then
@@ -554,6 +564,11 @@ else
 fi
 echo >> $makeit_makefile_base
 
+# disable those options for non unix system
+if [ "$host" != "unix" ]; then
+	with_network=0
+	with_suid=0
+fi
 
 ########################
 # build tools
@@ -587,6 +602,7 @@ PSDIR := $psdir
 LIBDIR := $libdir
 LOCALEDIR := $localedir
 MANDIR := $mandir
+RPMPREFIX:=
 
 NAME := $package_name
 SHORT_VERSION := $short_version
@@ -609,7 +625,6 @@ SIZE := size
 OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
-
 EOF
 
 
@@ -621,36 +636,31 @@ EOF
 found_modules=`(cat $makeit_mconflist | awk '{ printf("%s ", $0) }') 2>/dev/null || true`
 if [ "$found_modules" = "" ]; then
 	found_modules=`find . -name '*.mconf' -print`
-	if [ "$found_modules" = "" ]; then
-		echo "error: no build modules found !"
-		echo
-		echo "You need to at least create one \`<module_name>.mconf' "
-		echo "file describing either a program, a lib, or a set of"
-		echo "objects to build."
-		exit 2
-	fi
 fi
-echo " found build modules:"
-echo "CPPFLAGS :=" >> $makeit_makefile_base
-# NOTE: parsed module (*.mconf) files only substitute var tgt_arch for now
-for m in $found_modules; do
-	mod=`eval echo ${m##*./}`
-	modpath=`eval echo ${mod%/*}`
-	if [ ! -f $mod ]; then
-		echo "error: module file \`$mod' not found!"
-		exit 2
-	fi
-	if [ $mod = $modpath ]; then
-		modpath="."
-	fi
 
-	echo "   +-> $mod"
-	echo "$modpath `eval basename $mod`" >> $makeit_interdir/module.lst
-	mkdir -p $makeit_interdir/$modpath
-	cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, tgt_arch); print }' > \
-		$makeit_interdir/${mod}.parsed
-done
-echo >> $makeit_makefile_base
+if [ "$found_modules" != "" ]; then
+	echo " found build modules:"
+	echo "CPPFLAGS :=" >> $makeit_makefile_base
+	# NOTE: parsed module (*.mconf) files only substitute var tgt_arch for now
+	for m in $found_modules; do
+		mod=`eval echo ${m##*./}`
+		modpath=`eval echo ${mod%/*}`
+		if [ ! -f $mod ]; then
+			echo "error: module file \`$mod' not found!"
+			exit 2
+		fi
+		if [ $mod = $modpath ]; then
+			modpath="."
+		fi
+
+		echo "   +-> $mod"
+		echo "$modpath `eval basename $mod`" >> $makeit_interdir/module.lst
+		mkdir -p $makeit_interdir/$modpath
+		cat $mod | awk -v tgt_arch=$tgt_arch '{ gsub(/tgt_arch/, tgt_arch); print }' > \
+			$makeit_interdir/${mod}.parsed
+	done
+	echo >> $makeit_makefile_base
+fi
 
 # init LDFLAGS if static builds are supported
 if [ "$hststatic" = "1" -a "$tgtstatic" = "1" ]; then
@@ -697,14 +707,24 @@ cat $makeit_makefile_base >> $makeit_makefile
 drawline $makeit_fragsdir/common_opts.mk
 cat $makeit_fragsdir/common_opts.mk >> $makeit_makefile
 
+drawline $makeit_fragsdir/go_common_opts.mk
+cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
+
+if [ -f "$makeit_fragsdir/go_${host}_opts.mk" ]; then
+	drawline $makeit_fragsdir/go_${host}_opts.mk
+	cat $makeit_fragsdir/go_${host}_opts.mk >> $makeit_makefile
+fi
 
 if [ "$appsec" = "1" ]; then
 	drawline $makeit_fragsdir/go_appsec_opts.mk
 	cat $makeit_fragsdir/go_appsec_opts.mk >> $makeit_makefile
-else
-	drawline $makeit_fragsdir/go_common_opts.mk
-	cat $makeit_fragsdir/go_common_opts.mk >> $makeit_makefile
 fi
+
+if [ "$build_runtime" = "1" ]; then
+	drawline $makeit_fragsdir/go_runtime_opts.mk
+	cat $makeit_fragsdir/go_runtime_opts.mk >> $makeit_makefile
+fi
+
 
 case $profile in
 	release)
@@ -750,6 +770,24 @@ cat $makeit_interdir/combined-mconfsready.mk >> $makeit_makefile
 drawline $makeit_interdir/all.mk
 cat $makeit_interdir/all.mk >> $makeit_makefile
 
+drawline $makeit_fragsdir/build_cli.mk
+cat $makeit_fragsdir/build_cli.mk >> $makeit_makefile
+
+if [ "$build_runtime" = 1 ]; then
+	drawline $makeit_fragsdir/build_runtime.mk
+	cat $makeit_fragsdir/build_runtime.mk >> $makeit_makefile
+fi
+
+if [ "$with_suid" = 1 ]; then
+	drawline $makeit_fragsdir/build_runtime_suid.mk
+	cat $makeit_fragsdir/build_runtime_suid.mk >> $makeit_makefile
+fi
+
+if [ "$with_network" = 1 ]; then
+	drawline $makeit_fragsdir/build_network.mk
+	cat $makeit_fragsdir/build_network.mk >> $makeit_makefile
+fi
+
 drawline $makeit_fragsdir/Makefile.stub
 # here, `depends' need to happen after all other rules; at the very end
 final_all=`cat $makeit_interdir/all.mk | awk 'BEGIN { FS="all: " } { print $2 }'`
@@ -762,16 +800,17 @@ cat $makeit_fragsdir/Makefile.stub | awk \
 # Rpm spec for project package
 #######################################################################
 
-RPMSPEC=singularity.spec
-echo "=> generating $RPMSPEC ..."
-rm -f $sourcedir/$RPMSPEC
-VERSION="`echo "$package_version"|sed 's/-.*//'`"
-RELEASE="`echo "$package_version"|sed 's/[^-]*-//'`"
-if [ "$VERSION" = "$RELEASE" ]; then
-    # $package_version has no dash
-    RELEASE=1
+if [ "$host" = "unix" ]; then
+	RPMSPEC=singularity.spec
+	echo "=> generating $RPMSPEC ..."
+	rm -f $sourcedir/$RPMSPEC
+	release="`echo "$package_version"|sed 's/[^-]*-//'`"
+	if [ "$short_version" = "$release" ]; then
+	    # $package_version has no dash
+	    release=1
+	fi
+	sed "s/@PACKAGE_VERSION@/$short_version/;s/@PACKAGE_RELEASE@/$release/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
-sed "s/@PACKAGE_VERSION@/$VERSION/;s/@PACKAGE_RELEASE@/$RELEASE/;s/@GO_VERSION@/$go_version/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 
 
 
@@ -789,6 +828,17 @@ echo "    - target wordsize: ${tgt_word}-bit"
 echo "    - target C compiler: $tgtcc"
 echo "      ---"
 echo "    - config profile: $profile"
+echo "      ---"
+if [ "$with_suid" = 0 ]; then
+	echo "    - SUID install: no"
+else
+	echo "    - SUID install: yes"
+fi
+if [ "$with_network" = 0 ]; then
+	echo "    - Network plugins: no"
+else
+	echo "    - Network plugins: yes"
+fi
 echo "      ---"
 if [ "$verbose" = 1 ]; then
 	echo "    - verbose: yes"

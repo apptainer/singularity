@@ -265,7 +265,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error {
+func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return fmt.Errorf("failed to load SIF container file: %s", err)
@@ -316,7 +316,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error 
 		if err != nil {
 			// verification with local keyring failed, try to fetch from key server
 			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
-			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken)
+			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
@@ -333,14 +333,21 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string) error 
 				return fmt.Errorf("signature verification failed: %s", err)
 			}
 
-			// Ask to store new public key
-			resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
-			if err != nil {
-				return err
-			}
-			if resp == "" || resp == "y" || resp == "Y" {
+			if noPrompt {
+				// always store key when prompts disabled
 				if err = sypgp.StorePubKey(netlist[0]); err != nil {
 					return fmt.Errorf("could not store public key: %s", err)
+				}
+			} else {
+				// Ask to store new public key
+				resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
+				if err != nil {
+					return err
+				}
+				if resp == "" || resp == "y" || resp == "Y" {
+					if err = sypgp.StorePubKey(netlist[0]); err != nil {
+						return fmt.Errorf("could not store public key: %s", err)
+					}
 				}
 			}
 		}

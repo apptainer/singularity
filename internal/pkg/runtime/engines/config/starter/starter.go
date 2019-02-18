@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,22 +6,24 @@
 package starter
 
 /*
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
 #include <sys/types.h>
 #include "starter.h"
 */
-// #cgo CFLAGS: -I../../../../../../cmd/starter/c
+// #cgo CFLAGS: -I../../../../../../cmd/starter/c/include
 import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"strings"
 	"syscall"
 	"unsafe"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-
-	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 // CConfig is the common type for C.struct_cConfig
@@ -41,7 +43,7 @@ func NewConfig(config CConfig) *Config {
 
 // GetIsSUID returns if SUID workflow is enabled or not
 func (c *Config) GetIsSUID() bool {
-	if c.config.isSuid == 1 {
+	if c.config.container.isSuid == 1 {
 		return true
 	}
 	return false
@@ -49,21 +51,21 @@ func (c *Config) GetIsSUID() bool {
 
 // GetContainerPid returns container process ID
 func (c *Config) GetContainerPid() int {
-	return int(c.config.containerPid)
+	return int(c.config.container.pid)
 }
 
 // SetInstance sets if starter should spawn instance or not
 func (c *Config) SetInstance(instance bool) {
 	if instance {
-		c.config.isInstance = C.uchar(1)
+		c.config.container.isInstance = C.uchar(1)
 	} else {
-		c.config.isInstance = C.uchar(0)
+		c.config.container.isInstance = C.uchar(0)
 	}
 }
 
 // GetInstance returns if container run as instance or not
 func (c *Config) GetInstance() bool {
-	if c.config.isInstance == 1 {
+	if c.config.container.isInstance == 1 {
 		return true
 	}
 	return false
@@ -72,15 +74,66 @@ func (c *Config) GetInstance() bool {
 // SetNoNewPrivs sets NO_NEW_PRIVS flag
 func (c *Config) SetNoNewPrivs(noprivs bool) {
 	if noprivs {
-		c.config.noNewPrivs = C.uchar(1)
+		c.config.container.noNewPrivs = C.uchar(1)
 	} else {
-		c.config.noNewPrivs = C.uchar(0)
+		c.config.container.noNewPrivs = C.uchar(0)
 	}
 }
 
 // GetNoNewPrivs returns if NO_NEW_PRIVS flag is set or not
 func (c *Config) GetNoNewPrivs() bool {
-	if c.config.noNewPrivs == 1 {
+	if c.config.container.noNewPrivs == 1 {
+		return true
+	}
+	return false
+}
+
+// SetSharedMount sets if master/container shares mount point
+func (c *Config) SetSharedMount(shared bool) {
+	if shared {
+		c.config.container.sharedMount = C.uchar(1)
+	} else {
+		c.config.container.sharedMount = C.uchar(0)
+	}
+}
+
+// GetSharedMount returns if master/container shares mount point or not
+func (c *Config) GetSharedMount() bool {
+	if c.config.container.sharedMount == 1 {
+		return true
+	}
+	return false
+}
+
+// SetJoinMount sets if container process join a mount namespace
+func (c *Config) SetJoinMount(join bool) {
+	if join {
+		c.config.container.joinMount = C.uchar(1)
+	} else {
+		c.config.container.joinMount = C.uchar(0)
+	}
+}
+
+// GetJoinMount returns if container process join a mount namespace
+func (c *Config) GetJoinMount() bool {
+	if c.config.container.joinMount == 1 {
+		return true
+	}
+	return false
+}
+
+// SetBringLoopbackInterface sets if starter bring loopback network interface
+func (c *Config) SetBringLoopbackInterface(bring bool) {
+	if bring {
+		c.config.container.bringLoopbackInterface = C.uchar(1)
+	} else {
+		c.config.container.bringLoopbackInterface = C.uchar(0)
+	}
+}
+
+// GetBringLoopbackInterface returns if starter bring loopback network interface
+func (c *Config) GetBringLoopbackInterface() bool {
+	if c.config.container.bringLoopbackInterface == 1 {
 		return true
 	}
 	return false
@@ -88,144 +141,203 @@ func (c *Config) GetNoNewPrivs() bool {
 
 // SetMountPropagation sets root filesystem mount propagation
 func (c *Config) SetMountPropagation(propagation string) {
+	var flags uintptr
+
 	switch propagation {
-	case "shared":
-		c.config.mountPropagation = C.ulong(syscall.MS_SHARED | syscall.MS_REC)
-	case "slave":
-		c.config.mountPropagation = C.ulong(syscall.MS_SLAVE | syscall.MS_REC)
-	case "private":
-		c.config.mountPropagation = C.ulong(syscall.MS_PRIVATE | syscall.MS_REC)
+	case "shared", "rshared":
+		flags = syscall.MS_SHARED
+	case "slave", "rslave":
+		flags = syscall.MS_SLAVE
+	case "private", "rprivate":
+		flags = syscall.MS_SHARED
+	case "unbindable", "runbindable":
+		flags = syscall.MS_UNBINDABLE
 	}
+
+	if strings.HasPrefix(propagation, "r") {
+		flags |= syscall.MS_REC
+	}
+	c.config.container.mountPropagation = C.ulong(flags)
 }
 
-// GetJSONConfSize returns size of JSON configuration sent
-// by starter
-func (c *Config) GetJSONConfSize() uint {
-	return uint(c.config.jsonConfSize)
+// GetJSONConfig returns pointer to JSON configuration
+func (c *Config) GetJSONConfig() []byte {
+	return C.GoBytes(unsafe.Pointer(&c.config.json.config[0]), C.int(c.config.json.size))
 }
 
-// WritePayload writes raw C configuration and payload passed in
-// argument to the provided writer
-func (c *Config) WritePayload(w io.Writer, payload interface{}) error {
+// WriteConfig writes raw C configuration
+func (c *Config) Write(payload interface{}) error {
 	jsonConf, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal payload: %s", err)
 	}
+	size := len(jsonConf)
+	maxSize := C.MAX_JSON_SIZE - 1
+	c.config.json.size = C.size_t(size)
 
-	c.config.jsonConfSize = C.uint(len(jsonConf))
-	c.config.nsPathSize = C.uint(len(c.nsPath))
-	cconfPayload := C.GoBytes(unsafe.Pointer(c.config), C.sizeof_struct_cConfig)
-	cconfPayload = append(cconfPayload, c.nsPath...)
-	cconfPayload = append(cconfPayload, jsonConf...)
-
-	if n, err := w.Write(cconfPayload); err != nil || n != len(cconfPayload) {
-		return fmt.Errorf("failed to write payload: %s", err)
+	if size >= maxSize {
+		return fmt.Errorf("json configuration too big %d > %d", size, maxSize)
 	}
+
+	json := C.CBytes(jsonConf)
+
+	C.memcpy(unsafe.Pointer(&c.config.json.config[0]), json, c.config.json.size)
+	C.free(json)
+
 	return nil
 }
 
 // AddUIDMappings sets user namespace UID mapping.
 func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
+	uidMap := ""
 	for i, uid := range uids {
-		if i >= C.MAX_ID_MAPPING {
-			return fmt.Errorf("Maximum of %d uid mapping allowed", C.MAX_ID_MAPPING)
+		if i == 0 {
+			c.SetTargetUID(int(uid.ContainerID))
 		}
-		c.config.uidMapping[i].containerID = C.uid_t(uid.ContainerID)
-		c.config.uidMapping[i].hostID = C.uid_t(uid.HostID)
-		c.config.uidMapping[i].size = C.uint(uid.Size)
+		uidMap = uidMap + fmt.Sprintf("%d %d %d\n", uid.ContainerID, uid.HostID, uid.Size)
 	}
+
+	l := len(uidMap)
+	if l >= C.MAX_MAP_SIZE-1 {
+		return fmt.Errorf("UID map too big")
+	}
+
+	if l > 0 {
+		cpath := unsafe.Pointer(C.CString(uidMap))
+		size := C.size_t(l)
+
+		C.memcpy(unsafe.Pointer(&c.config.container.uidMap[0]), cpath, size)
+		C.free(cpath)
+	}
+
 	return nil
 }
 
 // AddGIDMappings sets user namespace GID mapping
 func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
-	for i, gid := range gids {
-		if i >= C.MAX_ID_MAPPING {
-			return fmt.Errorf("Maximum of %d gid mapping allowed", C.MAX_ID_MAPPING)
-		}
-		c.config.gidMapping[i].containerID = C.gid_t(gid.ContainerID)
-		c.config.gidMapping[i].hostID = C.gid_t(gid.HostID)
-		c.config.gidMapping[i].size = C.uint(gid.Size)
+	var targetGids []int
+	gidMap := ""
+	for _, gid := range gids {
+		targetGids = append(targetGids, int(gid.ContainerID))
+		gidMap = gidMap + fmt.Sprintf("%d %d %d\n", gid.ContainerID, gid.HostID, gid.Size)
 	}
+
+	if len(targetGids) != 0 {
+		c.SetTargetGID(targetGids)
+	}
+
+	l := len(gidMap)
+	if l >= C.MAX_MAP_SIZE-1 {
+		return fmt.Errorf("GID map too big")
+	}
+
+	if l > 0 {
+		cpath := unsafe.Pointer(C.CString(gidMap))
+		size := C.size_t(l)
+
+		C.memcpy(unsafe.Pointer(&c.config.container.gidMap[0]), cpath, size)
+		C.free(cpath)
+	}
+
 	return nil
 }
 
 // SetNsFlags sets namespaces flag directly from flags argument
 func (c *Config) SetNsFlags(flags int) {
-	c.config.nsFlags = C.uint(flags)
+	c.config.namespace.flags = C.uint(flags)
 }
 
 // SetNsFlagsFromSpec sets namespaces flag from OCI spec
 func (c *Config) SetNsFlagsFromSpec(namespaces []specs.LinuxNamespace) {
-	c.config.nsFlags = 0
+	c.config.namespace.flags = 0
 	for _, namespace := range namespaces {
-		switch namespace.Type {
-		case specs.UserNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWUSER
-		case specs.IPCNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWIPC
-		case specs.UTSNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWUTS
-		case specs.PIDNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWPID
-		case specs.NetworkNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWNET
-		case specs.MountNamespace:
-			c.config.nsFlags |= syscall.CLONE_NEWNS
-		case specs.CgroupNamespace:
-			c.config.nsFlags |= 0x2000000
+		if namespace.Path == "" {
+			switch namespace.Type {
+			case specs.UserNamespace:
+				c.config.namespace.flags |= syscall.CLONE_NEWUSER
+			case specs.IPCNamespace:
+				c.config.namespace.flags |= syscall.CLONE_NEWIPC
+			case specs.UTSNamespace:
+				c.config.namespace.flags |= syscall.CLONE_NEWUTS
+			case specs.PIDNamespace:
+				c.config.namespace.flags |= syscall.CLONE_NEWPID
+			case specs.NetworkNamespace:
+				c.config.namespace.flags |= syscall.CLONE_NEWNET
+			case specs.MountNamespace:
+				c.config.namespace.flags |= syscall.CLONE_NEWNS
+			case specs.CgroupNamespace:
+				c.config.namespace.flags |= 0x2000000
+			}
 		}
 	}
 }
 
 // SetNsPath sets corresponding namespace to be joined
-func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) {
-	nullified := path + "\x00"
+func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
+	cpath := unsafe.Pointer(C.CString(path))
+	l := len(path)
+	size := C.size_t(l)
+
+	if l > C.MAX_NS_PATH_SIZE-1 {
+		return fmt.Errorf("%s namespace path too big", nstype)
+	}
 
 	switch nstype {
 	case specs.UserNamespace:
-		c.config.userNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.user[0]), cpath, size)
 	case specs.IPCNamespace:
-		c.config.ipcNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.ipc[0]), cpath, size)
 	case specs.UTSNamespace:
-		c.config.utsNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.uts[0]), cpath, size)
 	case specs.PIDNamespace:
-		c.config.pidNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.pid[0]), cpath, size)
 	case specs.NetworkNamespace:
-		c.config.netNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.network[0]), cpath, size)
 	case specs.MountNamespace:
-		c.config.mntNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.mount[0]), cpath, size)
 	case specs.CgroupNamespace:
-		c.config.cgroupNsPathOffset = C.off_t(len(c.nsPath))
+		C.memcpy(unsafe.Pointer(&c.config.namespace.cgroup[0]), cpath, size)
 	}
 
-	c.nsPath = append(c.nsPath, nullified...)
+	C.free(cpath)
+
+	return nil
 }
 
 // SetNsPathFromSpec sets corresponding namespace to be joined from OCI spec
-func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) {
+func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) error {
 	for _, namespace := range namespaces {
-		nullified := namespace.Path + "\x00"
+		if namespace.Path != "" {
+			cpath := unsafe.Pointer(C.CString(namespace.Path))
+			l := len(namespace.Path)
+			size := C.size_t(l)
 
-		switch namespace.Type {
-		case specs.UserNamespace:
-			c.config.userNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.IPCNamespace:
-			c.config.ipcNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.UTSNamespace:
-			c.config.utsNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.PIDNamespace:
-			c.config.pidNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.NetworkNamespace:
-			c.config.netNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.MountNamespace:
-			c.config.mntNsPathOffset = C.off_t(len(c.nsPath))
-		case specs.CgroupNamespace:
-			c.config.cgroupNsPathOffset = C.off_t(len(c.nsPath))
+			if l > C.MAX_NS_PATH_SIZE-1 {
+				return fmt.Errorf("%s namespace path too big", namespace.Type)
+			}
+
+			switch namespace.Type {
+			case specs.UserNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.user[0]), cpath, size)
+			case specs.IPCNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.ipc[0]), cpath, size)
+			case specs.UTSNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.uts[0]), cpath, size)
+			case specs.PIDNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.pid[0]), cpath, size)
+			case specs.NetworkNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.network[0]), cpath, size)
+			case specs.MountNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.mount[0]), cpath, size)
+			case specs.CgroupNamespace:
+				C.memcpy(unsafe.Pointer(&c.config.namespace.cgroup[0]), cpath, size)
+			}
+
+			C.free(cpath)
 		}
-
-		c.nsPath = append(c.nsPath, nullified...)
 	}
+
+	return nil
 }
 
 // SetCapabilities sets corresponding capability set identified by ctype
@@ -233,47 +345,55 @@ func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) {
 func (c *Config) SetCapabilities(ctype string, caps []string) {
 	switch ctype {
 	case capabilities.Permitted:
-		c.config.capPermitted = 0
+		c.config.capabilities.permitted = 0
 		for _, v := range caps {
-			c.config.capPermitted |= C.ulonglong(1 << capabilities.Map[v].Value)
+			c.config.capabilities.permitted |= C.ulonglong(1 << capabilities.Map[v].Value)
 		}
 	case capabilities.Effective:
-		c.config.capEffective = 0
+		c.config.capabilities.effective = 0
 		for _, v := range caps {
-			c.config.capEffective |= C.ulonglong(1 << capabilities.Map[v].Value)
+			c.config.capabilities.effective |= C.ulonglong(1 << capabilities.Map[v].Value)
 		}
 	case capabilities.Inheritable:
-		c.config.capInheritable = 0
+		c.config.capabilities.inheritable = 0
 		for _, v := range caps {
-			c.config.capInheritable |= C.ulonglong(1 << capabilities.Map[v].Value)
+			c.config.capabilities.inheritable |= C.ulonglong(1 << capabilities.Map[v].Value)
 		}
 	case capabilities.Bounding:
-		c.config.capBounding = 0
+		c.config.capabilities.bounding = 0
 		for _, v := range caps {
-			c.config.capBounding |= C.ulonglong(1 << capabilities.Map[v].Value)
+			c.config.capabilities.bounding |= C.ulonglong(1 << capabilities.Map[v].Value)
 		}
 	case capabilities.Ambient:
-		c.config.capAmbient = 0
+		c.config.capabilities.ambient = 0
 		for _, v := range caps {
-			c.config.capAmbient |= C.ulonglong(1 << capabilities.Map[v].Value)
+			c.config.capabilities.ambient |= C.ulonglong(1 << capabilities.Map[v].Value)
 		}
 	}
 }
 
 // SetTargetUID sets target UID to execute the container process as user ID
 func (c *Config) SetTargetUID(uid int) {
-	c.config.targetUID = C.uid_t(uid)
+	c.config.container.targetUID = C.uid_t(uid)
 }
 
 // SetTargetGID sets target GIDs to execute container process as group IDs
 func (c *Config) SetTargetGID(gids []int) {
-	c.config.numGID = C.int(len(gids))
+	c.config.container.numGID = C.int(len(gids))
 
 	for i, gid := range gids {
 		if i > C.MAX_GID {
 			sylog.Warningf("you can't specify more than %d group IDs", C.MAX_GID)
 			break
 		}
-		c.config.targetGID[i] = C.gid_t(gid)
+		c.config.container.targetGID[i] = C.gid_t(gid)
 	}
+}
+
+// Release performs a unmap on starter config and release mapped memory
+func (c *Config) Release() error {
+	if C.munmap(unsafe.Pointer(c.config), C.sizeof_struct_cConfig) != 0 {
+		return fmt.Errorf("failed to release starter memory")
+	}
+	return nil
 }

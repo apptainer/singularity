@@ -126,6 +126,29 @@ func TestMkdirAll(t *testing.T) {
 	}
 }
 
+func TestMkdir(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpdir, err := ioutil.TempDir("", "mkdir")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	test := filepath.Join(tmpdir, "test")
+	if err := Mkdir(test, 0777); err != nil {
+		t.Error(err)
+	}
+	fi, err := os.Stat(test)
+	if err != nil {
+		t.Error(err)
+	}
+	if fi.Mode().Perm() != 0777 {
+		t.Errorf("bad mode applied on %s, got %v", test, fi.Mode().Perm())
+	}
+}
+
 func TestEvalRelative(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -180,5 +203,30 @@ func TestEvalRelative(t *testing.T) {
 		if eval != p.eval {
 			t.Errorf("evaluated path %s expected path %s got %s", p.path, p.eval, eval)
 		}
+	}
+}
+
+func TestTouch(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpdir, err := ioutil.TempDir("", "evalrelative")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpdir)
+
+	if err := Touch(tmpdir); err == nil {
+		t.Errorf("touch can't take a directory")
+	}
+
+	testing := filepath.Join(tmpdir, "testing")
+
+	if err := Touch(testing); err != nil {
+		t.Error(err)
+	}
+
+	if _, err := os.Stat(testing); os.IsNotExist(err) {
+		t.Errorf("creation of %s failed", testing)
 	}
 }

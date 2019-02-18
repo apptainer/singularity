@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,19 +7,21 @@ package imgbuild
 
 import (
 	"fmt"
-	"net"
 	"syscall"
+
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/util/capabilities"
+	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 // EngineOperations implements the engines.EngineOperations interface for
 // the image build process
 type EngineOperations struct {
-	CommonConfig *config.Common `json:"-"`
-	EngineConfig *EngineConfig  `json:"engineConfig"`
+	CommonConfig *config.Common               `json:"-"`
+	EngineConfig *imgbuildConfig.EngineConfig `json:"engineConfig"`
 }
 
 // InitConfig initializes engines config internals
@@ -33,7 +35,7 @@ func (e *EngineOperations) Config() config.EngineConfig {
 }
 
 // PrepareConfig validates/prepares EngineConfig setup
-func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *starter.Config) error {
+func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
@@ -47,6 +49,8 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 
 	e.EngineConfig.OciConfig.SetupPrivileged(true)
 
+	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
+
 	if e.EngineConfig.OciConfig.Linux != nil {
 		starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 	}
@@ -57,6 +61,9 @@ func (e *EngineOperations) PrepareConfig(masterConn net.Conn, starterConfig *sta
 		starterConfig.SetCapabilities(capabilities.Bounding, e.EngineConfig.OciConfig.Process.Capabilities.Bounding)
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
+
+	starterConfig.SetMountPropagation("rslave")
+	starterConfig.SetSharedMount(true)
 
 	return nil
 }

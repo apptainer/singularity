@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -94,6 +94,9 @@ Enterprise Performance Computing (EPC)`
           Bootstrap: localimage
           From: /home/dave/starter.img
 
+      Scratch:
+          Bootstrap: scratch # Populate the container with a minimal rootfs in %setup
+
   DEFFILE SECTIONS:
 
       %pre
@@ -154,77 +157,125 @@ Enterprise Performance Computing (EPC)`
           $ singularity build /tmp/debian2.sif /tmp/debian`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys
+	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysUse   string = `keys [keys options...] <subcommand>`
-	KeysShort string = `Manage OpenPGP key stores`
-	KeysLong  string = `
-  The 'keys' command  allows you to manage local OpenPGP key stores by creating
-  a new store and new keys pairs. You can also list available keys from the
-  default store. Finally, the keys command offers subcommands to communicate
-  with an HKP key server to fetch and upload public keys.`
-	KeysExample string = `
+	CacheUse   string = `cache <subcommand>`
+	CacheShort string = `Manage your local singularity cache`
+	CacheLong  string = `
+  Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
+  You can list/clean using the spicific types.`
+	CacheExample string = `
   All group commands have their own help output:
 
-  $ singularity help keys newpair
-  $ singularity keys list --help`
+  $ singularity cache
+  $ singularity cache --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Cache clean
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CacheCleanUse   string = `clean [clean options...]`
+	CacheCleanShort string = `Clean your local Singularity cache`
+	CacheCleanLong  string = `
+  This will clean you local cache: "${HOME}/.singularity/cache". The available cache
+  types are: library, oci, and blob. By default cache clean will only clean blob cache,
+  use: '--all' to clean all cache.`
+	CacheCleanExample string = `
+  All group commands have their own help output:
+
+  $ singularity help cache clean --name cache_name.sif
+  $ singularity help cache clean --type=library,oci
+  $ singularity cache clean --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Cache List
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CacheListUse   string = `list [list options...]`
+	CacheListShort string = `List your local Singularity cache`
+	CacheListLong  string = `
+  This will list you local cache: "${HOME}/.singularity/cache". The available cache
+  types are: library, oci, and blob.`
+	CacheListExample string = `
+  All group commands have their own help output:
+
+  $ singularity help cache list
+  $ singularity help cache list --type=library,oci
+  $ singularity cache list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys newpair
+	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysNewPairUse   string = `newpair`
-	KeysNewPairShort string = `Create a new OpenPGP key pair`
-	KeysNewPairLong  string = `
-  The 'keys newpair' command allows you to create a new key or public/private
+	KeyUse string = `key [key options...] <subcommand>`
+
+	// keys : for the hidden `keys` command
+	KeysUse  string = `keys [keys options...] <subcommand>`
+	KeyShort string = `Manage OpenPGP key stores`
+	KeyLong  string = `
+  The 'key' command allows you to manage local OpenPGP key stores by creating
+  a new store and new key pairs. You can also list available keys from the
+  default store. Finally, the key command offers subcommands to communicate
+  with an HKP key server to fetch and upload public keys.`
+	KeyExample string = `
+  All group commands have their own help output:
+
+  $ singularity help key newpair
+  $ singularity key list --help`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key newpair
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyNewPairUse   string = `newpair`
+	KeyNewPairShort string = `Create a new OpenPGP key pair`
+	KeyNewPairLong  string = `
+  The 'key newpair' command allows you to create a new key or public/private
   keys to be stored in the default user local key store location (e.g., 
   $HOME/.singularity/sypgp).`
-	KeysNewPairExample string = `
-  $ singularity keys newpair`
+	KeyNewPairExample string = `
+  $ singularity key newpair`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys list
+	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysListUse   string = `list`
-	KeysListShort string = `List keys from the default key store`
-	KeysListLong  string = `
-  The 'keys list' command allows you to list public/private key pairs from the 
+	KeyListUse   string = `list`
+	KeyListShort string = `List keys from the default key store`
+	KeyListLong  string = `
+  The 'key list' command allows you to list public/private key pairs from the 
   default user local key store location (e.g., $HOME/.singularity/sypgp).`
-	KeysListExample string = `
-  $ singularity keys list`
+	KeyListExample string = `
+  $ singularity key list`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys search
+	// key search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysSearchUse   string = `search [search options...] <search_string>`
-	KeysSearchShort string = `Search for keys matching string argument`
-	KeysSearchLong  string = `
-  The 'keys search' command allows you to connect to a key server and look for 
+	KeySearchUse   string = `search [search options...] <search_string>`
+	KeySearchShort string = `Search for keys matching string argument`
+	KeySearchLong  string = `
+  The 'key search' command allows you to connect to a key server and look for 
   public keys matching the string argument passed to the command line.`
-	KeysSearchExample string = `
-  $ singularity keys search sylabs.io`
+	KeySearchExample string = `
+  $ singularity key search sylabs.io`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys pull
+	// key pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPullUse   string = `pull [pull options...] <fingerprint>`
-	KeysPullShort string = `Fetch an OpenPGP public key from a key server`
-	KeysPullLong  string = `
-  The 'keys pull' command allows you to connect to a key server look for and 
+	KeyPullUse   string = `pull [pull options...] <fingerprint>`
+	KeyPullShort string = `Fetch an OpenPGP public key from a key server`
+	KeyPullLong  string = `
+  The 'key pull' command allows you to connect to a key server look for and 
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
-	KeysPullExample string = `
-  $ singularity keys pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+	KeyPullExample string = `
+  $ singularity key pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// keys push
+	// key push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeysPushUse   string = `push [push options...] <fingerprint>`
-	KeysPushShort string = `Upload an OpenPGP public key to a key server`
-	KeysPushLong  string = `
-  The 'keys push' command allows you to connect to a key server and upload 
+	KeyPushUse   string = `push [push options...] <fingerprint>`
+	KeyPushShort string = `Upload an OpenPGP public key to a key server`
+	KeyPushLong  string = `
+  The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
-	KeysPushExample string = `
-  $ singularity keys push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+	KeyPushExample string = `
+  $ singularity key push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
@@ -439,13 +490,14 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance start
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceStartUse   string = `start [start options...] <container path> <instance name>`
+	InstanceStartUse   string = `start [start options...] <container path> <instance name> [startscript args...]`
 	InstanceStartShort string = `Start a named instance of the given container image`
 	InstanceStartLong  string = `
   The instance start command allows you to create a new named instance from an
   existing container image that will begin running in the background. If a
   startscript is defined in the container metadata the commands in that script
-  will be executed with the instance start command as well.
+  will be executed with the instance start command as well. You can optionally
+  pass arguments to startscript
 
   singularity instance start accepts the following container formats` + formats
 	InstanceStartExample string = `
@@ -660,6 +712,48 @@ Enterprise Performance Computing (EPC)`
   with the image determined by the flags you pass.`
 	InspectExample string = `
   $ singularity inspect ubuntu.sif`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Apps
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	AppsUse   string = `apps <image path>`
+	AppsShort string = `List available apps within a container`
+	AppsLong  string = `
+  List applications (apps) installed in a container, located at
+  /scif/apps. See http://containers-ftw.org/SCI-F/
+  
+  To access apps, use shell, exec, run, inspect with --app <appname>
+
+  The following environment variables are available to you when called 
+  from the shell inside the container. The top variables are relevant 
+  to the active app (--app <app>) and the bottom available for all 
+  apps regardless of the active app:
+
+  ACTIVE APP ENVIRONMENT:
+
+      SCIF_APPNAME       the name of the application
+      SCIF_APPROOT       the application base (/scif/apps/<app>)
+      SCIF_APPMETA       the application metadata folder
+      SCIF_APPDATA       the data base folder for active app
+        SCIF_APPINPUT    expected input folder within data base folder
+        SCIF_APPOUTPUT   the output data folder within data base folder
+
+  GLOBAL APP ENVIRONMENT:
+    
+      SCIF_DATA             scif defined data base for all apps (/scif/data)
+      SCIF_APPS             scif defined install bases for all apps (/scif/apps)
+      SCIF_APPROOT_<app>    root for application <app>
+      SCIF_APPDATA_<app>    data root for application <app>
+
+
+For additional help, please visit our public documentation pages which are
+found at:
+
+  https://www.sylabs.io/docs/`
+	AppsExample string = `
+  $ singularity apps ubuntu.img
+   bar
+   foo`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -688,4 +782,123 @@ Enterprise Performance Computing (EPC)`
   found at:
 
       https://www.sylabs.io/docs/`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// OCI
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	OciUse   string = `oci <subcommand>`
+	OciShort string = `Manage OCI containers`
+	OciLong  string = `
+  Allow you to manage containers from OCI bundle directories.
+
+  NOTE: all oci commands requires to run as root`
+	OciExample string = `
+  All group commands have their own help output:
+
+  $ singularity oci create -b ~/bundle mycontainer
+  $ singularity oci start mycontainer`
+
+	OciCreateUse   string = `create [create options...] <container_ID>`
+	OciCreateShort string = `Create a container from a bundle directory (root user only)`
+	OciCreateLong  string = `
+  Create invoke create operation to create a container instance from an OCI bundle directory`
+	OciCreateExample string = `
+  $ singularity create -b ~/bundle mycontainer`
+
+	OciStartUse   string = `start <container_ID>`
+	OciStartShort string = `Start container process (root user only)`
+	OciStartLong  string = `
+  Start invoke start operation to start a previously created container identified by container ID.`
+	OciStartExample string = `
+  $ singularity start mycontainer`
+
+	OciStateUse   string = `state <container_ID>`
+	OciStateShort string = `Query state of a container (root user only)`
+	OciStateLong  string = `
+  State invoke state operation to query state of a created/running/stopped container identified by container ID.`
+	OciStateExample string = `
+  $ singularity state mycontainer`
+
+	OciKillUse   string = `kill <container_ID> [-s] signal`
+	OciKillShort string = `Kill a container (root user only)`
+	OciKillLong  string = `
+  Kill invoke kill operation to kill processes running within container identified by container ID.`
+	OciKillExample string = `
+  $ singularity kill mycontainer INT
+  $ singularity kill mycontainer -s INT`
+
+	OciDeleteUse   string = `delete <container_ID>`
+	OciDeleteShort string = `Delete container (root user only)`
+	OciDeleteLong  string = `
+  Delete invoke delete operation to delete resources that were created for container identified by container ID.`
+	OciDeleteExample string = `
+  $ singularity delete mycontainer`
+
+	OciAttachUse   string = `attach <container_ID>`
+	OciAttachShort string = `Attach console to a running container process (root user only)`
+	OciAttachLong  string = `
+  Attach will attach console to a running container process running within container identified by container ID.`
+	OciAttachExample string = `
+  $ singularity attach mycontainer`
+
+	OciExecUse   string = `exec <container_ID> <command> <args>`
+	OciExecShort string = `Execute a command within container (root user only)`
+	OciExecLong  string = `
+  Exec will execute the provided command/arguments within container identified by container ID.`
+	OciExecExample string = `
+  $ singularity exec mycontainer id`
+
+	OciRunUse   string = `run [run options...] <container_ID>`
+	OciRunShort string = `Create/start/attach/delete a container from a bundle directory (root user only)`
+	OciRunLong  string = `
+  Run will invoke equivalent of create/start/attach/delete commands in a row.`
+	OciRunExample string = `
+  $ singularity oci run -b ~/bundle mycontainer
+
+  is equivalent to :
+
+  $ singularity oci create -b ~/bundle mycontainer
+  $ singularity oci start mycontainer
+  $ singularity oci attach mycontainer
+  $ singularity oci delete mycontainer`
+
+	OciUpdateUse   string = `update [update options...] <container_ID>`
+	OciUpdateShort string = `Update container cgroups resources (root user only)`
+	OciUpdateLong  string = `
+  Update will update cgroups resources for the specified container ID.
+  Container must be in a RUNNING or CREATED state.`
+	OciUpdateExample string = `
+  $ singularity oci update --from-file /tmp/cgroups-update.json mycontainer
+
+  or to update from stdin :
+
+  $ cat /tmp/cgroups-update.json | singularity oci update --from-file - mycontainer`
+
+	OciPauseUse   string = `pause <container_ID>`
+	OciPauseShort string = `Suspends all processes inside the container (root user only)`
+	OciPauseLong  string = `
+  Pause will suspend all processes for the specified container ID.`
+	OciPauseExample string = `
+  $ singularity oci pause mycontainer`
+
+	OciResumeUse   string = `resume <container_ID>`
+	OciResumeShort string = `Resumes all processes previously paused inside the container (root user only)`
+	OciResumeLong  string = `
+  Resume will resume all processes previously paused for the specified container ID.`
+	OciResumeExample string = `
+  $ singularity oci resume mycontainer`
+
+	OciMountUse   string = `mount <sif_image> <bundle_path>`
+	OciMountShort string = `Mount create an OCI bundle from SIF image (root user only)`
+	OciMountLong  string = `
+  Mount will mount and create an OCI bundle from a SIF image.`
+	OciMountExample string = `
+  $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example`
+
+	OciUmountUse   string = `umount <bundle_path>`
+	OciUmountShort string = `Umount delete bundle (root user only)`
+	OciUmountLong  string = `
+  Umount will umount an OCI bundle previously mounted with singularity oci mount.`
+	OciUmountExample string = `
+  $ singularity oci umount /var/lib/singularity/bundles/example`
 )

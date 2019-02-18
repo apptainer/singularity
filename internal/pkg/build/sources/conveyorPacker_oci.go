@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -59,6 +59,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		OCIInsecureSkipTLSVerify:    cp.b.Opts.NoHTTPS,
 		DockerInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:            cp.b.Opts.DockerAuthConfig,
+		OSChoice:                    "linux",
 	}
 
 	// add registry and namespace to reference if specified
@@ -317,15 +318,25 @@ func (cp *OCIConveyorPacker) insertRunScript() (err error) {
 		}
 	}
 
-	_, err = f.WriteString(`# ENTRYPOINT only - run entrypoint plus args
+	_, err = f.WriteString(`CMDLINE_ARGS=""
+# prepare command line arguments for evaluation
+for arg in "$@"; do
+    CMDLINE_ARGS="${CMDLINE_ARGS} \"$arg\""
+done
+
+# ENTRYPOINT only - run entrypoint plus args
 if [ -z "$OCI_CMD" ] && [ -n "$OCI_ENTRYPOINT" ]; then
-    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} $@"
+    if [ $# -gt 0 ]; then
+        SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
+    else
+        SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT}"
+    fi
 fi
 
 # CMD only - run CMD or override with args
 if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
     if [ $# -gt 0 ]; then
-        SINGULARITY_OCI_RUN="$@"
+        SINGULARITY_OCI_RUN="${CMDLINE_ARGS}"
     else
         SINGULARITY_OCI_RUN="${OCI_CMD}"
     fi
@@ -334,12 +345,15 @@ fi
 # ENTRYPOINT and CMD - run ENTRYPOINT with CMD as default args
 # override with user provided args
 if [ $# -gt 0 ]; then
-    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} $@"
+    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
 else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
-eval ${SINGULARITY_OCI_RUN}
+# Evaluate shell expressions first and set arguments accordingly,
+# then execute final command as first container process
+eval "set ${SINGULARITY_OCI_RUN}"
+exec "$@"
 
 `)
 	if err != nil {
@@ -370,18 +384,20 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 	}
 
 	for _, element := range cp.imgConfig.Env {
-
+		export := ""
 		envParts := strings.SplitN(element, "=", 2)
 		if len(envParts) == 1 {
-			_, err = f.WriteString("export " + shell.Escape(element) + "\n")
-			if err != nil {
-				return
-			}
+			export = fmt.Sprintf("export %s=${%s:-}\n", envParts[0], envParts[0])
 		} else {
-			_, err = f.WriteString("export " + envParts[0] + "=\"" + shell.Escape(envParts[1]) + "\"\n")
-			if err != nil {
-				return
+			if envParts[0] == "PATH" {
+				export = fmt.Sprintf("export %s=\"%s\"\n", envParts[0], shell.Escape(envParts[1]))
+			} else {
+				export = fmt.Sprintf("export %s=${%s:-%s}\n", envParts[0], envParts[0], shell.Escape(envParts[1]))
 			}
+		}
+		_, err = f.WriteString(export)
+		if err != nil {
+			return
 		}
 	}
 

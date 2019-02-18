@@ -55,10 +55,14 @@ func TestSetContainerEnv(t *testing.T) {
 		{name: "alwaysPassKeys",
 			args: args{[]string{"LD_LIBRARY_PATH=/.singularity.d/libs", "HOME=/home/tester",
 				"PS1=test", "TERM=xterm-256color", "PATH=/usr/games:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-				"LANG=C", "SINGULARITY_CONTAINER=/tmp/lolcow.sif", "PWD=/tmp", "LC_ALL=C", "http_proxy=test_proxy", "no_proxy=noproxy",
-				"ftp_proxy=ftpProxy", "SINGULARITY_NAME=lolcow.sif", "SINGULARITYENV_FOO=VAR", "CLEANENV=TRUE"}, true, "/home/tester",
+				"LANG=C", "SINGULARITY_CONTAINER=/tmp/lolcow.sif", "PWD=/tmp", "LC_ALL=C",
+				"http_proxy=http_proxy", "https_proxy=https_proxy", "no_proxy=no_proxy", "all_proxy=all_proxy", "ftp_proxy=ftp_proxy",
+				"HTTP_PROXY=http_proxy", "HTTPS_PROXY=https_proxy", "NO_PROXY=no_proxy", "ALL_PROXY=all_proxy", "FTP_PROXY=ftp_proxy",
+				"SINGULARITY_NAME=lolcow.sif", "SINGULARITYENV_FOO=VAR", "CLEANENV=TRUE"}, true, "/home/tester",
 				[]string{"LD_LIBRARY_PATH=/.singularity.d/libs", "HOME=/home/tester", "PS1=test", "TERM=xterm-256color", "PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
-					"LANG=C", "SINGULARITY_CONTAINER=/tmp/lolcow.sif", "PWD=/tmp", "LC_ALL=C", "SINGULARITY_NAME=lolcow.sif", "FOO=VAR", "http_proxy=test_proxy", "no_proxy=noproxy", "ftp_proxy=ftpProxy"},
+					"LANG=C", "SINGULARITY_CONTAINER=/tmp/lolcow.sif", "PWD=/tmp", "LC_ALL=C", "SINGULARITY_NAME=lolcow.sif", "FOO=VAR",
+					"http_proxy=http_proxy", "https_proxy=https_proxy", "no_proxy=no_proxy", "all_proxy=all_proxy", "ftp_proxy=ftp_proxy",
+					"HTTP_PROXY=http_proxy", "HTTPS_PROXY=https_proxy", "NO_PROXY=no_proxy", "ALL_PROXY=all_proxy", "FTP_PROXY=ftp_proxy"},
 			}},
 	}
 	for _, tt := range tests {

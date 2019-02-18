@@ -6,6 +6,7 @@
 package assemblers
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -20,8 +21,6 @@ type SandboxAssembler struct {
 
 // Assemble creates a Sandbox image from a Bundle
 func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
-	defer os.RemoveAll(b.Path)
-
 	sylog.Infof("Creating sandbox directory...")
 
 	// move bundle rootfs to sandboxdir as final sandbox
@@ -29,9 +28,11 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	if _, err := os.Stat(path); err == nil {
 		os.RemoveAll(path)
 	}
+	var stderr bytes.Buffer
 	cmd := exec.Command("mv", b.Rootfs(), path)
+	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("Sandbox Assemble Failed: %s", err)
+		return fmt.Errorf("Sandbox Assemble Failed: %v: %v", err, stderr.String())
 	}
 
 	return nil
