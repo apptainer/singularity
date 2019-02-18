@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/signing"
 )
 
 const (
@@ -163,6 +164,14 @@ func pullRun(cmd *cobra.Command, args []string) {
 		_, err = io.Copy(dstFile, srcFile)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
+		}
+		//sylog.Infof("INFO: %v", PullLibraryURI)
+		if len(PullLibraryURI) >= 1 {
+			if signing.IsSigned(name) {
+				sylog.Infof("Pulled container is signed")
+			} else {
+				sylog.Warningf("Pulled container is **NOT** signed!")
+			}
 		}
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force, noHTTPS)

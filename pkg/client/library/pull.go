@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/signing"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
@@ -118,13 +117,6 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	bar.Finish()
 
 	sylog.Debugf("Download complete\n")
-
-	if signing.IsSigned(filePath) {
-		sylog.Infof("Pulled container is signed.")
-	} else {
-		sylog.Warningf("Pulled container **not** signed!")
-	}
-
 	return nil
 
 }
