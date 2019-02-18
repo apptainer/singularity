@@ -145,6 +145,9 @@ type container struct {
 }
 
 func (engine *EngineOperations) createState(pid int) error {
+	engine.EngineConfig.Lock()
+	defer engine.EngineConfig.Unlock()
+
 	name := engine.CommonConfig.ContainerID
 
 	file, err := instance.Add(name, true)
@@ -188,11 +191,17 @@ func (engine *EngineOperations) createState(pid int) error {
 }
 
 func (engine *EngineOperations) updateState(status string) error {
+	engine.EngineConfig.Lock()
+	defer engine.EngineConfig.Unlock()
+
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
 	if err != nil {
 		return err
 	}
-
+	// do nothing if already stopped
+	if engine.EngineConfig.State.Status == ociruntime.Stopped {
+		return nil
+	}
 	engine.EngineConfig.State.Status = status
 
 	t := time.Now().UnixNano()

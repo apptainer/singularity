@@ -98,9 +98,6 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 			break
 		}
 	}
-	if !userNS && os.Getuid() != 0 {
-		return fmt.Errorf("you can't run without root privileges, use user namespace rather")
-	}
 
 	starterConfig.SetNsFlagsFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces)
 	if err := starterConfig.SetNsPathFromSpec(e.EngineConfig.OciConfig.Linux.Namespaces); err != nil {
