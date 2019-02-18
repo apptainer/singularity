@@ -675,8 +675,7 @@ Enterprise Performance Computing (EPC)`
   multiple data objects signed. By default the command searches for the primary 
   partition signature. If found, a list of all verification blocks applied on 
   the primary partition is gathered so that data integrity (hashing) and 
-  signature verification is done for all those blocks. BE CAREFUL RUNNING RANDOM
-  CONTAINERS THAT ARE NOT SIGNED!!!`
+  signature verification is done for all those blocks.`
 	VerifyExample string = `
   $ singularity verify container.sif`
 
