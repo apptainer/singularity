@@ -35,16 +35,6 @@ func pluginManifestPath(sourceDir string) string {
 	return filepath.Join(sourceDir, b+".manifest")
 }
 
-// sifPath returns the default path where a plugin's resulting SIF file will
-// be built to when no custom -o has been set.
-//
-// The default behavior of this will place the resulting .sif file in the
-// same directory as the source code.
-func sifPath(sourceDir string) string {
-	b := filepath.Base(sourceDir)
-	return filepath.Join(sourceDir, b+".sif")
-}
-
 // CompilePlugin compiles a plugin. It takes as input: sourceDir, the path to the
 // plugin's source code directory; and destSif, the path to the intended final
 // location of the plugin SIF file.

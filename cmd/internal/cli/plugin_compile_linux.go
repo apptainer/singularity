@@ -55,3 +55,13 @@ var PluginCompileCmd = &cobra.Command{
 	Long:    docs.PluginCompileLong,
 	Example: docs.PluginCompileExample,
 }
+
+// sifPath returns the default path where a plugin's resulting SIF file will
+// be built to when no custom -o has been set.
+//
+// The default behavior of this will place the resulting .sif file in the
+// same directory as the source code.
+func sifPath(sourceDir string) string {
+	b := filepath.Base(sourceDir)
+	return filepath.Join(sourceDir, b+".sif")
+}
