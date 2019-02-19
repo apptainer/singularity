@@ -46,8 +46,8 @@ func Passwd(path string, home string, uid int) (content []byte, err error) {
 	}
 	userInfo := fmt.Sprintf("%s:x:%d:%d:%s:%s:%s\n", pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, pwInfo.Shell)
 
-	if content[len(content)-1] != '\n' {
-		content = append(content, byte('\n'))
+	if len(content) > 0 && content[len(content)-1] != '\n' {
+		content = append(content, '\n')
 	}
 
 	sylog.Verbosef("Creating template passwd file and appending user data: %s\n", path)
