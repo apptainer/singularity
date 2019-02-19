@@ -14,11 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-const (
-	containerPath      = "/home/mibauer/plugin-compile/compile_plugin.sif"
-	containedSourceDir = "/go/src/github.com/sylabs/singularity/plugins/"
-)
-
 var (
 	out string
 )
