@@ -25,6 +25,9 @@ depcomp
 etc/singularity.conf
 etc/Makefile
 etc/Makefile.in
+examples/plugins/test-plugin/*.so
+examples/plugins/test-plugin/*.sif
+examples/plugins/test-plugin/*.manifest
 install-sh
 libexec/Makefile
 libexec/Makefile.in

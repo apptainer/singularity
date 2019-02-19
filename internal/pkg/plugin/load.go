@@ -13,6 +13,16 @@ import (
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
+// initialized stores whether or not the plugin system has been initialized. A
+// call to Initialize MUST be made before any other functions can be called.
+var initialized = false
+
+func assertInitialized() {
+	if !initialized {
+		panic("Plugin system has not been initialized")
+	}
+}
+
 var loadedPlugins []*pluginapi.Plugin
 
 // InitializeAll loads all plugins into memory and stores their symbols
@@ -28,6 +38,7 @@ func InitializeAll(glob string) error {
 		}
 	}
 
+	initialized = true // set initialized to true
 	return nil
 }
 
