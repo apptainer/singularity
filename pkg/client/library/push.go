@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -36,6 +37,16 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 
 	if !signing.IsSigned(filePath) {
 		sylog.Warningf("Your container is **NOT** signed! You should sign your container before pushing!")
+		fmt.Print("Do you really want to continue? (think carfully) [N/y] ")
+		reader := bufio.NewReader(os.Stdin)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			sylog.Fatalf("Error parsing input: %s", err)
+		}
+		if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
+			fmt.Printf("Stoping upload.\n")
+			os.Exit(3)
+		}
 	}
 
 	entityName, collectionName, containerName, tags := parseLibraryRef(libraryRef)
