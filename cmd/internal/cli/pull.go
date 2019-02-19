@@ -6,9 +6,12 @@
 package cli
 
 import (
+	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -168,10 +171,36 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		// check if we pulled from the library, if so; is it signed?
 		if len(PullLibraryURI) >= 1 {
-			if signing.IsSigned(name) {
-				sylog.Infof("Pulled container is signed")
-			} else {
+			//			sylog.Infof("TEST: verifing the container...")
+			//			err := signing.Verify(name, "https://keys.sylabs.io", 0, false, "", false)
+			//			if err != nil {
+			//				sylog.Warningf("Unable to verify container: %v", err)
+			//			}
+
+			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, "", false)
+			if err != nil {
+				sylog.Fatalf("Unable to verify container")
+				os.Exit(100)
+			}
+			if !imageSigned {
 				sylog.Warningf("Pulled container is **NOT** signed!")
+				sylog.Warningf("This image is not signed, and thus its contents cannot be verified.")
+				fmt.Printf("Do you wish to proceed? [N/y] ")
+				reader := bufio.NewReader(os.Stdin)
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					sylog.Fatalf("Error parsing input: %s", err)
+				}
+				if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
+					fmt.Printf("Aborting.\n")
+					err := os.Remove(name)
+					if err != nil {
+						sylog.Fatalf("Unable to delete file: %v", err)
+						os.Exit(255)
+					}
+					os.Exit(3)
+				}
+
 			}
 		}
 	case ShubProtocol:
