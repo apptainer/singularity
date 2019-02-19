@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	containerPath      = "/home/mibauer/plugin-compile/compile_plugin.sif"
+	containerURI       = "library://bauer/default/plugin_compile:3.2.0-alpha"
 	containedSourceDir = "/go/src/github.com/sylabs/singularity/plugins/"
 )
 
@@ -59,9 +59,9 @@ func CompilePlugin(sourceDir, destSif string) error {
 // This function essentially runs the `go build -buildmode=plugin [...]` command
 func buildPlugin(sourceDir string) error {
 	baseDir := filepath.Base(sourceDir)
-	scmd := exec.Command("singularity", "run", "-B",
+	scmd := exec.Command("singularity", "run", "--cleanenv", "-B",
 		sourceDir+":"+filepath.Join(containedSourceDir, baseDir),
-		containerPath, baseDir)
+		containerURI, baseDir)
 
 	scmd.Stderr = os.Stderr
 	scmd.Stdout = os.Stdout

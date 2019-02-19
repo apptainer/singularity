@@ -11,7 +11,7 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// plugin command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PluginUse   string = `plugin [plugin options...] <subcommand>`
+	PluginUse   string = `plugin [plugin options...]`
 	PluginShort string = `Manage singularity plugins`
 	PluginLong  string = `
   The 'plugin' command allows you to manage `
