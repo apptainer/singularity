@@ -27,6 +27,10 @@ var loadedPlugins []*pluginapi.Plugin
 
 // InitializeAll loads all plugins into memory and stores their symbols
 func InitializeAll(glob string) error {
+	if initialized {
+		return nil
+	}
+
 	paths, err := filepath.Glob(glob)
 	if err != nil {
 		return fmt.Errorf("while globbing %s: %s", glob, err)
