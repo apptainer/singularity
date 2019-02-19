@@ -289,7 +289,6 @@ func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPr
 	// load the public keys available locally from the cache
 	elist, err := sypgp.LoadPubKeyring()
 	if err != nil {
-		//		sylog.Warningf("could not load public keyring: %s", err)
 		return false, fmt.Errorf("could not load public keyring: %s", err)
 	}
 
