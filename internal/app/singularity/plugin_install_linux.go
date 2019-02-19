@@ -3,42 +3,21 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cli
+package singularity
 
 import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/docs"
 )
-
-// PluginInstallCmd takes a compiled plugin.sif file and installs it
-// in the appropriate location
-//
-// singularity plugin install <path>
-var PluginInstallCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Installing plugin")
-
-		return nil
-	},
-	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
-
-	Use:     docs.PluginInstallUse,
-	Short:   docs.PluginInstallShort,
-	Long:    docs.PluginInstallLong,
-	Example: docs.PluginInstallExample,
-}
 
 // InstallPlugin takes a plugin located at path and installs it into
 // the singularity folder in libexecdir.
 //
 // Installing a plugin will also automatically enable it.
 func InstallPlugin(pluginPath, libexecdir string) error {
-	fimg, err := sif.LoadContainer(path, true)
+	fimg, err := sif.LoadContainer(pluginPath, true)
 	if err != nil {
 		return fmt.Errorf("while opening sif file: %s", err)
 	}
@@ -50,6 +29,8 @@ func InstallPlugin(pluginPath, libexecdir string) error {
 	if err := copyFile(pluginPath, filepath.Join(libexecdir, ".")); err != nil {
 		return fmt.Errorf("while copying plugin file to install location: %s", err)
 	}
+
+	return nil
 }
 
 // isPluginFile checks if the sif.FileImage contains the sections which
@@ -63,10 +44,11 @@ func InstallPlugin(pluginPath, libexecdir string) error {
 // DESCR[1]: Sifmanifest
 //   - Datatype: sif.DataGenericJSON
 func isPluginFile(fimg *sif.FileImage) bool {
-
+	return false
 }
 
 // copyFile copies a file from src -> dst
 func copyFile(src, dst string) error {
 	// copycmd := exec.Command("cp", src, dst)
+	return nil
 }

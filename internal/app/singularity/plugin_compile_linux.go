@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cli
+package singularity
 
 import (
 	"fmt"
@@ -13,53 +13,13 @@ import (
 	"runtime"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (
 	containerPath      = "/home/mibauer/plugin-compile/compile_plugin.sif"
 	containedSourceDir = "/go/src/github.com/sylabs/singularity/plugins/"
 )
-
-var (
-	out string
-)
-
-func init() {
-	PluginCompileCmd.Flags().StringVarP(&out, "out", "o", "", "")
-}
-
-// PluginCompileCmd allows a user to compile a plugin
-//
-// singularity plugin compile <path> [-o name]
-var PluginCompileCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
-		s, err := filepath.Abs(args[0])
-		if err != nil {
-			sylog.Fatalf("While sanitizing input path: %s", err)
-		}
-		sourceDir := filepath.Clean(s)
-
-		destSif := out
-
-		if destSif == "" {
-			destSif = sifPath(sourceDir)
-		}
-
-		sylog.Debugf("sourceDir: %s; sifPath: %s", sourceDir, destSif)
-		return CompilePlugin(sourceDir, destSif)
-	},
-	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
-
-	Use:     docs.PluginCompileUse,
-	Short:   docs.PluginCompileShort,
-	Long:    docs.PluginCompileLong,
-	Example: docs.PluginCompileExample,
-}
 
 // pluginObjPath returns the path of the .so file which is built when
 // running `go build -buildmode=plugin [...]`.
