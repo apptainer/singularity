@@ -86,6 +86,10 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 		}
 	}
 
+	if c.User == "" && c.Group == "" {
+		return fmt.Errorf("no user or group specified")
+	}
+
 	if c.User != "" {
 		if !userExists(c.User) {
 			return fmt.Errorf("while setting capabilities for user %s: user does not exist", c.User)
