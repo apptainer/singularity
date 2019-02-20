@@ -42,7 +42,8 @@ var (
 	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
 	// PullImageName holds the name to be given to the pulled image
-	PullImageName string
+	PullImageName       string
+	unauthenticatedPull bool
 )
 
 func init() {
@@ -53,6 +54,9 @@ func init() {
 
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
+
+	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "dont check if the container is signed")
+	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW-UNAUTHENTICATED"})
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
@@ -170,7 +174,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// check if we pulled from the library, if so; is it signed?
-		if len(PullLibraryURI) >= 1 {
+		if len(PullLibraryURI) >= 1 && !unauthenticatedPull {
 			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, false)
 			if err != nil {
 				sylog.Fatalf("Unable to verify container")
@@ -194,7 +198,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 					os.Exit(3)
 				}
 			}
+		} else {
+			sylog.Warningf("Skipping container verification")
 		}
+
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
