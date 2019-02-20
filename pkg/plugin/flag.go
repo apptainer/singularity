@@ -10,15 +10,6 @@ import (
 	singularity "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 )
 
-// RegisterFlag functions are function variables which will be assigned
-// before any plugins Init() function is called. These functions can
-// only be called during init, and will register a functions specific flag
-// hooks with the singularity runtime
-var (
-	RegisterStringFlag func(StringFlagHook) error
-	RegisterBoolFlag   func(BoolFlagHook) error
-)
-
 // FlagCallbackFn is the callback function type for flag hooks. It takes two
 // arguments:
 //

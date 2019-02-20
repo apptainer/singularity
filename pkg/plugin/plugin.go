@@ -37,8 +37,8 @@ type Plugin struct {
 	Initializer
 }
 
-// Initializer is an interface which stores the object of a plugin's implementation. This interface only has an Init() method,
-// however if the underlying type satisfies other plugin interface types, then it will be used in those places as well.
+// Initializer is an interface which stores the object of a plugin's implementation. The Initialize
+// method allows the plugin to register its functions with the Runtime to be called later
 type Initializer interface {
-	Init()
+	Initialize(HookRegistration)
 }
