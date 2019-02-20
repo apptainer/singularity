@@ -17,56 +17,46 @@ type flagHook struct {
 	callback pluginapi.FlagCallbackFn
 }
 
-type flagHooks struct {
+type flagRegistry struct {
 	FlagSet *pflag.FlagSet
 	Hooks   []flagHook
 }
 
-var registeredFlagHooks *flagHooks
-
-func registerStringFlagHook(f pluginapi.StringFlagHook) error {
+// RegisterStringFlag adds a string flag to the registry
+func (r *flagRegistry) RegisterStringFlag(f pluginapi.StringFlagHook) error {
 	sylog.Debugf("Registering string flag %s", f.Flag.Name)
-	registeredFlagHooks.FlagSet.StringP(f.Flag.Name, f.Flag.Shorthand, f.Flag.DefValue, f.Flag.Usage)
+	r.FlagSet.StringP(f.Flag.Name, f.Flag.Shorthand, f.Flag.DefValue, f.Flag.Usage)
 
 	hook := flagHook{
-		flag:     registeredFlagHooks.FlagSet.Lookup(f.Flag.Name),
+		flag:     r.FlagSet.Lookup(f.Flag.Name),
 		callback: f.Callback,
 	}
 
-	registeredFlagHooks.Hooks = append(registeredFlagHooks.Hooks, hook)
-	sylog.Debugf("Registered new string flag hook %v\n", hook)
+	r.Hooks = append(r.Hooks, hook)
+	sylog.Debugf("Successfully registered new string flag %s\n", f.Flag.Name)
 	return nil
 }
 
-func registerBoolFlagHook(f pluginapi.BoolFlagHook) error {
+// RegisterBoolFlag adds a bool flag to the registry
+func (r *flagRegistry) RegisterBoolFlag(f pluginapi.BoolFlagHook) error {
 	sylog.Debugf("Registering bool flag %s", f.Flag.Name)
-	registeredFlagHooks.FlagSet.BoolP(f.Flag.Name, f.Flag.Shorthand, false, f.Flag.Usage)
+	r.FlagSet.BoolP(f.Flag.Name, f.Flag.Shorthand, false, f.Flag.Usage)
 
 	hook := flagHook{
-		flag:     registeredFlagHooks.FlagSet.Lookup(f.Flag.Name),
+		flag:     r.FlagSet.Lookup(f.Flag.Name),
 		callback: f.Callback,
 	}
-	registeredFlagHooks.Hooks = append(registeredFlagHooks.Hooks, hook)
+	r.Hooks = append(r.Hooks, hook)
 
 	sylog.Debugf("Registered new bool flag hook %v\n", hook)
 	return nil
 }
 
-func init() {
-	registeredFlagHooks = &flagHooks{
-		FlagSet: pflag.NewFlagSet("FlagHooksSet", pflag.ExitOnError),
-		Hooks:   []flagHook{},
-	}
-
-	pluginapi.RegisterStringFlag = registerStringFlagHook
-	pluginapi.RegisterBoolFlag = registerBoolFlagHook
-}
-
-// AddFlagHooks will add the plugin defined flags to the input FlagSet
-func AddFlagHooks(flagSet *pflag.FlagSet) {
+// AddflagRegistry will add the plugin defined flags to the input FlagSet
+func AddflagRegistry(flagSet *pflag.FlagSet) {
 	assertInitialized()
 
-	flagSet.AddFlagSet(registeredFlagHooks.FlagSet)
+	flagSet.AddFlagSet(reg.FlagSet)
 }
 
 // FlagHookCallbacks will run the callback functions for all registered
@@ -74,7 +64,7 @@ func AddFlagHooks(flagSet *pflag.FlagSet) {
 func FlagHookCallbacks(c *singularity.EngineConfig) {
 	assertInitialized()
 
-	for _, hook := range registeredFlagHooks.Hooks {
+	for _, hook := range reg.Hooks {
 		hook.callback(hook.flag, c)
 	}
 }

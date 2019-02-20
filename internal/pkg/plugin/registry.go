@@ -4,3 +4,20 @@
 // rights to use or distribute this software.
 
 package plugin
+
+import "github.com/spf13/pflag"
+
+type registry struct {
+	*flagRegistry
+}
+
+var reg registry
+
+func init() {
+	reg = registry{
+		flagRegistry: &flagRegistry{
+			FlagSet: pflag.NewFlagSet("flagRegistrySet", pflag.ExitOnError),
+			Hooks:   []flagHook{},
+		},
+	}
+}

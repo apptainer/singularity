@@ -54,7 +54,7 @@ func Initialize(path string) (*pluginapi.Plugin, error) {
 	}
 
 	loadedPlugins = append(loadedPlugins, pl)
-	pl.Init()
+	pl.Initialize(reg)
 
 	return pl, nil
 }
