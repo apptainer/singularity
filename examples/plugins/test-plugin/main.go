@@ -32,7 +32,7 @@ type pluginImplementation struct {
 
 var impl = pluginImplementation{}
 
-func (p pluginImplementation) Init() {
+func (p pluginImplementation) Initialize(r pluginapi.HookRegistration) {
 	flag := pluginapi.StringFlagHook{
 		Flag: pflag.Flag{
 			Name:      "test-flag",
@@ -46,7 +46,7 @@ func (p pluginImplementation) Init() {
 		},
 	}
 
-	_ = pluginapi.RegisterStringFlag(flag)
+	r.RegisterStringFlag(flag)
 }
 
 func (p pluginImplementation) CommandAdd() []*cobra.Command {
