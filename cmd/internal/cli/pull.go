@@ -171,15 +171,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		// check if we pulled from the library, if so; is it signed?
 		if len(PullLibraryURI) >= 1 {
-			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, "", false)
+			//imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, "", false)
+			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, false)
 			if err != nil {
 				sylog.Fatalf("Unable to verify container")
 				os.Exit(100)
 			}
 			if !imageSigned {
-				sylog.Warningf("Pulled container is **NOT** signed!")
 				sylog.Warningf("This image is not signed, and thus its contents cannot be verified.")
-				fmt.Printf("Do you wish to proceed? [N/y] ")
+				fmt.Printf("Pulled container (%v) is **NOT** signed! Do you wish to proceed? [N/y] ", name)
 				reader := bufio.NewReader(os.Stdin)
 				input, err := reader.ReadString('\n')
 				if err != nil {

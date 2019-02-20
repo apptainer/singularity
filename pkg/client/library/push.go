@@ -35,12 +35,12 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 	}
 	sylog.Debugf("Image hash computed as %s\n", imageHash)
 
-	imageSigned, err := signing.IsSigned(filePath, "", 0, false, "", false)
+	imageSigned, err := signing.IsSigned(filePath, "", 0, false, authToken, true)
 	if err != nil {
 		sylog.Fatalf("Unable to verify container: %v", err)
 		os.Exit(100)
 	}
-	if imageSigned {
+	if !imageSigned {
 		sylog.Warningf("Your container is **NOT** signed! You should sign your container before pushing!")
 		fmt.Printf("Do you really want to continue? [N/y] ")
 		reader := bufio.NewReader(os.Stdin)
