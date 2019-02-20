@@ -52,8 +52,8 @@ func (r *flagRegistry) RegisterBoolFlag(f pluginapi.BoolFlagHook) error {
 	return nil
 }
 
-// AddflagRegistry will add the plugin defined flags to the input FlagSet
-func AddflagRegistry(flagSet *pflag.FlagSet) {
+// AddFlagHooks will add the plugin defined flags to the input FlagSet
+func AddFlagHooks(flagSet *pflag.FlagSet) {
 	assertInitialized()
 
 	flagSet.AddFlagSet(reg.FlagSet)
