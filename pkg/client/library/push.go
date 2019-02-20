@@ -10,11 +10,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	//	"strings"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	//	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
@@ -34,26 +32,6 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 		return err
 	}
 	sylog.Debugf("Image hash computed as %s\n", imageHash)
-
-	/*	imageSigned, err := signing.IsSigned(filePath, "", 0, false, authToken, true)
-		if err != nil {
-			sylog.Fatalf("Unable to verify container: %v", err)
-			os.Exit(100)
-		}
-		if !imageSigned {
-			fmt.Println("Visit here for instructions on how to sign a container : https://www.sylabs.io/guides/3.0/user-guide/signNverify.html#verifying-containers-from-the-container-library")
-			sylog.Warningf("Your container is **NOT** signed! You REALLY should sign your container before pushing!")
-			fmt.Printf("Do you really want to continue? [N/y] ")
-			reader := bufio.NewReader(os.Stdin)
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				sylog.Fatalf("Error parsing input: %s", err)
-			}
-			if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
-				fmt.Printf("Stoping upload.\n")
-				os.Exit(3)
-			}
-		}*/
 
 	entityName, collectionName, containerName, tags := parseLibraryRef(libraryRef)
 
