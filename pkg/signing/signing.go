@@ -262,6 +262,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 
 // IsSigned : will return false if the givin container (cpath) is
 // not signed. Likewise, will return true if the container is signed.
+// will return a error if one occures.
 func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
@@ -366,6 +367,7 @@ func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPr
 		}
 		authok += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 	}
+	sylog.Infof("Container is signed")
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
 	fmt.Print(authok)
 

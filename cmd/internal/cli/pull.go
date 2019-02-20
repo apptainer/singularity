@@ -171,7 +171,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		// check if we pulled from the library, if so; is it signed?
 		if len(PullLibraryURI) >= 1 {
-			//imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, "", false)
 			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, false)
 			if err != nil {
 				sylog.Fatalf("Unable to verify container")
@@ -189,12 +188,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 					fmt.Printf("Aborting.\n")
 					err := os.Remove(name)
 					if err != nil {
-						sylog.Fatalf("Unable to delete file: %v", err)
+						sylog.Fatalf("Unable to delete container: %v", err)
 						os.Exit(255)
 					}
 					os.Exit(3)
 				}
-
 			}
 		}
 	case ShubProtocol:

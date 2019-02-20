@@ -41,7 +41,8 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 		os.Exit(100)
 	}
 	if !imageSigned {
-		sylog.Warningf("Your container is **NOT** signed! You should sign your container before pushing!")
+		fmt.Println("Visit here for instructions on how to sign a container : https://www.sylabs.io/guides/3.0/user-guide/signNverify.html#verifying-containers-from-the-container-library")
+		sylog.Warningf("Your container is **NOT** signed! You REALLY should sign your container before pushing!")
 		fmt.Printf("Do you really want to continue? [N/y] ")
 		reader := bufio.NewReader(os.Stdin)
 		input, err := reader.ReadString('\n')
