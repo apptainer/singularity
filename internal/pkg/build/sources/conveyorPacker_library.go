@@ -31,6 +31,10 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	cp.b = b
 
+	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+		return fmt.Errorf("While inserting base environment: %v", err)
+	}
+
 	// check for custom library from definition
 	customLib, ok := b.Recipe.Header["library"]
 	if ok {
@@ -63,6 +67,11 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		} else if cacheFileHash != libraryImage.Hash {
 			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
+	}
+
+	// insert base metadata before unpacking fs
+	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+		return fmt.Errorf("While inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
