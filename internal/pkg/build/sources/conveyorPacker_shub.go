@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -41,6 +42,11 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	// get image from singularity hub
 	if err = client.DownloadImage(cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
 		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
+	}
+
+	// insert base metadata before unpacking fs
+	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+		return fmt.Errorf("While inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["shubImg"], cp.b)

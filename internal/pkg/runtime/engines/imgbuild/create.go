@@ -155,7 +155,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	sylog.Debugf("Set RPC mount propagation flag to PRIVATE")
-	_, err = rpcOps.Mount("", "/", "", syscall.MS_PRIVATE, "")
+	_, err = rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
 	if err != nil {
 		return err
 	}
