@@ -104,55 +104,25 @@ func GetAllNetworkConfigList(cniPath *CNIPath) ([]*libcni.NetworkConfigList, err
 // NewSetup creates and returns a network setup to configure, add and remove
 // network interfaces in container
 func NewSetup(networks []string, containerID string, netNS string, cniPath *CNIPath) (*Setup, error) {
-	id := containerID
-
-	if id == "" {
-		id = strconv.Itoa(os.Getpid())
-	}
-
 	if cniPath == nil {
 		return nil, ErrNoCNIConfig
 	}
 	if cniPath.Conf == "" {
 		return nil, ErrNoCNIConfig
 	}
-	if cniPath.Plugin == "" {
-		return nil, ErrNoCNIPlugin
-	}
 
-	networkConfList := make([]*libcni.NetworkConfigList, 0)
-	runtimeConf := make([]*libcni.RuntimeConf, 0)
+	networkConfList := make([]*libcni.NetworkConfigList, len(networks))
 
-	ifIndex := 0
-	for _, network := range networks {
-		nlist, err := libcni.LoadConfList(cniPath.Conf, network)
+	for i, network := range networks {
+		var err error
+
+		networkConfList[i], err = libcni.LoadConfList(cniPath.Conf, network)
 		if err != nil {
 			return nil, err
 		}
-
-		rt := &libcni.RuntimeConf{
-			ContainerID:    containerID,
-			NetNS:          netNS,
-			IfName:         fmt.Sprintf("eth%d", ifIndex),
-			CapabilityArgs: make(map[string]interface{}, 0),
-			Args:           make([][2]string, 0),
-		}
-
-		runtimeConf = append(runtimeConf, rt)
-		networkConfList = append(networkConfList, nlist)
-
-		ifIndex++
 	}
 
-	return &Setup{
-			networks:        networks,
-			networkConfList: networkConfList,
-			runtimeConf:     runtimeConf,
-			cniPath:         cniPath,
-			netNS:           netNS,
-			containerID:     id,
-		},
-		nil
+	return NewSetupFromConfig(networkConfList, containerID, netNS, cniPath)
 }
 
 // NewSetupFromConfig creates and returns network setup to configure from
