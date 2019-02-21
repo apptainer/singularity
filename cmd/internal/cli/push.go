@@ -48,10 +48,12 @@ var PushCmd = &cobra.Command{
 			if !unauthenticatedPush {
 				imageSigned, err := signing.IsSigned(args[0], "", 0, false, authToken, true)
 				if err != nil {
-					sylog.Fatalf("Unable to verify container: %v", err)
+					// warning message will be: ("Unable to verify the container (test.sif): %v", err)
+					sylog.Warningf("%v", err)
 				}
 				if !imageSigned {
-					fmt.Println("Visit here for instructions on how to sign a container : https://www.sylabs.io/guides/3.0/user-guide/signNverify.html")
+					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/guides/3.0/user-guide/signNverify.html")
+					fmt.Printf("\n")
 					sylog.Warningf("Your container is **NOT** signed! You REALLY should sign your container before pushing!")
 					fmt.Printf("Do you really want to continue? [N/y] ")
 					reader := bufio.NewReader(os.Stdin)
