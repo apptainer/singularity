@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -264,7 +264,15 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // not signed. Likewise, will return true if the container is signed.
 // will return a error if one occures.
 func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
-	fimg, err := sif.LoadContainer(cpath, true)
+
+	err := Verify(cpath, url, id, isGroup, authToken, noPrompt)
+	if err != nil {
+		//sylog.Warningf("Unable to verify the container (%v): %v", cpath, err)
+		return false, fmt.Errorf("Unable to verify the container (%v): %v", cpath, err)
+	}
+	return true, nil
+
+	/*fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		sylog.Fatalf("failed to load SIF container file: %v", err)
 		os.Exit(100)
@@ -369,9 +377,9 @@ func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPr
 	}
 	sylog.Infof("Container is signed")
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
-	fmt.Print(authok)
+	fmt.Print(authok)*/
 
-	return true, nil
+	//return true, nil
 }
 
 // Verify takes a container path and look for a verification block for a

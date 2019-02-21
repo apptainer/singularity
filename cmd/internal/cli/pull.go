@@ -177,8 +177,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if len(PullLibraryURI) >= 1 && !unauthenticatedPull {
 			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, false)
 			if err != nil {
-				sylog.Fatalf("Unable to verify container")
-				os.Exit(100)
+				sylog.Warningf("%v", err)
+				//os.Exit(100)
 			}
 			if !imageSigned {
 				sylog.Warningf("This image is not signed, and thus its contents cannot be verified.")
