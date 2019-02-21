@@ -43,11 +43,11 @@ func TestPull(t *testing.T) {
 		imagePath  string
 		success    bool
 	}{
-		{"Pull_Library", "library://alpine:3.7", false, "", imagePath, true}, // https://cloud.sylabs.io/library
-		{"Force", "library://alpine:3.7", true, "", imagePath, true},
+		{"Pull_Library", "library://alpine:3.8", false, "", imagePath, true}, // https://cloud.sylabs.io/library
+		{"Force", "library://alpine:3.8", true, "", imagePath, true},
 		{"Pull_Docker", "docker://alpine:3.7", true, "", imagePath, true},   // https://hub.docker.com/
 		{"Pull_Shub", "shub://GodloveD/busybox", true, "", imagePath, true}, // https://singularity-hub.org/
-		{"PullWithHash", "library://alpine:sha256.af5e6b93dcfd08b7b46d6158c31ae5b6c2b4241c169b65595659ad9feac6f761", true, "", imagePath, true},
+		{"PullWithHash", "library://library/default/alpine:sha256.5800f43befdcbfa9d285b2d2127c19a6acaa54b113d15bf6ed82079e0ae8ca45", true, "", imagePath, true},
 		{"PullWithoutTransportProtocol", "alpine:3.7", true, "", imagePath, true},
 	}
 	defer os.Remove(imagePath)
