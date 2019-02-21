@@ -43,7 +43,7 @@ func TestPull(t *testing.T) {
 		imagePath  string
 		success    bool
 	}{
-		{"Pull_Library", "library://alpine:3.7", false, "", imagePath, true}, // https://cloud.sylabs.io/library
+		{"Pull_Library", "library://alpine:3.8", false, "", imagePath, true}, // https://cloud.sylabs.io/library
 		{"Force", "library://alpine:3.7", true, "", imagePath, true},
 		{"Pull_Docker", "docker://alpine:3.7", true, "", imagePath, true},   // https://hub.docker.com/
 		{"Pull_Shub", "shub://GodloveD/busybox", true, "", imagePath, true}, // https://singularity-hub.org/
