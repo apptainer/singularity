@@ -15,10 +15,8 @@ import (
 	osexec "os/exec"
 	"os/signal"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/sylabs/singularity/pkg/util/copy"
@@ -67,8 +65,6 @@ func (engine *EngineOperations) emptyProcess(masterConn net.Conn) error {
 		return fmt.Errorf("failed to receive ack from master: %s", err)
 	}
 
-	masterConn.Close()
-
 	var status syscall.WaitStatus
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGCHLD, syscall.SIGINT, syscall.SIGTERM)
@@ -76,6 +72,8 @@ func (engine *EngineOperations) emptyProcess(masterConn net.Conn) error {
 	if err := security.Configure(&engine.EngineConfig.OciConfig.Spec); err != nil {
 		return fmt.Errorf("failed to apply security configuration: %s", err)
 	}
+
+	masterConn.Close()
 
 	for {
 		s := <-signals
@@ -186,12 +184,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 	}
 
+	// trigger pre-start process
+	if _, err := masterConn.Write([]byte("t")); err != nil {
+		return fmt.Errorf("failed to pause process: %s", err)
+	}
 	if !engine.EngineConfig.Exec {
-		// pause process on next read
-		if _, err := masterConn.Write([]byte("t")); err != nil {
-			return fmt.Errorf("failed to pause process: %s", err)
-		}
-
 		// block on read start given
 		data := make([]byte, 1)
 		if _, err := masterConn.Read(data); err != nil {
@@ -204,22 +201,15 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	err = syscall.Exec(args[0], args, env)
-
-	if !engine.EngineConfig.Exec {
-		// write data to just tell master to not execute PostStartProcess
-		// in case of failure
-		if _, err := masterConn.Write([]byte("t")); err != nil {
-			sylog.Errorf("fail to send data to master: %s", err)
-		}
-	}
-
-	runtime.KeepAlive(masterConn)
-
 	return fmt.Errorf("exec %s failed: %s", args[0], err)
 }
 
 // PreStartProcess will be executed in master context
 func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fatalChan chan error) error {
+	if engine.EngineConfig.Exec {
+		return nil
+	}
+
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
 	engine.EngineConfig.State.AttachSocket = filepath.Join(filepath.Dir(file.Path), "attach.sock")
 
@@ -256,10 +246,6 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
-	start := make(chan bool, 1)
-
-	go engine.handleControl(masterConn, attach, control, logger, start, fatalChan)
-
 	pidFile := engine.EngineConfig.GetPidFile()
 	if pidFile != "" {
 		if err := ioutil.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644); err != nil {
@@ -270,6 +256,8 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	if err := engine.updateState(ociruntime.Created); err != nil {
 		return err
 	}
+
+	go engine.handleControl(masterConn, attach, control, logger, fatalChan)
 
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
@@ -283,22 +271,20 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	// detach process
 	syscall.Kill(os.Getppid(), syscall.SIGUSR1)
 
-	// wait start event
-	<-start
-
 	return nil
 }
 
 // PostStartProcess will execute code in master context after execution of container
 // process, typically to write instance state/config files or execute post start OCI hook
 func (engine *EngineOperations) PostStartProcess(pid int) error {
-	if engine.EngineConfig.State.Status == ociruntime.Running {
-		hooks := engine.EngineConfig.OciConfig.Hooks
-		if hooks != nil {
-			for _, h := range hooks.Poststart {
-				if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
-					sylog.Warningf("%s", err)
-				}
+	if err := engine.updateState(ociruntime.Running); err != nil {
+		return err
+	}
+	hooks := engine.EngineConfig.OciConfig.Hooks
+	if hooks != nil {
+		for _, h := range hooks.Poststart {
+			if err := exec.Hook(&h, &engine.EngineConfig.State.State); err != nil {
+				sylog.Warningf("%s", err)
 			}
 		}
 	}
@@ -306,7 +292,6 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 }
 
 func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Logger, fatalChan chan error) {
-	var wg sync.WaitGroup
 	var stdout io.ReadWriteCloser
 	var stderr io.ReadCloser
 	var stdin io.WriteCloser
@@ -316,8 +301,6 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	var tbuf *copy.TerminalBuffer
 
 	hasTerminal := engine.EngineConfig.OciConfig.Process.Terminal
-
-	defer l.Close()
 
 	inputWriters = &copy.MultiWriter{}
 	outputWriters = &copy.MultiWriter{}
@@ -344,8 +327,6 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 		errorWriters.Add(logger.NewWriter("stderr", true))
 		errorWriters.Add(os.Stderr)
 	}
-
-	wg.Add(1)
 
 	go func() {
 		for {
@@ -393,11 +374,9 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 			stdin.Close()
 		}()
 	}
-
-	wg.Wait()
 }
 
-func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
+func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, fatalChan chan error) {
 	var master *os.File
 	started := false
 	ctrl := &ociruntime.Control{}
@@ -421,7 +400,7 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Li
 		if ctrl.StartContainer && !started {
 			started = true
 
-			go engine.handleStream(attach, logger, fatalChan)
+			engine.handleStream(attach, logger, fatalChan)
 
 			// since container process block on read, send it an
 			// ACK so when it will receive data, the container
@@ -430,17 +409,9 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Li
 				fatalChan <- fmt.Errorf("failed to send ACK to start process: %s", err)
 				return
 			}
-			// wait container process execution
-			data := make([]byte, 1)
-			if _, err := masterConn.Read(data); err != io.EOF {
-				fatalChan <- err
-				return
-			}
-			if err := engine.updateState(ociruntime.Running); err != nil {
-				fatalChan <- err
-				return
-			}
-			start <- true
+
+			// wait status update
+			engine.waitStatusUpdate()
 		}
 		if ctrl.ConsoleSize != nil && master != nil {
 			size := &pty.Winsize{

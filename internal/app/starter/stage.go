@@ -43,6 +43,11 @@ func Stage(stage, masterSocket int, sconfig *sarterConfig.Config, engine *engine
 	} else {
 		sylog.Debugf("Entering stage 2\n")
 		if err := engine.StartProcess(conn); err != nil {
+			// write data to just tell master to not execute PostStartProcess
+			// in case of failure
+			if _, err := conn.Write([]byte("t")); err != nil {
+				sylog.Errorf("fail to send data to master: %s", err)
+			}
 			sylog.Fatalf("%s\n", err)
 		}
 	}
