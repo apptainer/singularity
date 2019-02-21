@@ -272,7 +272,7 @@ var OciMountCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "mount",
+	Use:     docs.OciMountUse,
 	Short:   docs.OciMountShort,
 	Long:    docs.OciMountLong,
 	Example: docs.OciMountExample,
@@ -288,7 +288,7 @@ var OciUmountCmd = &cobra.Command{
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "umount",
+	Use:     docs.OciUmountUse,
 	Short:   docs.OciUmountShort,
 	Long:    docs.OciUmountLong,
 	Example: docs.OciUmountExample,

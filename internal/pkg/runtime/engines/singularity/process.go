@@ -239,8 +239,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	masterConn.Close()
 
-	var lastSignal syscall.Signal
-
 	for {
 		select {
 		case s := <-signals:
@@ -254,11 +252,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 					}
 				}
 			default:
-				lastSignal = s.(syscall.Signal)
+				signal := s.(syscall.Signal)
 				if isInstance {
-					if err := syscall.Kill(-1, lastSignal); err == syscall.ESRCH {
+					if err := syscall.Kill(-1, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
-						os.Exit(128 + int(lastSignal))
+						os.Exit(128 + int(signal))
 					}
 				} else {
 					// kill ourself with SIGKILL whatever signal was received
@@ -275,12 +273,10 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				}
 				return fmt.Errorf("command exit with error: %s", err)
 			} else if e, ok := err.(*os.SyscallError); ok {
-				// handle possible race with Wait4 call above because command
-				// execution can return "no such processes" error which means
-				// container process execution has been interrupted by signal
-				if e.Err.(syscall.Errno) == syscall.ECHILD {
-					sylog.Debugf("No child processes, exiting ...")
-					os.Exit(128 + int(lastSignal))
+				// handle possible race with Wait4 call above by ignoring ECHILD
+				// error because child process was already catched
+				if e.Err.(syscall.Errno) != syscall.ECHILD {
+					sylog.Fatalf("error while waiting container process: %s", e.Error())
 				}
 			}
 			if !isInstance {

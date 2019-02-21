@@ -144,6 +144,8 @@ type container struct {
 	cgroupIndex int
 }
 
+var statusChan = make(chan string, 1)
+
 func (engine *EngineOperations) createState(pid int) error {
 	engine.EngineConfig.Lock()
 	defer engine.EngineConfig.Unlock()
@@ -202,6 +204,7 @@ func (engine *EngineOperations) updateState(status string) error {
 	if engine.EngineConfig.State.Status == ociruntime.Stopped {
 		return nil
 	}
+	oldStatus := engine.EngineConfig.State.Status
 	engine.EngineConfig.State.Status = status
 
 	t := time.Now().UnixNano()
@@ -235,7 +238,25 @@ func (engine *EngineOperations) updateState(status string) error {
 		}
 	}
 
+	// send running or stopped status right after container creation
+	// to notify that container process started
+	if statusChan != nil && oldStatus == ociruntime.Created &&
+		(status == ociruntime.Running || status == ociruntime.Stopped) {
+		statusChan <- status
+	}
 	return nil
+}
+
+// one shot function to wait on running or stopped status
+func (engine *EngineOperations) waitStatusUpdate() {
+	if statusChan == nil {
+		return
+	}
+	// block until status update is sent
+	<-statusChan
+	// close channel and set it to nil
+	close(statusChan)
+	statusChan = nil
 }
 
 // CreateContainer creates a container
