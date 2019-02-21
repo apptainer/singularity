@@ -45,10 +45,10 @@ func TestPull(t *testing.T) {
 	}{
 		{"Pull_Library", "library://alpine:3.8", false, "", imagePath, true}, // https://cloud.sylabs.io/library
 		{"Force", "library://alpine:3.8", true, "", imagePath, true},
-		{"Pull_Docker", "docker://alpine:3.7", true, "", imagePath, true},   // https://hub.docker.com/
+		{"Pull_Docker", "docker://alpine:3.8", true, "", imagePath, true},   // https://hub.docker.com/
 		{"Pull_Shub", "shub://GodloveD/busybox", true, "", imagePath, true}, // https://singularity-hub.org/
-		{"PullWithHash", "library://alpine:sha256.5800f43befdcbfa9d285b2d2127c19a6acaa54b113d15bf6ed82079e0ae8ca45", true, "", imagePath, true},
-		{"PullWithoutTransportProtocol", "alpine:3.7", true, "", imagePath, true},
+		{"PullWithHash", "library://alpine:sha256.69ce2a3dcc6d3e559e20ced0df251046ee6ecff390a945d856fe0dcb3bcb3ce8", true, "", imagePath, true},
+		{"PullWithoutTransportProtocol", "alpine:3.8", true, "", imagePath, true},
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
