@@ -7,14 +7,20 @@ package network
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
+	"strings"
+	"syscall"
 	"testing"
 
 	"github.com/containernetworking/cni/libcni"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var confFiles = []struct {
@@ -29,6 +35,9 @@ var confFiles = []struct {
 			"cniVersion": "0.3.1",
 			"name": "test-bridge",
 			"plugins": [
+				{
+					"type": "loopback"
+				},
 				{
 					"type": "bridge",
 					"bridge": "tbr0",
@@ -72,8 +81,11 @@ var confFiles = []struct {
 			"name": "test-bridge-iprange",
 			"plugins": [
 				{
+					"type": "loopback"
+				},
+				{
 					"type": "bridge",
-					"bridge": "tibr0",
+					"bridge": "tipbr0",
 					"isGateway": true,
 					"ipMasq": true,
 					"capabilities": {"ipRanges": true},
@@ -100,9 +112,12 @@ var defaultCNIConfPath = ""
 // defaultCNIPluginPath is the default directory to CNI plugins executables
 var defaultCNIPluginPath = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
 
+// testNetworks will contains configured network
 var testNetworks []string
 
 func TestGetAllNetworkConfigList(t *testing.T) {
+	test.EnsurePrivilege(t)
+
 	emptyDir, err := ioutil.TempDir("", "empty_conf_")
 	if err != nil {
 		t.Errorf("failed to creaty empty configuration directory: %s", err)
@@ -263,6 +278,8 @@ func testSetArgs(setup *Setup, t *testing.T) {
 }
 
 func TestNewSetup(t *testing.T) {
+	test.EnsurePrivilege(t)
+
 	var cniPath = &CNIPath{
 		Conf:   defaultCNIConfPath,
 		Plugin: defaultCNIPluginPath,
@@ -335,8 +352,234 @@ func TestNewSetup(t *testing.T) {
 	}
 }
 
+// ping requested IP from host
+func testPingIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
+	testIP := "10.111.111.10"
+
+	setup, err := NewSetup([]string{"test-bridge"}, "", nsPath, cniPath)
+	if err != nil {
+		return err
+	}
+	setup.SetArgs([]string{"IP=" + testIP})
+	if err := setup.AddNetworks(); err != nil {
+		return err
+	}
+	defer setup.DelNetworks()
+
+	ip, err := setup.GetNetworkIP("test-bridge", "4")
+	if err != nil {
+		return err
+	}
+	cmdPath, err := exec.LookPath("ping")
+	if err != nil {
+		return err
+	}
+	if ip.String() != testIP {
+		return fmt.Errorf("%s doesn't match with requested ip %s", ip.String(), testIP)
+	}
+	cmd := exec.Command(cmdPath, "-c", "1", testIP)
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ping random acquired IP from host
+func testPingRandomIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
+	setup, err := NewSetup([]string{"test-bridge"}, "", nsPath, cniPath)
+	if err != nil {
+		return err
+	}
+	if err := setup.AddNetworks(); err != nil {
+		return err
+	}
+	defer setup.DelNetworks()
+
+	ip, err := setup.GetNetworkIP("test-bridge", "4")
+	if err != nil {
+		return err
+	}
+	cmdPath, err := exec.LookPath("ping")
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(cmdPath, "-c", "1", ip.String())
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ping IP from host within requested IP range
+func testPingIPRange(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
+	setup, err := NewSetup([]string{"test-bridge-iprange"}, "", nsPath, cniPath)
+	if err != nil {
+		return err
+	}
+	setup.SetArgs([]string{"ipRange=10.111.112.0/24"})
+	if err := setup.AddNetworks(); err != nil {
+		return err
+	}
+	defer setup.DelNetworks()
+
+	ip, err := setup.GetNetworkIP("test-bridge", "4")
+	if err != nil {
+		ip, err = setup.GetNetworkIP("test-bridge-iprange", "4")
+		if err != nil {
+			return err
+		}
+	}
+	cmdPath, err := exec.LookPath("ping")
+	if err != nil {
+		return err
+	}
+	if !strings.HasPrefix(ip.String(), "10.111.112") {
+		return fmt.Errorf("ip address %s not in net range 10.111.112.0/24", ip.String())
+	}
+	cmd := exec.Command(cmdPath, "-c", "1", ip.String())
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	return nil
+}
+
+// test port mapping by connecting to port 80 mapped inside container
+// to 31080 on host
+func testHTTPPortmap(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
+	setup, err := NewSetup([]string{"test-bridge"}, "", nsPath, cniPath)
+	if err != nil {
+		return err
+	}
+	setup.SetArgs([]string{"portmap=31080:80/tcp"})
+	if err := setup.AddNetworks(); err != nil {
+		return err
+	}
+	defer setup.DelNetworks()
+
+	eth, err := setup.GetNetworkInterface("test-bridge-iprange")
+	if err != nil {
+		eth, err = setup.GetNetworkInterface("test-bridge")
+		if err != nil {
+			return err
+		}
+	}
+	if eth != "eth0" {
+		return fmt.Errorf("unexpected interface %s", eth)
+	}
+	conn, err := net.Dial("tcp", ":31080")
+	if err != nil {
+		return err
+	}
+	message := "test\r\n"
+
+	if _, err := conn.Write([]byte(message)); err != nil {
+		return err
+	}
+	conn.Close()
+
+	received, err := ioutil.ReadAll(stdout)
+	if err != nil {
+		return err
+	}
+	if string(received) != message {
+		return fmt.Errorf("received data doesn't match message: %s", string(received))
+	}
+	return nil
+}
+
+// try with an non existent plugin
+func testBadBridge(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
+	setup, err := NewSetup([]string{"test-badbridge"}, "", nsPath, cniPath)
+	if err != nil {
+		return err
+	}
+	if err := setup.AddNetworks(); err == nil {
+		return fmt.Errorf("unexpected success while calling non existent plugin")
+	}
+	defer setup.DelNetworks()
+
+	return nil
+}
+
+func TestAddDelNetworks(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	var cniPath = &CNIPath{
+		Conf:   defaultCNIConfPath,
+		Plugin: defaultCNIPluginPath,
+	}
+
+	for _, c := range []struct {
+		command string
+		args    []string
+		runFunc func(string, *CNIPath, io.WriteCloser, io.ReadCloser) error
+	}{
+		{
+			command: "cat",
+			runFunc: testPingIP,
+		},
+		{
+			command: "cat",
+			runFunc: testPingRandomIP,
+		},
+		{
+			command: "nc",
+			args:    []string{"-l", "-p", "80"},
+			runFunc: testHTTPPortmap,
+		},
+		{
+			command: "cat",
+			runFunc: testPingIPRange,
+		},
+		{
+			command: "cat",
+			runFunc: testBadBridge,
+		},
+	} {
+		var err error
+		var cmdPath string
+		var stdinPipe io.WriteCloser
+		var stdoutPipe io.ReadCloser
+
+		cmdPath, err = exec.LookPath(c.command)
+		if err != nil {
+			t.Fatal(err)
+		}
+		cmd := exec.Command(cmdPath, c.args...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		cmd.SysProcAttr.Cloneflags = syscall.CLONE_NEWNET
+
+		stdinPipe, err = cmd.StdinPipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+		stdoutPipe, err = cmd.StdoutPipe()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := cmd.Start(); err != nil {
+			t.Fatal(err)
+		}
+
+		nsPath := fmt.Sprintf("/proc/%d/ns/net", cmd.Process.Pid)
+		if err := c.runFunc(nsPath, cniPath, stdinPipe, stdoutPipe); err != nil {
+			t.Error(err)
+		}
+
+		stdoutPipe.Close()
+		stdinPipe.Close()
+
+		if err := cmd.Wait(); err != nil {
+			t.Error(err)
+		}
+	}
+}
+
 func TestMain(m *testing.M) {
 	var err error
+
+	test.EnsurePrivilege(nil)
 
 	defaultCNIConfPath, err = ioutil.TempDir("", "conf_test_")
 	if err != nil {
