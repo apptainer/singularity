@@ -47,7 +47,7 @@ func TestPull(t *testing.T) {
 		{"Force", "library://alpine:3.8", true, "", imagePath, true},
 		{"Pull_Docker", "docker://alpine:3.7", true, "", imagePath, true},   // https://hub.docker.com/
 		{"Pull_Shub", "shub://GodloveD/busybox", true, "", imagePath, true}, // https://singularity-hub.org/
-		{"PullWithHash", "library://library/default/alpine:sha256.5800f43befdcbfa9d285b2d2127c19a6acaa54b113d15bf6ed82079e0ae8ca45", true, "", imagePath, true},
+		{"PullWithHash", "library://alpine:sha256.5800f43befdcbfa9d285b2d2127c19a6acaa54b113d15bf6ed82079e0ae8ca45", true, "", imagePath, true},
 		{"PullWithoutTransportProtocol", "alpine:3.7", true, "", imagePath, true},
 	}
 	defer os.Remove(imagePath)
