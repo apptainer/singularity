@@ -177,9 +177,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if len(PullLibraryURI) >= 1 && !unauthenticatedPull {
 			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, false)
 			if err != nil {
+				// warning message will be: ("Unable to verify the container (test.sif): %v", err)
 				sylog.Warningf("%v", err)
-				//os.Exit(100)
 			}
+			// if container is not signed, print a warning
 			if !imageSigned {
 				sylog.Warningf("This image is not signed, and thus its contents cannot be verified.")
 				fmt.Printf("Pulled container (%v) is **NOT** signed! Do you wish to proceed? [N/y] ", name)
@@ -192,6 +193,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 					fmt.Printf("Aborting.\n")
 					err := os.Remove(name)
 					if err != nil {
+						// not ideal to delete the container on the spot...
 						sylog.Fatalf("Unable to delete container: %v", err)
 						os.Exit(255)
 					}
