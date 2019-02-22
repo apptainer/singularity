@@ -79,7 +79,7 @@ func TestPullNonExistent(t *testing.T) {
 func TestUnauthenticatedPull(t *testing.T) {
 	test.DropPrivilege(t)
 
-	// pull a unsigned container with force enabled. should fail
+	// pull a unsigned container. should fail
 	if b, err := imagePull("", imagePath, "library://sylabs/tests/unsigned:1.0.0", true, false); err == nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected success when pulling a unsigned container")
