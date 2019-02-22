@@ -504,6 +504,19 @@ func testBadBridge(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout
 func TestAddDelNetworks(t *testing.T) {
 	test.EnsurePrivilege(t)
 
+	// centos 6 doesn't support brigde/veth, only macvlan
+	// just skip tests on centos 6
+	b, err := ioutil.ReadFile("/etc/system-release-cpe")
+	if err == nil {
+		fields := strings.Split(string(b), ":")
+		switch fields[2] {
+		case "centos":
+			if strings.HasPrefix(fields[4], "6") {
+				t.SkipNow()
+			}
+		}
+	}
+
 	var cniPath = &CNIPath{
 		Conf:   defaultCNIConfPath,
 		Plugin: defaultCNIPluginPath,
