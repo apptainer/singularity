@@ -602,7 +602,6 @@ PSDIR := $psdir
 LIBDIR := $libdir
 LOCALEDIR := $localedir
 MANDIR := $mandir
-RPMPREFIX:=
 
 NAME := $package_name
 SHORT_VERSION := $short_version
