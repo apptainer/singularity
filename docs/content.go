@@ -221,6 +221,16 @@ Enterprise Performance Computing (EPC)`
   $ singularity key list --help`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key import
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyImportUse   string = `import [import options...] --path <path-to-local-key> --fingerprint <local-key-fingerprint>`
+	KeyImportShort string = `Add a local key into the local Singularity key store`
+	KeyImportLong  string = `
+  The 'key import' command allows you to add to your local key store, keys from a specific local folder`
+	KeyImportExample string = `
+  $ singularity key import --path ./gnupg/pubring.kbx --fingerprint E8898C49AF4DE879276001175BF69D96F8EDC1D0`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyNewPairUse   string = `newpair`

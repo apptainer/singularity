@@ -7,16 +7,20 @@ package cli
 
 import (
 	"errors"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 )
 
 const (
-	defaultKeyServer = "https://keys.sylabs.io"
+	defaultKeyServer     = "https://keys.sylabs.io"
+	defaultLocalKeyStore = " ~/gnupg/pubring.kbx"
 )
 
 var (
-	keyServerURL string // -u command line option
+	keyServerURL       string // -u command line option
+	keyLocalFolderPath string
+	keyFingerprint     string
 )
 
 func init() {
@@ -29,6 +33,7 @@ func init() {
 	KeyCmd.AddCommand(KeySearchCmd)
 	KeyCmd.AddCommand(KeyPullCmd)
 	KeyCmd.AddCommand(KeyPushCmd)
+	KeyCmd.AddCommand(KeyImportCmd)
 
 	// keys commands
 	KeysCmd.AddCommand(KeyNewPairCmd)
