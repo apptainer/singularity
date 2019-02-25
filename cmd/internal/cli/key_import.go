@@ -22,7 +22,7 @@ func init() {
 	KeyImportCmd.Flags().StringVarP(&keyFingerprint, "fingerprint", "f", "", "specify the local folder path to the key to be added")
 }
 
-// KeyImportCmd is `singularity key import` and imports a local key into the key store.
+// KeyImportCmd is `singularity keys import` and imports a local key into the key store.
 var KeyImportCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -35,14 +35,54 @@ var KeyImportCmd = &cobra.Command{
 }
 
 func doKeyImportCmd(path string, fingerprint string) error {
-	fmt.Printf("Adding key %s from %s into the Singularity keystore %s\n", fingerprint, path, sypgp.PublicPath())
+
+	var count int
+
+	el, err := sypgp.LoadPubKeyringFromFileAndFingerPrint(path, fingerprint)
+	if err != nil {
+		return err
+	}
+	//load the local file passed as argument to a entity list key store
+	elstore, err := sypgp.LoadPubKeyringFromFile(path)
+	if err != nil {
+		return err
+	}
+	// get local cache (where the key will be stored)
+	fp, err := os.OpenFile(sypgp.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer fp.Close()
+
+	//go through the keystore checking for the given fingerprint
+	for _, e := range elstore {
+		storeKey := true
+		for _, estore := range el {
+			if estore.PrimaryKey.KeyId == e.PrimaryKey.KeyId {
+				storeKey = true // Verify that entity is in key store file
+				break
+			}
+		}
+		if storeKey {
+			if err = el.Serialize(fp); err != nil {
+				return err
+			}
+		}
+		else{
+			fmt.Printf("This fingerprint does not belong to the given keystore file.")
+		}
+	}
+
+	fmt.Printf("Adding key(s) with fingerprint %s from %s into local cache %s\n", fingerprint, path, sypgp.PublicPath())
 
 	return nil
 }
 
 func importRun(cmd *cobra.Command, args []string) {
-	if err := doKeyImportCmd(args[0], keyLocalFolderPath); err != nil {
-		sylog.Errorf("import failed: %s", err)
+
+	if err := doKeyImportCmd(args[0], args[1]); err != nil {
+		sylog.Errorf("keys import command failed: %s", err)
 		os.Exit(2)
 	}
+
 }
