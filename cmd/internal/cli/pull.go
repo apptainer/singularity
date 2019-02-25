@@ -183,14 +183,14 @@ func pullRun(cmd *cobra.Command, args []string) {
 			// if container is not signed, print a warning
 			if !imageSigned {
 				sylog.Warningf("This image is not signed, and thus its contents cannot be verified.")
-				fmt.Printf("Pulled container (%v) is **NOT** signed! Do you wish to proceed? [N/y] ", name)
+				fmt.Fprintf(os.Stderr, "Pulled container (%v) is **NOT** signed! Do you wish to proceed? [N/y] ", name)
 				reader := bufio.NewReader(os.Stdin)
 				input, err := reader.ReadString('\n')
 				if err != nil {
 					sylog.Fatalf("Error parsing input: %s", err)
 				}
 				if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
-					fmt.Printf("Aborting.\n")
+					fmt.Fprintf(os.Stderr, "Aborting.\n")
 					err := os.Remove(name)
 					if err != nil {
 						// not ideal to delete the container on the spot...
