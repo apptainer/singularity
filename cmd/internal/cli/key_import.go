@@ -57,8 +57,7 @@ func doKeyImportCmd(path string) error {
 		fingerprint = estore.PrimaryKey.Fingerprint
 		for _, e := range el {
 			if estore.PrimaryKey.KeyId == e.PrimaryKey.KeyId {
-				isInStore = true // Verify that entity is in key store file
-				break
+				isInStore = true // Verify that this key has already been added
 			}
 		}
 		if !isInStore {
