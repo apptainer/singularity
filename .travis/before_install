@@ -2,10 +2,6 @@
 
 if [ -z "$OS_TYPE" ]; then
     # default is ubuntu
-    # the first 3 lines enable running travis on personal github repositories
-    cd ../..
-    if [ ! -d sylabs ]; then mv * sylabs; fi
-    cd sylabs/singularity
     curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
     go get -u golang.org/x/lint/golint
     exit
