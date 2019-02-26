@@ -18,8 +18,7 @@ const (
 
 var (
 	keyServerURL       string // -u command line option
-	keyLocalFolderPath string
-	keyFingerprint     string
+	keyLocalFolderPath string // -path command line option
 )
 
 func init() {
