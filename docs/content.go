@@ -256,10 +256,10 @@ Enterprise Performance Computing (EPC)`
 	KeySearchExample string = `
   $ singularity key search sylabs.io
 
-  # note theres a '0x' before the fingerprint:
+  # note the '0x' before the fingerprint:
   $ singularity key search 0x1CEC42121A994A3FBFAAF6CC51BE5020C508C7E9
 
-  # search with the sort ID:
+  # search with the sort ID: (again, theres '0x' before the ID)
   $ singularity key search 0xC508C7E9`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
