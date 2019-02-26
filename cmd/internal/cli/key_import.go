@@ -17,9 +17,7 @@ import (
 
 func init() {
 	KeyImportCmd.Flags().SetInterspersed(false)
-
 	KeyImportCmd.Flags().StringVarP(&keyLocalFolderPath, "path", "p", defaultLocalKeyStore, "specify the local folder path to the key to be added")
-	KeyImportCmd.Flags().StringVarP(&keyFingerprint, "fingerprint", "f", "", "specify the local folder path to the key to be added")
 }
 
 // KeyImportCmd is `singularity keys import` and imports a local key into the key store.
@@ -34,15 +32,14 @@ var KeyImportCmd = &cobra.Command{
 	Example:               docs.KeyImportExample,
 }
 
-func doKeyImportCmd(path string, fingerprint string) error {
-
-	var count int
-
-	el, err := sypgp.LoadPubKeyringFromFileAndFingerPrint(path, fingerprint)
+func doKeyImportCmd(path string) error {
+	var fingerprint [20]byte
+	//load the local public keys as entitylist
+	el, err := sypgp.LoadPubKeyring()
 	if err != nil {
 		return err
 	}
-	//load the local file passed as argument to a entity list key store
+	//load the public key as a entitylist
 	elstore, err := sypgp.LoadPubKeyringFromFile(path)
 	if err != nil {
 		return err
@@ -55,33 +52,31 @@ func doKeyImportCmd(path string, fingerprint string) error {
 	defer fp.Close()
 
 	//go through the keystore checking for the given fingerprint
-	for _, e := range elstore {
-		storeKey := true
-		for _, estore := range el {
+	for _, estore := range elstore {
+		isInStore := false
+		fingerprint = estore.PrimaryKey.Fingerprint
+		for _, e := range el {
 			if estore.PrimaryKey.KeyId == e.PrimaryKey.KeyId {
-				storeKey = true // Verify that entity is in key store file
+				isInStore = true // Verify that entity is in key store file
 				break
 			}
 		}
-		if storeKey {
-			if err = el.Serialize(fp); err != nil {
+		if !isInStore {
+			if err = estore.Serialize(fp); err != nil {
 				return err
 			}
-		}
-		else{
-			fmt.Printf("This fingerprint does not belong to the given keystore file.")
+			fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)
+		} else {
+			fmt.Printf("The key you want to add with fingerprint %0X already belongs to the keystore\n", fingerprint)
 		}
 	}
-
-	fmt.Printf("Adding key(s) with fingerprint %s from %s into local cache %s\n", fingerprint, path, sypgp.PublicPath())
-
 	return nil
 }
 
 func importRun(cmd *cobra.Command, args []string) {
 
-	if err := doKeyImportCmd(args[0], args[1]); err != nil {
-		sylog.Errorf("keys import command failed: %s", err)
+	if err := doKeyImportCmd(args[0]); err != nil {
+		sylog.Errorf("key import command failed: %s", err)
 		os.Exit(2)
 	}
 

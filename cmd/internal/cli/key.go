@@ -33,6 +33,7 @@ func init() {
 	KeyCmd.AddCommand(KeySearchCmd)
 	KeyCmd.AddCommand(KeyPullCmd)
 	KeyCmd.AddCommand(KeyPushCmd)
+	KeyCmd.AddCommand(KeyImportCmd)
 
 	// keys commands
 	KeysCmd.AddCommand(KeyNewPairCmd)
