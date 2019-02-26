@@ -5,6 +5,7 @@ singularity_REPO := github.com/sylabs/singularity
 
 cni_builddir := $(BUILDDIR_ABSPATH)/cni
 cni_install_DIR := $(DESTDIR)$(LIBEXECDIR)/singularity/cni
+cni_plugins := $(shell grep '^	_' $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/plugins.go | cut -d\" -f2)
 cni_vendor_GOPATH := $(singularity_REPO)/vendor/github.com/containernetworking/plugins/plugins
 cni_plugins_GOPATH := $(cni_vendor_GOPATH)/meta/bandwidth \
                       $(cni_vendor_GOPATH)/main/bridge \
@@ -57,12 +58,12 @@ cni_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/network
 .PHONY: cniplugins
 cniplugins:
 	$(V)install -d $(cni_builddir)
-	$(V)for p in $(cni_plugins_GOPATH); do \
+	$(V)for p in $(cni_plugins); do \
 		name=`basename $$p`; \
 		cniplugin=$(cni_builddir)/$$name; \
 		if [ ! -f $$cniplugin ]; then \
 			echo " CNI PLUGIN" $$name; \
-		go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+		$(GO) build $(GO_MODFLAGS) $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
 			-o $$cniplugin $$p; \
 		fi \
 	done
