@@ -7,8 +7,8 @@ package cli
 
 import (
 	"fmt"
-	"strings"
 	"runtime"
+	"strings"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
@@ -73,7 +73,7 @@ func init() {
 			cmd.Flags().AddFlag(actionFlags.Lookup("app"))
 			cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
 			cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
-                }
+		}
 
 		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
