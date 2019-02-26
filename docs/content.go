@@ -251,13 +251,16 @@ Enterprise Performance Computing (EPC)`
 	KeySearchLong  string = `
   The 'key search' command allows you to connect to a key server and look for
   public keys matching the string argument passed to the command line. You can
-  also search for a key by the key ID or fingerprint by adding '0x' before the
-  key ID.`
+  also search for a key by the fingerprint, (or key ID) by adding '0x' before the
+  fingerprint.`
 	KeySearchExample string = `
   $ singularity key search sylabs.io
 
-  # note theres a '0x' before the key ID
-  $ singularity key search 0x1CEC42121A994A3FBFAAF6CC51BE5020C508C7E9`
+  # note theres a '0x' before the fingerprint:
+  $ singularity key search 0x1CEC42121A994A3FBFAAF6CC51BE5020C508C7E9
+
+  # search with the sort ID:
+  $ singularity key search 0xC508C7E9`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key pull
