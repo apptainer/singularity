@@ -58,26 +58,30 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		}
 		defer conn.Close()
 
-		n, err := conn.Read(data)
-		if err != nil && err != io.EOF {
-			if isInstance && os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-			}
-			fatalChan <- fmt.Errorf("failed to start process: %s", err)
-			return
-		}
-
 		// special path for engines which needs to stop before executing
 		// container process
-		if n != 0 {
-			if obj, ok := engine.EngineOperations.(interface {
-				PreStartProcess(int, net.Conn, chan error) error
-			}); ok {
-				if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
-					fatalChan <- fmt.Errorf("pre start process failed: %s", err)
-					return
+		if obj, ok := engine.EngineOperations.(interface {
+			PreStartProcess(int, net.Conn, chan error) error
+		}); ok {
+			n, err := conn.Read(data)
+			if (err != nil && err != io.EOF) || n == 0 {
+				if isInstance && os.Getppid() == ppid {
+					syscall.Kill(ppid, syscall.SIGUSR2)
 				}
+				fatalChan <- fmt.Errorf("failed to call pre start process: %s", err)
+				return
 			}
+			if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
+				fatalChan <- fmt.Errorf("pre start process failed: %s", err)
+				return
+			}
+		}
+		// wait container process execution, any error different from EOF
+		// or any data send over master connection at this point means an
+		// error occured in StartProcess, just return by waiting error
+		n, err := conn.Read(data)
+		if (err != nil && err != io.EOF) || n > 0 {
+			return
 		}
 
 		err = engine.PostStartProcess(containerPid)
@@ -88,7 +92,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
-		if n == 0 && isInstance {
+		if isInstance {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
 			if os.Getppid() == ppid {
