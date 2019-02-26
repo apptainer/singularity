@@ -20,7 +20,7 @@ func init() {
 	KeyImportCmd.Flags().StringVarP(&keyLocalFolderPath, "path", "p", "", "specify the local folder path to the key to be added")
 }
 
-// KeyImportCmd is `singularity keys import` and imports a local key into the key store.
+// KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
@@ -39,12 +39,12 @@ func doKeyImportCmd(path string) error {
 	if err != nil {
 		return err
 	}
-	//load the public key as a entitylist
+	//load the public key as an entitylist
 	elstore, err := sypgp.LoadPubKeyringFromFile(path)
 	if err != nil {
 		return err
 	}
-	// get local cache (where the key will be stored)
+	// get local keystore (where the key will be stored)
 	fp, err := os.OpenFile(sypgp.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
