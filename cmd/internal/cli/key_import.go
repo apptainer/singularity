@@ -17,7 +17,7 @@ import (
 
 func init() {
 	KeyImportCmd.Flags().SetInterspersed(false)
-	KeyImportCmd.Flags().StringVarP(&keyLocalFolderPath, "path", "p", defaultLocalKeyStore, "specify the local folder path to the key to be added")
+	KeyImportCmd.Flags().StringVarP(&keyLocalFolderPath, "path", "p", "", "specify the local folder path to the key to be added")
 }
 
 // KeyImportCmd is `singularity keys import` and imports a local key into the key store.

@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	defaultKeyServer     = "https://keys.sylabs.io"
-	defaultLocalKeyStore = " ~/gnupg/pubring.kbx"
+	defaultKeyServer = "https://keys.sylabs.io"
 )
 
 var (
