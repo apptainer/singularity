@@ -154,16 +154,16 @@ func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
-    exists, err := cache.ShubImageExists("hash", imageName)
-    if err != nil {
-        return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-    }
-    if !exists {
-        sylog.Infof("Downloading shub image")
-	    libexec.PullShubImage(imagePath, u, true, noHTTPS)
-    } else {
-        sylog.Infof("Use image from cache")
-    }
+	exists, err := cache.ShubImageExists("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading shub image")
+		libexec.PullShubImage(imagePath, u, true, noHTTPS)
+	} else {
+		sylog.Infof("Use image from cache")
+	}
 
 	return imagePath, nil
 }
