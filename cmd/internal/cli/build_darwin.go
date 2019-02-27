@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,6 +21,8 @@ func preRun(cmd *cobra.Command, args []string) {
 func run(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
+
+	handleRemoteBuildFlags(cmd)
 
 	// check if target collides with existing file
 	if ok := checkBuildTarget(dest, false); !ok {
