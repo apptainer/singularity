@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
@@ -28,6 +29,23 @@ var KeyPullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+
+		// If flag did not change, look for a remote configuration, otherwise fall back to default
+		if !cmd.Flags().Lookup("url").Changed {
+			e, err := sylabsRemote(remoteConfig)
+			if err == nil {
+				uri, err := e.GetServiceURI("keystore")
+				if err != nil {
+					sylog.Fatalf("Unable to get key service URI: %v", err)
+				}
+				keyServerURL = uri
+			} else if err == scs.ErrNoDefault {
+				sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
+			} else {
+				sylog.Debugf("Unable to load remote configuration: %v", err)
+			}
+		}
+
 		if err := doKeyPullCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
