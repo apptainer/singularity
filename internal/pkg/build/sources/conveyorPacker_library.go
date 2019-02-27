@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,14 +6,17 @@
 package sources
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/signing"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
@@ -66,6 +69,27 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 			return fmt.Errorf("Error getting ImageHash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
 			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
+	}
+
+	// check if the base container is signed
+	imageSigned, err := signing.IsSigned(imagePath, "https://keys.sylabs.io", 0, false, cp.AuthToken, true)
+	if err != nil {
+		// warning message will be: ("unable to verify the container (test.sif): %v", err)
+		sylog.Warningf("%v", err)
+	}
+	// if its not signed, print a warning
+	if !imageSigned {
+		sylog.Warningf("The base container is **NOT** signed thus, its content cant be verified!")
+		fmt.Fprintf(os.Stderr, "Do you really want to continue? [N/y] ")
+		reader := bufio.NewReader(os.Stdin)
+		input, err := reader.ReadString('\n')
+		if err != nil {
+			sylog.Fatalf("Error parsing input: %s", err)
+		}
+		if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
+			fmt.Fprintf(os.Stderr, "Stoping build.\n")
+			os.Exit(3)
 		}
 	}
 
