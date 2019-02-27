@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -65,9 +66,14 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		}
 	}
 
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Failed to get current user")
+	}
+
 	// Force $HOME to be mounted
-	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used eventually
-	homeSrc := os.Getenv("HOME")
+	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used
+	homeSrc := usr.HomeDir
 	pciArgs := fmt.Sprintf("4:0,virtio-9p,home=%s", homeSrc)
 	homeBind := fmt.Sprintf("home:%s", homeSrc)
 	singBinds = append(singBinds, homeBind)
@@ -76,11 +82,13 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	defArgs = append(defArgs, "-s")
 	defArgs = append(defArgs, pciArgs)
 
+	userInfo := fmt.Sprintf("%s:%s:%s", usr.Username, usr.Uid, usr.Gid)
+
 	if IsSyOS {
 		cliExtra = "syos"
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), singAction, cliExtra, strings.Join(singBinds, "|"))
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, singAction, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	defArgs = append(defArgs, "-f")
