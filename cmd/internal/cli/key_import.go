@@ -17,12 +17,11 @@ import (
 
 func init() {
 	KeyImportCmd.Flags().SetInterspersed(false)
-	KeyImportCmd.Flags().StringVarP(&keyLocalFolderPath, "path", "p", "", "specify the local folder path to the key to be added")
 }
 
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   importRun,
