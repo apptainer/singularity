@@ -65,8 +65,8 @@ func Group(path string, uid int, gids []int) (content []byte, err error) {
 		return content, fmt.Errorf("failed to read group file content in container: %s", err)
 	}
 
-	if content[len(content)-1] != '\n' {
-		content = append(content, byte('\n'))
+	if len(content) > 0 && content[len(content)-1] != '\n' {
+		content = append(content, '\n')
 	}
 
 	for _, gid := range groups {
