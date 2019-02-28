@@ -191,9 +191,9 @@ func pullRun(cmd *cobra.Command, args []string) {
 				}
 				if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
 					fmt.Fprintf(os.Stderr, "Aborting.\n")
+					// not ideal to delete the container on the spot...
 					err := os.Remove(name)
 					if err != nil {
-						// not ideal to delete the container on the spot...
 						sylog.Fatalf("Unable to delete container: %v", err)
 						os.Exit(255)
 					}
