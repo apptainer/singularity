@@ -21,7 +21,7 @@ func init() {
 
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   importRun,
@@ -57,10 +57,15 @@ func doKeyImportCmd(path string) error {
 		for _, e := range el {
 			if estore.PrimaryKey.KeyId == e.PrimaryKey.KeyId {
 				isInStore = true // Verify that this key has already been added
+				break
 			}
 		}
 		if !isInStore {
-			if err = estore.Serialize(fp); err != nil {
+
+			if err = estore.PrivateKey.Serialize(fp); err != nil {
+				return err
+			}
+			if err = estore.PrimaryKey.Serialize(fp); err != nil {
 				return err
 			}
 			fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)
