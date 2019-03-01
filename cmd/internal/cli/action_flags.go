@@ -8,7 +8,6 @@ package cli
 import (
 	"log"
 	"os"
-	"runtime"
 
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -79,6 +78,7 @@ func init() {
 	initBoolVars()
 	initNamespaceVars()
 	initPrivilegeVars()
+	initPlatformDefaults()
 }
 
 // initPathVars initializes flags that take a string argument
@@ -238,15 +238,11 @@ func initBoolVars() {
 	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
 
 	// --vm
-	if runtime.GOOS == "darwin" {
-		actionFlags.BoolVar(&VM, "vm", true, "enable VM support")
-	} else {
-		actionFlags.BoolVar(&VM, "vm", false, "enable VM support")
-	}
+	actionFlags.BoolVar(&VM, "vm", false, "enable VM support")
 	actionFlags.SetAnnotation("vm", "envkey", []string{"VM"})
 
 	// --vm-err
-	actionFlags.BoolVar(&VMErr, "vm-err", false, "enable attaching stderr from VM (default false)")
+	actionFlags.BoolVar(&VMErr, "vm-err", false, "enable attaching stderr from VM")
 	actionFlags.SetAnnotation("vm-err", "envkey", []string{"VMERROR"})
 
 	// --syos

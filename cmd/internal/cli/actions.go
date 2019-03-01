@@ -7,7 +7,6 @@ package cli
 
 import (
 	"fmt"
-	"runtime"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
@@ -36,54 +35,10 @@ func init() {
 	// TODO : the next n lines of code are repeating too much but I don't
 	// know how to shorten them tonight
 	for _, cmd := range actionCmds {
-		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
-
-		// TODO: This is an ugly hack... sorry
-		if runtime.GOOS == "linux" {
-			cmd.Flags().AddFlag(actionFlags.Lookup("contain"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("containall"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("cleanenv"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("net"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("network"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("pwd"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("security"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("app"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
-			cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
+		for _, flagName := range platformActionFlags {
+			cmd.Flags().AddFlag(actionFlags.Lookup(flagName))
 		}
 
-		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("vm"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("vm-ram"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("vm-cpu"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("vm-err"))
 		plugin.AddFlagHooks(cmd.Flags())
 
 		if cmd == ShellCmd {

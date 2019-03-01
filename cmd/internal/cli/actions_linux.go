@@ -35,13 +35,14 @@ import (
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	// --vm-ram or --vm-cpu changed from default value, and --vm flag not given
-	if (VMRAM != "1024" || VMCPU != "1") && !VM {
+	if (cobraCmd.Flag("vm-ram").Changed || cobraCmd.Flag("vm-cpu").Changed) && !VM {
 		sylog.Debugf("Setting --vm option to true")
-		VM = true
+		cobraCmd.Flag("vm").Value.Set("true")
 	}
+
 	if IsSyOS && !VM {
 		sylog.Warningf("--syos option only effective when used with the --vm option. Running in VM.")
-		VM = true
+		cobraCmd.Flag("vm").Value.Set("true")
 	}
 
 	if VM {
