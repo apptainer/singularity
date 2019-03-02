@@ -266,7 +266,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
 	err := Verify(cpath, url, id, isGroup, authToken, noPrompt)
 	if err != nil {
-		return false, fmt.Errorf("unable to verify the container (%v): %v", cpath, err)
+		return false, fmt.Errorf("%v", err)
 	}
 	return true, nil
 }
@@ -300,6 +300,8 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	var authok string
+	var netlist openpgp.EntityList
+	noLocalKey := false
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
@@ -326,12 +328,13 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
 			// verification with local keyring failed, try to fetch from key server
-			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
-			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+			sylog.Infof("Image '%v' is signed with key(s) that are not in your keyring.", cpath)
+			sylog.Infof("Searching 'https://keys.sylabs.io' for key (0x%X)...", fingerprint[24:])
+			netlist, err = sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
-			sylog.Infof("key retrieved successfully!")
+			sylog.Infof("key found:")
 
 			block, _ := clearsign.Decode(data)
 			if block == nil {
@@ -343,24 +346,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			if err != nil {
 				return fmt.Errorf("signature verification failed: %s", err)
 			}
-
-			if noPrompt {
-				// always store key when prompts disabled
-				if err = sypgp.StorePubKey(netlist[0]); err != nil {
-					return fmt.Errorf("could not store public key: %s", err)
-				}
-			} else {
-				// Ask to store new public key
-				resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
-				if err != nil {
-					return err
-				}
-				if resp == "" || resp == "y" || resp == "Y" {
-					if err = sypgp.StorePubKey(netlist[0]); err != nil {
-						return fmt.Errorf("could not store public key: %s", err)
-					}
-				}
-			}
+			noLocalKey = true
 		}
 
 		// Get first Identity data for convenience
@@ -373,7 +359,28 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	}
 	sylog.Infof("Container is signed")
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
-	fmt.Print(authok)
+	fmt.Printf("%v", authok)
+
+	// if theres no local key, then ask to store it
+	if noLocalKey {
+		if noPrompt {
+			// always store key when prompts disabled
+			if err = sypgp.StorePubKey(netlist[0]); err != nil {
+				return fmt.Errorf("could not store public key: %s", err)
+			}
+		} else {
+			// Ask to store new public key
+			resp, err := sypgp.AskQuestion("Would you like to add this key to your local keyring? [Y/n] ")
+			if err != nil {
+				return err
+			}
+			if resp == "" || resp == "y" || resp == "Y" {
+				if err = sypgp.StorePubKey(netlist[0]); err != nil {
+					return fmt.Errorf("could not store public key: %s", err)
+				}
+			}
+		}
+	}
 
 	return nil
 }

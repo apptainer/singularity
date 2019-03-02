@@ -47,9 +47,8 @@ var PushCmd = &cobra.Command{
 		if authToken != "" {
 			if !unauthenticatedPush {
 				// check if the container is signed
-				imageSigned, err := signing.IsSigned(args[0], "", 0, false, authToken, true)
+				imageSigned, err := signing.IsSigned(args[0], "https://keys.sylabs.io", 0, false, authToken, true)
 				if err != nil {
-					// warning message will be: ("Unable to verify the container (test.sif): %v", err)
 					sylog.Warningf("%v", err)
 				}
 				// if its not signed, print a warning
