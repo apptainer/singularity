@@ -334,7 +334,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
-			sylog.Infof("key found:")
+			sylog.Infof("key found.")
 
 			block, _ := clearsign.Decode(data)
 			if block == nil {
