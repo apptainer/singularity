@@ -15,7 +15,6 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
@@ -235,68 +234,28 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	return nil
 }
 
-func (c *container) setupWritableSIFImage(img *image.Image, overlayEnabled bool) error {
-	fimg, err := sif.LoadContainerFp(img.File, !img.Writable)
-	if err != nil {
-		return err
-	}
-
-	// Get the default system partition image
-	part, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return err
-	}
-
-	// Get descriptor for group associated with system partition
-	descriptors, _, err := fimg.GetPartFromGroup(part.Groupid)
-	if err != nil {
-		return err
-	}
-
-	// Determine if an overlay partition exists
+func (c *container) setupSIFOverlay(img *image.Image, writable bool) error {
+	// Determine if overlay partitions exists
 	overlayPart := 0
-	for _, desc := range descriptors {
-		ptype, err := desc.GetPartType()
-		if err != nil {
-			return err
-		}
-		if ptype == sif.PartOverlay {
-			fstype, err := desc.GetFsType()
-			if err != nil {
-				continue
-			}
-			if fstype == sif.FsExt3 {
-				if overlayPart == 0 {
-					if !overlayEnabled {
-						return fmt.Errorf("Can't mount SIF image as read-write, overlay is not enabled")
-					}
+	overlayImg := c.engine.EngineConfig.GetOverlayImage()
+	imglist := c.engine.EngineConfig.GetImageList()
 
-					imgCopy := *img
-
-					imgCopy.Type = image.EXT3
-					imgCopy.Offset = uint64(desc.Fileoff)
-					imgCopy.Size = uint64(desc.Filelen)
-					imgCopy.RootFS = false
-					imgCopy.Writable = true
-
-					imglist := c.engine.EngineConfig.GetImageList()
-					imglist = append(imglist, imgCopy)
-
-					c.engine.EngineConfig.SetImageList(imglist)
-
-					overlayImg := c.engine.EngineConfig.GetOverlayImage()
-					overlayImg = append(overlayImg, imgCopy.Path)
-					c.engine.EngineConfig.SetOverlayImage(overlayImg)
-				}
-				overlayPart++
-			}
+	for _, p := range img.Partitions[1:] {
+		if p.Type == image.EXT3 || p.Type == image.SQUASHFS {
+			imgCopy := *img
+			imgCopy.Type = int(p.Type)
+			imgCopy.Partitions = []image.Partition{p}
+			imglist = append(imglist, imgCopy)
+			overlayImg = append(overlayImg, imgCopy.Path)
+			overlayPart++
 		}
 	}
 
-	if overlayPart > 1 {
-		sylog.Warningf("more than one writable overlay partition found, taking the first")
-	} else if overlayPart == 0 {
-		return fmt.Errorf("no overlay partition found")
+	c.engine.EngineConfig.SetOverlayImage(overlayImg)
+	c.engine.EngineConfig.SetImageList(imglist)
+
+	if overlayPart == 0 && writable {
+		return fmt.Errorf("no SIF writable overlay partition found")
 	}
 
 	return nil
@@ -322,27 +281,32 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 		}
 	}
 
-	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
-		imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
-		if err != nil {
-			return err
-		}
+	imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
+	if err != nil {
+		return err
+	}
 
+	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
+		sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
 		if imgObject.Type == image.SIF {
-			err = c.setupWritableSIFImage(imgObject, overlayEnabled)
+			err = c.setupSIFOverlay(imgObject, c.engine.EngineConfig.GetWritableImage())
 			if err == nil {
 				return c.setupOverlayLayout(system, sessionPath)
 			}
 			sylog.Warningf("%s", err)
-		} else {
-			sylog.Debugf("Image is writable, not attempting to use overlay or underlay\n")
 		}
-
 		return c.setupDefaultLayout(system, sessionPath)
 	}
 
 	if overlayEnabled {
 		sylog.Debugf("Attempting to use overlayfs (enable overlay = %v)\n", c.engine.EngineConfig.File.EnableOverlay)
+		if imgObject.Type == image.SIF {
+			err = c.setupSIFOverlay(imgObject, c.engine.EngineConfig.GetWritableImage())
+			if err == nil {
+				return c.setupOverlayLayout(system, sessionPath)
+			}
+			sylog.Warningf("%s", err)
+		}
 		return c.setupOverlayLayout(system, sessionPath)
 	}
 
@@ -608,31 +572,35 @@ func (c *container) mountImage(mnt *mount.Point) error {
 func (c *container) loadImage(path string, rootfs bool) (*image.Image, error) {
 	list := c.engine.EngineConfig.GetImageList()
 
+	if len(list) == 0 {
+		return nil, fmt.Errorf("no root filesystem found in %s", path)
+	}
+
 	if rootfs {
-		for _, img := range list {
-			if img.RootFS {
-				img.File = os.NewFile(img.Fd, img.Path)
-				if img.File == nil {
-					return nil, fmt.Errorf("can't find image %s", path)
-				}
+		img := list[0]
+		if img.File == nil {
+			return &img, nil
+		}
+		img.File = os.NewFile(img.Fd, img.Path)
+		if img.File == nil {
+			return nil, fmt.Errorf("can't find image %s", path)
+		}
+		return &img, nil
+	}
+	for _, img := range list[1:] {
+		p, err := image.ResolvePath(path)
+		if err != nil {
+			return nil, err
+		}
+		if p == img.Path {
+			if img.File == nil {
 				return &img, nil
 			}
-		}
-	} else {
-		for _, img := range list {
-			if !img.RootFS {
-				p, err := image.ResolvePath(path)
-				if err != nil {
-					return nil, err
-				}
-				if p == img.Path {
-					img.File = os.NewFile(img.Fd, img.Path)
-					if img.File == nil {
-						return nil, fmt.Errorf("can't find image %s", path)
-					}
-					return &img, nil
-				}
+			img.File = os.NewFile(img.Fd, img.Path)
+			if img.File == nil {
+				return nil, fmt.Errorf("can't find image %s", path)
 			}
+			return &img, nil
 		}
 	}
 
@@ -656,36 +624,10 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	}
 
 	mountType := ""
+	offset := imageObject.Partitions[0].Offset
+	size := imageObject.Partitions[0].Size
 
-	switch imageObject.Type {
-	case image.SIF:
-		// Load the SIF file
-		fimg, err := sif.LoadContainerFp(imageObject.File, !imageObject.Writable)
-		if err != nil {
-			return err
-		}
-
-		// Get the default system partition image
-		part, _, err := fimg.GetPartPrimSys()
-		if err != nil {
-			return err
-		}
-
-		// record the fs type
-		fstype, err := part.GetFsType()
-		if err != nil {
-			return err
-		}
-		if fstype == sif.FsSquash {
-			mountType = "squashfs"
-		} else if fstype == sif.FsExt3 {
-			mountType = "ext3"
-		} else {
-			return fmt.Errorf("unknown file system type: %v", fstype)
-		}
-
-		imageObject.Offset = uint64(part.Fileoff)
-		imageObject.Size = uint64(part.Filelen)
+	switch imageObject.Partitions[0].Type {
 	case image.SQUASHFS:
 		mountType = "squashfs"
 	case image.EXT3:
@@ -709,8 +651,8 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		c.session.RootFsPath(),
 		mountType,
 		flags,
-		imageObject.Offset,
-		imageObject.Size,
+		offset,
+		size,
 	); err != nil {
 		return err
 	}
@@ -808,6 +750,8 @@ func (c *container) addOverlayMount(system *mount.System) error {
 		nb++
 
 		src := imageObject.Source
+		offset := imageObject.Partitions[0].Offset
+		size := imageObject.Partitions[0].Size
 
 		switch imageObject.Type {
 		case image.EXT3:
@@ -818,14 +762,14 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				ov.AddLowerDir(filepath.Join(dst, "upper"))
 			}
 
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, imageObject.Offset, imageObject.Size)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size)
 			if err != nil {
 				return err
 			}
 			flags &^= syscall.MS_RDONLY
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, imageObject.Offset, imageObject.Size)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size)
 			if err != nil {
 				return err
 			}

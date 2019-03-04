@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -37,18 +37,23 @@ type format interface {
 	initializer(*Image, os.FileInfo) error
 }
 
+// Partition identifies and locates a partition in image object
+type Partition struct {
+	Size   uint64 `json:"size"`
+	Offset uint64 `json:"offset"`
+	Type   uint32 `json:"type"`
+}
+
 // Image describes an image object
 type Image struct {
-	Path     string   `json:"path"`
-	Name     string   `json:"name"`
-	Type     int      `json:"type"`
-	File     *os.File `json:"-"`
-	Fd       uintptr  `json:"fd"`
-	Source   string   `json:"source"`
-	Offset   uint64   `json:"offset"`
-	Size     uint64   `json:"size"`
-	Writable bool     `json:"writable"`
-	RootFS   bool     `json:"rootFS"`
+	Path       string      `json:"path"`
+	Name       string      `json:"name"`
+	Type       int         `json:"type"`
+	File       *os.File    `json:"-"`
+	Fd         uintptr     `json:"fd"`
+	Source     string      `json:"source"`
+	Writable   bool        `json:"writable"`
+	Partitions []Partition `json:"partitions"`
 }
 
 // AuthorizedPath checks if image is in a path supplied in paths
@@ -134,8 +139,9 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	img := &Image{
-		Path: resolvedPath,
-		Name: filepath.Base(resolvedPath),
+		Path:       resolvedPath,
+		Name:       filepath.Base(resolvedPath),
+		Partitions: make([]Partition, 1),
 	}
 
 	for _, rf := range registeredFormats {

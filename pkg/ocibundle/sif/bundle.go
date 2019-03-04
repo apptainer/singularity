@@ -8,7 +8,6 @@ package sifbundle
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -92,33 +91,20 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 		return fmt.Errorf("image wasn't set, need one to create bundle")
 	}
 
-	flag := os.O_RDONLY
-	if s.writable {
-		flag = os.O_RDWR
-	}
-	file, err := os.OpenFile(s.image, flag, 0)
+	img, err := image.Init(s.image, s.writable)
 	if err != nil {
-		return fmt.Errorf("can't open image %s: %s", s.image, err)
+		return fmt.Errorf("failed to load SIF image %s: %s", s.image, err)
 	}
-	defer file.Close()
+	defer img.File.Close()
 
-	fimg, err := sif.LoadContainerFp(file, !s.writable)
-	if err != nil {
-		return fmt.Errorf("could not load image fp: %v", err)
+	if img.Type != image.SIF {
+		return fmt.Errorf("%s is not a SIF image", s.image)
 	}
-	part, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return fmt.Errorf("could not get primaty partitions: %v", err)
+	if img.Partitions[0].Type != image.SQUASHFS {
+		return fmt.Errorf("unsupported image fs type: %v", img.Partitions[0].Type)
 	}
-	fstype, err := part.GetFsType()
-	if err != nil {
-		return fmt.Errorf("could not get fs type: %v", err)
-	}
-	if fstype != sif.FsSquash {
-		return fmt.Errorf("unsuported image fs type: %v", fstype)
-	}
-	offset := uint64(part.Fileoff)
-	size := uint64(part.Filelen)
+	offset := img.Partitions[0].Offset
+	size := img.Partitions[0].Size
 
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(s.bundlePath, ociConfig)
@@ -127,7 +113,7 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	}
 
 	// associate SIF image with a block
-	loop, err := tools.CreateLoop(file, offset, size)
+	loop, err := tools.CreateLoop(img.File, offset, size)
 	if err != nil {
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to find loop device: %s", err)

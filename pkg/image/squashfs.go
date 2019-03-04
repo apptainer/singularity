@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -92,8 +92,9 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		return err
 	}
 	img.Type = SQUASHFS
-	img.Offset = offset
-	img.Size = uint64(fileinfo.Size()) - img.Offset
+	img.Partitions[0].Offset = offset
+	img.Partitions[0].Size = uint64(fileinfo.Size()) - offset
+	img.Partitions[0].Type = SQUASHFS
 
 	if img.Writable {
 		sylog.Warningf("squashfs is not a writable filesystem")
