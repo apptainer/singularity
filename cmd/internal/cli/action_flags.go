@@ -248,6 +248,7 @@ func initBoolVars() {
 	// --syos
 	// TODO: Keep this in production?
 	actionFlags.BoolVar(&IsSyOS, "syos", false, "execute SyOS shell")
+	actionFlags.MarkHidden("syos")
 	actionFlags.SetAnnotation("syos", "envkey", []string{"SYOS"})
 
 }

@@ -44,7 +44,6 @@ func init() {
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 			cmd.Flags().AddFlag(actionFlags.Lookup("syos"))
-			cmd.Flags().MarkHidden("syos")
 		}
 		cmd.Flags().SetInterspersed(false)
 
