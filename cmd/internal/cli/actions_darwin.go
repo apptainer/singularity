@@ -11,5 +11,5 @@ import (
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
-	prepareVM(cobraCmd, image, args)
+	vmStarter(cobraCmd, image, args)
 }

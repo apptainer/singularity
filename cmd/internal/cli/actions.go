@@ -184,6 +184,33 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	return
 }
 
+// TODO: Let's stick this in another file so that that CLI is just CLI
+func vmStarter(cmd *cobra.Command, image string, args []string) bool {
+	// check if --vm-ram or --vm-cpu changed from default value
+	for _, flagName := range []string{"vm-ram", "vm-cpu"} {
+		if flag := cmd.Flag(flagName); flag != nil && flag.Changed {
+			// the user passed an option related to the VM...
+			if !VM {
+				// ... but didn't enable the VM itself
+				cmd.Flag("vm").Value.Set("true")
+			}
+			break
+		}
+	}
+
+	// since --syos is a boolean, it cannot be added to the above list
+	if IsSyOS && !VM {
+		sylog.Warningf("The --syos option requires a virtual machine, automatically enabling --vm option.")
+		cmd.Flag("vm").Value.Set("true")
+	}
+
+	if VM {
+		prepareVM(cmd, image, args)
+	}
+
+	return VM
+}
+
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,

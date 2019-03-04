@@ -24,9 +24,16 @@ var platformActionFlags = []string{
 // initPlatformDefaults customizes the default values for the flags in
 // actionFlags to make them appropriate for the build target
 func initPlatformDefaults() {
-	// darwin defaults to running a VM
-	vmFlag := actionFlags.Lookup("vm")
-	vmFlag.Value.Set("true")
-	vmFlag.Changed = false
-	vmFlag.DefValue = "true"
+	// these are boolean flags which are enabled by default
+	// TODO: should darwin default to running SyOS? ("syos" flag)
+	flags := []string{
+		"vm", // darwin defaults to running a VM
+	}
+
+	for _, flag := range flags {
+		vmFlag := actionFlags.Lookup(flag)
+		vmFlag.Value.Set("true")
+		vmFlag.Changed = false
+		vmFlag.DefValue = "true"
+	}
 }
