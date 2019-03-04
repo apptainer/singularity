@@ -804,50 +804,50 @@ found at:
 	OciCreateLong  string = `
   Create invoke create operation to create a container instance from an OCI bundle directory`
 	OciCreateExample string = `
-  $ singularity create -b ~/bundle mycontainer`
+  $ singularity oci create -b ~/bundle mycontainer`
 
 	OciStartUse   string = `start <container_ID>`
 	OciStartShort string = `Start container process (root user only)`
 	OciStartLong  string = `
   Start invoke start operation to start a previously created container identified by container ID.`
 	OciStartExample string = `
-  $ singularity start mycontainer`
+  $ singularity oci start mycontainer`
 
 	OciStateUse   string = `state <container_ID>`
 	OciStateShort string = `Query state of a container (root user only)`
 	OciStateLong  string = `
   State invoke state operation to query state of a created/running/stopped container identified by container ID.`
 	OciStateExample string = `
-  $ singularity state mycontainer`
+  $ singularity oci state mycontainer`
 
 	OciKillUse   string = `kill <container_ID> [-s] signal`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
   Kill invoke kill operation to kill processes running within container identified by container ID.`
 	OciKillExample string = `
-  $ singularity kill mycontainer INT
-  $ singularity kill mycontainer -s INT`
+  $ singularity oci kill mycontainer INT
+  $ singularity oci kill mycontainer -s INT`
 
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`
 	OciDeleteLong  string = `
   Delete invoke delete operation to delete resources that were created for container identified by container ID.`
 	OciDeleteExample string = `
-  $ singularity delete mycontainer`
+  $ singularity oci delete mycontainer`
 
 	OciAttachUse   string = `attach <container_ID>`
 	OciAttachShort string = `Attach console to a running container process (root user only)`
 	OciAttachLong  string = `
   Attach will attach console to a running container process running within container identified by container ID.`
 	OciAttachExample string = `
-  $ singularity attach mycontainer`
+  $ singularity oci attach mycontainer`
 
 	OciExecUse   string = `exec <container_ID> <command> <args>`
 	OciExecShort string = `Execute a command within container (root user only)`
 	OciExecLong  string = `
   Exec will execute the provided command/arguments within container identified by container ID.`
 	OciExecExample string = `
-  $ singularity exec mycontainer id`
+  $ singularity oci exec mycontainer id`
 
 	OciRunUse   string = `run [run options...] <container_ID>`
 	OciRunShort string = `Create/start/attach/delete a container from a bundle directory (root user only)`
