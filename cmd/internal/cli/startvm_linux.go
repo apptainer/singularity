@@ -23,10 +23,11 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	initramfs := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH+".gz", "/singularity/vm/initramfs_")
 	appendArgs := fmt.Sprintf("root=/dev/ram0 console=ttyS0 quiet singularity_action=%s singularity_arguments=\"%s\"", singAction, cliExtra)
 
-	defArgs := []string{""}
-	defArgs = []string{"-cpu", "host", "-smp", VMCPU, "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", VMRAM, "-append", appendArgs}
+	args := []string{"/usr/libexec/qemu-kvm", "-cpu", "host", "-smp", VMCPU, "-enable-kvm", "-device", "virtio-rng-pci", "-display", "none", "-realtime", "mlock=on", "-hda", sifImage, "-serial", "stdio", "-kernel", bzImage, "-initrd", initramfs, "-m", VMRAM, "-append", appendArgs}
 
-	pgmExec, lookErr := exec.LookPath("/usr/libexec/qemu-kvm")
+	sylog.Debugf("About to launch VM using: %+v", args)
+
+	pmgExec, lookErr := exec.LookPath(args[0])
 	if lookErr != nil {
 		sylog.Fatalf("Failed to find qemu-kvm executable at /usr/libexec/qemu-kvm")
 	}
@@ -41,7 +42,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("This functionality is not supported.")
 	}
 
-	cmd := exec.Command(pgmExec, defArgs...)
+	cmd := exec.Command(pmgExec, args[1:]...)
 	cmd.Env = os.Environ()
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
