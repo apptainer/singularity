@@ -27,15 +27,18 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	initramfs := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH+".gz", "/singularity/vm/initramfs_")
 
 	// Default xhyve Arguments
-	defArgs := []string{""}
-	defArgs = []string{"-A", "-m", VMRAM, "-c", VMCPU, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
+	defArgs := []string{"-A", "-m", VMRAM, "-c", VMCPU, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
+
+	if len(BindPaths) > 8 {
+		sylog.Fatalf("Maximum of 8 bind mounts")
+	}
 
 	// Bind mounts
 	singBinds := []string{""}
 
 	slot := 5
-	function := 0
-	for _, bindpath := range BindPaths {
+
+	for idx, bindpath := range BindPaths {
 		splitted := strings.Split(bindpath, ":")
 		src := splitted[0]
 		dst := ""
@@ -45,25 +48,17 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 			dst = src
 		}
 
-		mntTag := ""
-
 		sylog.Debugf("Bind path: " + src + " -> " + dst)
 		// TODO: Figure out if src is a directory or not
-		mntTag = filepath.Base(src)
+		mntTag := filepath.Base(src)
 
-		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(function), mntTag, src)
-		defArgs = append(defArgs, "-s")
-		defArgs = append(defArgs, pciArgs)
+		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(idx), mntTag, src)
+		defArgs = append(defArgs, "-s", pciArgs)
 
 		localBind := fmt.Sprintf("%s:%s", mntTag, dst)
 		singBinds = append(singBinds, localBind)
 
 		sylog.Debugf("PCI: %s", pciArgs)
-
-		function++
-		if function > 7 {
-			sylog.Fatalf("Maximum of 8 bind mounts")
-		}
 	}
 
 	usr, err := user.Current()
@@ -79,8 +74,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	singBinds = append(singBinds, homeBind)
 
 	sylog.Debugf("PCI: %s", pciArgs)
-	defArgs = append(defArgs, "-s")
-	defArgs = append(defArgs, pciArgs)
+	defArgs = append(defArgs, "-s", pciArgs)
 
 	userInfo := fmt.Sprintf("%s:%s:%s", usr.Username, usr.Uid, usr.Gid)
 
