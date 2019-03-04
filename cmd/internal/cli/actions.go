@@ -162,7 +162,7 @@ func handleShub(u string) (string, error) {
 		sylog.Infof("Downloading shub image")
 		libexec.PullShubImage(imagePath, u, true, noHTTPS)
 	} else {
-		sylog.Infof("Use image from cache")
+		sylog.Verbosef("Use image from cache")
 	}
 
 	return imagePath, nil
