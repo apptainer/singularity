@@ -7,27 +7,28 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
+func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string) []string {
 	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
-	bzImage := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH, "/singularity/vm/syos-kernel-")
-	initramfs := fmt.Sprintf(buildcfg.LIBEXECDIR+"%s"+runtime.GOARCH+".gz", "/singularity/vm/initramfs_")
 
 	// Default xhyve Arguments
-	defArgs := []string{"-A", "-m", VMRAM, "-c", VMCPU, "-s", "0:0,hostbridge", "-s", hdString, "-s", "31,lpc", "-l", "com1,stdio"}
+	args := []string{
+		"-A",
+		"-m", VMRAM,
+		"-c", VMCPU,
+		"-s", "0:0,hostbridge",
+		"-s", hdString,
+		"-s", "31,lpc",
+		"-l", "com1,stdio",
+	}
 
 	if len(BindPaths) > 8 {
 		sylog.Fatalf("Maximum of 8 bind mounts")
@@ -53,7 +54,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		mntTag := filepath.Base(src)
 
 		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(idx), mntTag, src)
-		defArgs = append(defArgs, "-s", pciArgs)
+		args = append(args, "-s", pciArgs)
 
 		localBind := fmt.Sprintf("%s:%s", mntTag, dst)
 		singBinds = append(singBinds, localBind)
@@ -74,7 +75,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	singBinds = append(singBinds, homeBind)
 
 	sylog.Debugf("PCI: %s", pciArgs)
-	defArgs = append(defArgs, "-s", pciArgs)
+	args = append(args, "-s", pciArgs)
 
 	userInfo := fmt.Sprintf("%s:%s:%s", usr.Username, usr.Uid, usr.Gid)
 
@@ -85,45 +86,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, singAction, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
-	defArgs = append(defArgs, "-f")
-	defArgs = append(defArgs, kexecArgs)
+	args = append(args, "-f", kexecArgs)
 
-	pgmExec, lookErr := exec.LookPath("/usr/local/libexec/singularity/vm/xhyve")
-	if lookErr != nil {
-		sylog.Fatalf("Failed to find xhyve executable at /usr/local/libexec/singularity/vm/xhyve")
-	}
-
-	if _, err := os.Stat(sifImage); os.IsNotExist(err) {
-		sylog.Fatalf("Failed to determine image absolute path for %s: %s", sifImage, err)
-	}
-	if _, err := os.Stat(bzImage); os.IsNotExist(err) {
-		sylog.Fatalf("This functionality is not supported")
-	}
-	if _, err := os.Stat(initramfs); os.IsNotExist(err) {
-		sylog.Fatalf("This functionality is not supported")
-	}
-
-	sylog.Debugf("%s", singBinds)
-	sylog.Debugf("%s", defArgs)
-	cmd := exec.Command(pgmExec)
-	cmd.Args = append([]string{"Sylabs"}, defArgs...)
-	cmd.Env = os.Environ()
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	if VMErr || debug {
-		cmd.Stderr = os.Stderr
-	}
-
-	if err := cmd.Run(); err != nil {
-		sylog.Debugf("Hypervisor exit code: %v\n", err)
-
-		if exitErr, ok := err.(*exec.ExitError); ok {
-			//Program exited with non-zero return code
-			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
-				sylog.Debugf("Process exited with non-zero return code: %d\n", status.ExitStatus())
-			}
-		}
-	}
-
-	return nil
+	return args
 }
