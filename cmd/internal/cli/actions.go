@@ -184,8 +184,12 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	return
 }
 
-// TODO: Let's stick this in another file so that that CLI is just CLI
-func vmStarter(cmd *cobra.Command, image string, args []string) bool {
+// wantsVM will check whether the user is requesting execution in a VM
+// or not
+//
+// It checks the command line arguments related to --vm and sets
+// that flag if the user did not enable it explicitly.
+func wantsVM(cmd *cobra.Command) bool {
 	// check if --vm-ram or --vm-cpu changed from default value
 	for _, flagName := range []string{"vm-ram", "vm-cpu"} {
 		if flag := cmd.Flag(flagName); flag != nil && flag.Changed {
@@ -204,10 +208,6 @@ func vmStarter(cmd *cobra.Command, image string, args []string) bool {
 		cmd.Flag("vm").Value.Set("true")
 	}
 
-	if VM {
-		prepareVM(cmd, image, args)
-	}
-
 	return VM
 }
 
@@ -219,6 +219,10 @@ var ExecCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
+		if wantsVM(cmd) {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 
@@ -236,6 +240,10 @@ var ShellCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
+		if wantsVM(cmd) {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 
@@ -253,6 +261,10 @@ var RunCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
+		if wantsVM(cmd) {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 
@@ -270,6 +282,10 @@ var TestCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
+		if wantsVM(cmd) {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 

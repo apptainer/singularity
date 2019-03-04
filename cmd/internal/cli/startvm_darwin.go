@@ -80,6 +80,10 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 	userInfo := fmt.Sprintf("%s:%s:%s", usr.Username, usr.Uid, usr.Gid)
 
 	if IsSyOS {
+		// We're ignoring anything passed since we want a SyOS
+		// shell ... We aren't going into the image
+		// automatically here.
+
 		cliExtra = "syos"
 	}
 

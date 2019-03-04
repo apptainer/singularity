@@ -19,7 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func prepareVM(cmd *cobra.Command, image string, args []string) {
+func execVM(cmd *cobra.Command, image string, args []string) {
 	// SIF image we are running
 	sifImage := image
 
@@ -76,7 +76,9 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		cmd.Stderr = os.Stderr
 	}
 
-	if err := cmd.Run(); err != nil {
+	err := cmd.Run()
+
+	if err != nil {
 		sylog.Debugf("Hypervisor exit code: %v\n", err)
 
 		if exitErr, ok := err.(*exec.ExitError); ok {
@@ -87,5 +89,5 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		}
 	}
 
-	return nil
+	return err
 }

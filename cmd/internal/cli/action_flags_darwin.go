@@ -36,4 +36,7 @@ func initPlatformDefaults() {
 		vmFlag.Changed = false
 		vmFlag.DefValue = "true"
 	}
+
+	// hide this flag from the help so that users don't try to turn it off
+	actionFlags.MarkHidden("vm")
 }
