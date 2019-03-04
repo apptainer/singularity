@@ -59,6 +59,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string) (err 
 			Groupid:  sif.DescrDefaultGroup,
 			Link:     sif.DescrUnusedLink,
 			Data:     ociConf,
+			Fname:    "oci-config.json",
 		}
 		ociInput.Size = int64(binary.Size(ociInput.Data))
 
