@@ -31,7 +31,7 @@ import (
 type SIFAssembler struct {
 }
 
-func createSIF(path string, definition []byte, squashfile string) (err error) {
+func createSIF(path string, definition, ociConf []byte, squashfile string) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -51,6 +51,20 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 
 	// add this descriptor input element to creation descriptor slice
 	cinfo.InputDescr = append(cinfo.InputDescr, definput)
+
+	if len(ociConf) > 0 {
+		// data we need to create a definition file descriptor
+		ociInput := sif.DescriptorInput{
+			Datatype: sif.DataGenericJSON,
+			Groupid:  sif.DescrDefaultGroup,
+			Link:     sif.DescrUnusedLink,
+			Data:     ociConf,
+		}
+		ociInput.Size = int64(binary.Size(ociInput.Data))
+
+		// add this descriptor input element to creation descriptor slice
+		cinfo.InputDescr = append(cinfo.InputDescr, ociInput)
+	}
 
 	// data we need to create a system partition descriptor
 	parinput := sif.DescriptorInput{
@@ -157,7 +171,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	err = createSIF(path, b.Recipe.Raw, squashfsPath)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], squashfsPath)
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}

@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -160,6 +161,11 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
 	}
 
+	err = cp.insertOCIConfig()
+	if err != nil {
+		return nil, fmt.Errorf("While inserting oci config: %v", err)
+	}
+
 	return cp.b, nil
 }
 
@@ -189,6 +195,16 @@ func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
 	}
 
 	return imgSpec.Config, nil
+}
+
+func (cp *OCIConveyorPacker) insertOCIConfig() error {
+	conf, err := json.Marshal(cp.imgConfig)
+	if err != nil {
+		return err
+	}
+
+	cp.b.JSONObjects["oci-config"] = conf
+	return nil
 }
 
 // Perform a dumb tar(gz) extraction with no chown, id remapping etc.
@@ -318,6 +334,18 @@ func (cp *OCIConveyorPacker) insertRunScript() (err error) {
 		}
 	}
 
+	if len(cp.imgConfig.WorkingDir) > 0 {
+		_, err = f.WriteString("OCI_WORKDIR='" + cp.imgConfig.WorkingDir + "'\n")
+		if err != nil {
+			return
+		}
+	} else {
+		_, err = f.WriteString("OCI_WORKDIR=''\n")
+		if err != nil {
+			return
+		}
+	}
+
 	_, err = f.WriteString(`CMDLINE_ARGS=""
 # prepare command line arguments for evaluation
 for arg in "$@"; do
@@ -348,6 +376,11 @@ if [ $# -gt 0 ]; then
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
 else
     SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
+fi
+
+# WORKDIR - if set change directory to this location before executing CMD/ENTRYPOINT
+if [ -n "$OCI_WORKDIR" ]; then
+    cd ${OCI_WORKDIR}
 fi
 
 # Evaluate shell expressions first and set arguments accordingly,
