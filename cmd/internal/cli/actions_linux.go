@@ -34,8 +34,18 @@ import (
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
-	// --vm-ram or --vm-cpu changed from default value, and --vm flag not given
-	if (cobraCmd.Flag("vm-ram").Changed || cobraCmd.Flag("vm-cpu").Changed) && !VM {
+	// check if --vm-ram or --vm-cpu changed from default value
+	isVMNeeded := false
+	for _, flagName := range []string{"vm-ram", "vm-cpu"} {
+		if flag := cobraCmd.Flag(flagName); flag != nil && flag.Changed {
+			isVMNeeded = true
+			break
+		}
+	}
+
+	// check if the user passed options related to the VM but didn't
+	// enable the VM itself
+	if isVMNeeded && !VM {
 		sylog.Debugf("Setting --vm option to true")
 		cobraCmd.Flag("vm").Value.Set("true")
 	}
