@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build !linux
+
 package cli
 
 import (
@@ -11,4 +13,5 @@ import (
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
+	panic("starter is unsupported on this platform")
 }
