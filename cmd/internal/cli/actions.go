@@ -32,8 +32,6 @@ func init() {
 		TestCmd,
 	}
 
-	// TODO : the next n lines of code are repeating too much but I don't
-	// know how to shorten them tonight
 	for _, cmd := range actionCmds {
 		for _, flagName := range platformActionFlags {
 			cmd.Flags().AddFlag(actionFlags.Lookup(flagName))
