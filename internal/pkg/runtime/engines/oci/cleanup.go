@@ -10,6 +10,8 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/instance"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
@@ -22,6 +24,20 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 	pidFile := engine.EngineConfig.GetPidFile()
 	if pidFile != "" {
 		os.Remove(pidFile)
+	}
+
+	// if container wasn't created, delete instance files
+	if engine.EngineConfig.State.Status == ociruntime.Creating {
+		name := engine.CommonConfig.ContainerID
+		file, err := instance.Get(name)
+		if err != nil {
+			sylog.Warningf("no instance files found for %s: %s", name, err)
+			return nil
+		}
+		if err := file.Delete(); err != nil {
+			sylog.Warningf("failed to delete instance files: %s", err)
+		}
+		return nil
 	}
 
 	exitCode := 0
