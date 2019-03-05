@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 )
@@ -40,6 +42,15 @@ var (
 const (
 	envPrefix = "SINGULARITY_"
 )
+
+// initializePlugins should be called in any init() function which needs to interact with the plugin
+// systems internal API. This will guarantee that any internal API calls happen AFTER all plugins
+// have been properly loaded and initialized
+func initializePlugins() {
+	if err := plugin.InitializeAll(filepath.Join(buildcfg.LIBEXECDIR, "singularity/plugin/*")); err != nil {
+		sylog.Fatalf("Unable to initialize plugins: %s\n", err)
+	}
+}
 
 func init() {
 	SingularityCmd.Flags().SetInterspersed(false)
@@ -67,6 +78,9 @@ func init() {
 
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
+
+	initializePlugins()
+	plugin.AddCommands(SingularityCmd)
 }
 
 func setSylogMessageLevel(cmd *cobra.Command, args []string) {

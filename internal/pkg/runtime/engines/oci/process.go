@@ -257,7 +257,9 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return err
 	}
 
-	go engine.handleControl(masterConn, attach, control, logger, fatalChan)
+	start := make(chan bool, 1)
+
+	go engine.handleControl(masterConn, attach, control, logger, start, fatalChan)
 
 	hooks := engine.EngineConfig.OciConfig.Hooks
 	if hooks != nil {
@@ -270,6 +272,10 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 
 	// detach process
 	syscall.Kill(os.Getppid(), syscall.SIGUSR1)
+
+	// block until start event received
+	<-start
+	close(start)
 
 	return nil
 }
@@ -376,7 +382,7 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 	}
 }
 
-func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, fatalChan chan error) {
+func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
 	var master *os.File
 	started := false
 	ctrl := &ociruntime.Control{}
@@ -409,6 +415,9 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Li
 				fatalChan <- fmt.Errorf("failed to send ACK to start process: %s", err)
 				return
 			}
+
+			// send start event
+			start <- true
 
 			// wait status update
 			engine.waitStatusUpdate()

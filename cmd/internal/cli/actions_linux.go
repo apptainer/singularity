@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
 
 	"github.com/spf13/cobra"
@@ -332,6 +333,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	Env := []string{sylog.GetEnvVar()}
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
+
+	plugin.FlagHookCallbacks(engineConfig)
 
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,

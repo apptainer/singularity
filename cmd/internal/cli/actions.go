@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -23,6 +24,7 @@ import (
 )
 
 func init() {
+	initializePlugins()
 	actionCmds := []*cobra.Command{
 		ExecCmd,
 		ShellCmd,
@@ -72,10 +74,12 @@ func init() {
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
 		cmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
+		plugin.AddFlagHooks(cmd.Flags())
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
 		}
 		cmd.Flags().SetInterspersed(false)
+
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
@@ -154,7 +158,16 @@ func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
-	libexec.PullShubImage(imagePath, u, true, noHTTPS)
+	exists, err := cache.ShubImageExists("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading shub image")
+		libexec.PullShubImage(imagePath, u, true, noHTTPS)
+	} else {
+		sylog.Verbosef("Use image from cache")
+	}
 
 	return imagePath, nil
 }

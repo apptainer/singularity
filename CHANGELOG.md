@@ -11,7 +11,9 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.1.0
 
-# v3.1.0 - [2019.02.08]
+  - Fixed usage docstrings for OCI - was missing "oci" in command examples.
+
+# v3.1.0 - [2019.02.22]
 
 ## New Commands
   - Introduced the `oci` command group to support a new OCI compliant variant of the Singularity runtime:
