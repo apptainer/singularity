@@ -11,6 +11,17 @@ import (
 	"os"
 )
 
+type readerError string
+
+func (e readerError) Error() string { return string(e) }
+
+const (
+	// ErrNoSection corresponds to a missing CNI configuration path
+	ErrNoSection = readerError("no section found")
+	// ErrNoPartition corresponds to a missing CNI plugin path
+	ErrNoPartition = readerError("no partition found")
+)
+
 func checkImage(image *Image) error {
 	if image == nil {
 		return fmt.Errorf("image is nil")
@@ -41,15 +52,15 @@ func NewPartitionReader(image *Image, name string, index int) (io.Reader, error)
 		}
 		idx = index
 	}
+	if name == "" && idx < 0 {
+		return nil, fmt.Errorf("no name or positive index provided")
+	}
 	for i, p := range image.Partitions {
 		if p.Name == name || i == idx {
 			return getSectionReader(image.File, p), nil
 		}
 	}
-	if idx == -1 {
-		return nil, fmt.Errorf("no partition found with name %s", name)
-	}
-	return nil, fmt.Errorf("no partition found at index %d", idx)
+	return nil, ErrNoPartition
 }
 
 // NewSectionReader searches and returns a reader for an image
@@ -68,13 +79,13 @@ func NewSectionReader(image *Image, name string, index int) (io.Reader, error) {
 		}
 		idx = index
 	}
+	if name == "" && idx < 0 {
+		return nil, fmt.Errorf("no name or positive index provided")
+	}
 	for i, p := range image.Sections {
 		if p.Name == name || i == idx {
 			return getSectionReader(image.File, p), nil
 		}
 	}
-	if idx == -1 {
-		return nil, fmt.Errorf("no section found with name %s", name)
-	}
-	return nil, fmt.Errorf("no section found at index %d", idx)
+	return nil, ErrNoSection
 }
