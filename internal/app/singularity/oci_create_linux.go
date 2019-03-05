@@ -48,7 +48,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	engineConfig.SetPidFile(args.PidFile)
 
 	// load config.json from bundle path
-	configJSON := filepath.Join(args.BundlePath, "config.json")
+	configJSON := filepath.Join(absBundle, "config.json")
 	fb, err := os.Open(configJSON)
 	if err != nil {
 		return fmt.Errorf("failed to open %s: %s", configJSON, err)

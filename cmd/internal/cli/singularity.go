@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -270,6 +270,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"containall":     envBool,
 	"nv":             envBool,
 	"no-nv":          envBool,
+	"vm":             envBool,
 	"writable":       envBool,
 	"writable-tmpfs": envBool,
 	"no-home":        envBool,
