@@ -244,7 +244,7 @@ func (c *container) setupSIFOverlay(img *image.Image, writable bool) error {
 		if p.Type == image.EXT3 || p.Type == image.SQUASHFS {
 			imgCopy := *img
 			imgCopy.Type = int(p.Type)
-			imgCopy.Partitions = []image.Partition{p}
+			imgCopy.Partitions = []image.Section{p}
 			imglist = append(imglist, imgCopy)
 			overlayImg = append(overlayImg, imgCopy.Path)
 			overlayPart++

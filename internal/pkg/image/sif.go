@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
 )
@@ -62,38 +63,51 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Partitions[0].Offset = uint64(part.Fileoff)
 	img.Partitions[0].Size = uint64(part.Filelen)
 
-	// check if there is overlay partitions
-	// Get descriptor for group associated with system partition
-	descriptors, _, err := fimg.GetPartFromGroup(part.Groupid)
-	if err != nil {
-		return err
-	}
-	// Determine if an overlay partition exists
-	for _, desc := range descriptors {
-		ptype, err := desc.GetPartType()
-		if err != nil {
-			return err
-		}
-		if ptype == sif.PartOverlay {
-			fstype, err := desc.GetFsType()
-			if err != nil {
-				continue
+	// store all remaining sections
+	img.Sections = make([]Section, 0)
+
+	for _, desc := range fimg.DescrArr {
+		if ptype, err := desc.GetPartType(); err == nil {
+			// overlay partitions
+			if ptype == sif.PartOverlay && part.Groupid == desc.Groupid && desc.Used {
+				fstype, err := desc.GetFsType()
+				if err != nil {
+					continue
+				}
+				partition := Section{
+					Offset: uint64(desc.Fileoff),
+					Size:   uint64(desc.Filelen),
+					Name:   desc.GetName(),
+				}
+				switch fstype {
+				case sif.FsSquash:
+					partition.Type = SQUASHFS
+				case sif.FsExt3:
+					partition.Type = EXT3
+				}
+				img.Partitions = append(img.Partitions, partition)
 			}
-			partition := Partition{
+		} else {
+			// anything else
+			data := Section{
 				Offset: uint64(desc.Fileoff),
 				Size:   uint64(desc.Filelen),
+				Type:   uint32(desc.Datatype),
+				Name:   desc.GetName(),
 			}
-			switch fstype {
-			case sif.FsSquash:
-				partition.Type = SQUASHFS
-			case sif.FsExt3:
-				partition.Type = EXT3
-			}
-			img.Partitions = append(img.Partitions, partition)
+			img.Sections = append(img.Sections, data)
 		}
 	}
 
 	img.Type = SIF
+
+	// UnloadContainer close image, just want to unmap image
+	// from memory
+	if fimg.Amodebuf == false {
+		if err := syscall.Munmap(fimg.Filedata); err != nil {
+			return fmt.Errorf("while calling unmapping SIF file")
+		}
+	}
 
 	return nil
 }

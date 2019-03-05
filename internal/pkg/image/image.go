@@ -37,23 +37,25 @@ type format interface {
 	initializer(*Image, os.FileInfo) error
 }
 
-// Partition identifies and locates a partition in image object
-type Partition struct {
+// Section identifies and locates a data section in image object
+type Section struct {
 	Size   uint64 `json:"size"`
 	Offset uint64 `json:"offset"`
 	Type   uint32 `json:"type"`
+	Name   string `json:"name"`
 }
 
 // Image describes an image object
 type Image struct {
-	Path       string      `json:"path"`
-	Name       string      `json:"name"`
-	Type       int         `json:"type"`
-	File       *os.File    `json:"-"`
-	Fd         uintptr     `json:"fd"`
-	Source     string      `json:"source"`
-	Writable   bool        `json:"writable"`
-	Partitions []Partition `json:"partitions"`
+	Path       string    `json:"path"`
+	Name       string    `json:"name"`
+	Type       int       `json:"type"`
+	File       *os.File  `json:"-"`
+	Fd         uintptr   `json:"fd"`
+	Source     string    `json:"source"`
+	Writable   bool      `json:"writable"`
+	Partitions []Section `json:"partitions"`
+	Sections   []Section `json:"sections"`
 }
 
 // AuthorizedPath checks if image is in a path supplied in paths
@@ -129,7 +131,7 @@ func ResolvePath(path string) (string, error) {
 	return resolvedPath, nil
 }
 
-// Init initilizes an image object based on given path
+// Init initializes an image object based on given path
 func Init(path string, writable bool) (*Image, error) {
 	sylog.Debugf("Entering image format intializer")
 
@@ -141,7 +143,7 @@ func Init(path string, writable bool) (*Image, error) {
 	img := &Image{
 		Path:       resolvedPath,
 		Name:       filepath.Base(resolvedPath),
-		Partitions: make([]Partition, 1),
+		Partitions: make([]Section, 1),
 	}
 
 	for _, rf := range registeredFormats {
