@@ -266,6 +266,14 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
 func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
+
+//	fmt.Println("START LISTING:")
+
+//	if err := sypgp.RemovePupKey(); err != nil {
+//		return fmt.Errorf("unable to read keyring: %v", err)
+//	}
+
+
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return fmt.Errorf("failed to load SIF container file: %s", err)
@@ -289,6 +297,10 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	var authok string
+//	var signer openpgp.Entity
+
+	var took uint64
+
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
@@ -311,29 +323,49 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("could not get the signing entity fingerprint: %s", err)
 		}
 
+		fmt.Printf("fingerptinyOOOOOOOOOO: %v\n", fingerprint)
+
+//		sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
+//		netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+//		if err != nil {
+//			return fmt.Errorf("could not fetch public key from server: %v", err)
+//		}
+//		sylog.Infof("key retrieved successfully!")
+
+//		block, _ = clearsign.Decode(data)
+//		if block == nil {
+//			return fmt.Errorf("failed to parse signature block")
+//		}
+
+//		if err = sypgp.StorePubKey(netlist[0]); err != nil {
+//			return fmt.Errorf("could not store public key: %s", err)
+//		}
+
+//		signer, err := openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+//		if err != nil {
+//			return fmt.Errorf("signature verification failed: %s", err)
+//		}
+
 		// try to verify with local OpenPGP store first
+
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
+
+//			return fmt.Errorf("unable to verify container: %v", err)
 			// verification with local keyring failed, try to fetch from key server
-			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
-			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
-			if err != nil {
-				return fmt.Errorf("could not fetch public key from server: %s", err)
-			}
-			sylog.Infof("key retrieved successfully!")
+//			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
+//			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+//			if err != nil {
+//				return fmt.Errorf("could not fetch public key from server: %s", err)
+//			}
+//			sylog.Infof("key retrieved successfully!")
+//
+//			block, _ := clearsign.Decode(data)
+//			if block == nil {
+//				return fmt.Errorf("failed to parse signature block")
+//			}
 
-			block, _ := clearsign.Decode(data)
-			if block == nil {
-				return fmt.Errorf("failed to parse signature block")
-			}
-
-			// try verification again with downloaded key
-			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
-			if err != nil {
-				return fmt.Errorf("signature verification failed: %s", err)
-			}
-
-			if noPrompt {
+/*			if noPrompt {
 				// always store key when prompts disabled
 				if err = sypgp.StorePubKey(netlist[0]); err != nil {
 					return fmt.Errorf("could not store public key: %s", err)
@@ -349,8 +381,21 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 						return fmt.Errorf("could not store public key: %s", err)
 					}
 				}
-			}
+			}*/
+
+			// try verification again with downloaded key
+
+
+
+//			signer, err := openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+//			if err != nil {
+//				return fmt.Errorf("signature verification failed: %s", err)
+//			}
+//			fmt.Println("FOOOOO: ", signer)
+//
 		}
+
+		took = signer.PrimaryKey.KeyId
 
 		// Get first Identity data for convenience
 		var name string
@@ -362,6 +407,19 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	}
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
 	fmt.Print(authok)
+//	fmt.Println("SOGNED: ", took)
+
+	fmt.Printf("KEY FINGERPRINT: %X\n", took)
+
+	// TODO : need to send the whole key id, not just the last part of it
+	if err := sypgp.RemovePupKey(took); err != nil {
+		return fmt.Errorf("unable to read keyring: %v", err)
+	}
+
+//	err = sypgp.RemovePubKey(signer.PrimaryKey.KeyId)
+//	if err != nil {
+//		return fmt.Errorf("unable to check public keyring: %v", err)
+//	}
 
 	return nil
 }

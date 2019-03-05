@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+//	"io"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -347,6 +348,92 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 		return
 	}
 	return
+}
+
+func foobar(e *openpgp.Entity, oldToken uint64) error {
+	fmt.Printf("FOO_FINGERPRINT: %X\n", e.PrimaryKey.Fingerprint)
+	fmt.Printf("ESTRING: %s\n", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
+	fmt.Printf("FOBAR: %s\n", fmt.Sprintf("%X", oldToken))
+
+	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), fmt.Sprintf("%X", oldToken)) {
+		fmt.Println("MATCH!!!")
+	}
+
+	fmt.Printf("\n")
+
+	return nil
+}
+
+
+// RemovePupKey : will remove the public key
+//func RemovePupKey(e *openpgp.Entity, signature io.Reader) error {
+//func RemovePupKey(e *openpgp, keysFoo io.Reader) error {
+//func RemovePupKey(keysFoo io.Reader) (err error) {
+//
+func RemovePupKey(toDelete uint64) error {
+
+//	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return fmt.Errorf("unable to read keyring: %v", err)
+		//return err
+	}
+	fmt.Println("ALL KEYS: ", elist)
+
+	for i := range elist {
+		err := foobar(elist[i], toDelete)
+		if err != nil {
+			return fmt.Errorf("unable to remove key id: %v", err)
+		}
+	}
+
+//	fmt.Println("TOOOOOOOOO DELETE: ", toDelete)
+
+//	foobar(elist[1])
+
+
+//	for _, v := range elist.Identities {
+//	for _, v := range elist {
+//		fmt.Printf("U: %v (%v) <%v>\n", v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+//	}
+
+//	fmt.Printf("   F: %X\n", elist.PrimaryKey.Fingerprint)
+//	fmt.Printf("   F: %X\n", elist.Fingerprint)
+
+//	bits, _ := elist.PrimaryKey.BitLength()
+//	fmt.Printf("   L: %v\n", bits)
+
+
+	//foo := openpgp.EntityList.DecryptionKeys(elist)
+	//foo := openpgp.EntityList.KeysById(elist, 1)
+//	fmt.Printf("FOOOOO:  %X\n", foo)
+
+//	for i := range elist {
+//		fmt.Println("INFO:  ", elist[i])
+//		foo := openpgp.EntityList.DecryptionKeys(elist[i])
+//		fmt.Printf("FOOOOO:  ", foo)
+//	}
+
+	//	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	defer f.Close()
+
+	//	err := openpgp.CheckDetachedSignature(e KeyRing, signed, signature io.Reader)
+	//	err = e.CheckDetachedSignature(f)
+	//	//(signer *Entity, err error)
+	//	if err != nil {
+	//		return err
+	//	}
+
+	return nil
 }
 
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
