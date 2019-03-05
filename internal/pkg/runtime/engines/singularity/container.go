@@ -1333,7 +1333,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		sylog.Debugf("Adding %s to mount list\n", src)
 
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
-			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
+			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		}
 		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		flags &^= syscall.MS_RDONLY
