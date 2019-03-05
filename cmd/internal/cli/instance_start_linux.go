@@ -61,7 +61,8 @@ var InstanceStartCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/start"}, args[2:]...)
-		if wantsVM(cmd) {
+		setVM(cmd)
+		if VM {
 			execVM(cmd, args[0], a)
 			return
 		}

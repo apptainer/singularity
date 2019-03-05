@@ -184,31 +184,23 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	return
 }
 
-// wantsVM will check whether the user is requesting execution in a VM
-// or not
-//
-// It checks the command line arguments related to --vm and sets
-// that flag if the user did not enable it explicitly.
-func wantsVM(cmd *cobra.Command) bool {
+// setVM will set the --vm option if needed by other options
+func setVM(cmd *cobra.Command) {
 	// check if --vm-ram or --vm-cpu changed from default value
 	for _, flagName := range []string{"vm-ram", "vm-cpu"} {
 		if flag := cmd.Flag(flagName); flag != nil && flag.Changed {
-			// the user passed an option related to the VM...
-			if !VM {
-				// ... but didn't enable the VM itself
-				cmd.Flag("vm").Value.Set("true")
-			}
-			break
+			// this option requires the VM setting to be enabled
+			cmd.Flags().Set("vm", "true")
+			return
 		}
 	}
 
 	// since --syos is a boolean, it cannot be added to the above list
 	if IsSyOS && !VM {
+		// let the user know that passing --syos implictly enables --vm
 		sylog.Warningf("The --syos option requires a virtual machine, automatically enabling --vm option.")
-		cmd.Flag("vm").Value.Set("true")
+		cmd.Flags().Set("vm", "true")
 	}
-
-	return VM
 }
 
 // ExecCmd represents the exec command
@@ -219,7 +211,8 @@ var ExecCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
-		if wantsVM(cmd) {
+		setVM(cmd)
+		if VM {
 			execVM(cmd, args[0], a)
 			return
 		}
@@ -240,7 +233,8 @@ var ShellCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
-		if wantsVM(cmd) {
+		setVM(cmd)
+		if VM {
 			execVM(cmd, args[0], a)
 			return
 		}
@@ -261,7 +255,8 @@ var RunCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
-		if wantsVM(cmd) {
+		setVM(cmd)
+		if VM {
 			execVM(cmd, args[0], a)
 			return
 		}
@@ -282,7 +277,8 @@ var TestCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
-		if wantsVM(cmd) {
+		setVM(cmd)
+		if VM {
 			execVM(cmd, args[0], a)
 			return
 		}
