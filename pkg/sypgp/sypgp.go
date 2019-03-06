@@ -350,16 +350,18 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-func foobar(e *openpgp.Entity, oldToken uint64) error {
-	fmt.Printf("FOO_FINGERPRINT: %X\n", e.PrimaryKey.Fingerprint)
-	fmt.Printf("ESTRING: %s\n", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
-	fmt.Printf("FOBAR: %s\n", fmt.Sprintf("%X", oldToken))
+func foobar(e *openpgp.Entity, oldToken string) error {
+//	fmt.Printf("FOO_FINGERPRINT: %X\n", e.PrimaryKey.Fingerprint)
+//	fmt.Printf("ESTRING: %s\n", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
+//	fmt.Printf("FOBAR: %s\n", fmt.Sprintf("%X", oldToken))
 
-	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), fmt.Sprintf("%X", oldToken)) {
-		fmt.Println("MATCH!!!")
+//	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), fmt.Sprintf("%X", oldToken)) {
+	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), oldToken) {
+		//fmt.Println("MATCH!!!")
+		fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
 	}
 
-	fmt.Printf("\n")
+//	fmt.Printf("\n")
 
 	return nil
 }
@@ -370,7 +372,7 @@ func foobar(e *openpgp.Entity, oldToken uint64) error {
 //func RemovePupKey(e *openpgp, keysFoo io.Reader) error {
 //func RemovePupKey(keysFoo io.Reader) (err error) {
 //
-func RemovePupKey(toDelete uint64) error {
+func RemovePupKey(toDelete string) error {
 
 //	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
