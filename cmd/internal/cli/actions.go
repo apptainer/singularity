@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -23,6 +24,7 @@ import (
 )
 
 func init() {
+	initializePlugins()
 	actionCmds := []*cobra.Command{
 		ExecCmd,
 		ShellCmd,
@@ -30,52 +32,19 @@ func init() {
 		TestCmd,
 	}
 
-	// TODO : the next n lines of code are repeating too much but I don't
-	// know how to shorten them tonight
 	for _, cmd := range actionCmds {
-		cmd.Flags().AddFlag(actionFlags.Lookup("bind"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("contain"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("containall"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("cleanenv"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("home"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("ipc"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("net"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("network"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("network-args"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("dns"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("nv"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("overlay"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("pid"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("uts"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("pwd"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("scratch"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("userns"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("workdir"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("hostname"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("fakeroot"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("keep-privs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-privs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("add-caps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("drop-caps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("allow-setuid"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("writable"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("writable-tmpfs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-home"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-init"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("security"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("apply-cgroups"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("app"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("containlibs"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("no-nv"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("tmpdir"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("nohttps"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
-		cmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
+		for _, flagName := range platformActionFlags {
+			cmd.Flags().AddFlag(actionFlags.Lookup(flagName))
+		}
+
+		plugin.AddFlagHooks(cmd.Flags())
+
 		if cmd == ShellCmd {
 			cmd.Flags().AddFlag(actionFlags.Lookup("shell"))
+			cmd.Flags().AddFlag(actionFlags.Lookup("syos"))
 		}
 		cmd.Flags().SetInterspersed(false)
+
 	}
 
 	SingularityCmd.AddCommand(ExecCmd)
@@ -154,7 +123,16 @@ func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
 
-	libexec.PullShubImage(imagePath, u, true, noHTTPS)
+	exists, err := cache.ShubImageExists("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading shub image")
+		libexec.PullShubImage(imagePath, u, true, noHTTPS)
+	} else {
+		sylog.Verbosef("Use image from cache")
+	}
 
 	return imagePath, nil
 }
@@ -213,6 +191,25 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	return
 }
 
+// setVM will set the --vm option if needed by other options
+func setVM(cmd *cobra.Command) {
+	// check if --vm-ram or --vm-cpu changed from default value
+	for _, flagName := range []string{"vm-ram", "vm-cpu"} {
+		if flag := cmd.Flag(flagName); flag != nil && flag.Changed {
+			// this option requires the VM setting to be enabled
+			cmd.Flags().Set("vm", "true")
+			return
+		}
+	}
+
+	// since --syos is a boolean, it cannot be added to the above list
+	if IsSyOS && !VM {
+		// let the user know that passing --syos implictly enables --vm
+		sylog.Warningf("The --syos option requires a virtual machine, automatically enabling --vm option.")
+		cmd.Flags().Set("vm", "true")
+	}
+}
+
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
@@ -221,6 +218,11 @@ var ExecCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
+		setVM(cmd)
+		if VM {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 
@@ -238,6 +240,11 @@ var ShellCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
+		setVM(cmd)
+		if VM {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 
@@ -255,6 +262,11 @@ var RunCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
+		setVM(cmd)
+		if VM {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 
@@ -272,6 +284,11 @@ var TestCmd = &cobra.Command{
 	PreRun:                replaceURIWithImage,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
+		setVM(cmd)
+		if VM {
+			execVM(cmd, args[0], a)
+			return
+		}
 		execStarter(cmd, args[0], a, "")
 	},
 

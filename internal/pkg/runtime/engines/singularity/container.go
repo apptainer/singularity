@@ -1389,7 +1389,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		sylog.Debugf("Adding %s to mount list\n", src)
 
 		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
-			return fmt.Errorf("unabled to %s to mount list: %s", src, err)
+			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		}
 		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		flags &^= syscall.MS_RDONLY
@@ -1430,10 +1430,10 @@ func (c *container) addTmpMount(system *mount.System) error {
 			tmpSource = filepath.Join(workdir, tmpSource)
 			vartmpSource = filepath.Join(workdir, vartmpSource)
 
-			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil {
+			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
-			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil {
+			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
@@ -1506,11 +1506,11 @@ func (c *container) addScratchMount(system *mount.System) error {
 
 		if hasWorkdir {
 			fullSourceDir = filepath.Join(sourceDir, filepath.Base(dir))
-			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil {
+			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
 			}
 		} else {
-			src := filepath.Join("/scratch", filepath.Base(dir))
+			src := filepath.Join("/scratch", dir)
 			if err := c.session.AddDir(src); err != nil {
 				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
 			}
@@ -1541,7 +1541,11 @@ func (c *container) addCwdMount(system *mount.System) error {
 	}
 	cwd = c.engine.EngineConfig.OciConfig.Process.Cwd
 	if err := os.Chdir(cwd); err != nil {
-		sylog.Warningf("Could not set container working directory %s: %s", cwd, err)
+		if os.IsNotExist(err) {
+			sylog.Debugf("Container working directory %s doesn't exist, will retry after chroot", cwd)
+		} else {
+			sylog.Warningf("Could not set container working directory %s: %s", cwd, err)
+		}
 		return nil
 	}
 	current, err := os.Getwd()

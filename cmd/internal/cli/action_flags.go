@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,6 +29,8 @@ var (
 	DNS             string
 	Security        []string
 	CgroupsPath     string
+	VMRAM           string
+	VMCPU           string
 	ContainLibsPath []string
 
 	IsBoot          bool
@@ -42,6 +44,9 @@ var (
 	NoHome          bool
 	NoInit          bool
 	NoNvidia        bool
+	VM              bool
+	VMErr           bool
+	IsSyOS          bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -73,6 +78,7 @@ func init() {
 	initBoolVars()
 	initNamespaceVars()
 	initPrivilegeVars()
+	initPlatformDefaults()
 }
 
 // initPathVars initializes flags that take a string argument
@@ -144,6 +150,16 @@ func initPathVars() {
 	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "apply cgroups from file for container processes (requires root privileges)")
 	actionFlags.SetAnnotation("apply-cgroups", "argtag", []string{"<path>"})
 	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
+
+	// --vm-ram
+	actionFlags.StringVar(&VMRAM, "vm-ram", "1024", "Amount of RAM in MiB to allocate to Virtual Machine (implies --vm)")
+	actionFlags.SetAnnotation("vm-ram", "argtag", []string{"<size>"})
+	actionFlags.SetAnnotation("vm-ram", "envkey", []string{"VM_RAM"})
+
+	// --vm-cpu
+	actionFlags.StringVar(&VMCPU, "vm-cpu", "1", "Number of CPU cores to allocate to Virtual Machine (implies --vm)")
+	actionFlags.SetAnnotation("vm-cpu", "argtag", []string{"<CPU #>"})
+	actionFlags.SetAnnotation("vm-cpu", "envkey", []string{"VM_CPU"})
 
 	// hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
 	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
@@ -220,6 +236,20 @@ func initBoolVars() {
 	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
 	actionFlags.Lookup("no-nv").Hidden = true
 	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
+
+	// --vm
+	actionFlags.BoolVar(&VM, "vm", false, "enable VM support")
+	actionFlags.SetAnnotation("vm", "envkey", []string{"VM"})
+
+	// --vm-err
+	actionFlags.BoolVar(&VMErr, "vm-err", false, "enable attaching stderr from VM")
+	actionFlags.SetAnnotation("vm-err", "envkey", []string{"VMERROR"})
+
+	// --syos
+	// TODO: Keep this in production?
+	actionFlags.BoolVar(&IsSyOS, "syos", false, "execute SyOS shell")
+	actionFlags.MarkHidden("syos")
+	actionFlags.SetAnnotation("syos", "envkey", []string{"SYOS"})
 
 }
 
