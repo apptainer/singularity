@@ -351,7 +351,9 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 }
 
 // compareLocalPubKey : compares ...
-func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
+//func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
+//func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]openpgp.Entity, error) {
+func compareLocalPubKey(e *openpgp.Entity, oldToken string) (bool, error) {
 
 //func foobar(e *openpgp.Entity, oldToken string) (openpgp.EntityList, error) {
 
@@ -363,7 +365,8 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
 
 //	var newKeyListBar openpgp.EntityList
 //	var newKeyList openpgp.EntityList
-	var newKeyListBar []byte
+
+//	var newKeyListBar []byte
 
 //	fmt.Println("new key: ", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
 //	fmt.Println("old key: ", oldToken)
@@ -372,8 +375,10 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
 	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) != oldToken {
 		//fmt.Println("MATCH!!!")
 		//fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
+		return true, nil
+//		newKeyListBar = e.PrimaryKey.Fingerprint
+//		newKeyListBar = e.PrimaryKey.Fingerprint
 
-		newKeyListBar = e.PrimaryKey.Fingerprint[:]
 //		newKeyList = append(newKeyList, e.PrimaryKey.Fingerprint[:]...)
 	}
 
@@ -381,7 +386,8 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
 
 //	fmt.Printf("newKeyList: %X\n", newKeyListBar)
 
-	return newKeyListBar, nil
+//	return newKeyListBar, nil
+	return false, nil
 }
 
 
@@ -410,27 +416,72 @@ func RemovePupKey(toDelete string) error {
 
 //	foobar(elist, toDelete)
 
-	var newKeyList []string
+//	var newKeyList []string
 //	var newKeyList []openpgp.EntityList
+	var newKeyList []openpgp.Entity
 
+	// add all but toDelete to a []string
 	for i := range elist {
-		newKeyListFoo, err := compareLocalPubKey(elist[i], toDelete)
+//		newKeyListFoo, err := compareLocalPubKey(elist[i], toDelete)
+		match, err := compareLocalPubKey(elist[i], toDelete)
 		if err != nil {
 			return fmt.Errorf("unable to remove key id: %v", err)
 		}
-		if newKeyListFoo != nil {
-			newKeyList = append(newKeyList, string(newKeyListFoo[:]))
+
+		if match {
+			newKeyList = append(newKeyList, *elist[i])
 		}
 
+
+/*
+		if newKeyListFoo != nil {
+//			newKeyList = append(newKeyList, string(newKeyListFoo[:]))
+
+//			el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(string(newKeyListFoo)))
+//			el, err := openpgp.ReadArmoredKeyRing(newKeyListFoo[:])
+//			if err != nil {
+//				return fmt.Errorf("unable to convert string to *openpgp.Entity: %v", err)
+//			}
+			newKeyList = append(newKeyList, []openpgp.Entity(newKeyListFoo))
+		}*/
 //		newKeyList = append(newKeyList, newKeyListFoo...)
 	}
 
-//	fmt.Printf("FULL KEY LIST: %X\n", newKeyList)
-
+	fmt.Printf("FULL KEY LIST: %X\n", newKeyList)
 //	fmt.Printf("FULL KEY LIST: %v\n", newKeyList)
+	fmt.Printf("FULL KEY LIST: %T\n", newKeyList)
+
+
+	// delete all the local public keys... scary :O
+	sylog.Infof("local key file to delete: %v", PublicPath())
+	os.Remove(PublicPath())
+	file, err := os.Create(PublicPath())
+	if err != nil {
+		return fmt.Errorf("unable to create the local key file: %v", err)
+	}
+	defer file.Close()
+	sylog.Verbosef("File created: %v", PublicPath())
+
+	if err = file.Chmod(0600); err != nil {
+		return fmt.Errorf("unable to change file permision: %v", err)
+	}
 
 	for k := range newKeyList {
 		fmt.Printf("ONE KEY FOO: %X\n", newKeyList[k])
+		fmt.Printf("ONE KEY FOO: %v\n", newKeyList[k])
+//		if err := StorePubKey([]openpgp.EntityList(newKeyList[k])); err != nil {
+//		el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(newKeyList[k]))
+
+//		el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(newKeyList[k]))
+//		if err != nil {
+//			return fmt.Errorf("unable to convert string to *openpgp.Entity: %v", err)
+//		}
+//		fmt.Printf("FOOBAR: %X\n", el[1])
+
+		if err := StorePubKey(&newKeyList[k]); err != nil {
+			return fmt.Errorf("could not store public key: %s", err)
+		}
+
 	}
 
 
