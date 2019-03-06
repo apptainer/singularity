@@ -60,10 +60,10 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 		sylog.Fatalf("Failed to determine image absolute path for %s: %s", sifImage, err)
 	}
 	if _, err := os.Stat(bzImage); os.IsNotExist(err) {
-        sylog.Fatalf("This functionality is not supported. For more information visit: https://sylabs.io/singularity-desktop-macos")
+		sylog.Fatalf("This functionality is not supported. For more information visit: https://sylabs.io/singularity-desktop-macos")
 	}
 	if _, err := os.Stat(initramfs); os.IsNotExist(err) {
-        sylog.Fatalf("This functionality is not supported. For more information visit: https://sylabs.io/singularity-desktop-macos")
+		sylog.Fatalf("This functionality is not supported. For more information visit: https://sylabs.io/singularity-desktop-macos")
 	}
 
 	args[0] = "Sylabs"
