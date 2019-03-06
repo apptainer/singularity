@@ -327,7 +327,6 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		fmt.Printf("fingerptinyOOOOOOOOOO: %v\n", fingerprint)
 
 		// remove the local key
-
 		// TODO : need to send the whole key id, not just the last part of it
 		if err := sypgp.RemovePupKey(fingerprint); err != nil {
 			return fmt.Errorf("unable to read keyring: %v", err)

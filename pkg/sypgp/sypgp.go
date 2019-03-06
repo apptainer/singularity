@@ -350,7 +350,8 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-func foobar(e *openpgp.Entity, oldToken string) ([]byte, error) {
+// compareLocalPubKey : compares ...
+func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
 
 //func foobar(e *openpgp.Entity, oldToken string) (openpgp.EntityList, error) {
 
@@ -364,7 +365,11 @@ func foobar(e *openpgp.Entity, oldToken string) ([]byte, error) {
 //	var newKeyList openpgp.EntityList
 	var newKeyListBar []byte
 
-	if !strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), oldToken) {
+//	fmt.Println("new key: ", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
+//	fmt.Println("old key: ", oldToken)
+
+//	if !strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), oldToken) {
+	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) != oldToken {
 		//fmt.Println("MATCH!!!")
 		//fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
 
@@ -385,6 +390,8 @@ func foobar(e *openpgp.Entity, oldToken string) ([]byte, error) {
 //func RemovePupKey(e *openpgp, keysFoo io.Reader) error {
 //func RemovePupKey(keysFoo io.Reader) (err error) {
 //
+
+// RemovePupKey : will delete all keys with the ID of (toDelete string)
 func RemovePupKey(toDelete string) error {
 
 //	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
@@ -399,7 +406,7 @@ func RemovePupKey(toDelete string) error {
 		return fmt.Errorf("unable to read keyring: %v", err)
 		//return err
 	}
-	fmt.Printf("ALL KEYS: %v\n", elist)
+//	fmt.Printf("ALL KEYS: %v\n", elist)
 
 //	foobar(elist, toDelete)
 
@@ -407,7 +414,7 @@ func RemovePupKey(toDelete string) error {
 //	var newKeyList []openpgp.EntityList
 
 	for i := range elist {
-		newKeyListFoo, err := foobar(elist[i], toDelete)
+		newKeyListFoo, err := compareLocalPubKey(elist[i], toDelete)
 		if err != nil {
 			return fmt.Errorf("unable to remove key id: %v", err)
 		}
@@ -418,7 +425,7 @@ func RemovePupKey(toDelete string) error {
 //		newKeyList = append(newKeyList, newKeyListFoo...)
 	}
 
-	fmt.Printf("FULL KEY LIST: %X\n", newKeyList)
+//	fmt.Printf("FULL KEY LIST: %X\n", newKeyList)
 
 //	fmt.Printf("FULL KEY LIST: %v\n", newKeyList)
 
