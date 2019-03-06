@@ -364,14 +364,14 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
 	if err != nil {
-		return false, fmt.Errorf("unable to read keyring: %v", err)
+		return false, fmt.Errorf("unable to open local keyring: %v", err)
 	}
 	defer f.Close()
 
 	// read all the local public keys
 	elist, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		return false, fmt.Errorf("unable to read keyring: %v", err)
+		return false, fmt.Errorf("unable to list local keyring: %v", err)
 	}
 
 	for i := range elist {
@@ -379,7 +379,6 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 			return true, nil
 		}
 	}
-
 	return false, nil
 }
 
@@ -387,14 +386,14 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 func RemovePubKey(toDelete string) error {
 	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
-		return fmt.Errorf("unable to read keyring: %v", err)
+		return fmt.Errorf("unable to open local keyring: %v", err)
 	}
 	defer f.Close()
 
 	// read all the local public keys
 	elist, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		return fmt.Errorf("unable to read keyring: %v", err)
+		return fmt.Errorf("unable to list local keyring: %v", err)
 	}
 
 	var newKeyList []openpgp.Entity

@@ -320,7 +320,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 
 		// remove the local key that signed the container
 		if err := sypgp.RemovePubKey(fingerprint); err != nil {
-			return fmt.Errorf("unable to read keyring: %v", err)
+			return fmt.Errorf("unable to remove key from local public keyring: %v", err)
 		}
 
 		// download the new key
@@ -359,7 +359,6 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	// store new key
 	if noPrompt || dontAskToStore {
 		// always store key when prompts disabled or already have the key
-		sylog.Infof("Storing new key...")
 		if err = sypgp.StorePubKey(tokenToAdd); err != nil {
 			return fmt.Errorf("could not store public key: %s", err)
 		}
@@ -371,7 +370,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return err
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
-			sylog.Infof("Storing new key...")
+			sylog.Infof("Storing new key.")
 			if err = sypgp.StorePubKey(tokenToAdd); err != nil {
 				return fmt.Errorf("could not store public key: %s", err)
 			}
