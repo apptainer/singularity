@@ -301,6 +301,11 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("hashes differ, data may be corrupted")
 		}
 
+		block, _ = clearsign.Decode(data)
+		if block == nil {
+			return fmt.Errorf("failed to parse signature block")
+		}
+
 		// (1) Data integrity is verified, (2) now validate identify of signers
 
 		// get the entity fingerprint for the signature block
@@ -330,11 +335,6 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("could not fetch public key from server: %s", err)
 		}
 		sylog.Verbosef("key retrieved successfully!")
-
-		block, _ = clearsign.Decode(data)
-		if block == nil {
-			return fmt.Errorf("failed to parse signature block")
-		}
 
 		// verify the container
 		signer, err := openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
