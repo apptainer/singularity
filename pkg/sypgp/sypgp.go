@@ -362,7 +362,7 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
 // returns true if theres a match.
 func CheckLocalPubKey(ckey string) (bool, error) {
 	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
+	f, err := os.OpenFile(PublicPath(), os.O_CREATE, 0600)
 	if err != nil {
 		return false, fmt.Errorf("unable to open local keyring: %v", err)
 	}
