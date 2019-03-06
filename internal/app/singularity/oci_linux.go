@@ -26,6 +26,8 @@ type OciArgs struct {
 	PidFile        string
 	FromFile       string
 	KillSignal     string
+	ForceKill      bool
+	KillTimeout    uint32
 }
 
 func getCommonConfig(containerID string) (*config.Common, error) {
