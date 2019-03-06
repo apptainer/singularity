@@ -350,13 +350,38 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-// compareLocalPubKey : compares a key ID with a string. return true if the
-// key / oldToken *dont* match.
+// compareLocalPubKey compares a key ID with a string, returning true if the
+// key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
-	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) != oldToken {
+	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken {
 		return true
 	}
 	return false
+}
+
+// CheckLocalPubKey : will check if we have a local public key matching ckey stirng
+// returns true if theres a match.
+func CheckLocalPubKey(ckey string) (bool, error) {
+	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
+	if err != nil {
+		return false, fmt.Errorf("unable to read keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local public keys
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return false, fmt.Errorf("unable to read keyring: %v", err)
+	}
+
+	for i := range elist {
+		if compareLocalPubKey(elist[i], ckey) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // RemovePupKey : will delete all keys with the ID of (toDelete string)
@@ -364,7 +389,7 @@ func RemovePupKey(toDelete string) error {
 	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to read keyring: %v", err)
 	}
 	defer f.Close()
 
@@ -379,7 +404,7 @@ func RemovePupKey(toDelete string) error {
 	// sort throught them, and remove any that match toDelete
 	for i := range elist {
 		// if the elist[i] dose not match toDelete, then add it to newKeyList
-		if compareLocalPubKey(elist[i], toDelete) {
+		if !compareLocalPubKey(elist[i], toDelete) {
 			newKeyList = append(newKeyList, *elist[i])
 		}
 	}
