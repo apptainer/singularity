@@ -17,7 +17,6 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-//	"io"
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
