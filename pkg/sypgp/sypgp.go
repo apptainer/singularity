@@ -383,8 +383,8 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	return false, nil
 }
 
-// RemovePupKey will delete a public key matching toDelete
-func RemovePupKey(toDelete string) error {
+// RemovePubKey will delete a public key matching toDelete
+func RemovePubKey(toDelete string) error {
 	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("unable to read keyring: %v", err)

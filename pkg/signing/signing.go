@@ -319,7 +319,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		}
 
 		// remove the local key that signed the container
-		if err := sypgp.RemovePupKey(fingerprint); err != nil {
+		if err := sypgp.RemovePubKey(fingerprint); err != nil {
 			return fmt.Errorf("unable to read keyring: %v", err)
 		}
 
