@@ -350,10 +350,9 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-// compareLocalPubKey : compares ...
-//func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]byte, error) {
-//func compareLocalPubKey(e *openpgp.Entity, oldToken string) ([]openpgp.Entity, error) {
-func compareLocalPubKey(e *openpgp.Entity, oldToken string) (bool, error) {
+// compareLocalPubKey : compares a key ID with a string. return true if the
+// key / oldToken *dont* match.
+func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
 
 //func foobar(e *openpgp.Entity, oldToken string) (openpgp.EntityList, error) {
 
@@ -375,7 +374,7 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) (bool, error) {
 	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) != oldToken {
 		//fmt.Println("MATCH!!!")
 		//fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
-		return true, nil
+		return true
 //		newKeyListBar = e.PrimaryKey.Fingerprint
 //		newKeyListBar = e.PrimaryKey.Fingerprint
 
@@ -387,7 +386,7 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) (bool, error) {
 //	fmt.Printf("newKeyList: %X\n", newKeyListBar)
 
 //	return newKeyListBar, nil
-	return false, nil
+	return false
 }
 
 
@@ -423,12 +422,13 @@ func RemovePupKey(toDelete string) error {
 	// add all but toDelete to a []string
 	for i := range elist {
 //		newKeyListFoo, err := compareLocalPubKey(elist[i], toDelete)
-		match, err := compareLocalPubKey(elist[i], toDelete)
-		if err != nil {
-			return fmt.Errorf("unable to remove key id: %v", err)
-		}
+//		match, err := compareLocalPubKey(elist[i], toDelete)
+//		if err != nil {
+//			return fmt.Errorf("unable to remove key id: %v", err)
+//		}
 
-		if match {
+		// if the elist[i] dose not match toDelete, then add it to newKeyList
+		if compareLocalPubKey(elist[i], toDelete) {
 			newKeyList = append(newKeyList, *elist[i])
 		}
 
@@ -466,6 +466,7 @@ func RemovePupKey(toDelete string) error {
 		return fmt.Errorf("unable to change file permision: %v", err)
 	}
 
+	// loop throught a write all the other keys back
 	for k := range newKeyList {
 		fmt.Printf("ONE KEY FOO: %X\n", newKeyList[k])
 		fmt.Printf("ONE KEY FOO: %v\n", newKeyList[k])
@@ -478,6 +479,7 @@ func RemovePupKey(toDelete string) error {
 //		}
 //		fmt.Printf("FOOBAR: %X\n", el[1])
 
+		// store the freshly downloaded key
 		if err := StorePubKey(&newKeyList[k]); err != nil {
 			return fmt.Errorf("could not store public key: %s", err)
 		}
