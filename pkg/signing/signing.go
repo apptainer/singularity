@@ -283,14 +283,13 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 
 	// load the public keys available locally from the cache
 	//elist, err := sypgp.LoadPubKeyring()
-	_, err = sypgp.LoadPubKeyring()
-	if err != nil {
-		return fmt.Errorf("could not load public keyring: %s", err)
-	}
+	//_, err = sypgp.LoadPubKeyring()
+	//if err != nil {
+	//	return fmt.Errorf("could not load public keyring: %s", err)
+	//}
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	var authok string
-//	var took uint64
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
@@ -326,7 +325,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		if err != nil {
 			return fmt.Errorf("could not fetch public key from server: %s", err)
 		}
-		sylog.Infof("key retrieved successfully!")
+		//sylog.Infof("key retrieved successfully!")
 		//fmt.Printf("netList type: %T\n", netlist)
 
 		block, _ = clearsign.Decode(data)
