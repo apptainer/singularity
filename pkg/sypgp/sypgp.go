@@ -386,8 +386,7 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 
 // RemovePupKey will delete a public key matching toDelete
 func RemovePupKey(toDelete string) error {
-	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
+	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("unable to read keyring: %v", err)
 	}
@@ -409,31 +408,23 @@ func RemovePupKey(toDelete string) error {
 		}
 	}
 
-	// delete all the local public keys... scary :O
-	// to my knowledge, there is no other way to do this...
 	sylog.Infof("Updating local keyring: %v", PublicPath())
-	os.Remove(PublicPath())
 
-	// create a fresh file with the proper permision
-	file, err := os.Create(PublicPath())
+	// truncate all the public keys... scary :O
+	// to my knowledge, there is no other way to do this...
+	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
-		return fmt.Errorf("unable to create the local key file: %v", err)
+		return fmt.Errorf("unable to clear, and open the file: %v", err)
 	}
-	defer file.Close()
-	sylog.Verbosef("File created: %v", PublicPath())
-	if err = file.Chmod(0600); err != nil {
-		return fmt.Errorf("unable to change file permision: %v", err)
-	}
+	defer nf.Close()
 
 	// loop throught a write all the other keys back
 	for k := range newKeyList {
-
 		// store the freshly downloaded key
 		if err := StorePubKey(&newKeyList[k]); err != nil {
 			return fmt.Errorf("could not store public key: %s", err)
 		}
 	}
-
 	return nil
 }
 
