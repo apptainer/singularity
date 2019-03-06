@@ -353,179 +353,61 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // compareLocalPubKey : compares a key ID with a string. return true if the
 // key / oldToken *dont* match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
-
-//func foobar(e *openpgp.Entity, oldToken string) (openpgp.EntityList, error) {
-
-//	fmt.Printf("FOO_FINGERPRINT: %X\n", e.PrimaryKey.Fingerprint)
-//	fmt.Printf("ESTRING: %s\n", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
-//	fmt.Printf("FOBAR: %s\n", fmt.Sprintf("%X", oldToken))
-
-//	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), fmt.Sprintf("%X", oldToken)) {
-
-//	var newKeyListBar openpgp.EntityList
-//	var newKeyList openpgp.EntityList
-
-//	var newKeyListBar []byte
-
-//	fmt.Println("new key: ", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
-//	fmt.Println("old key: ", oldToken)
-
-//	if !strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), oldToken) {
 	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) != oldToken {
-		//fmt.Println("MATCH!!!")
-		//fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
 		return true
-//		newKeyListBar = e.PrimaryKey.Fingerprint
-//		newKeyListBar = e.PrimaryKey.Fingerprint
-
-//		newKeyList = append(newKeyList, e.PrimaryKey.Fingerprint[:]...)
 	}
-
-//	fmt.Printf("\n")
-
-//	fmt.Printf("newKeyList: %X\n", newKeyListBar)
-
-//	return newKeyListBar, nil
 	return false
 }
 
-
-// RemovePupKey : will remove the public key
-//func RemovePupKey(e *openpgp.Entity, signature io.Reader) error {
-//func RemovePupKey(e *openpgp, keysFoo io.Reader) error {
-//func RemovePupKey(keysFoo io.Reader) (err error) {
-//
-
 // RemovePupKey : will delete all keys with the ID of (toDelete string)
 func RemovePupKey(toDelete string) error {
-
-//	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
+	// read all the local public keys
 	elist, err := openpgp.ReadKeyRing(f)
 	if err != nil {
 		return fmt.Errorf("unable to read keyring: %v", err)
-		//return err
 	}
-//	fmt.Printf("ALL KEYS: %v\n", elist)
 
-//	foobar(elist, toDelete)
-
-//	var newKeyList []string
-//	var newKeyList []openpgp.EntityList
 	var newKeyList []openpgp.Entity
 
-	// add all but toDelete to a []string
+	// sort throught them, and remove any that match toDelete
 	for i := range elist {
-//		newKeyListFoo, err := compareLocalPubKey(elist[i], toDelete)
-//		match, err := compareLocalPubKey(elist[i], toDelete)
-//		if err != nil {
-//			return fmt.Errorf("unable to remove key id: %v", err)
-//		}
-
 		// if the elist[i] dose not match toDelete, then add it to newKeyList
 		if compareLocalPubKey(elist[i], toDelete) {
 			newKeyList = append(newKeyList, *elist[i])
 		}
-
-
-/*
-		if newKeyListFoo != nil {
-//			newKeyList = append(newKeyList, string(newKeyListFoo[:]))
-
-//			el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(string(newKeyListFoo)))
-//			el, err := openpgp.ReadArmoredKeyRing(newKeyListFoo[:])
-//			if err != nil {
-//				return fmt.Errorf("unable to convert string to *openpgp.Entity: %v", err)
-//			}
-			newKeyList = append(newKeyList, []openpgp.Entity(newKeyListFoo))
-		}*/
-//		newKeyList = append(newKeyList, newKeyListFoo...)
 	}
 
-	fmt.Printf("FULL KEY LIST: %X\n", newKeyList)
-//	fmt.Printf("FULL KEY LIST: %v\n", newKeyList)
-	fmt.Printf("FULL KEY LIST: %T\n", newKeyList)
-
-
 	// delete all the local public keys... scary :O
-	sylog.Infof("local key file to delete: %v", PublicPath())
+	// to my knowledge, there is no other way to do this...
+	sylog.Infof("Updating local keyring: %v", PublicPath())
 	os.Remove(PublicPath())
+
+	// create a fresh file with the proper permision
 	file, err := os.Create(PublicPath())
 	if err != nil {
 		return fmt.Errorf("unable to create the local key file: %v", err)
 	}
 	defer file.Close()
 	sylog.Verbosef("File created: %v", PublicPath())
-
 	if err = file.Chmod(0600); err != nil {
 		return fmt.Errorf("unable to change file permision: %v", err)
 	}
 
 	// loop throught a write all the other keys back
 	for k := range newKeyList {
-		fmt.Printf("ONE KEY FOO: %X\n", newKeyList[k])
-		fmt.Printf("ONE KEY FOO: %v\n", newKeyList[k])
-//		if err := StorePubKey([]openpgp.EntityList(newKeyList[k])); err != nil {
-//		el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(newKeyList[k]))
-
-//		el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(newKeyList[k]))
-//		if err != nil {
-//			return fmt.Errorf("unable to convert string to *openpgp.Entity: %v", err)
-//		}
-//		fmt.Printf("FOOBAR: %X\n", el[1])
 
 		// store the freshly downloaded key
 		if err := StorePubKey(&newKeyList[k]); err != nil {
 			return fmt.Errorf("could not store public key: %s", err)
 		}
-
 	}
-
-
-//	fmt.Println("TOOOOOOOOO DELETE: ", toDelete)
-
-//	foobar(elist[1])
-
-
-//	for _, v := range elist.Identities {
-//	for _, v := range elist {
-//		fmt.Printf("U: %v (%v) <%v>\n", v.UserId.Name, v.UserId.Comment, v.UserId.Email)
-//	}
-
-//	fmt.Printf("   F: %X\n", elist.PrimaryKey.Fingerprint)
-//	fmt.Printf("   F: %X\n", elist.Fingerprint)
-
-//	bits, _ := elist.PrimaryKey.BitLength()
-//	fmt.Printf("   L: %v\n", bits)
-
-
-	//foo := openpgp.EntityList.DecryptionKeys(elist)
-	//foo := openpgp.EntityList.KeysById(elist, 1)
-//	fmt.Printf("FOOOOO:  %X\n", foo)
-
-//	for i := range elist {
-//		fmt.Println("INFO:  ", elist[i])
-//		foo := openpgp.EntityList.DecryptionKeys(elist[i])
-//		fmt.Printf("FOOOOO:  ", foo)
-//	}
-
-	//	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	defer f.Close()
-
-	//	err := openpgp.CheckDetachedSignature(e KeyRing, signed, signature io.Reader)
-	//	err = e.CheckDetachedSignature(f)
-	//	//(signer *Entity, err error)
-	//	if err != nil {
-	//		return err
-	//	}
 
 	return nil
 }
