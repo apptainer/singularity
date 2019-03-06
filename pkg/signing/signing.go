@@ -288,8 +288,13 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	//	return fmt.Errorf("could not load public keyring: %s", err)
 	//}
 
-	// compare freshly computed hash with hashes stored in signatures block(s)
 	var authok string
+	var dontAskToStore bool
+	//var netlist openpgp.EntityList
+	var toStoreToken uint64
+	var tokenToAdd *openpgp.Entity
+
+	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
@@ -312,7 +317,14 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("could not get the signing entity fingerprint: %s", err)
 		}
 
-		//fmt.Printf("fingerptinyOOOOOOOOOO: %v\n", fingerprint)
+		// check if we already have the public key
+		checkPub, err := sypgp.CheckLocalPubKey(fingerprint)
+		if err != nil {
+			return fmt.Errorf("unable to check public keys: %v", err)
+		}
+		if checkPub {
+			dontAskToStore = true
+		}
 
 		// remove the local key that signed the container
 		if err := sypgp.RemovePupKey(fingerprint); err != nil {
@@ -325,18 +337,11 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		if err != nil {
 			return fmt.Errorf("could not fetch public key from server: %s", err)
 		}
-		//sylog.Infof("key retrieved successfully!")
-		//fmt.Printf("netList type: %T\n", netlist)
+		sylog.Verbosef("key retrieved successfully!")
 
 		block, _ = clearsign.Decode(data)
 		if block == nil {
 			return fmt.Errorf("failed to parse signature block")
-		}
-
-		// store new key
-		sylog.Infof("Storing new key...")
-		if err = sypgp.StorePubKey(netlist[0]); err != nil {
-			return fmt.Errorf("could not store public key: %s", err)
 		}
 
 		// verify the container
@@ -344,6 +349,28 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		if err != nil {
 			return fmt.Errorf("signature verification failed: %s", err)
 		}
+
+/*		// store new key
+		if noPrompt || dontAskToStore {
+			// always store key when prompts disabled or already have the key
+			sylog.Infof("Storing new key...")
+			if err = sypgp.StorePubKey(netlist[0]); err != nil {
+				return fmt.Errorf("could not store public key: %s", err)
+			}
+		} else {
+			// Ask to store new public key
+			resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
+			if err != nil {
+				return err
+			}
+			if resp == "" || resp == "y" || resp == "Y" {
+				sylog.Infof("Storing new key...")
+				if err = sypgp.StorePubKey(netlist[0]); err != nil {
+					return fmt.Errorf("could not store public key: %s", err)
+				}
+			}
+		}
+*/
 
 //		sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
 //		netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
@@ -417,7 +444,10 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 
 //		}
 
-//		took = signer.PrimaryKey.KeyId
+		toStoreToken = signer.PrimaryKey.KeyId
+//		toStoreToken = signer.PrimaryKey.Fingerprint[:]
+
+		tokenToAdd = netlist[0]
 
 		// Get first Identity data for convenience
 		var name string
@@ -429,6 +459,33 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	}
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
 	fmt.Print(authok)
+
+	// store new key
+	if noPrompt || dontAskToStore {
+		// always store key when prompts disabled or already have the key
+		sylog.Infof("Storing new key...")
+		if err = sypgp.StorePubKey(tokenToAdd); err != nil {
+			return fmt.Errorf("could not store public key: %s", err)
+		}
+	} else {
+		// Ask to store new public key
+//		resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
+		fmt.Printf("\n")
+		resp, err := sypgp.AskQuestion("Trust new public key %X? [Y/n] ", toStoreToken)
+		if err != nil {
+			return err
+		}
+		if resp == "" || resp == "y" || resp == "Y" {
+			sylog.Infof("Storing new key...")
+			if err = sypgp.StorePubKey(tokenToAdd); err != nil {
+				return fmt.Errorf("could not store public key: %s", err)
+			}
+		}
+	}
+
+
+
+
 //	fmt.Println("SOGNED: ", took)
 
 //	fmt.Printf("KEY FINGERPRINT: %X\n", took)
