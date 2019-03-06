@@ -344,6 +344,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("could not fetch public key from server: %s", err)
 		}
 		sylog.Infof("key retrieved successfully!")
+//		fmt.Printf("netList type: %T\n", netlist)
 
 		block, _ = clearsign.Decode(data)
 		if block == nil {

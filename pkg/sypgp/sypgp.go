@@ -350,20 +350,33 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-func foobar(e *openpgp.Entity, oldToken string) error {
+func foobar(e *openpgp.Entity, oldToken string) ([]byte, error) {
+
+//func foobar(e *openpgp.Entity, oldToken string) (openpgp.EntityList, error) {
+
 //	fmt.Printf("FOO_FINGERPRINT: %X\n", e.PrimaryKey.Fingerprint)
 //	fmt.Printf("ESTRING: %s\n", fmt.Sprintf("%X", e.PrimaryKey.Fingerprint))
 //	fmt.Printf("FOBAR: %s\n", fmt.Sprintf("%X", oldToken))
 
 //	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), fmt.Sprintf("%X", oldToken)) {
-	if strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), oldToken) {
+
+//	var newKeyListBar openpgp.EntityList
+//	var newKeyList openpgp.EntityList
+	var newKeyListBar []byte
+
+	if !strings.Contains(fmt.Sprintf("%X", e.PrimaryKey.Fingerprint), oldToken) {
 		//fmt.Println("MATCH!!!")
-		fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
+		//fmt.Printf("Found local key matching signed key: %X\n", e.PrimaryKey.Fingerprint)
+
+		newKeyListBar = e.PrimaryKey.Fingerprint[:]
+//		newKeyList = append(newKeyList, e.PrimaryKey.Fingerprint[:]...)
 	}
 
 //	fmt.Printf("\n")
 
-	return nil
+//	fmt.Printf("newKeyList: %X\n", newKeyListBar)
+
+	return newKeyListBar, nil
 }
 
 
@@ -386,14 +399,33 @@ func RemovePupKey(toDelete string) error {
 		return fmt.Errorf("unable to read keyring: %v", err)
 		//return err
 	}
-	fmt.Println("ALL KEYS: ", elist)
+	fmt.Printf("ALL KEYS: %v\n", elist)
+
+//	foobar(elist, toDelete)
+
+	var newKeyList []string
+//	var newKeyList []openpgp.EntityList
 
 	for i := range elist {
-		err := foobar(elist[i], toDelete)
+		newKeyListFoo, err := foobar(elist[i], toDelete)
 		if err != nil {
 			return fmt.Errorf("unable to remove key id: %v", err)
 		}
+		if newKeyListFoo != nil {
+			newKeyList = append(newKeyList, string(newKeyListFoo[:]))
+		}
+
+//		newKeyList = append(newKeyList, newKeyListFoo...)
 	}
+
+	fmt.Printf("FULL KEY LIST: %X\n", newKeyList)
+
+//	fmt.Printf("FULL KEY LIST: %v\n", newKeyList)
+
+	for k := range newKeyList {
+		fmt.Printf("ONE KEY FOO: %X\n", newKeyList[k])
+	}
+
 
 //	fmt.Println("TOOOOOOOOO DELETE: ", toDelete)
 
