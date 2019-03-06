@@ -384,7 +384,7 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	return false, nil
 }
 
-// RemovePupKey : will delete all keys with the ID of (toDelete string)
+// RemovePupKey will delete a public key matching toDelete
 func RemovePupKey(toDelete string) error {
 	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND, 0600)
