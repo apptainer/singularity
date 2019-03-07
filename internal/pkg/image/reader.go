@@ -16,9 +16,9 @@ type readerError string
 func (e readerError) Error() string { return string(e) }
 
 const (
-	// ErrNoSection corresponds to a missing CNI configuration path
+	// ErrNoSection corresponds to an image section not found
 	ErrNoSection = readerError("no section found")
-	// ErrNoPartition corresponds to a missing CNI plugin path
+	// ErrNoPartition corresponds to an image partition not found
 	ErrNoPartition = readerError("no partition found")
 )
 
@@ -36,31 +36,48 @@ func getSectionReader(file *os.File, section Section) io.Reader {
 	return io.NewSectionReader(file, int64(section.Offset), int64(section.Size))
 }
 
-// NewPartitionReader searches and returns a reader for an image
-// partition identified by name or by index, if index is less than 0
-// only partition with provided name will be returned if a matching
-// entry is found
-func NewPartitionReader(image *Image, name string, index int) (io.Reader, error) {
+func commonSectionReader(partition bool, image *Image, name string, index int) (io.Reader, error) {
+	var err error
+
 	idx := -1
-	if err := checkImage(image); err != nil {
+	if err = checkImage(image); err != nil {
 		return nil, err
 	}
+
+	sectionName := "sections"
+	sections := image.Sections
+	err = ErrNoSection
+
+	if partition {
+		sectionName = "partitions"
+		sections = image.Partitions
+		err = ErrNoPartition
+	}
+
 	if index >= 0 {
-		l := len(image.Partitions)
+		l := len(sections)
 		if index > l-1 {
-			return nil, fmt.Errorf("index too large, image contains %d partitions", l)
+			return nil, fmt.Errorf("index too large, image contains %d %s", l, sectionName)
 		}
 		idx = index
 	}
 	if name == "" && idx < 0 {
 		return nil, fmt.Errorf("no name or positive index provided")
 	}
-	for i, p := range image.Partitions {
+	for i, p := range sections {
 		if p.Name == name || i == idx {
 			return getSectionReader(image.File, p), nil
 		}
 	}
-	return nil, ErrNoPartition
+	return nil, err
+}
+
+// NewPartitionReader searches and returns a reader for an image
+// partition identified by name or by index, if index is less than 0
+// only partition with provided name will be returned if a matching
+// entry is found
+func NewPartitionReader(image *Image, name string, index int) (io.Reader, error) {
+	return commonSectionReader(true, image, name, index)
 }
 
 // NewSectionReader searches and returns a reader for an image
@@ -68,24 +85,5 @@ func NewPartitionReader(image *Image, name string, index int) (io.Reader, error)
 // only section with provided name will be returned if a matching
 // entry is found
 func NewSectionReader(image *Image, name string, index int) (io.Reader, error) {
-	idx := -1
-	if err := checkImage(image); err != nil {
-		return nil, err
-	}
-	if index >= 0 {
-		l := len(image.Sections)
-		if index > l-1 {
-			return nil, fmt.Errorf("index too large, image contains %d sections", l)
-		}
-		idx = index
-	}
-	if name == "" && idx < 0 {
-		return nil, fmt.Errorf("no name or positive index provided")
-	}
-	for i, p := range image.Sections {
-		if p.Name == name || i == idx {
-			return getSectionReader(image.File, p), nil
-		}
-	}
-	return nil, ErrNoSection
+	return commonSectionReader(false, image, name, index)
 }

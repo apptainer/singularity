@@ -90,6 +90,13 @@ func TestReader(t *testing.T) {
 			fn:       NewPartitionReader,
 			fnCheck:  checkPartition,
 			errCheck: ErrNoPartition,
+			name:     RootFs,
+			index:    -1,
+		},
+		{
+			fn:       NewPartitionReader,
+			fnCheck:  checkPartition,
+			errCheck: ErrNoPartition,
 			index:    0,
 		},
 		{
