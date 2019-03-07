@@ -58,7 +58,10 @@ type Section struct {
 	Name   string `json:"name"`
 }
 
-// Image describes an image object
+// Image describes an image object, an image is composed of
+// partitions (eg: container root filesystem, overlay), image
+// format like SIF contains descriptors pointing to chunk of
+// data, those descriptors are stored as sections
 type Image struct {
 	Path       string    `json:"path"`
 	Name       string    `json:"name"`

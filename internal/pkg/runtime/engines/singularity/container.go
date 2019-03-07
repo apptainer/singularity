@@ -283,7 +283,7 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 
 	imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
 	if err != nil {
-		return err
+		return fmt.Errorf("while loading image object: %s", err)
 	}
 
 	if c.engine.EngineConfig.GetWritableImage() && !writableTmpfs {
@@ -293,7 +293,7 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 			if err == nil {
 				return c.setupOverlayLayout(system, sessionPath)
 			}
-			sylog.Warningf("%s", err)
+			sylog.Warningf("While attempting to set up SIFOverlay: %s", err)
 		}
 		return c.setupDefaultLayout(system, sessionPath)
 	}
@@ -305,7 +305,7 @@ func (c *container) setupSessionLayout(system *mount.System) error {
 			if err == nil {
 				return c.setupOverlayLayout(system, sessionPath)
 			}
-			sylog.Warningf("%s", err)
+			sylog.Warningf("While attempting to set up SIFOverlay: %s", err)
 		}
 		return c.setupOverlayLayout(system, sessionPath)
 	}
@@ -764,7 +764,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size)
 			if err != nil {
-				return err
+				return fmt.Errorf("while adding ext3 image: %s", err)
 			}
 			flags &^= syscall.MS_RDONLY
 		case image.SQUASHFS:
@@ -782,7 +782,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV)
 			err = system.Points.AddBind(mount.PreLayerTag, imageObject.Path, dst, flags)
 			if err != nil {
-				return err
+				return fmt.Errorf("while adding sandbox image: %s", err)
 			}
 			system.Points.AddRemount(mount.PreLayerTag, dst, flags)
 
