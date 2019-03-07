@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	workpath   = filepath.Join(build.Default.GOPATH, repo)
+	workpath   = filepath.Join(filepath.SplitList(build.Default.GOPATH)[0], repo)
 	trimpath   = filepath.Dir(workpath)
 	mangenpath = filepath.Join(workpath, "cmd/plugin_manifestgen/")
 )
@@ -27,7 +27,7 @@ var (
 const (
 	repo         = "src/github.com/sylabs/singularity"
 	buildtmpl    = "build -buildmode=plugin -gcflags=all=-trimpath=%[1]s -asmflags=all=-trimpath=%[1]s -o %s %s"
-	manifesttmpl = "run -gcflags=all=-trimpath=%[1]s -asmflags=all=-trimpath=%[1]s %s %s"
+	manifesttmpl = "run -gcflags=all=-trimpath=%[1]s -asmflags=all=-trimpath=%[1]s %s %s %s"
 )
 
 // pluginObjPath returns the path of the .so file which is built when
@@ -91,8 +91,7 @@ func buildPlugin(sourceDir string) (string, error) {
 func generateManifest(sourceDir string) (string, error) {
 	in := pluginObjPath(sourceDir)
 	out := pluginManifestPath(sourceDir)
-
-	c := fmt.Sprintf(manifesttmpl, trimpath, mangenpath, in+" "+out)
+	c := fmt.Sprintf(manifesttmpl, trimpath, mangenpath, in, out)
 	gencmd := exec.Command("go", strings.Split(c, " ")...)
 
 	gencmd.Dir = workpath
