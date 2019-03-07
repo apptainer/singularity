@@ -6,6 +6,7 @@
 package unpacker
 
 import (
+	"bufio"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -91,7 +92,7 @@ func TestSquashfs(t *testing.T) {
 	}
 
 	// extract squashfs_test.go only
-	if err := s.ExtractFiles([]string{"squashfs_test.go"}, archive, dir); err != nil {
+	if err := s.ExtractFiles([]string{"squashfs_test.go"}, bufio.NewReader(archive), dir); err != nil {
 		t.Error(err)
 	}
 	// check that squashfs.go was not extracted
