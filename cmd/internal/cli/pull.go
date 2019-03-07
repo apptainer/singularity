@@ -57,7 +57,7 @@ func init() {
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
 	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "dont check if the container is signed")
-	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW-UNAUTHENTICATED"})
+	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
