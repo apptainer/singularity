@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,9 +12,6 @@ import (
 	"os"
 	"unsafe"
 )
-
-// EXT3 defines constant for ext3 format
-const EXT3 = 2
 
 const (
 	extMagicOffset      = 1080
@@ -89,8 +86,10 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 		return err
 	}
 	img.Type = EXT3
-	img.Offset = offset
-	img.Size = uint64(fileinfo.Size()) - img.Offset
+	img.Partitions[0].Offset = offset
+	img.Partitions[0].Size = uint64(fileinfo.Size()) - offset
+	img.Partitions[0].Type = EXT3
+	img.Partitions[0].Name = RootFs
 	return nil
 }
 
