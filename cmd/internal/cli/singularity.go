@@ -103,7 +103,7 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 	sylog.SetLevel(level)
 }
 
-func setSylogColorOn(cmd *cobra.Command, args []string) {
+func setSylogColor(cmd *cobra.Command, args []string) {
 	if nocolor {
 		sylog.DisableColor()
 	}
@@ -186,7 +186,7 @@ func handleEnv(flag *pflag.Flag) {
 
 func persistentPreRun(cmd *cobra.Command, args []string) {
 	setSylogMessageLevel(cmd, args)
-	setSylogColorOn(cmd, args)
+	setSylogColor(cmd, args)
 	updateFlagsFromEnv(cmd)
 }
 
