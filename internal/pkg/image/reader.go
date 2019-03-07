@@ -45,7 +45,7 @@ func NewPartitionReader(image *Image, name string, index int) (io.Reader, error)
 	if err := checkImage(image); err != nil {
 		return nil, err
 	}
-	if index > 0 {
+	if index >= 0 {
 		l := len(image.Partitions)
 		if index > l-1 {
 			return nil, fmt.Errorf("index too large, image contains %d partitions", l)
@@ -72,7 +72,7 @@ func NewSectionReader(image *Image, name string, index int) (io.Reader, error) {
 	if err := checkImage(image); err != nil {
 		return nil, err
 	}
-	if index > 0 {
+	if index >= 0 {
 		l := len(image.Sections)
 		if index > l-1 {
 			return nil, fmt.Errorf("index too large, image contains %d sections", l)
