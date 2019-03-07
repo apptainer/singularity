@@ -147,7 +147,7 @@ func initPathVars() {
 	actionFlags.SetAnnotation("security", "envkey", []string{"SECURITY"})
 
 	// --apply-cgroups
-	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "apply cgroups from file for container processes (requires root privileges)")
+	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "apply cgroups from file for container processes (root only)")
 	actionFlags.SetAnnotation("apply-cgroups", "argtag", []string{"<path>"})
 	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
 
@@ -279,7 +279,7 @@ func initNamespaceVars() {
 // initPrivilegeVars initializes flags that manipulate privileges
 func initPrivilegeVars() {
 	// --keep-privs
-	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "let root user keep privileges in container")
+	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "let root user keep privileges in container (root only)")
 	actionFlags.SetAnnotation("keep-privs", "envkey", []string{"KEEP_PRIVS"})
 
 	// --no-privs
