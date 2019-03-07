@@ -1374,10 +1374,10 @@ func (c *container) addTmpMount(system *mount.System) error {
 			tmpSource = filepath.Join(workdir, tmpSource)
 			vartmpSource = filepath.Join(workdir, vartmpSource)
 
-			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil {
+			if err := fs.Mkdir(tmpSource, os.ModeSticky|0777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
-			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil {
+			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
@@ -1450,11 +1450,11 @@ func (c *container) addScratchMount(system *mount.System) error {
 
 		if hasWorkdir {
 			fullSourceDir = filepath.Join(sourceDir, filepath.Base(dir))
-			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil {
+			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
 			}
 		} else {
-			src := filepath.Join("/scratch", filepath.Base(dir))
+			src := filepath.Join("/scratch", dir)
 			if err := c.session.AddDir(src); err != nil {
 				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
 			}
