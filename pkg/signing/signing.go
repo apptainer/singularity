@@ -260,11 +260,12 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 	return getSigsDescr(fimg, id)
 }
 
-// IsSigned : will return false if the givin container (cpath) is not signed.
-// Likewise, will return true if the container is signed and print who signed
-// it. will return a error if one occures.
-func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
-	err := Verify(cpath, url, id, isGroup, authToken, noPrompt)
+// IsSigned takse a container path (cpath string), and will verify that
+// container. returns false if the container is not signed. likewise,
+// will return true if the container is signed. also returns a error
+// if one occures
+func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
+	err := Verify(cpath, keyServerURI, id, isGroup, authToken, noPrompt)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %v", err)
 	}
@@ -276,7 +277,7 @@ func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPr
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
+func Verify(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return fmt.Errorf("failed to load SIF container file: %s", err)
@@ -327,7 +328,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		if err != nil {
 			// verification with local keyring failed, try to fetch from key server
 			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
-			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+			netlist, err := sypgp.FetchPubkey(fingerprint, keyServerURI, authToken, noPrompt)
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
