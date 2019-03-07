@@ -266,7 +266,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 func IsSigned(cpath, url string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
 	err := Verify(cpath, url, id, isGroup, authToken, noPrompt)
 	if err != nil {
-		return false, fmt.Errorf("%v", err)
+		return false, fmt.Errorf("unable to verify container: %v", err)
 	}
 	return true, nil
 }
