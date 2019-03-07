@@ -42,7 +42,8 @@ var (
 	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
 	// PullImageName holds the name to be given to the pulled image
-	PullImageName       string
+	PullImageName string
+	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
 )
 
