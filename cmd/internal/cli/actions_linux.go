@@ -8,6 +8,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -17,7 +18,7 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
+	"github.com/sylabs/singularity/pkg/util/nvidia"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -125,9 +126,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Verbosef("binding nvidia files into container")
 		}
 
-		libs, bins, err := nvidiautils.GetNvidiaPath(buildcfg.SINGULARITY_CONFDIR, userPath)
+		libs, bins, err := nvidia.Paths(buildcfg.SINGULARITY_CONFDIR, userPath)
 		if err != nil {
-			sylog.Infof("Unable to capture nvidia bind points: %v", err)
+			sylog.Warningf("Unable to capture NVIDIA bind points: %v", err)
 		} else {
 			if len(bins) == 0 {
 				sylog.Infof("Could not find any NVIDIA binaries on this host!")
@@ -353,7 +354,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
 
-		start, err := stderr.Seek(0, os.SEEK_END)
+		start, err := stderr.Seek(0, io.SeekEnd)
 		if err != nil {
 			sylog.Warningf("failed to get standard error stream offset: %s", err)
 		}
@@ -369,7 +370,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			// by instance process, wait a bit to catch all errors
 			time.Sleep(100 * time.Millisecond)
 
-			end, err := stderr.Seek(0, os.SEEK_END)
+			end, err := stderr.Seek(0, io.SeekEnd)
 			if err != nil {
 				sylog.Warningf("failed to get standard error stream offset: %s", err)
 			}
