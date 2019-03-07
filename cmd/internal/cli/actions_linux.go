@@ -90,7 +90,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetTargetUID(targetUID)
 	})
 
-	checkPrivileges(uidParam != "", "gid security feature", func() {
+	checkPrivileges(gidParam != "", "gid security feature", func() {
 		gids := strings.Split(gidParam, ":")
 		for _, id := range gids {
 			g, err := strconv.ParseUint(id, 10, 32)
