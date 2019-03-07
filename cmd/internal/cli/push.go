@@ -55,7 +55,7 @@ var PushCmd = &cobra.Command{
 				}
 				// if its not signed, print a warning
 				if !imageSigned {
-					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/guides/3.0/user-guide/signNverify.html")
+					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
 					fmt.Fprintf(os.Stderr, "\n")
 					sylog.Warningf("Your container is **NOT** signed! You REALLY should sign your container before pushing!")
 					fmt.Fprintf(os.Stderr, "Do you really want to continue? [N/y] ")
