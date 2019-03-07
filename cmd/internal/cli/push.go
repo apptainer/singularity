@@ -22,6 +22,7 @@ var (
 	// PushLibraryURI holds the base URI to a Sylabs library API instance
 	PushLibraryURI string
 
+	// unauthenticatedPush when true; will never ask to push a unsigned container
 	unauthenticatedPush bool
 )
 
@@ -32,7 +33,7 @@ func init() {
 	PushCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
 	PushCmd.Flags().BoolVarP(&unauthenticatedPush, "allow-unauthenticated", "U", false, "dont check if the container is signed")
-	PushCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW-UNAUTHENTICATED"})
+	PushCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	SingularityCmd.AddCommand(PushCmd)
 }
