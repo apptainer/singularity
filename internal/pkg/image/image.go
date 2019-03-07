@@ -50,7 +50,7 @@ type format interface {
 	initializer(*Image, os.FileInfo) error
 }
 
-// Section identifies and locates a data section in image object
+// Section identifies and locates a data section in image object.
 type Section struct {
 	Size   uint64 `json:"size"`
 	Offset uint64 `json:"offset"`
@@ -58,10 +58,10 @@ type Section struct {
 	Name   string `json:"name"`
 }
 
-// Image describes an image object, an image is composed of
-// partitions (eg: container root filesystem, overlay), image
-// format like SIF contains descriptors pointing to chunk of
-// data, those descriptors are stored as sections
+// Image describes an image object, an image is composed of one
+// or more partitions (eg: container root filesystem, overlay),
+// image format like SIF contains descriptors pointing to chunk of
+// data, chunks position and size are stored as image sections.
 type Image struct {
 	Path       string    `json:"path"`
 	Name       string    `json:"name"`
