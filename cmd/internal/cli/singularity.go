@@ -104,7 +104,6 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 }
 
 func setSylogColorOn(cmd *cobra.Command, args []string) {
-
 	if nocolor {
 		sylog.DisableColor()
 	}

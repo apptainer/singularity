@@ -61,12 +61,9 @@ var messageColors = map[messageLevel]string{
 	info:  "\x1b[34m",
 }
 
-const colorReset string = "\x1b[0m"
+var colorReset string = "\x1b[0m"
 
 var loggerLevel messageLevel
-
-// By default, color is enabled
-var disableColor = false
 
 func init() {
 	_level, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
@@ -90,11 +87,7 @@ func prefix(level messageLevel) string {
 
 	// This section builds and returns the prefix for levels < debug
 	if loggerLevel < debug {
-		if disableColor {
-			return fmt.Sprintf("%-8s ", level.String()+":")
-		}
 		return fmt.Sprintf("%s%-8s%s ", messageColor, level.String()+":", colorReset)
-
 	}
 
 	pc, _, _, ok := runtime.Caller(3)
@@ -113,9 +106,6 @@ func prefix(level messageLevel) string {
 	pid := os.Getpid()
 	uidStr := fmt.Sprintf("[U=%d,P=%d]", uid, pid)
 
-	if disableColor {
-		return fmt.Sprintf("%-8s%-19s%-30s", level, uidStr, funcName)
-	}
 	return fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
 }
 
@@ -172,7 +162,13 @@ func SetLevel(l int) {
 
 // DisableColor for the logger
 func DisableColor() {
-	disableColor = true
+	messageColors = map[messageLevel]string{
+		fatal: "",
+		error: "",
+		warn:  "",
+		info:  "",
+	}
+	colorReset = ""
 }
 
 // GetLevel returns the current log level as integer
