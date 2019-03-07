@@ -17,6 +17,19 @@ import (
 )
 
 const (
+	// SQUASHFS constant for squashfs format
+	SQUASHFS = iota + 1
+	// EXT3 constant for ext3 format
+	EXT3
+	// SANDBOX constant for directory format
+	SANDBOX
+	// SIF constant for sif format
+	SIF
+)
+
+const (
+	// RootFs partition name
+	RootFs       = "rootfs"
 	launchString = " run-singularity"
 	bufferSize   = 2048
 )

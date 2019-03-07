@@ -13,9 +13,6 @@ import (
 	"unsafe"
 )
 
-// EXT3 defines constant for ext3 format
-const EXT3 = 2
-
 const (
 	extMagicOffset      = 1080
 	extMagic            = "\x53\xEF"
@@ -92,6 +89,7 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Partitions[0].Offset = offset
 	img.Partitions[0].Size = uint64(fileinfo.Size()) - offset
 	img.Partitions[0].Type = EXT3
+	img.Partitions[0].Name = RootFs
 	return nil
 }
 

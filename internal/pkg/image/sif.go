@@ -14,9 +14,6 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 )
 
-// SIF defines constant for sif format
-const SIF = 4
-
 const (
 	sifMagic = "\x53\x49\x46\x5f\x4d\x41\x47\x49\x43"
 )
@@ -62,6 +59,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 
 	img.Partitions[0].Offset = uint64(part.Fileoff)
 	img.Partitions[0].Size = uint64(part.Filelen)
+	img.Partitions[0].Name = RootFs
 
 	// store all remaining sections
 	img.Sections = make([]Section, 0)
@@ -89,13 +87,15 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			}
 		} else {
 			// anything else
-			data := Section{
-				Offset: uint64(desc.Fileoff),
-				Size:   uint64(desc.Filelen),
-				Type:   uint32(desc.Datatype),
-				Name:   desc.GetName(),
+			if desc.Datatype != 0 {
+				data := Section{
+					Offset: uint64(desc.Fileoff),
+					Size:   uint64(desc.Filelen),
+					Type:   uint32(desc.Datatype),
+					Name:   desc.GetName(),
+				}
+				img.Sections = append(img.Sections, data)
 			}
-			img.Sections = append(img.Sections, data)
 		}
 	}
 

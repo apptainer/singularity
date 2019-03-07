@@ -15,9 +15,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// SQUASHFS defines constant for squashfs format
-const SQUASHFS = 1
-
 const (
 	squashfsMagic    = "\x68\x73\x71\x73"
 	squashfsZlib     = 1
@@ -95,6 +92,7 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	img.Partitions[0].Offset = offset
 	img.Partitions[0].Size = uint64(fileinfo.Size()) - offset
 	img.Partitions[0].Type = SQUASHFS
+	img.Partitions[0].Name = RootFs
 
 	if img.Writable {
 		sylog.Warningf("squashfs is not a writable filesystem")

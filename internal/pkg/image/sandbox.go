@@ -10,9 +10,6 @@ import (
 	"os"
 )
 
-// SANDBOX defines constant for directory format
-const SANDBOX = 3
-
 type sandboxFormat struct{}
 
 func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
@@ -22,6 +19,7 @@ func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		return fmt.Errorf("not a directory image")
 	}
 	img.Partitions[0].Type = SANDBOX
+	img.Partitions[0].Name = RootFs
 	return nil
 }
 
