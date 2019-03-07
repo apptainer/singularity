@@ -66,7 +66,7 @@ const colorReset string = "\x1b[0m"
 var loggerLevel messageLevel
 
 // By default, color is enabled
-var disableColor bool = false
+var disableColor = false
 
 func init() {
 	_level, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
@@ -170,7 +170,7 @@ func SetLevel(l int) {
 	loggerLevel = messageLevel(l)
 }
 
-// Disable color for the logger
+// DisableColor for the logger
 func DisableColor() {
 	disableColor = true
 }
