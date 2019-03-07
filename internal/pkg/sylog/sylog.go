@@ -61,7 +61,7 @@ var messageColors = map[messageLevel]string{
 	info:  "\x1b[34m",
 }
 
-var colorReset string = "\x1b[0m"
+var colorReset = "\x1b[0m"
 
 var loggerLevel messageLevel
 
