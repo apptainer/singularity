@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -160,6 +161,11 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
 	}
 
+	err = cp.insertOCIConfig()
+	if err != nil {
+		return nil, fmt.Errorf("While inserting oci config: %v", err)
+	}
+
 	return cp.b, nil
 }
 
@@ -189,6 +195,16 @@ func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
 	}
 
 	return imgSpec.Config, nil
+}
+
+func (cp *OCIConveyorPacker) insertOCIConfig() error {
+	conf, err := json.Marshal(cp.imgConfig)
+	if err != nil {
+		return err
+	}
+
+	cp.b.JSONObjects["oci-config"] = conf
+	return nil
 }
 
 // Perform a dumb tar(gz) extraction with no chown, id remapping etc.
