@@ -22,8 +22,6 @@ func run(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
 
-	handleRemoteBuildFlags(cmd)
-
 	// check if target collides with existing file
 	if ok := checkBuildTarget(dest, false); !ok {
 		os.Exit(1)
@@ -32,6 +30,8 @@ func run(cmd *cobra.Command, args []string) {
 	if !remote {
 		sylog.Fatalf("Only remote builds are supported on this platform")
 	}
+
+	handleRemoteBuildFlags(cmd)
 
 	// Submiting a remote build requires a valid authToken
 	if authToken == "" {

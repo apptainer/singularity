@@ -29,7 +29,6 @@ var KeyPullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// If flag did not change, look for a remote configuration, otherwise fall back to default
 		if !cmd.Flags().Lookup("url").Changed {
 			e, err := sylabsRemote(remoteConfig)
@@ -42,7 +41,7 @@ var KeyPullCmd = &cobra.Command{
 			} else if err == scs.ErrNoDefault {
 				sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
 			} else {
-				sylog.Debugf("Unable to load remote configuration: %v", err)
+				sylog.Fatalf("Unable to load remote configuration: %v", err)
 			}
 		}
 

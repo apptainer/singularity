@@ -30,7 +30,6 @@ var KeyPushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// if we can load config and if default endpoint is set, use that
 		// otherwise fall back on regular authtoken and URI behavior
 		e, err := sylabsRemote(remoteConfig)
@@ -46,7 +45,7 @@ var KeyPushCmd = &cobra.Command{
 		} else if err == scs.ErrNoDefault {
 			sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
 		} else {
-			sylog.Debugf("Unable to load remote configuration: %v", err)
+			sylog.Fatalf("Unable to load remote configuration: %v", err)
 		}
 
 		if err := doKeyPushCmd(args[0], keyServerURL); err != nil {

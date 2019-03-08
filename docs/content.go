@@ -901,15 +901,4 @@ found at:
   Umount will umount an OCI bundle previously mounted with singularity oci mount.`
 	OciUmountExample string = `
   $ singularity oci umount /var/lib/singularity/bundles/example`
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Remote
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteUse       string = `remote <subcommand>`
-	RemoteAddUse    string = `add <remote_name> <remote_URI>`
-	RemoteRemoveUse string = `remove <remote_name>`
-	RemoteUseUse    string = `use <remote_name>`
-	RemoteListUse   string = `list`
-	RemoteLoginUse  string = `login <remote_name>`
-	RemoteStatusUse string = `status <remote_name>`
 )

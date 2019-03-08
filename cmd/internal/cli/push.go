@@ -33,7 +33,6 @@ var PushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(2),
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// if we can load config and if default endpoint is set, use that
 		// otherwise fall back on regular authtoken and URI behavior
 		e, err := sylabsRemote(remoteConfig)
@@ -49,7 +48,7 @@ var PushCmd = &cobra.Command{
 		} else if err == scs.ErrNoDefault {
 			sylog.Warningf("No default remote in use, falling back to: %v", PushLibraryURI)
 		} else {
-			sylog.Debugf("Unable to load remote configuration: %v", err)
+			sylog.Fatalf("Unable to load remote configuration: %v", err)
 		}
 
 		// Push to library requires a valid authToken

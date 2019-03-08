@@ -250,7 +250,7 @@ func handleRemoteBuildFlags(cmd *cobra.Command) {
 	} else if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to CLI defaults")
 	} else {
-		sylog.Debugf("Unable to load remote configuration: %v", err)
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 }
 
@@ -272,6 +272,6 @@ func handleBuildFlags(cmd *cobra.Command) {
 	} else if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
 	} else {
-		sylog.Debugf("Unable to load remote configuration: %v", err)
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 }
