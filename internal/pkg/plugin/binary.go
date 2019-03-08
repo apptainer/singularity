@@ -280,3 +280,49 @@ func getManifest(fimg *sif.FileImage) pluginapi.Manifest {
 
 	return manifest
 }
+
+func GetList(libexecdir string) ([]*Meta, error) {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	pattern := filepath.Join(pluginDir, "*.meta")
+	entries, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot list plugins in directory %q", pluginDir)
+	}
+
+	metas := []*Meta{}
+
+	for _, entry := range entries {
+		fi, err := os.Stat(entry)
+		if err != nil {
+			sylog.Debugf("Error stating %s: %s. Skip\n", entry, err)
+			continue
+		}
+
+		if !fi.Mode().IsRegular() {
+			continue
+		}
+
+		readMeta := func(name string) *Meta {
+			fh, err := os.Open(name)
+			if err != nil {
+				sylog.Debugf("Error opening %s: %s. Skip\n", name, err)
+				return nil
+			}
+			defer fh.Close()
+
+			meta, err := LoadFromJSON(fh)
+			if err != nil {
+				sylog.Debugf("Error loading %s: %s. Skip\n", name, err)
+				return nil
+			}
+
+			return meta
+		}
+
+		if meta := readMeta(entry); meta != nil {
+			metas = append(metas, meta)
+		}
+	}
+
+	return metas, nil
+}

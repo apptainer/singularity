@@ -13,8 +13,7 @@ import (
 )
 
 func init() {
-	// === For Future Use ===
-	// PluginCmd.AddCommand(PluginListCmd)
+	PluginCmd.AddCommand(PluginListCmd)
 	PluginCmd.AddCommand(PluginInstallCmd)
 	// PluginCmd.AddCommand(PluginUninstallCmd)
 	// PluginCmd.AddCommand(PluginEnableCmd)

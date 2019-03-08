@@ -42,3 +42,20 @@ var PluginInstallCmd = &cobra.Command{
 	Long:    docs.PluginInstallLong,
 	Example: docs.PluginInstallExample,
 }
+
+var PluginListCmd = &cobra.Command{
+	RunE: func(cmd *cobra.Command, args []string) error {
+		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)
+		if err != nil {
+			fmt.Println(err)
+		}
+		return err
+	},
+	DisableFlagsInUseLine: true,
+	Args:                  cobra.ExactArgs(0),
+
+	Use:     docs.PluginListUse,
+	Short:   docs.PluginListShort,
+	Long:    docs.PluginListLong,
+	Example: docs.PluginListExample,
+}
