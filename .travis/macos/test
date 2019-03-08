@@ -12,6 +12,6 @@ singularity help
 singularity version
 
 singularity search alpine
-singularity key pull 1CEC42121A994A3FBFAAF6CC51BE5020C508C7E9
+singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E
 singularity pull library://library/default/alpine:latest && [[ -f alpine_latest.sif ]]
 singularity pull docker://busybox:latest && [[ -f busybox_latest.sif ]]
