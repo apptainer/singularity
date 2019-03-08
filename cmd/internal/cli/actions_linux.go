@@ -45,9 +45,12 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 	defer img.File.Close()
 
+	// squashfs only
 	if img.Partitions[0].Type != image.SQUASHFS {
 		return "", fmt.Errorf("not a squashfs root filesystem")
 	}
+
+	// create a reader for rootfs partition
 	reader, err := image.NewPartitionReader(img, "", 0)
 	if err != nil {
 		return "", fmt.Errorf("could not extract root filesystem: %s", err)
@@ -56,14 +59,34 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	if !s.HasUnsquashfs() && unsquashfsPath != "" {
 		s.UnsquashfsPath = unsquashfsPath
 	}
-	dir, err := ioutil.TempDir("", "rootfs-")
+
+	// keep compatibility with v2
+	tmpdir := os.Getenv("SINGULARITY_LOCALCACHEDIR")
+	if tmpdir == "" {
+		pw, err := user.GetPwUID(uint32(os.Getuid()))
+		if err != nil {
+			return "", fmt.Errorf("could not find current user information: %s", err)
+		}
+		tmpdir = filepath.Join(pw.Dir, ".singularity", "tmp")
+		if !fs.IsDir(tmpdir) {
+			if err := os.Mkdir(tmpdir, 0755); err != nil {
+				return "", fmt.Errorf("could not create directory %s: %s", tmpdir, err)
+			}
+		}
+	}
+
+	// create temporary sandbox
+	dir, err := ioutil.TempDir(tmpdir, "rootfs-")
 	if err != nil {
 		return "", fmt.Errorf("could not create temporary sandbox: %s", err)
 	}
+
+	// extract root filesystem
 	if err := s.ExtractAll(reader, dir); err != nil {
 		os.RemoveAll(dir)
 		return "", fmt.Errorf("root filesystem extraction failed: %s", err)
 	}
+
 	return dir, err
 }
 
@@ -402,6 +425,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 		engineConfig.SetImage(dir)
 		engineConfig.SetDeleteImage(true)
+		generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
 	}
 
 	plugin.FlagHookCallbacks(engineConfig)
