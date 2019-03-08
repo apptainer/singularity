@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,7 +17,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
+
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
 
@@ -30,8 +34,38 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
+
+func convertImage(filename string, unsquashfsPath string) (string, error) {
+	img, err := image.Init(filename, false)
+	if err != nil {
+		return "", fmt.Errorf("could not open image %s: %s", filename, err)
+	}
+	defer img.File.Close()
+
+	if img.Partitions[0].Type != image.SQUASHFS {
+		return "", fmt.Errorf("not a squashfs root filesystem")
+	}
+	reader, err := image.NewPartitionReader(img, "", 0)
+	if err != nil {
+		return "", fmt.Errorf("could not extract root filesystem: %s", err)
+	}
+	s := unpacker.NewSquashfs()
+	if !s.HasUnsquashfs() && unsquashfsPath != "" {
+		s.UnsquashfsPath = unsquashfsPath
+	}
+	dir, err := ioutil.TempDir("", "rootfs-")
+	if err != nil {
+		return "", fmt.Errorf("could not create temporary sandbox: %s", err)
+	}
+	if err := s.ExtractAll(reader, dir); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("root filesystem extraction failed: %s", err)
+	}
+	return dir, err
+}
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
@@ -352,6 +386,23 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	Env := []string{sylog.GetEnvVar()}
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
+
+	// convert image file to sandbox if image contains
+	// a squashfs filesystem
+	if UserNamespace && fs.IsFile(image) {
+		unsquashfsPath := ""
+		if engineConfig.File.MksquashfsPath != "" {
+			d := filepath.Dir(engineConfig.File.MksquashfsPath)
+			unsquashfsPath = filepath.Join(d, "unsquashfs")
+		}
+		sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
+		dir, err := convertImage(image, unsquashfsPath)
+		if err != nil {
+			sylog.Fatalf("while extracting %s: %s", image, err)
+		}
+		engineConfig.SetImage(dir)
+		engineConfig.SetDeleteImage(true)
+	}
 
 	plugin.FlagHookCallbacks(engineConfig)
 
