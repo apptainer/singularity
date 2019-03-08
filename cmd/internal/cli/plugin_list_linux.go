@@ -14,31 +14,20 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 )
 
-var (
-	pluginName string
-)
-
-func init() {
-	PluginInstallCmd.Flags().StringVarP(&pluginName, "name", "n", "", "Name to install the plugin as, defaults to the value in the manifest")
-}
-
-// PluginInstallCmd takes a compiled plugin.sif file and installs it
-// in the appropriate location
-//
-// singularity plugin install <path> [-n name]
-var PluginInstallCmd = &cobra.Command{
+// PluginListCmd lists the plugins installed in the system
+var PluginListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
-		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
+		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)
 		if err != nil {
 			fmt.Println(err)
 		}
 		return err
 	},
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(0),
 
-	Use:     docs.PluginInstallUse,
-	Short:   docs.PluginInstallShort,
-	Long:    docs.PluginInstallLong,
-	Example: docs.PluginInstallExample,
+	Use:     docs.PluginListUse,
+	Short:   docs.PluginListShort,
+	Long:    docs.PluginListLong,
+	Example: docs.PluginListExample,
 }

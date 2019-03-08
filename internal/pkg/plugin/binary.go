@@ -281,7 +281,7 @@ func getManifest(fimg *sif.FileImage) pluginapi.Manifest {
 	return manifest
 }
 
-func GetList(libexecdir string) ([]*Meta, error) {
+func List(libexecdir string) ([]*Meta, error) {
 	pluginDir := filepath.Join(libexecdir, DirRoot)
 	pattern := filepath.Join(pluginDir, "*.meta")
 	entries, err := filepath.Glob(pattern)

@@ -6,9 +6,6 @@
 package singularity
 
 import (
-	"fmt"
-	"sort"
-
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 )
@@ -28,34 +25,6 @@ func InstallPlugin(pluginPath, libexecdir string) error {
 	_, err = plugin.InstallFromSIF(&fimg, libexecdir)
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func ListPlugins(libexecdir string) error {
-	plugins, err := plugin.GetList(libexecdir)
-	if err != nil {
-		return err
-	}
-
-	if len(plugins) == 0 {
-		fmt.Println("There are no plugins installed.")
-		return nil
-	}
-
-	sort.Slice(plugins, func(i, j int) bool {
-		return plugins[i].Name < plugins[j].Name
-	})
-
-	fmt.Printf("ENABLED  NAME\n")
-
-	for _, p := range plugins {
-		enabled := "no"
-		if p.Enabled {
-			enabled = "yes"
-		}
-		fmt.Printf("%7s  %s\n", enabled, p.Name)
 	}
 
 	return nil
