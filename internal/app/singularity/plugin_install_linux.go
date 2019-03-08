@@ -6,8 +6,6 @@
 package singularity
 
 import (
-	"fmt"
-
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 )
@@ -28,8 +26,6 @@ func InstallPlugin(pluginPath, libexecdir string) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Printf("%#v\n", m)
 
 	return nil
 }
