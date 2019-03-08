@@ -15,7 +15,7 @@ import (
 func init() {
 	PluginCmd.AddCommand(PluginListCmd)
 	PluginCmd.AddCommand(PluginInstallCmd)
-	// PluginCmd.AddCommand(PluginUninstallCmd)
+	PluginCmd.AddCommand(PluginUninstallCmd)
 	// PluginCmd.AddCommand(PluginEnableCmd)
 	// PluginCmd.AddCommand(PluginDisableCmd)
 	PluginCmd.AddCommand(PluginCompileCmd)

@@ -55,6 +55,16 @@ const (
 	PluginInstallExample string = `
 	$ singularity plugin install $PLUGIN_PATH`
 
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin uninstall command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginUninstallUse   string = `uninstall <name>`
+	PluginUninstallShort string = `Uninstall removes the named plugin from the system`
+	PluginUninstallLong  string = `
+	The 'plugin uninstall' command removes the named plugin from the system`
+	PluginUninstallExample string = `
+	$ singularity plugin uninstall example.org/plugin`
+
 	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// // plugin list command
 	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
