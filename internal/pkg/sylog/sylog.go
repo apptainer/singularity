@@ -38,7 +38,6 @@ func (l messageLevel) String() string {
 	if !ok {
 		str = "????"
 	}
-
 	return str
 }
 
@@ -166,6 +165,7 @@ func DisableColor() {
 		fatal:    "",
 		error:    "",
 		warn:     "",
+		log:      "",
 		info:     "",
 		verbose:  "",
 		verbose2: "",
