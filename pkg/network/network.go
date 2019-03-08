@@ -269,7 +269,7 @@ func (m *Setup) SetArgs(args []string) error {
 
 				splittedPort := strings.SplitN(value, "/", 2)
 				if len(splittedPort) != 2 {
-					return fmt.Errorf("badly formatted portmap argument '%s', must be of form portmap=hostPort:containerPort/protocol", splitted)
+					return fmt.Errorf("badly formatted portmap argument '%s', must be of form portmap=hostPort:containerPort/protocol", value)
 				}
 				pm.Protocol = splittedPort[1]
 				if pm.Protocol != "tcp" && pm.Protocol != "udp" {
