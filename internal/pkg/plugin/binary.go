@@ -381,6 +381,8 @@ func getManifest(fimg *sif.FileImage) pluginapi.Manifest {
 	return manifest
 }
 
+// List returns all the singularity plugins installed in libexecdir in
+// the form of a list of Meta information
 func List(libexecdir string) ([]*Meta, error) {
 	pluginDir := filepath.Join(libexecdir, DirRoot)
 	pattern := filepath.Join(pluginDir, "*.meta")
