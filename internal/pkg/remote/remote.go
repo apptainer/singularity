@@ -141,7 +141,7 @@ func (c *Config) Rename(name, newName string) error {
 	return nil
 }
 
-// returns an error if a token is not valid
+// VerifyToken returns an error if a token is not valid
 func (e *EndPoint) VerifyToken() error {
 
 	baseURL, err := e.GetServiceURI("token")
