@@ -258,15 +258,16 @@ func LoadPrivKeyring() (openpgp.EntityList, error) {
 	return el, nil
 }
 
-// LoadPubKeyringFromFile loads the public key from a local file given from a path into an EntityList
-func LoadPubKeyringFromFile(path string) (openpgp.EntityList, error) {
+// LoadKeyringFromFile loads the public key from a local file given from a path into an EntityList
+func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
+	defer f.Close()
 
-	el, err := openpgp.ReadKeyRing(f)
+	el, err := openpgp.ReadArmoredKeyRing(f)
 	if err != nil {
 		return nil, err
 	}
