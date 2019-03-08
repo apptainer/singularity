@@ -163,10 +163,14 @@ func SetLevel(l int) {
 // DisableColor for the logger
 func DisableColor() {
 	messageColors = map[messageLevel]string{
-		fatal: "",
-		error: "",
-		warn:  "",
-		info:  "",
+		fatal:    "",
+		error:    "",
+		warn:     "",
+		info:     "",
+		verbose:  "",
+		verbose2: "",
+		verbose3: "",
+		debug:    "",
 	}
 	colorReset = ""
 }

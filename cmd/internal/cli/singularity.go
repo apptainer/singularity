@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Global variables for singularity CLI
@@ -104,7 +105,9 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 }
 
 func setSylogColor(cmd *cobra.Command, args []string) {
-	if nocolor {
+	// Disable color if nocolor flag, or NOT writing to terminal
+	fd := int(os.Stderr.Fd())
+	if nocolor || !terminal.IsTerminal(fd) {
 		sylog.DisableColor()
 	}
 }
