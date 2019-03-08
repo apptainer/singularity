@@ -575,7 +575,7 @@ Enterprise Performance Computing (EPC)`
 	PushShort string = `Push a container to a Library URI`
 	PushLong  string = `
   The Singularity push command allows you to upload your container to a library.
-  Its always good practice to sign your container before pushing them to the library.`
+  It's always good practice to sign your containers before pushing them to the library.`
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
