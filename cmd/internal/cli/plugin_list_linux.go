@@ -14,8 +14,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 )
 
-// PluginListCmd lists the plugins installed in the system
-var PluginListCmd = &cobra.Command{
+// pluginListCmd lists the plugins installed in the system
+var pluginListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)
 		if err != nil {

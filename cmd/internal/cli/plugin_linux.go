@@ -13,21 +13,21 @@ import (
 )
 
 func init() {
-	PluginCmd.AddCommand(PluginListCmd)
-	PluginCmd.AddCommand(PluginInstallCmd)
-	PluginCmd.AddCommand(PluginUninstallCmd)
-	// PluginCmd.AddCommand(PluginEnableCmd)
-	// PluginCmd.AddCommand(PluginDisableCmd)
-	PluginCmd.AddCommand(PluginCompileCmd)
+	pluginCmd.AddCommand(pluginListCmd)
+	pluginCmd.AddCommand(pluginInstallCmd)
+	pluginCmd.AddCommand(pluginUninstallCmd)
+	// pluginCmd.AddCommand(pluginEnableCmd)
+	// pluginCmd.AddCommand(pluginDisableCmd)
+	pluginCmd.AddCommand(pluginCompileCmd)
 
-	SingularityCmd.AddCommand(PluginCmd)
+	SingularityCmd.AddCommand(pluginCmd)
 }
 
-// PluginCmd is the root command for all plugin related functionalities
+// pluginCmd is the root command for all plugin related functionalities
 // which are exposed via the CLI.
 //
 // singularity plugin [...]
-var PluginCmd = &cobra.Command{
+var pluginCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return errors.New("Invalid command")
 	},
