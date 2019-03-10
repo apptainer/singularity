@@ -11,6 +11,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -339,7 +340,9 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 			}
 		}
 		if present {
-			return fmt.Errorf("destination %s is already in the mount point list", dest)
+			sylog.Warningf("destination %s is already in the mount point list", dest)
+			return nil
+
 		}
 		if len(p.points[tag]) == 1 && !authorizedTags[tag].multiPoint {
 			return fmt.Errorf("tag %s allow only one mount point", tag)
