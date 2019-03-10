@@ -59,8 +59,8 @@ func TestImage(t *testing.T) {
 	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", 0, 0, 0); err == nil {
 		t.Errorf("should have failed with 0 size limit")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10); err == nil {
-		t.Errorf("should have failed with destination already in list")
+	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10); err != nil {
+		t.Errorf("should have issued warning with destination already in list")
 	}
 	points.RemoveAll()
 
