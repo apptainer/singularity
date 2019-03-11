@@ -282,9 +282,6 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	sifhash := computeHashStr(&fimg, descr)
 
 	var authok string
-	var dontAskToStore bool
-	var toStoreToken uint64
-	var tokenToAdd *openpgp.Entity
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
@@ -314,36 +311,36 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("could not get the signing entity fingerprint: %s", err)
 		}
 
-		// check if we already have the public key
-		checkPub, err := sypgp.CheckLocalPubKey(fingerprint)
+		// load the public keys available locally from the cache
+		elist, err := sypgp.LoadPubKeyring()
 		if err != nil {
-			return fmt.Errorf("unable to check public keys: %v", err)
-		}
-		if checkPub {
-			dontAskToStore = true
+			return fmt.Errorf("could not load public keyring: %s", err)
 		}
 
-		// remove the local key that signed the container
-		if err := sypgp.RemovePubKey(fingerprint); err != nil {
-			return fmt.Errorf("unable to remove key from local public keyring: %v", err)
-		}
-
-		// download the new key
-		sylog.Infof("Downloading the new key: %s...", fingerprint[24:])
-		netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+		// verify the container with our local keys first
+		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
-			return fmt.Errorf("could not fetch public key from server: %s", err)
-		}
-		sylog.Verbosef("key retrieved successfully!")
+			// if theres a error, thats proboly becuse we dont have a local key
 
-		// verify the container
-		signer, err := openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
-		if err != nil {
-			return fmt.Errorf("signature verification failed: %s", err)
-		}
+			// download the key
+			sylog.Infof("Downloading key: %s...", fingerprint[24:])
+			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
+			if err != nil {
+				return fmt.Errorf("could not fetch public key from server: %s", err)
+			}
+			sylog.Verbosef("key retrieved successfully!")
 
-		toStoreToken = signer.PrimaryKey.KeyId
-		tokenToAdd = netlist[0]
+			block, _ := clearsign.Decode(data)
+			if block == nil {
+				return fmt.Errorf("failed to parse signature block")
+			}
+
+			// verify the container
+			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+			if err != nil {
+				return fmt.Errorf("signature verification failed: %s", err)
+			}
+		}
 
 		// Get first Identity data for convenience
 		var name string
@@ -356,26 +353,6 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
 	fmt.Print(authok)
 
-	// store new key
-	if noPrompt || dontAskToStore {
-		// always store key when prompts disabled or already have the key
-		if err = sypgp.StorePubKey(tokenToAdd); err != nil {
-			return fmt.Errorf("could not store public key: %s", err)
-		}
-	} else {
-		// Ask to store new public key
-		fmt.Printf("\n")
-		resp, err := sypgp.AskQuestion("Trust new public key %X? [Y/n] ", toStoreToken)
-		if err != nil {
-			return err
-		}
-		if resp == "" || resp == "y" || resp == "Y" {
-			sylog.Infof("Storing new key.")
-			if err = sypgp.StorePubKey(tokenToAdd); err != nil {
-				return fmt.Errorf("could not store public key: %s", err)
-			}
-		}
-	}
 	return nil
 }
 
