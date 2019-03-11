@@ -77,7 +77,7 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 		argv = append(argv, "--app", opts.app)
 	}
 	if opts.userns {
-		argv = append(args, "-u")
+		argv = append(argv, "-u")
 	}
 	argv = append(argv, imagePath)
 	argv = append(argv, command...)
