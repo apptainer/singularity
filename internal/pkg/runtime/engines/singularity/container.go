@@ -1388,11 +1388,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		sylog.Debugf("Adding %s to mount list\n", src)
 
-		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
+		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil && err == mount.ErrMountExists {
+			sylog.Warningf("destination %s already in mount list: %s", src, err)
+		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
+		} else {
+			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
+			flags &^= syscall.MS_RDONLY
 		}
-		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
-		flags &^= syscall.MS_RDONLY
 	}
 
 	sylog.Debugf("Checking for 'user bind control' in configuration file")
