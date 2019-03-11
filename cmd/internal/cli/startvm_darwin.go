@@ -22,7 +22,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 
 	// Default xhyve Arguments
 	args := []string{
-		buildcfg.LIBEXECDIR + "/singularity/vm/xhyve",
+		filepath.Joing(buildcfg.LIBEXECDIR, "/singularity/vm/xhyve"),
 		"-A",
 		"-m", VMRAM,
 		"-c", VMCPU,
