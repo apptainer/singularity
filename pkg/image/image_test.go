@@ -18,7 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
+	"github.com/sylabs/singularity/pkg/image/unpacker"
 )
 
 func downloadImage(t *testing.T) string {
