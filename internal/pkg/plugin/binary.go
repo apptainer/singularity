@@ -115,24 +115,38 @@ func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
 // Uninstall removes the plugin matching "name" from the specified
 // singularity installation directory
 func Uninstall(name, libexecdir string) error {
-	sylog.Debugf("Uninstalling plugin %q from %q", name, libexecdir)
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	sylog.Debugf("Uninstalling plugin %q from %q", name, pluginDir)
 
-	metas, err := List(libexecdir)
-
+	meta, err := loadMetaByName(name, pluginDir)
 	if err != nil {
+		// figure out if this is a not found error?
 		return err
 	}
 
-	for _, meta := range metas {
-		if meta.Name != name {
-			continue
-		}
+	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
+	return meta.uninstall()
+}
 
-		sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
-		return meta.uninstall()
+func loadMetaByName(name, plugindir string) (*Meta, error) {
+	fh, err := os.Open(metaPath(plugindir, name))
+	if err != nil {
+		return nil, err
 	}
 
-	return fmt.Errorf("Plugin %q not found in %q", name, libexecdir)
+	defer fh.Close()
+
+	m, err := LoadFromJSON(fh)
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure we loaded the right thing
+	if m.Name != name {
+		return nil, fmt.Errorf("Unexpected plugin name %q when loading plugin %q", m.Name, name)
+	}
+
+	return m, nil
 }
 
 // install installs the plugin represented by m into the destination
@@ -186,7 +200,7 @@ func (m *Meta) installBinary() error {
 }
 
 func (m *Meta) installMeta(dstdir string) error {
-	fn := filepath.Join(dstdir, m.filename())
+	fn := metaPath(dstdir, m.Name)
 	fh, err := os.Create(fn)
 	if err != nil {
 		return err
@@ -271,14 +285,14 @@ func (m *Meta) uninstallBinary() error {
 }
 
 func (m *Meta) uninstallMeta() error {
-	fn := filepath.Join(m.baseDir(), m.filename())
+	fn := metaPath(m.baseDir(), m.Name)
 	return os.Remove(fn)
 }
 
-// filename returns the name of the Meta file
-func (m *Meta) filename() string {
-	sum := sha256.Sum256([]byte(m.Name))
-	return fmt.Sprintf("%x.meta", sum)
+// metaPath returns the path to the meta file based on the directory and
+// the name of the corresponding plugin
+func metaPath(dir, name string) string {
+	return filepath.Join(dir, pluginIDFromName(name)+".meta")
 }
 
 func (m *Meta) baseDir() string {
@@ -299,6 +313,12 @@ func (m *Meta) baseDir() string {
 // plugin installation directory
 func pathFromName(name string) string {
 	return filepath.FromSlash(name)
+}
+
+// pluginIDFromName returns a unique ID for the plugin given its name
+func pluginIDFromName(name string) string {
+	sum := sha256.Sum256([]byte(name))
+	return fmt.Sprintf("%x", sum)
 }
 
 //
