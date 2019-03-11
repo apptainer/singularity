@@ -63,6 +63,7 @@ type Options struct {
 // NewBundle creates a Bundle environment
 func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
+	b.JSONObjects = make(map[string][]byte)
 
 	if bundlePrefix == "" {
 		bundlePrefix = "sbuild-"

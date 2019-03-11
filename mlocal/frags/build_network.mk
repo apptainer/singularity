@@ -62,7 +62,8 @@ cniplugins:
 		cniplugin=$(cni_builddir)/$$name; \
 		if [ ! -f $$cniplugin ]; then \
 			echo " CNI PLUGIN" $$name; \
-			go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $$cniplugin $$p; \
+		go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+			-o $$cniplugin $$p; \
 		fi \
 	done
 
