@@ -17,11 +17,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
-
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
-	"github.com/sylabs/singularity/internal/pkg/image"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/image/unpacker"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
