@@ -358,11 +358,10 @@ func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
 	return false
 }
 
-// CheckLocalPubKey : will check if we have a local public key matching ckey stirng
-// returns true if theres a match.
+// CheckLocalPubKey will check if we have a local public key matching ckey string
+// returns true if there's a match.
 func CheckLocalPubKey(ckey string) (bool, error) {
-	//f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-	f, err := os.OpenFile(PublicPath(), os.O_CREATE, 0600)
+	f, err := os.OpenFile(PublicPath(), os.O_CREATE|os.O_RDONLY, 0600)
 	if err != nil {
 		return false, fmt.Errorf("unable to open local keyring: %v", err)
 	}
@@ -375,9 +374,7 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	}
 
 	for i := range elist {
-		if compareLocalPubKey(elist[i], ckey) {
-			return true, nil
-		}
+		return compareLocalPubKey(elist[i], ckey), nil
 	}
 	return false, nil
 }
@@ -408,15 +405,14 @@ func RemovePubKey(toDelete string) error {
 
 	sylog.Infof("Updating local keyring: %v", PublicPath())
 
-	// truncate all the public keys... scary :O
-	// to my knowledge, there is no other way to do this...
+	// open the public keyring file
 	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("unable to clear, and open the file: %v", err)
 	}
 	defer nf.Close()
 
-	// loop throught a write all the other keys back
+	// loop through a write all the other keys back
 	for k := range newKeyList {
 		// store the freshly downloaded key
 		if err := StorePubKey(&newKeyList[k]); err != nil {
