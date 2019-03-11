@@ -19,13 +19,13 @@ var (
 )
 
 func init() {
-	pluginCompileCmd.Flags().StringVarP(&out, "out", "o", "", "")
+	PluginCompileCmd.Flags().StringVarP(&out, "out", "o", "", "")
 }
 
-// pluginCompileCmd allows a user to compile a plugin
+// PluginCompileCmd allows a user to compile a plugin
 //
 // singularity plugin compile <path> [-o name]
-var pluginCompileCmd = &cobra.Command{
+var PluginCompileCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		s, err := filepath.Abs(args[0])
 		if err != nil {
