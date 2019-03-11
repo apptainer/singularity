@@ -27,12 +27,11 @@ func init() {
 //
 // singularity plugin install <path> [-n name]
 var PluginInstallCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println("Failed to install plugin %q: %s.", args[0], err)
 		}
-		return err
 	},
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),

@@ -16,12 +16,11 @@ import (
 
 // PluginListCmd lists the plugins installed in the system
 var PluginListCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
+	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)
 		if err != nil {
-			fmt.Println(err)
+			fmt.Printf("Failed to get a list of installed plugins: %s.\n", err)
 		}
-		return err
 	},
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(0),
