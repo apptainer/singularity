@@ -281,7 +281,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	// the selected data object is hashed for comparison against signature block's
 	sifhash := computeHashStr(&fimg, descr)
 
-	var authok string
+	var author string
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
@@ -348,10 +348,10 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			name = i.Name
 			break
 		}
-		authok += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
+		author += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 	}
 	fmt.Printf("Data integrity checked, authentic and signed by:\n")
-	fmt.Print(authok)
+	fmt.Print(author)
 
 	return nil
 }
