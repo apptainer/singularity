@@ -250,15 +250,10 @@ func LoadPrivKeyring() (openpgp.EntityList, error) {
 	}
 	defer f.Close()
 
-	el, err := openpgp.ReadKeyRing(f)
-	if err != nil {
-		return nil, err
-	}
-
-	return el, nil
+	return openpgp.ReadKeyRing(f)
 }
 
-// LoadKeyringFromFile loads the public key from a local file given from a path into an EntityList
+// LoadKeyringFromFile loads a key from a local file (private or public) given from a path into an EntityList
 func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 
 	f, err := os.Open(path)
@@ -287,12 +282,7 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 	}
 	defer f.Close()
 
-	el, err := openpgp.ReadKeyRing(f)
-	if err != nil {
-		return nil, err
-	}
-
-	return el, nil
+	return openpgp.ReadKeyRing(f)
 }
 
 // PrintEntity pretty prints an entity entry
