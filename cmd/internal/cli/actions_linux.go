@@ -62,6 +62,9 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	// keep compatibility with v2
 	tmpdir := os.Getenv("SINGULARITY_LOCALCACHEDIR")
 	if tmpdir == "" {
+		tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+	}
+	if tmpdir == "" {
 		pw, err := user.GetPwUID(uint32(os.Getuid()))
 		if err != nil {
 			return "", fmt.Errorf("could not find current user information: %s", err)
