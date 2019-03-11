@@ -38,10 +38,10 @@ func init() {
 var RemoteCmd = &cobra.Command{
 	Run: nil,
 
-	Use: docs.RemoteUse,
-	// Short:                 docs.RemoteShort,
-	// Long:                  docs.RemoteLong,
-	// Example:               docs.RemoteExample,
+	Use:     docs.RemoteUse,
+	Short:   docs.RemoteShort,
+	Long:    docs.RemoteLong,
+	Example: docs.RemoteExample,
 }
 
 // RemoteAddCmd singularity remote add [remoteName] [remoteURI]
@@ -53,10 +53,10 @@ var RemoteAddCmd = &cobra.Command{
 		}
 	},
 
-	Use: docs.RemoteAddUse,
-	// Short:                 docs.RemoteAddShort,
-	// Long:                  docs.RemoteAddLong,
-	// Example:               docs.RemoteAddExample,
+	Use:     docs.RemoteAddUse,
+	Short:   docs.RemoteAddShort,
+	Long:    docs.RemoteAddLong,
+	Example: docs.RemoteAddExample,
 }
 
 // RemoteRemoveCmd singularity remote remove [remoteName]
@@ -68,10 +68,10 @@ var RemoteRemoveCmd = &cobra.Command{
 		}
 	},
 
-	Use: docs.RemoteRemoveUse,
-	// Short:                 docs.RemoteAddShort,
-	// Long:                  docs.RemoteAddLong,
-	// Example:               docs.RemoteAddExample,
+	Use:     docs.RemoteRemoveUse,
+	Short:   docs.RemoteRemoveShort,
+	Long:    docs.RemoteRemoveLong,
+	Example: docs.RemoteRemoveExample,
 }
 
 // RemoteUseCmd singularity remote use [remoteName]
@@ -83,10 +83,10 @@ var RemoteUseCmd = &cobra.Command{
 		}
 	},
 
-	Use: docs.RemoteUseUse,
-	// Short:                 docs.RemoteAddShort,
-	// Long:                  docs.RemoteAddLong,
-	// Example:               docs.RemoteAddExample,
+	Use:     docs.RemoteUseUse,
+	Short:   docs.RemoteUseShort,
+	Long:    docs.RemoteUseLong,
+	Example: docs.RemoteUseExample,
 }
 
 // RemoteListCmd singularity remote list
@@ -98,10 +98,10 @@ var RemoteListCmd = &cobra.Command{
 		}
 	},
 
-	Use: docs.RemoteListUse,
-	// Short:                 docs.RemoteAddShort,
-	// Long:                  docs.RemoteAddLong,
-	// Example:               docs.RemoteAddExample,
+	Use:     docs.RemoteListUse,
+	Short:   docs.RemoteListShort,
+	Long:    docs.RemoteListLong,
+	Example: docs.RemoteListExample,
 }
 
 // RemoteLoginCmd singularity remote login [remoteName]
@@ -113,10 +113,10 @@ var RemoteLoginCmd = &cobra.Command{
 		}
 	},
 
-	Use: docs.RemoteLoginUse,
-	// Short:                 docs.RemoteAddShort,
-	// Long:                  docs.RemoteAddLong,
-	// Example:               docs.RemoteAddExample,
+	Use:     docs.RemoteLoginUse,
+	Short:   docs.RemoteLoginShort,
+	Long:    docs.RemoteLoginLong,
+	Example: docs.RemoteLoginExample,
 }
 
 // RemoteStatusCmd singularity remote status [remoteName]
@@ -128,8 +128,8 @@ var RemoteStatusCmd = &cobra.Command{
 		}
 	},
 
-	Use: docs.RemoteStatusUse,
-	// Short:                 docs.RemoteAddShort,
-	// Long:                  docs.RemoteAddLong,
-	// Example:               docs.RemoteAddExample,
+	Use:     docs.RemoteStatusUse,
+	Short:   docs.RemoteStatusShort,
+	Long:    docs.RemoteStatusLong,
+	Example: docs.RemoteStatusExample,
 }
