@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,19 @@ import (
 )
 
 const (
+	// SQUASHFS constant for squashfs format
+	SQUASHFS = iota + 1
+	// EXT3 constant for ext3 format
+	EXT3
+	// SANDBOX constant for directory format
+	SANDBOX
+	// SIF constant for sif format
+	SIF
+)
+
+const (
+	// RootFs partition name
+	RootFs       = "rootfs"
 	launchString = " run-singularity"
 	bufferSize   = 2048
 )
@@ -37,18 +50,28 @@ type format interface {
 	initializer(*Image, os.FileInfo) error
 }
 
-// Image describes an image object
+// Section identifies and locates a data section in image object.
+type Section struct {
+	Size   uint64 `json:"size"`
+	Offset uint64 `json:"offset"`
+	Type   uint32 `json:"type"`
+	Name   string `json:"name"`
+}
+
+// Image describes an image object, an image is composed of one
+// or more partitions (eg: container root filesystem, overlay),
+// image format like SIF contains descriptors pointing to chunk of
+// data, chunks position and size are stored as image sections.
 type Image struct {
-	Path     string   `json:"path"`
-	Name     string   `json:"name"`
-	Type     int      `json:"type"`
-	File     *os.File `json:"-"`
-	Fd       uintptr  `json:"fd"`
-	Source   string   `json:"source"`
-	Offset   uint64   `json:"offset"`
-	Size     uint64   `json:"size"`
-	Writable bool     `json:"writable"`
-	RootFS   bool     `json:"rootFS"`
+	Path       string    `json:"path"`
+	Name       string    `json:"name"`
+	Type       int       `json:"type"`
+	File       *os.File  `json:"-"`
+	Fd         uintptr   `json:"fd"`
+	Source     string    `json:"source"`
+	Writable   bool      `json:"writable"`
+	Partitions []Section `json:"partitions"`
+	Sections   []Section `json:"sections"`
 }
 
 // AuthorizedPath checks if image is in a path supplied in paths
@@ -124,7 +147,7 @@ func ResolvePath(path string) (string, error) {
 	return resolvedPath, nil
 }
 
-// Init initilizes an image object based on given path
+// Init initializes an image object based on given path
 func Init(path string, writable bool) (*Image, error) {
 	sylog.Debugf("Entering image format intializer")
 
@@ -134,8 +157,9 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	img := &Image{
-		Path: resolvedPath,
-		Name: filepath.Base(resolvedPath),
+		Path:       resolvedPath,
+		Name:       filepath.Base(resolvedPath),
+		Partitions: make([]Section, 1),
 	}
 
 	for _, rf := range registeredFormats {

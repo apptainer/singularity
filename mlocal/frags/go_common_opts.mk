@@ -1,5 +1,5 @@
 # go tool default build options
-GO_TAGS := containers_image_openpgp
+GO_TAGS := containers_image_openpgp sylog
 GO_BUILDMODE := -buildmode=default
 
 GO_LDFLAGS :=
