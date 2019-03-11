@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -21,6 +22,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 
 	// Default xhyve Arguments
 	args := []string{
+		buildcfg.LIBEXECDIR + "/singularity/vm/xhyve",
 		"-A",
 		"-m", VMRAM,
 		"-c", VMCPU,
