@@ -108,8 +108,37 @@ func InstallFromSIF(fimg *sif.FileImage, sysconfdir, libexecdir string) (*Meta, 
 		fimg: fimg,
 	}
 
-	err = m.install(plugindir)
-	return m, err
+	fn, err := m.install(plugindir)
+	if err != nil {
+		return nil, err
+	}
+
+	configFilename := configPath(sysconfdir, m.Name)
+	err = os.Remove(configFilename)
+	if err != nil && !os.IsNotExist(err) {
+		// TODO(mem): handle not found errors
+		return nil, err
+	}
+
+	err = os.MkdirAll(filepath.Dir(configFilename), 0777)
+	if err != nil {
+		// TODO(mem): handle errors
+		return nil, err
+	}
+
+	relPath, err := filepath.Rel(filepath.Dir(configFilename), fn)
+	if err != nil {
+		// TODO(mem): why can this fail?
+		return nil, err
+	}
+
+	err = os.Symlink(relPath, configFilename)
+	if err != nil {
+		// TODO(mem): why can this fail?
+		return nil, err
+	}
+
+	return m, nil
 }
 
 // Uninstall removes the plugin matching "name" from the specified
@@ -151,24 +180,25 @@ func loadMetaByName(name, plugindir string) (*Meta, error) {
 
 // install installs the plugin represented by m into the destination
 // directory. This should normally only be called in InstallFromSIF
-func (m *Meta) install(dstdir string) error {
+func (m *Meta) install(dstdir string) (string, error) {
 	if err := os.MkdirAll(m.Path, 0777); err != nil {
-		return err
+		return "", err
 	}
 
 	if err := m.installImage(); err != nil {
-		return err
+		return "", err
 	}
 
 	if err := m.installBinary(); err != nil {
-		return err
+		return "", err
 	}
 
-	if err := m.installMeta(dstdir); err != nil {
-		return err
+	fn, err := m.installMeta(dstdir)
+	if err != nil {
+		return "", err
 	}
 
-	return nil
+	return fn, nil
 }
 
 func (m *Meta) installImage() error {
@@ -199,26 +229,26 @@ func (m *Meta) installBinary() error {
 	return err
 }
 
-func (m *Meta) installMeta(dstdir string) error {
+func (m *Meta) installMeta(dstdir string) (string, error) {
 	fn := metaPath(dstdir, m.Name)
 	fh, err := os.Create(fn)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	defer fh.Close()
 
 	data, err := json.Marshal(m)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	_, err = fh.Write(data)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return fn, nil
 }
 
 // uninstall removes the plugin it represents from the filesystem.
@@ -293,6 +323,14 @@ func (m *Meta) uninstallMeta() error {
 // the name of the corresponding plugin
 func metaPath(dir, name string) string {
 	return filepath.Join(dir, pluginIDFromName(name)+".meta")
+}
+
+// configPath returns the path to the config file based on the directory
+// and the name of the corresponding plugin
+func configPath(dir, name string) string {
+	// TODO(mem): should "singularity" be here? Or does that belong
+	// in a different layer?
+	return filepath.Join(dir, "singularity", DirRoot, pluginIDFromName(name)+".config")
 }
 
 func (m *Meta) baseDir() string {
