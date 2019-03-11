@@ -84,7 +84,7 @@ func (m *Meta) Config() (*os.File, error) {
 //     4. Extract the binary object into the path
 //     5. Generate a default config file in the path
 //     6. Write the Meta struct onto disk in DirRoot
-func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
+func InstallFromSIF(fimg *sif.FileImage, sysconfdir, libexecdir string) (*Meta, error) {
 	sylog.Debugf("Installing plugin from SIF to %q", libexecdir)
 
 	if !isPluginFile(fimg) {
@@ -114,7 +114,7 @@ func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
 
 // Uninstall removes the plugin matching "name" from the specified
 // singularity installation directory
-func Uninstall(name, libexecdir string) error {
+func Uninstall(name, sysconfdir, libexecdir string) error {
 	pluginDir := filepath.Join(libexecdir, DirRoot)
 	sylog.Debugf("Uninstalling plugin %q from %q", name, pluginDir)
 
@@ -405,7 +405,7 @@ func getManifest(fimg *sif.FileImage) pluginapi.Manifest {
 
 // List returns all the singularity plugins installed in libexecdir in
 // the form of a list of Meta information
-func List(libexecdir string) ([]*Meta, error) {
+func List(sysconfdir, libexecdir string) ([]*Meta, error) {
 	pluginDir := filepath.Join(libexecdir, DirRoot)
 	pattern := filepath.Join(pluginDir, "*.meta")
 	entries, err := filepath.Glob(pattern)

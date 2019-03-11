@@ -16,7 +16,7 @@ import (
 // PluginListCmd lists the plugins installed in the system
 var PluginListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
-		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)
+		err := singularity.ListPlugins(buildcfg.SYSCONFDIR, buildcfg.LIBEXECDIR)
 		if err != nil {
 			sylog.Fatalf("Failed to get a list of installed plugins: %s.", err)
 		}

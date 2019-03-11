@@ -19,7 +19,7 @@ import (
 // singularity plugin uninstall <name>
 var PluginUninstallCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
-		err := singularity.UninstallPlugin(args[0], buildcfg.LIBEXECDIR)
+		err := singularity.UninstallPlugin(args[0], buildcfg.SYSCONFDIR, buildcfg.LIBEXECDIR)
 		if err != nil {
 			sylog.Fatalf("Failed to uninstall plugin %q: %s.", args[0], err)
 		}

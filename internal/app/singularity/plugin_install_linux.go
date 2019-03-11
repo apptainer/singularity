@@ -14,7 +14,7 @@ import (
 // the singularity folder in libexecdir.
 //
 // Installing a plugin will also automatically enable it.
-func InstallPlugin(pluginPath, libexecdir string) error {
+func InstallPlugin(pluginPath, sysconfdir, libexecdir string) error {
 	fimg, err := sif.LoadContainer(pluginPath, true)
 	if err != nil {
 		return err
@@ -22,7 +22,7 @@ func InstallPlugin(pluginPath, libexecdir string) error {
 
 	defer fimg.UnloadContainer()
 
-	_, err = plugin.InstallFromSIF(&fimg, libexecdir)
+	_, err = plugin.InstallFromSIF(&fimg, sysconfdir, libexecdir)
 	if err != nil {
 		return err
 	}
