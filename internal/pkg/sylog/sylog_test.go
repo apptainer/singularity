@@ -12,8 +12,8 @@ import (
 	"testing"
 )
 
-// TestSylogSetLevel to ensure the correct integer is returned
-func TestSylogSetLevel(t *testing.T) {
+// TestSetLevel to ensure the correct integer is returned
+func TestSetLevel(t *testing.T) {
 	var levelTests = []struct {
 		name  string
 		level int
@@ -32,9 +32,7 @@ func TestSylogSetLevel(t *testing.T) {
 	for _, tt := range levelTests {
 		t.Run(tt.name, func(t *testing.T) {
 			SetLevel(tt.level)
-
 			l := GetLevel()
-
 			if l != tt.level {
 				t.Errorf("got %d, want %d", l, tt.level)
 			}
@@ -42,8 +40,7 @@ func TestSylogSetLevel(t *testing.T) {
 	}
 }
 
-func TestSylogPrefix(t *testing.T) {
-
+func TestPrefix(t *testing.T) {
 	var logSuffix = "\x1b[0m "
 	var levelTests = []struct {
 		name  string
@@ -80,8 +77,7 @@ func TestSylogPrefix(t *testing.T) {
 	}
 }
 
-func TestSylogDisableColor(t *testing.T) {
-
+func TestDisableColor(t *testing.T) {
 	var logSuffix = "\x1b[0m "
 	var levelTests = []struct {
 		name  string
@@ -101,19 +97,19 @@ func TestSylogDisableColor(t *testing.T) {
 	// Disable all color output, removing prefix and off suffix
 	DisableColor()
 
-	// Test that prefix is colored
+	// Test that prefix is not colored
 	for _, tt := range levelTests {
 		t.Run(tt.name, func(t *testing.T) {
 
 			SetLevel(int(tt.level))
 			levelPrefix := prefix(tt.level)
 
-			// Check that we start with the color prefix
+			// Check that we don't start with the color prefix
 			if !strings.HasPrefix(levelPrefix, tt.name) {
 				t.Errorf("got prefix %s, want %s", levelPrefix, tt.name)
 			}
 
-			// The suffix should be consistently the "off" color string
+			// The suffix should not contain the the "off" color string
 			if strings.HasSuffix(levelPrefix, logSuffix) && tt.level != debug {
 				t.Errorf("%s does ends with %s", levelPrefix, logSuffix)
 			}
