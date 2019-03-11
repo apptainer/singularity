@@ -352,10 +352,7 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // compareLocalPubKey compares a key ID with a string, returning true if the
 // key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
-	if fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken {
-		return true
-	}
-	return false
+	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
 }
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
