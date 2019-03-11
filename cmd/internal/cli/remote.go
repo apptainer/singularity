@@ -25,6 +25,8 @@ func init() {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
 	}
 	remoteConfig = filepath.Join(usr.HomeDir, ".singularity", "remote.yaml")
+	RemoteCmd.Flags().StringVarP(&remoteConfig, "config", "c", remoteConfig, "path to the file holding remote endpoint configurations")
+
 	SingularityCmd.AddCommand(RemoteCmd)
 	RemoteCmd.AddCommand(RemoteAddCmd)
 	RemoteCmd.AddCommand(RemoteRemoveCmd)
