@@ -55,6 +55,18 @@ else
 	fi
 fi
 
+########################
+# host compilers options
+########################
+for opt in $cflags_opts; do
+	printf " checking: host C compiler option $opt... "
+	if $cc $opt -E -x c /dev/null >/dev/null 2>&1; then
+		echo "yes"
+		cflags="$cflags $opt"
+	else
+		echo "no"
+	fi
+done
 
 ########################
 # host tool paths
