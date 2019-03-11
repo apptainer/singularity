@@ -136,6 +136,14 @@ func (c *Config) Rename(name, newName string) error {
 		return fmt.Errorf("%s is not a remote", name)
 	}
 
+	if _, ok := c.Remotes[newName]; ok {
+		return fmt.Errorf("%s is already a remote", newName)
+	}
+
+	if c.DefaultRemote == name {
+		c.DefaultRemote = newName
+	}
+
 	c.Remotes[newName] = c.Remotes[name]
 	delete(c.Remotes, name)
 	return nil
