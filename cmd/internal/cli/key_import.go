@@ -23,7 +23,7 @@ func init() {
 
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   importRun,
@@ -69,11 +69,11 @@ func doKeyImportCmd(path string) error {
 			return err
 		}
 		// get local keystore (where the key will be stored)
-		fp, err := os.OpenFile(sypgp.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		publicFilePath, err := os.OpenFile(sypgp.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 		if err != nil {
 			return err
 		}
-		defer fp.Close()
+		defer publicFilePath.Close()
 
 		//go through the keystore checking for the given fingerprint
 		for _, pathEntity := range pathEntityList {
@@ -88,7 +88,7 @@ func doKeyImportCmd(path string) error {
 			}
 			if !isInStore {
 
-				if err = pathEntity.Serialize(fp); err != nil {
+				if err = pathEntity.Serialize(publicFilePath); err != nil {
 					return err
 				}
 				fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)
@@ -113,11 +113,11 @@ func doKeyImportCmd(path string) error {
 				return err
 			}
 			// get local keystore (where the key will be stored)
-			fp, err := os.OpenFile(sypgp.SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+			secretFilePath, err := os.OpenFile(sypgp.SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 			if err != nil {
 				return err
 			}
-			defer fp.Close()
+			defer secretFilePath.Close()
 
 			//go through the keystore checking for the given fingerprint
 			for _, pathEntity := range pathEntityList {
@@ -132,7 +132,7 @@ func doKeyImportCmd(path string) error {
 				}
 				if !isInStore {
 
-					if err = pathEntity.SerializePrivate(fp, nil); err != nil {
+					if err = pathEntity.Serialize(secretFilePath); err != nil {
 						return err
 					}
 					fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)
