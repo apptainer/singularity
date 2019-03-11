@@ -349,8 +349,8 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 		}
 		if present {
 			return ErrMountExists
-
 		}
+
 		if len(p.points[tag]) == 1 && !authorizedTags[tag].multiPoint {
 			return fmt.Errorf("tag %s allow only one mount point", tag)
 		}
