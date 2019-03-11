@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,9 +10,6 @@ import (
 	"os"
 )
 
-// SANDBOX defines constant for directory format
-const SANDBOX = 3
-
 type sandboxFormat struct{}
 
 func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
@@ -21,6 +18,8 @@ func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	} else {
 		return fmt.Errorf("not a directory image")
 	}
+	img.Partitions[0].Type = SANDBOX
+	img.Partitions[0].Name = RootFs
 	return nil
 }
 

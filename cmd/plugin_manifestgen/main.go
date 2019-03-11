@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,7 +34,6 @@ func main() {
 		sylog.Fatalf("While marshalling manifest to json: %s", err)
 	}
 
-	fmt.Println(string(manifest))
 	if err := ioutil.WriteFile(args[1], manifest, 0644); err != nil {
 		sylog.Fatalf("While writing manifest to file: %s", err)
 	}

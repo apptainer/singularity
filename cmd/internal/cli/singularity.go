@@ -28,6 +28,7 @@ import (
 // Global variables for singularity CLI
 var (
 	debug   bool
+	nocolor bool
 	silent  bool
 	verbose bool
 	quiet   bool
@@ -72,6 +73,7 @@ func init() {
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
 	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "print debugging information (highest verbosity)")
+	SingularityCmd.Flags().BoolVar(&nocolor, "nocolor", false, "print without color output (default False)")
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "only print errors")
 	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "suppress normal output")
 	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print additional information")
@@ -100,6 +102,12 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 	}
 
 	sylog.SetLevel(level)
+}
+
+func setSylogColor(cmd *cobra.Command, args []string) {
+	if nocolor {
+		sylog.DisableColor()
+	}
 }
 
 // SingularityCmd is the base command when called without any subcommands
@@ -179,6 +187,7 @@ func handleEnv(flag *pflag.Flag) {
 
 func persistentPreRun(cmd *cobra.Command, args []string) {
 	setSylogMessageLevel(cmd, args)
+	setSylogColor(cmd, args)
 	updateFlagsFromEnv(cmd)
 }
 
