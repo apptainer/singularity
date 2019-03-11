@@ -14,7 +14,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/image"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 )
