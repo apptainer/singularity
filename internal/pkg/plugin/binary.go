@@ -112,7 +112,7 @@ func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
 	return m, err
 }
 
-// Uninstalling removes the plugin matching "name" from the specified
+// Uninstall removes the plugin matching "name" from the specified
 // singularity installation directory
 func Uninstall(name, libexecdir string) error {
 	sylog.Debugf("Uninstalling plugin %q from %q", name, libexecdir)

@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 )
 
-// PluginUninstall takes the name of a plugin and uninstalls it from the
+// pluginUninstall takes the name of a plugin and uninstalls it from the
 // plugin directory
 //
 // singularity plugin uninstall <name>
