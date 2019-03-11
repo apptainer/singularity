@@ -16,7 +16,7 @@ import (
 func RemoteRemove(configFile, name string) (err error) {
 	c := &remote.Config{}
 
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0644)
+	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
