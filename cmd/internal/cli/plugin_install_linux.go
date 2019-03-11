@@ -30,7 +30,7 @@ var PluginInstallCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
-			fmt.Println("Failed to install plugin %q: %s.", args[0], err)
+			fmt.Printf("Failed to install plugin %q: %s.", args[0], err)
 		}
 	},
 	DisableFlagsInUseLine: true,
