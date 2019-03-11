@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	// DefaultLogFormat represents default log format.
-	DefaultLogFormat = "default"
+	// BasicLogFormat represents basic log format.
+	BasicLogFormat = "basic"
 	// KubernetesLogFormat represents kubernetes log format.
 	KubernetesLogFormat = "kubernetes"
 	// JSONLogFormat represents JSON log format.
@@ -38,7 +38,7 @@ func jsonLogFormatter(stream, data string) string {
 	return fmt.Sprintf("{\"time\":\"%s\",\"stream\":\"%s\",\"log\":\"%s\"}\n", time.Now().Format(time.RFC3339Nano), stream, data)
 }
 
-func defaultLogFormatter(stream, data string) string {
+func basicLogFormatter(stream, data string) string {
 	if stream != "" {
 		return fmt.Sprintf("%s %s %s\n", time.Now().Format(time.RFC3339Nano), stream, data)
 	}
@@ -47,7 +47,7 @@ func defaultLogFormatter(stream, data string) string {
 
 // LogFormats contains supported log format by default.
 var LogFormats = map[string]LogFormatter{
-	DefaultLogFormat:    defaultLogFormatter,
+	BasicLogFormat:      basicLogFormatter,
 	KubernetesLogFormat: kubernetesLogFormatter,
 	JSONLogFormat:       jsonLogFormatter,
 }
@@ -66,7 +66,7 @@ func NewLogger(logPath string, formatter LogFormatter) (*Logger, error) {
 	}
 
 	if logger.formatter == nil {
-		logger.formatter = defaultLogFormatter
+		logger.formatter = basicLogFormatter
 	}
 
 	if err := logger.openFile(logPath); err != nil {

@@ -554,7 +554,7 @@ func (e *EngineOperations) loadImages() error {
 			}
 		}
 	}
-	img.RootFS = true
+	// first image is always the root filesystem
 	images = append(images, *img)
 
 	// load overlay images

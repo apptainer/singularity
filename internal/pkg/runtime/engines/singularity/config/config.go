@@ -90,6 +90,7 @@ type JSONConfig struct {
 	TargetUID     int           `json:"targetUID,omitempty"`
 	TargetGID     []int         `json:"targetGID,omitempty"`
 	LibrariesPath []string      `json:"librariesPath,omitempty"`
+	DeleteImage   bool          `json:"deleteImage,omitempty"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -473,4 +474,14 @@ func (e *EngineConfig) SetLibrariesPath(libraries []string) {
 // /.singularity.d/libs directory
 func (e *EngineConfig) GetLibrariesPath() []string {
 	return e.JSON.LibrariesPath
+}
+
+// GetDeleteImage returns if container image must be deleted after use
+func (e *EngineConfig) GetDeleteImage() bool {
+	return e.JSON.DeleteImage
+}
+
+// SetDeleteImage sets if container image must be deleted after use
+func (e *EngineConfig) SetDeleteImage(delete bool) {
+	e.JSON.DeleteImage = delete
 }
