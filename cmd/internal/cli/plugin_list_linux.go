@@ -6,12 +6,11 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // PluginListCmd lists the plugins installed in the system
@@ -19,7 +18,7 @@ var PluginListCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.ListPlugins(buildcfg.LIBEXECDIR)
 		if err != nil {
-			fmt.Printf("Failed to get a list of installed plugins: %s.\n", err)
+			sylog.Fatalf("Failed to get a list of installed plugins: %s.", err)
 		}
 	},
 	DisableFlagsInUseLine: true,

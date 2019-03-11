@@ -6,12 +6,11 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // PluginUninstallCmd takes the name of a plugin and uninstalls it from the
@@ -22,7 +21,7 @@ var PluginUninstallCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		err := singularity.UninstallPlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
-			fmt.Printf("Failed to uninstall plugin %q: %s.\n", args[0], err)
+			sylog.Fatalf("Failed to uninstall plugin %q: %s.", args[0], err)
 		}
 	},
 	DisableFlagsInUseLine: true,
