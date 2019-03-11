@@ -656,6 +656,14 @@
   version = "v0.5.0"
 
 [[projects]]
+  digest = "1:514ba544a9164b33a313febbc29c10182fb2488b06e9ec76298fa687901d9591"
+  name = "github.com/sylabs/scs-key-client"
+  packages = ["client"]
+  pruneopts = "UT"
+  revision = "02f68c915ede2331b018da046e6f809ffcb84c7f"
+  version = "v0.2.0"
+
+[[projects]]
   digest = "1:89016522d62b3fe281177a0aaccf6f136aac0b053e36e908d542974ea91db675"
   name = "github.com/sylabs/sif"
   packages = ["pkg/sif"]
@@ -831,6 +839,7 @@
     "github.com/spf13/cobra/doc",
     "github.com/spf13/pflag",
     "github.com/sylabs/json-resp",
+    "github.com/sylabs/scs-key-client/client",
     "github.com/sylabs/sif/pkg/sif",
     "golang.org/x/crypto/openpgp",
     "golang.org/x/crypto/openpgp/armor",
