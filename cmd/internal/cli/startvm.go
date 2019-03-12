@@ -85,6 +85,7 @@ func startVM(sifImage, singAction, cliExtra string, isInternal bool) error {
 			//Program exited with non-zero return code
 			if status, ok := exitErr.Sys().(syscall.WaitStatus); ok {
 				sylog.Debugf("Process exited with non-zero return code: %d\n", status.ExitStatus())
+				return nil
 			}
 		}
 	}

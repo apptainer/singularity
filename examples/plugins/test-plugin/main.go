@@ -18,7 +18,7 @@ import (
 // by the plugin framework to initialize the plugin
 var Plugin = pluginapi.Plugin{
 	Manifest: pluginapi.Manifest{
-		Name:        "TestPlugin",
+		Name:        "sylabs.io/test-plugin",
 		Author:      "Michael Bauer",
 		Version:     "0.0.1",
 		Description: "This is a short test plugin for Singularity",

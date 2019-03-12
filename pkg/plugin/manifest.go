@@ -7,7 +7,15 @@ package plugin
 
 // Manifest is the plugin manifest, stored as a data object in the plugin SIF
 type Manifest struct {
-	// Name of the plugin
+	// Name is, by convention, a fully-qualified domain name which uniquely identifies a plugin.
+	// This convention is not enforced, but rather is best practice.
+	//
+	// Good Names:
+	//     - sylabs.io/test-plugin
+	//     - github.com/user/repo
+	//
+	// Bad Names:
+	//     - test-plugin
 	Name string `json:"name"`
 	// Author of the plugin
 	Author string `json:"author"`
