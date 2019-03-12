@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
@@ -223,4 +224,56 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 	}
 
 	return
+}
+
+// remote builds need to fail if we cannot resolve remote URLS
+func handleRemoteBuildFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	e, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to CLI defaults")
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = e.Token
+	if !cmd.Flags().Lookup("builder").Changed {
+		uri, err := e.GetServiceURI("builder")
+		if err != nil {
+			sylog.Fatalf("Unable to get build service URI: %v", err)
+		}
+		builderURL = uri
+	}
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := e.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		libraryURL = uri
+	}
+}
+
+// standard builds should just warn and fall back to CLI default if we cannot resolve library URL
+func handleBuildFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	e, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = e.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := e.GetServiceURI("library")
+		if err == nil {
+			libraryURL = uri
+		} else if err != nil {
+			sylog.Warningf("Unable to get library service URI: %v", err)
+		}
+	}
 }
