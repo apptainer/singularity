@@ -13,8 +13,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 )
@@ -72,14 +71,14 @@ func TestSearchPubkey(t *testing.T) {
 		{"Unauthorized", http.StatusUnauthorized, nil, "search", srv.URL, "", true},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
 			if err := SearchPubkey(tt.search, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
-		}))
+		})
 	}
 }
 
@@ -108,7 +107,7 @@ func TestFetchPubkey(t *testing.T) {
 		{"Unauthorized", http.StatusUnauthorized, nil, fp, srv.URL, "", true},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 			ms.el = tt.el
 
@@ -128,7 +127,7 @@ func TestFetchPubkey(t *testing.T) {
 					}
 				}
 			}
-		}))
+		})
 	}
 }
 
