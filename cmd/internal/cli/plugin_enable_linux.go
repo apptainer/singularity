@@ -18,9 +18,9 @@ var PluginEnableCmd = &cobra.Command{
 		err := singularity.EnablePlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
 			if os.IsNotExist(err) {
-				sylog.Fatalf("Failed to enable plugin %q: plugin not found.", args[0])
+				sylog.Errorf("Failed to enable plugin %q: plugin not found.", args[0])
 			} else {
-				sylog.Fatalf("Failed to enable plugin %q: %s.", args[0], err)
+				sylog.Errorf("Failed to enable plugin %q: %s.", args[0], err)
 			}
 		}
 	},
