@@ -3,12 +3,6 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cli
-
-import (
-	"github.com/spf13/cobra"
-)
-
-// TODO: Let's stick this in another file so that that CLI is just CLI
-func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
-}
+// Package sylog implements a basic logger for Singularity Go code to log
+// messages in the same format as singularity_message() from C code
+package sylog

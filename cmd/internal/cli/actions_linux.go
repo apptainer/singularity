@@ -8,6 +8,8 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -17,7 +19,9 @@ import (
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/util/nvidiautils"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/image/unpacker"
+	"github.com/sylabs/singularity/pkg/util/nvidia"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -29,8 +33,64 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
+
+func convertImage(filename string, unsquashfsPath string) (string, error) {
+	img, err := image.Init(filename, false)
+	if err != nil {
+		return "", fmt.Errorf("could not open image %s: %s", filename, err)
+	}
+	defer img.File.Close()
+
+	// squashfs only
+	if img.Partitions[0].Type != image.SQUASHFS {
+		return "", fmt.Errorf("not a squashfs root filesystem")
+	}
+
+	// create a reader for rootfs partition
+	reader, err := image.NewPartitionReader(img, "", 0)
+	if err != nil {
+		return "", fmt.Errorf("could not extract root filesystem: %s", err)
+	}
+	s := unpacker.NewSquashfs()
+	if !s.HasUnsquashfs() && unsquashfsPath != "" {
+		s.UnsquashfsPath = unsquashfsPath
+	}
+
+	// keep compatibility with v2
+	tmpdir := os.Getenv("SINGULARITY_LOCALCACHEDIR")
+	if tmpdir == "" {
+		tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+	}
+	if tmpdir == "" {
+		pw, err := user.GetPwUID(uint32(os.Getuid()))
+		if err != nil {
+			return "", fmt.Errorf("could not find current user information: %s", err)
+		}
+		tmpdir = filepath.Join(pw.Dir, ".singularity", "tmp")
+		if !fs.IsDir(tmpdir) {
+			if err := os.Mkdir(tmpdir, 0755); err != nil {
+				return "", fmt.Errorf("could not create directory %s: %s", tmpdir, err)
+			}
+		}
+	}
+
+	// create temporary sandbox
+	dir, err := ioutil.TempDir(tmpdir, "rootfs-")
+	if err != nil {
+		return "", fmt.Errorf("could not create temporary sandbox: %s", err)
+	}
+
+	// extract root filesystem
+	if err := s.ExtractAll(reader, dir); err != nil {
+		os.RemoveAll(dir)
+		return "", fmt.Errorf("root filesystem extraction failed: %s", err)
+	}
+
+	return dir, err
+}
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
@@ -41,6 +101,20 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
+
+	// Are we running from a privileged account?
+	isPrivileged := uid == 0
+	checkPrivileges := func(cond bool, desc string, fn func()) {
+		if !cond {
+			return
+		}
+
+		if !isPrivileged {
+			sylog.Fatalf("%s requires root privileges", desc)
+		}
+
+		fn()
+	}
 
 	syscall.Umask(0022)
 
@@ -64,7 +138,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	gidParam := security.GetParam(Security, "gid")
 
 	// handle target UID/GID for root user
-	if os.Getuid() == 0 && uidParam != "" {
+	checkPrivileges(uidParam != "", "uid security feature", func() {
 		u, err := strconv.ParseUint(uidParam, 10, 32)
 		if err != nil {
 			sylog.Fatalf("failed to parse provided UID")
@@ -73,10 +147,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		uid = uint32(targetUID)
 
 		engineConfig.SetTargetUID(targetUID)
-	} else if uidParam != "" {
-		sylog.Warningf("uid security feature requires root privileges")
-	}
-	if os.Getuid() == 0 && gidParam != "" {
+	})
+
+	checkPrivileges(gidParam != "", "gid security feature", func() {
 		gids := strings.Split(gidParam, ":")
 		for _, id := range gids {
 			g, err := strconv.ParseUint(id, 10, 32)
@@ -90,9 +163,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		engineConfig.SetTargetGID(targetGID)
-	} else if gidParam != "" {
-		sylog.Warningf("gid security feature requires root privileges")
-	}
+	})
 
 	if strings.HasPrefix(image, "instance://") {
 		instanceName := instance.ExtractName(image)
@@ -125,9 +196,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Verbosef("binding nvidia files into container")
 		}
 
-		libs, bins, err := nvidiautils.GetNvidiaPath(buildcfg.SINGULARITY_CONFDIR, userPath)
+		libs, bins, err := nvidia.Paths(buildcfg.SINGULARITY_CONFDIR, userPath)
 		if err != nil {
-			sylog.Infof("Unable to capture nvidia bind points: %v", err)
+			sylog.Warningf("Unable to capture NVIDIA bind points: %v", err)
 		} else {
 			if len(bins) == 0 {
 				sylog.Infof("Could not find any NVIDIA binaries on this host!")
@@ -160,8 +231,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetNv(Nvidia)
 	engineConfig.SetAddCaps(AddCaps)
 	engineConfig.SetDropCaps(DropCaps)
-	engineConfig.SetAllowSUID(AllowSUID)
-	engineConfig.SetKeepPrivs(KeepPrivs)
+
+	checkPrivileges(AllowSUID, "--allow-setuid", func() {
+		engineConfig.SetAllowSUID(AllowSUID)
+	})
+
+	checkPrivileges(KeepPrivs, "--keep-privs", func() {
+		engineConfig.SetKeepPrivs(KeepPrivs)
+	})
+
 	engineConfig.SetNoPrivs(NoPrivs)
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
@@ -171,11 +249,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
 	}
 
-	if os.Getuid() != 0 && CgroupsPath != "" {
-		sylog.Warningf("--apply-cgroups requires root privileges")
-	} else {
+	checkPrivileges(CgroupsPath != "", "--apply-cgroups", func() {
 		engineConfig.SetCgroupsPath(CgroupsPath)
-	}
+	})
 
 	if IsWritable && IsWritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
@@ -210,6 +286,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		UtsNamespace = true
 		engineConfig.SetHostname(Hostname)
 	}
+
+	checkPrivileges(IsBoot, "--boot", func() {})
 
 	if IsContained || IsContainAll || IsBoot {
 		engineConfig.SetContain(true)
@@ -334,6 +412,24 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 
+	// convert image file to sandbox if image contains
+	// a squashfs filesystem
+	if UserNamespace && fs.IsFile(image) {
+		unsquashfsPath := ""
+		if engineConfig.File.MksquashfsPath != "" {
+			d := filepath.Dir(engineConfig.File.MksquashfsPath)
+			unsquashfsPath = filepath.Join(d, "unsquashfs")
+		}
+		sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
+		dir, err := convertImage(image, unsquashfsPath)
+		if err != nil {
+			sylog.Fatalf("while extracting %s: %s", image, err)
+		}
+		engineConfig.SetImage(dir)
+		engineConfig.SetDeleteImage(true)
+		generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
+	}
+
 	plugin.FlagHookCallbacks(engineConfig)
 
 	cfg := &config.Common{
@@ -353,7 +449,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
 
-		start, err := stderr.Seek(0, os.SEEK_END)
+		start, err := stderr.Seek(0, io.SeekEnd)
 		if err != nil {
 			sylog.Warningf("failed to get standard error stream offset: %s", err)
 		}
@@ -369,7 +465,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			// by instance process, wait a bit to catch all errors
 			time.Sleep(100 * time.Millisecond)
 
-			end, err := stderr.Seek(0, os.SEEK_END)
+			end, err := stderr.Seek(0, io.SeekEnd)
 			if err != nil {
 				sylog.Warningf("failed to get standard error stream offset: %s", err)
 			}
