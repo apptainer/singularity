@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
-// RemoteRemove deletes a remote remote from the configuration
+// RemoteRemove deletes a remote endpoint from the configuration
 func RemoteRemove(configFile, name string) (err error) {
 	c := &remote.Config{}
 

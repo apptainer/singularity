@@ -83,6 +83,7 @@ func handleKeyFlags(cmd *cobra.Command) {
 	e, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
+		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
