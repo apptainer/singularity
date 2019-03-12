@@ -25,10 +25,29 @@ func (r RootFs) Path() string {
 	return filepath.Join(string(r), "rootfs")
 }
 
-// CreateBundle generates a minimal OCI bundle directory
+// Volumes is the parent volumes path
+type Volumes string
+
+// Path returns the volumes path inside bundle
+func (v Volumes) Path() string {
+	return filepath.Join(string(v), "volumes")
+}
+
+// Config is the OCI configuration path
+type Config string
+
+// Path returns the OCI configuration path
+func (c Config) Path() string {
+	return filepath.Join(string(c), "config.json")
+}
+
+// RunScript is the default process argument
+const RunScript = "/.singularity.d/actions/run"
+
+// GenerateBundleConfig generates a minimal OCI bundle directory
 // with the provided OCI configuration or a default one
 // if there is no configuration
-func CreateBundle(bundlePath string, config *specs.Spec) error {
+func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Generator, error) {
 	var err error
 	var g generate.Generator
 
@@ -37,7 +56,11 @@ func CreateBundle(bundlePath string, config *specs.Spec) error {
 
 	rootFsDir := RootFs(bundlePath).Path()
 	if err := os.MkdirAll(rootFsDir, 0700); err != nil {
-		return fmt.Errorf("failed to create %s: %s", rootFsDir, err)
+		return nil, fmt.Errorf("failed to create %s: %s", rootFsDir, err)
+	}
+	volumesDir := Volumes(bundlePath).Path()
+	if err := os.MkdirAll(volumesDir, 0755); err != nil {
+		return nil, fmt.Errorf("failed to create %s: %s", volumesDir, err)
 	}
 	defer func() {
 		if err != nil {
@@ -49,8 +72,9 @@ func CreateBundle(bundlePath string, config *specs.Spec) error {
 		// generate and write config.json in bundle
 		g, err = generate.New(runtime.GOOS)
 		if err != nil {
-			return fmt.Errorf("failed to generate OCI config: %s", err)
+			return nil, fmt.Errorf("failed to generate OCI config: %s", err)
 		}
+		g.SetProcessArgs([]string{RunScript})
 	} else {
 		g = generate.Generator{
 			Config:       config,
@@ -58,11 +82,29 @@ func CreateBundle(bundlePath string, config *specs.Spec) error {
 		}
 	}
 	g.SetRootPath(rootFsDir)
-	options := generate.ExportOptions{}
-	return g.SaveToFile(filepath.Join(bundlePath, "config.json"), options)
+	return &g, nil
 }
 
-// DeleteBundle ...
+// SaveBundleConfig creates config.json in OCI bundle directory and
+// saves OCI configuration
+func SaveBundleConfig(bundlePath string, g *generate.Generator) error {
+	options := generate.ExportOptions{}
+	return g.SaveToFile(Config(bundlePath).Path(), options)
+}
+
+// DeleteBundle deletes bundle directory
 func DeleteBundle(bundlePath string) error {
-	return os.RemoveAll(bundlePath)
+	if err := os.RemoveAll(Volumes(bundlePath).Path()); err != nil {
+		return fmt.Errorf("failed to delete volumes directory: %s", err)
+	}
+	if err := os.Remove(RootFs(bundlePath).Path()); err != nil {
+		return fmt.Errorf("failed to delete rootfs directory: %s", err)
+	}
+	if err := os.Remove(Config(bundlePath).Path()); err != nil {
+		return fmt.Errorf("failed to delete config.json file: %s", err)
+	}
+	if err := os.Remove(bundlePath); err != nil && !os.IsExist(err) {
+		return fmt.Errorf("failed to delete bundle %s directory: %s", bundlePath, err)
+	}
+	return nil
 }
