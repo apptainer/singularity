@@ -15,6 +15,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -121,6 +122,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 			}
 		}
 
+		handlePullFlags(cmd)
+
 		libraryImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
 		if err != nil {
 			sylog.Fatalf("While getting image info: %v", err)
@@ -183,5 +186,26 @@ func pullRun(cmd *cobra.Command, args []string) {
 			DockerAuthConfig: authConf,
 			NoCleanUp:        noCleanUp,
 		})
+	}
+}
+
+func handlePullFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	e, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = e.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := e.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		PullLibraryURI = uri
 	}
 }
