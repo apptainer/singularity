@@ -13,30 +13,22 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-var (
-	pluginName string
-)
-
-func init() {
-	PluginInstallCmd.Flags().StringVarP(&pluginName, "name", "n", "", "Name to install the plugin as, defaults to the value in the manifest")
-}
-
-// PluginInstallCmd takes a compiled plugin.sif file and installs it
-// in the appropriate location
+// PluginUninstallCmd takes the name of a plugin and uninstalls it from the
+// plugin directory
 //
-// singularity plugin install <path> [-n name]
-var PluginInstallCmd = &cobra.Command{
+// singularity plugin uninstall <name>
+var PluginUninstallCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
-		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
+		err := singularity.UninstallPlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
-			sylog.Fatalf("Failed to install plugin %q: %s.", args[0], err)
+			sylog.Fatalf("Failed to uninstall plugin %q: %s.", args[0], err)
 		}
 	},
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
 
-	Use:     docs.PluginInstallUse,
-	Short:   docs.PluginInstallShort,
-	Long:    docs.PluginInstallLong,
-	Example: docs.PluginInstallExample,
+	Use:     docs.PluginUninstallUse,
+	Short:   docs.PluginUninstallShort,
+	Long:    docs.PluginUninstallLong,
+	Example: docs.PluginUninstallExample,
 }
