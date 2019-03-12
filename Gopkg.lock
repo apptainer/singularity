@@ -835,6 +835,7 @@
     "golang.org/x/crypto/openpgp",
     "golang.org/x/crypto/openpgp/armor",
     "golang.org/x/crypto/openpgp/clearsign",
+    "golang.org/x/crypto/openpgp/errors",
     "golang.org/x/crypto/openpgp/packet",
     "golang.org/x/crypto/ssh/terminal",
     "golang.org/x/sys/unix",
