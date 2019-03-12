@@ -143,7 +143,7 @@ func loadMetaByName(name, plugindir string) (*Meta, error) {
 
 	// make sure we loaded the right thing
 	if m.Name != name {
-		return nil, fmt.Errorf("Unexpected plugin name %q when loading plugin %q", m.Name, name)
+		return nil, fmt.Errorf("unexpected plugin name %q when loading plugin %q", m.Name, name)
 	}
 
 	return m, nil
