@@ -14,7 +14,6 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -26,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
@@ -554,7 +554,7 @@ func (e *EngineOperations) loadImages() error {
 			}
 		}
 	}
-	img.RootFS = true
+	// first image is always the root filesystem
 	images = append(images, *img)
 
 	// load overlay images

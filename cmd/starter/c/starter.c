@@ -174,7 +174,7 @@ static int prepare_stage(int stage, struct cConfig *config) {
                 debugf("Clear additional group IDs\n");
 
                 if ( setgroups(0, NULL) < 0 ) {
-                    fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
+                    fatalf("Unable to clear additional group IDs: %s\n", strerror(errno));
                 }
             }
 

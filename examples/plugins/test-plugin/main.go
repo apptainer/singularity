@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -18,7 +18,7 @@ import (
 // by the plugin framework to initialize the plugin
 var Plugin = pluginapi.Plugin{
 	Manifest: pluginapi.Manifest{
-		Name:        "TestPlugin",
+		Name:        "sylabs.io/test-plugin",
 		Author:      "Michael Bauer",
 		Version:     "0.0.1",
 		Description: "This is a short test plugin for Singularity",

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -54,4 +54,24 @@ const (
 	appropriate directory on the host.`
 	PluginInstallExample string = `
 	$ singularity plugin install $PLUGIN_PATH`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin uninstall command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginUninstallUse   string = `uninstall <name>`
+	PluginUninstallShort string = `Uninstall removes the named plugin from the system`
+	PluginUninstallLong  string = `
+	The 'plugin uninstall' command removes the named plugin from the system`
+	PluginUninstallExample string = `
+	$ singularity plugin uninstall example.org/plugin`
+
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// // plugin list command
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginListUse   string = `list [list options...]`
+	PluginListShort string = `List installed singularity plugins`
+	PluginListLong  string = `
+	The 'plugin list' command lists the singularity plugins installed on the host.`
+	PluginListExample string = `
+	$ singularity plugin list`
 )
