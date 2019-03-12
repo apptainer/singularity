@@ -17,7 +17,6 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -27,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -1332,11 +1332,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		sylog.Debugf("Adding %s to mount list\n", src)
 
-		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil {
+		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil && err == mount.ErrMountExists {
+			sylog.Warningf("destination %s already in mount list: %s", src, err)
+		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
+		} else {
+			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
+			flags &^= syscall.MS_RDONLY
 		}
-		system.Points.AddRemount(mount.UserbindsTag, dst, flags)
-		flags &^= syscall.MS_RDONLY
 	}
 
 	sylog.Debugf("Checking for 'user bind control' in configuration file")

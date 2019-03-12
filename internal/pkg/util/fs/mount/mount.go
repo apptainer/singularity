@@ -16,6 +16,15 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
+type mountError string
+
+func (e mountError) Error() string { return string(e) }
+
+const (
+	// ErrMountExists indicates a duplicated mount being asked for
+	ErrMountExists = mountError("destination is already in the mount point list")
+)
+
 var mountFlags = []struct {
 	option string
 	flag   uintptr
@@ -339,8 +348,9 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 			}
 		}
 		if present {
-			return fmt.Errorf("destination %s is already in the mount point list", dest)
+			return ErrMountExists
 		}
+
 		if len(p.points[tag]) == 1 && !authorizedTags[tag].multiPoint {
 			return fmt.Errorf("tag %s allow only one mount point", tag)
 		}
@@ -517,6 +527,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
 				continue
 			}
+
 			// check if this is a filesystem or overlay mount point
 			if point.Type != "overlay" {
 				if err = p.AddFSWithSource(tag, point.Source, point.Destination, point.Type, flags, strings.Join(options, ",")); err == nil {
