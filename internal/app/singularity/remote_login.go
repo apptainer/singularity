@@ -27,7 +27,7 @@ func RemoteLogin(configFile, name string) (err error) {
 
 	c, err = remote.ReadFrom(file)
 	if err != nil {
-		return fmt.Errorf("while parsing capability config data: %s", err)
+		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
 	r, err := c.GetRemote(name)
