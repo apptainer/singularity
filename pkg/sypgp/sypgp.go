@@ -564,7 +564,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 		return nil, fmt.Errorf("failed to decode fingerprint: %v", err)
 	}
 	if got, want := len(b), len(fp); got != want {
-		return nil, fmt.Errorf("unexpected fingerprint length: %v", len(b))
+		return nil, fmt.Errorf("unexpected fingerprint length of %v (expected %v)", got, want)
 	}
 	copy(fp[:], b)
 
@@ -656,10 +656,10 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 			// Try to push key to Key Service again with new auth token.
 			c.AuthToken = authToken
 			if err := c.PKSAdd(context.TODO(), keyText); err != nil {
-				return err
+				return fmt.Errorf("key server did not accept PGP key: %v", err)
 			}
 		} else {
-			return fmt.Errorf("Key server did not accept PGP key: %v", err)
+			return fmt.Errorf("key server did not accept PGP key: %v", err)
 		}
 	}
 	return nil
