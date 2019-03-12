@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -87,7 +88,13 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		cliExtra = "syos"
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, singAction, cliExtra, strings.Join(singBinds, "|"))
+	// Get our CWD and pass it along
+	cwdDir, err := os.Getwd()
+	if err != nil {
+		sylog.Fatalf("Error getting working directory: %s", err)
+	}
+
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	args = append(args, "-f", kexecArgs)
