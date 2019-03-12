@@ -350,8 +350,7 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 		}
 		author += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 	}
-	fmt.Printf("Data integrity checked, authentic and signed by:\n")
-	fmt.Print(author)
+	fmt.Printf("Data integrity checked, authentic and signed by:\n%v", author)
 
 	return nil
 }
