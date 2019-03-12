@@ -648,12 +648,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:a6010a5c0b2580e9b401bed4a395a39136af9f2ead1c242bdc3bc77cc245ab5b"
+  digest = "1:269563f854f63d16ce1197adf6b06299e0189dfddcfed33d8315f07b38877d75"
   name = "github.com/sylabs/json-resp"
   packages = ["."]
   pruneopts = "UT"
-  revision = "7047a0df94bf118f6a160dffbce73cfa7606513b"
-  version = "v0.1.0"
+  revision = "e50b63af17af4fce7f342372977d470440ff316d"
+  version = "v0.5.0"
 
 [[projects]]
   digest = "1:89016522d62b3fe281177a0aaccf6f136aac0b053e36e908d542974ea91db675"
