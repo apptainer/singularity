@@ -14,7 +14,8 @@ singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/sing
 singularity := $(BUILDDIR)/singularity
 $(singularity): $(singularity_build_config) $(singularity_SOURCE)
 	@echo " GO" $@; echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
-	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) -o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
+	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+		-o $(BUILDDIR)/singularity $(SOURCEDIR)/cmd/singularity/cli.go
 
 singularity_INSTALL := $(DESTDIR)$(BINDIR)/singularity
 $(singularity_INSTALL): $(singularity)
@@ -33,7 +34,8 @@ $(bash_completion): $(singularity_build_config)
 	@echo " GEN" $@
 	$(V)rm -f $@
 	$(V)mkdir -p $(@D)
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/bash_completion/bash_completion.go $@
+	$(V)go run -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+		$(SOURCEDIR)/cmd/bash_completion/bash_completion.go $@
 
 bash_completion_INSTALL := $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/singularity
 $(bash_completion_INSTALL): $(bash_completion)
@@ -54,7 +56,7 @@ old_config := $(config_INSTALL)
 
 $(config): $(singularity_build_config) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/config.go
 	@echo " GEN $@`if [ -n "$(old_config)" ]; then echo " from $(old_config)"; fi`"
-	$(V)go run $(SOURCEDIR)/etc/conf/gen.go \
+	$(V)go run $(GO_GCFLAGS) $(GO_ASMFLAGS) $(SOURCEDIR)/etc/conf/gen.go \
 		$(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(old_config) $(config)
 
 $(config_INSTALL): $(config)

@@ -74,6 +74,8 @@ func init() {
 	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
 	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
 
+	PullCmd.Flags().AddFlag(BuildCmd.Flags().Lookup("no-cleanup"))
+
 	SingularityCmd.AddCommand(PullCmd)
 }
 
@@ -220,6 +222,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			Force:            force,
 			NoHTTPS:          noHTTPS,
 			DockerAuthConfig: authConf,
+			NoCleanUp:        noCleanUp,
 		})
 	}
 }
