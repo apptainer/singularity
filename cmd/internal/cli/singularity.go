@@ -212,13 +212,13 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 func sylabsRemote(filepath string) (*scs.EndPoint, error) {
 	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0644)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer file.Close()
 
 	c, err := scs.ReadFrom(file)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
 	return c.GetDefault()

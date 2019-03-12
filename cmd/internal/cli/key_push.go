@@ -30,23 +30,7 @@ var KeyPushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		// if we can load config and if default endpoint is set, use that
-		// otherwise fall back on regular authtoken and URI behavior
-		e, err := sylabsRemote(remoteConfig)
-		if err == nil {
-			authToken = e.Token
-			if !cmd.Flags().Lookup("url").Changed {
-				uri, err := e.GetServiceURI("keystore")
-				if err != nil {
-					sylog.Fatalf("Unable to get key service URI: %v", err)
-				}
-				keyServerURL = uri
-			}
-		} else if err == scs.ErrNoDefault {
-			sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
-		} else {
-			sylog.Fatalf("Unable to load remote configuration: %v", err)
-		}
+		handleKeyFlags(cmd)
 
 		if err := doKeyPushCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("push failed: %s", err)
@@ -91,4 +75,24 @@ func doKeyPushCmd(fingerprint string, url string) error {
 	fmt.Printf("public key `%v' pushed to server successfully\n", fingerprint)
 
 	return nil
+}
+
+func handleKeyFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	e, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = e.Token
+	if !cmd.Flags().Lookup("url").Changed {
+		uri, err := e.GetServiceURI("keystore")
+		if err != nil {
+			sylog.Fatalf("Unable to get key service URI: %v", err)
+		}
+		keyServerURL = uri
+	}
 }

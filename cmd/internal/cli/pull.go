@@ -122,23 +122,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			}
 		}
 
-		// if we can load config and if default endpoint is set, use that
-		// otherwise fall back on regular authtoken and URI behavior
-		e, err := sylabsRemote(remoteConfig)
-		if err == nil {
-			authToken = e.Token
-			if !cmd.Flags().Lookup("library").Changed {
-				uri, err := e.GetServiceURI("library")
-				if err != nil {
-					sylog.Fatalf("Unable to get library service URI: %v", err)
-				}
-				PullLibraryURI = uri
-			}
-		} else if err == scs.ErrNoDefault {
-			sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
-		} else {
-			sylog.Fatalf("Unable to load remote configuration: %v", err)
-		}
+		handlePullFlags(cmd)
 
 		libraryImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
 		if err != nil {
@@ -202,5 +186,26 @@ func pullRun(cmd *cobra.Command, args []string) {
 			DockerAuthConfig: authConf,
 			NoCleanUp:        noCleanUp,
 		})
+	}
+}
+
+func handlePullFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	e, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = e.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := e.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		PullLibraryURI = uri
 	}
 }
