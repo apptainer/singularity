@@ -16,12 +16,14 @@ import (
 func RemoteUse(configFile, name string) (err error) {
 	c := &remote.Config{}
 
+	// opening config file
 	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer file.Close()
 
+	// read file contents to config struct
 	c, err = remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
@@ -31,6 +33,7 @@ func RemoteUse(configFile, name string) (err error) {
 		return err
 	}
 
+	// truncating file before writing new contents and syncing to commit file
 	if err := file.Truncate(0); err != nil {
 		return fmt.Errorf("while truncating remote config file: %s", err)
 	}

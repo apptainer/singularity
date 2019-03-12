@@ -153,7 +153,7 @@ func (c *Config) Rename(name, newName string) error {
 func (e *EndPoint) VerifyToken() error {
 	baseURL, err := e.GetServiceURI("token")
 	if err != nil {
-		return fmt.Errorf("While getting token service uri: %v", err)
+		return fmt.Errorf("while getting token service uri: %v", err)
 	}
 
 	client := &http.Client{

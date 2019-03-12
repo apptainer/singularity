@@ -19,15 +19,18 @@ const listLine = "%s\t%s\n"
 // RemoteList prints information about remote configurations
 func RemoteList(configFile string) (err error) {
 	c := &remote.Config{}
+
+	// opening config file
 	file, err := os.OpenFile(configFile, os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("No Remote configurations")
+			return fmt.Errorf("no remote configurations")
 		}
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer file.Close()
 
+	// read file contents to config struct
 	c, err = remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)

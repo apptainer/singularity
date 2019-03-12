@@ -33,6 +33,8 @@ type scsAssets map[string]string
 // RemoteStatus checks status of services related to an endpoint
 func RemoteStatus(configFile, name string) (err error) {
 	c := &remote.Config{}
+
+	// opening config file
 	file, err := os.OpenFile(configFile, os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -42,6 +44,7 @@ func RemoteStatus(configFile, name string) (err error) {
 	}
 	defer file.Close()
 
+	// read file contents to config struct
 	c, err = remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
