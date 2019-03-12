@@ -13,12 +13,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/opencontainers/runtime-tools/generate"
-
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/opencontainers/runtime-tools/generate"
 
-	"github.com/sylabs/singularity/internal/pkg/image"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 )
