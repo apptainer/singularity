@@ -6,8 +6,8 @@
 package singularity
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 // Name is the name of the runtime.

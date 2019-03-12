@@ -321,7 +321,7 @@ func (i *File) UpdateNamespacesPath(configNs []specs.LinuxNamespace) error {
 			return err
 		}
 		if int(st.Uid) != uid {
-			return fmt.Errorf("you doesn't own the instance")
+			return fmt.Errorf("you do not own the instance")
 		}
 	}
 
