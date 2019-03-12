@@ -56,8 +56,17 @@ func (s *sifBundle) writeConfig(img *image.Image, g *generate.Generator) error {
 		g.SetProcessCwd(imgConfig.WorkingDir)
 	}
 	for _, e := range imgConfig.Env {
+		found := false
 		k := strings.SplitN(e, "=", 2)
-		g.AddProcessEnv(k[0], k[1])
+		for _, pe := range g.Config.Process.Env {
+			if strings.HasPrefix(pe, k[0]+"=") {
+				found = true
+				break
+			}
+		}
+		if !found {
+			g.AddProcessEnv(k[0], k[1])
+		}
 	}
 
 	volumes := tools.Volumes(s.bundlePath).Path()
