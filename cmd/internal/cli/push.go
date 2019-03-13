@@ -6,16 +6,15 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (
@@ -58,13 +57,11 @@ var PushCmd = &cobra.Command{
 					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
 					fmt.Fprintf(os.Stderr, "\n")
 					sylog.Warningf("Your container is **NOT** signed! You REALLY should sign your container before pushing!")
-					fmt.Fprintf(os.Stderr, "Do you really want to continue? [N/y] ")
-					reader := bufio.NewReader(os.Stdin)
-					input, err := reader.ReadString('\n')
+					reps, err := sypgp.AskQuestion("Do you really want to continue? [N/y] ")
 					if err != nil {
-						sylog.Fatalf("Error parsing input: %s", err)
+						sylog.Fatalf("Unable to parse user input: %v", err)
 					}
-					if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
+					if reps == "" || reps != "y" && reps != "Y" {
 						fmt.Fprintf(os.Stderr, "Stoping upload.\n")
 						os.Exit(3)
 					}
