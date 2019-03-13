@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -356,6 +356,78 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 		return
 	}
 	return
+}
+
+// compareLocalPubKey compares a key ID with a string, returning true if the
+// key and oldToken match.
+func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
+	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+}
+
+// CheckLocalPubKey will check if we have a local public key matching ckey string
+// returns true if there's a match.
+func CheckLocalPubKey(ckey string) (bool, error) {
+	f, err := os.OpenFile(PublicPath(), os.O_CREATE|os.O_RDONLY, 0600)
+	if err != nil {
+		return false, fmt.Errorf("unable to open local keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local public keys
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return false, fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	for i := range elist {
+		if compareLocalPubKey(elist[i], ckey) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// RemovePubKey will delete a public key matching toDelete
+func RemovePubKey(toDelete string) error {
+	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to open local keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local public keys
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	var newKeyList []openpgp.Entity
+
+	// sort throught them, and remove any that match toDelete
+	for i := range elist {
+		// if the elist[i] dose not match toDelete, then add it to newKeyList
+		if !compareLocalPubKey(elist[i], toDelete) {
+			newKeyList = append(newKeyList, *elist[i])
+		}
+	}
+
+	sylog.Infof("Updating local keyring: %v", PublicPath())
+
+	// open the public keyring file
+	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to clear, and open the file: %v", err)
+	}
+	defer nf.Close()
+
+	// loop through a write all the other keys back
+	for k := range newKeyList {
+		// store the freshly downloaded key
+		if err := StorePubKey(&newKeyList[k]); err != nil {
+			return fmt.Errorf("could not store public key: %s", err)
+		}
+	}
+	return nil
 }
 
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
