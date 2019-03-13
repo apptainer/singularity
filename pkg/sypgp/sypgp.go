@@ -373,7 +373,9 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	}
 
 	for i := range elist {
-		return compareLocalPubKey(elist[i], ckey), nil
+		if compareLocalPubKey(elist[i], ckey) {
+			return true, nil
+		}
 	}
 	return false, nil
 }
