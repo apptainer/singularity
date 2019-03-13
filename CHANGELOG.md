@@ -11,6 +11,16 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.1.0
 
+## New Commands
+- Introduced the `remote` command group to support management of SCS endpoints:
+    - `add`     Create a new SCS remote endpoint
+    - `list`    List all remote endpoints that are configured
+    - `login`   Log into a remote endpoint using an authentication token
+    - `remove`  Remove an existing SCS remote endpoint
+    - `status`  Check the status of the services at an endpoint
+    - `use`     Set a remote endpoint to be used by default
+
+## New features / functionalities
   - Fixed usage docstrings for OCI - was missing "oci" in command examples.
   - Added --nocolor flag to Singularity client to disable color in logging
   - Repeated binds does not exit and fail, just issues warning

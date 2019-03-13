@@ -78,6 +78,7 @@ func init() {
 	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "suppress normal output")
 	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print additional information")
 	SingularityCmd.Flags().StringVarP(&tokenFile, "tokenfile", "t", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	SingularityCmd.Flags().MarkDeprecated("tokenfile", "Use 'singularity remote' to manage remote endpoints and tokens.")
 
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
@@ -203,8 +204,8 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
-	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
-		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
+	if authToken != "" {
+		sylog.Warningf("sylabs-token files are deprecated. Use 'singularity remote' to manage remote endpoints and tokens.")
 	}
 }
 
