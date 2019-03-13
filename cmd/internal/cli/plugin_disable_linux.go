@@ -18,10 +18,13 @@ var PluginDisableCmd = &cobra.Command{
 		err := singularity.DisablePlugin(args[0], buildcfg.LIBEXECDIR)
 		if err != nil {
 			if os.IsNotExist(err) {
-				sylog.Errorf("Failed to disable plugin %q: plugin not found.", args[0])
-			} else {
-				sylog.Errorf("Failed to disable plugin %q: %s.", args[0], err)
+				sylog.Fatalf("Failed to disable plugin %q: plugin not found.", args[0])
 			}
+
+			// The above call to sylog.Fatalf terminates the
+			// program, so we are either printing the above
+			// or this, not both.
+			sylog.Fatalf("Failed to disable plugin %q: %s.", args[0], err)
 		}
 	},
 	DisableFlagsInUseLine: true,
