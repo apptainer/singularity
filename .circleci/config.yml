@@ -64,6 +64,24 @@ jobs:
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
 
+  go1.11-macos:
+    <<: *defaults
+    macos:
+      xcode: "10.2.0"
+    steps:
+      - attach_workspace:
+          at: /go
+      - run:
+          name: Build Singularity
+          command: |-
+            ./mconfig -p /usr/local
+            make -j$(nproc) -C ./builddir all
+      - run:
+          name: Check code
+          command: |-
+            go get -u golang.org/x/lint/golint
+            make -j$(nproc) -C ./builddir check
+
   singularity_test:
     machine: true
     steps:
