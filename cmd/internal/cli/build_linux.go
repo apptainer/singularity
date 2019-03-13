@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -35,6 +35,8 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	if remote {
+		handleRemoteBuildFlags(cmd)
+
 		// Submiting a remote build requires a valid authToken
 		if authToken == "" {
 			sylog.Fatalf("Unable to submit build job: %v", authWarning)
@@ -54,7 +56,6 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-
 		err := checkSections()
 		if err != nil {
 			sylog.Fatalf(err.Error())
@@ -63,6 +64,17 @@ func run(cmd *cobra.Command, args []string) {
 		authConf, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
+		}
+
+		// parse definition to determine build source
+		def, err := build.MakeDef(spec, false)
+		if err != nil {
+			sylog.Fatalf("Unable to build from %s: %v", spec, err)
+		}
+
+		// only resolve remote endpoints if library is the build source
+		if def.Header["bootstrap"] == "library" {
+			handleBuildFlags(cmd)
 		}
 
 		b, err := build.NewBuild(

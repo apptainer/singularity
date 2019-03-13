@@ -28,6 +28,8 @@ var KeyPullCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		handleKeyFlags(cmd)
+
 		if err := doKeyPullCmd(args[0], keyServerURL); err != nil {
 			sylog.Errorf("pull failed: %s", err)
 			os.Exit(2)
