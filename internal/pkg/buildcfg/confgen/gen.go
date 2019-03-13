@@ -71,5 +71,16 @@ func main() {
 		}
 	}
 
+	if goBuildTags := os.Getenv("GO_BUILD_TAGS"); goBuildTags != "" {
+		d := Define{
+			Words: []string{
+				"#define",
+				"GO_BUILD_TAGS",
+				fmt.Sprintf("`%s`", goBuildTags),
+			},
+		}
+		header = append(header, d)
+	}
+
 	confgenTemplate.Execute(outFile, header)
 }
