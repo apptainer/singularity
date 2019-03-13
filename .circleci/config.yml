@@ -137,6 +137,9 @@ workflows:
       - go1.11-alpine:
           requires:
             - get_source
+      - go1.11-macos:
+          requires:
+            - get_source
       - singularity_test:
           requires:
             - get_source
