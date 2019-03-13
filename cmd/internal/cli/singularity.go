@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 )
@@ -205,6 +206,22 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
 		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
 	}
+}
+
+// sylabsRemote returns the remote in use or an error
+func sylabsRemote(filepath string) (*scs.EndPoint, error) {
+	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("while opening remote config file: %s", err)
+	}
+	defer file.Close()
+
+	c, err := scs.ReadFrom(file)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	return c.GetDefault()
 }
 
 // envAppend combines command line and environment var into a single argument
