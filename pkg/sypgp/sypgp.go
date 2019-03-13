@@ -393,6 +393,14 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 	if err != nil {
 		return
 	}
+	passRetype, err := AskQuestionNoEcho("Retype your passphrase : ")
+	if err != nil {
+		return
+	}
+	if pass != passRetype {
+		return nil, fmt.Errorf("passphrases do not match")
+	}
+
 	if err = EncryptKey(entity, pass); err != nil {
 		return
 	}
