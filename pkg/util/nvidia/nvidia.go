@@ -28,7 +28,7 @@ func nvidiaContainerCli() ([]string, error) {
 	}
 
 	var out bytes.Buffer
-	cmd := exec.Command(nvidiaCLIPath, "list", "--binaries", "--ipcs", "--libraries")
+	cmd := exec.Command(nvidiaCLIPath, "list", "--binaries", "--libraries")
 	cmd.Stdout = &out
 	err = cmd.Run()
 	if err != nil {
