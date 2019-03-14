@@ -67,7 +67,7 @@ jobs:
   go1.11-macos:
     macos:
       xcode: "10.2.0"
-    working_directory: $HOME/go/src/github.com/sylabs/singularity
+    working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
     steps:
       - checkout
       - run:
