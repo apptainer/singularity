@@ -67,13 +67,12 @@ jobs:
   go1.11-macos:
     macos:
       xcode: "10.2.0"
+    environment:
+      GOPATH: $HOME/go
+      PATH: $GOPATH/bin:$PATH
+    working_directory: $GOPATH/src/github.com/sylabs/singularity
     steps:
       - checkout
-      - run:
-          name: Setup environment
-          command: |-
-            echo 'export GOPATH=$HOME/go'        >> $BASH_ENV
-            echo 'export PATH=$GOPATH/bin:$PATH' >> $BASH_ENV
       - run:
           name: Install dependencies
           command: brew install go
