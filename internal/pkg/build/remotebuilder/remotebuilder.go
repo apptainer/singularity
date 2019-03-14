@@ -32,12 +32,12 @@ const CloudURI = "https://cloud.sylabs.io"
 type RemoteBuilder struct {
 	Client     http.Client
 	ImagePath  string
-	Force      bool
 	LibraryURL string
 	Definition types.Definition
-	IsDetached bool
 	BuilderURL *url.URL
 	AuthToken  string
+	Force      bool
+	IsDetached bool
 }
 
 func (rb *RemoteBuilder) setAuthHeader(h http.Header) {

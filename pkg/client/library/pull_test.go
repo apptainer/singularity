@@ -71,6 +71,7 @@ func Test_DownloadImage(t *testing.T) {
 	f.Close()
 	os.Remove(tempFile)
 
+	// nolint:maligned
 	tests := []struct {
 		name         string
 		libraryRef   string
