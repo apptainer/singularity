@@ -351,9 +351,8 @@ func (m *Setup) GetNetworkIP(network string, version string) (net.IP, error) {
 // with a network, if network is empty, the function returns interface
 // for the first configured network
 func (m *Setup) GetNetworkInterface(network string) (string, error) {
-	n := network
-	if n == "" && len(m.networkConfList) > 0 {
-		n = m.networkConfList[0].Name
+	if network == "" && len(m.runtimeConf) > 0 {
+		return m.runtimeConf[0].IfName, nil
 	}
 
 	for i := 0; i < len(m.networkConfList); i++ {

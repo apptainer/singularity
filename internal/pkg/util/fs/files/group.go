@@ -19,7 +19,7 @@ import (
 // updates content with current user information and returns content
 func Group(path string, uid int, gids []int) (content []byte, err error) {
 	duplicate := false
-	groups := make([]int, 0)
+	var groups []int
 
 	sylog.Verbosef("Checking for template group file: %s\n", path)
 	if fs.IsFile(path) == false {
