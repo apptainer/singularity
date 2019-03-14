@@ -82,12 +82,12 @@ jobs:
           name: Build Singularity
           command: |-
             ./mconfig -p /usr/local
-            make -j$(nproc) -C ./builddir all
+            make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
       - run:
           name: Check code
           command: |-
             go get -u golang.org/x/lint/golint
-            make -j$(nproc) -C ./builddir check
+            make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
 
   singularity_test:
     machine: true
