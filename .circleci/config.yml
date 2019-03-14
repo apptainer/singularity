@@ -69,8 +69,7 @@ jobs:
     macos:
       xcode: "10.2.0"
     steps:
-      - attach_workspace:
-          at: /go
+      - checkout
       - run:
           name: Build Singularity
           command: |-
@@ -137,9 +136,7 @@ workflows:
       - go1.11-alpine:
           requires:
             - get_source
-      - go1.11-macos:
-          requires:
-            - get_source
+      - go1.11-macos
       - singularity_test:
           requires:
             - get_source
