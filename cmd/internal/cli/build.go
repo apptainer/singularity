@@ -13,7 +13,6 @@ import (
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -29,7 +28,6 @@ var (
 	libraryURL     string
 	isJSON         bool
 	sandbox        bool
-	writable       bool
 	force          bool
 	update         bool
 	noTest         bool
@@ -41,8 +39,6 @@ var (
 	dockerLogin    bool
 	noCleanUp      bool
 )
-
-var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
