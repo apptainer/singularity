@@ -18,11 +18,11 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	"github.com/sylabs/json-resp"
+	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/client/library"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
+	client "github.com/sylabs/singularity/pkg/client/library"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // CloudURI holds the URI of the Library web front-end.
