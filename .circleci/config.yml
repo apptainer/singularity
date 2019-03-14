@@ -70,7 +70,12 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install Dependencies
+          name: Setup environment
+          command: |-
+            echo 'export GOPATH=$HOME/go'        >> $BASH_ENV
+            echo 'export PATH=$GOPATH/bin:$PATH' >> $BASH_ENV
+      - run:
+          name: Install dependencies
           command: brew install go
       - run:
           name: Build Singularity
