@@ -37,12 +37,12 @@ func EnsurePrivilege(t *testing.T) {
 // not require elevated privileges. A matching call to ResetPrivilege must
 // occur before the test completes (a defer statement is recommended.)
 func DropPrivilege(t *testing.T) {
-	t.Fatalf("Currently not supported for Darwin")
+	t.Skip("Currently not supported for Darwin")
 }
 
 // ResetPrivilege returns effective privilege to the original user.
 func ResetPrivilege(t *testing.T) {
-	t.Fatalf("Currently not supported for Darwin")
+	t.Skip("Currently not supported for Darwin")
 }
 
 // WithPrivilege wraps the supplied test function with calls to ensure
@@ -64,15 +64,7 @@ func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 // the test is run without elevated privileges.
 func WithoutPrivilege(f func(t *testing.T)) func(t *testing.T) {
 	return func(t *testing.T) {
-		t.Helper()
-
-		DropPrivilege(t)
-		defer ResetPrivilege(t)
-
-		// set SINGULARITY_CACHEDIR
-		os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
-
-		f(t)
+		t.Skip("Currently not supported for Darwin")
 	}
 }
 
