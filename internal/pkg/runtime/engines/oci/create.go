@@ -694,19 +694,27 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 					sylog.Debugf("skipping mount, %s doesn't exists", device.path)
 					continue
 				}
+				dirpath := filepath.Dir(path)
+				if _, err := c.rpcOps.MkdirAll(dirpath, 0755); err != nil {
+					return fmt.Errorf("could not create parent directory %s: %s", dirpath, err)
+				}
 				if _, err := c.rpcOps.Touch(path); err != nil {
-					return err
+					return fmt.Errorf("could not create file %s: %s", path, err)
 				}
 				if _, err := c.rpcOps.Mount(device.path, path, "", syscall.MS_BIND, ""); err != nil {
-					return err
+					return fmt.Errorf("could not mount %s to %s: %s", device.path, path, err)
 				}
 			} else {
+				dirpath := filepath.Dir(path)
+				if err := os.MkdirAll(dirpath, 0755); err != nil {
+					return fmt.Errorf("could not create parent directory %s: %s", dirpath, err)
+				}
 				if err := syscall.Mknod(path, uint32(device.mode), dev); err != nil {
-					return fmt.Errorf("mknod: %s", err)
+					return fmt.Errorf("could not create device %s: %s", path, err)
 				}
 				if device.uid != 0 || device.gid != 0 {
 					if err := os.Chown(path, device.uid, device.gid); err != nil {
-						return err
+						return fmt.Errorf("could not change %s owner: %s", path, err)
 					}
 				}
 			}
