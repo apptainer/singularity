@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -381,14 +381,6 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
-	fmt.Print("Generating Entity and OpenPGP Key Pair... ")
-	entity, err = openpgp.NewEntity(name, comment, email, conf)
-	if err != nil {
-		return
-	}
-	fmt.Println("Done")
-
-	// encrypt private key
 	pass, err := AskQuestionNoEcho("Enter encryption passphrase : ")
 	if err != nil {
 		return
@@ -398,9 +390,28 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 	if pass != passRetype {
-		return nil, fmt.Errorf("passphrases do not match")
+		sylog.Warningf("Passwords do not match! Please try again")
+		pass, err = AskQuestionNoEcho("Enter encryption passphrase : ")
+		if err != nil {
+			return
+		}
+		passRetype, err = AskQuestionNoEcho("Retype your passphrase : ")
+		if err != nil {
+			return
+		}
+		if pass != passRetype {
+			return nil, fmt.Errorf("passphrases do not match")
+		}
 	}
 
+	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
+	entity, err = openpgp.NewEntity(name, comment, email, conf)
+	if err != nil {
+		return
+	}
+	fmt.Printf("Done\n")
+
+	// encrypt private key
 	if err = EncryptKey(entity, pass); err != nil {
 		return
 	}
