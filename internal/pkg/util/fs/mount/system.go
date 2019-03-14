@@ -70,7 +70,7 @@ func (b *System) MountAll() error {
 		for _, point := range b.Points.GetByTag(tag) {
 			if b.Mount != nil {
 				if err := b.Mount(&point); err != nil {
-					return fmt.Errorf("mount error: %s", err)
+					return fmt.Errorf("mount %s->%s error: %s", point.Source, point.Destination, err)
 				}
 			}
 		}
