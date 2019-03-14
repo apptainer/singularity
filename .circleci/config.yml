@@ -65,7 +65,6 @@ jobs:
             make -j$(nproc) -C ./builddir check
 
   go1.11-macos:
-    <<: *defaults
     macos:
       xcode: "10.2.0"
     steps:
