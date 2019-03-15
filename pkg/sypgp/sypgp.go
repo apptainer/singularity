@@ -403,7 +403,7 @@ func RemovePubKey(toDelete string) error {
 
 	var newKeyList []openpgp.Entity
 
-	// sort throught them, and remove any that match toDelete
+	// sort through them, and remove any that match toDelete
 	for i := range elist {
 		// if the elist[i] dose not match toDelete, then add it to newKeyList
 		if !compareLocalPubKey(elist[i], toDelete) {

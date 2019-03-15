@@ -58,13 +58,36 @@ jobs:
           command: |-
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
-            go get -u golang.org/x/lint/golint
-            make -j$(nproc) -C ./builddir check
       - run:
           name: Check code
           command: |-
             go get -u golang.org/x/lint/golint
             make -j$(nproc) -C ./builddir check
+
+  go1.11-macos:
+    macos:
+      xcode: "10.2.0"
+    working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
+    steps:
+      - checkout
+      - run:
+          name: Setup environment
+          command: |-
+            echo 'export GOPATH=$HOME/go'        >> $BASH_ENV
+            echo 'export PATH=$GOPATH/bin:$PATH' >> $BASH_ENV
+      - run:
+          name: Install dependencies
+          command: brew install go
+      - run:
+          name: Build Singularity
+          command: |-
+            ./mconfig -p /usr/local
+            make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
+      - run:
+          name: Check code
+          command: |-
+            go get -u golang.org/x/lint/golint
+            make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
 
   singularity_test:
     machine: true
@@ -121,6 +144,7 @@ workflows:
       - go1.11-alpine:
           requires:
             - get_source
+      - go1.11-macos
       - singularity_test:
           requires:
             - get_source
