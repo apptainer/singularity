@@ -521,6 +521,9 @@ func insertDefinition(b *types.Bundle) error {
 
 			// look at number of files in bootstrap_history to give correct file name
 			files, err := ioutil.ReadDir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"))
+			if err != nil {
+				return err
+			}
 
 			// name is "Singularity" concatenated with an index based on number of other files in bootstrap_history
 			len := strconv.Itoa(len(files))

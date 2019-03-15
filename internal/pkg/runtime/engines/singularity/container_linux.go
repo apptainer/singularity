@@ -767,7 +767,6 @@ func (c *container) addOverlayMount(system *mount.System) error {
 			if err != nil {
 				return fmt.Errorf("while adding ext3 image: %s", err)
 			}
-			flags &^= syscall.MS_RDONLY
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
 			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size)

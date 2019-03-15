@@ -712,6 +712,9 @@ func serializeEntity(e *openpgp.Entity, blockType string) (string, error) {
 // PushPubkey pushes a public key to the Key Service.
 func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
+	if err != nil {
+		return err
+	}
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
