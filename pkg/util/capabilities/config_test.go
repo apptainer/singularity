@@ -23,23 +23,23 @@ type readWriteTest struct {
 
 func TestReadFromWriteTo(t *testing.T) {
 	testsPass := []readWriteTest{
-		readWriteTest{
+		{
 			name: "empty config",
 			c: Config{
 				Users:  map[string][]string{},
 				Groups: map[string][]string{},
 			},
 		},
-		readWriteTest{
+		{
 			name: "config with stuff",
 			c: Config{
 				Users: map[string][]string{
-					"user1": []string{"CAP_SYS_ADMIN"},
-					"user2": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+					"user1": {"CAP_SYS_ADMIN"},
+					"user2": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 				},
 				Groups: map[string][]string{
-					"user1": []string{"CAP_SYS_ADMIN"},
-					"user2": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+					"user1": {"CAP_SYS_ADMIN"},
+					"user2": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 				},
 			},
 		},
@@ -104,62 +104,62 @@ type capTest struct {
 
 func TestAddUserCaps(t *testing.T) {
 	testsPass := []capTest{
-		capTest{
+		{
 			name: "add existing user single cap",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 				},
 			},
 			id:   "root",
 			caps: []string{"CAP_DAC_OVERRIDE"},
 		},
-		capTest{
+		{
 			name: "add existing user multiple caps",
 			old: Config{
 				Users: map[string][]string{
-					"user1": []string{"CAP_SYS_ADMIN"},
+					"user1": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"user1": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"user1": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			id:   "user1",
 			caps: []string{"CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 		},
-		capTest{
+		{
 			name: "add new user",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root":  []string{"CAP_SYS_ADMIN"},
-					"user1": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"root":  {"CAP_SYS_ADMIN"},
+					"user1": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			id:   "user1",
 			caps: []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 		},
-		capTest{
+		{
 			name: "add duplicate cap",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			id:   "root",
@@ -183,12 +183,12 @@ func TestAddUserCaps(t *testing.T) {
 		name: "add bad cap fail",
 		old: Config{
 			Users: map[string][]string{
-				"root": []string{"CAP_SYS_ADMIN"},
+				"root": {"CAP_SYS_ADMIN"},
 			},
 		},
 		new: Config{
 			Users: map[string][]string{
-				"root": []string{"CAP_SYS_ADMIN"},
+				"root": {"CAP_SYS_ADMIN"},
 			},
 		},
 		id:   "root",
@@ -204,62 +204,62 @@ func TestAddUserCaps(t *testing.T) {
 
 func TestAddGroupCaps(t *testing.T) {
 	testsPass := []capTest{
-		capTest{
+		{
 			name: "add existing group single cap",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 				},
 			},
 			id:   "root",
 			caps: []string{"CAP_DAC_OVERRIDE"},
 		},
-		capTest{
+		{
 			name: "add existing group multiple caps",
 			old: Config{
 				Groups: map[string][]string{
-					"group1": []string{"CAP_SYS_ADMIN"},
+					"group1": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"group1": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"group1": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			id:   "group1",
 			caps: []string{"CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 		},
-		capTest{
+		{
 			name: "add new group",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root":   []string{"CAP_SYS_ADMIN"},
-					"group1": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"root":   {"CAP_SYS_ADMIN"},
+					"group1": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			id:   "group1",
 			caps: []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 		},
-		capTest{
+		{
 			name: "add duplicate cap",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			id:   "root",
@@ -283,12 +283,12 @@ func TestAddGroupCaps(t *testing.T) {
 		name: "add bad cap fail",
 		old: Config{
 			Groups: map[string][]string{
-				"root": []string{"CAP_SYS_ADMIN"},
+				"root": {"CAP_SYS_ADMIN"},
 			},
 		},
 		new: Config{
 			Groups: map[string][]string{
-				"root": []string{"CAP_SYS_ADMIN"},
+				"root": {"CAP_SYS_ADMIN"},
 			},
 		},
 		id:   "root",
@@ -304,46 +304,46 @@ func TestAddGroupCaps(t *testing.T) {
 
 func TestDropUserCaps(t *testing.T) {
 	testsPass := []capTest{
-		capTest{
+		{
 			name: "drop existing user single cap",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "root",
 			caps: []string{"CAP_DAC_OVERRIDE"},
 		},
-		capTest{
+		{
 			name: "drop existing user multiple caps",
 			old: Config{
 				Users: map[string][]string{
-					"user1": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"user1": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"user1": []string{"CAP_SYS_ADMIN"},
+					"user1": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "user1",
 			caps: []string{"CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 		},
-		capTest{
+		{
 			name: "drop duplicate cap",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root": []string{},
+					"root": {},
 				},
 			},
 			id:   "root",
@@ -364,31 +364,31 @@ func TestDropUserCaps(t *testing.T) {
 	}
 
 	testsFail := []capTest{
-		capTest{
+		{
 			name: "drop bad cap fail",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "root",
 			caps: []string{"CAP_BAD_WRONG_INCORRECT_BAD"},
 		},
-		capTest{
+		{
 			name: "drop bad user fail",
 			old: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Users: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "non_existent_user",
@@ -407,46 +407,46 @@ func TestDropUserCaps(t *testing.T) {
 
 func TestDropGroupCaps(t *testing.T) {
 	testsPass := []capTest{
-		capTest{
+		{
 			name: "drop existing group single cap",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "root",
 			caps: []string{"CAP_DAC_OVERRIDE"},
 		},
-		capTest{
+		{
 			name: "drop existing group multiple caps",
 			old: Config{
 				Groups: map[string][]string{
-					"group1": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"group1": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"group1": []string{"CAP_SYS_ADMIN"},
+					"group1": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "group1",
 			caps: []string{"CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 		},
-		capTest{
+		{
 			name: "drop duplicate cap",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
+					"root": {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE", "CAP_CHOWN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root": []string{},
+					"root": {},
 				},
 			},
 			id:   "root",
@@ -467,31 +467,31 @@ func TestDropGroupCaps(t *testing.T) {
 	}
 
 	testsFail := []capTest{
-		capTest{
+		{
 			name: "drop bad cap fail",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "root",
 			caps: []string{"CAP_BAD_WRONG_INCORRECT_BAD"},
 		},
-		capTest{
+		{
 			name: "drop bad group fail",
 			old: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			new: Config{
 				Groups: map[string][]string{
-					"root": []string{"CAP_SYS_ADMIN"},
+					"root": {"CAP_SYS_ADMIN"},
 				},
 			},
 			id:   "non_existent_group",
@@ -511,12 +511,12 @@ func TestDropGroupCaps(t *testing.T) {
 func TestListCaps(t *testing.T) {
 	conf := Config{
 		Users: map[string][]string{
-			"root":  []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
-			"user1": []string{"CAP_CHOWN"},
+			"root":  {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+			"user1": {"CAP_CHOWN"},
 		},
 		Groups: map[string][]string{
-			"root":  []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
-			"user2": []string{"CAP_CHOWN"},
+			"root":  {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+			"user2": {"CAP_CHOWN"},
 		},
 	}
 
@@ -546,31 +546,31 @@ type capCheckTest struct {
 func TestCheckCaps(t *testing.T) {
 	conf := Config{
 		Users: map[string][]string{
-			"root":  []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
-			"user1": []string{"CAP_CHOWN", "CAP_SYS_ADMIN"},
-			"user2": []string{},
+			"root":  {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+			"user1": {"CAP_CHOWN", "CAP_SYS_ADMIN"},
+			"user2": {},
 		},
 		Groups: map[string][]string{
-			"root":  []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
-			"user1": []string{"CAP_CHOWN", "CAP_SYS_ADMIN"},
-			"user2": []string{},
+			"root":  {"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
+			"user1": {"CAP_CHOWN", "CAP_SYS_ADMIN"},
+			"user2": {},
 		},
 	}
 
 	testsPass := []capCheckTest{
-		capCheckTest{
+		{
 			name:       "check multiple authorized",
 			id:         "root",
 			caps:       []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 			authorized: []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 		},
-		capCheckTest{
+		{
 			name:         "check multiple unauthorized",
 			id:           "user2",
 			caps:         []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 			unauthorized: []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},
 		},
-		capCheckTest{
+		{
 			name:         "check multiple authorized & unauthorized",
 			id:           "user1",
 			caps:         []string{"CAP_SYS_ADMIN", "CAP_DAC_OVERRIDE"},

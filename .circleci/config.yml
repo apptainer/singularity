@@ -58,8 +58,6 @@ jobs:
           command: |-
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
-            go get -u golang.org/x/lint/golint
-            make -j$(nproc) -C ./builddir check
       - run:
           name: Check code
           command: |-
