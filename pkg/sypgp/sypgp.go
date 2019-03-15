@@ -361,7 +361,8 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // compareLocalPubKey compares a key ID with a string, returning true if the
 // key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
-	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+	// TODO: there must be a better way to do this...
+	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == fmt.Sprintf("%X", oldToken)
 }
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
@@ -411,7 +412,7 @@ func RemovePubKey(toDelete string) error {
 		}
 	}
 
-	sylog.Infof("Updating local keyring: %v", PublicPath())
+	sylog.Verbosef("Updating local keyring: %v", PublicPath())
 
 	// open the public keyring file
 	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
@@ -496,6 +497,7 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
+	// Ask to push the new key to the keystore
 	pushKeyQ, err := AskQuestionNoEcho("Would you like to push it to the keystore? [Y,n] : ")
 	if err != nil {
 		return
