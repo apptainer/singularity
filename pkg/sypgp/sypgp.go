@@ -496,6 +496,15 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
+	pushKeyQ, err := AskQuestionNoEcho("Would you like to push it to the keystore? [Y,n] : ")
+	if err != nil {
+		return
+	}
+
+	if pushKeyQ == "" || pushKeyQ == "y" || pushKeyQ == "Y" {
+		fmt.Printf("DEBUG::: PUSHING KEY...\n")
+	}
+
 	return
 }
 
