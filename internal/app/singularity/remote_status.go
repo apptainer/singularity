@@ -28,8 +28,6 @@ type status struct {
 	version string
 }
 
-type scsAssets map[string]string
-
 // RemoteStatus checks status of services related to an endpoint
 func RemoteStatus(configFile, name string) (err error) {
 	c := &remote.Config{}

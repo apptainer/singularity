@@ -11,11 +11,6 @@ import (
 	"testing"
 )
 
-type readFromTest struct {
-	c          Config
-	shouldFail bool
-}
-
 type readWriteTest struct {
 	name string
 	c    Config
@@ -73,25 +68,6 @@ func TestReadFromWriteTo(t *testing.T) {
 
 	})
 
-}
-
-func checkReadFrom(t *testing.T, confExpected Config, shouldFail bool) {
-	var r *bytes.Buffer
-
-	confExpected.WriteTo(r)
-
-	confActual, err := ReadFrom(r)
-	if err == nil && shouldFail {
-		t.Errorf("unexpected success running test")
-		return
-	} else if err != nil && !shouldFail {
-		t.Errorf("unexpected failure running test")
-		return
-	}
-
-	if !reflect.DeepEqual(confExpected, *confActual) {
-		t.Errorf("ReadFrom returned incorrect capability config")
-	}
 }
 
 type capTest struct {
