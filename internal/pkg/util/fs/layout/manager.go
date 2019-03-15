@@ -21,25 +21,25 @@ const (
 )
 
 type file struct {
+	created bool
 	mode    os.FileMode
 	uid     int
 	gid     int
 	content []byte
-	created bool
 }
 
 type dir struct {
+	created bool
 	mode    os.FileMode
 	uid     int
 	gid     int
-	created bool
 }
 
 type symlink struct {
+	created bool
 	uid     int
 	gid     int
 	target  string
-	created bool
 }
 
 // Manager manages a filesystem layout in a given path

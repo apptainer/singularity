@@ -33,7 +33,7 @@ func TestNewTerminalBuffer(t *testing.T) {
 	}
 
 	// Write content and end with a newline to clear buffer
-	n, err = ntb.Write([]byte("st\n"))
+	_, err = ntb.Write([]byte("st\n"))
 	if err != nil {
 		t.Error(err)
 	}

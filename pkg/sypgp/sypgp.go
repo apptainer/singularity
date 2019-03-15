@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -43,87 +43,6 @@ const helpAuth = `Access token is expired or missing. To update or obtain a toke
 WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exists
 
 `
-
-// routine that outputs signature type (applies to vindex operation)
-func printSigType(sig *packet.Signature) {
-	switch sig.SigType {
-	case packet.SigTypeBinary:
-		fmt.Printf("sbin ")
-	case packet.SigTypeText:
-		fmt.Printf("stext")
-	case packet.SigTypeGenericCert:
-		fmt.Printf("sgenc")
-	case packet.SigTypePersonaCert:
-		fmt.Printf("sperc")
-	case packet.SigTypeCasualCert:
-		fmt.Printf("scasc")
-	case packet.SigTypePositiveCert:
-		fmt.Printf("sposc")
-	case packet.SigTypeSubkeyBinding:
-		fmt.Printf("sbind")
-	case packet.SigTypePrimaryKeyBinding:
-		fmt.Printf("sprib")
-	case packet.SigTypeDirectSignature:
-		fmt.Printf("sdirc")
-	case packet.SigTypeKeyRevocation:
-		fmt.Printf("skrev")
-	case packet.SigTypeSubkeyRevocation:
-		fmt.Printf("sbrev")
-	}
-}
-
-// routine that displays signature information (applies to vindex operation)
-func putSigInfo(sig *packet.Signature) {
-	fmt.Print("sig  ")
-	printSigType(sig)
-	fmt.Print(" ")
-	if sig.IssuerKeyId != nil {
-		fmt.Printf("%08X ", uint32(*sig.IssuerKeyId))
-	}
-	y, m, d := sig.CreationTime.Date()
-	fmt.Printf("%02d-%02d-%02d ", y, m, d)
-}
-
-// output all the signatures related to a key (entity) (applies to vindex
-// operation).
-func printSignatures(entity *openpgp.Entity) error {
-	fmt.Println("=>++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-	fmt.Printf("uid  ")
-	for _, i := range entity.Identities {
-		fmt.Printf("%s", i.Name)
-	}
-	fmt.Println("")
-
-	// Self signature and other Signatures
-	for _, i := range entity.Identities {
-		if i.SelfSignature != nil {
-			putSigInfo(i.SelfSignature)
-			fmt.Printf("--------- --------- [selfsig]\n")
-		}
-		for _, s := range i.Signatures {
-			putSigInfo(s)
-			fmt.Printf("--------- --------- ---------\n")
-		}
-	}
-
-	// Revocation Signatures
-	for _, s := range entity.Revocations {
-		putSigInfo(s)
-		fmt.Printf("--------- --------- ---------\n")
-	}
-	fmt.Println("")
-
-	// Subkeys Signatures
-	for _, sub := range entity.Subkeys {
-		putSigInfo(sub.Sig)
-		fmt.Printf("--------- --------- [%s]\n", entity.PrimaryKey.KeyIdShortString())
-	}
-
-	fmt.Println("<=++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-	return nil
-}
 
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
@@ -356,6 +275,78 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 		return
 	}
 	return
+}
+
+// compareLocalPubKey compares a key ID with a string, returning true if the
+// key and oldToken match.
+func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
+	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+}
+
+// CheckLocalPubKey will check if we have a local public key matching ckey string
+// returns true if there's a match.
+func CheckLocalPubKey(ckey string) (bool, error) {
+	f, err := os.OpenFile(PublicPath(), os.O_CREATE|os.O_RDONLY, 0600)
+	if err != nil {
+		return false, fmt.Errorf("unable to open local keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local public keys
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return false, fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	for i := range elist {
+		if compareLocalPubKey(elist[i], ckey) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// RemovePubKey will delete a public key matching toDelete
+func RemovePubKey(toDelete string) error {
+	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to open local keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local public keys
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	var newKeyList []openpgp.Entity
+
+	// sort through them, and remove any that match toDelete
+	for i := range elist {
+		// if the elist[i] dose not match toDelete, then add it to newKeyList
+		if !compareLocalPubKey(elist[i], toDelete) {
+			newKeyList = append(newKeyList, *elist[i])
+		}
+	}
+
+	sylog.Infof("Updating local keyring: %v", PublicPath())
+
+	// open the public keyring file
+	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to clear, and open the file: %v", err)
+	}
+	defer nf.Close()
+
+	// loop through a write all the other keys back
+	for k := range newKeyList {
+		// store the freshly downloaded key
+		if err := StorePubKey(&newKeyList[k]); err != nil {
+			return fmt.Errorf("could not store public key: %s", err)
+		}
+	}
+	return nil
 }
 
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
@@ -640,6 +631,9 @@ func serializeEntity(e *openpgp.Entity, blockType string) (string, error) {
 // PushPubkey pushes a public key to the Key Service.
 func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
+	if err != nil {
+		return err
+	}
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{

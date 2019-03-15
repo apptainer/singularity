@@ -120,23 +120,56 @@ func Uninstall(name, libexecdir string) error {
 
 	meta, err := loadMetaByName(name, pluginDir)
 	if err != nil {
-		// figure out if this is a not found error?
 		return err
 	}
 
 	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
+
 	return meta.uninstall()
 }
 
-func loadMetaByName(name, plugindir string) (*Meta, error) {
-	fh, err := os.Open(metaPath(plugindir, name))
+// Enable enables the plugin named "name" found under "libexecdir"
+func Enable(name, libexecdir string) error {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	sylog.Debugf("Enabling plugin %q in %q", name, pluginDir)
+
+	meta, err := loadMetaByName(name, pluginDir)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	defer fh.Close()
+	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
 
-	m, err := LoadFromJSON(fh)
+	if meta.Enabled {
+		sylog.Infof("Plugin %q is already enabled", name)
+		return nil
+	}
+
+	return meta.enable()
+}
+
+// Disable disables the plugin named "name" found under "libexecdir"
+func Disable(name, libexecdir string) error {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	sylog.Debugf("Disabling plugin %q in %q", name, pluginDir)
+
+	meta, err := loadMetaByName(name, pluginDir)
+	if err != nil {
+		return err
+	}
+
+	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
+
+	if !meta.Enabled {
+		sylog.Infof("Plugin %q is already disabled", name)
+		return nil
+	}
+
+	return meta.disable()
+}
+
+func loadMetaByName(name, plugindir string) (*Meta, error) {
+	m, err := loadMetaByFilename(metaPath(plugindir, name))
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +180,17 @@ func loadMetaByName(name, plugindir string) (*Meta, error) {
 	}
 
 	return m, nil
+}
+
+func loadMetaByFilename(filename string) (*Meta, error) {
+	fh, err := os.Open(filename)
+	if err != nil {
+		sylog.Debugf("Error opening meta file %q: %s\n", filename, err)
+		return nil, err
+	}
+	defer fh.Close()
+
+	return LoadFromJSON(fh)
 }
 
 // install installs the plugin represented by m into the destination
@@ -289,6 +333,16 @@ func (m *Meta) uninstallMeta() error {
 	return os.Remove(fn)
 }
 
+func (m *Meta) enable() error {
+	m.Enabled = true
+	return m.installMeta(m.baseDir())
+}
+
+func (m *Meta) disable() error {
+	m.Enabled = false
+	return m.installMeta(m.baseDir())
+}
+
 // metaPath returns the path to the meta file based on the directory and
 // the name of the corresponding plugin
 func metaPath(dir, name string) string {
@@ -427,14 +481,7 @@ func List(libexecdir string) ([]*Meta, error) {
 		}
 
 		readMeta := func(name string) *Meta {
-			fh, err := os.Open(name)
-			if err != nil {
-				sylog.Debugf("Error opening %s: %s. Skip\n", name, err)
-				return nil
-			}
-			defer fh.Close()
-
-			meta, err := LoadFromJSON(fh)
+			meta, err := loadMetaByFilename(name)
 			if err != nil {
 				sylog.Debugf("Error loading %s: %s. Skip\n", name, err)
 				return nil

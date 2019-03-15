@@ -351,7 +351,7 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 					err = fmt.Errorf("failed to escalate gid privileges")
 					return
 				}
-				if err := syscall.Setresuid(uid, uid, 0); err != nil {
+				if err = syscall.Setresuid(uid, uid, 0); err != nil {
 					err = fmt.Errorf("failed to escalate uid privileges")
 					return
 				}
