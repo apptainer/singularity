@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -1055,15 +1056,13 @@ func (c *container) addDevMount(system *mount.System) error {
 			return err
 		}
 		if c.engine.EngineConfig.GetNv() {
-			files, err := ioutil.ReadDir("/dev")
+			devs, err := nvidia.Devices(true)
 			if err != nil {
-				return fmt.Errorf("failed to read /dev directory: %s", err)
+				return fmt.Errorf("failed to get nvidia devices: %v", err)
 			}
-			for _, file := range files {
-				if strings.HasPrefix(file.Name(), "nvidia") {
-					if err := c.addSessionDev(filepath.Join("/dev", file.Name()), system); err != nil {
-						return err
-					}
+			for _, dev := range devs {
+				if err := c.addSessionDev(dev, system); err != nil {
+					return err
 				}
 			}
 		}
