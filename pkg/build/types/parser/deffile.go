@@ -131,20 +131,6 @@ func getSectionName(line string) string {
 	return lineSplit[0]
 }
 
-// splitToken splits tok -> identline & content pair (sep on \n)
-func splitToken(tok string) (ident string, content string) {
-	// trim % prefix on section name
-	tok = strings.TrimLeft(tok, "%")
-	tokSplit := strings.SplitN(tok, "\n", 2)
-	if len(tokSplit) == 1 {
-		content = ""
-	} else {
-		content = tokSplit[1]
-	}
-
-	return strings.ToLower(tokSplit[0]), content
-}
-
 // parseTokenSection splits the token into maximum 2 strings separated by a newline,
 // and then inserts the section into the sections map
 //

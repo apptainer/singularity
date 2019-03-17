@@ -18,11 +18,11 @@ import (
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
-	"github.com/sylabs/json-resp"
+	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/client/library"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
+	client "github.com/sylabs/singularity/pkg/client/library"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // CloudURI holds the URI of the Library web front-end.
@@ -32,12 +32,12 @@ const CloudURI = "https://cloud.sylabs.io"
 type RemoteBuilder struct {
 	Client     http.Client
 	ImagePath  string
-	Force      bool
 	LibraryURL string
 	Definition types.Definition
-	IsDetached bool
 	BuilderURL *url.URL
 	AuthToken  string
+	Force      bool
+	IsDetached bool
 }
 
 func (rb *RemoteBuilder) setAuthHeader(h http.Header) {

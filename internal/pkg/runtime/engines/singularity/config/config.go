@@ -16,69 +16,70 @@ const Name = "singularity"
 // FileConfig describes the singularity.conf file options
 type FileConfig struct {
 	AllowSetuid             bool     `default:"yes" authorized:"yes,no" directive:"allow setuid"`
-	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	AllowPidNs              bool     `default:"yes" authorized:"yes,no" directive:"allow pid ns"`
 	ConfigPasswd            bool     `default:"yes" authorized:"yes,no" directive:"config passwd"`
 	ConfigGroup             bool     `default:"yes" authorized:"yes,no" directive:"config group"`
 	ConfigResolvConf        bool     `default:"yes" authorized:"yes,no" directive:"config resolv_conf"`
 	MountProc               bool     `default:"yes" authorized:"yes,no" directive:"mount proc"`
 	MountSys                bool     `default:"yes" authorized:"yes,no" directive:"mount sys"`
-	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
 	MountDevPts             bool     `default:"yes" authorized:"yes,no" directive:"mount devpts"`
 	MountHome               bool     `default:"yes" authorized:"yes,no" directive:"mount home"`
 	MountTmp                bool     `default:"yes" authorized:"yes,no" directive:"mount tmp"`
 	MountHostfs             bool     `default:"no" authorized:"yes,no" directive:"mount hostfs"`
-	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
 	UserBindControl         bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
-	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
 	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
-	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
-	LimitContainerOwners    []string `directive:"limit container owners"`
-	LimitContainerGroups    []string `directive:"limit container groups"`
-	LimitContainerPaths     []string `directive:"limit container paths"`
 	AllowContainerSquashfs  bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`
 	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
-	AutofsBugPath           []string `directive:"autofs bug path"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
+	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
+	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
+	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
+	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
+	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
+	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
+	LimitContainerOwners    []string `directive:"limit container owners"`
+	LimitContainerGroups    []string `directive:"limit container groups"`
+	LimitContainerPaths     []string `directive:"limit container paths"`
+	AutofsBugPath           []string `directive:"autofs bug path"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
-	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
 type JSONConfig struct {
-	Image         string        `json:"image"`
 	WritableImage bool          `json:"writableImage,omitempty"`
 	WritableTmpfs bool          `json:"writableTmpfs,omitempty"`
-	OverlayImage  []string      `json:"overlayImage,omitempty"`
 	Contain       bool          `json:"container,omitempty"`
 	Nv            bool          `json:"nv,omitempty"`
-	Workdir       string        `json:"workdir,omitempty"`
-	ScratchDir    []string      `json:"scratchdir,omitempty"`
-	HomeSource    string        `json:"homedir,omitempty"`
-	HomeDest      string        `json:"homeDest,omitempty"`
 	CustomHome    bool          `json:"customHome,omitempty"`
-	BindPath      []string      `json:"bindpath,omitempty"`
-	Command       string        `json:"command,omitempty"`
-	Shell         string        `json:"shell,omitempty"`
-	TmpDir        string        `json:"tmpdir,omitempty"`
 	Instance      bool          `json:"instance,omitempty"`
 	InstanceJoin  bool          `json:"instanceJoin,omitempty"`
 	BootInstance  bool          `json:"bootInstance,omitempty"`
 	RunPrivileged bool          `json:"runPrivileged,omitempty"`
-	AddCaps       string        `json:"addCaps,omitempty"`
-	DropCaps      string        `json:"dropCaps,omitempty"`
-	Hostname      string        `json:"hostname,omitempty"`
 	AllowSUID     bool          `json:"allowSUID,omitempty"`
 	KeepPrivs     bool          `json:"keepPrivs,omitempty"`
 	NoPrivs       bool          `json:"noPrivs,omitempty"`
 	NoHome        bool          `json:"noHome,omitempty"`
 	NoInit        bool          `json:"noInit,omitempty"`
+	DeleteImage   bool          `json:"deleteImage,omitempty"`
+	Image         string        `json:"image"`
+	OverlayImage  []string      `json:"overlayImage,omitempty"`
+	Workdir       string        `json:"workdir,omitempty"`
+	ScratchDir    []string      `json:"scratchdir,omitempty"`
+	HomeSource    string        `json:"homedir,omitempty"`
+	HomeDest      string        `json:"homeDest,omitempty"`
+	BindPath      []string      `json:"bindpath,omitempty"`
+	Command       string        `json:"command,omitempty"`
+	Shell         string        `json:"shell,omitempty"`
+	TmpDir        string        `json:"tmpdir,omitempty"`
+	AddCaps       string        `json:"addCaps,omitempty"`
+	DropCaps      string        `json:"dropCaps,omitempty"`
+	Hostname      string        `json:"hostname,omitempty"`
 	ImageList     []image.Image `json:"imageList,omitempty"`
 	Network       string        `json:"network,omitempty"`
 	NetworkArgs   []string      `json:"networkArgs,omitempty"`
@@ -90,7 +91,6 @@ type JSONConfig struct {
 	TargetUID     int           `json:"targetUID,omitempty"`
 	TargetGID     []int         `json:"targetGID,omitempty"`
 	LibrariesPath []string      `json:"librariesPath,omitempty"`
-	DeleteImage   bool          `json:"deleteImage,omitempty"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig

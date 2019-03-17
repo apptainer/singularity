@@ -51,6 +51,10 @@ func doKeyImportCmd(path string) error {
 
 	// If the block does not correspond to any of public ot private type return error
 	block, err := armor.Decode(f)
+	if err != nil {
+		return err
+	}
+
 	if block.Type != PublicKeyType && block.Type != PrivateKeyType {
 		return errors.InvalidArgumentError("expected public or private key block, got: " + block.Type)
 	}

@@ -191,17 +191,15 @@ func ConvertOptions(options []string) (uintptr, []string) {
 
 // ConvertSpec converts an OCI Mount spec into an importable mount points list
 func ConvertSpec(mounts []specs.Mount) (map[AuthorizedTag][]Point, error) {
-	var tag AuthorizedTag
-
 	points := make(map[AuthorizedTag][]Point)
 	for _, m := range mounts {
+		var tag AuthorizedTag
 		var options []string
 		var propagationOption string
 		var err error
 		source := m.Source
 		mountType := m.Type
 
-		tag = ""
 		if mountType != "" && mountType != "bind" && mountType != "none" {
 			if _, ok := authorizedFS[mountType]; !ok {
 				return points, fmt.Errorf("%s filesystem type is not authorized", mountType)

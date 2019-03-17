@@ -24,18 +24,18 @@ const imagePath = "./container.sif"
 const appsImage = "./appsImage.sif"
 
 type opts struct {
-	binds     []string
-	security  []string
 	keepPrivs bool
-	dropCaps  string
 	contain   bool
 	noHome    bool
+	userns    bool
+	binds     []string
+	security  []string
+	dropCaps  string
 	home      string
 	workdir   string
 	pwd       string
 	app       string
 	overlay   []string
-	userns    bool
 }
 
 // imageExec can be used to run/exec/shell a Singularity image

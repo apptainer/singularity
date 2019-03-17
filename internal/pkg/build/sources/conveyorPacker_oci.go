@@ -106,6 +106,10 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 			} else {
 				cp.srcRef, err = oci.ParseReference(tmpDir)
 			}
+
+			if err != nil {
+				return fmt.Errorf("error parsing reference: %v", err)
+			}
 		}
 
 	default:

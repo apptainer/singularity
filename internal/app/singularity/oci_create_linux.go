@@ -83,6 +83,9 @@ func OciCreate(containerID string, args *OciArgs) error {
 
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
 	cmd, err := exec.PipeCommand(starter, []string{procName}, Env, configData)
+	if err != nil {
+		return err
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

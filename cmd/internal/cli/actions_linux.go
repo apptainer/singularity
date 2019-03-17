@@ -455,6 +455,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
+		if err != nil {
+			sylog.Warningf("failed to prepare command: %s", err)
+		}
+
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 
