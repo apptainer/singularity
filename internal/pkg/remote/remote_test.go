@@ -14,16 +14,6 @@ import (
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
-var remoteConfig = Config{
-	DefaultRemote: "",
-	Remotes: map[string]*EndPoint{
-		"cloud": {
-			URI:   "cloud.sylabs.io",
-			Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
-		},
-	},
-}
-
 //NOTE: VerifyToken() cannot be tested unless we have a dummy token for the token service to authenticate
 
 func TestMain(m *testing.M) {

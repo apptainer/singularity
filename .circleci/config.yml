@@ -43,7 +43,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            go get -u golang.org/x/lint/golint
+            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(nproc) -C ./builddir check
 
   go1.11-alpine:
@@ -61,7 +61,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            go get -u golang.org/x/lint/golint
+            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(nproc) -C ./builddir check
 
   go1.11-macos:
@@ -86,7 +86,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            go get -u golang.org/x/lint/golint
+            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
 
   singularity_test:
@@ -144,7 +144,9 @@ workflows:
       - go1.11-alpine:
           requires:
             - get_source
-      - go1.11-macos
+      - go1.11-macos:
+          requires:
+            - get_source
       - singularity_test:
           requires:
             - get_source

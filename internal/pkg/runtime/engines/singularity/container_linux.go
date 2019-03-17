@@ -1300,7 +1300,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 			}
 		}
 
-		// special case for /dev mount to override default mount behaviour
+		// special case for /dev mount to override default mount behavior
 		// with --contain option or 'mount dev = minimal'
 		if strings.HasPrefix(src, devPrefix) {
 			if c.engine.EngineConfig.File.MountDev == "minimal" || c.engine.EngineConfig.GetContain() {
