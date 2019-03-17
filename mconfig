@@ -32,6 +32,8 @@ tgtobjcopy=
 hststatic=0
 tgtstatic=0
 
+# user_cflags - user-defined CFLAGS without all the cflags_opts
+user_cflags="$CFLAGS"
 cflags_opts="-Wall -Werror -Wfatal-errors -Wno-unknown-warning-option \
 -Wstrict-prototypes -Wpointer-arith -Wbad-function-cast \
 -Woverlength-strings -Wframe-larger-than=2047 \

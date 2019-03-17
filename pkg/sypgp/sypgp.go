@@ -44,87 +44,6 @@ WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exis
 
 `
 
-// routine that outputs signature type (applies to vindex operation)
-func printSigType(sig *packet.Signature) {
-	switch sig.SigType {
-	case packet.SigTypeBinary:
-		fmt.Printf("sbin ")
-	case packet.SigTypeText:
-		fmt.Printf("stext")
-	case packet.SigTypeGenericCert:
-		fmt.Printf("sgenc")
-	case packet.SigTypePersonaCert:
-		fmt.Printf("sperc")
-	case packet.SigTypeCasualCert:
-		fmt.Printf("scasc")
-	case packet.SigTypePositiveCert:
-		fmt.Printf("sposc")
-	case packet.SigTypeSubkeyBinding:
-		fmt.Printf("sbind")
-	case packet.SigTypePrimaryKeyBinding:
-		fmt.Printf("sprib")
-	case packet.SigTypeDirectSignature:
-		fmt.Printf("sdirc")
-	case packet.SigTypeKeyRevocation:
-		fmt.Printf("skrev")
-	case packet.SigTypeSubkeyRevocation:
-		fmt.Printf("sbrev")
-	}
-}
-
-// routine that displays signature information (applies to vindex operation)
-func putSigInfo(sig *packet.Signature) {
-	fmt.Print("sig  ")
-	printSigType(sig)
-	fmt.Print(" ")
-	if sig.IssuerKeyId != nil {
-		fmt.Printf("%08X ", uint32(*sig.IssuerKeyId))
-	}
-	y, m, d := sig.CreationTime.Date()
-	fmt.Printf("%02d-%02d-%02d ", y, m, d)
-}
-
-// output all the signatures related to a key (entity) (applies to vindex
-// operation).
-func printSignatures(entity *openpgp.Entity) error {
-	fmt.Println("=>++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-	fmt.Printf("uid  ")
-	for _, i := range entity.Identities {
-		fmt.Printf("%s", i.Name)
-	}
-	fmt.Println("")
-
-	// Self signature and other Signatures
-	for _, i := range entity.Identities {
-		if i.SelfSignature != nil {
-			putSigInfo(i.SelfSignature)
-			fmt.Printf("--------- --------- [selfsig]\n")
-		}
-		for _, s := range i.Signatures {
-			putSigInfo(s)
-			fmt.Printf("--------- --------- ---------\n")
-		}
-	}
-
-	// Revocation Signatures
-	for _, s := range entity.Revocations {
-		putSigInfo(s)
-		fmt.Printf("--------- --------- ---------\n")
-	}
-	fmt.Println("")
-
-	// Subkeys Signatures
-	for _, sub := range entity.Subkeys {
-		putSigInfo(sub.Sig)
-		fmt.Printf("--------- --------- [%s]\n", entity.PrimaryKey.KeyIdShortString())
-	}
-
-	fmt.Println("<=++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-	return nil
-}
-
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
 	fmt.Printf(format, a...)
@@ -403,7 +322,7 @@ func RemovePubKey(toDelete string) error {
 
 	var newKeyList []openpgp.Entity
 
-	// sort throught them, and remove any that match toDelete
+	// sort through them, and remove any that match toDelete
 	for i := range elist {
 		// if the elist[i] dose not match toDelete, then add it to newKeyList
 		if !compareLocalPubKey(elist[i], toDelete) {
@@ -731,6 +650,9 @@ func serializeEntity(e *openpgp.Entity, blockType string) (string, error) {
 // PushPubkey pushes a public key to the Key Service.
 func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
+	if err != nil {
+		return err
+	}
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
