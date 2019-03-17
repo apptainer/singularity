@@ -58,6 +58,9 @@ func (t *ImageReference) NewImageSource(ctx context.Context, sys *types.SystemCo
 func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemContext, w io.Writer) (types.ImageSource, error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	policyCtx, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return nil, err
+	}
 
 	// First we are fetching into the cache
 	err = copy.Image(context.Background(), policyCtx, t.ImageReference, t.source, &copy.Options{

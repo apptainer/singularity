@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,11 +7,13 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -35,6 +37,8 @@ func run(cmd *cobra.Command, args []string) {
 	}
 
 	if remote {
+		handleRemoteBuildFlags(cmd)
+
 		// Submiting a remote build requires a valid authToken
 		if authToken == "" {
 			sylog.Fatalf("Unable to submit build job: %v", authWarning)
@@ -54,7 +58,6 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-
 		err := checkSections()
 		if err != nil {
 			sylog.Fatalf(err.Error())
@@ -63,6 +66,17 @@ func run(cmd *cobra.Command, args []string) {
 		authConf, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
+		}
+
+		// parse definition to determine build source
+		def, err := build.MakeDef(spec, false)
+		if err != nil {
+			sylog.Fatalf("Unable to build from %s: %v", spec, err)
+		}
+
+		// only resolve remote endpoints if library is the build source
+		if def.Header["bootstrap"] == "library" {
+			handleBuildFlags(cmd)
 		}
 
 		b, err := build.NewBuild(
@@ -87,6 +101,50 @@ func run(cmd *cobra.Command, args []string) {
 
 		if err = b.Full(); err != nil {
 			sylog.Fatalf("While performing build: %v", err)
+		}
+	}
+}
+
+func checkSections() error {
+	var all, none bool
+	for _, section := range sections {
+		if section == "none" {
+			none = true
+		}
+		if section == "all" {
+			all = true
+		}
+	}
+
+	if all && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have all and any other option")
+	}
+	if none && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have none and any other option")
+	}
+
+	return nil
+}
+
+// standard builds should just warn and fall back to CLI default if we cannot resolve library URL
+func handleBuildFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	e, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = e.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := e.GetServiceURI("library")
+		if err == nil {
+			libraryURL = uri
+		} else if err != nil {
+			sylog.Warningf("Unable to get library service URI: %v", err)
 		}
 	}
 }

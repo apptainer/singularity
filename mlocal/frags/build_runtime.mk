@@ -1,11 +1,7 @@
 # This file contains all of the rules for building the singularity runtime
 #   and installing the necessary config files.
 
-CGO_CPPFLAGS += -include $(BUILDDIR_ABSPATH)/config.h
-
-export CGO_CPPFLAGS
-
-starter_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main.go)
+starter_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main_linux.go)
 starter_CSOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c \
                   $(SOURCEDIR)/cmd/starter/c/capability.c \
                   $(SOURCEDIR)/cmd/starter/c/message.c \
@@ -22,7 +18,7 @@ starter := $(BUILDDIR)/cmd/starter/c/starter
 $(starter): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starter_SOURCE)
 	@echo " GO" $@
 	$(V)go build $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
-		-o $@ $(SOURCEDIR)/cmd/starter/main.go
+		-o $@ $(SOURCEDIR)/cmd/starter/main_linux.go
 
 starter_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/starter
 $(starter_INSTALL): $(starter)

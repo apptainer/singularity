@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 )
@@ -27,6 +28,7 @@ import (
 // Global variables for singularity CLI
 var (
 	debug   bool
+	nocolor bool
 	silent  bool
 	verbose bool
 	quiet   bool
@@ -71,10 +73,12 @@ func init() {
 	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
 
 	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "print debugging information (highest verbosity)")
+	SingularityCmd.Flags().BoolVar(&nocolor, "nocolor", false, "print without color output (default False)")
 	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "only print errors")
 	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "suppress normal output")
 	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print additional information")
 	SingularityCmd.Flags().StringVarP(&tokenFile, "tokenfile", "t", defaultTokenFile, "path to the file holding your sylabs authentication token")
+	SingularityCmd.Flags().MarkDeprecated("tokenfile", "Use 'singularity remote' to manage remote endpoints and tokens.")
 
 	VersionCmd.Flags().SetInterspersed(false)
 	SingularityCmd.AddCommand(VersionCmd)
@@ -99,6 +103,12 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 	}
 
 	sylog.SetLevel(level)
+}
+
+func setSylogColor(cmd *cobra.Command, args []string) {
+	if nocolor {
+		sylog.DisableColor()
+	}
 }
 
 // SingularityCmd is the base command when called without any subcommands
@@ -178,6 +188,7 @@ func handleEnv(flag *pflag.Flag) {
 
 func persistentPreRun(cmd *cobra.Command, args []string) {
 	setSylogMessageLevel(cmd, args)
+	setSylogColor(cmd, args)
 	updateFlagsFromEnv(cmd)
 }
 
@@ -193,9 +204,29 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
-	if authToken == "" && authWarning == auth.WarningTokenFileNotFound {
-		sylog.Warningf("%v : Only pulls of public images will succeed", authWarning)
+	if authToken != "" {
+		sylog.Warningf("sylabs-token files are deprecated. Use 'singularity remote' to manage remote endpoints and tokens.")
 	}
+}
+
+// sylabsRemote returns the remote in use or an error
+func sylabsRemote(filepath string) (*scs.EndPoint, error) {
+	file, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
+	if err != nil {
+		// catch non existing remotes.yaml file or missing .singularity/
+		if os.IsNotExist(err) {
+			return nil, scs.ErrNoDefault
+		}
+		return nil, fmt.Errorf("while opening remote config file: %s", err)
+	}
+	defer file.Close()
+
+	c, err := scs.ReadFrom(file)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	return c.GetDefault()
 }
 
 // envAppend combines command line and environment var into a single argument

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,12 +13,11 @@ import (
 )
 
 func init() {
-	// === For Future Use ===
-	// PluginCmd.AddCommand(PluginListCmd)
+	PluginCmd.AddCommand(PluginListCmd)
 	PluginCmd.AddCommand(PluginInstallCmd)
-	// PluginCmd.AddCommand(PluginUninstallCmd)
-	// PluginCmd.AddCommand(PluginEnableCmd)
-	// PluginCmd.AddCommand(PluginDisableCmd)
+	PluginCmd.AddCommand(PluginUninstallCmd)
+	PluginCmd.AddCommand(PluginEnableCmd)
+	PluginCmd.AddCommand(PluginDisableCmd)
 	PluginCmd.AddCommand(PluginCompileCmd)
 
 	SingularityCmd.AddCommand(PluginCmd)
