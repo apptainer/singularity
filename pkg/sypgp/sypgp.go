@@ -391,7 +391,7 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 			return
 		}
 		if pass != passRetype {
-			return nil, fmt.Errorf("passphrases do not match")
+			return nil, fmt.Errorf("passwords do not match")
 		}
 	}
 
