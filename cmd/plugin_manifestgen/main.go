@@ -34,7 +34,6 @@ func main() {
 		sylog.Fatalf("While marshalling manifest to json: %s", err)
 	}
 
-	fmt.Println(string(manifest))
 	if err := ioutil.WriteFile(args[1], manifest, 0644); err != nil {
 		sylog.Fatalf("While writing manifest to file: %s", err)
 	}

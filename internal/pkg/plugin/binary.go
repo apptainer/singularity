@@ -6,14 +6,18 @@
 package plugin
 
 import (
+	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"plugin"
+	"strings"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
@@ -72,7 +76,7 @@ func (m *Meta) Config() (*os.File, error) {
 	return os.Open(m.configName())
 }
 
-// NewFromImage returns a new meta object which hasn't yet been installed from
+// InstallFromSIF returns a new meta object which hasn't yet been installed from
 // a pointer to an on disk SIF. It will:
 //     1. Check that the SIF is a valid plugin
 //     2. Open the Manifest to retrieve name and calculate the path
@@ -80,55 +84,295 @@ func (m *Meta) Config() (*os.File, error) {
 //     4. Extract the binary object into the path
 //     5. Generate a default config file in the path
 //     6. Write the Meta struct onto disk in DirRoot
-func NewFromImage(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
+func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
+	sylog.Debugf("Installing plugin from SIF to %q", libexecdir)
+
 	if !isPluginFile(fimg) {
-		return nil, fmt.Errorf("while opening sif file: not a valid plugin")
+		return nil, fmt.Errorf("while opening SIF file: not a valid plugin")
 	}
 
 	manifest := getManifest(fimg)
-	abspath, err := filepath.Abs(filepath.Join(libexecdir, pathFromManifest(manifest)))
+
+	plugindir := filepath.Join(libexecdir, DirRoot)
+
+	dstdir, err := filepath.Abs(filepath.Join(plugindir, pathFromName(manifest.Name)))
 	if err != nil {
 		return nil, fmt.Errorf("while getting absolute path to plugin installation: %s", err)
 	}
 
 	m := &Meta{
 		Name:    manifest.Name,
-		Path:    abspath,
+		Path:    dstdir,
 		Enabled: true,
 
 		fimg: fimg,
 	}
 
-	m.installTo(libexecdir)
+	err = m.install(plugindir)
+	return m, err
+}
+
+// Uninstall removes the plugin matching "name" from the specified
+// singularity installation directory
+func Uninstall(name, libexecdir string) error {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	sylog.Debugf("Uninstalling plugin %q from %q", name, pluginDir)
+
+	meta, err := loadMetaByName(name, pluginDir)
+	if err != nil {
+		return err
+	}
+
+	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
+
+	return meta.uninstall()
+}
+
+// Enable enables the plugin named "name" found under "libexecdir"
+func Enable(name, libexecdir string) error {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	sylog.Debugf("Enabling plugin %q in %q", name, pluginDir)
+
+	meta, err := loadMetaByName(name, pluginDir)
+	if err != nil {
+		return err
+	}
+
+	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
+
+	if meta.Enabled {
+		sylog.Infof("Plugin %q is already enabled", name)
+		return nil
+	}
+
+	return meta.enable()
+}
+
+// Disable disables the plugin named "name" found under "libexecdir"
+func Disable(name, libexecdir string) error {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	sylog.Debugf("Disabling plugin %q in %q", name, pluginDir)
+
+	meta, err := loadMetaByName(name, pluginDir)
+	if err != nil {
+		return err
+	}
+
+	sylog.Debugf("Found plugin %q, meta=%#v", name, meta)
+
+	if !meta.Enabled {
+		sylog.Infof("Plugin %q is already disabled", name)
+		return nil
+	}
+
+	return meta.disable()
+}
+
+func loadMetaByName(name, plugindir string) (*Meta, error) {
+	m, err := loadMetaByFilename(metaPath(plugindir, name))
+	if err != nil {
+		return nil, err
+	}
+
+	// make sure we loaded the right thing
+	if m.Name != name {
+		return nil, fmt.Errorf("unexpected plugin name %q when loading plugin %q", m.Name, name)
+	}
+
 	return m, nil
 }
 
-// installTo installs the plugin represented by m into libexecdir. This should
-// normally only be called in NewFromImage
-func (m *Meta) installTo(libexecdir string) {
+func loadMetaByFilename(filename string) (*Meta, error) {
+	fh, err := os.Open(filename)
+	if err != nil {
+		sylog.Debugf("Error opening meta file %q: %s\n", filename, err)
+		return nil, err
+	}
+	defer fh.Close()
 
+	return LoadFromJSON(fh)
+}
+
+// install installs the plugin represented by m into the destination
+// directory. This should normally only be called in InstallFromSIF
+func (m *Meta) install(dstdir string) error {
+	if err := os.MkdirAll(m.Path, 0777); err != nil {
+		return err
+	}
+
+	if err := m.installImage(); err != nil {
+		return err
+	}
+
+	if err := m.installBinary(); err != nil {
+		return err
+	}
+
+	if err := m.installMeta(dstdir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Meta) installImage() error {
+	fh, err := os.Create(m.imageName())
+	if err != nil {
+		return err
+	}
+
+	defer fh.Close()
+
+	_, err = fh.Write(m.fimg.Filedata)
+
+	return err
+}
+
+func (m *Meta) installBinary() error {
+	fh, err := os.Create(m.binaryName())
+	if err != nil {
+		return err
+	}
+
+	defer fh.Close()
+
+	start := m.fimg.DescrArr[0].Fileoff
+	end := start + m.fimg.DescrArr[0].Filelen
+	_, err = fh.Write(m.fimg.Filedata[start:end])
+
+	return err
+}
+
+func (m *Meta) installMeta(dstdir string) error {
+	fn := metaPath(dstdir, m.Name)
+	fh, err := os.Create(fn)
+	if err != nil {
+		return err
+	}
+
+	defer fh.Close()
+
+	data, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+
+	_, err = fh.Write(data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// uninstall removes the plugin it represents from the filesystem.
+func (m *Meta) uninstall() error {
+	// in this function we cannot bail out on error because we need
+	// to clean up as much as possible, so collect all the errors
+	// that happen along the way.
+
+	var errs []error
+
+	if err := m.uninstallImage(); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := m.uninstallBinary(); err != nil {
+		errs = append(errs, err)
+	}
+
+	if err := m.uninstallMeta(); err != nil {
+		errs = append(errs, err)
+	}
+
+	baseDir := m.baseDir()
+	for dir := m.Path; dir != baseDir && dir != "/"; dir = filepath.Dir(dir) {
+		sylog.Debugf("Removing directory %q", dir)
+		if err := os.Remove(dir); err != nil {
+			errs = append(errs, err)
+			break
+		}
+	}
+
+	switch len(errs) {
+	case 0:
+		return nil
+
+	case 1:
+		return errs[0]
+
+	default:
+		// Transform all the errors into a single error. This
+		// might be destroying information by grabbing only the
+		// textual description of the error. The alternative is
+		// to implement an special type that implements Error()
+		// in the same way, and offers the option of examining
+		// all the errors one by one, but at the moment that's
+		// not needed.
+		var b strings.Builder
+		for i, err := range errs {
+			if i > 0 {
+				b.WriteString("; ")
+			}
+			b.WriteString(err.Error())
+		}
+		return errors.New(b.String())
+	}
+}
+
+func (m *Meta) uninstallImage() error {
+	return os.Remove(m.imageName())
+}
+
+func (m *Meta) uninstallBinary() error {
+	return os.Remove(m.binaryName())
+}
+
+func (m *Meta) uninstallMeta() error {
+	fn := metaPath(m.baseDir(), m.Name)
+	return os.Remove(fn)
+}
+
+func (m *Meta) enable() error {
+	m.Enabled = true
+	return m.installMeta(m.baseDir())
+}
+
+func (m *Meta) disable() error {
+	m.Enabled = false
+	return m.installMeta(m.baseDir())
+}
+
+// metaPath returns the path to the meta file based on the directory and
+// the name of the corresponding plugin
+func metaPath(dir, name string) string {
+	return filepath.Join(dir, pluginIDFromName(name)+".meta")
+}
+
+func (m *Meta) baseDir() string {
+	// figure out the location where the .meta file should be by
+	// removing the name of the plugin from the installation path.
+	//
+	// the other option is actually walking up m.Path looking for
+	// the .meta file, but that's expensive because it would have to
+	// perform a whole bunch of stat calls looking for the file.
+	return filepath.Clean(strings.TrimSuffix(m.Path, pathFromName(m.Name)))
 }
 
 //
 // Misc helper functions
 //
 
-// pathFromManifest returns a path which will exist inside of DirRoot and
-// is derived from Manifest.Name
-func pathFromManifest(pluginapi.Manifest) string {
-	return ""
+// pathFromName returns a partial path for the plugin relative to the
+// plugin installation directory
+func pathFromName(name string) string {
+	return filepath.FromSlash(name)
 }
 
-// metaFileFromName returns the name of the Meta file from the plugin name, which
-// is a unique string generated by hashing n
-func metaFileFromName(n string) string {
-	return ""
-}
-
-// copyFile copies a file from src -> dst
-func copyFile(src, dst string) error {
-	// copycmd := exec.Command("cp", src, dst)
-	return nil
+// pluginIDFromName returns a unique ID for the plugin given its name
+func pluginIDFromName(name string) string {
+	sum := sha256.Sum256([]byte(name))
+	return fmt.Sprintf("%x", sum)
 }
 
 //
@@ -162,10 +406,94 @@ func (m *Meta) configName() string {
 // DESCR[1]: Sifmanifest
 //   - Datatype: sif.DataGenericJSON
 func isPluginFile(fimg *sif.FileImage) bool {
-	return false
+	if len(fimg.DescrArr) < 2 {
+		return false
+	}
+
+	if !fimg.DescrArr[0].Used {
+		return false
+	}
+
+	if fimg.DescrArr[0].Datatype != sif.DataPartition {
+		return false
+	}
+
+	if fstype, err := fimg.DescrArr[0].GetFsType(); err != nil {
+		return false
+	} else if fstype != sif.FsRaw {
+		return false
+	}
+
+	if partype, err := fimg.DescrArr[0].GetPartType(); err != nil {
+		return false
+	} else if partype != sif.PartData {
+		return false
+	}
+
+	if !fimg.DescrArr[1].Used {
+		return false
+	}
+
+	if fimg.DescrArr[1].Datatype != sif.DataGenericJSON {
+		return false
+	}
+
+	return true
 }
 
 // getManifest will extract the Manifest data from the input FileImage
 func getManifest(fimg *sif.FileImage) pluginapi.Manifest {
-	return pluginapi.Manifest{}
+	var (
+		manifest pluginapi.Manifest
+		start    = fimg.DescrArr[1].Fileoff
+		end      = start + fimg.DescrArr[1].Filelen
+		data     = fimg.Filedata[start:end]
+	)
+
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		fmt.Println(err)
+	}
+
+	return manifest
+}
+
+// List returns all the singularity plugins installed in libexecdir in
+// the form of a list of Meta information
+func List(libexecdir string) ([]*Meta, error) {
+	pluginDir := filepath.Join(libexecdir, DirRoot)
+	pattern := filepath.Join(pluginDir, "*.meta")
+	entries, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot list plugins in directory %q", pluginDir)
+	}
+
+	metas := []*Meta{}
+
+	for _, entry := range entries {
+		fi, err := os.Stat(entry)
+		if err != nil {
+			sylog.Debugf("Error stating %s: %s. Skip\n", entry, err)
+			continue
+		}
+
+		if !fi.Mode().IsRegular() {
+			continue
+		}
+
+		readMeta := func(name string) *Meta {
+			meta, err := loadMetaByFilename(name)
+			if err != nil {
+				sylog.Debugf("Error loading %s: %s. Skip\n", name, err)
+				return nil
+			}
+
+			return meta
+		}
+
+		if meta := readMeta(entry); meta != nil {
+			metas = append(metas, meta)
+		}
+	}
+
+	return metas, nil
 }

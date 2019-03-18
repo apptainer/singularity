@@ -54,4 +54,46 @@ const (
 	appropriate directory on the host.`
 	PluginInstallExample string = `
 	$ singularity plugin install $PLUGIN_PATH`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin uninstall command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginUninstallUse   string = `uninstall <name>`
+	PluginUninstallShort string = `Uninstall removes the named plugin from the system`
+	PluginUninstallLong  string = `
+	The 'plugin uninstall' command removes the named plugin from the system`
+	PluginUninstallExample string = `
+	$ singularity plugin uninstall example.org/plugin`
+
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// // plugin list command
+	// // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginListUse   string = `list [list options...]`
+	PluginListShort string = `List installed singularity plugins`
+	PluginListLong  string = `
+	The 'plugin list' command lists the singularity plugins installed on the host.`
+	PluginListExample string = `
+	$ singularity plugin list`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin enable command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginEnableUse   string = `enable <name>`
+	PluginEnableShort string = `Enable an installed singularity plugin`
+	PluginEnableLong  string = `
+	The 'plugin enable' command allows a user to enable a plugin that is already
+	installed in the system and which has been previously disabled.`
+	PluginEnableExample string = `
+	$ singularity plugin enable sylabs.io/test-plugin`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin disable command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginDisableUse   string = `disable <name>`
+	PluginDisableShort string = `disable an installed singularity plugin`
+	PluginDisableLong  string = `
+	The 'plugin disable' command allows a user to disable a plugin that is already
+	installed in the system and which has been previously enabled.`
+	PluginDisableExample string = `
+	$ singularity plugin disable sylabs.io/test-plugin`
 )

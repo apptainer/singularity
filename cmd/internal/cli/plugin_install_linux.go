@@ -6,12 +6,11 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 var (
@@ -27,10 +26,11 @@ func init() {
 //
 // singularity plugin install <path> [-n name]
 var PluginInstallCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Installing plugin")
-
-		return singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
+	Run: func(cmd *cobra.Command, args []string) {
+		err := singularity.InstallPlugin(args[0], buildcfg.LIBEXECDIR)
+		if err != nil {
+			sylog.Fatalf("Failed to install plugin %q: %s.", args[0], err)
+		}
 	},
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -281,14 +281,9 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 	// the selected data object is hashed for comparison against signature block's
 	sifhash := computeHashStr(&fimg, descr)
 
-	// load the public keys available locally from the cache
-	elist, err := sypgp.LoadPubKeyring()
-	if err != nil {
-		return fmt.Errorf("could not load public keyring: %s", err)
-	}
+	var author string
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
-	var authok string
 	for _, v := range signatures {
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
@@ -303,6 +298,11 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("hashes differ, data may be corrupted")
 		}
 
+		block, _ = clearsign.Decode(data)
+		if block == nil {
+			return fmt.Errorf("failed to parse signature block")
+		}
+
 		// (1) Data integrity is verified, (2) now validate identify of signers
 
 		// get the entity fingerprint for the signature block
@@ -311,44 +311,34 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			return fmt.Errorf("could not get the signing entity fingerprint: %s", err)
 		}
 
-		// try to verify with local OpenPGP store first
+		// load the public keys available locally from the cache
+		elist, err := sypgp.LoadPubKeyring()
+		if err != nil {
+			return fmt.Errorf("could not load public keyring: %s", err)
+		}
+
+		// verify the container with our local keys first
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
-			// verification with local keyring failed, try to fetch from key server
-			sylog.Infof("key missing, searching key server for KeyID: %s...", fingerprint[24:])
+			// if theres a error, thats proboly becuse we dont have a local key
+
+			// download the key
+			sylog.Infof("Downloading key: %s...", fingerprint[24:])
 			netlist, err := sypgp.FetchPubkey(fingerprint, url, authToken, noPrompt)
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
-			sylog.Infof("key retrieved successfully!")
+			sylog.Verbosef("key retrieved successfully!")
 
 			block, _ := clearsign.Decode(data)
 			if block == nil {
 				return fmt.Errorf("failed to parse signature block")
 			}
 
-			// try verification again with downloaded key
+			// verify the container
 			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 			if err != nil {
 				return fmt.Errorf("signature verification failed: %s", err)
-			}
-
-			if noPrompt {
-				// always store key when prompts disabled
-				if err = sypgp.StorePubKey(netlist[0]); err != nil {
-					return fmt.Errorf("could not store public key: %s", err)
-				}
-			} else {
-				// Ask to store new public key
-				resp, err := sypgp.AskQuestion("Store new public key %X? [Y/n] ", signer.PrimaryKey.Fingerprint)
-				if err != nil {
-					return err
-				}
-				if resp == "" || resp == "y" || resp == "Y" {
-					if err = sypgp.StorePubKey(netlist[0]); err != nil {
-						return fmt.Errorf("could not store public key: %s", err)
-					}
-				}
 			}
 		}
 
@@ -358,10 +348,9 @@ func Verify(cpath, url string, id uint32, isGroup bool, authToken string, noProm
 			name = i.Name
 			break
 		}
-		authok += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
+		author += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
 	}
-	fmt.Printf("Data integrity checked, authentic and signed by:\n")
-	fmt.Print(authok)
+	fmt.Printf("Data integrity checked, authentic and signed by:\n%v", author)
 
 	return nil
 }
