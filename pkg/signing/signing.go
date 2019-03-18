@@ -106,7 +106,7 @@ func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken stri
 			return fmt.Errorf("could not read response: %s", err)
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
-			entity, err = sypgp.GenKeyPair()
+			entity, err = sypgp.GenKeyPair(url, authToken)
 			if err != nil {
 				return fmt.Errorf("generating openpgp key pair failed: %s", err)
 			}
