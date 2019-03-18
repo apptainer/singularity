@@ -257,10 +257,10 @@ Enterprise Performance Computing (EPC)`
   $ singularity key search sylabs.io
 
   # note the '0x' before the fingerprint:
-  $ singularity key search 0x1CEC42121A994A3FBFAAF6CC51BE5020C508C7E9
+  $ singularity key search 0x8883491F4268F173C6E5DC49EDECE4F3F38D871E
 
   # search with the sort ID: (again, theres '0x' before the ID)
-  $ singularity key search 0xC508C7E9`
+  $ singularity key search 0xF38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key pull
@@ -272,7 +272,7 @@ Enterprise Performance Computing (EPC)`
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyPullExample string = `
-  $ singularity key pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key push
@@ -283,7 +283,7 @@ Enterprise Performance Computing (EPC)`
   The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
 	KeyPushExample string = `
-  $ singularity key push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
