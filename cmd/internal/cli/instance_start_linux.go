@@ -57,7 +57,7 @@ func init() {
 // InstanceStartCmd singularity instance start
 var InstanceStartCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/start"}, args[2:]...)
