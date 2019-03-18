@@ -59,7 +59,7 @@ var PushCmd = &cobra.Command{
 				if !imageSigned {
 					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
 					fmt.Fprintf(os.Stderr, "\n")
-					sylog.Warningf("Your container is **NOT** signed! You REALLY should sign your container before pushing!")
+					fmt.Printf("Your container is **NOT** signed! You REALLY should sign your container before pushing!\n")
 					reps, err := sypgp.AskQuestion("Do you really want to continue? [N/y] ")
 					if err != nil {
 						sylog.Fatalf("Unable to parse user input: %v", err)
