@@ -87,7 +87,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
-		sylog.Infof("Image cached as SIF at %s", imgabs)
+		sylog.Verbosef("Image cached as SIF at %s", imgabs)
 	}
 
 	return imgabs, nil
@@ -151,7 +151,7 @@ func handleNet(u string) (string, error) {
 		sylog.Infof("Downloading network image")
 		libexec.PullNetImage(imagePath, u, true)
 	} else {
-		sylog.Infof("Use image from cache")
+		sylog.Verbosef("Use image from cache")
 	}
 
 	return imagePath, nil

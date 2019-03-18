@@ -7,11 +7,13 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -99,6 +101,50 @@ func run(cmd *cobra.Command, args []string) {
 
 		if err = b.Full(); err != nil {
 			sylog.Fatalf("While performing build: %v", err)
+		}
+	}
+}
+
+func checkSections() error {
+	var all, none bool
+	for _, section := range sections {
+		if section == "none" {
+			none = true
+		}
+		if section == "all" {
+			all = true
+		}
+	}
+
+	if all && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have all and any other option")
+	}
+	if none && len(sections) > 1 {
+		return fmt.Errorf("Section specification error: Cannot have none and any other option")
+	}
+
+	return nil
+}
+
+// standard builds should just warn and fall back to CLI default if we cannot resolve library URL
+func handleBuildFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := endpoint.GetServiceURI("library")
+		if err == nil {
+			libraryURL = uri
+		} else if err != nil {
+			sylog.Warningf("Unable to get library service URI: %v", err)
 		}
 	}
 }
