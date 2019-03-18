@@ -124,7 +124,7 @@ var RemoteRemoveCmd = &cobra.Command{
 var RemoteUseCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteUse(remoteConfig, args[0]); err != nil {
+		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -139,7 +139,7 @@ var RemoteUseCmd = &cobra.Command{
 var RemoteListCmd = &cobra.Command{
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteList(remoteConfig); err != nil {
+		if err := singularity.RemoteList(remoteConfig, remoteConfigSys); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -154,7 +154,7 @@ var RemoteListCmd = &cobra.Command{
 var RemoteLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteLogin(remoteConfig, args[0]); err != nil {
+		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -169,7 +169,7 @@ var RemoteLoginCmd = &cobra.Command{
 var RemoteStatusCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteStatus(remoteConfig, args[0]); err != nil {
+		if err := singularity.RemoteStatus(remoteConfig, remoteConfigSys, args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

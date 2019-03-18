@@ -17,11 +17,11 @@ import (
 const listLine = "%s\t%s\n"
 
 // RemoteList prints information about remote configurations
-func RemoteList(configFile string) (err error) {
+func RemoteList(usrConfigFile, sysConfigFile string) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDONLY|os.O_CREATE, 0600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("no remote configurations")
@@ -34,6 +34,10 @@ func RemoteList(configFile string) (err error) {
 	c, err = remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	if err := syncSysConfig(c, sysConfigFile); err != nil {
+		return err
 	}
 
 	// list in alphanumeric order

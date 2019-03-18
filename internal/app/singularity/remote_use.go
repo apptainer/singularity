@@ -12,12 +12,35 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
+func syncSysConfig(cUsr *remote.Config, sysConfigFile string) error {
+	// opening system config file
+	f, err := os.OpenFile(sysConfigFile, os.O_RDONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("while opening remote config file: %s", err)
+	}
+	defer f.Close()
+
+	// read file contents to config struct
+	cSys, err := remote.ReadFrom(f)
+	if err != nil {
+		return fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	// sync cUsr with system config cSys
+	if err := cUsr.SyncFrom(cSys); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // RemoteUse sets remote to use
-func RemoteUse(configFile, name string) (err error) {
+func RemoteUse(usrConfigFile, sysConfigFile, name string) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
@@ -27,6 +50,10 @@ func RemoteUse(configFile, name string) (err error) {
 	c, err = remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	if err := syncSysConfig(c, sysConfigFile); err != nil {
+		return err
 	}
 
 	if err := c.SetDefault(name); err != nil {
