@@ -213,28 +213,26 @@ func setVM(cmd *cobra.Command) {
 
 // returns url for library and sets auth token based on remote config
 // defaults to https://library.sylabs.io
-func handleActionRemote(cmd *cobra.Command) (remoteURL string) {
-	remoteURL = "https://library.sylabs.io"
+func handleActionRemote(cmd *cobra.Command) string {
+	defaultURI := "https://library.sylabs.io"
 
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
+	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to %v", remoteURL)
-		return
+		sylog.Warningf("No default remote in use, falling back to %v", defaultURI)
+		return defaultURI
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = e.Token
-	uri, err := e.GetServiceURI("library")
-	if err == nil {
-		remoteURL = uri
-	} else if err != nil {
+	authToken = endpoint.Token
+	endpointURI, err := endpoint.GetServiceURI("library")
+	if err != nil {
 		sylog.Warningf("Unable to get library service URI: %v", err)
+		return defaultURI
 	}
-
-	return
+	return endpointURI
 }
 
 // ExecCmd represents the exec command
