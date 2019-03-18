@@ -13,7 +13,6 @@ import (
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -29,7 +28,6 @@ var (
 	libraryURL     string
 	isJSON         bool
 	sandbox        bool
-	writable       bool
 	force          bool
 	update         bool
 	noTest         bool
@@ -41,8 +39,6 @@ var (
 	dockerLogin    bool
 	noCleanUp      bool
 )
-
-var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
@@ -131,27 +127,6 @@ func checkBuildTarget(path string, update bool) bool {
 	return true
 }
 
-func checkSections() error {
-	var all, none bool
-	for _, section := range sections {
-		if section == "none" {
-			none = true
-		}
-		if section == "all" {
-			all = true
-		}
-	}
-
-	if all && len(sections) > 1 {
-		return fmt.Errorf("Section specification error: Cannot have all and any other option")
-	}
-	if none && len(sections) > 1 {
-		return fmt.Errorf("Section specification error: Cannot have none and any other option")
-	}
-
-	return nil
-}
-
 func definitionFromSpec(spec string) (def types.Definition, err error) {
 
 	// Try spec as URI first
@@ -230,7 +205,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 func handleRemoteBuildFlags(cmd *cobra.Command) {
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
+	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to CLI defaults")
 		return
@@ -238,42 +213,19 @@ func handleRemoteBuildFlags(cmd *cobra.Command) {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = e.Token
+	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("builder").Changed {
-		uri, err := e.GetServiceURI("builder")
+		uri, err := endpoint.GetServiceURI("builder")
 		if err != nil {
 			sylog.Fatalf("Unable to get build service URI: %v", err)
 		}
 		builderURL = uri
 	}
 	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := e.GetServiceURI("library")
+		uri, err := endpoint.GetServiceURI("library")
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}
 		libraryURL = uri
-	}
-}
-
-// standard builds should just warn and fall back to CLI default if we cannot resolve library URL
-func handleBuildFlags(cmd *cobra.Command) {
-	// if we can load config and if default endpoint is set, use that
-	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
-	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
-		return
-	} else if err != nil {
-		sylog.Fatalf("Unable to load remote configuration: %v", err)
-	}
-
-	authToken = e.Token
-	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := e.GetServiceURI("library")
-		if err == nil {
-			libraryURL = uri
-		} else if err != nil {
-			sylog.Warningf("Unable to get library service URI: %v", err)
-		}
 	}
 }

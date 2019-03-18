@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
@@ -17,10 +18,15 @@ import (
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	library "github.com/sylabs/singularity/pkg/client/library"
+)
+
+const (
+	defaultPath = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 )
 
 func init() {
@@ -51,6 +57,17 @@ func init() {
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
 	SingularityCmd.AddCommand(TestCmd)
+}
+
+// actionPreRun will run replaceURIWithImage and will also do the proper path unsetting
+func actionPreRun(cmd *cobra.Command, args []string) {
+	// backup user PATH
+	userPath := strings.Join([]string{os.Getenv("PATH"), defaultPath}, ":")
+
+	os.Setenv("USER_PATH", userPath)
+	os.Setenv("PATH", defaultPath)
+
+	replaceURIWithImage(cmd, args)
 }
 
 func handleOCI(cmd *cobra.Command, u string) (string, error) {
@@ -86,14 +103,14 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
-		sylog.Infof("Image cached as SIF at %s", imgabs)
+		sylog.Verbosef("Image cached as SIF at %s", imgabs)
 	}
 
 	return imgabs, nil
 }
 
-func handleLibrary(u string) (string, error) {
-	libraryImage, err := library.GetImage("https://library.sylabs.io", authToken, u)
+func handleLibrary(u, libraryURL string) (string, error) {
+	libraryImage, err := library.GetImage(libraryURL, authToken, u)
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +122,7 @@ func handleLibrary(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = library.DownloadImage(imagePath, u, "https://library.sylabs.io", true, authToken); err != nil {
+		if err = library.DownloadImage(imagePath, u, libraryURL, true, authToken); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
@@ -150,7 +167,7 @@ func handleNet(u string) (string, error) {
 		sylog.Infof("Downloading network image")
 		libexec.PullNetImage(imagePath, u, true)
 	} else {
-		sylog.Infof("Use image from cache")
+		sylog.Verbosef("Use image from cache")
 	}
 
 	return imagePath, nil
@@ -170,7 +187,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Library:
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
-		image, err = handleLibrary(args[0])
+		image, err = handleLibrary(args[0], handleActionRemote(cmd))
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
@@ -210,12 +227,36 @@ func setVM(cmd *cobra.Command) {
 	}
 }
 
+// returns url for library and sets auth token based on remote config
+// defaults to https://library.sylabs.io
+func handleActionRemote(cmd *cobra.Command) string {
+	defaultURI := "https://library.sylabs.io"
+
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to %v", defaultURI)
+		return defaultURI
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	endpointURI, err := endpoint.GetServiceURI("library")
+	if err != nil {
+		sylog.Warningf("Unable to get library service URI: %v", err)
+		return defaultURI
+	}
+	return endpointURI
+}
+
 // ExecCmd represents the exec command
 var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(2),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		setVM(cmd)
@@ -237,7 +278,7 @@ var ShellCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
 		setVM(cmd)
@@ -259,7 +300,7 @@ var RunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		setVM(cmd)
@@ -281,7 +322,7 @@ var TestCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
 		setVM(cmd)

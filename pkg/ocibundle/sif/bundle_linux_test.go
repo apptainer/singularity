@@ -54,7 +54,7 @@ func TestFromSif(t *testing.T) {
 	}
 	// create OCI bundle from SIF
 	if err := bundle.Create(nil); err == nil {
-		// check if cleanup occured
+		// check if cleanup occurred
 		t.Errorf("unexpected success while creating OCI bundle")
 	}
 
@@ -73,7 +73,7 @@ func TestFromSif(t *testing.T) {
 	g.SetProcessArgs([]string{tools.RunScript, "id"})
 
 	if err := bundle.Create(g.Config); err != nil {
-		// check if cleanup occured
+		// check if cleanup occurred
 		t.Fatal(err)
 	}
 

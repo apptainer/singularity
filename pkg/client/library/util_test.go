@@ -288,12 +288,12 @@ func Test_imageHash(t *testing.T) {
 
 	expectedSha256 := "sha256.d7d356079af905c04e5ae10711ecf3f5b34385e9b143c5d9ddbf740665ce2fb7"
 
-	shasum, err := ImageHash("no_such_file.txt")
+	_, err := ImageHash("no_such_file.txt")
 	if err == nil {
 		t.Error("Invalid file must return an error")
 	}
 
-	shasum, err = ImageHash("test_data/test_sha256")
+	shasum, err := ImageHash("test_data/test_sha256")
 	if err != nil {
 		t.Errorf("ImageHash on valid file should not raise error: %v", err)
 	}
@@ -309,12 +309,12 @@ func Test_sha256sum(t *testing.T) {
 
 	expectedSha256 := "sha256.d7d356079af905c04e5ae10711ecf3f5b34385e9b143c5d9ddbf740665ce2fb7"
 
-	shasum, err := sha256sum("no_such_file.txt")
+	_, err := sha256sum("no_such_file.txt")
 	if err == nil {
 		t.Error("Invalid file must return an error")
 	}
 
-	shasum, err = sha256sum("test_data/test_sha256")
+	shasum, err := sha256sum("test_data/test_sha256")
 	if err != nil {
 		t.Errorf("sha256sum on valid file should not raise error: %v", err)
 	}

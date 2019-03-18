@@ -159,7 +159,7 @@ func TestCountChilds(t *testing.T) {
 	if childs == 0 {
 		t.Fatal("init have no child processes")
 	}
-	childs, err = CountChilds(0)
+	_, err = CountChilds(0)
 	if err == nil {
 		t.Fatal("no error reported with PID 0")
 	}
@@ -271,7 +271,9 @@ func TestHasNamespace(t *testing.T) {
 	}
 
 	has, err = HasNamespace(cmd.Process.Pid, "pid")
-	if !has {
+	if err != nil {
+		t.Fatal(err)
+	} else if !has {
 		t.Errorf("pid namespace should be different")
 	}
 

@@ -77,7 +77,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		}
 		// wait container process execution, any error different from EOF
 		// or any data send over master connection at this point means an
-		// error occured in StartProcess, just return by waiting error
+		// error occurred in StartProcess, just return by waiting error
 		n, err := conn.Read(data)
 		if (err != nil && err != io.EOF) || n > 0 {
 			return

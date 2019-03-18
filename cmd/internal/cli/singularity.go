@@ -12,7 +12,6 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -132,13 +131,6 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	defaultEnv := "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-
-	// backup user PATH
-	userEnv := strings.Join([]string{os.Getenv("PATH"), defaultEnv}, ":")
-	os.Setenv("USER_PATH", userEnv)
-
-	os.Setenv("PATH", defaultEnv)
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
@@ -211,8 +203,12 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 
 // sylabsRemote returns the remote in use or an error
 func sylabsRemote(filepath string) (*scs.EndPoint, error) {
-	file, err := os.OpenFile(filepath, os.O_RDONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
 	if err != nil {
+		// catch non existing remotes.yaml file or missing .singularity/
+		if os.IsNotExist(err) {
+			return nil, scs.ErrNoDefault
+		}
 		return nil, fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer file.Close()
