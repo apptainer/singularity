@@ -18,6 +18,7 @@ import (
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -108,8 +109,8 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	return imgabs, nil
 }
 
-func handleLibrary(u string) (string, error) {
-	libraryImage, err := library.GetImage("https://library.sylabs.io", authToken, u)
+func handleLibrary(u, libraryURL string) (string, error) {
+	libraryImage, err := library.GetImage(libraryURL, authToken, u)
 	if err != nil {
 		return "", err
 	}
@@ -121,7 +122,7 @@ func handleLibrary(u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = library.DownloadImage(imagePath, u, "https://library.sylabs.io", true, authToken); err != nil {
+		if err = library.DownloadImage(imagePath, u, libraryURL, true, authToken); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
@@ -186,7 +187,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Library:
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
-		image, err = handleLibrary(args[0])
+		image, err = handleLibrary(args[0], handleActionRemote(cmd))
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
@@ -224,6 +225,30 @@ func setVM(cmd *cobra.Command) {
 		sylog.Warningf("The --syos option requires a virtual machine, automatically enabling --vm option.")
 		cmd.Flags().Set("vm", "true")
 	}
+}
+
+// returns url for library and sets auth token based on remote config
+// defaults to https://library.sylabs.io
+func handleActionRemote(cmd *cobra.Command) string {
+	defaultURI := "https://library.sylabs.io"
+
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to %v", defaultURI)
+		return defaultURI
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	endpointURI, err := endpoint.GetServiceURI("library")
+	if err != nil {
+		sylog.Warningf("Unable to get library service URI: %v", err)
+		return defaultURI
+	}
+	return endpointURI
 }
 
 // ExecCmd represents the exec command

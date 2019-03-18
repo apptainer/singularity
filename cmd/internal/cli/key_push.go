@@ -80,7 +80,7 @@ func doKeyPushCmd(fingerprint string, url string) error {
 func handleKeyFlags(cmd *cobra.Command) {
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
+	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
 		return
@@ -88,9 +88,9 @@ func handleKeyFlags(cmd *cobra.Command) {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = e.Token
+	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("url").Changed {
-		uri, err := e.GetServiceURI("keystore")
+		uri, err := endpoint.GetServiceURI("keystore")
 		if err != nil {
 			sylog.Fatalf("Unable to get key service URI: %v", err)
 		}
