@@ -6,6 +6,8 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -16,13 +18,15 @@ func init() {
 	KeyNewPairCmd.Flags().SetInterspersed(false)
 }
 
-// KeyNewPairCmd is `singularity key newpair' and generate a new OpenPGP key pair
+// KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
 var KeyNewPairCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
+	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if _, err := sypgp.GenKeyPair(); err != nil {
-			sylog.Fatalf("creating newpair failed: %v", err)
+		if err := doKeyNewpairCmd(keyServerURL, authToken); err != nil {
+			sylog.Errorf("creating newpair failed: %v", err)
+			os.Exit(2)
 		}
 	},
 
@@ -30,4 +34,10 @@ var KeyNewPairCmd = &cobra.Command{
 	Short:   docs.KeyNewPairShort,
 	Long:    docs.KeyNewPairLong,
 	Example: docs.KeyNewPairExample,
+}
+
+// doKeyNewpairCmd is the 'singularity key newpair' command
+func doKeyNewpairCmd(keyServerURI, authToken string) error {
+	_, err := sypgp.GenKeyPair(keyServerURL, authToken)
+	return err
 }
