@@ -15,7 +15,9 @@ import (
 func syncSysConfig(cUsr *remote.Config, sysConfigFile string) error {
 	// opening system config file
 	f, err := os.OpenFile(sysConfigFile, os.O_RDONLY, 0600)
-	if err != nil {
+	if err != nil && os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
 	defer f.Close()
