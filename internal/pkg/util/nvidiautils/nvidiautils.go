@@ -29,7 +29,7 @@ func nvidiaContainerCli() ([]string, error) {
 		return nil, fmt.Errorf("no nvidia-container-cli present: %v", err)
 	}
 
-	cmd := exec.Command(command, "list", "--binaries", "--ipcs", "--libraries")
+	cmd := exec.Command(command, "list", "--binaries", "--libraries")
 	out, err := cmd.Output()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to execute nvidia-container-cli: %v", err)
