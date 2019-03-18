@@ -28,10 +28,10 @@ type System struct {
 
 func (b *System) init() {
 	if b.beforeTagHooks == nil {
-		b.beforeTagHooks = make(map[AuthorizedTag][]hookFn, 0)
+		b.beforeTagHooks = make(map[AuthorizedTag][]hookFn)
 	}
 	if b.afterTagHooks == nil {
-		b.afterTagHooks = make(map[AuthorizedTag][]hookFn, 0)
+		b.afterTagHooks = make(map[AuthorizedTag][]hookFn)
 	}
 }
 

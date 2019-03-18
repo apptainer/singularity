@@ -461,7 +461,7 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
-	if k.PrivateKey.Encrypted == true {
+	if k.PrivateKey.Encrypted {
 		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
 			return err
@@ -476,7 +476,7 @@ func DecryptKey(k *openpgp.Entity) error {
 
 // EncryptKey encrypts a private key using a pass phrase
 func EncryptKey(k *openpgp.Entity, pass string) (err error) {
-	if k.PrivateKey.Encrypted == true {
+	if k.PrivateKey.Encrypted {
 		return fmt.Errorf("key already encrypted")
 	}
 	err = k.PrivateKey.Encrypt([]byte(pass))
