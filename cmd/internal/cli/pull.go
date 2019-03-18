@@ -200,10 +200,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 					// not ideal to delete the container on the spot...
 					err := os.Remove(name)
 					if err != nil {
-						sylog.Fatalf("Unable to delete container: %v", err)
-						os.Exit(255)
+						sylog.Fatalf("Unabel to delete the container: %v", err)
 					}
-					os.Exit(3)
 				}
 			}
 		} else {
