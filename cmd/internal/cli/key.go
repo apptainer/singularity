@@ -7,6 +7,7 @@ package cli
 
 import (
 	"errors"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 )
@@ -29,6 +30,7 @@ func init() {
 	KeyCmd.AddCommand(KeySearchCmd)
 	KeyCmd.AddCommand(KeyPullCmd)
 	KeyCmd.AddCommand(KeyPushCmd)
+	KeyCmd.AddCommand(KeyImportCmd)
 
 	// keys commands
 	KeysCmd.AddCommand(KeyNewPairCmd)
@@ -36,6 +38,7 @@ func init() {
 	KeysCmd.AddCommand(KeySearchCmd)
 	KeysCmd.AddCommand(KeyPullCmd)
 	KeysCmd.AddCommand(KeyPushCmd)
+	KeysCmd.AddCommand(KeyImportCmd)
 }
 
 // KeysCmd is the 'keys' command that allows management of key stores

@@ -120,4 +120,12 @@ required = [
 
 [[constraint]]
   name = "github.com/sylabs/json-resp"
-  version = "0.1.0"
+  version = "0.5.0"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.2"
+  
+[[constraint]]
+  name = "github.com/sylabs/scs-key-client"
+  version = "0.2.0"

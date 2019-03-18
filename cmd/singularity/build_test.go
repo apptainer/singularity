@@ -250,11 +250,11 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Files: []FilePair{
-				FilePair{
+				{
 					Src: tmpfile.Name(),
 					Dst: "NewName2.txt",
 				},
-				FilePair{
+				{
 					Src: tmpfile.Name(),
 					Dst: "NewName.txt",
 				},
@@ -330,7 +330,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Help: []string{
 						"foo help info line 1",
@@ -338,7 +338,7 @@ func TestBuildDefinition(t *testing.T) {
 						"foo help info line 3",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Help: []string{
 						"bar help info line 1",
@@ -352,7 +352,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Env: []string{
 						"testvar1=fooOne",
@@ -360,7 +360,7 @@ func TestBuildDefinition(t *testing.T) {
 						"testvar3=fooThree",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Env: []string{
 						"testvar1=barOne",
@@ -374,7 +374,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Labels: map[string]string{
 						"customLabel1": "fooOne",
@@ -382,7 +382,7 @@ func TestBuildDefinition(t *testing.T) {
 						"customLabel3": "fooThree",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Labels: map[string]string{
 						"customLabel1": "barOne",
@@ -396,27 +396,27 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Files: []FilePair{
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "FooFile2.txt",
 						},
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "FooFile.txt",
 						},
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Files: []FilePair{
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "BarFile2.txt",
 						},
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "BarFile.txt",
 						},
@@ -428,13 +428,13 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Install: []string{
 						"FooInstallFile1",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Install: []string{
 						"BarInstallFile1",
@@ -446,7 +446,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Run: []string{
 						"echo foo runscript line 1",
@@ -454,7 +454,7 @@ func TestBuildDefinition(t *testing.T) {
 						"echo foo runscript line 3",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Run: []string{
 						"echo bar runscript line 1",
@@ -468,7 +468,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Test: []string{
 						"echo foo testscript line 1",
@@ -476,7 +476,7 @@ func TestBuildDefinition(t *testing.T) {
 						"echo foo testscript line 3",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Test: []string{
 						"echo bar testscript line 1",
