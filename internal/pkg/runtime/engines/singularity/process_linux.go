@@ -193,6 +193,9 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
+		if _, errNoShell := os.Stat("/bin/sh"); os.IsNotExist(errNoShell) {
+			return fmt.Errorf("/bin/sh doesn't exist in container: %s", err)
+		}
 		return fmt.Errorf("exec %s failed: %s", args[0], err)
 	}
 
