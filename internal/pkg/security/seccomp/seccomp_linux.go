@@ -77,8 +77,6 @@ func Enabled() bool {
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process
 func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
-	supportCondition := true
-
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
 		return fmt.Errorf("can't load seccomp filter: not supported by kernel")
 	}
@@ -95,7 +93,7 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 		return fmt.Errorf("a defaultAction must be provided")
 	}
 
-	supportCondition = hasConditionSupport()
+	supportCondition := hasConditionSupport()
 	if supportCondition == false {
 		sylog.Warningf("seccomp rule conditions are not supported with libseccomp under 2.2.1")
 	}
