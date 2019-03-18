@@ -432,7 +432,7 @@ func RemovePubKey(toDelete string) error {
 }
 
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
-func GenKeyPair() (entity *openpgp.Entity, err error) {
+func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
 	if err = PathsCheck(); err != nil {
@@ -477,12 +477,12 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		}
 	}
 
-	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
+	fmt.Printf("Generating Entity and OpenPGP Key Pair...")
 	entity, err = openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
 		return
 	}
-	fmt.Printf("Done\n")
+	fmt.Printf("done\n")
 
 	// encrypt private key
 	if err = EncryptKey(entity, pass); err != nil {
@@ -498,14 +498,19 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 	}
 
 	// Ask to push the new key to the keystore
-	pushKeyQ, err := AskQuestionNoEcho("Would you like to push it to the keystore? [Y,n] : ")
+	pushKeyQ, err := AskQuestion("Would you like to push it to the keystore? [Y,n] : ")
 	if err != nil {
 		return
 	}
 
 	if pushKeyQ == "" || pushKeyQ == "y" || pushKeyQ == "Y" {
-		fmt.Printf("DEBUG::: PUSHING KEY...\n")
+		err = PushPubkey(entity, keyServiceURI, authToken)
+		if err != nil {
+			return
+		}
+		fmt.Printf("Key successfully pushed to: %v\n", keyServiceURI)
 	}
+	fmt.Printf("Done.\n")
 
 	return
 }
