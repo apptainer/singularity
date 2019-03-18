@@ -7,6 +7,7 @@ package remote
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -82,6 +83,183 @@ func TestWriteToReadFrom(t *testing.T) {
 
 	})
 
+}
+
+type syncTest struct {
+	name string
+	sys  Config // sys Input
+	usr  Config // usr Input
+	res  Config // res Output
+}
+
+func TestSyncFrom(t *testing.T) {
+	testsPass := []syncTest{
+		{
+			name: "empty sys config",
+			usr: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			res: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+		}, {
+			name: "sys config new endpoint",
+			sys: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token", // should be ignored by SyncFrom
+					},
+				},
+			},
+			usr: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			res: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.sylabs.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+		}, {
+			name: "sys config existing endpoint",
+			sys: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token", // should be ignored by SyncFrom
+					},
+				},
+			},
+			usr: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.sylabs.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			res: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.sylabs.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+		}, {
+			name: "sys config update existing endpoint",
+			sys: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token", // should be ignored by SyncFrom
+					},
+				},
+			},
+			usr: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.old-url.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			res: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.sylabs.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range testsPass {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.usr.SyncFrom(&test.sys); err != nil {
+				t.Error("failed to sync from sys")
+			}
+
+			fmt.Println(test.usr)
+			fmt.Println(test.res)
+
+			if !reflect.DeepEqual(test.usr, test.res) {
+				t.Errorf("incorrect result Config")
+			}
+		})
+	}
+
+	testsFail := []syncTest{
+		{
+			name: "sys endpoint collision",
+			sys: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			usr: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+					"sylabs-global": {
+						URI: "cloud.sylabs.io",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range testsFail {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.usr.SyncFrom(&test.sys); err == nil {
+				t.Error("unexpected success calling SyncFrom")
+			}
+		})
+	}
 }
 
 type remoteTest struct {
