@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
@@ -21,6 +22,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	library "github.com/sylabs/singularity/pkg/client/library"
+)
+
+const (
+	defaultPath = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 )
 
 func init() {
@@ -51,6 +56,17 @@ func init() {
 	SingularityCmd.AddCommand(ShellCmd)
 	SingularityCmd.AddCommand(RunCmd)
 	SingularityCmd.AddCommand(TestCmd)
+}
+
+// actionPreRun will run replaceURIWithImage and will also do the proper path unsetting
+func actionPreRun(cmd *cobra.Command, args []string) {
+	// backup user PATH
+	userPath := strings.Join([]string{os.Getenv("PATH"), defaultPath}, ":")
+
+	os.Setenv("USER_PATH", userPath)
+	os.Setenv("PATH", defaultPath)
+
+	replaceURIWithImage(cmd, args)
 }
 
 func handleOCI(cmd *cobra.Command, u string) (string, error) {
@@ -86,7 +102,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
-		sylog.Infof("Image cached as SIF at %s", imgabs)
+		sylog.Verbosef("Image cached as SIF at %s", imgabs)
 	}
 
 	return imgabs, nil
@@ -150,7 +166,7 @@ func handleNet(u string) (string, error) {
 		sylog.Infof("Downloading network image")
 		libexec.PullNetImage(imagePath, u, true)
 	} else {
-		sylog.Infof("Use image from cache")
+		sylog.Verbosef("Use image from cache")
 	}
 
 	return imagePath, nil
@@ -215,7 +231,7 @@ var ExecCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(2),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/exec"}, args[1:]...)
 		setVM(cmd)
@@ -237,7 +253,7 @@ var ShellCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := []string{"/.singularity.d/actions/shell"}
 		setVM(cmd)
@@ -259,7 +275,7 @@ var RunCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/run"}, args[1:]...)
 		setVM(cmd)
@@ -281,7 +297,7 @@ var TestCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	TraverseChildren:      true,
 	Args:                  cobra.MinimumNArgs(1),
-	PreRun:                replaceURIWithImage,
+	PreRun:                actionPreRun,
 	Run: func(cmd *cobra.Command, args []string) {
 		a := append([]string{"/.singularity.d/actions/test"}, args[1:]...)
 		setVM(cmd)

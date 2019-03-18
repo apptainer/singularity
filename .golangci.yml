@@ -1,0 +1,35 @@
+run:
+  deadline: 3m
+
+linters:
+  disable-all: true
+  enable-all: false
+  enable:
+    - deadcode
+    - gofmt
+    - goimports
+    - golint
+    - govet
+    - ineffassign
+    - maligned
+    - misspell
+    # we would like to add these
+    # - dupl
+    # - nakedret
+    # - staticcheck
+
+linters-settings:
+  gofmt:
+    simplify: true
+  govet:
+    # we would like to enalbe this eventually
+    check-shadowing: false
+  maligned:
+    suggest-new: true
+  misspell:
+    locale: US
+
+issues:
+  max-per-linter: 0
+  max-same-issues: 0
+

@@ -94,7 +94,9 @@ func getPath(privileged bool, username string) (string, error) {
 	}
 
 	containerID, hostID, err := proc.ReadIDMap("/proc/self/uid_map")
-	if containerID == 0 && containerID != hostID {
+	if err != nil {
+		return path, err
+	} else if containerID == 0 && containerID != hostID {
 		if pw, err = user.GetPwUID(hostID); err != nil {
 			return path, err
 		}

@@ -38,6 +38,7 @@ func TestPull(t *testing.T) {
 
 	imagePath := "./test_pull.sif"
 
+	// nolint:maligned
 	tests := []struct {
 		name            string
 		sourceSpec      string
