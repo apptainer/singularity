@@ -70,7 +70,8 @@ func listLibraryCache(listFiles bool) (int, int64, error) {
 	return count, totalSize, nil
 }
 
-func listOciCache() (int, int64, error) {
+// listOciCache will list all you oci-tmp cache.
+func listOciCache(listFiles bool) (int, int64, error) {
 	var totalSize int64
 	count := 0
 
@@ -93,7 +94,9 @@ func listOciCache() (int, int64, error) {
 				// no need to describe the error, since it is already
 				sylog.Warningf("%v", err)
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "oci")
+			if !listFiles {
+				fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "oci")
+			}
 			count++
 			totalSize += fileInfo.Size()
 		}
@@ -102,7 +105,6 @@ func listOciCache() (int, int64, error) {
 }
 
 func listBlobCache(printList bool) (int, int64, error) {
-	//func listBlobCache() (int, int64, error) {
 	// loop through ociBlob cache
 	count := 0
 	var totalSize int64
@@ -137,14 +139,6 @@ func listBlobCache(printList bool) (int, int64, error) {
 			totalSize += fileInfo.Size()
 		}
 	}
-	//if printList != true && count >= 1 {
-	//	printFileSize, err := findSize(totalSize)
-	//	if err != nil {
-	//		// no need to describe the error, since it is already
-	//		sylog.Warningf("%v", err)
-	//	}
-	//	fmt.Printf("\nThere are %d oci blob file(s) using %v of space. Use: '-T=blob' to list\n", count, printFileSize)
-	//}
 	return count, totalSize, nil
 }
 
@@ -164,8 +158,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummery boo
 			ociList = true
 		case "blob", "blobs":
 			blobList = true
-		//case "blobSum":
-		//	listBlobSum = true
 		case "all":
 			listAll = true
 		default:
@@ -174,27 +166,17 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummery boo
 		}
 	}
 
-	//var libraryCount int
-	//libraryCount := 0
-	//var librarySize string
-	//librarySize := ""
-
 	var containerCount int
 	var containerSpace int64
 	var blobCount int
 	var blobSpace int64
 	var totalSpace int64
 
-	//	var err error
-
-	//	listSum := true
-
 	if !cacheListSummery {
 		fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 	}
 
 	if libraryList || listAll {
-		//var err error
 		libraryCount, librarySize, err := listLibraryCache(cacheListSummery)
 		if err != nil {
 			return err
@@ -203,7 +185,7 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummery boo
 		containerSpace += librarySize
 	}
 	if ociList || listAll {
-		ociCount, ociSize, err := listOciCache()
+		ociCount, ociSize, err := listOciCache(cacheListSummery)
 		if err != nil {
 			return err
 		}
@@ -217,8 +199,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummery boo
 		}
 		blobCount = blobsCount
 		blobSpace = blobsSize
-		// dont list blob summary after listing all blobs
-		//listBlobSum = false
 	} else {
 		blobsCount, blobsSize, err := listBlobCache(false)
 		if err != nil {
@@ -226,11 +206,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummery boo
 		}
 		blobCount = blobsCount
 		blobSpace = blobsSize
-		//if blobListAll {
-		//err := listBlobCache(false)
-		//if err != nil {
-		//	return err
-		//}
 	}
 
 	//if listSum {
