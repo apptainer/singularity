@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -39,8 +40,10 @@ var PluginCompileCmd = &cobra.Command{
 			destSif = sifPath(sourceDir)
 		}
 
+		buildTags := buildcfg.GO_BUILD_TAGS
+
 		sylog.Debugf("sourceDir: %s; sifPath: %s", sourceDir, destSif)
-		if err := singularity.CompilePlugin(sourceDir, destSif); err != nil {
+		if err := singularity.CompilePlugin(sourceDir, destSif, buildTags); err != nil {
 			sylog.Fatalf("Plugin compile failed with error: %s", err)
 		}
 	},

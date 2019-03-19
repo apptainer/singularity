@@ -25,7 +25,7 @@ import (
 const (
 	// DirRoot is the root directory for the plugin installation, typically
 	// located within LIBEXECDIR.
-	DirRoot = "plugin"
+	DirRoot = "singularity/plugin"
 	// NameImage is the name of the SIF image of the plugin
 	NameImage = "plugin.sif"
 	// NameBinary is the name of the plugin object
