@@ -19,8 +19,6 @@ import (
 
 const (
 	lowerDir = "/overlay-lowerdir"
-	upperDir = "/overlay-upperdir"
-	workDir  = "/overlay-workdir"
 )
 
 // Overlay layer manager

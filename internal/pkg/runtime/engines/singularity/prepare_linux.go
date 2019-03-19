@@ -64,6 +64,10 @@ func (e *EngineOperations) prepareUserCaps() error {
 	}
 
 	groups, err := os.Getgroups()
+	if err != nil {
+		return err
+	}
+
 	for _, g := range groups {
 		gr, err := user.GetGrGID(uint32(g))
 		if err != nil {
@@ -141,7 +145,12 @@ func (e *EngineOperations) prepareRootCaps() error {
 		}
 
 		commonCaps = append(commonCaps, capConfig.ListUserCaps("root")...)
+
 		groups, err := os.Getgroups()
+		if err != nil {
+			return fmt.Errorf("while getting groups: %s", err)
+		}
+
 		for _, g := range groups {
 			gr, err := user.GetGrGID(uint32(g))
 			if err != nil {
@@ -587,6 +596,10 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 	}
 
 	link, err := mainthread.Readlink(imgObject.Source)
+	if err != nil {
+		return nil, err
+	}
+
 	if link != imgObject.Path {
 		return nil, fmt.Errorf("resolved path %s doesn't match with opened path %s", imgObject.Path, link)
 	}

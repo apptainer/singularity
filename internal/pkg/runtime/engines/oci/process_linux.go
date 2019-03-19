@@ -211,6 +211,9 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	}
 
 	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	if err != nil {
+		return err
+	}
 	engine.EngineConfig.State.AttachSocket = filepath.Join(filepath.Dir(file.Path), "attach.sock")
 
 	attach, err := unix.CreateSocket(engine.EngineConfig.State.AttachSocket)

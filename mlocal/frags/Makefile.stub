@@ -18,18 +18,9 @@ collect:
 
 .PHONY: check
 check: $(go_OBJ)
-	@echo " CHECK go fmt"
+	@echo " CHECK golangci-lint"
 	$(V)cd $(SOURCEDIR) && \
-		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
-		   ( echo "The above files have formatting errors."; \
-		     echo "Use 'go fmt github.com/sylabs/singularity/...' to correct the errors."; \
-		     false ) >&2 )
-	@echo "       PASS"
-	@echo " CHECK go vet"
-	$(V)cd $(SOURCEDIR) && go vet -tags "$(GO_TAGS)" -all ./...
-	@echo "       PASS"
-	@echo " CHECK go lint"
-	$(V)cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
+		golangci-lint run --build-tags "$(GO_TAGS)" ./...
 	@echo "       PASS"
 
 .PHONY: dist

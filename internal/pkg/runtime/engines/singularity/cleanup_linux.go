@@ -60,7 +60,7 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 			var err error
 
 			mainthread.Execute(func() {
-				if err := syscall.Setresuid(0, 0, uid); err != nil {
+				if err = syscall.Setresuid(0, 0, uid); err != nil {
 					err = fmt.Errorf("failed to escalate privileges")
 					return
 				}
