@@ -331,6 +331,9 @@ var flagEnvFuncs = map[string]envHandle{
 	"docker-password": envStringNSlice,
 	"docker-login":    envBool,
 
+	// push/pull flags
+	"allow-unauthenticated": envBool,
+
 	// capability flags (and others)
 	"user":  envStringNSlice,
 	"group": envStringNSlice,
