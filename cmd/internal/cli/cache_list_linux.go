@@ -24,16 +24,14 @@ func init() {
 	CacheListCmd.Flags().SetInterspersed(false)
 
 	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci"}, "list cache type, choose between: library, oci, and blob")
-	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
+	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"CACHE_LIST_TYPE"})
 
 	CacheListCmd.Flags().BoolVarP(&cacheListSummery, "summery", "s", false, "list cache summery")
-	//CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
 
 	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
-	CacheListCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 }
 
-// CacheListCmd : is `singularity cache list' and will list your local singularity cache
+// CacheListCmd is 'singularity cache list' and will list your local singularity cache
 var CacheListCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
