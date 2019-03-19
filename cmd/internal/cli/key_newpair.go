@@ -24,7 +24,7 @@ var KeyNewPairCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeyNewpairCmd(keyServerURL, authToken); err != nil {
+		if _, err := sypgp.GenKeyPair(keyServerURL, authToken); err != nil {
 			sylog.Errorf("creating newpair failed: %v", err)
 			os.Exit(2)
 		}
@@ -34,10 +34,4 @@ var KeyNewPairCmd = &cobra.Command{
 	Short:   docs.KeyNewPairShort,
 	Long:    docs.KeyNewPairLong,
 	Example: docs.KeyNewPairExample,
-}
-
-// doKeyNewpairCmd is the 'singularity key newpair' command
-func doKeyNewpairCmd(keyServerURI, authToken string) error {
-	_, err := sypgp.GenKeyPair(keyServerURL, authToken)
-	return err
 }
