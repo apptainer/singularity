@@ -4,7 +4,7 @@
 singularity_build_config := $(SOURCEDIR)/internal/pkg/buildcfg/config.go
 $(singularity_build_config): $(BUILDDIR)/config.h
 	$(V)rm -f $(singularity_build_config)
-	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) && cd $(SOURCEDIR)/internal/pkg/buildcfg && go generate
+	$(V)export BUILDDIR=$(BUILDDIR_ABSPATH) GO_BUILD_TAGS="$(GO_TAGS)" && cd $(SOURCEDIR)/internal/pkg/buildcfg && go generate
 
 CLEANFILES += $(singularity_build_config)
 

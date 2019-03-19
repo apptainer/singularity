@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"path/filepath"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -48,7 +47,7 @@ const (
 // systems internal API. This will guarantee that any internal API calls happen AFTER all plugins
 // have been properly loaded and initialized
 func initializePlugins() {
-	if err := plugin.InitializeAll(filepath.Join(buildcfg.LIBEXECDIR, "singularity/plugin/*")); err != nil {
+	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
 		sylog.Fatalf("Unable to initialize plugins: %s\n", err)
 	}
 }
