@@ -25,6 +25,13 @@ import (
 func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
 	sylog.Debugf("Cleanup container")
 
+	if engine.EngineConfig.GetDeleteImage() {
+		image := engine.EngineConfig.GetImage()
+		if err := os.RemoveAll(image); err != nil {
+			sylog.Errorf("failed to delete container image %s: %s", image, err)
+		}
+	}
+
 	if engine.EngineConfig.Network != nil {
 		if err := engine.EngineConfig.Network.DelNetworks(); err != nil {
 			sylog.Errorf("%s", err)

@@ -804,7 +804,7 @@ func (c *container) addMaskedPathsMount(system *mount.System) error {
 
 	for _, path := range paths {
 		relativePath := filepath.Join(c.rootfs, path)
-		rpcPath := filepath.Join(c.rpcRoot, path)
+		rpcPath := filepath.Join(c.rpcRoot, relativePath)
 		fi, err := os.Stat(rpcPath)
 		if err != nil {
 			sylog.Debugf("ignoring masked path %s: %s", path, err)
@@ -826,6 +826,12 @@ func (c *container) addReadonlyPathsMount(system *mount.System) error {
 
 	for _, path := range paths {
 		relativePath := filepath.Join(c.rootfs, path)
+		rpcPath := filepath.Join(c.rpcRoot, relativePath)
+		_, err := os.Stat(rpcPath)
+		if err != nil {
+			sylog.Debugf("ignoring read-only path %s: %s", path, err)
+			continue
+		}
 		if err := system.Points.AddBind(mount.OtherTag, relativePath, relativePath, syscall.MS_BIND|syscall.MS_RDONLY); err != nil {
 			return err
 		}
@@ -922,7 +928,8 @@ func (c *container) mount(point *mount.Point) error {
 
 		sylog.Debugf("Checking if %s exists", procDest)
 		if _, err := os.Stat(procDest); os.IsNotExist(err) {
-			return fmt.Errorf("destination %s doesn't exist", dest)
+			sylog.Warningf("destination %s doesn't exist", dest)
+			return nil
 		}
 	}
 

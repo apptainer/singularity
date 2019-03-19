@@ -48,7 +48,7 @@ func CreateOverlay(bundlePath string) error {
 	}
 
 	upperDir := filepath.Join(overlayDir, "upper")
-	if err = os.Mkdir(upperDir, 0700); err != nil {
+	if err = os.Mkdir(upperDir, 0755); err != nil {
 		return fmt.Errorf("failed to create %s: %s", upperDir, err)
 	}
 	workDir := filepath.Join(overlayDir, "work")

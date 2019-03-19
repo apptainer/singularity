@@ -1,10 +1,6 @@
 # This file contains all of the rules for building the singularity runtime
 #   and installing the necessary config files.
 
-CGO_CPPFLAGS += -include $(BUILDDIR_ABSPATH)/config.h
-
-export CGO_CPPFLAGS
-
 starter_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep $(SOURCEDIR)/cmd/starter/main.go)
 starter_CSOURCE := $(SOURCEDIR)/cmd/starter/c/starter.c \
                   $(SOURCEDIR)/cmd/starter/c/capability.c \

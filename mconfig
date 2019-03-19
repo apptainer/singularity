@@ -32,6 +32,16 @@ tgtobjcopy=
 hststatic=0
 tgtstatic=0
 
+cflags_opts="-Wall -Werror -Wfatal-errors -Wno-unknown-warning-option \
+-Wstrict-prototypes -Wpointer-arith -Wbad-function-cast \
+-Woverlength-strings -Wframe-larger-than=2047 \
+-Wno-sign-compare -Wclobbered -Wempty-body -Wmissing-parameter-type \
+-Wtype-limits -Wunused-parameter -Wunused-but-set-parameter \
+-Wno-discarded-qualifiers -Wno-incompatible-pointer-types \
+-pipe -fmessage-length=0 -fPIC"
+cflags="$CFLAGS -D_FORTIFY_SOURCE=2 -Wformat -Wformat-security -fstack-protector --param ssp-buffer-size=4"
+ldflags=$LDFLAGS
+
 package_name=singularity
 package_version=`(git describe --match 'v[0-9]*' --dirty --always 2>/dev/null || cat VERSION 2>/dev/null || echo "") | sed -e "s/^v//;s/-/_/g;s/_/-/;s/_/./g"`
 
@@ -625,6 +635,14 @@ SIZE := size
 OBJCOPY := $tgtobjcopy
 
 ARCH := $tgt_arch
+
+CFLAGS := $cflags
+
+CGO_CFLAGS := -include $builddir/config.h $CGO_CFLAGS
+CGO_LDFLAGS := $CGO_LDFLAGS
+CGO_CPPFLAGS := $CGO_CPPFLAGS
+CGO_CXXFLAGS := $CGO_CXXFLAGS
+export CGO_CFLAGS CGO_LDFLAGS CGO_CPPFLAGS CGO_CXXFLAGS
 EOF
 
 
@@ -664,9 +682,9 @@ fi
 
 # init LDFLAGS if static builds are supported
 if [ "$hststatic" = "1" -a "$tgtstatic" = "1" ]; then
-	echo "LDFLAGS := -static" >> $makeit_makefile_base
+	echo "LDFLAGS := -static $ldflags" >> $makeit_makefile_base
 else
-	echo "LDFLAGS :=" >> $makeit_makefile_base
+	echo "LDFLAGS := $ldflags" >> $makeit_makefile_base
 fi
 echo >> $makeit_makefile_base
 
