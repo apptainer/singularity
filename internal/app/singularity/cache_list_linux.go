@@ -208,7 +208,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummery boo
 		blobSpace = blobsSize
 	}
 
-	//if listSum {
 	if !listAll || cacheListSummery {
 		totalSpace = containerSpace + blobSpace
 		realTotalSpace, err := findSize(totalSpace)
