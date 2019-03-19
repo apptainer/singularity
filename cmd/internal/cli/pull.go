@@ -44,6 +44,8 @@ var (
 	PullLibraryURI string
 	// PullImageName holds the name to be given to the pulled image
 	PullImageName string
+	// KeyServerURL server URL
+	KeyServerURL string
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
 )
@@ -180,8 +182,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// check if we pulled from the library, if so; is it signed?
-		if len(PullLibraryURI) >= 1 && !unauthenticatedPull {
-			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, force)
+		if PullLibraryURI != "" && !unauthenticatedPull {
+			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, force)
 			if err != nil {
 				// err will be: "unable to verify container: %v", err
 				sylog.Warningf("%v", err)
@@ -234,6 +236,8 @@ func handlePullFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		KeyServerURL = "https://keys.sylabs.io"
+		sylog.Debugf("using default key server url: %v", KeyServerURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
