@@ -17,7 +17,7 @@ const (
 )
 
 var (
-	keyServerURL string // -u command line option
+	keyServerURI string // -u command line option
 )
 
 func init() {
