@@ -130,7 +130,7 @@ func checkSections() error {
 func handleBuildFlags(cmd *cobra.Command) {
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
+	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to %v", libraryURL)
 		return
@@ -138,9 +138,9 @@ func handleBuildFlags(cmd *cobra.Command) {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = e.Token
+	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := e.GetServiceURI("library")
+		uri, err := endpoint.GetServiceURI("library")
 		if err == nil {
 			libraryURL = uri
 		} else if err != nil {
