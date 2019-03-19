@@ -17,16 +17,16 @@ import (
 var (
 	cacheListTypes   []string
 	allList          bool
-	cacheListSummery bool
+	cacheListSummary bool
 )
 
 func init() {
 	CacheListCmd.Flags().SetInterspersed(false)
 
-	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci"}, "list cache type, choose between: library, oci, and blob")
+	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci"}, "list of cache types, choose between: library, oci, and blob. Multiple values can be specified separating them with a comma.")
 	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"CACHE_LIST_TYPE"})
 
-	CacheListCmd.Flags().BoolVarP(&cacheListSummery, "summery", "s", false, "list cache summery")
+	CacheListCmd.Flags().BoolVarP(&cacheListSummary, "summery", "s", false, "display a cache summary")
 
 	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
 }
@@ -49,9 +49,9 @@ var CacheListCmd = &cobra.Command{
 
 func cacheListCmd() error {
 
-	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummery)
+	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummary)
 	if err != nil {
-		sylog.Fatalf("Not listing cache; an error occured: %v", err)
+		sylog.Fatalf("Not listing cache; an error occurred: %v", err)
 		return err
 	}
 	return err
