@@ -6,9 +6,10 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
-	"path/filepath"
 	"plugin"
+	"strings"
 
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
@@ -26,23 +27,61 @@ func assertInitialized() {
 var loadedPlugins []*pluginapi.Plugin
 
 // InitializeAll loads all plugins into memory and stores their symbols
-func InitializeAll(glob string) error {
+func InitializeAll(libexecdir string) error {
 	if initialized {
 		return nil
 	}
 
-	paths, err := filepath.Glob(glob)
+	metas, err := List(libexecdir)
 	if err != nil {
-		return fmt.Errorf("while globbing %s: %s", glob, err)
+		return err
 	}
 
-	for _, path := range paths {
-		if _, err := Initialize(path); err != nil {
-			return fmt.Errorf("while initializing %s as plugin: %s", path, err)
+	errs := []error{}
+
+	for _, meta := range metas {
+		if !meta.Enabled {
+			continue
+		}
+
+		if _, err := Initialize(meta.binaryName()); err != nil {
+			// This might be destroying information by
+			// grabbing only the textual description of the
+			// error
+			wrappedErr := fmt.Errorf("while initializin plugin %q: %s", meta.Name, err)
+			errs = append(errs, wrappedErr)
 		}
 	}
 
-	initialized = true // set initialized to true
+	if len(errs) > 0 {
+		// Collect all the errors into a single one that can be
+		// returned.
+		//
+		// Beware that we are destroying information that might
+		// be part of the type underlying the error interface we
+		// are getting here. UI-wise this might not be ideal,
+		// because the user might end up seeing a bunch of
+		// errors "slightly" separated by "; ".
+		//
+		// The alternative is to implement a type that collects
+		// the individual errors and implements the error
+		// interface by doing something similar to this. If
+		// there's some code that needs to handle errors in a
+		// more discrete way, it could type-assert an interface
+		// to check if it's possible to obtain the individual
+		// errors.
+		var b strings.Builder
+		for i, err := range errs {
+			if i > 0 {
+				b.WriteString("; ")
+			}
+			b.WriteString(err.Error())
+		}
+		return errors.New(b.String())
+	}
+
+	// no errors, we are initialized :-)
+	initialized = true
 	return nil
 }
 
