@@ -23,9 +23,6 @@
 
 %define singgopath src/github.com/sylabs/singularity
 
-# set sver for suse_version ... or 0 if not set
-%{!?sver:%{expand:%%global sles_version 0}}
-
 # Disable debugsource packages; otherwise it ends up with an empty %files
 #   file in debugsourcefiles.list on Fedora
 %undefine _debugsource_packages
@@ -40,7 +37,7 @@ URL: https://www.sylabs.io/singularity/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 %if "%{_target_vendor}" == "suse"
-%if %{sver} != 11
+%if "%{sles_version}" != "11"
 BuildRequires: go
 %endif
 %else
@@ -52,7 +49,7 @@ BuildRequires: make
 BuildRequires: libuuid-devel
 BuildRequires: openssl-devel
 %if ! 0%{?el6}
-%if %{sver} != 11
+%if "%{sles_version}" != "11"
 BuildRequires: libseccomp-devel
 %endif
 %endif
