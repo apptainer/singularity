@@ -407,6 +407,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			unsquashfsPath = filepath.Join(d, "unsquashfs")
 		}
 		sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
+		sylog.Infof("Convert SIF file to sandbox...")
 		dir, err := convertImage(image, unsquashfsPath)
 		if err != nil {
 			sylog.Fatalf("while extracting %s: %s", image, err)
