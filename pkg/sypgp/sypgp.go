@@ -12,6 +12,7 @@ import (
 	"context"
 	"crypto"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -43,6 +44,9 @@ const helpAuth = `Access token is expired or missing. To update or obtain a toke
 WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exists
 
 `
+
+var errPassphraseMismatch = errors.New("passphrases do not match")
+var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
@@ -349,6 +353,44 @@ func RemovePubKey(toDelete string) error {
 	return nil
 }
 
+// GetPassphrase will ask the user for a password with int number of
+// retries.
+func GetPassphrase(retries int) (string, error) {
+	ask := func() (string, error) {
+		pass1, err := AskQuestionNoEcho("Enter a passphrase : ")
+		if err != nil {
+			return "", err
+		}
+
+		pass2, err := AskQuestionNoEcho("Retype your passphrase : ")
+		if err != nil {
+			return "", err
+		}
+
+		if pass1 != pass2 {
+			return "", errPassphraseMismatch
+		}
+
+		return pass1, nil
+	}
+
+	for i := 0; i < retries; i++ {
+		switch passphrase, err := ask(); err {
+		case nil:
+			// we got it!
+			return passphrase, nil
+		case errPassphraseMismatch:
+			// retry
+			sylog.Warningf("%v", err)
+		default:
+			// something else went wrong, bail out
+			return "", err
+		}
+	}
+
+	return "", errTooManyRetries
+}
+
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
 func GenKeyPair() (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
@@ -372,19 +414,21 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
-	fmt.Print("Generating Entity and OpenPGP Key Pair... ")
+	// get a password
+	passphrase, err := GetPassphrase(3)
+	if err != nil {
+		return
+	}
+
+	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
 	entity, err = openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
 		return
 	}
-	fmt.Println("Done")
+	fmt.Printf("Done\n")
 
 	// encrypt private key
-	pass, err := AskQuestionNoEcho("Enter encryption passphrase : ")
-	if err != nil {
-		return
-	}
-	if err = EncryptKey(entity, pass); err != nil {
+	if err = EncryptKey(entity, passphrase); err != nil {
 		return
 	}
 
