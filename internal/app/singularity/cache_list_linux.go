@@ -16,7 +16,7 @@ import (
 )
 
 // findSize takes a size in bytes and converts it to a human-readable string representation
-// expressing kB, MB or GB (whatever is smaller, but still larger than one).
+// expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
 func findSize(size int64) string {
 
 	var factor float64
@@ -38,9 +38,7 @@ func findSize(size int64) string {
 	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
 }
 
-// listLibraryCache will loop through and list all library cache (~/.singularity/cache/library).
-// will return the amount of library containers, the total space thoughts containers are using,
-// and an error if one occurs.
+// listLibraryCache will list all entries in your cache directory (${HOME}/.singularity/cache/library)
 func listLibraryCache(listFiles bool) (int, int64, error) {
 	var totalSize int64
 	count := 0
