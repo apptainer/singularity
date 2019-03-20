@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,8 +13,8 @@ import (
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
@@ -28,7 +28,6 @@ var (
 	libraryURL     string
 	isJSON         bool
 	sandbox        bool
-	writable       bool
 	force          bool
 	update         bool
 	noTest         bool
@@ -40,8 +39,6 @@ var (
 	dockerLogin    bool
 	noCleanUp      bool
 )
-
-var buildflags = pflag.NewFlagSet("BuildFlags", pflag.ExitOnError)
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
@@ -130,27 +127,6 @@ func checkBuildTarget(path string, update bool) bool {
 	return true
 }
 
-func checkSections() error {
-	var all, none bool
-	for _, section := range sections {
-		if section == "none" {
-			none = true
-		}
-		if section == "all" {
-			all = true
-		}
-	}
-
-	if all && len(sections) > 1 {
-		return fmt.Errorf("Section specification error: Cannot have all and any other option")
-	}
-	if none && len(sections) > 1 {
-		return fmt.Errorf("Section specification error: Cannot have none and any other option")
-	}
-
-	return nil
-}
-
 func definitionFromSpec(spec string) (def types.Definition, err error) {
 
 	// Try spec as URI first
@@ -223,4 +199,33 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 	}
 
 	return
+}
+
+// remote builds need to fail if we cannot resolve remote URLS
+func handleRemoteBuildFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to CLI defaults")
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("builder").Changed {
+		uri, err := endpoint.GetServiceURI("builder")
+		if err != nil {
+			sylog.Fatalf("Unable to get build service URI: %v", err)
+		}
+		builderURL = uri
+	}
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := endpoint.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		libraryURL = uri
+	}
 }

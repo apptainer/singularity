@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -42,7 +43,10 @@ var (
 	// PullLibraryURI holds the base URI to a Sylabs library API instance
 	PullLibraryURI string
 	// PullImageName holds the name to be given to the pulled image
-	PullImageName       string
+	PullImageName string
+	// KeyServerURL server URL
+	KeyServerURL string
+	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
 )
 
@@ -56,7 +60,7 @@ func init() {
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
 	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "dont check if the container is signed")
-	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW-UNAUTHENTICATED"})
+	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
@@ -72,6 +76,8 @@ func init() {
 	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
 	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
 	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
+
+	PullCmd.Flags().AddFlag(BuildCmd.Flags().Lookup("no-cleanup"))
 
 	SingularityCmd.AddCommand(PullCmd)
 }
@@ -127,6 +133,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 			}
 		}
 
+		handlePullFlags(cmd)
+
 		libraryImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
 		if err != nil {
 			sylog.Fatalf("While getting image info: %v", err)
@@ -174,16 +182,16 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// check if we pulled from the library, if so; is it signed?
-		if len(PullLibraryURI) >= 1 && !unauthenticatedPull {
-			imageSigned, err := signing.IsSigned(name, "https://keys.sylabs.io", 0, false, authToken, false)
+		if PullLibraryURI != "" && !unauthenticatedPull {
+			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, force)
 			if err != nil {
-				// warning message will be: ("Unable to verify the container (test.sif): %v", err)
+				// err will be: "unable to verify container: %v", err
 				sylog.Warningf("%v", err)
 			}
 			// if container is not signed, print a warning
 			if !imageSigned {
-				sylog.Warningf("This image is not signed, and thus its contents cannot be verified.")
-				fmt.Fprintf(os.Stderr, "Pulled container (%v) is **NOT** signed! Do you wish to proceed? [N/y] ", name)
+				fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
+				fmt.Fprintf(os.Stderr, "Do you wish to proceed? [N/y] ")
 				reader := bufio.NewReader(os.Stdin)
 				input, err := reader.ReadString('\n')
 				if err != nil {
@@ -191,13 +199,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 				}
 				if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
 					fmt.Fprintf(os.Stderr, "Aborting.\n")
+					// not ideal to delete the container on the spot...
 					err := os.Remove(name)
 					if err != nil {
-						// not ideal to delete the container on the spot...
-						sylog.Fatalf("Unable to delete container: %v", err)
-						os.Exit(255)
+						sylog.Fatalf("Unabel to delete the container: %v", err)
 					}
-					os.Exit(3)
 				}
 			}
 		} else {
@@ -219,6 +225,30 @@ func pullRun(cmd *cobra.Command, args []string) {
 			Force:            force,
 			NoHTTPS:          noHTTPS,
 			DockerAuthConfig: authConf,
+			NoCleanUp:        noCleanUp,
 		})
+	}
+}
+
+func handlePullFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		KeyServerURL = "https://keys.sylabs.io"
+		sylog.Debugf("using default key server url: %v", KeyServerURL)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("library").Changed {
+		uri, err := endpoint.GetServiceURI("library")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		PullLibraryURI = uri
 	}
 }

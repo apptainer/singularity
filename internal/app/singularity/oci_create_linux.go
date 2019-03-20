@@ -48,7 +48,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	engineConfig.SetPidFile(args.PidFile)
 
 	// load config.json from bundle path
-	configJSON := filepath.Join(args.BundlePath, "config.json")
+	configJSON := filepath.Join(absBundle, "config.json")
 	fb, err := os.Open(configJSON)
 	if err != nil {
 		return fmt.Errorf("failed to open %s: %s", configJSON, err)
@@ -83,6 +83,9 @@ func OciCreate(containerID string, args *OciArgs) error {
 
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
 	cmd, err := exec.PipeCommand(starter, []string{procName}, Env, configData)
+	if err != nil {
+		return err
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

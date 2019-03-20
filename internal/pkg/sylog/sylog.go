@@ -3,8 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package sylog implements a basic logger for Singularity Go code to log
-// messages in the same format as singularity_message() from C code
+// +build sylog
+
 package sylog
 
 import (
@@ -61,7 +61,7 @@ var messageColors = map[messageLevel]string{
 	info:  "\x1b[34m",
 }
 
-const colorReset string = "\x1b[0m"
+var colorReset = "\x1b[0m"
 
 var loggerLevel messageLevel
 
@@ -85,6 +85,7 @@ func prefix(level messageLevel) string {
 		messageColor = "\x1b[0m"
 	}
 
+	// This section builds and returns the prefix for levels < debug
 	if loggerLevel < debug {
 		return fmt.Sprintf("%s%-8s%s ", messageColor, level.String()+":", colorReset)
 	}
@@ -157,6 +158,17 @@ func Debugf(format string, a ...interface{}) {
 // SetLevel explicitly sets the loggerLevel
 func SetLevel(l int) {
 	loggerLevel = messageLevel(l)
+}
+
+// DisableColor for the logger
+func DisableColor() {
+	messageColors = map[messageLevel]string{
+		fatal: "",
+		error: "",
+		warn:  "",
+		info:  "",
+	}
+	colorReset = ""
 }
 
 // GetLevel returns the current log level as integer

@@ -28,33 +28,33 @@ const (
 )
 
 type startOpts struct {
-	addCaps       string
 	allowSetuid   bool
-	applyCgroups  string
-	binds         []string
 	boot          bool
 	cleanenv      bool
 	contain       bool
 	containall    bool
+	keepPrivs     bool
+	net           bool
+	noHome        bool
+	noPrivs       bool
+	nv            bool
+	userns        bool
+	uts           bool
+	writable      bool
+	writableTmpfs bool
+	addCaps       string
+	applyCgroups  string
+	binds         []string
 	dns           string
 	dropCaps      string
 	home          string
 	hostname      string
-	keepPrivs     bool
-	net           bool
 	network       string
 	networkArgs   string
-	noHome        bool
-	noPrivs       bool
-	nv            bool
 	overlay       string
 	scratch       string
 	security      string
-	userns        bool
-	uts           bool
 	workdir       string
-	writable      bool
-	writableTmpfs bool
 }
 
 type listOpts struct {

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -117,6 +117,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	bar.Finish()
 
 	sylog.Debugf("Download complete\n")
+
 	return nil
 
 }
