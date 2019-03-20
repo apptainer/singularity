@@ -64,7 +64,7 @@ func listLibraryCache(listFiles bool) (int, int64, error) {
 				if err != nil {
 					return 0, 0, fmt.Errorf("unable to get stat for library cache: %v", err)
 				}
-				if !listFiles {
+				if listFiles {
 					fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "library")
 				}
 				count++
@@ -102,7 +102,7 @@ func listOciCache(listFiles bool) (int, int64, error) {
 				if err != nil {
 					return 0, 0, fmt.Errorf("unable to get stat for oci-tmp cache: %v", err)
 				}
-				if !listFiles {
+				if listFiles {
 					fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "oci")
 				}
 				count++
@@ -158,13 +158,13 @@ func listBlobCache(printList bool) (int, int64, error) {
 	return count, totalSize, nil
 }
 
-// ListSingularityCache : list local singularity cache, typeNameList : is a string of what cache
-// to list (seprate each type with a comma; like this: library,oci,blob) allList : force list all cache.
+// ListSingularityCache will list local singularity cache, typeNameList is a []string of what cache
+// to list (seprate each type with a comma; like: library,oci,blob) allList force list all cache.
 func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary bool) error {
 	libraryList := false
 	ociList := false
 	blobList := false
-	//listBlobSum := false
+	blobSum := false
 
 	for _, t := range cacheListTypes {
 		switch t {
@@ -174,26 +174,44 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 			ociList = true
 		case "blob", "blobs":
 			blobList = true
+		case "blobSum":
+			blobSum = true
 		case "all":
 			listAll = true
+		case "":
 		default:
 			sylog.Fatalf("Not a valid type: %v", t)
 			os.Exit(2)
 		}
 	}
 
+	if listAll {
+		libraryList = true
+		ociList = true
+		blobList = true
+	}
+
 	var containerCount int
 	var containerSpace int64
 	var blobCount int
 	var blobSpace int64
-	//var totalSpace int64
+
+	// this next part is very messy, but it ensures that the '--summary' flag will be
+	// compatible with '--type=', and '--all' flag.
 
 	if !cacheListSummary {
 		fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 	}
 
-	if libraryList || listAll {
-		libraryCount, librarySize, err := listLibraryCache(cacheListSummary)
+	if listAll {
+		libraryCount, librarySize, err := listLibraryCache(true)
+		if err != nil {
+			return err
+		}
+		containerCount += libraryCount
+		containerSpace += librarySize
+	} else if libraryList {
+		libraryCount, librarySize, err := listLibraryCache(!cacheListSummary)
 		if err != nil {
 			return err
 		}
@@ -201,23 +219,38 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 		containerSpace += librarySize
 	}
 
-	if ociList || listAll {
-		ociCount, ociSize, err := listOciCache(cacheListSummary)
+	if listAll {
+		ociCount, ociSize, err := listOciCache(true)
+		if err != nil {
+			return err
+		}
+		containerCount += ociCount
+		containerSpace += ociSize
+	} else if ociList {
+		ociCount, ociSize, err := listOciCache(!cacheListSummary)
 		if err != nil {
 			return err
 		}
 		containerCount += ociCount
 		containerSpace += ociSize
 	}
-	if blobList || listAll {
-		blobsCount, blobsSize, err := listBlobCache(listAll)
+
+	if listAll {
+		blobsCount, blobsSize, err := listBlobCache(true)
 		if err != nil {
 			return err
 		}
 		blobCount = blobsCount
 		blobSpace = blobsSize
-	} else {
+	} else if blobSum {
 		blobsCount, blobsSize, err := listBlobCache(false)
+		if err != nil {
+			return err
+		}
+		blobCount = blobsCount
+		blobSpace = blobsSize
+	} else if blobList {
+		blobsCount, blobsSize, err := listBlobCache(!cacheListSummary)
 		if err != nil {
 			return err
 		}
@@ -227,7 +260,7 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 
 	if !listAll || cacheListSummary {
 		fmt.Printf("\nThere %v containers using: %v, %v oci blob file(s) using %v of space.\n", containerCount, findSize(containerSpace), blobCount, findSize(blobSpace))
-		fmt.Printf("Total space used: %v\n", findSize(containerSpace + blobSpace))
+		fmt.Printf("Total space used: %v\n", findSize(containerSpace+blobSpace))
 	}
 
 	return nil
