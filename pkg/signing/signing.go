@@ -92,7 +92,7 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Des
 // location if available or helps the user by prompting with key generation
 // configuration options. In its current form, Sign also pushes, when desired,
 // public material to a key server.
-func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken string) error {
+func Sign(cpath, keyServiceURI string, id uint32, isGroup bool, keyIdx int, authToken string) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
@@ -106,19 +106,19 @@ func Sign(cpath, url string, id uint32, isGroup bool, keyIdx int, authToken stri
 			return fmt.Errorf("could not read response: %s", err)
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
-			entity, err = sypgp.GenKeyPair()
+			entity, err = sypgp.GenKeyPair(keyServiceURI, authToken)
 			if err != nil {
 				return fmt.Errorf("generating openpgp key pair failed: %s", err)
 			}
 		} else {
 			return fmt.Errorf("cannot sign without installed keys")
 		}
-		resp, err = sypgp.AskQuestion("Upload public key %X to %s? [Y/n] ", entity.PrimaryKey.Fingerprint, url)
+		resp, err = sypgp.AskQuestion("Upload public key %X to %s? [Y/n] ", entity.PrimaryKey.Fingerprint, keyServiceURI)
 		if err != nil {
 			return err
 		}
 		if resp == "" || resp == "y" || resp == "Y" {
-			if err = sypgp.PushPubkey(entity, url, authToken); err != nil {
+			if err = sypgp.PushPubkey(entity, keyServiceURI, authToken); err != nil {
 				return fmt.Errorf("failed while pushing public key to server: %s", err)
 			}
 			fmt.Printf("Uploaded key successfully!\n")
@@ -277,7 +277,7 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
+func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return fmt.Errorf("failed to load SIF container file: %s", err)
@@ -336,7 +336,7 @@ func Verify(cpath, keyServerURI string, id uint32, isGroup bool, authToken strin
 
 			// download the key
 			sylog.Infof("Downloading key: %s...", fingerprint[24:])
-			netlist, err := sypgp.FetchPubkey(fingerprint, keyServerURI, authToken, noPrompt)
+			netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 			if err != nil {
 				return fmt.Errorf("could not fetch public key from server: %s", err)
 			}
