@@ -233,6 +233,23 @@ Enterprise Performance Computing (EPC)`
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key export
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyExportUse   string = `export --private --fingerprint <key-fingerprint> --path <full-path-to-save-key>`
+	KeyExportShort string = `Export a public or private key into a specific folder location`
+	KeyExportLong  string = `
+  The 'key export' command allows you to export a key (either private or public) and save it on a local folder`
+	KeyExportExample string = `
+  For exporting a private key:
+  $ singularity key export --private --fingerprint <fingerprint_id> --path $HOME/key.asc
+  $ singularity key export --private --fingerprint <fingerprint_id> --path $HOME/key.asc
+  
+  For exporting a public key:
+  $ singularity key export --public --fingerprint <fingerprint_id> --path $HOME/key.asc
+  $ singularity keys export --public --fingerprint <fingerprint_id> --path $HOME/key.asc
+  `
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyNewPairUse   string = `newpair`
