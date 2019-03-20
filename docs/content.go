@@ -31,7 +31,7 @@ Enterprise Performance Computing (EPC)`
 	// build
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	BuildUse   string = `build [local options...] <IMAGE PATH> <BUILD SPEC>`
-	BuildShort string = `Build a new Singularity container`
+	BuildShort string = `Build a Singularity image`
 	BuildLong  string = `
 
   IMAGE PATH:
@@ -160,7 +160,7 @@ Enterprise Performance Computing (EPC)`
 	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CacheUse   string = `cache <subcommand>`
-	CacheShort string = `Manage your local singularity cache`
+	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
   Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
   You can list/clean using the specific types.`
@@ -208,7 +208,7 @@ Enterprise Performance Computing (EPC)`
 
 	// keys : for the hidden `keys` command
 	KeysUse  string = `keys [keys options...] <subcommand>`
-	KeyShort string = `Manage OpenPGP key stores`
+	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
   The 'key' command allows you to manage local OpenPGP key stores by creating
   a new store and new key pairs. You can also list available keys from the
@@ -281,7 +281,7 @@ Enterprise Performance Computing (EPC)`
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`
-	CapabilityShort string = `Manage Linux capabilities on containers`
+	CapabilityShort string = `Manage Linux capabilities for an image`
 	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
   your containers need to run.`
@@ -444,7 +444,7 @@ Enterprise Performance Computing (EPC)`
 
   shub://*            A container hosted on Singularity Hub`
 	ExecUse   string = `exec [exec options...] <container> <command>`
-	ExecShort string = `Execute a command within container`
+	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
   singularity exec supports the following formats:` + formats
 	ExecExamples string = `
@@ -459,7 +459,7 @@ Enterprise Performance Computing (EPC)`
 	// instance
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	InstanceUse   string = `instance <subcommand>`
-	InstanceShort string = `Manage containers running in the background`
+	InstanceShort string = `Manage containers running as services`
 	InstanceLong  string = `
   Instances allow you to run containers as background processes. This can be
   useful for running services such as web servers or databases.`
@@ -545,7 +545,7 @@ Enterprise Performance Computing (EPC)`
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PullUse   string = `pull [pull options...] [output file] <URI>`
-	PullShort string = `Pull a container from a URI`
+	PullShort string = `Pull an image from a URI`
 	PullLong  string = `
   The 'pull' command allows you to download or build a container from a given
   URI.  Supported URIs include:
@@ -583,7 +583,7 @@ Enterprise Performance Computing (EPC)`
 	// search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SearchUse   string = `search [search options...] <search query>`
-	SearchShort string = `Search the library`
+	SearchShort string = `Search a Library for images`
 	SearchLong  string = `
   The Singularity search command allows you to search within a container library 
   of your choosing.  The container library defaults to 
@@ -595,7 +595,7 @@ Enterprise Performance Computing (EPC)`
 	// run
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunUse   string = `run [run options...] <container>`
-	RunShort string = `Launch a runscript within container`
+	RunShort string = `Run the user-defined default command within a container`
 	RunLong  string = `
   This command will launch a Singularity container and execute a runscript
   if one is defined for that container. The runscript is a metadata file within
@@ -622,7 +622,7 @@ Enterprise Performance Computing (EPC)`
 	// shell
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	ShellUse   string = `shell [shell options...] <container>`
-	ShellShort string = `Run a Bourne shell within container`
+	ShellShort string = `Run a shell within a container`
 	ShellLong  string = `
   singularity shell supports the following formats:` + formats
 	ShellExamples string = `
@@ -655,7 +655,7 @@ Enterprise Performance Computing (EPC)`
 	// sign
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SignUse   string = `sign [sign options...] <image path>`
-	SignShort string = `Attach cryptographic signatures to container`
+	SignShort string = `Attach a cryptographic signature to an image`
 	SignLong  string = `
   The sign command allows a user to create a cryptographic signature on either a 
   single data object or a list of data objects within the same SIF group. By 
@@ -668,7 +668,7 @@ Enterprise Performance Computing (EPC)`
 	// verify
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	VerifyUse   string = `verify [verify options...] <image path>`
-	VerifyShort string = `Verify cryptographic signatures on container`
+	VerifyShort string = `Verify cryptographic signatures attached to an image`
 	VerifyLong  string = `
   The verify command allows a user to verify cryptographic signatures on SIF 
   container files. There may be multiple signatures for data objects and 
@@ -682,7 +682,7 @@ Enterprise Performance Computing (EPC)`
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunHelpUse   string = `run-help <image path>`
-	RunHelpShort string = `Display help for container if available`
+	RunHelpShort string = `Show the user-defined help for an image`
 	RunHelpLong  string = `
   The 'run-help' command will display a help text file for a container if 
   available.`
@@ -706,7 +706,7 @@ Enterprise Performance Computing (EPC)`
 	// Inspect
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	InspectUse   string = `inspect [inspect options...] <image path>`
-	InspectShort string = `Display metadata for container if available`
+	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
   Inspect will show you labels, environment variables, and scripts associated 
   with the image determined by the flags you pass.`
@@ -758,7 +758,7 @@ found at:
 	// Test
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunTestUse   string = `test [exec options...] <image path>`
-	RunTestShort string = `Run defined tests for this particular container`
+	RunTestShort string = `Run the user-defined tests within a container`
 	RunTestLong  string = `
   The 'test' command allows you to execute a testscript (if available) inside of
   a given container 
