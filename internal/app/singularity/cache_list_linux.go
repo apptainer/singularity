@@ -259,7 +259,7 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if !listAll || cacheListSummary {
-		fmt.Printf("\nThere %v containers using: %v, %v oci blob file(s) using %v of space.\n", containerCount, findSize(containerSpace), blobCount, findSize(blobSpace))
+		fmt.Printf("\nThere %d containers using: %v, %d oci blob file(s) using %v of space.\n", containerCount, findSize(containerSpace), blobCount, findSize(blobSpace))
 		fmt.Printf("Total space used: %v\n", findSize(containerSpace+blobSpace))
 	}
 
