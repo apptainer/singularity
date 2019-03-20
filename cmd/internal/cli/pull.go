@@ -201,6 +201,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 					if err != nil {
 						sylog.Fatalf("Unabel to delete the container: %v", err)
 					}
+					// exit status 10 after replying no
+					os.Exit(10)
 				}
 			}
 		} else {
