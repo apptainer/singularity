@@ -121,7 +121,7 @@ jobs:
           name: Build & install singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            ./mconfig -p /usr/local
+            ./mconfig -p /usr/local --without-network
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
