@@ -6,12 +6,10 @@
 package cli
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -24,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 const (
@@ -191,13 +190,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 			// if container is not signed, print a warning
 			if !imageSigned {
 				fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
-				fmt.Fprintf(os.Stderr, "Do you wish to proceed? [N/y] ")
-				reader := bufio.NewReader(os.Stdin)
-				input, err := reader.ReadString('\n')
+				resp, err := sypgp.AskQuestion("Do you with to proceed? [N/y] ")
 				if err != nil {
-					sylog.Fatalf("Error parsing input: %s", err)
+					sylog.Fatalf("unable to parse input: %v", err)
 				}
-				if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
+				if resp == "" || resp != "y" && resp != "Y" {
 					fmt.Fprintf(os.Stderr, "Aborting.\n")
 					// not ideal to delete the container on the spot...
 					err := os.Remove(name)
@@ -215,6 +212,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	default:
+		if !force {
+			if _, err := os.Stat(name); err == nil {
+				sylog.Fatalf("image file already exists - will not overwrite")
+			}
+		}
+
 		authConf, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
