@@ -38,10 +38,16 @@ var (
 	dockerPassword string
 	dockerLogin    bool
 	noCleanUp      bool
+
+	// AllowUnauthenticatedBuild foobar
+	AllowUnauthenticatedBuild bool
 )
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
+
+	BuildCmd.Flags().BoolVarP(&AllowUnauthenticatedBuild, "allow-unauthenticated", "U", false, "foobar foobar")
+	BuildCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "build image as sandbox format (chroot directory structure)")
 	BuildCmd.Flags().SetAnnotation("sandbox", "envkey", []string{"SANDBOX"})

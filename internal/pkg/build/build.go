@@ -54,13 +54,13 @@ type Build struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
+func NewBuild(spec, dest, format string, libraryURL, authToken string, opts types.Options, allowUnauthenticatedBuild bool) (*Build, error) {
 	def, err := makeDef(spec, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, libraryURL, authToken, opts)
+	return newBuild(def, dest, format, libraryURL, authToken, opts, allowUnauthenticatedBuild)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
@@ -70,10 +70,10 @@ func NewBuildJSON(r io.Reader, dest, format string, libraryURL, authToken string
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, libraryURL, authToken, opts)
+	return newBuild(def, dest, format, libraryURL, authToken, opts, false)
 }
 
-func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
+func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options, allowUnauthenticatedBuild bool) (*Build, error) {
 	var err error
 
 	syscall.Umask(0002)
@@ -98,7 +98,7 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 
 	// dont need to get cp if we're skipping bootstrap
 	if !opts.Update || opts.Force {
-		if c, err := getcp(b.b.Recipe, libraryURL, authToken); err == nil {
+		if c, err := getcp(b.b.Recipe, libraryURL, authToken, allowUnauthenticatedBuild); err == nil {
 			b.c = c
 		} else {
 			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -343,12 +343,13 @@ func (b *Build) runBuildEngine() error {
 	return starterCmd.Run()
 }
 
-func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
+func getcp(def types.Definition, libraryURL, authToken string, unauth bool) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{
 			LibraryURL: libraryURL,
 			AuthToken:  authToken,
+			AllowU:     unauth,
 		}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil

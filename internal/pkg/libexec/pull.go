@@ -40,7 +40,7 @@ func PullShubImage(filePath, shubRef string, force, noHTTPS bool) {
 
 // PullOciImage pulls an OCI image to a sif
 func PullOciImage(path, uri string, opts types.Options) {
-	b, err := build.NewBuild(uri, path, "sif", "", "", opts)
+	b, err := build.NewBuild(uri, path, "sif", "", "", opts, true)
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", uri, err)
 	}

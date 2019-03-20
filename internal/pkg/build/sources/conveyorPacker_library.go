@@ -6,10 +6,8 @@
 package sources
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -17,6 +15,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 // LibraryConveyorPacker only needs to hold a packer to pack the image it pulls
@@ -26,9 +25,10 @@ type LibraryConveyorPacker struct {
 	LocalPacker
 	LibraryURL string
 	AuthToken  string
+	AllowU     bool
 }
 
-// Get downloads container from Singularityhub
+// Get downloads container from Singularity Library
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
@@ -72,32 +72,32 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		}
 	}
 
-	// check if the base container is signed
-	imageSigned, err := signing.IsSigned(imagePath, "https://keys.sylabs.io", 0, false, cp.AuthToken, true)
-	if err != nil {
-		// warning message will be: ("unable to verify the container (test.sif): %v", err)
-		sylog.Warningf("%v", err)
-	}
-	// if its not signed, print a warning
-	if !imageSigned {
-		sylog.Warningf("The base container is **NOT** signed thus, its content cant be verified!")
-		fmt.Fprintf(os.Stderr, "Do you really want to continue? [N/y] ")
-		reader := bufio.NewReader(os.Stdin)
-		input, err := reader.ReadString('\n')
+	if !cp.AllowU {
+		// check if the base container is signed
+		imageSigned, err := signing.IsSigned(imagePath, "https://keys.sylabs.io", 0, false, cp.AuthToken, true)
 		if err != nil {
-			sylog.Fatalf("Error parsing input: %s", err)
+			sylog.Warningf("%v", err)
 		}
-		if val := strings.Compare(strings.ToLower(input), "y\n"); val != 0 {
-			fmt.Fprintf(os.Stderr, "Stoping build.\n")
-			os.Exit(3)
+		// if its not signed, print a warning
+		if !imageSigned {
+			sylog.Warningf("The base container is **NOT** signed thus, its content cant be verified!")
+			resp, err := sypgp.AskQuestion("Do you really want to continue? [N/y] ")
+			if err != nil {
+				sylog.Fatalf("Error parsing input: %s", err)
+			}
+			if resp == "" || resp != "y" && resp != "Y" {
+				fmt.Fprintf(os.Stderr, "Stoping build.\n")
+				return fmt.Errorf("user said not to build from unsigned container, good choice")
+			}
 		}
+	} else {
+		sylog.Warningf("Skipping verifction check.")
 	}
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
 		return fmt.Errorf("While inserting base environment: %v", err)
 	}
-
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
 
 	return err

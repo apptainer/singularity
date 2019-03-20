@@ -94,7 +94,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS, DockerAuthConfig: authConf})
+		b, err := build.NewBuild(u, imgabs, "sif", "", "", types.Options{TmpDir: tmpDir, NoTest: true, NoHTTPS: noHTTPS, DockerAuthConfig: authConf}, AllowUnauthenticatedBuild)
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}

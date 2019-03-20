@@ -94,7 +94,8 @@ func run(cmd *cobra.Command, args []string) {
 				NoHTTPS:          noHTTPS,
 				NoCleanUp:        noCleanUp,
 				DockerAuthConfig: authConf,
-			})
+			},
+			AllowUnauthenticatedBuild)
 		if err != nil {
 			sylog.Fatalf("Unable to create build: %v", err)
 		}
