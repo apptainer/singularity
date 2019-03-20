@@ -78,7 +78,7 @@ func listLibraryCache(listFiles bool) (int, int64, error) {
 	return count, totalSize, nil
 }
 
-// listOciCache will list all you oci-tmp cache.
+// listOciCache lists all the entries in the OCI cache
 func listOciCache(listFiles bool) (int, int64, error) {
 	var totalSize int64
 	count := 0
