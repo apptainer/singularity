@@ -23,9 +23,9 @@ import (
 type LibraryConveyorPacker struct {
 	b *types.Bundle
 	LocalPacker
-	LibraryURL string
-	AuthToken  string
-	AllowU     bool
+	LibraryURL           string
+	AuthToken            string
+	AllowUnauthenticated bool
 }
 
 // Get downloads container from Singularity Library
@@ -72,7 +72,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		}
 	}
 
-	if !cp.AllowU {
+	if !cp.AllowUnauthenticated {
 		// check if the base container is signed
 		imageSigned, err := signing.IsSigned(imagePath, "https://keys.sylabs.io", 0, false, cp.AuthToken, true)
 		if err != nil {

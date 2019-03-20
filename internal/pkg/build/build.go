@@ -343,13 +343,13 @@ func (b *Build) runBuildEngine() error {
 	return starterCmd.Run()
 }
 
-func getcp(def types.Definition, libraryURL, authToken string, unauth bool) (ConveyorPacker, error) {
+func getcp(def types.Definition, libraryURL, authToken string, unauthenticatedBuild bool) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{
-			LibraryURL: libraryURL,
-			AuthToken:  authToken,
-			AllowU:     unauth,
+			LibraryURL:           libraryURL,
+			AuthToken:            authToken,
+			AllowUnauthenticated: unauthenticatedBuild,
 		}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil

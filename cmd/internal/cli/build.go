@@ -39,14 +39,17 @@ var (
 	dockerLogin    bool
 	noCleanUp      bool
 
-	// AllowUnauthenticatedBuild foobar
+	// AllowUnauthenticatedBuild When true, will never ask if you want to build
+	// a container from a unsigned base container. This only works when your bootstrap
+	// is the library
+	// TODO: 'bootstrap: localimage' test
 	AllowUnauthenticatedBuild bool
 )
 
 func init() {
 	BuildCmd.Flags().SetInterspersed(false)
 
-	BuildCmd.Flags().BoolVarP(&AllowUnauthenticatedBuild, "allow-unauthenticated", "U", false, "foobar foobar")
+	BuildCmd.Flags().BoolVarP(&AllowUnauthenticatedBuild, "allow-unauthenticated", "U", false, "never prompt when building from a unsigned container, only when bootstrap is library")
 	BuildCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "build image as sandbox format (chroot directory structure)")
