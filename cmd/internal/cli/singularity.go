@@ -155,7 +155,7 @@ var VersionCmd = &cobra.Command{
 	},
 
 	Use:   "version",
-	Short: "Show application version",
+	Short: "Show the version for Singularity",
 }
 
 func updateFlagsFromEnv(cmd *cobra.Command) {
