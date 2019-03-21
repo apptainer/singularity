@@ -43,10 +43,7 @@ func NewConfig(config CConfig) *Config {
 
 // GetIsSUID returns if SUID workflow is enabled or not
 func (c *Config) GetIsSUID() bool {
-	if c.config.container.isSuid == 1 {
-		return true
-	}
-	return false
+	return c.config.container.isSuid == 1
 }
 
 // GetContainerPid returns container process ID
@@ -65,10 +62,7 @@ func (c *Config) SetInstance(instance bool) {
 
 // GetInstance returns if container run as instance or not
 func (c *Config) GetInstance() bool {
-	if c.config.container.isInstance == 1 {
-		return true
-	}
-	return false
+	return c.config.container.isInstance == 1
 }
 
 // SetNoNewPrivs sets NO_NEW_PRIVS flag
@@ -82,10 +76,7 @@ func (c *Config) SetNoNewPrivs(noprivs bool) {
 
 // GetNoNewPrivs returns if NO_NEW_PRIVS flag is set or not
 func (c *Config) GetNoNewPrivs() bool {
-	if c.config.container.noNewPrivs == 1 {
-		return true
-	}
-	return false
+	return c.config.container.noNewPrivs == 1
 }
 
 // SetSharedMount sets if master/container shares mount point
@@ -99,10 +90,7 @@ func (c *Config) SetSharedMount(shared bool) {
 
 // GetSharedMount returns if master/container shares mount point or not
 func (c *Config) GetSharedMount() bool {
-	if c.config.container.sharedMount == 1 {
-		return true
-	}
-	return false
+	return c.config.container.sharedMount == 1
 }
 
 // SetJoinMount sets if container process join a mount namespace
@@ -116,10 +104,7 @@ func (c *Config) SetJoinMount(join bool) {
 
 // GetJoinMount returns if container process join a mount namespace
 func (c *Config) GetJoinMount() bool {
-	if c.config.container.joinMount == 1 {
-		return true
-	}
-	return false
+	return c.config.container.joinMount == 1
 }
 
 // SetBringLoopbackInterface sets if starter bring loopback network interface
@@ -133,10 +118,7 @@ func (c *Config) SetBringLoopbackInterface(bring bool) {
 
 // GetBringLoopbackInterface returns if starter bring loopback network interface
 func (c *Config) GetBringLoopbackInterface() bool {
-	if c.config.container.bringLoopbackInterface == 1 {
-		return true
-	}
-	return false
+	return c.config.container.bringLoopbackInterface == 1
 }
 
 // SetMountPropagation sets root filesystem mount propagation

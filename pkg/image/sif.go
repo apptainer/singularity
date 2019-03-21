@@ -28,7 +28,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
 		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
 	}
-	if bytes.Index(b, []byte(sifMagic)) == -1 {
+	if !bytes.Contains(b, []byte(sifMagic)) {
 		return fmt.Errorf("SIF magic not found")
 	}
 
@@ -103,7 +103,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 
 	// UnloadContainer close image, just want to unmap image
 	// from memory
-	if fimg.Amodebuf == false {
+	if !fimg.Amodebuf {
 		if err := syscall.Munmap(fimg.Filedata); err != nil {
 			return fmt.Errorf("while calling unmapping SIF file")
 		}
