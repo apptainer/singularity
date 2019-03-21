@@ -27,7 +27,7 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if !remote {
+	if !remote && !cmd.Flags().Lookup("builder").Changed {
 		sylog.Fatalf("Only remote builds are supported on this platform")
 	}
 

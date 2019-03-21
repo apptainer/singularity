@@ -36,7 +36,7 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if remote {
+	if remote || cmd.Flags().Lookup("builder").Changed {
 		handleRemoteBuildFlags(cmd)
 
 		// Submiting a remote build requires a valid authToken
