@@ -153,7 +153,7 @@ func NewSetupFromConfig(networkConfList []*libcni.NetworkConfigList, containerID
 			ContainerID:    containerID,
 			NetNS:          netNS,
 			IfName:         fmt.Sprintf("eth%d", ifIndex),
-			CapabilityArgs: make(map[string]interface{}, 0),
+			CapabilityArgs: make(map[string]interface{}),
 			Args:           make([][2]string, 0),
 		}
 
@@ -204,18 +204,18 @@ func (m *Setup) SetCapability(network string, capName string, args interface{}) 
 				return fmt.Errorf("%s network doesn't have %s capability", network, capName)
 			}
 
-			switch args.(type) {
+			switch args := args.(type) {
 			case PortMapEntry:
 				if m.runtimeConf[i].CapabilityArgs[capName] == nil {
 					m.runtimeConf[i].CapabilityArgs[capName] = make([]PortMapEntry, 0)
 				}
 				m.runtimeConf[i].CapabilityArgs[capName] = append(
 					m.runtimeConf[i].CapabilityArgs[capName].([]PortMapEntry),
-					args.(PortMapEntry),
+					args,
 				)
 			case []allocator.Range:
 				if m.runtimeConf[i].CapabilityArgs[capName] == nil {
-					m.runtimeConf[i].CapabilityArgs[capName] = []allocator.RangeSet{args.([]allocator.Range)}
+					m.runtimeConf[i].CapabilityArgs[capName] = []allocator.RangeSet{args}
 				}
 			}
 		}

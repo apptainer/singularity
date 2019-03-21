@@ -169,7 +169,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 		return fmt.Errorf("Invalid yum header, no MirrorURL specified")
 	}
 
-	c.updateurl, _ = c.b.Recipe.Header["updateurl"]
+	c.updateurl = c.b.Recipe.Header["updateurl"]
 
 	// look for an OS version if a mirror specifies it
 	regex := regexp.MustCompile(`(?i)%{OSVERSION}`)
@@ -182,7 +182,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 		c.updateurl = regex.ReplaceAllString(c.updateurl, c.osversion)
 	}
 
-	include, _ := c.b.Recipe.Header["include"]
+	include := c.b.Recipe.Header["include"]
 
 	// check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")
@@ -277,7 +277,7 @@ func (c *YumConveyor) importGPGKey() (err error) {
 	sylog.Infof("We have a GPG key!  Preparing RPM database.")
 
 	// make sure gpg is being imported over https
-	if strings.HasPrefix(c.gpg, "https://") == false {
+	if !strings.HasPrefix(c.gpg, "https://") {
 		return fmt.Errorf("GPG key must be fetched with https")
 	}
 

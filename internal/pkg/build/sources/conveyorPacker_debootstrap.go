@@ -92,7 +92,7 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
 	}
 
-	include, _ := cp.b.Recipe.Header["include"]
+	include := cp.b.Recipe.Header["include"]
 
 	//check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")

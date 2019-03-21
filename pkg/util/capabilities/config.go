@@ -26,8 +26,8 @@ type Config struct {
 // config with the set of authorized user/group capabilities
 func ReadFrom(r io.Reader) (*Config, error) {
 	c := &Config{
-		Users:  make(Caplist, 0),
-		Groups: make(Caplist, 0),
+		Users:  make(Caplist),
+		Groups: make(Caplist),
 	}
 
 	// read all data from r into b
