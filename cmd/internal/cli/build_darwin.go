@@ -14,10 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func preRun(cmd *cobra.Command, args []string) {
-	sylabsToken(cmd, args)
-}
-
 func run(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
@@ -27,7 +23,7 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if !remote && !cmd.Flags().Lookup("builder").Changed {
+	if !remote {
 		sylog.Fatalf("Only remote builds are supported on this platform")
 	}
 

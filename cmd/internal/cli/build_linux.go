@@ -18,10 +18,6 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-func preRun(cmd *cobra.Command, args []string) {
-	sylabsToken(cmd, args)
-}
-
 func run(cmd *cobra.Command, args []string) {
 	buildFormat := "sif"
 	if sandbox {
@@ -36,7 +32,7 @@ func run(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	if remote || cmd.Flags().Lookup("builder").Changed {
+	if remote {
 		handleRemoteBuildFlags(cmd)
 
 		// Submiting a remote build requires a valid authToken
