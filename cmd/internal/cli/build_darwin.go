@@ -14,10 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func preRun(cmd *cobra.Command, args []string) {
-	sylabsToken(cmd, args)
-}
-
 func run(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
