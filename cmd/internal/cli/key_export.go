@@ -12,9 +12,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sypgp"
+	"golang.org/x/crypto/openpgp"
 )
 
 var secretExport bool
+var foundKey bool
 
 func init() {
 	KeyExportCmd.Flags().SetInterspersed(false)
@@ -38,12 +41,39 @@ var KeyExportCmd = &cobra.Command{
 func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
 	if secretExport {
-		fmt.Printf("secret key export\n")
+
+		f, err := os.OpenFile(sypgp.SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
+		if err != nil {
+			return fmt.Errorf("unable to open local keyring: %v", err)
+		}
+		defer f.Close()
+
+		// read all the local secret keys
+		elist, err := openpgp.ReadKeyRing(f)
+		if err != nil {
+			return fmt.Errorf("unable to list local keyring: %v", err)
+		}
+
+		foundKey = false
+		// sort through them, and remove any that match toDelete
+		for i := range elist {
+			// if the elist[i] dose not match toDelete, then add it to newKeyList
+			if fmt.Sprintf("%X", elist[i].PrimaryKey.Fingerprint) == fmt.Sprintf("%X", fingerprint) {
+				foundKey = true
+				fmt.Printf("found key!\n")
+				break
+
+			}
+		}
+
 	} else {
-		fmt.Printf("public key export\n")
+
+		f, err := os.OpenFile(sypgp.PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
+		if err != nil {
+			return fmt.Errorf("unable to open local keyring: %v", err)
+		}
+		defer f.Close()
 	}
-	fmt.Printf("fingerprint: %0X\n", fingerprint)
-	fmt.Printf("path: %s\n", path)
 
 	return nil
 }
