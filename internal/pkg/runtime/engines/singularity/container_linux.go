@@ -14,6 +14,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -1008,7 +1010,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			//  and also check the device that docker uses,
 			//  /dev/console.
 			procfd := fmt.Sprintf("/proc/self/fd/%d", fd)
-			ttylink, err := os.Readlink(procfd)
+			ttylink, err := mainthread.Readlink(procfd)
 			if err != nil {
 				return err
 			}
