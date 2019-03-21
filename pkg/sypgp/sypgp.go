@@ -284,7 +284,8 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // compareLocalPubKey compares a key ID with a string, returning true if the
 // key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
-	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+	// TODO: there must be a better way to do this...
+	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == fmt.Sprintf("%X", oldToken)
 }
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
@@ -334,7 +335,7 @@ func RemovePubKey(toDelete string) error {
 		}
 	}
 
-	sylog.Infof("Updating local keyring: %v", PublicPath())
+	sylog.Verbosef("Updating local keyring: %v", PublicPath())
 
 	// open the public keyring file
 	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
@@ -392,7 +393,7 @@ func GetPassphrase(retries int) (string, error) {
 }
 
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
-func GenKeyPair() (entity *openpgp.Entity, err error) {
+func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
 	if err = PathsCheck(); err != nil {
@@ -420,12 +421,12 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
-	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
+	fmt.Printf("Generating Entity and OpenPGP Key Pair...")
 	entity, err = openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
 		return
 	}
-	fmt.Printf("Done\n")
+	fmt.Printf("done\n")
 
 	// encrypt private key
 	if err = EncryptKey(entity, passphrase); err != nil {
@@ -439,6 +440,21 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 	if err = StorePubKey(entity); err != nil {
 		return
 	}
+
+	// Ask to push the new key to the keystore
+	pushKeyQ, err := AskQuestion("Would you like to push it to the keystore? [Y,n] : ")
+	if err != nil {
+		return
+	}
+
+	if pushKeyQ == "" || pushKeyQ == "y" || pushKeyQ == "Y" {
+		err = PushPubkey(entity, keyServiceURI, authToken)
+		if err != nil {
+			return
+		}
+		fmt.Printf("Key successfully pushed to: %v\n", keyServiceURI)
+	}
+	fmt.Printf("Done.\n")
 
 	return
 }
