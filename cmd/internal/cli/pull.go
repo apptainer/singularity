@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -29,8 +30,6 @@ const (
 	// ShubProtocol holds singularity hub base URI
 	// for more info refer to https://singularity-hub.org/
 	ShubProtocol = "shub"
-	// DockerProtocol holds dockerhub base URI
-	DockerProtocol = "docker"
 	// HTTPProtocol holds the remote http base URI
 	HTTPProtocol = "http"
 	// HTTPSProtocol holds the remote https base URI
@@ -175,7 +174,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
-	case DockerProtocol:
+	case ociclient.IsSupported(transport):
 		if !force {
 			if _, err := os.Stat(name); err == nil {
 				sylog.Fatalf("image file already exists - will not overwrite")
