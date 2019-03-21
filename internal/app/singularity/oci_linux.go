@@ -22,10 +22,12 @@ type OciArgs struct {
 	LogPath        string
 	LogFormat      string
 	SyncSocketPath string
-	EmptyProcess   bool
 	PidFile        string
 	FromFile       string
 	KillSignal     string
+	KillTimeout    uint32
+	EmptyProcess   bool
+	ForceKill      bool
 }
 
 func getCommonConfig(containerID string) (*config.Common, error) {

@@ -6,13 +6,13 @@
 package singularity
 
 import (
+	"errors"
 	"fmt"
 	"go/build"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
@@ -25,9 +25,7 @@ var (
 )
 
 const (
-	repo         = "src/github.com/sylabs/singularity"
-	buildtmpl    = "build -buildmode=plugin -gcflags=all=-trimpath=%[1]s -asmflags=all=-trimpath=%[1]s -o %s %s"
-	manifesttmpl = "run -gcflags=all=-trimpath=%[1]s -asmflags=all=-trimpath=%[1]s %s %s %s"
+	repo = "src/github.com/sylabs/singularity"
 )
 
 // pluginObjPath returns the path of the .so file which is built when
@@ -47,15 +45,15 @@ func pluginManifestPath(sourceDir string) string {
 // CompilePlugin compiles a plugin. It takes as input: sourceDir, the path to the
 // plugin's source code directory; and destSif, the path to the intended final
 // location of the plugin SIF file.
-func CompilePlugin(sourceDir, destSif string) error {
+func CompilePlugin(sourceDir, destSif, buildTags string) error {
 	// build plugin object using go buiild
-	_, err := buildPlugin(sourceDir)
+	_, err := buildPlugin(sourceDir, buildTags)
 	if err != nil {
 		return fmt.Errorf("while building plugin .so: %s", err)
 	}
 
 	// generate plugin manifest from .so
-	_, err = generateManifest(sourceDir)
+	_, err = generateManifest(sourceDir, buildTags)
 	if err != nil {
 		return fmt.Errorf("while generating plugin manifest: %s", err)
 	}
@@ -72,11 +70,26 @@ func CompilePlugin(sourceDir, destSif string) error {
 // the plugin. buildPlugin returns the path to the built file, along with an error
 //
 // This function essentially runs the `go build -buildmode=plugin [...]` command
-func buildPlugin(sourceDir string) (string, error) {
+func buildPlugin(sourceDir, buildTags string) (string, error) {
 	// assuming that sourceDir is within trimpath for now
 	out := pluginObjPath(sourceDir)
-	c := fmt.Sprintf(buildtmpl, trimpath, out, sourceDir)
-	buildcmd := exec.Command("go", strings.Split(c, " ")...)
+
+	goTool, err := exec.LookPath("go")
+	if err != nil {
+		return "", errors.New("go compiler not found")
+	}
+
+	args := []string{
+		"build",
+		"-o", out,
+		"-buildmode=plugin",
+		"-tags", buildTags,
+		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
+		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
+		sourceDir,
+	}
+
+	buildcmd := exec.Command(goTool, args...)
 
 	buildcmd.Dir = workpath
 	buildcmd.Stderr = os.Stderr
@@ -88,11 +101,26 @@ func buildPlugin(sourceDir string) (string, error) {
 
 // generateManifest takes the path to the plugin source, sourceDir, and generates
 // its corresponding manifest file.
-func generateManifest(sourceDir string) (string, error) {
+func generateManifest(sourceDir, buildTags string) (string, error) {
 	in := pluginObjPath(sourceDir)
 	out := pluginManifestPath(sourceDir)
-	c := fmt.Sprintf(manifesttmpl, trimpath, mangenpath, in, out)
-	gencmd := exec.Command("go", strings.Split(c, " ")...)
+
+	goTool, err := exec.LookPath("go")
+	if err != nil {
+		return "", errors.New("go compiler not found")
+	}
+
+	args := []string{
+		"run",
+		"-tags", buildTags,
+		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
+		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
+		mangenpath,
+		in,
+		out,
+	}
+
+	gencmd := exec.Command(goTool, args...)
 
 	gencmd.Dir = workpath
 	gencmd.Stderr = os.Stderr
