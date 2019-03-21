@@ -29,6 +29,7 @@
     - Divya Cote <divya.cote@gmail.com>
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
     - Felix Abecassis <fabecassis@nvidia.com>
+    - Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
     - George Hartzell <hartzell@alerce.com>
     - Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
     - Hakon Enger <hakonenger@github.com>

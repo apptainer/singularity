@@ -64,6 +64,9 @@ func init() {
 	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
 	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
 
+	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
+	SingularityCmd.SetVersionTemplate(vt)
+
 	usr, err := user.Current()
 	if err != nil {
 		sylog.Fatalf("Couldn't determine user home directory: %v", err)
@@ -232,7 +235,7 @@ func envAppend(flag *pflag.Flag, envvar string) {
 
 // envBool sets a bool flag if the CLI option is unset and env var is set
 func envBool(flag *pflag.Flag, envvar string) {
-	if flag.Changed == true || envvar == "" {
+	if flag.Changed || envvar == "" {
 		return
 	}
 
@@ -251,7 +254,7 @@ func envBool(flag *pflag.Flag, envvar string) {
 // envStringNSlice writes to a string or slice flag if CLI option/argument
 // string is unset and env var is set
 func envStringNSlice(flag *pflag.Flag, envvar string) {
-	if flag.Changed == true {
+	if flag.Changed {
 		return
 	}
 

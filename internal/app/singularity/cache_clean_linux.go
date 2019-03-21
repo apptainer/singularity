@@ -122,7 +122,7 @@ func cleanOciCacheName(cacheName string) (bool, error) {
 }
 
 // CleanCacheName : will clean a container with the same name as cacheName (in the cache directory).
-// if libraryCache == true; only search thrught library cache. if ociCache == true; only search the
+// if libraryCache is true; only search thrught library cache. if ociCache is true; only search the
 // oci-tmp cache. if both are false; search all cache, and if both are true; again, search all cache.
 func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error) {
 	if libraryCache == ociCache {
@@ -134,20 +134,20 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 		if err != nil {
 			return false, err
 		}
-		if matchLibrary == true || matchOci == true {
+		if matchLibrary || matchOci {
 			return true, nil
 		}
 		return false, nil
 	}
 
 	match := false
-	if libraryCache == true {
+	if libraryCache {
 		match, err := cleanLibraryCacheName(cacheName)
 		if err != nil {
 			return false, err
 		}
 		return match, nil
-	} else if ociCache == true {
+	} else if ociCache {
 		match, err := cleanOciCacheName(cacheName)
 		if err != nil {
 			return false, err
@@ -157,7 +157,7 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 	return match, nil
 }
 
-// CleanSingularityCache : the main function that drives all these other functions, if allClean == true; clean
+// CleanSingularityCache : the main function that drives all these other functions, if allClean is true; clean
 // all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
 func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName string) error {
@@ -181,13 +181,13 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 		}
 	}
 
-	if len(cacheName) >= 1 && cleanAll != true {
+	if len(cacheName) >= 1 && !cleanAll {
 		foundMatch, err := CleanCacheName(cacheName, libraryClean, ociClean)
 		if err != nil {
 			return err
 		}
-		if foundMatch != true {
-			sylog.Warningf("No cache found with givin name: %v", cacheName)
+		if !foundMatch {
+			sylog.Warningf("No cache found with given name: %v", cacheName)
 			os.Exit(0)
 		}
 		return nil

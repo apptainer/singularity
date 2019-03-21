@@ -247,9 +247,8 @@ func (m *Manager) sync() error {
 
 	for p, e := range m.entries {
 		path := m.rootPath + p
-		switch e.(type) {
+		switch entry := e.(type) {
 		case *file:
-			entry := e.(*file)
 			if entry.created {
 				continue
 			}
@@ -273,7 +272,6 @@ func (m *Manager) sync() error {
 			}
 			entry.created = true
 		case *symlink:
-			entry := e.(*symlink)
 			if entry.created {
 				continue
 			}

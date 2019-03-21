@@ -14,6 +14,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -365,11 +367,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 // is enabled
 func (c *container) isLayerEnabled() bool {
 	sylog.Debugf("Using Layer system: %v\n", c.sessionLayerType)
-	if c.sessionLayerType == "none" {
-		return false
-	}
-
-	return true
+	return c.sessionLayerType != "none"
 }
 
 func (c *container) mount(point *mount.Point) error {
@@ -1008,7 +1006,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			//  and also check the device that docker uses,
 			//  /dev/console.
 			procfd := fmt.Sprintf("/proc/self/fd/%d", fd)
-			ttylink, err := os.Readlink(procfd)
+			ttylink, err := mainthread.Readlink(procfd)
 			if err != nil {
 				return err
 			}
@@ -1650,6 +1648,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 				return err
 			}
 			content, err = ioutil.ReadAll(r)
+			r.Close()
 			if err != nil {
 				return err
 			}
