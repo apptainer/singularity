@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -101,7 +101,7 @@ func Split(uri string) (transport string, ref string) {
 		return "", uri
 	}
 
-	if uriSplit[1][0:1] == "//" {
+	if strings.HasPrefix(uriSplit[1], "//") {
 		// the format was ://, so try it whether or not valid URI
 		return uriSplit[0], uriSplit[1]
 	}
