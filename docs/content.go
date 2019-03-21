@@ -23,9 +23,9 @@ Enterprise Performance Computing (EPC)`
   Singularity one is capable of building a root file system that runs on any 
   other Linux system where Singularity is installed.`
 	SingularityExample string = `
-  $ singularity help <command>
-      Additional help for any Singularity subcommand can be seen by appending
-      the subcommand name to the above command.`
+  $ singularity help <command> [<subcommand>]
+  $ singularity help build
+  $ singularity help instance start`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// build
@@ -163,7 +163,7 @@ Enterprise Performance Computing (EPC)`
 	CacheShort string = `Manage your local singularity cache`
 	CacheLong  string = `
   Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
-  You can list/clean using the spicific types.`
+  You can list/clean using the specific types.`
 	CacheExample string = `
   All group commands have their own help output:
 
@@ -258,10 +258,18 @@ Enterprise Performance Computing (EPC)`
 	KeySearchUse   string = `search [search options...] <search_string>`
 	KeySearchShort string = `Search for keys matching string argument`
 	KeySearchLong  string = `
-  The 'key search' command allows you to connect to a key server and look for 
-  public keys matching the string argument passed to the command line.`
+  The 'key search' command allows you to connect to a key server and look for
+  public keys matching the argument passed to the command line. You can
+  also search for a key by fingerprint or key ID by adding '0x' before the
+  fingerprint.`
 	KeySearchExample string = `
-  $ singularity key search sylabs.io`
+  $ singularity key search sylabs.io
+
+  # note the '0x' before the fingerprint:
+  $ singularity key search 0x8883491F4268F173C6E5DC49EDECE4F3F38D871E
+
+  # search by key ID: (again, there's '0x' before the ID)
+  $ singularity key search 0xF38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key pull
@@ -273,7 +281,7 @@ Enterprise Performance Computing (EPC)`
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyPullExample string = `
-  $ singularity key pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key push
@@ -284,7 +292,7 @@ Enterprise Performance Computing (EPC)`
   The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
 	KeyPushExample string = `
-  $ singularity key push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key remove
