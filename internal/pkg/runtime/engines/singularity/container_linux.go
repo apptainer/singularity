@@ -1650,6 +1650,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 				return err
 			}
 			content, err = ioutil.ReadAll(r)
+			r.Close()
 			if err != nil {
 				return err
 			}
