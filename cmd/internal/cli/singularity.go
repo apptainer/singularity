@@ -11,8 +11,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -49,7 +47,7 @@ const (
 // systems internal API. This will guarantee that any internal API calls happen AFTER all plugins
 // have been properly loaded and initialized
 func initializePlugins() {
-	if err := plugin.InitializeAll(filepath.Join(buildcfg.LIBEXECDIR, "singularity/plugin/*")); err != nil {
+	if err := plugin.InitializeAll(buildcfg.LIBEXECDIR); err != nil {
 		sylog.Fatalf("Unable to initialize plugins: %s\n", err)
 	}
 }
@@ -65,6 +63,9 @@ func init() {
 
 	SingularityCmd.SetHelpTemplate(docs.HelpTemplate)
 	SingularityCmd.SetUsageTemplate(docs.UseTemplate)
+
+	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
+	SingularityCmd.SetVersionTemplate(vt)
 
 	usr, err := user.Current()
 	if err != nil {
@@ -132,13 +133,6 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	defaultEnv := "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-
-	// backup user PATH
-	userEnv := strings.Join([]string{os.Getenv("PATH"), defaultEnv}, ":")
-	os.Setenv("USER_PATH", userEnv)
-
-	os.Setenv("PATH", defaultEnv)
 	if err := SingularityCmd.Execute(); err != nil {
 		os.Exit(1)
 	}

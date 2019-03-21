@@ -67,7 +67,7 @@ func init() {
 	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print build ID (no real-time logs and requires --remote)")
 	BuildCmd.Flags().SetAnnotation("detached", "envkey", []string{"DETACHED"})
 
-	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "remote Build Service URL")
+	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "remote Build Service URL, setting this implies --remote")
 	BuildCmd.Flags().SetAnnotation("builder", "envkey", []string{"BUILDER"})
 
 	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
@@ -101,6 +101,15 @@ var BuildCmd = &cobra.Command{
 	PreRun:           preRun,
 	Run:              run,
 	TraverseChildren: true,
+}
+
+func preRun(cmd *cobra.Command, args []string) {
+	// Always perform remote build when builder flag is set
+	if cmd.Flags().Lookup("builder").Changed {
+		cmd.Flags().Lookup("remote").Value.Set("true")
+	}
+
+	sylabsToken(cmd, args)
 }
 
 // checkTargetCollision makes sure output target doesn't exist, or is ok to overwrite
@@ -205,7 +214,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 func handleRemoteBuildFlags(cmd *cobra.Command) {
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
+	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to CLI defaults")
 		return
@@ -213,16 +222,16 @@ func handleRemoteBuildFlags(cmd *cobra.Command) {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = e.Token
+	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("builder").Changed {
-		uri, err := e.GetServiceURI("builder")
+		uri, err := endpoint.GetServiceURI("builder")
 		if err != nil {
 			sylog.Fatalf("Unable to get build service URI: %v", err)
 		}
 		builderURL = uri
 	}
 	if !cmd.Flags().Lookup("library").Changed {
-		uri, err := e.GetServiceURI("library")
+		uri, err := endpoint.GetServiceURI("library")
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}

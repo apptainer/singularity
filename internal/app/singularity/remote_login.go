@@ -15,11 +15,11 @@ import (
 )
 
 // RemoteLogin logs in remote by setting API token
-func RemoteLogin(configFile, name string) (err error) {
+func RemoteLogin(usrConfigFile, sysConfigFile, name string) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
@@ -29,6 +29,10 @@ func RemoteLogin(configFile, name string) (err error) {
 	c, err = remote.ReadFrom(file)
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	if err := syncSysConfig(c, sysConfigFile); err != nil {
+		return err
 	}
 
 	r, err := c.GetRemote(name)

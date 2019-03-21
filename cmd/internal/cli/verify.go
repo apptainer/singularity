@@ -23,7 +23,7 @@ var (
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
 
-	VerifyCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "key server URL")
+	VerifyCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
 	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be verified")
 	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be verified")
@@ -39,7 +39,7 @@ var VerifyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
-		if err := doVerifyCmd(args[0], keyServerURL); err != nil {
+		if err := doVerifyCmd(args[0], keyServerURI); err != nil {
 			sylog.Errorf("verification failed: %s", err)
 			os.Exit(2)
 		}
