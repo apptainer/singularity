@@ -46,3 +46,11 @@ func EvalSymlinks(path string) (rpath string, err error) {
 	})
 	return
 }
+
+// Chdir changes and returns current working directory from main thread
+func Chdir(path string) (err error) {
+	Execute(func() {
+		err = os.Chdir(path)
+	})
+	return
+}
