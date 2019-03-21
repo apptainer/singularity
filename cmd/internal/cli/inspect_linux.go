@@ -89,11 +89,12 @@ func getPathPrefix(appName string) string {
 }
 
 func getSingleFileCommand(file string, label string, appName string) string {
-	str := fmt.Sprintf(" if [ -f %s/%s ]; then", getPathPrefix(appName), file)
-	str += fmt.Sprintf("     echo %s:`wc -c < %s/%s`;", label, getPathPrefix(appName), file)
-	str += fmt.Sprintf("     cat %s/%s;", getPathPrefix(appName), file)
-	str += " fi;"
-	return str
+	var str strings.Builder
+	str.WriteString(fmt.Sprintf(" if [ -f %s/%s ]; then", getPathPrefix(appName), file))
+	str.WriteString(fmt.Sprintf("     echo %s:`wc -c < %s/%s`;", label, getPathPrefix(appName), file))
+	str.WriteString(fmt.Sprintf("     cat %s/%s;", getPathPrefix(appName), file))
+	str.WriteString(" fi;")
+	return str.String()
 }
 
 func getLabelsCommand(appName string) string {
@@ -113,11 +114,12 @@ func getTestCommand(appName string) string {
 }
 
 func getEnvironmentCommand(appName string) string {
-	str := " for env in %s/env/9*-environment.sh; do"
-	str += "     echo `basename -z $env`:`wc -c < $env`;"
-	str += "     cat $env;"
-	str += " done;"
-	return fmt.Sprintf(str, getPathPrefix(appName))
+	var str strings.Builder
+	str.WriteString(" for env in %s/env/9*-environment.sh; do")
+	str.WriteString("     echo `basename -z $env`:`wc -c < $env`;")
+	str.WriteString("     cat $env;")
+	str.WriteString(" done;")
+	return fmt.Sprintf(str.String(), getPathPrefix(appName))
 }
 
 func getHelpCommand(appName string) string {
