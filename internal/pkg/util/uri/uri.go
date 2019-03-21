@@ -101,7 +101,7 @@ func Split(uri string) (transport string, ref string) {
 		return "", uri
 	}
 
-	if uriSplit[1][0:1] == "//" {
+	if strings.HasPrefix(uriSplit[1], "//") {
 		// the format was ://, so try it whether or not valid URI
 		return uriSplit[0], uriSplit[1]
 	}

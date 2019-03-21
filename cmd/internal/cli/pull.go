@@ -29,6 +29,8 @@ const (
 	// ShubProtocol holds singularity hub base URI
 	// for more info refer to https://singularity-hub.org/
 	ShubProtocol = "shub"
+	// DockerProtocol holds dockerhub base URI
+	DockerProtocol = "docker"
 	// HTTPProtocol holds the remote http base URI
 	HTTPProtocol = "http"
 	// HTTPSProtocol holds the remote https base URI
@@ -173,7 +175,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
-	default:
+	case DockerProtocol:
 		if !force {
 			if _, err := os.Stat(name); err == nil {
 				sylog.Fatalf("image file already exists - will not overwrite")
@@ -192,6 +194,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 			DockerAuthConfig: authConf,
 			NoCleanUp:        noCleanUp,
 		})
+	default:
+		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
 }
 
