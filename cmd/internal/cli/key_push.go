@@ -20,7 +20,7 @@ import (
 func init() {
 	KeyPushCmd.Flags().SetInterspersed(false)
 
-	KeyPushCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "specify the key server URL")
+	KeyPushCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "specify the key server URL")
 	KeyPushCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
@@ -32,7 +32,7 @@ var KeyPushCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		handleKeyFlags(cmd)
 
-		if err := doKeyPushCmd(args[0], keyServerURL); err != nil {
+		if err := doKeyPushCmd(args[0], keyServerURI); err != nil {
 			sylog.Errorf("push failed: %s", err)
 			os.Exit(2)
 		}
@@ -80,20 +80,20 @@ func doKeyPushCmd(fingerprint string, url string) error {
 func handleKeyFlags(cmd *cobra.Command) {
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
-	e, err := sylabsRemote(remoteConfig)
+	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURL)
+		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
 	}
 
-	authToken = e.Token
+	authToken = endpoint.Token
 	if !cmd.Flags().Lookup("url").Changed {
-		uri, err := e.GetServiceURI("keystore")
+		uri, err := endpoint.GetServiceURI("keystore")
 		if err != nil {
 			sylog.Fatalf("Unable to get key service URI: %v", err)
 		}
-		keyServerURL = uri
+		keyServerURI = uri
 	}
 }
