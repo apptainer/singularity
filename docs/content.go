@@ -289,9 +289,9 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key remove
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyRemoveUse   string = `remove <fingerprint>`
-	KeyRemoveShort string = `Remove a local public key`
-	KeyRemoveLong  string = `The 'key remove' command will remove a local public key.`
+	KeyRemoveUse     string = `remove <fingerprint>`
+	KeyRemoveShort   string = `Remove a local public key`
+	KeyRemoveLong    string = `The 'key remove' command will remove a local public key.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
