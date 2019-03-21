@@ -7,7 +7,12 @@
 
 package goversion
 
-// Check checks if we are running with the minimal recommended version of Go runtime
-func Check() error {
-	return nil
-}
+// __BUILD_REQUIRES_GO_VERSION_1_10_OR_LATER__ provides a human-readable
+// error message when building this package with an unsupported version
+// of the Go compiler.
+//
+// Keep the name of this variable in sync with the minimum required
+// version specified in the build tag above.
+//
+// nolint:golint
+const __BUILD_REQUIRES_GO_VERSION_1_10_OR_LATER__ = uint8(0)
