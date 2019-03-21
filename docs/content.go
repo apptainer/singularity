@@ -204,10 +204,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse string = `key [key options...] <subcommand>`
-
-	// keys : for the hidden `keys` command
-	KeysUse  string = `keys [keys options...] <subcommand>`
+	KeyUse   string = `key [key options...] <subcommand>`
 	KeyShort string = `Manage OpenPGP key stores`
 	KeyLong  string = `
   The 'key' command allows you to manage local OpenPGP key stores by creating
@@ -831,13 +828,13 @@ found at:
 	OciStateExample string = `
   $ singularity oci state mycontainer`
 
-	OciKillUse   string = `kill <container_ID> [-s] signal`
+	OciKillUse   string = `kill <container_ID>`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
   Kill invoke kill operation to kill processes running within container identified by container ID.`
 	OciKillExample string = `
   $ singularity oci kill mycontainer INT
-  $ singularity oci kill mycontainer -s INT`
+  $ singularity oci kill -s INT mycontainer`
 
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`

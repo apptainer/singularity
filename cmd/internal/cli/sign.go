@@ -22,7 +22,7 @@ var (
 func init() {
 	SignCmd.Flags().SetInterspersed(false)
 
-	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "key server URL")
+	SignCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
 	SignCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 	SignCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be signed")
 	SignCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be signed")
@@ -40,7 +40,7 @@ var SignCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		if err := doSignCmd(args[0], keyServerURL); err != nil {
+		if err := doSignCmd(args[0], keyServerURI); err != nil {
 			sylog.Errorf("signing container failed: %s", err)
 			os.Exit(2)
 		}
