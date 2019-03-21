@@ -22,7 +22,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/goversion"
+	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
@@ -92,10 +92,6 @@ func init() {
 }
 
 func main() {
-	if err := goversion.Check(); err != nil {
-		sylog.Fatalf("%s", err)
-	}
-
 	// initialize runtime engines
 	engines.Init()
 

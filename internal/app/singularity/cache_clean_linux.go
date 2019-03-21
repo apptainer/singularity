@@ -187,7 +187,7 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 			return err
 		}
 		if foundMatch != true {
-			sylog.Warningf("No cache found with givin name: %v", cacheName)
+			sylog.Warningf("No cache found with given name: %v", cacheName)
 			os.Exit(0)
 		}
 		return nil
