@@ -281,9 +281,9 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-// compareLocalPubKey compares a key ID with a string, returning true if the
+// CompareKeyEntity compares a key ID with a string, returning true if the
 // key and oldToken match.
-func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
+func CompareKeyEntity(e *openpgp.Entity, oldToken string) bool {
 	// TODO: there must be a better way to do this...
 	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
 }
@@ -304,7 +304,7 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	}
 
 	for i := range elist {
-		if compareLocalPubKey(elist[i], ckey) {
+		if CompareKeyEntity(elist[i], ckey) {
 			return true, nil
 		}
 	}
@@ -332,7 +332,7 @@ func RemovePubKey(toDelete string) error {
 	// sort through them, and remove any that match toDelete
 	for i := range elist {
 		// if the elist[i] dose not match toDelete, then add it to newKeyList
-		if !compareLocalPubKey(elist[i], toDelete) {
+		if !CompareKeyEntity(elist[i], toDelete) {
 			newKeyList = append(newKeyList, *elist[i])
 		} else {
 			matchKey = true
@@ -340,7 +340,7 @@ func RemovePubKey(toDelete string) error {
 	}
 
 	if !matchKey {
-		return fmt.Errorf("no key matching given fingerprint")
+		return fmt.Errorf("no key matching given fingerprint found")
 	}
 
 	sylog.Verbosef("Updating local keyring: %v", PublicPath())

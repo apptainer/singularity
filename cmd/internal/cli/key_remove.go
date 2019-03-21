@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -24,9 +22,9 @@ var KeyRemoveCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := sypgp.RemovePubKey(fmt.Sprintf("%s", args[0]))
+		err := sypgp.RemovePubKey(args[0])
 		if err != nil {
-			sylog.Fatalf("Unable to remove public key: %v", err)
+			sylog.Fatalf("Unable to remove public key: %s", err)
 		}
 
 	},
