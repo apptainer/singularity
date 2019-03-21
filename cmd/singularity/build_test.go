@@ -58,10 +58,9 @@ func imageVerify(t *testing.T, imagePath string, labels bool) {
 }
 
 type buildOpts struct {
-	force           bool
-	sandbox         bool
-	unauthenticated bool
-	env             []string
+	force   bool
+	sandbox bool
+	env     []string
 }
 
 func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
@@ -73,9 +72,6 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 	if opts.sandbox {
 		argv = append(argv, "--sandbox")
 	}
-	if opts.unauthenticated {
-		argv = append(argv, "--alow-unauthenticated")
-	}
 	argv = append(argv, imagePath, buildSpec)
 
 	cmd := exec.Command(cmdPath, argv...)
@@ -86,24 +82,21 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 
 func TestBuild(t *testing.T) {
 	tests := []struct {
-		name            string
-		dependency      string
-		buildSpec       string
-		sandbox         bool
-		unauthenticated bool
-		succeed         bool
+		name       string
+		dependency string
+		buildSpec  string
+		sandbox    bool
 	}{
-		{"BusyBox", "", "../../examples/busybox/Singularity", false, false, true},
-		{"BusyBoxSandbox", "", "../../examples/busybox/Singularity", true, false, true},
-		{"Debootstrap", "debootstrap", "../../examples/debian/Singularity", true, false, true},
-		{"DockerURI", "", "docker://busybox", true, false, true},
-		{"DockerDefFile", "", "../../examples/docker/Singularity", true, false, true},
-		{"SHubURI", "", "shub://GodloveD/busybox", true, false, true},
-		{"SHubDefFile", "", "../../examples/shub/Singularity", true, false, true},
-		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false}, // this should fail
-		{"LibraryDefFile", "", "../../examples/library/Singularity", true, false, true},
-		{"Yum", "yum", "../../examples/centos/Singularity", true, false, true},
-		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true, false, true},
+		{"BusyBox", "", "../../examples/busybox/Singularity", false},
+		{"BusyBoxSandbox", "", "../../examples/busybox/Singularity", true},
+		{"Debootstrap", "debootstrap", "../../examples/debian/Singularity", true},
+		{"DockerURI", "", "docker://busybox", true},
+		{"DockerDefFile", "", "../../examples/docker/Singularity", true},
+		{"SHubURI", "", "shub://GodloveD/busybox", true},
+		{"SHubDefFile", "", "../../examples/shub/Singularity", true},
+		{"LibraryDefFile", "", "../../examples/library/Singularity", true},
+		{"Yum", "yum", "../../examples/centos/Singularity", true},
+		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
@@ -121,24 +114,11 @@ func TestBuild(t *testing.T) {
 			imagePath := path.Join(testDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			b, err := imageBuild(opts, imagePath, tt.buildSpec)
-			if tt.succeed {
-				if err != nil {
-					t.Log(string(b))
-					t.Fatalf("unexpected failure: %v", err)
-				}
-				imageVerify(t, imagePath, false)
-			} else {
-				if err == nil {
-					t.Log(string(b))
-					t.Fatalf("unexpected success: command should have failed")
-				}
+			if b, err := imageBuild(opts, imagePath, tt.buildSpec); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
 			}
-
-			//			if b, err := imageBuild(opts, imagePath, tt.buildSpec); err != nil {
-			//				t.Log(string(b))
-			//				t.Fatalf("unexpected failure: %v", err)
-			//			}
+			imageVerify(t, imagePath, false)
 		}))
 	}
 }
