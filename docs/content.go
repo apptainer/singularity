@@ -163,7 +163,7 @@ Enterprise Performance Computing (EPC)`
 	CacheShort string = `Manage your local singularity cache`
 	CacheLong  string = `
   Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
-  You can list/clean using the spicific types.`
+  You can list/clean using the specific types.`
 	CacheExample string = `
   All group commands have their own help output:
 
