@@ -14,10 +14,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-var (
-	fingerPrintRemove string
-)
-
 func init() {
 	KeyRemoveCmd.Flags().SetInterspersed(false)
 }
