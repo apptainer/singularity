@@ -237,13 +237,21 @@ Enterprise Performance Computing (EPC)`
 	KeyExportLong  string = `
   The 'key export' command allows you to export a key (either private or public) and save it on a local folder`
 	KeyExportExample string = `
-  For exporting a private key:
-  $ singularity key export --private --fingerprint <fingerprint_id> --path $HOME/key.asc
-  $ singularity key export --private --fingerprint <fingerprint_id> --path $HOME/key.asc
+  Exporting a private key:
   
-  For exporting a public key:
-  $ singularity key export --public --fingerprint <fingerprint_id> --path $HOME/key.asc
-  $ singularity keys export --public --fingerprint <fingerprint_id> --path $HOME/key.asc
+  $ singularity key export --secret <fingerprint_id> <file_folder_path>
+
+  For example:
+
+  $ singularity key export --secret 9B19CCFCA7B8DDE324E03753D144FCB921E59147 $HOME/mysecretkey.asc
+  
+  Exporting a public key:
+  
+  $ singularity key export <fingerprint_id> <file_folder_path>
+
+  For example:
+
+  $ singularity key export 9B19CCFCA7B8DDE324E03753D144FCB921E59147 $HOME/mysecretkey.asc
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
