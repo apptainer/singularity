@@ -232,7 +232,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key export
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyExportUse   string = `export --private --fingerprint <key-fingerprint> --path <full-path-to-save-key>`
+	KeyExportUse   string = `export [export options...] <key-fingerprint> <full-path-to-key-file>`
 	KeyExportShort string = `Export a public or private key into a specific folder location`
 	KeyExportLong  string = `
   The 'key export' command allows you to export a key (either private or public) and save it on a local folder`
