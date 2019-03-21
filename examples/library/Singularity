@@ -1,5 +1,5 @@
 Bootstrap: library
-From: alpine:3.7
+From: alpine:3.8
 
 %runscript
     echo "$@"
