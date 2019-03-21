@@ -168,6 +168,57 @@ func Disable(name, libexecdir string) error {
 	return meta.disable()
 }
 
+// Inspect obtains information about the plugin "name"
+//
+// "name" can be either the name of plugin installed under "libexecdir"
+// or the name of an image file corresponding to a plugin.
+func Inspect(name, libexecdir string) (pluginapi.Manifest, error) {
+	var manifest pluginapi.Manifest
+
+	// LoadContainer returns a decorated error, no it's not possible
+	// to ask whether the error happens because the file does not
+	// exist or something else. Check for the file _before_ trying
+	// to load it as a container.
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			// no file, try to find the installed plugin
+			pluginDir := filepath.Join(libexecdir, DirRoot)
+			meta, err := loadMetaByName(name, pluginDir)
+			if err != nil {
+				// Metafile not found, or we cannot read
+				// it. There's nothing we can do.
+				return manifest, err
+			}
+
+			// Replace the original name, which seems to be
+			// the name of a plugin, by the path to the
+			// installed SIF file for that plugin.
+			name = meta.imageName()
+		} else {
+			// There seems to be a file here, but we cannot
+			// read it.
+			return manifest, err
+		}
+	}
+
+	// at this point, either the file is there under the original
+	// name or we found one by looking at the metafile.
+	fimg, err := sif.LoadContainer(name, true)
+	if err != nil {
+		return manifest, err
+	}
+
+	defer fimg.UnloadContainer()
+
+	if !isPluginFile(&fimg) {
+		return manifest, fmt.Errorf("while opening SIF file: not a valid plugin")
+	}
+
+	manifest = getManifest(&fimg)
+
+	return manifest, nil
+}
+
 func loadMetaByName(name, plugindir string) (*Meta, error) {
 	m, err := loadMetaByFilename(metaPath(plugindir, name))
 	if err != nil {
