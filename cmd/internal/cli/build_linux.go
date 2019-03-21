@@ -18,10 +18,6 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-func preRun(cmd *cobra.Command, args []string) {
-	sylabsToken(cmd, args)
-}
-
 func run(cmd *cobra.Command, args []string) {
 	buildFormat := "sif"
 	if sandbox {

@@ -94,10 +94,7 @@ func TestBuild(t *testing.T) {
 		buildSpec       string
 		sandbox         bool
 		unauthenticated bool
-
-		// succeed will decied if the command should succeed, or fail.
-		// true means the command should succeed
-		succeed bool
+		succeed         bool
 	}{
 		{"BusyBox", "", "../../examples/busybox/Singularity", false, false, true},
 		{"BusyBoxSandbox", "", "../../examples/busybox/Singularity", true, false, true},
@@ -106,6 +103,7 @@ func TestBuild(t *testing.T) {
 		{"DockerDefFile", "", "../../examples/docker/Singularity", true, false, true},
 		{"SHubURI", "", "shub://GodloveD/busybox", true, false, true},
 		{"SHubDefFile", "", "../../examples/shub/Singularity", true, false, true},
+		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false}, // this should fail
 		{"LibraryDefFile", "", "../../examples/library/Singularity", true, false, true},
 		{"Yum", "yum", "../../examples/centos/Singularity", true, false, true},
 		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true, false, true},
@@ -132,13 +130,18 @@ func TestBuild(t *testing.T) {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
+				imageVerify(t, imagePath, false)
 			} else {
 				if err == nil {
 					t.Log(string(b))
-					t.Fatalf("unexpected success: %v", err)
+					t.Fatalf("unexpected success: command should have failed")
 				}
 			}
-			imageVerify(t, imagePath, false)
+
+			//			if b, err := imageBuild(opts, imagePath, tt.buildSpec); err != nil {
+			//				t.Log(string(b))
+			//				t.Fatalf("unexpected failure: %v", err)
+			//			}
 		}))
 	}
 }
