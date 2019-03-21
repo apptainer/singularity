@@ -89,7 +89,47 @@ jobs:
             curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
 
-  singularity_test:
+  unit_tests:
+    machine: true
+    steps:
+      - attach_workspace:
+          at: ~/go
+      - run:
+          name: Setup environment
+          command: |-
+            echo 'export  GOPATH=$HOME/go' >> $BASH_ENV
+            echo 'export  GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export  GOBIN=$HOME/go/bin' >> $BASH_ENV
+            echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
+      - run:
+          name: Update Go to 1.11
+          working_directory: /tmp
+          command: |-
+            wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
+            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
+            sudo chown -R circleci:circleci ~/go
+      - run:
+          name: Fetch deps
+          working_directory: /tmp
+          command: |-
+            mkdir -p ${GOBIN}
+            sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+      - run:
+          name: Build and Install Singularity
+          command: |-
+            cd $HOME/go/src/github.com/sylabs/singularity
+            ./mconfig -p /usr/local --without-network
+            make -j$(nproc) -C ./builddir all
+            sudo make -C ./builddir install
+      - run:
+          name: Run unit tests
+          command: |-
+            cd $HOME/go/src/github.com/sylabs/singularity
+            make -j$(nproc) -C ./builddir unit-test
+
+  integration_tests:
     machine: true
     steps:
       - attach_workspace:
@@ -109,6 +149,7 @@ jobs:
             wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
             sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
+            sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
           name: Fetch deps
@@ -118,21 +159,21 @@ jobs:
             curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
-          name: Build & install singularity
+          name: Build and Install singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
             ./mconfig -p /usr/local
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: Test singularity
+          name: Run integration tests
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            make -C ./builddir test
+            make -C ./builddir integration-test
 
 workflows:
   version: 2
-  test-compile:
+  build_and_test:
     jobs:
       - get_source
       - go1.10-stretch:
@@ -147,6 +188,12 @@ workflows:
       - go1.11-macos:
           requires:
             - get_source
-      - singularity_test:
+      - unit_tests:
           requires:
             - get_source
+      - integration_tests:
+          requires:
+            - get_source
+          filters:
+            branches:
+              only: master
