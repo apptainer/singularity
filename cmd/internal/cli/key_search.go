@@ -17,7 +17,7 @@ import (
 func init() {
 	KeySearchCmd.Flags().SetInterspersed(false)
 
-	KeySearchCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "specify the key server URL")
+	KeySearchCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "specify the key server URL")
 	KeySearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }
 
@@ -27,7 +27,7 @@ var KeySearchCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := doKeySearchCmd(args[0], keyServerURL); err != nil {
+		if err := doKeySearchCmd(args[0], keyServerURI); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
 		}

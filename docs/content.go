@@ -204,10 +204,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse string = `key [key options...] <subcommand>`
-
-	// keys : for the hidden `keys` command
-	KeysUse  string = `keys [keys options...] <subcommand>`
+	KeyUse   string = `key [key options...] <subcommand>`
 	KeyShort string = `Manage OpenPGP key stores`
 	KeyLong  string = `
   The 'key' command allows you to manage local OpenPGP key stores by creating
