@@ -34,6 +34,7 @@ var CapabilityCmd = &cobra.Command{
 	},
 	DisableFlagsInUseLine: true,
 
+	Aliases:       []string{"caps"},
 	Use:           docs.CapabilityUse,
 	Short:         docs.CapabilityShort,
 	Long:          docs.CapabilityLong,
