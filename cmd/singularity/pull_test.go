@@ -57,6 +57,7 @@ func TestPull(t *testing.T) {
 		{"PullWithHash", "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c", true, false, "", imagePath, true},
 		{"PullWithoutTransportProtocol", "alpine:3.8", true, false, "", imagePath, true},
 		{"PullNonExistent", "library://this_should_not/exist/not_exist", true, false, "", imagePath, false}, // pull a non-existent container
+		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", imagePath, true},                 // https://cloud.sylabs.io/library
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
@@ -67,13 +68,13 @@ func TestPull(t *testing.T) {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
+				imageVerify(t, tt.imagePath, false)
 			} else {
 				if err == nil {
 					t.Log(string(b))
 					t.Fatalf("unexpected success: command should have failed")
 				}
 			}
-			imageVerify(t, tt.imagePath, false)
 		}))
 	}
 }
