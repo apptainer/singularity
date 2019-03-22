@@ -16,12 +16,12 @@ import (
 func init() {
 
 	// -u|--user
-	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "add capabilities for the given user")
+	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "add capabilities to a user")
 	CapabilityAddCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
 	CapabilityAddCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -g|--group
-	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "add capabilities for the given group")
+	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "add capabilities to a group")
 	CapabilityAddCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 	CapabilityAddCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
 
