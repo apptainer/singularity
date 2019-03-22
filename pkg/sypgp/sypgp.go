@@ -671,7 +671,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	return el, nil
 }
 
-func serializeEntity(e *openpgp.Entity, blockType string) (string, error) {
+func SerializePublicEntity(e *openpgp.Entity, blockType string) (string, error) {
 	w := bytes.NewBuffer(nil)
 
 	wr, err := armor.Encode(w, blockType, nil)
@@ -688,9 +688,26 @@ func serializeEntity(e *openpgp.Entity, blockType string) (string, error) {
 	return w.String(), nil
 }
 
+func SerializePrivateEntity(e *openpgp.Entity, blockType string, config *packet.Config) (string, error) {
+	w := bytes.NewBuffer(nil)
+
+	wr, err := armor.Encode(w, blockType, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if err = e.SerializePrivate(wr, config); err != nil {
+		wr.Close()
+		return "", err
+	}
+	wr.Close()
+
+	return w.String(), nil
+}
+
 // PushPubkey pushes a public key to the Key Service.
 func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
-	keyText, err := serializeEntity(e, openpgp.PublicKeyType)
+	keyText, err := SerializePublicEntity(e, openpgp.PublicKeyType)
 	if err != nil {
 		return err
 	}

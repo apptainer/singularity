@@ -40,41 +40,49 @@ var KeyExportCmd = &cobra.Command{
 
 func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
+	//describes the path from either the local public keyring or secret local keyring
+	var fetchPath string
+	var blockType string
+
 	if secretExport {
-
-		f, err := os.OpenFile(sypgp.SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
-		if err != nil {
-			return fmt.Errorf("unable to open local keyring: %v", err)
-		}
-		defer f.Close()
-
-		// read all the local secret keys
-		elist, err := openpgp.ReadKeyRing(f)
-		if err != nil {
-			return fmt.Errorf("unable to list local keyring: %v", err)
-		}
-
-		foundKey = false
-		// sort through them, and remove any that match toDelete
-		for i := range elist {
-			// if the elist[i] dose not match toDelete, then add it to newKeyList
-			if fmt.Sprintf("%X", elist[i].PrimaryKey.Fingerprint) == fmt.Sprintf("%X", fingerprint) {
-				foundKey = true
-				fmt.Printf("found key!\n")
-				break
-
-			}
-		}
-
+		fetchPath = sypgp.SecretPath()
+		blockType = "PGP PRIVATE KEY BLOCK"
 	} else {
-
-		f, err := os.OpenFile(sypgp.PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
-		if err != nil {
-			return fmt.Errorf("unable to open local keyring: %v", err)
-		}
-		defer f.Close()
+		fetchPath = sypgp.PublicPath()
+		blockType = "PGP PUBLIC KEY BLOCK"
 	}
 
+	f, err := os.OpenFile(fetchPath, os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to open local keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local secret keys
+	localEntityList, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	var entityToSave *openpgp.Entity
+	var serializedEntity string
+	foundKey = false
+	// sort through them, and remove any that match toDelete
+	for _, localEntity := range localEntityList {
+		if fmt.Sprintf("%X", localEntity.PrimaryKey.Fingerprint) == fingerprint {
+			foundKey = true
+			entityToSave = localEntity
+			break
+		}
+	}
+
+	if secretExport {
+		serializedEntity, err = sypgp.SerializePrivateEntity(entityToSave, blockType, nil)
+	} else {
+		serializedEntity, err = sypgp.SerializePublicEntity(entityToSave, blockType)
+	}
+
+	fmt.Printf("%s", serializedEntity)
 	return nil
 }
 
