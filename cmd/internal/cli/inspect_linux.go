@@ -139,10 +139,8 @@ var InspectCmd = &cobra.Command{
 		delimiter := "@@@end"
 
 		// If AppName is given fail quickly (exit) if it doesn't exist
-
 		if AppName != "" {
 			sylog.Debugf("Inspection of App %s Selected.", AppName)
-
 			a[2] += getAppCheck(AppName)
 		}
 
