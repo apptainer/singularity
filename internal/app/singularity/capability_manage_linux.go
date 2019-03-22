@@ -84,6 +84,7 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 		for _, cap := range caps {
 			fmt.Printf("%-22s %s\n\n", cap+":", capabilities.Map[cap].Description)
 		}
+		return nil
 	}
 
 	if c.User == "" && c.Group == "" {
