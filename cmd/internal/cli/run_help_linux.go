@@ -31,7 +31,7 @@ const (
 func init() {
 	RunHelpCmd.Flags().SetInterspersed(false)
 
-	RunHelpCmd.Flags().StringVar(&AppName, "app", "", "Get help info for specific app")
+	RunHelpCmd.Flags().StringVar(&AppName, "app", "", "Show the help for an app")
 	RunHelpCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
 
 	SingularityCmd.AddCommand(RunHelpCmd)
