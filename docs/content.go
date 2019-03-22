@@ -190,7 +190,7 @@ Enterprise Performance Computing (EPC)`
 	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
-  This will list you local cache stored at $HOME/.singularity/cache.`
+  This will list your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).
 	CacheListExample string = `
   All group commands have their own help output:
 
