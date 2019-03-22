@@ -24,7 +24,7 @@ type CapListConfig struct {
 // CapabilityList lists the capabilities based on the CapListConfig
 func CapabilityList(capFile string, c CapListConfig) error {
 	if c.User == "" && c.Group == "" && !c.All {
-		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
+		return fmt.Errorf("while listing capabilities: must specify a user or a group")
 	}
 
 	oldmask := syscall.Umask(0)
