@@ -41,6 +41,16 @@ type Bundle struct {
 
 // Options ...
 type Options struct {
+	// sections are the parts of the definition to run during the build
+	Sections []string `json:"sections"`
+	// TmpDir specifies a non-standard temporary location to perform a build
+	TmpDir string
+	// LibraryURL contains URL to library where base images can be pulled
+	LibraryURL string `json:"libraryURL"`
+	// LibraryAuthToken contains authentication token to access specified library
+	LibraryAuthToken string `json:"libraryAuthToken"`
+	// contains docker credentials if specified
+	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// noTest indicates if build should skip running the test script
 	NoTest bool `json:"noTest"`
 	// force automatically deletes an existing container at build destination while performing build
@@ -49,19 +59,9 @@ type Options struct {
 	Update bool `json:"update"`
 	// noHTTPS
 	NoHTTPS bool `json:"noHTTPS"`
-	// LibraryURL contains URL to library where base images can be pulled
-	LibraryURL string `json:"libraryURL"`
-	// LibraryAuthToken contains authentication token to access specified library
-	LibraryAuthToken string `json:"libraryAuthToken"`
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
-	// TmpDir specifies a non-standard temporary location to perform a build
-	TmpDir string
-	// sections are the parts of the definition to run during the build
-	Sections []string `json:"sections"`
-	// contains docker credentials if specified
-	DockerAuthConfig *ocitypes.DockerAuthConfig
 }
 
 // NewBundle creates a Bundle environment
