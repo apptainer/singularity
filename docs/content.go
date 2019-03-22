@@ -175,7 +175,7 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanUse   string = `clean [clean options...]`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
-  This will clean you local cache stored at $HOME/.singularity/cache.
+  This will clean your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).
   By default only blob cache is cleaned, use '--all' to clean all cache.`
 	CacheCleanExample string = `
   All group commands have their own help output:
