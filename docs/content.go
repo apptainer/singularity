@@ -162,8 +162,7 @@ Enterprise Performance Computing (EPC)`
 	CacheUse   string = `cache <subcommand>`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
-  Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
-  You can list/clean using the specific types.`
+  Manage your local singularity cache. You can list/clean using the specific types.`
 	CacheExample string = `
   All group commands have their own help output:
 
@@ -176,9 +175,8 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanUse   string = `clean [clean options...]`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
-  This will clean you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob. By default cache clean will only clean blob cache,
-  use: '--all' to clean all cache.`
+  This will clean you local cache stored at $HOME/.singularity/cache.
+  By default only blob cache is cleaned, use '--all' to clean all cache.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
@@ -192,8 +190,7 @@ Enterprise Performance Computing (EPC)`
 	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
-  This will list you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob.`
+  This will list you local cache stored at $HOME/.singularity/cache.`
 	CacheListExample string = `
   All group commands have their own help output:
 
