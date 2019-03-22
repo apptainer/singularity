@@ -62,7 +62,7 @@ func CapabilityList(capFile string, c CapListConfig) error {
 		}
 
 		if outputCaps == 0 {
-			return fmt.Errorf("no capabilities set for users or groups")
+			return fmt.Errorf("no capability set for users or groups")
 		}
 
 		return nil
@@ -85,7 +85,7 @@ func CapabilityList(capFile string, c CapListConfig) error {
 	}
 
 	if outputCaps == 0 {
-		return fmt.Errorf("no capabilities set for user/group %s", c.User)
+		return fmt.Errorf("no capability set for user/group %s", c.User)
 	}
 
 	return nil
