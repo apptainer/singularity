@@ -23,10 +23,6 @@ type CapListConfig struct {
 
 // CapabilityList lists the capabilities based on the CapListConfig
 func CapabilityList(capFile string, c CapListConfig) error {
-	if os.Getuid() != 0 {
-		return fmt.Errorf("while listing capabilities: only root user can list capabilities")
-	}
-
 	if c.User == "" && c.Group == "" && !c.All {
 		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
 	}
