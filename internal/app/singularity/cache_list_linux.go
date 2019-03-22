@@ -150,7 +150,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 			}
 		} else {
 			// stray file in ~/.singularity/cache/library
-			sylog.Debugf("stray file in cache dir: %v", filepath.Join(cache.Library(), f.Name()))
+			sylog.Debugf("stray file in cache directory: %v", filepath.Join(cache.Library(), f.Name()))
 		}
 	}
 	return count, totalSize, nil

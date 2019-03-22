@@ -85,7 +85,7 @@ func TestHostname(t *testing.T) {
 	if err != nil {
 		t.Errorf("should have passed with correct hostname")
 	}
-	if bytes.Compare(content, []byte("mycontainer\n")) != 0 {
+	if !bytes.Equal(content, []byte("mycontainer\n")) {
 		t.Errorf("Hostname returns a bad content")
 	}
 	_, err = Hostname("bad|hostname")
@@ -110,7 +110,7 @@ func TestResolvConf(t *testing.T) {
 	if err != nil {
 		t.Errorf("should have passed with valid dns")
 	}
-	if bytes.Compare(content, []byte("nameserver 8.8.8.8\n")) != 0 {
+	if !bytes.Equal(content, []byte("nameserver 8.8.8.8\n")) {
 		t.Errorf("ResolvConf returns a bad content")
 	}
 }

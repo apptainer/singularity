@@ -379,7 +379,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 					isInternal = true
 				}
 			}
-			if isInternal == true {
+			if isInternal {
 				internalOpts = append(internalOpts, o)
 			} else {
 				mountOpts = append(mountOpts, o)

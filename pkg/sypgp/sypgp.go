@@ -12,6 +12,7 @@ import (
 	"context"
 	"crypto"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -43,6 +44,9 @@ const helpAuth = `Access token is expired or missing. To update or obtain a toke
 WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exists
 
 `
+
+var errPassphraseMismatch = errors.New("passphrases do not match")
+var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
@@ -280,7 +284,8 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // compareLocalPubKey compares a key ID with a string, returning true if the
 // key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
-	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+	// TODO: there must be a better way to do this...
+	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == fmt.Sprintf("%X", oldToken)
 }
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
@@ -330,7 +335,7 @@ func RemovePubKey(toDelete string) error {
 		}
 	}
 
-	sylog.Infof("Updating local keyring: %v", PublicPath())
+	sylog.Verbosef("Updating local keyring: %v", PublicPath())
 
 	// open the public keyring file
 	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
@@ -349,8 +354,46 @@ func RemovePubKey(toDelete string) error {
 	return nil
 }
 
+// GetPassphrase will ask the user for a password with int number of
+// retries.
+func GetPassphrase(retries int) (string, error) {
+	ask := func() (string, error) {
+		pass1, err := AskQuestionNoEcho("Enter a passphrase : ")
+		if err != nil {
+			return "", err
+		}
+
+		pass2, err := AskQuestionNoEcho("Retype your passphrase : ")
+		if err != nil {
+			return "", err
+		}
+
+		if pass1 != pass2 {
+			return "", errPassphraseMismatch
+		}
+
+		return pass1, nil
+	}
+
+	for i := 0; i < retries; i++ {
+		switch passphrase, err := ask(); err {
+		case nil:
+			// we got it!
+			return passphrase, nil
+		case errPassphraseMismatch:
+			// retry
+			sylog.Warningf("%v", err)
+		default:
+			// something else went wrong, bail out
+			return "", err
+		}
+	}
+
+	return "", errTooManyRetries
+}
+
 // GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
-func GenKeyPair() (entity *openpgp.Entity, err error) {
+func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity, err error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
 	if err = PathsCheck(); err != nil {
@@ -372,19 +415,21 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
-	fmt.Print("Generating Entity and OpenPGP Key Pair... ")
+	// get a password
+	passphrase, err := GetPassphrase(3)
+	if err != nil {
+		return
+	}
+
+	fmt.Printf("Generating Entity and OpenPGP Key Pair...")
 	entity, err = openpgp.NewEntity(name, comment, email, conf)
 	if err != nil {
 		return
 	}
-	fmt.Println("Done")
+	fmt.Printf("done\n")
 
 	// encrypt private key
-	pass, err := AskQuestionNoEcho("Enter encryption passphrase : ")
-	if err != nil {
-		return
-	}
-	if err = EncryptKey(entity, pass); err != nil {
+	if err = EncryptKey(entity, passphrase); err != nil {
 		return
 	}
 
@@ -396,12 +441,27 @@ func GenKeyPair() (entity *openpgp.Entity, err error) {
 		return
 	}
 
+	// Ask to push the new key to the keystore
+	pushKeyQ, err := AskQuestion("Would you like to push it to the keystore? [Y,n] : ")
+	if err != nil {
+		return
+	}
+
+	if pushKeyQ == "" || pushKeyQ == "y" || pushKeyQ == "Y" {
+		err = PushPubkey(entity, keyServiceURI, authToken)
+		if err != nil {
+			return
+		}
+		fmt.Printf("Key successfully pushed to: %v\n", keyServiceURI)
+	}
+	fmt.Printf("Done.\n")
+
 	return
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
-	if k.PrivateKey.Encrypted == true {
+	if k.PrivateKey.Encrypted {
 		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
 			return err
@@ -416,7 +476,7 @@ func DecryptKey(k *openpgp.Entity) error {
 
 // EncryptKey encrypts a private key using a pass phrase
 func EncryptKey(k *openpgp.Entity, pass string) (err error) {
-	if k.PrivateKey.Encrypted == true {
+	if k.PrivateKey.Encrypted {
 		return fmt.Errorf("key already encrypted")
 	}
 	err = k.PrivateKey.Encrypt([]byte(pass))

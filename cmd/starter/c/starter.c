@@ -616,7 +616,7 @@ static unsigned char is_suid(void) {
     verbosef("Check if we are running as setuid\n");
 
     if ( proc_auxv < 0 ) {
-        fatalf("Cant' open /proc/self/auxv: %s\n", strerror(errno));
+        fatalf("Can't open /proc/self/auxv: %s\n", strerror(errno));
     }
 
     /* use auxiliary vectors to determine if running privileged */

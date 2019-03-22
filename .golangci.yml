@@ -9,6 +9,7 @@ linters:
     - gofmt
     - goimports
     - golint
+    - gosimple
     - govet
     - ineffassign
     - maligned

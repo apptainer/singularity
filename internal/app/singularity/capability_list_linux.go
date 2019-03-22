@@ -27,7 +27,7 @@ func CapabilityList(capFile string, c CapListConfig) error {
 		return fmt.Errorf("while listing capabilities: only root user can list capabilities")
 	}
 
-	if c.User == "" && c.Group == "" && c.All == false {
+	if c.User == "" && c.Group == "" && !c.All {
 		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
 	}
 
