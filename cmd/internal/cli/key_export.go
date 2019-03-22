@@ -64,7 +64,6 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 	}
 
 	var entityToSave *openpgp.Entity
-	var serializedEntity string
 	foundKey = false
 	// sort through them, and remove any that match toDelete
 	for _, localEntity := range localEntityList {
@@ -76,19 +75,38 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 	}
 
 	if secretExport {
-		//entityToSave.PrivateKey.SerializePGPPrivate(path)
+
+		privKeyBuf := bytes.NewBuffer(nil)
+
+		privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
+		}
+
+		err = entityToSave.SerializePrivate(privKeyWriter, nil)
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
+		}
+		privKeyWriter.Close()
+		file, err := os.Create(path)
+		if err != nil {
+			os.Exit(1)
+		}
+		file.WriteString(privKeyBuf.String())
+		defer file.Close()
+
 	} else {
 
 		pubKeyBuf := bytes.NewBuffer(nil)
 
 		pubKeyWriter, err := armor.Encode(pubKeyBuf, openpgp.PublicKeyType, nil)
 		if err != nil {
-			return fmt.Errorf("error encoding")
+			return fmt.Errorf("error encoding public key")
 		}
 
 		err = entityToSave.Serialize(pubKeyWriter)
 		if err != nil {
-			return fmt.Errorf("error serializing key")
+			return fmt.Errorf("error serializing public key")
 		}
 		pubKeyWriter.Close()
 		file, err := os.Create(path)
@@ -97,12 +115,11 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		}
 
 		file.WriteString(pubKeyBuf.String())
-
 		defer file.Close()
 
 	}
 
-	fmt.Printf("%s", serializedEntity)
+	fmt.Printf("Public key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
 	return nil
 }
 
