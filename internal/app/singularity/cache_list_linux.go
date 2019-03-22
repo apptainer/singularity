@@ -38,99 +38,20 @@ func findSize(size int64) string {
 	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
 }
 
-// listLibraryCache will list all entries in your cache directory (${HOME}/.singularity/cache/library)
-func listLibraryCache(listFiles bool) (int, int64, error) {
-	var totalSize int64
-	count := 0
-
-	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
-	if err != nil {
-		return 0, 0, fmt.Errorf("unable to open library cache directory: %v", err)
-	}
-	for _, f := range libraryCacheFiles {
-		checkStat, err := os.Stat(filepath.Join(cache.Library(), f.Name()))
-		if err != nil {
-			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cache.Library(), f.Name()), err)
-		}
-		if checkStat.Mode().IsDir() {
-			cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
-			if err != nil {
-				return 0, 0, fmt.Errorf("unable to look in library cache: %v", err)
-			}
-			for _, c := range cont {
-				fileInfo, err := os.Stat(filepath.Join(cache.Library(), f.Name(), c.Name()))
-				if err != nil {
-					return 0, 0, fmt.Errorf("unable to get stat for library cache: %v", err)
-				}
-				if listFiles {
-					fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "library")
-				}
-				count++
-				totalSize += fileInfo.Size()
-			}
-		} else {
-			// stray file in ~/.singularity/cache/library
-			sylog.Debugf("stray file in cache dir: %v", filepath.Join(cache.Library(), f.Name()))
-		}
-	}
-	return count, totalSize, nil
-}
-
-// listOciCache lists all the entries in the OCI cache
-func listOciCache(listFiles bool) (int, int64, error) {
-	var totalSize int64
-	count := 0
-
-	ociTmp, err := ioutil.ReadDir(cache.OciTemp())
-	if err != nil {
-		return 0, 0, fmt.Errorf("unable to open oci-tmp directory: %v", err)
-	}
-	for _, f := range ociTmp {
-		checkStat, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name()))
-		if err != nil {
-			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cache.OciTemp(), f.Name()), err)
-		}
-		if checkStat.Mode().IsDir() {
-			blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
-			if err != nil {
-				return 0, 0, fmt.Errorf("unable to look in oci-tmp cache: %v", err)
-			}
-			for _, b := range blob {
-				fileInfo, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-				if err != nil {
-					return 0, 0, fmt.Errorf("unable to get stat for oci-tmp cache: %v", err)
-				}
-				if listFiles {
-					fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "oci")
-				}
-				count++
-				totalSize += fileInfo.Size()
-			}
-		} else {
-			// stray file in ~/.singularity/cache/library
-			sylog.Debugf("stray file in cache dir: %v", filepath.Join(cache.Library(), f.Name()))
-		}
-	}
-	return count, totalSize, nil
-}
-
-// listTypeCache will list a cache type
+// listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.
+// Will return: the number of containers for that type (int), the total space the container type is using (int64),
+// and an error if one occurs.
 func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 	var totalSize int64
 	count := 0
 	cachePath := ""
 
+	// check what cache we need to list, and set are path.
 	switch cacheType {
 	case "library":
 		cachePath = cache.Library()
 	case "oci":
 		cachePath = cache.OciTemp()
-		//	case "blob", "blobs":
-		//		blobList = true
-		//	case "blobSum":
-		//		blobSum = true
-		//	case "all":
-		//		listAll = true
 	case "":
 		sylog.Fatalf("No cache type specifyed")
 	default:
@@ -163,7 +84,7 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 				totalSize += fileInfo.Size()
 			}
 		} else {
-			// stray file in ~/.singularity/cache/library
+			// stray file in ~/.singularity/cache
 			sylog.Debugf("stray file in cache dir: %v", filepath.Join(cachePath, f.Name()))
 		}
 	}
@@ -259,7 +180,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if listAll {
-		//libraryCount, librarySize, err := listLibraryCache(true)
 		libraryCount, librarySize, err := listTypeCache(true, "library")
 		if err != nil {
 			return err
@@ -267,7 +187,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 		containerCount += libraryCount
 		containerSpace += librarySize
 	} else if libraryList {
-		//libraryCount, librarySize, err := listLibraryCache(!cacheListSummary)
 		libraryCount, librarySize, err := listTypeCache(!cacheListSummary, "library")
 		if err != nil {
 			return err
@@ -277,7 +196,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if listAll {
-		//ociCount, ociSize, err := listOciCache(true)
 		ociCount, ociSize, err := listTypeCache(true, "oci")
 		if err != nil {
 			return err
@@ -285,7 +203,6 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 		containerCount += ociCount
 		containerSpace += ociSize
 	} else if ociList {
-		//ociCount, ociSize, err := listOciCache(!cacheListSummary)
 		ociCount, ociSize, err := listTypeCache(!cacheListSummary, "oci")
 		if err != nil {
 			return err
