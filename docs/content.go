@@ -315,7 +315,7 @@ Enterprise Performance Computing (EPC)`
 	// capability add
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
-	CapabilityAddShort string = `Add authorized capabilities for a given user/group`
+	CapabilityAddShort string = `Add Linux capabilities to a given user/group`
 	CapabilityAddLong  string = `
   Capabilities must be separated by commas and are not case sensitive,
   here accepted values:
@@ -359,21 +359,20 @@ Enterprise Performance Computing (EPC)`
   CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
   CAP_WAKE_ALARM        | WAKE_ALARM
 
-  See "-d" flag example for description of each capabilities`
+  For details, see "man 7 capabilities" or singularity capability avail`
 	CapabilityAddExample string = `
-  $ singularity capability add --user nobody AUDIT_READ,chown
-  $ singularity capability add --group nobody cap_audit_write
+  # singularity capability add --user nobody AUDIT_READ,chown
+  # singularity capability add --group nobody cap_audit_write
 
-  To print capabilities description:
+  To add all capabilities to a user:
 
-  $ singularity capability add -d CAP_CHOWN
-  $ singularity capability add -d CAP_CHOWN,CAP_SYS_ADMIN`
+  # singularity capability add --user nobody all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
-	CapabilityDropShort string = `Drop authorized capabilities for a given user/group`
+	CapabilityDropShort string = `Drop Linux capabilities for a given user/group`
 	CapabilityDropLong  string = `
   Capabilities must be separated by commas and are not case sensitive,
   here accepted values:
@@ -417,28 +416,52 @@ Enterprise Performance Computing (EPC)`
   CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
   CAP_WAKE_ALARM        | WAKE_ALARM
 
-  See "-d" flag example for description of each capabilities`
+  For details, see "man 7 capabilities" or singularity capability avail`
 	CapabilityDropExample string = `
-  $ singularity capability drop --user nobody AUDIT_READ,CHOWN
-  $ singularity capability drop --group nobody audit_write
+  # singularity capability drop --user nobody AUDIT_READ,CHOWN
+  # singularity capability drop --group nobody audit_write
 
-  To print capabilities description:
+  To drop all capabilities for a user:
 
-  $ singularity capability drop -d CAP_CHOWN
-  $ singularity capability drop -d CAP_CHOWN,CAP_SYS_ADMIN`
+  # singularity capability drop --user nobody all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityListUse   string = `list [list options...]`
-	CapabilityListShort string = `List authorized capabilities for the given user/group.`
+	CapabilityListUse   string = `list [user/group]`
+	CapabilityListShort string = `List Linux capabilities for the given user/group`
 	CapabilityListLong  string = `
   The capability list command allows you to see
   what Linux capabilities are associated with users/groups.`
 	CapabilityListExample string = `
-  $ singularity capability list --user nobody
-  $ singularity capability list --group nobody
-  $ singularity capability list --all`
+  To list capabilities set for user or group nobody:
+
+  $ singularity capability list nobody
+
+  To list capabilities for all users/groups:
+
+  $ singularity capability list`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// capability avail
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CapabilityAvailUse   string = `avail [capabilities]`
+	CapabilityAvailShort string = `Show description for available Linux capabilities`
+	CapabilityAvailLong  string = `
+  The capability avail command allows you to show
+  description for available Linux capabilities.`
+	CapabilityAvailExample string = `
+  Show description for all available Linux capabilities:
+
+  $ singularity capability avail
+
+  Show CAP_CHOWN description:
+
+  $ singularity capability avail CAP_CHOWN
+
+  Show CAP_CHOWN/CAP_NET_RAW description:
+
+  $ singularity capability avail CAP_CHOWN,CAP_NET_RAW`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// exec

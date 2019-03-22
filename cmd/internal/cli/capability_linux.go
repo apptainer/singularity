@@ -16,7 +16,6 @@ import (
 var (
 	CapUser    string
 	CapGroup   string
-	CapDesc    bool
 	CapListAll bool
 )
 
@@ -25,6 +24,7 @@ func init() {
 	CapabilityCmd.AddCommand(CapabilityAddCmd)
 	CapabilityCmd.AddCommand(CapabilityDropCmd)
 	CapabilityCmd.AddCommand(CapabilityListCmd)
+	CapabilityCmd.AddCommand(CapabilityAvailCmd)
 }
 
 // CapabilityCmd is the capability command
