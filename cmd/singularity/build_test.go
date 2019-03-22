@@ -721,7 +721,7 @@ func verifyFile(t *testing.T, original, copy string) error {
 		t.Fatalf("While reading file: %v", err)
 	}
 
-	if bytes.Compare(o, c) != 0 {
+	if !bytes.Equal(o, c) {
 		return fmt.Errorf("Incorrect file content")
 	}
 

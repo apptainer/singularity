@@ -25,7 +25,7 @@ import (
 const (
 	standardHelpPath = "/.singularity.d/runscript.help"
 	appHelpPath      = "/scif/apps/%s/scif/runscript.help"
-	runHelpCommand   = "if [ ! -f \"%s\" ]\nthen\n    echo \"Container does not have a help file\"\nelse\n    /bin/cat %s\nfi"
+	runHelpCommand   = "if [ ! -f \"%s\" ]\nthen\n    echo \"No help sections were defined for this image\"\nelse\n    /bin/cat %s\nfi"
 )
 
 func init() {

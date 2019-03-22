@@ -108,7 +108,7 @@ func listBlobCache(printList bool) error {
 			if err != nil {
 				return fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
 			}
-			if printList == true {
+			if printList {
 				printFileSize, err := findSize(fileInfo.Size())
 				if err != nil {
 					// no need to describe the error, since it is already
@@ -120,7 +120,7 @@ func listBlobCache(printList bool) error {
 			totalSize += fileInfo.Size()
 		}
 	}
-	if printList != true && count >= 1 {
+	if !printList && count >= 1 {
 		printFileSize, err := findSize(totalSize)
 		if err != nil {
 			// no need to describe the error, since it is already

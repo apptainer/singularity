@@ -31,11 +31,7 @@ func isShubPullRef(shubRef string) bool {
 
 	// sanity check
 	// if found string is not equal to the input, input isn't a valid URI
-	if strings.Compare(shubRef, found) != 0 {
-		return false
-	}
-
-	return true
+	return shubRef == found
 }
 
 // shubParseReference accepts a valid Shub reference string and parses its content
