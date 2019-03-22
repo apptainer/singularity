@@ -25,10 +25,6 @@ func init() {
 	CapabilityAddCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 	CapabilityAddCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
 
-	// -d|--desc
-	CapabilityAddCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "print capabilities description")
-	CapabilityAddCmd.Flags().SetAnnotation("desc", "envkey", []string{"DESC"})
-
 	CapabilityAddCmd.Flags().SetInterspersed(false)
 }
 
@@ -41,7 +37,6 @@ var CapabilityAddCmd = &cobra.Command{
 			Caps:  args[0],
 			User:  CapUser,
 			Group: CapGroup,
-			Desc:  CapDesc,
 		}
 
 		if err := singularity.CapabilityAdd(buildcfg.CAPABILITY_FILE, c); err != nil {
