@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 var secretExport bool
@@ -78,12 +79,14 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
 		privKeyBuf := bytes.NewBuffer(nil)
 
+		var config *packet.Config
+
 		privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
 		if err != nil {
 			return fmt.Errorf("error encoding private key")
 		}
 
-		err = entityToSave.SerializePrivate(privKeyWriter, nil)
+		err = entityToSave.SerializePrivate(privKeyWriter, config)
 		if err != nil {
 			return fmt.Errorf("error encoding private key")
 		}
@@ -116,10 +119,10 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
 		file.WriteString(pubKeyBuf.String())
 		defer file.Close()
+		fmt.Printf("Public key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
 
 	}
 
-	fmt.Printf("Public key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
 	return nil
 }
 
