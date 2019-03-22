@@ -701,7 +701,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunHelpUse   string = `singularity run-help [run-help options] <image path>`
+	RunHelpUse   string = `run-help [run-help options] <image path>`
 	RunHelpShort string = `Show the help for an image`
 	RunHelpLong  string = `
   Show the help for an image.
