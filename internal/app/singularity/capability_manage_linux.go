@@ -77,7 +77,7 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 
 	caps, ign := capabilities.Split(c.Caps)
 	if len(ign) > 0 {
-		sylog.Warningf("Ignoring unkown capabilities: %s", ign)
+		sylog.Warningf("Ignoring unknown capabilities: %s", ign)
 	}
 
 	if c.Desc {
