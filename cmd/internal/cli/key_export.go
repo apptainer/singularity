@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
 )
 
 var secretExport bool
@@ -42,14 +44,11 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
 	//describes the path from either the local public keyring or secret local keyring
 	var fetchPath string
-	var blockType string
 
 	if secretExport {
 		fetchPath = sypgp.SecretPath()
-		blockType = "PGP PRIVATE KEY BLOCK"
 	} else {
 		fetchPath = sypgp.PublicPath()
-		blockType = "PGP PUBLIC KEY BLOCK"
 	}
 
 	f, err := os.OpenFile(fetchPath, os.O_RDONLY|os.O_CREATE, 0600)
@@ -77,9 +76,30 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 	}
 
 	if secretExport {
-		serializedEntity, err = sypgp.SerializePrivateEntity(entityToSave, blockType, nil)
+		//entityToSave.PrivateKey.SerializePGPPrivate(path)
 	} else {
-		serializedEntity, err = sypgp.SerializePublicEntity(entityToSave, blockType)
+
+		pubKeyBuf := bytes.NewBuffer(nil)
+
+		pubKeyWriter, err := armor.Encode(pubKeyBuf, openpgp.PublicKeyType, nil)
+		if err != nil {
+			return fmt.Errorf("error encoding")
+		}
+
+		err = entityToSave.Serialize(pubKeyWriter)
+		if err != nil {
+			return fmt.Errorf("error serializing key")
+		}
+		pubKeyWriter.Close()
+		file, err := os.Create(path)
+		if err != nil {
+			os.Exit(1)
+		}
+
+		file.WriteString(pubKeyBuf.String())
+
+		defer file.Close()
+
 	}
 
 	fmt.Printf("%s", serializedEntity)
