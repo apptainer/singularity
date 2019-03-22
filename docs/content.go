@@ -301,10 +301,12 @@ Enterprise Performance Computing (EPC)`
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`
-	CapabilityShort string = `Manage Linux capabilities for an image`
+	CapabilityShort string = `Manage Linux capabilities for users and groups`
 	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
-  your containers need to run.`
+  your containers need to run.
+
+  NOTE: capability add/drop commands requires root to run.`
 	CapabilityExample string = `
   All group commands have their own help output:
 
@@ -315,51 +317,14 @@ Enterprise Performance Computing (EPC)`
 	// capability add
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
-	CapabilityAddShort string = `Add Linux capabilities to a given user/group`
+	CapabilityAddShort string = `Add capabilities to a user or group (requires root)`
 	CapabilityAddLong  string = `
-  Capabilities must be separated by commas and are not case sensitive,
-  here accepted values:
+  Add Linux capabilities to a user or group. NOTE: This command requires root to run.
 
-  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
-  CAP_AUDIT_READ        | AUDIT_READ
-  CAP_AUDIT_WRITE       | AUDIT_WRITE
-  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
-  CAP_CHOWN             | CHOWN
-  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
-  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
-  CAP_FOWNER            | FOWNER
-  CAP_FSETID            | FSETID
-  CAP_IPC_LOCK          | IPC_LOCK
-  CAP_IPC_OWNER         | IPC_OWNER
-  CAP_KILL              | KILL
-  CAP_LEASE             | LEASE
-  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
-  CAP_MAC_ADMIN         | MAC_ADMIN
-  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
-  CAP_MKNOD             | MKNOD
-  CAP_NET_ADMIN         | NET_ADMIN
-  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
-  CAP_NET_BROADCAST     | NET_BROADCAST
-  CAP_NET_RAW           | NET_RAW
-  CAP_SETFCAP           | SETFCAP
-  CAP_SETGID            | SETGID
-  CAP_SETPCAP           | SETPCAP
-  CAP_SETUID            | SETUID
-  CAP_SYS_ADMIN         | SYS_ADMIN
-  CAP_SYS_BOOT          | SYS_BOOT
-  CAP_SYS_CHROOT        | SYS_CHROOT
-  CAP_SYSLOG            | SYSLOG
-  CAP_SYS_MODULE        | SYS_MODULE
-  CAP_SYS_NICE          | SYS_NICE
-  CAP_SYS_PACCT         | SYS_PACCT
-  CAP_SYS_PTRACE        | SYS_PTRACE
-  CAP_SYS_RAWIO         | SYS_RAWIO
-  CAP_SYS_RESOURCE      | SYS_RESOURCE
-  CAP_SYS_TIME          | SYS_TIME
-  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
-  CAP_WAKE_ALARM        | WAKE_ALARM
+  The capabilities argument must be separated by commas and is not case sensitive.
 
-  For details, see "man 7 capabilities" or singularity capability avail`
+  To see available capabilities, type "singularity capability avail" or refer to
+  capabilities manual "man 7 capabilities".`
 	CapabilityAddExample string = `
   # singularity capability add --user nobody AUDIT_READ,chown
   # singularity capability add --group nobody cap_audit_write
@@ -372,51 +337,14 @@ Enterprise Performance Computing (EPC)`
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
-	CapabilityDropShort string = `Drop Linux capabilities for a given user/group`
+	CapabilityDropShort string = `Remove capabilities from a user or group (requires root)`
 	CapabilityDropLong  string = `
-  Capabilities must be separated by commas and are not case sensitive,
-  here accepted values:
+  Remove Linux capabilities from an user/group. NOTE: This command requires root to run.
 
-  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
-  CAP_AUDIT_READ        | AUDIT_READ
-  CAP_AUDIT_WRITE       | AUDIT_WRITE
-  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
-  CAP_CHOWN             | CHOWN
-  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
-  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
-  CAP_FOWNER            | FOWNER
-  CAP_FSETID            | FSETID
-  CAP_IPC_LOCK          | IPC_LOCK
-  CAP_IPC_OWNER         | IPC_OWNER
-  CAP_KILL              | KILL
-  CAP_LEASE             | LEASE
-  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
-  CAP_MAC_ADMIN         | MAC_ADMIN
-  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
-  CAP_MKNOD             | MKNOD
-  CAP_NET_ADMIN         | NET_ADMIN
-  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
-  CAP_NET_BROADCAST     | NET_BROADCAST
-  CAP_NET_RAW           | NET_RAW
-  CAP_SETFCAP           | SETFCAP
-  CAP_SETGID            | SETGID
-  CAP_SETPCAP           | SETPCAP
-  CAP_SETUID            | SETUID
-  CAP_SYS_ADMIN         | SYS_ADMIN
-  CAP_SYS_BOOT          | SYS_BOOT
-  CAP_SYS_CHROOT        | SYS_CHROOT
-  CAP_SYSLOG            | SYSLOG
-  CAP_SYS_MODULE        | SYS_MODULE
-  CAP_SYS_NICE          | SYS_NICE
-  CAP_SYS_PACCT         | SYS_PACCT
-  CAP_SYS_PTRACE        | SYS_PTRACE
-  CAP_SYS_RAWIO         | SYS_RAWIO
-  CAP_SYS_RESOURCE      | SYS_RESOURCE
-  CAP_SYS_TIME          | SYS_TIME
-  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
-  CAP_WAKE_ALARM        | WAKE_ALARM
+  The capabilities argument must be separated by commas and is not case sensitive.
 
-  For details, see "man 7 capabilities" or singularity capability avail`
+  To see available capabilities, type "singularity capability avail" or refer to
+  capabilities manual "man 7 capabilities"`
 	CapabilityDropExample string = `
   # singularity capability drop --user nobody AUDIT_READ,CHOWN
   # singularity capability drop --group nobody audit_write
@@ -429,10 +357,9 @@ Enterprise Performance Computing (EPC)`
 	// capability list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityListUse   string = `list [user/group]`
-	CapabilityListShort string = `List Linux capabilities for the given user/group`
+	CapabilityListShort string = `Show capabilities for a given user or group`
 	CapabilityListLong  string = `
-  The capability list command allows you to see
-  what Linux capabilities are associated with users/groups.`
+  Show the capabilities for a user or group.`
 	CapabilityListExample string = `
   To list capabilities set for user or group nobody:
 
@@ -446,12 +373,11 @@ Enterprise Performance Computing (EPC)`
 	// capability avail
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityAvailUse   string = `avail [capabilities]`
-	CapabilityAvailShort string = `Show description for available Linux capabilities`
+	CapabilityAvailShort string = `Show description for available capabilities`
 	CapabilityAvailLong  string = `
-  The capability avail command allows you to show
-  description for available Linux capabilities.`
+  Show description for available Linux capabilities.`
 	CapabilityAvailExample string = `
-  Show description for all available Linux capabilities:
+  Show description for all available capabilities:
 
   $ singularity capability avail
 

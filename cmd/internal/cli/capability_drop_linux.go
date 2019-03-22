@@ -16,12 +16,12 @@ import (
 func init() {
 
 	// -u|--user
-	CapabilityDropCmd.Flags().StringVarP(&CapUser, "user", "u", "", "drop capabilities for the given user")
+	CapabilityDropCmd.Flags().StringVarP(&CapUser, "user", "u", "", "remove capabilities from a user")
 	CapabilityDropCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
 	CapabilityDropCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -g|--group
-	CapabilityDropCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "drop capabilities for the given group")
+	CapabilityDropCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "remove capabilities from a group")
 	CapabilityDropCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 	CapabilityDropCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
 
