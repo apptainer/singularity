@@ -205,7 +205,6 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	}
 
 	args[0] = image
-	return
 }
 
 // setVM will set the --vm option if needed by other options
