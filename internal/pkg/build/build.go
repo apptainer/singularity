@@ -279,7 +279,9 @@ func runBuildEngine(b *types.Bundle) error {
 func getcp(def types.Definition, libraryURL, authToken string, unauthenticatedBuild bool) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
-		return &sources.LibraryConveyorPacker{}, nil
+		return &sources.LibraryConveyorPacker{
+			AllowUnauthenticated: unauthenticatedBuild,
+			}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
