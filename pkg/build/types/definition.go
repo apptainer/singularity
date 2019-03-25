@@ -23,7 +23,7 @@ type Definition struct {
 }
 
 // ImageData contains any scripts, metadata, etc... that needs to be
-// present in some from in the final built image
+// present in some form in the final built image
 type ImageData struct {
 	Metadata     []byte            `json:"metadata"`
 	Labels       map[string]string `json:"labels"`
@@ -32,18 +32,32 @@ type ImageData struct {
 
 // ImageScripts contains scripts that are used after build time.
 type ImageScripts struct {
-	Help        string `json:"help"`
-	Environment string `json:"environment"`
-	Runscript   string `json:"runScript"`
-	Test        string `json:"test"`
-	Startscript string `json:"startScript"`
+	Help        Script `json:"help"`
+	Environment Script `json:"environment"`
+	Runscript   Script `json:"runScript"`
+	Test        Script `json:"test"`
+	Startscript Script `json:"startScript"`
 }
 
 // Data contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
 type Data struct {
-	Files   []FileTransport `json:"files"`
+	Files   `json:"files"`
 	Scripts `json:"buildScripts"`
+}
+
+// Scripts defines scripts that are used at build time.
+type Scripts struct {
+	Pre   Script `json:"pre"`
+	Setup Script `json:"setup"`
+	Post  Script `json:"post"`
+	Test  Script `json:"test"`
+}
+
+// Files describes a %files section of a definition
+type Files struct {
+	Args  string          `json:"args"`
+	Files []FileTransport `json:"files"`
 }
 
 // FileTransport holds source and destination information of files to copy into the container
@@ -52,12 +66,10 @@ type FileTransport struct {
 	Dst string `json:"destination"`
 }
 
-// Scripts defines scripts that are used at build time.
-type Scripts struct {
-	Pre   string `json:"pre"`
-	Setup string `json:"setup"`
-	Post  string `json:"post"`
-	Test  string `json:"test"`
+// Script describes any script section of a definition
+type Script struct {
+	Args   string `json:"args"`
+	Script string `json:"script"`
 }
 
 // NewDefinitionFromURI crafts a new Definition given a URI
@@ -107,25 +119,30 @@ func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
 	return d, nil
 }
 
-func writeSectionIfExists(w io.Writer, ident string, s string) {
-	if len(s) > 0 {
+func writeSectionIfExists(w io.Writer, ident string, s Script) {
+	if len(s.Script) > 0 {
 		w.Write([]byte("%"))
 		w.Write([]byte(ident))
+		if len(s.Args) > 0 {
+			w.Write([]byte(" " + s.Args))
+		}
 		w.Write([]byte("\n"))
-		w.Write([]byte(s))
+		w.Write([]byte(s.Script))
 		w.Write([]byte("\n\n"))
 	}
 }
 
-func writeFilesIfExists(w io.Writer, f []FileTransport) {
+func writeFilesIfExists(w io.Writer, f Files) {
 
-	if len(f) > 0 {
-
+	if len(f.Files) > 0 {
 		w.Write([]byte("%"))
 		w.Write([]byte("files"))
+		if len(f.Args) > 0 {
+			w.Write([]byte(" " + f.Args))
+		}
 		w.Write([]byte("\n"))
 
-		for _, ft := range f {
+		for _, ft := range f.Files {
 			w.Write([]byte("\t"))
 			w.Write([]byte(ft.Src))
 			w.Write([]byte("\t"))

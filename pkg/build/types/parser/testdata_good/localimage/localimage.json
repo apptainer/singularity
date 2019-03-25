@@ -1,1 +1,58 @@
-{"header":{"bootstrap":"localimage","from":"/path/to/container/file/or/directory"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":"","startScript":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"","post":"","test":""}},"customData":null,"raw":"Qm9vdHN0cmFwOiBsb2NhbGltYWdlCkZyb206IC9wYXRoL3RvL2NvbnRhaW5lci9maWxlL29yL2RpcmVjdG9yeQojIHNvbWUgY29tbWVudCAxCg=="}
+{
+	"header": {
+		"bootstrap": "localimage",
+		"from": "/path/to/container/file/or/directory"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": {
+			"args": "",
+			"files": null
+		},
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": ""
+			},
+			"post": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBsb2NhbGltYWdlCkZyb206IC9wYXRoL3RvL2NvbnRhaW5lci9maWxlL29yL2RpcmVjdG9yeQojIHNvbWUgY29tbWVudCAxCg=="
+}

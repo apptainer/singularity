@@ -37,7 +37,7 @@ func (s *stage) Assemble(path string) error {
 func (s *stage) copyFiles() error {
 
 	// iterate through files transfers
-	for _, transfer := range s.b.Recipe.BuildData.Files {
+	for _, transfer := range s.b.Recipe.BuildData.Files.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")
@@ -61,13 +61,13 @@ func (s *stage) copyFiles() error {
 
 // runPreScript() executes the stages pre script on host
 func (s *stage) runPreScript() error {
-	if s.b.RunSection("pre") && s.b.Recipe.BuildData.Pre != "" {
+	if s.b.RunSection("pre") && s.b.Recipe.BuildData.Pre.Script != "" {
 		if syscall.Getuid() != 0 {
 			return fmt.Errorf("Attempted to build with scripts as non-root user")
 		}
 
 		// Run %pre script here
-		pre := exec.Command("/bin/sh", "-cex", s.b.Recipe.BuildData.Pre)
+		pre := exec.Command("/bin/sh", "-cex", s.b.Recipe.BuildData.Pre.Script)
 		pre.Stdout = os.Stdout
 		pre.Stderr = os.Stderr
 

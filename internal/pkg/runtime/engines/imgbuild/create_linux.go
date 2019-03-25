@@ -74,9 +74,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// run setup/files sections here to allow injection of custom /etc/hosts or /etc/resolv.conf
-	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
+	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup.Script != "" {
 		// Run %setup script here
-		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
+		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup.Script)
 		setup.Env = engine.EngineConfig.OciConfig.Process.Env
 		setup.Stdout = os.Stdout
 		setup.Stderr = os.Stderr
@@ -184,7 +184,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 func (engine *EngineOperations) copyFiles() error {
 	// iterate through filetransfers
-	for _, transfer := range engine.EngineConfig.Recipe.BuildData.Files {
+	for _, transfer := range engine.EngineConfig.Recipe.BuildData.Files.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")

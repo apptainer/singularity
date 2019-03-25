@@ -1,1 +1,60 @@
-{"header":{"bootstrap":"yum","include":"yum","mirrorurl":"http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/","osversion":"7"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":"","startScript":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"","post":"","test":""}},"customData":null,"raw":"Qm9vdHN0cmFwOiB5dW0KT1NWZXJzaW9uOiA3Ck1pcnJvclVSTDogaHR0cDovL21pcnJvci5jZW50b3Mub3JnL2NlbnRvcy0le09TVkVSU0lPTn0vJXtPU1ZFUlNJT059L29zLyRiYXNlYXJjaC8KSW5jbHVkZTogeXVtCg=="}
+{
+	"header": {
+		"bootstrap": "yum",
+		"include": "yum",
+		"mirrorurl": "http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/",
+		"osversion": "7"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": {
+			"args": "",
+			"files": null
+		},
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": ""
+			},
+			"post": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiB5dW0KT1NWZXJzaW9uOiA3Ck1pcnJvclVSTDogaHR0cDovL21pcnJvci5jZW50b3Mub3JnL2NlbnRvcy0le09TVkVSU0lPTn0vJXtPU1ZFUlNJT059L29zLyRiYXNlYXJjaC8KSW5jbHVkZTogeXVtCg=="
+}

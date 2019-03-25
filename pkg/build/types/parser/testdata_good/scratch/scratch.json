@@ -1,1 +1,57 @@
-{"header":{"bootstrap":"scratch"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"","test":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"    alpine_minirootfs_url='http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/alpine-minirootfs-3.8.1-x86_64.tar.gz'\n\n    # Download and extract alpine minirootfs.\n    curl \"${alpine_minirootfs_url}\" \\\n       | tar xz -C \"${SINGULARITY_ROOTFS}\" --exclude=./dev --exclude=./etc/hosts\n","post":"","test":""}},"customData":null,"raw":"Qm9vdHN0cmFwOiBzY3JhdGNoCgolc2V0dXAKICAgIGFscGluZV9taW5pcm9vdGZzX3VybD0naHR0\ncDovL2RsLWNkbi5hbHBpbmVsaW51eC5vcmcvYWxwaW5lL3YzLjgvcmVsZWFzZXMveDg2XzY0L2Fs\ncGluZS1taW5pcm9vdGZzLTMuOC4xLXg4Nl82NC50YXIuZ3onCgogICAgIyBEb3dubG9hZCBhbmQg\nZXh0cmFjdCBhbHBpbmUgbWluaXJvb3Rmcy4KICAgIGN1cmwgIiR7YWxwaW5lX21pbmlyb290ZnNf\ndXJsfSIgXAogICAgICAgfCB0YXIgeHogLUMgIiR7U0lOR1VMQVJJVFlfUk9PVEZTfSIgLS1leGNs\ndWRlPS4vZGV2IC0tZXhjbHVkZT0uL2V0Yy9ob3N0cwo="}
+{
+	"header": {
+		"bootstrap": "scratch"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": {
+			"args": "",
+			"files": null
+		},
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": "    alpine_minirootfs_url='http://dl-cdn.alpinelinux.org/alpine/v3.8/releases/x86_64/alpine-minirootfs-3.8.1-x86_64.tar.gz'\n\n    # Download and extract alpine minirootfs.\n    curl \"${alpine_minirootfs_url}\" \\\n       | tar xz -C \"${SINGULARITY_ROOTFS}\" --exclude=./dev --exclude=./etc/hosts\n"
+			},
+			"post": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBzY3JhdGNoCgolc2V0dXAKICAgIGFscGluZV9taW5pcm9vdGZzX3VybD0naHR0cDovL2RsLWNkbi5hbHBpbmVsaW51eC5vcmcvYWxwaW5lL3YzLjgvcmVsZWFzZXMveDg2XzY0L2FscGluZS1taW5pcm9vdGZzLTMuOC4xLXg4Nl82NC50YXIuZ3onCgogICAgIyBEb3dubG9hZCBhbmQgZXh0cmFjdCBhbHBpbmUgbWluaXJvb3Rmcy4KICAgIGN1cmwgIiR7YWxwaW5lX21pbmlyb290ZnNfdXJsfSIgXAogICAgICAgfCB0YXIgeHogLUMgIiR7U0lOR1VMQVJJVFlfUk9PVEZTfSIgLS1leGNsdWRlPS4vZGV2IC0tZXhjbHVkZT0uL2V0Yy9ob3N0cwo="
+}

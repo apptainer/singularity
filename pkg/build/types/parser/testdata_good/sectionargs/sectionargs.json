@@ -1,0 +1,63 @@
+{
+	"header": {
+		"bootstrap": "library",
+		"from": "debian:9"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": {
+			"args": "from something",
+			"files": [
+				{
+					"source": "notafile",
+					"destination": "notafile"
+				}
+			]
+		},
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": ""
+			},
+			"post": {
+				"args": "-c /bin/bash",
+				"script": "        echo \"Running post section\"\n        echo $0\n        dpkg -S $0\n        function foo { echo; }\n        echo \"Bashism function defined\"\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBsaWJyYXJ5CkZyb206IGRlYmlhbjo5CgolZmlsZXMgZnJvbSBzb21ldGhpbmcKICAgIG5vdGFmaWxlIG5vdGFmaWxlCgolcG9zdCAtYyAvYmluL2Jhc2gKICAgICAgICBlY2hvICJSdW5uaW5nIHBvc3Qgc2VjdGlvbiIKICAgICAgICBlY2hvICQwCiAgICAgICAgZHBrZyAtUyAkMAogICAgICAgIGZ1bmN0aW9uIGZvbyB7IGVjaG87IH0KICAgICAgICBlY2hvICJCYXNoaXNtIGZ1bmN0aW9uIGRlZmluZWQi"
+}

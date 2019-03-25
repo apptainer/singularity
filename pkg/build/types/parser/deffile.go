@@ -131,16 +131,15 @@ func getSectionName(line string) string {
 	return lineSplit[0]
 }
 
-// parseTokenSection splits the token into maximum 2 strings separated by a newline,
-// and then inserts the section into the sections map
-//
-func parseTokenSection(tok string, sections map[string]string) error {
+// parseTokenSection into appropriate components to be placed into a types.Script struct
+func parseTokenSection(tok string, sections map[string]*types.Script) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
 		return fmt.Errorf("Section %v: Could not be split into section name and body", split[0])
 	}
 
 	key := getSectionName(split[0])
+
 	if appSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
 		if len(sectionSplit) < 2 {
@@ -148,16 +147,27 @@ func parseTokenSection(tok string, sections map[string]string) error {
 		}
 
 		key = strings.Join(sectionSplit[0:2], " ")
+		// create app script pbject to populate
+		if _, ok := sections[key]; !ok {
+			sections[key] = &types.Script{}
+		}
+	} else {
+		// create section script object if its a non-standard section
+		if _, ok := sections[key]; !ok {
+			sections[key] = &types.Script{}
+		}
+		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 2)
+		if len(sectionSplit) == 2 {
+			sections[key].Args = sectionSplit[1]
+		}
 	}
 
-	sections[key] += split[1]
-
+	sections[key].Script += split[1]
 	return nil
 }
 
 func doSections(s *bufio.Scanner, d *types.Definition) error {
-	sectionsMap := make(map[string]string)
-
+	sectionsMap := make(map[string]*types.Script)
 	tok := strings.TrimSpace(s.Text())
 
 	// skip initial token parsing if it is empty after trimming whitespace
@@ -196,9 +206,17 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	return populateDefinition(sectionsMap, d)
 }
 
-func populateDefinition(sections map[string]string, d *types.Definition) (err error) {
+func populateDefinition(sections map[string]*types.Script, d *types.Definition) (err error) {
+	// initialize standard sections if not already created
+	// this function relies on standard sections being initialized in the map
+	for section := range validSections {
+		if _, ok := sections[section]; !ok {
+			sections[section] = &types.Script{}
+		}
+	}
+
 	// Files are parsed as a map[string]string
-	filesSections := strings.TrimSpace(sections["files"])
+	filesSections := strings.TrimSpace(sections["files"].Script)
 	subs := strings.Split(filesSections, "\n")
 	var files []types.FileTransport
 
@@ -221,7 +239,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 	}
 
 	// labels are parsed as a map[string]string
-	labelsSections := strings.TrimSpace(sections["labels"])
+	labelsSections := strings.TrimSpace(sections["labels"].Script)
 	subs = strings.Split(labelsSections, "\n")
 	labels := make(map[string]string)
 
@@ -244,20 +262,20 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 
 	d.ImageData = types.ImageData{
 		ImageScripts: types.ImageScripts{
-			Help:        sections["help"],
-			Environment: sections["environment"],
-			Runscript:   sections["runscript"],
-			Test:        sections["test"],
-			Startscript: sections["startscript"],
+			Help:        *sections["help"],
+			Environment: *sections["environment"],
+			Runscript:   *sections["runscript"],
+			Test:        *sections["test"],
+			Startscript: *sections["startscript"],
 		},
 		Labels: labels,
 	}
-	d.BuildData.Files = files
+	d.BuildData.Files = types.Files{Args: sections["files"].Args, Files: files}
 	d.BuildData.Scripts = types.Scripts{
-		Pre:   sections["pre"],
-		Setup: sections["setup"],
-		Post:  sections["post"],
-		Test:  sections["test"],
+		Pre:   *sections["pre"],
+		Setup: *sections["setup"],
+		Post:  *sections["post"],
+		Test:  *sections["test"],
 	}
 
 	// remove standard sections from map
@@ -267,7 +285,11 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 
 	// add remaining sections to CustomData and throw error for invalid section(s)
 	if len(sections) != 0 {
-		d.CustomData = sections
+		// take remaining sections and store them as custom data
+		d.CustomData = make(map[string]string)
+		for k := range sections {
+			d.CustomData[k] = sections[k].Script
+		}
 		var keys []string
 		for k := range sections {
 			sectionName := strings.Split(k, " ")

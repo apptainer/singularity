@@ -177,6 +177,7 @@ func TestParseDefinitionFile(t *testing.T) {
 		{"NoHeaderComments", "testdata_good/noheadercomments/noheadercomments", "testdata_good/noheadercomments/noheadercomments.json"},
 		{"NoHeaderWhiteSpace", "testdata_good/noheaderwhitespace/noheaderwhitespace", "testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
 		{"MultipleScripts", "testdata_good/multiplescripts/multiplescripts", "testdata_good/multiplescripts/multiplescripts.json"},
+		{"SectionArgs", "testdata_good/sectionargs/sectionargs", "testdata_good/sectionargs/sectionargs.json"},
 	}
 
 	for _, tt := range tests {
@@ -187,7 +188,7 @@ func TestParseDefinitionFile(t *testing.T) {
 			}
 			defer defFile.Close()
 
-			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0755)
+			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0644)
 			if err != nil {
 				t.Fatal("failed to open:", err)
 			}

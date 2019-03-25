@@ -1,1 +1,59 @@
-{"header":{"bootstrap":"docker","from":"\u003cregistry\u003e/\u003cnamespace\u003e/\u003ccontainer\u003e:\u003ctag\u003e@\u003cdigest\u003e","includecmd":"yes"},"imageData":{"metadata":null,"labels":{},"imageScripts":{"help":"","environment":"","runScript":"    echo \"Mock!\"\n\n\n    echo \"SecondMock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n","test":"","startScript":""}},"buildData":{"files":null,"buildScripts":{"pre":"","setup":"    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n    touch ${SINGULARITY_ROOTFS}/secondmock.txt\n    touch secondmock.txt\n\n","post":"    echo 'this is a command so long that the user had to' \\\n    'add a new line'\n    echo 'export GOPATH=$HOME/go' \u003e\u003e $SINGULARITY_ENVIRONMENT\n\n    echo 'this is a command so long that the user had to' \\\n    'add a new line again'\n    echo 'export GOPATH=$HOME/go' \u003e\u003e $SINGULARITY_ENVIRONMENT\n\n","test":""}},"customData":null,"raw":"Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogPHJlZ2lzdHJ5Pi88bmFtZXNwYWNlPi88Y29udGFpbmVyPjo8dGFnPkA8ZGlnZXN0PgpJbmNsdWRlQ21kOiB5ZXMKCiVzZXR1cAogICAgdG91Y2ggJHtTSU5HVUxBUklUWV9ST09URlN9L21vY2sudHh0CiAgICB0b3VjaCBtb2NrLnR4dAoKJXBvc3QKICAgIGVjaG8gJ3RoaXMgaXMgYSBjb21tYW5kIHNvIGxvbmcgdGhhdCB0aGUgdXNlciBoYWQgdG8nIFwKICAgICdhZGQgYSBuZXcgbGluZScKICAgIGVjaG8gJ2V4cG9ydCBHT1BBVEg9JEhPTUUvZ28nID4+ICRTSU5HVUxBUklUWV9FTlZJUk9OTUVOVAoKJXJ1bnNjcmlwdAogICAgZWNobyAiTW9jayEiCgoKJXNldHVwCiAgICB0b3VjaCAke1NJTkdVTEFSSVRZX1JPT1RGU30vc2Vjb25kbW9jay50eHQKICAgIHRvdWNoIHNlY29uZG1vY2sudHh0CgolcG9zdAogICAgZWNobyAndGhpcyBpcyBhIGNvbW1hbmQgc28gbG9uZyB0aGF0IHRoZSB1c2VyIGhhZCB0bycgXAogICAgJ2FkZCBhIG5ldyBsaW5lIGFnYWluJwogICAgZWNobyAnZXhwb3J0IEdPUEFUSD0kSE9NRS9nbycgPj4gJFNJTkdVTEFSSVRZX0VOVklST05NRU5UCgolcnVuc2NyaXB0CiAgICBlY2hvICJTZWNvbmRNb2NrISIKICAgIGVjaG8gIkFyZ3VtZW50cyByZWNlaXZlZDogJCoiICMgVGhpcyBpcyBhIHZlcnkgbG9uZyBjb21tZW50CiAgICBleGVjIGVjaG8gIiRAIgo="}
+{
+	"header": {
+		"bootstrap": "docker",
+		"from": "\u003cregistry\u003e/\u003cnamespace\u003e/\u003ccontainer\u003e:\u003ctag\u003e@\u003cdigest\u003e",
+		"includecmd": "yes"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": "    echo \"Mock!\"\n\n\n    echo \"SecondMock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": {
+			"args": "",
+			"files": null
+		},
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": "    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n    touch ${SINGULARITY_ROOTFS}/secondmock.txt\n    touch secondmock.txt\n\n"
+			},
+			"post": {
+				"args": "",
+				"script": "    echo 'this is a command so long that the user had to' \\\n    'add a new line'\n    echo 'export GOPATH=$HOME/go' \u003e\u003e $SINGULARITY_ENVIRONMENT\n\n    echo 'this is a command so long that the user had to' \\\n    'add a new line again'\n    echo 'export GOPATH=$HOME/go' \u003e\u003e $SINGULARITY_ENVIRONMENT\n\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogPHJlZ2lzdHJ5Pi88bmFtZXNwYWNlPi88Y29udGFpbmVyPjo8dGFnPkA8ZGlnZXN0PgpJbmNsdWRlQ21kOiB5ZXMKCiVzZXR1cAogICAgdG91Y2ggJHtTSU5HVUxBUklUWV9ST09URlN9L21vY2sudHh0CiAgICB0b3VjaCBtb2NrLnR4dAoKJXBvc3QKICAgIGVjaG8gJ3RoaXMgaXMgYSBjb21tYW5kIHNvIGxvbmcgdGhhdCB0aGUgdXNlciBoYWQgdG8nIFwKICAgICdhZGQgYSBuZXcgbGluZScKICAgIGVjaG8gJ2V4cG9ydCBHT1BBVEg9JEhPTUUvZ28nID4+ICRTSU5HVUxBUklUWV9FTlZJUk9OTUVOVAoKJXJ1bnNjcmlwdAogICAgZWNobyAiTW9jayEiCgoKJXNldHVwCiAgICB0b3VjaCAke1NJTkdVTEFSSVRZX1JPT1RGU30vc2Vjb25kbW9jay50eHQKICAgIHRvdWNoIHNlY29uZG1vY2sudHh0CgolcG9zdAogICAgZWNobyAndGhpcyBpcyBhIGNvbW1hbmQgc28gbG9uZyB0aGF0IHRoZSB1c2VyIGhhZCB0bycgXAogICAgJ2FkZCBhIG5ldyBsaW5lIGFnYWluJwogICAgZWNobyAnZXhwb3J0IEdPUEFUSD0kSE9NRS9nbycgPj4gJFNJTkdVTEFSSVRZX0VOVklST05NRU5UCgolcnVuc2NyaXB0CiAgICBlY2hvICJTZWNvbmRNb2NrISIKICAgIGVjaG8gIkFyZ3VtZW50cyByZWNlaXZlZDogJCoiICMgVGhpcyBpcyBhIHZlcnkgbG9uZyBjb21tZW50CiAgICBleGVjIGVjaG8gIiRAIgo="
+}
