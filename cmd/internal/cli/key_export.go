@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -96,26 +97,25 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 				fmt.Println("Failed to decrypt key")
 			}
 		}
-		/*
 
-			privKeyBuf := bytes.NewBuffer(nil)
+		privKeyBuf := bytes.NewBuffer(nil)
 
-			var config *packet.Config
+		var config *packet.Config
 
-			privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
-			if err != nil {
-				return fmt.Errorf("error encoding private key")
-			}
+		privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
+		}
 
-			err = entityToSave.SerializePrivate(privKeyWriter, config)
-			if err != nil {
-				return fmt.Errorf("error encoding private key")
-			}
-			privKeyWriter.Close()
+		err = entityToSave.SerializePrivate(privKeyWriter, config)
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
+		}
+		privKeyWriter.Close()
 
-			file.WriteString(privKeyBuf.String())
-			defer file.Close()
-		*/
+		file.WriteString(privKeyBuf.String())
+		defer file.Close()
+
 	} else {
 
 		foundKey = false
