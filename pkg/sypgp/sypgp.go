@@ -285,7 +285,6 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
 	// TODO: there must be a better way to do this...
-	//return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == fmt.Sprintf("%X", oldToken)
 	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
 }
 
