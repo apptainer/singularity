@@ -183,7 +183,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		// check if we pulled from the library, if so; is it signed?
 		if PullLibraryURI != "" && !unauthenticatedPull {
-			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, force)
+			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, true)
 			if err != nil {
 				// err will be: "unable to verify container: %v", err
 				sylog.Warningf("%v", err)
