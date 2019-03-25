@@ -334,7 +334,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			return fmt.Errorf("no key in keyring")
 		}
 
-		// verify the container with our local keys first
+		// verify the container with our local keys
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
 			return fmt.Errorf("unable to verify container: %v", err)
