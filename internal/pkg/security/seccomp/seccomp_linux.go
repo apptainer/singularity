@@ -94,7 +94,7 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	}
 
 	supportCondition := hasConditionSupport()
-	if supportCondition == false {
+	if !supportCondition {
 		sylog.Warningf("seccomp rule conditions are not supported with libseccomp under 2.2.1")
 	}
 
@@ -145,7 +145,7 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 				continue
 			}
 
-			if len(syscall.Args) == 0 || supportCondition == false {
+			if len(syscall.Args) == 0 || !supportCondition {
 				if err := filter.AddRule(sysNr, scmpAction); err != nil {
 					return fmt.Errorf("failed adding seccomp rule for syscall %s: %s", sysName, err)
 				}

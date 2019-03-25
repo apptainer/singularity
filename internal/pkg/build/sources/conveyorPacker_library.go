@@ -34,6 +34,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	cp.b = b
 
+	libraryURL := b.Opts.LibraryURL
+	authToken := b.Opts.LibraryAuthToken
+
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
 		return fmt.Errorf("While inserting base environment: %v", err)
 	}
@@ -42,14 +45,14 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	customLib, ok := b.Recipe.Header["library"]
 	if ok {
 		sylog.Debugf("Using custom library: %v", customLib)
-		cp.LibraryURL = customLib
+		libraryURL = customLib
 	}
 
-	sylog.Debugf("LibraryURL: %v", cp.LibraryURL)
+	sylog.Debugf("LibraryURL: %v", libraryURL)
 	sylog.Debugf("LibraryRef: %v", b.Recipe.Header["from"])
 
 	libURI := "library://" + b.Recipe.Header["from"]
-	libraryImage, err := client.GetImage(cp.LibraryURL, cp.AuthToken, libURI)
+	libraryImage, err := client.GetImage(libraryURL, authToken, libURI)
 	if err != nil {
 		return err
 	}
@@ -61,7 +64,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = client.DownloadImage(imagePath, libURI, cp.LibraryURL, true, cp.AuthToken); err != nil {
+		if err = client.DownloadImage(imagePath, libURI, libraryURL, true, authToken); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 

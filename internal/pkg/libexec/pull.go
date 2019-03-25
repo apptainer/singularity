@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -40,7 +40,7 @@ func PullShubImage(filePath, shubRef string, force, noHTTPS bool) {
 
 // PullOciImage pulls an OCI image to a sif
 func PullOciImage(path, uri string, opts types.Options) {
-	b, err := build.NewBuild(uri, path, "sif", "", "", opts, true)
+	b, err := build.NewBuild(uri, build.Config{Dest: path, Format: "sif", Opts: opts}, true)
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", uri, err)
 	}
