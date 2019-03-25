@@ -103,8 +103,8 @@ func TestBuild(t *testing.T) {
 		{"DockerDefFile", "", "../../examples/docker/Singularity", true, false, true},
 		{"SHubURI", "", "shub://GodloveD/busybox", true, false, true},
 		{"SHubDefFile", "", "../../examples/shub/Singularity", true, false, true},
-		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false}, // this should fail
-		//		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, true, true}, // this should succeed
+		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false},   // this should fail
+		{"LibraryDefFileUnsigned", "", "../../examples/unsigned-library/unsigned.def", false, true, true}, // this should succeed
 		{"LibraryDefFile", "", "../../examples/library/Singularity", true, false, true},
 		{"Yum", "yum", "../../examples/centos/Singularity", true, false, true},
 		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true, false, true},
@@ -138,11 +138,6 @@ func TestBuild(t *testing.T) {
 					t.Fatalf("unexpected success: command should have failed")
 				}
 			}
-
-			//			if b, err := imageBuild(opts, imagePath, tt.buildSpec); err != nil {
-			//				t.Log(string(b))
-			//				t.Fatalf("unexpected failure: %v", err)
-			//			}
 		}))
 	}
 }
