@@ -264,7 +264,7 @@ Enterprise Performance Computing (EPC)`
   The 'key search' command allows you to connect to a key server and look for
   public keys matching the argument passed to the command line. You can
   also search for a key by fingerprint or key ID by adding '0x' before the
-  fingerprint.`
+  fingerprint. (Maximum 100 search entities)`
 	KeySearchExample string = `
   $ singularity key search sylabs.io
 
@@ -591,11 +591,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse   string = `push [push options...] <container image> library://[user[collection/[container[:tag]]]]`
-	PushShort string = `Push a container to a Library URI`
+	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
+	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
-  of your choosing`
+  of your choosing. An auth token is required to push to the remote, so you may
+  need to configure if first with 'singularity remote'.
+  `
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
@@ -701,11 +703,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunHelpUse   string = `run-help <image path>`
-	RunHelpShort string = `Show the user-defined help for an image`
+	RunHelpUse   string = `run-help [run-help options] <image path>`
+	RunHelpShort string = `Show the help for an image`
 	RunHelpLong  string = `
-  The 'run-help' command will display a help text file for a container if 
-  available.`
+  Show the help for an image.
+
+  The help text is from the '%help' section of the definition file. If you are using the '--apps' option,
+  the help text is instead from that app's '%apphelp' section.`
 	RunHelpExample string = `
   $ cat my_container.def
   Bootstrap: docker
@@ -714,6 +718,9 @@ Enterprise Performance Computing (EPC)`
   %help
       Some help for this container
 
+  %apphelp foo
+      Some help for application 'foo' in this container
+
   $ sudo singularity build my_container.sif my_container.def
   Using container recipe deffile: my_container.def
   [...snip...]
@@ -721,7 +728,11 @@ Enterprise Performance Computing (EPC)`
 
   $ singularity run-help my_container.sif
 
-    Some help for this container`
+    Some help for this container
+
+  $ singularity run-help --app foo my_container.sif
+
+    Some help for application in this container`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Inspect
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
