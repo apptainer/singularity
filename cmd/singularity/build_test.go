@@ -104,6 +104,7 @@ func TestBuild(t *testing.T) {
 		{"SHubURI", "", "shub://GodloveD/busybox", true, false, true},
 		{"SHubDefFile", "", "../../examples/shub/Singularity", true, false, true},
 		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false}, // this should fail
+		//		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, true, true}, // this should succeed
 		{"LibraryDefFile", "", "../../examples/library/Singularity", true, false, true},
 		{"Yum", "yum", "../../examples/centos/Singularity", true, false, true},
 		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true, false, true},
