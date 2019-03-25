@@ -39,7 +39,7 @@ type Bundle struct {
 	Opts        Options           `json:"opts"`
 }
 
-// Options ...
+// Options defines build time behavior to be executed on the bundle
 type Options struct {
 	// sections are the parts of the definition to run during the build
 	Sections []string `json:"sections"`
