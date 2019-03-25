@@ -22,7 +22,7 @@ func OciStart(containerID string) error {
 	}
 
 	if state.Status != ociruntime.Created {
-		return fmt.Errorf("container %s is not created", containerID)
+		return fmt.Errorf("cannot start '%s', the state of the container must be %s", containerID, ociruntime.Created)
 	}
 
 	if state.ControlSocket == "" {
