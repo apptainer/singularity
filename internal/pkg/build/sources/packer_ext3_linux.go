@@ -72,8 +72,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 
 // getLoopDevice attaches a loop device with the specified arguments
 func getLoopDevice(arguments *args.LoopArgs) error {
-	var reply int
-	reply = 1
+	reply := 1
 	loopdev := new(loop.Device)
 	loopdev.MaxLoopDevices = 256
 	loopdev.Info = &arguments.Info

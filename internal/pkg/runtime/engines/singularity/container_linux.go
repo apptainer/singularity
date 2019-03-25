@@ -367,11 +367,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 // is enabled
 func (c *container) isLayerEnabled() bool {
 	sylog.Debugf("Using Layer system: %v\n", c.sessionLayerType)
-	if c.sessionLayerType == "none" {
-		return false
-	}
-
-	return true
+	return c.sessionLayerType != "none"
 }
 
 func (c *container) mount(point *mount.Point) error {

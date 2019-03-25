@@ -461,7 +461,7 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
-	if k.PrivateKey.Encrypted == true {
+	if k.PrivateKey.Encrypted {
 		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
 			return err
@@ -476,7 +476,7 @@ func DecryptKey(k *openpgp.Entity) error {
 
 // EncryptKey encrypts a private key using a pass phrase
 func EncryptKey(k *openpgp.Entity, pass string) (err error) {
-	if k.PrivateKey.Encrypted == true {
+	if k.PrivateKey.Encrypted {
 		return fmt.Errorf("key already encrypted")
 	}
 	err = k.PrivateKey.Encrypt([]byte(pass))
@@ -559,8 +559,10 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		return err
 	}
 
+	// the max entities to print.
 	pd := client.PageDetails{
-		Size: 10,
+		// still will only print 100 entities
+		Size: 256,
 	}
 
 	// Retrieve first page of search results from Key Service.
@@ -587,27 +589,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		}
 	}
 
-	// Print first page of search results.
-	fmt.Print(keyText)
-
-	// Retrieve 2-N pages of search results from Key Service.
-	for pd.Token != "" {
-		resp, err := AskQuestion("\nDisplay more results? [Y/n] ")
-		if err != nil {
-			return err
-		}
-		if resp != "" && resp != "y" && resp != "Y" {
-			break
-		}
-
-		keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
-		if err != nil {
-			return err
-		}
-
-		// Print page of search results.
-		fmt.Print(keyText)
-	}
+	fmt.Printf("%v", keyText)
 
 	return nil
 }

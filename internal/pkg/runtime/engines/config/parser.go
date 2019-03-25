@@ -75,7 +75,7 @@ func Parser(filepath string, f interface{}) error {
 						break
 					}
 				}
-				if found == false {
+				if !found {
 					return fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
 				}
 			} else {
@@ -128,7 +128,7 @@ func Parser(filepath string, f interface{}) error {
 						}
 					}
 				}
-				if found == false {
+				if !found {
 					return fmt.Errorf("value authorized for directive '%s' are %s", dir, authorized)
 				}
 			} else {

@@ -59,9 +59,7 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) error 
 	}
 
 	args := []string{"-f", "-d", dest, filename}
-	for _, f := range files {
-		args = append(args, f)
-	}
+	args = append(args, files...)
 	cmd := exec.Command(s.UnsquashfsPath, args...)
 	if stdin {
 		cmd.Stdin = reader

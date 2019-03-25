@@ -37,7 +37,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 
 	libraryRef = strings.TrimPrefix(libraryRef, "library://")
 
-	if strings.Index(libraryRef, ":") == -1 {
+	if !strings.Contains(libraryRef, ":") {
 		libraryRef += ":latest"
 	}
 

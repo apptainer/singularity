@@ -31,9 +31,9 @@ const listAppsCommand = "for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n 
 var AppsCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Use:                   docs.AppsUse,
-	Short:                 docs.AppsUse,
-	Long:                  docs.AppsUse,
-	Example:               docs.AppsUse,
+	Short:                 docs.AppsShort,
+	Long:                  docs.AppsLong,
+	Example:               docs.AppsExample,
 
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
