@@ -123,13 +123,13 @@ func TestParseTokenSection(t *testing.T) {
 // Specific tests to cover some corner cases of doSections()
 func TestDoSections(t *testing.T) {
 	// This is an string representing an invalid section, we make sure it is not identified as a header
-	invalid_str := "%apptest\ntesttext"
+	invalidStr := "%apptest\ntesttext"
 
 	// This is a fake data structure
 	myData := new(types.Definition)
 	myData.Labels = make(map[string]string)
 
-	s1 := bufio.NewScanner(strings.NewReader(invalid_str))
+	s1 := bufio.NewScanner(strings.NewReader(invalidStr))
 	s1.Split(scanDefinitionFile)
 
 	// advance scanner until it returns a useful token
@@ -143,8 +143,8 @@ func TestDoSections(t *testing.T) {
 	}
 
 	// Now we define a valid first section but an invalid second section
-	invalid_str = "%appenv apptest apptest2\ntest\n%appenv\ntest"
-	s2 := bufio.NewScanner(strings.NewReader(invalid_str))
+	invalidStr = "%appenv apptest apptest2\ntest\n%appenv\ntest"
+	s2 := bufio.NewScanner(strings.NewReader(invalidStr))
 	s2.Split(scanDefinitionFile)
 
 	// Advance the scanner until it returns a useful token
@@ -240,9 +240,9 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 func TestIsInvalidSectionErrors(t *testing.T) {
 
 	// Test of IsInvalidSectionError()
-	dummy_keys := []string{"dummy_key1", "dummy_key2"}
-	myValidErr1 := &InvalidSectionError{dummy_keys, errInvalidSection}
-	myValidErr2 := &InvalidSectionError{dummy_keys, errEmptyDefinition}
+	dummyKeys := []string{"dummy_key1", "dummy_key2"}
+	myValidErr1 := &InvalidSectionError{dummyKeys, errInvalidSection}
+	myValidErr2 := &InvalidSectionError{dummyKeys, errEmptyDefinition}
 	myInvalidErr := errors.New("My dummy error")
 	if IsInvalidSectionError(myValidErr1) == false ||
 		IsInvalidSectionError(myValidErr2) == false ||
@@ -251,8 +251,8 @@ func TestIsInvalidSectionErrors(t *testing.T) {
 	}
 
 	// Test of Error()
-	expectedStr1 := "invalid section(s) specified: " + strings.Join(dummy_keys, ", ")
-	expectedStr2 := "Empty definition file: " + strings.Join(dummy_keys, ", ")
+	expectedStr1 := "invalid section(s) specified: " + strings.Join(dummyKeys, ", ")
+	expectedStr2 := "Empty definition file: " + strings.Join(dummyKeys, ", ")
 	if myValidErr1.Error() != expectedStr1 || myValidErr2.Error() != expectedStr2 {
 		t.Fatal("unexpecter result from Error()", myValidErr1.Error())
 	}
@@ -294,13 +294,15 @@ func TestPopulateDefinition(t *testing.T) {
 
 // Specific tests to cover some corners cases of doHeader()
 func TestDoHeader(t *testing.T) {
-	invalidHeader := "headerTest"
+	invalidHeaders := []string{"headerTest", "headerTest: invalid"}
 	myData := new(types.Definition)
 	myData.Labels = make(map[string]string)
 
-	myerr := doHeader(invalidHeader, myData)
-	if myerr == nil {
-		t.Fatal("Test succeeded while supposed to fail")
+	for _, invalidHeader := range invalidHeaders {
+		myerr := doHeader(invalidHeader, myData)
+		if myerr == nil {
+			t.Fatal("Test succeeded while supposed to fail")
+		}
 	}
 }
 
@@ -309,7 +311,7 @@ func TestIsValidDefinition(t *testing.T) {
 	//
 	// Test with a bunch of valid files
 	//
-	valid_tests := []struct {
+	validTests := []struct {
 		name     string
 		defPath  string
 		sections string
@@ -325,7 +327,7 @@ func TestIsValidDefinition(t *testing.T) {
 		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper_sections.json"},
 	}
 
-	for _, tt := range valid_tests {
+	for _, tt := range validTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			deffile := tt.defPath
 
@@ -340,7 +342,7 @@ func TestIsValidDefinition(t *testing.T) {
 	// Test with a non-existing file
 	//
 	valid, err := IsValidDefinition("notExistingDirectory/notExistingFile")
-	if valid == true && err != nil {
+	if valid == true && err == nil {
 		t.Fatal("Validation of a non-existing file succeeded while expected to fail")
 	}
 
@@ -355,7 +357,7 @@ func TestIsValidDefinition(t *testing.T) {
 	//
 	// Now test with invalid definition files
 	//
-	invalid_tests := []struct {
+	invalidTests := []struct {
 		name    string
 		defPath string
 	}{
@@ -364,7 +366,7 @@ func TestIsValidDefinition(t *testing.T) {
 		{"JSONInput2", "testdata_bad/json_input_2"},
 		{"Empty", "testdata_bad/empty"},
 	}
-	for _, tt := range invalid_tests {
+	for _, tt := range invalidTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			deffile := tt.defPath
 
