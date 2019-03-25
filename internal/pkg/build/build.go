@@ -281,7 +281,7 @@ func getcp(def types.Definition, libraryURL, authToken string, unauthenticatedBu
 	case "library":
 		return &sources.LibraryConveyorPacker{
 			AllowUnauthenticated: unauthenticatedBuild,
-			}, nil
+		}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
