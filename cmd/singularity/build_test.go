@@ -77,7 +77,7 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 		argv = append(argv, "--sandbox")
 	}
 	if opts.unauthenticated {
-		argv = append(argv, "--alow-unauthenticated")
+		argv = append(argv, "--allow-unauthenticated")
 	}
 	argv = append(argv, imagePath, buildSpec)
 
