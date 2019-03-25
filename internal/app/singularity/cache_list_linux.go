@@ -126,7 +126,7 @@ func listBlobCache(printList bool) error {
 			// no need to describe the error, since it is already
 			sylog.Warningf("%v", err)
 		}
-		fmt.Printf("\nThere are %d oci blob file(s) using %v of space. Use: '-T=blob' to list\n", count, printFileSize)
+		fmt.Printf("\nThere are %d blob file(s) using %v of space. Use '-T=blob' to list them\n", count, printFileSize)
 	}
 	return nil
 }
