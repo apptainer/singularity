@@ -84,8 +84,6 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
 		}
 
-		fmt.Println(entityToSave)
-
 		pass, err := sypgp.AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
 			return err
