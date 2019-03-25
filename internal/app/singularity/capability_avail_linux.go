@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
@@ -20,11 +21,11 @@ type CapAvailConfig struct {
 // CapabilityAvail lists the capabilities based on the CapAvailConfig
 func CapabilityAvail(c CapAvailConfig) error {
 	caps, ign := capabilities.Split(c.Caps)
-	if len(ign) > 0 && c.Caps != "" {
-		return fmt.Errorf("Ignoring unknown capabilities: %s", ign)
+	if len(ign) > 0 {
+		return fmt.Errorf("unknown capabilities found in: %s", strings.Join(ign, ","))
 	}
 
-	if len(caps) > 0 && c.Caps != "" {
+	if len(caps) > 0 {
 		for _, cap := range caps {
 			fmt.Printf("%-22s %s\n\n", cap+":", capabilities.Map[cap].Description)
 		}
