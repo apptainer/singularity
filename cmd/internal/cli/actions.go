@@ -105,8 +105,8 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 					NoHTTPS:          noHTTPS,
 					DockerAuthConfig: authConf,
 				},
-				AllowUnauthenticatedBuild,
 			},
+			AllowUnauthenticatedBuild,
 		)
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)

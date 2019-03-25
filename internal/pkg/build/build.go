@@ -73,12 +73,12 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, libraryURL, authToken, opts, false)
+	return newBuild([]types.Definition{def}, conf, false)
 }
 
-func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options, allowUnauthenticatedBuild bool) (*Build, error) {
-	return newBuild([]types.Definition{def}, conf)
-}
+//func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options, allowUnauthenticatedBuild bool) (*Build, error) {
+//	return newBuild([]types.Definition{def}, conf, allowUnauthenticatedBuild)
+//}
 
 func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild bool) (*Build, error) {
 	var err error
@@ -279,11 +279,6 @@ func runBuildEngine(b *types.Bundle) error {
 func getcp(def types.Definition, libraryURL, authToken string, unauthenticatedBuild bool) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
-//		return &sources.LibraryConveyorPacker{
-//			LibraryURL:           libraryURL,
-//			AuthToken:            authToken,
-//			AllowUnauthenticated: unauthenticatedBuild,
-//		}, nil
 		return &sources.LibraryConveyorPacker{}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
