@@ -336,7 +336,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 
 		// If we dont have a local public key
-		if !ifHaveKey {
+		if !noPrompt && !ifHaveKey {
 			sylog.Errorf("This image is signed with key '%s', but this key is not present in your local keyring.", fingerprint)
 			fmt.Fprintf(os.Stderr, "\nTo add this key to your local keyring, run:\n\n")
 
@@ -344,6 +344,10 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 			fmt.Fprintf(os.Stderr, "\nRunning this command instructs 'singularity' to trust this key in future. Run 'singularity key pull -h' for more information regarding the implications of this action.\n")
 			return fmt.Errorf("no key in keyring")
+		} else if !ifHaveKey {
+			sylog.Warningf("This image is signed with key '%s', but this key is not present in your local keyring.", fingerprint)
+			sylog.Warningf("This image is signed, but not trusted")
+			return nil
 		}
 
 		// verify the container with our local keys
