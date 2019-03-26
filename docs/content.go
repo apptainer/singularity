@@ -23,15 +23,15 @@ Enterprise Performance Computing (EPC)`
   Singularity one is capable of building a root file system that runs on any 
   other Linux system where Singularity is installed.`
 	SingularityExample string = `
-  $ singularity help <command>
-      Additional help for any Singularity subcommand can be seen by appending
-      the subcommand name to the above command.`
+  $ singularity help <command> [<subcommand>]
+  $ singularity help build
+  $ singularity help instance start`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// build
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	BuildUse   string = `build [local options...] <IMAGE PATH> <BUILD SPEC>`
-	BuildShort string = `Build a new Singularity container`
+	BuildShort string = `Build a Singularity image`
 	BuildLong  string = `
 
   IMAGE PATH:
@@ -160,10 +160,10 @@ Enterprise Performance Computing (EPC)`
 	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CacheUse   string = `cache <subcommand>`
-	CacheShort string = `Manage your local singularity cache`
+	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
   Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
-  You can list/clean using the spicific types.`
+  You can list/clean using the specific types.`
 	CacheExample string = `
   All group commands have their own help output:
 
@@ -205,7 +205,7 @@ Enterprise Performance Computing (EPC)`
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyUse   string = `key [key options...] <subcommand>`
-	KeyShort string = `Manage OpenPGP key stores`
+	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
   The 'key' command allows you to manage local OpenPGP key stores by creating
   a new store and new key pairs. You can also list available keys from the
@@ -216,6 +216,9 @@ Enterprise Performance Computing (EPC)`
 
   $ singularity help key newpair
   $ singularity key list --help`
+
+	// keys : for the hidden `keys` command
+	KeysUse string = `keys [keys options...] <subcommand>`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
@@ -258,10 +261,18 @@ Enterprise Performance Computing (EPC)`
 	KeySearchUse   string = `search [search options...] <search_string>`
 	KeySearchShort string = `Search for keys matching string argument`
 	KeySearchLong  string = `
-  The 'key search' command allows you to connect to a key server and look for 
-  public keys matching the string argument passed to the command line.`
+  The 'key search' command allows you to connect to a key server and look for
+  public keys matching the argument passed to the command line. You can
+  also search for a key by fingerprint or key ID by adding '0x' before the
+  fingerprint. (Maximum 100 search entities)`
 	KeySearchExample string = `
-  $ singularity key search sylabs.io`
+  $ singularity key search sylabs.io
+
+  # note the '0x' before the fingerprint:
+  $ singularity key search 0x8883491F4268F173C6E5DC49EDECE4F3F38D871E
+
+  # search by key ID: (again, there's '0x' before the ID)
+  $ singularity key search 0xF38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key pull
@@ -273,7 +284,7 @@ Enterprise Performance Computing (EPC)`
   download a public key. Key rings are stored into (e.g., 
   $HOME/.singularity/sypgp).`
 	KeyPullExample string = `
-  $ singularity key pull D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key push
@@ -284,13 +295,13 @@ Enterprise Performance Computing (EPC)`
   The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
 	KeyPushExample string = `
-  $ singularity key push D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+  $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`
-	CapabilityShort string = `Manage Linux capabilities on containers`
+	CapabilityShort string = `Manage Linux capabilities for an image`
 	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
   your containers need to run.`
@@ -453,7 +464,7 @@ Enterprise Performance Computing (EPC)`
 
   shub://*            A container hosted on Singularity Hub`
 	ExecUse   string = `exec [exec options...] <container> <command>`
-	ExecShort string = `Execute a command within container`
+	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
   singularity exec supports the following formats:` + formats
 	ExecExamples string = `
@@ -468,7 +479,7 @@ Enterprise Performance Computing (EPC)`
 	// instance
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	InstanceUse   string = `instance <subcommand>`
-	InstanceShort string = `Manage containers running in the background`
+	InstanceShort string = `Manage containers running as services`
 	InstanceLong  string = `
   Instances allow you to run containers as background processes. This can be
   useful for running services such as web servers or databases.`
@@ -481,7 +492,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceListUse   string = `list [list options...] <container>`
+	InstanceListUse   string = `list [list options...]`
 	InstanceListShort string = `List all running and named Singularity instances`
 	InstanceListLong  string = `
   The instance list command allows you to view the Singularity container
@@ -554,7 +565,7 @@ Enterprise Performance Computing (EPC)`
 	// pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PullUse   string = `pull [pull options...] [output file] <URI>`
-	PullShort string = `Pull a container from a URI`
+	PullShort string = `Pull an image from a URI`
 	PullLong  string = `
   The 'pull' command allows you to download or build a container from a given
   URI.  Supported URIs include:
@@ -580,11 +591,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse   string = `push [push options...] <container image> library://[user[collection/[container[:tag]]]]`
-	PushShort string = `Push a container to a Library URI`
+	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
+	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
-  of your choosing`
+  of your choosing. An auth token is required to push to the remote, so you may
+  need to configure if first with 'singularity remote'.
+  `
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
@@ -592,7 +605,7 @@ Enterprise Performance Computing (EPC)`
 	// search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SearchUse   string = `search [search options...] <search query>`
-	SearchShort string = `Search the library`
+	SearchShort string = `Search a Library for images`
 	SearchLong  string = `
   The Singularity search command allows you to search within a container library 
   of your choosing.  The container library defaults to 
@@ -604,7 +617,7 @@ Enterprise Performance Computing (EPC)`
 	// run
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunUse   string = `run [run options...] <container>`
-	RunShort string = `Launch a runscript within container`
+	RunShort string = `Run the user-defined default command within a container`
 	RunLong  string = `
   This command will launch a Singularity container and execute a runscript
   if one is defined for that container. The runscript is a metadata file within
@@ -631,7 +644,7 @@ Enterprise Performance Computing (EPC)`
 	// shell
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	ShellUse   string = `shell [shell options...] <container>`
-	ShellShort string = `Run a Bourne shell within container`
+	ShellShort string = `Run a shell within a container`
 	ShellLong  string = `
   singularity shell supports the following formats:` + formats
 	ShellExamples string = `
@@ -664,7 +677,7 @@ Enterprise Performance Computing (EPC)`
 	// sign
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SignUse   string = `sign [sign options...] <image path>`
-	SignShort string = `Attach cryptographic signatures to container`
+	SignShort string = `Attach a cryptographic signature to an image`
 	SignLong  string = `
   The sign command allows a user to create a cryptographic signature on either a 
   single data object or a list of data objects within the same SIF group. By 
@@ -677,7 +690,7 @@ Enterprise Performance Computing (EPC)`
 	// verify
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	VerifyUse   string = `verify [verify options...] <image path>`
-	VerifyShort string = `Verify cryptographic signatures on container`
+	VerifyShort string = `Verify cryptographic signatures attached to an image`
 	VerifyLong  string = `
   The verify command allows a user to verify cryptographic signatures on SIF 
   container files. There may be multiple signatures for data objects and 
@@ -690,11 +703,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunHelpUse   string = `run-help <image path>`
-	RunHelpShort string = `Display help for container if available`
+	RunHelpUse   string = `run-help [run-help options] <image path>`
+	RunHelpShort string = `Show the help for an image`
 	RunHelpLong  string = `
-  The 'run-help' command will display a help text file for a container if 
-  available.`
+  Show the help for an image.
+
+  The help text is from the '%help' section of the definition file. If you are using the '--apps' option,
+  the help text is instead from that app's '%apphelp' section.`
 	RunHelpExample string = `
   $ cat my_container.def
   Bootstrap: docker
@@ -703,6 +718,9 @@ Enterprise Performance Computing (EPC)`
   %help
       Some help for this container
 
+  %apphelp foo
+      Some help for application 'foo' in this container
+
   $ sudo singularity build my_container.sif my_container.def
   Using container recipe deffile: my_container.def
   [...snip...]
@@ -710,12 +728,16 @@ Enterprise Performance Computing (EPC)`
 
   $ singularity run-help my_container.sif
 
-    Some help for this container`
+    Some help for this container
+
+  $ singularity run-help --app foo my_container.sif
+
+    Some help for application in this container`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Inspect
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	InspectUse   string = `inspect [inspect options...] <image path>`
-	InspectShort string = `Display metadata for container if available`
+	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
   Inspect will show you labels, environment variables, and scripts associated 
   with the image determined by the flags you pass.`
@@ -767,7 +789,7 @@ found at:
 	// Test
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RunTestUse   string = `test [exec options...] <image path>`
-	RunTestShort string = `Run defined tests for this particular container`
+	RunTestShort string = `Run the user-defined tests within a container`
 	RunTestLong  string = `
   The 'test' command allows you to execute a testscript (if available) inside of
   a given container 
@@ -828,13 +850,13 @@ found at:
 	OciStateExample string = `
   $ singularity oci state mycontainer`
 
-	OciKillUse   string = `kill <container_ID> [-s] signal`
+	OciKillUse   string = `kill <container_ID>`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
   Kill invoke kill operation to kill processes running within container identified by container ID.`
 	OciKillExample string = `
   $ singularity oci kill mycontainer INT
-  $ singularity oci kill mycontainer -s INT`
+  $ singularity oci kill -s INT mycontainer`
 
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`

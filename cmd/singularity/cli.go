@@ -8,16 +8,11 @@ package main
 import (
 	"github.com/sylabs/singularity/cmd/internal/cli"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/goversion"
+	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 func main() {
-	if err := goversion.Check(); err != nil {
-		sylog.Fatalf("%s", err)
-	}
-
 	// In cmd/internal/cli/singularity.go
 	cli.ExecuteSingularity()
 }

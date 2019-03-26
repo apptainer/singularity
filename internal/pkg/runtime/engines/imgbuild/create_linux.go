@@ -41,7 +41,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		return fmt.Errorf("stat on %s failed", rootfs)
 	}
 
-	if st.IsDir() == false {
+	if !st.IsDir() {
 		return fmt.Errorf("%s is not a directory", rootfs)
 	}
 

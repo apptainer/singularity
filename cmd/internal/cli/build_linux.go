@@ -18,10 +18,6 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-func preRun(cmd *cobra.Command, args []string) {
-	sylabsToken(cmd, args)
-}
-
 func run(cmd *cobra.Command, args []string) {
 	buildFormat := "sif"
 	if sandbox {
@@ -81,19 +77,21 @@ func run(cmd *cobra.Command, args []string) {
 
 		b, err := build.NewBuild(
 			spec,
-			dest,
-			buildFormat,
-			libraryURL,
-			authToken,
-			types.Options{
-				TmpDir:           tmpDir,
-				Update:           update,
-				Force:            force,
-				Sections:         sections,
-				NoTest:           noTest,
-				NoHTTPS:          noHTTPS,
-				NoCleanUp:        noCleanUp,
-				DockerAuthConfig: authConf,
+			build.Config{
+				Dest:      dest,
+				Format:    buildFormat,
+				NoCleanUp: noCleanUp,
+				Opts: types.Options{
+					TmpDir:           tmpDir,
+					Update:           update,
+					Force:            force,
+					Sections:         sections,
+					NoTest:           noTest,
+					NoHTTPS:          noHTTPS,
+					LibraryURL:       libraryURL,
+					LibraryAuthToken: authToken,
+					DockerAuthConfig: authConf,
+				},
 			})
 		if err != nil {
 			sylog.Fatalf("Unable to create build: %v", err)
