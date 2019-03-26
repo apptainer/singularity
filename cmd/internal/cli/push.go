@@ -89,11 +89,13 @@ var PushCmd = &cobra.Command{
 }
 
 func handlePushFlags(cmd *cobra.Command) {
+	KeyServerURL = "https://keys.sylabs.io"
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", PushLibraryURI)
+		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		sylog.Debugf("using default key server url: %v", KeyServerURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
@@ -105,6 +107,13 @@ func handlePushFlags(cmd *cobra.Command) {
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}
-		PushLibraryURI = uri
+		PullLibraryURI = uri
 	}
+
+	uri, err := endpoint.GetServiceURI("keystore")
+	if err != nil {
+		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, KeyServerURL)
+		return
+	}
+	KeyServerURL = uri
 }
