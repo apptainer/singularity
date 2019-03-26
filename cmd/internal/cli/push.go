@@ -94,7 +94,7 @@ func handlePushFlags(cmd *cobra.Command) {
 	// otherwise fall back on regular authtoken and URI behavior
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
-		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		sylog.Warningf("No default remote in use, falling back to: %v", PushLibraryURI)
 		sylog.Debugf("using default key server url: %v", KeyServerURL)
 		return
 	} else if err != nil {
@@ -107,7 +107,7 @@ func handlePushFlags(cmd *cobra.Command) {
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
 		}
-		PullLibraryURI = uri
+		PushLibraryURI = uri
 	}
 
 	uri, err := endpoint.GetServiceURI("keystore")
