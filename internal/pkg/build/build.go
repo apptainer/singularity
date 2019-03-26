@@ -223,7 +223,7 @@ func (b *Build) Full() error {
 
 // engineRequired returns true if build definition is requesting to run scripts or copy files
 func engineRequired(def types.Definition) bool {
-	return def.BuildData.Post.Script != "" || def.BuildData.Setup.Script != "" || def.BuildData.Test.Script != "" || len(def.BuildData.Files.Files) != 0
+	return def.BuildData.Post.Script != "" || def.BuildData.Setup.Script != "" || def.BuildData.Test.Script != "" || len(def.BuildData.Files) != 0
 }
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle

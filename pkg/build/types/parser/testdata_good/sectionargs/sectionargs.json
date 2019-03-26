@@ -30,15 +30,26 @@
 		}
 	},
 	"buildData": {
-		"files": {
-			"args": "from something",
-			"files": [
-				{
-					"source": "notafile",
-					"destination": "notafile"
-				}
-			]
-		},
+		"files": [
+			{
+				"args": "from something",
+				"files": [
+					{
+						"source": "notafile",
+						"destination": "notafile"
+					}
+				]
+			},
+			{
+				"args": "from somethingelse",
+				"files": [
+					{
+						"source": "something",
+						"destination": "different"
+					}
+				]
+			}
+		],
 		"buildScripts": {
 			"pre": {
 				"args": "",
@@ -49,7 +60,7 @@
 				"script": ""
 			},
 			"post": {
-				"args": "-c /bin/bash",
+				"args": "-c /bin/bash extra stuff here ",
 				"script": "        echo \"Running post section\"\n        echo $0\n        dpkg -S $0\n        function foo { echo; }\n        echo \"Bashism function defined\"\n"
 			},
 			"test": {
@@ -59,5 +70,5 @@
 		}
 	},
 	"customData": null,
-	"raw": "Qm9vdHN0cmFwOiBsaWJyYXJ5CkZyb206IGRlYmlhbjo5CgolZmlsZXMgZnJvbSBzb21ldGhpbmcKICAgIG5vdGFmaWxlIG5vdGFmaWxlCgolcG9zdCAtYyAvYmluL2Jhc2gKICAgICAgICBlY2hvICJSdW5uaW5nIHBvc3Qgc2VjdGlvbiIKICAgICAgICBlY2hvICQwCiAgICAgICAgZHBrZyAtUyAkMAogICAgICAgIGZ1bmN0aW9uIGZvbyB7IGVjaG87IH0KICAgICAgICBlY2hvICJCYXNoaXNtIGZ1bmN0aW9uIGRlZmluZWQi"
+	"raw": "Qm9vdHN0cmFwOiBsaWJyYXJ5CkZyb206IGRlYmlhbjo5CgolZmlsZXMgZnJvbSBzb21ldGhpbmcKICAgIG5vdGFmaWxlIG5vdGFmaWxlCgolZmlsZXMgZnJvbSBzb21ldGhpbmdlbHNlCiAgICBzb21ldGhpbmcgZGlmZmVyZW50CgolcG9zdCAtYyAvYmluL2Jhc2ggZXh0cmEgc3R1ZmYgaGVyZSAjY29tbWVudAogICAgICAgIGVjaG8gIlJ1bm5pbmcgcG9zdCBzZWN0aW9uIgogICAgICAgIGVjaG8gJDAKICAgICAgICBkcGtnIC1TICQwCiAgICAgICAgZnVuY3Rpb24gZm9vIHsgZWNobzsgfQogICAgICAgIGVjaG8gIkJhc2hpc20gZnVuY3Rpb24gZGVmaW5lZCI="
 }

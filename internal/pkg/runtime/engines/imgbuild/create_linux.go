@@ -18,6 +18,7 @@ import (
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // CreateContainer creates a container
@@ -183,8 +184,14 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 }
 
 func (engine *EngineOperations) copyFiles() error {
+	files := types.Files{}
+	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
+		if f.Args == "" {
+			files = f
+		}
+	}
 	// iterate through filetransfers
-	for _, transfer := range engine.EngineConfig.Recipe.BuildData.Files.Files {
+	for _, transfer := range files.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name...")

@@ -13,15 +13,15 @@
 		"imageScripts": {
 			"help": {
 				"args": "",
-				"script": "Hello Help!\n# # double Hashtag comment\n"
+				"script": "Hello Help!\n\n"
 			},
 			"environment": {
 				"args": "",
-				"script": "    VADER=badguy\n    LUKE=goodguy\n    SOLO=someguy # comment 4\n    export VADER LUKE SOLO\n\n\n\n"
+				"script": "    VADER=badguy\n    LUKE=goodguy\n    SOLO=someguy \n    export VADER LUKE SOLO\n\n\n\n"
 			},
 			"runScript": {
 				"args": "",
-				"script": "    echo \"Mock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n"
+				"script": "    echo \"Mock!\"\n    echo \"Arguments received: $*\" \n    exec echo \"$@\"\n"
 			},
 			"test": {
 				"args": "",
@@ -34,19 +34,21 @@
 		}
 	},
 	"buildData": {
-		"files": {
-			"args": "",
-			"files": [
-				{
-					"source": "mock1.txt",
-					"destination": ""
-				},
-				{
-					"source": "mock2.txt",
-					"destination": "/opt"
-				}
-			]
-		},
+		"files": [
+			{
+				"args": "",
+				"files": [
+					{
+						"source": "mock1.txt",
+						"destination": ""
+					},
+					{
+						"source": "mock2.txt",
+						"destination": "/opt"
+					}
+				]
+			}
+		],
 		"buildScripts": {
 			"pre": {
 				"args": "",
@@ -54,7 +56,7 @@
 			},
 			"setup": {
 				"args": "",
-				"script": "    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n# Some dummy comment 2\n\n"
+				"script": "    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n\n\n"
 			},
 			"post": {
 				"args": "",

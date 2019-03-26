@@ -42,7 +42,7 @@ type ImageScripts struct {
 // Data contains any scripts, metadata, etc... that the Builder may
 // need to know only at build time to build the image
 type Data struct {
-	Files   `json:"files"`
+	Files   []Files `json:"files"`
 	Scripts `json:"buildScripts"`
 }
 
@@ -132,24 +132,25 @@ func writeSectionIfExists(w io.Writer, ident string, s Script) {
 	}
 }
 
-func writeFilesIfExists(w io.Writer, f Files) {
+func writeFilesIfExists(w io.Writer, f []Files) {
+	for _, f := range f {
+		if len(f.Files) > 0 {
+			w.Write([]byte("%"))
+			w.Write([]byte("files"))
+			if len(f.Args) > 0 {
+				w.Write([]byte(" " + f.Args))
+			}
+			w.Write([]byte("\n"))
 
-	if len(f.Files) > 0 {
-		w.Write([]byte("%"))
-		w.Write([]byte("files"))
-		if len(f.Args) > 0 {
-			w.Write([]byte(" " + f.Args))
-		}
-		w.Write([]byte("\n"))
-
-		for _, ft := range f.Files {
-			w.Write([]byte("\t"))
-			w.Write([]byte(ft.Src))
-			w.Write([]byte("\t"))
-			w.Write([]byte(ft.Dst))
+			for _, ft := range f.Files {
+				w.Write([]byte("\t"))
+				w.Write([]byte(ft.Src))
+				w.Write([]byte("\t"))
+				w.Write([]byte(ft.Dst))
+				w.Write([]byte("\n"))
+			}
 			w.Write([]byte("\n"))
 		}
-		w.Write([]byte("\n"))
 	}
 }
 

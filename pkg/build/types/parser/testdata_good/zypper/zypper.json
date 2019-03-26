@@ -32,10 +32,7 @@
 		}
 	},
 	"buildData": {
-		"files": {
-			"args": "",
-			"files": null
-		},
+		"files": [],
 		"buildScripts": {
 			"pre": {
 				"args": "",

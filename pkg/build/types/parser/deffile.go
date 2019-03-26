@@ -132,13 +132,52 @@ func getSectionName(line string) string {
 }
 
 // parseTokenSection into appropriate components to be placed into a types.Script struct
-func parseTokenSection(tok string, sections map[string]*types.Script) error {
+func parseTokenSection(tok string, sections map[string]*types.Script, files *[]types.Files) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
 		return fmt.Errorf("Section %v: Could not be split into section name and body", split[0])
 	}
 
 	key := getSectionName(split[0])
+
+	// parse files differently to allow multiple files sections
+	if key == "files" {
+		f := types.Files{}
+		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 2)
+		if len(sectionSplit) == 2 {
+			f.Args = sectionSplit[1]
+		}
+
+		// Files are parsed as a map[string]string
+		filesSections := strings.TrimSpace(split[1])
+		subs := strings.Split(filesSections, "\n")
+		for _, line := range subs {
+			if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+				continue
+			}
+			var src, dst string
+			lineSubs := strings.SplitN(line, " ", 2)
+			if len(lineSubs) < 2 {
+				src = strings.TrimSpace(lineSubs[0])
+				dst = ""
+			} else {
+				src = strings.TrimSpace(lineSubs[0])
+				dst = strings.TrimSpace(lineSubs[1])
+			}
+			f.Files = append(f.Files, types.FileTransport{Src: src, Dst: dst})
+		}
+
+		// look through existing files and append to them if they already exist
+		for _, ef := range *files {
+			if ef.Args == f.Args {
+				ef.Files = append(ef.Files, f.Files...)
+				return nil
+			}
+		}
+
+		*files = append(*files, f)
+		return nil
+	}
 
 	if appSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
@@ -168,6 +207,7 @@ func parseTokenSection(tok string, sections map[string]*types.Script) error {
 
 func doSections(s *bufio.Scanner, d *types.Definition) error {
 	sectionsMap := make(map[string]*types.Script)
+	files := []types.Files{}
 	tok := strings.TrimSpace(s.Text())
 
 	// skip initial token parsing if it is empty after trimming whitespace
@@ -179,7 +219,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 			}
 		} else {
 			//this is a section
-			if err := parseTokenSection(tok, sectionsMap); err != nil {
+			if err := parseTokenSection(tok, sectionsMap, &files); err != nil {
 				return err
 			}
 		}
@@ -194,7 +234,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		tok := s.Text()
 
 		// Parse each token -> section
-		if err := parseTokenSection(tok, sectionsMap); err != nil {
+		if err := parseTokenSection(tok, sectionsMap, &files); err != nil {
 			return err
 		}
 	}
@@ -203,10 +243,10 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		return err
 	}
 
-	return populateDefinition(sectionsMap, d)
+	return populateDefinition(sectionsMap, &files, d)
 }
 
-func populateDefinition(sections map[string]*types.Script, d *types.Definition) (err error) {
+func populateDefinition(sections map[string]*types.Script, files *[]types.Files, d *types.Definition) (err error) {
 	// initialize standard sections if not already created
 	// this function relies on standard sections being initialized in the map
 	for section := range validSections {
@@ -215,32 +255,9 @@ func populateDefinition(sections map[string]*types.Script, d *types.Definition) 
 		}
 	}
 
-	// Files are parsed as a map[string]string
-	filesSections := strings.TrimSpace(sections["files"].Script)
-	subs := strings.Split(filesSections, "\n")
-	var files []types.FileTransport
-
-	for _, line := range subs {
-
-		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
-			continue
-		}
-		var src, dst string
-		lineSubs := strings.SplitN(line, " ", 2)
-		if len(lineSubs) < 2 {
-			src = strings.TrimSpace(lineSubs[0])
-			dst = ""
-		} else {
-			src = strings.TrimSpace(lineSubs[0])
-			dst = strings.TrimSpace(lineSubs[1])
-		}
-
-		files = append(files, types.FileTransport{Src: src, Dst: dst})
-	}
-
 	// labels are parsed as a map[string]string
 	labelsSections := strings.TrimSpace(sections["labels"].Script)
-	subs = strings.Split(labelsSections, "\n")
+	subs := strings.Split(labelsSections, "\n")
 	labels := make(map[string]string)
 
 	for _, line := range subs {
@@ -270,7 +287,7 @@ func populateDefinition(sections map[string]*types.Script, d *types.Definition) 
 		},
 		Labels: labels,
 	}
-	d.BuildData.Files = types.Files{Args: sections["files"].Args, Files: files}
+	d.BuildData.Files = *files
 	d.BuildData.Scripts = types.Scripts{
 		Pre:   *sections["pre"],
 		Setup: *sections["setup"],
@@ -342,6 +359,23 @@ func doHeader(h string, d *types.Definition) (err error) {
 	return
 }
 
+// trim lines with comments on theme
+func removeComments(b []byte) []byte {
+	cleanBuf := []byte{}
+	s := bufio.NewScanner(bytes.NewReader(b))
+	s.Split(bufio.ScanLines)
+	for s.Scan() {
+		splitLine := strings.SplitN(s.Text(), "#", 2)
+		appendLine := splitLine[0]
+		if !strings.HasSuffix(appendLine, "\n") {
+			appendLine += "\n"
+		}
+		cleanBuf = append(cleanBuf, appendLine...)
+	}
+
+	return cleanBuf
+}
+
 // ParseDefinitionFile receives a reader from a definition file
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
@@ -351,7 +385,7 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 		return d, fmt.Errorf("While attempting to read in definition: %v", err)
 	}
 
-	s := bufio.NewScanner(bytes.NewReader(d.Raw))
+	s := bufio.NewScanner(bytes.NewReader(removeComments(d.Raw)))
 	s.Split(scanDefinitionFile)
 
 	// advance scanner until it returns a useful token or errors
