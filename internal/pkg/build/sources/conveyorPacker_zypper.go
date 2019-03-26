@@ -63,7 +63,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 		mirrorurl = regex.ReplaceAllString(mirrorurl, osversion)
 	}
 
-	include, _ := cp.b.Recipe.Header["include"]
+	include := cp.b.Recipe.Header["include"]
 
 	// check for include environment variable and add it to requires string
 	include += ` ` + os.Getenv("INCLUDE")

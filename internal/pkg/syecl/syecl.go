@@ -143,7 +143,7 @@ func checkWhiteStrict(fp *os.File, egroup *execgroup) (ok bool, err error) {
 		}
 	}
 	for _, v := range m {
-		if v != true {
+		if !v {
 			return false, fmt.Errorf("%s is not signed by required entities", fp.Name())
 		}
 	}
@@ -209,7 +209,7 @@ func shouldRun(ecl *EclConfig, fp *os.File) (ok bool, err error) {
 // ShouldRun determines if a container should run according to its execgroup rules
 func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
 	// look if ECL rules are activated
-	if ecl.Activated == false {
+	if !ecl.Activated {
 		return true, nil
 	}
 
@@ -224,7 +224,7 @@ func (ecl *EclConfig) ShouldRun(cpath string) (ok bool, err error) {
 // ShouldRunFp determines if an already opened container should run according to its execgroup rules
 func (ecl *EclConfig) ShouldRunFp(fp *os.File) (ok bool, err error) {
 	// look if ECL rules are activated
-	if ecl.Activated == false {
+	if !ecl.Activated {
 		return true, nil
 	}
 

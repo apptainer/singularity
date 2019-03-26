@@ -80,9 +80,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
 
 // unpackImagePart temporarily mounts an image parition using a loop device and then copies its contents to the destination directory
 func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err error) {
-
-	var number int
-	number = 0
+	number := 0
 	loopdev := new(loop.Device)
 	loopdev.MaxLoopDevices = 256
 	loopdev.Info = info

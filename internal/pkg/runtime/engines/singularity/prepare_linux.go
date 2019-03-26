@@ -340,7 +340,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 // to join a running instance
 func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Config) error {
 	name := instance.ExtractName(e.EngineConfig.GetImage())
-	file, err := instance.Get(name)
+	file, err := instance.Get(name, instance.SingSubDir)
 	if err != nil {
 		return err
 	}
@@ -539,7 +539,7 @@ func (e *EngineOperations) loadImages() error {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
-		if err := os.Chdir(img.Source); err != nil {
+		if err := mainthread.Chdir(img.Source); err != nil {
 			return err
 		}
 		cwd, err := os.Getwd()

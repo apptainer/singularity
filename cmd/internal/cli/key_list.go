@@ -40,7 +40,7 @@ var KeyListCmd = &cobra.Command{
 }
 
 func doKeyListCmd(secret bool) error {
-	if secret == false {
+	if !secret {
 		fmt.Printf("Public key listing (%s):\n\n", sypgp.PublicPath())
 		sypgp.PrintPubKeyring()
 	} else {

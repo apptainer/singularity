@@ -27,6 +27,8 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 
 	if engine.EngineConfig.GetDeleteImage() {
 		image := engine.EngineConfig.GetImage()
+		sylog.Verbosef("Removing image %s", image)
+		sylog.Infof("Cleaning up image...")
 		if err := os.RemoveAll(image); err != nil {
 			sylog.Errorf("failed to delete container image %s: %s", image, err)
 		}
@@ -47,7 +49,7 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 	if engine.EngineConfig.GetInstance() {
 		uid := os.Getuid()
 
-		file, err := instance.Get(engine.CommonConfig.ContainerID)
+		file, err := instance.Get(engine.CommonConfig.ContainerID, instance.SingSubDir)
 		if err != nil {
 			return err
 		}

@@ -23,7 +23,7 @@ func OciDelete(containerID string) error {
 
 	switch engineConfig.State.Status {
 	case ociruntime.Running:
-		return fmt.Errorf("container is not stopped: running")
+		return fmt.Errorf("cannot delete '%s', the state of the container must be created or stopped", containerID)
 	case ociruntime.Stopped:
 	case ociruntime.Created:
 		if err := OciKill(containerID, "SIGTERM", 2); err != nil {
@@ -45,7 +45,7 @@ func OciDelete(containerID string) error {
 	}
 
 	// remove instance files
-	file, err := instance.Get(containerID)
+	file, err := instance.Get(containerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
