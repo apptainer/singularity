@@ -213,8 +213,8 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
-		err := syscall.Exec(args[0], args, env)
-		return fmt.Errorf("exec %s failed: %s", args[0], err)
+		syscall.Exec(args[0], args, env)
+		return fmt.Errorf("exec %s failed: a shared library is likely missing in the image", args[0])
 	}
 
 	// Spawn and wait container process, signal handler
