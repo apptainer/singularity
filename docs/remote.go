@@ -11,9 +11,9 @@ const (
 	// remote command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteUse   string = `remote <subcommand>`
-	RemoteShort string = `Manage SCS endpoints`
+	RemoteShort string = `Manage Sylabs Cloud endpoints`
 	RemoteLong  string = `
-	The 'remote' commands allow you to manage SCS endpoints through its
+	The 'remote' commands allow you to manage Sylabs Cloud endpoints through its
 	subcommands. These allow you to add, log in, and use endpoints. The remote
 	configuration is stored in $HOME/.singularity/remotes.yaml by default.`
 	RemoteExample string = `
@@ -25,17 +25,17 @@ const (
 	// remote add command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteAddUse   string = `add <remote_name> <remote_URI>`
-	RemoteAddShort string = `Create a new SCS remote endpoint`
+	RemoteAddShort string = `Create a new Sylabs Cloud remote endpoint`
 	RemoteAddLong  string = `
 	The 'remote add' command allows you to create a new remote endpoint to be
-	be used for SCS services.`
+	be used for Sylabs Cloud services.`
 	RemoteAddExample string = `
 	$ singularity remote add sylabs cloud.sylabs.io`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote remove command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteRemoveUse   string = `remove <remote_name>`
-	RemoteRemoveShort string = `Remove an existing SCS remote endpoint`
+	RemoteRemoveShort string = `Remove an existing Sylabs Cloud remote endpoint`
 	RemoteRemoveLong  string = `
 	The 'remote remove' command allows you to remove an existing remote endpoint
 	from the list of potential endpoints to use.`
@@ -48,7 +48,7 @@ const (
 	RemoteUseShort string = `Set a remote endpoint to be used by default`
 	RemoteUseLong  string = `
 	The 'remote use' command sets the remote to be used by default by any command
-	that interacts with SCS services.`
+	that interacts with Sylabs Cloud services.`
 	RemoteUseExample string = `
 	$ singularity remote use sylabs`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
