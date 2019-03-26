@@ -25,7 +25,7 @@ func OciKill(containerID string, killSignal string, killTimeout int) error {
 	}
 
 	if state.Status != ociruntime.Created && state.Status != ociruntime.Running {
-		return fmt.Errorf("container %s is nor created nor running", containerID)
+		return fmt.Errorf("cannot kill '%s', the state of the container must be created or running", containerID)
 	}
 
 	sig := syscall.SIGTERM

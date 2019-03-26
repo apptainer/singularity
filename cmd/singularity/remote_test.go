@@ -338,4 +338,39 @@ func TestRemoteList(t *testing.T) {
 			}
 		}))
 	}
+
+	// Prep config by selecting a remote to default to
+	use := []struct {
+		name   string
+		remote string
+	}{
+		{"useCloud", "cloud"},
+	}
+
+	for _, tt := range use {
+		argv := []string{"remote", "--config", config.Name(), "use"}
+		argv = append(argv, tt.remote)
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			}
+		}))
+	}
+
+	testPass = []struct {
+		name string
+	}{
+		{"PopulatedConfigWithDefault"},
+	}
+
+	for _, tt := range testPass {
+		argv := []string{"remote", "--config", config.Name(), "list"}
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			}
+		}))
+	}
 }
