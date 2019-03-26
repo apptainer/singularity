@@ -13,9 +13,12 @@ import (
 	"os/exec"
 	"os/signal"
 	"reflect"
+	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
+
+	"github.com/sylabs/sif/pkg/sif"
 
 	"github.com/sylabs/singularity/internal/pkg/security"
 
@@ -38,6 +41,19 @@ func (engine *EngineOperations) checkExec() error {
 	// Make sure the shell exists.
 	if _, err := os.Stat(shell); os.IsNotExist(err) {
 		return fmt.Errorf("shell %s doesn't exist in container", shell)
+	}
+
+	// Verify architecture of image matches architecture of Go.
+	if fimg, err := sif.LoadContainer(engine.EngineConfig.GetImage(), true); err != nil {
+		sylog.Warningf("could not load container as SIF to verify architecture matches")
+	} else {
+		imgArch := sif.GetGoArch(string(fimg.Header.Arch[:sif.HdrArchLen-1]))
+		sylog.Debugf("image architecture: %s", imgArch)
+		sylog.Debugf("go architecture: %s", runtime.GOARCH)
+		fimg.UnloadContainer()
+		if imgArch != runtime.GOARCH {
+			return fmt.Errorf("image targets %s architecture, cannot run on %s architecture", imgArch, runtime.GOARCH)
+		}
 	}
 
 	args := engine.EngineConfig.OciConfig.Process.Args
