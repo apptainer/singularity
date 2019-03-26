@@ -830,9 +830,12 @@ found at:
   $ singularity oci start mycontainer`
 
 	OciCreateUse   string = `create [create options...] <container_ID>`
-	OciCreateShort string = `Create a container from a bundle directory (root user only)`
+	OciCreateShort string = `Create a container from an OCI bundle (requires root privileges)`
 	OciCreateLong  string = `
-  Create invoke create operation to create a container instance from an OCI bundle directory`
+  Create a container from an OCI bundle (requires root privileges).
+
+  An OCI bundle is a directory that contains a 'config.json' file and a root 
+  filesystem. For more information, please visit https://opencontainers.org.`
 	OciCreateExample string = `
   $ singularity oci create -b ~/bundle mycontainer`
 
