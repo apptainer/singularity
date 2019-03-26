@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -212,20 +212,20 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 
 	// skip initial token parsing if it is empty after trimming whitespace
 	if tok != "" {
-		//check if first thing parsed is a header/comment or just a section
+		// check if first thing parsed is a header/comment or just a section
 		if tok[0] != '%' {
 			if err := doHeader(tok, d); err != nil {
 				return fmt.Errorf("failed to parse DefFile header: %v", err)
 			}
 		} else {
-			//this is a section
+			// this is a section
 			if err := parseTokenSection(tok, sectionsMap, &files); err != nil {
 				return err
 			}
 		}
 	}
 
-	//parse remaining sections while scanner can advance
+	// parse remaining sections while scanner can advance
 	for s.Scan() {
 		if err := s.Err(); err != nil {
 			return err
