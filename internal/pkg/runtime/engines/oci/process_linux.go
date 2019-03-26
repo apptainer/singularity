@@ -210,7 +210,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return nil
 	}
 
-	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	file, err := instance.Get(engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	logPath := engine.EngineConfig.GetLogPath()
 	if logPath == "" {
 		containerID := engine.CommonConfig.ContainerID
-		dir, err := instance.GetDirPrivileged(containerID)
+		dir, err := instance.GetDirPrivileged(containerID, instance.OciSubDir)
 		if err != nil {
 			return err
 		}
