@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -373,7 +374,7 @@ func removeComments(b []byte) []byte {
 		cleanBuf = append(cleanBuf, appendLine...)
 	}
 
-	return cleanBuf
+	return bytes.TrimSpace(cleanBuf)
 }
 
 // ParseDefinitionFile receives a reader from a definition file
@@ -404,6 +405,60 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	}
 
 	return
+}
+
+// All receives a reader from a definition file
+// and parses it into a slice of Definition structs or returns error if
+// an error is encounter while parsing
+func All(r io.Reader) ([]types.Definition, error) {
+	var stages []types.Definition
+
+	raw, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("While attempting to read in definition: %v", err)
+	}
+
+	buf := removeComments(raw)
+	rgx := regexp.MustCompile(`(?mi)^bootstrap:`)
+	i := rgx.FindAllIndex(buf, -1)
+
+	splitBuf := [][]byte{}
+	// split up buffer based on index of delimiter
+	for len(i) > 0 {
+		index := i[len(i)-1][0]
+		splitBuf = append([][]byte{buf[index:]}, splitBuf...)
+		i = i[:len(i)-1]
+		buf = buf[:index]
+	}
+
+	// add anything remaining above first found Bootstrap
+	// handles case of no header
+	splitBuf = append([][]byte{buf[:]}, splitBuf...)
+
+	if len(splitBuf) == 0 {
+		return nil, errEmptyDefinition
+	}
+
+	for _, stage := range splitBuf {
+		if len(stage) == 0 {
+			continue
+		}
+
+		d, err := ParseDefinitionFile(bytes.NewReader(stage))
+		if err != nil {
+			if err == errEmptyDefinition {
+				continue
+			}
+			return nil, err
+		}
+
+		stages = append(stages, d)
+	}
+
+	// set raw of last stage to be entire specification
+	stages[len(stages)-1].Raw = raw
+
+	return stages, nil
 }
 
 // IsValidDefinition returns whether or not the given file is a valid definition
@@ -466,4 +521,5 @@ var validHeaders = map[string]bool{
 	"library":    true,
 	"registry":   true,
 	"namespace":  true,
+	"stage":      true,
 }

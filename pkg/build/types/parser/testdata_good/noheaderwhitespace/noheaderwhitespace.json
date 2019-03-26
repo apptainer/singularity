@@ -9,7 +9,7 @@
 		"imageScripts": {
 			"help": {
 				"args": "",
-				"script": "Hello Help!\n\n"
+				"script": "Hello Help!"
 			},
 			"environment": {
 				"args": "",

@@ -385,5 +385,48 @@ func TestIsValidDefinition(t *testing.T) {
 			}
 		}))
 	}
+}
 
+func TestParseAll(t *testing.T) {
+	tests := []struct {
+		name     string
+		defPath  string
+		jsonPath string
+	}{
+		{"Single", "testdata_multi/single/docker", "testdata_multi/single/docker.json"},
+		{"MultiStage", "testdata_multi/simple/simple", "testdata_multi/simple/simple.json"},
+		{"NoHeader", "testdata_multi/noheader/noheader", "testdata_multi/noheader/noheader.json"},
+		{"NoHeaderComments", "testdata_multi/noheadercomments/noheadercomments", "testdata_multi/noheadercomments/noheadercomments.json"},
+		{"NoHeaderWhiteSpace", "testdata_multi/noheaderwhitespace/noheaderwhitespace", "testdata_multi/noheaderwhitespace/noheaderwhitespace.json"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			defFile, err := os.Open(tt.defPath)
+			if err != nil {
+				t.Fatal("failed to open:", err)
+			}
+			defer defFile.Close()
+
+			jsonFile, err := os.OpenFile(tt.jsonPath, os.O_RDWR, 0644)
+			if err != nil {
+				t.Fatal("failed to open:", err)
+			}
+			defer jsonFile.Close()
+
+			defTest, err := All(defFile)
+			if err != nil {
+				t.Fatal("failed to parse definition file:", err)
+			}
+
+			var defCorrect []types.Definition
+			if err := json.NewDecoder(jsonFile).Decode(&defCorrect); err != nil {
+				t.Fatal("failed to parse JSON:", err)
+			}
+
+			if !reflect.DeepEqual(defTest, defCorrect) {
+				t.Fatal("parsed definition did not match reference")
+			}
+		}))
+	}
 }
