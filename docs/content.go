@@ -326,12 +326,12 @@ Enterprise Performance Computing (EPC)`
   To see available capabilities, type "singularity capability avail" or refer to
   capabilities manual "man 7 capabilities".`
 	CapabilityAddExample string = `
-  # singularity capability add --user nobody AUDIT_READ,chown
-  # singularity capability add --group nobody cap_audit_write
+  $ sudo singularity capability add --user nobody AUDIT_READ,chown
+  $ sudo singularity capability add --group nobody cap_audit_write
 
   To add all capabilities to a user:
 
-  # singularity capability add --user nobody all`
+  $ sudo singularity capability add --user nobody all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
@@ -346,12 +346,12 @@ Enterprise Performance Computing (EPC)`
   To see available capabilities, type "singularity capability avail" or refer to
   capabilities manual "man 7 capabilities"`
 	CapabilityDropExample string = `
-  # singularity capability drop --user nobody AUDIT_READ,CHOWN
-  # singularity capability drop --group nobody audit_write
+  $ sudo singularity capability drop --user nobody AUDIT_READ,CHOWN
+  $ sudo singularity capability drop --group nobody audit_write
 
   To drop all capabilities for a user:
 
-  # singularity capability drop --user nobody all`
+  $ sudo singularity capability drop --user nobody all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability list
