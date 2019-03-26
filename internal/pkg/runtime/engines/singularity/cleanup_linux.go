@@ -49,7 +49,7 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 	if engine.EngineConfig.GetInstance() {
 		uid := os.Getuid()
 
-		file, err := instance.Get(engine.CommonConfig.ContainerID)
+		file, err := instance.Get(engine.CommonConfig.ContainerID, instance.SingSubDir)
 		if err != nil {
 			return err
 		}

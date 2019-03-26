@@ -559,8 +559,10 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		return err
 	}
 
+	// the max entities to print.
 	pd := client.PageDetails{
-		Size: 10,
+		// still will only print 100 entities
+		Size: 256,
 	}
 
 	// Retrieve first page of search results from Key Service.
@@ -587,27 +589,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		}
 	}
 
-	// Print first page of search results.
-	fmt.Print(keyText)
-
-	// Retrieve 2-N pages of search results from Key Service.
-	for pd.Token != "" {
-		resp, err := AskQuestion("\nDisplay more results? [Y/n] ")
-		if err != nil {
-			return err
-		}
-		if resp != "" && resp != "y" && resp != "Y" {
-			break
-		}
-
-		keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
-		if err != nil {
-			return err
-		}
-
-		// Print page of search results.
-		fmt.Print(keyText)
-	}
+	fmt.Printf("%v", keyText)
 
 	return nil
 }
