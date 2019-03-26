@@ -866,9 +866,9 @@ found at:
   $ singularity oci delete mycontainer`
 
 	OciAttachUse   string = `attach <container_ID>`
-	OciAttachShort string = `Attach console to a running container process (root user only)`
+	OciAttachShort string = `Attach the current console to a container (requires root privileges)`
 	OciAttachLong  string = `
-  Attach will attach console to a running container process running within container identified by container ID.`
+  Attach the current console to a container in the running state (requires root privileges).`
 	OciAttachExample string = `
   $ singularity oci attach mycontainer`
 
