@@ -87,7 +87,7 @@ func (m *Meta) Config() (*os.File, error) {
 func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
 	sylog.Debugf("Installing plugin from SIF to %q", libexecdir)
 
-	sr := (*sifFileImageReader)(fimg)
+	sr := newSifFileImageReader(fimg)
 
 	if !isPluginFile(sr) {
 		return nil, fmt.Errorf("while opening SIF file: not a valid plugin")
@@ -452,43 +452,63 @@ func (m *Meta) configName() string {
 
 type sifReader interface {
 	Descriptors() int
-	IsUsed(n int) bool
-	GetDatatype(n int) sif.Datatype
-	GetFsType(n int) (sif.Fstype, error)
-	GetPartType(n int) (sif.Parttype, error)
-	GetData(n int) []byte
+	IsUsed(name string) bool
+	GetDatatype(name string) sif.Datatype
+	GetFsType(name string) (sif.Fstype, error)
+	GetPartType(name string) (sif.Parttype, error)
+	GetData(name string) []byte
 }
 
-type sifFileImageReader sif.FileImage
+type sifFileImageReader struct {
+	fi          *sif.FileImage
+	descriptors map[string]int
+}
 
 func (r *sifFileImageReader) Descriptors() int {
-	return len(r.DescrArr)
+	return len(r.fi.DescrArr)
 }
 
-func (r *sifFileImageReader) IsUsed(n int) bool {
-	return r.DescrArr[n].Used
+func (r *sifFileImageReader) IsUsed(name string) bool {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].Used
 }
 
-func (r *sifFileImageReader) GetDatatype(n int) sif.Datatype {
-	return r.DescrArr[n].Datatype
+func (r *sifFileImageReader) GetDatatype(name string) sif.Datatype {
+	n := r.descriptors[name]
+	sylog.Debugf("n=%d datatype=%x", n, r.fi.DescrArr[n].Datatype)
+	return r.fi.DescrArr[n].Datatype
 }
 
-func (r *sifFileImageReader) GetFsType(n int) (sif.Fstype, error) {
-	return r.DescrArr[n].GetFsType()
+func (r *sifFileImageReader) GetFsType(name string) (sif.Fstype, error) {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].GetFsType()
 }
 
-func (r *sifFileImageReader) GetPartType(n int) (sif.Parttype, error) {
-	return r.DescrArr[n].GetPartType()
+func (r *sifFileImageReader) GetPartType(name string) (sif.Parttype, error) {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].GetPartType()
 }
 
-func (r *sifFileImageReader) GetData(n int) []byte {
+func (r *sifFileImageReader) GetData(name string) []byte {
 	var (
-		start = r.DescrArr[n].Fileoff
-		end   = start + r.DescrArr[n].Filelen
-		data  = r.Filedata[start:end]
+		n     = r.descriptors[name]
+		start = r.fi.DescrArr[n].Fileoff
+		end   = start + r.fi.DescrArr[n].Filelen
+		data  = r.fi.Filedata[start:end]
 	)
 
 	return data
+}
+
+func newSifFileImageReader(fi *sif.FileImage) *sifFileImageReader {
+	r := &sifFileImageReader{fi: fi, descriptors: make(map[string]int)}
+	for n, desc := range fi.DescrArr {
+		if !desc.Used {
+			continue
+		}
+		r.descriptors[fi.DescrArr[n].GetName()] = n
+	}
+	return r
 }
 
 // isPluginFile checks if the sif.FileImage contains the sections which
@@ -506,31 +526,31 @@ func isPluginFile(fimg sifReader) bool {
 		return false
 	}
 
-	if !fimg.IsUsed(0) {
+	if !fimg.IsUsed("plugin.so") {
 		return false
 	}
 
-	if fimg.GetDatatype(0) != sif.DataPartition {
+	if fimg.GetDatatype("plugin.so") != sif.DataPartition {
 		return false
 	}
 
-	if fstype, err := fimg.GetFsType(0); err != nil {
+	if fstype, err := fimg.GetFsType("plugin.so"); err != nil {
 		return false
 	} else if fstype != sif.FsRaw {
 		return false
 	}
 
-	if partype, err := fimg.GetPartType(0); err != nil {
+	if partype, err := fimg.GetPartType("plugin.so"); err != nil {
 		return false
 	} else if partype != sif.PartData {
 		return false
 	}
 
-	if !fimg.IsUsed(1) {
+	if !fimg.IsUsed("plugin.manifest") {
 		return false
 	}
 
-	if fimg.GetDatatype(1) != sif.DataGenericJSON {
+	if fimg.GetDatatype("plugin.manifest") != sif.DataGenericJSON {
 		return false
 	}
 
@@ -541,11 +561,11 @@ func isPluginFile(fimg sifReader) bool {
 func getManifest(fimg sifReader) pluginapi.Manifest {
 	var manifest pluginapi.Manifest
 
-	if fimg.Descriptors() < 2 || !fimg.IsUsed(1) {
+	if fimg.Descriptors() < 2 || !fimg.IsUsed("plugin.manifest") {
 		return manifest
 	}
 
-	data := fimg.GetData(1)
+	data := fimg.GetData("plugin.manifest")
 
 	if data == nil {
 		return manifest

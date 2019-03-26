@@ -14,6 +14,7 @@ import (
 )
 
 type testSifReader []struct {
+	name      string
 	data      []byte
 	used      bool
 	datatype  sif.Datatype
@@ -27,24 +28,54 @@ func (r testSifReader) Descriptors() int {
 	return len(r)
 }
 
-func (r testSifReader) IsUsed(n int) bool {
+func (r testSifReader) IsUsed(name string) bool {
+	n := r.findByName(name)
+	if n < 0 {
+		return false
+	}
 	return r[n].used
 }
 
-func (r testSifReader) GetDatatype(n int) sif.Datatype {
+func (r testSifReader) GetDatatype(name string) sif.Datatype {
+	n := r.findByName(name)
+	if n < 0 {
+		return -1
+	}
 	return r[n].datatype
 }
 
-func (r testSifReader) GetFsType(n int) (sif.Fstype, error) {
+func (r testSifReader) GetFsType(name string) (sif.Fstype, error) {
+	n := r.findByName(name)
+	if n < 0 {
+		return -1, r[n].fserror
+	}
 	return r[n].fstype, r[n].fserror
 }
 
-func (r testSifReader) GetPartType(n int) (sif.Parttype, error) {
+func (r testSifReader) GetPartType(name string) (sif.Parttype, error) {
+	n := r.findByName(name)
+	if n < 0 {
+		return -1, r[n].parterror
+	}
 	return r[n].parttype, r[n].parterror
 }
 
-func (r testSifReader) GetData(n int) []byte {
+func (r testSifReader) GetData(name string) []byte {
+	n := r.findByName(name)
+	if n < 0 {
+		return nil
+	}
 	return r[n].data
+}
+
+func (r testSifReader) findByName(name string) int {
+	for n, data := range r {
+		if data.name == name {
+			return n
+		}
+	}
+
+	return -1
 }
 
 func TestIsPluginFile(t *testing.T) {
@@ -76,10 +107,12 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:     true,
+					name:     "plugin.so",
 					datatype: sif.DataDeffile,
 				},
 				{
 					used:     true,
+					name:     "plugin.manifest",
 					datatype: sif.DataGenericJSON,
 				},
 			},
@@ -90,12 +123,14 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:     true,
+					name:     "plugin.so",
 					datatype: sif.DataPartition,
 					fstype:   sif.FsRaw,
 					fserror:  errors.New("invalid filesystem"),
 				},
 				{
 					used:     true,
+					name:     "plugin.manifest",
 					datatype: sif.DataGenericJSON,
 				},
 			},
@@ -106,12 +141,14 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:     true,
+					name:     "plugin.so",
 					datatype: sif.DataPartition,
 					fstype:   sif.FsRaw,
 					parttype: sif.PartSystem,
 				},
 				{
 					used:     true,
+					name:     "plugin.manifest",
 					datatype: sif.DataGenericJSON,
 				},
 			},
@@ -122,6 +159,7 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:      true,
+					name:      "plugin.so",
 					datatype:  sif.DataPartition,
 					fstype:    sif.FsRaw,
 					parttype:  sif.PartData,
@@ -129,6 +167,7 @@ func TestIsPluginFile(t *testing.T) {
 				},
 				{
 					used:     true,
+					name:     "plugin.manifest",
 					datatype: sif.DataGenericJSON,
 				},
 			},
@@ -139,12 +178,14 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:     true,
+					name:     "plugin.so",
 					datatype: sif.DataPartition,
 					fstype:   sif.FsRaw,
 					parttype: sif.PartData,
 				},
 				{
 					used: false,
+					name: "plugin.manifest",
 				},
 			},
 			expected: false,
@@ -154,12 +195,14 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:     true,
+					name:     "plugin.so",
 					datatype: sif.DataPartition,
 					fstype:   sif.FsRaw,
 					parttype: sif.PartData,
 				},
 				{
 					used:     true,
+					name:     "plugin.manifest",
 					datatype: sif.DataDeffile,
 				},
 			},
@@ -170,13 +213,56 @@ func TestIsPluginFile(t *testing.T) {
 			sif: testSifReader{
 				{
 					used:     true,
+					name:     "plugin.so",
 					datatype: sif.DataPartition,
 					fstype:   sif.FsRaw,
 					parttype: sif.PartData,
 				},
 				{
 					used:     true,
+					name:     "plugin.manifest",
 					datatype: sif.DataGenericJSON,
+				},
+			},
+			expected: true,
+		},
+		{
+			description: "good image out of order",
+			sif: testSifReader{
+				{
+					used:     true,
+					name:     "plugin.manifest",
+					datatype: sif.DataGenericJSON,
+				},
+				{
+					used:     true,
+					name:     "plugin.so",
+					datatype: sif.DataPartition,
+					fstype:   sif.FsRaw,
+					parttype: sif.PartData,
+				},
+			},
+			expected: true,
+		},
+		{
+			description: "good image extra descriptors",
+			sif: testSifReader{
+				{
+					used:     true,
+					name:     "plugin.manifest",
+					datatype: sif.DataGenericJSON,
+				},
+				{
+					used:     true,
+					name:     "plugin.so",
+					datatype: sif.DataPartition,
+					fstype:   sif.FsRaw,
+					parttype: sif.PartData,
+				},
+				{
+					used:     true,
+					name:     "signature",
+					datatype: sif.DataSignature,
 				},
 			},
 			expected: true,
@@ -198,6 +284,12 @@ func TestIsPluginFile(t *testing.T) {
 
 func TestGetManifest(t *testing.T) {
 	testGoodJSON := `{"name":"test name", "author":"test author", "version":"test version", "description":"test description"}`
+	testGoodManifest := pluginapi.Manifest{
+		Name:        "test name",
+		Author:      "test author",
+		Version:     "test version",
+		Description: "test description",
+	}
 	testBadJSON := `{123`
 
 	cases := []struct {
@@ -226,8 +318,13 @@ func TestGetManifest(t *testing.T) {
 		{
 			description: "empty manifest",
 			sif: testSifReader{
-				{used: true},
-				{used: true},
+				{
+					used: true,
+				},
+				{
+					used: true,
+					name: "plugin.manifest",
+				},
 			},
 			expected: pluginapi.Manifest{},
 		},
@@ -239,6 +336,7 @@ func TestGetManifest(t *testing.T) {
 				},
 				{
 					used: true,
+					name: "plugin.manifest",
 					data: []byte(testBadJSON),
 				},
 			},
@@ -252,15 +350,42 @@ func TestGetManifest(t *testing.T) {
 				},
 				{
 					used: true,
+					name: "plugin.manifest",
 					data: []byte(testGoodJSON),
 				},
 			},
-			expected: pluginapi.Manifest{
-				Name:        "test name",
-				Author:      "test author",
-				Version:     "test version",
-				Description: "test description",
+			expected: testGoodManifest,
+		},
+		{
+			description: "good manifest out of order",
+			sif: testSifReader{
+				{
+					used: true,
+					name: "plugin.manifest",
+					data: []byte(testGoodJSON),
+				},
+				{
+					used: true,
+				},
 			},
+			expected: testGoodManifest,
+		},
+		{
+			description: "good manifest extra descriptors",
+			sif: testSifReader{
+				{
+					used: true,
+				},
+				{
+					used: true,
+				},
+				{
+					used: true,
+					name: "plugin.manifest",
+					data: []byte(testGoodJSON),
+				},
+			},
+			expected: testGoodManifest,
 		},
 	}
 
