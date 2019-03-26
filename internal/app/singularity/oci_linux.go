@@ -48,19 +48,10 @@ func getCommonConfig(containerID string) (*config.Common, error) {
 }
 
 func getEngineConfig(containerID string) (*oci.EngineConfig, error) {
-	commonConfig := config.Common{
-		EngineConfig: &oci.EngineConfig{},
-	}
-
-	file, err := instance.Get(containerID)
+	commonConfig, err := getCommonConfig(containerID)
 	if err != nil {
 		return nil, err
 	}
-
-	if err := json.Unmarshal(file.Config, &commonConfig); err != nil {
-		return nil, err
-	}
-
 	return commonConfig.EngineConfig.(*oci.EngineConfig), nil
 }
 
