@@ -22,7 +22,7 @@ func init() {
 	OciCreateCmd.Flags().SetInterspersed(false)
 	OciCreateCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "set the OCI bundle path")
 	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "set the path to the unix socket for state synchronization (internal use only)")
+	OciCreateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "set the path to the unix socket for state synchronization")
 	OciCreateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 	OciCreateCmd.Flags().BoolVar(&ociArgs.EmptyProcess, "empty-process", false, "run a container without executing a container process (eg: POD containers)")
 	OciCreateCmd.Flags().StringVarP(&ociArgs.LogPath, "log-path", "l", "", "set the path to the log file")
