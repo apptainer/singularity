@@ -862,9 +862,9 @@ found at:
   $ singularity oci kill -s INT mycontainer`
 
 	OciDeleteUse   string = `delete <container_ID>`
-	OciDeleteShort string = `Delete container (root user only)`
+	OciDeleteShort string = `Delete a container (requires root privileges)`
 	OciDeleteLong  string = `
-  Delete invoke delete operation to delete resources that were created for container identified by container ID.`
+  Delete a container in the created or stopped state (requires root privileges).`
 	OciDeleteExample string = `
   $ singularity oci delete mycontainer`
 
