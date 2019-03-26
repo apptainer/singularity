@@ -144,6 +144,9 @@ func OciAttach(containerID string) error {
 	if err != nil {
 		return err
 	}
+	if engineConfig.GetState().Status != ociruntime.Running {
+		return fmt.Errorf("could not attach to %s: not in running state", containerID)
+	}
 
 	defer exitContainer(containerID, false)
 

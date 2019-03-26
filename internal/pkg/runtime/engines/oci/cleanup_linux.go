@@ -29,7 +29,7 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 	// if container wasn't created, delete instance files
 	if engine.EngineConfig.State.Status == ociruntime.Creating {
 		name := engine.CommonConfig.ContainerID
-		file, err := instance.Get(name)
+		file, err := instance.Get(name, instance.OciSubDir)
 		if err != nil {
 			sylog.Warningf("no instance files found for %s: %s", name, err)
 			return nil
