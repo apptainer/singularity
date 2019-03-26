@@ -12,12 +12,6 @@ import (
 	"syscall"
 )
 
-func deleteDir(dir string, err error) {
-	if err != nil {
-		os.RemoveAll(dir)
-	}
-}
-
 // CreateOverlay creates a writable overlay
 func CreateOverlay(bundlePath string) error {
 	var err error
@@ -30,7 +24,11 @@ func CreateOverlay(bundlePath string) error {
 		return fmt.Errorf("failed to create %s: %s", overlayDir, err)
 	}
 	// delete overlay directory in case of error
-	defer deleteDir(overlayDir, err)
+	defer func() {
+		if err != nil {
+			os.RemoveAll(overlayDir)
+		}
+	}()
 
 	err = syscall.Mount(overlayDir, overlayDir, "", syscall.MS_BIND, "")
 	if err != nil {
