@@ -37,7 +37,9 @@ URL: https://www.sylabs.io/singularity/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
 %if "%{_target_vendor}" == "suse"
+%if "%{sles_version}" != "11"
 BuildRequires: go
+%endif
 %else
 BuildRequires: golang
 %endif
@@ -47,7 +49,9 @@ BuildRequires: make
 BuildRequires: libuuid-devel
 BuildRequires: openssl-devel
 %if ! 0%{?el6}
+%if "%{sles_version}" != "11"
 BuildRequires: libseccomp-devel
+%endif
 %endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
