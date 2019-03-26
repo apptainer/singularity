@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -173,7 +174,13 @@ func pullRun(cmd *cobra.Command, args []string) {
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
-	default:
+	case ociclient.IsSupported(transport):
+		if !force {
+			if _, err := os.Stat(name); err == nil {
+				sylog.Fatalf("image file already exists - will not overwrite")
+			}
+		}
+
 		authConf, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
@@ -186,6 +193,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 			DockerAuthConfig: authConf,
 			NoCleanUp:        noCleanUp,
 		})
+	default:
+		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
 }
 
