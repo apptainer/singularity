@@ -62,7 +62,7 @@ type buildOpts struct {
 	force bool
 	// --sandbox option
 	sandbox bool
-	// --alow-unauthenticated option
+	// --allow-unauthenticated option
 	unauthenticated bool
 	env             []string
 }
@@ -76,6 +76,7 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 	if opts.sandbox {
 		argv = append(argv, "--sandbox")
 	}
+
 	if opts.unauthenticated {
 		argv = append(argv, "--allow-unauthenticated")
 	}
@@ -103,8 +104,9 @@ func TestBuild(t *testing.T) {
 		{"DockerDefFile", "", "../../examples/docker/Singularity", true, false, true},
 		{"SHubURI", "", "shub://GodloveD/busybox", true, false, true},
 		{"SHubDefFile", "", "../../examples/shub/Singularity", true, false, true},
-		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false},   // this should fail
-		{"LibraryDefFileUnsigned", "", "../../examples/unsigned-library/unsigned.def", false, true, true}, // this should succeed
+		{"LibraryDefFileFail", "", "../../examples/unsigned-library/unsigned.def", false, false, false},         // this should fail
+		{"LibraryDefFileUnsigned", "", "../../examples/unsigned-library/unsigned.def", false, true, true},       // this should succeed
+		{"LibraryDefFileUnsignedSandbox", "", "../../examples/unsigned-library/unsigned.def", true, true, true}, // this should succeed
 		{"LibraryDefFile", "", "../../examples/library/Singularity", true, false, true},
 		{"Yum", "yum", "../../examples/centos/Singularity", true, false, true},
 		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true, false, true},
@@ -119,7 +121,8 @@ func TestBuild(t *testing.T) {
 			}
 
 			opts := buildOpts{
-				sandbox: tt.sandbox,
+				sandbox:         tt.sandbox,
+				unauthenticated: tt.unauthenticated,
 			}
 
 			imagePath := path.Join(testDir, "container")
