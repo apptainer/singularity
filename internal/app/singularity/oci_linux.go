@@ -35,7 +35,7 @@ func getCommonConfig(containerID string) (*config.Common, error) {
 		EngineConfig: &oci.EngineConfig{},
 	}
 
-	file, err := instance.Get(containerID)
+	file, err := instance.Get(containerID, instance.OciSubDir)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func getEngineConfig(containerID string) (*oci.EngineConfig, error) {
 		EngineConfig: &oci.EngineConfig{},
 	}
 
-	file, err := instance.Get(containerID)
+	file, err := instance.Get(containerID, instance.OciSubDir)
 	if err != nil {
 		return nil, err
 	}
