@@ -34,7 +34,7 @@ func OciExec(containerID string, cmdArgs []string) error {
 	case ociruntime.Running, ociruntime.Paused:
 	default:
 		args := strings.Join(cmdArgs, " ")
-		return fmt.Errorf("cannot execute command %s, container '%s' is not running", args, containerID)
+		return fmt.Errorf("cannot execute command %q, container '%s' is not running", args, containerID)
 	}
 
 	engineConfig.Exec = true
