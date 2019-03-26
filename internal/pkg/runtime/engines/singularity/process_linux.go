@@ -35,6 +35,11 @@ func (engine *EngineOperations) checkExec() error {
 		shell = "/bin/sh"
 	}
 
+	// Make sure the shell exists.
+	if _, err := os.Stat(shell); os.IsNotExist(err) {
+		return fmt.Errorf("shell %s doesn't exist in container", shell)
+	}
+
 	args := engine.EngineConfig.OciConfig.Process.Args
 	env := engine.EngineConfig.OciConfig.Process.Env
 
@@ -193,9 +198,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
-		if _, errNoShell := os.Stat("/bin/sh"); os.IsNotExist(errNoShell) {
-			return fmt.Errorf("/bin/sh doesn't exist in container: %s", err)
-		}
 		return fmt.Errorf("exec %s failed: %s", args[0], err)
 	}
 
