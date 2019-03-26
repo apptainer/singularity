@@ -9,6 +9,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
+
+	"github.com/sylabs/singularity/pkg/ociruntime"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
@@ -26,6 +29,13 @@ func OciExec(containerID string, cmdArgs []string) error {
 	}
 
 	engineConfig := commonConfig.EngineConfig.(*oci.EngineConfig)
+
+	switch engineConfig.GetState().Status {
+	case ociruntime.Running, ociruntime.Paused:
+	default:
+		args := strings.Join(cmdArgs, " ")
+		return fmt.Errorf("cannot execute command %s, container '%s' is not running", args, containerID)
+	}
 
 	engineConfig.Exec = true
 	engineConfig.OciConfig.SetProcessArgs(cmdArgs)
