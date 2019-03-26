@@ -80,7 +80,7 @@ func init() {
 
 func ensureRootPriv(cmd *cobra.Command, args []string) {
 	if os.Geteuid() != 0 {
-		sylog.Fatalf("this command is required to be run as root")
+		sylog.Fatalf("command 'oci %s' requires root privileges", cmd.Name())
 	}
 }
 

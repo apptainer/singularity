@@ -162,8 +162,7 @@ Enterprise Performance Computing (EPC)`
 	CacheUse   string = `cache <subcommand>`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
-  Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
-  You can list/clean using the specific types.`
+  Manage your local singularity cache. You can list/clean using the specific types.`
 	CacheExample string = `
   All group commands have their own help output:
 
@@ -176,9 +175,8 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanUse   string = `clean [clean options...]`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
-  This will clean you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob. By default cache clean will only clean blob cache,
-  use: '--all' to clean all cache.`
+  This will clean your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).
+  By default only blob cache is cleaned, use '--all' to clean the entire cache.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
@@ -192,8 +190,7 @@ Enterprise Performance Computing (EPC)`
 	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
-  This will list you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob.`
+  This will list your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).`
 	CacheListExample string = `
   All group commands have their own help output:
 
@@ -540,11 +537,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse   string = `push [push options...] <container image> library://[user[collection/[container[:tag]]]]`
-	PushShort string = `Push a container to a Library URI`
+	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
+	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
-  of your choosing`
+  of your choosing. An auth token is required to push to the remote, so you may
+  need to configure if first with 'singularity remote'.
+  `
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
