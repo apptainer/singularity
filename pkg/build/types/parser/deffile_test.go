@@ -93,30 +93,30 @@ func TestScanDefinitionFile(t *testing.T) {
 // Specific tests to cover some corner cases of parseTokenSection()
 func TestParseTokenSection(t *testing.T) {
 	// Fake map
-	testMap := make(map[string]string)
-	testMap["fakeKey1"] = "%content1 content2 content3"
-	testMap["fakeKey2"] = ""
+	testMap := make(map[string]*types.Script)
+	testMap["fakeKey1"] = &types.Script{Script: "%content1 content2 content3"}
+	testMap["fakeKey2"] = &types.Script{Script: ""}
 
 	// Incorrect token; map not used
 	str := "test test1"
-	myerr := parseTokenSection(str, nil)
+	myerr := parseTokenSection(str, nil, nil)
 	if myerr == nil {
 		t.Fatal("test expected to fail but succeeded")
 	}
 
 	// Another incorrect token case; map not used
-	myerr = parseTokenSection("apptest\ntest", nil)
+	myerr = parseTokenSection("apptest\ntest", nil, nil)
 	if myerr == nil {
 		t.Fatal("test expected to fail but succeeded")
 	}
 
 	// Correct token
-	myerr = parseTokenSection("appenv apptest apptest2\ntest", testMap)
+	myerr = parseTokenSection("appenv apptest apptest2\ntest", testMap, nil)
 	if myerr != nil {
 		t.Fatal("error while parsing sections")
 	}
-	if testMap["appenv apptest"] != "test" {
-		t.Fatal("returned map is invalid", testMap["appenv"])
+	if testMap["appenv apptest"].Script != "test" {
+		t.Fatal("returned map is invalid", testMap["appenv"].Script)
 	}
 }
 
@@ -266,18 +266,24 @@ func TestPopulateDefinition(t *testing.T) {
 	//
 
 	// We use a specific set of section names to reach some corner cases
-	testMap := make(map[string]string)
-	testMap["files"] = "file1 file2"
-	testMap["labels"] = "label1"
+	testMap := make(map[string]*types.Script)
+	testMap["files"] = &types.Script{Script: "file1 file2"}
+	testMap["labels"] = &types.Script{Script: "label1"}
+	testFiles := []types.Files{types.Files{
+		Files: []types.FileTransport{
+			types.FileTransport{Src: "file1", Dst: "file2"},
+		},
+	}}
 
-	emptyMap := make(map[string]string)
+	emptyMap := make(map[string]*types.Script)
+	emptyFiles := []types.Files{}
 
 	//
 	// Test with invalid data
 	//
 	invalidData := new(types.Definition)
 	invalidData.Labels = make(map[string]string)
-	populateDefinition(emptyMap, invalidData)
+	populateDefinition(emptyMap, &emptyFiles, invalidData)
 
 	//
 	// Test with very specific maps
@@ -287,7 +293,7 @@ func TestPopulateDefinition(t *testing.T) {
 	myData := new(types.Definition)
 	myData.Labels = make(map[string]string)
 
-	myerr := populateDefinition(testMap, myData)
+	myerr := populateDefinition(testMap, &testFiles, myData)
 	if myerr != nil {
 		t.Fatal("Test failed while testing populateDefinition()")
 	}
