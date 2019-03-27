@@ -15,6 +15,7 @@ import (
 )
 
 const listLine = "%s\t%s\t%s\n"
+const listLineDefault = "[%s]\t%s\t%s\n"
 
 // RemoteList prints information about remote configurations
 func RemoteList(usrConfigFile, sysConfigFile string) (err error) {
@@ -61,17 +62,17 @@ func RemoteList(usrConfigFile, sysConfigFile string) (err error) {
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, listLine, "NAME", "URI", "SYS")
 	for _, n := range names {
-		uri := c.Remotes[n].URI
-		if c.DefaultRemote != "" && c.DefaultRemote == n {
-			n = fmt.Sprintf("[%s]", n)
-		}
-
 		sys := "NO"
 		if c.Remotes[n].System {
 			sys = "YES"
 		}
 
-		fmt.Fprintf(tw, listLine, n, uri, sys)
+		uri := c.Remotes[n].URI
+		if c.DefaultRemote != "" && c.DefaultRemote == n {
+			fmt.Fprintf(tw, listLineDefault, n, uri, sys)
+		} else {
+			fmt.Fprintf(tw, listLine, n, uri, sys)
+		}
 	}
 	tw.Flush()
 	return nil

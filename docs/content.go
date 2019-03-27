@@ -162,8 +162,7 @@ Enterprise Performance Computing (EPC)`
 	CacheUse   string = `cache <subcommand>`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
-  Manage your local singularity cache. There are 3 types of cache; library, oci, and blob.
-  You can list/clean using the specific types.`
+  Manage your local singularity cache. You can list/clean using the specific types.`
 	CacheExample string = `
   All group commands have their own help output:
 
@@ -176,9 +175,8 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanUse   string = `clean [clean options...]`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
-  This will clean you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob. By default cache clean will only clean blob cache,
-  use: '--all' to clean all cache.`
+  This will clean your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).
+  By default only blob cache is cleaned, use '--all' to clean the entire cache.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
@@ -192,8 +190,7 @@ Enterprise Performance Computing (EPC)`
 	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
-  This will list you local cache: "${HOME}/.singularity/cache". The available cache
-  types are: library, oci, and blob.`
+  This will list your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).`
 	CacheListExample string = `
   All group commands have their own help output:
 
@@ -264,7 +261,7 @@ Enterprise Performance Computing (EPC)`
   The 'key search' command allows you to connect to a key server and look for
   public keys matching the argument passed to the command line. You can
   also search for a key by fingerprint or key ID by adding '0x' before the
-  fingerprint.`
+  fingerprint. (Maximum 100 search entities)`
 	KeySearchExample string = `
   $ singularity key search sylabs.io
 
@@ -310,10 +307,12 @@ Enterprise Performance Computing (EPC)`
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability <subcommand>`
-	CapabilityShort string = `Manage Linux capabilities for an image`
+	CapabilityShort string = `Manage Linux capabilities for users and groups`
 	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
-  your containers need to run.`
+  your containers need to run.
+
+  NOTE: capability add/drop commands requires root to run.`
 	CapabilityExample string = `
   All group commands have their own help output:
 
@@ -324,130 +323,77 @@ Enterprise Performance Computing (EPC)`
 	// capability add
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
-	CapabilityAddShort string = `Add authorized capabilities for a given user/group`
+	CapabilityAddShort string = `Add capabilities to a user or group (requires root)`
 	CapabilityAddLong  string = `
-  Capabilities must be separated by commas and are not case sensitive,
-  here accepted values:
+  Add Linux capabilities to a user or group. NOTE: This command requires root to run.
 
-  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
-  CAP_AUDIT_READ        | AUDIT_READ
-  CAP_AUDIT_WRITE       | AUDIT_WRITE
-  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
-  CAP_CHOWN             | CHOWN
-  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
-  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
-  CAP_FOWNER            | FOWNER
-  CAP_FSETID            | FSETID
-  CAP_IPC_LOCK          | IPC_LOCK
-  CAP_IPC_OWNER         | IPC_OWNER
-  CAP_KILL              | KILL
-  CAP_LEASE             | LEASE
-  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
-  CAP_MAC_ADMIN         | MAC_ADMIN
-  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
-  CAP_MKNOD             | MKNOD
-  CAP_NET_ADMIN         | NET_ADMIN
-  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
-  CAP_NET_BROADCAST     | NET_BROADCAST
-  CAP_NET_RAW           | NET_RAW
-  CAP_SETFCAP           | SETFCAP
-  CAP_SETGID            | SETGID
-  CAP_SETPCAP           | SETPCAP
-  CAP_SETUID            | SETUID
-  CAP_SYS_ADMIN         | SYS_ADMIN
-  CAP_SYS_BOOT          | SYS_BOOT
-  CAP_SYS_CHROOT        | SYS_CHROOT
-  CAP_SYSLOG            | SYSLOG
-  CAP_SYS_MODULE        | SYS_MODULE
-  CAP_SYS_NICE          | SYS_NICE
-  CAP_SYS_PACCT         | SYS_PACCT
-  CAP_SYS_PTRACE        | SYS_PTRACE
-  CAP_SYS_RAWIO         | SYS_RAWIO
-  CAP_SYS_RESOURCE      | SYS_RESOURCE
-  CAP_SYS_TIME          | SYS_TIME
-  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
-  CAP_WAKE_ALARM        | WAKE_ALARM
+  The capabilities argument must be separated by commas and is not case sensitive.
 
-  See "-d" flag example for description of each capabilities`
+  To see available capabilities, type "singularity capability avail" or refer to
+  capabilities manual "man 7 capabilities".`
 	CapabilityAddExample string = `
-  $ singularity capability add --user nobody AUDIT_READ,chown
-  $ singularity capability add --group nobody cap_audit_write
+  $ sudo singularity capability add --user nobody AUDIT_READ,chown
+  $ sudo singularity capability add --group nobody cap_audit_write
 
-  To print capabilities description:
+  To add all capabilities to a user:
 
-  $ singularity capability add -d CAP_CHOWN
-  $ singularity capability add -d CAP_CHOWN,CAP_SYS_ADMIN`
+  $ sudo singularity capability add --user nobody all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability drop
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
-	CapabilityDropShort string = `Drop authorized capabilities for a given user/group`
+	CapabilityDropShort string = `Remove capabilities from a user or group (requires root)`
 	CapabilityDropLong  string = `
-  Capabilities must be separated by commas and are not case sensitive,
-  here accepted values:
+  Remove Linux capabilities from an user/group. NOTE: This command requires root to run.
 
-  CAP_AUDIT_CONTROL     | AUDIT_CONTROL
-  CAP_AUDIT_READ        | AUDIT_READ
-  CAP_AUDIT_WRITE       | AUDIT_WRITE
-  CAP_BLOCK_SUSPEND     | BLOCK_SUSPEND
-  CAP_CHOWN             | CHOWN
-  CAP_DAC_OVERRIDE      | DAC_OVERRIDE
-  CAP_DAC_READ_SEARCH   | DAC_READ_SEARCH
-  CAP_FOWNER            | FOWNER
-  CAP_FSETID            | FSETID
-  CAP_IPC_LOCK          | IPC_LOCK
-  CAP_IPC_OWNER         | IPC_OWNER
-  CAP_KILL              | KILL
-  CAP_LEASE             | LEASE
-  CAP_LINUX_IMMUTABLE   | LINUX_IMMUTABLE
-  CAP_MAC_ADMIN         | MAC_ADMIN
-  CAP_MAC_OVERRIDE      | MAC_OVERRIDE
-  CAP_MKNOD             | MKNOD
-  CAP_NET_ADMIN         | NET_ADMIN
-  CAP_NET_BIND_SERVICE  | NET_BIND_SERVICE
-  CAP_NET_BROADCAST     | NET_BROADCAST
-  CAP_NET_RAW           | NET_RAW
-  CAP_SETFCAP           | SETFCAP
-  CAP_SETGID            | SETGID
-  CAP_SETPCAP           | SETPCAP
-  CAP_SETUID            | SETUID
-  CAP_SYS_ADMIN         | SYS_ADMIN
-  CAP_SYS_BOOT          | SYS_BOOT
-  CAP_SYS_CHROOT        | SYS_CHROOT
-  CAP_SYSLOG            | SYSLOG
-  CAP_SYS_MODULE        | SYS_MODULE
-  CAP_SYS_NICE          | SYS_NICE
-  CAP_SYS_PACCT         | SYS_PACCT
-  CAP_SYS_PTRACE        | SYS_PTRACE
-  CAP_SYS_RAWIO         | SYS_RAWIO
-  CAP_SYS_RESOURCE      | SYS_RESOURCE
-  CAP_SYS_TIME          | SYS_TIME
-  CAP_SYS_TTY_CONFIG    | SYS_TTY_CONFIG
-  CAP_WAKE_ALARM        | WAKE_ALARM
+  The capabilities argument must be separated by commas and is not case sensitive.
 
-  See "-d" flag example for description of each capabilities`
+  To see available capabilities, type "singularity capability avail" or refer to
+  capabilities manual "man 7 capabilities"`
 	CapabilityDropExample string = `
-  $ singularity capability drop --user nobody AUDIT_READ,CHOWN
-  $ singularity capability drop --group nobody audit_write
+  $ sudo singularity capability drop --user nobody AUDIT_READ,CHOWN
+  $ sudo singularity capability drop --group nobody audit_write
 
-  To print capabilities description:
+  To drop all capabilities for a user:
 
-  $ singularity capability drop -d CAP_CHOWN
-  $ singularity capability drop -d CAP_CHOWN,CAP_SYS_ADMIN`
+  $ sudo singularity capability drop --user nobody all`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityListUse   string = `list [list options...]`
-	CapabilityListShort string = `List authorized capabilities for the given user/group.`
+	CapabilityListUse   string = `list [user/group]`
+	CapabilityListShort string = `Show capabilities for a given user or group`
 	CapabilityListLong  string = `
-  The capability list command allows you to see
-  what Linux capabilities are associated with users/groups.`
+  Show the capabilities for a user or group.`
 	CapabilityListExample string = `
-  $ singularity capability list --user nobody
-  $ singularity capability list --group nobody
-  $ singularity capability list --all`
+  To list capabilities set for user or group nobody:
+
+  $ singularity capability list nobody
+
+  To list capabilities for all users/groups:
+
+  $ singularity capability list`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// capability avail
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	CapabilityAvailUse   string = `avail [capabilities]`
+	CapabilityAvailShort string = `Show description for available capabilities`
+	CapabilityAvailLong  string = `
+  Show description for available Linux capabilities.`
+	CapabilityAvailExample string = `
+  Show description for all available capabilities:
+
+  $ singularity capability avail
+
+  Show CAP_CHOWN description:
+
+  $ singularity capability avail CAP_CHOWN
+
+  Show CAP_CHOWN/CAP_NET_RAW description:
+
+  $ singularity capability avail CAP_CHOWN,CAP_NET_RAW`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// exec
@@ -600,11 +546,13 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse   string = `push [push options...] <container image> library://[user[collection/[container[:tag]]]]`
-	PushShort string = `Push a container to a Library URI`
+	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
+	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
-  of your choosing`
+  of your choosing. An auth token is required to push to the remote, so you may
+  need to configure if first with 'singularity remote'.
+  `
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
