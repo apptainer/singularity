@@ -356,14 +356,13 @@ func IsValidDefinition(source string) (valid bool, err error) {
 	if err != nil {
 		return false, err
 	}
+	defer defFile.Close()
 
 	if s, err := defFile.Stat(); err != nil {
 		return false, fmt.Errorf("unable to stat file: %v", err)
 	} else if s.IsDir() {
 		return false, nil
 	}
-
-	defer defFile.Close()
 
 	_, err = ParseDefinitionFile(defFile)
 	if err != nil {

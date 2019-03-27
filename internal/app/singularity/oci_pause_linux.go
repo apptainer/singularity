@@ -6,10 +6,12 @@
 package singularity
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
 
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/pkg/util/unix"
 )
 
 // OciPauseResume pauses/resumes processes in a container
@@ -19,15 +21,54 @@ func OciPauseResume(containerID string, pause bool) error {
 		return err
 	}
 
-	if state.Status != ociruntime.Running {
+	if state.ControlSocket == "" {
+		return fmt.Errorf("can't find control socket")
+	}
+
+	if pause && state.Status != ociruntime.Running {
 		return fmt.Errorf("container %s is not running", containerID)
+	} else if !pause && state.Status != ociruntime.Paused {
+		return fmt.Errorf("container %s is not paused", containerID)
 	}
 
-	manager := &cgroups.Manager{Pid: state.State.Pid}
-
-	if !pause {
-		return manager.Resume()
+	ctrl := &ociruntime.Control{}
+	if pause {
+		ctrl.Pause = true
+	} else {
+		ctrl.Resume = true
 	}
 
-	return manager.Pause()
+	c, err := unix.Dial(state.ControlSocket)
+	if err != nil {
+		return fmt.Errorf("failed to connect to control socket")
+	}
+	defer c.Close()
+
+	enc := json.NewEncoder(c)
+	if err != nil {
+		return err
+	}
+
+	if err := enc.Encode(ctrl); err != nil {
+		return err
+	}
+
+	// wait runtime close socket connection for ACK
+	d := make([]byte, 1)
+	if _, err := c.Read(d); err != io.EOF {
+		return err
+	}
+
+	// check status
+	state, err = getState(containerID)
+	if err != nil {
+		return err
+	}
+	if pause && state.Status != ociruntime.Paused {
+		return fmt.Errorf("bad status %s returned instead of paused", state.Status)
+	} else if !pause && state.Status != ociruntime.Running {
+		return fmt.Errorf("bad status %s returned instead of running", state.Status)
+	}
+
+	return nil
 }

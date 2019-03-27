@@ -167,7 +167,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	if strings.HasPrefix(image, "instance://") {
 		instanceName := instance.ExtractName(image)
-		file, err := instance.Get(instanceName)
+		file, err := instance.Get(instanceName, instance.SingSubDir)
 		if err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -326,7 +326,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetInstance(true)
 		engineConfig.SetBootInstance(IsBoot)
 
-		_, err := instance.Get(name)
+		_, err := instance.Get(name, instance.SingSubDir)
 		if err == nil {
 			sylog.Fatalf("instance %s already exists", name)
 		}
@@ -445,7 +445,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if engineConfig.GetInstance() {
-		stdout, stderr, err := instance.SetLogFile(name, int(uid))
+		stdout, stderr, err := instance.SetLogFile(name, int(uid), instance.SingSubDir)
 		if err != nil {
 			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
