@@ -169,6 +169,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	default:
+		if !force {
+			if _, err := os.Stat(name); err == nil {
+				sylog.Fatalf("image file already exists - will not overwrite")
+			}
+		}
+
 		authConf, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
