@@ -269,11 +269,13 @@ func TestPopulateDefinition(t *testing.T) {
 	testMap := make(map[string]*types.Script)
 	testMap["files"] = &types.Script{Script: "file1 file2"}
 	testMap["labels"] = &types.Script{Script: "label1"}
-	testFiles := []types.Files{types.Files{
-		Files: []types.FileTransport{
-			types.FileTransport{Src: "file1", Dst: "file2"},
+	testFiles := []types.Files{
+		{
+			Files: []types.FileTransport{
+				{Src: "file1", Dst: "file2"},
+			},
 		},
-	}}
+	}
 
 	emptyMap := make(map[string]*types.Script)
 	emptyFiles := []types.Files{}
