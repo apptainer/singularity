@@ -32,6 +32,13 @@ const (
 	NameBinary = "object.so"
 	// NameConfig is the name of the plugin's config file
 	NameConfig = "config.yaml"
+
+	// pluginBinaryName is the name of the plugin binary within the
+	// SIF file
+	pluginBinaryName = "plugin.so"
+	// pluginManifestName is the name of the plugin manifest within
+	// the SIF file
+	pluginManifestName = "plugin.manifest"
 )
 
 // Meta is an internal representation of a plugin binary and all of its
@@ -526,31 +533,31 @@ func isPluginFile(fimg sifReader) bool {
 		return false
 	}
 
-	if !fimg.IsUsed("plugin.so") {
+	if !fimg.IsUsed(pluginBinaryName) {
 		return false
 	}
 
-	if fimg.GetDatatype("plugin.so") != sif.DataPartition {
+	if fimg.GetDatatype(pluginBinaryName) != sif.DataPartition {
 		return false
 	}
 
-	if fstype, err := fimg.GetFsType("plugin.so"); err != nil {
+	if fstype, err := fimg.GetFsType(pluginBinaryName); err != nil {
 		return false
 	} else if fstype != sif.FsRaw {
 		return false
 	}
 
-	if partype, err := fimg.GetPartType("plugin.so"); err != nil {
+	if partype, err := fimg.GetPartType(pluginBinaryName); err != nil {
 		return false
 	} else if partype != sif.PartData {
 		return false
 	}
 
-	if !fimg.IsUsed("plugin.manifest") {
+	if !fimg.IsUsed(pluginManifestName) {
 		return false
 	}
 
-	if fimg.GetDatatype("plugin.manifest") != sif.DataGenericJSON {
+	if fimg.GetDatatype(pluginManifestName) != sif.DataGenericJSON {
 		return false
 	}
 
@@ -561,11 +568,11 @@ func isPluginFile(fimg sifReader) bool {
 func getManifest(fimg sifReader) pluginapi.Manifest {
 	var manifest pluginapi.Manifest
 
-	if fimg.Descriptors() < 2 || !fimg.IsUsed("plugin.manifest") {
+	if fimg.Descriptors() < 2 || !fimg.IsUsed(pluginManifestName) {
 		return manifest
 	}
 
-	data := fimg.GetData("plugin.manifest")
+	data := fimg.GetData(pluginManifestName)
 
 	if data == nil {
 		return manifest
