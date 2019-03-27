@@ -276,7 +276,7 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, cmd)
+		sylog.Fatalf("%s: %s", err, cmd.Args)
 	}
 
 	b, err := cmd.Output()
