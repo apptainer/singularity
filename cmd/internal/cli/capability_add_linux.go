@@ -16,18 +16,14 @@ import (
 func init() {
 
 	// -u|--user
-	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "add capabilities for the given user")
+	CapabilityAddCmd.Flags().StringVarP(&CapUser, "user", "u", "", "add capabilities to a user")
 	CapabilityAddCmd.Flags().SetAnnotation("user", "argtag", []string{"<user>"})
 	CapabilityAddCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
 
 	// -g|--group
-	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "add capabilities for the given group")
+	CapabilityAddCmd.Flags().StringVarP(&CapGroup, "group", "g", "", "add capabilities to a group")
 	CapabilityAddCmd.Flags().SetAnnotation("group", "argtag", []string{"<group>"})
 	CapabilityAddCmd.Flags().SetAnnotation("group", "envkey", []string{"GROUP"})
-
-	// -d|--desc
-	CapabilityAddCmd.Flags().BoolVarP(&CapDesc, "desc", "d", false, "print capabilities description")
-	CapabilityAddCmd.Flags().SetAnnotation("desc", "envkey", []string{"DESC"})
 
 	CapabilityAddCmd.Flags().SetInterspersed(false)
 }
@@ -41,7 +37,6 @@ var CapabilityAddCmd = &cobra.Command{
 			Caps:  args[0],
 			User:  CapUser,
 			Group: CapGroup,
-			Desc:  CapDesc,
 		}
 
 		if err := singularity.CapabilityAdd(buildcfg.CAPABILITY_FILE, c); err != nil {
