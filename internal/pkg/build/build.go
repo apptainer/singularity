@@ -79,6 +79,11 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 	return newBuild([]types.Definition{def}, conf)
 }
 
+// New creates a new build struct form a slice of definitions
+func New(defs []types.Definition, conf Config) (*Build, error) {
+	return newBuild(defs, conf)
+}
+
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	var err error
 
@@ -95,6 +100,11 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 
 	// create stages
 	for _, d := range defs {
+		// verify every definition has a header if there are multiple stages
+		if d.Header == nil {
+			return nil, fmt.Errorf("multiple stages detected, all must have headers")
+		}
+
 		s := stage{}
 		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
 		if err != nil {
@@ -165,12 +175,14 @@ func (b *Build) Full() error {
 	defer b.cleanUp()
 
 	// build each stage one after the other
-	for _, stage := range b.stages {
+	for i, stage := range b.stages {
 		if err := stage.runPreScript(); err != nil {
 			return err
 		}
 
-		if stage.b.Opts.Update && !stage.b.Opts.Force {
+		// only update last stage if specified
+		update := stage.b.Opts.Update && !stage.b.Opts.Force && i == len(b.stages)-1
+		if update {
 			// updating, extract dest container to bundle
 			sylog.Infof("Building into existing container: %s", b.Conf.Dest)
 			p, err := sources.GetLocalPacker(b.Conf.Dest, stage.b)
@@ -378,12 +390,22 @@ func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
 		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
 	}
 
-	d, err := parser.ParseAll(defFile)
+	d, err := parser.All(defFile)
 	if err != nil {
 		return nil, fmt.Errorf("While parsing definition: %s: %v", spec, err)
 	}
 
 	return d, nil
+}
+
+func (b *Build) findStageIndex(name string) (int, error) {
+	for i, s := range b.stages {
+		if name == s.name {
+			return i, nil
+		}
+	}
+
+	return -1, fmt.Errorf("Stage %s was not found", name)
 }
 
 func (s *stage) copyFiles(b *Build) error {
@@ -397,16 +419,12 @@ func (s *stage) copyFiles(b *Build) error {
 			continue
 		}
 
-		srcStage := args[1]
-		stageIndex := -1
-		for i, s := range b.stages {
-			if srcStage == s.name {
-				stageIndex = i
-				break
-			}
+		stageIndex, err := b.findStageIndex(args[1])
+		if err != nil {
+			return err
 		}
 
-		sylog.Debugf("Copying files from stage: %s", srcStage)
+		sylog.Debugf("Copying files from stage: %s", args[1])
 
 		// iterate through filetransfers
 		for _, transfer := range f.Files {
