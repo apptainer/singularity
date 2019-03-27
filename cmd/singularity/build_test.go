@@ -235,7 +235,7 @@ func TestMultiStageDefinition(t *testing.T) {
 	}{
 		// Simple copy from stage one to final stage
 		{"FileCopySimple", false, true, []DefFileDetail{
-			DefFileDetail{
+			{
 				Bootstrap: "docker",
 				From:      "alpine:latest",
 				Stage:     "one",
@@ -250,7 +250,7 @@ func TestMultiStageDefinition(t *testing.T) {
 					},
 				},
 			},
-			DefFileDetail{
+			{
 				Bootstrap: "docker",
 				From:      "alpine:latest",
 				FilesFrom: []FileSection{
@@ -283,7 +283,7 @@ func TestMultiStageDefinition(t *testing.T) {
 		// Complex copy of files from stage one and two to stage three, then final copy from three to final stage
 		{"FileCopyComplex", false, true,
 			[]DefFileDetail{
-				DefFileDetail{
+				{
 					Bootstrap: "docker",
 					From:      "alpine:latest",
 					Stage:     "one",
@@ -298,7 +298,7 @@ func TestMultiStageDefinition(t *testing.T) {
 						},
 					},
 				},
-				DefFileDetail{
+				{
 					Bootstrap: "docker",
 					From:      "alpine:latest",
 					Stage:     "two",
@@ -313,12 +313,12 @@ func TestMultiStageDefinition(t *testing.T) {
 						},
 					},
 				},
-				DefFileDetail{
+				{
 					Bootstrap: "docker",
 					From:      "alpine:latest",
 					Stage:     "three",
 					FilesFrom: []FileSection{
-						FileSection{
+						{
 							"one",
 							[]FilePair{
 								{
@@ -330,7 +330,7 @@ func TestMultiStageDefinition(t *testing.T) {
 									Dst: "StageOneCopy.txt",
 								},
 							}},
-						FileSection{
+						{
 							"two",
 							[]FilePair{
 								{
@@ -344,11 +344,11 @@ func TestMultiStageDefinition(t *testing.T) {
 							},
 						}},
 				},
-				DefFileDetail{
+				{
 					Bootstrap: "docker",
 					From:      "alpine:latest",
 					FilesFrom: []FileSection{
-						FileSection{
+						{
 							"three",
 							[]FilePair{
 								{
