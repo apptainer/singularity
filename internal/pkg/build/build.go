@@ -6,12 +6,15 @@
 package build
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -97,6 +100,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		if err != nil {
 			return nil, err
 		}
+		s.name = d.Header["stage"]
 		s.b.Recipe = d
 
 		s.b.Opts = conf.Opts
@@ -199,8 +203,13 @@ func (b *Build) Full() error {
 		a.HandleBundle(stage.b)
 		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()
 
+		if stage.b.RunSection("files") {
+			if err := stage.copyFiles(b); err != nil {
+				return fmt.Errorf("unable to copy files a stage to container fs: %v", err)
+			}
+		}
+
 		if engineRequired(stage.b.Recipe) {
-			fmt.Println("starting engine")
 			if err := runBuildEngine(stage.b); err != nil {
 				return fmt.Errorf("while running engine: %v", err)
 			}
@@ -336,4 +345,102 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 	}
 
 	return d, nil
+}
+
+// MakeAllDefs gets a definition slice from a spec
+func MakeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+	return makeAllDefs(spec, remote)
+}
+
+// makeAllDef gets a definition object from a spec
+func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+	if ok, err := uri.IsValid(spec); ok && err == nil {
+		// URI passed as spec
+		d, err := types.NewDefinitionFromURI(spec)
+		return []types.Definition{d}, err
+	}
+
+	// Check if spec is an image/sandbox
+	if _, err := image.Init(spec, false); err == nil {
+		d, err := types.NewDefinitionFromURI("localimage" + "://" + spec)
+		return []types.Definition{d}, err
+	}
+
+	// default to reading file as definition
+	defFile, err := os.Open(spec)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open file %s: %v", spec, err)
+	}
+	defer defFile.Close()
+
+	// must be root to build from a definition
+	if os.Getuid() != 0 && !remote {
+		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+	}
+
+	d, err := parser.ParseAll(defFile)
+	if err != nil {
+		return nil, fmt.Errorf("While parsing definition: %s: %v", spec, err)
+	}
+
+	return d, nil
+}
+
+func (s *stage) copyFiles(b *Build) error {
+	def := s.b.Recipe
+	for _, f := range def.BuildData.Files {
+		if f.Args == "" {
+			continue
+		}
+		args := strings.Fields(f.Args)
+		if len(args) != 2 {
+			continue
+		}
+
+		srcStage := args[1]
+		stageIndex := -1
+		for i, s := range b.stages {
+			if srcStage == s.name {
+				stageIndex = i
+				break
+			}
+		}
+
+		sylog.Debugf("Copying files from stage: %s", srcStage)
+
+		// iterate through filetransfers
+		for _, transfer := range f.Files {
+			// sanity
+			if transfer.Src == "" {
+				sylog.Warningf("Attempt to copy file with no name...")
+				continue
+			}
+			// dest = source if not specified
+			if transfer.Dst == "" {
+				transfer.Dst = transfer.Src
+			}
+
+			// copy each file into bundle rootfs
+			transfer.Src = filepath.Join(b.stages[stageIndex].b.Rootfs(), transfer.Src)
+			transfer.Dst = filepath.Join(s.b.Rootfs(), transfer.Dst)
+			if err := copy(transfer.Src, transfer.Dst); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func copy(src, dst string) error {
+	var output, stderr bytes.Buffer
+	// copy each file into bundle rootfs
+	sylog.Infof("Copying %v to %v", src, dst)
+	copy := exec.Command("/bin/cp", "-fLr", src, dst)
+	copy.Stdout = &output
+	copy.Stderr = &stderr
+	if err := copy.Run(); err != nil {
+		return fmt.Errorf("While copying %v to %v: %v: %v", src, dst, err, stderr.String())
+	}
+	return nil
 }
