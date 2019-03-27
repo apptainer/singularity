@@ -31,14 +31,14 @@ func TestLibraryConveyor(t *testing.T) {
 		return
 	}
 
+	b.Opts.LibraryURL = libraryURL
+
 	b.Recipe, err = types.NewDefinitionFromURI(libraryURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
 
-	cp := &sources.LibraryConveyorPacker{
-		LibraryURL: libraryURL,
-	}
+	cp := &sources.LibraryConveyorPacker{}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -57,14 +57,14 @@ func TestLibraryPacker(t *testing.T) {
 		return
 	}
 
+	b.Opts.LibraryURL = libraryURL
+
 	b.Recipe, err = types.NewDefinitionFromURI(libraryURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
 
-	cp := &sources.LibraryConveyorPacker{
-		LibraryURL: libraryURL,
-	}
+	cp := &sources.LibraryConveyorPacker{}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
