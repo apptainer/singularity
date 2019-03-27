@@ -530,7 +530,7 @@ func (e *EngineOperations) loadImages() error {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
-		if err := os.Chdir(img.Source); err != nil {
+		if err := mainthread.Chdir(img.Source); err != nil {
 			return err
 		}
 		cwd, err := os.Getwd()
