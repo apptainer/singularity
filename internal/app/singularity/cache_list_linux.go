@@ -78,7 +78,7 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 					return 0, 0, fmt.Errorf("unable to get stat for: %s: %v", cachePath, err)
 				}
 				if printList {
-					fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), cacheType)
+					fmt.Printf("%-24.22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), cacheType)
 				}
 				count++
 				totalSize += fileInfo.Size()
@@ -121,7 +121,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 					return 0, 0, fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
 				}
 				if printList {
-					fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "blob")
+					fmt.Printf("%-24.22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "blob")
 				}
 				count++
 				totalSize += fileInfo.Size()
@@ -176,7 +176,7 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	// compatible with '--type=', and '--all' flag.
 
 	if !cacheListSummary {
-		fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
+		fmt.Printf("%-24s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
 	}
 
 	if listAll {
