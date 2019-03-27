@@ -44,11 +44,11 @@ func init() {
 	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 
 	OciKillCmd.Flags().SetInterspersed(false)
-	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "SIGTERM", "signal sent to the container")
+	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "SIGTERM", "set the signal sent to a container")
 	OciKillCmd.Flags().SetInterspersed(false)
-	OciKillCmd.Flags().BoolVarP(&ociArgs.ForceKill, "force", "f", false, "kill container process with SIGKILL")
+	OciKillCmd.Flags().BoolVarP(&ociArgs.ForceKill, "force", "f", false, "set the signal sent to a container to SIGKILL")
 	OciKillCmd.Flags().SetInterspersed(false)
-	OciKillCmd.Flags().Uint32VarP(&ociArgs.KillTimeout, "timeout", "t", 0, "timeout in second before killing container")
+	OciKillCmd.Flags().Uint32VarP(&ociArgs.KillTimeout, "timeout", "t", 0, "set the timeout for killing a container (in seconds)")
 
 	OciRunCmd.Flags().SetInterspersed(false)
 	OciRunCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")

@@ -853,13 +853,29 @@ found at:
 	OciStateExample string = `
   $ singularity oci state mycontainer`
 
-	OciKillUse   string = `kill <container_ID>`
-	OciKillShort string = `Kill a container (root user only)`
+	OciKillUse   string = `kill [kill options...] <container_ID> [signal]`
+	OciKillShort string = `Kill a container (requires root privileges)`
 	OciKillLong  string = `
-  Kill invoke kill operation to kill processes running within container identified by container ID.`
+  Kill a container in the created or running state (requires root privileges).
+
+  The signal is set by using either an option or an argument with a value from the signal(7) man page.`
+
 	OciKillExample string = `
+  Both of these commands send the INT signal to a container
+
+  # Use the signal argument
   $ singularity oci kill mycontainer INT
-  $ singularity oci kill -s INT mycontainer`
+
+  # Use the signal option
+  $ singularity oci kill -s INT mycontainer
+
+  Both of these commands send the KILL signal to a container
+
+  # Use the signal option
+  $ singularity oci kill -s KILL mycontainer
+
+  # Use the force option
+  $ singularity oci kill -f mycontainer`
 
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete a container (requires root privileges)`
