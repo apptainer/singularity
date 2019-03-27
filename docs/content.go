@@ -472,7 +472,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceListUse   string = `list [list options...] <container>`
+	InstanceListUse   string = `list [list options...]`
 	InstanceListShort string = `List all running and named Singularity instances`
 	InstanceListLong  string = `
   The instance list command allows you to view the Singularity container
