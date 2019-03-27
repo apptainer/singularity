@@ -23,7 +23,7 @@ var (
 func init() {
 	CacheCleanCmd.Flags().SetInterspersed(false)
 
-	CacheCleanCmd.Flags().BoolVarP(&cleanAll, "all", "a", false, "clean all cache (will overide all other options)")
+	CacheCleanCmd.Flags().BoolVarP(&cleanAll, "all", "a", false, "clean all cache (will override all other options)")
 	CacheCleanCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 
 	CacheCleanCmd.Flags().StringSliceVarP(&cacheCleanTypes, "type", "T", []string{"blob"}, "clean cache type, choose between: library, oci, and blob")
