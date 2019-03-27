@@ -329,31 +329,29 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			return fmt.Errorf("could not get the signing entity fingerprint: %s", err)
 		}
 
-		// Check if we have a local public key
-		ifHaveKey, err := sypgp.CheckLocalPubKey(fingerprint)
-		if err != nil {
-			return err
-		}
-
-		// If we dont have a local public key
-		if !noPrompt && !ifHaveKey {
-			sylog.Errorf("This image is signed with key '%s', but this key is not present in your local keyring.", fingerprint)
-			fmt.Fprintf(os.Stderr, "\nTo add this key to your local keyring, run:\n\n")
-
-			fmt.Fprintf(os.Stderr, "\tsingularity key pull %s\n", fingerprint)
-
-			fmt.Fprintf(os.Stderr, "\nRunning this command instructs 'singularity' to trust this key in future. Run 'singularity key pull -h' for more information regarding the implications of this action.\n")
-			return fmt.Errorf("no key in keyring")
-		} else if !ifHaveKey {
-			sylog.Warningf("This image is signed with key '%s', but this key is not present in your local keyring.", fingerprint)
-			sylog.Warningf("This image is signed, but not trusted")
-			return nil
-		}
-
-		// verify the container with our local keys
+		// verify the container with our local keys first
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
-			return fmt.Errorf("unable to verify container: %v", err)
+			// if theres a error, thats probably because we dont have a local key
+
+			// download the key
+			sylog.Infof("Downloading key: %s; not present in local keyring", fingerprint[24:])
+			netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
+			if err != nil {
+				return fmt.Errorf("could not fetch public key from server: %s", err)
+			}
+			sylog.Verbosef("key retrieved successfully!")
+
+			block, _ := clearsign.Decode(data)
+			if block == nil {
+				return fmt.Errorf("failed to parse signature block")
+			}
+
+			// verify the container with the downloaded key
+			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+			if err != nil {
+				return fmt.Errorf("signature verification failed: %s", err)
+			}
 		}
 
 		// Get first Identity data for convenience
