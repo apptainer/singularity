@@ -14,6 +14,9 @@ Registry: {{.Registry}}
 Namespace: {{.Namespace}}
 {{- end}}
 
+{{- if .Stage}}
+Stage: {{.Stage}}
+{{- end}}
 
 
 
@@ -43,6 +46,13 @@ Namespace: {{.Namespace}}
 {{- end}}
 {{- range $f := .Files}}
     {{$f.Src}} {{$f.Dst}}
+{{- end}}
+
+{{- range $ff := .FilesFrom}}
+%files from {{$ff.Stage}}
+{{- range $f := $ff.Files}}
+    {{$f.Src}} {{$f.Dst}}
+{{- end}}
 {{- end}}
 
 {{- if .Pre}}
