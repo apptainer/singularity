@@ -876,9 +876,9 @@ found at:
   $ singularity oci attach mycontainer`
 
 	OciExecUse   string = `exec <container_ID> <command> <args>`
-	OciExecShort string = `Execute a command within container (root user only)`
+	OciExecShort string = `Execute a command inside a container (requires root privileges)`
 	OciExecLong  string = `
-  Exec will execute the provided command/arguments within container identified by container ID.`
+  Execute a command inside a container (requires root privileges)`
 	OciExecExample string = `
   $ singularity oci exec mycontainer id`
 
