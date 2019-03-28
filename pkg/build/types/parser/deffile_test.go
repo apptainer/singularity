@@ -178,6 +178,7 @@ func TestParseDefinitionFile(t *testing.T) {
 		{"NoHeaderWhiteSpace", "testdata_good/noheaderwhitespace/noheaderwhitespace", "testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
 		{"MultipleScripts", "testdata_good/multiplescripts/multiplescripts", "testdata_good/multiplescripts/multiplescripts.json"},
 		{"SectionArgs", "testdata_good/sectionargs/sectionargs", "testdata_good/sectionargs/sectionargs.json"},
+		{"MultipleFiless", "testdata_good/multiplefiles/multiplefiles", "testdata_good/multiplefiles/multiplefiles.json"},
 	}
 
 	for _, tt := range tests {

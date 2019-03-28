@@ -169,9 +169,11 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 		}
 
 		// look through existing files and append to them if they already exist
-		for _, ef := range *files {
+		for i, ef := range *files {
 			if ef.Args == f.Args {
 				ef.Files = append(ef.Files, f.Files...)
+				// replace old file struct with newly appended one
+				(*files)[i] = ef
 				return nil
 			}
 		}
