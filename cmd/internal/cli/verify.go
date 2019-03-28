@@ -16,12 +16,17 @@ import (
 )
 
 var (
-	sifGroupID uint32 // -g groupid specification
-	sifDescID  uint32 // -i id specification
+	sifGroupID  uint32 // -g groupid specification
+	sifDescID   uint32 // -i id specification
+	localVerify bool   // -l flag
 )
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+
+	// -l, --local flag
+	VerifyCmd.Flags().BoolVarP(&localVerify, "local", "l", false, "only verify with local keys")
+	VerifyCmd.Flags().SetAnnotation("local", "envkey", []string{"LOCAL_VERIFY"})
 
 	VerifyCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
 	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
@@ -65,5 +70,5 @@ func doVerifyCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
-	return signing.Verify(cpath, url, id, isGroup, authToken, false)
+	return signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false)
 }
