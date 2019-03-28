@@ -152,7 +152,7 @@ func (engine *EngineOperations) createState(pid int) error {
 
 	name := engine.CommonConfig.ContainerID
 
-	file, err := instance.Add(name, true)
+	file, err := instance.Add(name, true, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (engine *EngineOperations) updateState(status string) error {
 	engine.EngineConfig.Lock()
 	defer engine.EngineConfig.Unlock()
 
-	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	file, err := instance.Get(engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -795,7 +795,7 @@ func (c *container) addDevices(system *mount.System) error {
 func (c *container) addMaskedPathsMount(system *mount.System) error {
 	paths := c.engine.EngineConfig.OciConfig.Linux.MaskedPaths
 
-	dir, err := instance.GetDirPrivileged(c.engine.CommonConfig.ContainerID)
+	dir, err := instance.GetDirPrivileged(c.engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
