@@ -281,7 +281,7 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 	return
 }
 
-// CompareKeyEntity compares a key entity with a string, returning true if the
+// CompareKeyEntity compares a key ID with a string, returning true if the
 // key and oldToken match.
 func CompareKeyEntity(e *openpgp.Entity, oldToken string) bool {
 	// TODO: there must be a better way to do this...
@@ -327,12 +327,20 @@ func RemovePubKey(toDelete string) error {
 
 	var newKeyList []openpgp.Entity
 
+	matchKey := false
+
 	// sort through them, and remove any that match toDelete
 	for i := range elist {
 		// if the elist[i] dose not match toDelete, then add it to newKeyList
 		if !CompareKeyEntity(elist[i], toDelete) {
 			newKeyList = append(newKeyList, *elist[i])
+		} else {
+			matchKey = true
 		}
+	}
+
+	if !matchKey {
+		return fmt.Errorf("no key matching given fingerprint found")
 	}
 
 	sylog.Verbosef("Updating local keyring: %v", PublicPath())
@@ -346,7 +354,7 @@ func RemovePubKey(toDelete string) error {
 
 	// loop through a write all the other keys back
 	for k := range newKeyList {
-		// store the freshly downloaded key
+		// store the keys
 		if err := StorePubKey(&newKeyList[k]); err != nil {
 			return fmt.Errorf("could not store public key: %s", err)
 		}
@@ -568,7 +576,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
 	if err != nil {
-		if err, ok := err.(*jsonresp.Error); ok && err.Code == http.StatusUnauthorized {
+		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			authToken, err := helpAuthentication()
@@ -582,7 +590,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 			if keyText, err = c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil); err != nil {
 				return err
 			}
-		} else if err.Code == http.StatusNotFound {
+		} else if ok && jerr.Code == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return fmt.Errorf("failed to get key: %v", err)
@@ -620,7 +628,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	// Pull key from Key Service.
 	keyText, err := c.GetKey(context.TODO(), fp)
 	if err != nil {
-		if err, ok := err.(*jsonresp.Error); ok && err.Code == http.StatusUnauthorized {
+		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			authToken, err := helpAuthentication()
@@ -633,7 +641,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 			if keyText, err = c.GetKey(context.TODO(), fp); err != nil {
 				return nil, err
 			}
-		} else if err.Code == http.StatusNotFound {
+		} else if ok && jerr.Code == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return nil, fmt.Errorf("failed to get key: %v", err)
@@ -688,7 +696,7 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 
 	// Push key to Key Service.
 	if err := c.PKSAdd(context.TODO(), keyText); err != nil {
-		if err, ok := err.(*jsonresp.Error); ok && err.Code == http.StatusUnauthorized {
+		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			authToken, err := helpAuthentication()
