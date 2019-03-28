@@ -211,11 +211,17 @@ func (engine *EngineOperations) updateState(status string) error {
 
 	switch status {
 	case ociruntime.Created:
-		engine.EngineConfig.State.CreatedAt = &t
+		if engine.EngineConfig.State.CreatedAt == nil {
+			engine.EngineConfig.State.CreatedAt = &t
+		}
 	case ociruntime.Running:
-		engine.EngineConfig.State.StartedAt = &t
+		if engine.EngineConfig.State.StartedAt == nil {
+			engine.EngineConfig.State.StartedAt = &t
+		}
 	case ociruntime.Stopped:
-		engine.EngineConfig.State.FinishedAt = &t
+		if engine.EngineConfig.State.FinishedAt == nil {
+			engine.EngineConfig.State.FinishedAt = &t
+		}
 	}
 
 	file.Config, err = json.Marshal(engine.CommonConfig)
@@ -476,6 +482,8 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 			cgroupsPath = filepath.Join("/", cgroupsPath)
 		}
 	}
+
+	c.engine.EngineConfig.OciConfig.Linux.CgroupsPath = cgroupsPath
 
 	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
 
