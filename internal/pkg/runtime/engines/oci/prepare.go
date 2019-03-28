@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/containerd/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 
@@ -194,6 +195,21 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	} else {
 		starterConfig.SetJoinMount(true)
+		cPath := e.EngineConfig.OciConfig.Linux.CgroupsPath
+		if cPath == "" {
+			return nil
+		}
+
+		// add executed process to container cgroups
+		ppid := os.Getppid()
+		staticPath := cgroups.StaticPath(cPath)
+		control, err := cgroups.Load(cgroups.V1, staticPath)
+		if err != nil {
+			return fmt.Errorf("failed to load cgroups: %s", err)
+		}
+		if err := control.Add(cgroups.Process{Pid: ppid}); err != nil {
+			return fmt.Errorf("failed to add exec process to cgroups %s: %s", cPath, err)
+		}
 	}
 
 	return nil

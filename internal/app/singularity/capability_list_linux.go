@@ -23,12 +23,8 @@ type CapListConfig struct {
 
 // CapabilityList lists the capabilities based on the CapListConfig
 func CapabilityList(capFile string, c CapListConfig) error {
-	if os.Getuid() != 0 {
-		return fmt.Errorf("while listing capabilities: only root user can list capabilities")
-	}
-
-	if c.User == "" && c.Group == "" && c.All == false {
-		return fmt.Errorf("while listing capabilities: must specify user, group, or listall")
+	if c.User == "" && c.Group == "" && !c.All {
+		return fmt.Errorf("while listing capabilities: must specify a user or a group")
 	}
 
 	oldmask := syscall.Umask(0)
@@ -45,6 +41,8 @@ func CapabilityList(capFile string, c CapListConfig) error {
 		return fmt.Errorf("while parsing capability config data: %s", err)
 	}
 
+	outputCaps := 0
+
 	// if --all specified, take priority over listing specific user/group
 	if c.All {
 		users, groups := capConfig.ListAllCaps()
@@ -52,39 +50,42 @@ func CapabilityList(capFile string, c CapListConfig) error {
 		for user, cap := range users {
 			if len(cap) > 0 {
 				fmt.Printf("%s [user]: %s\n", user, strings.Join(cap, ","))
+				outputCaps++
 			}
 		}
 
 		for group, cap := range groups {
 			if len(cap) > 0 {
 				fmt.Printf("%s [group]: %s\n", group, strings.Join(cap, ","))
+				outputCaps++
 			}
+		}
+
+		if outputCaps == 0 {
+			return fmt.Errorf("no capability set for users or groups")
 		}
 
 		return nil
 	}
 
 	if c.User != "" {
-		if !userExists(c.User) {
-			return fmt.Errorf("while listing user capabilities: user does not exist")
-		}
-
 		caps := capConfig.ListUserCaps(c.User)
 		if len(caps) > 0 {
 			fmt.Printf("%s [user]: %s\n", c.User, strings.Join(caps, ","))
+			outputCaps++
 		}
 	}
 
 	if c.Group != "" {
-		if !groupExists(c.Group) {
-			return fmt.Errorf("while listing group capabilities: group does not exist")
-		}
-
 		caps := capConfig.ListGroupCaps(c.Group)
 		if len(caps) > 0 {
 			fmt.Printf("%s [group]: %s\n", c.Group, strings.Join(caps, ","))
+			outputCaps++
 		}
+	}
 
+	if outputCaps == 0 {
+		return fmt.Errorf("no capability set for user/group %s", c.User)
 	}
 
 	return nil
