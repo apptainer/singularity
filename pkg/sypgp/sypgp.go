@@ -48,27 +48,64 @@ WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exis
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 
-// AskQuestion prompts the user with a question and return the response
-func AskQuestion(format string, a ...interface{}) (string, error) {
-	fmt.Printf(format, a...)
-	scanner := bufio.NewScanner(os.Stdin)
+// Read from a file descriptor (but through a os.File object) one line at a time.
+// The file can be a normal file or os.Stdin.
+// Note that we could imagine a simpler code but we want to make sure that
+// the code works properly in the normal case with the default Stdin and when
+// redirecting stdin (for testing or when using pipes).
+func askQuestionUsingGenericDescr(f *os.File) (string, error) {
+	// Get the initial position in the buffer so we can later seek the correct
+	// position based on how much data we read. Doing so, we can still benefit
+	// from buffered io and still have a fine-grain control over reading
+	// operations
+	pos, _ := f.Seek(0, os.SEEK_CUR)
+	// Get the data
+	scanner := bufio.NewScanner(f)
 	scanner.Scan()
 	response := scanner.Text()
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
+	// We basically did a buffered read (for good reasons) so make sure
+	// we reposition ourselves at the end of the data that was read, not
+	// the end of the buffer.
+	strLen := 1 // We always move forward, even if we did not a non-empty string
+	if len(response) > 1 {
+		strLen = len(response) + 1 // We do not forget the \n character
+	}
+	f.Seek(pos+int64(strLen), os.SEEK_SET)
+
 	return response, nil
+}
+
+// AskQuestion prompts the user with a question and return the response
+func AskQuestion(format string, a ...interface{}) (string, error) {
+	fmt.Printf(format, a...)
+
+	return askQuestionUsingGenericDescr(os.Stdin)
 }
 
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
 func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	fmt.Printf(format, a...)
-	response, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println("")
-	if err != nil {
-		return "", err
+
+	var response string
+	var err error
+	if terminal.IsTerminal(int(os.Stdin.Fd())) {
+		var resp []byte
+		resp, err = terminal.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			return "", err
+		}
+		response = string(resp)
+	} else {
+		response, err = askQuestionUsingGenericDescr(os.Stdin)
+		if err != nil {
+			return "", err
+		}
 	}
-	return string(response), nil
+	fmt.Println("")
+	return response, nil
 }
 
 // GetTokenFile returns a string describing the path to the stored token file
@@ -212,6 +249,10 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 
 // PrintEntity pretty prints an entity entry
 func PrintEntity(index int, e *openpgp.Entity) {
+	if e == nil {
+		return
+	}
+
 	for _, v := range e.Identities {
 		fmt.Printf("%v) U: %v (%v) <%v>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
 	}
@@ -255,6 +296,10 @@ func PrintPrivKeyring() (err error) {
 
 // StorePrivKey stores a private entity list into the local key cache
 func StorePrivKey(e *openpgp.Entity) (err error) {
+	if e == nil {
+		return
+	}
+
 	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return
@@ -269,6 +314,10 @@ func StorePrivKey(e *openpgp.Entity) (err error) {
 
 // StorePubKey stores a public key entity list into the local key cache
 func StorePubKey(e *openpgp.Entity) (err error) {
+	if e == nil {
+		return
+	}
+
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return
@@ -284,6 +333,10 @@ func StorePubKey(e *openpgp.Entity) (err error) {
 // compareLocalPubKey compares a key ID with a string, returning true if the
 // key and oldToken match.
 func compareLocalPubKey(e *openpgp.Entity, oldToken string) bool {
+	if e == nil {
+		return false
+	}
+
 	// TODO: there must be a better way to do this...
 	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == fmt.Sprintf("%X", oldToken)
 }
@@ -461,6 +514,10 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
+	if k == nil {
+		return nil
+	}
+
 	if k.PrivateKey.Encrypted {
 		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
 		if err != nil {
@@ -476,11 +533,18 @@ func DecryptKey(k *openpgp.Entity) error {
 
 // EncryptKey encrypts a private key using a pass phrase
 func EncryptKey(k *openpgp.Entity, pass string) (err error) {
+	if k == nil {
+		return nil
+	}
+
 	if k.PrivateKey.Encrypted {
 		return fmt.Errorf("key already encrypted")
 	}
 	err = k.PrivateKey.Encrypt([]byte(pass))
-	return
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // SelectPubKey prints a public key list to user and returns the choice
