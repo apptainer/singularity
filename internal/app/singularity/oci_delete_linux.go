@@ -45,7 +45,7 @@ func OciDelete(containerID string) error {
 	}
 
 	// remove instance files
-	file, err := instance.Get(containerID)
+	file, err := instance.Get(containerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}

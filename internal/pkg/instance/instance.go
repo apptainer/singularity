@@ -24,6 +24,13 @@ import (
 )
 
 const (
+	// OciSubDir represents directory where OCI instance files are stored
+	OciSubDir = "oci"
+	// SingSubDir represents directory where Singularity instance files are stored
+	SingSubDir = "sing"
+)
+
+const (
 	privPath        = "/var/run/singularity/instances"
 	unprivPath      = ".singularity/instances"
 	authorizedChars = `^[a-zA-Z0-9._-]+$`
@@ -73,7 +80,7 @@ func CheckName(name string) error {
 }
 
 // getPath returns the path where searching for instance files
-func getPath(privileged bool, username string) (string, error) {
+func getPath(privileged bool, username string, subDir string) (string, error) {
 	path := ""
 	var pw *user.User
 	var err error
@@ -89,7 +96,7 @@ func getPath(privileged bool, username string) (string, error) {
 	}
 
 	if privileged {
-		path = filepath.Join(privPath, pw.Name)
+		path = filepath.Join(privPath, subDir, pw.Name)
 		return path, nil
 	}
 
@@ -105,15 +112,15 @@ func getPath(privileged bool, username string) (string, error) {
 		return path, err
 	}
 
-	path = filepath.Join(pw.Dir, unprivPath, hostname, pw.Name)
+	path = filepath.Join(pw.Dir, unprivPath, subDir, hostname, pw.Name)
 	return path, nil
 }
 
-func getDir(privileged bool, name string) (string, error) {
+func getDir(privileged bool, name string, subDir string) (string, error) {
 	if err := CheckName(name); err != nil {
 		return "", err
 	}
-	path, err := getPath(privileged, "")
+	path, err := getPath(privileged, "", subDir)
 	if err != nil {
 		return "", err
 	}
@@ -122,22 +129,22 @@ func getDir(privileged bool, name string) (string, error) {
 
 // GetDirPrivileged returns directory where instances file will be stored
 // if instance is run with privileges
-func GetDirPrivileged(name string) (string, error) {
-	return getDir(true, name)
+func GetDirPrivileged(name string, subDir string) (string, error) {
+	return getDir(true, name, subDir)
 }
 
 // GetDirUnprivileged returns directory where instances file will be stored
 // if instance is run without privileges
-func GetDirUnprivileged(name string) (string, error) {
-	return getDir(false, name)
+func GetDirUnprivileged(name string, subDir string) (string, error) {
+	return getDir(false, name, subDir)
 }
 
 // Get returns the instance file corresponding to instance name
-func Get(name string) (*File, error) {
+func Get(name string, subDir string) (*File, error) {
 	if err := CheckName(name); err != nil {
 		return nil, err
 	}
-	list, err := List("", name)
+	list, err := List("", name, subDir)
 	if err != nil {
 		return nil, err
 	}
@@ -149,16 +156,16 @@ func Get(name string) (*File, error) {
 
 // Add creates an instance file for a named instance in a privileged
 // or unprivileged path
-func Add(name string, privileged bool) (*File, error) {
+func Add(name string, privileged bool, subDir string) (*File, error) {
 	if err := CheckName(name); err != nil {
 		return nil, err
 	}
-	_, err := Get(name)
+	_, err := Get(name, subDir)
 	if err == nil {
 		return nil, fmt.Errorf("instance %s already exists", name)
 	}
 	i := &File{Name: name, Privileged: privileged}
-	i.Path, err = getPath(privileged, "")
+	i.Path, err = getPath(privileged, "", subDir)
 	if err != nil {
 		return nil, err
 	}
@@ -168,12 +175,12 @@ func Add(name string, privileged bool) (*File, error) {
 }
 
 // List returns instance files matching username and/or name pattern
-func List(username string, name string) ([]*File, error) {
+func List(username string, name string, subDir string) ([]*File, error) {
 	list := make([]*File, 0)
 	privileged := true
 
 	for {
-		path, err := getPath(privileged, username)
+		path, err := getPath(privileged, username, subDir)
 		if err != nil {
 			return nil, err
 		}
@@ -352,8 +359,8 @@ func (i *File) UpdateNamespacesPath(configNs []specs.LinuxNamespace) error {
 
 // SetLogFile replaces stdout/stderr streams and redirect content
 // to log file
-func SetLogFile(name string, uid int) (*os.File, *os.File, error) {
-	path, err := getPath(false, "")
+func SetLogFile(name string, uid int, subDir string) (*os.File, *os.File, error) {
+	path, err := getPath(false, "", subDir)
 	if err != nil {
 		return nil, nil, err
 	}
