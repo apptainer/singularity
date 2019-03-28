@@ -64,18 +64,6 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	if tmpdir == "" {
 		tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
 	}
-	if tmpdir == "" {
-		pw, err := user.GetPwUID(uint32(os.Getuid()))
-		if err != nil {
-			return "", fmt.Errorf("could not find current user information: %s", err)
-		}
-		tmpdir = filepath.Join(pw.Dir, ".singularity", "tmp")
-		if !fs.IsDir(tmpdir) {
-			if err := os.Mkdir(tmpdir, 0755); err != nil {
-				return "", fmt.Errorf("could not create directory %s: %s", tmpdir, err)
-			}
-		}
-	}
 
 	// create temporary sandbox
 	dir, err := ioutil.TempDir(tmpdir, "rootfs-")
