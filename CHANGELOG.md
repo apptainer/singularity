@@ -9,11 +9,21 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.1.0
+# Changes Since v3.1.1
 
-  - Fixed usage docstrings for OCI - was missing "oci" in command examples.
-  - Added --nocolor flag to Singularity client to disable color in logging
-  - Repeated binds does not exit and fail, just issues warning
+# v3.1.1 - [2019.03.28]
+
+## New Commands
+  - New hidden `buildcfg` command to display compile-time parameters 
+  - Added support for `LDFLAGS`, `CFLAGS`, `CGO_` variables in build system
+  - Added `--nocolor` flag to Singularity client to disable color in logging
+
+## New features / functionalities
+  - The `--builder` flag to the `build` command implicitly sets `--remote`
+  - Repeated binds no longer cause Singularity to exit and fail, just warn instead
+  - Corrected typos and improved docstrings throughout
+  - Removed warning when CWD does not exist on the host system
+  - Added support to spec file for RPM building on SLES 11
 
 # v3.1.0 - [2019.02.22]
 
