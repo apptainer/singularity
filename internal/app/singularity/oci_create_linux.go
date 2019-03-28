@@ -51,18 +51,18 @@ func OciCreate(containerID string, args *OciArgs) error {
 	configJSON := filepath.Join(absBundle, "config.json")
 	fb, err := os.Open(configJSON)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %s", configJSON, err)
+		return fmt.Errorf("OCI specification file %q is missing or cannot be read", configJSON)
 	}
 
 	data, err := ioutil.ReadAll(fb)
 	if err != nil {
-		return fmt.Errorf("failed to read %s: %s", configJSON, err)
+		return fmt.Errorf("failed to read OCI specification file %s: %s", configJSON, err)
 	}
 
 	fb.Close()
 
 	if err := json.Unmarshal(data, generator.Config); err != nil {
-		return fmt.Errorf("failed to parse %s: %s", configJSON, err)
+		return fmt.Errorf("failed to parse OCI specification file %s: %s", configJSON, err)
 	}
 
 	Env := []string{sylog.GetEnvVar()}
