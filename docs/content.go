@@ -159,7 +159,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CacheUse   string = `cache <subcommand>`
+	CacheUse   string = `cache`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
   Manage your local singularity cache. You can list/clean using the specific types.`
@@ -201,10 +201,10 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse string = `key [key options...] <subcommand>`
+	KeyUse string = `key [key options...]`
 
 	// keys : for the hidden `keys` command
-	KeysUse  string = `keys [keys options...] <subcommand>`
+	KeysUse  string = `keys [keys options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
   The 'key' command allows you to manage local OpenPGP key stores by creating
@@ -277,7 +277,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityUse   string = `capability <subcommand>`
+	CapabilityUse   string = `capability`
 	CapabilityShort string = `Manage Linux capabilities for users and groups`
 	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
@@ -404,7 +404,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceUse   string = `instance <subcommand>`
+	InstanceUse   string = `instance`
 	InstanceShort string = `Manage containers running as services`
 	InstanceLong  string = `
   Instances allow you to run containers as background processes. This can be
@@ -741,7 +741,7 @@ found at:
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// OCI
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	OciUse   string = `oci <subcommand>`
+	OciUse   string = `oci`
 	OciShort string = `Manage OCI containers`
 	OciLong  string = `
   Allow you to manage containers from OCI bundle directories.
