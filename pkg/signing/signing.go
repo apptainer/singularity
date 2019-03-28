@@ -260,12 +260,14 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 	return getSigsDescr(fimg, id)
 }
 
+// TODO: update this godoc thing...
+//
 // Verify takes a container path and look for a verification block for a
 // specified descriptor. If found, the signature block is used to verify the
 // partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local store or looks it up from a key server
 // if access is enabled.
-func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, noPrompt bool) error {
+func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify bool, noPrompt bool) error {
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
 		return fmt.Errorf("failed to load SIF container file: %s", err)
@@ -322,23 +324,27 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		if err != nil {
 			// if theres a error, thats proboly becuse we dont have a local key
 
-			// download the key
-			sylog.Infof("Downloading key: %s...", fingerprint[24:])
-			netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
-			if err != nil {
-				return fmt.Errorf("could not fetch public key from server: %s", err)
-			}
-			sylog.Verbosef("key retrieved successfully!")
+			if !localVerify {
+				// download the key
+				sylog.Infof("Downloading key: %s...", fingerprint[24:])
+				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
+				if err != nil {
+					return fmt.Errorf("could not fetch public key from server: %s", err)
+				}
+				sylog.Verbosef("key retrieved successfully!")
 
-			block, _ := clearsign.Decode(data)
-			if block == nil {
-				return fmt.Errorf("failed to parse signature block")
-			}
+				block, _ := clearsign.Decode(data)
+				if block == nil {
+					return fmt.Errorf("failed to parse signature block")
+				}
 
-			// verify the container
-			signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
-			if err != nil {
-				return fmt.Errorf("signature verification failed: %s", err)
+				// verify the container
+				signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+				if err != nil {
+					return fmt.Errorf("signature verification failed: %s", err)
+				}
+			} else {
+				return fmt.Errorf("unable to verify container: %v", err)
 			}
 		}
 
