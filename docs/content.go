@@ -295,6 +295,15 @@ Enterprise Performance Computing (EPC)`
   $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key remove
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyRemoveUse     string = `remove <fingerprint>`
+	KeyRemoveShort   string = `Remove a local public key`
+	KeyRemoveLong    string = `The 'key remove' command will remove a local public key.`
+	KeyRemoveExample string = `
+  $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	CapabilityUse   string = `capability`
