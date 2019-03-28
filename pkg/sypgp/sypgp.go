@@ -576,7 +576,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
 	if err != nil {
-		if err, ok := err.(*jsonresp.Error); ok && err.Code == http.StatusUnauthorized {
+		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			authToken, err := helpAuthentication()
@@ -590,7 +590,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 			if keyText, err = c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil); err != nil {
 				return err
 			}
-		} else if err.Code == http.StatusNotFound {
+		} else if ok && jerr.Code == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return fmt.Errorf("failed to get key: %v", err)
@@ -628,7 +628,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	// Pull key from Key Service.
 	keyText, err := c.GetKey(context.TODO(), fp)
 	if err != nil {
-		if err, ok := err.(*jsonresp.Error); ok && err.Code == http.StatusUnauthorized {
+		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			authToken, err := helpAuthentication()
@@ -641,7 +641,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 			if keyText, err = c.GetKey(context.TODO(), fp); err != nil {
 				return nil, err
 			}
-		} else if err.Code == http.StatusNotFound {
+		} else if ok && jerr.Code == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
 			return nil, fmt.Errorf("failed to get key: %v", err)
@@ -696,7 +696,7 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 
 	// Push key to Key Service.
 	if err := c.PKSAdd(context.TODO(), keyText); err != nil {
-		if err, ok := err.(*jsonresp.Error); ok && err.Code == http.StatusUnauthorized {
+		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
 			authToken, err := helpAuthentication()
