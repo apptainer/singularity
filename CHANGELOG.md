@@ -24,6 +24,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Fixed usage docstrings for OCI - was missing "oci" in command examples.
   - Added --nocolor flag to Singularity client to disable color in logging
   - Repeated binds does not exit and fail, just issues warning
+  - Scientific Filesystem app, when doesn't exist, exits with clear message. 
 
 # v3.1.0 - [2019.02.22]
 
