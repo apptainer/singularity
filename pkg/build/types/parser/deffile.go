@@ -136,7 +136,7 @@ func getSectionName(line string) string {
 func parseTokenSection(tok string, sections map[string]*types.Script, files *[]types.Files) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
-		return fmt.Errorf("Section %v: Could not be split into section name and body", split[0])
+		return fmt.Errorf("section %v: could not be split into section name and body", split[0])
 	}
 
 	key := getSectionName(split[0])
@@ -185,7 +185,7 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 	if appSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
 		if len(sectionSplit) < 2 {
-			return fmt.Errorf("App Section %v: Could not be split into section name and app name", sectionSplit[0])
+			return fmt.Errorf("app section %v: could not be split into section name and app name", sectionSplit[0])
 		}
 
 		key = strings.Join(sectionSplit[0:2], " ")
@@ -218,7 +218,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		// check if first thing parsed is a header/comment or just a section
 		if tok[0] != '%' {
 			if err := doHeader(tok, d); err != nil {
-				return fmt.Errorf("failed to parse DefFile header: %v", err)
+				return fmt.Errorf("failed to parse deffile header: %v", err)
 			}
 		} else {
 			// this is a section
@@ -385,7 +385,7 @@ func removeComments(b []byte) []byte {
 func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	d.Raw, err = ioutil.ReadAll(r)
 	if err != nil {
-		return d, fmt.Errorf("While attempting to read in definition: %v", err)
+		return d, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
 
 	s := bufio.NewScanner(bytes.NewReader(removeComments(d.Raw)))
@@ -417,7 +417,7 @@ func All(r io.Reader) ([]types.Definition, error) {
 
 	raw, err := ioutil.ReadAll(r)
 	if err != nil {
-		return nil, fmt.Errorf("While attempting to read in definition: %v", err)
+		return nil, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
 
 	buf := removeComments(raw)

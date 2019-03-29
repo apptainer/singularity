@@ -229,7 +229,7 @@ func (b *Build) Full() error {
 
 		sylog.Debugf("Inserting Metadata")
 		if err := stage.insertMetadata(); err != nil {
-			return fmt.Errorf("While inserting metadata to bundle: %v", err)
+			return fmt.Errorf("while inserting metadata to bundle: %v", err)
 		}
 	}
 
@@ -353,7 +353,7 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 
 	d, err := parser.ParseDefinitionFile(defFile)
 	if err != nil {
-		return types.Definition{}, fmt.Errorf("While parsing definition: %s: %v", spec, err)
+		return types.Definition{}, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
 
 	return d, nil
@@ -392,7 +392,7 @@ func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
 
 	d, err := parser.All(defFile)
 	if err != nil {
-		return nil, fmt.Errorf("While parsing definition: %s: %v", spec, err)
+		return nil, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
 
 	return d, nil
@@ -405,7 +405,7 @@ func (b *Build) findStageIndex(name string) (int, error) {
 		}
 	}
 
-	return -1, fmt.Errorf("Stage %s was not found", name)
+	return -1, fmt.Errorf("stage %s was not found", name)
 }
 
 func (s *stage) copyFiles(b *Build) error {
@@ -458,7 +458,7 @@ func copy(src, dst string) error {
 	copy.Stdout = &output
 	copy.Stderr = &stderr
 	if err := copy.Run(); err != nil {
-		return fmt.Errorf("While copying %v to %v: %v: %v", src, dst, err, stderr.String())
+		return fmt.Errorf("while copying %v to %v: %v: %v", src, dst, err, stderr.String())
 	}
 	return nil
 }

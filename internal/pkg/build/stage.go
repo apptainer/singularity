@@ -36,7 +36,7 @@ func (s *stage) Assemble(path string) error {
 func (s *stage) runPreScript() error {
 	if s.b.RunSection("pre") && s.b.Recipe.BuildData.Pre.Script != "" {
 		if syscall.Getuid() != 0 {
-			return fmt.Errorf("Attempted to build with scripts as non-root user")
+			return fmt.Errorf("attempted to build with scripts as non-root user")
 		}
 
 		// Run %pre script here

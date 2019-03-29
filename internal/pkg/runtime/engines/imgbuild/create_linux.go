@@ -196,7 +196,7 @@ func (engine *EngineOperations) copyFiles() error {
 	for _, transfer := range files.Files {
 		// sanity
 		if transfer.Src == "" {
-			sylog.Warningf("Attempt to copy file with no name...")
+			sylog.Warningf("Attempt to copy file with no name, skipping.")
 			continue
 		}
 		// dest = source if not specified
@@ -210,7 +210,7 @@ func (engine *EngineOperations) copyFiles() error {
 		copy.Stdout = &output
 		copy.Stderr = &stderr
 		if err := copy.Run(); err != nil {
-			return fmt.Errorf("While copying %v to %v: %v: %v", transfer.Src, transfer.Dst, err, stderr.String())
+			return fmt.Errorf("while copying %v to %v: %v: %v", transfer.Src, transfer.Dst, err, stderr.String())
 		}
 	}
 
