@@ -105,6 +105,10 @@ func getHelpFile(appName string) string {
 	return fmt.Sprintf("/scif/apps/%s/scif/runscript.help", appName)
 }
 
+func getAppCheck(appName string) string {
+	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
+}
+
 // InspectCmd represents the build command
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
@@ -133,6 +137,12 @@ var InspectCmd = &cobra.Command{
 		a := []string{"/bin/sh", "-c", ""}
 		prefix := "@@@start"
 		delimiter := "@@@end"
+
+		// If AppName is given fail quickly (exit) if it doesn't exist
+		if AppName != "" {
+			sylog.Debugf("Inspection of App %s Selected.", AppName)
+			a[2] += getAppCheck(AppName)
+		}
 
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
@@ -266,12 +276,12 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("%s: %s", err, cmd.Args)
 	}
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("%s: %s", err, b)
 	}
 
 	return string(b), nil

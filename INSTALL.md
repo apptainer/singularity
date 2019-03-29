@@ -99,11 +99,11 @@ To build the RPM, you first need to install `rpm-build` and `wget`:
 $ sudo yum -y update && sudo yum install -y rpm-build wget
 ```
 
-Then download the latest 
-[release tarball](https://github.com/sylabs/singularity/releases) and use it to
-install the RPM.  Since we are building from the RPM, you don't need to install 
-Golang, but you do need to 
-[install the other dependencies](#install-system-dependencies).
+Make sure you have also 
+[installed the system dependencies](#install-system-dependencies)
+as shown above.  Then download the latest 
+[release tarball](https://github.com/sylabs/singularity/releases)
+and use it to install the RPM like this: 
 
 ```
 $ export VERSION=3.1.0  # this is the singularity version, change as you need
