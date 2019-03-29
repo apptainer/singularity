@@ -326,7 +326,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 			if !localVerify {
 				// download the key
-				sylog.Infof("Downloading key: %s...", fingerprint[24:])
+				sylog.Infof("Downloading key: %s; not in keyring of trust.", fingerprint[24:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					return fmt.Errorf("could not fetch public key from server: %s", err)
