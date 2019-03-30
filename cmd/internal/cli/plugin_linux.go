@@ -19,6 +19,7 @@ func init() {
 	PluginCmd.AddCommand(PluginEnableCmd)
 	PluginCmd.AddCommand(PluginDisableCmd)
 	PluginCmd.AddCommand(PluginCompileCmd)
+	PluginCmd.AddCommand(PluginInspectCmd)
 
 	SingularityCmd.AddCommand(PluginCmd)
 }
