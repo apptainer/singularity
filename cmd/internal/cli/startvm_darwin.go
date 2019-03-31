@@ -28,7 +28,6 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		"-m", VMRAM,
 		"-c", VMCPU,
 		"-s", "0:0,hostbridge",
-		"-s", hdString,
 		"-s", "31,lpc",
 		"-l", "com1,stdio",
 	}
@@ -70,15 +69,30 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		sylog.Fatalf("Failed to get current user")
 	}
 
+	// NOTE: The 0:4:x PCI slot is to be used for static mounts. (BUS:SLOT:FUNCTION)
 	// Force $HOME to be mounted
 	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used
 	homeSrc := usr.HomeDir
 	pciArgs := fmt.Sprintf("4:0,virtio-9p,home=%s", homeSrc)
 	homeBind := fmt.Sprintf("home:%s", homeSrc)
 	singBinds = append(singBinds, homeBind)
-
 	sylog.Debugf("PCI: %s", pciArgs)
 	args = append(args, "-s", pciArgs)
+
+	// Check for Sandbox Image
+	sylog.Debugf("Check for sandbox image")
+	if f, err := os.Stat(sifImage); err == nil {
+		if f.IsDir() {
+			sylog.Debugf("Image is sandbox. Setting up share.")
+			pciArgs = fmt.Sprintf("4:1,virtio-9p,runimg=%s", sifImage)
+			args = append(args, "-s", pciArgs)
+			sboxImgBind := fmt.Sprintf("runimg:/runImage")
+			singBinds = append(singBinds, sboxImgBind)
+		} else {
+			// We are not a sandbox
+			args = append(args, "-s", hdString)
+		}
+	}
 
 	userInfo := fmt.Sprintf("%s:%s:%s", usr.Username, usr.Uid, usr.Gid)
 
