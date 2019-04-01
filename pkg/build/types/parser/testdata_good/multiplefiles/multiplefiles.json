@@ -1,0 +1,99 @@
+{
+	"header": {
+		"bootstrap": "docker",
+		"from": "alpine:latest",
+		"stage": "one"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": [
+			{
+				"args": "",
+				"files": [
+					{
+						"source": "file2",
+						"destination": "onefile2"
+					},
+					{
+						"source": "file1",
+						"destination": "onefile1"
+					},
+					{
+						"source": "file1",
+						"destination": "twofile1"
+					},
+					{
+						"source": "file2",
+						"destination": "twofile2"
+					}
+				]
+			},
+			{
+				"args": "from somewhere",
+				"files": [
+					{
+						"source": "file1",
+						"destination": "file1copy"
+					},
+					{
+						"source": "file2",
+						"destination": "file2copy"
+					},
+					{
+						"source": "file1",
+						"destination": "file1copy2"
+					},
+					{
+						"source": "file2",
+						"destination": "file2copy2"
+					}
+				]
+			}
+		],
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": ""
+			},
+			"post": {
+				"args": "",
+				"script": "    echo \"Hello\"\n\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogYWxwaW5lOmxhdGVzdApTdGFnZTogb25lCgolZmlsZXMKICAgIGZpbGUyIG9uZWZpbGUyCiAgICBmaWxlMSBvbmVmaWxlMQoKJWZpbGVzIGZyb20gc29tZXdoZXJlCiAgICBmaWxlMSBmaWxlMWNvcHkKICAgIGZpbGUyIGZpbGUyY29weQoKJXBvc3QKICAgIGVjaG8gIkhlbGxvIgoKJWZpbGVzIGZyb20gc29tZXdoZXJlCiAgICBmaWxlMSBmaWxlMWNvcHkyCiAgICBmaWxlMiBmaWxlMmNvcHkyCgolZmlsZXMKICAgIGZpbGUxIHR3b2ZpbGUxCiAgICBmaWxlMiB0d29maWxlMgo="
+}
