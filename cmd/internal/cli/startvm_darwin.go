@@ -67,7 +67,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 
 		sylog.Debugf("PCI: %s", pciArgs)
 
-		// The PCI function can be a value from 0-7 per slot. If we have more than 8 binds, increase the slot, 
+		// The PCI function can be a value from 0-7 per slot. If we have more than 8 binds, increase the slot,
 		// and reset the function value back to 0
 		function++
 		if function > 7 {
