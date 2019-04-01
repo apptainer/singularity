@@ -260,8 +260,6 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 	return getSigsDescr(fimg, id)
 }
 
-// TODO: update this godoc thing...
-//
 // Verify takes a container path and look for a verification block for a
 // specified descriptor. If found, the signature block is used to verify the
 // partition hash against the signer's version. Verify takes care of looking
@@ -300,11 +298,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			return fmt.Errorf("hashes differ, data may be corrupted")
 		}
 
-		block, _ = clearsign.Decode(data)
-		if block == nil {
-			return fmt.Errorf("failed to parse signature block")
-		}
-
 		// (1) Data integrity is verified, (2) now validate identify of signers
 
 		// get the entity fingerprint for the signature block
@@ -323,10 +316,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
 			// if theres a error, thats proboly becuse we dont have a local key
-
 			if !localVerify {
 				// download the key
-				sylog.Infof("Downloading key: %s; not in keyring of trust.", fingerprint[24:])
+				sylog.Infof("Key with ID %s not found in local keyring, searching for it via server %s", fingerprint[24:], keyServiceURI)
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					return fmt.Errorf("could not fetch public key from server: %s", err)
