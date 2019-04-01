@@ -229,7 +229,7 @@ func initBoolVars() {
 	actionFlags.SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
 	// --docker-login
-	actionFlags.BoolVar(&dockerLogin, "docker-login", false, "Login to a Docker Repository interactively")
+	actionFlags.BoolVar(&dockerLogin, "docker-login", false, "login to a Docker Repository interactively")
 	actionFlags.SetAnnotation("docker-login", "envkey", []string{"DOCKER_LOGIN"})
 
 	// hidden flag to disable nvidia bindings when 'always use nv = yes'
