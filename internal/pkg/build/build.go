@@ -387,7 +387,7 @@ func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
 
 	// must be root to build from a definition
 	if os.Getuid() != 0 && !remote {
-		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+		sylog.Fatalf("You must be the root user to build definition file")
 	}
 
 	d, err := parser.All(defFile)
@@ -430,7 +430,7 @@ func (s *stage) copyFiles(b *Build) error {
 		for _, transfer := range f.Files {
 			// sanity
 			if transfer.Src == "" {
-				sylog.Warningf("Attempt to copy file with no name...")
+				sylog.Warningf("Attempt to copy file with no name, skipping.")
 				continue
 			}
 			// dest = source if not specified
