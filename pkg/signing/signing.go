@@ -318,7 +318,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			// if theres a error, thats proboly becuse we dont have a local key
 			if !localVerify {
 				// download the key
-				sylog.Infof("Key with ID %s not found in local keyring, searching for it via server %s", fingerprint[24:], keyServiceURI)
+				sylog.Infof("Key with ID %s not found in local keyring, downloading from keystore...", fingerprint[24:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					return fmt.Errorf("could not fetch public key from server: %s", err)
