@@ -348,7 +348,7 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 
 	// must be root to build from a definition
 	if os.Getuid() != 0 && !remote {
-		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+		return types.Definition{}, fmt.Errorf("you must be the root user to build from a definition file")
 	}
 
 	d, err := parser.ParseDefinitionFile(defFile)
@@ -387,7 +387,7 @@ func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
 
 	// must be root to build from a definition
 	if os.Getuid() != 0 && !remote {
-		sylog.Fatalf("You must be the root user to build definition file")
+		return nil, fmt.Errorf("you must be the root user to build from a definition file")
 	}
 
 	d, err := parser.All(defFile)
