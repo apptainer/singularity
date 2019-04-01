@@ -6,6 +6,7 @@
 package types
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,10 +25,11 @@ func TestNewBundle(t *testing.T) {
 		{"dummy", "test"}}
 
 	// We create the test directory
-	err := os.MkdirAll(validDir, 0755)
+	testDir, err := ioutil.TempDir("", validDir)
 	if err != nil {
 		t.Fatal("cannot create temporary directory:", validDir)
 	}
+	defer os.RemoveAll(testDir)
 
 	// Now we run various tests, it will create directories
 	for _, prefix := range prefixes {
@@ -39,7 +41,7 @@ func TestNewBundle(t *testing.T) {
 		}
 
 		// Test that should succeed
-		bundle, myerr = NewBundle(validDir, prefix)
+		bundle, myerr = NewBundle(testDir, prefix)
 		if bundle == nil || myerr != nil {
 			t.Fatal("NewBundle() with a valid directory failed while expected to succeed")
 		}
@@ -68,7 +70,4 @@ func TestNewBundle(t *testing.T) {
 		// All done, deleting the directory that was created
 		os.RemoveAll(bundle.Path)
 	}
-
-	// We delete the test directory
-	os.RemoveAll(validDir)
 }
