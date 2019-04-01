@@ -14,7 +14,7 @@ import (
 
 func TestNewBundle(t *testing.T) {
 	invalidDir := "notExsitingDir/"
-	validDir := "bundleTests/"
+	validDirPrefix := "bundleTests-"
 	prefixes := []string{"", "dummyPrefix"}
 	testFalseSections := [][]string{{"dummy1", "dummy2", "none"},
 		{"none"},
@@ -25,9 +25,9 @@ func TestNewBundle(t *testing.T) {
 		{"dummy", "test"}}
 
 	// We create the test directory
-	testDir, err := ioutil.TempDir("", validDir)
+	testDir, err := ioutil.TempDir("", validDirPrefix)
 	if err != nil {
-		t.Fatal("cannot create temporary directory:", validDir)
+		t.Fatal("cannot create temporary directory", err)
 	}
 	defer os.RemoveAll(testDir)
 
