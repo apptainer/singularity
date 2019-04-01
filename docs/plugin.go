@@ -96,4 +96,16 @@ const (
 	installed in the system and which has been previously enabled.`
 	PluginDisableExample string = `
 	$ singularity plugin disable sylabs.io/test-plugin`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// plugin inspect command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	PluginInspectUse   string = `inspect (<name>|<image>)`
+	PluginInspectShort string = `Inspect a singularity plugin (either an installed one or an image)`
+	PluginInspectLong  string = `
+	The 'plugin inspect' command allows a user to inspect a plugin that is already
+	installed in the system or an image containing a plugin that is yet to be installed.`
+	PluginInspectExample string = `
+	$ singularity plugin inspect sylabs.io/test-plugin
+	$ singularity plugin inspect test-plugin.sif`
 )
