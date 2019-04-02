@@ -3,6 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// The following build tag is used to _exclude_ this file from builds,
+// as it exists solely to add the listed packages are dependencies so
+// that they get added to the toplevel go.mod file.
+//
+// If you need to add a new plugin, simply add it to this import list.
+// The build system will pick it up from here.
+
 // +build cni_plugins
 
 package singularity
