@@ -357,7 +357,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				}
 			} else {
 				return false, fmt.Errorf("unable to verify container: %v", err)
-				//>>>>>>> local-verify-flag
 			}
 		}
 
