@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
+	"golang.org/x/crypto/openpgp/armor"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 var secretExport bool
@@ -75,46 +78,32 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		// sort through them, and remove any that match toDelete
 		for _, localEntity := range localEntityList {
 
-			fmt.Println(localEntity.PrivateKey)
-			/*if fmt.Sprintf("%X", localEntity.PrivateKey.PublicKey.Fingerprint) == fingerprint {
+			if fmt.Sprintf("%X", localEntity.PrivateKey.PublicKey.Fingerprint) == fingerprint {
 				foundKey = true
 				entityToSave = localEntity
 				break
-			}*/
+			}
 
 		}
-		/*
-			pass, err := sypgp.AskQuestionNoEcho("Enter key passphrase: ")
-			if err != nil {
-				return err
-			}
 
-			fmt.Println(entityToSave.PrivateKey)
-			if entityToSave.PrivateKey != nil && entityToSave.PrivateKey.Encrypted {
-				err := entityToSave.PrivateKey.Decrypt([]byte(pass))
-				if err != nil {
-					fmt.Println("Failed to decrypt key")
-				}
-			}
+		privKeyBuf := bytes.NewBuffer(nil)
 
-			privKeyBuf := bytes.NewBuffer(nil)
+		var config *packet.Config
 
-			var config *packet.Config
+		privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
+		}
 
-			privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
-			if err != nil {
-				return fmt.Errorf("error encoding private key")
-			}
+		err = entityToSave.SerializePrivate(privKeyWriter, config)
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
+		}
+		privKeyWriter.Close()
 
-			err = entityToSave.SerializePrivate(privKeyWriter, config)
-			if err != nil {
-				return fmt.Errorf("error encoding private key")
-			}
-			privKeyWriter.Close()
+		file.WriteString(privKeyBuf.String())
+		defer file.Close()
 
-			file.WriteString(privKeyBuf.String())
-			defer file.Close()
-		*/
 	} else {
 
 		foundKey = false
@@ -126,7 +115,6 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 				break
 			}
 		}
-		fmt.Println(entityToSave.PrimaryKey)
 		keyString, err = sypgp.SerializePublicEntity(entityToSave, openpgp.PublicKeyType)
 		file.WriteString(keyString)
 		defer file.Close()
