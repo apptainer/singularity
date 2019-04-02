@@ -1,0 +1,15 @@
+Bootstrap: library
+From: debian:9
+
+%files from something
+    notafile notafile
+
+%files from somethingelse
+    something different
+
+%post -c /bin/bash extra stuff here #comment
+        echo "Running post section"
+        echo $0
+        dpkg -S $0
+        function foo { echo; }
+        echo "Bashism function defined"
