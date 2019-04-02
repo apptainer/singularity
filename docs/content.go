@@ -805,7 +805,7 @@ found at:
 	OciStateExample string = `
   $ singularity oci state mycontainer`
 
-	OciKillUse   string = `kill <container_ID>`
+	OciKillUse   string = `kill [kill options...] <container_ID>`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
   Kill invoke kill operation to kill processes running within container identified by container ID.`
