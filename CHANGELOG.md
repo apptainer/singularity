@@ -11,7 +11,7 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.1.1
 
-# v3.1.1 - [2019.03.28]
+# v3.1.1 - [2019.04.02]
 
 ## New Commands
   - New hidden `buildcfg` command to display compile-time parameters 
