@@ -18,6 +18,10 @@ _The old changelog can be found in the `release-2.6` branch_
   - Added support for `LDFLAGS`, `CFLAGS`, `CGO_` variables in build system
   - Added `--nocolor` flag to Singularity client to disable color in logging
 
+## Removed Commands
+  - `singularity capability <add/drop> --desc` has been removed
+  - `singularity capability list <--all/--group/--user> flags have all been removed 
+
 ## New features / functionalities
   - The `--builder` flag to the `build` command implicitly sets `--remote`
   - Repeated binds no longer cause Singularity to exit and fail, just warn instead
