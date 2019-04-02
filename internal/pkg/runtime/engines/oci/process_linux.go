@@ -210,7 +210,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 		return nil
 	}
 
-	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	file, err := instance.Get(engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -231,7 +231,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	logPath := engine.EngineConfig.GetLogPath()
 	if logPath == "" {
 		containerID := engine.CommonConfig.ContainerID
-		dir, err := instance.GetDirPrivileged(containerID)
+		dir, err := instance.GetDirPrivileged(containerID, instance.OciSubDir)
 		if err != nil {
 			return err
 		}
@@ -388,7 +388,6 @@ func (engine *EngineOperations) handleStream(l net.Listener, logger *instance.Lo
 func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Listener, control net.Listener, logger *instance.Logger, start chan bool, fatalChan chan error) {
 	var master *os.File
 	started := false
-	ctrl := &ociruntime.Control{}
 
 	if engine.EngineConfig.OciConfig.Process.Terminal {
 		master = os.NewFile(uintptr(engine.EngineConfig.MasterPts), "control-master-pts")
@@ -401,6 +400,7 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Li
 			return
 		}
 		dec := json.NewDecoder(c)
+		ctrl := &ociruntime.Control{}
 		if err := dec.Decode(ctrl); err != nil {
 			fatalChan <- err
 			return
@@ -437,6 +437,26 @@ func (engine *EngineOperations) handleControl(masterConn net.Conn, attach net.Li
 		}
 		if ctrl.ReopenLog {
 			logger.ReOpenFile()
+		}
+		if ctrl.Pause {
+			if err := engine.EngineConfig.Cgroups.Pause(); err != nil {
+				fatalChan <- err
+				return
+			}
+			if err := engine.updateState(ociruntime.Paused); err != nil {
+				fatalChan <- err
+				return
+			}
+		}
+		if ctrl.Resume {
+			if err := engine.updateState(ociruntime.Running); err != nil {
+				fatalChan <- err
+				return
+			}
+			if err := engine.EngineConfig.Cgroups.Resume(); err != nil {
+				fatalChan <- err
+				return
+			}
 		}
 
 		c.Close()

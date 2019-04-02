@@ -15,23 +15,24 @@ import (
 )
 
 var (
-	cacheListTypes []string
-	allList        bool
+	cacheListTypes   []string
+	allList          bool
+	cacheListSummary bool
 )
 
 func init() {
 	CacheListCmd.Flags().SetInterspersed(false)
 
-	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci", "blobSum"}, "list cache type, choose between: library, oci, and blob")
+	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci", "blobSum"},
+		"a list of cache types to display, possible entries: library, oci, blob(s), blobSum, all")
 	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
+	CacheListCmd.Flags().BoolVarP(&cacheListSummary, "summary", "s", false, "display a cache summary")
 
 	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
-	CacheListCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
 }
 
-// CacheListCmd : is `singularity cache list' and will list your local singularity cache
+// CacheListCmd is 'singularity cache list' and will list your local singularity cache
 var CacheListCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cacheListCmd(); err != nil {
@@ -46,10 +47,9 @@ var CacheListCmd = &cobra.Command{
 }
 
 func cacheListCmd() error {
-
-	err := singularity.ListSingularityCache(cacheListTypes, allList)
+	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummary)
 	if err != nil {
-		sylog.Fatalf("Not listing cache; an error occured: %v", err)
+		sylog.Fatalf("Not listing cache; an error occurred: %v", err)
 		return err
 	}
 	return err

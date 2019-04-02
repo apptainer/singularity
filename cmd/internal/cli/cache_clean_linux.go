@@ -35,7 +35,6 @@ func init() {
 
 // CacheCleanCmd : is `singularity cache clean' and will clear your local singularity cache
 var CacheCleanCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cacheCleanCmd(); err != nil {
