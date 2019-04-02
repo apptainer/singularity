@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
 )
 
 var secretExport bool
@@ -78,46 +75,46 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		// sort through them, and remove any that match toDelete
 		for _, localEntity := range localEntityList {
 
-			fmt.Printf("%0X\n", localEntity.PrivateKey.PublicKey.Fingerprint)
-			if fmt.Sprintf("%X", localEntity.PrivateKey.PublicKey.Fingerprint) == fingerprint {
+			fmt.Println(localEntity.PrivateKey)
+			/*if fmt.Sprintf("%X", localEntity.PrivateKey.PublicKey.Fingerprint) == fingerprint {
 				foundKey = true
 				entityToSave = localEntity
 				break
-			}
+			}*/
 
 		}
-
-		pass, err := sypgp.AskQuestionNoEcho("Enter key passphrase: ")
-		if err != nil {
-			return err
-		}
-
-		fmt.Println(entityToSave.PrivateKey)
-		if entityToSave.PrivateKey != nil && entityToSave.PrivateKey.Encrypted {
-			err := entityToSave.PrivateKey.Decrypt([]byte(pass))
+		/*
+			pass, err := sypgp.AskQuestionNoEcho("Enter key passphrase: ")
 			if err != nil {
-				fmt.Println("Failed to decrypt key")
+				return err
 			}
-		}
 
-		privKeyBuf := bytes.NewBuffer(nil)
+			fmt.Println(entityToSave.PrivateKey)
+			if entityToSave.PrivateKey != nil && entityToSave.PrivateKey.Encrypted {
+				err := entityToSave.PrivateKey.Decrypt([]byte(pass))
+				if err != nil {
+					fmt.Println("Failed to decrypt key")
+				}
+			}
 
-		var config *packet.Config
+			privKeyBuf := bytes.NewBuffer(nil)
 
-		privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
-		if err != nil {
-			return fmt.Errorf("error encoding private key")
-		}
+			var config *packet.Config
 
-		err = entityToSave.SerializePrivate(privKeyWriter, config)
-		if err != nil {
-			return fmt.Errorf("error encoding private key")
-		}
-		privKeyWriter.Close()
+			privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
+			if err != nil {
+				return fmt.Errorf("error encoding private key")
+			}
 
-		file.WriteString(privKeyBuf.String())
-		defer file.Close()
+			err = entityToSave.SerializePrivate(privKeyWriter, config)
+			if err != nil {
+				return fmt.Errorf("error encoding private key")
+			}
+			privKeyWriter.Close()
 
+			file.WriteString(privKeyBuf.String())
+			defer file.Close()
+		*/
 	} else {
 
 		foundKey = false

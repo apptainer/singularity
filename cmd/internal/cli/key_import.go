@@ -6,6 +6,8 @@
 package cli
 
 import (
+	"bytes"
+	"crypto"
 	"fmt"
 	"os"
 
@@ -15,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/errors"
+	"golang.org/x/crypto/openpgp/packet"
 )
 
 func init() {
@@ -23,7 +26,7 @@ func init() {
 
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   importRun,
@@ -35,6 +38,8 @@ var KeyImportCmd = &cobra.Command{
 
 func doKeyImportCmd(path string) error {
 	var fingerprint [20]byte
+
+	var conf = &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
 	// PublicKeyType is the armor type for a PGP public key.
 	var PublicKeyType = "PGP PUBLIC KEY BLOCK"
@@ -123,16 +128,28 @@ func doKeyImportCmd(path string) error {
 			// Go through the keystore checking for the given fingerprint
 			for _, pathEntity := range pathEntityList {
 				isInStore := false
-				fingerprint = pathEntity.PrimaryKey.Fingerprint
+				fingerprint = pathEntity.PrivateKey.PublicKey.Fingerprint
+				emptyByteVar := make([]byte, 20)
 
+				//fmt.Printf("%0X", fingerprint)
 				for _, privateEntity := range privateEntityList {
-					if pathEntity.PrimaryKey.KeyId == privateEntity.PrimaryKey.KeyId {
-						isInStore = true // Verify that this key has already been added
-						break
+
+					if privateEntity.PrivateKey != nil {
+						if !bytes.Equal(privateEntity.PrivateKey.PublicKey.Fingerprint[:], emptyByteVar[:]) {
+							if privateEntity.PrivateKey.PublicKey.Fingerprint == fingerprint {
+								isInStore = true
+								break
+							}
+
+						} else {
+							continue
+						}
 					}
+
 				}
 				if !isInStore {
-					if err = pathEntity.Serialize(secretFilePath); err != nil {
+
+					if err = pathEntity.SerializePrivate(secretFilePath, conf); err != nil {
 						return err
 					}
 					fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)

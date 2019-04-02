@@ -6,6 +6,7 @@ package openpgp
 
 import (
 	"crypto/rsa"
+	"fmt"
 	"io"
 	"time"
 
@@ -609,6 +610,44 @@ func (e *Entity) Serialize(w io.Writer) error {
 	}
 	for _, subkey := range e.Subkeys {
 		err = subkey.PublicKey.Serialize(w)
+		if err != nil {
+			return err
+		}
+		err = subkey.Sig.Serialize(w)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Serialize writes the public part of the given Entity to w, including
+// signatures from other entities. No private key material will be output.
+func (e *Entity) SerializePrivate2(w io.Writer) error {
+
+	fmt.Println("here yes!")
+	err := e.PrivateKey.Serialize(w)
+	if err != nil {
+		return err
+	}
+	for _, ident := range e.Identities {
+		err = ident.UserId.Serialize(w)
+		if err != nil {
+			return err
+		}
+		err = ident.SelfSignature.Serialize(w)
+		if err != nil {
+			return err
+		}
+		for _, sig := range ident.Signatures {
+			err = sig.Serialize(w)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	for _, subkey := range e.Subkeys {
+		err = subkey.PrivateKey.Serialize(w)
 		if err != nil {
 			return err
 		}
