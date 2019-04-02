@@ -16,12 +16,17 @@ import (
 )
 
 var (
-	sifGroupID uint32 // -g groupid specification
-	sifDescID  uint32 // -i id specification
+	sifGroupID  uint32 // -g groupid specification
+	sifDescID   uint32 // -i id specification
+	localVerify bool   // -l flag
 )
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+
+	// -l, --local flag
+	VerifyCmd.Flags().BoolVarP(&localVerify, "local", "l", false, "only verify with local keys")
+	VerifyCmd.Flags().SetAnnotation("local", "envkey", []string{"LOCAL_VERIFY"})
 
 	VerifyCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
 	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
@@ -39,10 +44,7 @@ var VerifyCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
-		if err := doVerifyCmd(args[0], keyServerURI); err != nil {
-			sylog.Errorf("verification failed: %s", err)
-			os.Exit(2)
-		}
+		doVerifyCmd(args[0], keyServerURI)
 	},
 
 	Use:     docs.VerifyUse,
@@ -51,9 +53,9 @@ var VerifyCmd = &cobra.Command{
 	Example: docs.VerifyExample,
 }
 
-func doVerifyCmd(cpath, url string) error {
+func doVerifyCmd(cpath, url string) {
 	if sifGroupID != 0 && sifDescID != 0 {
-		return fmt.Errorf("only one of -i or -g may be set")
+		sylog.Fatalf("only one of -i or -g may be set")
 	}
 
 	var isGroup bool
@@ -65,5 +67,11 @@ func doVerifyCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
-	return signing.Verify(cpath, url, id, isGroup, authToken, false)
+	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false)
+	if err != nil {
+		sylog.Fatalf("%v", err)
+	}
+	if notLocalKey {
+		os.Exit(1)
+	}
 }
