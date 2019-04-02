@@ -38,7 +38,7 @@ jobs:
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
       - run:
           name: Check code
@@ -56,7 +56,7 @@ jobs:
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
       - run:
           name: Check code
@@ -81,7 +81,7 @@ jobs:
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
       - run:
           name: Check code
@@ -124,7 +124,7 @@ jobs:
           name: Build and Install Singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            ./mconfig -p /usr/local --without-network
+            ./mconfig -v -p /usr/local --without-network
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
@@ -170,7 +170,7 @@ jobs:
           name: Build and Install singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
