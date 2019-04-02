@@ -66,12 +66,12 @@ func (s *stage) insertMetadata() (err error) {
 }
 
 func insertEnvScript(b *types.Bundle) error {
-	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
+	if b.RunSection("environment") && b.Recipe.ImageData.Environment.Script != "" {
 		sylog.Infof("Adding environment to container")
 		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
 		_, err := os.Stat(envScriptPath)
 		if os.IsNotExist(err) {
-			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0755)
+			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment.Script+"\n"), 0755)
 			if err != nil {
 				return err
 			}
@@ -83,7 +83,7 @@ func insertEnvScript(b *types.Bundle) error {
 			}
 			defer f.Close()
 
-			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
+			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment.Script + "\n")
 			if err != nil {
 				return err
 			}
@@ -93,9 +93,9 @@ func insertEnvScript(b *types.Bundle) error {
 }
 
 func insertRunScript(b *types.Bundle) error {
-	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript != "" {
+	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript.Script != "" {
 		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0755)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript.Script+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -104,9 +104,9 @@ func insertRunScript(b *types.Bundle) error {
 }
 
 func insertStartScript(b *types.Bundle) error {
-	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript != "" {
+	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript.Script != "" {
 		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0755)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript.Script+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -115,9 +115,9 @@ func insertStartScript(b *types.Bundle) error {
 }
 
 func insertTestScript(b *types.Bundle) error {
-	if b.RunSection("test") && b.Recipe.ImageData.Test != "" {
+	if b.RunSection("test") && b.Recipe.ImageData.Test.Script != "" {
 		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0755)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test.Script+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -126,11 +126,11 @@ func insertTestScript(b *types.Bundle) error {
 }
 
 func insertHelpScript(b *types.Bundle) error {
-	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
+	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
 		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
 		if err != nil || b.Opts.Force {
 			sylog.Infof("Adding help info")
-			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0644)
+			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help.Script+"\n"), 0644)
 			if err != nil {
 				return err
 			}
@@ -261,7 +261,7 @@ func addBuildLabels(labels map[string]string, b *types.Bundle) error {
 	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
 
 	// help info if help exists in the definition and is run in the build
-	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
+	if b.RunSection("help") && b.Recipe.ImageData.Help.Script != "" {
 		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
 		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
 	}
