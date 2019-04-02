@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	defaultKeyServer = "https://keys.sylabs.io"
+	defaultKeyServer = "https://cloud.sylabs.io/keystore"
 )
 
 var (
