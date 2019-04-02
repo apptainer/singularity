@@ -48,6 +48,9 @@ var PushCmd = &cobra.Command{
 
 		// Push to library requires a valid authToken
 		if authToken != "" {
+			if _, err := os.Stat(args[0]); os.IsNotExist(err) {
+				sylog.Fatalf("Unable to open: %v: %v", args[0], err)
+			}
 			if !unauthenticatedPush {
 				// check if the container is signed
 				imageSigned, err := signing.IsSigned(args[0], "https://keys.sylabs.io", 0, false, authToken, true)
