@@ -64,7 +64,7 @@ require (
 	github.com/spf13/pflag v1.0.3
 	github.com/sylabs/json-resp v0.5.0
 	github.com/sylabs/scs-key-client v0.2.0
-	github.com/sylabs/sif v1.0.2
+	github.com/sylabs/sif v1.0.3
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936 // indirect
