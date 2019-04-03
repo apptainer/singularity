@@ -529,6 +529,10 @@ func (e *EngineOperations) loadImages() error {
 		return err
 	}
 
+	if !img.HasRootfs() {
+		return fmt.Errorf("no root filesystem partition found in image %s", e.EngineConfig.GetImage())
+	}
+
 	if writable && !img.Writable {
 		sylog.Warningf("Can't set writable flag on image, no write permissions")
 		e.EngineConfig.SetWritableImage(false)

@@ -38,64 +38,87 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		return err
 	}
 
+	groupID := -1
+
 	// Get the default system partition image
-	part, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return err
-	}
+	for _, desc := range fimg.DescrArr {
+		if !desc.Used {
+			continue
+		}
+		if desc.Datatype != sif.DataPartition {
+			continue
+		}
+		ptype, err := desc.GetPartType()
+		if err != nil {
+			continue
+		}
+		if ptype != sif.PartPrimSys {
+			continue
+		}
+		fstype, err := desc.GetFsType()
+		if err != nil {
+			continue
+		}
+		if fstype == sif.FsSquash {
+			img.Partitions[0].Type = SQUASHFS
+		} else if fstype == sif.FsExt3 {
+			img.Partitions[0].Type = EXT3
+		} else {
+			return fmt.Errorf("unknown file system type: %v", fstype)
+		}
 
-	// record the fs type
-	fstype, err := part.GetFsType()
-	if err != nil {
-		return err
-	}
-	if fstype == sif.FsSquash {
-		img.Partitions[0].Type = SQUASHFS
-	} else if fstype == sif.FsExt3 {
-		img.Partitions[0].Type = EXT3
-	} else {
-		return fmt.Errorf("unknown file system type: %v", fstype)
-	}
+		groupID = int(desc.Groupid)
 
-	img.Partitions[0].Offset = uint64(part.Fileoff)
-	img.Partitions[0].Size = uint64(part.Filelen)
-	img.Partitions[0].Name = RootFs
+		img.Partitions[0].Offset = uint64(desc.Fileoff)
+		img.Partitions[0].Size = uint64(desc.Filelen)
+		img.Partitions[0].Name = RootFs
+
+		break
+	}
 
 	// store all remaining sections
 	img.Sections = make([]Section, 0)
 
 	for _, desc := range fimg.DescrArr {
+		if !desc.Used {
+			continue
+		}
 		if ptype, err := desc.GetPartType(); err == nil {
-			// overlay partitions
-			if ptype == sif.PartOverlay && part.Groupid == desc.Groupid && desc.Used {
-				fstype, err := desc.GetFsType()
-				if err != nil {
-					continue
-				}
-				partition := Section{
-					Offset: uint64(desc.Fileoff),
-					Size:   uint64(desc.Filelen),
-					Name:   desc.GetName(),
-				}
-				switch fstype {
-				case sif.FsSquash:
-					partition.Type = SQUASHFS
-				case sif.FsExt3:
-					partition.Type = EXT3
-				}
-				img.Partitions = append(img.Partitions, partition)
+			// exclude partitions that are not types data or overlay
+			if ptype != sif.PartData && ptype != sif.PartOverlay {
+				continue
 			}
-		} else {
-			// anything else
-			if desc.Datatype != 0 {
-				data := Section{
-					Offset: uint64(desc.Fileoff),
-					Size:   uint64(desc.Filelen),
-					Type:   uint32(desc.Datatype),
-					Name:   desc.GetName(),
-				}
-				img.Sections = append(img.Sections, data)
+			// ignore overlay partitions not associated to root
+			// filesystem group ID
+			if ptype == sif.PartOverlay && groupID != int(desc.Groupid) {
+				continue
 			}
+			fstype, err := desc.GetFsType()
+			if err != nil {
+				continue
+			}
+			partition := Section{
+				Offset: uint64(desc.Fileoff),
+				Size:   uint64(desc.Filelen),
+				Name:   desc.GetName(),
+			}
+			switch fstype {
+			case sif.FsSquash:
+				partition.Type = SQUASHFS
+			case sif.FsExt3:
+				partition.Type = EXT3
+			default:
+				partition.Type = uint32(fstype)
+			}
+			img.Partitions = append(img.Partitions, partition)
+		} else if desc.Datatype != 0 {
+			data := Section{
+				Offset: uint64(desc.Fileoff),
+				Size:   uint64(desc.Filelen),
+				Type:   uint32(desc.Datatype),
+				Name:   desc.GetName(),
+			}
+			img.Sections = append(img.Sections, data)
 		}
 	}
 

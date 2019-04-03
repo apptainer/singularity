@@ -124,6 +124,9 @@ func TestReader(t *testing.T) {
 		if img.Type != SIF {
 			t.Errorf("unexpected image format: %v", img.Type)
 		}
+		if !img.HasRootfs() {
+			t.Errorf("no root filesystem found")
+		}
 		// test without match criteria
 		if _, err := e.fn(img, "", -1); err == nil {
 			t.Errorf("unexpected success without match criteria")
