@@ -10,7 +10,7 @@
 // sufficient to trigger a build failure like:
 //
 //     ...
-//     ../internal/pkg/util/goversion/version_check.go:19:9: undefined: __BUILD_REQUIRES_GO_VERSION_1_10_OR_LATER__
+//     ../internal/pkg/util/goversion/version_check.go:19:9: undefined: __BUILD_REQUIRES_GO_VERSION_1_11_OR_LATER__
 //
 //
 // This is based on the technique presented at
@@ -19,4 +19,4 @@ package goversion
 
 // keep the variable here in sync with the mininum required version
 // specified in goversion.go
-var _ = __BUILD_REQUIRES_GO_VERSION_1_10_OR_LATER__
+var _ = __BUILD_REQUIRES_GO_VERSION_1_11_OR_LATER__

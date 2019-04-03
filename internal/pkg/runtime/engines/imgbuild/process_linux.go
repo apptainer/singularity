@@ -24,9 +24,9 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// clean environment in which %post and %test scripts are run in
 	e.cleanEnv()
 
-	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
+	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post.Script != "" {
 		// Run %post script here
-		post := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Post)
+		post := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Post.Script)
 		post.Env = e.EngineConfig.OciConfig.Process.Env
 		post.Stdout = os.Stdout
 		post.Stderr = os.Stderr
@@ -41,9 +41,9 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	}
 
 	if e.EngineConfig.RunSection("test") {
-		if !e.EngineConfig.Opts.NoTest && e.EngineConfig.Recipe.BuildData.Test != "" {
+		if !e.EngineConfig.Opts.NoTest && e.EngineConfig.Recipe.BuildData.Test.Script != "" {
 			// Run %test script
-			test := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Test)
+			test := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Test.Script)
 			test.Stdout = os.Stdout
 			test.Stderr = os.Stderr
 

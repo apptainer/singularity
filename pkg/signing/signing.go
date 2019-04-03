@@ -348,7 +348,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			name = i.Name
 			break
 		}
-		author += fmt.Sprintf("\t%s, KeyID %X\n", name, signer.PrimaryKey.KeyId)
+		author += fmt.Sprintf("\t%s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
 	}
 	fmt.Printf("Data integrity checked, authentic and signed by:\n%v", author)
 
@@ -362,7 +362,7 @@ func getSignEntities(fimg *sif.FileImage) ([]string, error) {
 		return nil, err
 	}
 
-	var entities []string
+	entities := make([]string, 0, len(signatures))
 	for _, v := range signatures {
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
