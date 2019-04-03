@@ -19,7 +19,7 @@ var secret bool
 func init() {
 	KeyListCmd.Flags().SetInterspersed(false)
 
-	KeyListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
+	KeyListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "only list private keys")
 	KeyListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
 }
 
@@ -41,10 +41,10 @@ var KeyListCmd = &cobra.Command{
 
 func doKeyListCmd(secret bool) error {
 	if !secret {
-		fmt.Printf("Public key listing (%s):\n\n", sypgp.PublicPath())
+		fmt.Printf("Public keys (%s):\n\n", sypgp.PublicPath())
 		sypgp.PrintPubKeyring()
 	} else {
-		fmt.Printf("Private key listing (%s):\n\n", sypgp.SecretPath())
+		fmt.Printf("Private keys (%s):\n\n", sypgp.SecretPath())
 		sypgp.PrintPrivKeyring()
 	}
 

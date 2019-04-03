@@ -244,11 +244,10 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyListUse   string = `list`
-	KeyListShort string = `List keys from the default key store`
+	KeyListUse   string = `list [list options...]`
+	KeyListShort string = `List OpenPGP keys from the Singularity keychain`
 	KeyListLong  string = `
-  The 'key list' command allows you to list public/private key pairs from the 
-  default user local key store location (e.g., $HOME/.singularity/sypgp).`
+  List OpenPGP keys from the Singularity keychain (default: $HOME/.singularity/sypgp).`
 	KeyListExample string = `
   $ singularity key list`
 
