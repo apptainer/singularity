@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -133,18 +133,17 @@ func getSectionName(line string) string {
 
 // parseTokenSection splits the token into maximum 2 strings separated by a newline,
 // and then inserts the section into the sections map
-//
 func parseTokenSection(tok string, sections map[string]string) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
-		return fmt.Errorf("Section %v: Could not be split into section name and body", split[0])
+		return fmt.Errorf("section %v: could not be split into section name and body", split[0])
 	}
 
 	key := getSectionName(split[0])
 	if appSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
 		if len(sectionSplit) < 2 {
-			return fmt.Errorf("App Section %v: Could not be split into section name and app name", sectionSplit[0])
+			return fmt.Errorf("app section %v: could not be split into section name and app name", sectionSplit[0])
 		}
 
 		key = strings.Join(sectionSplit[0:2], " ")
@@ -162,20 +161,20 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 
 	// skip initial token parsing if it is empty after trimming whitespace
 	if tok != "" {
-		//check if first thing parsed is a header/comment or just a section
+		// check if first thing parsed is a header/comment or just a section
 		if tok[0] != '%' {
 			if err := doHeader(tok, d); err != nil {
 				return fmt.Errorf("failed to parse DefFile header: %v", err)
 			}
 		} else {
-			//this is a section
+			// this is a section
 			if err := parseTokenSection(tok, sectionsMap); err != nil {
 				return err
 			}
 		}
 	}
 
-	//parse remaining sections while scanner can advance
+	// parse remaining sections while scanner can advance
 	for s.Scan() {
 		if err := s.Err(); err != nil {
 			return err
@@ -326,7 +325,7 @@ func doHeader(h string, d *types.Definition) (err error) {
 func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	d.Raw, err = ioutil.ReadAll(r)
 	if err != nil {
-		return d, fmt.Errorf("While attempting to read in definition: %v", err)
+		return d, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
 
 	s := bufio.NewScanner(bytes.NewReader(d.Raw))
