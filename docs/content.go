@@ -201,13 +201,10 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse   string = `key [key options...]`
+	KeyUse   string = `key`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  The 'key' command allows you to manage local OpenPGP key stores by creating
-  a new store and new key pairs. You can also list available keys from the
-  default store. Finally, the key command offers subcommands to communicate
-  with an HKP key server to fetch and upload public keys.`
+  Manage OpenPGP keys.`
 	KeyExample string = `
   All group commands have their own help output:
 
@@ -215,7 +212,7 @@ Enterprise Performance Computing (EPC)`
   $ singularity key list --help`
 
 	// keys : for the hidden `keys` command
-	KeysUse string = `keys [keys options...]`
+	KeysUse string = `keys`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
