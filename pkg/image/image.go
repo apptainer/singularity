@@ -167,9 +167,8 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	img := &Image{
-		Path:       resolvedPath,
-		Name:       filepath.Base(resolvedPath),
-		Partitions: make([]Section, 1),
+		Path: resolvedPath,
+		Name: filepath.Base(resolvedPath),
 	}
 
 	for _, rf := range registeredFormats {

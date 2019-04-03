@@ -59,6 +59,15 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		if err != nil {
 			continue
 		}
+
+		img.Partitions = []Section{
+			{
+				Offset: uint64(desc.Fileoff),
+				Size:   uint64(desc.Filelen),
+				Name:   RootFs,
+			},
+		}
+
 		if fstype == sif.FsSquash {
 			img.Partitions[0].Type = SQUASHFS
 		} else if fstype == sif.FsExt3 {
@@ -68,16 +77,8 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		}
 
 		groupID = int(desc.Groupid)
-
-		img.Partitions[0].Offset = uint64(desc.Fileoff)
-		img.Partitions[0].Size = uint64(desc.Filelen)
-		img.Partitions[0].Name = RootFs
-
 		break
 	}
-
-	// store all remaining sections
-	img.Sections = make([]Section, 0)
 
 	for _, desc := range fimg.DescrArr {
 		if !desc.Used {
