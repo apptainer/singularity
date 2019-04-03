@@ -584,6 +584,14 @@ func (e *Entity) SerializePrivate(w io.Writer, config *packet.Config) (err error
 	return nil
 }
 
+func (e *Entity) SerializePrivateNoConfig(w io.Writer) (err error) {
+	err = e.PrivateKey.Serialize(w)
+	if err != nil {
+		return
+	}
+	return nil
+}
+
 // Serialize writes the public part of the given Entity to w, including
 // signatures from other entities. No private key material will be output.
 func (e *Entity) Serialize(w io.Writer) error {

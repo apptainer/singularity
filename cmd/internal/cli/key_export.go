@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
-	"golang.org/x/crypto/openpgp/armor"
-	"golang.org/x/crypto/openpgp/packet"
 )
 
 var secretExport bool
@@ -31,7 +28,7 @@ func init() {
 
 // KeyExportCmd is `singularity key (or keys) export` and exports a key from either the public or secret local key store.
 var KeyExportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(2),
+	Args: cobra.ExactArgs(2),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   exportRun,
@@ -78,7 +75,9 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		// sort through them, and remove any that match toDelete
 		for _, localEntity := range localEntityList {
 
-			if fmt.Sprintf("%X", localEntity.PrivateKey.PublicKey.Fingerprint) == fingerprint {
+			fmt.Printf("%0X\n", localEntity.PrimaryKey.Fingerprint)
+
+			if fmt.Sprintf("%X", localEntity.PrimaryKey.Fingerprint) == fingerprint {
 				foundKey = true
 				entityToSave = localEntity
 				break
@@ -86,23 +85,17 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 
 		}
 
-		privKeyBuf := bytes.NewBuffer(nil)
-
-		var config *packet.Config
-
-		privKeyWriter, err := armor.Encode(privKeyBuf, openpgp.PrivateKeyType, nil)
-		if err != nil {
-			return fmt.Errorf("error encoding private key")
+		if foundKey {
+			keyString, err = sypgp.SerializePrivateEntityNoConfig(entityToSave, openpgp.PrivateKeyType)
+			file.WriteString(keyString)
+			defer file.Close()
+			if err != nil {
+				return fmt.Errorf("error encoding private key")
+			}
+			fmt.Printf("Private key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
+		} else {
+			return fmt.Errorf("No private keys with fingerprint %s were found to export.\n", fingerprint)
 		}
-
-		err = entityToSave.SerializePrivate(privKeyWriter, config)
-		if err != nil {
-			return fmt.Errorf("error encoding private key")
-		}
-		privKeyWriter.Close()
-
-		file.WriteString(privKeyBuf.String())
-		defer file.Close()
 
 	} else {
 
@@ -115,10 +108,16 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 				break
 			}
 		}
-		keyString, err = sypgp.SerializePublicEntity(entityToSave, openpgp.PublicKeyType)
-		file.WriteString(keyString)
-		defer file.Close()
-		fmt.Printf("Public key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
+
+		if foundKey {
+			keyString, err = sypgp.SerializePublicEntity(entityToSave, openpgp.PublicKeyType)
+			file.WriteString(keyString)
+			defer file.Close()
+			fmt.Printf("Public key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
+		} else {
+			return fmt.Errorf("No public keys with fingerprint %s were found to export.\n", fingerprint)
+		}
+
 	}
 
 	return nil
