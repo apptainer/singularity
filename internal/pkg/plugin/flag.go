@@ -8,7 +8,6 @@ package plugin
 import (
 	"github.com/spf13/pflag"
 	singularity "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
@@ -24,7 +23,6 @@ type flagRegistry struct {
 
 // RegisterStringFlag adds a string flag to the registry
 func (r *flagRegistry) RegisterStringFlag(f pluginapi.StringFlagHook) error {
-	sylog.Debugf("Registering string flag %s", f.Flag.Name)
 	r.FlagSet.StringP(f.Flag.Name, f.Flag.Shorthand, f.Flag.DefValue, f.Flag.Usage)
 
 	hook := flagHook{
@@ -33,13 +31,11 @@ func (r *flagRegistry) RegisterStringFlag(f pluginapi.StringFlagHook) error {
 	}
 
 	r.Hooks = append(r.Hooks, hook)
-	sylog.Debugf("Successfully registered new string flag %s\n", f.Flag.Name)
 	return nil
 }
 
 // RegisterBoolFlag adds a bool flag to the registry
 func (r *flagRegistry) RegisterBoolFlag(f pluginapi.BoolFlagHook) error {
-	sylog.Debugf("Registering bool flag %s", f.Flag.Name)
 	r.FlagSet.BoolP(f.Flag.Name, f.Flag.Shorthand, false, f.Flag.Usage)
 
 	hook := flagHook{
@@ -48,7 +44,6 @@ func (r *flagRegistry) RegisterBoolFlag(f pluginapi.BoolFlagHook) error {
 	}
 	r.Hooks = append(r.Hooks, hook)
 
-	sylog.Debugf("Registered new bool flag hook %v\n", hook)
 	return nil
 }
 
