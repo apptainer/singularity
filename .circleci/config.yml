@@ -15,19 +15,6 @@ jobs:
           paths:
             - src/github.com/sylabs/singularity
 
-  go1.10-stretch:
-    <<: *defaults
-    docker:
-      - image: sylabsio/golang:1.10-stretch
-    steps:
-      - attach_workspace:
-          at: /go
-      - run:
-          name: Build Singularity
-          command: |-
-            ./mconfig -p /usr/local
-            make -j$(nproc) -C ./builddir all
-
   go1.11-stretch:
     <<: *defaults
     docker:
@@ -38,7 +25,7 @@ jobs:
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
       - run:
           name: Check code
@@ -56,7 +43,7 @@ jobs:
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
       - run:
           name: Check code
@@ -81,7 +68,7 @@ jobs:
       - run:
           name: Build Singularity
           command: |-
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
       - run:
           name: Check code
@@ -102,12 +89,12 @@ jobs:
             echo 'export  GOBIN=$HOME/go/bin' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.11
+          name: Update Go to 1.11.6
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.11.6.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.11.6.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
@@ -124,7 +111,7 @@ jobs:
           name: Build and Install Singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            ./mconfig -p /usr/local --without-network
+            ./mconfig -v -p /usr/local --without-network
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
@@ -147,12 +134,12 @@ jobs:
             echo 'export  GOCACHE=off' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.11
+          name: Update Go to 1.11.6
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.11.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.11.6.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.11.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.11.6.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
@@ -170,7 +157,7 @@ jobs:
           name: Build and Install singularity
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            ./mconfig -p /usr/local
+            ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
@@ -184,9 +171,6 @@ workflows:
   build_and_test:
     jobs:
       - get_source
-      - go1.10-stretch:
-          requires:
-            - get_source
       - go1.11-stretch:
           requires:
             - get_source
