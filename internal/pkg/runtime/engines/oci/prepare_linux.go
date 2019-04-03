@@ -75,13 +75,14 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	// reset state config that could be passed to engine
 	e.EngineConfig.State = ociruntime.State{}
 
-	var gids []int
+	user := &e.EngineConfig.OciConfig.Process.User
+	gids := make([]int, 0, len(user.AdditionalGids)+1)
 
-	uid := int(e.EngineConfig.OciConfig.Process.User.UID)
-	gid := e.EngineConfig.OciConfig.Process.User.GID
+	uid := int(user.UID)
+	gid := user.GID
 
 	gids = append(gids, int(gid))
-	for _, g := range e.EngineConfig.OciConfig.Process.User.AdditionalGids {
+	for _, g := range user.AdditionalGids {
 		gids = append(gids, int(g))
 	}
 
