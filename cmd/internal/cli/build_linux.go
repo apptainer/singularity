@@ -65,18 +65,21 @@ func run(cmd *cobra.Command, args []string) {
 		}
 
 		// parse definition to determine build source
-		def, err := build.MakeDef(spec, false)
+		defs, err := build.MakeAllDefs(spec, false)
 		if err != nil {
 			sylog.Fatalf("Unable to build from %s: %v", spec, err)
 		}
 
-		// only resolve remote endpoints if library is the build source
-		if def.Header["bootstrap"] == "library" {
-			handleBuildFlags(cmd)
+		// only resolve remote endpoints if library is a build source
+		for _, d := range defs {
+			if d.Header != nil && d.Header["bootstrap"] == "library" {
+				handleBuildFlags(cmd)
+				continue
+			}
 		}
 
-		b, err := build.NewBuild(
-			spec,
+		b, err := build.New(
+			defs,
 			build.Config{
 				Dest:      dest,
 				Format:    buildFormat,
