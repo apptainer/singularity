@@ -135,6 +135,35 @@ func getMksquashfsPath() (string, error) {
 	return exec.LookPath(p)
 }
 
+// getMksquashfsCompFlag returns the compression flag to be passed to
+// mksquashfs
+func getMksquashfsCompFlag(mksquashfsPath string) ([]string, error) {
+	fh, err := ioutil.TempFile("", "")
+	if err != nil {
+		return nil, err
+	}
+	fh.Close()
+	fn := fh.Name()
+	defer os.Remove(fn)
+
+	gzipCompFlags := []string{"-comp", "gzip"}
+	args := append([]string{"/dev/null", fn, "-noappend"}, gzipCompFlags...)
+	cmd := exec.Command(mksquashfsPath, args...)
+
+	_, err = cmd.CombinedOutput()
+	if err != nil || cmd.ProcessState.ExitCode() != 0 {
+		// assume that any error when trying to run the command
+		// is due to not supporting the -comp flag. It could be
+		// that the problem is that the mksquashfs binary is not
+		// available or fails to run, in which case it's ok to
+		// report that the -comp flag is not supported, as it
+		// won't make a difference.
+		return nil, nil
+	}
+
+	return gzipCompFlags, nil
+}
+
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	sylog.Infof("Creating SIF file...")
@@ -144,6 +173,11 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While searching for mksquashfs: %v", err)
 	}
 
+	gzipCompFlags, err := getMksquashfsCompFlag(mksquashfs)
+	if err != nil {
+		return fmt.Errorf("While checking compression flags for mksquashfs: %v", err)
+	}
+
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
 	squashfsPath := f.Name() + ".img"
 	f.Close()
@@ -151,12 +185,14 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	os.Remove(squashfsPath)
 	defer os.Remove(squashfsPath)
 
-	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
+	args := append([]string{b.Rootfs(), squashfsPath, "-noappend"}, gzipCompFlags...)
 
 	// build squashfs with all-root flag when building as a user
 	if syscall.Getuid() != 0 {
 		args = append(args, "-all-root")
 	}
+
+	sylog.Debugf("Running %s %s", mksquashfs, strings.Join(args, " "))
 
 	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	stderr, err := mksquashfsCmd.StderrPipe()
