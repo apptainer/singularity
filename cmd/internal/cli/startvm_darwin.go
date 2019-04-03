@@ -36,16 +36,16 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 	// Bind mounts
 	singBinds := []string{""}
 
+	// If we surpass 48 bind mounts ... error. We can't do anything at this point.
+	if len(BindPaths) > 48 {
+		sylog.Fatalf("Surpassed max amount of binds we can pass to virtual machine")
+	}
+
 	// Set slot to 26. slot has a max value of 31, so this will give us a max of 48 bind mounts from the Mac host.
 	slot := 26
 	function := 0
 
 	for _, bindpath := range BindPaths {
-		// If we somehow surpass slot 31 ... error. We can't do anything at this point.
-		if slot > 31 {
-			sylog.Fatalf("Surpassed max amount of binds we can pass to virtual machine")
-		}
-
 		splitted := strings.Split(bindpath, ":")
 		src := splitted[0]
 		dst := ""
