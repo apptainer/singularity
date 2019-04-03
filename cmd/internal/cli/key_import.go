@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"bytes"
-	"crypto"
 	"fmt"
 	"os"
 
@@ -17,7 +15,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/errors"
-	"golang.org/x/crypto/openpgp/packet"
 )
 
 func init() {
@@ -38,9 +35,6 @@ var KeyImportCmd = &cobra.Command{
 
 func doKeyImportCmd(path string) error {
 	var fingerprint [20]byte
-
-	var conf = &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
-
 	// PublicKeyType is the armor type for a PGP public key.
 	var PublicKeyType = "PGP PUBLIC KEY BLOCK"
 
@@ -128,28 +122,19 @@ func doKeyImportCmd(path string) error {
 			// Go through the keystore checking for the given fingerprint
 			for _, pathEntity := range pathEntityList {
 				isInStore := false
-				fingerprint = pathEntity.PrivateKey.PublicKey.Fingerprint
-				emptyByteVar := make([]byte, 20)
+				fingerprint = pathEntity.PrimaryKey.Fingerprint
 
-				//fmt.Printf("%0X", fingerprint)
 				for _, privateEntity := range privateEntityList {
-
-					if privateEntity.PrivateKey != nil {
-						if !bytes.Equal(privateEntity.PrivateKey.PublicKey.Fingerprint[:], emptyByteVar[:]) {
-							if privateEntity.PrivateKey.PublicKey.Fingerprint == fingerprint {
-								isInStore = true
-								break
-							}
-
-						} else {
-							continue
-						}
+					if privateEntity.PrimaryKey.Fingerprint == fingerprint {
+						isInStore = true
+						break
 					}
 
 				}
+
 				if !isInStore {
 
-					if err = pathEntity.SerializePrivate(secretFilePath, conf); err != nil {
+					if err = pathEntity.Serialize(secretFilePath); err != nil {
 						return err
 					}
 					fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)
@@ -157,6 +142,7 @@ func doKeyImportCmd(path string) error {
 					fmt.Printf("The key you want to add with fingerprint %0X already belongs to the keystore\n", fingerprint)
 				}
 			}
+
 		}
 	}
 
