@@ -1,3 +1,4 @@
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2018, Divya Cote <divya.cote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE file distributed with the sources of this project regarding your
@@ -39,10 +40,10 @@ func readableSize(size uint64) string {
 
 // FmtHeader formats the output of a SIF file global header
 func (fimg *FileImage) FmtHeader() string {
-	s := fmt.Sprintln("Launch:  ", string(fimg.Header.Launch[:]))
-	s += fmt.Sprintln("Magic:   ", string(fimg.Header.Magic[:]))
-	s += fmt.Sprintln("Version: ", string(fimg.Header.Version[:]))
-	s += fmt.Sprintln("Arch:    ", GetGoArch(string(fimg.Header.Arch[:HdrArchLen-1])))
+	s := fmt.Sprintln("Launch:  ", cstrToString(fimg.Header.Launch[:]))
+	s += fmt.Sprintln("Magic:   ", cstrToString(fimg.Header.Magic[:]))
+	s += fmt.Sprintln("Version: ", cstrToString(fimg.Header.Version[:]))
+	s += fmt.Sprintln("Arch:    ", GetGoArch(cstrToString(fimg.Header.Arch[:])))
 	s += fmt.Sprintln("ID:      ", fimg.Header.ID)
 	s += fmt.Sprintln("Ctime:   ", time.Unix(fimg.Header.Ctime, 0))
 	s += fmt.Sprintln("Mtime:   ", time.Unix(fimg.Header.Mtime, 0))
@@ -71,6 +72,8 @@ func datatypeStr(dtype Datatype) string {
 		return "Signature"
 	case DataGenericJSON:
 		return "JSON.Generic"
+	case DataGeneric:
+		return "Generic/Raw"
 	}
 	return "Unknown data-type"
 }
@@ -128,7 +131,7 @@ func (fimg *FileImage) FmtDescrList() string {
 	s += fmt.Sprintln("------------------------------------------------------------------------------")
 
 	for _, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			s += fmt.Sprintf("%-4d ", v.ID)
@@ -155,7 +158,7 @@ func (fimg *FileImage) FmtDescrList() string {
 				f, _ := v.GetFsType()
 				p, _ := v.GetPartType()
 				a, _ := v.GetArch()
-				s += fmt.Sprintf("|%s (%s/%s/%s)\n", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p), GetGoArch(string(a[:HdrArchLen-1])))
+				s += fmt.Sprintf("|%s (%s/%s/%s)\n", datatypeStr(v.Datatype), fstypeStr(f), parttypeStr(p), GetGoArch(cstrToString(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
 				s += fmt.Sprintf("|%s (%s)\n", datatypeStr(v.Datatype), hashtypeStr(h))
@@ -173,7 +176,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else if v.ID == uint32(id) {
 			s = fmt.Sprintln("Descr slot#:", i)
@@ -208,7 +211,7 @@ func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 				a, _ := v.GetArch()
 				s += fmt.Sprintln("  Fstype:   ", fstypeStr(f))
 				s += fmt.Sprintln("  Parttype: ", parttypeStr(p))
-				s += fmt.Sprintln("  Arch:     ", GetGoArch(string(a[:HdrArchLen-1])))
+				s += fmt.Sprintln("  Arch:     ", GetGoArch(cstrToString(a[:])))
 			case DataSignature:
 				h, _ := v.GetHashType()
 				e, _ := v.GetEntityString()
