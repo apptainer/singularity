@@ -204,7 +204,7 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage OpenPGP keys both locally via a Singluarity keychain
+  Manage OpenPGP keys both locally via a Singularity keychain
   and remotely via a Sylabs Cloud Keystore.`
 	KeyExample string = `
   All group commands have their own help output:
