@@ -115,8 +115,8 @@ if test -n "${SINGULARITY_APPNAME:-}"; then
 elif test -x "/.singularity.d/test"; then
     exec "/.singularity.d/test" "$@"
 else
-    echo "No Singularity container test found, executing /bin/sh"
-    exec /bin/sh "$@"
+    echo "No Singularity container test found, executing /bin/sh -c true"
+    exec /bin/sh -c true
 fi
 `
 	// Contents of /.singularity.d/env/01-base.sh

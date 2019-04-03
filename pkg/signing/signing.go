@@ -381,7 +381,7 @@ func getSignEntities(fimg *sif.FileImage) ([]string, error) {
 		return nil, err
 	}
 
-	var entities []string
+	entities := make([]string, 0, len(signatures))
 	for _, v := range signatures {
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
