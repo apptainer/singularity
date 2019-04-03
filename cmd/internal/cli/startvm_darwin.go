@@ -7,17 +7,33 @@ package cli
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+// Lots of love from:
+// https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
+func genString(n int) string {
+	validChar := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = validChar[rand.Intn(len(validChar))]
+	}
+	return string(s)
+}
+
 func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string) []string {
+	// Seed on call to getHypervisorArgs()
+	rand.Seed(time.Now().UnixNano())
+
 	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
 
@@ -28,7 +44,6 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		"-m", VMRAM,
 		"-c", VMCPU,
 		"-s", "0:0,hostbridge",
-		"-s", hdString,
 		"-s", "31,lpc",
 		"-l", "com1,stdio",
 	}
@@ -53,9 +68,10 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		}
 
 		sylog.Debugf("Bind path: " + src + " -> " + dst)
-		// TODO: Figure out if src is a directory or not
-		mntTag := filepath.Base(src)
+		// 6 char is the limit for a usable mount tag...
+		mntTag := genString(6)
 
+		// TODO: Figure out if src is a directory or not
 		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(idx), mntTag, src)
 		args = append(args, "-s", pciArgs)
 
@@ -70,15 +86,30 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		sylog.Fatalf("Failed to get current user")
 	}
 
+	// NOTE: The 0:4:x PCI slot is to be used for static mounts. (BUS:SLOT:FUNCTION)
 	// Force $HOME to be mounted
 	// TODO: engineConfig.GetHomeSource() / GetHomeDest() -- should probably be used
 	homeSrc := usr.HomeDir
 	pciArgs := fmt.Sprintf("4:0,virtio-9p,home=%s", homeSrc)
 	homeBind := fmt.Sprintf("home:%s", homeSrc)
 	singBinds = append(singBinds, homeBind)
-
 	sylog.Debugf("PCI: %s", pciArgs)
 	args = append(args, "-s", pciArgs)
+
+	// Check for Sandbox Image
+	sylog.Debugf("Check for sandbox image")
+	if f, err := os.Stat(sifImage); err == nil {
+		if f.IsDir() {
+			sylog.Debugf("Image is sandbox. Setting up share.")
+			pciArgs = fmt.Sprintf("4:1,virtio-9p,runimg=%s", sifImage)
+			args = append(args, "-s", pciArgs)
+			sboxImgBind := fmt.Sprintf("runimg:/runImage")
+			singBinds = append(singBinds, sboxImgBind)
+		} else {
+			// We are not a sandbox
+			args = append(args, "-s", hdString)
+		}
+	}
 
 	userInfo := fmt.Sprintf("%s:%s:%s", usr.Username, usr.Uid, usr.Gid)
 

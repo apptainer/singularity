@@ -1,0 +1,22 @@
+Bootstrap: docker
+From: alpine:latest
+Stage: one
+
+%files
+    file2 onefile2
+    file1 onefile1
+
+%files from somewhere
+    file1 file1copy
+    file2 file2copy
+
+%post
+    echo "Hello"
+
+%files from somewhere
+    file1 file1copy2
+    file2 file2copy2
+
+%files
+    file1 twofile1
+    file2 twofile2

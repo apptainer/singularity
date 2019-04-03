@@ -6,6 +6,7 @@
 package imgbuild
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 	"net/rpc"
@@ -18,6 +19,7 @@ import (
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // CreateContainer creates a container
@@ -74,9 +76,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// run setup/files sections here to allow injection of custom /etc/hosts or /etc/resolv.conf
-	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
+	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup.Script != "" {
 		// Run %setup script here
-		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
+		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup.Script)
 		setup.Env = engine.EngineConfig.OciConfig.Process.Env
 		setup.Stdout = os.Stdout
 		setup.Stderr = os.Stderr
@@ -183,11 +185,18 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 }
 
 func (engine *EngineOperations) copyFiles() error {
+	var output, stderr bytes.Buffer
+	files := types.Files{}
+	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
+		if f.Args == "" {
+			files = f
+		}
+	}
 	// iterate through filetransfers
-	for _, transfer := range engine.EngineConfig.Recipe.BuildData.Files {
+	for _, transfer := range files.Files {
 		// sanity
 		if transfer.Src == "" {
-			sylog.Warningf("Attempt to copy file with no name...")
+			sylog.Warningf("Attempt to copy file with no name, skipping.")
 			continue
 		}
 		// dest = source if not specified
@@ -198,8 +207,10 @@ func (engine *EngineOperations) copyFiles() error {
 		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
+		copy.Stdout = &output
+		copy.Stderr = &stderr
 		if err := copy.Run(); err != nil {
-			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
+			return fmt.Errorf("while copying %v to %v: %v: %v", transfer.Src, transfer.Dst, err, stderr.String())
 		}
 	}
 
