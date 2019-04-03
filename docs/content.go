@@ -204,7 +204,7 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage OpenPGP keys.`
+  Manage OpenPGP keys in your Singularity keychain (default: $HOME/.singularity/sypgp).`
 	KeyExample string = `
   All group commands have their own help output:
 
