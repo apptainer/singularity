@@ -7,17 +7,33 @@ package cli
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+// Lots of love from:
+// https://stackoverflow.com/questions/22892120/how-to-generate-a-random-string-of-a-fixed-length-in-go
+func genString(n int) string {
+	validChar := []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	s := make([]rune, n)
+	for i := range s {
+		s[i] = validChar[rand.Intn(len(validChar))]
+	}
+	return string(s)
+}
+
 func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string) []string {
+	// Seed on call to getHypervisorArgs()
+	rand.Seed(time.Now().UnixNano())
+
 	// Setup some needed variables
 	hdString := fmt.Sprintf("2:0,ahci-hd,%s", sifImage)
 
@@ -52,9 +68,10 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		}
 
 		sylog.Debugf("Bind path: " + src + " -> " + dst)
-		// TODO: Figure out if src is a directory or not
-		mntTag := filepath.Base(src)
+		// 6 char is the limit for a usable mount tag...
+		mntTag := genString(6)
 
+		// TODO: Figure out if src is a directory or not
 		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(idx), mntTag, src)
 		args = append(args, "-s", pciArgs)
 
