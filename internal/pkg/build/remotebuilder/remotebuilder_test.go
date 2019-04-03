@@ -22,7 +22,7 @@ import (
 	"github.com/gorilla/websocket"
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/build/types"
+	types "github.com/sylabs/singularity/pkg/build/legacy"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 

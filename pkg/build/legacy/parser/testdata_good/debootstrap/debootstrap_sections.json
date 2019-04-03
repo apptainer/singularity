@@ -1,0 +1,5 @@
+[  
+   {  
+      "Header":"Bootstrap: debootstrap\nOSVersion: xenial\nMirrorURL:  http://us.archive.ubuntu.com/ubuntu/\nInclude: somepackage\n"
+   }
+]
