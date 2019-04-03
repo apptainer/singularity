@@ -102,7 +102,7 @@ func (s *sifBundle) Create(ociConfig *specs.Spec) error {
 	if img.Type != image.SIF {
 		return fmt.Errorf("%s is not a SIF image", s.image)
 	}
-	if !img.HasRootfs() {
+	if !img.HasRootFs() {
 		return fmt.Errorf("no root filesystem found in SIF %s", s.image)
 	}
 	if img.Partitions[0].Type != image.SQUASHFS {

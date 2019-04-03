@@ -529,7 +529,7 @@ func (e *EngineOperations) loadImages() error {
 		return err
 	}
 
-	if !img.HasRootfs() {
+	if !img.HasRootFs() {
 		return fmt.Errorf("no root filesystem partition found in image %s", e.EngineConfig.GetImage())
 	}
 

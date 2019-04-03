@@ -134,8 +134,8 @@ func (i *Image) AuthorizedGroup(groups []string) (bool, error) {
 	return authorized, nil
 }
 
-// HasRootfs returns if image contains a root filesystem partition
-func (i *Image) HasRootfs() bool {
+// HasRootFs returns if image contains a root filesystem partition
+func (i *Image) HasRootFs() bool {
 	for _, p := range i.Partitions {
 		if p.Name == RootFs {
 			return true
