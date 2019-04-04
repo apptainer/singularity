@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"go/build"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -145,7 +146,10 @@ func makeSIF(sourceDir, sifPath string) error {
 	if err != nil {
 		return err
 	}
-	defer plObjInput.Fp.Close()
+
+	if fp, ok := plObjInput.Fp.(io.Closer); ok {
+		defer fp.Close()
+	}
 
 	// add plugin object file descriptor to sif
 	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plObjInput)
@@ -155,7 +159,9 @@ func makeSIF(sourceDir, sifPath string) error {
 	if err != nil {
 		return err
 	}
-	defer plManifestInput.Fp.Close()
+	if fp, ok := plManifestInput.Fp.(io.Closer); ok {
+		defer fp.Close()
+	}
 
 	// add plugin manifest descriptor to sif
 	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plManifestInput)
@@ -187,16 +193,18 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 	}
 
 	// open plugin object file
-	objInput.Fp, err = os.Open(objInput.Fname)
+	fp, err := os.Open(objInput.Fname)
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", objInput.Fname, err)
 	}
 
 	// stat file to obtain size
-	fstat, err := objInput.Fp.Stat()
+	fstat, err := fp.Stat()
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", objInput.Fname, err)
 	}
+
+	objInput.Fp = fp
 	objInput.Size = fstat.Size()
 
 	// populate objInput.Extra with appropriate Fstype & Parttype
@@ -214,8 +222,6 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 //
 // Datatype: sif.DataGenericJSON
 func getPluginManifestDescr(manifestPath string) (sif.DescriptorInput, error) {
-	var err error
-
 	manifestInput := sif.DescriptorInput{
 		Datatype: sif.DataGenericJSON,
 		Groupid:  sif.DescrDefaultGroup,
@@ -224,16 +230,18 @@ func getPluginManifestDescr(manifestPath string) (sif.DescriptorInput, error) {
 	}
 
 	// open plugin object file
-	manifestInput.Fp, err = os.Open(manifestInput.Fname)
+	fp, err := os.Open(manifestInput.Fname)
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", manifestInput.Fname, err)
 	}
 
 	// stat file to obtain size
-	fstat, err := manifestInput.Fp.Stat()
+	fstat, err := fp.Stat()
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", manifestInput.Fname, err)
 	}
+
+	manifestInput.Fp = fp
 	manifestInput.Size = fstat.Size()
 
 	return manifestInput, nil
