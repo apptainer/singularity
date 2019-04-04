@@ -7,6 +7,7 @@ package cmdline
 
 import (
 	"os"
+	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -25,6 +26,7 @@ type Flag struct {
 	Hidden       bool
 	EnvKeys      []string
 	EnvHandler   EnvHandler
+	ExcludedOS   []string
 }
 
 // FlagManager ...
@@ -57,6 +59,11 @@ func (m *FlagManager) RegisterFlagAnnotation(flag *Flag, cmd *cobra.Command) {
 
 // RegisterCmdFlag ...
 func (m *FlagManager) RegisterCmdFlag(flag *Flag, cmds ...*cobra.Command) {
+	for _, os := range flag.ExcludedOS {
+		if os == runtime.GOOS {
+			return
+		}
+	}
 	switch flag.DefaultValue.(type) {
 	case string:
 		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
