@@ -11,6 +11,7 @@ import (
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
@@ -18,13 +19,20 @@ var (
 	PushLibraryURI string
 )
 
+// --library
+var pushLibraryURIFlag = cmdline.Flag{
+	ID:           "pushLibraryURIFlag",
+	Value:        &PushLibraryURI,
+	DefaultValue: "https://library.sylabs.io",
+	Name:         "library",
+	Usage:        "the library to push to",
+	EnvKeys:      []string{"LIBRARY"},
+}
+
 func init() {
-	PushCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(PushCmd, false)
 
-	PushCmd.Flags().StringVar(&PushLibraryURI, "library", "https://library.sylabs.io", "the library to push to")
-	PushCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
-
-	SingularityCmd.AddCommand(PushCmd)
+	flagManager.RegisterCmdFlag(&pushLibraryURIFlag, PushCmd)
 }
 
 // PushCmd singularity push

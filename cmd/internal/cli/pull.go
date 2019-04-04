@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 const (
@@ -43,33 +44,72 @@ var (
 	PullImageName string
 )
 
+// --library
+var pullLibraryURIFlag = cmdline.Flag{
+	ID:           "pullLibraryURIFlag",
+	Value:        &PushLibraryURI,
+	DefaultValue: "https://library.sylabs.io",
+	Name:         "library",
+	Usage:        "download images from the provided library",
+	EnvKeys:      []string{"LIBRARY"},
+}
+
+// -F|--force
+var pullForceFlag = cmdline.Flag{
+	ID:           "pullForceFlag",
+	Value:        &force,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "overwrite an image file if it exists",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// --name
+var pullNameFlag = cmdline.Flag{
+	ID:           "pullNameFlag",
+	Value:        &PullImageName,
+	DefaultValue: "",
+	Name:         "name",
+	Usage:        "specify a custom image name",
+	EnvKeys:      []string{"NAME"},
+}
+
+// --tmpdir
+var pullTmpdirFlag = cmdline.Flag{
+	ID:           "pullTmpdirFlag",
+	Value:        &tmpDir,
+	DefaultValue: false,
+	Hidden:       true,
+	Name:         "tmpdir",
+	Usage:        "specify a temporary directory to use for build",
+	EnvKeys:      []string{"TMPDIR"},
+}
+
+// --nohttps
+var pullNoHTTPSFlag = cmdline.Flag{
+	ID:           "pullNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Usage:        "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)",
+	EnvKeys:      []string{"NOHTTPS"},
+}
+
 func init() {
-	PullCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(PullCmd, false)
 
-	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
-	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+	flagManager.RegisterCmdFlag(&pullForceFlag, PullCmd)
+	flagManager.RegisterCmdFlag(&pullLibraryURIFlag, PullCmd)
+	flagManager.RegisterCmdFlag(&pullNameFlag, PullCmd)
+	flagManager.RegisterCmdFlag(&pullNoHTTPSFlag, PullCmd)
+	flagManager.RegisterCmdFlag(&pullTmpdirFlag, PullCmd)
 
-	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
-	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
+	flagManager.RegisterCmdFlag(&actionDockerUsernameFlag, PullCmd)
+	flagManager.RegisterCmdFlag(&actionDockerPasswordFlag, PullCmd)
+	flagManager.RegisterCmdFlag(&actionDockerLoginFlag, PullCmd)
 
-	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
-	PullCmd.Flags().Lookup("name").Hidden = true
-	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
-
-	PullCmd.Flags().StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
-	PullCmd.Flags().Lookup("tmpdir").Hidden = true
-	PullCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
-
-	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)")
-	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
-
-	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
-	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
-	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
-
-	PullCmd.Flags().AddFlag(BuildCmd.Flags().Lookup("no-cleanup"))
-
-	SingularityCmd.AddCommand(PullCmd)
+	flagManager.RegisterCmdFlag(&buildNoCleanupFlag, PullCmd)
 }
 
 // PullCmd singularity pull

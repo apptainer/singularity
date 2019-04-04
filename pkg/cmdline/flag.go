@@ -49,9 +49,8 @@ func NewFlagManager() *FlagManager {
 
 // RegisterFlagAnnotation ...
 func (m *FlagManager) RegisterFlagAnnotation(flag *Flag, cmd *cobra.Command) {
-	if flag.Tag != "" {
-		cmd.Flags().SetAnnotation(flag.Name, "argtag", []string{flag.Tag})
-	}
+	cmd.Flags().SetAnnotation(flag.Name, "argtag", []string{flag.Tag})
+
 	if len(flag.EnvKeys) > 0 {
 		cmd.Flags().SetAnnotation(flag.Name, "envkey", flag.EnvKeys)
 	}

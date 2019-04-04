@@ -11,14 +11,25 @@ import (
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
 	pluginName string
 )
 
+// -n|--name
+var pluginInstallNameFlag = cmdline.Flag{
+	ID:           "pluginInstallNameFlag",
+	Value:        &pluginName,
+	DefaultValue: "",
+	Name:         "name",
+	ShortHand:    "n",
+	Usage:        "Name to install the plugin as, defaults to the value in the manifest",
+}
+
 func init() {
-	PluginInstallCmd.Flags().StringVarP(&pluginName, "name", "n", "", "Name to install the plugin as, defaults to the value in the manifest")
+	flagManager.RegisterCmdFlag(&pluginInstallNameFlag, PluginInstallCmd)
 }
 
 // PluginInstallCmd takes a compiled plugin.sif file and installs it

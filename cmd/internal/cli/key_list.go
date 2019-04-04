@@ -17,8 +17,6 @@ import (
 var secret bool
 
 func init() {
-	KeyListCmd.Flags().SetInterspersed(false)
-
 	KeyListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
 	KeyListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
 }

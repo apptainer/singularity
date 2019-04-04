@@ -21,16 +21,14 @@ var (
 )
 
 func init() {
-	SingularityCmd.AddCommand(KeyCmd)
-
-	// key commands
-	KeyCmd.AddCommand(KeyNewPairCmd)
-	KeyCmd.AddCommand(KeyListCmd)
-	KeyCmd.AddCommand(KeySearchCmd)
-	KeyCmd.AddCommand(KeyPullCmd)
-	KeyCmd.AddCommand(KeyPushCmd)
-	KeyCmd.AddCommand(KeyImportCmd)
-	KeyCmd.AddCommand(KeyRemoveCmd)
+	cmdManager.RegisterCmd(KeyCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd, false)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores

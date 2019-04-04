@@ -17,9 +17,20 @@ import (
 var ociArgs singularity.OciArgs
 
 func init() {
-	SingularityCmd.AddCommand(OciCmd)
+	cmdManager.RegisterCmd(OciCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciStartCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciCreateCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciRunCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciDeleteCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciKillCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciAttachCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciExecCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciUpdateCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciPauseCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciResumeCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciMountCmd, false)
+	cmdManager.RegisterSubCmd(OciCmd, OciUmountCmd, false)
 
-	OciCreateCmd.Flags().SetInterspersed(false)
 	OciCreateCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
 	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 	OciCreateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
@@ -32,25 +43,15 @@ func init() {
 	OciCreateCmd.Flags().StringVar(&ociArgs.PidFile, "pid-file", "", "specify the pid file")
 	OciCreateCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
 
-	OciStartCmd.Flags().SetInterspersed(false)
-	OciDeleteCmd.Flags().SetInterspersed(false)
-	OciAttachCmd.Flags().SetInterspersed(false)
-	OciExecCmd.Flags().SetInterspersed(false)
-	OciPauseCmd.Flags().SetInterspersed(false)
-	OciResumeCmd.Flags().SetInterspersed(false)
-
-	OciStateCmd.Flags().SetInterspersed(false)
 	OciStateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
 	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
 
-	OciKillCmd.Flags().SetInterspersed(false)
 	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "SIGTERM", "signal sent to the container")
-	OciKillCmd.Flags().SetInterspersed(false)
+
 	OciKillCmd.Flags().BoolVarP(&ociArgs.ForceKill, "force", "f", false, "kill container process with SIGKILL")
-	OciKillCmd.Flags().SetInterspersed(false)
+
 	OciKillCmd.Flags().Uint32VarP(&ociArgs.KillTimeout, "timeout", "t", 0, "timeout in second before killing container")
 
-	OciRunCmd.Flags().SetInterspersed(false)
 	OciRunCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
 	OciRunCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
 	OciRunCmd.Flags().StringVarP(&ociArgs.LogPath, "log-path", "l", "", "specify the log file path")
@@ -60,22 +61,7 @@ func init() {
 	OciRunCmd.Flags().StringVar(&ociArgs.PidFile, "pid-file", "", "specify the pid file")
 	OciRunCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
 
-	OciUpdateCmd.Flags().SetInterspersed(false)
 	OciUpdateCmd.Flags().StringVarP(&ociArgs.FromFile, "from-file", "f", "", "specify path to OCI JSON cgroups resource file ('-' to read from STDIN)")
-
-	OciCmd.AddCommand(OciStartCmd)
-	OciCmd.AddCommand(OciCreateCmd)
-	OciCmd.AddCommand(OciRunCmd)
-	OciCmd.AddCommand(OciDeleteCmd)
-	OciCmd.AddCommand(OciKillCmd)
-	OciCmd.AddCommand(OciStateCmd)
-	OciCmd.AddCommand(OciAttachCmd)
-	OciCmd.AddCommand(OciExecCmd)
-	OciCmd.AddCommand(OciUpdateCmd)
-	OciCmd.AddCommand(OciPauseCmd)
-	OciCmd.AddCommand(OciResumeCmd)
-	OciCmd.AddCommand(OciMountCmd)
-	OciCmd.AddCommand(OciUmountCmd)
 }
 
 func ensureRootPriv(cmd *cobra.Command, args []string) {

@@ -15,8 +15,6 @@ import (
 )
 
 func init() {
-	KeySearchCmd.Flags().SetInterspersed(false)
-
 	KeySearchCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "specify the key server URL")
 	KeySearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
 }

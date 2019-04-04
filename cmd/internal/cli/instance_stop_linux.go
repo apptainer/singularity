@@ -10,31 +10,71 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
+// -u|--user
+var instanceStopUserFlag = cmdline.Flag{
+	ID:           "instanceStopUserFlag",
+	Value:        &username,
+	DefaultValue: "",
+	Name:         "user",
+	ShortHand:    "u",
+	Usage:        "If running as root, stop instances belonging to user",
+	Tag:          "<username>",
+	EnvKeys:      []string{"USER"},
+}
+
+// -a|--all
+var instanceStopAllFlag = cmdline.Flag{
+	ID:           "instanceStopAllFlag",
+	Value:        &stopAll,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "stop all user's instances",
+	EnvKeys:      []string{"ALL"},
+}
+
+// -f|--force
+var instanceStopForceFlag = cmdline.Flag{
+	ID:           "instanceStopForceFlag",
+	Value:        &forceStop,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "force kill instance",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// -s|--signal
+var instanceStopSignalFlag = cmdline.Flag{
+	ID:           "instanceStopSignalFlag",
+	Value:        &stopSignal,
+	DefaultValue: "",
+	Name:         "signal",
+	ShortHand:    "s",
+	Usage:        "signal sent to the instance",
+	Tag:          "<signal>",
+	EnvKeys:      []string{"SIGNAL"},
+}
+
+// -t|--timeout
+var instanceStopTimeoutFlag = cmdline.Flag{
+	ID:           "instanceStopTimeoutFlag",
+	Value:        &stopTimeout,
+	DefaultValue: 10,
+	Name:         "timeout",
+	ShortHand:    "t",
+	Usage:        "force kill non stopped instances after X seconds",
+}
+
 func init() {
-	InstanceStopCmd.Flags().SetInterspersed(false)
-
-	// -u|--user
-	InstanceStopCmd.Flags().StringVarP(&username, "user", "u", "", `if running as root, list instances from "<username>"`)
-	InstanceStopCmd.Flags().SetAnnotation("user", "argtag", []string{"<username>"})
-	InstanceStopCmd.Flags().SetAnnotation("user", "envkey", []string{"USER"})
-
-	// -a|--all
-	InstanceStopCmd.Flags().BoolVarP(&stopAll, "all", "a", false, "stop all user's instances")
-	InstanceStopCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
-
-	// -f|--force
-	InstanceStopCmd.Flags().BoolVarP(&forceStop, "force", "F", false, "force kill instance")
-	InstanceStopCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
-
-	// -s|--signal
-	InstanceStopCmd.Flags().StringVarP(&stopSignal, "signal", "s", "", "signal sent to the instance")
-	InstanceStopCmd.Flags().SetAnnotation("signal", "argtag", []string{"<signal>"})
-	InstanceStopCmd.Flags().SetAnnotation("signal", "envkey", []string{"SIGNAL"})
-
-	// -t|--timeout
-	InstanceStopCmd.Flags().IntVarP(&stopTimeout, "timeout", "t", 10, "force kill non stopped instances after X seconds")
+	flagManager.RegisterCmdFlag(&instanceStopUserFlag, InstanceStopCmd)
+	flagManager.RegisterCmdFlag(&instanceStopAllFlag, InstanceStopCmd)
+	flagManager.RegisterCmdFlag(&instanceStopForceFlag, InstanceStopCmd)
+	flagManager.RegisterCmdFlag(&instanceStopSignalFlag, InstanceStopCmd)
+	flagManager.RegisterCmdFlag(&instanceStopTimeoutFlag, InstanceStopCmd)
 }
 
 // InstanceStopCmd singularity instance stop

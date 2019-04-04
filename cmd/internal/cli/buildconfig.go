@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	SingularityCmd.AddCommand(BuildConfigCmd)
+	cmdManager.RegisterCmd(BuildConfigCmd, false)
 }
 
 // BuildConfigCmd outputs a list of the compile-time parameters with which
