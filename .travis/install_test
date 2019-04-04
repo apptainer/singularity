@@ -5,5 +5,4 @@ export PATH="${GOPATH}/bin:${PATH}"
 make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
 sudo make -C ./builddir install
 
-# Pull the sylabs key, to avoid 'go test' failing.
 make -C ./builddir testall
