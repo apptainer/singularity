@@ -16,33 +16,38 @@ import (
 	"golang.org/x/crypto/openpgp"
 )
 
-var secretExport bool
-var foundKey bool
+var (
+	secretExport bool
+	foundKey     bool
+)
 
 func init() {
 	KeyExportCmd.Flags().SetInterspersed(false)
 
-	KeyExportCmd.Flags().BoolVarP(&secretExport, "secret", "s", false, "fetch a key on local secret keystore and export it")
-	KeyExportCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
+	KeyExportCmd.Flags().BoolVarP(&secretExport, "secret", "s", false, "export a secret key")
 }
 
-// KeyExportCmd is `singularity key (or keys) export` and exports a key from either the public or secret local key store.
+// KeyExportCmd is `singularity key export` and exports a public or secret
+// key from local keyring.
 var KeyExportCmd = &cobra.Command{
-	Args: cobra.ExactArgs(2),
+	Args:                  cobra.ExactArgs(2),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   exportRun,
-	Use:                   docs.KeyExportUse,
-	Short:                 docs.KeyExportShort,
-	Long:                  docs.KeyExportLong,
-	Example:               docs.KeyExportExample,
+
+	Use:     docs.KeyExportUse,
+	Short:   docs.KeyExportShort,
+	Long:    docs.KeyExportLong,
+	Example: docs.KeyExportExample,
 }
 
-func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
-
-	//describes the path from either the local public keyring or secret local keyring
+func doKeyExportCmd(secretExport bool, fingerprint, path string) error {
+	// describes the path from either the local public keyring or secret local keyring
 	var fetchPath string
 	var keyString string
+
+	fmt.Printf("FINGERPRINT: %v\n", fingerprint)
+	fmt.Printf("PATH       : %v\n", path)
 
 	if secretExport {
 		fetchPath = sypgp.SecretPath()
@@ -70,7 +75,6 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 	}
 
 	if secretExport {
-
 		foundKey = false
 		// sort through them, and remove any that match toDelete
 		for _, localEntity := range localEntityList {
@@ -84,8 +88,14 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		}
 
 		if foundKey {
+			fmt.Printf("INFO: %T\n", entityToSave)
+			fmt.Printf("EXPORT_V: %v\n", entityToSave)
+			fmt.Println("EXPORT_PRIV: ", entityToSave.PrivateKey)
+			fmt.Println("EXPORT_ENTITY: ", entityToSave.PrivateKey.Encrypted)
 
-			err = sypgp.DecryptKey(entityToSave)
+			fmt.Printf("ALLLLLLLLL: %+v\n", entityToSave)
+
+			err := sypgp.DecryptKey(entityToSave)
 			if err != nil {
 				return err
 			}
@@ -100,9 +110,7 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		} else {
 			return fmt.Errorf("No private keys with fingerprint %s were found to export.\n", fingerprint)
 		}
-
 	} else {
-
 		foundKey = false
 		// sort through them, and remove any that match toDelete
 		for _, localEntity := range localEntityList {
