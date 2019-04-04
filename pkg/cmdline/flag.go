@@ -13,6 +13,14 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// Supported operating systems
+const (
+	// Darwin OS
+	Darwin = "darwin"
+	// Linux OS
+	Linux = "linux"
+)
+
 // Flag ...
 type Flag struct {
 	ID           string
