@@ -44,6 +44,10 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	}
 	defer img.File.Close()
 
+	if !img.HasRootFs() {
+		return "", fmt.Errorf("no root filesystem found in %s", filename)
+	}
+
 	// squashfs only
 	if img.Partitions[0].Type != image.SQUASHFS {
 		return "", fmt.Errorf("not a squashfs root filesystem")
