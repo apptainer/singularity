@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 export PATH="${GOPATH}/bin:${PATH}"
-./mconfig -p /usr/local
+./mconfig -v -p /usr/local
 make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
 sudo make -C ./builddir install
 
