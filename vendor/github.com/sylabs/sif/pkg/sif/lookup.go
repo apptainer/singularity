@@ -10,9 +10,16 @@ package sif
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+// ErrNotFound is the code for when no search key is not found
+var ErrNotFound = errors.New("no match found")
+
+// ErrMultValues is the code for when search key is not unique
+var ErrMultValues = errors.New("lookup would return more than one match")
 
 //
 // Methods on (fimg *FIleImage)
@@ -76,12 +83,12 @@ func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	var match = -1
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			if v.ID == id {
 				if match != -1 {
-					return nil, -1, fmt.Errorf("key collision, be more precise")
+					return nil, -1, ErrMultValues
 				}
 				match = i
 			}
@@ -89,7 +96,7 @@ func (fimg *FileImage) GetFromDescrID(id uint32) (*Descriptor, int, error) {
 	}
 
 	if match == -1 {
-		return nil, -1, fmt.Errorf("key not found")
+		return nil, -1, ErrNotFound
 	}
 
 	return &fimg.DescrArr[match], match, nil
@@ -102,7 +109,7 @@ func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	var count int
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			if v.Datatype == DataPartition && v.Groupid == groupid {
@@ -114,7 +121,7 @@ func (fimg *FileImage) GetPartFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	}
 
 	if count == 0 {
-		return nil, nil, fmt.Errorf("key not found")
+		return nil, nil, ErrNotFound
 	}
 
 	return descrs, indexes, nil
@@ -127,7 +134,7 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	var count int
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			if v.Datatype == DataSignature && v.Groupid == groupid {
@@ -139,7 +146,7 @@ func (fimg *FileImage) GetSignFromGroup(groupid uint32) ([]*Descriptor, []int, e
 	}
 
 	if count == 0 {
-		return nil, nil, fmt.Errorf("key not found")
+		return nil, nil, ErrNotFound
 	}
 
 	return descrs, indexes, nil
@@ -152,7 +159,7 @@ func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, erro
 	var count int
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			if v.Link == ID {
@@ -164,7 +171,7 @@ func (fimg *FileImage) GetFromLinkedDescr(ID uint32) ([]*Descriptor, []int, erro
 	}
 
 	if count == 0 {
-		return nil, nil, fmt.Errorf("key not found")
+		return nil, nil, ErrNotFound
 	}
 
 	return descrs, indexes, nil
@@ -177,7 +184,7 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 	var count int
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			if descr.Datatype != 0 && descr.Datatype != v.Datatype {
@@ -224,7 +231,7 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 	}
 
 	if count == 0 {
-		return nil, nil, fmt.Errorf("key not found")
+		return nil, nil, ErrNotFound
 	}
 
 	return descrs, indexes, nil
@@ -236,8 +243,10 @@ func (fimg *FileImage) GetFromDescr(descr Descriptor) ([]*Descriptor, []int, err
 
 // GetData return a memory mapped byte slice mirroring the data object in a SIF file.
 func (descr *Descriptor) GetData(fimg *FileImage) []byte {
-	if fimg.Amodebuf == true {
-		fimg.Fp.Seek(descr.Fileoff, 0)
+	if fimg.Amodebuf {
+		if _, err := fimg.Fp.Seek(descr.Fileoff, 0); err != nil {
+			return nil
+		}
 		data := make([]byte, descr.Filelen)
 		if n, _ := fimg.Fp.Read(data); int64(n) != descr.Filelen {
 			return nil
@@ -345,7 +354,7 @@ func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 	index := -1
 
 	for i, v := range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			continue
 		} else {
 			if v.Datatype == DataPartition {
@@ -355,7 +364,7 @@ func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 				}
 				if ptype == PartPrimSys {
 					if index != -1 {
-						return nil, -1, fmt.Errorf("more than one primary system partition")
+						return nil, -1, ErrMultValues
 					}
 					index = i
 					descr = &fimg.DescrArr[i]
@@ -365,7 +374,7 @@ func (fimg *FileImage) GetPartPrimSys() (*Descriptor, int, error) {
 	}
 
 	if index == -1 {
-		return nil, -1, fmt.Errorf("key not found")
+		return nil, -1, ErrNotFound
 	}
 
 	return descr, index, nil

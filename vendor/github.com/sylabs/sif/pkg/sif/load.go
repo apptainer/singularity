@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -51,10 +51,10 @@ func readDescriptors(fimg *FileImage) error {
 // `runnable' checks is current container can run on host.
 func isValidSif(fimg *FileImage) error {
 	// check various header fields
-	if string(fimg.Header.Magic[:HdrMagicLen-1]) != HdrMagic {
+	if cstrToString(fimg.Header.Magic[:]) != HdrMagic {
 		return fmt.Errorf("invalid SIF file: Magic |%s| want |%s|", fimg.Header.Magic, HdrMagic)
 	}
-	if string(fimg.Header.Version[:HdrVersionLen-1]) > HdrVersion {
+	if cstrToString(fimg.Header.Version[:]) > HdrVersion {
 		return fmt.Errorf("invalid SIF file: Version %s want <= %s", fimg.Header.Version, HdrVersion)
 	}
 
@@ -77,7 +77,7 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 		return fmt.Errorf("file is to big to be mapped")
 	}
 
-	if rdonly == false {
+	if !rdonly {
 		prot = syscall.PROT_WRITE
 		flags = syscall.MAP_SHARED
 	}
@@ -108,7 +108,7 @@ func (fimg *FileImage) mapFile(rdonly bool) error {
 }
 
 func (fimg *FileImage) unmapFile() error {
-	if fimg.Amodebuf == true {
+	if fimg.Amodebuf {
 		return nil
 	}
 	if err := syscall.Munmap(fimg.Filedata); err != nil {
@@ -121,43 +121,25 @@ func (fimg *FileImage) unmapFile() error {
 // the container file name, and whether the file is opened as read-only
 // as arguments.
 func LoadContainer(filename string, rdonly bool) (fimg FileImage, err error) {
+	var fp ReadWriter
+
 	if rdonly { // open SIF rdonly if mounting immutable partitions or inspecting the image
-		if fimg.Fp, err = os.Open(filename); err != nil {
+		if fp, err = os.Open(filename); err != nil {
 			return fimg, fmt.Errorf("opening(RDONLY) container file: %s", err)
 		}
 	} else { // open SIF read-write when adding and removing data objects
-		if fimg.Fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
+		if fp, err = os.OpenFile(filename, os.O_RDWR, 0644); err != nil {
 			return fimg, fmt.Errorf("opening(RDWR) container file: %s", err)
 		}
 	}
 
-	// get a memory map of the SIF file
-	if err = fimg.mapFile(rdonly); err != nil {
-		return
-	}
-
-	// read global header from SIF file
-	if err = readHeader(&fimg); err != nil {
-		return
-	}
-
-	// validate global header
-	if err = isValidSif(&fimg); err != nil {
-		return
-	}
-
-	// read descriptor array from SIF file
-	if err = readDescriptors(&fimg); err != nil {
-		return
-	}
-
-	return
+	return LoadContainerFp(fp, rdonly)
 }
 
 // LoadContainerFp is responsible for loading a SIF container file. It takes
 // a *os.File pointing to an opened file, and whether the file is opened as
 // read-only for arguments.
-func LoadContainerFp(fp *os.File, rdonly bool) (fimg FileImage, err error) {
+func LoadContainerFp(fp ReadWriter, rdonly bool) (fimg FileImage, err error) {
 	if fp == nil {
 		return fimg, fmt.Errorf("provided fp for file is invalid")
 	}
@@ -205,9 +187,11 @@ func LoadContainerReader(b *bytes.Reader) (fimg FileImage, err error) {
 
 	// in the case where the reader buffer doesn't include descriptor data, we
 	// don't return an error and DescrArr will be set to nil
-	readDescriptors(&fimg)
+	if readErr := readDescriptors(&fimg); readErr != nil {
+		fmt.Println("Error reading descriptors: ", readErr)
+	}
 
-	return fimg, nil
+	return fimg, err
 }
 
 // UnloadContainer closes the SIF container file and free associated resources if needed
@@ -222,4 +206,12 @@ func (fimg *FileImage) UnloadContainer() (err error) {
 		}
 	}
 	return
+}
+
+func cstrToString(str []byte) string {
+	n := len(str)
+	if m := n - 1; str[m] == 0 {
+		n = m
+	}
+	return string(str[:n])
 }
