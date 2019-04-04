@@ -7,10 +7,18 @@ package cli
 
 import (
 	"errors"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
+
+func ensurePluginCmdRootPriv(cmd *cobra.Command, args []string) {
+	if os.Geteuid() != 0 {
+		sylog.Fatalf("command 'plugin %s' requires root privileges", cmd.Name())
+	}
+}
 
 func init() {
 	PluginCmd.AddCommand(PluginListCmd)
