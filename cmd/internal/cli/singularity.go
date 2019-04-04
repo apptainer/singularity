@@ -335,6 +335,7 @@ var flagEnvFuncs = map[string]envHandle{
 
 	// push/pull flags
 	"allow-unauthenticated": envBool,
+	"allow-unsigned":        envBool,
 
 	// capability flags (and others)
 	"user":  envStringNSlice,

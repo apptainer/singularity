@@ -276,7 +276,7 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 	return true, nil
 }
 
-// Verify takes a container path (cpath), and look for a verification block
+// Verify takes a container path (cpath), and looks for a signature block
 // for a specified descriptor. If found, the signature block is used to verify
 // the partition hash against the signer's version. Verify takes care of looking
 // for OpenPGP keys in the default local keyring, if non is found, it will then

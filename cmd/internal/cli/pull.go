@@ -45,7 +45,7 @@ var (
 	// PullImageName holds the name to be given to the pulled image
 	PullImageName string
 	// KeyServerURL server URL
-	KeyServerURL string
+	KeyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
 )
@@ -200,13 +200,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 				}
 				if resp == "" || resp != "y" && resp != "Y" {
 					fmt.Fprintf(os.Stderr, "Aborting.\n")
-					// not ideal to delete the container on the spot...
 					err := os.Remove(name)
 					if err != nil {
 						sylog.Fatalf("Unabel to delete the container: %v", err)
 					}
 					// exit status 10 after replying no
-					os.Exit(10)
+					exitStat = 10
 				}
 			}
 		} else {
@@ -246,7 +245,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 }
 
 func handlePullFlags(cmd *cobra.Command) {
-	KeyServerURL = "https://keys.sylabs.io"
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
 	endpoint, err := sylabsRemote(remoteConfig)
