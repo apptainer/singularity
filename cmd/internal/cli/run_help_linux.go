@@ -20,6 +20,7 @@ import (
 	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 const (
@@ -28,13 +29,20 @@ const (
 	runHelpCommand   = "if [ ! -f \"%s\" ]\nthen\n    echo \"No help sections were defined for this image\"\nelse\n    /bin/cat %s\nfi"
 )
 
+// --app
+var runHelpAppNameFlag = cmdline.Flag{
+	ID:           "runHelpAppNameFlag",
+	Value:        &AppName,
+	DefaultValue: "",
+	Name:         "app",
+	Usage:        "Show the help for an app",
+	EnvKeys:      []string{"APP"},
+}
+
 func init() {
-	RunHelpCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(RunHelpCmd, false)
 
-	RunHelpCmd.Flags().StringVar(&AppName, "app", "", "Show the help for an app")
-	RunHelpCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
-
-	SingularityCmd.AddCommand(RunHelpCmd)
+	flagManager.RegisterCmdFlag(&runHelpAppNameFlag, RunHelpCmd)
 }
 
 // RunHelpCmd singularity run-help <image>

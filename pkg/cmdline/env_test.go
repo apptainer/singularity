@@ -1,9 +1,9 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cli
+package cmdline
 
 import (
 	"testing"
@@ -24,11 +24,11 @@ func TestEnvAppend(t *testing.T) {
 	v := cmd.Flag("appendFlag").Value.String()
 	assert.Equal(t, v, "[]", "The flag should be unset.")
 
-	envAppend(cmd.Flag("appendFlag"), "appendval")
+	EnvAppend(cmd.Flag("appendFlag"), "appendval")
 	v = cmd.Flag("appendFlag").Value.String()
 	assert.Equal(t, v, "[appendval]", "The flag should be set to the value provided.")
 
-	envAppend(cmd.Flag("appendFlag"), "appendval")
+	EnvAppend(cmd.Flag("appendFlag"), "appendval")
 	v = cmd.Flag("appendFlag").Value.String()
 	assert.Equal(t, v, "[appendval,appendval]", "The flag should appended with the value provided.")
 }
@@ -42,7 +42,7 @@ func TestEnvBool(t *testing.T) {
 	v := cmd.Flag("boolFlag").Value.String()
 	assert.Equal(t, v, "false", "The flag should be unset.")
 
-	envBool(cmd.Flag("boolFlag"), "any string")
+	EnvBool(cmd.Flag("boolFlag"), "any string")
 	v = cmd.Flag("boolFlag").Value.String()
 	assert.Equal(t, v, "true", "The flag should be set to true.")
 }
@@ -56,11 +56,11 @@ func TestEnvStringNSlice(t *testing.T) {
 	v := cmd.Flag("stringFlag").Value.String()
 	assert.Equal(t, v, "", "The flag should be unset.")
 
-	envStringNSlice(cmd.Flag("stringFlag"), "stringval")
+	EnvStringNSlice(cmd.Flag("stringFlag"), "stringval")
 	v = cmd.Flag("stringFlag").Value.String()
 	assert.Equal(t, v, "stringval", "The flag should be set to value provided.")
 
-	envStringNSlice(cmd.Flag("stringFlag"), "newstringval")
+	EnvStringNSlice(cmd.Flag("stringFlag"), "newstringval")
 	v = cmd.Flag("stringFlag").Value.String()
 	assert.Equal(t, v, "stringval", "Once set, the flag should not be overwritten.")
 
@@ -70,11 +70,11 @@ func TestEnvStringNSlice(t *testing.T) {
 	v = cmd.Flag("stringSlice").Value.String()
 	assert.Equal(t, v, "[]", "The flag should be unset.")
 
-	envStringNSlice(cmd.Flag("stringSlice"), "sliceval")
+	EnvStringNSlice(cmd.Flag("stringSlice"), "sliceval")
 	v = cmd.Flag("stringSlice").Value.String()
 	assert.Equal(t, v, "[sliceval]", "The flag should be set to value provided.")
 
-	envStringNSlice(cmd.Flag("stringSlice"), "newsliceval")
+	EnvStringNSlice(cmd.Flag("stringSlice"), "newsliceval")
 	v = cmd.Flag("stringSlice").Value.String()
 	assert.Equal(t, v, "[sliceval]", "Once set, the flag should not be appended or overwritten.")
 }

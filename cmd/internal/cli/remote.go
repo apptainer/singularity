@@ -7,7 +7,6 @@ package cli
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -15,6 +14,7 @@ import (
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 const (
@@ -28,39 +28,44 @@ var (
 	global       bool
 )
 
-var (
-	remoteConfigUser string
-	remoteConfigSys  string
-)
+// assemble values of remoteConfig for user/sys locations
+var remoteConfigUser = filepath.Join(CurrentUser.HomeDir, userDir, fileName)
+var remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, fileName)
 
-func addGlobalFlag(c *cobra.Command) {
-	c.Flags().BoolVarP(&global, "global", "g", false, "edit the list of globally configured remote endpoints")
+// -g|--global
+var remoteGlobalFlag = cmdline.Flag{
+	ID:           "remoteGlobalFlag",
+	Value:        &global,
+	DefaultValue: false,
+	Name:         "global",
+	ShortHand:    "g",
+	Usage:        "edit the list of globally configured remote endpoints",
+}
+
+// -c|--config
+var remoteConfigFlag = cmdline.Flag{
+	ID:           "remoteConfigFlag",
+	Value:        &remoteConfig,
+	DefaultValue: remoteConfigUser,
+	Name:         "config",
+	ShortHand:    "c",
+	Usage:        "path to the file holding remote endpoint configurations",
 }
 
 func init() {
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-
-	// assemble values of remoteConfig for user/sys locations
-	remoteConfigUser = filepath.Join(usr.HomeDir, userDir, fileName)
-	remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, fileName)
+	cmdManager.RegisterCmd(RemoteCmd, false)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddCmd, false)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteRemoveCmd, false)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteUseCmd, false)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteListCmd, false)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteLoginCmd, false)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteStatusCmd, false)
 
 	// default location of the remote.yaml file is the user directory
-	RemoteCmd.Flags().StringVarP(&remoteConfig, "config", "c", remoteConfigUser, "path to the file holding remote endpoint configurations")
+	flagManager.RegisterCmdFlag(&remoteConfigFlag, RemoteCmd)
 
 	// add --global flag to remote add/remove commands
-	addGlobalFlag(RemoteAddCmd)
-	addGlobalFlag(RemoteRemoveCmd)
-
-	SingularityCmd.AddCommand(RemoteCmd)
-	RemoteCmd.AddCommand(RemoteAddCmd)
-	RemoteCmd.AddCommand(RemoteRemoveCmd)
-	RemoteCmd.AddCommand(RemoteUseCmd)
-	RemoteCmd.AddCommand(RemoteListCmd)
-	RemoteCmd.AddCommand(RemoteLoginCmd)
-	RemoteCmd.AddCommand(RemoteStatusCmd)
+	flagManager.RegisterCmdFlag(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
 }
 
 // RemoteCmd singularity remote [...]

@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 )
 
@@ -20,14 +21,43 @@ var (
 	sifDescID  uint32 // -i id specification
 )
 
-func init() {
-	VerifyCmd.Flags().SetInterspersed(false)
+// -u|--url
+var verifyServerURIFlag = cmdline.Flag{
+	ID:           "verifyServerURIFlag",
+	Value:        &keyServerURI,
+	DefaultValue: defaultKeyServer,
+	Name:         "url",
+	ShortHand:    "u",
+	Usage:        "key server URL",
+	EnvKeys:      []string{"URL"},
+}
 
-	VerifyCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
-	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
-	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be verified")
-	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be verified")
-	SingularityCmd.AddCommand(VerifyCmd)
+// -g|--groupid
+var verifySifGroupIDFlag = cmdline.Flag{
+	ID:           "verifySifGroupIDFlag",
+	Value:        &sifGroupID,
+	DefaultValue: uint32(0),
+	Name:         "groupid",
+	ShortHand:    "g",
+	Usage:        "group ID to be verified",
+}
+
+// -i|--id
+var verifySifDescIDFlag = cmdline.Flag{
+	ID:           "verifySifDescIDFlag",
+	Value:        &sifDescID,
+	DefaultValue: uint32(0),
+	Name:         "id",
+	ShortHand:    "i",
+	Usage:        "descriptor ID to be verified",
+}
+
+func init() {
+	cmdManager.RegisterCmd(VerifyCmd, false)
+
+	flagManager.RegisterCmdFlag(&verifyServerURIFlag, VerifyCmd)
+	flagManager.RegisterCmdFlag(&verifySifGroupIDFlag, VerifyCmd)
+	flagManager.RegisterCmdFlag(&verifySifDescIDFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify
