@@ -6,6 +6,4 @@ make -j `nproc 2>/dev/null || echo 1` -C ./builddir all
 sudo make -C ./builddir install
 
 # Pull the sylabs key, to avoid 'go test' failing.
-sudo singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E
-singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E
 make -C ./builddir testall
