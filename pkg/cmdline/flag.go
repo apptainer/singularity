@@ -59,14 +59,25 @@ func (m *FlagManager) RegisterFlagAnnotation(flag *Flag, cmd *cobra.Command) {
 func (m *FlagManager) RegisterCmdFlag(flag *Flag, cmds ...*cobra.Command) {
 	switch flag.DefaultValue.(type) {
 	case string:
+		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
+			flag.EnvHandler = EnvStringNSlice
+		}
 		m.registerStringVar(flag, cmds)
 	case []string:
+		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
+			flag.EnvHandler = EnvStringNSlice
+		}
 		m.registerStringSliceVar(flag, cmds)
 	case bool:
+		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
+			flag.EnvHandler = EnvBool
+		}
 		m.registerBoolVar(flag, cmds)
 	case int:
+		flag.EnvHandler = nil
 		m.registerIntVar(flag, cmds)
 	case uint32:
+		flag.EnvHandler = nil
 		m.registerUint32Var(flag, cmds)
 	}
 	m.flags[flag.ID] = flag
