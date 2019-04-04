@@ -41,6 +41,10 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 	}
 	defer img.File.Close()
 
+	if !img.HasRootFs() {
+		return fmt.Errorf("no root filesystem found in %s", srcfile)
+	}
+
 	switch img.Partitions[0].Type {
 	case image.SQUASHFS:
 		// create a reader for rootfs partition
