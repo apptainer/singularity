@@ -695,23 +695,6 @@ func SerializePrivateEntity(e *openpgp.Entity, blockType string, config *packet.
 	return w.String(), nil
 }
 
-func SerializePrivateEntityNoConfig(e *openpgp.Entity, blockType string) (string, error) {
-	w := bytes.NewBuffer(nil)
-
-	wr, err := armor.Encode(w, blockType, nil)
-	if err != nil {
-		return "", err
-	}
-
-	if err = e.SerializePrivateNoConfig(wr); err != nil {
-		wr.Close()
-		return "", err
-	}
-	wr.Close()
-
-	return w.String(), nil
-}
-
 // PushPubkey pushes a public key to the Key Service.
 func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	keyText, err := SerializePublicEntity(e, openpgp.PublicKeyType)

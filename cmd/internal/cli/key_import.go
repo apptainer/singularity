@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
+	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/errors"
 )
@@ -23,7 +24,7 @@ func init() {
 
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   importRun,
@@ -134,7 +135,16 @@ func doKeyImportCmd(path string) error {
 
 				if !isInStore {
 
+					e := &openpgp.Entity{
+						PrimaryKey: pathEntity.PrimaryKey,
+						PrivateKey: pathEntity.PrivateKey,
+					}
+
 					if err = pathEntity.Serialize(secretFilePath); err != nil {
+						return err
+					}
+
+					if err = e.SerializePrivate(secretFilePath, nil); err != nil {
 						return err
 					}
 					fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)

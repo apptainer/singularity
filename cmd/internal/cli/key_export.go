@@ -75,8 +75,6 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		// sort through them, and remove any that match toDelete
 		for _, localEntity := range localEntityList {
 
-			fmt.Printf("%0X\n", localEntity.PrimaryKey.Fingerprint)
-
 			if fmt.Sprintf("%X", localEntity.PrimaryKey.Fingerprint) == fingerprint {
 				foundKey = true
 				entityToSave = localEntity
@@ -86,7 +84,13 @@ func doKeyExportCmd(secretExport bool, fingerprint string, path string) error {
 		}
 
 		if foundKey {
-			keyString, err = sypgp.SerializePrivateEntityNoConfig(entityToSave, openpgp.PrivateKeyType)
+
+			err = sypgp.DecryptKey(entityToSave)
+			if err != nil {
+				return err
+			}
+
+			keyString, err = sypgp.SerializePrivateEntity(entityToSave, openpgp.PrivateKeyType, nil)
 			file.WriteString(keyString)
 			defer file.Close()
 			if err != nil {
