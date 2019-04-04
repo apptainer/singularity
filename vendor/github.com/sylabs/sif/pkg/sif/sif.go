@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 // Copyright (c) 2017, Yannick Cote <yhcote@gmail.com> All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -18,8 +18,10 @@ package sif
 
 import (
 	"bytes"
-	"github.com/satori/go.uuid"
+	"io"
 	"os"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 // Layout of a SIF file (example)
@@ -133,6 +135,7 @@ const (
 	DataPartition                            // file system data object
 	DataSignature                            // signing/verification data object
 	DataGenericJSON                          // generic JSON meta-data
+	DataGeneric                              // generic / raw data
 )
 
 // Fstype represents the different SIF file system types found in partition data objects
@@ -191,10 +194,10 @@ type Descriptor struct {
 	UID   int64                 // system user owning the file
 	Gid   int64                 // system group owning the file
 	Name  [DescrNameLen]byte    // descriptor name (string identifier)
-	Extra [DescrMaxPrivLen]byte // big enough for above extra data
+	Extra [DescrMaxPrivLen]byte // big enough for extra data below
 }
 
-// Deffile represets the SIF definition-file data object descriptor
+// Deffile represents the SIF definition-file data object descriptor
 type Deffile struct {
 }
 
@@ -223,6 +226,10 @@ type Signature struct {
 type GenericJSON struct {
 }
 
+// Generic represents the SIF generic data object descriptor
+type Generic struct {
+}
+
 // Header describes a loaded SIF file
 type Header struct {
 	Launch [HdrLaunchLen]byte // #! shell execution line
@@ -243,10 +250,30 @@ type Header struct {
 	Datalen  int64 // bytes used by all data objects
 }
 
+//
+// This section describes SIF creation/loading data structures used when
+// building or opening a SIF file. Transient data not found in the final
+// SIF file. Those data structures are internal.
+//
+
+// ReadWriter describes the operations needed to support reading and
+// writing SIF files
+type ReadWriter interface {
+	Name() string
+	Close() error
+	Fd() uintptr
+	Read(b []byte) (n int, err error)
+	Seek(offset int64, whence int) (ret int64, err error)
+	Stat() (os.FileInfo, error)
+	Sync() error
+	Truncate(size int64) error
+	Write(b []byte) (n int, err error)
+}
+
 // FileImage describes the representation of a SIF file in memory
 type FileImage struct {
 	Header     Header        // the loaded SIF global header
-	Fp         *os.File      // file pointer of opened SIF file
+	Fp         ReadWriter    // file pointer of opened SIF file
 	Filesize   int64         // file size of the opened SIF file
 	Filedata   []byte        // the content of the opened file
 	Amodebuf   bool          // access mode: mmap = false, buffered = true
@@ -264,12 +291,6 @@ type CreateInfo struct {
 	InputDescr []DescriptorInput // slice of input info for descriptor creation
 }
 
-//
-// This section describes SIF creation data structures used when building
-// a new SIF file. Transient data not found in the final SIF file. Those data
-// structures are internal.
-//
-
 // DescriptorInput describes the common info needed to create a data object descriptor
 type DescriptorInput struct {
 	Datatype  Datatype // datatype being harvested for new descriptor
@@ -278,9 +299,9 @@ type DescriptorInput struct {
 	Size      int64    // size of the data object for the new descriptor
 	Alignment int      // Align requirement for data object
 
-	Fname string   // file containing data associated with the new descriptor
-	Fp    *os.File // file pointer to opened 'fname'
-	Data  []byte   // loaded data from file
+	Fname string    // file containing data associated with the new descriptor
+	Fp    io.Reader // file pointer to opened 'fname'
+	Data  []byte    // loaded data from file
 
 	Image *FileImage  // loaded SIF file in memory
 	Descr *Descriptor // created end result descriptor
