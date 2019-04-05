@@ -42,7 +42,7 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 
 	const singularityJSON = "parser/testdata_good/docker/docker.json"
 	// We do not have a valid example file that we can use to reach the corner cases, so we define a fake JSON
-	const validSingularityJSON = `{"header":{"bootstrap":"yum","include":"yum","mirrorurl":"http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/","osversion":"7"},"imageData":{"metadata":null,"labels":{"Maintainer":"gvallee"},"imageScripts":{"help":"","environment":"","runScript":"","test":"testMyTest","startScript":""}},"buildData":{"files":[{"source":"myFakeFile"}],"buildScripts":{"pre":"","setup":"","post":"","test":""}},"customData":null}`
+	const validSingularityJSON = `{"header":{"bootstrap":"yum","include":"yum","mirrorurl":"http://mirror.centos.org/centos-%{OSVERSION}/%{OSVERSION}/os/$basearch/","osversion":"7"},"imageData":{"metadata":null,"labels":{"Maintainer":"gvallee"},"imageScripts":{"help":{"args":"","script":""},"environment":{"args":"","script":""},"runScript":{"args":"","script":""},"test":{"args":"","script":""},"startScript":{"args":"","script":""}}},"buildData":{"files":[{"source":"myFakeFile"}],"buildScripts":{"pre":{"args":"","script":""},"setup":{"args":"","script":""},"post":{"args":"","script":""},"test":{"args":"","script":""}}},"customData":null}`
 
 	for _, testCase := range simpleCases {
 		_, myerr := NewDefinitionFromJSON(strings.NewReader(testCase.JSON))
@@ -62,7 +62,7 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 	var def1 Definition
 	def1, def1Err := NewDefinitionFromJSON(f)
 	if def1Err != nil {
-		t.Fatal("NewDefinitionFromJSON() failed with a valid JSON")
+		t.Fatal("NewDefinitionFromJSON() failed with a valid JSON", def1Err)
 	}
 	if len(def1.ImageData.Labels) != 2 {
 		t.Fatal("Invalid number of labels")
@@ -72,7 +72,7 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 	var def2 Definition
 	def2, def2Err := NewDefinitionFromJSON(strings.NewReader(validSingularityJSON))
 	if def2Err != nil {
-		t.Fatal("NewDefinitionFromJSON() failed with a Singularity JSON")
+		t.Fatal("NewDefinitionFromJSON() failed with a Singularity JSON", def2Err)
 	}
 	if len(def2.ImageData.Labels) != 1 {
 		t.Fatal("Invalid number of labels")
