@@ -37,7 +37,12 @@ func (m *CommandManager) RegisterSubCmd(parentCmd, subCmd *cobra.Command, inters
 
 // SetCmdGroup ...
 func (m *CommandManager) SetCmdGroup(name string, cmds ...*cobra.Command) {
-	m.groupCmds[name] = cmds
+	m.groupCmds[name] = make([]*cobra.Command, 0)
+	for _, c := range cmds {
+		if c != nil {
+			m.groupCmds[name] = append(m.groupCmds[name], c)
+		}
+	}
 }
 
 // GetCmdGroup ...
