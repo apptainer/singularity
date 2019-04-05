@@ -36,18 +36,16 @@ import (
 )
 
 func setRlimit(rlimits []specs.POSIXRlimit) error {
-	var resources []string
+	resources := make(map[string]struct{})
 
 	for _, rl := range rlimits {
 		if err := rlimit.Set(rl.Type, rl.Soft, rl.Hard); err != nil {
 			return err
 		}
-		for _, t := range resources {
-			if t == rl.Type {
-				return fmt.Errorf("%s was already set", t)
-			}
+		if _, found := resources[rl.Type]; found {
+			return fmt.Errorf("%s was already set", rl.Type)
 		}
-		resources = append(resources, rl.Type)
+		resources[rl.Type] = struct{}{}
 	}
 
 	return nil
