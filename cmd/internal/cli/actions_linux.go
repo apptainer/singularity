@@ -158,6 +158,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	})
 
 	if strings.HasPrefix(image, "instance://") {
+		if name != "" {
+			sylog.Fatalf("Starting an instance from another is not allowed")
+		}
 		instanceName := instance.ExtractName(image)
 		file, err := instance.Get(instanceName, instance.SingSubDir)
 		if err != nil {
