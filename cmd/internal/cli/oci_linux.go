@@ -12,9 +12,123 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var ociArgs singularity.OciArgs
+
+// -b|--bundle
+var ociBundleFlag = cmdline.Flag{
+	ID:           "ociBundleFlag",
+	Value:        &ociArgs.BundlePath,
+	DefaultValue: "",
+	Name:         "bundle",
+	ShortHand:    "b",
+	Required:     true,
+	Usage:        "specify the OCI bundle path (required)",
+	Tag:          "<path>",
+	EnvKeys:      []string{"BUNDLE"},
+}
+
+// -s|--sync-socket
+var ociSyncSocketFlag = cmdline.Flag{
+	ID:           "ociSyncSocketFlag",
+	Value:        &ociArgs.SyncSocketPath,
+	DefaultValue: "",
+	Name:         "sync-socket",
+	ShortHand:    "s",
+	Usage:        "specify the path to unix socket for state synchronization",
+	Tag:          "<path>",
+	EnvKeys:      []string{"SYNC_SOCKET"},
+}
+
+// --empty-process
+var ociCreateEmptyProcessFlag = cmdline.Flag{
+	ID:           "ociCreateEmptyProcessFlag",
+	Value:        &ociArgs.EmptyProcess,
+	DefaultValue: false,
+	Name:         "empty-process",
+	Usage:        "run container without executing container process (eg: for POD container)",
+	EnvKeys:      []string{"EMPTY_PROCESS"},
+}
+
+// -l|--log-path
+var ociLogPathFlag = cmdline.Flag{
+	ID:           "ociLogPathFlag",
+	Value:        &ociArgs.LogPath,
+	DefaultValue: "",
+	Name:         "log-path",
+	ShortHand:    "l",
+	Usage:        "specify the log file path",
+	Tag:          "<path>",
+	EnvKeys:      []string{"LOG_PATH"},
+}
+
+// --log-format
+var ociLogFormatFlag = cmdline.Flag{
+	ID:           "ociLogFormatFlag",
+	Value:        &ociArgs.LogFormat,
+	DefaultValue: "kubernetes",
+	Name:         "log-format",
+	Usage:        "specify the log file format. Available formats are basic, kubernetes and json",
+	Tag:          "<format>",
+	EnvKeys:      []string{"LOG_FORMAT"},
+}
+
+// --pid-file
+var ociPidFileFlag = cmdline.Flag{
+	ID:           "ociPidFileFlag",
+	Value:        &ociArgs.PidFile,
+	DefaultValue: "",
+	Name:         "pid-file",
+	Usage:        "specify the pid file",
+	Tag:          "<path>",
+	EnvKeys:      []string{"PID_FILE"},
+}
+
+// -s|--signal
+var ociKillSignalFlag = cmdline.Flag{
+	ID:           "ociKillSignalFlag",
+	Value:        &ociArgs.KillSignal,
+	DefaultValue: "SIGTERM",
+	Name:         "signal",
+	ShortHand:    "s",
+	Usage:        "signal sent to the container",
+	Tag:          "<signal>",
+	EnvKeys:      []string{"SIGNAL"},
+}
+
+// -f|--force
+var ociKillForceFlag = cmdline.Flag{
+	ID:           "ociKillForceFlag",
+	Value:        &ociArgs.ForceKill,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "f",
+	Usage:        "kill container process with SIGKILL",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// -t|--timeout
+var ociKillTimeoutFlag = cmdline.Flag{
+	ID:           "ociKillTimeoutFlag",
+	Value:        &ociArgs.KillTimeout,
+	DefaultValue: uint32(0),
+	Name:         "timeout",
+	ShortHand:    "t",
+	Usage:        "timeout in second before killing container",
+}
+
+// -f|--from-file
+var ociUpdateFromFileFlag = cmdline.Flag{
+	ID:           "ociUpdateFromFileFlag",
+	Value:        &ociArgs.FromFile,
+	DefaultValue: "",
+	Name:         "from-file",
+	ShortHand:    "f",
+	Usage:        "specify path to OCI JSON cgroups resource file ('-' to read from STDIN)",
+	EnvKeys:      []string{"FROM_FILE"},
+}
 
 func init() {
 	cmdManager.RegisterCmd(OciCmd, false)
@@ -31,37 +145,19 @@ func init() {
 	cmdManager.RegisterSubCmd(OciCmd, OciMountCmd, false)
 	cmdManager.RegisterSubCmd(OciCmd, OciUmountCmd, false)
 
-	OciCreateCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
-	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
-	OciCreateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().BoolVar(&ociArgs.EmptyProcess, "empty-process", false, "run container without executing container process (eg: for POD container)")
-	OciCreateCmd.Flags().StringVarP(&ociArgs.LogPath, "log-path", "l", "", "specify the log file path")
-	OciCreateCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().StringVar(&ociArgs.LogFormat, "log-format", "kubernetes", "specify the log file format. Available formats are basic, kubernetes and json")
-	OciCreateCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
-	OciCreateCmd.Flags().StringVar(&ociArgs.PidFile, "pid-file", "", "specify the pid file")
-	OciCreateCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
+	cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd)
+	createRunCmd := cmdManager.GetCmdGroup("create_run")
 
-	OciStateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
-	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
-
-	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "SIGTERM", "signal sent to the container")
-
-	OciKillCmd.Flags().BoolVarP(&ociArgs.ForceKill, "force", "f", false, "kill container process with SIGKILL")
-
-	OciKillCmd.Flags().Uint32VarP(&ociArgs.KillTimeout, "timeout", "t", 0, "timeout in second before killing container")
-
-	OciRunCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
-	OciRunCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
-	OciRunCmd.Flags().StringVarP(&ociArgs.LogPath, "log-path", "l", "", "specify the log file path")
-	OciRunCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
-	OciRunCmd.Flags().StringVar(&ociArgs.LogFormat, "log-format", "kubernetes", "specify the log file format. Available formats are basic, kubernetes and json")
-	OciRunCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
-	OciRunCmd.Flags().StringVar(&ociArgs.PidFile, "pid-file", "", "specify the pid file")
-	OciRunCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
-
-	OciUpdateCmd.Flags().StringVarP(&ociArgs.FromFile, "from-file", "f", "", "specify path to OCI JSON cgroups resource file ('-' to read from STDIN)")
+	flagManager.RegisterCmdFlag(&ociBundleFlag, createRunCmd...)
+	flagManager.RegisterCmdFlag(&ociSyncSocketFlag, createRunCmd...)
+	flagManager.RegisterCmdFlag(&ociLogPathFlag, createRunCmd...)
+	flagManager.RegisterCmdFlag(&ociLogFormatFlag, createRunCmd...)
+	flagManager.RegisterCmdFlag(&ociPidFileFlag, createRunCmd...)
+	flagManager.RegisterCmdFlag(&ociCreateEmptyProcessFlag, OciCreateCmd)
+	flagManager.RegisterCmdFlag(&ociKillForceFlag, OciKillCmd)
+	flagManager.RegisterCmdFlag(&ociKillSignalFlag, OciKillCmd)
+	flagManager.RegisterCmdFlag(&ociKillTimeoutFlag, OciKillCmd)
+	flagManager.RegisterCmdFlag(&ociUpdateFromFileFlag, OciUpdateCmd)
 }
 
 func ensureRootPriv(cmd *cobra.Command, args []string) {
