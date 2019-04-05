@@ -115,7 +115,9 @@ func TestConfigure(t *testing.T) {
 		})
 		err := Configure(&s.spec)
 		if err != nil && !s.expectFailure {
-			t.Errorf("unexpected failure with %s", s.desc)
+			t.Errorf("unexpected failure %s: %s", s.desc, err)
+		} else if err == nil && !s.disabled && s.expectFailure {
+			t.Errorf("unexpected success %s", s.desc)
 		}
 	}
 }
