@@ -94,9 +94,9 @@ func doKeyImportCmd(path string) error {
 				if err = pathEntity.Serialize(publicFilePath); err != nil {
 					return err
 				}
-				fmt.Printf("Key with fingerprint %X added succesfully to the keystore\n", pathEntity.PrimaryKey.Fingerprint)
+				fmt.Printf("Key with fingerprint %X succesfully added to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
 			} else {
-				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keystore\n", pathEntity.PrimaryKey.Fingerprint)
+				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
 			}
 		}
 		// If private key
@@ -167,9 +167,9 @@ func doKeyImportCmd(path string) error {
 				if err != nil {
 					return err
 				}
-				fmt.Printf("Key with fingerprint %X added succesfully to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
+				fmt.Printf("Key with fingerprint %X succesfully added to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
 			} else {
-				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keystore\n", pathEntity.PrimaryKey.Fingerprint)
+				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
 			}
 		}
 	} else {

@@ -86,7 +86,7 @@ func doKeyExportCmd(secretExport bool, path string) error {
 		file.WriteString(keyString)
 		defer file.Close()
 		if err != nil {
-			return fmt.Errorf("error encoding private key")
+			return fmt.Errorf("error encoding private key: %v", err)
 		}
 		fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
 	} else {
