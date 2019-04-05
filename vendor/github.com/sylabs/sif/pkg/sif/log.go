@@ -16,6 +16,3 @@ var (
 	sifLoggerBuf bytes.Buffer
 	siflog       = log.New(&sifLoggerBuf, "", log.Ldate|log.Ltime|log.Lshortfile)
 )
-
-func init() {
-}
