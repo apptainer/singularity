@@ -489,22 +489,22 @@ func TestPrintPrivKeyring(t *testing.T) {
 func TestStorePrivKey(t *testing.T) {
 	// Valid case but should return right away
 	err := StorePrivKey(nil)
-	if err != nil {
-		t.Fatal("cannot call without argument", err)
+	if err == nil {
+		t.Fatal("test succeeded while expected to fail")
 	}
 }
 
 func TestStorePubKey(t *testing.T) {
 	// Valid case but should return right away
 	err := StorePubKey(nil)
-	if err != nil {
-		t.Fatal("cannot call without argument", err)
+	if err == nil {
+		t.Fatal("test succeeded while expected to fail")
 	}
 }
 
 func TestCompareLocalPubKey(t *testing.T) {
 	// Valid case but should return right away
-	cmp := compareLocalPubKey(nil, "")
+	cmp := CompareKeyEntity(nil, "")
 	if cmp == true {
 		t.Fatal("comparison of different keys returned true")
 	}
@@ -525,24 +525,24 @@ func TestCheckLocalPubKey(t *testing.T) {
 func TestRemovePubKey(t *testing.T) {
 	// Valid case but should return right away
 	err := RemovePubKey("")
-	if err != nil {
-		t.Fatal("removing an empty key returned an error", err)
+	if err == nil {
+		t.Fatal("test succeeded while expected to fail")
 	}
 }
 
 func TestDecryptKey(t *testing.T) {
 	// Valid case but should return right away
 	err := DecryptKey(nil)
-	if err != nil {
-		t.Fatal("decrypting an invalid key passed")
+	if err == nil {
+		t.Fatal("test succeeded while expected to fail")
 	}
 }
 
 func TestEncryptKey(t *testing.T) {
 	// Valid case but should return right away
 	err := EncryptKey(nil, "")
-	if err != nil {
-		t.Fatal("encrypting an empty key failed")
+	if err == nil {
+		t.Fatal("test succeeded while expected to fail")
 	}
 }
 
