@@ -14,9 +14,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 var (
@@ -89,6 +91,8 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
 		sourceDir,
 	}
+
+	sylog.Debugf("Runnig: %s %s", goTool, strings.Join(args, " "))
 
 	buildcmd := exec.Command(goTool, args...)
 
