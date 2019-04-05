@@ -36,7 +36,7 @@ var cacheListTypesFlag = cmdline.Flag{
 var cacheListSummaryFlag = cmdline.Flag{
 	ID:           "cacheListSummary",
 	Value:        &cacheListSummary,
-	DefaultValue: "",
+	DefaultValue: false,
 	Name:         "summary",
 	ShortHand:    "s",
 	Usage:        "display a cache summary",
