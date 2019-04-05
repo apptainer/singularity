@@ -79,7 +79,7 @@ var pullNameFlag = cmdline.Flag{
 var pullTmpdirFlag = cmdline.Flag{
 	ID:           "pullTmpdirFlag",
 	Value:        &tmpDir,
-	DefaultValue: false,
+	DefaultValue: "",
 	Hidden:       true,
 	Name:         "tmpdir",
 	Usage:        "specify a temporary directory to use for build",

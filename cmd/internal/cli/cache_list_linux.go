@@ -12,6 +12,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
@@ -20,15 +21,42 @@ var (
 	cacheListSummary bool
 )
 
+// -T|--type
+var cacheListTypesFlag = cmdline.Flag{
+	ID:           "cacheListTypes",
+	Value:        &cacheListTypes,
+	DefaultValue: []string{"library", "oci", "blobSum"},
+	Name:         "type",
+	ShortHand:    "T",
+	Usage:        "a list of cache types to display, possible entries: library, oci, blob(s), blobSum, all",
+	EnvKeys:      []string{"TYPE"},
+}
+
+// -s|--summary
+var cacheListSummaryFlag = cmdline.Flag{
+	ID:           "cacheListSummary",
+	Value:        &cacheListSummary,
+	DefaultValue: "",
+	Name:         "summary",
+	ShortHand:    "s",
+	Usage:        "display a cache summary",
+}
+
+// -a|--all
+var cacheListAllFlag = cmdline.Flag{
+	ID:           "cacheListAllFlag",
+	Value:        &allList,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "list all cache types",
+	EnvKeys:      []string{"ALL"},
+}
+
 func init() {
-	CacheListCmd.Flags().SetInterspersed(false)
-
-	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci", "blobSum"},
-		"a list of cache types to display, possible entries: library, oci, blob(s), blobSum, all")
-	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
-	CacheListCmd.Flags().BoolVarP(&cacheListSummary, "summary", "s", false, "display a cache summary")
-
-	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
+	flagManager.RegisterCmdFlag(&cacheListTypesFlag, CacheListCmd)
+	flagManager.RegisterCmdFlag(&cacheListSummaryFlag, CacheListCmd)
+	flagManager.RegisterCmdFlag(&cacheListAllFlag, CacheListCmd)
 }
 
 // CacheListCmd is 'singularity cache list' and will list your local singularity cache

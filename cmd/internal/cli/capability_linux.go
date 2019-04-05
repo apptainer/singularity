@@ -33,7 +33,6 @@ var capUserFlag = cmdline.Flag{
 	ShortHand:    "u",
 	Usage:        "manage capabilities for a user",
 	EnvKeys:      []string{"CAP_USER"},
-	EnvHandler:   cmdline.EnvStringNSlice,
 }
 
 // -g|--group
@@ -45,7 +44,6 @@ var capGroupFlag = cmdline.Flag{
 	ShortHand:    "g",
 	Usage:        "manage capabilities for a group",
 	EnvKeys:      []string{"CAP_GROUP"},
-	EnvHandler:   cmdline.EnvStringNSlice,
 }
 
 // CapabilityAvailCmd singularity capability avail

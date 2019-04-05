@@ -8,6 +8,8 @@ package cli
 import (
 	"os"
 
+	"github.com/sylabs/singularity/pkg/cmdline"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -20,17 +22,43 @@ var (
 	cacheName       string
 )
 
+// -a|--all
+var cacheCleanAllFlag = cmdline.Flag{
+	ID:           "cacheCleanAllFlag",
+	Value:        &cleanAll,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "clean all cache (will override all other options)",
+	EnvKeys:      []string{"ALL"},
+}
+
+// -T|--type
+var cacheCleanTypesFlag = cmdline.Flag{
+	ID:           "cacheCleanTypesFlag",
+	Value:        &cacheCleanTypes,
+	DefaultValue: []string{"blob"},
+	Name:         "type",
+	ShortHand:    "T",
+	Usage:        "clean cache type, choose between: library, oci, and blob",
+	EnvKeys:      []string{"TYPE"},
+}
+
+// -N|--name
+var cacheCleanNameFlag = cmdline.Flag{
+	ID:           "cacheCleanNameFlag",
+	Value:        &cacheName,
+	DefaultValue: "",
+	Name:         "name",
+	ShortHand:    "N",
+	Usage:        "specify a container cache to clean (will clear all cache with the same name)",
+	EnvKeys:      []string{"NAME"},
+}
+
 func init() {
-	CacheCleanCmd.Flags().SetInterspersed(false)
-
-	CacheCleanCmd.Flags().BoolVarP(&cleanAll, "all", "a", false, "clean all cache (will override all other options)")
-	CacheCleanCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
-
-	CacheCleanCmd.Flags().StringSliceVarP(&cacheCleanTypes, "type", "T", []string{"blob"}, "clean cache type, choose between: library, oci, and blob")
-	CacheCleanCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
-
-	CacheCleanCmd.Flags().StringVarP(&cacheName, "name", "N", "", "specify a container cache to clean (will clear all cache with the same name)")
-	CacheCleanCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
+	flagManager.RegisterCmdFlag(&cacheCleanAllFlag, CacheCleanCmd)
+	flagManager.RegisterCmdFlag(&cacheCleanTypesFlag, CacheCleanCmd)
+	flagManager.RegisterCmdFlag(&cacheCleanNameFlag, CacheCleanCmd)
 }
 
 // CacheCleanCmd : is `singularity cache clean' and will clear your local singularity cache
