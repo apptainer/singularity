@@ -144,6 +144,7 @@ func doKeyImportCmd(path string) error {
 
 				// Check if the key is encrypted, if it is, decrypt it
 				if pathEntity.PrivateKey.Encrypted {
+					fmt.Fprintf(os.Stderr, "Enter your old password for this key:\n")
 					err = sypgp.DecryptKey(newEntity)
 					if err != nil {
 						return err
@@ -151,6 +152,7 @@ func doKeyImportCmd(path string) error {
 				}
 
 				// Get a new password for the key
+				fmt.Fprintf(os.Stderr, "Enter a new password for this key:\n")
 				newPass, err := sypgp.GetPassphrase(3)
 				if err != nil {
 					return err
