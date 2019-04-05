@@ -96,6 +96,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 	buildcmd.Stderr = os.Stderr
 	buildcmd.Stdout = os.Stdout
 	buildcmd.Stdin = os.Stdin
+	buildcmd.Env = append(os.Environ(), "GO111MODULE=on")
 
 	return out, buildcmd.Run()
 }
