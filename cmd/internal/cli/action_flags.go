@@ -644,6 +644,7 @@ func init() {
 	flagManager.RegisterCmdFlag(&actionAddCapsFlag, actionsInstanceCmd...)
 	flagManager.RegisterCmdFlag(&actionDropCapsFlag, actionsInstanceCmd...)
 	flagManager.RegisterCmdFlag(&actionAllowSetuidFlag, actionsInstanceCmd...)
+	flagManager.RegisterCmdFlag(&actionPwdFlag, actionsCmd...)
 
 	for _, cmd := range actionsCmd {
 		plugin.AddFlagHooks(cmd.Flags())
