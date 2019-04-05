@@ -784,7 +784,7 @@ found at:
   $ singularity oci create -b ~/bundle mycontainer
   $ singularity oci start mycontainer`
 
-	OciCreateUse   string = `create [create options...] <container_ID>`
+	OciCreateUse   string = `create -b <bundle_path> [create options...] <container_ID>`
 	OciCreateShort string = `Create a container from a bundle directory (root user only)`
 	OciCreateLong  string = `
   Create invoke create operation to create a container instance from an OCI bundle directory`
@@ -834,7 +834,7 @@ found at:
 	OciExecExample string = `
   $ singularity oci exec mycontainer id`
 
-	OciRunUse   string = `run [run options...] <container_ID>`
+	OciRunUse   string = `run -b <bundle_path> [run options...] <container_ID>`
 	OciRunShort string = `Create/start/attach/delete a container from a bundle directory (root user only)`
 	OciRunLong  string = `
   Run will invoke equivalent of create/start/attach/delete commands in a row.`
