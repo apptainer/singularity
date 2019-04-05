@@ -84,6 +84,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		"build",
 		"-o", out,
 		"-buildmode=plugin",
+		"-mod=vendor",
 		"-tags", buildTags,
 		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
 		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
@@ -98,6 +99,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 	buildcmd.Stderr = os.Stderr
 	buildcmd.Stdout = os.Stdout
 	buildcmd.Stdin = os.Stdin
+	buildcmd.Env = append(os.Environ(), "GO111MODULE=on")
 
 	return out, buildcmd.Run()
 }
@@ -115,6 +117,7 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 
 	args := []string{
 		"run",
+		"-mod=vendor",
 		"-tags", buildTags,
 		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
 		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
@@ -129,6 +132,7 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 	gencmd.Stderr = os.Stderr
 	gencmd.Stdout = os.Stdout
 	gencmd.Stdin = os.Stdin
+	gencmd.Env = append(os.Environ(), "GO111MODULE=on")
 
 	return out, gencmd.Run()
 }
