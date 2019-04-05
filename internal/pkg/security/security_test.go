@@ -112,12 +112,12 @@ func TestConfigure(t *testing.T) {
 			if s.disabled {
 				t.Skip("test disabled, security module not enabled on this system")
 			}
+			err := Configure(&s.spec)
+			if err != nil && !s.expectFailure {
+				t.Errorf("unexpected failure %s: %s", s.desc, err)
+			} else if err == nil && s.expectFailure {
+				t.Errorf("unexpected success %s", s.desc)
+			}
 		})
-		err := Configure(&s.spec)
-		if err != nil && !s.expectFailure {
-			t.Errorf("unexpected failure %s: %s", s.desc, err)
-		} else if err == nil && !s.disabled && s.expectFailure {
-			t.Errorf("unexpected success %s", s.desc)
-		}
 	}
 }
