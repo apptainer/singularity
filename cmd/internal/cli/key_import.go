@@ -36,7 +36,6 @@ var KeyImportCmd = &cobra.Command{
 }
 
 func doKeyImportCmd(path string) error {
-	var fingerprint [20]byte
 	// PublicKeyType is the armor type for a PGP public key.
 	const PublicKeyType = "PGP PUBLIC KEY BLOCK"
 
@@ -82,7 +81,7 @@ func doKeyImportCmd(path string) error {
 		// Go through the keyring checking for the given fingerprint
 		for _, pathEntity := range pathEntityList {
 			isInStore := false
-			fingerprint = pathEntity.PrimaryKey.Fingerprint
+			//fingerprint = pathEntity.PrimaryKey.Fingerprint
 
 			for _, publicEntity := range publicEntityList {
 				if pathEntity.PrimaryKey.KeyId == publicEntity.PrimaryKey.KeyId {
@@ -95,100 +94,85 @@ func doKeyImportCmd(path string) error {
 				if err = pathEntity.Serialize(publicFilePath); err != nil {
 					return err
 				}
-				fmt.Printf("Key with fingerprint %X added succesfully to the keystore\n", fingerprint)
+				fmt.Printf("Key with fingerprint %X added succesfully to the keystore\n", pathEntity.PrimaryKey.Fingerprint)
 			} else {
-				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keystore\n", fingerprint)
+				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keystore\n", pathEntity.PrimaryKey.Fingerprint)
+			}
+		}
+		// If private key
+	} else if block.Type == PrivateKeyType {
+
+		// Load the local private keys as entitylist
+		privateEntityList, err := sypgp.LoadPrivKeyring()
+		if err != nil {
+			return err
+		}
+		// Load the private key as an entitylist
+		pathEntityList, err := sypgp.LoadKeyringFromFile(path)
+		if err != nil {
+			return err
+		}
+		// Get local keyring (where the key will be stored)
+		secretFilePath, err := os.OpenFile(sypgp.SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+		defer secretFilePath.Close()
+
+		// Go through the keystore checking for the given fingerprint
+		for _, pathEntity := range pathEntityList {
+			isInStore := false
+			//fingerprint = pathEntity.PrimaryKey.Fingerprint
+
+			for _, privateEntity := range privateEntityList {
+				if privateEntity.PrimaryKey.Fingerprint == pathEntity.PrimaryKey.Fingerprint {
+					isInStore = true
+					break
+				}
+
+			}
+
+			if !isInStore {
+				// Make a clone of the entity
+				newEntity := &openpgp.Entity{
+					PrimaryKey:  pathEntity.PrimaryKey,
+					PrivateKey:  pathEntity.PrivateKey,
+					Identities:  pathEntity.Identities,
+					Revocations: pathEntity.Revocations,
+					Subkeys:     pathEntity.Subkeys,
+				}
+
+				// Check if the key is encrypted, if it is, decrypt it
+				if pathEntity.PrivateKey.Encrypted {
+					err = sypgp.DecryptKey(newEntity)
+					if err != nil {
+						return err
+					}
+				}
+
+				// Get a new password for the key
+				newPass, err := sypgp.GetPassphrase(3)
+				if err != nil {
+					return err
+				}
+				err = sypgp.EncryptKey(newEntity, newPass)
+				if err != nil {
+					return err
+				}
+
+				// Store the private key
+				err = sypgp.StorePrivKey(newEntity)
+				if err != nil {
+					return err
+				}
+				fmt.Printf("Key with fingerprint %X added succesfully to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
+			} else {
+				fmt.Printf("The key you want to add with fingerprint %X already belongs to the keystore\n", pathEntity.PrimaryKey.Fingerprint)
 			}
 		}
 	} else {
-		// Case on private key import
-		if block.Type == PrivateKeyType {
-
-			// Load the local private keys as entitylist
-			privateEntityList, err := sypgp.LoadPrivKeyring()
-			if err != nil {
-				return err
-			}
-			// Load the private key as an entitylist
-			pathEntityList, err := sypgp.LoadKeyringFromFile(path)
-			if err != nil {
-				return err
-			}
-			// Get local keyring (where the key will be stored)
-			secretFilePath, err := os.OpenFile(sypgp.SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
-			if err != nil {
-				return err
-			}
-			defer secretFilePath.Close()
-
-			// Go through the keystore checking for the given fingerprint
-			for _, pathEntity := range pathEntityList {
-				isInStore := false
-				fingerprint = pathEntity.PrimaryKey.Fingerprint
-
-				for _, privateEntity := range privateEntityList {
-					if privateEntity.PrimaryKey.Fingerprint == fingerprint {
-						isInStore = true
-						break
-					}
-
-				}
-
-				fmt.Println("KEY ENTITY ____ : ", pathEntity.PrivateKey.Encrypted)
-				if !isInStore {
-
-					e := &openpgp.Entity{
-						PrimaryKey: pathEntity.PrimaryKey,
-						PrivateKey: pathEntity.PrivateKey,
-						//Identities:  map[string]*Identity, // indexed by Identity.Name
-						Identities: pathEntity.Identities, // indexed by Identity.Name
-						//Revocations: []*pathEntity.Signature,
-						Revocations: pathEntity.Revocations,
-						Subkeys:     pathEntity.Subkeys,
-					}
-
-					//e := openpgp.Entity{
-					//	PrimaryKey: pathEntity.PrimaryKey,
-					//	PrivateKey: pathEntity.PrivateKey,
-					//	//PrivateKey.Encrypted: pathEntity.PrivateKey.Encrypted,
-					//}
-
-					fmt.Printf("DEBUG 1 : %v\n", pathEntity.PrivateKey)
-
-					//if err = pathEntity.Serialize(secretFilePath); err != nil {
-					//	return err
-					//}
-
-					fmt.Printf("Using default pass: 1234\n")
-					err = sypgp.EncryptKey(e, "1234")
-					if err != nil {
-						return err
-					}
-
-					fmt.Printf("EEEEE: %v\n", e.PrivateKey.Encrypted)
-					fmt.Printf("ALLLLLL: %+v\n", e)
-					fmt.Printf("\n")
-					fmt.Printf("ALLLLLL PATHENTITY: %+v\n", pathEntity)
-
-					//if err = pathEntity.Serialize(secretFilePath); err != nil {
-					//	return err
-					//}
-
-					err = sypgp.StorePrivKey(e)
-					if err != nil {
-						return err
-					}
-
-					//if err = e.SerializePrivate(secretFilePath, nil); err != nil {
-					//	return err
-					//}
-					fmt.Printf("Key with fingerprint %0X added succesfully to the keystore\n", fingerprint)
-				} else {
-					fmt.Printf("The key you want to add with fingerprint %0X already belongs to the keystore\n", fingerprint)
-				}
-			}
-
-		}
+		// The code should NEVER get here
+		return fmt.Errorf("not a private, or public key")
 	}
 
 	return nil

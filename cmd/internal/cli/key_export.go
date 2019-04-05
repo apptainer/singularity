@@ -30,7 +30,7 @@ func init() {
 // KeyExportCmd is `singularity key export` and exports a public or secret
 // key from local keyring.
 var KeyExportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(2),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   exportRun,
@@ -41,13 +41,10 @@ var KeyExportCmd = &cobra.Command{
 	Example: docs.KeyExportExample,
 }
 
-func doKeyExportCmd(secretExport bool, fingerprint, path string) error {
+func doKeyExportCmd(secretExport bool, path string) error {
 	// describes the path from either the local public keyring or secret local keyring
 	var fetchPath string
 	var keyString string
-
-	fmt.Printf("FINGERPRINT: %v\n", fingerprint)
-	fmt.Printf("PATH       : %v\n", path)
 
 	if secretExport {
 		fetchPath = sypgp.SecretPath()
@@ -67,7 +64,7 @@ func doKeyExportCmd(secretExport bool, fingerprint, path string) error {
 		return fmt.Errorf("unable to list local keyring: %v", err)
 	}
 
-	var entityToSave *openpgp.Entity
+	//var entityToExport *openpgp.Entity
 
 	file, err := os.Create(path)
 	if err != nil {
@@ -75,69 +72,39 @@ func doKeyExportCmd(secretExport bool, fingerprint, path string) error {
 	}
 
 	if secretExport {
-		foundKey = false
-		// sort through them, and remove any that match toDelete
-		for _, localEntity := range localEntityList {
-
-			if fmt.Sprintf("%X", localEntity.PrimaryKey.Fingerprint) == fingerprint {
-				foundKey = true
-				entityToSave = localEntity
-				break
-			}
-
+		// Get a key to export
+		entityToExport, err := sypgp.SelectPrivKey(localEntityList)
+		if err != nil {
+			return err
+		}
+		err = sypgp.DecryptKey(entityToExport)
+		if err != nil {
+			return err
 		}
 
-		if foundKey {
-			fmt.Printf("INFO: %T\n", entityToSave)
-			fmt.Printf("EXPORT_V: %v\n", entityToSave)
-			fmt.Println("EXPORT_PRIV: ", entityToSave.PrivateKey)
-			fmt.Println("EXPORT_ENTITY: ", entityToSave.PrivateKey.Encrypted)
-
-			fmt.Printf("ALLLLLLLLL: %+v\n", entityToSave)
-
-			err := sypgp.DecryptKey(entityToSave)
-			if err != nil {
-				return err
-			}
-
-			keyString, err = sypgp.SerializePrivateEntity(entityToSave, openpgp.PrivateKeyType, nil)
-			file.WriteString(keyString)
-			defer file.Close()
-			if err != nil {
-				return fmt.Errorf("error encoding private key")
-			}
-			fmt.Printf("Private key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
-		} else {
-			return fmt.Errorf("No private keys with fingerprint %s were found to export.\n", fingerprint)
+		keyString, err = sypgp.SerializePrivateEntity(entityToExport, openpgp.PrivateKeyType, nil)
+		file.WriteString(keyString)
+		defer file.Close()
+		if err != nil {
+			return fmt.Errorf("error encoding private key")
 		}
+		fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
 	} else {
-		foundKey = false
-		// sort through them, and remove any that match toDelete
-		for _, localEntity := range localEntityList {
-			if fmt.Sprintf("%X", localEntity.PrimaryKey.Fingerprint) == fingerprint {
-				foundKey = true
-				entityToSave = localEntity
-				break
-			}
+		entityToExport, err := sypgp.SelectPubKey(localEntityList)
+		if err != nil {
+			return err
 		}
-
-		if foundKey {
-			keyString, err = sypgp.SerializePublicEntity(entityToSave, openpgp.PublicKeyType)
-			file.WriteString(keyString)
-			defer file.Close()
-			fmt.Printf("Public key with fingerprint %s correctly exported to file: %s\n", fingerprint, path)
-		} else {
-			return fmt.Errorf("No public keys with fingerprint %s were found to export.\n", fingerprint)
-		}
-
+		keyString, err = sypgp.SerializePublicEntity(entityToExport, openpgp.PublicKeyType)
+		file.WriteString(keyString)
+		defer file.Close()
+		fmt.Printf("Public key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
 	}
 
 	return nil
 }
 
 func exportRun(cmd *cobra.Command, args []string) {
-
-	if err := doKeyExportCmd(secretExport, args[0], args[1]); err != nil {
+	if err := doKeyExportCmd(secretExport, args[0]); err != nil {
 		sylog.Errorf("key export command failed: %s", err)
 		os.Exit(2)
 	}
