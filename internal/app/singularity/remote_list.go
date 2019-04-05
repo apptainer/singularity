@@ -42,7 +42,7 @@ func RemoteList(usrConfigFile, sysConfigFile string) (err error) {
 	}
 
 	// list in alphanumeric order
-	var names []string
+	names := make([]string, 0, len(c.Remotes))
 	for n := range c.Remotes {
 		names = append(names, n)
 	}
