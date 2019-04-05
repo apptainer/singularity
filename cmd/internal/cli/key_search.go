@@ -14,11 +14,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func init() {
-	KeySearchCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "specify the key server URL")
-	KeySearchCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
-}
-
 // KeySearchCmd is `singularity key search' and look for public keys from a key server
 var KeySearchCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),

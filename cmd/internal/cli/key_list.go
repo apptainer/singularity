@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sylabs/singularity/pkg/cmdline"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -16,9 +18,19 @@ import (
 
 var secret bool
 
+// -s|--secret
+var keyListSecretFlag = cmdline.Flag{
+	ID:           "keyListSecretFlag",
+	Value:        &secret,
+	DefaultValue: false,
+	Name:         "secret",
+	ShortHand:    "s",
+	Usage:        "list private keys instead of the default which displays public ones",
+	EnvKeys:      []string{"SECRET"},
+}
+
 func init() {
-	KeyListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
-	KeyListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
+	flagManager.RegisterCmdFlag(&keyListSecretFlag, KeyListCmd)
 }
 
 // KeyListCmd is `singularity key list' and lists local store OpenPGP keys

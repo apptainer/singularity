@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 const (
@@ -20,6 +21,17 @@ var (
 	keyServerURI string // -u command line option
 )
 
+// -u|--url
+var keyServerURIFlag = cmdline.Flag{
+	ID:           "keyServerURIFlag",
+	Value:        &keyServerURI,
+	DefaultValue: defaultKeyServer,
+	Name:         "url",
+	ShortHand:    "u",
+	Usage:        "specify the key server URL",
+	EnvKeys:      []string{"URL"},
+}
+
 func init() {
 	cmdManager.RegisterCmd(KeyCmd, false)
 	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd, false)
@@ -29,6 +41,8 @@ func init() {
 	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd, false)
 	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd, false)
 	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd, false)
+
+	flagManager.RegisterCmdFlag(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores
