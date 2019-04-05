@@ -32,6 +32,7 @@ type Flag struct {
 	Tag          string
 	Deprecated   string
 	Hidden       bool
+	Required     bool
 	EnvKeys      []string
 	EnvHandler   EnvHandler
 	ExcludedOS   []string
