@@ -48,8 +48,7 @@ func NewFlagManager() *FlagManager {
 	return &FlagManager{make(map[string]*Flag)}
 }
 
-// RegisterFlagAnnotation ...
-func (m *FlagManager) RegisterFlagAnnotation(flag *Flag, cmd *cobra.Command) {
+func (m *FlagManager) setFlagOptions(flag *Flag, cmd *cobra.Command) {
 	cmd.Flags().SetAnnotation(flag.Name, "argtag", []string{flag.Tag})
 
 	if len(flag.EnvKeys) > 0 {
@@ -62,6 +61,9 @@ func (m *FlagManager) RegisterFlagAnnotation(flag *Flag, cmd *cobra.Command) {
 	}
 	if flag.Hidden {
 		cmd.Flags().MarkHidden(flag.Name)
+	}
+	if flag.Required {
+		cmd.MarkFlagRequired(flag.Name)
 	}
 }
 
@@ -105,7 +107,7 @@ func (m *FlagManager) registerStringVar(flag *Flag, cmds []*cobra.Command) {
 		} else {
 			c.Flags().StringVar(flag.Value.(*string), flag.Name, flag.DefaultValue.(string), flag.Usage)
 		}
-		m.RegisterFlagAnnotation(flag, c)
+		m.setFlagOptions(flag, c)
 	}
 }
 
@@ -116,7 +118,7 @@ func (m *FlagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) 
 		} else {
 			c.Flags().StringSliceVar(flag.Value.(*[]string), flag.Name, flag.DefaultValue.([]string), flag.Usage)
 		}
-		m.RegisterFlagAnnotation(flag, c)
+		m.setFlagOptions(flag, c)
 	}
 }
 
@@ -127,7 +129,7 @@ func (m *FlagManager) registerBoolVar(flag *Flag, cmds []*cobra.Command) {
 		} else {
 			c.Flags().BoolVar(flag.Value.(*bool), flag.Name, flag.DefaultValue.(bool), flag.Usage)
 		}
-		m.RegisterFlagAnnotation(flag, c)
+		m.setFlagOptions(flag, c)
 	}
 }
 
@@ -138,7 +140,7 @@ func (m *FlagManager) registerIntVar(flag *Flag, cmds []*cobra.Command) {
 		} else {
 			c.Flags().IntVar(flag.Value.(*int), flag.Name, flag.DefaultValue.(int), flag.Usage)
 		}
-		m.RegisterFlagAnnotation(flag, c)
+		m.setFlagOptions(flag, c)
 	}
 }
 
@@ -149,7 +151,7 @@ func (m *FlagManager) registerUint32Var(flag *Flag, cmds []*cobra.Command) {
 		} else {
 			c.Flags().Uint32Var(flag.Value.(*uint32), flag.Name, flag.DefaultValue.(uint32), flag.Usage)
 		}
-		m.RegisterFlagAnnotation(flag, c)
+		m.setFlagOptions(flag, c)
 	}
 }
 
