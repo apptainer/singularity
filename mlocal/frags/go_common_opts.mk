@@ -6,7 +6,7 @@ GO_BUILDMODE := -buildmode=default
 GO_GCFLAGS := -gcflags=all=-trimpath=`dirname $(SOURCEDIR)`
 GO_ASMFLAGS := -asmflags=all=-trimpath=`dirname $(SOURCEDIR)`
 GO_MODFLAGS :=
-GOFLAGS := -mod=vendor
+GOFLAGS :=
 
 export GOFLAGS GO111MODULE
 
