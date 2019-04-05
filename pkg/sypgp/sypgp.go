@@ -47,6 +47,7 @@ WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exis
 
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
+var errInvalidArgument = errors.New("invalid argument")
 
 // Read from a file descriptor (but through a os.File object) one line at a time.
 // The file can be a normal file or os.Stdin.
@@ -57,7 +58,9 @@ func askQuestionUsingGenericDescr(f *os.File) (string, error) {
 	// Get the initial position in the buffer so we can later seek the correct
 	// position based on how much data we read. Doing so, we can still benefit
 	// from buffered io and still have a fine-grain control over reading
-	// operations
+	// operations.
+	// Note that we do not check for errors since some cases (e.g., pipes) will
+	// actually not allow to perform a seek().
 	pos, _ := f.Seek(0, os.SEEK_CUR)
 	// Get the data
 	scanner := bufio.NewScanner(f)
@@ -73,6 +76,8 @@ func askQuestionUsingGenericDescr(f *os.File) (string, error) {
 	if len(response) > 1 {
 		strLen = len(response) + 1 // We do not forget the \n character
 	}
+	// Note that we do not check for errors since some cases (e.g., pipes) will
+	// actually not allow to perform a seek().
 	f.Seek(pos+int64(strLen), os.SEEK_SET)
 
 	return response, nil
@@ -250,6 +255,7 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 // PrintEntity pretty prints an entity entry
 func PrintEntity(index int, e *openpgp.Entity) {
 	if e == nil {
+		fmt.Println("warning: entity not defined")
 		return
 	}
 
@@ -297,7 +303,7 @@ func PrintPrivKeyring() (err error) {
 // StorePrivKey stores a private entity list into the local key cache
 func StorePrivKey(e *openpgp.Entity) (err error) {
 	if e == nil {
-		return
+		return errInvalidArgument
 	}
 
 	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
@@ -315,7 +321,7 @@ func StorePrivKey(e *openpgp.Entity) (err error) {
 // StorePubKey stores a public key entity list into the local key cache
 func StorePubKey(e *openpgp.Entity) (err error) {
 	if e == nil {
-		return
+		return errInvalidArgument
 	}
 
 	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
@@ -515,7 +521,7 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
 	if k == nil {
-		return nil
+		return errInvalidArgument
 	}
 
 	if k.PrivateKey.Encrypted {
@@ -534,7 +540,7 @@ func DecryptKey(k *openpgp.Entity) error {
 // EncryptKey encrypts a private key using a pass phrase
 func EncryptKey(k *openpgp.Entity, pass string) (err error) {
 	if k == nil {
-		return nil
+		return errInvalidArgument
 	}
 
 	if k.PrivateKey.Encrypted {
