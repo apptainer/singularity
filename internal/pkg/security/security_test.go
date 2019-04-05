@@ -90,7 +90,7 @@ func TestConfigure(t *testing.T) {
 			desc: "with bad apparmor profile",
 			spec: specs.Spec{
 				Process: &specs.Process{
-					SelinuxLabel: "__test__",
+					ApparmorProfile: "__test__",
 				},
 			},
 			expectFailure: true,
@@ -100,7 +100,7 @@ func TestConfigure(t *testing.T) {
 			desc: "with unconfined apparmor profile",
 			spec: specs.Spec{
 				Process: &specs.Process{
-					SelinuxLabel: "unconfined",
+					ApparmorProfile: "unconfined",
 				},
 			},
 			disabled: !apparmor.Enabled(),
@@ -108,9 +108,11 @@ func TestConfigure(t *testing.T) {
 	}
 
 	for _, s := range specs {
-		if s.disabled {
-			continue
-		}
+		t.Run(s.desc, func(t *testing.T) {
+			if s.disabled {
+				t.Skip("test disabled, security module not enabled on this system")
+			}
+		})
 		err := Configure(&s.spec)
 		if err != nil && !s.expectFailure {
 			t.Errorf("unexpected failure with %s", s.desc)
