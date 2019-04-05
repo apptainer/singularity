@@ -334,7 +334,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("failed to retrieve user information for UID %d: %s", os.Getuid(), err)
 		}
-		procname = instance.ProcName(name, pwd.Name)
+		procname, err = instance.ProcName(name, pwd.Name)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	} else {
 		generator.SetProcessArgs(args)
 		procname = "Singularity runtime parent"

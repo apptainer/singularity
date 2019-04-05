@@ -20,10 +20,53 @@ func TestProcName(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test := ProcName("test", "test")
-	match := "Singularity instance: test [test]"
-	if test != match {
-		t.Errorf("unexpected match %s != %s", test, match)
+	tests := []struct {
+		desc            string
+		name            string
+		user            string
+		match           string
+		expectedFailure bool
+	}{
+		{
+			desc:  "with valid same name/username",
+			name:  "test",
+			user:  "test",
+			match: "Singularity instance: test [test]",
+		},
+		{
+			desc:  "with valid different name/username",
+			name:  "instance",
+			user:  "user",
+			match: "Singularity instance: user [instance]",
+		},
+		{
+			desc:            "with empty name",
+			name:            "",
+			user:            "test",
+			expectedFailure: true,
+		},
+		{
+			desc:            "with empty username",
+			name:            "test",
+			user:            "",
+			expectedFailure: true,
+		},
+		{
+			desc:            "both empty name/username",
+			name:            "",
+			user:            "",
+			expectedFailure: true,
+		},
+	}
+	for _, e := range tests {
+		m, err := ProcName(e.name, e.user)
+		if err != nil && !e.expectedFailure {
+			t.Errorf("unexpected failure for test '%s': %s", e.desc, err)
+		} else if err == nil && e.expectedFailure {
+			t.Errorf("unexpected success for test '%s'", e.desc)
+		} else if m != e.match {
+			t.Errorf("unexpected match %s != %s", m, e.match)
+		}
 	}
 }
 
@@ -51,7 +94,7 @@ func TestExtractName(t *testing.T) {
 	for _, e := range tests {
 		o := ExtractName(e.input)
 		if o != e.output {
-			t.Errorf("unexpected match, got %s instead of %s", o, e.output)
+			t.Errorf("unexpected result, got %s instead of %s", o, e.output)
 		}
 	}
 }
@@ -100,11 +143,18 @@ func TestCheckName(t *testing.T) {
 			name:          "test/123",
 			expectFailure: true,
 		},
+		{
+			desc:          "with empty name",
+			name:          "",
+			expectFailure: true,
+		},
 	}
 	for _, e := range tests {
 		err := CheckName(e.name)
 		if err != nil && !e.expectFailure {
 			t.Errorf("unexpected failure %s: %s", e.desc, err)
+		} else if err == nil && e.expectFailure {
+			t.Errorf("unexpected success %s", e.desc)
 		}
 	}
 }
@@ -138,6 +188,8 @@ func TestGetDirUnprivileged(t *testing.T) {
 		path, err := GetDirUnprivileged(e.name, testSubDir)
 		if err != nil && !e.expectFailure {
 			t.Errorf("unexpected failure for name %s: %s", e.name, err)
+		} else if err == nil && e.expectFailure {
+			t.Errorf("unexpected success for name %s", e.name)
 		} else if !e.expectFailure && path != e.path {
 			t.Errorf("unexpected path returned %s instead of %s", path, e.path)
 		}
@@ -168,6 +220,8 @@ func TestGetDirPrivileged(t *testing.T) {
 		path, err := GetDirPrivileged(e.name, testSubDir)
 		if err != nil && !e.expectFailure {
 			t.Errorf("unexpected failure for name %s: %s", e.name, err)
+		} else if err == nil && e.expectFailure {
+			t.Errorf("unexpected success for name %s", e.name)
 		} else if !e.expectFailure && path != e.path {
 			t.Errorf("unexpected path returned %s instead of %s", path, e.path)
 		}
@@ -195,12 +249,12 @@ var instanceTests = []struct {
 		expectFailure: false,
 	},
 	{
-		name:          "invalid_privileged_instance",
+		name:          "invalid privileged_instance",
 		privileged:    true,
 		expectFailure: true,
 	},
 	{
-		name:          "invalid_unprivileged_instance",
+		name:          "invalid unprivileged_instance",
 		privileged:    false,
 		expectFailure: true,
 	},
@@ -216,6 +270,8 @@ func TestAdd(t *testing.T) {
 		file, err = Add(e.name, e.privileged, testSubDir)
 		if err != nil && !e.expectFailure {
 			t.Errorf("unexpected failure for name %s: %s", e.name, err)
+		} else if err == nil && e.expectFailure {
+			t.Errorf("unexpected success for name %s", e.name)
 		}
 		if file != nil {
 			file.User = "root"
@@ -260,6 +316,8 @@ func TestGet(t *testing.T) {
 		file, err = Get(e.name, testSubDir)
 		if err != nil && !e.expectFailure {
 			t.Errorf("unexpected failure for name %s: %s", e.name, err)
+		} else if err == nil && e.expectFailure {
+			t.Errorf("unexpected success for name %s", e.name)
 		}
 		if file != nil {
 			if file.User != "root" {
