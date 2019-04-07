@@ -21,7 +21,7 @@ const (
 	fileName      = "remote.yaml"
 	userDir       = ".singularity"
 	sysDir        = "singularity"
-	remoteWarning = "no auth token, log in with 'singularity remote` commands"
+	remoteWarning = "no authentication token, log in with 'singularity remote` commands"
 )
 
 var (
