@@ -93,7 +93,7 @@ var RemoteAddCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(2),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteAdd(remoteConfig, args[0], args[1]); err != nil {
+		if err := singularity.RemoteAdd(remoteConfig, args[0], args[1], global); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
