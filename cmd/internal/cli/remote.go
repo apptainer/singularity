@@ -50,6 +50,8 @@ func init() {
 
 	// default location of the remote.yaml file is the user directory
 	RemoteCmd.Flags().StringVarP(&remoteConfig, "config", "c", remoteConfigUser, "path to the file holding remote endpoint configurations")
+	// use tokenfile to log in to a remote
+	RemoteLoginCmd.Flags().StringVar(&tokenFile, "tokenfile", "", "path to the file holding token")
 
 	// add --global flag to remote add/remove commands
 	addGlobalFlag(RemoteAddCmd)
@@ -155,7 +157,7 @@ var RemoteListCmd = &cobra.Command{
 var RemoteLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0]); err != nil {
+		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0], tokenFile); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
