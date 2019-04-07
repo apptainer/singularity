@@ -1,0 +1,5 @@
+Active: cloud
+Remotes:
+  cloud:
+    URI: cloud.sylabs.io
+    System: true
