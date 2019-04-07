@@ -7,18 +7,15 @@ package cli
 
 import (
 	"errors"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func ensurePluginCmdRootPriv(cmd *cobra.Command, args []string) {
-	if os.Geteuid() != 0 {
-		sylog.Fatalf("command 'plugin %s' requires root privileges", cmd.Name())
-	}
-}
+// pluginContext is a variable used to describe the context of a plugin command.
+// This variable is for example passed in to the EnsureRootPriv() function to
+// customize the output.
+var pluginContext = []string{"plugin"}
 
 func init() {
 	PluginCmd.AddCommand(PluginListCmd)
