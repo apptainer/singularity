@@ -99,7 +99,7 @@ func (c *Config) SyncFrom(sys *Config) error {
 		}
 	}
 
-	// set sytem default to user default if no user default specified
+	// set system default to user default if no user default specified
 	if c.DefaultRemote == "" && sys.DefaultRemote != "" {
 		c.DefaultRemote = sys.DefaultRemote
 	}
