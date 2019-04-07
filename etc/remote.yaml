@@ -1,5 +1,5 @@
-Active: cloud
+Active: SylabsCloud
 Remotes:
-  cloud:
+  SylabsCloud:
     URI: cloud.sylabs.io
     System: true
