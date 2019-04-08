@@ -81,7 +81,6 @@ func doKeyImportCmd(path string) error {
 		// Go through the keyring checking for the given fingerprint
 		for _, pathEntity := range pathEntityList {
 			isInStore := false
-			//fingerprint = pathEntity.PrimaryKey.Fingerprint
 
 			for _, publicEntity := range publicEntityList {
 				if pathEntity.PrimaryKey.KeyId == publicEntity.PrimaryKey.KeyId {
@@ -122,7 +121,6 @@ func doKeyImportCmd(path string) error {
 		// Go through the keystore checking for the given fingerprint
 		for _, pathEntity := range pathEntityList {
 			isInStore := false
-			//fingerprint = pathEntity.PrimaryKey.Fingerprint
 
 			for _, privateEntity := range privateEntityList {
 				if privateEntity.PrimaryKey.Fingerprint == pathEntity.PrimaryKey.Fingerprint {
@@ -152,8 +150,7 @@ func doKeyImportCmd(path string) error {
 				}
 
 				// Get a new password for the key
-				fmt.Fprintf(os.Stderr, "Enter a new password for this key:\n")
-				newPass, err := sypgp.GetPassphrase(3)
+				newPass, err := sypgp.GetPassphrase("Enter a new password for this key : ", 3)
 				if err != nil {
 					return err
 				}

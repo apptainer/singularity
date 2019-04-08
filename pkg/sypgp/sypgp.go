@@ -364,9 +364,9 @@ func RemovePubKey(toDelete string) error {
 
 // GetPassphrase will ask the user for a password with int number of
 // retries.
-func GetPassphrase(retries int) (string, error) {
+func GetPassphrase(message string, retries int) (string, error) {
 	ask := func() (string, error) {
-		pass1, err := AskQuestionNoEcho("Enter a passphrase : ")
+		pass1, err := AskQuestionNoEcho(message)
 		if err != nil {
 			return "", err
 		}
@@ -424,7 +424,7 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 	}
 
 	// get a password
-	passphrase, err := GetPassphrase(3)
+	passphrase, err := GetPassphrase("Enter a passphrase : ", 3)
 	if err != nil {
 		return
 	}
@@ -470,7 +470,7 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity) error {
 	if k.PrivateKey.Encrypted {
-		pass, err := AskQuestionNoEcho("Enter key passphrase: ")
+		pass, err := AskQuestionNoEcho("Enter key passphrase : ")
 		if err != nil {
 			return err
 		}
