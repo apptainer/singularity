@@ -699,9 +699,26 @@ func SerializePrivateEntity(e *openpgp.Entity, blockType string, config *packet.
 	return w.String(), nil
 }
 
-//func (e *packet.EncryptedKey) foo(w io.Writer) error {
-//	return e.packet.EncryptedKey.Serialize(w)
-//}
+// RecryptKey Will decrypt a entity, then recrypt it with the same password.
+// This function seems pritty usless, but its not!
+func RecryptKey(k *openpgp.Entity) error {
+	if k.PrivateKey.Encrypted {
+		pass, err := AskQuestionNoEcho("Enter key passphrase : ")
+		if err != nil {
+			return err
+		}
+		err = k.PrivateKey.Decrypt([]byte(pass))
+		if err != nil {
+			return err
+		}
+		err = k.PrivateKey.Encrypt([]byte(pass))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // ExportPrivateKey ...
 func ExportPrivateKey(path string) error {
@@ -723,12 +740,9 @@ func ExportPrivateKey(path string) error {
 		return err
 	}
 
-	err = DecryptKey(entityToExport)
-	if err != nil {
-		return err
-	}
 
-	err = EncryptKey(entityToExport, "1234")
+//	err = DecryptKey(entityToExport)
+	err = RecryptKey(entityToExport)
 	if err != nil {
 		return err
 	}
