@@ -17,6 +17,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	//	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -187,12 +188,13 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	}
 	defer f.Close()
 
-	el, err := openpgp.ReadArmoredKeyRing(f)
-	if err != nil {
-		return nil, err
-	}
+	//	el, err := openpgp.ReadArmoredKeyRing(f)
+	//	el, err := ReadEntity(f)
+	//	if err != nil {
+	//		return nil, err
+	//	}
 
-	return el, nil
+	return openpgp.ReadKeyRing(f)
 }
 
 // LoadPubKeyring loads the public keys from local store into an EntityList
@@ -661,6 +663,7 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	return el, nil
 }
 
+// SerializePublicEntity ...
 func SerializePublicEntity(e *openpgp.Entity, blockType string) (string, error) {
 	w := bytes.NewBuffer(nil)
 
@@ -678,6 +681,7 @@ func SerializePublicEntity(e *openpgp.Entity, blockType string) (string, error) 
 	return w.String(), nil
 }
 
+// SerializePrivateEntity ...
 func SerializePrivateEntity(e *openpgp.Entity, blockType string, config *packet.Config) (string, error) {
 	w := bytes.NewBuffer(nil)
 
@@ -693,6 +697,149 @@ func SerializePrivateEntity(e *openpgp.Entity, blockType string, config *packet.
 	wr.Close()
 
 	return w.String(), nil
+}
+
+//func (e *packet.EncryptedKey) foo(w io.Writer) error {
+//	return e.packet.EncryptedKey.Serialize(w)
+//}
+
+// ExportPrivateKey ...
+func ExportPrivateKey(path string) error {
+
+	f, err := os.OpenFile(SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to open local keyring: %v", err)
+	}
+	defer f.Close()
+
+	localEntityList, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	// Get a key to export
+	entityToExport, err := SelectPrivKey(localEntityList)
+	if err != nil {
+		return err
+	}
+
+	err = DecryptKey(entityToExport)
+	if err != nil {
+		return err
+	}
+
+	err = EncryptKey(entityToExport, "1234")
+	if err != nil {
+		return err
+	}
+
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+
+	//	wr, err := io.ReadAll(path)
+	//	if err != nil {
+	//		return err
+	//	}
+
+//	err = entityToExport.SerializePrivate(file, nil)
+
+	err = entityToExport.SerializePrivate(file, nil)
+
+	//	func (e *EncryptedKey) Serialize(w io.Writer) error
+
+//	err = entityToExport.Packet.EncryptedKey.Serialize(file)
+
+//	err = SerializeEncryptedKey(file, pub *PublicKey, cipherFunc CipherFunction, key []byte, nil)
+//	err = SerializeEncryptedKey(file, entityToExport.PublicKey, entityToExport.CipherFunction, key []byte, nil)
+
+
+	//	err = foo(wr)
+
+	if err != nil {
+		return err
+	}
+
+	//	err = EncryptKey(file, "1234")
+	//	if err != nil {
+	//		return err
+	//	}
+	fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
+	return nil
+}
+
+// ImportPrivateKey ...
+func ImportPrivateKey(path string) error {
+	// Load the local private keys as entitylist
+	privateEntityList, err := LoadPrivKeyring()
+	if err != nil {
+		return err
+	}
+	// Load the private key as an entitylist
+	pathEntityList, err := LoadKeyringFromFile(path)
+	if err != nil {
+		return fmt.Errorf("unable to get entity from: %s: %v", path, err)
+	}
+	// Get local keyring (where the key will be stored)
+	secretFilePath, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	defer secretFilePath.Close()
+
+	// Go through the keystore checking for the given fingerprint
+	for _, pathEntity := range pathEntityList {
+		isInStore := false
+
+		for _, privateEntity := range privateEntityList {
+			if privateEntity.PrimaryKey.Fingerprint == pathEntity.PrimaryKey.Fingerprint {
+				isInStore = true
+				break
+			}
+
+		}
+
+		if !isInStore {
+			// Make a clone of the entity
+			newEntity := &openpgp.Entity{
+				PrimaryKey:  pathEntity.PrimaryKey,
+				PrivateKey:  pathEntity.PrivateKey,
+				Identities:  pathEntity.Identities,
+				Revocations: pathEntity.Revocations,
+				Subkeys:     pathEntity.Subkeys,
+			}
+
+			// Check if the key is encrypted, if it is, decrypt it
+			if pathEntity.PrivateKey.Encrypted {
+				fmt.Fprintf(os.Stderr, "Enter your old password for this key:\n")
+				err = DecryptKey(newEntity)
+				if err != nil {
+					return err
+				}
+			}
+
+			// Get a new password for the key
+			newPass, err := GetPassphrase("Enter a new password for this key : ", 3)
+			if err != nil {
+				return err
+			}
+			err = EncryptKey(newEntity, newPass)
+			if err != nil {
+				return err
+			}
+
+			// Store the private key
+			err = StorePrivKey(newEntity)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("Key with fingerprint %X succesfully added to the keyring\n", pathEntity.PrimaryKey.Fingerprint)
+
+		}
+	}
+
+	return nil
 }
 
 // PushPubkey pushes a public key to the Key Service.
