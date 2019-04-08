@@ -38,7 +38,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		// Submiting a remote build requires a valid authToken
 		if authToken == "" {
-			sylog.Fatalf("Unable to submit build job: %v", authWarning)
+			sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
 		}
 
 		def, err := definitionFromSpec(spec)

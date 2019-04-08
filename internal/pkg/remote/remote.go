@@ -99,6 +99,11 @@ func (c *Config) SyncFrom(sys *Config) error {
 		}
 	}
 
+	// set system default to user default if no user default specified
+	if c.DefaultRemote == "" && sys.DefaultRemote != "" {
+		c.DefaultRemote = sys.DefaultRemote
+	}
+
 	return nil
 }
 
@@ -137,10 +142,15 @@ func (c *Config) Add(name string, e *EndPoint) error {
 }
 
 // Remove a remote endpoint
+// if endpoint is the default, the default is cleared
 // returns an error if it does not exist
 func (c *Config) Remove(name string) error {
 	if _, ok := c.Remotes[name]; !ok {
 		return fmt.Errorf("%s is not a remote", name)
+	}
+
+	if c.DefaultRemote == name {
+		c.DefaultRemote = ""
 	}
 
 	delete(c.Remotes, name)
