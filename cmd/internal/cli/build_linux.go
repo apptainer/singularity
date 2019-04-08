@@ -8,6 +8,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -43,6 +44,48 @@ func run(cmd *cobra.Command, args []string) {
 		def, err := definitionFromSpec(spec)
 		if err != nil {
 			sylog.Fatalf("Unable to build from %s: %v", spec, err)
+		}
+
+		if sandbox {
+			// create temporary file to download sif
+			f, err := ioutil.TempFile(tmpDir, "remote-build-")
+			if err != nil {
+				sylog.Fatalf("Could not create temporary directory: %s", err)
+			}
+			os.Remove(f.Name())
+			dest = f.Name()
+
+			// remove downloaded sif
+			defer os.Remove(f.Name())
+
+			// build from sif downloaded in tmp location
+			defer func() {
+				sylog.Debugf("Building sandbox from downloaded SIF")
+				d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
+				if err != nil {
+					sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
+				}
+
+				b, err := build.New(
+					[]types.Definition{d},
+					build.Config{
+						Dest:      args[0],
+						Format:    buildFormat,
+						NoCleanUp: noCleanUp,
+						Opts: types.Options{
+							TmpDir: tmpDir,
+							Update: update,
+							Force:  force,
+						},
+					})
+				if err != nil {
+					sylog.Fatalf("Unable to create build: %v", err)
+				}
+
+				if err = b.Full(); err != nil {
+					sylog.Fatalf("While performing build: %v", err)
+				}
+			}()
 		}
 
 		b, err := remotebuilder.New(dest, libraryURL, def, detached, force, builderURL, authToken)
