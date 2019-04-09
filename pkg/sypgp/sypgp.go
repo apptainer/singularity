@@ -710,12 +710,6 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	}
 	defer f.Close()
 
-	//	el, err := openpgp.ReadArmoredKeyRing(f)
-	//	el, err := ReadEntity(f)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-
 	return openpgp.ReadKeyRing(f)
 }
 
@@ -739,7 +733,6 @@ func ExportPrivateKey(path string) error {
 		return err
 	}
 
-	//	err = DecryptKey(entityToExport)
 	err = RecryptKey(entityToExport)
 	if err != nil {
 		return err
@@ -750,33 +743,13 @@ func ExportPrivateKey(path string) error {
 		return err
 	}
 
-	//	wr, err := io.ReadAll(path)
-	//	if err != nil {
-	//		return err
-	//	}
-
-	//	err = entityToExport.SerializePrivate(file, nil)
-
 	err = entityToExport.SerializePrivate(file, nil)
-
-	//	func (e *EncryptedKey) Serialize(w io.Writer) error
-
-	//	err = entityToExport.Packet.EncryptedKey.Serialize(file)
-
-	//	err = SerializeEncryptedKey(file, pub *PublicKey, cipherFunc CipherFunction, key []byte, nil)
-	//	err = SerializeEncryptedKey(file, entityToExport.PublicKey, entityToExport.CipherFunction, key []byte, nil)
-
-	//	err = foo(wr)
-
 	if err != nil {
 		return err
 	}
 
-	//	err = EncryptKey(file, "1234")
-	//	if err != nil {
-	//		return err
-	//	}
 	fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
+
 	return nil
 }
 
@@ -801,7 +774,6 @@ func ExportPubKey(kpath string) error {
 	if err != nil {
 		return err
 	}
-	//keyString, err := SerializePublicEntity(entityToExport, openpgp.PublicKeyType)
 
 	err = entityToExport.Serialize(file)
 
@@ -951,12 +923,6 @@ func ImportKey(kpath string) error {
 				return err
 			}
 		}
-
-		//fmt.Printf("PRIM: %v\n", pathEntity.PrimaryKey)
-		//fmt.Printf("PRIV: %v\n", pathEntity.PrivateKey)
-		//fmt.Printf("IDEN: %v\n", pathEntity.Identities)
-		//fmt.Printf("RECO: %v\n", pathEntity.Revocations)
-		//fmt.Printf("SUBK: %v\n", pathEntity.Subkeys)
 	}
 
 	return nil
