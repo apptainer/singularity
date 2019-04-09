@@ -54,7 +54,7 @@ func (c *ScratchConveyor) insertBaseEnv() (err error) {
 }
 
 func (cp *ScratchConveyorPacker) insertRunScript() (err error) {
-	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}
