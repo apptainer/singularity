@@ -197,7 +197,7 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 
 // AddGIDMappings sets user namespace GID mapping
 func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
-	var targetGids []int
+	targetGids := make([]int, 0, len(gids))
 	gidMap := ""
 	for _, gid := range gids {
 		targetGids = append(targetGids, int(gid.ContainerID))
