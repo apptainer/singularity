@@ -656,8 +656,8 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunHelpUse   string = `run-help [run-help options] <image path>`
-	RunHelpShort string = `Show the help for an image`
+	RunHelpUse   string = `run-help <image path>`
+	RunHelpShort string = `Show the user-defined help for an image`
 	RunHelpLong  string = `
   Show the help for an image.
 
@@ -809,7 +809,7 @@ found at:
   Kill invoke kill operation to kill processes running within container identified by container ID.`
 	OciKillExample string = `
   $ singularity oci kill mycontainer INT
-  $ singularity oci kill -s INT mycontainer`
+  $ singularity oci kill mycontainer -s INT`
 
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`

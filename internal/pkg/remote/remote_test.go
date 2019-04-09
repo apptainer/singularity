@@ -210,6 +210,79 @@ func TestSyncFrom(t *testing.T) {
 					},
 				},
 			},
+		}, {
+			name: "sys config update default endpoint",
+			sys: Config{
+				DefaultRemote: "sylabs-global",
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token", // should be ignored by SyncFrom
+					},
+				},
+			},
+			usr: Config{
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.old-url.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			res: Config{
+				DefaultRemote: "sylabs-global",
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.sylabs.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+		}, {
+			name: "sys config dont update default endpoint",
+			sys: Config{
+				DefaultRemote: "sylabs-global",
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token", // should be ignored by SyncFrom
+					},
+				},
+			},
+			usr: Config{
+				DefaultRemote: "sylabs",
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.old-url.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
+			res: Config{
+				DefaultRemote: "sylabs",
+				Remotes: map[string]*EndPoint{
+					"sylabs-global": {
+						URI:    "cloud.sylabs.io",
+						System: true,
+					},
+					"sylabs": {
+						URI:   "cloud.sylabs.io",
+						Token: "fake-token",
+					},
+				},
+			},
 		},
 	}
 
@@ -384,6 +457,32 @@ func TestRemoveRemote(t *testing.T) {
 			name: "remove remote to make non-empty config",
 			old: Config{
 				DefaultRemote: "",
+				Remotes: map[string]*EndPoint{
+					"random": {
+						URI:   "cloud.random.io",
+						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+					},
+					"cloud": {
+						URI:   "cloud.sylabs.io",
+						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+					},
+				},
+			},
+			new: Config{
+				DefaultRemote: "",
+				Remotes: map[string]*EndPoint{
+					"random": {
+						URI:   "cloud.random.io",
+						Token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.TCYt5XsITJX1CxPCT8yAV-TVkIEq_PbChOMqsLfRoPsnsgw5WEuts01mq-pQy7UJiN5mgRxD-WUcX16dUEMGlv50aqzpqh4Qktb3rk-BuQy72IFLOqV0G_zS245-kronKb78cPN25DGlcTwLtjPAYuNzVBAh4vGHSrQyHUdBBPM",
+					},
+				},
+			},
+			id: "cloud",
+		},
+		{
+			name: "remove default remote to make defaultless config",
+			old: Config{
+				DefaultRemote: "cloud",
 				Remotes: map[string]*EndPoint{
 					"random": {
 						URI:   "cloud.random.io",
