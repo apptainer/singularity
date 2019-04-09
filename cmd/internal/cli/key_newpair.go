@@ -24,6 +24,8 @@ var KeyNewPairCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		handleKeyFlags(cmd)
+
 		if _, err := sypgp.GenKeyPair(keyServerURI, authToken); err != nil {
 			sylog.Errorf("creating newpair failed: %v", err)
 			os.Exit(2)
