@@ -17,7 +17,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	//	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -926,6 +925,23 @@ func ImportKey(kpath string) error {
 	}
 
 	return nil
+}
+
+func serializeEntity(e *openpgp.Entity, blockType string) (string, error) {
+	w := bytes.NewBuffer(nil)
+
+	wr, err := armor.Encode(w, blockType, nil)
+	if err != nil {
+		return "", err
+	}
+
+	if err = e.Serialize(wr); err != nil {
+		wr.Close()
+		return "", err
+	}
+	wr.Close()
+
+	return w.String(), nil
 }
 
 // PushPubkey pushes a public key to the Key Service.
