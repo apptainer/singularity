@@ -185,6 +185,3 @@ workflows:
       - integration_tests:
           requires:
             - get_source
-          filters:
-            branches:
-              only: master
