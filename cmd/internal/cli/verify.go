@@ -91,7 +91,7 @@ func handleVerifyFlags(cmd *cobra.Command) {
 	}
 
 	authToken = endpoint.Token
-	if !cmd.Flags().Lookup("keystore").Changed {
+	if !cmd.Flags().Lookup("url").Changed {
 		uri, err := endpoint.GetServiceURI("keystore")
 		if err != nil {
 			sylog.Fatalf("Unable to get library service URI: %v", err)
