@@ -187,7 +187,7 @@ func handleBuildFlags(cmd *cobra.Command) {
 		uri, err := endpoint.GetServiceURI("library")
 		if err == nil {
 			libraryURL = uri
-		} else if err != nil {
+		} else {
 			sylog.Warningf("Unable to get library service URI: %v", err)
 		}
 	}
