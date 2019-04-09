@@ -52,8 +52,8 @@ func resize(controlSocket string, oversized bool) {
 	}
 
 	enc := json.NewEncoder(c)
-	if err != nil {
-		sylog.Errorf("%s", err)
+	if enc == nil {
+		sylog.Errorf("cannot instantiate JSON encoder")
 		return
 	}
 

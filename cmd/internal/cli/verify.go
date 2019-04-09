@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/signing"
 )
@@ -42,6 +43,8 @@ var VerifyCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		handleVerifyFlags(cmd)
+
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
 		doVerifyCmd(args[0], keyServerURI)
@@ -73,5 +76,26 @@ func doVerifyCmd(cpath, url string) {
 	}
 	if notLocalKey {
 		os.Exit(1)
+	}
+}
+
+func handleVerifyFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("keystore").Changed {
+		uri, err := endpoint.GetServiceURI("keystore")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		keyServerURI = uri
 	}
 }

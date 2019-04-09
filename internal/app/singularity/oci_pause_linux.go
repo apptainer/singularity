@@ -45,8 +45,8 @@ func OciPauseResume(containerID string, pause bool) error {
 	defer c.Close()
 
 	enc := json.NewEncoder(c)
-	if err != nil {
-		return err
+	if enc == nil {
+		return fmt.Errorf("cannot instantiate new JSON encoder")
 	}
 
 	if err := enc.Encode(ctrl); err != nil {
