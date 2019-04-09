@@ -52,17 +52,17 @@ func doKeyExportCmd(secretExport bool, path string) error {
 		fetchPath = sypgp.PublicPath()
 	}
 
-//	f, err := os.OpenFile(fetchPath, os.O_RDONLY|os.O_CREATE, 0600)
-//	if err != nil {
-//		return fmt.Errorf("unable to open local keyring: %v", err)
-//	}
-//	defer f.Close()
+	//	f, err := os.OpenFile(fetchPath, os.O_RDONLY|os.O_CREATE, 0600)
+	//	if err != nil {
+	//		return fmt.Errorf("unable to open local keyring: %v", err)
+	//	}
+	//	defer f.Close()
 
 	// read all the local secret keys
-//	localEntityList, err := openpgp.ReadKeyRing(f)
-//	if err != nil {
-//		return fmt.Errorf("unable to list local keyring: %v", err)
-//	}
+	//	localEntityList, err := openpgp.ReadKeyRing(f)
+	//	if err != nil {
+	//		return fmt.Errorf("unable to list local keyring: %v", err)
+	//	}
 
 	//file, err := os.Create(path)
 	//if err != nil {
@@ -71,15 +71,14 @@ func doKeyExportCmd(secretExport bool, path string) error {
 
 	if secretExport {
 		// Get a key to export
-//		entityToExport, err := sypgp.SelectPrivKey(localEntityList)
-//		if err != nil {
-//			return err
-//		}
-//		err = sypgp.DecryptKey(entityToExport)
-//		if err != nil {
-//			return err
-//		}
-
+		//		entityToExport, err := sypgp.SelectPrivKey(localEntityList)
+		//		if err != nil {
+		//			return err
+		//		}
+		//		err = sypgp.DecryptKey(entityToExport)
+		//		if err != nil {
+		//			return err
+		//		}
 
 		err := sypgp.ExportPrivateKey(path)
 		if err != nil {
@@ -100,19 +99,19 @@ func doKeyExportCmd(secretExport bool, path string) error {
 		//	return err
 		//}
 
-//		fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
+		//		fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, path)
 	} else {
 
-	f, err := os.OpenFile(fetchPath, os.O_RDONLY|os.O_CREATE, 0600)
-	if err != nil {
-		return fmt.Errorf("unable to open local keyring: %v", err)
-	}
-	defer f.Close()
+		f, err := os.OpenFile(fetchPath, os.O_RDONLY|os.O_CREATE, 0600)
+		if err != nil {
+			return fmt.Errorf("unable to open local keyring: %v", err)
+		}
+		defer f.Close()
 
-	localEntityList, err := openpgp.ReadKeyRing(f)
-	if err != nil {
-		return fmt.Errorf("unable to list local keyring: %v", err)
-	}
+		localEntityList, err := openpgp.ReadKeyRing(f)
+		if err != nil {
+			return fmt.Errorf("unable to list local keyring: %v", err)
+		}
 
 		entityToExport, err := sypgp.SelectPubKey(localEntityList)
 		if err != nil {
@@ -129,9 +128,17 @@ func doKeyExportCmd(secretExport bool, path string) error {
 }
 
 func exportRun(cmd *cobra.Command, args []string) {
-	if err := doKeyExportCmd(secretExport, args[0]); err != nil {
-		sylog.Errorf("key export command failed: %s", err)
-		os.Exit(2)
+	if secretExport {
+		err := sypgp.ExportPrivateKey(args[0])
+		if err != nil {
+			sylog.Errorf("key export command failed: %s", err)
+			os.Exit(10)
+		}
+	} else {
+		err := sypgp.ExportPubKey(args[0])
+		if err != nil {
+			sylog.Errorf("key export command failed: %s", err)
+			os.Exit(10)
+		}
 	}
-
 }
