@@ -322,12 +322,9 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 		}
 	}
 
-	// make sure information was valid by checking if definition is not equal to an empty one
-	emptyDef := new(types.Definition)
-	// labels is always initialized
-	emptyDef.Labels = make(map[string]string)
-	if reflect.DeepEqual(d, emptyDef) {
-		return fmt.Errorf("parsed definition did not have any valid information")
+	// return error if no useful information was parsed into the struct
+	if isEmpty(*d) {
+		return errEmptyDefinition
 	}
 
 	return err
@@ -336,7 +333,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 func doHeader(h string, d *types.Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
-	d.Header = make(map[string]string)
+	header := make(map[string]string)
 
 	for _, line := range toks {
 		// skip empty or comment lines
@@ -356,27 +353,14 @@ func doHeader(h string, d *types.Definition) (err error) {
 		if _, ok := validHeaders[key]; !ok {
 			return fmt.Errorf("invalid header keyword found: %s", key)
 		}
-		d.Header[key] = val
+		header[key] = val
 	}
 
+	// only set header if some values are found
+	if len(header) != 0 {
+		d.Header = header
+	}
 	return
-}
-
-// trim lines with comments on theme
-func removeComments(b []byte) []byte {
-	cleanBuf := []byte{}
-	s := bufio.NewScanner(bytes.NewReader(b))
-	s.Split(bufio.ScanLines)
-	for s.Scan() {
-		splitLine := strings.SplitN(s.Text(), "#", 2)
-		appendLine := splitLine[0]
-		if !strings.HasSuffix(appendLine, "\n") {
-			appendLine += "\n"
-		}
-		cleanBuf = append(cleanBuf, appendLine...)
-	}
-
-	return bytes.TrimSpace(cleanBuf)
 }
 
 // ParseDefinitionFile receives a reader from a definition file
@@ -388,7 +372,7 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 		return d, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
 
-	s := bufio.NewScanner(bytes.NewReader(removeComments(d.Raw)))
+	s := bufio.NewScanner(bytes.NewReader(d.Raw))
 	s.Split(scanDefinitionFile)
 
 	// advance scanner until it returns a useful token or errors
@@ -420,7 +404,8 @@ func All(r io.Reader) ([]types.Definition, error) {
 		return nil, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
 
-	buf := removeComments(raw)
+	// copy raw data for parsing
+	buf := raw
 	rgx := regexp.MustCompile(`(?mi)^bootstrap:`)
 	i := rgx.FindAllIndex(buf, -1)
 
@@ -483,6 +468,21 @@ func IsValidDefinition(source string) (valid bool, err error) {
 	}
 
 	return true, nil
+}
+
+// isEmpty returns a bool indicating whether the given definition contains no parsed information
+// due to the unique initialization state of the empty definition for this check, it should only
+// be used by populateDefinition()
+func isEmpty(d types.Definition) bool {
+	// clear raw data for comparison
+	d.Raw = nil
+
+	// initalize empty definition fully
+	emptyDef := types.Definition{}
+	emptyDef.Labels = make(map[string]string)
+	emptyDef.BuildData.Files = make([]types.Files, 0)
+
+	return reflect.DeepEqual(d, emptyDef)
 }
 
 // validSections just contains a list of all the valid sections a definition file
