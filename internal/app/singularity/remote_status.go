@@ -75,7 +75,7 @@ func RemoteStatus(usrConfigFile, sysConfigFile, name string) (err error) {
 	}
 
 	// list in alphanumeric order
-	var names []string
+	names := make([]string, 0, len(smap))
 	for n := range smap {
 		names = append(names, n)
 	}

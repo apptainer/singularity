@@ -1,2 +1,0 @@
-bootstrap: library
-from: sylabs/tests/unsigned:1.0.0

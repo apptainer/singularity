@@ -16,8 +16,8 @@ import (
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/build/types/parser"
+	legacytypes "github.com/sylabs/singularity/pkg/build/legacy"
+	legacyparser "github.com/sylabs/singularity/pkg/build/legacy/parser"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
@@ -145,17 +145,19 @@ func checkBuildTarget(path string, update bool) bool {
 	return true
 }
 
-func definitionFromSpec(spec string) (def types.Definition, err error) {
+// definitionFromSpec is specifically for parsing specs for the remote builder
+// it uses a different version the the definition struct and parser
+func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 
 	// Try spec as URI first
-	def, err = types.NewDefinitionFromURI(spec)
+	def, err = legacytypes.NewDefinitionFromURI(spec)
 	if err == nil {
 		return
 	}
 
 	// Try spec as local file
 	var isValid bool
-	isValid, err = parser.IsValidDefinition(spec)
+	isValid, err = legacyparser.IsValidDefinition(spec)
 	if err != nil {
 		return
 	}
@@ -170,14 +172,14 @@ func definitionFromSpec(spec string) (def types.Definition, err error) {
 		}
 
 		defer defFile.Close()
-		def, err = parser.ParseDefinitionFile(defFile)
+		def, err = legacyparser.ParseDefinitionFile(defFile)
 
 		return
 	}
 
 	// File exists and does NOT contain a valid definition
 	// local image or sandbox
-	def = types.Definition{
+	def = legacytypes.Definition{
 		Header: map[string]string{
 			"bootstrap": "localimage",
 			"from":      spec,

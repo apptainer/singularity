@@ -6,6 +6,7 @@
 package main
 
 import (
+	"bytes"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -17,10 +18,12 @@ type DefFileDetail struct {
 	From        string
 	Registry    string
 	Namespace   string
+	Stage       string
 	Help        []string
 	Env         []string
 	Labels      map[string]string
 	Files       []FilePair
+	FilesFrom   []FileSection
 	Pre         []string
 	Setup       []string
 	Post        []string
@@ -39,6 +42,11 @@ type AppDetail struct {
 	Install []string
 	Run     []string
 	Test    []string
+}
+
+type FileSection struct {
+	Stage string
+	Files []FilePair
 }
 
 type FilePair struct {
@@ -62,6 +70,34 @@ func prepareDefFile(dfd DefFileDetail) (outputPath string) {
 
 	if err := tmpl.Execute(f, dfd); err != nil {
 		log.Fatalf("failed to execute template: %v", err)
+	}
+
+	return f.Name()
+}
+
+// prepareDefFile reads a template from a file, applies data to it for each definition,
+// concatenates them all together, writes them to a file and returns the path.
+func prepareMultipleDefFiles(dfd []DefFileDetail) (outputPath string) {
+	var b bytes.Buffer
+	for _, d := range dfd {
+		tmpl, err := template.ParseFiles(path.Join("testdata", "deffile.tmpl"))
+		if err != nil {
+			log.Fatalf("failed to parse template: %v", err)
+		}
+
+		if err := tmpl.Execute(&b, d); err != nil {
+			log.Fatalf("failed to execute template: %v", err)
+		}
+	}
+
+	f, err := ioutil.TempFile("", "TestTemplate-")
+	if err != nil {
+		log.Fatalf("failed to open temp file: %v", err)
+	}
+	defer f.Close()
+
+	if _, err := f.Write(b.Bytes()); err != nil {
+		log.Fatalf("failed to write temp file: %v", err)
 	}
 
 	return f.Name()

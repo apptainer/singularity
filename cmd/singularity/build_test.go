@@ -76,7 +76,6 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 	if opts.sandbox {
 		argv = append(argv, "--sandbox")
 	}
-
 	if opts.unauthenticated {
 		argv = append(argv, "--allow-unauthenticated")
 	}
@@ -90,12 +89,10 @@ func imageBuild(opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 
 func TestBuild(t *testing.T) {
 	tests := []struct {
-		name            string
-		dependency      string
-		buildSpec       string
-		sandbox         bool
-		unauthenticated bool
-		succeed         bool
+		name       string
+		dependency string
+		buildSpec  string
+		sandbox    bool
 	}{
 		{"BusyBox", "", "../../examples/busybox/Singularity", false, false, true},
 		{"BusyBoxSandbox", "", "../../examples/busybox/Singularity", true, false, true},
@@ -128,24 +125,16 @@ func TestBuild(t *testing.T) {
 			imagePath := path.Join(testDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			b, err := imageBuild(opts, imagePath, tt.buildSpec)
-			if tt.succeed {
-				if err != nil {
-					t.Log(string(b))
-					t.Fatalf("unexpected failure: %v", err)
-				}
-				imageVerify(t, imagePath, false)
-			} else {
-				if err == nil {
-					t.Log(string(b))
-					t.Fatalf("unexpected success: command should have failed")
-				}
+			if b, err := imageBuild(opts, imagePath, tt.buildSpec); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
 			}
+			imageVerify(t, imagePath, false)
 		}))
 	}
 }
 
-func TestBuildMultiStage(t *testing.T) {
+func TestMultipleBuilds(t *testing.T) {
 	imagePath1 := path.Join(testDir, "container1")
 	imagePath2 := path.Join(testDir, "container2")
 	imagePath3 := path.Join(testDir, "container3")
@@ -231,6 +220,212 @@ func TestBadPath(t *testing.T) {
 		t.Log(string(b))
 		t.Fatal("unexpected success")
 	}
+}
+
+func TestMultiStageDefinition(t *testing.T) {
+	tmpfile, err := ioutil.TempFile(testDir, "testFile-")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	if _, err := tmpfile.Write([]byte(testFileContent)); err != nil {
+		log.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		force   bool
+		sandbox bool
+		dfd     []DefFileDetail
+		correct DefFileDetail // a bit hacky, but this allows us to check final image for correct artifacts
+	}{
+		// Simple copy from stage one to final stage
+		{"FileCopySimple", false, true, []DefFileDetail{
+			{
+				Bootstrap: "docker",
+				From:      "alpine:latest",
+				Stage:     "one",
+				Files: []FilePair{
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOne2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOne.txt",
+					},
+				},
+			},
+			{
+				Bootstrap: "docker",
+				From:      "alpine:latest",
+				FilesFrom: []FileSection{
+					{
+						"one",
+						[]FilePair{
+							{
+								Src: "StageOne2.txt",
+								Dst: "StageOneCopy2.txt",
+							},
+							{
+								Src: "StageOne.txt",
+								Dst: "StageOneCopy.txt",
+							},
+						}}},
+			}},
+			DefFileDetail{
+				Files: []FilePair{
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopy2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopy.txt",
+					},
+				},
+			},
+		},
+		// Complex copy of files from stage one and two to stage three, then final copy from three to final stage
+		{"FileCopyComplex", false, true,
+			[]DefFileDetail{
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "one",
+					Files: []FilePair{
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageOne2.txt",
+						},
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageOne.txt",
+						},
+					},
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "two",
+					Files: []FilePair{
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageTwo2.txt",
+						},
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageTwo.txt",
+						},
+					},
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "three",
+					FilesFrom: []FileSection{
+						{
+							"one",
+							[]FilePair{
+								{
+									Src: "StageOne2.txt",
+									Dst: "StageOneCopy2.txt",
+								},
+								{
+									Src: "StageOne.txt",
+									Dst: "StageOneCopy.txt",
+								},
+							}},
+						{
+							"two",
+							[]FilePair{
+								{
+									Src: "StageTwo2.txt",
+									Dst: "StageTwoCopy2.txt",
+								},
+								{
+									Src: "StageTwo.txt",
+									Dst: "StageTwoCopy.txt",
+								},
+							},
+						}},
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					FilesFrom: []FileSection{
+						{
+							"three",
+							[]FilePair{
+								{
+									Src: "StageOneCopy2.txt",
+									Dst: "StageOneCopyFinal2.txt",
+								},
+								{
+									Src: "StageOneCopy.txt",
+									Dst: "StageOneCopyFinal.txt",
+								},
+								{
+									Src: "StageTwoCopy2.txt",
+									Dst: "StageTwoCopyFinal2.txt",
+								},
+								{
+									Src: "StageTwoCopy.txt",
+									Dst: "StageTwoCopyFinal.txt",
+								},
+							}}},
+				},
+			},
+			DefFileDetail{
+				Files: []FilePair{
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopyFinal2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopyFinal.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageTwoCopyFinal2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageTwoCopyFinal.txt",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+
+			defFile := prepareMultipleDefFiles(tt.dfd)
+			defer os.Remove(defFile)
+
+			opts := buildOpts{
+				sandbox: tt.sandbox,
+			}
+
+			imagePath := path.Join(testDir, "container")
+			defer os.RemoveAll(imagePath)
+
+			if b, err := imageBuild(opts, imagePath, defFile); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			}
+
+			definitionImageVerify(t, imagePath, tt.correct)
+		}))
+	}
+
 }
 
 func TestBuildDefinition(t *testing.T) {
@@ -558,7 +753,7 @@ func definitionImageVerify(t *testing.T, imagePath string, dfd DefFileDetail) {
 	// verify %files section works correctly
 	for _, p := range dfd.Files {
 		var file string
-		if p.Src == "" {
+		if p.Dst == "" {
 			file = p.Src
 		} else {
 			file = p.Dst

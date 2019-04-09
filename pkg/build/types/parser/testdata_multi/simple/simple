@@ -1,0 +1,38 @@
+Bootstrap: docker
+From: centos:7
+Stage: one
+
+
+%setup
+	mkdir -p $SINGULARITY_ROOTFS/root/go/src/hello
+
+
+%files
+	hello.go /root/go/src/hello/hello.go
+
+
+%post
+	yum install wget -y
+
+	wget https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz
+	tar -C /usr/local -xzf go1.10.3.linux-amd64.tar.gz
+	export PATH=$PATH:/usr/local/go/bin
+
+	cd /root/go/src/hello
+	go build
+	
+	./hello
+
+
+Bootstrap: docker
+From: alpine:latest
+Stage: two
+
+
+%files from one
+	/root/go/src/hello/hello /bin/hello
+
+
+%runscript
+	hello
+

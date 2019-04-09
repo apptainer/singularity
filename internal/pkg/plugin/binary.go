@@ -32,6 +32,13 @@ const (
 	NameBinary = "object.so"
 	// NameConfig is the name of the plugin's config file
 	NameConfig = "config.yaml"
+
+	// pluginBinaryName is the name of the plugin binary within the
+	// SIF file
+	pluginBinaryName = "plugin.so"
+	// pluginManifestName is the name of the plugin manifest within
+	// the SIF file
+	pluginManifestName = "plugin.manifest"
 )
 
 // Meta is an internal representation of a plugin binary and all of its
@@ -87,11 +94,13 @@ func (m *Meta) Config() (*os.File, error) {
 func InstallFromSIF(fimg *sif.FileImage, libexecdir string) (*Meta, error) {
 	sylog.Debugf("Installing plugin from SIF to %q", libexecdir)
 
-	if !isPluginFile(fimg) {
+	sr := newSifFileImageReader(fimg)
+
+	if !isPluginFile(sr) {
 		return nil, fmt.Errorf("while opening SIF file: not a valid plugin")
 	}
 
-	manifest := getManifest(fimg)
+	manifest := getManifest(sr)
 
 	plugindir := filepath.Join(libexecdir, DirRoot)
 
@@ -166,6 +175,59 @@ func Disable(name, libexecdir string) error {
 	}
 
 	return meta.disable()
+}
+
+// Inspect obtains information about the plugin "name"
+//
+// "name" can be either the name of plugin installed under "libexecdir"
+// or the name of an image file corresponding to a plugin.
+func Inspect(name, libexecdir string) (pluginapi.Manifest, error) {
+	var manifest pluginapi.Manifest
+
+	// LoadContainer returns a decorated error, no it's not possible
+	// to ask whether the error happens because the file does not
+	// exist or something else. Check for the file _before_ trying
+	// to load it as a container.
+	if _, err := os.Stat(name); err != nil {
+		if os.IsNotExist(err) {
+			// no file, try to find the installed plugin
+			pluginDir := filepath.Join(libexecdir, DirRoot)
+			meta, err := loadMetaByName(name, pluginDir)
+			if err != nil {
+				// Metafile not found, or we cannot read
+				// it. There's nothing we can do.
+				return manifest, err
+			}
+
+			// Replace the original name, which seems to be
+			// the name of a plugin, by the path to the
+			// installed SIF file for that plugin.
+			name = meta.imageName()
+		} else {
+			// There seems to be a file here, but we cannot
+			// read it.
+			return manifest, err
+		}
+	}
+
+	// at this point, either the file is there under the original
+	// name or we found one by looking at the metafile.
+	fimg, err := sif.LoadContainer(name, true)
+	if err != nil {
+		return manifest, err
+	}
+
+	defer fimg.UnloadContainer()
+
+	r := newSifFileImageReader(&fimg)
+
+	if !isPluginFile(r) {
+		return manifest, fmt.Errorf("while opening SIF file: not a valid plugin")
+	}
+
+	manifest = getManifest(r)
+
+	return manifest, nil
 }
 
 func loadMetaByName(name, plugindir string) (*Meta, error) {
@@ -395,6 +457,67 @@ func (m *Meta) configName() string {
 // Helper functions for fimg *sif.FileImage
 //
 
+type sifReader interface {
+	Descriptors() int
+	IsUsed(name string) bool
+	GetDatatype(name string) sif.Datatype
+	GetFsType(name string) (sif.Fstype, error)
+	GetPartType(name string) (sif.Parttype, error)
+	GetData(name string) []byte
+}
+
+type sifFileImageReader struct {
+	fi          *sif.FileImage
+	descriptors map[string]int
+}
+
+func (r *sifFileImageReader) Descriptors() int {
+	return len(r.fi.DescrArr)
+}
+
+func (r *sifFileImageReader) IsUsed(name string) bool {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].Used
+}
+
+func (r *sifFileImageReader) GetDatatype(name string) sif.Datatype {
+	n := r.descriptors[name]
+	sylog.Debugf("n=%d datatype=%x", n, r.fi.DescrArr[n].Datatype)
+	return r.fi.DescrArr[n].Datatype
+}
+
+func (r *sifFileImageReader) GetFsType(name string) (sif.Fstype, error) {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].GetFsType()
+}
+
+func (r *sifFileImageReader) GetPartType(name string) (sif.Parttype, error) {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].GetPartType()
+}
+
+func (r *sifFileImageReader) GetData(name string) []byte {
+	var (
+		n     = r.descriptors[name]
+		start = r.fi.DescrArr[n].Fileoff
+		end   = start + r.fi.DescrArr[n].Filelen
+		data  = r.fi.Filedata[start:end]
+	)
+
+	return data
+}
+
+func newSifFileImageReader(fi *sif.FileImage) *sifFileImageReader {
+	r := &sifFileImageReader{fi: fi, descriptors: make(map[string]int)}
+	for n, desc := range fi.DescrArr {
+		if !desc.Used {
+			continue
+		}
+		r.descriptors[fi.DescrArr[n].GetName()] = n
+	}
+	return r
+}
+
 // isPluginFile checks if the sif.FileImage contains the sections which
 // make up a valid plugin. A plugin sif file should have the following
 // format:
@@ -405,36 +528,36 @@ func (m *Meta) configName() string {
 //   - Parttype: sif.PartData
 // DESCR[1]: Sifmanifest
 //   - Datatype: sif.DataGenericJSON
-func isPluginFile(fimg *sif.FileImage) bool {
-	if len(fimg.DescrArr) < 2 {
+func isPluginFile(fimg sifReader) bool {
+	if fimg.Descriptors() < 2 {
 		return false
 	}
 
-	if !fimg.DescrArr[0].Used {
+	if !fimg.IsUsed(pluginBinaryName) {
 		return false
 	}
 
-	if fimg.DescrArr[0].Datatype != sif.DataPartition {
+	if fimg.GetDatatype(pluginBinaryName) != sif.DataPartition {
 		return false
 	}
 
-	if fstype, err := fimg.DescrArr[0].GetFsType(); err != nil {
+	if fstype, err := fimg.GetFsType(pluginBinaryName); err != nil {
 		return false
 	} else if fstype != sif.FsRaw {
 		return false
 	}
 
-	if partype, err := fimg.DescrArr[0].GetPartType(); err != nil {
+	if partype, err := fimg.GetPartType(pluginBinaryName); err != nil {
 		return false
 	} else if partype != sif.PartData {
 		return false
 	}
 
-	if !fimg.DescrArr[1].Used {
+	if !fimg.IsUsed(pluginManifestName) {
 		return false
 	}
 
-	if fimg.DescrArr[1].Datatype != sif.DataGenericJSON {
+	if fimg.GetDatatype(pluginManifestName) != sif.DataGenericJSON {
 		return false
 	}
 
@@ -442,13 +565,18 @@ func isPluginFile(fimg *sif.FileImage) bool {
 }
 
 // getManifest will extract the Manifest data from the input FileImage
-func getManifest(fimg *sif.FileImage) pluginapi.Manifest {
-	var (
-		manifest pluginapi.Manifest
-		start    = fimg.DescrArr[1].Fileoff
-		end      = start + fimg.DescrArr[1].Filelen
-		data     = fimg.Filedata[start:end]
-	)
+func getManifest(fimg sifReader) pluginapi.Manifest {
+	var manifest pluginapi.Manifest
+
+	if fimg.Descriptors() < 2 || !fimg.IsUsed(pluginManifestName) {
+		return manifest
+	}
+
+	data := fimg.GetData(pluginManifestName)
+
+	if data == nil {
+		return manifest
+	}
 
 	if err := json.Unmarshal(data, &manifest); err != nil {
 		fmt.Println(err)

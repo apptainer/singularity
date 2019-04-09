@@ -159,7 +159,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Cache
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CacheUse   string = `cache <subcommand>`
+	CacheUse   string = `cache`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
   Manage your local singularity cache. You can list/clean using the specific types.`
@@ -201,7 +201,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyUse   string = `key [key options...] <subcommand>`
+	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
   The 'key' command allows you to manage local OpenPGP key stores by creating
@@ -215,18 +215,34 @@ Enterprise Performance Computing (EPC)`
   $ singularity key list --help`
 
 	// keys : for the hidden `keys` command
-	KeysUse string = `keys [keys options...] <subcommand>`
+	KeysUse string = `keys [keys options...]`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
-	KeyImportShort string = `Import a local key into the local Singularity key store`
+	KeyImportUse   string = `import [import options...] <input-key>`
+	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
 	KeyImportExample string = `
-  $ singularity key import $HOME/key.asc
-  $ singularity keys import $HOME/key.asc
+  $ singularity key import ./my-key.asc
+  `
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key export
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
+	KeyExportShort string = `Export a public or private key into a specific file`
+	KeyExportLong  string = `
+  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
+	KeyExportExample string = `
+  Exporting a private key:
+  
+  $ singularity key export --secret <path_to_file>
+
+  Exporting a public key:
+  
+  $ singularity key export <path_to_file>
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -297,7 +313,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// capability
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	CapabilityUse   string = `capability <subcommand>`
+	CapabilityUse   string = `capability`
 	CapabilityShort string = `Manage Linux capabilities for users and groups`
 	CapabilityLong  string = `
   Capabilities allow you to have fine grained control over the permissions that
@@ -424,7 +440,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	InstanceUse   string = `instance <subcommand>`
+	InstanceUse   string = `instance`
 	InstanceShort string = `Manage containers running as services`
 	InstanceLong  string = `
   Instances allow you to run containers as background processes. This can be
@@ -650,8 +666,8 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RunHelpUse   string = `run-help [run-help options] <image path>`
-	RunHelpShort string = `Show the help for an image`
+	RunHelpUse   string = `run-help <image path>`
+	RunHelpShort string = `Show the user-defined help for an image`
 	RunHelpLong  string = `
   Show the help for an image.
 
@@ -764,7 +780,7 @@ found at:
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// OCI
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	OciUse   string = `oci <subcommand>`
+	OciUse   string = `oci`
 	OciShort string = `Manage OCI containers`
 	OciLong  string = `
   Allow you to manage containers from OCI bundle directories.
@@ -797,13 +813,13 @@ found at:
 	OciStateExample string = `
   $ singularity oci state mycontainer`
 
-	OciKillUse   string = `kill <container_ID>`
+	OciKillUse   string = `kill [kill options...] <container_ID>`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
   Kill invoke kill operation to kill processes running within container identified by container ID.`
 	OciKillExample string = `
   $ singularity oci kill mycontainer INT
-  $ singularity oci kill -s INT mycontainer`
+  $ singularity oci kill mycontainer -s INT`
 
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`

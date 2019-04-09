@@ -6,18 +6,22 @@
 package imgbuild
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"net/rpc"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 // CreateContainer creates a container
@@ -74,20 +78,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	// run setup/files sections here to allow injection of custom /etc/hosts or /etc/resolv.conf
-	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup != "" {
+	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup.Script != "" {
 		// Run %setup script here
-		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup)
-		setup.Env = engine.EngineConfig.OciConfig.Process.Env
-		setup.Stdout = os.Stdout
-		setup.Stderr = os.Stderr
-
-		sylog.Infof("Running setup scriptlet\n")
-		if err := setup.Start(); err != nil {
-			sylog.Fatalf("failed to start %%setup proc: %v\n", err)
-		}
-		if err := setup.Wait(); err != nil {
-			sylog.Fatalf("setup proc: %v\n", err)
-		}
+		engine.runScriptSection("setup", engine.EngineConfig.Recipe.BuildData.Setup, true)
 	}
 
 	if engine.EngineConfig.RunSection("files") {
@@ -183,11 +176,18 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 }
 
 func (engine *EngineOperations) copyFiles() error {
+	var output, stderr bytes.Buffer
+	files := types.Files{}
+	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
+		if f.Args == "" {
+			files = f
+		}
+	}
 	// iterate through filetransfers
-	for _, transfer := range engine.EngineConfig.Recipe.BuildData.Files {
+	for _, transfer := range files.Files {
 		// sanity
 		if transfer.Src == "" {
-			sylog.Warningf("Attempt to copy file with no name...")
+			sylog.Warningf("Attempt to copy file with no name, skipping.")
 			continue
 		}
 		// dest = source if not specified
@@ -198,10 +198,45 @@ func (engine *EngineOperations) copyFiles() error {
 		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
+		copy.Stdout = &output
+		copy.Stderr = &stderr
 		if err := copy.Run(); err != nil {
-			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
+			return fmt.Errorf("while copying %v to %v: %v: %v", transfer.Src, transfer.Dst, err, stderr.String())
 		}
 	}
 
 	return nil
+}
+
+func (engine *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
+	args := []string{"-ex"}
+	// trim potential trailing comment from args and append to args list
+	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
+
+	cmd := exec.Command("/bin/sh", args...)
+	if setEnv {
+		cmd.Env = engine.EngineConfig.OciConfig.Process.Env
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		sylog.Fatalf("while creating %s proc pipe: %v", name, err)
+	}
+
+	sylog.Infof("Running %s scriptlet\n", name)
+	if err := cmd.Start(); err != nil {
+		sylog.Fatalf("failed to start %%%s proc: %v\n", name, err)
+	}
+
+	// pipe in script
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, s.Script)
+	}()
+
+	if err := cmd.Wait(); err != nil {
+		sylog.Fatalf("%s proc: %v\n", name, err)
+	}
 }

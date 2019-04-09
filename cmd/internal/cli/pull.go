@@ -45,7 +45,7 @@ var (
 	// PullImageName holds the name to be given to the pulled image
 	PullImageName string
 	// KeyServerURL server URL
-	KeyServerURL string
+	KeyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
 )
@@ -53,13 +53,13 @@ var (
 func init() {
 	PullCmd.Flags().SetInterspersed(false)
 
-	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "the library to pull from")
+	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
 	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
-	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "dont check if the container is signed")
+	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "do not require a signed container")
 	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
@@ -70,7 +70,7 @@ func init() {
 	PullCmd.Flags().Lookup("tmpdir").Hidden = true
 	PullCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
 
-	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
+	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)")
 	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
 
 	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
@@ -95,6 +95,7 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
+	exitStat := 0
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
 	transport, ref := uri.Split(args[i])
 	if ref == "" {
@@ -187,6 +188,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 			if err != nil {
 				// err will be: "unable to verify container: %v", err
 				sylog.Warningf("%v", err)
+				// if theres a warning, exit 1
+				exitStat = 1
 			}
 			// if container is not signed, print a warning
 			if !imageSigned {
@@ -197,13 +200,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 				}
 				if resp == "" || resp != "y" && resp != "Y" {
 					fmt.Fprintf(os.Stderr, "Aborting.\n")
-					// not ideal to delete the container on the spot...
 					err := os.Remove(name)
 					if err != nil {
 						sylog.Fatalf("Unabel to delete the container: %v", err)
 					}
 					// exit status 10 after replying no
-					os.Exit(10)
+					exitStat = 10
 				}
 			}
 		} else {
@@ -236,10 +238,13 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
+	// This will exit 1 if the pulled container is signed by
+	// a unknown signer, i.e, if you dont have the key in your
+	// local keyring. theres proboly a better way to do this...
+	os.Exit(exitStat)
 }
 
 func handlePullFlags(cmd *cobra.Command) {
-	KeyServerURL = "https://keys.sylabs.io"
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
 	endpoint, err := sylabsRemote(remoteConfig)

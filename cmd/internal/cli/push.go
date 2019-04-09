@@ -15,7 +15,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (
@@ -32,8 +31,8 @@ func init() {
 	PushCmd.Flags().StringVar(&PushLibraryURI, "library", "https://library.sylabs.io", "the library to push to")
 	PushCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
-	PushCmd.Flags().BoolVarP(&unauthenticatedPush, "allow-unauthenticated", "U", false, "dont check if the container is signed")
-	PushCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
+	PushCmd.Flags().BoolVarP(&unauthenticatedPush, "allow-unsigned", "U", false, "do not require a signed container")
+	PushCmd.Flags().SetAnnotation("allow-unsigned", "envkey", []string{"ALLOW_UNSIGNED"})
 
 	SingularityCmd.AddCommand(PushCmd)
 }
@@ -48,9 +47,12 @@ var PushCmd = &cobra.Command{
 
 		// Push to library requires a valid authToken
 		if authToken != "" {
+			if _, err := os.Stat(args[0]); os.IsNotExist(err) {
+				sylog.Fatalf("Unable to open: %v: %v", args[0], err)
+			}
 			if !unauthenticatedPush {
 				// check if the container is signed
-				imageSigned, err := signing.IsSigned(args[0], "https://keys.sylabs.io", 0, false, authToken, true)
+				imageSigned, err := signing.IsSigned(args[0], KeyServerURL, 0, false, authToken, true)
 				if err != nil {
 					// err will be: "unable to verify container: %v", err
 					sylog.Warningf("%v", err)
@@ -58,16 +60,9 @@ var PushCmd = &cobra.Command{
 				// if its not signed, print a warning
 				if !imageSigned {
 					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
-					fmt.Fprintf(os.Stderr, "\n")
-					fmt.Printf("Your container is **NOT** signed! You REALLY should sign your container before pushing!\n")
-					reps, err := sypgp.AskQuestion("Do you really want to continue? [N/y] ")
-					if err != nil {
-						sylog.Fatalf("Unable to parse user input: %v", err)
-					}
-					if reps == "" || reps != "y" && reps != "Y" {
-						fmt.Fprintf(os.Stderr, "Stoping upload.\n")
-						os.Exit(3)
-					}
+					fmt.Fprintf(os.Stderr, "\nUnable to verify Your container! You REALLY should sign your container before pushing!\n")
+					fmt.Fprintf(os.Stderr, "Stoping upload.\n")
+					os.Exit(3)
 				}
 			} else {
 				sylog.Warningf("Skipping container verifying")
@@ -78,7 +73,7 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("%v\n", err)
 			}
 		} else {
-			sylog.Fatalf("Couldn't push image to library: %v", authWarning)
+			sylog.Fatalf("Couldn't push image to library: %v", remoteWarning)
 		}
 	},
 
@@ -89,7 +84,6 @@ var PushCmd = &cobra.Command{
 }
 
 func handlePushFlags(cmd *cobra.Command) {
-	KeyServerURL = "https://keys.sylabs.io"
 	// if we can load config and if default endpoint is set, use that
 	// otherwise fall back on regular authtoken and URI behavior
 	endpoint, err := sylabsRemote(remoteConfig)

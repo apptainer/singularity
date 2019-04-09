@@ -68,6 +68,9 @@ func TestSearchPubkey(t *testing.T) {
 	}{
 		{"Success", http.StatusOK, openpgp.EntityList{testEntity}, "search", srv.URL, "", false},
 		{"SuccessToken", http.StatusOK, openpgp.EntityList{testEntity}, "search", srv.URL, "token", false},
+		{"BadURL", http.StatusOK, openpgp.EntityList{testEntity}, "search", ":", "", true},
+		{"TerribleURL", http.StatusOK, openpgp.EntityList{testEntity}, "search", "terrible:", "", true},
+		{"NotFound", http.StatusNotFound, nil, "search", srv.URL, "", true},
 		{"Unauthorized", http.StatusUnauthorized, nil, "search", srv.URL, "", true},
 	}
 	for _, tt := range tests {
@@ -103,6 +106,7 @@ func TestFetchPubkey(t *testing.T) {
 		{"NoKeys", http.StatusOK, openpgp.EntityList{}, fp, srv.URL, "token", true},
 		{"TwoKeys", http.StatusOK, openpgp.EntityList{testEntity, testEntity}, fp, srv.URL, "token", true},
 		{"BadURL", http.StatusOK, openpgp.EntityList{testEntity}, fp, ":", "", true},
+		{"TerribleURL", http.StatusOK, openpgp.EntityList{testEntity}, fp, "terrible:", "", true},
 		{"NotFound", http.StatusNotFound, nil, fp, srv.URL, "", true},
 		{"Unauthorized", http.StatusUnauthorized, nil, fp, srv.URL, "", true},
 	}
@@ -170,20 +174,23 @@ func TestPushPubkey(t *testing.T) {
 
 	tests := []struct {
 		name      string
+		uri       string
 		authToken string
 		code      int
 		wantErr   bool
 	}{
-		{"Success", "", http.StatusOK, false},
-		{"SuccessToken", "token", http.StatusOK, false},
-		{"Unauthorized", "", http.StatusUnauthorized, true},
+		{"Success", srv.URL, "", http.StatusOK, false},
+		{"SuccessToken", srv.URL, "token", http.StatusOK, false},
+		{"BadURL", ":", "", http.StatusOK, true},
+		{"TerribleURL", "terrible:", "", http.StatusOK, true},
+		{"Unauthorized", srv.URL, "", http.StatusUnauthorized, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ms.code = tt.code
 
-			if err := PushPubkey(testEntity, srv.URL, tt.authToken); (err != nil) != tt.wantErr {
+			if err := PushPubkey(testEntity, tt.uri, tt.authToken); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})

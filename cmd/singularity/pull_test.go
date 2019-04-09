@@ -48,14 +48,16 @@ func TestPull(t *testing.T) {
 		imagePath       string
 		success         bool
 	}{
-		{"Pull_Library", "library://alpine:3.8", false, false, "", imagePath, true}, // https://cloud.sylabs.io/library
-		{"Force", "library://alpine:3.8", true, false, "", imagePath, true},
+		// TODO: Download the Sylabs pub key before running tests
+		{"Pull_Library", "library://alpine:3.8", false, true, "", imagePath, true}, // https://cloud.sylabs.io/library
+		{"ForceUnauth", "library://alpine:3.8", true, false, "", imagePath, false},
+		{"Force", "library://alpine:3.8", true, true, "", imagePath, true},
 		{"Unsigned_image", "library://sylabs/tests/unsigned:1.0.0", true, true, "", imagePath, true},
 		{"Unsigned_image_fail", "library://sylabs/tests/unsigned:1.0.0", true, false, "", imagePath, false}, // pull a unsigned image; should fail
 		{"Pull_Docker", "docker://alpine:3.8", true, false, "", imagePath, true},                            // https://hub.docker.com/
 		{"Pull_Shub", "shub://GodloveD/busybox", true, false, "", imagePath, true},                          // https://singularity-hub.org/
-		{"PullWithHash", "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c", true, false, "", imagePath, true},
-		{"PullWithoutTransportProtocol", "alpine:3.8", true, false, "", imagePath, true},
+		{"PullWithHash", "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c", true, true, "", imagePath, true},
+		{"PullWithoutTransportProtocol", "alpine:3.8", true, true, "", imagePath, true},
 		{"PullNonExistent", "library://this_should_not/exist/not_exist", true, false, "", imagePath, false}, // pull a non-existent container
 		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", imagePath, true},                 // https://cloud.sylabs.io/library
 	}

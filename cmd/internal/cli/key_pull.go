@@ -79,7 +79,7 @@ func doKeyPullCmd(fingerprint string, url string) error {
 		}
 	}
 
-	fmt.Printf("%v key(s) fetched and stored in local cache %s\n", count, sypgp.PublicPath())
+	fmt.Printf("%v key(s) added to keyring of trust %s\n", count, sypgp.PublicPath())
 
 	return nil
 }
