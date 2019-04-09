@@ -477,7 +477,7 @@ func isEmpty(d types.Definition) bool {
 	// clear raw data for comparison
 	d.Raw = nil
 
-	// initalize empty definition fully
+	// initialize empty definition fully
 	emptyDef := types.Definition{}
 	emptyDef.Labels = make(map[string]string)
 	emptyDef.BuildData.Files = make([]types.Files, 0)
