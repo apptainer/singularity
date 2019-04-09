@@ -30,7 +30,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            make -j$(nproc) -C ./builddir check
+            make -j$(nproc) -C ./builddir vendor-check check
 
   go1.11-alpine:
     <<: *defaults
@@ -47,7 +47,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            make -j$(nproc) -C ./builddir check
+            make -j$(nproc) -C ./builddir vendor-check check
 
   go1.11-macos:
     macos:
@@ -71,7 +71,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
+            make -j$(sysctl -n hw.physicalcpu) -C ./builddir vendor-check check
 
   unit_tests:
     machine: true
