@@ -8,7 +8,6 @@ package singularity
 import (
 	"errors"
 	"fmt"
-	"go/build"
 	"io"
 	"os"
 	"os/exec"
@@ -21,15 +20,28 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-var (
-	workpath   = filepath.Join(filepath.SplitList(build.Default.GOPATH)[0], repo)
-	trimpath   = filepath.Dir(workpath)
-	mangenpath = filepath.Join(workpath, "cmd/plugin_manifestgen/")
-)
+const manifestgenDir = "cmd/plugin_manifestgen"
 
-const (
-	repo = "src/github.com/sylabs/singularity"
-)
+// getSingularitySrcDir returns the source directory for singularity
+func getSingularitySrcDir() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	canary := filepath.Join(dir, "cmd", "singularity", "cli.go")
+
+	switch _, err = os.Stat(canary); {
+	case os.IsNotExist(err):
+		return "", fmt.Errorf("cannot find \"%s\"", canary)
+
+	case err != nil:
+		return "", fmt.Errorf("unexpected error while looking for \"%s\": %s", canary, err)
+
+	default:
+		return dir, nil
+	}
+}
 
 // pluginObjPath returns the path of the .so file which is built when
 // running `go build -buildmode=plugin [...]`.
@@ -72,6 +84,11 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 //
 // This function essentially runs the `go build -buildmode=plugin [...]` command
 func buildPlugin(sourceDir, buildTags string) (string, error) {
+	workpath, err := getSingularitySrcDir()
+	if err != nil {
+		return "", errors.New("singularity source directory not found")
+	}
+
 	// assuming that sourceDir is within trimpath for now
 	out := pluginObjPath(sourceDir)
 
@@ -86,8 +103,8 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		"-buildmode=plugin",
 		"-mod=vendor",
 		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
+		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
+		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
 		sourceDir,
 	}
 
@@ -107,6 +124,11 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 // generateManifest takes the path to the plugin source, sourceDir, and generates
 // its corresponding manifest file.
 func generateManifest(sourceDir, buildTags string) (string, error) {
+	workpath, err := getSingularitySrcDir()
+	if err != nil {
+		return "", errors.New("singularity source directory not found")
+	}
+
 	in := pluginObjPath(sourceDir)
 	out := pluginManifestPath(sourceDir)
 
@@ -115,12 +137,14 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 		return "", errors.New("go compiler not found")
 	}
 
+	mangenpath := filepath.Join(workpath, manifestgenDir)
+
 	args := []string{
 		"run",
 		"-mod=vendor",
 		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
+		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
+		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
 		mangenpath,
 		in,
 		out,
