@@ -141,7 +141,7 @@ func Sign(cpath, keyServiceURI string, id uint32, isGroup bool, keyIdx int, auth
 	}
 
 	// Decrypt key if needed
-	if err = sypgp.DecryptKey(entity); err != nil {
+	if err = sypgp.DecryptKey(entity, ""); err != nil {
 		return fmt.Errorf("could not decrypt private key, wrong password?")
 	}
 

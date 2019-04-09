@@ -451,9 +451,12 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
-func DecryptKey(k *openpgp.Entity) error {
+func DecryptKey(k *openpgp.Entity, message string) error {
+	if message == "" {
+		message = "Enter key passphrase : "
+	}
 	if k.PrivateKey.Encrypted {
-		pass, err := AskQuestionNoEcho("Enter key passphrase : ")
+		pass, err := AskQuestionNoEcho(message)
 		if err != nil {
 			return err
 		}
@@ -829,8 +832,7 @@ func ImportPrivateKey(kpath string) error {
 
 			// Check if the key is encrypted, if it is, decrypt it
 			if pathEntity.PrivateKey.Encrypted {
-				fmt.Fprintf(os.Stderr, "Enter your old password for this key:\n")
-				err = DecryptKey(newEntity)
+				err = DecryptKey(newEntity, "Enter your old password : ")
 				if err != nil {
 					return err
 				}
