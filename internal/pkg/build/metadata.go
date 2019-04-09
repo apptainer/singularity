@@ -97,7 +97,7 @@ func insertEnvScript(b *types.Bundle) error {
 func handleShebangScript(s types.Script) (string, string) {
 	shebang := "#!/bin/sh"
 	script := ""
-	if strings.HasPrefix(s.Script, "#!") {
+	if strings.HasPrefix(strings.TrimSpace(s.Script), "#!") {
 		// separate and cleanup shebang
 		split := strings.SplitN(s.Script, "\n", 2)
 		shebang = strings.TrimSpace(split[0])

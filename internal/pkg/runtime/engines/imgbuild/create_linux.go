@@ -220,21 +220,22 @@ func (engine *EngineOperations) runScriptSection(name string, s types.Script, se
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	// pipe in script
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		sylog.Fatalf("while creating %s proc pipe: %v", name, err)
 	}
 
+	sylog.Infof("Running %s scriptlet\n", name)
+	if err := cmd.Start(); err != nil {
+		sylog.Fatalf("failed to start %%%s proc: %v\n", name, err)
+	}
+
+	// pipe in script
 	go func() {
 		defer stdin.Close()
 		io.WriteString(stdin, s.Script)
 	}()
 
-	sylog.Infof("Running %s scriptlet\n", name)
-	if err := cmd.Start(); err != nil {
-		sylog.Fatalf("failed to start %%%s proc: %v\n", name, err)
-	}
 	if err := cmd.Wait(); err != nil {
 		sylog.Fatalf("%s proc: %v\n", name, err)
 	}
