@@ -1,0 +1,14 @@
+[  
+   {  
+      "Header":"# some comment before header\nBootstrap: docker   # some comment on header line\nFrom: <registry>/<namespace>/<container>:<tag>@<digest>\nIncludeCmd: yes\n\n# Some dummy comment 1\n",
+      "Help":"%help\nHello Help!\n# # double Hashtag comment\n",
+      "Setup":"%setup\n\ttouch ${SINGULARITY_ROOTFS}/mock.txt\n\ttouch mock.txt\n\n# Some dummy comment 2",
+      "Files":"%files\nmock1.txt\nmock2.txt /opt\n\n# Some dummy comment 3",
+      "Labels":"%labels\nMaintainer Eduardo\nVersion v1.0\n",
+      "Environment":"%environment\n\tVADER=badguy\n\tLUKE=goodguy\n\tSOLO=someguy # comment 4\n\texport VADER LUKE SOLO\n\n",
+      "Post":"%post\n\techo 'this is a command so long that the user had to' \\\n\t'add a new line'\n\techo 'export GOPATH=$HOME/go' >> $SINGULARITY_ENVIRONMENT\n\n",
+      "Runscript":"%runscript\n\techo \"Mock!\"\n\techo \"Arguments received: $*\" # This is a very long comment\n\texec echo \"$@\""
+   }
+]
+
+

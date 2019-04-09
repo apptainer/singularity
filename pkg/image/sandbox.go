@@ -18,8 +18,12 @@ func (f *sandboxFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	} else {
 		return fmt.Errorf("not a directory image")
 	}
-	img.Partitions[0].Type = SANDBOX
-	img.Partitions[0].Name = RootFs
+	img.Partitions = []Section{
+		{
+			Type: SANDBOX,
+			Name: RootFs,
+		},
+	}
 	return nil
 }
 
