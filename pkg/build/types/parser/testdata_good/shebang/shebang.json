@@ -1,0 +1,55 @@
+{
+	"header": {
+		"bootstrap": "docker",
+		"from": "python:latest"
+	},
+	"imageData": {
+		"metadata": null,
+		"labels": {},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": ""
+			},
+			"environment": {
+				"args": "",
+				"script": ""
+			},
+			"runScript": {
+				"args": "",
+				"script": "#!/usr/bin/env python\nprint(\"Uh-oh, there's a snake in my container\")\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": [],
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": ""
+			},
+			"post": {
+				"args": "",
+				"script": ""
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogcHl0aG9uOmxhdGVzdAoKJXJ1bnNjcmlwdAojIS91c3IvYmluL2VudiBweXRob24KcHJpbnQoIlVoLW9oLCB0aGVyZSdzIGEgc25ha2UgaW4gbXkgY29udGFpbmVyIik="
+}
