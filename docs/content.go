@@ -220,7 +220,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
+	KeyImportUse   string = `import [import options...] <input-key>`
 	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
@@ -231,7 +231,7 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key export
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyExportUse   string = `export [export options...] <key-fingerprint> <full-path-to-key-file>`
+	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
 	KeyExportShort string = `Export a public or private key into a specific file`
 	KeyExportLong  string = `
   The 'key export' command allows you to export a key (either private or public) and save it on a local file`
