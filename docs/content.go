@@ -221,37 +221,28 @@ Enterprise Performance Computing (EPC)`
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
-	KeyImportShort string = `Import a local key into the local Singularity key store`
+	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
 	KeyImportExample string = `
-  $ singularity key import $HOME/key.asc
-  $ singularity keys import $HOME/key.asc
+  $ singularity key import ./my-key.asc
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key export
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyExportUse   string = `export [export options...] <key-fingerprint> <full-path-to-key-file>`
-	KeyExportShort string = `Export a public or private key into a specific folder location`
+	KeyExportShort string = `Export a public or private key into a specific file`
 	KeyExportLong  string = `
-  The 'key export' command allows you to export a key (either private or public) and save it on a local folder`
+  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
 	KeyExportExample string = `
   Exporting a private key:
   
-  $ singularity key export --secret <fingerprint_id> <file_folder_path>
+  $ singularity key export --secret <path_to_file>
 
-  For example:
-
-  $ singularity key export --secret 9B19CCFCA7B8DDE324E03753D144FCB921E59147 $HOME/mysecretkey.asc
-  
   Exporting a public key:
   
-  $ singularity key export <fingerprint_id> <file_folder_path>
-
-  For example:
-
-  $ singularity key export 9B19CCFCA7B8DDE324E03753D144FCB921E59147 $HOME/mysecretkey.asc
+  $ singularity key export <path_to_file>
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
