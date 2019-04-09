@@ -42,7 +42,7 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("%v\n", err)
 			}
 		} else {
-			sylog.Fatalf("Couldn't push image to library: %v", authWarning)
+			sylog.Fatalf("Couldn't push image to library: %v", remoteWarning)
 		}
 	},
 
