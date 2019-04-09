@@ -16,7 +16,6 @@ import (
 
 var (
 	secretExport bool
-	foundKey     bool
 )
 
 func init() {
