@@ -262,10 +262,10 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 
 // Verify takes a container path (cpath), and look for a verification block
 // for a specified descriptor. If found, the signature block is used to verify
-// the partition hash against the signer's version. Verify takes care of looking
-// for OpenPGP keys in the default local keyring, if non is found, it will then
-// looks it up from a key server if access is enabled, or if localVerify is true.
-// Returns true, if theres no local key matching a signers entity.
+// the partition hash against the signer's version. Verify will look for OpenPGP
+// keys in the default local keyring, if non is found, it will then looks it up
+// from a key server if access is enabled, or if localVerify is false. Returns
+// true, if theres no local key matching a signers entity.
 func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify bool, noPrompt bool) (bool, error) {
 	notLocalKey := false
 
