@@ -77,7 +77,7 @@ func run(cmd *cobra.Command, args []string) {
 							Update: update,
 							Force:  force,
 						},
-					})
+					}, false)
 				if err != nil {
 					sylog.Fatalf("Unable to create build: %v", err)
 				}

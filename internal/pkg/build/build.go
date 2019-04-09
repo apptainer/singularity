@@ -80,8 +80,8 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 }
 
 // New creates a new build struct form a slice of definitions
-func New(defs []types.Definition, conf Config) (*Build, error) {
-	return newBuild(defs, conf)
+func New(defs []types.Definition, conf Config, allowUnauthenticatedBuild bool) (*Build, error) {
+	return newBuild(defs, conf, allowUnauthenticatedBuild)
 }
 
 func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild bool) (*Build, error) {
