@@ -32,15 +32,13 @@ const (
 // pluginObjPath returns the path of the .so file which is built when
 // running `go build -buildmode=plugin [...]`.
 func pluginObjPath(sourceDir string) string {
-	b := filepath.Base(sourceDir)
-	return filepath.Join(sourceDir, b+".so")
+	return filepath.Join(sourceDir, "plugin.so")
 }
 
 // pluginManifestPath returns the path of the .manifest file created
 // in the container after the plugin object is built
 func pluginManifestPath(sourceDir string) string {
-	b := filepath.Base(sourceDir)
-	return filepath.Join(sourceDir, b+".manifest")
+	return filepath.Join(sourceDir, "plugin.manifest")
 }
 
 // CompilePlugin compiles a plugin. It takes as input: sourceDir, the path to the
