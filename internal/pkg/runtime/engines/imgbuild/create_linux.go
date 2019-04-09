@@ -8,11 +8,13 @@ package imgbuild
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"net/rpc"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -78,18 +80,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	// run setup/files sections here to allow injection of custom /etc/hosts or /etc/resolv.conf
 	if engine.EngineConfig.RunSection("setup") && engine.EngineConfig.Recipe.BuildData.Setup.Script != "" {
 		// Run %setup script here
-		setup := exec.Command("/bin/sh", "-cex", engine.EngineConfig.Recipe.BuildData.Setup.Script)
-		setup.Env = engine.EngineConfig.OciConfig.Process.Env
-		setup.Stdout = os.Stdout
-		setup.Stderr = os.Stderr
-
-		sylog.Infof("Running setup scriptlet\n")
-		if err := setup.Start(); err != nil {
-			sylog.Fatalf("failed to start %%setup proc: %v\n", err)
-		}
-		if err := setup.Wait(); err != nil {
-			sylog.Fatalf("setup proc: %v\n", err)
-		}
+		engine.runScriptSection("setup", engine.EngineConfig.Recipe.BuildData.Setup, true)
 	}
 
 	if engine.EngineConfig.RunSection("files") {
@@ -215,4 +206,36 @@ func (engine *EngineOperations) copyFiles() error {
 	}
 
 	return nil
+}
+
+func (engine *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
+	args := []string{"-ex"}
+	// trim potential trailing comment from args and append to args list
+	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
+
+	cmd := exec.Command("/bin/sh", args...)
+	if setEnv {
+		cmd.Env = engine.EngineConfig.OciConfig.Process.Env
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	// pipe in script
+	stdin, err := cmd.StdinPipe()
+	if err != nil {
+		sylog.Fatalf("while creating %s proc pipe: %v", name, err)
+	}
+
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, s.Script)
+	}()
+
+	sylog.Infof("Running %s scriptlet\n", name)
+	if err := cmd.Start(); err != nil {
+		sylog.Fatalf("failed to start %%%s proc: %v\n", name, err)
+	}
+	if err := cmd.Wait(); err != nil {
+		sylog.Fatalf("%s proc: %v\n", name, err)
+	}
 }

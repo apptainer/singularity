@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -92,10 +93,33 @@ func insertEnvScript(b *types.Bundle) error {
 	return nil
 }
 
+// runscript and starscript should use this function to properly handle args and shebangs
+func handleShebangScript(s types.Script) (string, string) {
+	shebang := "#!/bin/sh"
+	script := ""
+	if strings.HasPrefix(s.Script, "#!") {
+		// separate and cleanup shebang
+		split := strings.SplitN(s.Script, "\n", 2)
+		shebang = strings.TrimSpace(split[0])
+		if len(split) == 2 {
+			script = split[1]
+		}
+	} else {
+		script = s.Script
+	}
+
+	if s.Args != "" {
+		// add arg after trimming comments
+		shebang += " " + strings.Split(s.Args, "#")[0]
+	}
+	return shebang, script
+}
+
 func insertRunScript(b *types.Bundle) error {
 	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript.Script != "" {
 		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript.Script+"\n"), 0755)
+		shebang, script := handleShebangScript(b.Recipe.ImageData.Runscript)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte(shebang+"\n\n"+script+"\n"), 0755)
 		if err != nil {
 			return err
 		}
@@ -106,7 +130,8 @@ func insertRunScript(b *types.Bundle) error {
 func insertStartScript(b *types.Bundle) error {
 	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript.Script != "" {
 		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript.Script+"\n"), 0755)
+		shebang, script := handleShebangScript(b.Recipe.ImageData.Startscript)
+		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte(shebang+"\n\n"+script+"\n"), 0755)
 		if err != nil {
 			return err
 		}
