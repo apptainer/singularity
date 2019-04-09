@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	fileName = "remote.yaml"
-	userDir  = ".singularity"
-	sysDir   = "singularity"
+	fileName      = "remote.yaml"
+	userDir       = ".singularity"
+	sysDir        = "singularity"
+	remoteWarning = "no authentication token, log in with 'singularity remote` commands"
 )
 
 var (
@@ -52,6 +53,15 @@ var remoteConfigFlag = cmdline.Flag{
 	Usage:        "path to the file holding remote endpoint configurations",
 }
 
+// --tokenfile
+var remoteTokenFileFlag = cmdline.Flag{
+	ID:           "remoteTokenFileFlag",
+	Value:        &tokenFile,
+	DefaultValue: "",
+	Name:         "tokenfile",
+	Usage:        "path to the file holding token",
+}
+
 func init() {
 	cmdManager.RegisterCmd(RemoteCmd, false)
 	cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddCmd, false)
@@ -63,7 +73,8 @@ func init() {
 
 	// default location of the remote.yaml file is the user directory
 	flagManager.RegisterCmdFlag(&remoteConfigFlag, RemoteCmd)
-
+	// use tokenfile to log in to a remote
+	flagManager.RegisterCmdFlag(&remoteTokenFileFlag, RemoteLoginCmd)
 	// add --global flag to remote add/remove commands
 	flagManager.RegisterCmdFlag(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
 }
@@ -98,7 +109,7 @@ var RemoteAddCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(2),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteAdd(remoteConfig, args[0], args[1]); err != nil {
+		if err := singularity.RemoteAdd(remoteConfig, args[0], args[1], global); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -159,7 +170,7 @@ var RemoteListCmd = &cobra.Command{
 var RemoteLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0]); err != nil {
+		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0], tokenFile); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

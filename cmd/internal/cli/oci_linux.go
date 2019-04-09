@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -130,6 +128,11 @@ var ociUpdateFromFileFlag = cmdline.Flag{
 	EnvKeys:      []string{"FROM_FILE"},
 }
 
+// ociContext is a variable used to describe the context of a OCI command.
+// This variable is for example passed in to the EnsureRootPriv() function to
+// customize the output.
+var ociContext = []string{"oci"}
+
 func init() {
 	cmdManager.RegisterCmd(OciCmd, false)
 	cmdManager.RegisterSubCmd(OciCmd, OciStartCmd, false)
@@ -160,17 +163,11 @@ func init() {
 	flagManager.RegisterCmdFlag(&ociUpdateFromFileFlag, OciUpdateCmd)
 }
 
-func ensureRootPriv(cmd *cobra.Command, args []string) {
-	if os.Geteuid() != 0 {
-		sylog.Fatalf("command 'oci %s' requires root privileges", cmd.Name())
-	}
-}
-
 // OciCreateCmd represents oci create command.
 var OciCreateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciCreate(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -186,7 +183,7 @@ var OciCreateCmd = &cobra.Command{
 var OciRunCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciRun(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -202,7 +199,7 @@ var OciRunCmd = &cobra.Command{
 var OciStartCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciStart(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -218,7 +215,7 @@ var OciStartCmd = &cobra.Command{
 var OciDeleteCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciDelete(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -234,7 +231,7 @@ var OciDeleteCmd = &cobra.Command{
 var OciKillCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		timeout := int(ociArgs.KillTimeout)
 		killSignal := ""
@@ -260,7 +257,7 @@ var OciKillCmd = &cobra.Command{
 var OciStateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciState(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -276,7 +273,7 @@ var OciStateCmd = &cobra.Command{
 var OciAttachCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciAttach(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -292,7 +289,7 @@ var OciAttachCmd = &cobra.Command{
 var OciExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciExec(args[0], args[1:]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -308,7 +305,7 @@ var OciExecCmd = &cobra.Command{
 var OciUpdateCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciUpdate(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -324,7 +321,7 @@ var OciUpdateCmd = &cobra.Command{
 var OciPauseCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciPauseResume(args[0], true); err != nil {
 			sylog.Fatalf("%s", err)
@@ -340,7 +337,7 @@ var OciPauseCmd = &cobra.Command{
 var OciResumeCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciPauseResume(args[0], false); err != nil {
 			sylog.Fatalf("%s", err)
@@ -356,7 +353,7 @@ var OciResumeCmd = &cobra.Command{
 var OciMountCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(2),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciMount(args[0], args[1]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -372,7 +369,7 @@ var OciMountCmd = &cobra.Command{
 var OciUmountCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
-	PreRun:                ensureRootPriv,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciUmount(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
