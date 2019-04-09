@@ -547,7 +547,7 @@ Enterprise Performance Computing (EPC)`
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
-	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
+	PushShort string = `Upload image to the provided library (default is "cloud.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
   of your choosing. An auth token is required to push to the remote, so you may
