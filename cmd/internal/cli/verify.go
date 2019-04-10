@@ -62,16 +62,16 @@ var verifyLocalFlag = cmdline.Flag{
 	Name:         "local",
 	ShortHand:    "l",
 	Usage:        "only verify with local keys",
-	EnvKeys: []string{"LOCAL_VERIFY"},
+	EnvKeys:      []string{"LOCAL_VERIFY"},
 }
 
 func init() {
 	cmdManager.RegisterCmd(VerifyCmd, false)
 
-	flagManager.RegisterCmdFlag(&verifyServerURIFlag, VerifyCmd)
-	flagManager.RegisterCmdFlag(&verifySifGroupIDFlag, VerifyCmd)
-	flagManager.RegisterCmdFlag(&verifySifDescIDFlag, VerifyCmd)
-	flagManager.RegisterCmdFlag(&verifyLocalFlag, VerifyCmd)
+	cmdManager.RegisterCmdFlag(&verifyServerURIFlag, VerifyCmd)
+	cmdManager.RegisterCmdFlag(&verifySifGroupIDFlag, VerifyCmd)
+	cmdManager.RegisterCmdFlag(&verifySifDescIDFlag, VerifyCmd)
+	cmdManager.RegisterCmdFlag(&verifyLocalFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify

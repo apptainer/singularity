@@ -127,14 +127,14 @@ var inspectJSONFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(InspectCmd, false)
 
-	flagManager.RegisterCmdFlag(&inspectAppNameFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectDeffileFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectEnvironmentFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectHelpfileFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectJSONFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectLabelsFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectRunscriptFlag, InspectCmd)
-	flagManager.RegisterCmdFlag(&inspectTestFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectAppNameFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectDeffileFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectEnvironmentFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectHelpfileFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectJSONFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectLabelsFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectRunscriptFlag, InspectCmd)
+	cmdManager.RegisterCmdFlag(&inspectTestFlag, InspectCmd)
 }
 
 func getLabelsFile(appName string) string {

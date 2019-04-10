@@ -151,16 +151,16 @@ func init() {
 	cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd)
 	createRunCmd := cmdManager.GetCmdGroup("create_run")
 
-	flagManager.RegisterCmdFlag(&ociBundleFlag, createRunCmd...)
-	flagManager.RegisterCmdFlag(&ociSyncSocketFlag, createRunCmd...)
-	flagManager.RegisterCmdFlag(&ociLogPathFlag, createRunCmd...)
-	flagManager.RegisterCmdFlag(&ociLogFormatFlag, createRunCmd...)
-	flagManager.RegisterCmdFlag(&ociPidFileFlag, createRunCmd...)
-	flagManager.RegisterCmdFlag(&ociCreateEmptyProcessFlag, OciCreateCmd)
-	flagManager.RegisterCmdFlag(&ociKillForceFlag, OciKillCmd)
-	flagManager.RegisterCmdFlag(&ociKillSignalFlag, OciKillCmd)
-	flagManager.RegisterCmdFlag(&ociKillTimeoutFlag, OciKillCmd)
-	flagManager.RegisterCmdFlag(&ociUpdateFromFileFlag, OciUpdateCmd)
+	cmdManager.RegisterCmdFlag(&ociBundleFlag, createRunCmd...)
+	cmdManager.RegisterCmdFlag(&ociSyncSocketFlag, createRunCmd...)
+	cmdManager.RegisterCmdFlag(&ociLogPathFlag, createRunCmd...)
+	cmdManager.RegisterCmdFlag(&ociLogFormatFlag, createRunCmd...)
+	cmdManager.RegisterCmdFlag(&ociPidFileFlag, createRunCmd...)
+	cmdManager.RegisterCmdFlag(&ociCreateEmptyProcessFlag, OciCreateCmd)
+	cmdManager.RegisterCmdFlag(&ociKillForceFlag, OciKillCmd)
+	cmdManager.RegisterCmdFlag(&ociKillSignalFlag, OciKillCmd)
+	cmdManager.RegisterCmdFlag(&ociKillTimeoutFlag, OciKillCmd)
+	cmdManager.RegisterCmdFlag(&ociUpdateFromFileFlag, OciUpdateCmd)
 }
 
 // OciCreateCmd represents oci create command.

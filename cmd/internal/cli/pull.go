@@ -99,17 +99,17 @@ var pullNoHTTPSFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(PullCmd, false)
 
-	flagManager.RegisterCmdFlag(&pullForceFlag, PullCmd)
-	flagManager.RegisterCmdFlag(&pullLibraryURIFlag, PullCmd)
-	flagManager.RegisterCmdFlag(&pullNameFlag, PullCmd)
-	flagManager.RegisterCmdFlag(&pullNoHTTPSFlag, PullCmd)
-	flagManager.RegisterCmdFlag(&pullTmpdirFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&pullForceFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&pullLibraryURIFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&pullNameFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&pullNoHTTPSFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&pullTmpdirFlag, PullCmd)
 
-	flagManager.RegisterCmdFlag(&actionDockerUsernameFlag, PullCmd)
-	flagManager.RegisterCmdFlag(&actionDockerPasswordFlag, PullCmd)
-	flagManager.RegisterCmdFlag(&actionDockerLoginFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&actionDockerUsernameFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&actionDockerPasswordFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&actionDockerLoginFlag, PullCmd)
 
-	flagManager.RegisterCmdFlag(&buildNoCleanupFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&buildNoCleanupFlag, PullCmd)
 }
 
 // PullCmd singularity pull

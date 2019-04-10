@@ -30,7 +30,7 @@ var pluginCompileOutFlag = cmdline.Flag{
 }
 
 func init() {
-	flagManager.RegisterCmdFlag(&pluginCompileOutFlag, PluginCompileCmd)
+	cmdManager.RegisterCmdFlag(&pluginCompileOutFlag, PluginCompileCmd)
 }
 
 // PluginCompileCmd allows a user to compile a plugin

@@ -25,7 +25,6 @@ import (
 )
 
 var cmdManager = cmdline.NewCommandManager(SingularityCmd)
-var flagManager = cmdline.NewFlagManager()
 
 // CurrentUser holds the current user account information
 var CurrentUser = getCurrentUser()
@@ -152,12 +151,12 @@ func init() {
 	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
 	SingularityCmd.SetVersionTemplate(vt)
 
-	flagManager.RegisterCmdFlag(&singDebugFlag, SingularityCmd)
-	flagManager.RegisterCmdFlag(&singNoColorFlag, SingularityCmd)
-	flagManager.RegisterCmdFlag(&singSilentFlag, SingularityCmd)
-	flagManager.RegisterCmdFlag(&singQuietFlag, SingularityCmd)
-	flagManager.RegisterCmdFlag(&singVerboseFlag, SingularityCmd)
-	flagManager.RegisterCmdFlag(&singTokenFileFlag, SingularityCmd)
+	cmdManager.RegisterCmdFlag(&singDebugFlag, SingularityCmd)
+	cmdManager.RegisterCmdFlag(&singNoColorFlag, SingularityCmd)
+	cmdManager.RegisterCmdFlag(&singSilentFlag, SingularityCmd)
+	cmdManager.RegisterCmdFlag(&singQuietFlag, SingularityCmd)
+	cmdManager.RegisterCmdFlag(&singVerboseFlag, SingularityCmd)
+	cmdManager.RegisterCmdFlag(&singTokenFileFlag, SingularityCmd)
 
 	cmdManager.RegisterCmd(VersionCmd, false)
 
@@ -165,7 +164,7 @@ func init() {
 	plugin.AddCommands(SingularityCmd)
 }
 
-func setSylogMessageLevel(cmd *cobra.Command, args []string) {
+func setSylogMessageLevel() {
 	var level int
 
 	if debug {
@@ -183,7 +182,7 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 	sylog.SetLevel(level)
 }
 
-func setSylogColor(cmd *cobra.Command, args []string) {
+func setSylogColor() {
 	if nocolor {
 		sylog.DisableColor()
 	}
@@ -193,7 +192,6 @@ func setSylogColor(cmd *cobra.Command, args []string) {
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	PersistentPreRun:      persistentPreRun,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return errors.New("Invalid command")
 	},
@@ -211,6 +209,16 @@ var SingularityCmd = &cobra.Command{
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
+	setSylogMessageLevel()
+	setSylogColor()
+
+	cmdManager.UpdateCmdFlagFromEnv(envPrefix)
+
+	// error reported by command manager is considered as fatal
+	for _, e := range cmdManager.GetError() {
+		sylog.Fatalf(e.Error())
+	}
+
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
 		if str := err.Error(); strings.Contains(str, "unknown flag: ") {
 			flag := strings.TrimPrefix(str, "unknown flag: ")
@@ -245,12 +253,6 @@ var VersionCmd = &cobra.Command{
 
 	Use:   "version",
 	Short: "Show the version for Singularity",
-}
-
-func persistentPreRun(cmd *cobra.Command, args []string) {
-	setSylogMessageLevel(cmd, args)
-	setSylogColor(cmd, args)
-	flagManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
 // sylabsToken process the authentication Token

@@ -42,7 +42,7 @@ var runHelpAppNameFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(RunHelpCmd, false)
 
-	flagManager.RegisterCmdFlag(&runHelpAppNameFlag, RunHelpCmd)
+	cmdManager.RegisterCmdFlag(&runHelpAppNameFlag, RunHelpCmd)
 }
 
 // RunHelpCmd singularity run-help <image>

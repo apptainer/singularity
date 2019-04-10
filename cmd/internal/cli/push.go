@@ -32,7 +32,7 @@ var pushLibraryURIFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(PushCmd, false)
 
-	flagManager.RegisterCmdFlag(&pushLibraryURIFlag, PushCmd)
+	cmdManager.RegisterCmdFlag(&pushLibraryURIFlag, PushCmd)
 }
 
 // PushCmd singularity push

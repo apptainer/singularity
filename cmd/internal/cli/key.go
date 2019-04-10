@@ -41,8 +41,9 @@ func init() {
 	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd, false)
 	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd, false)
 	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd, false)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd, false)
 
-	flagManager.RegisterCmdFlag(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
+	cmdManager.RegisterCmdFlag(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores

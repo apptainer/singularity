@@ -73,11 +73,11 @@ func init() {
 	cmdManager.RegisterSubCmd(RemoteCmd, RemoteStatusCmd, false)
 
 	// default location of the remote.yaml file is the user directory
-	flagManager.RegisterCmdFlag(&remoteConfigFlag, RemoteCmd)
+	cmdManager.RegisterCmdFlag(&remoteConfigFlag, RemoteCmd)
 	// use tokenfile to log in to a remote
-	flagManager.RegisterCmdFlag(&remoteTokenFileFlag, RemoteLoginCmd)
+	cmdManager.RegisterCmdFlag(&remoteTokenFileFlag, RemoteLoginCmd)
 	// add --global flag to remote add/remove commands
-	flagManager.RegisterCmdFlag(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
+	cmdManager.RegisterCmdFlag(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
 }
 
 // RemoteCmd singularity remote [...]

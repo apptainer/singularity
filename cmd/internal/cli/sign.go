@@ -64,10 +64,10 @@ var signKeyIdxFlag = cmdline.Flag{
 func init() {
 	cmdManager.RegisterCmd(SignCmd, false)
 
-	flagManager.RegisterCmdFlag(&signServerURIFlag, SignCmd)
-	flagManager.RegisterCmdFlag(&signSifGroupIDFlag, SignCmd)
-	flagManager.RegisterCmdFlag(&signSifDescIDFlag, SignCmd)
-	flagManager.RegisterCmdFlag(&signKeyIdxFlag, SignCmd)
+	cmdManager.RegisterCmdFlag(&signServerURIFlag, SignCmd)
+	cmdManager.RegisterCmdFlag(&signSifGroupIDFlag, SignCmd)
+	cmdManager.RegisterCmdFlag(&signSifDescIDFlag, SignCmd)
+	cmdManager.RegisterCmdFlag(&signKeyIdxFlag, SignCmd)
 }
 
 // SignCmd singularity sign

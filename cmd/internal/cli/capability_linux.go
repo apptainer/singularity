@@ -163,6 +163,6 @@ func init() {
 	cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityListCmd, false)
 	cmdManager.RegisterSubCmd(CapabilityCmd, CapabilityAvailCmd, false)
 
-	flagManager.RegisterCmdFlag(&capUserFlag, CapabilityAddCmd, CapabilityDropCmd)
-	flagManager.RegisterCmdFlag(&capGroupFlag, CapabilityAddCmd, CapabilityDropCmd)
+	cmdManager.RegisterCmdFlag(&capUserFlag, CapabilityAddCmd, CapabilityDropCmd)
+	cmdManager.RegisterCmdFlag(&capGroupFlag, CapabilityAddCmd, CapabilityDropCmd)
 }

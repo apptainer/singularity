@@ -30,7 +30,7 @@ var keyListSecretFlag = cmdline.Flag{
 }
 
 func init() {
-	flagManager.RegisterCmdFlag(&keyListSecretFlag, KeyListCmd)
+	cmdManager.RegisterCmdFlag(&keyListSecretFlag, KeyListCmd)
 }
 
 // KeyListCmd is `singularity key list' and lists local store OpenPGP keys
