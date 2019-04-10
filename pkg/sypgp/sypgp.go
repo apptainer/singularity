@@ -14,7 +14,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -515,24 +514,6 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	}
 
 	return el[i], nil
-}
-
-// helpAuthentication advises the client on how to procure an authentication token
-func helpAuthentication() (token string, err error) {
-	sylog.Infof(helpAuth)
-
-	token, err = AskQuestion("Paste Token HERE: ")
-	if err != nil {
-		return "", fmt.Errorf("could not read pasted token: %s", err)
-	}
-
-	// Create/Overwrite token file
-	err = ioutil.WriteFile(GetTokenFile(), []byte(token), 0600)
-	if err != nil {
-		return "", fmt.Errorf("could not create/update token file: %s", err)
-	}
-
-	return
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
