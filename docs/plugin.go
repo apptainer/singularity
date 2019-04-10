@@ -37,10 +37,9 @@ const (
 	PluginCompileUse   string = `compile [compile options...] <host_path>`
 	PluginCompileShort string = `Compile a singularity plugin`
 	PluginCompileLong  string = `
-	The 'plugin compile' command allows a developer to compile a plugin in the
-	expected environment. The host directory specified is the location of the plugins
-	source code folder which will be bind mounted into the compile container. Compilation
-	of a container must happen in a container due to constraints in the Go plugin package.`
+	The 'plugin compile' command allows a developer to compile a singularity plugin in the
+	expected environment. The provided host directory is the location of the plugin's
+	source code.`
 	PluginCompileExample string = `
 	$ singularity plugin compile $HOST_PATH`
 
