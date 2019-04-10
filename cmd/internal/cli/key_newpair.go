@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
@@ -24,6 +25,8 @@ var KeyNewPairCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		handleKeyNewPairEndpoint()
+
 		if _, err := sypgp.GenKeyPair(keyServerURI, authToken); err != nil {
 			sylog.Errorf("creating newpair failed: %v", err)
 			os.Exit(2)
@@ -34,4 +37,23 @@ var KeyNewPairCmd = &cobra.Command{
 	Short:   docs.KeyNewPairShort,
 	Long:    docs.KeyNewPairLong,
 	Example: docs.KeyNewPairExample,
+}
+
+func handleKeyNewPairEndpoint() {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	uri, err := endpoint.GetServiceURI("keystore")
+	if err != nil {
+		sylog.Fatalf("Unable to get key service URI: %v", err)
+	}
+	keyServerURI = uri
 }
