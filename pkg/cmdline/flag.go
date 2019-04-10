@@ -118,7 +118,7 @@ func (m *flagManager) registerCmdFlag(flag *Flag, cmds ...*cobra.Command) error 
 		flag.EnvHandler = nil
 		m.registerUint32Var(flag, cmds)
 	default:
-		return fmt.Errorf("flag of type %s are not supported", t)
+		return fmt.Errorf("flag of type %s is not supported", t)
 	}
 	m.flags[flag.ID] = flag
 	return nil
