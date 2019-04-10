@@ -60,7 +60,7 @@ func (m *Manager) GetCgroupRootPath() string {
 	return ""
 }
 
-// ApplyFromSpec applies cgroups ressources restriction from OCI specification
+// ApplyFromSpec applies cgroups resources restriction from OCI specification
 func (m *Manager) ApplyFromSpec(spec *specs.LinuxResources) (err error) {
 	var path cgroups.Path
 
@@ -127,7 +127,7 @@ func (m *Manager) UpdateFromFile(path string) error {
 	return m.UpdateFromSpec(&spec)
 }
 
-// Remove removes ressources restriction for current managed process
+// Remove removes resources restriction for current managed process
 func (m *Manager) Remove() error {
 	// deletes subgroup
 	return m.cgroup.Delete()
