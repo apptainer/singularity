@@ -25,8 +25,9 @@ const (
 )
 
 var (
-	remoteConfig string
-	global       bool
+	loginTokenFile string
+	remoteConfig   string
+	global         bool
 )
 
 // assemble values of remoteConfig for user/sys locations
@@ -56,7 +57,7 @@ var remoteConfigFlag = cmdline.Flag{
 // --tokenfile
 var remoteTokenFileFlag = cmdline.Flag{
 	ID:           "remoteTokenFileFlag",
-	Value:        &tokenFile,
+	Value:        &loginTokenFile,
 	DefaultValue: "",
 	Name:         "tokenfile",
 	Usage:        "path to the file holding token",
@@ -170,7 +171,7 @@ var RemoteListCmd = &cobra.Command{
 var RemoteLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0], tokenFile); err != nil {
+		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0], loginTokenFile); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

@@ -77,6 +77,8 @@ var SignCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		handleKeyFlags(cmd)
+
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
 		if err := doSignCmd(args[0], keyServerURI); err != nil {
