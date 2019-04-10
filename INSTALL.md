@@ -48,6 +48,26 @@ $ echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
   source ~/.bashrc
 ```
 
+## Install golangci-lint
+
+This is an optional (but highly recommended!) step. To ensure
+consistency and to catch certain kinds of issues early, we provide a
+configuration file for golangci-lint. Every pull request must pass the
+checks specified there, and these will be run automatically before
+attempting to merge the code. If you are modifying Singularity and
+contributing your changes to the repository, it's faster to run these
+checks locally before uploading your pull request.
+
+In order to install golangci-lint, you can run:
+
+```
+$ curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh |
+  sh -s -- -b $(go env GOPATH)/bin v1.15.0
+```
+
+This will download and install golangci-lint from its Github releases
+page (using version v1.15.0 at the moment).
+
 ## Clone the repo
 
 Golang is a bit finicky about where things are placed. Here is the correct way

@@ -220,13 +220,29 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
-	KeyImportShort string = `Import a local key into the local Singularity key store`
+	KeyImportUse   string = `import [import options...] <input-key>`
+	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
 	KeyImportExample string = `
-  $ singularity key import $HOME/key.asc
-  $ singularity keys import $HOME/key.asc
+  $ singularity key import ./my-key.asc
+  `
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key export
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
+	KeyExportShort string = `Export a public or private key into a specific file`
+	KeyExportLong  string = `
+  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
+	KeyExportExample string = `
+  Exporting a private key:
+  
+  $ singularity key export --secret <path_to_file>
+
+  Exporting a public key:
+  
+  $ singularity key export <path_to_file>
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -784,7 +800,7 @@ found at:
   $ singularity oci create -b ~/bundle mycontainer
   $ singularity oci start mycontainer`
 
-	OciCreateUse   string = `create [create options...] <container_ID>`
+	OciCreateUse   string = `create -b <bundle_path> [create options...] <container_ID>`
 	OciCreateShort string = `Create a container from a bundle directory (root user only)`
 	OciCreateLong  string = `
   Create invoke create operation to create a container instance from an OCI bundle directory`
@@ -834,7 +850,7 @@ found at:
 	OciExecExample string = `
   $ singularity oci exec mycontainer id`
 
-	OciRunUse   string = `run [run options...] <container_ID>`
+	OciRunUse   string = `run -b <bundle_path> [run options...] <container_ID>`
 	OciRunShort string = `Create/start/attach/delete a container from a bundle directory (root user only)`
 	OciRunLong  string = `
   Run will invoke equivalent of create/start/attach/delete commands in a row.`

@@ -44,6 +44,7 @@ all your interactions with the project members and users.
       formatting as our standard
     - Left a function comment on **every** new exported function and package that
       your PR has introduced. To learn about how to properly comment Golang code, read [this post on golang.org](https://golang.org/doc/effective_go.html?#commentary)
+    - Run `make check` to perform static analysis on the code
 9. Is the code human understandable? This can be accomplished via a clear code
    style as well as documentation and/or comments.
 10. The pull request will be reviewed by others, and finally merged when all

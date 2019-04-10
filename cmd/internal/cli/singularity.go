@@ -444,6 +444,9 @@ var flagEnvFuncs = map[string]envHandle{
 	"secret": envBool,
 	"url":    envStringNSlice,
 
+	// verify flag
+	"local": envBool,
+
 	// inspect flags
 	"labels":      envBool,
 	"deffile":     envBool,
