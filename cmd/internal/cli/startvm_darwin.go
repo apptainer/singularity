@@ -48,16 +48,19 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		"-l", "com1,stdio",
 	}
 
-	if len(BindPaths) > 8 {
-		sylog.Fatalf("Maximum of 8 bind mounts")
-	}
-
 	// Bind mounts
 	singBinds := []string{""}
 
-	slot := 5
+	// If we surpass 48 bind mounts ... error. We can't do anything at this point.
+	if len(BindPaths) > 48 {
+		sylog.Fatalf("Surpassed max amount of binds we can pass to virtual machine")
+	}
 
-	for idx, bindpath := range BindPaths {
+	// Set slot to 26. slot has a max value of 31, so this will give us a max of 48 bind mounts from the Mac host.
+	slot := 26
+	function := 0
+
+	for _, bindpath := range BindPaths {
 		splitted := strings.Split(bindpath, ":")
 		src := splitted[0]
 		dst := ""
@@ -72,13 +75,21 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		mntTag := genString(6)
 
 		// TODO: Figure out if src is a directory or not
-		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(idx), mntTag, src)
+		pciArgs := fmt.Sprintf("%s:%s,virtio-9p,%s=%s", strconv.Itoa(slot), strconv.Itoa(function), mntTag, src)
 		args = append(args, "-s", pciArgs)
 
 		localBind := fmt.Sprintf("%s:%s", mntTag, dst)
 		singBinds = append(singBinds, localBind)
 
 		sylog.Debugf("PCI: %s", pciArgs)
+
+		// The PCI function can be a value from 0-7 per slot. If we have more than 8 binds, increase the slot,
+		// and reset the function value back to 0
+		function++
+		if function > 7 {
+			slot++
+			function = 0
+		}
 	}
 
 	usr, err := user.Current()
