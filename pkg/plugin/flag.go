@@ -7,7 +7,7 @@ package plugin
 
 import (
 	"github.com/spf13/pflag"
-	singularity "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // FlagCallbackFn is the callback function type for flag hooks. It takes two
