@@ -220,13 +220,29 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
-	KeyImportShort string = `Import a local key into the local Singularity key store`
+	KeyImportUse   string = `import [import options...] <input-key>`
+	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
 	KeyImportExample string = `
-  $ singularity key import $HOME/key.asc
-  $ singularity keys import $HOME/key.asc
+  $ singularity key import ./my-key.asc
+  `
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key export
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
+	KeyExportShort string = `Export a public or private key into a specific file`
+	KeyExportLong  string = `
+  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
+	KeyExportExample string = `
+  Exporting a private key:
+  
+  $ singularity key export --secret <path_to_file>
+
+  Exporting a public key:
+  
+  $ singularity key export <path_to_file>
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
