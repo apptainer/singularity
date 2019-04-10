@@ -539,7 +539,8 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			sylog.Fatalf(helpAuth)
+			sylog.Infof(helpAuth)
+			return fmt.Errorf("unauthorized token")
 		} else if ok && jerr.Code == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
@@ -580,7 +581,8 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			sylog.Fatalf(helpAuth)
+			sylog.Infof(helpAuth)
+			return nil, fmt.Errorf("unauthorized token")
 		} else if ok && jerr.Code == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
@@ -884,10 +886,11 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	if err := c.PKSAdd(context.TODO(), keyText); err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			sylog.Fatalf(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
-		} else {
-			return fmt.Errorf("key server did not accept PGP key: %v", err)
+			sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
+			return fmt.Errorf("unauthorized token")
 		}
+		return fmt.Errorf("key server did not accept PGP key: %v", err)
+
 	}
 	return nil
 }
