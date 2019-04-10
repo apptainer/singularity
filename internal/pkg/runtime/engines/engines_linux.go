@@ -20,8 +20,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
 	ociserver "github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/server"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // Engine is the combination of an EngineOperations and a config.Common. The singularity
