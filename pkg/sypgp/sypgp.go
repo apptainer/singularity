@@ -32,17 +32,11 @@ import (
 )
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
-  1) Go to : https://cloud.sylabs.io/
-  2) Click "Sign in to Sylabs" and follow the sign in steps
-  3) Click on your login id (same and updated button as the Sign in one)
-  4) Select "Access Tokens" from the drop down menu
-  5) Click the "Manage my API tokens" button from the "Account Management" page
-  6) Click "Create"
-  7) Click "Copy token to Clipboard" from the "New API Token" page
-  8) Paste the token string to the waiting prompt below and then press "Enter"
-
-WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exists
-
+  1) View configured remotes using "singularity remote list"
+  2) Identify default remote. It will be listed with square brackets.
+  3) Login to default remote with "singularity remote login <RemoteName>"
+`
+const helpPush = `  4) Push key using "singularity key push %[1]X"
 `
 
 var errPassphraseMismatch = errors.New("passphrases do not match")
@@ -563,19 +557,8 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			authToken, err := helpAuthentication()
-			if err != nil {
-				return fmt.Errorf("could not obtain or install authentication token: %s", err)
-			}
-
-			// Try to pull key from Key Service again with new auth token.
-			c.AuthToken = authToken
-			pd = client.PageDetails{}
-			if keyText, err = c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil); err != nil {
-				return err
-			}
+			sylog.Fatalf(helpAuth)
 		} else if ok && jerr.Code == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
@@ -615,18 +598,8 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	keyText, err := c.GetKey(context.TODO(), fp)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			authToken, err := helpAuthentication()
-			if err != nil {
-				return nil, fmt.Errorf("could not obtain or install authentication token: %s", err)
-			}
-
-			// Try to pull key from Key Service again with new auth token.
-			c.AuthToken = authToken
-			if keyText, err = c.GetKey(context.TODO(), fp); err != nil {
-				return nil, err
-			}
+			sylog.Fatalf(helpAuth)
 		} else if ok && jerr.Code == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
@@ -929,18 +902,8 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	// Push key to Key Service.
 	if err := c.PKSAdd(context.TODO(), keyText); err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			authToken, err := helpAuthentication()
-			if err != nil {
-				return fmt.Errorf("could not obtain or install authentication token: %s", err)
-			}
-
-			// Try to push key to Key Service again with new auth token.
-			c.AuthToken = authToken
-			if err := c.PKSAdd(context.TODO(), keyText); err != nil {
-				return fmt.Errorf("key server did not accept PGP key: %v", err)
-			}
+			sylog.Fatalf(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
 		} else {
 			return fmt.Errorf("key server did not accept PGP key: %v", err)
 		}
