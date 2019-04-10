@@ -50,6 +50,38 @@ const (
 	envPrefix = "SINGULARITY_"
 )
 
+// checkForInvalidShortFlags ensures that supported short flags are used with
+// the singularity command. Cobra natively use the pflag type instead of the
+// flag type and as a result has limited support for short flags (i.e., flags
+// with a single dash such as "-foo"). As a result, Cobra does not check if
+// short flags are valid or not. This function addresses this gap by manually
+// checking the validity of the short flags that are passed in.
+func checkForInvalidShortFlags() {
+	// Unfortunately, it seems that Cobra does not maintain a structure to
+	// query all the supported flags and the potential short version so we
+	// have to maintain a map of supported short flags. Note that we use a
+	// map to clearly specify what is the long version and to ease lookup.
+	supportedShortFlags := map[string]string{
+		"d": "debug",
+		"h": "help",
+		"q": "quiet",
+		"s": "silent",
+		"v": "verbose",
+	}
+
+	for _, arg := range os.Args {
+		if len(string(arg)) > 1 && string(arg[0]) == "-" && string(arg[1]) != "-" {
+			name := arg[1:len(arg)]
+			_, ok := supportedShortFlags[name]
+			if !ok {
+				fmt.Printf("Invalid flafg \"%s\" for command \"singularity\"\n", arg)
+				SingularityCmd.Printf("Run 'singularity --help' for more detailed usage information.\n")
+				os.Exit(1)
+			}
+		}
+	}
+}
+
 // initializePlugins should be called in any init() function which needs to interact with the plugin
 // systems internal API. This will guarantee that any internal API calls happen AFTER all plugins
 // have been properly loaded and initialized
@@ -93,6 +125,8 @@ func init() {
 
 	initializePlugins()
 	plugin.AddCommands(SingularityCmd)
+
+	checkForInvalidShortFlags()
 }
 
 func setSylogMessageLevel(cmd *cobra.Command, args []string) {
