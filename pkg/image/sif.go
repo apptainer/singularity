@@ -9,9 +9,11 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime"
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (
@@ -38,64 +40,100 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		return err
 	}
 
+	// Check the compatibility of the image's target architecture
+	// TODO: we should check if we need to deal with compatible architectures. For example, i386 can run on amd64 and maybe some ARM processor can run <= armv6 instructions on asasrch64 (someone should double check).
+	// TODO: The typically workflow is:
+	// 1. pull image from docker/library/shub (pull/build commands)
+	// 2. extract image file system to temp folder (build commands)
+	// 3. if definition file contains a 'executable' section, the architecture check should occur (or delegate to runtime which would fail during execution).
+	// The current code will be called by the started which will cover most of the workflow desribed above. However, SIF is currently build upon the assumption that the architecture is assigned based on the architecture defined by a Go runtime, which is not 100% compliant with the intended workflow.
+	sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
+	if sifArch != sif.HdrArchUnknown && sifArch != sif.GetSIFArch(runtime.GOARCH) {
+		sylog.Fatalf("the image's architecture (%s) is incompatible with the host (%s)", sif.GetGoArch(sifArch), runtime.GOARCH)
+	}
+
+	groupID := -1
+
 	// Get the default system partition image
-	part, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return err
-	}
+	for _, desc := range fimg.DescrArr {
+		if !desc.Used {
+			continue
+		}
+		if desc.Datatype != sif.DataPartition {
+			continue
+		}
+		ptype, err := desc.GetPartType()
+		if err != nil {
+			continue
+		}
+		if ptype != sif.PartPrimSys {
+			continue
+		}
+		fstype, err := desc.GetFsType()
+		if err != nil {
+			continue
+		}
 
-	// record the fs type
-	fstype, err := part.GetFsType()
-	if err != nil {
-		return err
-	}
-	if fstype == sif.FsSquash {
-		img.Partitions[0].Type = SQUASHFS
-	} else if fstype == sif.FsExt3 {
-		img.Partitions[0].Type = EXT3
-	} else {
-		return fmt.Errorf("unknown file system type: %v", fstype)
-	}
+		img.Partitions = []Section{
+			{
+				Offset: uint64(desc.Fileoff),
+				Size:   uint64(desc.Filelen),
+				Name:   RootFs,
+			},
+		}
 
-	img.Partitions[0].Offset = uint64(part.Fileoff)
-	img.Partitions[0].Size = uint64(part.Filelen)
-	img.Partitions[0].Name = RootFs
+		if fstype == sif.FsSquash {
+			img.Partitions[0].Type = SQUASHFS
+		} else if fstype == sif.FsExt3 {
+			img.Partitions[0].Type = EXT3
+		} else {
+			return fmt.Errorf("unknown file system type: %v", fstype)
+		}
 
-	// store all remaining sections
-	img.Sections = make([]Section, 0)
+		groupID = int(desc.Groupid)
+		break
+	}
 
 	for _, desc := range fimg.DescrArr {
+		if !desc.Used {
+			continue
+		}
 		if ptype, err := desc.GetPartType(); err == nil {
-			// overlay partitions
-			if ptype == sif.PartOverlay && part.Groupid == desc.Groupid && desc.Used {
-				fstype, err := desc.GetFsType()
-				if err != nil {
-					continue
-				}
-				partition := Section{
-					Offset: uint64(desc.Fileoff),
-					Size:   uint64(desc.Filelen),
-					Name:   desc.GetName(),
-				}
-				switch fstype {
-				case sif.FsSquash:
-					partition.Type = SQUASHFS
-				case sif.FsExt3:
-					partition.Type = EXT3
-				}
-				img.Partitions = append(img.Partitions, partition)
+			// exclude partitions that are not types data or overlay
+			if ptype != sif.PartData && ptype != sif.PartOverlay {
+				continue
 			}
-		} else {
-			// anything else
-			if desc.Datatype != 0 {
-				data := Section{
-					Offset: uint64(desc.Fileoff),
-					Size:   uint64(desc.Filelen),
-					Type:   uint32(desc.Datatype),
-					Name:   desc.GetName(),
-				}
-				img.Sections = append(img.Sections, data)
+			// ignore overlay partitions not associated to root
+			// filesystem group ID
+			if ptype == sif.PartOverlay && groupID != int(desc.Groupid) {
+				continue
 			}
+			fstype, err := desc.GetFsType()
+			if err != nil {
+				continue
+			}
+			partition := Section{
+				Offset: uint64(desc.Fileoff),
+				Size:   uint64(desc.Filelen),
+				Name:   desc.GetName(),
+			}
+			switch fstype {
+			case sif.FsSquash:
+				partition.Type = SQUASHFS
+			case sif.FsExt3:
+				partition.Type = EXT3
+			default:
+				partition.Type = uint32(fstype)
+			}
+			img.Partitions = append(img.Partitions, partition)
+		} else if desc.Datatype != 0 {
+			data := Section{
+				Offset: uint64(desc.Fileoff),
+				Size:   uint64(desc.Filelen),
+				Type:   uint32(desc.Datatype),
+				Name:   desc.GetName(),
+			}
+			img.Sections = append(img.Sections, data)
 		}
 	}
 

@@ -2,7 +2,7 @@ all: $(ALL)
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+	$(V)$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
 		$(SOURCEDIR)/cmd/docs/docs.go man --dir $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: collect
@@ -20,7 +20,10 @@ collect:
 check: $(go_OBJ)
 	@echo " CHECK golangci-lint"
 	$(V)cd $(SOURCEDIR) && \
-		golangci-lint run --build-tags "$(GO_TAGS)" ./...
+		(PATH=$(SOURCEDIR)/bin:$$PATH; \
+		 (command -v golangci-lint >/dev/null || \
+		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.15.0) && \
+		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
 	@echo "       PASS"
 
 .PHONY: dist
@@ -30,15 +33,15 @@ dist:
 .PHONY: unit-test
 unit-test:
 	@echo " TEST sudo go test [unit]"
-	@cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
-		`go list ./... | grep -v "cmd/singularity\|pkg/network"`
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+		`$(GO) list ./... | grep -v "cmd/singularity\|pkg/network"`
 	@echo "       PASS"
 
 
 .PHONY: integration-test
 integration-test:
 	@echo " TEST sudo go test [integration]"
-	@cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
 
@@ -48,7 +51,7 @@ test:
 	@echo " TEST sudo go test [all]"
 	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
     	trap "kill $$! || true" 0; \
-		cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race ./...
+		cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: testall
@@ -79,7 +82,7 @@ cscope:
 .PHONY: clean
 clean:
 	@printf " CLEAN\n"
-	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* bin/golangci-lint $(CLEANFILES)
 
 .PHONY: install
 install: $(INSTALLFILES)
@@ -89,11 +92,11 @@ install: $(INSTALLFILES)
 .PHONY: vendor
 vendor:
 	@echo " VENDOR"
-	$(V)dep ensure >/dev/null
+	$(V)$(GO) mod vendor >/dev/null
 
 .PHONY: vendor-check
 vendor-check:
 	@echo " VENDOR CHECK"
-	$(V)dep check
+	$(V)$(GO) mod verify
 
 -include $(BUILDDIR)/mergeddeps

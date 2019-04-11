@@ -24,7 +24,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 var (
@@ -149,6 +149,10 @@ func setAttribute(obj *inspectFormat, label string, value string) {
 	}
 }
 
+func getAppCheck(appName string) string {
+	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
+}
+
 // InspectCmd represents the build command
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
@@ -173,6 +177,12 @@ var InspectCmd = &cobra.Command{
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/sh", "-c", ""}
+
+		// If AppName is given fail quickly (exit) if it doesn't exist
+		if AppName != "" {
+			sylog.Debugf("Inspection of App %s Selected.", AppName)
+			a[2] += getAppCheck(AppName)
+		}
 
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
@@ -308,12 +318,12 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("%s: %s", err, cmd.Args)
 	}
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("%s: %s", err, b)
 	}
 
 	return string(b), nil

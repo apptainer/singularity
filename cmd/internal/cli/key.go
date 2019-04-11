@@ -30,6 +30,8 @@ func init() {
 	KeyCmd.AddCommand(KeyPullCmd)
 	KeyCmd.AddCommand(KeyPushCmd)
 	KeyCmd.AddCommand(KeyImportCmd)
+	KeyCmd.AddCommand(KeyExportCmd)
+	KeyCmd.AddCommand(KeyRemoveCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores

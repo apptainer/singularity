@@ -152,7 +152,7 @@ func (engine *EngineOperations) createState(pid int) error {
 
 	name := engine.CommonConfig.ContainerID
 
-	file, err := instance.Add(name, true)
+	file, err := instance.Add(name, true, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func (engine *EngineOperations) updateState(status string) error {
 	engine.EngineConfig.Lock()
 	defer engine.EngineConfig.Unlock()
 
-	file, err := instance.Get(engine.CommonConfig.ContainerID)
+	file, err := instance.Get(engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -211,11 +211,17 @@ func (engine *EngineOperations) updateState(status string) error {
 
 	switch status {
 	case ociruntime.Created:
-		engine.EngineConfig.State.CreatedAt = &t
+		if engine.EngineConfig.State.CreatedAt == nil {
+			engine.EngineConfig.State.CreatedAt = &t
+		}
 	case ociruntime.Running:
-		engine.EngineConfig.State.StartedAt = &t
+		if engine.EngineConfig.State.StartedAt == nil {
+			engine.EngineConfig.State.StartedAt = &t
+		}
 	case ociruntime.Stopped:
-		engine.EngineConfig.State.FinishedAt = &t
+		if engine.EngineConfig.State.FinishedAt == nil {
+			engine.EngineConfig.State.FinishedAt = &t
+		}
 	}
 
 	file.Config, err = json.Marshal(engine.CommonConfig)
@@ -477,10 +483,12 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 		}
 	}
 
+	c.engine.EngineConfig.OciConfig.Linux.CgroupsPath = cgroupsPath
+
 	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
 
 	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
-		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+		return fmt.Errorf("Failed to apply cgroups resources restriction: %s", err)
 	}
 
 	if c.cgroupIndex >= 0 {
@@ -795,7 +803,7 @@ func (c *container) addDevices(system *mount.System) error {
 func (c *container) addMaskedPathsMount(system *mount.System) error {
 	paths := c.engine.EngineConfig.OciConfig.Linux.MaskedPaths
 
-	dir, err := instance.GetDirPrivileged(c.engine.CommonConfig.ContainerID)
+	dir, err := instance.GetDirPrivileged(c.engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}

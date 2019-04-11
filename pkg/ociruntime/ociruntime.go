@@ -6,7 +6,7 @@
 package ociruntime
 
 import (
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 const (
@@ -18,6 +18,8 @@ const (
 	Running = "running"
 	// Stopped represent stopped status during container lifecycle
 	Stopped = "stopped"
+	// Paused represent paused status during container lifecycle
+	Paused = "paused"
 )
 
 // State represents the state of the container
@@ -38,4 +40,6 @@ type Control struct {
 	ConsoleSize    *specs.Box `json:"consoleSize,omitempty"`
 	ReopenLog      bool       `json:"reopenLog,omitempty"`
 	StartContainer bool       `json:"startContainer,omitempty"`
+	Pause          bool       `json:"pause,omitempty"`
+	Resume         bool       `json:"resume,omitempty"`
 }

@@ -12,6 +12,11 @@ import (
 	"github.com/sylabs/singularity/docs"
 )
 
+// pluginContext is a variable used to describe the context of a plugin command.
+// This variable is for example passed in to the EnsureRootPriv() function to
+// customize the output.
+var pluginContext = []string{"plugin"}
+
 func init() {
 	PluginCmd.AddCommand(PluginListCmd)
 	PluginCmd.AddCommand(PluginInstallCmd)
@@ -19,6 +24,7 @@ func init() {
 	PluginCmd.AddCommand(PluginEnableCmd)
 	PluginCmd.AddCommand(PluginDisableCmd)
 	PluginCmd.AddCommand(PluginCompileCmd)
+	PluginCmd.AddCommand(PluginInspectCmd)
 
 	SingularityCmd.AddCommand(PluginCmd)
 }

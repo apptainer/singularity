@@ -1,1 +1,69 @@
-{"header":{},"imageData":{"metadata":null,"labels":{"Maintainer":"Eduardo","Version":"v1.0"},"imageScripts":{"help":"Hello Help!\n# # double Hashtag comment\n","environment":"    VADER=badguy\n    LUKE=goodguy\n    SOLO=someguy # comment 4\n    export VADER LUKE SOLO\n\n\n\n","runScript":"    echo \"Mock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n","test":"","startScript":""}},"buildData":{"files":[{"source":"mock1.txt","destination":""},{"source":"mock2.txt","destination":"/opt"}],"buildScripts":{"pre":"","setup":"    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n# Some dummy comment 2\n\n","post":"    echo 'this is a command so long that the user had to' \\\n    'add a new line'\n    echo 'export GOPATH=$HOME/go' \u003e\u003e $SINGULARITY_ENVIRONMENT\n\n","test":""}},"customData":null,"raw":"IyBTb21lIGR1bW15IGNvbW1lbnQgMQolaGVscApIZWxsbyBIZWxwIQojICMgZG91YmxlIEhhc2h0YWcgY29tbWVudAolc2V0dXAKICAgIHRvdWNoICR7U0lOR1VMQVJJVFlfUk9PVEZTfS9tb2NrLnR4dAogICAgdG91Y2ggbW9jay50eHQKCiMgU29tZSBkdW1teSBjb21tZW50IDIKCiVmaWxlcwptb2NrMS50eHQKbW9jazIudHh0IC9vcHQKCiMgU29tZSBkdW1teSBjb21tZW50IDMKJWxhYmVscwpNYWludGFpbmVyIEVkdWFyZG8KVmVyc2lvbiB2MS4wCgolZW52aXJvbm1lbnQKICAgIFZBREVSPWJhZGd1eQogICAgTFVLRT1nb29kZ3V5CiAgICBTT0xPPXNvbWVndXkgIyBjb21tZW50IDQKICAgIGV4cG9ydCBWQURFUiBMVUtFIFNPTE8KCgoKJXBvc3QKICAgIGVjaG8gJ3RoaXMgaXMgYSBjb21tYW5kIHNvIGxvbmcgdGhhdCB0aGUgdXNlciBoYWQgdG8nIFwKICAgICdhZGQgYSBuZXcgbGluZScKICAgIGVjaG8gJ2V4cG9ydCBHT1BBVEg9JEhPTUUvZ28nID4+ICRTSU5HVUxBUklUWV9FTlZJUk9OTUVOVAoKJXJ1bnNjcmlwdAogICAgZWNobyAiTW9jayEiCiAgICBlY2hvICJBcmd1bWVudHMgcmVjZWl2ZWQ6ICQqIiAjIFRoaXMgaXMgYSB2ZXJ5IGxvbmcgY29tbWVudAogICAgZXhlYyBlY2hvICIkQCIK"}
+{
+	"header": null,
+	"imageData": {
+		"metadata": null,
+		"labels": {
+			"Maintainer": "Eduardo",
+			"Version": "v1.0"
+		},
+		"imageScripts": {
+			"help": {
+				"args": "",
+				"script": "Hello Help!\n# # double Hashtag comment\n"
+			},
+			"environment": {
+				"args": "",
+				"script": "    VADER=badguy\n    LUKE=goodguy\n    SOLO=someguy # comment 4\n    export VADER LUKE SOLO\n\n\n\n"
+			},
+			"runScript": {
+				"args": "",
+				"script": "    echo \"Mock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			},
+			"startScript": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"buildData": {
+		"files": [
+			{
+				"args": "",
+				"files": [
+					{
+						"source": "mock1.txt",
+						"destination": ""
+					},
+					{
+						"source": "mock2.txt",
+						"destination": "/opt"
+					}
+				]
+			}
+		],
+		"buildScripts": {
+			"pre": {
+				"args": "",
+				"script": ""
+			},
+			"setup": {
+				"args": "",
+				"script": "    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n# Some dummy comment 2\n\n"
+			},
+			"post": {
+				"args": "",
+				"script": "    echo 'this is a command so long that the user had to' \\\n    'add a new line'\n    echo 'export GOPATH=$HOME/go' \u003e\u003e $SINGULARITY_ENVIRONMENT\n\n"
+			},
+			"test": {
+				"args": "",
+				"script": ""
+			}
+		}
+	},
+	"customData": null,
+	"raw": "IyBTb21lIGR1bW15IGNvbW1lbnQgMQolaGVscApIZWxsbyBIZWxwIQojICMgZG91YmxlIEhhc2h0YWcgY29tbWVudAolc2V0dXAKICAgIHRvdWNoICR7U0lOR1VMQVJJVFlfUk9PVEZTfS9tb2NrLnR4dAogICAgdG91Y2ggbW9jay50eHQKCiMgU29tZSBkdW1teSBjb21tZW50IDIKCiVmaWxlcwptb2NrMS50eHQKbW9jazIudHh0IC9vcHQKCiMgU29tZSBkdW1teSBjb21tZW50IDMKJWxhYmVscwpNYWludGFpbmVyIEVkdWFyZG8KVmVyc2lvbiB2MS4wCgolZW52aXJvbm1lbnQKICAgIFZBREVSPWJhZGd1eQogICAgTFVLRT1nb29kZ3V5CiAgICBTT0xPPXNvbWVndXkgIyBjb21tZW50IDQKICAgIGV4cG9ydCBWQURFUiBMVUtFIFNPTE8KCgoKJXBvc3QKICAgIGVjaG8gJ3RoaXMgaXMgYSBjb21tYW5kIHNvIGxvbmcgdGhhdCB0aGUgdXNlciBoYWQgdG8nIFwKICAgICdhZGQgYSBuZXcgbGluZScKICAgIGVjaG8gJ2V4cG9ydCBHT1BBVEg9JEhPTUUvZ28nID4+ICRTSU5HVUxBUklUWV9FTlZJUk9OTUVOVAoKJXJ1bnNjcmlwdAogICAgZWNobyAiTW9jayEiCiAgICBlY2hvICJBcmd1bWVudHMgcmVjZWl2ZWQ6ICQqIiAjIFRoaXMgaXMgYSB2ZXJ5IGxvbmcgY29tbWVudAogICAgZXhlYyBlY2hvICIkQCIK"
+}

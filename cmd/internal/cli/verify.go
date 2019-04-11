@@ -11,17 +11,23 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/signing"
 )
 
 var (
-	sifGroupID uint32 // -g groupid specification
-	sifDescID  uint32 // -i id specification
+	sifGroupID  uint32 // -g groupid specification
+	sifDescID   uint32 // -i id specification
+	localVerify bool   // -l flag
 )
 
 func init() {
 	VerifyCmd.Flags().SetInterspersed(false)
+
+	// -l, --local flag
+	VerifyCmd.Flags().BoolVarP(&localVerify, "local", "l", false, "only verify with local keys")
+	VerifyCmd.Flags().SetAnnotation("local", "envkey", []string{"LOCAL_VERIFY"})
 
 	VerifyCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
 	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
@@ -37,12 +43,14 @@ var VerifyCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		// dont need to resolve remote endpoint
+		if !localVerify {
+			handleVerifyFlags(cmd)
+		}
+
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
-		if err := doVerifyCmd(args[0], keyServerURI); err != nil {
-			sylog.Errorf("verification failed: %s", err)
-			os.Exit(2)
-		}
+		doVerifyCmd(args[0], keyServerURI)
 	},
 
 	Use:     docs.VerifyUse,
@@ -51,9 +59,9 @@ var VerifyCmd = &cobra.Command{
 	Example: docs.VerifyExample,
 }
 
-func doVerifyCmd(cpath, url string) error {
+func doVerifyCmd(cpath, url string) {
 	if sifGroupID != 0 && sifDescID != 0 {
-		return fmt.Errorf("only one of -i or -g may be set")
+		sylog.Fatalf("only one of -i or -g may be set")
 	}
 
 	var isGroup bool
@@ -65,5 +73,32 @@ func doVerifyCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
-	return signing.Verify(cpath, url, id, isGroup, authToken, false)
+	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false)
+	if err != nil {
+		sylog.Fatalf("%v", err)
+	}
+	if notLocalKey {
+		os.Exit(1)
+	}
+}
+
+func handleVerifyFlags(cmd *cobra.Command) {
+	// if we can load config and if default endpoint is set, use that
+	// otherwise fall back on regular authtoken and URI behavior
+	endpoint, err := sylabsRemote(remoteConfig)
+	if err == scs.ErrNoDefault {
+		sylog.Warningf("No default remote in use, falling back to: %v", keyServerURI)
+		return
+	} else if err != nil {
+		sylog.Fatalf("Unable to load remote configuration: %v", err)
+	}
+
+	authToken = endpoint.Token
+	if !cmd.Flags().Lookup("url").Changed {
+		uri, err := endpoint.GetServiceURI("keystore")
+		if err != nil {
+			sylog.Fatalf("Unable to get library service URI: %v", err)
+		}
+		keyServerURI = uri
+	}
 }

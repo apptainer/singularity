@@ -52,8 +52,8 @@ func resize(controlSocket string, oversized bool) {
 	}
 
 	enc := json.NewEncoder(c)
-	if err != nil {
-		sylog.Errorf("%s", err)
+	if enc == nil {
+		sylog.Errorf("cannot instantiate JSON encoder")
 		return
 	}
 
@@ -143,6 +143,9 @@ func OciAttach(containerID string) error {
 	engineConfig, err := getEngineConfig(containerID)
 	if err != nil {
 		return err
+	}
+	if engineConfig.GetState().Status != ociruntime.Running {
+		return fmt.Errorf("could not attach to %s: not in running state", containerID)
 	}
 
 	defer exitContainer(containerID, false)

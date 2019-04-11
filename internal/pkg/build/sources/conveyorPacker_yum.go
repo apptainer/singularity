@@ -338,7 +338,7 @@ func (cp *YumConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *YumConveyorPacker) insertRunScript() (err error) {
-	ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
+	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0755)
 	if err != nil {
 		return
 	}

@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -37,6 +38,12 @@ var (
 	defaultTokenFile, tokenFile string
 	// authToken holds the sylabs auth token
 	authToken, authWarning string
+	// default remote configuration for comparison
+	defaultRemote = scs.EndPoint{
+		URI:    "cloud.sylabs.io",
+		Token:  "",
+		System: true,
+	}
 )
 
 const (
@@ -127,13 +134,25 @@ var SingularityCmd = &cobra.Command{
 	Long:          docs.SingularityLong,
 	Example:       docs.SingularityExample,
 	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 // ExecuteSingularity adds all child commands to the root command and sets
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	if err := SingularityCmd.Execute(); err != nil {
+	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
+		if str := err.Error(); strings.Contains(str, "unknown flag: ") {
+			flag := strings.TrimPrefix(str, "unknown flag: ")
+			SingularityCmd.Printf("Invalid flag %q for command %q.\n\nOptions:\n\n%s\n",
+				flag,
+				cmd.Name(),
+				cmd.Flags().FlagUsagesWrapped(getColumns()))
+		} else {
+			SingularityCmd.Println(cmd.UsageString())
+		}
+		SingularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
+			cmd.CommandPath())
 		os.Exit(1)
 	}
 }
@@ -198,29 +217,108 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
-	if authToken != "" {
-		sylog.Warningf("sylabs-token files are deprecated. Use 'singularity remote' to manage remote endpoints and tokens.")
-	}
 }
 
-// sylabsRemote returns the remote in use or an error
-func sylabsRemote(filepath string) (*scs.EndPoint, error) {
-	file, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
+func loadRemoteConf(filepath string) (*scs.Config, error) {
+	f, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
 	if err != nil {
-		// catch non existing remotes.yaml file or missing .singularity/
-		if os.IsNotExist(err) {
-			return nil, scs.ErrNoDefault
-		}
 		return nil, fmt.Errorf("while opening remote config file: %s", err)
 	}
-	defer file.Close()
+	defer f.Close()
 
-	c, err := scs.ReadFrom(file)
+	c, err := scs.ReadFrom(f)
 	if err != nil {
 		return nil, fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	return c.GetDefault()
+	return c, nil
+}
+
+// defaultRemoteLogin attempts to log in the default remote with the specified tokenfile
+// this will update the user remote config if it succeeds, otherwise it will return an error
+func defaultRemoteLogin(filepath string, c *scs.Config) error {
+	endpoint, err := c.GetDefault()
+	if err != nil {
+		return err
+	}
+
+	token, warning := auth.ReadToken(defaultTokenFile)
+	if warning != "" {
+		// token not found, return non logged in endpoint
+		return fmt.Errorf("token not found, cannot log in")
+	}
+
+	endpoint.Token = token
+	if err := endpoint.VerifyToken(); err != nil {
+		return err
+	}
+
+	// opening config file
+	file, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("while opening remote config file: %s", err)
+	}
+	defer file.Close()
+
+	// truncating file before writing new contents and syncing to commit file
+	if err := file.Truncate(0); err != nil {
+		return fmt.Errorf("while truncating remote config file: %s", err)
+	}
+
+	if n, err := file.Seek(0, os.SEEK_SET); err != nil || n != 0 {
+		return fmt.Errorf("failed to reset %s cursor: %s", file.Name(), err)
+	}
+
+	if _, err := c.WriteTo(file); err != nil {
+		return fmt.Errorf("while writing remote config to file: %s", err)
+	}
+
+	if err := file.Sync(); err != nil {
+		return fmt.Errorf("failed to flush remote config file %s: %s", file.Name(), err)
+	}
+	return nil
+}
+
+// sylabsRemote returns the remote in use or an error
+func sylabsRemote(filepath string) (*scs.EndPoint, error) {
+	var c *scs.Config
+
+	// try to load both remotes, check for errors, sync if both exist,
+	// if neither exist return errNoDefault to return to old auth behavior
+	cSys, sysErr := loadRemoteConf(remoteConfigSys)
+	cUsr, usrErr := loadRemoteConf(filepath)
+	if sysErr != nil && usrErr != nil {
+		return nil, scs.ErrNoDefault
+	} else if sysErr != nil {
+		c = cUsr
+	} else if usrErr != nil {
+		c = cSys
+	} else {
+		// sync cUsr with system config cSys
+		if err := cUsr.SyncFrom(cSys); err != nil {
+			return nil, err
+		}
+		c = cUsr
+	}
+
+	endpoint, err := c.GetDefault()
+	if err != nil {
+		return endpoint, err
+	}
+
+	// default remote without token, look for tokenfile to login with
+	if *endpoint == defaultRemote {
+		origEndpoint := *endpoint
+		err := defaultRemoteLogin(filepath, c)
+		if err != nil {
+			// failed to log in, return unmodified endpoint
+			return &origEndpoint, nil
+		}
+		sylog.Infof("Default remote in use, you are now logged in from existing tokenfile. Use 'singularity remote' commands to further manage remotes")
+		return endpoint, nil
+	}
+
+	return endpoint, nil
 }
 
 // envAppend combines command line and environment var into a single argument
@@ -333,6 +431,10 @@ var flagEnvFuncs = map[string]envHandle{
 	"docker-password": envStringNSlice,
 	"docker-login":    envBool,
 
+	// push/pull flags
+	"allow-unauthenticated": envBool,
+	"allow-unsigned":        envBool,
+
 	// capability flags (and others)
 	"user":  envStringNSlice,
 	"group": envStringNSlice,
@@ -345,6 +447,9 @@ var flagEnvFuncs = map[string]envHandle{
 	// keys flags
 	"secret": envBool,
 	"url":    envStringNSlice,
+
+	// verify flag
+	"local": envBool,
 
 	// inspect flags
 	"labels":      envBool,
