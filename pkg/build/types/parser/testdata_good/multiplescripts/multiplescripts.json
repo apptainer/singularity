@@ -18,7 +18,7 @@
 			},
 			"runScript": {
 				"args": "",
-				"script": "    echo \"Mock!\"\n\n\n    echo \"SecondMock!\"\n    echo \"Arguments received: $*\" \n    exec echo \"$@\"\n"
+				"script": "    echo \"Mock!\"\n\n\n    echo \"SecondMock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n"
 			},
 			"test": {
 				"args": "",

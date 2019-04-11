@@ -28,13 +28,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // EnsureRootPriv ensures that a command is executed with root privileges.
@@ -355,7 +355,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("failed to retrieve user information for UID %d: %s", os.Getuid(), err)
 		}
-		procname = instance.ProcName(name, pwd.Name)
+		procname, err = instance.ProcName(name, pwd.Name)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	} else {
 		generator.SetProcessArgs(args)
 		procname = "Singularity runtime parent"

@@ -10,15 +10,15 @@
 			"imageScripts": {
 				"help": {
 					"args": "",
-					"script": "Hello Help!"
+					"script": "Hello Help!\n# # double Hashtag comment"
 				},
 				"environment": {
 					"args": "",
-					"script": "    VADER=badguy\n    LUKE=goodguy\n    SOLO=someguy \n    export VADER LUKE SOLO\n\n\n\n"
+					"script": "    VADER=badguy\n    LUKE=goodguy\n    SOLO=someguy # comment 4\n    export VADER LUKE SOLO\n\n\n\n"
 				},
 				"runScript": {
 					"args": "",
-					"script": "    echo \"Mock!\"\n    echo \"Arguments received: $*\" \n    exec echo \"$@\"\n"
+					"script": "    echo \"Mock!\"\n    echo \"Arguments received: $*\" # This is a very long comment\n    exec echo \"$@\"\n"
 				},
 				"test": {
 					"args": "",
@@ -53,7 +53,7 @@
 				},
 				"setup": {
 					"args": "",
-					"script": "    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n\n\n"
+					"script": "    touch ${SINGULARITY_ROOTFS}/mock.txt\n    touch mock.txt\n\n# Some dummy comment 2\n\n"
 				},
 				"post": {
 					"args": "",

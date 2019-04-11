@@ -7,7 +7,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -23,7 +22,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(args)
 	pl, err := plugin.Initialize(args[0])
 	if err != nil {
 		sylog.Fatalf("While initializing %s as plugin: %s", args[0], err)
