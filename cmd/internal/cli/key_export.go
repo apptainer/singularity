@@ -14,9 +14,8 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-var (
-	secretExport bool
-)
+var secretExport bool
+var armor bool
 
 func init() {
 	KeyExportCmd.Flags().SetInterspersed(false)
@@ -28,7 +27,7 @@ func init() {
 // KeyExportCmd is `singularity key export` and exports a public or secret
 // key from local keyring.
 var KeyExportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   exportRun,
