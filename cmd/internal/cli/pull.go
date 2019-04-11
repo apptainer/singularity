@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
@@ -22,6 +23,8 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/signing"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 const (
@@ -42,6 +45,10 @@ var (
 	PullLibraryURI string
 	// PullImageName holds the name to be given to the pulled image
 	PullImageName string
+	// KeyServerURL server URL
+	KeyServerURL = "https://keys.sylabs.io"
+	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
+	unauthenticatedPull bool
 )
 
 // --library
@@ -71,6 +78,7 @@ var pullNameFlag = cmdline.Flag{
 	Value:        &PullImageName,
 	DefaultValue: "",
 	Name:         "name",
+	Hidden:       true,
 	Usage:        "specify a custom image name",
 	EnvKeys:      []string{"NAME"},
 }
@@ -96,6 +104,17 @@ var pullNoHTTPSFlag = cmdline.Flag{
 	EnvKeys:      []string{"NOHTTPS"},
 }
 
+// -U|--allow-unauthenticated
+var pullAllowUnauthenticatedFlag = cmdline.Flag{
+	ID:           "pullAllowUnauthenticatedFlag",
+	Value:        &unauthenticatedPull,
+	DefaultValue: false,
+	Name:         "allow-unauthenticated",
+	ShortHand:    "U",
+	Usage:        "do not require a signed container",
+	EnvKeys:      []string{"ALLOW_UNAUTHENTICATED"},
+}
+
 func init() {
 	cmdManager.RegisterCmd(PullCmd, false)
 
@@ -110,6 +129,7 @@ func init() {
 	cmdManager.RegisterCmdFlag(&actionDockerLoginFlag, PullCmd)
 
 	cmdManager.RegisterCmdFlag(&buildNoCleanupFlag, PullCmd)
+	cmdManager.RegisterCmdFlag(&pullAllowUnauthenticatedFlag, PullCmd)
 }
 
 // PullCmd singularity pull
@@ -125,6 +145,7 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
+	exitStat := 0
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
 	transport, ref := uri.Split(args[i])
 	if ref == "" {
@@ -210,6 +231,37 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
+
+		// check if we pulled from the library, if so; is it signed?
+		if PullLibraryURI != "" && !unauthenticatedPull {
+			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, true)
+			if err != nil {
+				// err will be: "unable to verify container: %v", err
+				sylog.Warningf("%v", err)
+				// if theres a warning, exit 1
+				exitStat = 1
+			}
+			// if container is not signed, print a warning
+			if !imageSigned {
+				fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
+				resp, err := sypgp.AskQuestion("Do you with to proceed? [N/y] ")
+				if err != nil {
+					sylog.Fatalf("unable to parse input: %v", err)
+				}
+				if resp == "" || resp != "y" && resp != "Y" {
+					fmt.Fprintf(os.Stderr, "Aborting.\n")
+					err := os.Remove(name)
+					if err != nil {
+						sylog.Fatalf("Unabel to delete the container: %v", err)
+					}
+					// exit status 10 after replying no
+					exitStat = 10
+				}
+			}
+		} else {
+			sylog.Warningf("Skipping container verification")
+		}
+
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
@@ -236,6 +288,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
+	// This will exit 1 if the pulled container is signed by
+	// a unknown signer, i.e, if you dont have the key in your
+	// local keyring. theres proboly a better way to do this...
+	os.Exit(exitStat)
 }
 
 func handlePullFlags(cmd *cobra.Command) {
@@ -244,6 +300,7 @@ func handlePullFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		sylog.Debugf("using default key server url: %v", KeyServerURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
@@ -257,4 +314,11 @@ func handlePullFlags(cmd *cobra.Command) {
 		}
 		PullLibraryURI = uri
 	}
+
+	uri, err := endpoint.GetServiceURI("keystore")
+	if err != nil {
+		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, KeyServerURL)
+		return
+	}
+	KeyServerURL = uri
 }

@@ -81,7 +81,10 @@ var VerifyCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
-		handleVerifyFlags(cmd)
+		// dont need to resolve remote endpoint
+		if !localVerify {
+			handleVerifyFlags(cmd)
+		}
 
 		// args[0] contains image path
 		fmt.Printf("Verifying image: %s\n", args[0])
