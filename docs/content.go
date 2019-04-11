@@ -563,8 +563,8 @@ Enterprise Performance Computing (EPC)`
 	SearchShort string = `Search a Library for images`
 	SearchLong  string = `
   The Singularity search command allows you to search within a container library 
-  of your choosing.  The container library defaults to 
-  https://library.sylabs.io when no other library argument is given.`
+  of your choosing.  The container library defaults to cloud.sylabs.io when no 
+  other library argument is given.`
 	SearchExample string = `
   $ singularity search lolcow`
 
