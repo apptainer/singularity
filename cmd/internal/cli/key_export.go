@@ -22,12 +22,13 @@ func init() {
 	KeyExportCmd.Flags().SetInterspersed(false)
 
 	KeyExportCmd.Flags().BoolVarP(&secretExport, "secret", "s", false, "export a secret key")
+	KeyExportCmd.Flags().BoolVarP(&armor, "armor", "a", false, "key armored format")
 }
 
 // KeyExportCmd is `singularity key export` and exports a public or secret
 // key from local keyring.
 var KeyExportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   exportRun,
@@ -40,13 +41,13 @@ var KeyExportCmd = &cobra.Command{
 
 func exportRun(cmd *cobra.Command, args []string) {
 	if secretExport {
-		err := sypgp.ExportPrivateKey(args[0])
+		err := sypgp.ExportPrivateKey(args[0], armor)
 		if err != nil {
 			sylog.Errorf("key export command failed: %s", err)
 			os.Exit(10)
 		}
 	} else {
-		err := sypgp.ExportPubKey(args[0])
+		err := sypgp.ExportPubKey(args[0], armor)
 		if err != nil {
 			sylog.Errorf("key export command failed: %s", err)
 			os.Exit(10)

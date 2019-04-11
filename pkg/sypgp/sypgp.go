@@ -653,7 +653,7 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 }
 
 // ExportPrivateKey Will export a private key into a file (kpath).
-func ExportPrivateKey(kpath string) error {
+func ExportPrivateKey(kpath string, armor bool) error {
 
 	f, err := os.OpenFile(SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -683,18 +683,25 @@ func ExportPrivateKey(kpath string) error {
 		return err
 	}
 
-	// Export the key to the file
-	err = entityToExport.SerializePrivate(file, nil)
-	if err != nil {
-		return err
+	if !armor {
+		// Export the key to the file
+		err = entityToExport.SerializePrivate(file, nil)
+		if err != nil {
+			return err
+		}
+	} else {
+		var keyText string
+		keyText, err = serializeEntity(entityToExport, openpgp.PrivateKeyType)
+		file.WriteString(keyText)
 	}
+
 	fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, kpath)
 
 	return nil
 }
 
 // ExportPubKey Will export a public key into a file (kpath).
-func ExportPubKey(kpath string) error {
+func ExportPubKey(kpath string, armor bool) error {
 	file, err := os.Create(kpath)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %v", err)
@@ -715,7 +722,13 @@ func ExportPubKey(kpath string) error {
 		return err
 	}
 
-	err = entityToExport.Serialize(file)
+	if !armor {
+		err = entityToExport.Serialize(file)
+	} else {
+		var keyText string
+		keyText, err = serializeEntity(entityToExport, openpgp.PublicKeyType)
+		file.WriteString(keyText)
+	}
 
 	if err != nil {
 		return fmt.Errorf("unable to serialize public key: %v", err)
