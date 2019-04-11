@@ -26,6 +26,7 @@ var (
 
 var errorCodeMap = map[int]string{
 	404: "Invalid Token",
+	500: "Internal Server Error",
 }
 
 // Config stores the state of remote endpoint configurations
@@ -216,8 +217,8 @@ func (e *EndPoint) VerifyToken() error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		convStatus := errorCodeMap[res.StatusCode]
-		if convStatus == "" {
+		convStatus, ok := errorCodeMap[res.StatusCode]
+		if !ok {
 			convStatus = "Unknown"
 		}
 		return fmt.Errorf("error response from server: %v", convStatus)
