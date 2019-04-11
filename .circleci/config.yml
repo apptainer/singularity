@@ -81,9 +81,9 @@ jobs:
       - run:
           name: Setup environment
           command: |-
-            echo 'export  GOPATH=$HOME/go' >> $BASH_ENV
-            echo 'export  GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export  GOBIN=$HOME/go/bin' >> $BASH_ENV
+            echo 'export GOPATH=$HOME/go' >> $BASH_ENV
+            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
           name: Update Go to 1.11.6
@@ -125,10 +125,9 @@ jobs:
       - run:
           name: Setup environment
           command: |-
-            echo 'export  GOPATH=$HOME/go' >> $BASH_ENV
-            echo 'export  GOROOT=/usr/local/go' >> $BASH_ENV
-            echo 'export  GOBIN=$HOME/go/bin' >> $BASH_ENV
-            echo 'export  GOCACHE=off' >> $BASH_ENV
+            echo 'export GOPATH=$HOME/go' >> $BASH_ENV
+            echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
+            echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
           name: Update Go to 1.11.6
