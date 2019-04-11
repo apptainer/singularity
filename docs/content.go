@@ -563,7 +563,7 @@ Enterprise Performance Computing (EPC)`
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
-	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
+	PushShort string = `Upload image to the provided library (default is "cloud.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
   of your choosing. It's always good practice to sign your containers before
@@ -579,8 +579,8 @@ Enterprise Performance Computing (EPC)`
 	SearchShort string = `Search a Library for images`
 	SearchLong  string = `
   The Singularity search command allows you to search within a container library 
-  of your choosing.  The container library defaults to 
-  https://library.sylabs.io when no other library argument is given.`
+  of your choosing.  The container library defaults to cloud.sylabs.io when no 
+  other library argument is given.`
 	SearchExample string = `
   $ singularity search lolcow`
 
