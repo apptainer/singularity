@@ -694,7 +694,7 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		keyText, err = serializeEntity(entityToExport, openpgp.PrivateKeyType)
 		file.WriteString(keyText)
 	}
-
+	defer file.Close()
 	fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, kpath)
 
 	return nil
