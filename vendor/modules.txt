@@ -166,8 +166,6 @@ github.com/j-keck/arping
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 github.com/kubernetes-sigs/cri-o/pkg/seccomp
-# github.com/magiconair/properties v1.8.0
-github.com/magiconair/properties/assert
 # github.com/mattn/go-runewidth v0.0.2
 github.com/mattn/go-runewidth
 # github.com/mattn/go-shellwords v1.0.3
@@ -256,12 +254,12 @@ github.com/xeipuuv/gojsonschema
 # go4.org v0.0.0-20180417224846-9599cf28b011
 go4.org/errorutil
 # golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
-golang.org/x/crypto/openpgp/armor
-golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/clearsign
+golang.org/x/crypto/openpgp/armor
 golang.org/x/crypto/openpgp/packet
+golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal

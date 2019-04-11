@@ -593,9 +593,14 @@ func init() {
 	cmdManager.RegisterCmd(TestCmd, false)
 
 	cmdManager.SetCmdGroup("actions", ExecCmd, ShellCmd, RunCmd, TestCmd)
-	cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, InstanceStartCmd)
-
 	actionsCmd := cmdManager.GetCmdGroup("actions")
+
+	if InstanceStartCmd != nil {
+		cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, InstanceStartCmd)
+		cmdManager.RegisterCmdFlag(&actionBootFlag, InstanceStartCmd)
+	} else {
+		cmdManager.SetCmdGroup("actions_instance", actionsCmd...)
+	}
 	actionsInstanceCmd := cmdManager.GetCmdGroup("actions_instance")
 
 	initPlatformDefaults()
@@ -619,7 +624,6 @@ func init() {
 	cmdManager.RegisterCmdFlag(&actionDockerUsernameFlag, actionsInstanceCmd...)
 	cmdManager.RegisterCmdFlag(&actionDockerPasswordFlag, actionsInstanceCmd...)
 	cmdManager.RegisterCmdFlag(&actionTmpDirFlag, actionsCmd...)
-	cmdManager.RegisterCmdFlag(&actionBootFlag, InstanceStartCmd)
 	cmdManager.RegisterCmdFlag(&actionFakerootFlag, actionsInstanceCmd...)
 	cmdManager.RegisterCmdFlag(&actionCleanEnvFlag, actionsInstanceCmd...)
 	cmdManager.RegisterCmdFlag(&actionContainFlag, actionsInstanceCmd...)
