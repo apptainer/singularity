@@ -55,7 +55,7 @@ var buildSandboxFlag = cmdline.Flag{
 
 // --section
 var buildSectionFlag = cmdline.Flag{
-	ID:           "buildSandboxFlag",
+	ID:           "buildSectionFlag",
 	Value:        &sections,
 	DefaultValue: []string{"all"},
 	Name:         "section",

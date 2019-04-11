@@ -7,53 +7,44 @@ package cmdline
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// EnvAppend combines command line and environment var into a single argument
-func EnvAppend(flag *pflag.Flag, envvar string) error {
-	if err := flag.Value.Set(envvar); err != nil {
-		return fmt.Errorf("unable to set %s to environment variable value %s", flag.Name, envvar)
+func setValue(flag *pflag.Flag, value string) error {
+	if err := flag.Value.Set(value); err != nil {
+		return fmt.Errorf("unable to set flag %s to value %s: %s", flag.Name, value, err)
 	}
-
 	flag.Changed = true
 	sylog.Debugf("Updated flag '%s' value to: %s", flag.Name, flag.Value)
 	return nil
 }
 
-// EnvBool sets a bool flag if the CLI option is unset and env var is set
-func EnvBool(flag *pflag.Flag, envvar string) error {
-	if flag.Changed || envvar == "" {
+// EnvAppendValue combines command line and environment var into a single argument
+func EnvAppendValue(flag *pflag.Flag, value string) error {
+	v := strings.TrimSpace(value)
+	if v == "" {
 		return nil
 	}
+	return setValue(flag, value)
+}
 
-	if err := flag.Value.Set(envvar); err != nil {
-		if err := flag.Value.Set("true"); err != nil {
-			return fmt.Errorf("unable to set flag %s to value %s: %s", flag.Name, envvar, err)
+// EnvSetValue set flag value if CLI option/argument is unset and env var is set
+func EnvSetValue(flag *pflag.Flag, value string) error {
+	v := strings.TrimSpace(value)
+	if flag.Changed || v == "" {
+		return nil
+	}
+	if flag.Value.Type() == "stringSlice" {
+		vals := strings.Split(v, ",")
+		for i, e := range vals {
+			vals[i] = strings.TrimSpace(e)
 		}
+		v = strings.Join(vals, ",")
 	}
-
-	flag.Changed = true
-	sylog.Debugf("Updated flag '%s' value to: %s", flag.Name, flag.Value)
-	return nil
-}
-
-// EnvStringNSlice writes to a string or slice flag if CLI option/argument
-// string is unset and env var is set
-func EnvStringNSlice(flag *pflag.Flag, envvar string) error {
-	if flag.Changed {
-		return nil
-	}
-
-	if err := flag.Value.Set(envvar); err != nil {
-		return fmt.Errorf("unable to set flag %s to value %s: %s", flag.Name, envvar, err)
-	}
-
-	flag.Changed = true
-	sylog.Debugf("Updated flag '%s' value to: %s", flag.Name, flag.Value)
-	return nil
+	return setValue(flag, v)
 }
 
 // EnvHandler defines an environment handler type to set flag's values

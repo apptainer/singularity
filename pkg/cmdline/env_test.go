@@ -8,73 +8,68 @@ package cmdline
 import (
 	"testing"
 
-	"github.com/magiconair/properties/assert"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var cmd cobra.Command
 
-func TestEnvAppend(t *testing.T) {
+func TestEnvAppendValue(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
-	var appendFlag []string
 
-	cmd.Flags().StringSliceVarP(&appendFlag, "appendFlag", "", []string{""}, "")
-	v := cmd.Flag("appendFlag").Value.String()
-	assert.Equal(t, v, "[]", "The flag should be unset.")
+	cmd.Flags().BoolSlice("boolFlag", []bool{}, "")
+	if cmd.Flag("boolFlag").Value.String() != "[]" {
+		t.Errorf("The flag should be unset.")
+	}
 
-	EnvAppend(cmd.Flag("appendFlag"), "appendval")
-	v = cmd.Flag("appendFlag").Value.String()
-	assert.Equal(t, v, "[appendval]", "The flag should be set to the value provided.")
+	EnvAppendValue(cmd.Flag("boolFlag"), "1")
+	if cmd.Flag("boolFlag").Value.String() != "[true]" {
+		t.Errorf("The flag should be set to the value provided.")
+	}
 
-	EnvAppend(cmd.Flag("appendFlag"), "appendval")
-	v = cmd.Flag("appendFlag").Value.String()
-	assert.Equal(t, v, "[appendval,appendval]", "The flag should appended with the value provided.")
+	EnvAppendValue(cmd.Flag("boolFlag"), "false")
+	if cmd.Flag("boolFlag").Value.String() != "[true,false]" {
+		t.Errorf("The flag should appended with the value provided.")
+	}
+
+	EnvAppendValue(cmd.Flag("boolFlag"), "bad")
+	if cmd.Flag("boolFlag").Value.String() != "[true,false]" {
+		t.Errorf("The flag should return previous value.")
+	}
 }
 
-func TestEnvBool(t *testing.T) {
+func TestEnvSetValue(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
-	var boolFlag bool
 
-	cmd.Flags().BoolVar(&boolFlag, "boolFlag", false, "")
-	v := cmd.Flag("boolFlag").Value.String()
-	assert.Equal(t, v, "false", "The flag should be unset.")
+	cmd.Flags().Int("intFlag", 0, "")
+	if cmd.Flag("intFlag").Value.String() != "0" {
+		t.Errorf("The flag should be unset.")
+	}
 
-	EnvBool(cmd.Flag("boolFlag"), "any string")
-	v = cmd.Flag("boolFlag").Value.String()
-	assert.Equal(t, v, "true", "The flag should be set to true.")
-}
+	EnvSetValue(cmd.Flag("intFlag"), "any string")
+	if cmd.Flag("intFlag").Value.String() != "0" {
+		t.Errorf("The flag should be set to default value.")
+	}
 
-func TestEnvStringNSlice(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-	var stringFlag string
+	EnvSetValue(cmd.Flag("intFlag"), "-1")
+	if cmd.Flag("intFlag").Value.String() != "-1" {
+		t.Errorf("The flag should be set to value provided.")
+	}
 
-	cmd.Flags().StringVarP(&stringFlag, "stringFlag", "", "", "")
-	v := cmd.Flag("stringFlag").Value.String()
-	assert.Equal(t, v, "", "The flag should be unset.")
+	cmd.Flags().StringSlice("stringSlice", []string{""}, "")
+	if cmd.Flag("stringSlice").Value.String() != "[]" {
+		t.Errorf("The flag should be unset.")
+	}
 
-	EnvStringNSlice(cmd.Flag("stringFlag"), "stringval")
-	v = cmd.Flag("stringFlag").Value.String()
-	assert.Equal(t, v, "stringval", "The flag should be set to value provided.")
+	EnvSetValue(cmd.Flag("stringSlice"), "sliceval1,sliceval2")
+	if cmd.Flag("stringSlice").Value.String() != "[sliceval1,sliceval2]" {
+		t.Errorf("The flag should be set to value provided.")
+	}
 
-	EnvStringNSlice(cmd.Flag("stringFlag"), "newstringval")
-	v = cmd.Flag("stringFlag").Value.String()
-	assert.Equal(t, v, "stringval", "Once set, the flag should not be overwritten.")
-
-	var stringSlice []string
-
-	cmd.Flags().StringSliceVarP(&stringSlice, "stringSlice", "", []string{""}, "")
-	v = cmd.Flag("stringSlice").Value.String()
-	assert.Equal(t, v, "[]", "The flag should be unset.")
-
-	EnvStringNSlice(cmd.Flag("stringSlice"), "sliceval")
-	v = cmd.Flag("stringSlice").Value.String()
-	assert.Equal(t, v, "[sliceval]", "The flag should be set to value provided.")
-
-	EnvStringNSlice(cmd.Flag("stringSlice"), "newsliceval")
-	v = cmd.Flag("stringSlice").Value.String()
-	assert.Equal(t, v, "[sliceval]", "Once set, the flag should not be appended or overwritten.")
+	EnvSetValue(cmd.Flag("stringSlice"), "newsliceval")
+	if cmd.Flag("stringSlice").Value.String() != "[sliceval1,sliceval2]" {
+		t.Errorf("Once set, the flag should not be appended or overwritten.")
+	}
 }

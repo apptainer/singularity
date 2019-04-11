@@ -11,8 +11,10 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+var rootCmd = &cobra.Command{Use: "root"}
 var parentCmd = &cobra.Command{Use: "parent"}
 var childCmd = &cobra.Command{Use: "child"}
 
@@ -56,84 +58,98 @@ func setCmdGroup(cm *CommandManager, name string, cmds ...*cobra.Command) (err e
 }
 
 func TestCommandManager(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// check panic with nil root command
 	_, err := newCommandManager(nil)
 	if err == nil {
 		t.Errorf("unexpected success with root nil command")
 	}
-	cm, err := newCommandManager(parentCmd)
+	// create command manager
+	cm, err := newCommandManager(rootCmd)
 	if err != nil {
 		t.Errorf("unexpected error while instantiating new command manager: %err", err)
 	}
-	if cm.GetRootCmd() != parentCmd {
+
+	// get root command
+	if cm.GetRootCmd() != rootCmd {
 		t.Errorf("unexpected root command returned")
 	}
-}
-
-func TestRegisterCmd(t *testing.T) {
-	cm, err := newCommandManager(parentCmd)
-	if err != nil {
-		t.Errorf("unexpected error while instantiating new command manager: %err", err)
+	// root command name must return an empty string
+	if cm.GetCmdName(rootCmd) != "" {
+		t.Errorf("unexpected root command name returned")
 	}
 
+	// check panic while registering a nil command
 	if err := registerCmd(cm, nil); err == nil {
 		t.Errorf("unexpected success with nil command")
 	}
 
-	if err := registerCmd(cm, childCmd); err != nil {
+	// register parent command
+	if err := registerCmd(cm, parentCmd); err != nil {
 		t.Errorf("unexpected error while registering command: %s", err)
 	}
-
-	if cm.GetCmd("nochild") != nil {
+	// get name with command
+	if cm.GetCmdName(parentCmd) != "parent" {
+		t.Errorf("unexpected command name returned")
+	}
+	// test with non-existent command name
+	if cm.GetCmd("noparent") != nil {
 		t.Errorf("unexpected command returned")
 	}
-	if cm.GetCmd("child") != childCmd {
+	// get parent command by name
+	if cm.GetCmd("parent") != parentCmd {
 		t.Errorf("unexpected child command returned")
 	}
-}
 
-func TestRegisterSubCmd(t *testing.T) {
-	cm, err := newCommandManager(parentCmd)
-	if err != nil {
-		t.Errorf("unexpected error while instantiating new command manager: %err", err)
-	}
-
+	// check panic with nil parent command
 	if err := registerSubCmd(cm, nil, childCmd); err == nil {
 		t.Errorf("unexpected success with nil parent command")
 	}
-
+	// check panic with nil child command
 	if err := registerSubCmd(cm, parentCmd, nil); err == nil {
 		t.Errorf("unexpected success with nil child command")
 	}
+	// check panic with unregistered command
+	unregisteredCmd := &cobra.Command{}
+	if err := registerSubCmd(cm, unregisteredCmd, childCmd); err == nil {
+		t.Errorf("unexpected success while registering sub command with unregistered parent command")
+	}
 
+	// register child command for parent command
 	if err := registerSubCmd(cm, parentCmd, childCmd); err != nil {
 		t.Errorf("unexpected error while registering command: %s", err)
 	}
-
-	if cm.GetSubCmd(parentCmd, "nochild") != nil {
-		t.Errorf("unexpected command returned")
-	}
-	if cm.GetSubCmd(parentCmd, "child") != childCmd {
+	// get child command by name
+	if cm.GetCmd("parent_child") != childCmd {
 		t.Errorf("unexpected child command returned")
 	}
-}
 
-func TestCmdGroup(t *testing.T) {
-	cm, err := newCommandManager(parentCmd)
-	if err != nil {
-		t.Errorf("unexpected error while instantiating new command manager: %err", err)
+	// check panic by creating a group with nil command only
+	emptyGroup := []*cobra.Command{nil, nil}
+	if err := setCmdGroup(cm, "test", emptyGroup...); err == nil {
+		t.Errorf("unexpected success while creating group with nil command")
 	}
 
-	if err := setCmdGroup(cm, "test", []*cobra.Command{nil}...); err == nil {
-		t.Errorf("unexpected success with nil group command")
-	}
-
+	// create group test with a nil command
 	testGroup := []*cobra.Command{parentCmd, childCmd}
 	if err := setCmdGroup(cm, "test", testGroup...); err != nil {
 		t.Errorf("unexpected error while creating group command: %s", err)
 	}
+	// check panic by adding an already existing group
+	if err := setCmdGroup(cm, "test", testGroup...); err == nil {
+		t.Errorf("unexpected success while creating an existing group")
+	}
 
+	// check returned command group
 	cmdGroup := cm.GetCmdGroup("test")
 	if !reflect.DeepEqual(testGroup, cmdGroup) {
 		t.Errorf("unexpected group command returned")
+	}
+
+	// check get command by name
+	if cm.GetCmd("test") != nil {
+		t.Errorf("unexpected test command returned")
 	}
 }

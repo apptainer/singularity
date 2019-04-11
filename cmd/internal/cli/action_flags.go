@@ -79,7 +79,7 @@ var actionBindFlag = cmdline.Flag{
 	Usage:        "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
 	EnvKeys:      []string{"BIND", "BINDPATH"},
 	Tag:          "<spec>",
-	EnvHandler:   cmdline.EnvAppend,
+	EnvHandler:   cmdline.EnvAppendValue,
 }
 
 // -H|--home
@@ -271,6 +271,7 @@ var actionDockerUsernameFlag = cmdline.Flag{
 	EnvKeys:      []string{"DOCKER_USERNAME"},
 }
 
+// --docker-password
 var actionDockerPasswordFlag = cmdline.Flag{
 	ID:           "actionDockerPasswordFlag",
 	Value:        &dockerUsername,
@@ -305,7 +306,7 @@ var actionBootFlag = cmdline.Flag{
 
 // -f|--fakeroot
 var actionFakerootFlag = cmdline.Flag{
-	ID:           "actionBootFlag",
+	ID:           "actionFakerootFlag",
 	Value:        &IsFakeroot,
 	DefaultValue: false,
 	Name:         "fakeroot",
@@ -430,7 +431,7 @@ var actionDockerLoginFlag = cmdline.Flag{
 
 // hidden flag to disable nvidia bindings when 'always use nv = yes'
 var actionNoNvidiaFlag = cmdline.Flag{
-	ID:           "actionDockerLoginFlag",
+	ID:           "actionNoNvidiaFlag",
 	Value:        &NoNvidia,
 	DefaultValue: false,
 	Name:         "no-nv",

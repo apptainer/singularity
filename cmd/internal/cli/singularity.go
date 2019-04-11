@@ -216,7 +216,7 @@ func ExecuteSingularity() {
 
 	// error reported by command manager is considered as fatal
 	for _, e := range cmdManager.GetError() {
-		sylog.Fatalf(e.Error())
+		sylog.Fatalf("%s", e)
 	}
 
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {

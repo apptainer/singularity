@@ -52,70 +52,51 @@ func newFlagManager() *flagManager {
 	}
 }
 
-func (m *flagManager) setFlagOptions(flag *Flag, cmd *cobra.Command) error {
-	if err := cmd.Flags().SetAnnotation(flag.Name, "argtag", []string{flag.Tag}); err != nil {
-		return fmt.Errorf("could not set argtag annotation: %s", err)
-	}
+func (m *flagManager) setFlagOptions(flag *Flag, cmd *cobra.Command) {
+	cmd.Flags().SetAnnotation(flag.Name, "argtag", []string{flag.Tag})
+	cmd.Flags().SetAnnotation(flag.Name, "ID", []string{flag.ID})
 
 	if len(flag.EnvKeys) > 0 {
-		if err := cmd.Flags().SetAnnotation(flag.Name, "envkey", flag.EnvKeys); err != nil {
-			return fmt.Errorf("could not set envkey annotation: %s", err)
-		}
+		cmd.Flags().SetAnnotation(flag.Name, "envkey", flag.EnvKeys)
 	}
-	if err := cmd.Flags().SetAnnotation(flag.Name, "ID", []string{flag.ID}); err != nil {
-		return fmt.Errorf("could not set ID annotation: %s", err)
-	}
-
 	if flag.Deprecated != "" {
-		if err := cmd.Flags().MarkDeprecated(flag.Name, flag.Deprecated); err != nil {
-			return fmt.Errorf("could not mark flag as deprecated: %s", err)
-		}
+		cmd.Flags().MarkDeprecated(flag.Name, flag.Deprecated)
 	}
 	if flag.Hidden {
-		if err := cmd.Flags().MarkHidden(flag.Name); err != nil {
-			return fmt.Errorf("could not mark flag as hidden: %s", err)
-		}
+		cmd.Flags().MarkHidden(flag.Name)
 	}
 	if flag.Required {
-		if err := cmd.MarkFlagRequired(flag.Name); err != nil {
-			return fmt.Errorf("could not mark flag as required: %s", err)
-		}
+		cmd.MarkFlagRequired(flag.Name)
 	}
-	return nil
 }
 
 func (m *flagManager) registerCmdFlag(flag *Flag, cmds ...*cobra.Command) error {
-	for _, os := range flag.ExcludedOS {
-		if os == runtime.GOOS {
-			return nil
-		}
-	}
 	for _, c := range cmds {
 		if c == nil {
 			return fmt.Errorf("nil command provided")
 		}
 	}
+	if flag == nil {
+		return fmt.Errorf("nil flag provided")
+	}
+	for _, os := range flag.ExcludedOS {
+		if os == runtime.GOOS {
+			return nil
+		}
+	}
+	if flag.EnvHandler == nil {
+		flag.EnvHandler = EnvSetValue
+	}
 	switch t := flag.DefaultValue.(type) {
 	case string:
-		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
-			flag.EnvHandler = EnvStringNSlice
-		}
 		m.registerStringVar(flag, cmds)
 	case []string:
-		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
-			flag.EnvHandler = EnvStringNSlice
-		}
 		m.registerStringSliceVar(flag, cmds)
 	case bool:
-		if flag.EnvHandler == nil && len(flag.EnvKeys) > 0 {
-			flag.EnvHandler = EnvBool
-		}
 		m.registerBoolVar(flag, cmds)
 	case int:
-		flag.EnvHandler = nil
 		m.registerIntVar(flag, cmds)
 	case uint32:
-		flag.EnvHandler = nil
 		m.registerUint32Var(flag, cmds)
 	default:
 		return fmt.Errorf("flag of type %s is not supported", t)
@@ -131,9 +112,7 @@ func (m *flagManager) registerStringVar(flag *Flag, cmds []*cobra.Command) error
 		} else {
 			c.Flags().StringVar(flag.Value.(*string), flag.Name, flag.DefaultValue.(string), flag.Usage)
 		}
-		if err := m.setFlagOptions(flag, c); err != nil {
-			return err
-		}
+		m.setFlagOptions(flag, c)
 	}
 	return nil
 }
@@ -145,9 +124,7 @@ func (m *flagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) 
 		} else {
 			c.Flags().StringSliceVar(flag.Value.(*[]string), flag.Name, flag.DefaultValue.([]string), flag.Usage)
 		}
-		if err := m.setFlagOptions(flag, c); err != nil {
-			return err
-		}
+		m.setFlagOptions(flag, c)
 	}
 	return nil
 }
@@ -159,9 +136,7 @@ func (m *flagManager) registerBoolVar(flag *Flag, cmds []*cobra.Command) error {
 		} else {
 			c.Flags().BoolVar(flag.Value.(*bool), flag.Name, flag.DefaultValue.(bool), flag.Usage)
 		}
-		if err := m.setFlagOptions(flag, c); err != nil {
-			return err
-		}
+		m.setFlagOptions(flag, c)
 	}
 	return nil
 }
@@ -173,9 +148,7 @@ func (m *flagManager) registerIntVar(flag *Flag, cmds []*cobra.Command) error {
 		} else {
 			c.Flags().IntVar(flag.Value.(*int), flag.Name, flag.DefaultValue.(int), flag.Usage)
 		}
-		if err := m.setFlagOptions(flag, c); err != nil {
-			return err
-		}
+		m.setFlagOptions(flag, c)
 	}
 	return nil
 }
@@ -187,9 +160,7 @@ func (m *flagManager) registerUint32Var(flag *Flag, cmds []*cobra.Command) error
 		} else {
 			c.Flags().Uint32Var(flag.Value.(*uint32), flag.Name, flag.DefaultValue.(uint32), flag.Usage)
 		}
-		if err := m.setFlagOptions(flag, c); err != nil {
-			return err
-		}
+		m.setFlagOptions(flag, c)
 	}
 	return nil
 }
