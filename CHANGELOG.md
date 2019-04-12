@@ -16,7 +16,7 @@ _The old changelog can be found in the `release-2.6` branch_
 ## New features / functionalities
   - Introduced a new basic framework for creating and managing plugins
   - Added the ability to create containers through multi-stage builds
-  - Created the concept of a "remote" SCS endpoint and added the ability for users and admins to set through conf files 
+  - Created the concept of a Sylabs Cloud "remote" endpoint and added the ability for users and admins to set them through CLI and conf files 
   - Added caching for images from Singularity Hub
   - Made it possible to compile Singularity outside of `$GOPATH`
   - Added a json partition to SIF files for OCI configuration when building from an OCI source
@@ -33,11 +33,11 @@ _The old changelog can be found in the `release-2.6` branch_
     - `list`      List installed singularity plugins
     - `uninstall` Uninstall removes the named plugin from the system
 
-  - Introduced the `remote` command group to support management of SCS endpoints:
-    - `add`       Create a new SCS remote endpoint
+  - Introduced the `remote` command group to support management of Singularity endpoints:
+    - `add`       Create a new Sylabs Cloud remote endpoint
     - `list`      List all remote endpoints that are configured
     - `login`     Log into a remote endpoint using an authentication token
-    - `remove`    Remove an existing SCS remote endpoint
+    - `remove`    Remove an existing Sylabs Cloud remote endpoint
     - `status`    Check the status of the services at an endpoint
     - `use`       Set a remote endpoint to be used by default
 
