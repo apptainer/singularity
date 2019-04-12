@@ -82,6 +82,9 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 		DockerAuthConfig:            authConf,
 	}
 
+	fmt.Println("u      : ", u)
+	fmt.Println("sysCtx : ", sysCtx)
+
 	sum, err := ociclient.ImageSHA(u, sysCtx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
@@ -142,6 +145,33 @@ func handleLibrary(u, libraryURL string) (string, error) {
 			return "", fmt.Errorf("Error getting ImageHash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
 			return "", fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		}
+	}
+
+	return imagePath, nil
+}
+
+func handleDocker(u, libraryURL string) (string, error) {
+	dockerImage, err := library.GetImage(libraryURL, authToken, u)
+	if err != nil {
+		return "", err
+	}
+
+	imageName := uri.GetName(u)
+	imagePath := cache.OciTempImage(dockerImage.Hash, imageName)
+
+	if exists, err := cache.LibraryImageExists(dockerImage.Hash, imageName); err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	} else if !exists {
+		sylog.Infof("downloading library image")
+		if err = library.DownloadImage(imagePath, u, libraryURL, true, authToken); err != nil {
+			return "", fmt.Errorf("unable to download image: %v", err)
+		}
+
+		if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
+			return "", fmt.Errorf("error getting imageHash: %v", err)
+		} else if cacheFileHash != dockerImage.Hash {
+			return "", fmt.Errorf("cached File hash(%s) and expected hash(%s) does not match", cacheFileHash, dockerImage.Hash)
 		}
 	}
 
