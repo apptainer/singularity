@@ -6,12 +6,15 @@
 package security
 
 import (
+	"os"
+	"runtime"
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/security/apparmor"
 	"github.com/sylabs/singularity/internal/pkg/security/selinux"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
 func TestGetParam(t *testing.T) {
@@ -46,8 +49,6 @@ func TestGetParam(t *testing.T) {
 
 func TestConfigure(t *testing.T) {
 	test.EnsurePrivilege(t)
-
-	t.Skip("test disabled: failing in CircleCI")
 
 	specs := []struct {
 		desc          string
@@ -114,12 +115,33 @@ func TestConfigure(t *testing.T) {
 			if s.disabled {
 				t.Skip("test disabled, security module not enabled on this system")
 			}
-			err := Configure(&s.spec)
+
+			var err error
+
+			mainthread.Execute(func() {
+				err = Configure(&s.spec)
+			})
+
 			if err != nil && !s.expectFailure {
 				t.Errorf("unexpected failure %s: %s", s.desc, err)
 			} else if err == nil && s.expectFailure {
 				t.Errorf("unexpected success %s", s.desc)
 			}
 		})
+	}
+}
+
+func init() {
+	runtime.LockOSThread()
+}
+
+func TestMain(m *testing.M) {
+	go func() {
+		os.Exit(m.Run())
+	}()
+
+	// run functions requiring execution in main thread
+	for f := range mainthread.FuncChannel {
+		f()
 	}
 }
