@@ -17,13 +17,11 @@ _The old changelog can be found in the `release-2.6` branch_
   - Introduced a new basic framework for creating and managing plugins
   - Added the ability to create containers through multi-stage builds
   - Created the concept of a "remote" SCS endpoint and added the ability for users and admins to set through conf files 
-  - Streamlined the key container signing, verifying, and key management workflows
   - Added caching for images from Singularity Hub
   - Made it possible to compile Singularity outside of `$GOPATH`
   - Added a json partition to SIF files for OCI configuration when building from an OCI source
   - Full integration with Singularity desktop for MacOS code base
   - Added --nocolor flag to Singularity client to disable color in logging
-  - Scientific Filesystem app, when doesn't exist, exits with clear message. 
 
 ## New Commands
  - Introduced the `plugin` command group for creating and managing plugins
