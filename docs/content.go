@@ -261,7 +261,7 @@ Enterprise Performance Computing (EPC)`
 	KeyListShort string = `List keys in your local keyring`
 	KeyListLong  string = `
   The 'key list' command allows you to list public/private keys from the 
-  default user local keyring location (i.e., $HOME/.singularity/sypgp).`
+  default user's local keyring location (i.e., $HOME/.singularity/sypgp).`
 	KeyListExample string = `
   $ singularity key list`
 
