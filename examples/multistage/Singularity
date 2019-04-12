@@ -1,0 +1,43 @@
+# Build binary using base image with golang installed
+Bootstrap: docker
+From: golang:1.12.3-alpine3.9
+Stage: one
+
+
+%post
+        # prep environment
+        export PATH="/go/bin:/usr/local/go/bin:$PATH"
+        export HOME="/root"
+        cd /root
+
+        # insert source code, could also be copied from host with %files
+        cat << EOF > hello.go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Printf("Hello World!\n")
+}
+
+EOF
+
+        # build
+        go build -o hello hello.go
+
+
+
+# Install binary into image without go tools
+Bootstrap: docker
+From: alpine:3.9
+Stage: two
+
+
+# install binary from stage one
+%files from one
+        /root/hello /bin/hello
+
+
+%runscript
+        hello
+
