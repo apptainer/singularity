@@ -148,33 +148,6 @@ func handleLibrary(u, libraryURL string) (string, error) {
 	return imagePath, nil
 }
 
-func handleDocker(u, libraryURL string) (string, error) {
-	dockerImage, err := library.GetImage(libraryURL, authToken, u)
-	if err != nil {
-		return "", err
-	}
-
-	imageName := uri.GetName(u)
-	imagePath := cache.OciTempImage(dockerImage.Hash, imageName)
-
-	if exists, err := cache.LibraryImageExists(dockerImage.Hash, imageName); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
-		sylog.Infof("downloading library image")
-		if err = library.DownloadImage(imagePath, u, libraryURL, true, authToken); err != nil {
-			return "", fmt.Errorf("unable to download image: %v", err)
-		}
-
-		if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
-			return "", fmt.Errorf("error getting imageHash: %v", err)
-		} else if cacheFileHash != dockerImage.Hash {
-			return "", fmt.Errorf("cached File hash(%s) and expected hash(%s) does not match", cacheFileHash, dockerImage.Hash)
-		}
-	}
-
-	return imagePath, nil
-}
-
 func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := cache.ShubImage("hash", imageName)
