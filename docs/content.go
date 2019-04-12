@@ -219,13 +219,11 @@ Enterprise Performance Computing (EPC)`
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
-	KeyImportShort string = `Import a local key into the local Singularity key store`
+	KeyImportShort string = `Import a local key into your local Sigularity keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
 	KeyImportExample string = `
-  $ singularity key import $HOME/key.asc
-  $ singularity keys import $HOME/key.asc
-  `
+  $ singularity key import ./key.asc`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key newpair
