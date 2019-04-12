@@ -82,9 +82,6 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 		DockerAuthConfig:            authConf,
 	}
 
-	fmt.Println("u      : ", u)
-	fmt.Println("sysCtx : ", sysCtx)
-
 	sum, err := ociclient.ImageSHA(u, sysCtx)
 	if err != nil {
 		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)

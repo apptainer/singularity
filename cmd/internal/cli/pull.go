@@ -12,11 +12,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
-	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -25,7 +26,6 @@ import (
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
-	"github.com/sylabs/singularity/internal/pkg/build"
 )
 
 const (
@@ -232,72 +232,47 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
+		sysCtx := &ocitypes.SystemContext{
+			OCIInsecureSkipTLSVerify:    noHTTPS,
+			DockerInsecureSkipTLSVerify: noHTTPS,
+			DockerAuthConfig:            authConf,
+		}
 
-	sysCtx := &ocitypes.SystemContext{
-		OCIInsecureSkipTLSVerify:    noHTTPS,
-		DockerInsecureSkipTLSVerify: noHTTPS,
-		DockerAuthConfig:            authConf,
-	}
-
-	fmt.Println("u      : ", args[i])
-	fmt.Println("sysCtx : ", sysCtx)
-
-//		imagePath := cache.OciTempImage(libraryImage.Hash, imageName)
-
-
-		fmt.Println("name     : ", name)
-		fmt.Println("args     : ", args[i])
-
-		fmt.Println("tmpDir    : ", tmpDir)
-		fmt.Println("force     : ", force)
-		fmt.Println("nohttps   : ", noHTTPS)
-		fmt.Println("authConf  : ", authConf)
-		fmt.Println("noCleanup : ", noCleanUp)
-
-
-	sum, err := ociclient.ImageSHA(args[i], sysCtx)
-	if err != nil {
-		sylog.Fatalf("Failed to get SHA of %v: %v", args[i], err)
-	}
-
-	name := uri.GetName(args[i])
-	imgabs := cache.OciTempImage(sum, name)
-
-		fmt.Println("imgabs: ", imgabs)
-
-		fmt.Println("sum: ", sum)
-
-//	exists, err := cache.OciTempExists(sum, name)
-	exists, err := cache.OciTempExists(sum, name)
-	if err != nil {
-		sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
-	}
-	fmt.Println("exist: ", exists)
-	if !exists {
-		sylog.Infof("Converting OCI blobs to SIF format")
-		b, err := build.NewBuild(
-			args[i],
-			build.Config{
-				Dest:   imgabs,
-//				Dest:   name,
-				Format: "sif",
-				Opts: types.Options{
-					TmpDir:           tmpDir,
-					NoTest:           true,
-					NoHTTPS:          noHTTPS,
-					DockerAuthConfig: authConf,
-				},
-			},
-		)
+		sum, err := ociclient.ImageSHA(args[i], sysCtx)
 		if err != nil {
-			sylog.Fatalf("Unable to create new build: %v", err)
+			sylog.Fatalf("Failed to get SHA of %v: %v", args[i], err)
 		}
 
-		if err := b.Full(); err != nil {
-			sylog.Fatalf("Unable to build: %v", err)
-		}
-	}
+		name := uri.GetName(args[i])
+		imgabs := cache.OciTempImage(sum, name)
 
+		exists, err := cache.OciTempExists(sum, name)
+		if err != nil {
+			sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
+		}
+		if !exists {
+			sylog.Infof("Converting OCI blobs to SIF format")
+			b, err := build.NewBuild(
+				args[i],
+				build.Config{
+					Dest:   imgabs,
+					Format: "sif",
+					Opts: types.Options{
+						TmpDir:           tmpDir,
+						NoTest:           true,
+						NoHTTPS:          noHTTPS,
+						DockerAuthConfig: authConf,
+					},
+				},
+			)
+			if err != nil {
+				sylog.Fatalf("Unable to create new build: %v", err)
+			}
+
+			if err := b.Full(); err != nil {
+				sylog.Fatalf("Unable to build: %v", err)
+			}
+		}
 
 		// Perms are 777 *prior* to umask
 		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
@@ -317,49 +292,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("Failed while copying files: %v\n", err)
 		}
-
-
-
-
-//		dockerImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
-//		if err != nil {
-//			sylog.Fatalf("While getting image info: %v", err)
-//		}
-
-/*		imagePath := cache.OciTempImage(dockerImage.Hash, imageName)
-		exists, err := cache.OciTempExists(dockerImage.Hash, imageName)
-		if err != nil {
-			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
-		}
-		if !exists {
-			sylog.Infof("Downloading docker image...")
-//			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
-//				sylog.Fatalf("unable to Download Image: %v", err)
-//			}
-			libexec.PullOciImage(name, args[i], types.Options{
-				TmpDir:           tmpDir,
-				Force:            force,
-				NoHTTPS:          noHTTPS,
-				DockerAuthConfig: authConf,
-				NoCleanUp:        noCleanUp,
-			})
-
-			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-				sylog.Fatalf("Error getting ImageHash: %v", err)
-			} else if cacheFileHash != dockerImage.Hash {
-				sylog.Fatalf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, dockerImage.Hash)
-			}
-		}*/
-
-
-
-/*		libexec.PullOciImage(name, args[i], types.Options{
-			TmpDir:           tmpDir,
-			Force:            force,
-			NoHTTPS:          noHTTPS,
-			DockerAuthConfig: authConf,
-			NoCleanUp:        noCleanUp,
-		})*/
 
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
