@@ -220,13 +220,29 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key import
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyImportUse   string = `import [import options...] <full-path-to-local-key>`
-	KeyImportShort string = `Import a local key into the local Singularity key store`
+	KeyImportUse   string = `import [import options...] <input-key>`
+	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
   The 'key import' command allows you to add to your local key store, keys from a specific local folder`
 	KeyImportExample string = `
-  $ singularity key import $HOME/key.asc
-  $ singularity keys import $HOME/key.asc
+  $ singularity key import ./my-key.asc
+  `
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key export
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
+	KeyExportShort string = `Export a public or private key into a specific file`
+	KeyExportLong  string = `
+  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
+	KeyExportExample string = `
+  Exporting a private key:
+  
+  $ singularity key export --secret <path_to_file>
+
+  Exporting a public key:
+  
+  $ singularity key export <path_to_file>
   `
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -526,7 +542,7 @@ Enterprise Performance Computing (EPC)`
   URI.  Supported URIs include:
 
   library: Pull an image from the currently configured library
-      library://[user[collection/[container[:tag]]]]
+      library://user/collection/container[:tag]
 
   docker: Pull an image from Docker Hub
       docker://user/image:tag
@@ -547,12 +563,12 @@ Enterprise Performance Computing (EPC)`
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
-	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
+	PushShort string = `Upload image to the provided library (default is "cloud.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
-  of your choosing. An auth token is required to push to the remote, so you may
-  need to configure if first with 'singularity remote'.
-  `
+  of your choosing. It's always good practice to sign your containers before
+  pushing them to the library. An auth token is required to push to the remote,
+  so you may need to configure if first with 'singularity remote'.`
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
@@ -563,8 +579,8 @@ Enterprise Performance Computing (EPC)`
 	SearchShort string = `Search a Library for images`
 	SearchLong  string = `
   The Singularity search command allows you to search within a container library 
-  of your choosing.  The container library defaults to 
-  https://library.sylabs.io when no other library argument is given.`
+  of your choosing.  The container library defaults to cloud.sylabs.io when no 
+  other library argument is given.`
 	SearchExample string = `
   $ singularity search lolcow`
 
@@ -655,6 +671,7 @@ Enterprise Performance Computing (EPC)`
   signature verification is done for all those blocks.`
 	VerifyExample string = `
   $ singularity verify container.sif`
+
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -784,7 +801,7 @@ found at:
   $ singularity oci create -b ~/bundle mycontainer
   $ singularity oci start mycontainer`
 
-	OciCreateUse   string = `create [create options...] <container_ID>`
+	OciCreateUse   string = `create -b <bundle_path> [create options...] <container_ID>`
 	OciCreateShort string = `Create a container from a bundle directory (root user only)`
 	OciCreateLong  string = `
   Create invoke create operation to create a container instance from an OCI bundle directory`
@@ -834,7 +851,7 @@ found at:
 	OciExecExample string = `
   $ singularity oci exec mycontainer id`
 
-	OciRunUse   string = `run [run options...] <container_ID>`
+	OciRunUse   string = `run -b <bundle_path> [run options...] <container_ID>`
 	OciRunShort string = `Create/start/attach/delete a container from a bundle directory (root user only)`
 	OciRunLong  string = `
   Run will invoke equivalent of create/start/attach/delete commands in a row.`

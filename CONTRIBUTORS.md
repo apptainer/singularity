@@ -63,6 +63,7 @@
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Richard Neuboeck <hawk@tbi.univie.ac.at>
     - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
+    - Satish Chebrolu  <satish@sylabs.io>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Vanessa Sochat <vsochat@stanford.edu>

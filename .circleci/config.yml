@@ -30,7 +30,6 @@ jobs:
       - run:
           name: Check code
           command: |-
-            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(nproc) -C ./builddir check
 
   go1.11-alpine:
@@ -48,7 +47,6 @@ jobs:
       - run:
           name: Check code
           command: |-
-            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(nproc) -C ./builddir check
 
   go1.11-macos:
@@ -73,7 +71,6 @@ jobs:
       - run:
           name: Check code
           command: |-
-            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | TMPDIR=$(mktemp -d) sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
 
   unit_tests:
@@ -150,7 +147,6 @@ jobs:
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install singularity
