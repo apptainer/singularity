@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"testing"
 
@@ -24,18 +25,19 @@ import (
 func downloadImage(t *testing.T) string {
 	sexec, err := exec.LookPath("singularity")
 	if err != nil {
+		t.Log("cannot find singularity path, skipping test")
 		t.SkipNow()
 	}
 	f, err := ioutil.TempFile("", "image-")
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("cannot create temporary file: %s\n", err)
 	}
 	name := f.Name()
 	f.Close()
 
 	cmd := exec.Command(sexec, "build", "-F", name, "docker://busybox")
 	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+		t.Fatalf("cannot create image (cmd: %s build -F %s docker://busybox): %s\n", sexec, name, err)
 	}
 	return name
 }
@@ -148,5 +150,133 @@ func TestReader(t *testing.T) {
 			}
 		}
 		img.File.Close()
+	}
+}
+
+func TestAuthorizedPath(t *testing.T) {
+	tests := []struct {
+		name       string
+		path       []string
+		shouldPass bool
+	}{
+		{"empty path", []string{""}, false},
+		{"invalid path", []string{"/a/random/invalid/path"}, false},
+		{"valid path", []string{"/"}, true},
+	}
+
+	// Create a temporary image
+	path := downloadImage(t)
+	defer os.Remove(path)
+
+	// Now load the image which will be used next for a bunch of tests
+	img, err := Init(path, true)
+	if err != nil {
+		t.Fatal("impossible to load image for testing")
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			auth, err := img.AuthorizedPath(test.path)
+			if test.shouldPass == false && (auth == true && err == nil) {
+				t.Fatal("invalid path was reported as authorized")
+			}
+			if test.shouldPass == true && (auth == false || err != nil) {
+				if err != nil {
+					t.Fatalf("valid path was reported as not authorized: %s", err)
+				} else {
+					t.Fatal("valid path was reported as not authorized")
+				}
+			}
+		})
+	}
+}
+
+func TestAuthorizedOwner(t *testing.T) {
+	me, err := user.Current()
+	if err != nil {
+		t.Fatalf("cannot get current user name for testing purposes: %s", err)
+	}
+
+	tests := []struct {
+		name       string
+		owners     []string
+		shouldPass bool
+	}{
+		{"empty owner list", []string{""}, false},
+		{"invalid owner list", []string{"2"}, false},
+		{"valid owner list", []string{me.Username}, true},
+	}
+
+	// Create a temporary image
+	path := downloadImage(t)
+	defer os.Remove(path)
+
+	// Now load the image which will be used next for a bunch of tests
+	img, err := Init(path, true)
+	if err != nil {
+		t.Fatal("impossible to load image for testing")
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			auth, err := img.AuthorizedOwner(test.owners)
+			if test.shouldPass == false && (auth == true && err == nil) {
+				t.Fatal("invalid owner list was reported as authorized")
+			}
+			if test.shouldPass == true && (auth == false || err != nil) {
+				if err != nil {
+					t.Fatalf("valid owner list was reported as not authorized: %s", err)
+				} else {
+					t.Fatal("valid owner list was reported as not authorized")
+				}
+			}
+		})
+	}
+}
+
+func TestAuthorizedGroup(t *testing.T) {
+	me, err := user.Current()
+	if err != nil {
+		t.Fatalf("cannot get the current username: %s", err)
+	}
+	myGroup, gpErr := user.LookupGroupId(me.Gid)
+	if gpErr != nil {
+		t.Fatalf("cannot lookup the current user's group: %s", err)
+	}
+
+	tests := []struct {
+		name       string
+		groups     []string
+		shouldPass bool
+	}{
+		{"empty group list", []string{""}, false},
+		{"invalid group list", []string{"-"}, false},
+		{"valid group list", []string{myGroup.Name}, true},
+	}
+
+	// Create a temporary image
+	path := downloadImage(t)
+	defer os.Remove(path)
+
+	// Now load the image which will be used next for a bunch of tests
+	img, err := Init(path, true)
+	if err != nil {
+		t.Fatal("impossible to load image for testing")
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			auth, err := img.AuthorizedGroup(test.groups)
+			if test.shouldPass == false && (auth == true && err == nil) {
+				t.Fatal("invalid group list was reported as authorized")
+			}
+			if test.shouldPass == true && (auth == false || err != nil) {
+				if err != nil {
+					t.Fatalf("valid group list was reported as not authorized: %s", err)
+				} else {
+					t.Fatal("valid group list was reported as not authorized")
+				}
+			}
+		})
 	}
 }
