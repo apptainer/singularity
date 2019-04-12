@@ -272,6 +272,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 			if err := b.Full(); err != nil {
 				sylog.Fatalf("Unable to build: %v", err)
 			}
+		} else {
+			sylog.Infof("Using cached image")
 		}
 
 		// Perms are 777 *prior* to umask
