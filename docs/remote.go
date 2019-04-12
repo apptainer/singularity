@@ -11,9 +11,9 @@ const (
 	// remote command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteUse   string = `remote <subcommand>`
-	RemoteShort string = `Manage Sylabs Cloud endpoints`
+	RemoteShort string = `Manage singularity remote endpoints`
 	RemoteLong  string = `
-	The 'remote' commands allow you to manage Sylabs Cloud endpoints through its
+	The 'remote' commands allow you to manage singularity remote endpoints through its
 	subcommands. These allow you to add, log in, and use endpoints. The remote
 	configuration is stored in $HOME/.singularity/remotes.yaml by default.`
 	RemoteExample string = `
@@ -25,62 +25,61 @@ const (
 	// remote add command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteAddUse   string = `add <remote_name> <remote_URI>`
-	RemoteAddShort string = `Create a new Sylabs Cloud remote endpoint`
+	RemoteAddShort string = `Create a new singularity remote endpoint`
 	RemoteAddLong  string = `
 	The 'remote add' command allows you to create a new remote endpoint to be
-	be used for Sylabs Cloud services.`
+	be used for singularity remote services.`
 	RemoteAddExample string = `
-	$ singularity remote add sylabs cloud.sylabs.io`
+	$ singularity remote add SylabsCloud cloud.sylabs.io`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote remove command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteRemoveUse   string = `remove <remote_name>`
-	RemoteRemoveShort string = `Remove an existing Sylabs Cloud remote endpoint`
+	RemoteRemoveShort string = `Remove an existing singularity remote endpoint`
 	RemoteRemoveLong  string = `
 	The 'remote remove' command allows you to remove an existing remote endpoint
 	from the list of potential endpoints to use.`
 	RemoteRemoveExample string = `
-	$ singularity remote remove sylabs`
+	$ singularity remote remove SylabsCloud`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote use command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteUseUse   string = `use <remote_name>`
-	RemoteUseShort string = `Set a remote endpoint to be used by default`
+	RemoteUseShort string = `Set a singularity remote endpoint to be actively used`
 	RemoteUseLong  string = `
 	The 'remote use' command sets the remote to be used by default by any command
-	that interacts with Sylabs Cloud services.`
+	that interacts with singularity services.`
 	RemoteUseExample string = `
-	$ singularity remote use sylabs`
+	$ singularity remote use SylabsCloud`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote list command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteListUse   string = `list`
-	RemoteListShort string = `List all remote endpoints that are configured`
+	RemoteListShort string = `List all singularity remote endpoints that are configured`
 	RemoteListLong  string = `
-	The 'remote list' command lists all remote endpoints configured by you as a
-	user. If you have set a remote as a default, its name will be encompassed by
-	brackets.`
+	The 'remote list' command lists all remote endpoints configured for use. If you 
+	have set a remote as a default, its name will be encompassed by brackets.`
 	RemoteListExample string = `
 	$ singularity remote list`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote login command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteLoginUse   string = `login <remote_name>`
-	RemoteLoginShort string = `Log into a remote endpoint using an authentication token`
+	RemoteLoginShort string = `Log into a singularity remote endpoint using an authentication token`
 	RemoteLoginLong  string = `
 	The 'remote login' command allows you to set an authentication token for a
 	specific endpoint. This command will produce a link directing you to the token
 	service you can use to generate a valid token.`
 	RemoteLoginExample string = `
-	$ singularity remote login`
+	$ singularity remote login SylabsCloud`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote status command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteStatusUse   string = `status <remote_name>`
-	RemoteStatusShort string = `Check the status of the services at an endpoint`
+	RemoteStatusShort string = `Check the status of the singularity services at an endpoint`
 	RemoteStatusLong  string = `
 	the 'remote status' command checks the status of the specified remote endpoint
 	and reports the availibility of services and their versions.`
 	RemoteStatusExample string = `
-	$ singularity remote status sylabs`
+	$ singularity remote status SylabsCloud`
 )
