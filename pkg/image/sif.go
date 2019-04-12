@@ -9,9 +9,11 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"runtime"
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (
@@ -36,6 +38,18 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	fimg, err := sif.LoadContainerFp(img.File, !img.Writable)
 	if err != nil {
 		return err
+	}
+
+	// Check the compatibility of the image's target architecture
+	// TODO: we should check if we need to deal with compatible architectures. For example, i386 can run on amd64 and maybe some ARM processor can run <= armv6 instructions on asasrch64 (someone should double check).
+	// TODO: The typically workflow is:
+	// 1. pull image from docker/library/shub (pull/build commands)
+	// 2. extract image file system to temp folder (build commands)
+	// 3. if definition file contains a 'executable' section, the architecture check should occur (or delegate to runtime which would fail during execution).
+	// The current code will be called by the started which will cover most of the workflow desribed above. However, SIF is currently build upon the assumption that the architecture is assigned based on the architecture defined by a Go runtime, which is not 100% compliant with the intended workflow.
+	sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
+	if sifArch != sif.HdrArchUnknown && sifArch != sif.GetSIFArch(runtime.GOARCH) {
+		sylog.Fatalf("the image's architecture (%s) is incompatible with the host (%s)", sif.GetGoArch(sifArch), runtime.GOARCH)
 	}
 
 	groupID := -1

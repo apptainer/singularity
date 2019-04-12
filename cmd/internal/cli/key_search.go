@@ -27,6 +27,8 @@ var KeySearchCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
+		handleKeyFlags(cmd)
+
 		if err := doKeySearchCmd(args[0], keyServerURI); err != nil {
 			sylog.Errorf("search failed: %s", err)
 			os.Exit(2)
