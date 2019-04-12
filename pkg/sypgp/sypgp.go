@@ -224,47 +224,53 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 	return openpgp.ReadKeyRing(f)
 }
 
+// printEntity pretty prints an entity entry to w
+func printEntity(w io.Writer, index int, e *openpgp.Entity) {
+	// TODO(mem): this should not be here, this is presentation
+	for _, v := range e.Identities {
+		fmt.Fprintf(w, "%d) U: %s (%s) <%s>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+	}
+	fmt.Fprintf(w, "   C: %s\n", e.PrimaryKey.CreationTime)
+	fmt.Fprintf(w, "   F: %0X\n", e.PrimaryKey.Fingerprint)
+	bits, _ := e.PrimaryKey.BitLength()
+	fmt.Fprintf(w, "   L: %d\n", bits)
+
+}
+
+func printEntities(w io.Writer, entities openpgp.EntityList) {
+	for i, e := range entities {
+		printEntity(w, i, e)
+		fmt.Fprint(w, "   --------\n")
+	}
+}
+
 // PrintEntity pretty prints an entity entry
 func PrintEntity(index int, e *openpgp.Entity) {
-	for _, v := range e.Identities {
-		fmt.Printf("%v) U: %v (%v) <%v>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
-	}
-	fmt.Printf("   C: %v\n", e.PrimaryKey.CreationTime)
-	fmt.Printf("   F: %0X\n", e.PrimaryKey.Fingerprint)
-	bits, _ := e.PrimaryKey.BitLength()
-	fmt.Printf("   L: %v\n", bits)
+	printEntity(os.Stdout, index, e)
 }
 
 // PrintPubKeyring prints the public keyring read from the public local store
-func PrintPubKeyring() (err error) {
-	var pubEntlist openpgp.EntityList
-
-	if pubEntlist, err = LoadPubKeyring(); err != nil {
-		return
+func PrintPubKeyring() error {
+	pubEntlist, err := LoadPubKeyring()
+	if err != nil {
+		return err
 	}
 
-	for i, e := range pubEntlist {
-		PrintEntity(i, e)
-		fmt.Println("   --------")
-	}
+	printEntities(os.Stdout, pubEntlist)
 
-	return
+	return nil
 }
 
 // PrintPrivKeyring prints the secret keyring read from the public local store
-func PrintPrivKeyring() (err error) {
-	var privEntlist openpgp.EntityList
-
-	if privEntlist, err = LoadPrivKeyring(); err != nil {
-		return
+func PrintPrivKeyring() error {
+	privEntlist, err := LoadPrivKeyring()
+	if err != nil {
+		return err
 	}
 
-	for i, e := range privEntlist {
-		PrintEntity(i, e)
-		fmt.Println("   --------")
-	}
+	printEntities(os.Stdout, privEntlist)
 
-	return
+	return nil
 }
 
 // StorePrivKey stores a private entity list into the local key cache
