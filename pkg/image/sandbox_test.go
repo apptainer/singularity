@@ -80,7 +80,7 @@ func TestSandboxInitializer(t *testing.T) {
 	}
 }
 
-func TestOpenMode(t *testing.T) {
+func TestSBOpenMode(t *testing.T) {
 	var sandboxfmt sandboxFormat
 
 	// Yes, it is correct, openMode() always retuns 'os.O_RDONLY'
