@@ -147,7 +147,6 @@ jobs:
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install singularity
