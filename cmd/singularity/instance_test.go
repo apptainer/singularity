@@ -167,7 +167,7 @@ func startInstance(image string, instance string, portOffset int, opts startOpts
 	}
 	args = append(args, image, instance, strconv.Itoa(instanceStartPort+portOffset))
 	cmd := exec.Command(cmdPath, args...)
-	return cmd.CombinedOutput()
+	return cmd.Output()
 }
 
 func listInstance(opts listOpts) ([]byte, error) {
@@ -182,7 +182,7 @@ func listInstance(opts listOpts) ([]byte, error) {
 		args = append(args, opts.container)
 	}
 	cmd := exec.Command(cmdPath, args...)
-	return cmd.CombinedOutput()
+	return cmd.Output()
 }
 
 func stopInstance(opts stopOpts) ([]byte, error) {
@@ -206,14 +206,14 @@ func stopInstance(opts stopOpts) ([]byte, error) {
 		args = append(args, opts.instance)
 	}
 	cmd := exec.Command(cmdPath, args...)
-	return cmd.CombinedOutput()
+	return cmd.Output()
 }
 
 func execInstance(instance string, execCmd ...string) ([]byte, error) {
 	args := []string{"exec", "instance://" + instance}
 	args = append(args, execCmd...)
 	cmd := exec.Command(cmdPath, args...)
-	return cmd.CombinedOutput()
+	return cmd.Output()
 }
 
 // Sends a deterministic message to an echo server and expects the same message
