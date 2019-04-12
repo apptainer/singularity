@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,10 +7,12 @@ package sypgp
 
 import (
 	"encoding/hex"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -194,6 +196,152 @@ func TestPushPubkey(t *testing.T) {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
+	}
+}
+
+func TestEnsureDirPrivate(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-ensure-dir-private")
+	if err != nil {
+		t.Fatalf("Cannot create temporary directory")
+	}
+	defer os.RemoveAll(tmpdir)
+
+	cases := []struct {
+		name        string
+		preFunc     func(string) error
+		entry       string
+		expectError bool
+	}{
+		{
+			name:        "non-existent directory",
+			entry:       "d1",
+			expectError: false,
+		},
+		{
+			name:        "directory exists",
+			entry:       "d2",
+			expectError: false,
+			preFunc: func(d string) error {
+				if err := os.MkdirAll(d, 0777); err != nil {
+					return err
+				}
+				return os.Chmod(d, 0777)
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		testEntry := filepath.Join(tmpdir, tc.entry)
+
+		if tc.preFunc != nil {
+			if err := tc.preFunc(testEntry); err != nil {
+				t.Errorf("Unexpected failure when calling prep function: %+v", err)
+				continue
+			}
+		}
+
+		err := ensureDirPrivate(testEntry)
+		switch {
+		case !tc.expectError && err != nil:
+			t.Errorf("Unexpected failure when calling ensureDirPrivate(%q): %+v", testEntry, err)
+
+		case tc.expectError && err == nil:
+			t.Errorf("Expecting failure when calling ensureDirPrivate(%q), but got none", testEntry)
+
+		case tc.expectError && err != nil:
+			t.Logf("Expecting failure when calling ensureDirPrivate(%q), got: %+v", testEntry, err)
+			continue
+
+		case !tc.expectError && err == nil:
+			// everything ok
+
+			fi, err := os.Stat(testEntry)
+			if err != nil {
+				t.Errorf("Error while examining test directory %q: %+v", testEntry, err)
+			}
+
+			if !fi.IsDir() {
+				t.Errorf("Expecting a directory after calling ensureDirPrivate(%q), found something else", testEntry)
+			}
+
+			if actual, expected := fi.Mode() & ^os.ModeDir, os.FileMode(0700); actual != expected {
+				t.Errorf("Expecting mode %o, got %o after calling ensureDirPrivate(%q)", expected, actual, testEntry)
+			}
+		}
+	}
+}
+
+func TestEnsureFilePrivate(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", "test-ensure-file-private")
+	if err != nil {
+		t.Fatalf("Cannot create temporary directory")
+	}
+	defer os.RemoveAll(tmpdir)
+
+	cases := []struct {
+		name        string
+		preFunc     func(string) error
+		entry       string
+		expectError bool
+	}{
+		{
+			name:        "non-existent file",
+			entry:       "f1",
+			expectError: false,
+		},
+		{
+			name:        "file exists",
+			entry:       "f2",
+			expectError: false,
+			preFunc: func(fn string) error {
+				fh, err := os.Create(fn)
+				if err != nil {
+					return err
+				}
+				fh.Close()
+				return os.Chmod(fn, 0666)
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		testEntry := filepath.Join(tmpdir, tc.entry)
+
+		if tc.preFunc != nil {
+			if err := tc.preFunc(testEntry); err != nil {
+				t.Errorf("Unexpected failure when calling prep function: %+v", err)
+				continue
+			}
+		}
+
+		err := ensureFilePrivate(testEntry)
+		switch {
+		case !tc.expectError && err != nil:
+			t.Errorf("Unexpected failure when calling ensureFilePrivate(%q): %+v", testEntry, err)
+
+		case tc.expectError && err == nil:
+			t.Errorf("Expecting failure when calling ensureFilePrivate(%q), but got none", testEntry)
+
+		case tc.expectError && err != nil:
+			t.Logf("Expecting failure when calling ensureFilePrivate(%q), got: %+v", testEntry, err)
+			continue
+
+		case !tc.expectError && err == nil:
+			// everything ok
+
+			fi, err := os.Stat(testEntry)
+			if err != nil {
+				t.Errorf("Error while examining test directory %q: %+v", testEntry, err)
+			}
+
+			if fi.IsDir() {
+				t.Errorf("Expecting a non-directory after calling ensureFilePrivate(%q), found something else", testEntry)
+			}
+
+			if actual, expected := fi.Mode(), os.FileMode(0600); actual != expected {
+				t.Errorf("Expecting mode %o, got %o after calling ensureFilePrivate(%q)", expected, actual, testEntry)
+			}
+		}
 	}
 }
 
