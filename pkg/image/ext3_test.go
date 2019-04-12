@@ -223,19 +223,19 @@ func TestInitializer(t *testing.T) {
 	defer os.RemoveAll(path)
 	resolvedPath, err = ResolvePath(path)
 	if err != nil {
-		t.Fatalf("failed to retrieve path for %s: %s\n", path, err)
+		t.Fatalf("failed to retrieve path for %s: %s\n", resolvedPath, err)
 	}
-	img.Path = path
-	img.File, err = os.Open(path)
+	img.Path = resolvedPath
+	img.File, err = os.Open(resolvedPath)
 	if err != nil {
-		t.Fatalf("cannot open %s: %s\n", path, err)
+		t.Fatalf("cannot open %s: %s\n", resolvedPath, err)
 	}
 	fileinfo, err = img.File.Stat()
 	if err != nil {
 		t.Fatalf("cannot stat image: %s\n", err)
 	}
 	if fileinfo.IsDir() == false {
-		t.Fatalf("invalid fileinfo for %s\n", path)
+		t.Fatalf("invalid fileinfo for %s\n", resolvedPath)
 	}
 
 	err = ext3format.initializer(img, fileinfo)

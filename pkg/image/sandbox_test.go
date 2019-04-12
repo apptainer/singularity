@@ -83,7 +83,7 @@ func TestSandboxInitializer(t *testing.T) {
 func TestSBOpenMode(t *testing.T) {
 	var sandboxfmt sandboxFormat
 
-	// Yes, it is correct, openMode() always retuns 'os.O_RDONLY'
+	// Yes, it is correct, openMode() always return 'os.O_RDONLY'
 	if sandboxfmt.openMode(true) != os.O_RDONLY {
 		t.Fatal("openMode(true) returned the wrong value")
 	}
