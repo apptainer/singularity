@@ -221,7 +221,8 @@ Enterprise Performance Computing (EPC)`
 	KeyImportUse   string = `import [import options...] <input-key>`
 	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
-  The 'key import' command allows you to add to your local key store, keys from a specific local folder`
+  The 'key import' command allows you to add a key to your local keyring
+  from a specific file.`
 	KeyImportExample string = `
   $ singularity key import ./my-key.asc
   `
@@ -232,7 +233,7 @@ Enterprise Performance Computing (EPC)`
 	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
 	KeyExportShort string = `Export a public or private key into a specific file`
 	KeyExportLong  string = `
-  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
+  The 'key export' command allows you to export a key and save it to a file.`
 	KeyExportExample string = `
   Exporting a private key:
   
