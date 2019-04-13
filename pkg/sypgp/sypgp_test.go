@@ -355,20 +355,21 @@ func TestEnsureFilePrivate(t *testing.T) {
 	}
 }
 
-func TestPrintEntity(t *testing.T) {
-	getPublicKey := func(data string) *packet.PublicKey {
-		pkt, err := packet.Read(readerFromHex(data))
-		if err != nil {
-			panic(err)
-		}
-
-		pk, ok := pkt.(*packet.PublicKey)
-		if !ok {
-			panic("expecting packet.PublicKey, got something else")
-		}
-
-		return pk
+func getPublicKey(data string) *packet.PublicKey {
+	pkt, err := packet.Read(readerFromHex(data))
+	if err != nil {
+		panic(err)
 	}
+
+	pk, ok := pkt.(*packet.PublicKey)
+	if !ok {
+		panic("expecting packet.PublicKey, got something else")
+	}
+
+	return pk
+}
+
+func TestPrintEntity(t *testing.T) {
 
 	cases := []struct {
 		name     string
@@ -458,20 +459,6 @@ func TestPrintEntity(t *testing.T) {
 }
 
 func TestPrintEntities(t *testing.T) {
-	getPublicKey := func(data string) *packet.PublicKey {
-		pkt, err := packet.Read(readerFromHex(data))
-		if err != nil {
-			panic(err)
-		}
-
-		pk, ok := pkt.(*packet.PublicKey)
-		if !ok {
-			panic("expecting packet.PublicKey, got something else")
-		}
-
-		return pk
-	}
-
 	entities := []*openpgp.Entity{
 		{
 			PrimaryKey: getPublicKey(rsaPkDataHex),
@@ -824,6 +811,68 @@ func TestGetPassphrase(t *testing.T) {
 			}
 			if !tt.shallPass && err == nil {
 				t.Fatalf("invalid case %s succeeded", tt.name)
+			}
+		})
+	}
+}
+
+func TestCompareKeyEntity(t *testing.T) {
+	cases := []struct {
+		name        string
+		entity      *openpgp.Entity
+		fingerprint string
+		expected    bool
+	}{
+		{
+			name: "RSA key correct fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			expected:    true,
+		},
+		{
+			name: "RSA key incorrect fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "0FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			expected:    false,
+		},
+		{
+			name: "RSA key fingerprint too long",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB00",
+			expected:    false,
+		},
+		{
+			name: "RSA key fingerprint too short",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31",
+			expected:    false,
+		},
+		{
+			name: "RSA key empty fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "",
+			expected:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := compareKeyEntity(tc.entity, tc.fingerprint)
+
+			if actual != tc.expected {
+				t.Errorf("Unexpected result from compareKeyEntity: expecting %v, got %v",
+					tc.expected,
+					actual)
 			}
 		})
 	}
