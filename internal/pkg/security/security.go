@@ -40,13 +40,15 @@ func Configure(config *specs.Spec) error {
 			}
 		}
 	}
-	if config.Linux != nil && config.Linux.Seccomp != nil {
+	if config.Linux != nil {
 		if seccomp.Enabled() {
-			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp, config.Process.NoNewPrivileges); err != nil {
-				return err
+			if config.Linux.Seccomp != nil {
+				if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp, config.Process.NoNewPrivileges); err != nil {
+					return err
+				}
 			}
 		} else {
-			sylog.Warningf("seccomp requested but not enabled")
+			sylog.Warningf("seccomp requested but not enabled, seccomp library is missing or too old")
 		}
 	}
 	return nil
