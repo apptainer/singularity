@@ -257,9 +257,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
-				} else {
-					// kill ourself with SIGKILL whatever signal was received
-					syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
 				}
 			}
 		case err := <-errChan:

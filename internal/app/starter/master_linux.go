@@ -14,10 +14,10 @@ import (
 	"runtime"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
 // Master initializes a runtime engine and runs it
@@ -119,20 +119,8 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	}
 	runtime.UnlockOSThread()
 
-	if !isInstance {
-		pgrp := syscall.Getpgrp()
-		tcpgrp := 0
-
-		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCGPGRP), uintptr(unsafe.Pointer(&tcpgrp))); err == 0 {
-			if tcpgrp > 0 && pgrp != tcpgrp {
-				signal.Ignore(syscall.SIGTTOU)
-
-				if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp))); err != 0 {
-					sylog.Errorf("failed to set crontrolling terminal group: %s", err.Error())
-				}
-			}
-		}
-	}
+	// reset signal handlers
+	signal.Reset()
 
 	if fatal != nil {
 		if isInstance {
@@ -145,11 +133,14 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	}
 
 	if status.Signaled() {
-		sylog.Debugf("Child exited due to signal %d", status.Signal())
+		s := status.Signal()
+		sylog.Debugf("Child exited due to signal %d", s)
 		if isInstance && os.Getppid() == ppid {
 			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
-		os.Exit(128 + int(status.Signal()))
+		mainthread.Execute(func() {
+			syscall.Kill(os.Getpid(), s)
+		})
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
 		if isInstance {
