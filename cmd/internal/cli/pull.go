@@ -243,12 +243,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Failed to get checksum for %s: %s", args[i], err)
 		}
 
-		name := uri.GetName(args[i])
-		cachedImgPath := cache.OciTempImage(sum, name)
+		imgName := uri.GetName(args[i])
+		cachedImgPath := cache.OciTempImage(sum, imgName)
 
-		exists, err := cache.OciTempExists(sum, name)
+		exists, err := cache.OciTempExists(sum, imgName)
 		if err != nil {
-			sylog.Fatalf("Unable to check if %s exists: %s", name, err)
+			sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
 		}
 		if !exists {
 			sylog.Infof("Converting OCI blobs to SIF format")
