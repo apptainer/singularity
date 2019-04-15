@@ -878,6 +878,100 @@ func TestCompareKeyEntity(t *testing.T) {
 	}
 }
 
+func TestFindKeyByPringerprint(t *testing.T) {
+	cases := []struct {
+		name        string
+		list        openpgp.EntityList
+		fingerprint string
+		exists      bool
+	}{
+		{
+			name:        "nil list, empty needle",
+			list:        nil,
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "nil list, non-empty needle",
+			list:        nil,
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			exists:      false,
+		},
+		{
+			name:        "empty list, empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "empty list, non-empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			exists:      false,
+		},
+		{
+			name: "non-empty list, empty needle",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name: "non-empty list, non-empty needle, exists",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "non-empty list, non-empty needle, does not exist",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			found := findKeyByFingerprint(tc.list, tc.fingerprint)
+
+			switch {
+			case found == nil && tc.exists:
+				// not found, but it exists
+				t.Errorf("Searching for %q found nothing but it exists in the entity list",
+					tc.fingerprint)
+
+			case found != nil && !tc.exists:
+				// found, but it does not exist
+				t.Errorf("Searching for %q found %q but it should not exist in the entity list",
+					tc.fingerprint,
+					found.PrimaryKey.Fingerprint)
+
+			case found == nil && !tc.exists:
+				// not found, it does not exist
+				return
+
+			case found != nil && tc.exists:
+				// found, it exists, is it the expected one?
+				if !compareKeyEntity(found, tc.fingerprint) {
+					t.Errorf("Searching for %q found %q",
+						tc.fingerprint,
+						found.PrimaryKey.Fingerprint)
+				}
+			}
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	// Set TZ to UTC so that the code converting a time.Time value
 	// to a string produces consistent output.
