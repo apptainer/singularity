@@ -47,12 +47,13 @@ func createFS(t *testing.T, fsType string, path string) {
 		t.Skipf("%s not available, skipping the test", cmdBin)
 	}
 
-	var err bytes.Buffer
+	var out, err bytes.Buffer
 	cmd := exec.Command(cmdBin, path)
 	cmd.Stderr = &err
+	cmd.Stdout = &out
 	cmdErr := cmd.Run()
 	if cmdErr != nil {
-		t.Fatalf("command failed: %s; %s\n", cmdErr, err.String())
+		t.Fatalf("command failed: %s - stderr: %s - stdout: %s\n", cmdErr, err.String(), out.String())
 	}
 }
 
