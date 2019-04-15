@@ -221,63 +221,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	case ociclient.IsSupported(transport):
-		if !force {
-			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("Image file already exists - will not overwrite")
-			}
-		}
-
-		authConf, err := makeDockerCredentials(cmd)
-		if err != nil {
-			sylog.Fatalf("While creating Docker credentials: %v", err)
-		}
-
-		sysCtx := &ocitypes.SystemContext{
-			OCIInsecureSkipTLSVerify:    noHTTPS,
-			DockerInsecureSkipTLSVerify: noHTTPS,
-			DockerAuthConfig:            authConf,
-		}
-
-		sum, err := ociclient.ImageSHA(args[i], sysCtx)
-		if err != nil {
-			sylog.Fatalf("Failed to get checksum for %s: %s", args[i], err)
-		}
-
-		imgName := uri.GetName(args[i])
-		cachedImgPath := cache.OciTempImage(sum, imgName)
-
-		exists, err := cache.OciTempExists(sum, imgName)
-		if err != nil {
-			sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
-		}
-		if !exists {
-			sylog.Infof("Converting OCI blobs to SIF format")
-			if err := convertDockerToSIF(args[i], cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
-				sylog.Fatalf("%v", err)
-			}
-		} else {
-			sylog.Infof("Using cached image")
-		}
-
-		// Perms are 777 *prior* to umask
-		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-		if err != nil {
-			sylog.Fatalf("Unable to open file for writing: %s: %v\n", name, err)
-		}
-		defer dstFile.Close()
-
-		srcFile, err := os.OpenFile(cachedImgPath, os.O_RDONLY, 0444)
-		if err != nil {
-			sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
-		}
-		defer srcFile.Close()
-
-		// Copy SIF from cache
-		_, err = io.Copy(dstFile, srcFile)
-		if err != nil {
-			sylog.Fatalf("Failed while copying files: %v\n", err)
-		}
-
+		downloadOciImage(name, args[i], cmd)
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
@@ -285,6 +229,66 @@ func pullRun(cmd *cobra.Command, args []string) {
 	// a unknown signer, i.e, if you dont have the key in your
 	// local keyring. theres proboly a better way to do this...
 	os.Exit(exitStat)
+}
+
+// TODO: This should be a external function
+func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
+	if !force {
+		if _, err := os.Stat(name); err == nil {
+			sylog.Fatalf("Image file already exists - will not overwrite")
+		}
+	}
+
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	sysCtx := &ocitypes.SystemContext{
+		OCIInsecureSkipTLSVerify:    noHTTPS,
+		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerAuthConfig:            authConf,
+	}
+
+	sum, err := ociclient.ImageSHA(imageURI, sysCtx)
+	if err != nil {
+		sylog.Fatalf("Failed to get checksum for %s: %s", imageURI, err)
+	}
+
+	imgName := uri.GetName(imageURI)
+	cachedImgPath := cache.OciTempImage(sum, imgName)
+
+	exists, err := cache.OciTempExists(sum, imgName)
+	if err != nil {
+		sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
+	}
+	if !exists {
+		sylog.Infof("Converting OCI blobs to SIF format")
+		if err := convertDockerToSIF(imageURI, cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
+			sylog.Fatalf("%v", err)
+		}
+	} else {
+		sylog.Infof("Using cached image")
+	}
+
+	// Perms are 777 *prior* to umask
+	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		sylog.Fatalf("Unable to open file for writing: %s: %v\n", name, err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.OpenFile(cachedImgPath, os.O_RDONLY, 0444)
+	if err != nil {
+		sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		sylog.Fatalf("Failed while copying files: %v\n", err)
+	}
 }
 
 func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
