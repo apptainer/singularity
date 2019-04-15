@@ -23,31 +23,3 @@ func AddCommands(rootCmd *cobra.Command) error {
 
 	return nil
 }
-
-// AddRootFlags calls all RootFlagAdder plugins and adds the returned flags
-// to the rootCmd
-func AddRootFlags(rootCmd *cobra.Command) error {
-	for _, pl := range loadedPlugins {
-		if _pl, ok := (pl.Initializer).(pluginapi.RootFlagAdder); ok {
-			for _, f := range _pl.RootFlagAdd() {
-				rootCmd.Flags().AddFlag(f)
-			}
-		}
-	}
-
-	return nil
-}
-
-// AddActionFlags calls all ActionFlagAdder plugins and adds the returned flags
-// to the actionCmd
-func AddActionFlags(actionCmd *cobra.Command) error {
-	for _, pl := range loadedPlugins {
-		if _pl, ok := (pl.Initializer).(pluginapi.ActionFlagAdder); ok {
-			for _, f := range _pl.ActionFlagAdd() {
-				actionCmd.Flags().AddFlag(f)
-			}
-		}
-	}
-
-	return nil
-}
