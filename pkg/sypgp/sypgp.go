@@ -421,6 +421,16 @@ func compareKeyEntity(e *openpgp.Entity, oldToken string) bool {
 	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
 }
 
+func findKeyByFingerprint(entities openpgp.EntityList, fingerprint string) *openpgp.Entity {
+	for _, e := range entities {
+		if compareKeyEntity(e, fingerprint) {
+			return e
+		}
+	}
+
+	return nil
+}
+
 // CheckLocalPubKey will check if we have a local public key matching ckey string
 // returns true if there's a match.
 func CheckLocalPubKey(ckey string) (bool, error) {
@@ -434,12 +444,7 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 		return false, fmt.Errorf("unable to load local keyring: %v", err)
 	}
 
-	for i := range elist {
-		if compareKeyEntity(elist[i], ckey) {
-			return true, nil
-		}
-	}
-	return false, nil
+	return findKeyByFingerprint(elist, ckey) != nil, nil
 }
 
 // RemovePubKey will delete a public key matching toDelete
