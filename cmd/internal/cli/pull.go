@@ -240,22 +240,22 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		sum, err := ociclient.ImageSHA(args[i], sysCtx)
 		if err != nil {
-			sylog.Fatalf("Failed to get SHA of %v: %v", args[i], err)
+			sylog.Fatalf("Failed to get checksum for %s: %s", args[i], err)
 		}
 
 		name := uri.GetName(args[i])
-		imgabs := cache.OciTempImage(sum, name)
+		cachedImgPath := cache.OciTempImage(sum, name)
 
 		exists, err := cache.OciTempExists(sum, name)
 		if err != nil {
-			sylog.Fatalf("Unable to check if %v exists: %v", imgabs, err)
+			sylog.Fatalf("Unable to check if %s exists: %s", name, err)
 		}
 		if !exists {
 			sylog.Infof("Converting OCI blobs to SIF format")
 			b, err := build.NewBuild(
 				args[i],
 				build.Config{
-					Dest:   imgabs,
+					Dest:   cachedImgPath,
 					Format: "sif",
 					Opts: types.Options{
 						TmpDir:           tmpDir,
@@ -279,13 +279,13 @@ func pullRun(cmd *cobra.Command, args []string) {
 		// Perms are 777 *prior* to umask
 		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 		if err != nil {
-			sylog.Fatalf("Unable to open file: %s: %v\n", name, err)
+			sylog.Fatalf("Unable to open file for writing: %s: %v\n", name, err)
 		}
 		defer dstFile.Close()
 
-		srcFile, err := os.OpenFile(imgabs, os.O_RDONLY, 0444)
+		srcFile, err := os.OpenFile(cachedImgPath, os.O_RDONLY, 0444)
 		if err != nil {
-			sylog.Fatalf("Unable to open file: %s: %v\n", imgabs, err)
+			sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
 		}
 		defer srcFile.Close()
 
