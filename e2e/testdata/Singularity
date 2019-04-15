@@ -1,0 +1,57 @@
+bootstrap: library
+from: centos:7
+%labels
+    maintainer "Eduardo Arango<eduardo@sylabs.io>"
+
+%help
+    export BAD_GUY=Thanos
+    export SMART_GUY=tony
+
+%environment
+    GOPATH=/go
+    PATH=$PATH:$GOPATH/bin:/usr/local/go/bin
+    CGO_ENABLED=0
+    AVENGERS=asemble
+    export GOPATH PATH CGO_ENABLED AVENGERS
+
+%setup
+    echo "SETUP"
+
+%appinstall foo
+
+    echo "INSTALLING FOO"
+    touch filefoo.exec
+
+%appinstall bar
+
+    echo "INSTALLING BAR"
+    touch filebar.exec
+
+%apphelp foo
+This is the help for foo!
+
+%applabels foo
+HELLOTHISIS foo
+
+%applabels bar
+HELLOTHISIS bar
+
+%appenv foo
+HELLOTHISIS=foo
+export HELLOTHISIS
+
+%apprun foo
+    echo "RUNNING FOO"
+
+%startscript
+    exec nc -ll -p $1 -e /bin/cat 2>/dev/null
+
+%runscript
+    echo "RUNSCRIPT"
+    exce "$@
+
+%post
+    echo "POST"
+
+%test
+    exec "$@"
