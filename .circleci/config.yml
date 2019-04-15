@@ -67,11 +67,11 @@ jobs:
           name: Build Singularity
           command: |-
             ./mconfig -v -p /usr/local
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
+            make -j$(sysctl -n hw.logicalcpu) -C ./builddir all
       - run:
           name: Check code
           command: |-
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir vendor-check check
+            make -j$(sysctl -n hw.logicalcpu) -C ./builddir vendor-check check
 
   unit_tests:
     machine: true
