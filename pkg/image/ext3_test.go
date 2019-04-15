@@ -6,6 +6,7 @@
 package image
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -46,10 +47,12 @@ func createFS(t *testing.T, fsType string, path string) {
 		t.Skipf("%s not available, skipping the test", cmdBin)
 	}
 
+	var err bytes.Buffer
 	cmd := exec.Command(cmdBin, path)
+	cmd.Stderr = &err
 	cmdErr := cmd.Run()
 	if cmdErr != nil {
-		t.Fatalf("command failed: %s\n", cmdErr)
+		t.Fatalf("command failed: %s; %s\n", cmdErr, err.String())
 	}
 }
 
