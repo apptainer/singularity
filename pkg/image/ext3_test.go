@@ -42,13 +42,13 @@ func createVirtualBlockDevice(t *testing.T, path string) {
 // @param[in] type of the file system to be created, e.g., ext3, fat.
 // @param[in] path to the virtual block device.
 func createFS(t *testing.T, fsType string, path string) {
-	cmdBin := "/sbin/mkfs." + fsType
+	cmdBin := "/sbin/mke2fs"
 	if _, statErr := os.Stat(cmdBin); os.IsNotExist(statErr) {
 		t.Skipf("%s not available, skipping the test", cmdBin)
 	}
 
 	var out, err bytes.Buffer
-	cmd := exec.Command(cmdBin, path)
+	cmd := exec.Command(cmdBin, "-F", "-t", fsType, path)
 	cmd.Stderr = &err
 	cmd.Stdout = &out
 	cmdErr := cmd.Run()
