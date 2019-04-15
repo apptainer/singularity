@@ -192,19 +192,28 @@ func TestAuthorizedPath(t *testing.T) {
 }
 
 func TestAuthorizedOwner(t *testing.T) {
+	type ownerGroup struct {
+		name       string
+		owners     []string
+		shouldPass bool
+	}
+
+	tests := []ownerGroup{
+		{"empty owner list", []string{""}, false},
+		{"invalid owner list", []string{"2"}, false},
+		{"root", []string{"root"}, false},
+	}
+
+	// If the test is not running as root, we test with the current username,
+	// i.e., the owner of the image. Note that it is not supposed to work with
+	// root.
 	me, err := user.Current()
 	if err != nil {
 		t.Fatalf("cannot get current user name for testing purposes: %s", err)
 	}
-
-	tests := []struct {
-		name       string
-		owners     []string
-		shouldPass bool
-	}{
-		{"empty owner list", []string{""}, false},
-		{"invalid owner list", []string{"2"}, false},
-		{"valid owner list", []string{me.Username}, true},
+	if me.Username != "root" {
+		localUser := ownerGroup{"valid owner list", []string{me.Username}, true}
+		tests = append(tests, localUser)
 	}
 
 	// Create a temporary image
