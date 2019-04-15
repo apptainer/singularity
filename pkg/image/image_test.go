@@ -244,6 +244,20 @@ func TestAuthorizedOwner(t *testing.T) {
 }
 
 func TestAuthorizedGroup(t *testing.T) {
+	type groupTest struct {
+		name       string
+		groups     []string
+		shouldPass bool
+	}
+
+	tests := []groupTest{
+		{"empty group list", []string{""}, false},
+		{"invalid group list", []string{"-"}, false},
+		{"root", []string{"root"}, false},
+	}
+
+	// If the current group is not root, we test the function with its name,
+	// which is a valid test since the owner of the image
 	me, err := user.Current()
 	if err != nil {
 		t.Fatalf("cannot get the current username: %s", err)
@@ -252,15 +266,9 @@ func TestAuthorizedGroup(t *testing.T) {
 	if gpErr != nil {
 		t.Fatalf("cannot lookup the current user's group: %s", err)
 	}
-
-	tests := []struct {
-		name       string
-		groups     []string
-		shouldPass bool
-	}{
-		{"empty group list", []string{""}, false},
-		{"invalid group list", []string{"-"}, false},
-		{"valid group list", []string{myGroup.Name}, true},
+	if myGroup.Name != "root" {
+		validTest := groupTest{"valid group list", []string{myGroup.Name}, true}
+		tests = append(tests, validTest)
 	}
 
 	// Create a temporary image
