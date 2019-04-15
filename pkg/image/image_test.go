@@ -198,10 +198,13 @@ func TestAuthorizedOwner(t *testing.T) {
 		shouldPass bool
 	}
 
+	// Note that we do not test the "root" case because the result will depend
+	// on the context of the test execution and therefore sometimes pass,
+	// sometimes fail. For instance, it will fail with the CI and succeed with
+	// Travis.
 	tests := []ownerGroup{
 		{"empty owner list", []string{""}, false},
 		{"invalid owner list", []string{"2"}, false},
-		{"root", []string{"root"}, false},
 	}
 
 	// If the test is not running as root, we test with the current username,
@@ -250,10 +253,13 @@ func TestAuthorizedGroup(t *testing.T) {
 		shouldPass bool
 	}
 
+	// Note that we do not test the "root" case because the result will depend
+	// on the context of the test execution and therefore sometimes pass,
+	// sometimes fail. For instance, it will fail with the CI and succeed with
+	// Travis.
 	tests := []groupTest{
 		{"empty group list", []string{""}, false},
 		{"invalid group list", []string{"-"}, false},
-		{"root", []string{"root"}, false},
 	}
 
 	// If the current group is not root, we test the function with its name,
