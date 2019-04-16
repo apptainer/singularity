@@ -972,6 +972,124 @@ func TestFindKeyByPringerprint(t *testing.T) {
 	}
 }
 
+func TestRemoveKey(t *testing.T) {
+	cases := []struct {
+		name        string
+		list        openpgp.EntityList
+		fingerprint string
+		exists      bool
+	}{
+		{
+			name:        "nil list, empty needle",
+			list:        nil,
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "empty list, empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "nil list, non-empty needle",
+			list:        nil,
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name:        "empty list, non-empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name: "list with many elements, needle does not exist",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "0892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name: "list with one element, needle exists",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle at the begining",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle in the middle",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle at the end",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			newList := removeKey(tc.list, tc.fingerprint)
+
+			switch {
+			case tc.exists && newList == nil:
+				// needle does exist, no new list returned
+				t.Errorf("Removing %q returned a nil list but it exists in the entity list",
+					tc.fingerprint)
+
+			case !tc.exists && newList != nil:
+				// needle does not exist, new list returned
+				t.Errorf("Removing %q returned a non-nil list but it does not exist in the entity list",
+					tc.fingerprint)
+
+			case !tc.exists && newList == nil:
+				// needle does not exist, no new list returned
+				return
+
+			case tc.exists && newList != nil:
+				// needle does exist, new list returned
+				if len(newList) != len(tc.list)-1 {
+					t.Errorf("After removing key %q the new list should have exactly one less element than the original, actual: %d, expected: %d",
+						tc.fingerprint,
+						len(newList),
+						len(tc.list)-1)
+				}
+
+				if found := findKeyByFingerprint(newList, tc.fingerprint); found != nil {
+					t.Errorf("After removing key %q it should not be present in the new list, but it was found there",
+						tc.fingerprint)
+				}
+			}
+		})
+	}
+}
+
 func TestMain(m *testing.M) {
 	// Set TZ to UTC so that the code converting a time.Time value
 	// to a string produces consistent output.

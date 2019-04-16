@@ -477,6 +477,24 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	return findKeyByFingerprint(elist, ckey) != nil, nil
 }
 
+// removeKey removes one key identified by fingerprint from list.
+//
+// removeKey returns a new list with the key removed, or nil if the key
+// was not found. The elements of the new list are the _same_ pointers
+// found in the original list.
+func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
+	for idx, e := range list {
+		if compareKeyEntity(e, fingerprint) {
+			newList := make(openpgp.EntityList, len(list)-1)
+			copy(newList, list[:idx])
+			copy(newList[idx:], list[idx+1:])
+			return newList
+		}
+	}
+
+	return nil
+}
+
 // RemovePubKey will delete a public key matching toDelete
 func RemovePubKey(toDelete string) error {
 	// read all the local public keys
