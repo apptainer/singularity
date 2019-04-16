@@ -120,7 +120,7 @@ jobs:
             cd $HOME/go/src/github.com/sylabs/singularity
             make -j$(nproc) -C ./builddir unit-test
 
-  integration_tests:
+  e2e_test:
     machine: true
     steps:
       - attach_workspace:
@@ -161,10 +161,10 @@ jobs:
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: Run integration tests
+          name: Run E2E tests
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            make -C ./builddir integration-test
+            make -C ./builddir e2e-test
 
 workflows:
   version: 2
@@ -183,7 +183,7 @@ workflows:
       - unit_tests:
           requires:
             - get_source
-      - integration_tests:
+      - e2e_test:
           requires:
             - get_source
           filters:
