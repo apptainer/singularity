@@ -58,3 +58,30 @@ func TestOciTemp(t *testing.T) {
 		})
 	}
 }
+
+func TestOciTempExists(t *testing.T) {
+	tests := []struct {
+		name     string
+		sum      string
+		path     string
+		expected bool
+	}{
+		{"empty", "", "", true},
+		{"invalid", "not a SHA sum", "not an image", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			exists, err := OciTempExists(test.sum, test.path)
+			if err != nil {
+				t.Fatalf("OciTempExists() failed: %s\n", err)
+			}
+			if test.expected == true && exists == false {
+				t.Fatal("test expected to succeed but failed")
+			}
+			if test.expected == false && exists == true {
+				t.Fatal("test expected to fail but succeeded")
+			}
+		})
+	}
+}

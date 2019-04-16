@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,9 +6,14 @@
 package cache
 
 import (
+	"bytes"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
+
+	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 func TestLibrary(t *testing.T) {
@@ -32,6 +37,55 @@ func TestLibrary(t *testing.T) {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
+	}
+}
+
+func TestLibraryImage(t *testing.T) {
+	LibraryImage("", "")
+}
+
+func TestLibraryImageExists(t *testing.T) {
+	// Invalid cases
+	_, err := LibraryImageExists("", "")
+	if err == nil {
+		t.Fatalf("LibraryImageExists() returned true for invalid data:  %s\n", err)
+	}
+
+	// Pull an image so we know for sure that it is in the cache
+	sexec, err := exec.LookPath("singularity")
+	dir, err := ioutil.TempDir("", "")
+	filename := "ubuntu_latest.sif"
+	name := dir + filename
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command(sexec, "pull", "-F", name, "library://ubuntu")
+	cmd.Stderr = &stderr
+	cmd.Stdout = &stdout
+	err = cmd.Run()
+	if err != nil {
+		t.Fatalf("command failed: %s - stdout: %s - stderr: %s\n", err, stdout.String(), stderr.String())
+	}
+	defer os.RemoveAll(dir)
+
+	// Invalid case with a valid image
+	_, err = LibraryImageExists("", filename)
+	if err != nil {
+		t.Fatalf("image reported as non-existing: %s\n", err)
+	}
+
+	// Valid case with a valid image, the get the hash from the
+	// file we just created and check whether it matches with what
+	// we have in the cache
+	hash, err := client.ImageHash(name)
+	if err != nil {
+		t.Fatalf("cannot get image's hash: %s\n", err)
+	}
+
+	exists, err := LibraryImageExists(hash, filename)
+	if err != nil {
+		t.Fatalf("error while checking if image exists: %s\n", err)
+	}
+	if exists == false {
+		t.Fatal("valid image is reported as non-existing")
 	}
 }
 
