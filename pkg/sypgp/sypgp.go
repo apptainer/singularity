@@ -383,6 +383,17 @@ func PrintPrivKeyring() error {
 	return nil
 }
 
+// storePrivKeys writes all the private keys in list to the writer w.
+func storePrivKeys(w io.Writer, list openpgp.EntityList) error {
+	for _, e := range list {
+		if err := e.SerializePrivate(w, nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // appendPrivateKey appends a private key entity to the local keyring
 func appendPrivateKey(e *openpgp.Entity) error {
 	f, err := createOrAppendPrivateFile(SecretPath())
@@ -391,7 +402,18 @@ func appendPrivateKey(e *openpgp.Entity) error {
 	}
 	defer f.Close()
 
-	return e.SerializePrivate(f, nil)
+	return storePrivKeys(f, openpgp.EntityList{e})
+}
+
+// storePubKeys writes all the public keys in list to the writer w.
+func storePubKeys(w io.Writer, list openpgp.EntityList) error {
+	for _, e := range list {
+		if err := e.Serialize(w); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // appendPubKey appends a public key entity to the local keyring
@@ -402,7 +424,7 @@ func appendPubKey(e *openpgp.Entity) error {
 	}
 	defer f.Close()
 
-	return e.Serialize(f)
+	return storePubKeys(f, openpgp.EntityList{e})
 }
 
 // storePubKeyring overwrites the public keyring with the listed keys
