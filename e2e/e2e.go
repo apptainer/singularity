@@ -8,9 +8,6 @@ package e2e
 import (
 	"os"
 	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // RunE2ETests is the main func to trigger the test suite
@@ -21,8 +18,4 @@ func RunE2ETests(t *testing.T) {
 		t.Log("Running E2E tests for Singularity")
 		Run(t)
 	}
-}
-
-func init() {
-	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
 }

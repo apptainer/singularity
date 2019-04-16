@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
@@ -25,6 +26,14 @@ var runDisabled = flag.Bool("run_disabled", false, "run tests that have been tem
 // Run is the main func for the test framework, initializes the required vars
 // and set the environment for the RunE2ETests framework
 func Run(t *testing.T) {
+	flag.Parse()
+
+	if *runDisabled {
+		os.Setenv("E2E_RUN_DISABLED", "true")
+	}
+	// init buildcfg values
+	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
+
 	// Ensure binary is in $PATH
 	cmdPath, err := exec.LookPath("singularity")
 	if err != nil {
