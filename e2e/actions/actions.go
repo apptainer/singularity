@@ -377,7 +377,7 @@ func PersistentOverlay(t *testing.T) {
 		_, stderr, exitCode, err := ImageExec(t, testenv.CmdPath, "exec", Opts{Overlay: []string{"ext3_fs.img", squashfsImage}}, testenv.ImagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
 		if exitCode != 0 {
 			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
+			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("%s", tmpfile.Name())}, " "))
 		}
 	}))
 	// look for the file without root privs
@@ -404,7 +404,6 @@ func RunE2ETests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	t.Log(testenv)
 
 	// singularity run
 	t.Run("run", actionRun)

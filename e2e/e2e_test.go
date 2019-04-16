@@ -3,8 +3,6 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build e2e
-
 package e2e
 
 import (

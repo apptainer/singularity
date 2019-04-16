@@ -18,6 +18,17 @@ from: centos:7
 %setup
     echo "SETUP"
 
+%appenv testapp
+    TESTAPP=testapp
+    export TESTAPP
+
+%appinstall testapp
+    echo 'echo $TESTAPP' > $SINGULARITY_APPROOT/bin/testapp.sh
+    chmod 0755 $SINGULARITY_APPROOT/bin/testapp.sh
+
+%apprun testapp
+    $TESTAPP.sh
+
 %appinstall foo
 
     echo "INSTALLING FOO"
@@ -48,8 +59,8 @@ export HELLOTHISIS
     exec nc -ll -p $1 -e /bin/cat 2>/dev/null
 
 %runscript
-    echo "RUNSCRIPT"
-    exce "$@
+    echo "Running command: $*"
+    exec "$@"
 
 %post
     echo "POST"
