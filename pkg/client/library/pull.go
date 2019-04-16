@@ -38,7 +38,7 @@ func DownloadImage(filePath string, libraryRef string, libraryURL string, Force 
 	libraryRef = strings.TrimPrefix(libraryRef, "library://")
 
 	if !strings.Contains(libraryRef, ":") {
-		sylog.Infof("No tag specifyed, using ':latest'")
+		sylog.Infof("No tag specified, using ':latest'")
 		libraryRef += ":latest"
 	}
 
