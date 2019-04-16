@@ -57,7 +57,7 @@ func TestLibraryImageExists(t *testing.T) {
 	filename := "ubuntu_latest.sif"
 	name := dir + filename
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(sexec, "pull", "-F", name, "library://ubuntu")
+	cmd := exec.Command(sexec, "pull", "-F", "-U", name, "library://ubuntu")
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	err = cmd.Run()
