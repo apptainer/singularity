@@ -56,7 +56,9 @@ const (
 // with a single dash such as "-foo"). As a result, Cobra does not check if
 // short flags are valid or not. This function addresses this gap by manually
 // checking the validity of the short flags that are passed in.
-func checkForInvalidShortFlags() {
+// The expected format of the command is:
+// singularity <singularitY_short_flags> <singularity_long_flags> singularity_cmd
+func checkForInvalidSingularityShortFlags() {
 	// Unfortunately, it seems that Cobra does not maintain a structure to
 	// query all the supported flags and the potential short version so we
 	// have to maintain a map of supported short flags. Note that we use a
@@ -69,12 +71,17 @@ func checkForInvalidShortFlags() {
 		"v": "verbose",
 	}
 
-	for _, arg := range os.Args {
-		if len(string(arg)) > 1 && string(arg[0]) == "-" && string(arg[1]) != "-" {
-			name := arg[1:len(arg)]
+	// We only check the arguments before the 'singularity' command name and
+	// before the singularity command. The singularity command is the first
+	// argument with an index > 0 than does *not* start with a '-'. A short
+	// flag (the type we check here) starts with a '-' but is *not* followed by
+	// a '-'.
+	for i := 1; i < len(os.Args) && string(os.Args[i][0]) == "-"; i++ {
+		if string(os.Args[i][0]) == "-" && string(os.Args[i][1]) != "-" {
+			name := os.Args[i][1:len(os.Args[i])]
 			_, ok := supportedShortFlags[name]
 			if !ok {
-				fmt.Printf("Invalid flafg \"%s\" for command \"singularity\"\n", arg)
+				fmt.Printf("Invalid flag \"%s\" for command \"singularity\"\n", os.Args[i])
 				SingularityCmd.Printf("Run 'singularity --help' for more detailed usage information.\n")
 				os.Exit(1)
 			}
@@ -126,7 +133,7 @@ func init() {
 	initializePlugins()
 	plugin.AddCommands(SingularityCmd)
 
-	checkForInvalidShortFlags()
+	checkForInvalidSingularityShortFlags()
 }
 
 func setSylogMessageLevel(cmd *cobra.Command, args []string) {
