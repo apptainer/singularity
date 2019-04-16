@@ -1,5 +1,6 @@
 bootstrap: library
 from: centos:7
+
 %labels
     maintainer "Eduardo Arango<eduardo@sylabs.io>"
 
