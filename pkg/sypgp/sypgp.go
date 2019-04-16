@@ -507,21 +507,8 @@ func RemovePubKey(toDelete string) error {
 		return fmt.Errorf("unable to list local keyring: %v", err)
 	}
 
-	var newKeyList openpgp.EntityList
-
-	matchKey := false
-
-	// sort through them, and remove any that match toDelete
-	for i := range elist {
-		// if the elist[i] dose not match toDelete, then add it to newKeyList
-		if !compareKeyEntity(elist[i], toDelete) {
-			newKeyList = append(newKeyList, elist[i])
-		} else {
-			matchKey = true
-		}
-	}
-
-	if !matchKey {
+	newKeyList := removeKey(elist, toDelete)
+	if newKeyList == nil {
 		return fmt.Errorf("no key matching given fingerprint found")
 	}
 
