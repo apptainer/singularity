@@ -53,7 +53,13 @@ func TestLibraryImageExists(t *testing.T) {
 
 	// Pull an image so we know for sure that it is in the cache
 	sexec, err := exec.LookPath("singularity")
+	if err != nil {
+		t.Fatalf("cannot get path for singularity: %s\n", err)
+	}
 	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("cannot create temporary directory: %s\n", err)
+	}
 	filename := "ubuntu_latest.sif"
 	name := dir + filename
 	var stdout, stderr bytes.Buffer
@@ -88,17 +94,3 @@ func TestLibraryImageExists(t *testing.T) {
 		t.Fatal("valid image is reported as non-existing")
 	}
 }
-
-// Will come back to after functionality exists
-// func TestLibraryImageExists(t *testing.T) {
-// 	tests := []struct {
-// 		name     string
-// 		env      string
-// 		expected string
-// 		file     []struct {
-// 			create bool
-// 			sum    string
-// 			name   string
-// 		}
-// 	}{}
-// }
