@@ -218,6 +218,14 @@ func ensureDirPrivate(dn string) error {
 	return nil
 }
 
+// createOrAppendPrivateFile creates the named filename, making sure
+// it's only accessible to the current user.
+//
+// TODO(mem): move this function to a common location
+func createOrAppendPrivateFile(fn string) (*os.File, error) {
+	return os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+}
+
 // ensureFilePrivate makes sure that the file system mode for the named
 // file does not allow other users access to it (neither read nor
 // write).
@@ -377,7 +385,7 @@ func PrintPrivKeyring() error {
 
 // appendPrivateKey appends a private key entity to the local keyring
 func appendPrivateKey(e *openpgp.Entity) error {
-	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := createOrAppendPrivateFile(SecretPath())
 	if err != nil {
 		return err
 	}
@@ -388,7 +396,7 @@ func appendPrivateKey(e *openpgp.Entity) error {
 
 // appendPubKey appends a public key entity to the local keyring
 func appendPubKey(e *openpgp.Entity) error {
-	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := createOrAppendPrivateFile(PublicPath())
 	if err != nil {
 		return err
 	}
