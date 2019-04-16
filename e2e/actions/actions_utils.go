@@ -15,16 +15,16 @@ import (
 type Opts struct {
 	Binds     []string
 	Security  []string
-	KeepPrivs bool
+	Overlay   []string
 	DropCaps  string
-	Contain   bool
-	NoHome    bool
 	Home      string
 	Workdir   string
 	Pwd       string
 	App       string
+	KeepPrivs bool
+	Contain   bool
+	NoHome    bool
 	Userns    bool
-	Overlay   []string
 }
 
 // ImageExec can be used to run/exec/shell a Singularity image
