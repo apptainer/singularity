@@ -48,6 +48,7 @@ const helpPush = `  4) Push key using "singularity key push %[1]X"
 
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
+var errNotEncrypted = errors.New("key is not encrypted")
 
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
@@ -515,20 +516,20 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity, message string) error {
+	if !k.PrivateKey.Encrypted {
+		return errNotEncrypted
+	}
+
 	if message == "" {
 		message = "Enter key passphrase : "
 	}
-	if k.PrivateKey.Encrypted {
-		pass, err := AskQuestionNoEcho(message)
-		if err != nil {
-			return err
-		}
 
-		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
-			return err
-		}
+	pass, err := AskQuestionNoEcho(message)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	return k.PrivateKey.Decrypt([]byte(pass))
 }
 
 // EncryptKey encrypts a private key using a pass phrase
