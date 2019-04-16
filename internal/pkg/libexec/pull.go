@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,11 +6,8 @@
 package libexec
 
 import (
-	"strings"
-
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	library "github.com/sylabs/singularity/pkg/client/library"
 	net "github.com/sylabs/singularity/pkg/client/net"
@@ -43,11 +40,6 @@ func PullShubImage(filePath, shubRef string, force, noHTTPS bool) {
 
 // PullOciImage pulls an OCI image to a sif
 func PullOciImage(path, imageURI string, opts types.Options) {
-	_, imageName := uri.Split(imageURI)
-	if !strings.Contains(imageName, ":") {
-		sylog.Infof("No tag specifyed, using ':latest'")
-	}
-
 	b, err := build.NewBuild(imageURI, build.Config{Dest: path, Format: "sif", Opts: opts})
 	if err != nil {
 		sylog.Fatalf("Unable to pull %v: %v", imageURI, err)
