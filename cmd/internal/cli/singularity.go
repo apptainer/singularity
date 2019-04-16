@@ -83,7 +83,7 @@ func checkForInvalidSingularityShortFlags() {
 			if !ok {
 				// Testing tools tend to add short flags and we should accept them
 				// so we don't break CI
-				if !strings.HasPrefix(name, "test.count") {
+				if !strings.HasPrefix(name, "test.") {
 					fmt.Printf("Invalid flag \"%s\" for command \"singularity\"\n", os.Args[i])
 					SingularityCmd.Printf("Run 'singularity --help' for more detailed usage information.\n")
 					os.Exit(1)
