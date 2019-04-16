@@ -38,7 +38,7 @@ unit-test:
 	@echo "       PASS"
 
 
-.PHONY: e2e-test
+.PHONY: e2e-tests
 integration-test:
 	@echo " TEST sudo go test [e2e]"
 	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
