@@ -32,7 +32,6 @@ func buildFrom(t *testing.T) {
 		sandbox    bool
 	}{
 		{"BusyBox", "", "../examples/busybox/Singularity", false},
-		{"BusyBoxSandbox", "", "../examples/busybox/Singularity", true},
 		{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
 		{"DockerDefFile", "", "../examples/docker/Singularity", true},
