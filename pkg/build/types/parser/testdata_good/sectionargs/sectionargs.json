@@ -60,7 +60,7 @@
 				"script": ""
 			},
 			"post": {
-				"args": "-c /bin/bash extra stuff here ",
+				"args": "-c /bin/bash extra stuff here #comment",
 				"script": "        echo \"Running post section\"\n        echo $0\n        dpkg -S $0\n        function foo { echo; }\n        echo \"Bashism function defined\"\n"
 			},
 			"test": {

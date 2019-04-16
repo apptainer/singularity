@@ -54,7 +54,7 @@
 				},
 				"post": {
 					"args": "",
-					"script": "\tyum install wget -y\n\n\twget https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz\n\ttar -C /usr/local -xzf go1.10.3.linux-amd64.tar.gz\n\texport PATH=$PATH:/usr/local/go/bin\n\n\tcd /root/go/src/hello\n\tgo build\n\t\n\t./hello\n"
+					"script": "\tyum install wget -y\n\n\twget https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz\n\ttar -C /usr/local -xzf go1.10.3.linux-amd64.tar.gz\n\texport PATH=$PATH:/usr/local/go/bin\n\n\tcd /root/go/src/hello\n\tgo build\n\t\n\t./hello\n\n\n"
 				},
 				"test": {
 					"args": "",
@@ -85,7 +85,7 @@
 				},
 				"runScript": {
 					"args": "",
-					"script": "\thello\n"
+					"script": "\thello\n\n"
 				},
 				"test": {
 					"args": "",

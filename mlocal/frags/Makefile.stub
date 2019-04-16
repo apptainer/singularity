@@ -20,7 +20,10 @@ collect:
 check: $(go_OBJ)
 	@echo " CHECK golangci-lint"
 	$(V)cd $(SOURCEDIR) && \
-		golangci-lint run --build-tags "$(GO_TAGS)" ./...
+		(PATH=$(SOURCEDIR)/bin:$$PATH; \
+		 (command -v golangci-lint >/dev/null || \
+		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.15.0) && \
+		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
 	@echo "       PASS"
 
 .PHONY: dist
@@ -81,7 +84,7 @@ cscope:
 .PHONY: clean
 clean:
 	@printf " CLEAN\n"
-	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* bin/golangci-lint $(CLEANFILES)
 
 .PHONY: install
 install: $(INSTALLFILES)

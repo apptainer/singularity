@@ -488,7 +488,7 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
 
 	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
-		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+		return fmt.Errorf("Failed to apply cgroups resources restriction: %s", err)
 	}
 
 	if c.cgroupIndex >= 0 {

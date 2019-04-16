@@ -28,14 +28,28 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/security"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
+
+// EnsureRootPriv ensures that a command is executed with root privileges.
+// To customize the output, arguments can be used to specify the context (e.g., "oci", "plugin"),
+// where the first argument (string) will be displayed before the command itself.
+func EnsureRootPriv(cmd *cobra.Command, args []string) {
+	if os.Geteuid() != 0 {
+		if len(args) >= 1 && len(args[0]) > 0 {
+			// The first argument is the context
+			sylog.Fatalf("command '%s %s' requires root privileges", args[0], cmd.Name())
+		} else {
+			sylog.Fatalf("command %s requires root privileges", cmd.Name())
+		}
+	}
+}
 
 func convertImage(filename string, unsquashfsPath string) (string, error) {
 	img, err := image.Init(filename, false)
@@ -341,7 +355,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("failed to retrieve user information for UID %d: %s", os.Getuid(), err)
 		}
-		procname = instance.ProcName(name, pwd.Name)
+		procname, err = instance.ProcName(name, pwd.Name)
+		if err != nil {
+			sylog.Fatalf("%s", err)
+		}
 	} else {
 		generator.SetProcessArgs(args)
 		procname = "Singularity runtime parent"

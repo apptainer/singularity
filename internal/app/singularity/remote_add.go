@@ -7,18 +7,25 @@ package singularity
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"path"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
 // RemoteAdd adds remote to configuration
-func RemoteAdd(configFile, name, uri string) (err error) {
+func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 	c := &remote.Config{}
-	e := remote.EndPoint{URI: uri}
+
+	// system config should be world readable
+	perm := os.FileMode(0600)
+	if global {
+		perm = os.FileMode(0644)
+	}
 
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0600)
+	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, perm)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}
@@ -29,6 +36,12 @@ func RemoteAdd(configFile, name, uri string) (err error) {
 	if err != nil {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
+
+	u, err := url.Parse(uri)
+	if err != nil {
+		return err
+	}
+	e := remote.EndPoint{URI: path.Join(u.Host + u.Path), System: global}
 
 	if err := c.Add(name, &e); err != nil {
 		return err
