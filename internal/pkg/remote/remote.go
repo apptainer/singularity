@@ -212,7 +212,7 @@ func (e *EndPoint) VerifyToken() error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error making request to server:\n\t%v", err)
+		return fmt.Errorf("error making request to server: %v", err)
 	}
 	defer res.Body.Close()
 
@@ -243,7 +243,7 @@ func getCloudConfig(uri string) ([]byte, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
+		return nil, fmt.Errorf("error making request to server: %v", err)
 	}
 	defer res.Body.Close()
 
