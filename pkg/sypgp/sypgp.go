@@ -43,6 +43,7 @@ const helpPush = `  4) Push key using "singularity key push %[1]X"
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 var errNotEncrypted = errors.New("key is not encrypted")
+var errInvalidChoice = errors.New("invalid choice")
 
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
@@ -127,6 +128,26 @@ func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, erro
 	default:
 		return "", fmt.Errorf("invalid answer %q", ans)
 	}
+}
+
+func askNumberInRange(start, end int, format string, a ...interface{}) (int, error) {
+	ans, err := AskQuestion(format, a...)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err := strconv.ParseInt(ans, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	m := int(n)
+
+	if m < start || m > end {
+		return 0, errInvalidChoice
+	}
+
+	return m, nil
 }
 
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
@@ -665,48 +686,26 @@ func EncryptKey(k *openpgp.Entity, pass string) error {
 
 // SelectPubKey prints a public key list to user and returns the choice
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	PrintPubKeyring()
+	printEntities(os.Stdout, el)
 
-	index, err := AskQuestion("Enter # of public key to use : ")
-	if err != nil {
-		return nil, err
-	}
-	if index == "" {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-	i, err := strconv.ParseUint(index, 10, 32)
+	n, err := askNumberInRange(0, len(el)-1, "Enter # of public key to use : ")
 	if err != nil {
 		return nil, err
 	}
 
-	if i < 0 || i > uint64(len(el))-1 {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-
-	return el[i], nil
+	return el[n], nil
 }
 
 // SelectPrivKey prints a secret key list to user and returns the choice
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	PrintPrivKeyring()
+	printEntities(os.Stdout, el)
 
-	index, err := AskQuestion("Enter # of signing key to use : ")
-	if err != nil {
-		return nil, err
-	}
-	if index == "" {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-	i, err := strconv.ParseUint(index, 10, 32)
+	n, err := askNumberInRange(0, len(el)-1, "Enter # of private key to use : ")
 	if err != nil {
 		return nil, err
 	}
 
-	if i < 0 || i > uint64(len(el))-1 {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-
-	return el[i], nil
+	return el[n], nil
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
