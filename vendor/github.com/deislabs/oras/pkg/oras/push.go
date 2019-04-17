@@ -12,38 +12,41 @@ import (
 )
 
 // Push pushes files to the remote
-func Push(ctx context.Context, resolver remotes.Resolver, ref string, provider content.Provider, descriptors []ocispec.Descriptor, opts ...PushOpt) error {
+func Push(ctx context.Context, resolver remotes.Resolver, ref string, provider content.Provider, descriptors []ocispec.Descriptor, opts ...PushOpt) (ocispec.Descriptor, error) {
 	if resolver == nil {
-		return ErrResolverUndefined
+		return ocispec.Descriptor{}, ErrResolverUndefined
 	}
 	if len(descriptors) == 0 {
-		return ErrEmptyDescriptors
+		return ocispec.Descriptor{}, ErrEmptyDescriptors
 	}
 	opt := pushOptsDefaults()
 	for _, o := range opts {
 		if err := o(opt); err != nil {
-			return err
+			return ocispec.Descriptor{}, err
 		}
 	}
 	if opt.validateName != nil {
 		for _, desc := range descriptors {
 			if err := opt.validateName(desc); err != nil {
-				return err
+				return ocispec.Descriptor{}, err
 			}
 		}
 	}
 
 	pusher, err := resolver.Pusher(ctx, ref)
 	if err != nil {
-		return err
+		return ocispec.Descriptor{}, err
 	}
 
 	desc, provider, err := pack(provider, descriptors, opt)
 	if err != nil {
-		return err
+		return ocispec.Descriptor{}, err
 	}
 
-	return remotes.PushContent(ctx, pusher, desc, provider, nil)
+	if err := remotes.PushContent(ctx, pusher, desc, provider, nil); err != nil {
+		return ocispec.Descriptor{}, err
+	}
+	return desc, nil
 }
 
 func pack(provider content.Provider, descriptors []ocispec.Descriptor, opts *pushOpts) (ocispec.Descriptor, content.Provider, error) {

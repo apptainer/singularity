@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	orascontent "github.com/deislabs/oras/pkg/content"
+
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )

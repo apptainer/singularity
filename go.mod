@@ -20,7 +20,7 @@ require (
 	github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203 // indirect
 	github.com/d2g/dhcp4server v0.0.0-20181031114812-7d4a0a7f59a5 // indirect
 	github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4 // indirect
-	github.com/deislabs/oras v0.3.4-0.20190417033154-bf2ff5d15c39
+	github.com/deislabs/oras v0.3.4-0.20190417044152-550ed34caf4a
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
 	github.com/docker/docker v0.0.0-20180522102801-da99009bbb11 // indirect
 	github.com/docker/docker-credential-helpers v0.6.0 // indirect
@@ -70,7 +70,7 @@ require (
 	github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/libseccomp-golang v0.9.0
-	github.com/sirupsen/logrus v1.0.5 // indirect
+	github.com/sirupsen/logrus v1.0.5
 	github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 	github.com/spf13/pflag v1.0.3
 	github.com/sylabs/json-resp v0.5.0

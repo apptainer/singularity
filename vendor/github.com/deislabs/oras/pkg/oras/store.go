@@ -3,9 +3,10 @@ package oras
 import (
 	"context"
 
+	orascontent "github.com/deislabs/oras/pkg/content"
+
 	"github.com/containerd/containerd/content"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	orascontent "github.com/deislabs/oras/pkg/content"
 )
 
 // ensure interface
