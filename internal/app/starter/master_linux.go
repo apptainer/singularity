@@ -123,14 +123,14 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	signal.Reset()
 
 	if fatal != nil {
-		if isInstance {
-			if os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-			}
+		if isInstance && os.Getppid() == ppid {
+			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
 		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
+
+	exitCode := 0
 
 	if status.Signaled() {
 		s := status.Signal()
@@ -138,22 +138,27 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		if isInstance && os.Getppid() == ppid {
 			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
-		mainthread.Execute(func() {
-			syscall.Kill(os.Getpid(), s)
-		})
+		exitCode = 128 + int(s)
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if isInstance {
+		if isInstance && os.Getppid() == ppid {
 			if status.ExitStatus() != 0 {
-				if os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR2)
-					sylog.Fatalf("failed to spawn instance")
-				}
-			}
-			if os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+				sylog.Fatalf("failed to spawn instance")
+			} else {
 				syscall.Kill(ppid, syscall.SIGUSR1)
 			}
 		}
-		os.Exit(status.ExitStatus())
+		exitCode = status.ExitStatus()
 	}
+
+	// mimic signal
+	if exitCode > 128 && exitCode < 128+int(syscall.SIGUNUSED) {
+		mainthread.Execute(func() {
+			syscall.Kill(os.Getpid(), syscall.Signal(exitCode-128))
+		})
+	}
+
+	// if previous signal didn't interrupt process
+	os.Exit(exitCode)
 }
