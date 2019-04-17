@@ -41,6 +41,7 @@ require (
 	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56 // indirect
+	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kr/pty v1.1.3
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 	github.com/mattn/go-colorable v0.1.1 // indirect

@@ -7,6 +7,4 @@ MirrorURL: http://ftp.us.debian.org/debian/
 
 %post
     echo "Hello from inside the container"
-    apt-get update
-    apt-get -y install vim
-    apt-get clean
+    apt-get -y --allow-unauthenticated install vim

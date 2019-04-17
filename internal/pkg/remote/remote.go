@@ -24,6 +24,11 @@ var (
 	ErrNoDefault = errors.New("no default remote")
 )
 
+var errorCodeMap = map[int]string{
+	404: "Invalid Token",
+	500: "Internal Server Error",
+}
+
 // Config stores the state of remote endpoint configurations
 type Config struct {
 	DefaultRemote string               `yaml:"Active"`
@@ -212,7 +217,11 @@ func (e *EndPoint) VerifyToken() error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("error response from server: %v", res.StatusCode)
+		convStatus, ok := errorCodeMap[res.StatusCode]
+		if !ok {
+			convStatus = "Unknown"
+		}
+		return fmt.Errorf("error response from server: %v", convStatus)
 	}
 
 	return nil

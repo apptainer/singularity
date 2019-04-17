@@ -15,9 +15,8 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-var (
-	secretExport bool
-)
+var secretExport bool
+var armor bool
 
 // -s|--secret
 var keyExportSecretFlag = cmdline.Flag{
@@ -29,8 +28,19 @@ var keyExportSecretFlag = cmdline.Flag{
 	Usage:        "export a secret key",
 }
 
+// -a|--armor
+var keyExportArmorFlag = cmdline.Flag{
+	ID:           "keyExportArmorFlag",
+	Value:        &armor,
+	DefaultValue: false,
+	Name:         "armor",
+	ShortHand:    "a",
+	Usage:        "ascii armored format",
+}
+
 func init() {
 	cmdManager.RegisterCmdFlag(&keyExportSecretFlag, KeyExportCmd)
+	cmdManager.RegisterCmdFlag(&keyExportArmorFlag, KeyExportCmd)
 }
 
 // KeyExportCmd is `singularity key export` and exports a public or secret
@@ -49,13 +59,13 @@ var KeyExportCmd = &cobra.Command{
 
 func exportRun(cmd *cobra.Command, args []string) {
 	if secretExport {
-		err := sypgp.ExportPrivateKey(args[0])
+		err := sypgp.ExportPrivateKey(args[0], armor)
 		if err != nil {
 			sylog.Errorf("key export command failed: %s", err)
 			os.Exit(10)
 		}
 	} else {
-		err := sypgp.ExportPubKey(args[0])
+		err := sypgp.ExportPubKey(args[0], armor)
 		if err != nil {
 			sylog.Errorf("key export command failed: %s", err)
 			os.Exit(10)
