@@ -6,16 +6,34 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/containerd/containerd/remotes/docker"
+	"github.com/deislabs/oras/pkg/content"
+	"github.com/deislabs/oras/pkg/oras"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
+)
+
+const (
+	// SifDefaultTag is the tag to use when a tag is not specified
+	SifDefaultTag = "latest"
+
+	// SifConfigMediaType is the config descriptor mediaType
+	SifConfigMediaType = "application/vnd.sylabs.sif.config.v1+json"
+
+	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
+	SifLayerMediaType = "appliciation/sylabs.sif.layer.tar+gzip"
 )
 
 var (
@@ -52,6 +70,9 @@ func init() {
 
 	cmdManager.RegisterFlagForCmd(&pushLibraryURIFlag, PushCmd)
 	cmdManager.RegisterFlagForCmd(&pushAllowUnsignedFlag, PushCmd)
+
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, PushCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, PushCmd)
 }
 
 // PushCmd singularity push
@@ -60,20 +81,34 @@ var PushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(2),
 	PreRun:                sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
-		handlePushFlags(cmd)
+		file, dest := args[0], args[1]
 
-		// Push to library requires a valid authToken
-		if authToken != "" {
-			if _, err := os.Stat(args[0]); os.IsNotExist(err) {
-				sylog.Fatalf("Unable to open: %v: %v", args[0], err)
+		transport, ref := uri.Split(dest)
+		if transport == "" {
+			sylog.Fatalf("bad uri %s", dest)
+		}
+
+		switch transport {
+		case LibraryProtocol, "": // Handle pushing to a library
+			handlePushFlags(cmd)
+
+			// Push to library requires a valid authToken
+			if authToken == "" {
+				sylog.Fatalf("Couldn't push image to library: %v", remoteWarning)
 			}
+
+			if _, err := os.Stat(file); os.IsNotExist(err) {
+				sylog.Fatalf("Unable to open: %v: %v", file, err)
+			}
+
 			if !unauthenticatedPush {
 				// check if the container is signed
-				imageSigned, err := signing.IsSigned(args[0], KeyServerURL, 0, false, authToken, true)
+				imageSigned, err := signing.IsSigned(file, KeyServerURL, 0, false, authToken, true)
 				if err != nil {
 					// err will be: "unable to verify container: %v", err
 					sylog.Warningf("%v", err)
 				}
+
 				// if its not signed, print a warning
 				if !imageSigned {
 					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
@@ -85,12 +120,38 @@ var PushCmd = &cobra.Command{
 				sylog.Warningf("Skipping container verifying")
 			}
 
-			err := client.UploadImage(args[0], args[1], PushLibraryURI, authToken, "No Description")
-			if err != nil {
+			if err := client.UploadImage(file, dest, PushLibraryURI, authToken, "No Description"); err != nil {
 				sylog.Fatalf("%v\n", err)
 			}
-		} else {
-			sylog.Fatalf("Couldn't push image to library: %v", remoteWarning)
+
+			return
+		case OrasProtocol:
+			ref = strings.TrimPrefix(ref, "//")
+
+			ociAuth, err := makeDockerCredentials(cmd)
+			if err != nil {
+				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
+			}
+
+			credFn := func(_ string) (string, string, error) {
+				return ociAuth.Username, ociAuth.Password, nil
+			}
+
+			resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
+
+			store := content.NewFileStore("")
+			defer store.Close()
+
+			desc, err := store.Add(file, SifLayerMediaType, "")
+			if err != nil {
+				sylog.Fatalf("Unable to add file to store: %s", err)
+			}
+
+			descriptors := []ocispec.Descriptor{desc}
+
+			if err := oras.Push(context.Background(), resolver, ref, store, descriptors); err != nil {
+				sylog.Fatalf("Unable to push: %s", err)
+			}
 		}
 	},
 

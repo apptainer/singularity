@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -14,6 +15,11 @@ import (
 	"syscall"
 
 	ocitypes "github.com/containers/image/types"
+	"strings"
+
+	"github.com/containerd/containerd/remotes/docker"
+	"github.com/deislabs/oras/pkg/content"
+	"github.com/deislabs/oras/pkg/oras"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
@@ -42,6 +48,8 @@ const (
 	HTTPProtocol = "http"
 	// HTTPSProtocol holds the remote https base URI
 	HTTPSProtocol = "https"
+	// OrasProtocol holds the oras URI
+	OrasProtocol = "oras"
 )
 
 var (
@@ -303,6 +311,32 @@ func pullRun(cmd *cobra.Command, args []string) {
 		err := shub.DownloadImage(name, args[i], force, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
+		}
+	case OrasProtocol:
+		ctx := context.Background()
+
+		ociAuth, err := makeDockerCredentials(cmd)
+		if err != nil {
+			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
+		}
+
+		credFn := func(_ string) (string, string, error) {
+			return ociAuth.Username, ociAuth.Password, nil
+		}
+		resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
+
+		store := content.NewFileStore("")
+		allowedMediaTypes := []string{SifLayerMediaType}
+
+		_, err = oras.Pull(ctx, resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes...)
+		if err != nil {
+			sylog.Fatalf("Unable to pull from registry: %s", err)
+		}
+	case ociclient.IsSupported(transport):
+		if !force {
+			if _, err := os.Stat(name); err == nil {
+				sylog.Fatalf("image file already exists - will not overwrite")
+			}
 		}
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
