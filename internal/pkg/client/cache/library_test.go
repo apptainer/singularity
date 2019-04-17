@@ -22,8 +22,16 @@ func TestLibrary(t *testing.T) {
 		env      string
 		expected string
 	}{
-		{"Default Library", "", filepath.Join(cacheDefault, "library")},
-		{"Custom Library", cacheCustom, filepath.Join(cacheCustom, "library")},
+		{
+			name:     "Default Library",
+			env:      "",
+			expected: filepath.Join(cacheDefault, "library"),
+		},
+		{
+			name:     "Custom Library",
+			env:      cacheCustom,
+			expected: filepath.Join(cacheCustom, "library"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -41,7 +49,30 @@ func TestLibrary(t *testing.T) {
 }
 
 func TestLibraryImage(t *testing.T) {
-	LibraryImage("", "")
+	// LibraryImage just return a string and there is no definition of what
+	// could be a bad string.
+	tests := []struct {
+		name     string
+		sum      string
+		path     string
+		expected string
+	}{
+		{
+			name:     "General case",
+			sum:      validSHASum,
+			path:     validPath,
+			expected: filepath.Join(Library(), "", ""),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			path := LibraryImage(tt.sum, tt.path)
+			if path != tt.expected {
+				t.Errorf("unexpected result: %s (expected %s)", path, tt.expected)
+			}
+		})
+	}
 }
 
 func TestLibraryImageExists(t *testing.T) {
@@ -52,25 +83,29 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 
 	// Pull an image so we know for sure that it is in the cache
+	if testing.Short() {
+		t.Skip("skipping test requiring Singularity to be installed")
+	}
+
 	sexec, err := exec.LookPath("singularity")
 	if err != nil {
-		t.Fatalf("cannot get path for singularity: %s\n", err)
+		t.Skip("skipping test: singularity is not installed")
 	}
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("cannot create temporary directory: %s\n", err)
 	}
-	filename := "ubuntu_latest.sif"
-	name := dir + filename
+	defer os.RemoveAll(dir)
+	filename := "alpine_latest.sif"
+	name := filepath.Join(dir, filename)
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(sexec, "pull", "-F", "-U", name, "library://ubuntu")
+	cmd := exec.Command(sexec, "pull", "-F", "-U", name, "library://alpine")
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	err = cmd.Run()
 	if err != nil {
 		t.Fatalf("command failed: %s - stdout: %s - stderr: %s\n", err, stdout.String(), stderr.String())
 	}
-	defer os.RemoveAll(dir)
 
 	// Invalid case with a valid image
 	_, err = LibraryImageExists("", filename)

@@ -17,8 +17,16 @@ func TestOciBlob(t *testing.T) {
 		env      string
 		expected string
 	}{
-		{"Default OCI blob", "", filepath.Join(cacheDefault, "oci")},
-		{"Custom OCI blob", cacheCustom, filepath.Join(cacheCustom, "oci")},
+		{
+			name:     "Default OCI blob",
+			env:      "",
+			expected: filepath.Join(cacheDefault, "oci"),
+		},
+		{
+			name:     "Custom OCI blob",
+			env:      cacheCustom,
+			expected: filepath.Join(cacheCustom, "oci"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -41,8 +49,16 @@ func TestOciTemp(t *testing.T) {
 		env      string
 		expected string
 	}{
-		{"Default OCI temp", "", filepath.Join(cacheDefault, "oci-tmp")},
-		{"Custom OCI temp", cacheCustom, filepath.Join(cacheCustom, "oci-tmp")},
+		{
+			name:     "Default OCI temp",
+			env:      "",
+			expected: filepath.Join(cacheDefault, "oci-tmp"),
+		},
+		{
+			name:     "Custom OCI temp",
+			env:      cacheCustom,
+			expected: filepath.Join(cacheCustom, "oci-tmp"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -66,8 +82,30 @@ func TestOciTempExists(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		{"empty", "", "", true},
-		{"invalid", "not a SHA sum", "not an image", false},
+		{
+			name:     "empty",
+			sum:      validSHASum,
+			path:     validPath,
+			expected: true,
+		},
+		{
+			name:     "invalid SHA sum; valid path",
+			sum:      invalidSHASum,
+			path:     validPath,
+			expected: true,
+		},
+		{
+			name:     "valid SHA sum; invalid path",
+			sum:      validSHASum,
+			path:     invalidPath,
+			expected: false,
+		},
+		{
+			name:     "invalid",
+			sum:      invalidSHASum,
+			path:     invalidPath,
+			expected: false,
+		},
 	}
 
 	for _, test := range tests {

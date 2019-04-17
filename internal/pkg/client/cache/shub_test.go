@@ -17,8 +17,16 @@ func TestShub(t *testing.T) {
 		env      string
 		expected string
 	}{
-		{"Default Shub", "", filepath.Join(cacheDefault, "shub")},
-		{"Custom Shub", cacheCustom, filepath.Join(cacheCustom, "shub")},
+		{
+			name:     "Default Shub",
+			env:      "",
+			expected: filepath.Join(cacheDefault, "shub"),
+		},
+		{
+			name:     "Custom Shub",
+			env:      cacheCustom,
+			expected: filepath.Join(cacheCustom, "shub"),
+		},
 	}
 
 	for _, tt := range tests {
@@ -42,8 +50,30 @@ func TestShubImageExists(t *testing.T) {
 		path     string
 		expected bool
 	}{
-		{"empty data", "", "", true},
-		{"invalid data", "not a SHA sum", "not an image", false},
+		{
+			name:     "valid data",
+			sum:      validSHASum,
+			path:     validPath,
+			expected: true,
+		},
+		{
+			name:     "invalid SHA sum; valid path",
+			sum:      invalidSHASum,
+			path:     validPath,
+			expected: true,
+		},
+		{
+			name:     "valid SHA sum; invalid path",
+			sum:      validSHASum,
+			path:     invalidPath,
+			expected: false,
+		},
+		{
+			name:     "invalid data",
+			sum:      invalidSHASum,
+			path:     invalidPath,
+			expected: false,
+		},
 	}
 
 	for _, test := range tests {

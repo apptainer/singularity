@@ -35,8 +35,16 @@ func TestRoot(t *testing.T) {
 		env      string
 		expected string
 	}{
-		{"Default root", "", cacheDefault},
-		{"Custom root", cacheCustom, cacheCustom},
+		{
+			name:     "Default root",
+			env:      "",
+			expected: cacheDefault,
+		},
+		{
+			name:     "Custom root",
+			env:      cacheCustom,
+			expected: cacheCustom,
+		},
 	}
 
 	for _, tt := range tests {
