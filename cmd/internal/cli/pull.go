@@ -313,8 +313,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("%v\n", err)
 		}
 	case OrasProtocol:
-		ctx := context.Background()
-
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
@@ -325,10 +323,20 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 		resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
 
-		store := content.NewFileStore("")
-		allowedMediaTypes := []string{SifLayerMediaType}
+		wd, err := os.Getwd()
+		if err != nil {
+			sylog.Fatalf("Failed to get working directory: %s", err)
+		}
 
-		_, err = oras.Pull(ctx, resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes...)
+		store := content.NewFileStore(wd)
+		defer store.Close()
+
+		store.AllowPathTraversalOnWrite = true
+		store.DisableOverwrite = !force
+
+		allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType, SifConfigMediaType})
+
+		_, _, err = oras.Pull(context.Background(), resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes)
 		if err != nil {
 			sylog.Fatalf("Unable to pull from registry: %s", err)
 		}

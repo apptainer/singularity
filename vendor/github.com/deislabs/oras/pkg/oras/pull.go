@@ -4,31 +4,42 @@ import (
 	"context"
 	"sync"
 
+	orascontent "github.com/deislabs/oras/pkg/content"
+
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	orascontent "github.com/deislabs/oras/pkg/content"
 )
 
 // Pull pull files from the remote
-func Pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester content.Ingester, allowedMediaTypes ...string) ([]ocispec.Descriptor, error) {
+func Pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester content.Ingester, opts ...PullOpt) (ocispec.Descriptor, []ocispec.Descriptor, error) {
 	if resolver == nil {
-		return nil, ErrResolverUndefined
+		return ocispec.Descriptor{}, nil, ErrResolverUndefined
+	}
+	opt := pullOptsDefaults()
+	for _, o := range opts {
+		if err := o(opt); err != nil {
+			return ocispec.Descriptor{}, nil, err
+		}
 	}
 
 	_, desc, err := resolver.Resolve(ctx, ref)
 	if err != nil {
-		return nil, err
+		return ocispec.Descriptor{}, nil, err
 	}
 
 	fetcher, err := resolver.Fetcher(ctx, ref)
 	if err != nil {
-		return nil, err
+		return ocispec.Descriptor{}, nil, err
 	}
 
-	return fetchContent(ctx, fetcher, desc, ingester, allowedMediaTypes...)
+	layers, err := fetchContent(ctx, fetcher, desc, ingester, opt.allowedMediaTypes...)
+	if err != nil {
+		return ocispec.Descriptor{}, nil, err
+	}
+	return desc, layers, nil
 }
 
 func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Descriptor, ingester content.Ingester, allowedMediaTypes ...string) ([]ocispec.Descriptor, error) {

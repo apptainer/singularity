@@ -33,7 +33,7 @@ const (
 	SifConfigMediaType = "application/vnd.sylabs.sif.config.v1+json"
 
 	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
-	SifLayerMediaType = "appliciation/sylabs.sif.layer.tar+gzip"
+	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar+gzip"
 )
 
 var (
@@ -142,14 +142,17 @@ var PushCmd = &cobra.Command{
 			store := content.NewFileStore("")
 			defer store.Close()
 
-			desc, err := store.Add(file, SifLayerMediaType, "")
+			conf, err := store.Add("$config", SifConfigMediaType, "/dev/null")
+			conf.Annotations = nil
+
+			desc, err := store.Add(file, SifLayerMediaType, file)
 			if err != nil {
 				sylog.Fatalf("Unable to add file to store: %s", err)
 			}
 
 			descriptors := []ocispec.Descriptor{desc}
 
-			if err := oras.Push(context.Background(), resolver, ref, store, descriptors); err != nil {
+			if _, err := oras.Push(context.Background(), resolver, ref, store, descriptors, oras.WithConfig(conf)); err != nil {
 				sylog.Fatalf("Unable to push: %s", err)
 			}
 		}

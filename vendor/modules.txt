@@ -97,7 +97,7 @@ github.com/cpuguy83/go-md2man/md2man
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
 github.com/d2g/dhcp4client
-# github.com/deislabs/oras v0.3.4-0.20190417033154-bf2ff5d15c39
+# github.com/deislabs/oras v0.3.4-0.20190417044152-550ed34caf4a
 github.com/deislabs/oras/pkg/content
 github.com/deislabs/oras/pkg/oras
 # github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572
