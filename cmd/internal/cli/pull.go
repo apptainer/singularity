@@ -6,12 +6,17 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
+	"github.com/containerd/containerd/remotes/docker"
+	"github.com/deislabs/oras/pkg/content"
+	"github.com/deislabs/oras/pkg/oras"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -37,6 +42,8 @@ const (
 	HTTPProtocol = "http"
 	// HTTPSProtocol holds the remote https base URI
 	HTTPSProtocol = "https"
+	// OrasProtocol holds the oras URI
+	OrasProtocol = "oras"
 )
 
 var (
@@ -216,6 +223,26 @@ func pullRun(cmd *cobra.Command, args []string) {
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
+	case OrasProtocol:
+		ctx := context.Background()
+
+		ociAuth, err := makeDockerCredentials(cmd)
+		if err != nil {
+			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
+		}
+
+		credFn := func(_ string) (string, string, error) {
+			return ociAuth.Username, ociAuth.Password, nil
+		}
+		resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
+
+		store := content.NewFileStore("")
+		allowedMediaTypes := []string{SifLayerMediaType}
+
+		_, err = oras.Pull(ctx, resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes...)
+		if err != nil {
+			sylog.Fatalf("Unable to pull from registry: %s", err)
+		}
 	case ociclient.IsSupported(transport):
 		if !force {
 			if _, err := os.Stat(name); err == nil {
