@@ -21,6 +21,18 @@ type CommandManager struct {
 	fm        *flagManager
 }
 
+// FlagError represents an error type returnes when command
+// line parsing fails
+type FlagError string
+
+func (f FlagError) Error() string {
+	return string(f)
+}
+
+func onError(cmd *cobra.Command, err error) error {
+	return FlagError(err.Error())
+}
+
 // NewCommandManager instantiates a CommandManager
 func NewCommandManager(rootCmd *cobra.Command) *CommandManager {
 	if rootCmd == nil {
@@ -31,6 +43,7 @@ func NewCommandManager(rootCmd *cobra.Command) *CommandManager {
 		groupCmds: make(map[string][]*cobra.Command),
 		fm:        newFlagManager(),
 	}
+	rootCmd.SetFlagErrorFunc(onError)
 	return cm
 }
 
@@ -61,6 +74,7 @@ func (m *CommandManager) RegisterCmd(cmd *cobra.Command, interspersed bool) {
 	if cmd == nil {
 		panic("nil command passed")
 	}
+	cmd.SetFlagErrorFunc(onError)
 	m.rootCmd.AddCommand(cmd)
 	cmd.Flags().SetInterspersed(interspersed)
 	m.SetCmdGroup(m.GetCmdName(cmd), cmd)

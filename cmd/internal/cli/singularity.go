@@ -11,7 +11,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"strings"
 	"text/template"
 
 	"github.com/spf13/cobra"
@@ -193,7 +192,7 @@ var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("Invalid command")
+		return errors.New("")
 	},
 
 	Use:           docs.SingularityUse,
@@ -220,14 +219,16 @@ func ExecuteSingularity() {
 	}
 
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
-		if str := err.Error(); strings.Contains(str, "unknown flag: ") {
-			flag := strings.TrimPrefix(str, "unknown flag: ")
-			SingularityCmd.Printf("Invalid flag %q for command %q.\n\nOptions:\n\n%s\n",
-				flag,
-				cmd.Name(),
-				cmd.Flags().FlagUsagesWrapped(getColumns()))
-		} else {
+		name := cmd.Name()
+		if _, ok := err.(cmdline.FlagError); !ok {
+			if err.Error() != "" {
+				SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			}
 			SingularityCmd.Println(cmd.UsageString())
+		} else {
+			usage := cmd.Flags().FlagUsagesWrapped(getColumns())
+			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			SingularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
 		}
 		SingularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
 			cmd.CommandPath())
