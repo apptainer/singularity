@@ -202,6 +202,9 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	cmd.Env = env
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: isInstance,
+	}
 
 	var status syscall.WaitStatus
 	errChan := make(chan error, 1)
@@ -254,7 +257,7 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 			default:
 				signal := s.(syscall.Signal)
 				if isInstance {
-					if err := syscall.Kill(-1, signal); err == syscall.ESRCH {
+					if err := syscall.Kill(-cmd.Process.Pid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
