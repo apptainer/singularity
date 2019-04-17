@@ -30,7 +30,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            make -j$(nproc) -C ./builddir check
+            make -j$(nproc) -C ./builddir vendor-check check
 
   go1.11-alpine:
     <<: *defaults
@@ -47,7 +47,7 @@ jobs:
       - run:
           name: Check code
           command: |-
-            make -j$(nproc) -C ./builddir check
+            make -j$(nproc) -C ./builddir vendor-check check
 
   go1.11-macos:
     macos:
@@ -67,11 +67,11 @@ jobs:
           name: Build Singularity
           command: |-
             ./mconfig -v -p /usr/local
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
+            make -j$(sysctl -n hw.logicalcpu) -C ./builddir all
       - run:
           name: Check code
           command: |-
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
+            make -j$(sysctl -n hw.logicalcpu) -C ./builddir vendor-check check
 
   unit_tests:
     machine: true
@@ -117,7 +117,7 @@ jobs:
             cd $HOME/go/src/github.com/sylabs/singularity
             make -j$(nproc) -C ./builddir unit-test
 
-  integration_tests:
+  e2e_tests:
     machine: true
     steps:
       - attach_workspace:
@@ -128,6 +128,7 @@ jobs:
             echo 'export GOPATH=$HOME/go' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
+            echo 'export SINGULARITY_E2E=1' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
           name: Update Go to 1.11.6
@@ -156,10 +157,10 @@ jobs:
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: Run integration tests
+          name: Run E2E tests
           command: |-
             cd $HOME/go/src/github.com/sylabs/singularity
-            make -C ./builddir integration-test
+            make -C ./builddir e2e-tests
 
 workflows:
   version: 2
@@ -178,7 +179,7 @@ workflows:
       - unit_tests:
           requires:
             - get_source
-      - integration_tests:
+      - e2e_tests:
           requires:
             - get_source
           filters:
