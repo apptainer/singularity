@@ -89,10 +89,8 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Des
 
 // Sign takes the path of a container and generates an OpenPGP signature block for
 // its system partition. Sign uses the private keys found in the default
-// location if available or helps the user by prompting with key generation
-// configuration options. In its current form, Sign also pushes, when desired,
-// public material to a key server.
-func Sign(cpath, keyServiceURI string, id uint32, isGroup bool, keyIdx int, authToken string) error {
+// location.
+func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
@@ -101,28 +99,7 @@ func Sign(cpath, keyServiceURI string, id uint32, isGroup bool, keyIdx int, auth
 	// Generate a private key usable for signing
 	var entity *openpgp.Entity
 	if elist == nil {
-		resp, err := sypgp.AskQuestion("No OpenPGP signing keys found, autogenerate? [Y/n] ")
-		if err != nil {
-			return fmt.Errorf("could not read response: %s", err)
-		}
-		if resp == "" || resp == "y" || resp == "Y" {
-			entity, err = sypgp.GenKeyPair(keyServiceURI, authToken)
-			if err != nil {
-				return fmt.Errorf("generating openpgp key pair failed: %s", err)
-			}
-		} else {
-			return fmt.Errorf("cannot sign without installed keys")
-		}
-		resp, err = sypgp.AskQuestion("Upload public key %X to %s? [Y/n] ", entity.PrimaryKey.Fingerprint, keyServiceURI)
-		if err != nil {
-			return err
-		}
-		if resp == "" || resp == "y" || resp == "Y" {
-			if err = sypgp.PushPubkey(entity, keyServiceURI, authToken); err != nil {
-				return fmt.Errorf("failed while pushing public key to server: %s", err)
-			}
-			fmt.Printf("Uploaded key successfully!\n")
-		}
+		return fmt.Errorf("no private keys in keyring. use 'newpair' to generate a key, or 'import' to import a private key from gpg")
 	} else {
 		if keyIdx != -1 { // -k <idx> has been specified
 			if keyIdx >= 0 && keyIdx < len(elist) {
