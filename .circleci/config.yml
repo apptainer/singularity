@@ -178,7 +178,7 @@ jobs:
           name: Run E2E tests
           command: |-
             cd $HOME/go/singularity
-            make -C ./builddir e2e-tests
+            make -C ./builddir e2e-test
 
 workflows:
   version: 2
