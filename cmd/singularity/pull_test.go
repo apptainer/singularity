@@ -8,7 +8,6 @@ package main
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -76,7 +75,7 @@ func TestPull(t *testing.T) {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				imageVerify(t, filepath.Join(tt.pullPath, tt.imagePath), false)
+				imageVerify(t, tt.imagePath, false)
 			} else {
 				if err == nil {
 					t.Log(string(b))
