@@ -116,7 +116,7 @@ func getTestCommand(appName string) string {
 func getEnvironmentCommand(appName string) string {
 	var str strings.Builder
 	str.WriteString(" for env in %s/env/9*-environment.sh; do")
-	str.WriteString("     echo `basename -z $env`:`wc -c < $env`;")
+	str.WriteString("     echo ${env##*/}:`wc -c < $env`;")
 	str.WriteString("     cat $env;")
 	str.WriteString(" done;")
 	return fmt.Sprintf(str.String(), getPathPrefix(appName))
