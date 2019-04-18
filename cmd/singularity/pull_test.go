@@ -19,7 +19,7 @@ func pullSylabsPublicKey() ([]byte, error) {
 	return exec.Command(cmdPath, argv...).CombinedOutput()
 }
 
-func imagePull(library string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
+func imagePull(library, pullPath string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
 	var argv []string
 	argv = append(argv, "pull")
 	if force {
@@ -30,6 +30,9 @@ func imagePull(library string, imagePath string, sourceSpec string, force, unaut
 	}
 	if library != "" {
 		argv = append(argv, "--library", library)
+	}
+	if pullPath != "" {
+		argv = append(argv, "--path", "/tmp")
 	}
 	if imagePath != "" {
 		argv = append(argv, imagePath)
@@ -56,6 +59,7 @@ func TestPull(t *testing.T) {
 		force           bool
 		unauthenticated bool
 		library         string
+		pullPath        string
 		imagePath       string
 		success         bool
 	}{
@@ -71,11 +75,13 @@ func TestPull(t *testing.T) {
 		{"PullWithoutTransportProtocol", "alpine:3.8", true, true, "", imagePath, true},
 		{"PullNonExistent", "library://this_should_not/exist/not_exist", true, false, "", imagePath, false}, // pull a non-existent container
 		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", imagePath, true},                 // https://cloud.sylabs.io/library
+		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},             // https://cloud.sylabs.io/library
+		{"Pull_Path_name", "library://alpine:3.9", false, true, "", "/tmp", imagePath, true},                // Pull the image to /tmp/test_pull.sif
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imagePull(tt.library, tt.imagePath, tt.sourceSpec, tt.force, tt.unauthenticated)
+			b, err := imagePull(tt.library, tt.pullPath, tt.imagePath, tt.sourceSpec, tt.force, tt.unauthenticated)
 			if tt.success {
 				if err != nil {
 					t.Log(string(b))
