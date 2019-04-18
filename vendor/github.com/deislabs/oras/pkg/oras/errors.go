@@ -1,17 +1,24 @@
 package oras
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // Common errors
 var (
-	ErrResolverUndefined = errors.New("resolver_undefined")
-	ErrEmptyDescriptors  = errors.New("empty_descriptors")
+	ErrResolverUndefined = errors.New("resolver undefined")
+	ErrEmptyDescriptors  = errors.New("empty descriptors")
 )
 
 // Path validation related errors
 var (
-	ErrDirtyPath               = errors.New("dirty_path")
-	ErrPathNotSlashSeparated   = errors.New("path_not_slash_separated")
-	ErrAbsolutePathDisallowed  = errors.New("absolute_path_disallowed")
-	ErrPathTraversalDisallowed = errors.New("path_traversal_disallowed")
+	ErrDirtyPath               = errors.New("dirty path")
+	ErrPathNotSlashSeparated   = errors.New("path not slash separated")
+	ErrAbsolutePathDisallowed  = errors.New("absolute path disallowed")
+	ErrPathTraversalDisallowed = errors.New("path traversal disallowed")
 )
+
+// ErrStopProcessing is used to stop processing an oras operation.
+// This error only makes sense in sequential pulling operation.
+var ErrStopProcessing = fmt.Errorf("stop processing")
