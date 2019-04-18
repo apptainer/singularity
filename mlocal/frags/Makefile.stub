@@ -38,13 +38,15 @@ unit-test:
 	@echo "       PASS"
 
 
-.PHONY: e2e-tests
+.PHONY: integration-test
 integration-test:
-	@echo " TEST sudo go test [e2e]"
+	@echo " TEST sudo go test [integration]"
 	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
-	@sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race $(SOURCEDIR)/e2e/
+	@echo " TEST sudo go test [e2e]"
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+		./e2e
 	@echo "       PASS"
 
 
