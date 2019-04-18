@@ -13,6 +13,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+func pullSylabsPublicKey() ([]byte, error) {
+	var argv []string
+	argv = append(argv, "key", "pull", "8883491F4268F173C6E5DC49EDECE4F3F38D871E")
+	return exec.Command(cmdPath, argv...).CombinedOutput()
+}
+
 func imagePull(library string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
 	var argv []string
 	argv = append(argv, "pull")
@@ -38,6 +44,11 @@ func TestPull(t *testing.T) {
 
 	imagePath := "./test_pull.sif"
 
+	if b, err := pullSylabsPublicKey(); err != nil {
+		t.Log(string(b))
+		t.Fatalf("Unable to download default key: %v", err)
+	}
+
 	// nolint:maligned
 	tests := []struct {
 		name            string
@@ -48,10 +59,10 @@ func TestPull(t *testing.T) {
 		imagePath       string
 		success         bool
 	}{
-		// TODO: Download the Sylabs pub key before running tests
 		{"Pull_Library", "library://alpine:3.8", false, true, "", imagePath, true}, // https://cloud.sylabs.io/library
-		{"ForceUnauth", "library://alpine:3.8", true, false, "", imagePath, false},
 		{"Force", "library://alpine:3.8", true, true, "", imagePath, true},
+		{"Force", "library://alpine:3.8", true, false, "", imagePath, true},
+		{"ForceUnauth", "library://sylabs/tests/unsigned:1.0.0", true, false, "", imagePath, false},
 		{"Unsigned_image", "library://sylabs/tests/unsigned:1.0.0", true, true, "", imagePath, true},
 		{"Unsigned_image_fail", "library://sylabs/tests/unsigned:1.0.0", true, false, "", imagePath, false}, // pull a unsigned image; should fail
 		{"Pull_Docker", "docker://alpine:3.8", true, false, "", imagePath, true},                            // https://hub.docker.com/
