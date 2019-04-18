@@ -8,7 +8,7 @@ package oci
 import (
 	"encoding/json"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 )
 
