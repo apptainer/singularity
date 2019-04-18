@@ -99,22 +99,21 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	// Generate a private key usable for signing
 	var entity *openpgp.Entity
 	if elist == nil {
-		return fmt.Errorf("no private keys in keyring. use 'newpair' to generate a key, or 'import' to import a private key from gpg")
-	} else {
-		if keyIdx != -1 { // -k <idx> has been specified
-			if keyIdx >= 0 && keyIdx < len(elist) {
-				entity = elist[keyIdx]
-			} else {
-				return fmt.Errorf("specified (-k, --keyidx) key index out of range")
-			}
-		} else if len(elist) > 1 {
-			entity, err = sypgp.SelectPrivKey(elist)
-			if err != nil {
-				return fmt.Errorf("failed while reading selection: %s", err)
-			}
+		return fmt.Errorf("no private keys in keyring. use 'key newpair' to generate a key, or 'key import' to import a private key from gpg")
+	}
+	if keyIdx != -1 { // -k <idx> has been specified
+		if keyIdx >= 0 && keyIdx < len(elist) {
+			entity = elist[keyIdx]
 		} else {
-			entity = elist[0]
+			return fmt.Errorf("specified (-k, --keyidx) key index out of range")
 		}
+	} else if len(elist) > 1 {
+		entity, err = sypgp.SelectPrivKey(elist)
+		if err != nil {
+			return fmt.Errorf("failed while reading selection: %s", err)
+		}
+	} else {
+		entity = elist[0]
 	}
 
 	// Decrypt key if needed
