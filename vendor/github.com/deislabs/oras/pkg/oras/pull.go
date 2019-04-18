@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/remotes"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 )
 
 // Pull pull files from the remote
@@ -35,18 +36,18 @@ func Pull(ctx context.Context, resolver remotes.Resolver, ref string, ingester c
 		return ocispec.Descriptor{}, nil, err
 	}
 
-	layers, err := fetchContent(ctx, fetcher, desc, ingester, opt.allowedMediaTypes...)
+	layers, err := fetchContent(ctx, fetcher, desc, ingester, opt)
 	if err != nil {
 		return ocispec.Descriptor{}, nil, err
 	}
 	return desc, layers, nil
 }
 
-func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Descriptor, ingester content.Ingester, allowedMediaTypes ...string) ([]ocispec.Descriptor, error) {
+func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Descriptor, ingester content.Ingester, opts *pullOpts) ([]ocispec.Descriptor, error) {
 	var descriptors []ocispec.Descriptor
 	lock := &sync.Mutex{}
 	picker := images.HandlerFunc(func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-		if isAllowedMediaType(desc.MediaType, allowedMediaTypes...) {
+		if isAllowedMediaType(desc.MediaType, opts.allowedMediaTypes...) {
 			if name, ok := orascontent.ResolveName(desc); ok && len(name) > 0 {
 				lock.Lock()
 				defer lock.Unlock()
@@ -57,13 +58,17 @@ func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Des
 		return nil, nil
 	})
 	store := newHybridStoreFromIngester(ingester)
-	handlers := images.Handlers(
-		filterHandler(allowedMediaTypes...),
+	handlers := []images.Handler{
+		filterHandler(opts.allowedMediaTypes...),
+	}
+	handlers = append(handlers, opts.baseHandlers...)
+	handlers = append(handlers,
 		remotes.FetchHandler(store, fetcher),
 		picker,
 		images.ChildrenHandler(store),
 	)
-	if err := images.Dispatch(ctx, handlers, desc); err != nil {
+
+	if err := opts.dispatch(ctx, images.Handlers(handlers...), desc); err != nil {
 		return nil, err
 	}
 
@@ -79,9 +84,9 @@ func filterHandler(allowedMediaTypes ...string) images.HandlerFunc {
 			if name, ok := orascontent.ResolveName(desc); ok && len(name) > 0 {
 				return nil, nil
 			}
-			log.G(ctx).Warnf("blob_no_name: %v", desc.Digest)
+			log.G(ctx).Warnf("blob no name: %v", desc.Digest)
 		default:
-			log.G(ctx).Warnf("unknown_type: %v", desc.MediaType)
+			log.G(ctx).Warnf("unknown type: %v", desc.MediaType)
 		}
 		return nil, images.ErrStopHandler
 	}
@@ -97,4 +102,23 @@ func isAllowedMediaType(mediaType string, allowedMediaTypes ...string) bool {
 		}
 	}
 	return false
+}
+
+// dispatchBFS behaves the same as images.Dispatch() but in sequence with breath-first search.
+func dispatchBFS(ctx context.Context, handler images.Handler, descs ...ocispec.Descriptor) error {
+	for i := 0; i < len(descs); i++ {
+		desc := descs[i]
+		children, err := handler.Handle(ctx, desc)
+		if err != nil {
+			switch err := errors.Cause(err); err {
+			case images.ErrSkipDesc:
+				continue // don't traverse the children.
+			case ErrStopProcessing:
+				return nil
+			}
+			return err
+		}
+		descs = append(descs, children...)
+	}
+	return nil
 }

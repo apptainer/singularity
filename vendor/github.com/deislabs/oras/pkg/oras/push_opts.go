@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/containerd/containerd/images"
 	orascontent "github.com/deislabs/oras/pkg/content"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -15,6 +16,7 @@ type pushOpts struct {
 	configAnnotations   map[string]string
 	manifestAnnotations map[string]string
 	validateName        func(desc ocispec.Descriptor) error
+	baseHandlers        []images.Handler
 }
 
 func pushOptsDefaults() *pushOpts {
@@ -97,4 +99,13 @@ func ValidateNameAsPath(desc ocispec.Descriptor) error {
 	}
 
 	return nil
+}
+
+// WithPushBaseHandler provides base handlers, which will be called before
+// any push specific handlers.
+func WithPushBaseHandler(handlers ...images.Handler) PushOpt {
+	return func(o *pushOpts) error {
+		o.baseHandlers = append(o.baseHandlers, handlers...)
+		return nil
+	}
 }

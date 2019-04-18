@@ -14,12 +14,13 @@ import (
 	"path/filepath"
 	"syscall"
 
-	ocitypes "github.com/containers/image/types"
-	"strings"
-
+	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/remotes/docker"
+	ocitypes "github.com/containers/image/types"
 	"github.com/deislabs/oras/pkg/content"
+	orasctx "github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
@@ -35,6 +36,7 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
+	"strings"
 )
 
 const (
@@ -334,9 +336,17 @@ func pullRun(cmd *cobra.Command, args []string) {
 		store.AllowPathTraversalOnWrite = true
 		store.DisableOverwrite = !force
 
-		allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType, SifConfigMediaType})
+		allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
+		handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+			if desc.MediaType == SifLayerMediaType {
+				nameOld, _ := content.ResolveName(desc)
+				_ = store.MapPath(nameOld, name)
+			}
+			return nil, nil
+		}
+		pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
 
-		_, _, err = oras.Pull(context.Background(), resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes)
+		_, _, err = oras.Pull(orasctx.Background(), resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes, pullHandler)
 		if err != nil {
 			sylog.Fatalf("Unable to pull from registry: %s", err)
 		}
