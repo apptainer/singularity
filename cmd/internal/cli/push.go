@@ -143,11 +143,14 @@ var PushCmd = &cobra.Command{
 			defer store.Close()
 
 			conf, err := store.Add("$config", SifConfigMediaType, "/dev/null")
+			if err != nil {
+				sylog.Fatalf("Unable to add manifest config to FileStore: %s", err)
+			}
 			conf.Annotations = nil
 
 			desc, err := store.Add(file, SifLayerMediaType, file)
 			if err != nil {
-				sylog.Fatalf("Unable to add file to store: %s", err)
+				sylog.Fatalf("Unable to add SIF file to FileStore: %s", err)
 			}
 
 			descriptors := []ocispec.Descriptor{desc}
