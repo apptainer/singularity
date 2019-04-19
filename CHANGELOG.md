@@ -21,7 +21,6 @@ _The old changelog can be found in the `release-2.6` branch_
   - Made it possible to compile Singularity outside of `$GOPATH`
   - Added a json partition to SIF files for OCI configuration when building from an OCI source
   - Full integration with Singularity desktop for MacOS code base
-  - Added --nocolor flag to Singularity client to disable color in logging
 
 ## New Commands
  - Introduced the `plugin` command group for creating and managing plugins
@@ -55,7 +54,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Ask to confirm password on a newly generated PGP key
   - Prompt to push a key to the KeyStore when generated
   - Refuse to push an unsigned container unless overridden with `--allow-unauthenticated/-U` option
-  - Warn and prompt when pulling an unsigned container without the `--allow-unauthenticated/-U` option`
+  - Warn and prompt when pulling an unsigned container without the `--allow-unauthenticated/-U` option
 
 # v3.1.1 - [2019.04.02]
 
