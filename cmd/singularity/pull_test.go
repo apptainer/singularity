@@ -63,12 +63,19 @@ func TestPull(t *testing.T) {
 		imagePath       string
 		success         bool
 	}{
-		{"Pull_Library", "library://alpine:3.8", false, true, "", "", imagePath, true}, // https://cloud.sylabs.io/library
-		{"Force", "library://alpine:3.8", true, true, "", "", imagePath, true},
-		{"Force", "library://alpine:3.8", true, false, "", "", imagePath, true},
+		{"Pull_Library", "library://alpine:3.8", false, true, "", "", imagePath, true}, // pull --allow-unauthenticated ./test_pull.sif library://alpine:3.8
+		{"ForceAuth", "library://alpine:3.8", true, true, "", "", imagePath, true},     // pull --force --allow-unauthenticated ./test_pull.sif library://alpine:3.8
+		{"Force", "library://alpine:3.8", true, false, "", "", imagePath, true},        // pull --force ./test_pull.sif library://alpine:3.8
 		{"ForceUnauth", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false},
 		{"Unsigned_image", "library://sylabs/tests/unsigned:1.0.0", true, true, "", "", imagePath, true},
 		{"Unsigned_image_fail", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false}, // pull a unsigned image; should fail
+		{"NotDefaultFail", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},   // pull a untrusted container; should fail
+		{"NotDefaultFail1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "", "", false},        // pull a untrusted container; should fail
+		{"NotDefaultSuc", "library://sylabs/tests/not-default:1.0.0", true, true, "", "", imagePath, true},      // pull a untrusted container with -U
+		{"NotDefault1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},        // pull a untrusted container; should fail
+		{"NotDefault2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},      // pull a untrusted container; should fail
+		{"NotDefaultPath", "library://sylabs/tests/not-default:1.0.0", true, true, "", "/tmp", imagePath, true}, // pull a untrusted container with -U, and --path <path>
+		{"NotDefaultFail2", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},    // pull a untrusted container; should fail
 		{"Pull_Docker", "docker://alpine:3.8", true, false, "", "", imagePath, true},                            // https://hub.docker.com/
 		{"Pull_Shub", "shub://GodloveD/busybox", true, false, "", "", imagePath, true},                          // https://singularity-hub.org/
 		{"PullWithHash", "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c", true, true, "", "", imagePath, true},
@@ -76,7 +83,9 @@ func TestPull(t *testing.T) {
 		{"PullNonExistent", "library://this_should_not/exist/not_exist", true, false, "", "", imagePath, false}, // pull a non-existent container
 		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},                 // https://cloud.sylabs.io/library
 		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},                 // https://cloud.sylabs.io/library
-		{"Pull_Path_name", "library://alpine:3.9", false, true, "", "/tmp", imagePath, true},                    // Pull the image to /tmp/test_pull.sif
+		{"Pull_Path_name", "library://alpine:3.9", true, true, "", "/tmp", imagePath, true},                     // Pull the image to /tmp/test_pull.sif
+		{"PullPathNameFail", "library://alpine:3.9", false, true, "", "/tmp", imagePath, false},                 // Pull the image to /tmp/test_pull.sif
+		{"PullPathNameFail1", "library://alpine:3.9", false, false, "", "/tmp", imagePath, false},               // Pull the image to /tmp/test_pull.sif
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
