@@ -8,11 +8,13 @@ package main
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+// pullSylabsPublicKey will pull the default Sylabs public key.
 func pullSylabsPublicKey() ([]byte, error) {
 	var argv []string
 	argv = append(argv, "key", "pull", "8883491F4268F173C6E5DC49EDECE4F3F38D871E")
@@ -70,7 +72,8 @@ func TestPull(t *testing.T) {
 		{"Unsigned_image", "library://sylabs/tests/unsigned:1.0.0", true, true, "", "", imagePath, true},
 		{"Unsigned_image_fail", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false}, // pull a unsigned image; should fail
 		{"NotDefaultFail", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},   // pull a untrusted container; should fail
-		{"NotDefaultFail1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "", "", false},        // pull a untrusted container; should fail
+		{"NotDefaultFail1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},    // pull a untrusted container; should fail
+		{"NotDefaultFail2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "/tmp", "", false},     // pull a untrusted container; should fail
 		{"NotDefaultSuc", "library://sylabs/tests/not-default:1.0.0", true, true, "", "", imagePath, true},      // pull a untrusted container with -U
 		{"NotDefault1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},        // pull a untrusted container; should fail
 		{"NotDefault2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},      // pull a untrusted container; should fail
@@ -96,7 +99,7 @@ func TestPull(t *testing.T) {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				imageVerify(t, tt.imagePath, false)
+				imageVerify(t, filepath.Join(tt.pullPath, tt.imagePath), false)
 			} else {
 				if err == nil {
 					t.Log(string(b))
