@@ -7,6 +7,7 @@ package env
 
 import (
 	"os"
+	"os/user"
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -67,6 +68,17 @@ func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDes
 		}
 	}
 
+	if homeDest == "" {
+		// Image buid typically runs as root
+		usr, err := user.Current()
+		homeDest = "/root"
+
+		if err == nil {
+			homeDest = usr.HomeDir
+		}
+	}
+
+	sylog.Verbosef("HOME = %s", homeDest)
 	g.AddProcessEnv("HOME", homeDest)
 	g.AddProcessEnv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
 
