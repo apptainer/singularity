@@ -27,7 +27,7 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
-const listAppsCommand = "for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename $app`\n        echo \"$APPNAME\"\n    fi\ndone"
+const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename $app`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
 var (
 	labels      bool
@@ -41,6 +41,7 @@ var (
 )
 
 type inspectAttributes struct {
+	Apps        string            `json:"apps"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Deffile     string            `json:"deffile,omitempty"`
 	Runscript   string            `json:"runscript,omitempty"`
@@ -133,6 +134,8 @@ func getHelpCommand(appName string) string {
 
 func setAttribute(obj *inspectFormat, label string, value string) {
 	switch label {
+	case "apps":
+		obj.Attributes.Apps = value
 	case "deffile":
 		obj.Attributes.Deffile = value
 	case "test":
@@ -158,7 +161,8 @@ func getAppCheck(appName string) string {
 	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
 }
 
-// InspectCmd represents the build command
+// InspectCmd represents the 'inspect' command
+// TODO: This should be in its own package, not cli
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
@@ -180,40 +184,12 @@ var InspectCmd = &cobra.Command{
 		}
 		name := filepath.Base(abspath)
 
-		if apps {
-			a := []string{"/bin/sh", "-c", listAppsCommand}
-
-			starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
-			procname := "Singularity apps"
-			Env := []string{sylog.GetEnvVar()}
-
-			engineConfig := singularityConfig.NewConfig()
-			ociConfig := &oci.Config{}
-			generator := generate.Generator{Config: &ociConfig.Spec}
-			engineConfig.OciConfig = ociConfig
-
-			generator.SetProcessArgs(a)
-			generator.SetProcessCwd("/")
-			engineConfig.SetImage(abspath)
-
-			cfg := &config.Common{
-				EngineName:   singularityConfig.Name,
-				ContainerID:  name,
-				EngineConfig: engineConfig,
-			}
-
-			configData, err := json.Marshal(cfg)
-			if err != nil {
-				sylog.Fatalf("failed to marshal CommonEngineConfig: %s", err)
-			}
-
-			if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
-				sylog.Fatalf("%s", err)
-			}
-			return
-		}
-
 		a := []string{"/bin/sh", "-c", ""}
+
+		if apps {
+			sylog.Debugf("Inspecting apps in container")
+			a[2] += listAppsCommand
+		}
 
 		// If AppName is given fail quickly (exit) if it doesn't exist
 		if AppName != "" {
@@ -265,14 +241,25 @@ var InspectCmd = &cobra.Command{
 
 		// Parse the command output string into sections.
 		reader := bufio.NewReader(strings.NewReader(fileContents))
+		//fmt.Println("FILE", fileContents)
+		//if !apps {
 		for {
 			section, err := reader.ReadBytes('\n')
 			if err != nil {
 				break
 			}
+			//fmt.Println("SECTIONS: ", string(section))
 			parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
+			//fmt.Println("lenparts: ", len(parts))
+			//fmt.Println("Parts: ", parts)
 			if len(parts) == 2 {
 				label := parts[0]
+				//fmt.Println("label", label)
+				//if label == "apps" {
+				//	//if len(label) != 2 {
+				//	setAttribute(&inspectObj, "apps", label)
+				//} else {
+				//fmt.Println("PArts: ", parts[1])
 				sizeData, errConv := strconv.Atoi(parts[1])
 				if errConv != nil {
 					sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
@@ -284,9 +271,12 @@ var InspectCmd = &cobra.Command{
 					sylog.Fatalf("Unable to read %d bytes.", sizeData)
 				}
 				setAttribute(&inspectObj, label, string(data))
+				//}
 			} else {
 				sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
 			}
+			//	}
+
 		}
 
 		// Output the inspection results (use JSON if requested).
@@ -297,6 +287,10 @@ var InspectCmd = &cobra.Command{
 			}
 			fmt.Println(string(jsonObj))
 		} else {
+			if inspectObj.Attributes.Apps != "" {
+				fmt.Printf("==Apps==\n")
+				fmt.Printf("%s\n", inspectObj.Attributes.Apps)
+			}
 			if inspectObj.Attributes.Helpfile != "" {
 				fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
 			}
@@ -351,16 +345,18 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	//record from stdout and store as a string to return as the contents of the file?
+	// Record from stdout and store as a string to return as the contents of the file?
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, cmd.Args)
+		sylog.Fatalf("Unable to exec command: %s: %s", err, cmd.Args)
 	}
+
+	//fmt.Println("CMD: ", args)
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, b)
+		sylog.Fatalf("Unable to prossess command: %s: %s", err, b)
 	}
 
 	return string(b), nil
