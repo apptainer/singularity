@@ -1,0 +1,17 @@
+Resumes all processes previously paused inside the container (root user only)
+
+Usage:
+  singularity oci resume <container_ID>
+
+Description:
+  Resume will resume all processes previously paused for the specified container ID.
+
+Options:
+  -h, --help   help for resume
+
+
+Examples:
+  $ singularity oci resume mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/

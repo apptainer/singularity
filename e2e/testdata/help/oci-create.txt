@@ -1,0 +1,27 @@
+Create a container from a bundle directory (root user only)
+
+Usage:
+  singularity oci create -b <bundle_path> [create options...] <container_ID>
+
+Description:
+  Create invoke create operation to create a container instance from an OCI bundle directory
+
+Options:
+  -b, --bundle string        specify the OCI bundle path
+      --empty-process        run container without executing container
+                             process (eg: for POD container)
+  -h, --help                 help for create
+      --log-format string    specify the log file format. Available
+                             formats are basic, kubernetes and json
+                             (default "kubernetes")
+  -l, --log-path string      specify the log file path
+      --pid-file string      specify the pid file
+  -s, --sync-socket string   specify the path to unix socket for state
+                             synchronization (internal)
+
+
+Examples:
+  $ singularity oci create -b ~/bundle mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/
