@@ -6,7 +6,6 @@
 package oci
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -191,11 +190,6 @@ func TestParseURI(t *testing.T) {
 			}
 		})
 	}
-}
-
-func createCtx() context.Context {
-	var ctx context.Context
-	return ctx
 }
 
 func createValidSysCtx() *types.SystemContext {
