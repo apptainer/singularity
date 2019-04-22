@@ -27,6 +27,8 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
+const listAppsCommand = "for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename $app`\n        echo \"$APPNAME\"\n    fi\ndone"
+
 var (
 	labels      bool
 	deffile     bool
@@ -35,6 +37,7 @@ var (
 	environment bool
 	helpfile    bool
 	jsonfmt     bool
+	apps        bool
 )
 
 type inspectAttributes struct {
@@ -56,6 +59,8 @@ func init() {
 
 	InspectCmd.Flags().StringVar(&AppName, "app", "", "inspect a specific app")
 	InspectCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
+
+	InspectCmd.Flags().BoolVarP(&apps, "apps", "A", false, "list all apps in a container")
 
 	InspectCmd.Flags().BoolVarP(&labels, "labels", "l", false, "show the labels associated with the image (default)")
 	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
@@ -164,7 +169,6 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// Sanity check
 		if _, err := os.Stat(args[0]); err != nil {
 			sylog.Fatalf("container not found: %s", err)
@@ -175,6 +179,39 @@ var InspectCmd = &cobra.Command{
 			sylog.Fatalf("While determining absolute file path: %v", err)
 		}
 		name := filepath.Base(abspath)
+
+		if apps {
+			a := []string{"/bin/sh", "-c", listAppsCommand}
+
+			starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
+			procname := "Singularity apps"
+			Env := []string{sylog.GetEnvVar()}
+
+			engineConfig := singularityConfig.NewConfig()
+			ociConfig := &oci.Config{}
+			generator := generate.Generator{Config: &ociConfig.Spec}
+			engineConfig.OciConfig = ociConfig
+
+			generator.SetProcessArgs(a)
+			generator.SetProcessCwd("/")
+			engineConfig.SetImage(abspath)
+
+			cfg := &config.Common{
+				EngineName:   singularityConfig.Name,
+				ContainerID:  name,
+				EngineConfig: engineConfig,
+			}
+
+			configData, err := json.Marshal(cfg)
+			if err != nil {
+				sylog.Fatalf("failed to marshal CommonEngineConfig: %s", err)
+			}
+
+			if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
+				sylog.Fatalf("%s", err)
+			}
+			return
+		}
 
 		a := []string{"/bin/sh", "-c", ""}
 
