@@ -7,10 +7,10 @@ package cli
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -43,7 +43,15 @@ var SearchCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		handleSearchFlags(cmd)
 
-		if err := client.SearchLibrary(args[0], SearchLibraryURI, authToken); err != nil {
+		libraryClient, err := client.NewClient(&client.Config{
+			BaseURL:   SearchLibraryURI,
+			AuthToken: authToken,
+		})
+		if err != nil {
+			sylog.Fatalf("Error initializing library client: %v", err)
+		}
+
+		if err := client.SearchLibrary(libraryClient, args[0]); err != nil {
 			sylog.Fatalf("Couldn't search library: %v", err)
 		}
 

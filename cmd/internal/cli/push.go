@@ -7,6 +7,7 @@ package cli
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -17,13 +18,14 @@ import (
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 const (
@@ -76,6 +78,29 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, PushCmd)
 }
 
+type progressCallback struct {
+	bar *pb.ProgressBar
+	r   io.Reader
+}
+
+func (c *progressCallback) InitUpload(totalSize int64, r io.Reader) {
+	// create and start bar
+	c.bar = pb.New64(totalSize).SetUnits(pb.U_BYTES)
+	c.bar.ShowTimeLeft = true
+	c.bar.ShowSpeed = true
+
+	c.bar.Start()
+	c.r = c.bar.NewProxyReader(r)
+}
+
+func (c *progressCallback) GetReader() io.Reader {
+	return c.r
+}
+
+func (c *progressCallback) Finish() {
+	c.bar.Finish()
+}
+
 // PushCmd singularity push
 var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
@@ -121,7 +146,14 @@ var PushCmd = &cobra.Command{
 				sylog.Warningf("Skipping container verifying")
 			}
 
-			if err := client.UploadImage(file, dest, PushLibraryURI, authToken, "No Description"); err != nil {
+			libraryClient, err := client.NewClient(&client.Config{
+				BaseURL:   PushLibraryURI,
+				AuthToken: authToken,
+			})
+			if err != nil {
+				sylog.Fatalf("Error initializing library client: %v", err)
+			}
+			if err := client.UploadImage(libraryClient, args[0], args[1], "No Description", &progressCallback{}); err != nil {
 				sylog.Fatalf("%v\n", err)
 			}
 

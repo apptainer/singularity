@@ -16,15 +16,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	buildclient "github.com/sylabs/scs-build-client/client"
+	client "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	types "github.com/sylabs/singularity/pkg/build/legacy"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
@@ -129,7 +130,33 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 	// If image destination is local file, pull image.
 	if !strings.HasPrefix(rb.ImagePath, "library://") {
-		err = client.DownloadImage(rb.ImagePath, bi.LibraryRef, bi.LibraryURL, rb.Force, rb.AuthToken)
+		f, err := os.OpenFile(rb.ImagePath, os.O_CREATE|os.O_RDWR, 0777)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("unable to open file %s for writing", rb.ImagePath))
+		}
+		defer f.Close()
+
+		c, err := client.NewClient(&client.Config{
+			BaseURL:   bi.LibraryURL,
+			AuthToken: rb.AuthToken,
+		})
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("error initializing library client: %v", err))
+		}
+
+		// split tag from libraryRef
+		r, err := client.Parse(bi.LibraryRef)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("error parsing libraryRef: %v", err))
+		}
+		var tag string
+		if len(r.Tags) > 0 {
+			tag = r.Tags[0]
+		} else {
+			tag = "latest"
+		}
+
+		err = c.DownloadImage(ctx, f, r.Path, tag, nil)
 		if err != nil {
 			return errors.Wrap(err, "failed to pull image file")
 		}

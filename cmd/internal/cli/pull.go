@@ -24,6 +24,7 @@ import (
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
@@ -32,12 +33,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	net "github.com/sylabs/singularity/pkg/client/net"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 const (
@@ -231,7 +232,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		handlePullFlags(cmd)
 
-		libraryImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
+		libraryClient, err := client.NewClient(&client.Config{
+			BaseURL:   PullLibraryURI,
+			AuthToken: authToken,
+		})
+		if err != nil {
+			sylog.Fatalf("Error initializing library client: %v", err)
+		}
+
+		libraryImage, err := client.GetImage(libraryClient, args[i])
 		if err != nil {
 			sylog.Fatalf("While getting image info: %v", err)
 		}
@@ -249,7 +258,28 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 		if !exists {
 			sylog.Infof("Downloading library image")
-			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
+			if err = client.DownloadImage(libraryClient, imagePath, args[i], true, func(totalSize int64, r io.Reader, w io.Writer) error {
+
+				bar := pb.New64(totalSize).SetUnits(pb.U_BYTES)
+				bar.ShowTimeLeft = true
+				bar.ShowSpeed = true
+
+				// create proxy reader
+				bodyProgress := bar.NewProxyReader(r)
+
+				bar.Start()
+
+				// Write the body to file
+				_, err := io.Copy(w, bodyProgress)
+				if err != nil {
+					return err
+				}
+
+				bar.Finish()
+
+				return nil
+
+			}); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
 			}
 
