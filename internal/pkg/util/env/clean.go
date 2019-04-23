@@ -7,7 +7,6 @@ package env
 
 import (
 	"os"
-	"os/user"
 	"strings"
 
 	"github.com/opencontainers/runtime-tools/generate"
@@ -65,16 +64,6 @@ func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDes
 		// Transpose host env variables into config
 		if addKey, ok := addIfReq(e[0], cleanEnv); ok {
 			g.AddProcessEnv(addKey, e[1])
-		}
-	}
-
-	if homeDest == "" {
-		// Image buid typically runs as root
-		usr, err := user.Current()
-		homeDest = "/root"
-
-		if err == nil {
-			homeDest = usr.HomeDir
 		}
 	}
 
