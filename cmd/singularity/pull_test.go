@@ -21,7 +21,7 @@ func pullSylabsPublicKey() ([]byte, error) {
 	return exec.Command(cmdPath, argv...).CombinedOutput()
 }
 
-func imagePull(library, pullPath string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
+func imagePull(library, pullDir string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
 	var argv []string
 	argv = append(argv, "pull")
 	if force {
@@ -33,7 +33,7 @@ func imagePull(library, pullPath string, imagePath string, sourceSpec string, fo
 	if library != "" {
 		argv = append(argv, "--library", library)
 	}
-	if pullPath != "" {
+	if pullDir != "" {
 		argv = append(argv, "--path", "/tmp")
 	}
 	if imagePath != "" {
@@ -61,7 +61,7 @@ func TestPull(t *testing.T) {
 		force           bool
 		unauthenticated bool
 		library         string
-		pullPath        string
+		pullDir         string
 		imagePath       string
 		success         bool
 	}{
@@ -86,20 +86,20 @@ func TestPull(t *testing.T) {
 		{"PullNonExistent", "library://this_should_not/exist/not_exist", true, false, "", "", imagePath, false}, // pull a non-existent container
 		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},                 // https://cloud.sylabs.io/library
 		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},                 // https://cloud.sylabs.io/library
-		{"Pull_Path_name", "library://alpine:3.9", true, true, "", "/tmp", imagePath, true},                     // Pull the image to /tmp/test_pull.sif
-		{"PullPathNameFail", "library://alpine:3.9", false, true, "", "/tmp", imagePath, false},                 // Pull the image to /tmp/test_pull.sif
-		{"PullPathNameFail1", "library://alpine:3.9", false, false, "", "/tmp", imagePath, false},               // Pull the image to /tmp/test_pull.sif
+		{"Pull_Dir_name", "library://alpine:3.9", true, true, "", "/tmp", imagePath, true},                      // Pull the image to /tmp/test_pull.sif
+		{"PullDirNameFail", "library://alpine:3.9", false, true, "", "/tmp", imagePath, false},                  // Pull the image to /tmp/test_pull.sif
+		{"PullDirNameFail1", "library://alpine:3.9", false, false, "", "/tmp", imagePath, false},                // Pull the image to /tmp/test_pull.sif
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imagePull(tt.library, tt.pullPath, tt.imagePath, tt.sourceSpec, tt.force, tt.unauthenticated)
+			b, err := imagePull(tt.library, tt.pullDir, tt.imagePath, tt.sourceSpec, tt.force, tt.unauthenticated)
 			if tt.success {
 				if err != nil {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				imageVerify(t, filepath.Join(tt.pullPath, tt.imagePath), false)
+				imageVerify(t, filepath.Join(tt.pullDir, tt.imagePath), false)
 			} else {
 				if err == nil {
 					t.Log(string(b))
