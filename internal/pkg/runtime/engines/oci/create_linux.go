@@ -925,7 +925,11 @@ func (c *container) mount(point *mount.Point) error {
 							return err
 						}
 					}
-				case syscall.S_IFREG:
+				case syscall.S_IFREG,
+					syscall.S_IFBLK,
+					syscall.S_IFCHR,
+					syscall.S_IFIFO,
+					syscall.S_IFSOCK:
 					sylog.Debugf("Creating file %s", filepath.Base(procDest))
 					if c.userNS {
 						if _, err := c.rpcOps.Touch(dest); err != nil {
