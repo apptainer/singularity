@@ -15,32 +15,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
-func isValidString(str string) bool {
-	if str == "" {
-		return false
-	}
-	return true
-}
-
-func isValidName(name string) bool {
-	return isValidString(name)
-}
-
-func isValidURI(uri string) bool {
-	return isValidString(uri)
-}
-
 // RemoteAdd adds remote to configuration
 func RemoteAdd(configFile, name, uri string, global bool) (err error) {
-	// Clean up the name and uri string
-	name = strings.TrimSpace(name)
-	uri = strings.TrimSpace(uri)
-
 	// Explicit handling of corner cases: name and uri must be valid strings
-	if isValidName(name) == false {
+	if strings.TrimSpace(name) == "" {
 		return fmt.Errorf("invalid name: %s", name)
 	}
-	if isValidURI(uri) == false {
+	if strings.TrimSpace(uri) == "" {
 		return fmt.Errorf("invalid URI: %s", uri)
 	}
 
