@@ -27,7 +27,7 @@ func init() {
 // KeyExportCmd is `singularity key export` and exports a public or secret
 // key from local keyring.
 var KeyExportCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
+	Args: cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   exportRun,
