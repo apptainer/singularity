@@ -49,8 +49,8 @@ var (
 	KeyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
-	// PullPath is the path that the containers will be pulled to, if set
-	PullPath string
+	// PullDir is the path that the containers will be pulled to, if set
+	PullDir string
 )
 
 func init() {
@@ -59,8 +59,8 @@ func init() {
 	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
 	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
-	PullCmd.Flags().StringVar(&PullPath, "path", "", "download images to the provided path")
-	PullCmd.Flags().SetAnnotation("path", "envkey", []string{"PULLPATH"})
+	PullCmd.Flags().StringVar(&PullDir, "path", "", "download images to the provided path")
+	PullCmd.Flags().SetAnnotation("path", "envkey", []string{"PULLDIR", "PULLFOLDER"})
 
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
@@ -122,8 +122,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		name = PullImageName
 	}
 
-	if PullPath != "" {
-		name = filepath.Join(PullPath, name)
+	if PullDir != "" {
+		name = filepath.Join(PullDir, name)
 	}
 
 	// monitor for OS signals and remove invalid file
