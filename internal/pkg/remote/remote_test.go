@@ -8,11 +8,13 @@ package remote
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	yaml "gopkg.in/yaml.v2"
 )
 
 //NOTE: VerifyToken() cannot be tested unless we have a dummy token for the token service to authenticate
@@ -26,6 +28,10 @@ func TestMain(m *testing.M) {
 type writeReadTest struct {
 	name string
 	c    Config
+}
+
+type aDummyData struct {
+	NoneSenseRemote string
 }
 
 func TestWriteToReadFrom(t *testing.T) {
@@ -55,6 +61,16 @@ func TestWriteToReadFrom(t *testing.T) {
 		},
 	}
 
+	testsFail := []struct {
+		name string
+		data aDummyData
+	}{
+		{
+			name: "invalid data",
+			data: aDummyData{NoneSenseRemote: "toto"},
+		},
+	}
+
 	for _, test := range testsPass {
 		t.Run(test.name, func(t *testing.T) {
 			var r bytes.Buffer
@@ -68,6 +84,39 @@ func TestWriteToReadFrom(t *testing.T) {
 
 			if !reflect.DeepEqual(test.c, *new) {
 				t.Errorf("failed to read/write config:\n\thave: %v\n\twant: %v", test.c, *new)
+			}
+		})
+	}
+
+	for _, test := range testsFail {
+		t.Run(test.name, func(t *testing.T) {
+			yaml, err := yaml.Marshal(test.data)
+			if err != nil {
+				t.Fatalf("cannot mashal YAML: %s\n", err)
+			}
+
+			// We manually create the file to test ReadFrom()
+			tempFile, err := ioutil.TempFile("", "")
+			if err != nil {
+				t.Fatalf("cannot create temporary file: %s\n", err)
+			}
+			path := tempFile.Name()
+
+			_, err = tempFile.Write(yaml)
+			defer os.Remove(path)
+			tempFile.Close()
+			if err != nil {
+				t.Fatalf("cannot write to file: %s\n", err)
+			}
+
+			file, err := os.Open(path)
+			if err != nil {
+				t.Fatalf("cannot open file: %s\n", err)
+			}
+			defer file.Close()
+			_, err = ReadFrom(file)
+			if err == nil {
+				t.Fatal("reading an invalid YAML file succeeded")
 			}
 		})
 	}
