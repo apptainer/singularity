@@ -213,9 +213,13 @@ func ExecuteSingularity() {
 
 	cmdManager.UpdateCmdFlagFromEnv(envPrefix)
 
-	// error reported by command manager is considered as fatal
+	cliErrors := 0
 	for _, e := range cmdManager.GetError() {
-		sylog.Fatalf("%s", e)
+		sylog.Errorf("%s", e)
+	}
+	// any error reported by command manager is considered as fatal
+	if cliErrors > 0 {
+		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
 	}
 
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
