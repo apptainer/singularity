@@ -241,25 +241,14 @@ var InspectCmd = &cobra.Command{
 
 		// Parse the command output string into sections.
 		reader := bufio.NewReader(strings.NewReader(fileContents))
-		//fmt.Println("FILE", fileContents)
-		//if !apps {
 		for {
 			section, err := reader.ReadBytes('\n')
 			if err != nil {
 				break
 			}
-			//fmt.Println("SECTIONS: ", string(section))
 			parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
-			//fmt.Println("lenparts: ", len(parts))
-			//fmt.Println("Parts: ", parts)
 			if len(parts) == 2 {
 				label := parts[0]
-				//fmt.Println("label", label)
-				//if label == "apps" {
-				//	//if len(label) != 2 {
-				//	setAttribute(&inspectObj, "apps", label)
-				//} else {
-				//fmt.Println("PArts: ", parts[1])
 				sizeData, errConv := strconv.Atoi(parts[1])
 				if errConv != nil {
 					sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
@@ -271,12 +260,9 @@ var InspectCmd = &cobra.Command{
 					sylog.Fatalf("Unable to read %d bytes.", sizeData)
 				}
 				setAttribute(&inspectObj, label, string(data))
-				//}
 			} else {
 				sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
 			}
-			//	}
-
 		}
 
 		// Output the inspection results (use JSON if requested).
@@ -345,14 +331,12 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	// Record from stdout and store as a string to return as the contents of the file?
+	// Record from stdout and store as a string to return as the contents of the file
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
 		sylog.Fatalf("Unable to exec command: %s: %s", err, cmd.Args)
 	}
-
-	//fmt.Println("CMD: ", args)
 
 	b, err := cmd.Output()
 	if err != nil {
