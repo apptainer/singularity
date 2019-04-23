@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build build_engine
+
 package imgbuild
 
 import (
@@ -18,7 +20,6 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -26,10 +27,6 @@ import (
 
 // CreateContainer creates a container
 func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error {
-	if engine.CommonConfig.EngineName != imgbuildConfig.Name {
-		return fmt.Errorf("engineName configuration doesn't match runtime name")
-	}
-
 	rpcOps := &client.RPC{
 		Client: rpc.NewClient(rpcConn),
 		Name:   engine.CommonConfig.EngineName,

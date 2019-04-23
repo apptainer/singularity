@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build singularity_engine
+
 package singularity
 
 import (
@@ -453,10 +455,6 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 
 // PrepareConfig checks and prepares the runtime engine config
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != singularityConfig.Name {
-		return fmt.Errorf("incorrect engine")
-	}
-
 	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)

@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build oci_engine
+
 package oci
 
 import (
@@ -56,14 +58,6 @@ func (e *EngineOperations) checkCapabilities() error {
 
 // PrepareConfig checks and prepares the runtime engine config
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
-	if e.CommonConfig.EngineName != Name {
-		return fmt.Errorf("incorrect engine")
-	}
-
-	if starterConfig.GetIsSUID() {
-		return fmt.Errorf("SUID workflow disabled by administrator")
-	}
-
 	if e.EngineConfig.OciConfig.Process == nil {
 		return fmt.Errorf("empty OCI process configuration")
 	}

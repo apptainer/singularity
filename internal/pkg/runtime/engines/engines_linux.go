@@ -15,13 +15,6 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
-	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
-	ociserver "github.com/sylabs/singularity/internal/pkg/runtime/engines/oci/rpc/server"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // Engine is the combination of an EngineOperations and a config.Common. The singularity
@@ -55,6 +48,12 @@ type EngineOperations interface {
 	// for ensuring that the container has been properly torn down.
 	CleanupContainer(error, syscall.WaitStatus) error
 }
+
+var registeredEngineOperations = make(map[string]EngineOperations)
+
+// registerEngineRPCMethods contains a map relating an Engine name to a set
+// of RPC methods served by RPC server
+var registeredEngineRPCMethods = make(map[string]interface{})
 
 // GetName returns the engine name set in JSON []byte configuration.
 func GetName(b []byte) string {
@@ -93,14 +92,6 @@ func NewEngine(b []byte) (*Engine, error) {
 	return e, nil
 }
 
-var (
-	registeredEngineOperations map[string]EngineOperations
-
-	// registerEngineRPCMethods contains a map relating an Engine name to a set
-	// of RPC methods served by RPC server
-	registeredEngineRPCMethods map[string]interface{}
-)
-
 // ServeRuntimeEngineRequests serves runtime engine requests with corresponding registered engine methods.
 func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 	methods := registeredEngineRPCMethods[name]
@@ -108,20 +99,22 @@ func ServeRuntimeEngineRequests(name string, conn net.Conn) {
 	rpc.ServeConn(conn)
 }
 
-// Init initializes registered runtime engines
-func Init() {
-	registeredEngineOperations = make(map[string]EngineOperations)
-	registeredEngineOperations[singularityConfig.Name] = &singularity.EngineOperations{EngineConfig: singularityConfig.NewConfig()}
-	registeredEngineOperations[imgbuildConfig.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuildConfig.EngineConfig{}}
-	registeredEngineOperations[oci.Name] = &oci.EngineOperations{EngineConfig: &oci.EngineConfig{}}
+// RegisterEngineOperations registers engine operations for a runtime
+// engine
+func RegisterEngineOperations(name string, eOp EngineOperations) error {
+	if _, ok := registeredEngineOperations[name]; ok {
+		return fmt.Errorf("engine %q operations already registered", name)
+	}
+	registeredEngineOperations[name] = eOp
+	return nil
+}
 
-	// register singularity rpc methods
-	methods := new(server.Methods)
-	registeredEngineRPCMethods = make(map[string]interface{})
-	registeredEngineRPCMethods[singularityConfig.Name] = methods
-	registeredEngineRPCMethods[imgbuildConfig.Name] = methods
-
-	ocimethods := new(ociserver.Methods)
-	ocimethods.Methods = methods
-	registeredEngineRPCMethods[oci.Name] = ocimethods
+// RegisterEngineRPCMethods registers engine RPC methods served by RPC
+// server
+func RegisterEngineRPCMethods(name string, methods interface{}) error {
+	if _, ok := registeredEngineRPCMethods[name]; ok {
+		return fmt.Errorf("engine %q RPC methods already registered", name)
+	}
+	registeredEngineRPCMethods[name] = methods
+	return nil
 }

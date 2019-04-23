@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build build_engine
+
 package imgbuild
 
 import (
@@ -10,7 +12,6 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
@@ -41,10 +42,6 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	if syscall.Getuid() != 0 {
 		return fmt.Errorf("unable to run imgbuild engine as non-root user")
-	}
-
-	if starterConfig.GetIsSUID() {
-		return fmt.Errorf("%s don't allow SUID workflow", e.CommonConfig.EngineName)
 	}
 
 	e.EngineConfig.OciConfig.SetupPrivileged(true)

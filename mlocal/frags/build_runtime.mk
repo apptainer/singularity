@@ -16,7 +16,7 @@ $(BUILDDIR)/.clean-starter: $(starter_CSOURCE)
 # starter
 starter := $(BUILDDIR)/cmd/starter/c/starter
 $(starter): $(BUILDDIR)/.clean-starter $(singularity_build_config) $(starter_SOURCE)
-	@echo " GO" $@
+	@echo " GO" $@; echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
 	$(V)$(GO) build $(GO_MODFLAGS) $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) \
 		-o $@ $(SOURCEDIR)/cmd/starter/main_linux.go
 
