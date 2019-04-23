@@ -1,5 +1,10 @@
-For this example, I'm going to use a topic of `env` or `environment variable tests`.
+# End-to-End Testing
 
+This package contains the end-to-end tests for `singularity`. 
+
+## Contributing
+
+For this example, we're going to use a topic of `env` or `environment variable tests`.
 
 * Add your topic as a runtime-hook in `suite.go`.
 
@@ -60,7 +65,6 @@ func RunE2ETests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	t.Log(testenv)
 }
 ```
 
@@ -81,8 +85,6 @@ func RunE2ETests(t *testing.T) {
         	t.Fatal(err.Error())
         }
         
-	t.Log(testenv)
-
 	// Add tests
 	t.Run("TestEnv", TestEnv)
 }
@@ -116,13 +118,14 @@ func RunE2ETests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	t.Log(testenv)
 
 	t.Run("TestEnv", TestEnv)
 }
 ```
 
-* Test your topic using the `e2e` target in the `Makefile`
+## Running
+
+Test your topic using the `e2e` target in the `Makefile`. To avoid skipping these tests (default), make sure you set the environment variable `SINGULARITY_E2E` to `1`.
 
 ```
 SINGULARITY_E2E=1 make -C builddir e2e-test
