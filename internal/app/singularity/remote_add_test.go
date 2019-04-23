@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	invalidCfgFile    = "/not/a/real/file"
-	invalidRemoteName = "notacorrectremotename"
-	invalidURI        = "really//not/a/URI"
+	invalidCfgFilePath = "/not/a/real/file"
+	invalidRemoteName  = "notacorrectremotename"
+	invalidURI         = "really//not/a/URI"
 )
 
 func createInvalidCfgFile(t *testing.T) string {
@@ -100,7 +100,6 @@ func TestRemoteAddAndRemove(t *testing.T) {
 		global     bool
 		shallPass  bool
 	}{
-		// Local cases
 		{
 			name:       "1: invalid config file; empty remote name; invalid URI, local",
 			cfgfile:    invalidCfgFile,
@@ -166,8 +165,9 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			shallPass:  true,
 		},
 		{
-			// This test checks both RemoteAdd() and RemoteRemove(), we stil have a separate test
-			// for corner cases in the context of RemoveRemove().
+			// This test checks both RemoteAdd() and RemoteRemove(), we stil
+			// have a separate test for corner cases in the context of
+			// RemoveRemove().
 			name:       "9: valid config file; valid remote name; valid URI; local",
 			cfgfile:    validCfgFile,
 			remoteName: "cloud_testing",
@@ -183,7 +183,6 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			global:     false,
 			shallPass:  true,
 		},
-		// Global cases
 		{
 			name:       "11: invalid config file; empty remote name; invalid URI, global",
 			cfgfile:    invalidCfgFile,
@@ -246,6 +245,38 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			uri:       invalidURI,
 			global:    true,
 			shallPass: true,
+		},
+		{
+			name:       "19: invalid config file path; invalid remote name; invalid URI; local",
+			cfgfile:    invalidCfgFilePath,
+			remoteName: invalidRemoteName,
+			uri:        invalidURI,
+			global:     false,
+			shallPass:  false,
+		},
+		{
+			name:       "20: invalid config file path; invalid remote name; invalid URI; global",
+			cfgfile:    invalidCfgFilePath,
+			remoteName: invalidRemoteName,
+			uri:        invalidURI,
+			global:     true,
+			shallPass:  false,
+		},
+		{
+			name:       "21: invalid config file path; empty remote name; invalid URI; local",
+			cfgfile:    invalidCfgFilePath,
+			remoteName: "",
+			uri:        invalidURI,
+			global:     false,
+			shallPass:  false,
+		},
+		{
+			name:       "22: invalid config file path; empty remote name; invalid URI; global",
+			cfgfile:    invalidCfgFilePath,
+			remoteName: "",
+			uri:        invalidURI,
+			global:     true,
+			shallPass:  false,
 		},
 	}
 
