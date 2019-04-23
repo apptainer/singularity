@@ -649,7 +649,11 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	}
 	defer f.Close()
 
-	return openpgp.ReadKeyRing(f)
+	el, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return openpgp.ReadArmoredKeyRing(f)
+	}
+	return el, err
 }
 
 // ExportPrivateKey Will export a private key into a file (kpath).
