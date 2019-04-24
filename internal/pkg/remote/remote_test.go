@@ -8,7 +8,6 @@ package remote
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -90,31 +89,19 @@ func TestWriteToReadFrom(t *testing.T) {
 
 	for _, test := range testsFail {
 		t.Run(test.name, func(t *testing.T) {
+			var r bytes.Buffer
+
 			yaml, err := yaml.Marshal(test.data)
 			if err != nil {
 				t.Fatalf("cannot mashal YAML: %s\n", err)
 			}
 
-			// We manually create the file to test ReadFrom()
-			tempFile, err := ioutil.TempFile("", "")
+			_, err = r.Write(yaml)
 			if err != nil {
-				t.Fatalf("cannot create temporary file: %s\n", err)
-			}
-			path := tempFile.Name()
-
-			_, err = tempFile.Write(yaml)
-			defer os.Remove(path)
-			tempFile.Close()
-			if err != nil {
-				t.Fatalf("cannot write to file: %s\n", err)
+				t.Fatalf("failed to write YAML data")
 			}
 
-			file, err := os.Open(path)
-			if err != nil {
-				t.Fatalf("cannot open file: %s\n", err)
-			}
-			defer file.Close()
-			_, err = ReadFrom(file)
+			_, err = ReadFrom(&r)
 			if err == nil {
 				t.Fatal("reading an invalid YAML file succeeded")
 			}
