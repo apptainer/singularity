@@ -244,7 +244,11 @@ func runAuthorizedOwnerTest(t *testing.T, testDescr ownerGroupTest, img *Image) 
 
 	auth, err := img.AuthorizedOwner(testDescr.owners)
 	if testDescr.shouldPass == true && (auth == false || err != nil) {
-		t.Fatal("valid test failed")
+		if err == nil {
+			t.Fatal("valid owner list reported as not authorized")
+		} else {
+			t.Fatalf("valid test failed: %s\n", err)
+		}
 	}
 	if testDescr.shouldPass == true && (auth == false || err != nil) {
 		if err != nil {
