@@ -19,10 +19,10 @@ import (
 func RemoteAdd(configFile, name, uri string, global bool) (err error) {
 	// Explicit handling of corner cases: name and uri must be valid strings
 	if strings.TrimSpace(name) == "" {
-		return fmt.Errorf("invalid name: %s", name)
+		return fmt.Errorf("invalid name: cannot have empty name")
 	}
 	if strings.TrimSpace(uri) == "" {
-		return fmt.Errorf("invalid URI: %s", uri)
+		return fmt.Errorf("invalid URI: cannot have empty URI")
 	}
 
 	c := &remote.Config{}
