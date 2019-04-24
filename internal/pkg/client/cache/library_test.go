@@ -61,7 +61,7 @@ func TestLibraryImage(t *testing.T) {
 			name:     "General case",
 			sum:      validSHASum,
 			path:     validPath,
-			expected: filepath.Join(Library(), "", ""),
+			expected: Library(),
 		},
 	}
 
