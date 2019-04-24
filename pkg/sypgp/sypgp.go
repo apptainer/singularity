@@ -749,8 +749,6 @@ func ExportPubKey(kpath string, armor bool) error {
 func ImportPrivateKey(entity *openpgp.Entity) error {
 	// Load the local private keys as entitylist
 
-	fmt.Println("here asdhakjasd")
-
 	privateEntityList, err := LoadPrivKeyring()
 	if err != nil {
 		return err
@@ -774,8 +772,6 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 	}
 
 	if !isInStore {
-
-		fmt.Println("create a new entity")
 		// Make a clone of the entity
 		newEntity := &openpgp.Entity{
 			PrimaryKey:  entity.PrimaryKey,
