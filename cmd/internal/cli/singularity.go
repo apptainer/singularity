@@ -424,6 +424,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"detached":        envBool,
 	"builder":         envStringNSlice,
 	"library":         envStringNSlice,
+	"path":            envStringNSlice,
 	"nohttps":         envBool,
 	"no-cleanup":      envBool,
 	"tmpdir":          envStringNSlice,
