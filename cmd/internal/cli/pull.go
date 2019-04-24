@@ -10,6 +10,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	ocitypes "github.com/containers/image/types"
@@ -50,6 +51,8 @@ var (
 	KeyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
+	// PullDir is the path that the containers will be pulled to, if set
+	PullDir string
 )
 
 func init() {
@@ -57,6 +60,9 @@ func init() {
 
 	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
 	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+
+	PullCmd.Flags().StringVar(&PullDir, "path", "", "download images to the provided path")
+	PullCmd.Flags().SetAnnotation("path", "envkey", []string{"PULLDIR", "PULLFOLDER"})
 
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
@@ -118,6 +124,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 		name = PullImageName
 	}
 
+	if PullDir != "" {
+		name = filepath.Join(PullDir, name)
+	}
+
 	// monitor for OS signals and remove invalid file
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -132,7 +142,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		if !force {
 			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists - will not overwrite")
+				sylog.Fatalf("image file already exists: %q - will not overwrite", name)
 			}
 		}
 
@@ -215,6 +225,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		} else {
 			sylog.Warningf("Skipping container verification")
 		}
+		fmt.Printf("Download complete: %s\n", name)
 
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
