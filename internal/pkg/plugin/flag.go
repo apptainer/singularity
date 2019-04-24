@@ -59,7 +59,7 @@ func AddFlagHooks(flagSet *pflag.FlagSet) {
 func FlagHookCallbacks(c *singularity.EngineConfig) {
 	assertInitialized()
 
-	for _, hook := range reg.Hooks {
+	for _, hook := range reg.flagRegistry.Hooks {
 		hook.callback(hook.flag, c)
 	}
 }
