@@ -42,7 +42,7 @@ func createInvalidCfgFile(t *testing.T) string {
 	if err != nil {
 		f.Close()
 		os.Remove(path)
-		t.Fatalf("cannot marshal YANK: %s\n", err)
+		t.Fatalf("cannot marshal YAML: %s\n", err)
 	}
 
 	f.Write(yaml)
