@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 )
 
@@ -28,18 +27,15 @@ func createSquashfs(t *testing.T) string {
 	}
 	defer sqshFile.Close()
 
-	sqshFilePath, err := filepath.Abs(sqshFile.Name())
-	if err != nil {
-		t.Fatalf("cannot get path of temporary file: %s\n", err)
-	}
+	sqshFilePath := sqshFile.Name()
 	// close and delete the temp file since we will be used with the
 	// mksquashfs command. We still use TempFile to have a clean way
 	// to get a valid path for a temporary file
 	sqshFile.Close()
 	os.Remove(sqshFilePath)
 
-	cmdBin := "/usr/bin/mksquashfs"
-	if _, statErr := os.Stat(cmdBin); os.IsNotExist(statErr) {
+	cmdBin, lookErr := exec.LookPath("mksquashfs")
+	if lookErr != nil {
 		t.Skipf("%s is not  available, skipping the test...", cmdBin)
 	}
 

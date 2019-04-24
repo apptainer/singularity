@@ -6,6 +6,7 @@
 package image
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,13 +15,29 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"strconv"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
 )
+
+type ownerGroupTest struct {
+	name       string
+	owners     []string
+	privileged bool
+	shouldPass bool
+}
+
+type groupTest struct {
+	name       string
+	groups     []string
+	privileged bool
+	shouldPass bool
+}
 
 func downloadImage(t *testing.T) string {
 	sexec, err := exec.LookPath("singularity")
@@ -35,9 +52,12 @@ func downloadImage(t *testing.T) string {
 	name := f.Name()
 	f.Close()
 
+	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(sexec, "build", "-F", name, "docker://busybox")
+	cmd.Stderr = &stderr
+	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("cannot create image (cmd: %s build -F %s docker://busybox): %s\n", sexec, name, err)
+		t.Fatalf("cannot create image (cmd: %s build -F %s docker://busybox): %s - stdout: %s - stderr: %s\n", sexec, name, err, stdout.String(), stderr.String())
 	}
 	return name
 }
@@ -78,6 +98,9 @@ func checkSection(reader io.Reader) error {
 }
 
 func TestReader(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	filename := downloadImage(t)
 	defer os.Remove(filename)
 
@@ -154,25 +177,32 @@ func TestReader(t *testing.T) {
 }
 
 func TestAuthorizedPath(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name       string
 		path       []string
 		shouldPass bool
 	}{
-		{"empty path", []string{""}, false},
-		{"invalid path", []string{"/a/random/invalid/path"}, false},
-		{"valid path", []string{"/"}, true},
+		{
+			name:       "empty path",
+			path:       []string{""},
+			shouldPass: false,
+		},
+		{
+			name:       "invalid path",
+			path:       []string{"/a/random/invalid/path"},
+			shouldPass: false,
+		},
+		{
+			name:       "valid path",
+			path:       []string{"/"},
+			shouldPass: true},
 	}
 
-	// Create a temporary image
-	path := downloadImage(t)
+	img, path := createImage(t)
 	defer os.Remove(path)
-
-	// Now load the image which will be used next for a bunch of tests
-	img, err := Init(path, true)
-	if err != nil {
-		t.Fatal("impossible to load image for testing")
-	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -191,37 +221,9 @@ func TestAuthorizedPath(t *testing.T) {
 	}
 }
 
-func TestAuthorizedOwner(t *testing.T) {
-	type ownerGroup struct {
-		name       string
-		owners     []string
-		shouldPass bool
-	}
-
-	// Note that we do not test the "root" case because the result will depend
-	// on the context of the test execution and therefore sometimes pass,
-	// sometimes fail. For instance, it will fail with the CI and succeed with
-	// Travis.
-	tests := []ownerGroup{
-		{"empty owner list", []string{""}, false},
-		{"invalid owner list", []string{"2"}, false},
-	}
-
-	// If the test is not running as root, we test with the current username,
-	// i.e., the owner of the image. Note that it is not supposed to work with
-	// root.
-	me, err := user.Current()
-	if err != nil {
-		t.Fatalf("cannot get current user name for testing purposes: %s", err)
-	}
-	if me.Username != "root" {
-		localUser := ownerGroup{"valid owner list", []string{me.Username}, true}
-		tests = append(tests, localUser)
-	}
-
+func createImage(t *testing.T) (*Image, string) {
 	// Create a temporary image
 	path := downloadImage(t)
-	defer os.Remove(path)
 
 	// Now load the image which will be used next for a bunch of tests
 	img, err := Init(path, true)
@@ -229,77 +231,195 @@ func TestAuthorizedOwner(t *testing.T) {
 		t.Fatal("impossible to load image for testing")
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			auth, err := img.AuthorizedOwner(test.owners)
-			if test.shouldPass == false && (auth == true && err == nil) {
-				t.Fatal("invalid owner list was reported as authorized")
-			}
-			if test.shouldPass == true && (auth == false || err != nil) {
-				if err != nil {
-					t.Fatalf("valid owner list was reported as not authorized: %s", err)
-				} else {
-					t.Fatal("valid owner list was reported as not authorized")
-				}
-			}
+	return img, path
+}
+
+func runAuthorizedOwnerTest(t *testing.T, testDescr ownerGroupTest, img *Image) {
+	if testDescr.privileged == true {
+		test.EnsurePrivilege(t)
+	} else {
+		test.DropPrivilege(t)
+		defer test.ResetPrivilege(t)
+	}
+
+	auth, err := img.AuthorizedOwner(testDescr.owners)
+	if testDescr.shouldPass == true && (auth == false || err != nil) {
+		t.Fatal("valid test failed")
+	}
+	if testDescr.shouldPass == true && (auth == false || err != nil) {
+		if err != nil {
+			t.Fatalf("valid owner list was reported as not authorized: %s", err)
+		} else {
+			t.Fatal("valid owner list was reported as not authorized")
+		}
+	}
+}
+
+func TestRootAuthorizedOwner(t *testing.T) {
+	// Function focusing only on executing the privileged case
+	test.EnsurePrivilege(t)
+
+	tests := []ownerGroupTest{
+		{
+			name:       "root",
+			privileged: true,
+			owners:     []string{"root"},
+			shouldPass: true,
+		},
+		{
+			name:       "root",
+			privileged: true,
+			owners:     []string{"foobar"},
+			shouldPass: false,
+		},
+	}
+
+	img, path := createImage(t)
+	defer os.Remove(path)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runAuthorizedOwnerTest(t, tt, img)
 		})
 	}
 }
 
-func TestAuthorizedGroup(t *testing.T) {
-	type groupTest struct {
-		name       string
-		groups     []string
-		shouldPass bool
+func TestAuthorizedOwner(t *testing.T) {
+	// We will create a runtime test based on the current user that assumes
+	// this not a privileged test
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// Note that we do not test the "root" case; the privileged cases are
+	// tested in a separate function.
+	tests := []ownerGroupTest{
+		{
+			name:       "empty owner list",
+			privileged: false,
+			owners:     []string{""},
+			shouldPass: false,
+		},
+		{
+			name:       "invalid owner list",
+			privileged: false,
+			owners:     []string{"2"},
+			shouldPass: false,
+		},
 	}
 
-	// Note that we do not test the "root" case because the result will depend
-	// on the context of the test execution and therefore sometimes pass,
-	// sometimes fail. For instance, it will fail with the CI and succeed with
-	// Travis.
-	tests := []groupTest{
-		{"empty group list", []string{""}, false},
-		{"invalid group list", []string{"-"}, false},
-	}
-
-	// If the current group is not root, we test the function with its name,
-	// which is a valid test since the owner of the image
-	me, err := user.Current()
+	// We test with the current username, note that because we are under
+	// test.DropPrivilege, this needs to be done a very specific way.
+	uid := os.Getuid()
+	me, err := user.LookupId(strconv.Itoa(uid))
 	if err != nil {
-		t.Fatalf("cannot get the current username: %s", err)
+		t.Fatalf("cannot get current user name for testing purposes: %s", err)
 	}
-	myGroup, gpErr := user.LookupGroupId(me.Gid)
-	if gpErr != nil {
-		t.Fatalf("cannot lookup the current user's group: %s", err)
+	localUser := ownerGroupTest{
+		name:       "valid owner list",
+		privileged: false,
+		owners:     []string{me.Username},
+		shouldPass: true,
 	}
-	if myGroup.Name != "root" {
-		validTest := groupTest{"valid group list", []string{myGroup.Name}, true}
-		tests = append(tests, validTest)
-	}
+	tests = append(tests, localUser)
 
-	// Create a temporary image
-	path := downloadImage(t)
+	img, path := createImage(t)
 	defer os.Remove(path)
-
-	// Now load the image which will be used next for a bunch of tests
-	img, err := Init(path, true)
-	if err != nil {
-		t.Fatal("impossible to load image for testing")
-	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			auth, err := img.AuthorizedGroup(test.groups)
-			if test.shouldPass == false && (auth == true && err == nil) {
-				t.Fatal("invalid group list was reported as authorized")
-			}
-			if test.shouldPass == true && (auth == false || err != nil) {
-				if err != nil {
-					t.Fatalf("valid group list was reported as not authorized: %s", err)
-				} else {
-					t.Fatal("valid group list was reported as not authorized")
-				}
-			}
+			runAuthorizedOwnerTest(t, test, img)
+		})
+	}
+}
+
+func runAuthorizedGroupTest(t *testing.T, tt groupTest, img *Image) {
+	if tt.privileged == true {
+		test.EnsurePrivilege(t)
+	} else {
+		test.DropPrivilege(t)
+		defer test.ResetPrivilege(t)
+	}
+
+	auth, err := img.AuthorizedGroup(tt.groups)
+	if tt.shouldPass == false && (auth == true && err == nil) {
+		t.Fatal("invalid group list was reported as authorized")
+	}
+	if tt.shouldPass == true && (auth == false || err != nil) {
+		if err != nil {
+			t.Fatalf("valid group list was reported as not authorized: %s", err)
+		} else {
+			t.Fatal("valid group list was reported as not authorized")
+		}
+	}
+}
+
+func TestPrivilegedAuthorizedGroup(t *testing.T) {
+	test.EnsurePrivilege(t) // to make sure we create the image under the correct user
+
+	tests := []groupTest{
+		{
+			name:       "root - empty group list",
+			privileged: true,
+			groups:     []string{""},
+			shouldPass: false,
+		},
+		{
+			name:       "root",
+			privileged: true,
+			groups:     []string{"root"},
+			shouldPass: true,
+		},
+	}
+
+	img, path := createImage(t)
+	defer os.Remove(path)
+
+	for _, tt := range tests {
+		runAuthorizedGroupTest(t, tt, img)
+	}
+}
+
+func TestAuthorizedGroup(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// Note that we do not test the "root" case here, privileged cases are
+	// performed in a separate function.
+	tests := []groupTest{
+		{
+			name:       "empty group list",
+			privileged: false,
+			groups:     []string{""},
+			shouldPass: false,
+		},
+		{
+			name:       "invalid group list",
+			privileged: false,
+			groups:     []string{"-"},
+			shouldPass: false,
+		},
+	}
+
+	gid := os.Getgid()
+	myGroup, err := user.LookupGroupId(strconv.Itoa(gid))
+	if err != nil {
+		t.Fatalf("cannot get group ID: %s\n", err)
+	}
+
+	validTest := groupTest{
+		name:       "valid group list",
+		privileged: false,
+		groups:     []string{myGroup.Name},
+		shouldPass: true,
+	}
+	tests = append(tests, validTest)
+
+	img, path := createImage(t)
+	defer os.Remove(path)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			runAuthorizedGroupTest(t, test, img)
 		})
 	}
 }

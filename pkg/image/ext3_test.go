@@ -10,8 +10,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 // createVirtualBlockDevice creates a virtual block device
@@ -20,9 +21,9 @@ import (
 // @parma[in] test handle to control the test, i.e., stop it in case of fatal error
 // @parma[in] path to the virtual block device to be created
 func createVirtualBlockDevice(t *testing.T, path string) {
-	cmdBin := "/bin/dd"
-	if _, statErr := os.Stat(cmdBin); os.IsNotExist(statErr) {
-		t.Skipf("%s not available, skipping the test", cmdBin)
+	cmdBin, err := exec.LookPath("dd")
+	if err != nil {
+		t.Skip("dd command not available, skipping the test")
 	}
 
 	arg := "of=" + path
@@ -42,9 +43,9 @@ func createVirtualBlockDevice(t *testing.T, path string) {
 // @param[in] type of the file system to be created, e.g., ext3, fat.
 // @param[in] path to the virtual block device.
 func createFS(t *testing.T, fsType string, path string) {
-	cmdBin := "/sbin/mke2fs"
-	if _, statErr := os.Stat(cmdBin); os.IsNotExist(statErr) {
-		t.Skipf("%s not available, skipping the test", cmdBin)
+	cmdBin, lookErr := exec.LookPath("mke2fs")
+	if lookErr != nil {
+		t.Skip("mke2fs not available, skipping the test")
 	}
 
 	var out, err bytes.Buffer
@@ -133,16 +134,15 @@ func TestCheckExt3Header(t *testing.T) {
 }
 
 func TestInitializer(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	// Create a temporary image which is obviously an invalid ext3 image
 	f, err := ioutil.TempFile("", "image-")
 	if err != nil {
 		t.Fatalf("cannot create temporary file: %s\n", err)
 	}
-	path, err := filepath.Abs(f.Name())
-	if err != nil {
-		f.Close()
-		t.Fatalf("impossible to retrieve path of temporary file: %s\n", err)
-	}
+	path := f.Name()
 	defer os.Remove(path)
 	// We do not use defer f.Close() since we will be manually
 	// opening and closing the file for testing.
@@ -193,24 +193,24 @@ func TestInitializer(t *testing.T) {
 
 	// We reformat the image with different file systems and see if we catch
 	// the error
-	_, statErr := os.Stat("/sbin/mkfs.fat")
-	if statErr == nil {
+	_, lookErr := exec.LookPath("mkfs.fat")
+	if lookErr == nil {
 		err = ext3InitializerTest(t, img, resolvedPath, "vfat")
 		if err == nil {
 			t.Fatal("ext3 initializer test succeeded with a vfat image")
 		}
 	} else {
-		t.Log("/sbin/mkfs.fat is not available, skipping the test...")
+		t.Log("mkfs.fat command is not available, skipping the test...")
 	}
 
-	_, statErr = os.Stat("/sbin/mkfs.ext4")
-	if statErr == nil {
+	_, lookErr = os.Stat("/sbin/mkfs.ext4")
+	if lookErr == nil {
 		err = ext3InitializerTest(t, img, resolvedPath, "ext4")
 		if err == nil {
 			t.Fatal("ext3 initializer test succeeded with a ext4 image while expected to fail")
 		}
 	} else {
-		t.Log("/sbin/mkfs.ext4 is not available, skipping the test...")
+		t.Log("mkfs.ext4 command is not available, skipping the test...")
 	}
 
 	// A small test to exercise openMode() when using read-only mode
@@ -219,7 +219,7 @@ func TestInitializer(t *testing.T) {
 		t.Fatal("wrong mode returned")
 	}
 
-	// Erro case when a directory is passed in to initializer()
+	// Error case when a directory is passed in to initializer()
 	path, err = ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("Cannot create a temporary directory: %s\n", err)

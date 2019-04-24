@@ -8,7 +8,6 @@ package image
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -66,10 +65,7 @@ func TestSandboxInitializer(t *testing.T) {
 	}
 	defer f.Close()
 
-	path, err = filepath.Abs(f.Name())
-	if err != nil {
-		t.Fatalf("cannot get path: %s\n", path)
-	}
+	path = f.Name()
 	defer os.Remove(path)
 
 	f.Close()
