@@ -234,7 +234,7 @@ func (el EntityList) DecryptionKeys() (keys []Key) {
 	return
 }
 
-func reformatGPGExportedFile(r io.Reader) io.Reader {
+func ReformatGPGExportedFile(r io.Reader) io.Reader {
 
 	var keyString string
 	buf := new(bytes.Buffer)
@@ -255,9 +255,9 @@ func reformatGPGExportedFile(r io.Reader) io.Reader {
 // ReadArmoredKeyRing reads one or more public/private keys from an armor keyring file.
 func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
 
-	re := reformatGPGExportedFile(r)
-
+	re := ReformatGPGExportedFile(r)
 	block, err := armor.Decode(re)
+
 	if err == io.EOF {
 		return nil, errors.InvalidArgumentError("no armored data found")
 	}
@@ -269,6 +269,7 @@ func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
 	}
 
 	return ReadKeyRing(block.Body)
+
 }
 
 // ReadKeyRing reads one or more public/private keys. Unsupported keys are
