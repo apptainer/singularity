@@ -203,7 +203,7 @@ func TestInitializer(t *testing.T) {
 		t.Log("mkfs.fat command is not available, skipping the test...")
 	}
 
-	_, lookErr = os.Stat("/sbin/mkfs.ext4")
+	_, lookErr = exec.LookPath("mkfs.ext4")
 	if lookErr == nil {
 		err = ext3InitializerTest(t, img, resolvedPath, "ext4")
 		if err == nil {
