@@ -92,7 +92,7 @@ func init() {
 	SingularityCmd.AddCommand(VersionCmd)
 
 	initializePlugins()
-	plugin.AddCommands(SingularityCmd)
+	SingularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
 func setSylogMessageLevel(cmd *cobra.Command, args []string) {

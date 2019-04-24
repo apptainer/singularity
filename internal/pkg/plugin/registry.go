@@ -5,10 +5,14 @@
 
 package plugin
 
-import "github.com/spf13/pflag"
+import (
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+)
 
 type registry struct {
 	*flagRegistry
+	*commandRegistry
 }
 
 var reg registry
@@ -18,6 +22,9 @@ func init() {
 		flagRegistry: &flagRegistry{
 			FlagSet: pflag.NewFlagSet("flagRegistrySet", pflag.ExitOnError),
 			Hooks:   []flagHook{},
+		},
+		commandRegistry: &commandRegistry{
+			Commands: []*cobra.Command{},
 		},
 	}
 }
