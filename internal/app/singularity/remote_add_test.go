@@ -132,7 +132,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        "",
 			global:     false,
-			shallPass:  true,
+			shallPass:  false,
 		},
 		{
 			name:       "5: valid config file; empty remote name; invalid URI, local",
@@ -156,7 +156,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        "",
 			global:     false,
-			shallPass:  true,
+			shallPass:  false,
 		},
 		{
 			name:       "8: valid config gile; invalid remote name; invalid URI; local",
@@ -239,7 +239,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        "",
 			global:     true,
-			shallPass:  true,
+			shallPass:  false,
 		},
 		{
 			name:       "18: valid config file; empty remote name; invalid URI, global",
@@ -271,7 +271,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        "",
 			global:     true,
-			shallPass:  true,
+			shallPass:  false,
 		},
 		{
 			name:       "22: invalid config file path; invalid remote name; invalid URI; local",
