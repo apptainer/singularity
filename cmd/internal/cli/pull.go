@@ -289,7 +289,7 @@ func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
 	}
 	defer dstFile.Close()
 
-	srcFile, err := os.OpenFile(cachedImgPath, os.O_RDONLY, 0444)
+	srcFile, err := os.Open(cachedImgPath)
 	if err != nil {
 		sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
 	}
