@@ -781,8 +781,6 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 			Subkeys:     entity.Subkeys,
 		}
 
-		fmt.Println(entity)
-
 		// Check if the key is encrypted, if it is, decrypt it
 		if entity.PrivateKey.Encrypted {
 			err = DecryptKey(newEntity, "Enter your old password : ")
