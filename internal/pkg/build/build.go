@@ -6,12 +6,10 @@
 package build
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
@@ -20,6 +18,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
+	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -441,24 +440,12 @@ func (s *stage) copyFiles(b *Build) error {
 			// copy each file into bundle rootfs
 			transfer.Src = filepath.Join(b.stages[stageIndex].b.Rootfs(), transfer.Src)
 			transfer.Dst = filepath.Join(s.b.Rootfs(), transfer.Dst)
-			if err := copy(transfer.Src, transfer.Dst); err != nil {
+			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
+			if err := copy.Copy(transfer.Src, transfer.Dst); err != nil {
 				return err
 			}
 		}
 	}
 
-	return nil
-}
-
-func copy(src, dst string) error {
-	var output, stderr bytes.Buffer
-	// copy each file into bundle rootfs
-	sylog.Infof("Copying %v to %v", src, dst)
-	copy := exec.Command("/bin/cp", "-fLr", src, dst)
-	copy.Stdout = &output
-	copy.Stderr = &stderr
-	if err := copy.Run(); err != nil {
-		return fmt.Errorf("while copying %v to %v: %v: %v", src, dst, err, stderr.String())
-	}
 	return nil
 }
