@@ -807,8 +807,7 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 			return err
 		}
 		fmt.Printf("Key with fingerprint %X succesfully added to the keyring\n", entity.PrimaryKey.Fingerprint)
-	}
-	else {
+	} else {
 		fmt.Printf("The key you want to add with fingerprint %X already belongs to the keyring\n", entity.PrimaryKey.Fingerprint)
 	}
 	return nil
