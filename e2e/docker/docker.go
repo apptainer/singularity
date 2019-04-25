@@ -11,8 +11,8 @@ import (
 	"path"
 	"strings"
 	//	"io/ioutil"
-	//	"path/filepath"
 	"os/exec"
+	"path/filepath"
 	"testing"
 	//"unix"
 
@@ -76,7 +76,7 @@ func testDockerPulls(t *testing.T) {
 			srcURI:        "docker://busybox:1.28",
 			imageName:     "",
 			imagePath:     "",
-			force:         false,
+			force:         true,
 			sandBox:       false,
 			expectSuccess: true,
 		},
@@ -100,7 +100,15 @@ func testDockerPulls(t *testing.T) {
 		},
 	}
 
-	tmpImagePath := ""
+	tmpImagePath := "/tmp/docker_tests"
+	t.Run("Makeing_tmp_dir", test.WithoutPrivilege(func(t *testing.T) {
+		if err := os.RemoveAll(tmpImagePath); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(tmpImagePath, os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+	}))
 
 	imagePull := func(imgURI, imageName, imagePath string, force, sandBox bool) ([]byte, error) {
 		argv := []string{"pull"}
@@ -113,17 +121,21 @@ func testDockerPulls(t *testing.T) {
 			argv = append(argv, "--sandbox")
 		}
 
-		if imagePath == "" {
-			argv = append(argv, "--dir", tmpImagePath)
-		} else {
+		if imagePath != "" {
 			argv = append(argv, "--dir", imagePath)
+			//} else {
+			//argv = append(argv, "--dir", imagePath)
 		}
 
 		if imageName != "" {
-			argv = append(argv, imageName)
+			argv = append(argv, filepath.Join(tmpImagePath, imageName))
+		} else {
+			argv = append(argv, filepath.Join(tmpImagePath, "test_container.sif"))
 		}
 
 		argv = append(argv, imgURI)
+
+		fmt.Println("COMMAND: ", argv)
 
 		cmd := exec.Command(testenv.CmdPath, argv...)
 
@@ -132,24 +144,19 @@ func testDockerPulls(t *testing.T) {
 		return b, err
 	}
 
-	test.WithoutPrivilege(func(t *testing.T) {
-		tmpImagePath := "/tmp/docker_tests"
-		if err := os.RemoveAll(tmpImagePath); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.MkdirAll(tmpImagePath, os.ModePerm); err != nil {
-			t.Fatal(err)
-		}
-	})
-
 	for _, tt := range tests {
 		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imagePull(tt.srcURI, tt.imageName, tmpImagePath, tt.force, tt.sandBox)
+			b, err := imagePull(tt.srcURI, tt.imageName, tt.imagePath, tt.force, tt.sandBox)
 			switch {
 			case tt.expectSuccess && err == nil:
 				// PASS: expecting success, succeeded
 
-				// imageVerify(t, tt.imagePath, false)
+				if tt.imageName == "" && tt.imagePath == "" {
+					imgbuild.ImageVerify(t, testenv.CmdPath, filepath.Join(tmpImagePath, "test_container.sif"), false, testenv.RunDisabled)
+				} else {
+					imgbuild.ImageVerify(t, testenv.CmdPath, tt.imagePath, false, testenv.RunDisabled)
+				}
+				//imageVerify(t, tt.imagePath, false)
 
 			case !tt.expectSuccess && err != nil:
 				// PASS: expecting failure, failed
@@ -168,6 +175,9 @@ func testDockerPulls(t *testing.T) {
 			}
 		}))
 	}
+	t.Run("Removing_tmp_dir", func(t *testing.T) {
+		os.RemoveAll(tmpImagePath)
+	})
 }
 
 // AUFS sanity tests
