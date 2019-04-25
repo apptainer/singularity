@@ -87,7 +87,7 @@ func createValidCfgFile(t *testing.T) string {
 	return path
 }
 
-func TestRemoteAddAndRemove(t *testing.T) {
+func TestRemoteAdd(t *testing.T) {
 	validCfgFile := createValidCfgFile(t)
 	defer os.Remove(validCfgFile)
 
@@ -124,7 +124,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        invalidURI,
 			global:     false,
-			shallPass:  true,
+			shallPass:  false,
 		},
 		{
 			name:       "4: invalid config file; invalid remote name; empty URI; local",
@@ -231,7 +231,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        invalidURI,
 			global:     true,
-			shallPass:  true,
+			shallPass:  false,
 		},
 		{
 			name:       "17: invalid config file; invalid remote name; invalid URI; global",
