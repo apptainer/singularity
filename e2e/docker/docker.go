@@ -17,8 +17,8 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	//	"github.com/sylabs/singularity/e2e/testutils"
-	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/actions"
+	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	//	"golang.org/x/sys/unix"
 )
@@ -205,8 +205,6 @@ func testDockerAUFS(t *testing.T) {
 		t.Fatalf("unexpected failure: %v", err)
 	}
 
-	t.Log("HHHHHHHHHEEEEEEEEEEEELLLLLLLLLLOOOOOOOOOOOOO %v", imagePath)
-
 	fileTests := []struct {
 		name          string
 		execArgs      []string
@@ -226,8 +224,47 @@ func testDockerAUFS(t *testing.T) {
 
 	for _, tt := range fileTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{Overlay: []string{"squashfs.simg"}}, imagePath, tt.execArgs)
-//			_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, tt.execArgs)
+			//_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{Overlay: []string{"squashfs.simg"}}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{}, imagePath, tt.execArgs)
+			//			_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, tt.execArgs)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
+				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
+				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
+			}
+		}))
+	}
+}
+
+// Check force permissions for user builds #977
+func testDockerPermissions(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	imagePath := path.Join(testDir, "container")
+	defer os.Remove(imagePath)
+
+	b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	//b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
+	}
+
+	fileTests := []struct {
+		name          string
+		execArgs      []string
+		expectSuccess bool
+	}{
+		{"TestDir", []string{"ls", "/testdir/"}, true},
+		{"TestDirFile", []string{"ls", "/testdir/testfile"}, false},
+	}
+	for _, tt := range fileTests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{}, imagePath, tt.execArgs)
+			//_, stderr, exitCode, err := actions.ImageExec(t, "exec", actions.Opts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
@@ -246,9 +283,9 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Run("remove key", removeNotDefaultKey)
 	t.Run("dockerPulls", testDockerPulls)
 	t.Run("testDockerAUFS", testDockerAUFS)
+	t.Run("testDockerPermissions", testDockerPermissions)
 	//	t.Run("docker", testDocker)
 	//	t.Run("docker", testDockerAUFS)
 	//	t.Run("docker", testDockerPermissions)
