@@ -88,13 +88,13 @@ var pullNameFlag = cmdline.Flag{
 	EnvKeys:      []string{"NAME"},
 }
 
-// --path
-var pullPathFlag = cmdline.Flag{
-	ID:           "pullPathFlag",
+// --dir
+var pullDirFlag = cmdline.Flag{
+	ID:           "pullDirFlag",
 	Value:        &PullDir,
 	DefaultValue: "",
-	Name:         "path",
-	Usage:        "download images to the provided path",
+	Name:         "dir",
+	Usage:        "download images to the specific directory",
 	EnvKeys:      []string{"PULLDIR", "PULLFOLDER"},
 }
 
@@ -138,7 +138,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullNoHTTPSFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullTmpdirFlag, PullCmd)
-	cmdManager.RegisterFlagForCmd(&pullPathFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, PullCmd)
