@@ -6,11 +6,8 @@
 package singularity
 
 import (
-	"fmt"
 	"os"
 	"syscall"
-
-	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -47,31 +44,8 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 	}
 
 	if engine.EngineConfig.GetInstance() {
-		uid := os.Getuid()
-
 		file, err := instance.Get(engine.CommonConfig.ContainerID, instance.SingSubDir)
 		if err != nil {
-			return err
-		}
-
-		if file.PPid != os.Getpid() {
-			return nil
-		}
-
-		if file.Privileged {
-			var err error
-
-			mainthread.Execute(func() {
-				if err = syscall.Setresuid(0, 0, uid); err != nil {
-					err = fmt.Errorf("failed to escalate privileges")
-					return
-				}
-				defer syscall.Setresuid(uid, uid, 0)
-
-				if err = file.Delete(); err != nil {
-					return
-				}
-			})
 			return err
 		}
 		return file.Delete()
