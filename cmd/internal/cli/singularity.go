@@ -160,7 +160,7 @@ func init() {
 	cmdManager.RegisterCmd(VersionCmd, false)
 
 	initializePlugins()
-	plugin.AddCommands(SingularityCmd)
+	SingularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
 func setSylogMessageLevel() {
@@ -213,11 +213,11 @@ func ExecuteSingularity() {
 
 	cmdManager.UpdateCmdFlagFromEnv(envPrefix)
 
-	cliErrors := 0
 	for _, e := range cmdManager.GetError() {
 		sylog.Errorf("%s", e)
 	}
 	// any error reported by command manager is considered as fatal
+	cliErrors := len(cmdManager.GetError())
 	if cliErrors > 0 {
 		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
 	}

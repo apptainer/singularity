@@ -56,8 +56,10 @@ func ReadFrom(r io.Reader) (*Config, error) {
 	}
 
 	if len(b) > 0 {
-		// if we had data to read in io.Reader, attempt to unmarshal as YAML
-		if err := yaml.Unmarshal(b, c); err != nil {
+		// If we had data to read in io.Reader, attempt to unmarshal as YAML.
+		// Also, it will fail if the YAML file does not have the expected
+		// structure.
+		if err := yaml.UnmarshalStrict(b, c); err != nil {
 			return nil, fmt.Errorf("failed to decode YAML data from io.Reader: %s", err)
 		}
 	}

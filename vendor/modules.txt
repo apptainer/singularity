@@ -182,7 +182,7 @@ github.com/opencontainers/go-digest
 github.com/opencontainers/image-spec/specs-go/v1
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/schema
-# github.com/opencontainers/image-tools v0.0.0-00010101000000-000000000000 => github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568
+# github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74 => github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568
 github.com/opencontainers/image-tools/image
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/system
