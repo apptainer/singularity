@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -192,7 +191,7 @@ var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("")
+		return cmdline.InvalidCmdError("invalid command")
 	},
 
 	Use:           docs.SingularityUse,
@@ -224,15 +223,16 @@ func ExecuteSingularity() {
 
 	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
 		name := cmd.Name()
-		if _, ok := err.(cmdline.FlagError); !ok {
-			if err.Error() != "" {
-				SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
-			}
-			SingularityCmd.Println(cmd.UsageString())
-		} else {
+		switch err.(type) {
+		case cmdline.FlagError:
 			usage := cmd.Flags().FlagUsagesWrapped(getColumns())
 			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
 			SingularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
+		case cmdline.InvalidCmdError:
+			SingularityCmd.Println(cmd.UsageString())
+		default:
+			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			SingularityCmd.Println(cmd.UsageString())
 		}
 		SingularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
 			cmd.CommandPath())
