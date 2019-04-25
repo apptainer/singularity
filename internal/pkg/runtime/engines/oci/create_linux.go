@@ -152,7 +152,7 @@ func (engine *EngineOperations) createState(pid int) error {
 
 	name := engine.CommonConfig.ContainerID
 
-	file, err := instance.Add(name, true, instance.OciSubDir)
+	file, err := instance.Add(name, instance.OciSubDir)
 	if err != nil {
 		return err
 	}
@@ -803,7 +803,7 @@ func (c *container) addDevices(system *mount.System) error {
 func (c *container) addMaskedPathsMount(system *mount.System) error {
 	paths := c.engine.EngineConfig.OciConfig.Linux.MaskedPaths
 
-	dir, err := instance.GetDirPrivileged(c.engine.CommonConfig.ContainerID, instance.OciSubDir)
+	dir, err := instance.GetDir(c.engine.CommonConfig.ContainerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}

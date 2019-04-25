@@ -6,11 +6,17 @@
 package singularity
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
+
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -28,6 +34,16 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
+
+var nsProcName = map[specs.LinuxNamespaceType]string{
+	specs.PIDNamespace:     "pid",
+	specs.UTSNamespace:     "uts",
+	specs.IPCNamespace:     "ipc",
+	specs.MountNamespace:   "mnt",
+	specs.CgroupNamespace:  "cgroup",
+	specs.NetworkNamespace: "net",
+	specs.UserNamespace:    "user",
+}
 
 // prepareUserCaps is responsible for checking that user's requested
 // capabilities are authorized
@@ -359,14 +375,29 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
-	// check if SUID workflow is really used with a privileged instance
-	if !file.PrivilegedPath() && starterConfig.GetIsSUID() {
-		return fmt.Errorf("try to join unprivileged instance with SUID workflow")
+	// basic checks:
+	// 1. a user must not use SUID workflow to join an instance
+	//    started with user namespace
+	// 2. a user must use SUID workflow to join an instance
+	//    started without user namespace
+	if starterConfig.GetIsSUID() && file.UserNs {
+		return fmt.Errorf("joining user namespace with SUID workflow is not allowed")
+	} else if !starterConfig.GetIsSUID() && !file.UserNs {
+		return fmt.Errorf("a setuid installation is required to join this instance")
 	}
 
+	// Pid and PPid are stored in instance file and can be controlled
+	// by users, just check for cool values
+	if file.Pid <= 1 || file.PPid <= 1 {
+		return fmt.Errorf("bad instance process ID found")
+	}
+
+	// instance configuration holding configuration read
+	// from instance file
 	instanceEngineConfig := singularityConfig.NewConfig()
 
-	// extract configuration from instance file
+	// extract engine configuration from instance file, the whole content
+	// of this file can't be trusted
 	instanceConfig := &config.Common{
 		EngineConfig: instanceEngineConfig,
 	}
@@ -374,22 +405,140 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	// configuration may be altered, be sure to not panic
+	if instanceEngineConfig.OciConfig.Linux == nil {
+		instanceEngineConfig.OciConfig.Linux = &specs.Linux{}
+	}
+
+	// go into /proc/<pid> directory to open namespaces inodes
+	// relative to current working directory while joining
+	// namespaces within C starter code as changing directory
+	// here also affects starter process thanks to CLONE_FS.
+	// Additionally it would prevent TOCTOU races and symlink
+	// usage.
+	// And if instance process exits during checks or while
+	// entering in namespace, we would get a "no such process"
+	// error because current working directory would point to a
+	// deleted inode: "/proc/self/cwd -> /proc/<pid> (deleted)"
+	path := filepath.Join("/proc", strconv.Itoa(file.Pid))
+	if err := mainthread.Chdir(path); err != nil {
+		return err
+	}
+
+	uid := os.Getuid()
+	gid := os.Getgid()
+
+	// enforce checks while joining an instance process with SUID workflow
+	// since instance file is stored in user home directory, we can't trust
+	// its content when using SUID workflow
+	if !file.UserNs && uid != 0 {
+		// check if instance is running with user namespace enabled
+		// by reading /proc/pid/uid_map
+		_, hid, err := proc.ReadIDMap("uid_map")
+
+		// if the error returned is "no such file or directory" it means
+		// that user namespaces are not supported, just skip this check
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to read user namespace mapping: %s", err)
+		} else if err == nil && hid > 0 {
+			// a host uid greater than 0 means user namespace is in use for this process
+			return fmt.Errorf("trying to join an instance running with user namespace enabled")
+		}
+
+		// read "/proc/pid/root" link of instance process must return a permission denied error
+		if _, err := mainthread.Readlink("root"); !os.IsPermission(err) {
+			return fmt.Errorf("trying to join a wrong instance process")
+		}
+		// "/proc/pid/task" directory must be owned by user UID/GID
+		fi, err := os.Stat("task")
+		if err != nil {
+			return fmt.Errorf("error while getting information for instance task directory: %s", err)
+		}
+		st := fi.Sys().(*syscall.Stat_t)
+		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
+			return fmt.Errorf("instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)
+		}
+
+		ppid := -1
+
+		// read "/proc/pid/status" to check if instance process
+		// is neither orphaned or faked
+		f, err := os.Open("status")
+		if err != nil {
+			return fmt.Errorf("could not open status: %s", err)
+		}
+
+		for s := bufio.NewScanner(f); s.Scan(); {
+			if n, _ := fmt.Sscanf(s.Text(), "PPid:\t%d", &ppid); n == 1 {
+				break
+			}
+		}
+		f.Close()
+
+		// check that Ppid/Pid read from instance file are "somewhat" valid
+		// processes
+		if ppid <= 1 || ppid != file.PPid {
+			return fmt.Errorf("orphaned (or faked) instance process")
+		}
+
+		// read "/proc/ppid/root" link of parent instance process must return
+		// a permission denied error.
+		// Also we don't use absolute path because we want to return an error
+		// if current working directory is deleted.
+		path := filepath.Join("..", strconv.Itoa(file.PPid), "root")
+		if _, err := mainthread.Readlink(path); !os.IsPermission(err) {
+			return fmt.Errorf("trying to join a wrong instance process")
+		}
+		// "/proc/ppid/task" directory must be owned by user UID/GID
+		path = filepath.Join("..", strconv.Itoa(file.PPid), "task")
+		fi, err = os.Stat(path)
+		if err != nil {
+			return fmt.Errorf("error while getting information for parent task directory: %s", err)
+		}
+		st = fi.Sys().(*syscall.Stat_t)
+		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
+			return fmt.Errorf("parent instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)
+		}
+	}
+
+	// get starter binary in use
+	dest, err := mainthread.Readlink("/proc/self/exe")
+	if err != nil {
+		return fmt.Errorf("failed to read /proc/self/exe link: %s", err)
+	}
+	// should be either starter-suid or starter
+	exe := filepath.Base(dest)
+	path = filepath.Join("..", strconv.Itoa(file.PPid), "comm")
+	b, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %s", path, err)
+	}
+	// check that the right starter binary is used according
+	// to namespace configuration and joined instance
+	if exe != strings.Trim(string(b), "\n") {
+		return fmt.Errorf("%s not found in %s, wrong instance process", exe, path)
+	}
+
+	// tell starter that we are joining an instance
 	starterConfig.SetJoinMount(true)
 
-	// set namespaces to join
-	if err := file.UpdateNamespacesPath(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
-		return err
+	// update namespaces path relative to /proc/<pid>
+	// since starter process is in /proc/<pid> directory
+	for i := range instanceEngineConfig.OciConfig.Linux.Namespaces {
+		// ignore unknown namespaces
+		t := instanceEngineConfig.OciConfig.Linux.Namespaces[i].Type
+		if _, ok := nsProcName[t]; !ok {
+			continue
+		}
+		// set namespace relative path
+		instanceEngineConfig.OciConfig.Linux.Namespaces[i].Path = filepath.Join("ns", nsProcName[t])
 	}
 
+	// store namespace paths in starter configuration that will
+	// be passed via a shared memory area and used by starter C code
+	// once this process exit
 	if err := starterConfig.SetNsPathFromSpec(instanceEngineConfig.OciConfig.Linux.Namespaces); err != nil {
 		return err
-	}
-
-	if e.EngineConfig.OciConfig.Process == nil {
-		e.EngineConfig.OciConfig.Process = &specs.Process{}
-	}
-	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
-		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
 	}
 
 	// duplicate instance capabilities
@@ -401,7 +550,10 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		e.EngineConfig.OciConfig.Process.Capabilities.Ambient = instanceEngineConfig.OciConfig.Process.Capabilities.Ambient
 	}
 
-	if os.Getuid() == 0 {
+	// check if user is authorized to set those capabilities and remove
+	// unauthorized capabilities from current set according to capability
+	// configuration file
+	if uid == 0 {
 		if err := e.prepareRootCaps(); err != nil {
 			return err
 		}
@@ -411,7 +563,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 	}
 
-	// restore apparmor profile
+	// restore apparmor profile or apply a new one if provided
 	param := security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")
 	if param != "" {
 		sylog.Debugf("Applying Apparmor profile %s", param)
@@ -420,7 +572,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		e.EngineConfig.OciConfig.SetProcessApparmorProfile(instanceEngineConfig.OciConfig.Process.ApparmorProfile)
 	}
 
-	// restore selinux context
+	// restore selinux context or apply a new one if provided
 	param = security.GetParam(e.EngineConfig.GetSecurity(), "selinux")
 	if param != "" {
 		sylog.Debugf("Applying SELinux context %s", param)
@@ -429,7 +581,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		e.EngineConfig.OciConfig.SetProcessSelinuxLabel(instanceEngineConfig.OciConfig.Process.SelinuxLabel)
 	}
 
-	// restore security features
+	// restore seccomp filter or apply a new one if provided
 	param = security.GetParam(e.EngineConfig.GetSecurity(), "seccomp")
 	if param != "" {
 		sylog.Debugf("Applying seccomp rule from %s", param)
@@ -438,15 +590,20 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 			return err
 		}
 	} else {
-		if instanceEngineConfig.OciConfig.Linux != nil {
-			if e.EngineConfig.OciConfig.Linux == nil {
-				e.EngineConfig.OciConfig.Linux = &specs.Linux{}
-			}
-			e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
+		if e.EngineConfig.OciConfig.Linux == nil {
+			e.EngineConfig.OciConfig.Linux = &specs.Linux{}
 		}
+		e.EngineConfig.OciConfig.Linux.Seccomp = instanceEngineConfig.OciConfig.Linux.Seccomp
 	}
 
-	e.EngineConfig.OciConfig.Process.NoNewPrivileges = instanceEngineConfig.OciConfig.Process.NoNewPrivileges
+	// only root user can set this value based on instance file
+	// and always set to true for normal users or if instance file
+	// returned a wrong configuration
+	if uid == 0 && instanceEngineConfig.OciConfig.Process != nil {
+		e.EngineConfig.OciConfig.Process.NoNewPrivileges = instanceEngineConfig.OciConfig.Process.NoNewPrivileges
+	} else {
+		e.EngineConfig.OciConfig.Process.NoNewPrivileges = true
+	}
 
 	return nil
 }
