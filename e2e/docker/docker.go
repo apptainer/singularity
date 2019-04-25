@@ -87,7 +87,7 @@ func testDockerPulls(t *testing.T) {
 			imagePath:     "",
 			force:         false,
 			sandBox:       false,
-			expectSuccess: true, // TODO: WTF!! this should fail...
+			expectSuccess: false,
 		},
 		{
 			desc:          "busybox pull",
@@ -114,9 +114,9 @@ func testDockerPulls(t *testing.T) {
 		}
 
 		if imagePath == "" {
-			argv = append(argv, "--path", tmpImagePath)
+			argv = append(argv, "--dir", tmpImagePath)
 		} else {
-			argv = append(argv, "--path", imagePath)
+			argv = append(argv, "--dir", imagePath)
 		}
 
 		if imageName != "" {
@@ -132,23 +132,18 @@ func testDockerPulls(t *testing.T) {
 		return b, err
 	}
 
+	test.WithoutPrivilege(func(t *testing.T) {
+		tmpImagePath := "/tmp/docker_tests"
+		if err := os.RemoveAll(tmpImagePath); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.MkdirAll(tmpImagePath, os.ModePerm); err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	for _, tt := range tests {
 		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
-			//			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test")
-			//			if err != nil {
-			//				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
-			//			}
-			//			tmpImagePath = filepath.Join(tmpdir, "image")
-			//			defer os.RemoveAll(tmpdir)
-
-			tmpImagePath := "/tmp/docker_tests"
-			if err := os.RemoveAll(tmpImagePath); err != nil {
-				t.Fatal("%v", err)
-			}
-			if err := os.MkdirAll(tmpImagePath, os.ModePerm); err != nil {
-				t.Fatal("%v", err)
-			}
-
 			b, err := imagePull(tt.srcURI, tt.imageName, tmpImagePath, tt.force, tt.sandBox)
 			switch {
 			case tt.expectSuccess && err == nil:
@@ -272,13 +267,11 @@ func testDockerWhiteoutSymlink(t *testing.T) {
 	defer os.Remove(imagePath)
 
 	b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
-	//	b, err := imageBuild(actions.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
 	}
 	imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
-	//imgbuild.ImageVerify(t, imagePath, false)
 }
 
 func testDockerDefFile(t *testing.T) {
@@ -339,13 +332,8 @@ func RunE2ETests(t *testing.T) {
 	}
 
 	t.Run("dockerPulls", testDockerPulls)
-	t.Run("testDockerAUFS", testDockerAUFS)
-	t.Run("testDockerPermissions", testDockerPermissions)
-	t.Run("testDockerWhiteoutSymlink", testDockerWhiteoutSymlink)
-	t.Run("testDockerDefFile", testDockerDefFile)
-	//	t.Run("docker", testDocker)
-	//	t.Run("docker", testDockerAUFS)
-	//	t.Run("docker", testDockerPermissions)
-	//	t.Run("docker", testDockerWhiteoutSymlink)
-	//	t.Run("docker", testDockerDefFile)
+	//t.Run("testDockerAUFS", testDockerAUFS)
+	//t.Run("testDockerPermissions", testDockerPermissions)
+	//t.Run("testDockerWhiteoutSymlink", testDockerWhiteoutSymlink)
+	//t.Run("testDockerDefFile", testDockerDefFile)
 }
