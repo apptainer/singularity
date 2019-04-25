@@ -34,7 +34,7 @@ func imagePull(library, pullDir string, imagePath string, sourceSpec string, for
 		argv = append(argv, "--library", library)
 	}
 	if pullDir != "" {
-		argv = append(argv, "--path", "/tmp")
+		argv = append(argv, "--dir", "/tmp")
 	}
 	if imagePath != "" {
 		argv = append(argv, imagePath)
