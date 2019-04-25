@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"gopkg.in/yaml.v2"
 )
 
@@ -88,6 +89,9 @@ func createValidCfgFile(t *testing.T) string {
 }
 
 func TestRemoteAdd(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	validCfgFile := createValidCfgFile(t)
 	defer os.Remove(validCfgFile)
 

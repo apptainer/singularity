@@ -8,11 +8,16 @@ package singularity
 import (
 	"os"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 // Note that the valid use cases are in remote_add_test.go. We still have tests
 // here for all the corner cases of RemoteRemove()
 func TestRemoteRemove(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	validCfgFile := createValidCfgFile(t) // from remote_add_test.go
 	defer os.Remove(validCfgFile)
 
