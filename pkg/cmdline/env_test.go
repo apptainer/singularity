@@ -20,7 +20,7 @@ func TestEnvAppendValue(t *testing.T) {
 
 	cmd.Flags().BoolSlice("boolFlag", []bool{}, "")
 	if cmd.Flag("boolFlag").Value.String() != "[]" {
-		t.Errorf("The flag should be unset.")
+		t.Errorf("The flag should be empty.")
 	}
 
 	EnvAppendValue(cmd.Flag("boolFlag"), "1")
@@ -30,7 +30,7 @@ func TestEnvAppendValue(t *testing.T) {
 
 	EnvAppendValue(cmd.Flag("boolFlag"), "false")
 	if cmd.Flag("boolFlag").Value.String() != "[true,false]" {
-		t.Errorf("The flag should appended with the value provided.")
+		t.Errorf("The flag should be appended with the value provided.")
 	}
 
 	EnvAppendValue(cmd.Flag("boolFlag"), "bad")
@@ -45,22 +45,22 @@ func TestEnvSetValue(t *testing.T) {
 
 	cmd.Flags().Int("intFlag", 0, "")
 	if cmd.Flag("intFlag").Value.String() != "0" {
-		t.Errorf("The flag should be unset.")
+		t.Errorf("The flag should be empty.")
 	}
 
 	EnvSetValue(cmd.Flag("intFlag"), "any string")
 	if cmd.Flag("intFlag").Value.String() != "0" {
-		t.Errorf("The flag should be set to default value.")
+		t.Errorf("The flag should be set to the default value.")
 	}
 
 	EnvSetValue(cmd.Flag("intFlag"), "-1")
 	if cmd.Flag("intFlag").Value.String() != "-1" {
-		t.Errorf("The flag should be set to value provided.")
+		t.Errorf("The flag should be set to the value provided.")
 	}
 
 	cmd.Flags().StringSlice("stringSlice", []string{""}, "")
 	if cmd.Flag("stringSlice").Value.String() != "[]" {
-		t.Errorf("The flag should be unset.")
+		t.Errorf("The flag should be empty.")
 	}
 
 	EnvSetValue(cmd.Flag("stringSlice"), "sliceval1,sliceval2")
@@ -70,6 +70,6 @@ func TestEnvSetValue(t *testing.T) {
 
 	EnvSetValue(cmd.Flag("stringSlice"), "newsliceval")
 	if cmd.Flag("stringSlice").Value.String() != "[sliceval1,sliceval2]" {
-		t.Errorf("Once set, the flag should not be appended or overwritten.")
+		t.Errorf("Once set, the flag value should not change.")
 	}
 }
