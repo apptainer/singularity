@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var cacheDefault string
@@ -30,6 +31,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestRoot(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		env      string

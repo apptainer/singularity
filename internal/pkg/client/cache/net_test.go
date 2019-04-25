@@ -9,9 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestNet(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -44,6 +49,9 @@ func TestNet(t *testing.T) {
 }
 
 func TestNetImageExists(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		sum      string

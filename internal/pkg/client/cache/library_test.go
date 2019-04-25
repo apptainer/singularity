@@ -13,10 +13,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test"
 	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 func TestLibrary(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -49,6 +53,9 @@ func TestLibrary(t *testing.T) {
 }
 
 func TestLibraryImage(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	// LibraryImage just return a string and there is no definition of what
 	// could be a bad string.
 	tests := []struct {
@@ -76,6 +83,9 @@ func TestLibraryImage(t *testing.T) {
 }
 
 func TestLibraryImageExists(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	// Invalid cases
 	_, err := LibraryImageExists("", "")
 	if err == nil {

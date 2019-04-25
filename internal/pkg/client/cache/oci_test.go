@@ -9,9 +9,14 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestOciBlob(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -44,6 +49,9 @@ func TestOciBlob(t *testing.T) {
 }
 
 func TestOciTemp(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -76,6 +84,9 @@ func TestOciTemp(t *testing.T) {
 }
 
 func TestOciTempExists(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		sum      string
