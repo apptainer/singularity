@@ -111,13 +111,11 @@ func (m *CommandManager) RegisterSubCmd(parentCmd, childCmd *cobra.Command) {
 }
 
 // SetCmdGroup creates a unique group of commands identified by name.
-// If group already exists, this function silently return and add
-// an error to the error pool (see GetError)
+// If group already exists or empty command is passed, this function
+// will panic
 func (m *CommandManager) SetCmdGroup(name string, cmds ...*cobra.Command) {
 	if m.groupCmds[name] != nil {
-		err := fmt.Errorf("group %s already exists", name)
-		m.pushError(err)
-		return
+		panic(fmt.Sprintf("group %s already exists", name))
 	}
 	tmp := make([]*cobra.Command, 0, len(cmds))
 	for _, c := range cmds {
@@ -129,9 +127,7 @@ func (m *CommandManager) SetCmdGroup(name string, cmds ...*cobra.Command) {
 	// the temporary allocated array containing only non nil
 	// commands
 	if len(tmp) == 0 {
-		err := fmt.Errorf("creation of an empty group %q", name)
-		m.pushError(err)
-		return
+		panic(fmt.Sprintf("creation of an empty group %q", name))
 	}
 	m.groupCmds[name] = tmp
 }
