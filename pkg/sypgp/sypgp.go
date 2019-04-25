@@ -14,7 +14,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -32,17 +31,11 @@ import (
 )
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
-  1) Go to : https://cloud.sylabs.io/
-  2) Click "Sign in to Sylabs" and follow the sign in steps
-  3) Click on your login id (same and updated button as the Sign in one)
-  4) Select "Access Tokens" from the drop down menu
-  5) Click the "Manage my API tokens" button from the "Account Management" page
-  6) Click "Create"
-  7) Click "Copy token to Clipboard" from the "New API Token" page
-  8) Paste the token string to the waiting prompt below and then press "Enter"
-
-WARNING: this may overwrite a previous token if ~/.singularity/sylabs-token exists
-
+  1) View configured remotes using "singularity remote list"
+  2) Identify default remote. It will be listed with square brackets.
+  3) Login to default remote with "singularity remote login <RemoteName>"
+`
+const helpPush = `  4) Push key using "singularity key push %[1]X"
 `
 
 var errPassphraseMismatch = errors.New("passphrases do not match")
@@ -523,24 +516,6 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	return el[i], nil
 }
 
-// helpAuthentication advises the client on how to procure an authentication token
-func helpAuthentication() (token string, err error) {
-	sylog.Infof(helpAuth)
-
-	token, err = AskQuestion("Paste Token HERE: ")
-	if err != nil {
-		return "", fmt.Errorf("could not read pasted token: %s", err)
-	}
-
-	// Create/Overwrite token file
-	err = ioutil.WriteFile(GetTokenFile(), []byte(token), 0600)
-	if err != nil {
-		return "", fmt.Errorf("could not create/update token file: %s", err)
-	}
-
-	return
-}
-
 // SearchPubkey connects to a key server and searches for a specific key
 func SearchPubkey(search, keyserverURI, authToken string) error {
 
@@ -563,19 +538,9 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			authToken, err := helpAuthentication()
-			if err != nil {
-				return fmt.Errorf("could not obtain or install authentication token: %s", err)
-			}
-
-			// Try to pull key from Key Service again with new auth token.
-			c.AuthToken = authToken
-			pd = client.PageDetails{}
-			if keyText, err = c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil); err != nil {
-				return err
-			}
+			sylog.Infof(helpAuth)
+			return fmt.Errorf("unauthorized or missing token")
 		} else if ok && jerr.Code == http.StatusNotFound {
 			return fmt.Errorf("no matching keys found for fingerprint")
 		} else {
@@ -615,18 +580,9 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 	keyText, err := c.GetKey(context.TODO(), fp)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			authToken, err := helpAuthentication()
-			if err != nil {
-				return nil, fmt.Errorf("could not obtain or install authentication token: %s", err)
-			}
-
-			// Try to pull key from Key Service again with new auth token.
-			c.AuthToken = authToken
-			if keyText, err = c.GetKey(context.TODO(), fp); err != nil {
-				return nil, err
-			}
+			sylog.Infof(helpAuth)
+			return nil, fmt.Errorf("unauthorized or missing token")
 		} else if ok && jerr.Code == http.StatusNotFound {
 			return nil, fmt.Errorf("no matching keys found for fingerprint")
 		} else {
@@ -697,7 +653,7 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 }
 
 // ExportPrivateKey Will export a private key into a file (kpath).
-func ExportPrivateKey(kpath string) error {
+func ExportPrivateKey(kpath string, armor bool) error {
 
 	f, err := os.OpenFile(SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -727,10 +683,18 @@ func ExportPrivateKey(kpath string) error {
 		return err
 	}
 
-	// Export the key to the file
-	err = entityToExport.SerializePrivate(file, nil)
+	if !armor {
+		// Export the key to the file
+		err = entityToExport.SerializePrivate(file, nil)
+	} else {
+		var keyText string
+		keyText, err = serializeEntity(entityToExport, openpgp.PrivateKeyType)
+		file.WriteString(keyText)
+	}
+	defer file.Close()
+
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to serialize private key: %v", err)
 	}
 	fmt.Printf("Private key with fingerprint %X correctly exported to file: %s\n", entityToExport.PrimaryKey.Fingerprint, kpath)
 
@@ -738,7 +702,7 @@ func ExportPrivateKey(kpath string) error {
 }
 
 // ExportPubKey Will export a public key into a file (kpath).
-func ExportPubKey(kpath string) error {
+func ExportPubKey(kpath string, armor bool) error {
 	file, err := os.Create(kpath)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %v", err)
@@ -759,7 +723,13 @@ func ExportPubKey(kpath string) error {
 		return err
 	}
 
-	err = entityToExport.Serialize(file)
+	if !armor {
+		err = entityToExport.Serialize(file)
+	} else {
+		var keyText string
+		keyText, err = serializeEntity(entityToExport, openpgp.PublicKeyType)
+		file.WriteString(keyText)
+	}
 
 	if err != nil {
 		return fmt.Errorf("unable to serialize public key: %v", err)
@@ -929,21 +899,12 @@ func PushPubkey(e *openpgp.Entity, keyserverURI, authToken string) error {
 	// Push key to Key Service.
 	if err := c.PKSAdd(context.TODO(), keyText); err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
-
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
-			authToken, err := helpAuthentication()
-			if err != nil {
-				return fmt.Errorf("could not obtain or install authentication token: %s", err)
-			}
-
-			// Try to push key to Key Service again with new auth token.
-			c.AuthToken = authToken
-			if err := c.PKSAdd(context.TODO(), keyText); err != nil {
-				return fmt.Errorf("key server did not accept PGP key: %v", err)
-			}
-		} else {
-			return fmt.Errorf("key server did not accept PGP key: %v", err)
+			sylog.Infof(helpAuth+helpPush, e.PrimaryKey.Fingerprint)
+			return fmt.Errorf("unauthorized or missing token")
 		}
+		return fmt.Errorf("key server did not accept PGP key: %v", err)
+
 	}
 	return nil
 }

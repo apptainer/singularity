@@ -1,24 +1,42 @@
 version: 2.0
 
 defaults: &defaults
-  working_directory: /go/src/github.com/sylabs/singularity
+  working_directory: /go/singularity
 
 jobs:
   get_source:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11-stretch
+      - image: sylabsio/golang:1.11.9-stretch
     steps:
       - checkout
       - persist_to_workspace:
           root: /go
           paths:
-            - src/github.com/sylabs/singularity
+            - singularity
 
-  go1.11-stretch:
+  cache_go_mod:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11-stretch
+      - image: sylabsio/golang:1.11.9-stretch
+    steps:
+      - attach_workspace:
+          at: /go
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.sum" }}
+      - run:
+          name: Check vendor/ module is up-to-date
+          command: scripts/check-vendor
+      - save_cache:
+          key: go-mod-{{ checksum "go.sum" }}
+          paths:
+            - '/go/pkg/mod'
+
+  go1.11.9-stretch:
+    <<: *defaults
+    docker:
+      - image: sylabsio/golang:1.11.9-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -30,13 +48,12 @@ jobs:
       - run:
           name: Check code
           command: |-
-            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(nproc) -C ./builddir check
 
-  go1.11-alpine:
+  go1.11.9-alpine:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11-alpine
+      - image: sylabsio/golang:1.11.9-alpine
     steps:
       - attach_workspace:
           at: /go
@@ -48,7 +65,6 @@ jobs:
       - run:
           name: Check code
           command: |-
-            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(go env GOPATH)/bin v1.15.0
             make -j$(nproc) -C ./builddir check
 
   go1.11-macos:
@@ -69,12 +85,11 @@ jobs:
           name: Build Singularity
           command: |-
             ./mconfig -v -p /usr/local
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir all
+            make -j$(sysctl -n hw.logicalcpu) -C ./builddir all
       - run:
           name: Check code
           command: |-
-            curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | TMPDIR=$(mktemp -d) sh -s -- -b $(go env GOPATH)/bin v1.15.0
-            make -j$(sysctl -n hw.physicalcpu) -C ./builddir check
+            make -j$(sysctl -n hw.logicalcpu) -C ./builddir check
 
   unit_tests:
     machine: true
@@ -110,17 +125,17 @@ jobs:
       - run:
           name: Build and Install Singularity
           command: |-
-            cd $HOME/go/src/github.com/sylabs/singularity
+            cd $HOME/go/singularity
             ./mconfig -v -p /usr/local --without-network
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
           name: Run unit tests
           command: |-
-            cd $HOME/go/src/github.com/sylabs/singularity
+            cd $HOME/go/singularity
             make -j$(nproc) -C ./builddir unit-test
 
-  integration_tests:
+  e2e_tests:
     machine: true
     steps:
       - attach_workspace:
@@ -131,6 +146,7 @@ jobs:
             echo 'export GOPATH=$HOME/go' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
+            echo 'export SINGULARITY_E2E=1' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
           name: Update Go to 1.11.6
@@ -150,39 +166,41 @@ jobs:
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
             sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install singularity
           command: |-
-            cd $HOME/go/src/github.com/sylabs/singularity
+            cd $HOME/go/singularity
             ./mconfig -v -p /usr/local
             make -j$(nproc) -C ./builddir all
             sudo make -C ./builddir install
       - run:
-          name: Run integration tests
+          name: Run E2E tests
           command: |-
-            cd $HOME/go/src/github.com/sylabs/singularity
-            make -C ./builddir integration-test
+            cd $HOME/go/singularity
+            make -C ./builddir integration-test e2e-test
 
 workflows:
   version: 2
   build_and_test:
     jobs:
       - get_source
-      - go1.11-stretch:
+      - cache_go_mod:
           requires:
             - get_source
-      - go1.11-alpine:
+      - go1.11.9-stretch:
           requires:
-            - get_source
+            - cache_go_mod
+      - go1.11.9-alpine:
+          requires:
+            - cache_go_mod
       - go1.11-macos:
           requires:
             - get_source
       - unit_tests:
           requires:
             - get_source
-      - integration_tests:
+      - e2e_tests:
           requires:
             - get_source
           filters:

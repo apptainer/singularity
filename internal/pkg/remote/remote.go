@@ -24,6 +24,11 @@ var (
 	ErrNoDefault = errors.New("no default remote")
 )
 
+var errorCodeMap = map[int]string{
+	404: "Invalid Token",
+	500: "Internal Server Error",
+}
+
 // Config stores the state of remote endpoint configurations
 type Config struct {
 	DefaultRemote string               `yaml:"Active"`
@@ -51,8 +56,10 @@ func ReadFrom(r io.Reader) (*Config, error) {
 	}
 
 	if len(b) > 0 {
-		// if we had data to read in io.Reader, attempt to unmarshal as YAML
-		if err := yaml.Unmarshal(b, c); err != nil {
+		// If we had data to read in io.Reader, attempt to unmarshal as YAML.
+		// Also, it will fail if the YAML file does not have the expected
+		// structure.
+		if err := yaml.UnmarshalStrict(b, c); err != nil {
 			return nil, fmt.Errorf("failed to decode YAML data from io.Reader: %s", err)
 		}
 	}
@@ -212,7 +219,11 @@ func (e *EndPoint) VerifyToken() error {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("error response from server: %v", res.StatusCode)
+		convStatus, ok := errorCodeMap[res.StatusCode]
+		if !ok {
+			convStatus = "Unknown"
+		}
+		return fmt.Errorf("error response from server: %v", convStatus)
 	}
 
 	return nil

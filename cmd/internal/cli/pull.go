@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,13 +6,17 @@
 package cli
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
@@ -21,6 +25,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/signing"
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 const (
@@ -41,6 +47,12 @@ var (
 	PullLibraryURI string
 	// PullImageName holds the name to be given to the pulled image
 	PullImageName string
+	// KeyServerURL server URL
+	KeyServerURL = "https://keys.sylabs.io"
+	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
+	unauthenticatedPull bool
+	// PullDir is the path that the containers will be pulled to, if set
+	PullDir string
 )
 
 func init() {
@@ -49,8 +61,14 @@ func init() {
 	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
 	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
+	PullCmd.Flags().StringVar(&PullDir, "path", "", "download images to the provided path")
+	PullCmd.Flags().SetAnnotation("path", "envkey", []string{"PULLDIR", "PULLFOLDER"})
+
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
+
+	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "do not require a signed container")
+	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
@@ -85,6 +103,7 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
+	exitStat := 0
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
 	transport, ref := uri.Split(args[i])
 	if ref == "" {
@@ -105,6 +124,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 		name = PullImageName
 	}
 
+	if PullDir != "" {
+		name = filepath.Join(PullDir, name)
+	}
+
 	// monitor for OS signals and remove invalid file
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -119,7 +142,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		if !force {
 			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists - will not overwrite")
+				sylog.Fatalf("image file already exists: %q - will not overwrite", name)
 			}
 		}
 
@@ -137,9 +160,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 			imageName = uri.GetName(args[i])
 		}
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-		if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName)
+		if err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
-		} else if !exists {
+		}
+		if !exists {
 			sylog.Infof("Downloading library image")
 			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
@@ -170,32 +195,132 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
+
+		// check if we pulled from the library, if so; is it signed?
+		if !unauthenticatedPull {
+			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, true)
+			if err != nil {
+				// err will be: "unable to verify container: %v", err
+				sylog.Warningf("%v", err)
+				// if theres a warning, exit 1
+				exitStat = 1
+			}
+			// if container is not signed, print a warning
+			if !imageSigned {
+				fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
+				resp, err := sypgp.AskQuestion("Do you with to proceed? [N/y] ")
+				if err != nil {
+					sylog.Fatalf("unable to parse input: %v", err)
+				}
+				if resp == "" || resp != "y" && resp != "Y" {
+					fmt.Fprintf(os.Stderr, "Aborting.\n")
+					err := os.Remove(name)
+					if err != nil {
+						sylog.Fatalf("Unabel to delete the container: %v", err)
+					}
+					// exit status 10 after replying no
+					exitStat = 10
+				}
+			}
+		} else {
+			sylog.Warningf("Skipping container verification")
+		}
+		fmt.Printf("Download complete: %s\n", name)
+
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	case ociclient.IsSupported(transport):
-		if !force {
-			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists - will not overwrite")
-			}
-		}
-
-		authConf, err := makeDockerCredentials(cmd)
-		if err != nil {
-			sylog.Fatalf("While creating Docker credentials: %v", err)
-		}
-
-		libexec.PullOciImage(name, args[i], types.Options{
-			TmpDir:           tmpDir,
-			Force:            force,
-			NoHTTPS:          noHTTPS,
-			DockerAuthConfig: authConf,
-			NoCleanUp:        noCleanUp,
-		})
+		downloadOciImage(name, args[i], cmd)
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
+	// This will exit 1 if the pulled container is signed by
+	// a unknown signer, i.e, if you dont have the key in your
+	// local keyring. theres proboly a better way to do this...
+	os.Exit(exitStat)
+}
+
+// TODO: This should be a external function
+func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
+	if !force {
+		if _, err := os.Stat(name); err == nil {
+			sylog.Fatalf("Image file already exists - will not overwrite")
+		}
+	}
+
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	sysCtx := &ocitypes.SystemContext{
+		OCIInsecureSkipTLSVerify:    noHTTPS,
+		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerAuthConfig:            authConf,
+	}
+
+	sum, err := ociclient.ImageSHA(imageURI, sysCtx)
+	if err != nil {
+		sylog.Fatalf("Failed to get checksum for %s: %s", imageURI, err)
+	}
+
+	imgName := uri.GetName(imageURI)
+	cachedImgPath := cache.OciTempImage(sum, imgName)
+
+	exists, err := cache.OciTempExists(sum, imgName)
+	if err != nil {
+		sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
+	}
+	if !exists {
+		sylog.Infof("Converting OCI blobs to SIF format")
+		if err := convertDockerToSIF(imageURI, cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
+			sylog.Fatalf("%v", err)
+		}
+	} else {
+		sylog.Infof("Using cached image")
+	}
+
+	// Perms are 777 *prior* to umask
+	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		sylog.Fatalf("Unable to open file for writing: %s: %v\n", name, err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.Open(cachedImgPath)
+	if err != nil {
+		sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		sylog.Fatalf("Failed while copying files: %v\n", err)
+	}
+}
+
+func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
+	b, err := build.NewBuild(
+		image,
+		build.Config{
+			Dest:   cachedImgPath,
+			Format: "sif",
+			Opts: types.Options{
+				TmpDir:           tmpDir,
+				NoTest:           true,
+				NoHTTPS:          noHTTPS,
+				DockerAuthConfig: authConf,
+			},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("Unable to create new build: %v", err)
+	}
+
+	return b.Full()
 }
 
 func handlePullFlags(cmd *cobra.Command) {
@@ -204,6 +329,7 @@ func handlePullFlags(cmd *cobra.Command) {
 	endpoint, err := sylabsRemote(remoteConfig)
 	if err == scs.ErrNoDefault {
 		sylog.Warningf("No default remote in use, falling back to: %v", PullLibraryURI)
+		sylog.Debugf("using default key server url: %v", KeyServerURL)
 		return
 	} else if err != nil {
 		sylog.Fatalf("Unable to load remote configuration: %v", err)
@@ -217,4 +343,11 @@ func handlePullFlags(cmd *cobra.Command) {
 		}
 		PullLibraryURI = uri
 	}
+
+	uri, err := endpoint.GetServiceURI("keystore")
+	if err != nil {
+		sylog.Warningf("Unable to get library service URI: %v, defaulting to %s.", err, KeyServerURL)
+		return
+	}
+	KeyServerURL = uri
 }

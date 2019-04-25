@@ -204,17 +204,15 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  The 'key' command allows you to manage local OpenPGP key stores by creating
-  a new store and new key pairs. You can also list available keys from the
-  default store. Finally, the key command offers subcommands to communicate
-  with an HKP key server to fetch and upload public keys.`
+  Manage OpenPGP keys both locally via a Singularity keychain
+  and remotely via a Sylabs Cloud Keystore.`
 	KeyExample string = `
   All group commands have their own help output:
 
   $ singularity help key newpair
   $ singularity key list --help`
 
-	// keys : for the hidden `keys` command
+	// keys is for the hidden 'keys' command
 	KeysUse string = `keys [keys options...]`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,33 +221,32 @@ Enterprise Performance Computing (EPC)`
 	KeyImportUse   string = `import [import options...] <input-key>`
 	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
-  The 'key import' command allows you to add to your local key store, keys from a specific local folder`
+  The 'key import' command allows you to add a key to your local keyring
+  from a specific file.`
 	KeyImportExample string = `
-  $ singularity key import ./my-key.asc
-  `
+  $ singularity key import ./my-key.asc`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key export
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyExportUse   string = `export [export options...] <key-fingerprint> <output-file>`
+	KeyExportUse   string = `export [export options...] <output-file>`
 	KeyExportShort string = `Export a public or private key into a specific file`
 	KeyExportLong  string = `
-  The 'key export' command allows you to export a key (either private or public) and save it on a local file`
+  The 'key export' command allows you to export a key and save it to a file.`
 	KeyExportExample string = `
   Exporting a private key:
   
-  $ singularity key export --secret <path_to_file>
+  $ singularity key export --secret ./private.asc
 
   Exporting a public key:
   
-  $ singularity key export <path_to_file>
-  `
+  $ singularity key export ./public.asc`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyNewPairUse   string = `newpair`
-	KeyNewPairShort string = `Create a new OpenPGP key pair`
+	KeyNewPairShort string = `Create a new key pair`
 	KeyNewPairLong  string = `
   The 'key newpair' command allows you to create a new key or public/private
   keys to be stored in the default user local key store location (e.g., 
@@ -261,10 +258,10 @@ Enterprise Performance Computing (EPC)`
 	// key list
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyListUse   string = `list`
-	KeyListShort string = `List keys from the default key store`
+	KeyListShort string = `List keys in your local keyring`
 	KeyListLong  string = `
-  The 'key list' command allows you to list public/private key pairs from the 
-  default user local key store location (e.g., $HOME/.singularity/sypgp).`
+  The 'key list' command allows you to list public/private keys from the 
+  default user's local keyring location (i.e., $HOME/.singularity/sypgp).`
 	KeyListExample string = `
   $ singularity key list`
 
@@ -272,7 +269,7 @@ Enterprise Performance Computing (EPC)`
 	// key search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeySearchUse   string = `search [search options...] <search_string>`
-	KeySearchShort string = `Search for keys matching string argument`
+	KeySearchShort string = `Search for keys on a key server`
 	KeySearchLong  string = `
   The 'key search' command allows you to connect to a key server and look for
   public keys matching the argument passed to the command line. You can
@@ -291,7 +288,7 @@ Enterprise Performance Computing (EPC)`
 	// key pull
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyPullUse   string = `pull [pull options...] <fingerprint>`
-	KeyPullShort string = `Fetch an OpenPGP public key from a key server`
+	KeyPullShort string = `Download a public key from a key server`
 	KeyPullLong  string = `
   The 'key pull' command allows you to connect to a key server look for and 
   download a public key. Key rings are stored into (e.g., 
@@ -303,7 +300,7 @@ Enterprise Performance Computing (EPC)`
 	// key push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyPushUse   string = `push [push options...] <fingerprint>`
-	KeyPushShort string = `Upload an OpenPGP public key to a key server`
+	KeyPushShort string = `Upload a public key to a key server`
 	KeyPushLong  string = `
   The 'key push' command allows you to connect to a key server and upload 
   public keys from the local key store.`
@@ -314,7 +311,7 @@ Enterprise Performance Computing (EPC)`
 	// key remove
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyRemoveUse     string = `remove <fingerprint>`
-	KeyRemoveShort   string = `Remove a local public key`
+	KeyRemoveShort   string = `Remove a local public key from your keyring`
 	KeyRemoveLong    string = `The 'key remove' command will remove a local public key.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
@@ -542,7 +539,7 @@ Enterprise Performance Computing (EPC)`
   URI.  Supported URIs include:
 
   library: Pull an image from the currently configured library
-      library://[user[collection/[container[:tag]]]]
+      library://user/collection/container[:tag]
 
   docker: Pull an image from Docker Hub
       docker://user/image:tag
@@ -563,12 +560,12 @@ Enterprise Performance Computing (EPC)`
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
-	PushShort string = `Upload image to the provided library (default is "https://library.sylabs.io")`
+	PushShort string = `Upload image to the provided library (default is "cloud.sylabs.io")`
 	PushLong  string = `
   The Singularity push command allows you to upload your sif image to a library
-  of your choosing. An auth token is required to push to the remote, so you may
-  need to configure if first with 'singularity remote'.
-  `
+  of your choosing. It's always good practice to sign your containers before
+  pushing them to the library. An auth token is required to push to the remote,
+  so you may need to configure if first with 'singularity remote'.`
 	PushExample string = `
   $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
 
@@ -579,8 +576,8 @@ Enterprise Performance Computing (EPC)`
 	SearchShort string = `Search a Library for images`
 	SearchLong  string = `
   The Singularity search command allows you to search within a container library 
-  of your choosing.  The container library defaults to 
-  https://library.sylabs.io when no other library argument is given.`
+  of your choosing.  The container library defaults to cloud.sylabs.io when no 
+  other library argument is given.`
 	SearchExample string = `
   $ singularity search lolcow`
 
@@ -671,6 +668,7 @@ Enterprise Performance Computing (EPC)`
   signature verification is done for all those blocks.`
 	VerifyExample string = `
   $ singularity verify container.sif`
+
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run-help
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

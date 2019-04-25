@@ -89,10 +89,8 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Des
 
 // Sign takes the path of a container and generates an OpenPGP signature block for
 // its system partition. Sign uses the private keys found in the default
-// location if available or helps the user by prompting with key generation
-// configuration options. In its current form, Sign also pushes, when desired,
-// public material to a key server.
-func Sign(cpath, keyServiceURI string, id uint32, isGroup bool, keyIdx int, authToken string) error {
+// location.
+func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	elist, err := sypgp.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
@@ -101,43 +99,21 @@ func Sign(cpath, keyServiceURI string, id uint32, isGroup bool, keyIdx int, auth
 	// Generate a private key usable for signing
 	var entity *openpgp.Entity
 	if elist == nil {
-		resp, err := sypgp.AskQuestion("No OpenPGP signing keys found, autogenerate? [Y/n] ")
-		if err != nil {
-			return fmt.Errorf("could not read response: %s", err)
-		}
-		if resp == "" || resp == "y" || resp == "Y" {
-			entity, err = sypgp.GenKeyPair(keyServiceURI, authToken)
-			if err != nil {
-				return fmt.Errorf("generating openpgp key pair failed: %s", err)
-			}
+		return fmt.Errorf("no private keys in keyring. use 'key newpair' to generate a key, or 'key import' to import a private key from gpg")
+	}
+	if keyIdx != -1 { // -k <idx> has been specified
+		if keyIdx >= 0 && keyIdx < len(elist) {
+			entity = elist[keyIdx]
 		} else {
-			return fmt.Errorf("cannot sign without installed keys")
+			return fmt.Errorf("specified (-k, --keyidx) key index out of range")
 		}
-		resp, err = sypgp.AskQuestion("Upload public key %X to %s? [Y/n] ", entity.PrimaryKey.Fingerprint, keyServiceURI)
+	} else if len(elist) > 1 {
+		entity, err = sypgp.SelectPrivKey(elist)
 		if err != nil {
-			return err
-		}
-		if resp == "" || resp == "y" || resp == "Y" {
-			if err = sypgp.PushPubkey(entity, keyServiceURI, authToken); err != nil {
-				return fmt.Errorf("failed while pushing public key to server: %s", err)
-			}
-			fmt.Printf("Uploaded key successfully!\n")
+			return fmt.Errorf("failed while reading selection: %s", err)
 		}
 	} else {
-		if keyIdx != -1 { // -k <idx> has been specified
-			if keyIdx >= 0 && keyIdx < len(elist) {
-				entity = elist[keyIdx]
-			} else {
-				return fmt.Errorf("specified (-k, --keyidx) key index out of range")
-			}
-		} else if len(elist) > 1 {
-			entity, err = sypgp.SelectPrivKey(elist)
-			if err != nil {
-				return fmt.Errorf("failed while reading selection: %s", err)
-			}
-		} else {
-			entity = elist[0]
-		}
+		entity = elist[0]
 	}
 
 	// Decrypt key if needed
@@ -260,6 +236,22 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 	return getSigsDescr(fimg, id)
 }
 
+// IsSigned Takse a container path (cpath), and will verify that
+// container. Returns false if the container is not signed, likewise,
+// will return true if the container is signed. Also returns a error
+// if one occures, eg. "the container is not signed", or "container is
+// signed by a unknown signer".
+func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
+	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, noPrompt)
+	if err != nil {
+		return false, fmt.Errorf("unable to verify container: %v", err)
+	}
+	if noLocalKey {
+		return true, fmt.Errorf("no local key matching entity")
+	}
+	return true, nil
+}
+
 // Verify takes a container path (cpath), and look for a verification block
 // for a specified descriptor. If found, the signature block is used to verify
 // the partition hash against the signer's version. Verify will look for OpenPGP
@@ -352,6 +344,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 		author += fmt.Sprintf("\t%s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
 	}
+	sylog.Infof("Container is signed")
 	fmt.Printf("Data integrity checked, authentic and signed by:\n%v", author)
 
 	return notLocalKey, nil

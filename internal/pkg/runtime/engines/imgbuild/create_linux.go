@@ -6,7 +6,6 @@
 package imgbuild
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"net"
@@ -17,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
@@ -176,7 +176,6 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 }
 
 func (engine *EngineOperations) copyFiles() error {
-	var output, stderr bytes.Buffer
 	files := types.Files{}
 	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
 		if f.Args == "" {
@@ -197,11 +196,8 @@ func (engine *EngineOperations) copyFiles() error {
 		// copy each file into bundle rootfs
 		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
-		copy.Stdout = &output
-		copy.Stderr = &stderr
-		if err := copy.Run(); err != nil {
-			return fmt.Errorf("while copying %v to %v: %v: %v", transfer.Src, transfer.Dst, err, stderr.String())
+		if err := copy.Copy(transfer.Src, transfer.Dst); err != nil {
+			return err
 		}
 	}
 

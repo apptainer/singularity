@@ -20,7 +20,10 @@ collect:
 check: $(go_OBJ)
 	@echo " CHECK golangci-lint"
 	$(V)cd $(SOURCEDIR) && \
-		golangci-lint run --build-tags "$(GO_TAGS)" ./...
+		(PATH=$(SOURCEDIR)/bin:$$PATH; \
+		 (command -v golangci-lint >/dev/null || \
+		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.15.0) && \
+		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
 	@echo "       PASS"
 
 .PHONY: dist
@@ -35,13 +38,19 @@ unit-test:
 	@echo "       PASS"
 
 
+.PHONY: e2e-test
+e2e-test:
+	@echo " TEST sudo go test [e2e]"
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+		./e2e
+	@echo "       PASS"
+
 .PHONY: integration-test
 integration-test:
 	@echo " TEST sudo go test [integration]"
 	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
-
 
 .PHONY: test
 test:
@@ -52,7 +61,7 @@ test:
 	@echo "       PASS"
 
 .PHONY: testall
-testall: vendor-check check test
+testall: check test
 
 .PHONY: rpm
 rpm: dist
@@ -79,7 +88,7 @@ cscope:
 .PHONY: clean
 clean:
 	@printf " CLEAN\n"
-	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* bin/golangci-lint $(CLEANFILES)
 
 .PHONY: install
 install: $(INSTALLFILES)
@@ -90,10 +99,5 @@ install: $(INSTALLFILES)
 vendor:
 	@echo " VENDOR"
 	$(V)$(GO) mod vendor >/dev/null
-
-.PHONY: vendor-check
-vendor-check:
-	@echo " VENDOR CHECK"
-	$(V)$(GO) mod verify
 
 -include $(BUILDDIR)/mergeddeps

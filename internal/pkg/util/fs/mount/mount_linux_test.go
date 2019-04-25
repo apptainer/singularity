@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -61,7 +61,7 @@ func TestImage(t *testing.T) {
 	}
 	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10); err == nil {
 		t.Errorf("nil error returned, should have returned non-nil mount.ErrMountExists")
-	} else if err != nil && err != ErrMountExists {
+	} else if err != ErrMountExists {
 		t.Errorf("non-nil error should have been mount.ErrMountExists")
 	}
 	points.RemoveAll()
