@@ -37,6 +37,9 @@ func EnvSetValue(flag *pflag.Flag, value string) error {
 	if flag.Changed || v == "" {
 		return nil
 	}
+	// if flag is a string slice, sanitize slice by
+	// trimming potential spaces in environment variable
+	// value (eg: FOO="val1 , val2,val3")
 	if flag.Value.Type() == "stringSlice" {
 		vals := strings.Split(v, ",")
 		for i, e := range vals {
