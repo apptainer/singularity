@@ -71,7 +71,7 @@ func buildMultiStage(t *testing.T) {
 	imagePath2 := path.Join(testenv.TestDir, "container2")
 	imagePath3 := path.Join(testenv.TestDir, "container3")
 
-	liDefFile := PrepareDefFile(defFileDetail{
+	liDefFile := PrepareDefFile(DefFileDetail{
 		Bootstrap: "localimage",
 		From:      imagePath1,
 	})
@@ -79,7 +79,7 @@ func buildMultiStage(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels["FOO"] = "bar"
-	liLabelDefFile := PrepareDefFile(defFileDetail{
+	liLabelDefFile := PrepareDefFile(DefFileDetail{
 		Bootstrap: "localimage",
 		From:      imagePath2,
 		Labels:    labels,

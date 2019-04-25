@@ -25,7 +25,8 @@ type Opts struct {
 	Env     []string
 }
 
-type defFileDetail struct {
+// DefFileDetail ...
+type DefFileDetail struct {
 	Bootstrap string
 	From      string
 	Registry  string
@@ -88,7 +89,7 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string, labels bool, ru
 
 // PrepareDefFile reads a template from a file, applies data to it, writes the
 // contents to disk, and returns the path.
-func PrepareDefFile(dfd defFileDetail) (outputPath string) {
+func PrepareDefFile(dfd DefFileDetail) (outputPath string) {
 	tmpl, err := template.ParseFiles(path.Join("testdata", "deffile.tmpl"))
 	if err != nil {
 		log.Fatalf("failed to parse template: %v", err)
