@@ -61,8 +61,8 @@ func init() {
 	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
 	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
 
-	PullCmd.Flags().StringVar(&PullDir, "path", "", "download images to the provided path")
-	PullCmd.Flags().SetAnnotation("path", "envkey", []string{"PULLDIR", "PULLFOLDER"})
+	PullCmd.Flags().StringVar(&PullDir, "dir", "", "download images to the specific directory")
+	PullCmd.Flags().SetAnnotation("dir", "envkey", []string{"PULLDIR", "PULLFOLDER"})
 
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
