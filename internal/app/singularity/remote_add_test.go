@@ -17,7 +17,6 @@ import (
 
 const (
 	invalidCfgFilePath = "/not/a/real/file"
-	invalidRemoteName  = "notacorrectremotename"
 	invalidURI         = "really//not/a/URI"
 	validURI           = "cloud.random.io"
 	validRemoteName    = "cloud_testing"
@@ -125,7 +124,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "3: invalid config file; invalid remote name; invalid URI; local",
 			cfgfile:    invalidCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        invalidURI,
 			global:     false,
 			shallPass:  false,
@@ -133,7 +132,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "4: invalid config file; invalid remote name; empty URI; local",
 			cfgfile:    invalidCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        "",
 			global:     false,
 			shallPass:  false,
@@ -157,7 +156,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "7: valid config file; invalid remote name; empty URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        "",
 			global:     false,
 			shallPass:  false,
@@ -165,7 +164,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "8: valid config gile; invalid remote name; invalid URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        invalidURI,
 			global:     false,
 			shallPass:  true,
@@ -176,15 +175,15 @@ func TestRemoteAdd(t *testing.T) {
 			// RemoveRemove().
 			name:       "9: valid config file; valid remote name; valid URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: "cloud_testing",
-			uri:        "cloud.random.io",
+			remoteName: validRemoteName,
+			uri:        validURI,
 			global:     false,
 			shallPass:  true,
 		},
 		{
 			name:       "10: valid config file; valid remote name; empty URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: "cloud_testing",
+			remoteName: validRemoteName,
 			uri:        "",
 			global:     false,
 			shallPass:  false,
@@ -193,14 +192,14 @@ func TestRemoteAdd(t *testing.T) {
 			name:       "11: valid config file; empty remote name; valid URI; local",
 			cfgfile:    validCfgFile,
 			remoteName: "",
-			uri:        "cloud.random.io",
+			uri:        validURI,
 			global:     false,
 			shallPass:  false,
 		},
 		{
 			name:       "12: valid config file; valid remote name; invalid URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: "cloud_testing",
+			remoteName: validRemoteName,
 			uri:        invalidURI,
 			global:     false,
 			shallPass:  true,
@@ -208,8 +207,8 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "13: valid config file: invalid remote name; valid URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: invalidRemoteName,
-			uri:        "cloud.random.io",
+			remoteName: validRemoteName,
+			uri:        validURI,
 			global:     false,
 			shallPass:  true,
 		},
@@ -232,7 +231,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "16: invalid config file; invalid remote name; invalid URI; global",
 			cfgfile:    invalidCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        invalidURI,
 			global:     true,
 			shallPass:  false,
@@ -240,7 +239,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "17: invalid config file; invalid remote name; invalid URI; global",
 			cfgfile:    invalidCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        "",
 			global:     true,
 			shallPass:  false,
@@ -264,7 +263,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "20: valid config file; invalid remote name; invalid URI; global",
 			cfgfile:    validCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        invalidURI,
 			global:     true,
 			shallPass:  true,
@@ -272,7 +271,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "21: valid config file; invalid remote name; invalid URI; global",
 			cfgfile:    validCfgFile,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        "",
 			global:     true,
 			shallPass:  false,
@@ -280,7 +279,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "22: invalid config file path; invalid remote name; invalid URI; local",
 			cfgfile:    invalidCfgFilePath,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        invalidURI,
 			global:     false,
 			shallPass:  false,
@@ -296,7 +295,7 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "24: invalid config file path; empty remote name; invalid URI; local",
 			cfgfile:    invalidCfgFilePath,
-			remoteName: invalidRemoteName,
+			remoteName: validRemoteName,
 			uri:        "",
 			global:     false,
 			shallPass:  false,
@@ -312,21 +311,13 @@ func TestRemoteAdd(t *testing.T) {
 		{
 			name:       "26: valid config file; valid remote name; valid URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: "cloud_testing",
-			uri:        "cloud.random.io",
+			remoteName: validRemoteName,
+			uri:        validURI,
 			global:     true,
 			shallPass:  true,
 		},
 		{
-			name:       "27: valid config file; valid remote name; empty URI; local",
-			cfgfile:    validCfgFile,
-			remoteName: "cloud_testing",
-			uri:        "",
-			global:     true,
-			shallPass:  false,
-		},
-		{
-			name:       "28: valid config file; empty remote name; valid URI; local",
+			name:       "27: valid config file; empty remote name; valid URI; local",
 			cfgfile:    validCfgFile,
 			remoteName: "",
 			uri:        validURI,
@@ -334,19 +325,19 @@ func TestRemoteAdd(t *testing.T) {
 			shallPass:  false,
 		},
 		{
-			name:       "29: valid config file; valid remote name; invalid URI; local",
-			cfgfile:    validCfgFile,
-			remoteName: "cloud_testing",
-			uri:        invalidURI,
-			global:     true,
-			shallPass:  true,
+			name:       "28: invalid config file; empty remote name; valid URI; local",
+			cfgfile:    invalidCfgFile,
+			remoteName: "",
+			uri:        validURI,
+			global:     false,
+			shallPass:  false,
 		},
 		{
-			name:       "30: valid config file: invalid remote name; valid URI; local",
+			name:       "29: invalid config file: valid remote name; valid URI; local",
 			cfgfile:    validCfgFile,
-			remoteName: invalidRemoteName,
-			uri:        "cloud.random.io",
-			global:     true,
+			remoteName: validRemoteName,
+			uri:        validURI,
+			global:     false,
 			shallPass:  true,
 		},
 	}
