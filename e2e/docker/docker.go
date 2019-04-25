@@ -8,14 +8,17 @@ package docker
 import (
 	"fmt"
 	"os"
-//	"io/ioutil"
-//	"path/filepath"
+	"path"
+	"strings"
+	//	"io/ioutil"
+	//	"path/filepath"
 	"os/exec"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
 	//	"github.com/sylabs/singularity/e2e/testutils"
-//	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	//	"golang.org/x/sys/unix"
 )
@@ -38,11 +41,11 @@ var testDir string
 
 func testDockerPulls(t *testing.T) {
 	tests := []struct {
-		desc      string
-		srcURI    string
-		imageName string
-		imagePath string
-		force     bool
+		desc          string
+		srcURI        string
+		imageName     string
+		imagePath     string
+		force         bool
 		sandBox       bool
 		expectSuccess bool
 	}{
@@ -102,15 +105,13 @@ func testDockerPulls(t *testing.T) {
 		},
 	}
 
-
-
-//	tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test")
-//	tmpImagePath, err := ioutil.TempDir(testenv.TestDir, "pull_test")
-//	if err != nil {
-//		t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
-//	}
-//	tmpImagePath := filepath.Join(tmpdir, "image")
-//	defer os.RemoveAll(tmpdir)
+	//	tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test")
+	//	tmpImagePath, err := ioutil.TempDir(testenv.TestDir, "pull_test")
+	//	if err != nil {
+	//		t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
+	//	}
+	//	tmpImagePath := filepath.Join(tmpdir, "image")
+	//	defer os.RemoveAll(tmpdir)
 
 	tmpImagePath := ""
 
@@ -148,12 +149,12 @@ func testDockerPulls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
-//			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test")
-//			if err != nil {
-//				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
-//			}
-//			tmpImagePath = filepath.Join(tmpdir, "image")
-//			defer os.RemoveAll(tmpdir)
+			//			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test")
+			//			if err != nil {
+			//				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
+			//			}
+			//			tmpImagePath = filepath.Join(tmpdir, "image")
+			//			defer os.RemoveAll(tmpdir)
 
 			tmpImagePath := "/tmp/docker_tests"
 			if err := os.RemoveAll(tmpImagePath); err != nil {
@@ -186,46 +187,57 @@ func testDockerPulls(t *testing.T) {
 				t.Fatalf("unexpected success: command should have failed")
 			}
 		}))
-//		defer os.RemoveAll(tmpdir)
+		//		defer os.RemoveAll(tmpdir)
 	}
 }
 
-/*
-func testDockerPulls(t *testing.T) {
-	tests := []struct {
-		name          string
-		imagePath     string
-		expectSuccess bool
-	}{
-		{"BusyBox", "docker://busybox", true},
-		{"DoesNotExist", "docker://something_that_doesnt_exist_ever", false},
+// AUFS sanity tests
+func testDockerAUFS(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	imagePath := path.Join(testDir, "container")
+	defer os.Remove(imagePath)
+
+	b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	//	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("unexpected failure: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
-			imagePath := path.Join(testDir, "container")
-			defer os.Remove(imagePath)
+	t.Log("HHHHHHHHHEEEEEEEEEEEELLLLLLLLLLOOOOOOOOOOOOO %v", imagePath)
 
-			opts := imgbuild.Opts{}
-			//				Sandbox: tt.sandbox,
-			//			}
+	fileTests := []struct {
+		name          string
+		execArgs      []string
+		expectSuccess bool
+	}{
+		{
+			name:          "File 2",
+			execArgs:      []string{"ls", "/test/whiteout-dir/file2", "/test/whiteout-file/file2", "/test/normal-dir/file2"},
+			expectSuccess: true,
+		},
+		{
+			name:          "File1",
+			execArgs:      []string{"ls", "/test/whiteout-dir/file1", "/test/whiteout-file/file1"},
+			expectSuccess: false,
+		},
+	}
 
-			//			b, err := imgbuild.ImageBuild(buildOpts{}, imagePath, tt.imagePath)
-			b, err := imgbuild.ImageBuild(testenv.CmdPath, opts, imagePath, tt.imagePath)
-			if tt.expectSuccess {
-				if err != nil {
-					t.Log(string(b))
-					t.Fatalf("unexpected failure: %v", err)
-				}
-				//				imgbuild.ImageVerify(t, imagePath, false)
-				imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
-			} else if !tt.expectSuccess && err == nil {
-				t.Log(string(b))
-				t.Fatal("unexpected success")
+	for _, tt := range fileTests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{Overlay: []string{"squashfs.simg"}}, imagePath, tt.execArgs)
+//			_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, tt.execArgs)
+			if tt.expectSuccess && (exitCode != 0) {
+				t.Log(stderr)
+				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
+			} else if !tt.expectSuccess && (exitCode != 1) {
+				t.Log(stderr)
+				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
 			}
 		}))
 	}
-}*/
+}
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
@@ -234,7 +246,9 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
+	t.Run("remove key", removeNotDefaultKey)
 	t.Run("dockerPulls", testDockerPulls)
+	t.Run("testDockerAUFS", testDockerAUFS)
 	//	t.Run("docker", testDocker)
 	//	t.Run("docker", testDockerAUFS)
 	//	t.Run("docker", testDockerPermissions)
