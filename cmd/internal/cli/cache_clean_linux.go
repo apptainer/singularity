@@ -56,9 +56,9 @@ var cacheCleanNameFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmdFlag(&cacheCleanAllFlag, CacheCleanCmd)
-	cmdManager.RegisterCmdFlag(&cacheCleanTypesFlag, CacheCleanCmd)
-	cmdManager.RegisterCmdFlag(&cacheCleanNameFlag, CacheCleanCmd)
+	cmdManager.RegisterFlagForCmd(&cacheCleanAllFlag, CacheCleanCmd)
+	cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, CacheCleanCmd)
+	cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, CacheCleanCmd)
 }
 
 // CacheCleanCmd : is `singularity cache clean' and will clear your local singularity cache

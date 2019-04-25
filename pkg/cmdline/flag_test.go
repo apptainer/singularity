@@ -227,7 +227,7 @@ func TestCmdFlag(t *testing.T) {
 
 	// test flag registration
 	for _, d := range ttData {
-		cm.RegisterCmdFlag(d.flag, d.cmd)
+		cm.RegisterFlagForCmd(d.flag, d.cmd)
 		if len(cm.GetError()) > 0 && !d.expectedFailure {
 			t.Errorf("unexpected failure for %s", d.desc)
 		} else if len(cm.GetError()) == 0 && d.expectedFailure {

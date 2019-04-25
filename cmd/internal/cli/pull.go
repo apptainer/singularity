@@ -131,21 +131,21 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(PullCmd, false)
+	cmdManager.RegisterCmd(PullCmd)
 
-	cmdManager.RegisterCmdFlag(&pullForceFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&pullLibraryURIFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&pullNameFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&pullNoHTTPSFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&pullTmpdirFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&pullPathFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullForceFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullLibraryURIFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullNoHTTPSFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullTmpdirFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullPathFlag, PullCmd)
 
-	cmdManager.RegisterCmdFlag(&actionDockerUsernameFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&actionDockerPasswordFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&actionDockerLoginFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, PullCmd)
 
-	cmdManager.RegisterCmdFlag(&buildNoCleanupFlag, PullCmd)
-	cmdManager.RegisterCmdFlag(&pullAllowUnauthenticatedFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 }
 
 // PullCmd singularity pull

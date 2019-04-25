@@ -39,8 +39,8 @@ var keyExportArmorFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmdFlag(&keyExportSecretFlag, KeyExportCmd)
-	cmdManager.RegisterCmdFlag(&keyExportArmorFlag, KeyExportCmd)
+	cmdManager.RegisterFlagForCmd(&keyExportSecretFlag, KeyExportCmd)
+	cmdManager.RegisterFlagForCmd(&keyExportArmorFlag, KeyExportCmd)
 }
 
 // KeyExportCmd is `singularity key export` and exports a public or secret

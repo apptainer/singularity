@@ -18,14 +18,14 @@ import (
 var pluginContext = []string{"plugin"}
 
 func init() {
-	cmdManager.RegisterCmd(PluginCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginListCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginInstallCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginUninstallCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginEnableCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginDisableCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginCompileCmd, false)
-	cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd, false)
+	cmdManager.RegisterCmd(PluginCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginListCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginInstallCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginUninstallCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginEnableCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginDisableCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginCompileCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd)
 }
 
 // PluginCmd is the root command for all plugin related functionalities

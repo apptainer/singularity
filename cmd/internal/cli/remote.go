@@ -64,20 +64,20 @@ var remoteTokenFileFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(RemoteCmd, false)
-	cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddCmd, false)
-	cmdManager.RegisterSubCmd(RemoteCmd, RemoteRemoveCmd, false)
-	cmdManager.RegisterSubCmd(RemoteCmd, RemoteUseCmd, false)
-	cmdManager.RegisterSubCmd(RemoteCmd, RemoteListCmd, false)
-	cmdManager.RegisterSubCmd(RemoteCmd, RemoteLoginCmd, false)
-	cmdManager.RegisterSubCmd(RemoteCmd, RemoteStatusCmd, false)
+	cmdManager.RegisterCmd(RemoteCmd)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddCmd)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteRemoveCmd)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteUseCmd)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteListCmd)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteLoginCmd)
+	cmdManager.RegisterSubCmd(RemoteCmd, RemoteStatusCmd)
 
 	// default location of the remote.yaml file is the user directory
-	cmdManager.RegisterCmdFlag(&remoteConfigFlag, RemoteCmd)
+	cmdManager.RegisterFlagForCmd(&remoteConfigFlag, RemoteCmd)
 	// use tokenfile to log in to a remote
-	cmdManager.RegisterCmdFlag(&remoteTokenFileFlag, RemoteLoginCmd)
+	cmdManager.RegisterFlagForCmd(&remoteTokenFileFlag, RemoteLoginCmd)
 	// add --global flag to remote add/remove commands
-	cmdManager.RegisterCmdFlag(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
+	cmdManager.RegisterFlagForCmd(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
 }
 
 // RemoteCmd singularity remote [...]

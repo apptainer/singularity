@@ -48,10 +48,10 @@ var pushAllowUnsignedFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(PushCmd, false)
+	cmdManager.RegisterCmd(PushCmd)
 
-	cmdManager.RegisterCmdFlag(&pushLibraryURIFlag, PushCmd)
-	cmdManager.RegisterCmdFlag(&pushAllowUnsignedFlag, PushCmd)
+	cmdManager.RegisterFlagForCmd(&pushLibraryURIFlag, PushCmd)
+	cmdManager.RegisterFlagForCmd(&pushAllowUnsignedFlag, PushCmd)
 }
 
 // PushCmd singularity push

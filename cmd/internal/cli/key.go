@@ -33,17 +33,17 @@ var keyServerURIFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(KeyCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd, false)
-	cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd, false)
+	cmdManager.RegisterCmd(KeyCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd)
 
-	cmdManager.RegisterCmdFlag(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
+	cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores

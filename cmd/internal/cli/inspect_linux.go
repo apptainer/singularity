@@ -141,16 +141,16 @@ var inspectJSONFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(InspectCmd, false)
+	cmdManager.RegisterCmd(InspectCmd)
 
-	cmdManager.RegisterCmdFlag(&inspectAppNameFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectDeffileFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectEnvironmentFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectHelpfileFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectJSONFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectLabelsFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectRunscriptFlag, InspectCmd)
-	cmdManager.RegisterCmdFlag(&inspectTestFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectAppNameFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectEnvironmentFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectHelpfileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectJSONFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectRunscriptFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectTestFlag, InspectCmd)
 }
 
 func getPathPrefix(appName string) string {

@@ -29,7 +29,7 @@ var pluginInstallNameFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmdFlag(&pluginInstallNameFlag, PluginInstallCmd)
+	cmdManager.RegisterFlagForCmd(&pluginInstallNameFlag, PluginInstallCmd)
 }
 
 // PluginInstallCmd takes a compiled plugin.sif file and installs it

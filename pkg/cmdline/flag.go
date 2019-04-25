@@ -70,7 +70,7 @@ func (m *flagManager) setFlagOptions(flag *Flag, cmd *cobra.Command) {
 	}
 }
 
-func (m *flagManager) registerCmdFlag(flag *Flag, cmds ...*cobra.Command) error {
+func (m *flagManager) registerFlagForCmd(flag *Flag, cmds ...*cobra.Command) error {
 	for _, c := range cmds {
 		if c == nil {
 			return fmt.Errorf("nil command provided")

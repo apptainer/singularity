@@ -33,7 +33,7 @@ func registerCmd(cm *CommandManager, cmd *cobra.Command) (err error) {
 			err = fmt.Errorf("%s", t)
 		}
 	}()
-	cm.RegisterCmd(cmd, false)
+	cm.RegisterCmd(cmd)
 	return
 }
 
@@ -43,7 +43,7 @@ func registerSubCmd(cm *CommandManager, parent, child *cobra.Command) (err error
 			err = fmt.Errorf("%s", t)
 		}
 	}()
-	cm.RegisterSubCmd(parent, child, false)
+	cm.RegisterSubCmd(parent, child)
 	return
 }
 

@@ -66,12 +66,12 @@ var verifyLocalFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(VerifyCmd, false)
+	cmdManager.RegisterCmd(VerifyCmd)
 
-	cmdManager.RegisterCmdFlag(&verifyServerURIFlag, VerifyCmd)
-	cmdManager.RegisterCmdFlag(&verifySifGroupIDFlag, VerifyCmd)
-	cmdManager.RegisterCmdFlag(&verifySifDescIDFlag, VerifyCmd)
-	cmdManager.RegisterCmdFlag(&verifyLocalFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify

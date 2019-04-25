@@ -150,14 +150,14 @@ func init() {
 	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
 	SingularityCmd.SetVersionTemplate(vt)
 
-	cmdManager.RegisterCmdFlag(&singDebugFlag, SingularityCmd)
-	cmdManager.RegisterCmdFlag(&singNoColorFlag, SingularityCmd)
-	cmdManager.RegisterCmdFlag(&singSilentFlag, SingularityCmd)
-	cmdManager.RegisterCmdFlag(&singQuietFlag, SingularityCmd)
-	cmdManager.RegisterCmdFlag(&singVerboseFlag, SingularityCmd)
-	cmdManager.RegisterCmdFlag(&singTokenFileFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singDebugFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singNoColorFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singSilentFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singQuietFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singVerboseFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, SingularityCmd)
 
-	cmdManager.RegisterCmd(VersionCmd, false)
+	cmdManager.RegisterCmd(VersionCmd)
 
 	initializePlugins()
 	SingularityCmd.AddCommand(plugin.AllCommands()...)

@@ -41,8 +41,8 @@ var instanceListJSONFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmdFlag(&instanceListUserFlag, InstanceListCmd)
-	cmdManager.RegisterCmdFlag(&instanceListJSONFlag, InstanceListCmd)
+	cmdManager.RegisterFlagForCmd(&instanceListUserFlag, InstanceListCmd)
+	cmdManager.RegisterFlagForCmd(&instanceListJSONFlag, InstanceListCmd)
 }
 
 // InstanceListCmd singularity instance list

@@ -70,11 +70,11 @@ var instanceStopTimeoutFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmdFlag(&instanceStopUserFlag, InstanceStopCmd)
-	cmdManager.RegisterCmdFlag(&instanceStopAllFlag, InstanceStopCmd)
-	cmdManager.RegisterCmdFlag(&instanceStopForceFlag, InstanceStopCmd)
-	cmdManager.RegisterCmdFlag(&instanceStopSignalFlag, InstanceStopCmd)
-	cmdManager.RegisterCmdFlag(&instanceStopTimeoutFlag, InstanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopUserFlag, InstanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopAllFlag, InstanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopForceFlag, InstanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopSignalFlag, InstanceStopCmd)
+	cmdManager.RegisterFlagForCmd(&instanceStopTimeoutFlag, InstanceStopCmd)
 }
 
 // InstanceStopCmd singularity instance stop

@@ -30,9 +30,9 @@ var searchLibraryFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(SearchCmd, false)
+	cmdManager.RegisterCmd(SearchCmd)
 
-	cmdManager.RegisterCmdFlag(&searchLibraryFlag, SearchCmd)
+	cmdManager.RegisterFlagForCmd(&searchLibraryFlag, SearchCmd)
 }
 
 // SearchCmd singularity search

@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	cmdManager.RegisterCmd(BuildConfigCmd, false)
+	cmdManager.RegisterCmd(BuildConfigCmd)
 }
 
 // BuildConfigCmd outputs a list of the compile-time parameters with which

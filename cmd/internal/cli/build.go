@@ -179,25 +179,25 @@ var buildNoCleanupFlag = cmdline.Flag{
 }
 
 func init() {
-	cmdManager.RegisterCmd(BuildCmd, false)
+	cmdManager.RegisterCmd(BuildCmd)
 
-	cmdManager.RegisterCmdFlag(&buildBuilderFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildDetachedFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildForceFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildJSONFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildLibraryFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildNoCleanupFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildNoHTTPSFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildNoTestFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildRemoteFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildSandboxFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildSectionFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildTmpdirFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&buildUpdateFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildBuilderFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDetachedFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildForceFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildJSONFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 
-	cmdManager.RegisterCmdFlag(&actionDockerUsernameFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&actionDockerPasswordFlag, BuildCmd)
-	cmdManager.RegisterCmdFlag(&actionDockerLoginFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, BuildCmd)
 }
 
 // BuildCmd represents the build command

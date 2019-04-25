@@ -13,7 +13,8 @@ import (
 )
 
 // CommandManager holds root command or first parent
-// and can stores group of command
+// can stores group of command. A command group can be
+// composed of one or many commands
 type CommandManager struct {
 	rootCmd   *cobra.Command
 	groupCmds map[string][]*cobra.Command
@@ -67,8 +68,10 @@ func (m *CommandManager) GetError() []error {
 	return m.errPool
 }
 
-// RegisterCmd registers a child command for the root command
-func (m *CommandManager) RegisterCmd(cmd *cobra.Command, interspersed bool) {
+// RegisterCmd registers a child command of the root command.
+// The registered command is automatically affected to a unique group
+// containing this command only, the group name is based on the command name
+func (m *CommandManager) RegisterCmd(cmd *cobra.Command) {
 	// panic here because it's a misuse of API and generally from
 	// global context or init() functions
 	if cmd == nil {
@@ -76,12 +79,15 @@ func (m *CommandManager) RegisterCmd(cmd *cobra.Command, interspersed bool) {
 	}
 	cmd.SetFlagErrorFunc(onError)
 	m.rootCmd.AddCommand(cmd)
-	cmd.Flags().SetInterspersed(interspersed)
+	cmd.Flags().SetInterspersed(false)
 	m.SetCmdGroup(m.GetCmdName(cmd), cmd)
 }
 
-// RegisterSubCmd registers a child command for parent command given as argument
-func (m *CommandManager) RegisterSubCmd(parentCmd, childCmd *cobra.Command, interspersed bool) {
+// RegisterSubCmd registers a child command for parent command given as argument.
+// The registered command is automatically affected to a unique group containing
+// this command only, the group name is based on the command name appended to
+// parents command name (see GetCmdName for details)
+func (m *CommandManager) RegisterSubCmd(parentCmd, childCmd *cobra.Command) {
 	// panic here because it's a misuse of API and generally from
 	// global context or init() functions
 	if parentCmd == nil {
@@ -92,14 +98,18 @@ func (m *CommandManager) RegisterSubCmd(parentCmd, childCmd *cobra.Command, inte
 		panic("parent command not registered")
 	}
 	parentCmd.AddCommand(childCmd)
-	childCmd.Flags().SetInterspersed(interspersed)
+	childCmd.Flags().SetInterspersed(false)
 	m.SetCmdGroup(m.GetCmdName(childCmd), childCmd)
 }
 
-// SetCmdGroup creates a group of commands identified by name
+// SetCmdGroup creates a unique group of commands identified by name.
+// If group already exists, this function silently return and add
+// an error to the error pool (see GetError)
 func (m *CommandManager) SetCmdGroup(name string, cmds ...*cobra.Command) {
 	if m.groupCmds[name] != nil {
-		panic(fmt.Sprintf("group %s already exists", name))
+		err := fmt.Errorf("group %s already exists", name)
+		m.pushError(err)
+		return
 	}
 	tmp := make([]*cobra.Command, 0, len(cmds))
 	for _, c := range cmds {
@@ -107,8 +117,13 @@ func (m *CommandManager) SetCmdGroup(name string, cmds ...*cobra.Command) {
 			tmp = append(tmp, c)
 		}
 	}
+	// cmds could contain only nil commands, we check length of
+	// the temporary allocated array containing only non nil
+	// commands
 	if len(tmp) == 0 {
-		panic("creation of an empty group")
+		err := fmt.Errorf("creation of an empty group %q", name)
+		m.pushError(err)
+		return
 	}
 	m.groupCmds[name] = tmp
 }
@@ -118,12 +133,14 @@ func (m *CommandManager) GetRootCmd() *cobra.Command {
 	return m.rootCmd
 }
 
-// GetCmdGroup returns group of commands corresponding to name
+// GetCmdGroup returns all commands associated with the group name
 func (m *CommandManager) GetCmdGroup(name string) []*cobra.Command {
 	return m.groupCmds[name]
 }
 
-// GetCmd returns the named command associated with root command
+// GetCmd returns a single command based on its unique group name.
+// If the command group has more than one command this function
+// return a nil command instead.
 func (m *CommandManager) GetCmd(name string) *cobra.Command {
 	cmds := m.groupCmds[name]
 	if cmds == nil || len(cmds) > 1 {
@@ -133,27 +150,28 @@ func (m *CommandManager) GetCmd(name string) *cobra.Command {
 }
 
 // GetCmdName returns name associated with the provided command.
-// If command is named child and has two parents named parent1 and parent2,
-// this function will return "parent1_parent2_child".
+// If command is named "child" and has two parents named "parent1"
+// and "parent2", this function will return "parent1_parent2_child".
 // Passing the root command to this function returns an empty string.
 func (m *CommandManager) GetCmdName(cmd *cobra.Command) string {
 	var names []string
 
-	c := cmd
-	for c != nil {
+	for c := cmd; c != nil; c = c.Parent() {
 		if c == m.rootCmd {
 			break
 		}
-		names = append([]string{c.Name()}, names...)
-		c = c.Parent()
+		names = append(names, c.Name())
 	}
-
+	// reverse slice
+	for i, j := 0, len(names)-1; i < j; i, j = i+1, j-1 {
+		names[i], names[j] = names[j], names[i]
+	}
 	return strings.Join(names, "_")
 }
 
-// RegisterCmdFlag registers a flag for a command
-func (m *CommandManager) RegisterCmdFlag(flag *Flag, cmds ...*cobra.Command) {
-	if err := m.fm.registerCmdFlag(flag, cmds...); err != nil {
+// RegisterFlagForCmd registers a flag for one or many commands
+func (m *CommandManager) RegisterFlagForCmd(flag *Flag, cmds ...*cobra.Command) {
+	if err := m.fm.registerFlagForCmd(flag, cmds...); err != nil {
 		m.pushError(err)
 	}
 }
