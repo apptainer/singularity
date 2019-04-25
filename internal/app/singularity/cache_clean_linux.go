@@ -65,10 +65,9 @@ func CleanCache(cacheType string) error {
 		err := cache.Clean()
 		return err
 	default:
-		sylog.Fatalf("Not a valid type: %v", cacheType)
-		os.Exit(2)
+		// The caller checks the returned error and will exit as required
+		return fmt.Errorf("Not a valid type: %v", cacheType)
 	}
-	return nil
 }
 
 func cleanLibraryCacheName(cacheName string) (bool, error) {
@@ -176,8 +175,8 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 		case "all":
 			cleanAll = true
 		default:
-			sylog.Fatalf("Not a valid type: %v", t)
-			os.Exit(2)
+			// The caller checks the returned error and exit when appropriate
+			return fmt.Errorf("Not a valid type: %v", t)
 		}
 	}
 
@@ -187,8 +186,7 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 			return err
 		}
 		if !foundMatch {
-			sylog.Warningf("No cache found with given name: %v", cacheName)
-			os.Exit(0)
+			return fmt.Errorf("No cache found with given name: %v", cacheName)
 		}
 		return nil
 	}
