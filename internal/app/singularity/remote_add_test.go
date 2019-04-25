@@ -199,7 +199,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: "cloud_testing",
 			uri:        invalidURI,
 			global:     false,
-			shallPass:  false,
+			shallPass:  true,
 		},
 		{
 			name:       "13: valid config file: invalid remote name; valid URI; local",
@@ -207,7 +207,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        "cloud.random.io",
 			global:     false,
-			shallPass:  false,
+			shallPass:  true,
 		},
 		{
 			name:       "14: invalid config file; empty remote name; invalid URI, global",
@@ -335,7 +335,7 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: "cloud_testing",
 			uri:        invalidURI,
 			global:     true,
-			shallPass:  false,
+			shallPass:  true,
 		},
 		{
 			name:       "30: valid config file: invalid remote name; valid URI; local",
@@ -343,7 +343,8 @@ func TestRemoteAddAndRemove(t *testing.T) {
 			remoteName: invalidRemoteName,
 			uri:        "cloud.random.io",
 			global:     true,
-			shallPass:  false},
+			shallPass:  true,
+		},
 	}
 
 	for _, tt := range tests {
