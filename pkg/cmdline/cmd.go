@@ -22,20 +22,18 @@ type CommandManager struct {
 	fm        *flagManager
 }
 
-// FlagError represents an error type returned when command
-// line parsing fails
+// FlagError represents a flag error type
 type FlagError string
 
 func (f FlagError) Error() string {
 	return string(f)
 }
 
-// InvalidCmdError represents an error type returned for an
-// invalid command
-type InvalidCmdError string
+// CommandError represents a command error type
+type CommandError string
 
-func (i InvalidCmdError) Error() string {
-	return string(i)
+func (c CommandError) Error() string {
+	return string(c)
 }
 
 func onError(cmd *cobra.Command, err error) error {

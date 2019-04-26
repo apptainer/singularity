@@ -191,7 +191,7 @@ var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return cmdline.InvalidCmdError("invalid command")
+		return cmdline.CommandError("invalid command")
 	},
 
 	Use:           docs.SingularityUse,
@@ -228,7 +228,7 @@ func ExecuteSingularity() {
 			usage := cmd.Flags().FlagUsagesWrapped(getColumns())
 			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
 			SingularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
-		case cmdline.InvalidCmdError:
+		case cmdline.CommandError:
 			SingularityCmd.Println(cmd.UsageString())
 		default:
 			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
