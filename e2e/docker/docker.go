@@ -44,6 +44,7 @@ func testDockerPulls(t *testing.T) {
 		sandBox       bool
 		expectSuccess bool
 	}{
+		// TODO: go thrught and fix this up
 		{
 			desc:          "alpine latest pull",
 			srcURI:        "docker://alpine:latest",
@@ -302,10 +303,26 @@ func testDockerDefFile(t *testing.T) {
 		kernelMajorRequired int
 		from                string
 	}{
-		{"Arch", 3, "dock0/arch:latest"},
-		{"BusyBox", 0, "busybox:latest"},
-		{"CentOS", 0, "centos:latest"},
-		{"Ubuntu", 0, "ubuntu:16.04"},
+		{
+			name:                "Arch",
+			kernelMajorRequired: 3,
+			from:                "dock0/arch:latest",
+		},
+		{
+			name:                "BusyBox",
+			kernelMajorRequired: 0,
+			from:                "busybox:latest",
+		},
+		{
+			name:                "CentOS",
+			kernelMajorRequired: 0,
+			from:                "centos:latest",
+		},
+		{
+			name:                "Ubuntu",
+			kernelMajorRequired: 0,
+			from:                "ubuntu:16.04",
+		},
 	}
 
 	for _, tt := range tests {
@@ -324,12 +341,105 @@ func testDockerDefFile(t *testing.T) {
 			defer os.Remove(deffile)
 
 			if b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, deffile); err != nil {
-				//if b, err := imageBuild(buildOpts{}, imagePath, deffile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %s", err)
 			}
 			imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
-			//imageVerify(t, imagePath, false)
+		}))
+	}
+}
+
+func prepRegistry(t *testing.T) {
+	commands := [][]string{
+		{"run", "-d", "-p", "5000:5000", "--restart=always", "--name", "registry", "registry:2"},
+		{"pull", "busybox"},
+		{"tag", "busybox", "localhost:5000/my-busybox"},
+		{"push", "localhost:5000/my-busybox"},
+	}
+
+	for _, command := range commands {
+		cmd := exec.Command("docker", command...)
+		if b, err := cmd.CombinedOutput(); err != nil {
+			t.Logf(string(b))
+			t.Fatalf("command failed: %v", strings.Join(command, " "))
+		}
+	}
+}
+
+func killRegistry(t *testing.T) {
+	commands := [][]string{
+		{"kill", "registry"},
+		{"rm", "registry"},
+	}
+
+	for _, command := range commands {
+		cmd := exec.Command("docker", command...)
+		if b, err := cmd.CombinedOutput(); err != nil {
+			t.Logf(string(b))
+			t.Fatalf("command failed: %v", strings.Join(command, " "))
+		}
+	}
+}
+
+func testDockerRegistry(t *testing.T) {
+	test.EnsurePrivilege(t)
+
+	if _, err := exec.LookPath("docker"); err != nil {
+		t.Skip("docker not installed")
+	}
+
+	prepRegistry(t)
+	defer killRegistry(t)
+
+	tests := []struct {
+		name          string
+		expectSuccess bool
+		dfd           imgbuild.DefFileDetail
+	}{
+		{"BusyBox", true, imgbuild.DefFileDetail{
+			Bootstrap: "docker",
+			From:      "localhost:5000/my-busybox",
+		}},
+		{"BusyBoxRegistry", true, imgbuild.DefFileDetail{
+			Bootstrap: "docker",
+			From:      "my-busybox",
+			Registry:  "localhost:5000",
+		}},
+		{"BusyBoxNamespace", false, imgbuild.DefFileDetail{
+			Bootstrap: "docker",
+			From:      "my-busybox",
+			Registry:  "localhost:5000",
+			Namespace: "not-a-namespace",
+		}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			opts := imgbuild.Opts{
+				Env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
+			}
+			//opts := buildOpts{
+			//	env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
+			//}
+			imagePath := path.Join(testDir, "container")
+			defer os.Remove(imagePath)
+
+			defFile := imgbuild.PrepareDefFile(tt.dfd)
+			//defFile := prepareDefFile(tt.dfd)
+
+			b, err := imgbuild.ImageBuild(testenv.CmdPath, opts, imagePath, defFile)
+			//b, err := imageBuild(opts, imagePath, defFile)
+			if tt.expectSuccess {
+				if err != nil {
+					t.Log(string(b))
+					t.Fatalf("unexpected failure: %v", err)
+				}
+				imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+				//imageVerify(t, imagePath, false)
+			} else if !tt.expectSuccess && (err == nil) {
+				t.Log(string(b))
+				t.Fatalf("unexpected success")
+			}
 		}))
 	}
 }
@@ -341,9 +451,10 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Run("dockerPulls", testDockerPulls)
+	//t.Run("dockerPulls", testDockerPulls)
 	//t.Run("testDockerAUFS", testDockerAUFS)
 	//t.Run("testDockerPermissions", testDockerPermissions)
 	//t.Run("testDockerWhiteoutSymlink", testDockerWhiteoutSymlink)
 	//t.Run("testDockerDefFile", testDockerDefFile)
+	t.Run("testDockerRegistry", testDockerRegistry)
 }
