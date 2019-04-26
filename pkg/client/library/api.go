@@ -345,7 +345,7 @@ func GetImage(baseURL string, authToken string, imageRef string) (image Image, e
 	if err != nil {
 		return Image{}, err
 	} else if !f {
-		return Image{}, fmt.Errorf("the requested image was not found in the library")
+		return Image{}, fmt.Errorf("image '%s:%s' was not found in '%s'", containerName, tags[0], baseURL)
 	}
 
 	return i, nil

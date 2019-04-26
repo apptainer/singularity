@@ -12,11 +12,13 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -35,29 +37,32 @@ func Run(t *testing.T) {
 	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
 
 	// Ensure binary is in $PATH
-	cmdPath, err := exec.LookPath("singularity")
-	if err != nil {
+	cmdPath := filepath.Join(buildcfg.BINDIR, "singularity")
+	if _, err := exec.LookPath(cmdPath); err != nil {
 		log.Fatalf("singularity is not installed on this system: %v", err)
 	}
+
 	os.Setenv("E2E_CMD_PATH", cmdPath)
 
-	// Ensure config files are installed
-	configFiles := []struct {
-		fileName string
-		filePath string
-	}{
-		{"singularity.conf", "/singularity/singularity.conf"},
-		{"ecl.toml", "/singularity/ecl.toml"},
-		{"capability.json", "/singularity/capability.json"},
-		{"nvliblist.conf", "/singularity/nvliblist.conf"},
+	sysconfdir := func(fn string) string {
+		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)
 	}
+
+	// Ensure config files are installed
+	configFiles := []string{
+		sysconfdir("singularity.conf"),
+		sysconfdir("ecl.toml"),
+		sysconfdir("capability.json"),
+		sysconfdir("nvliblist.conf"),
+	}
+
 	for _, cf := range configFiles {
-		if fi, err := os.Stat(buildcfg.SYSCONFDIR + cf.filePath); err != nil {
-			log.Fatalf("%s is not installed on this system: %v", cf.fileName, err)
+		if fi, err := os.Stat(cf); err != nil {
+			log.Fatalf("%s is not installed on this system: %v", cf, err)
 		} else if !fi.Mode().IsRegular() {
-			log.Fatalf("%s is not a regular file", cf.fileName)
+			log.Fatalf("%s is not a regular file", cf)
 		} else if fi.Sys().(*syscall.Stat_t).Uid != 0 {
-			log.Fatalf("%s must be owned by root", cf.fileName)
+			log.Fatalf("%s must be owned by root", cf)
 		}
 	}
 
@@ -88,4 +93,5 @@ func Run(t *testing.T) {
 	// RunE2ETests by functionality
 	t.Run("BUILD", imgbuild.RunE2ETests)
 	t.Run("ACTIONS", actions.RunE2ETests)
+	t.Run("PULL", pull.RunE2ETests)
 }
