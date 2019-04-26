@@ -18,6 +18,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -92,4 +93,5 @@ func Run(t *testing.T) {
 	// RunE2ETests by functionality
 	t.Run("BUILD", imgbuild.RunE2ETests)
 	t.Run("ACTIONS", actions.RunE2ETests)
+	t.Run("PULL", pull.RunE2ETests)
 }
