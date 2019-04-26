@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // Plugin is the only variable which a plugin MUST export. This symbol is accessed
@@ -33,6 +33,7 @@ type pluginImplementation struct {
 var impl = pluginImplementation{}
 
 func (p pluginImplementation) Initialize(r pluginapi.HookRegistration) {
+	// Adding a custom flag to the action commands
 	flag := pluginapi.StringFlagHook{
 		Flag: pflag.Flag{
 			Name:      "test-flag",
@@ -47,23 +48,22 @@ func (p pluginImplementation) Initialize(r pluginapi.HookRegistration) {
 	}
 
 	r.RegisterStringFlag(flag)
-}
 
-func (p pluginImplementation) CommandAdd() []*cobra.Command {
-	ret := []*cobra.Command{}
-
-	ret = append(ret, &cobra.Command{
-		DisableFlagsInUseLine: true,
-		Args:                  cobra.MinimumNArgs(1),
-		Use:                   "test-cmd [args ...]",
-		Short:                 "Test test test",
-		Long:                  "Long test long test long test",
-		Example:               "singularity test-cmd my test",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("test-cmd is printing args:", args)
+	// Adding a custom command to the root command
+	cmd := pluginapi.CommandHook{
+		Command: &cobra.Command{
+			DisableFlagsInUseLine: true,
+			Args:                  cobra.MinimumNArgs(1),
+			Use:                   "test-cmd [args ...]",
+			Short:                 "Test test test",
+			Long:                  "Long test long test long test",
+			Example:               "singularity test-cmd my test",
+			Run: func(cmd *cobra.Command, args []string) {
+				fmt.Println("test-cmd is printing args:", args)
+			},
+			TraverseChildren: true,
 		},
-		TraverseChildren: true,
-	})
+	}
 
-	return ret
+	r.RegisterCommand(cmd)
 }
