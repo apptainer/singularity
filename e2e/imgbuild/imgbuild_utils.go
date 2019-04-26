@@ -25,7 +25,7 @@ type Opts struct {
 	Env     []string
 }
 
-// DefFileDetail ...
+// DefFileDetail is the details for a def file.
 type DefFileDetail struct {
 	Bootstrap string
 	From      string
