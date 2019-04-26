@@ -21,7 +21,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
@@ -131,7 +131,7 @@ func (c *Config) SetMountPropagation(propagation string) {
 	case "slave", "rslave":
 		flags = syscall.MS_SLAVE
 	case "private", "rprivate":
-		flags = syscall.MS_SHARED
+		flags = syscall.MS_PRIVATE
 	case "unbindable", "runbindable":
 		flags = syscall.MS_UNBINDABLE
 	}
