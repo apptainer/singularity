@@ -8,16 +8,13 @@ package docker
 import (
 	"fmt"
 	"os"
-	"path"
-	"strings"
-	//	"io/ioutil"
 	"os/exec"
+	"path"
 	"path/filepath"
+	"strings"
 	"testing"
-	//"unix"
 
 	"github.com/kelseyhightower/envconfig"
-	//	"github.com/sylabs/singularity/e2e/testutils"
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/test"
