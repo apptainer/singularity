@@ -38,63 +38,79 @@ func testDockerPulls(t *testing.T) {
 		imageName     string
 		imagePath     string
 		force         bool
-		sandBox       bool
 		expectSuccess bool
 	}{
-		// TODO: go thrught and fix this up
 		{
-			desc:          "alpine latest pull",
+			desc:          "alpine_latest_pull",
 			srcURI:        "docker://alpine:latest",
 			imageName:     "",
 			imagePath:     "",
 			force:         false,
-			sandBox:       false,
 			expectSuccess: true,
 		},
 		{
-			desc:          "alpine 3.9 pull",
+			desc:          "alpine_3.9_pull",
+			srcURI:        "docker://alpine:3.9",
+			imageName:     "alpine.sif",
+			imagePath:     "",
+			force:         false,
+			expectSuccess: true,
+		},
+		{
+			desc:          "alpine_3.9_pull_force",
 			srcURI:        "docker://alpine:3.9",
 			imageName:     "",
 			imagePath:     "",
 			force:         true,
-			sandBox:       false,
 			expectSuccess: true,
 		},
 		{
-			desc:          "busybox pull",
+			desc:          "busybox_latest_pull",
 			srcURI:        "docker://busybox:latest",
 			imageName:     "",
 			imagePath:     "",
 			force:         true,
-			sandBox:       false,
 			expectSuccess: true,
 		},
 		{
-			desc:          "busybox pull",
-			srcURI:        "docker://busybox:1.28",
+			desc:          "busybox_latest_pull_fail",
+			srcURI:        "docker://busybox:latest",
 			imageName:     "",
 			imagePath:     "",
+			force:         false,
+			expectSuccess: false,
+		},
+		{
+			desc:          "busybox_1.28_pull",
+			srcURI:        "docker://busybox:1.28",
+			imageName:     "",
+			imagePath:     "/tmp",
 			force:         true,
-			sandBox:       false,
 			expectSuccess: true,
 		},
 		{
-			desc:          "busybox pull fail",
+			desc:          "busybox_1.28_pull_fail",
 			srcURI:        "docker://busybox:1.28",
 			imageName:     "",
 			imagePath:     "",
 			force:         false,
-			sandBox:       false,
 			expectSuccess: false,
 		},
 		{
-			desc:          "busybox pull",
+			desc:          "busybox_1.28_pull_sandbox",
 			srcURI:        "docker://busybox:1.28",
 			imageName:     "",
 			imagePath:     "",
 			force:         true,
-			sandBox:       false,
 			expectSuccess: true,
+		},
+		{
+			desc:          "busybox_1.28_pull_sandbox_fail",
+			srcURI:        "docker://busybox:1.28",
+			imageName:     "",
+			imagePath:     "",
+			force:         false,
+			expectSuccess: false,
 		},
 	}
 
@@ -108,66 +124,54 @@ func testDockerPulls(t *testing.T) {
 		}
 	}))
 
-	imagePull := func(imgURI, imageName, imagePath string, force, sandBox bool) ([]byte, error) {
+	imagePull := func(imgURI, imageName, imagePath string, force bool) ([]byte, string, error) {
 		argv := []string{"pull"}
+		fullImagePath := ""
 
 		if force {
 			argv = append(argv, "--force")
 		}
 
-		if sandBox {
-			argv = append(argv, "--sandbox")
-		}
-
+		// TODO: this next part is messy, and needs to be cleaned up...
 		if imagePath != "" {
 			argv = append(argv, "--dir", imagePath)
-			//} else {
-			//argv = append(argv, "--dir", imagePath)
+			fullImagePath = imagePath
 		}
-
-		if imageName != "" {
+		if imageName != "" && imagePath == "" {
+			fullImagePath += filepath.Join(tmpImagePath, imageName)
 			argv = append(argv, filepath.Join(tmpImagePath, imageName))
 		} else {
-			argv = append(argv, filepath.Join(tmpImagePath, "test_container.sif"))
+			if imagePath != "" {
+				argv = append(argv, "test_container.sif")
+				fullImagePath = filepath.Join(imagePath, "test_container.sif")
+			} else {
+				argv = append(argv, filepath.Join(tmpImagePath, "test_container.sif"))
+				fullImagePath = filepath.Join(tmpImagePath, "test_container.sif")
+			}
 		}
 
 		argv = append(argv, imgURI)
-
-		fmt.Println("COMMAND: ", argv)
-
 		cmd := exec.Command(testenv.CmdPath, argv...)
 
 		b, err := cmd.CombinedOutput()
 
-		return b, err
+		return b, fullImagePath, err
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imagePull(tt.srcURI, tt.imageName, tt.imagePath, tt.force, tt.sandBox)
+			b, fullPath, err := imagePull(tt.srcURI, tt.imageName, tt.imagePath, tt.force)
 			switch {
 			case tt.expectSuccess && err == nil:
-				// PASS: expecting success, succeeded
-
-				if tt.imageName == "" && tt.imagePath == "" {
-					imgbuild.ImageVerify(t, testenv.CmdPath, filepath.Join(tmpImagePath, "test_container.sif"), false, testenv.RunDisabled)
-				} else {
-					imgbuild.ImageVerify(t, testenv.CmdPath, tt.imagePath, false, testenv.RunDisabled)
-				}
-				//imageVerify(t, tt.imagePath, false)
-
+				imgbuild.ImageVerify(t, testenv.CmdPath, fullPath, false, testenv.RunDisabled)
 			case !tt.expectSuccess && err != nil:
 				// PASS: expecting failure, failed
-
 			case tt.expectSuccess && err != nil:
 				// FAIL: expecting success, failed
-
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %s", err)
-
 			case !tt.expectSuccess && err == nil:
 				// FAIL: expecting failure, succeeded
-
 				t.Log(string(b))
 				t.Fatalf("unexpected success: command should have failed")
 			}
