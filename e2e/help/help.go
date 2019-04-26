@@ -30,32 +30,31 @@ var helpTests = []struct {
 	cmds []string
 }{
 	// singularity oci
-	{[]string{"oci"}},
-	{[]string{"oci", "attach"}},
-	{[]string{"oci", "create"}},
-	{[]string{"oci", "delete"}},
-	{[]string{"oci", "exec"}},
-	{[]string{"oci", "kill"}},
-	{[]string{"oci", "mount"}},
-	{[]string{"oci", "pause"}},
-	{[]string{"oci", "resume"}},
-	{[]string{"oci", "run"}},
-	{[]string{"oci", "start"}},
-	{[]string{"oci", "state"}},
-	{[]string{"oci", "umount"}},
-	{[]string{"oci", "update"}},
+	{[]string{"help", "oci"}},
+	{[]string{"help", "oci", "attach"}},
+	{[]string{"help", "oci", "create"}},
+	{[]string{"help", "oci", "delete"}},
+	{[]string{"help", "oci", "exec"}},
+	{[]string{"help", "oci", "kill"}},
+	{[]string{"help", "oci", "mount"}},
+	{[]string{"help", "oci", "pause"}},
+	{[]string{"help", "oci", "resume"}},
+	{[]string{"help", "oci", "run"}},
+	{[]string{"help", "oci", "start"}},
+	{[]string{"help", "oci", "state"}},
+	{[]string{"help", "oci", "umount"}},
+	{[]string{"help", "oci", "update"}},
 }
 
-func TestHelp(t *testing.T) {
-	c := test.NewCmd("singularity")
+func testHelp(t *testing.T) {
+	c := test.NewCmd(testenv.CmdPath)
 
 	for _, tc := range helpTests {
 		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
 		path := filepath.Join("help", name)
-		args := append([]string{"help"}, tc.cmds...)
 
 		t.Run(name, func(t *testing.T) {
-			got := c.Run(t, args...).Stdout()
+			got := c.Run(t, tc.cmds...).Stdout()
 
 			assert.Assert(t, golden.String(got, path))
 		})
@@ -68,7 +67,6 @@ func RunE2ETests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	t.Log(testenv)
 
-	t.Run("TestHelp", TestHelp)
+	t.Run("TestHelp", testHelp)
 }
