@@ -9,7 +9,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// CommandAdder allows a plugin to add new command(s) to the singularity binary
-type CommandAdder interface {
-	CommandAdd() []*cobra.Command
+// CommandHook allows a plugin to add new command(s) to singularity by
+// defining custom cobra.Command objects.
+type CommandHook struct {
+	Command *cobra.Command
 }

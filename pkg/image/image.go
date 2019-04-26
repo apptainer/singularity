@@ -152,7 +152,7 @@ func ResolvePath(path string) (string, error) {
 	}
 	resolvedPath, err := filepath.EvalSymlinks(abspath)
 	if err != nil {
-		return "", fmt.Errorf("failed to retrieved path for %s: %s", path, err)
+		return "", fmt.Errorf("failed to retrieve path for %s: %s", path, err)
 	}
 	return resolvedPath, nil
 }
