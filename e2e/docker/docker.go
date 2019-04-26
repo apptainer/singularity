@@ -451,10 +451,10 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	//t.Run("dockerPulls", testDockerPulls)
-	//t.Run("testDockerAUFS", testDockerAUFS)
-	//t.Run("testDockerPermissions", testDockerPermissions)
-	//t.Run("testDockerWhiteoutSymlink", testDockerWhiteoutSymlink)
-	//t.Run("testDockerDefFile", testDockerDefFile)
+	t.Run("dockerPulls", testDockerPulls)
+	t.Run("testDockerAUFS", testDockerAUFS)
+	t.Run("testDockerPermissions", testDockerPermissions)
+	t.Run("testDockerWhiteoutSymlink", testDockerWhiteoutSymlink)
+	t.Run("testDockerDefFile", testDockerDefFile)
 	t.Run("testDockerRegistry", testDockerRegistry)
 }
