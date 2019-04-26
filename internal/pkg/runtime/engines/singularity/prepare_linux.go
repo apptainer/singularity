@@ -457,6 +457,10 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("incorrect engine")
 	}
 
+	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+		return fmt.Errorf("bad engine configuration provided")
+	}
+
 	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
 	if err := config.Parser(configurationFile, e.EngineConfig.File); err != nil {
 		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
@@ -495,6 +499,9 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 	if e.EngineConfig.OciConfig.Process.Capabilities == nil {
 		e.EngineConfig.OciConfig.Process.Capabilities = &specs.LinuxCapabilities{}
+	}
+	if len(e.EngineConfig.OciConfig.Process.Args) == 0 {
+		return fmt.Errorf("container process arguments not found")
 	}
 
 	uid := e.EngineConfig.GetTargetUID()
