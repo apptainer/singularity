@@ -10,12 +10,21 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
 // RemoteAdd adds remote to configuration
 func RemoteAdd(configFile, name, uri string, global bool) (err error) {
+	// Explicit handling of corner cases: name and uri must be valid strings
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("invalid name: cannot have empty name")
+	}
+	if strings.TrimSpace(uri) == "" {
+		return fmt.Errorf("invalid URI: cannot have empty URI")
+	}
+
 	c := &remote.Config{}
 
 	// system config should be world readable
