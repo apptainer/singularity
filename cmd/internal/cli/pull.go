@@ -67,8 +67,12 @@ func init() {
 	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
 	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
 
-	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "do not require a signed container")
-	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
+	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unsigned", "U", false, "do not require a signed container")
+	PullCmd.Flags().SetAnnotation("allow-unsigned", "envkey", []string{"ALLOW_UNSIGNED"})
+
+	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "", false, "do not require a signed container")
+	//PullCmd.Flags().MarkHidden("allow-unauthenticated")
+	PullCmd.Flags().Lookup("allow-unauthenticated").Hidden = true
 
 	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
 	PullCmd.Flags().Lookup("name").Hidden = true
