@@ -16,8 +16,6 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	//	"github.com/sylabs/singularity/e2e/actions"
-	//	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"golang.org/x/sys/unix"
 )
