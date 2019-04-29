@@ -60,6 +60,10 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("incorrect engine")
 	}
 
+	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+		return fmt.Errorf("bad engine configuration provided")
+	}
+
 	if starterConfig.GetIsSUID() {
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}
