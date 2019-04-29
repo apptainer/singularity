@@ -387,7 +387,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	}
 
 	// Pid and PPid are stored in instance file and can be controlled
-	// by users, just check for cool values
+	// by users, check to make sure these values are sane
 	if file.Pid <= 1 || file.PPid <= 1 {
 		return fmt.Errorf("bad instance process ID found")
 	}
@@ -445,11 +445,20 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 			return fmt.Errorf("trying to join an instance running with user namespace enabled")
 		}
 
-		// read "/proc/pid/root" link of instance process must return a permission denied error
+		// read "/proc/pid/root" link of instance process must return
+		// a permission denied error.
+		// This is the "sinit" process (PID 1 in container) and it inherited
+		// setuid bit, so most of "/proc/pid" entries are owned by root:root
+		// like "/proc/pid/root" link even if the process has dropped all
+		// privileges and run with user UID/GID. So we expect a "permission denied"
+		// error when reading link.
 		if _, err := mainthread.Readlink("root"); !os.IsPermission(err) {
 			return fmt.Errorf("trying to join a wrong instance process")
 		}
-		// "/proc/pid/task" directory must be owned by user UID/GID
+		// Since we could be tricked to join namespaces of a root owned process,
+		// we will get UID/GID information of task directory to be sure it belongs
+		// to the user currently joining the instance. Also ensure that a user won't
+		// be able to join other user's instances.
 		fi, err := os.Stat("task")
 		if err != nil {
 			return fmt.Errorf("error while getting information for instance task directory: %s", err)
@@ -482,9 +491,10 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 
 		// read "/proc/ppid/root" link of parent instance process must return
-		// a permission denied error.
+		// a permission denied error (same logic than "sinit" process).
 		// Also we don't use absolute path because we want to return an error
-		// if current working directory is deleted.
+		// if current working directory is deleted meaning that instance process
+		// exited.
 		path := filepath.Join("..", strconv.Itoa(file.PPid), "root")
 		if _, err := mainthread.Readlink(path); !os.IsPermission(err) {
 			return fmt.Errorf("trying to join a wrong instance process")

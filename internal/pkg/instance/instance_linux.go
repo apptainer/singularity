@@ -8,7 +8,6 @@ package instance
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -163,15 +162,13 @@ func List(username string, name string, subDir string) ([]*File, error) {
 		} else if err != nil {
 			return nil, err
 		}
-		b, err := ioutil.ReadAll(r)
+		f := &File{}
+		if err := json.NewDecoder(r).Decode(f); err != nil {
+			r.Close()
+			return nil, err
+		}
 		r.Close()
-		if err != nil {
-			return nil, err
-		}
-		f := &File{Path: file}
-		if err := json.Unmarshal(b, f); err != nil {
-			return nil, err
-		}
+		f.Path = file
 		list = append(list, f)
 	}
 
