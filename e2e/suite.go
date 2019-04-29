@@ -79,14 +79,6 @@ func Run(t *testing.T) {
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
-	opts := imgbuild.Opts{
-		Force:   true,
-		Sandbox: false,
-	}
-	if b, err := imgbuild.ImageBuild(cmdPath, opts, imagePath, "./testdata/Singularity"); err != nil {
-		t.Log(string(b))
-		t.Fatalf("unexpected failure: %v", err)
-	}
 	os.Setenv("E2E_IMAGE_PATH", imagePath)
 	defer os.Remove(imagePath)
 
