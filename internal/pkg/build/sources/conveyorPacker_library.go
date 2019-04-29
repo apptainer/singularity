@@ -93,6 +93,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 				fmt.Fprintf(os.Stderr, "Stoping build.\n")
 				return fmt.Errorf("user said not to build from unsigned container, good choice")
 			}
+			fmt.Fprintf(os.Stderr, "You can avoid this by using the '-U' flag\n")
 		}
 	} else {
 		sylog.Warningf("Skipping verifction check.")

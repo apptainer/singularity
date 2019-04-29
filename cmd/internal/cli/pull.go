@@ -221,6 +221,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 					// exit status 10 after replying no
 					exitStat = 10
 				}
+				fmt.Fprintf(os.Stderr, "You can avoid this by using the '-U' flag\n")
 			}
 		} else {
 			sylog.Warningf("Skipping container verification")
