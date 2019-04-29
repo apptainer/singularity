@@ -16,6 +16,7 @@ _The old changelog can be found in the `release-2.6` branch_
 ## New features / functionalities
   - Introduced a new basic framework for creating and managing plugins
   - Added the ability to create containers through multi-stage builds
+    - Definitions now require `Bootstrap` be the first parameter of header
   - Created the concept of a Sylabs Cloud "remote" endpoint and added the ability for users and admins to set them through CLI and conf files 
   - Added caching for images from Singularity Hub
   - Made it possible to compile Singularity outside of `$GOPATH`
