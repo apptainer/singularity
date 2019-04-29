@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 )
@@ -348,9 +348,7 @@ func testPullCmd(t *testing.T) {
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
-	if err := envconfig.Process("E2E", &testenv); err != nil {
-		t.Fatalf("processing environment: %+v", err)
-	}
+	e2e.LoadEnv(t, &testenv)
 
 	t.Run("pull", testPullCmd)
 }

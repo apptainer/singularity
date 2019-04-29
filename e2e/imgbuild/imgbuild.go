@@ -11,7 +11,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -50,18 +50,18 @@ func buildFrom(t *testing.T) {
 				}
 			}
 
-			opts := Opts{
+			opts := e2e.BuildOpts{
 				Sandbox: tt.sandbox,
 			}
 
 			imagePath := path.Join(testenv.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := ImageBuild(testenv.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
+			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
-			ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+			e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
 		}))
 	}
 }
@@ -71,7 +71,7 @@ func buildMultiStage(t *testing.T) {
 	imagePath2 := path.Join(testenv.TestDir, "container2")
 	imagePath3 := path.Join(testenv.TestDir, "container3")
 
-	liDefFile := PrepareDefFile(DefFileDetail{
+	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
 		From:      imagePath1,
 	})
@@ -79,7 +79,7 @@ func buildMultiStage(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels["FOO"] = "bar"
-	liLabelDefFile := PrepareDefFile(DefFileDetail{
+	liLabelDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
 		From:      imagePath2,
 		Labels:    labels,
@@ -126,16 +126,16 @@ func buildMultiStage(t *testing.T) {
 
 			for _, ts := range tt.steps {
 				t.Run(ts.name, test.WithPrivilege(func(t *testing.T) {
-					opts := Opts{
+					opts := e2e.BuildOpts{
 						Force:   ts.force,
 						Sandbox: ts.sandbox,
 					}
 
-					if b, err := ImageBuild(testenv.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
+					if b, err := e2e.ImageBuild(testenv.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
 						t.Log(string(b))
 						t.Fatalf("unexpected failure: %v", err)
 					}
-					ImageVerify(t, testenv.CmdPath, ts.imagePath, ts.labels, testenv.RunDisabled)
+					e2e.ImageVerify(t, testenv.CmdPath, ts.imagePath, ts.labels, testenv.RunDisabled)
 				}))
 			}
 		}))
@@ -148,7 +148,7 @@ func badPath(t *testing.T) {
 	imagePath := path.Join(testenv.TestDir, "container")
 	defer os.RemoveAll(imagePath)
 
-	if b, err := ImageBuild(testenv.CmdPath, Opts{}, imagePath, "/some/dumb/path"); err == nil {
+	if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
 		t.Log(string(b))
 		t.Fatal("unexpected success")
 	}
@@ -156,10 +156,8 @@ func badPath(t *testing.T) {
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
-	err := envconfig.Process("E2E", &testenv)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
+	e2e.LoadEnv(t, &testenv)
+
 	t.Log(testenv)
 
 	// builds from definition file and URI

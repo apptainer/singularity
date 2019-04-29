@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,7 +28,13 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 	return fmt.Errorf("can't load seccomp filter: not supported by OS")
 }
 
-// LoadProfileFromFile does nothing for unsupported platforms
+// LoadProfileFromFile sets an empty seccomp configuration for unsupported platforms
 func LoadProfileFromFile(profile string, generator *generate.Generator) error {
+	if generator.Config.Linux == nil {
+		generator.Config.Linux = &specs.Linux{}
+	}
+	if generator.Config.Linux.Seccomp == nil {
+		generator.Config.Linux.Seccomp = &specs.LinuxSeccomp{}
+	}
 	return nil
 }

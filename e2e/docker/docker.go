@@ -15,8 +15,9 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/e2e/actions"
-	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
+	//	"github.com/sylabs/singularity/e2e/actions"
+	//	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"golang.org/x/sys/unix"
 )
@@ -155,7 +156,7 @@ func testDockerPulls(t *testing.T) {
 			b, fullPath, err := imagePull(tt.srcURI, tt.imageName, tt.imagePath, tt.force)
 			switch {
 			case tt.expectSuccess && err == nil:
-				imgbuild.ImageVerify(t, testenv.CmdPath, fullPath, false, testenv.RunDisabled)
+				e2e.ImageVerify(t, testenv.CmdPath, fullPath, false, testenv.RunDisabled)
 			case !tt.expectSuccess && err != nil:
 				// PASS: expecting failure, failed
 			case tt.expectSuccess && err != nil:
@@ -181,7 +182,7 @@ func testDockerAUFS(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
@@ -206,7 +207,7 @@ func testDockerAUFS(t *testing.T) {
 
 	for _, tt := range fileTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%s': %s", strings.Join(tt.execArgs, " "), err)
@@ -226,7 +227,7 @@ func testDockerPermissions(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
@@ -250,7 +251,7 @@ func testDockerPermissions(t *testing.T) {
 	}
 	for _, tt := range fileTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := actions.ImageExec(t, testenv.CmdPath, "exec", actions.Opts{}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%s': %s", strings.Join(tt.execArgs, " "), err)
@@ -270,12 +271,12 @@ func testDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
+	b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
 	}
-	imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+	e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
 }
 
 func testDockerDefFile(t *testing.T) {
@@ -327,17 +328,17 @@ func testDockerDefFile(t *testing.T) {
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
 
-			deffile := imgbuild.PrepareDefFile(imgbuild.DefFileDetail{
+			deffile := e2e.PrepareDefFile(e2e.DefFileDetails{
 				Bootstrap: "docker",
 				From:      tt.from,
 			})
 			defer os.Remove(deffile)
 
-			if b, err := imgbuild.ImageBuild(testenv.CmdPath, imgbuild.Opts{}, imagePath, deffile); err != nil {
+			if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, deffile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %s", err)
 			}
-			imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+			e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
 		}))
 	}
 }
@@ -387,18 +388,18 @@ func testDockerRegistry(t *testing.T) {
 	tests := []struct {
 		name          string
 		expectSuccess bool
-		dfd           imgbuild.DefFileDetail
+		dfd           e2e.DefFileDetails
 	}{
-		{"BusyBox", true, imgbuild.DefFileDetail{
+		{"BusyBox", true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "localhost:5000/my-busybox",
 		}},
-		{"BusyBoxRegistry", true, imgbuild.DefFileDetail{
+		{"BusyBoxRegistry", true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "my-busybox",
 			Registry:  "localhost:5000",
 		}},
-		{"BusyBoxNamespace", false, imgbuild.DefFileDetail{
+		{"BusyBoxNamespace", false, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "my-busybox",
 			Registry:  "localhost:5000",
@@ -408,7 +409,7 @@ func testDockerRegistry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
-			opts := imgbuild.Opts{
+			opts := e2e.BuildOpts{
 				Env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
 			}
 			//opts := buildOpts{
@@ -417,17 +418,17 @@ func testDockerRegistry(t *testing.T) {
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
 
-			defFile := imgbuild.PrepareDefFile(tt.dfd)
+			defFile := e2e.PrepareDefFile(tt.dfd)
 			//defFile := prepareDefFile(tt.dfd)
 
-			b, err := imgbuild.ImageBuild(testenv.CmdPath, opts, imagePath, defFile)
+			b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile)
 			//b, err := imageBuild(opts, imagePath, defFile)
 			if tt.expectSuccess {
 				if err != nil {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				imgbuild.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+				e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
 				//imageVerify(t, imagePath, false)
 			} else if !tt.expectSuccess && (err == nil) {
 				t.Log(string(b))
