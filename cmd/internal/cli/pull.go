@@ -198,7 +198,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		// check if we pulled from the library, if so; is it signed?
 		if !unauthenticatedPull {
-			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, true)
+			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, false, true)
 			if err != nil {
 				// err will be: "unable to verify container: %v", err
 				sylog.Warningf("%v", err)
@@ -315,7 +315,7 @@ func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authC
 				DockerAuthConfig: authConf,
 			},
 		},
-		false,
+		false, false,
 	)
 	if err != nil {
 		return fmt.Errorf("Unable to create new build: %v", err)

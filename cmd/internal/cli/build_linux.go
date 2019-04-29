@@ -77,7 +77,8 @@ func run(cmd *cobra.Command, args []string) {
 							Update: update,
 							Force:  force,
 						},
-					}, false)
+					}, false, // <-- TODO:
+					LocalVerifyBuild)
 				if err != nil {
 					sylog.Fatalf("Unable to create build: %v", err)
 				}
@@ -139,7 +140,8 @@ func run(cmd *cobra.Command, args []string) {
 					DockerAuthConfig: authConf,
 				},
 			},
-			AllowUnauthenticatedBuild)
+			AllowUnauthenticatedBuild,
+			LocalVerifyBuild)
 		if err != nil {
 			sylog.Fatalf("Unable to create build: %v", err)
 		}

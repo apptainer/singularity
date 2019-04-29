@@ -241,8 +241,8 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // will return true if the container is signed. Also returns a error
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
-func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
-	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, noPrompt)
+func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, localVerify, noPrompt bool) (bool, error) {
+	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, localVerify, noPrompt)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %v", err)
 	}

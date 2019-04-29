@@ -59,13 +59,13 @@ type Config struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec string, conf Config, allowUnauthenticatedBuild bool) (*Build, error) {
+func NewBuild(spec string, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
 	def, err := makeDef(spec, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild([]types.Definition{def}, conf, allowUnauthenticatedBuild)
+	return newBuild([]types.Definition{def}, conf, allowUnauthenticatedBuild, localVerifyBuild)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
@@ -75,15 +75,15 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild([]types.Definition{def}, conf, false)
+	return newBuild([]types.Definition{def}, conf, false, false)
 }
 
 // New creates a new build struct form a slice of definitions
-func New(defs []types.Definition, conf Config, allowUnauthenticatedBuild bool) (*Build, error) {
-	return newBuild(defs, conf, allowUnauthenticatedBuild)
+func New(defs []types.Definition, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
+	return newBuild(defs, conf, allowUnauthenticatedBuild, localVerifyBuild)
 }
 
-func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild bool) (*Build, error) {
+func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
 	var err error
 
 	syscall.Umask(0002)
@@ -115,7 +115,7 @@ func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild bo
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
-			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken, allowUnauthenticatedBuild); err == nil {
+			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken, allowUnauthenticatedBuild, localVerifyBuild); err == nil {
 				s.c = c
 			} else {
 				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -292,11 +292,12 @@ func runBuildEngine(b *types.Bundle) error {
 	return starterCmd.Run()
 }
 
-func getcp(def types.Definition, libraryURL, authToken string, unauthenticatedBuild bool) (ConveyorPacker, error) {
+func getcp(def types.Definition, libraryURL, authToken string, unauthenticatedBuild, localVerifyBuild bool) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{
 			AllowUnauthenticated: unauthenticatedBuild,
+			LocalVerify:          localVerifyBuild,
 		}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil

@@ -52,7 +52,7 @@ var PushCmd = &cobra.Command{
 			}
 			if !unauthenticatedPush {
 				// check if the container is signed
-				imageSigned, err := signing.IsSigned(args[0], KeyServerURL, 0, false, authToken, true)
+				imageSigned, err := signing.IsSigned(args[0], KeyServerURL, 0, false, authToken, false, true)
 				if err != nil {
 					// err will be: "unable to verify container: %v", err
 					sylog.Warningf("%v", err)
