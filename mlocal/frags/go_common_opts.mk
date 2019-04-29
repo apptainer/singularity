@@ -9,5 +9,3 @@ GO_MODFLAGS :=
 GOFLAGS := -mod=vendor
 
 export GOFLAGS GO111MODULE
-
-GO := $(shell which go)
