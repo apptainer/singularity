@@ -11,7 +11,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sylabs/singularity/internal/pkg/build/copy"
+	"github.com/sylabs/singularity/internal/pkg/build/files"
 
 	buildargs "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/rpc"
 	server "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
@@ -24,7 +24,7 @@ type Methods struct {
 
 // Copy performs a file copy with the specified arguments.
 func (t *Methods) Copy(arguments *buildargs.CopyArgs, reply *int) (err error) {
-	return copy.Copy(arguments.Source, arguments.Dest)
+	return files.Copy(arguments.Source, arguments.Dest)
 }
 
 // RunScript executes a section script.
