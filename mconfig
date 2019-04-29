@@ -19,6 +19,9 @@ hstar=
 hstld=
 hstranlib=
 hstobjcopy=
+hstgo=
+hstgo_version="go1.11"
+hstgo_opts="go"
 
 tgtcc=
 tgtcc_opts=$hstcc_opts
@@ -640,6 +643,8 @@ ARCH := $tgt_arch
 
 CFLAGS := $cflags
 
+GO := $hstgo
+
 CGO_CFLAGS := -include $builddir/config.h $CGO_CFLAGS
 CGO_LDFLAGS := $CGO_LDFLAGS
 CGO_CPPFLAGS := $CGO_CPPFLAGS
@@ -841,6 +846,9 @@ echo "=> project $package_name setup with :"
 echo "    - host arch: $hst_arch"
 echo "    - host wordsize: ${hst_word}-bit"
 echo "    - host C compiler: $hstcc"
+if test "${lang_go}" -eq 1 ; then
+	echo "    - host Go compiler: $hstgo"
+fi
 echo "    - host system: $host"
 echo "      ---"
 echo "    - target arch: $tgt_arch"
