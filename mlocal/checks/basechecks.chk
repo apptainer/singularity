@@ -74,7 +74,7 @@ else
 	printf " checking: host Go compiler (at least version $hstgo_version)... "
 	if $hstgo run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
 		hstgo=`command -v $go`
-		echo $hostgo
+		echo $hstgo
 	else
 		echo "$hstgo cannot compile test code!"
 		usage
