@@ -111,7 +111,7 @@ $ ./mconfig -p /usr/local -b ./buildtree
 
 ## Install from the RPM
 
-*NOTE: You should only atempt to build the RPM on a CentOS/RHEL system.*
+*NOTE: You should only attempt to build the RPM on a CentOS/RHEL system.*
 
 To build the RPM, you first need to install `rpm-build` and `wget`:
 

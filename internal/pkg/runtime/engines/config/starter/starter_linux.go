@@ -21,7 +21,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
@@ -131,7 +131,7 @@ func (c *Config) SetMountPropagation(propagation string) {
 	case "slave", "rslave":
 		flags = syscall.MS_SLAVE
 	case "private", "rprivate":
-		flags = syscall.MS_SHARED
+		flags = syscall.MS_PRIVATE
 	case "unbindable", "runbindable":
 		flags = syscall.MS_UNBINDABLE
 	}
@@ -364,8 +364,9 @@ func (c *Config) SetTargetGID(gids []int) {
 	c.config.container.numGID = C.int(len(gids))
 
 	for i, gid := range gids {
-		if i > C.MAX_GID {
+		if i >= C.MAX_GID {
 			sylog.Warningf("you can't specify more than %d group IDs", C.MAX_GID)
+			c.config.container.numGID = C.MAX_GID
 			break
 		}
 		c.config.container.targetGID[i] = C.gid_t(gid)
