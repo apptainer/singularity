@@ -71,7 +71,7 @@ func buildFrom(t *testing.T) {
 	}
 }
 
-func buildMultiStage(t *testing.T) {
+func buildMultiple(t *testing.T) {
 	imagePath1 := path.Join(testenv.TestDir, "container1")
 	imagePath2 := path.Join(testenv.TestDir, "container2")
 	imagePath3 := path.Join(testenv.TestDir, "container3")
@@ -159,7 +159,7 @@ func badPath(t *testing.T) {
 	}
 }
 
-func multiStageDefinition(t *testing.T) {
+func buildMultiStageDefinition(t *testing.T) {
 	tmpfile, err := ioutil.TempFile(testenv.TestDir, "testFile-")
 	if err != nil {
 		log.Fatal(err)
@@ -673,11 +673,11 @@ func RunE2ETests(t *testing.T) {
 	// builds from definition file and URI
 	t.Run("From", buildFrom)
 	// build and image from an existing image
-	t.Run("multistage", buildMultiStage)
+	t.Run("multistage", buildMultiple)
 	// try to build from a non existen path
 	t.Run("badPath", badPath)
 	// builds from definition template
 	t.Run("Definition", buildDefinition)
 	// multistage build from definition templates
-	t.Run("MultiStage", buildMultiStage)
+	t.Run("MultiStage", buildMultiStageDefinition)
 }
