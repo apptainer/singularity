@@ -450,7 +450,8 @@ var flagEnvFuncs = map[string]envHandle{
 	"url":    envStringNSlice,
 
 	// verify flag
-	"local": envBool,
+	"local":              envBool,
+	"local-verify-build": envBool,
 
 	// inspect flags
 	"labels":      envBool,
