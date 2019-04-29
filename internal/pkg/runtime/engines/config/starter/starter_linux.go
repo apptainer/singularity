@@ -364,8 +364,9 @@ func (c *Config) SetTargetGID(gids []int) {
 	c.config.container.numGID = C.int(len(gids))
 
 	for i, gid := range gids {
-		if i > C.MAX_GID {
+		if i >= C.MAX_GID {
 			sylog.Warningf("you can't specify more than %d group IDs", C.MAX_GID)
+			c.config.container.numGID = C.MAX_GID
 			break
 		}
 		c.config.container.targetGID[i] = C.gid_t(gid)
