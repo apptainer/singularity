@@ -20,7 +20,7 @@ func init() {
 
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                sylabsToken,
 	Run:                   importRun,
