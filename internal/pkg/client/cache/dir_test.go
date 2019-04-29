@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var cacheDefault string
@@ -30,13 +31,24 @@ func TestMain(m *testing.M) {
 }
 
 func TestRoot(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tests := []struct {
 		name     string
 		env      string
 		expected string
 	}{
-		{"Default root", "", cacheDefault},
-		{"Custom root", cacheCustom, cacheCustom},
+		{
+			name:     "Default root",
+			env:      "",
+			expected: cacheDefault,
+		},
+		{
+			name:     "Custom root",
+			env:      cacheCustom,
+			expected: cacheCustom,
+		},
 	}
 
 	for _, tt := range tests {

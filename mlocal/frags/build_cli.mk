@@ -54,10 +54,10 @@ config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/singularity.conf
 # override this to empty to avoid merging old configuration settings
 old_config := $(config_INSTALL)
 
-$(config): $(singularity_build_config) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/config.go
+$(config): $(singularity_build_config) $(SOURCEDIR)/etc/conf/gen.go $(SOURCEDIR)/pkg/runtime/engines/singularity/config/data/singularity.conf $(SOURCEDIR)/pkg/runtime/engines/singularity/config/config.go
 	@echo " GEN $@`if [ -n "$(old_config)" ]; then echo " from $(old_config)"; fi`"
 	$(V)$(GO) run $(GO_MODFLAGS) $(GO_GCFLAGS) $(GO_ASMFLAGS) $(SOURCEDIR)/etc/conf/gen.go \
-		$(SOURCEDIR)/internal/pkg/runtime/engines/singularity/config/data/singularity.conf $(old_config) $(config)
+		$(SOURCEDIR)/pkg/runtime/engines/singularity/config/data/singularity.conf $(old_config) $(config)
 
 $(config_INSTALL): $(config)
 	@echo " INSTALL" $@

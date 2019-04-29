@@ -488,7 +488,7 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
 
 	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
-		return fmt.Errorf("Failed to apply cgroups ressources restriction: %s", err)
+		return fmt.Errorf("Failed to apply cgroups resources restriction: %s", err)
 	}
 
 	if c.cgroupIndex >= 0 {
@@ -925,7 +925,11 @@ func (c *container) mount(point *mount.Point) error {
 							return err
 						}
 					}
-				case syscall.S_IFREG:
+				case syscall.S_IFREG,
+					syscall.S_IFBLK,
+					syscall.S_IFCHR,
+					syscall.S_IFIFO,
+					syscall.S_IFSOCK:
 					sylog.Debugf("Creating file %s", filepath.Base(procDest))
 					if c.userNS {
 						if _, err := c.rpcOps.Touch(dest); err != nil {
