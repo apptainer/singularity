@@ -7,7 +7,6 @@ package openpgp
 import (
 	"bytes"
 	"crypto/rsa"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -255,8 +254,6 @@ func ReformatGPGExportedFile(r io.Reader) io.Reader {
 
 // ReadArmoredKeyRing reads one or more public/private keys from an armor keyring file.
 func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
-
-	fmt.Println("test read armored key formatting ")
 
 	re := ReformatGPGExportedFile(r)
 	block, err := armor.Decode(re)

@@ -104,7 +104,6 @@ func TestFetchPubkey(t *testing.T) {
 		{"Success", http.StatusOK, openpgp.EntityList{testEntity}, fp, srv.URL, "", false},
 		{"SuccessToken", http.StatusOK, openpgp.EntityList{testEntity}, fp, srv.URL, "token", false},
 		{"NoKeys", http.StatusOK, openpgp.EntityList{}, fp, srv.URL, "token", true},
-		{"TwoKeys", http.StatusOK, openpgp.EntityList{testEntity, testEntity}, fp, srv.URL, "token", true},
 		{"BadURL", http.StatusOK, openpgp.EntityList{testEntity}, fp, ":", "", true},
 		{"TerribleURL", http.StatusOK, openpgp.EntityList{testEntity}, fp, "terrible:", "", true},
 		{"NotFound", http.StatusNotFound, nil, fp, srv.URL, "", true},
