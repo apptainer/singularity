@@ -740,6 +740,9 @@ func ExportPrivateKey(kpath string, armor bool) error {
 	} else {
 		var keyText string
 		keyText, err = serializePrivateEntity(entityToExport, openpgp.PrivateKeyType)
+		if err != nil {
+			return sylog.Fatalf("Failed to read private key ASCII armored format: %s\n", err)
+		}
 		file.WriteString(keyText)
 	}
 	defer file.Close()
