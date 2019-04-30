@@ -5,10 +5,8 @@
 package openpgp
 
 import (
-	"bytes"
 	"crypto/rsa"
 	"io"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/openpgp/armor"
@@ -234,34 +232,9 @@ func (el EntityList) DecryptionKeys() (keys []Key) {
 	return
 }
 
-func ReformatGPGExportedFile(r io.Reader) io.Reader {
-
-	var keyString string
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(r)
-
-	s := buf.String()
-
-	//remove trailing line at the EOF if present, otherwise return the same content
-	if s[len(s)-1] == '\n' {
-		keyString = s[:len(s)-1]
-	} else {
-		keyString = s[:]
-	}
-	//add missing part of header
-	if keyString[0:5] != "-----" {
-		keyString = "--" + keyString
-	}
-
-	return strings.NewReader(keyString)
-}
-
 // ReadArmoredKeyRing reads one or more public/private keys from an armor keyring file.
 func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
-
-	re := ReformatGPGExportedFile(r)
-	block, err := armor.Decode(re)
-
+	block, err := armor.Decode(r)
 	if err == io.EOF {
 		return nil, errors.InvalidArgumentError("no armored data found")
 	}
@@ -273,7 +246,6 @@ func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
 	}
 
 	return ReadKeyRing(block.Body)
-
 }
 
 // ReadKeyRing reads one or more public/private keys. Unsupported keys are

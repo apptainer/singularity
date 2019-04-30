@@ -14,6 +14,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -647,6 +648,28 @@ func RecryptKey(k *openpgp.Entity) error {
 	return nil
 }
 
+func ReformatGPGExportedFile(r io.Reader) io.Reader {
+
+	var keyString string
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r)
+
+	s := buf.String()
+
+	//remove trailing line at the EOF if present, otherwise return the same content
+	if s[len(s)-1] == '\n' {
+		keyString = s[:len(s)-1]
+	} else {
+		keyString = s[:]
+	}
+	//add missing part of header
+	if keyString[0:5] != "-----" {
+		keyString = "--" + keyString
+	}
+
+	return strings.NewReader(keyString)
+}
+
 // LoadKeyringFromFile loads a key from a local file (private or public) given from a path into an EntityList
 func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	f, err := os.Open(path)
@@ -656,7 +679,8 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	defer f.Close()
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
-		return openpgp.ReadArmoredKeyRing(f)
+		reader = ReformatGPGExportedFile(f)
+		return openpgp.ReadArmoredKeyRing(reader)
 	}
 	return el, err
 
