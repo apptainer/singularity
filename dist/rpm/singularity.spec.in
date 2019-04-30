@@ -36,6 +36,11 @@ License: BSD-3-Clause-LBNL
 URL: https://www.sylabs.io/singularity/
 Source: %{name}-%{version}.tar.gz
 ExclusiveOS: linux
+# RPM_BUILD_ROOT wasn't being set ... for some reason
+%if "%{sles_version}" == "11"
+BuildRoot: /var/tmp/singularity-%{version}-build
+%endif
+
 %if "%{_target_vendor}" == "suse"
 %if "%{sles_version}" != "11"
 BuildRequires: go
@@ -72,6 +77,10 @@ containers that can be used across host environments.
 %debug_package
 
 %prep
+%if "%{?buildroot}"
+export RPM_BUILD_ROOT="%{buildroot}"
+%endif
+
 # Create our build root
 rm -rf %{name}-%{version}
 mkdir %{name}-%{version}
@@ -117,14 +126,27 @@ mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 make DESTDIR=$RPM_BUILD_ROOT install man
 chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/singularity/actions/*
 
+%if "%{suse_version}" == "11"
+%clean
+/bin/rm -rf %{buildroot}
+%endif
+
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
-%{_bindir}/*
+%{_bindir}/singularity
+%{_bindir}/run-singularity
 %dir %{_libexecdir}/singularity
 %{_libexecdir}/singularity/bin/starter
 %{_libexecdir}/singularity/cni/*
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*
+%config(noreplace) %{_sysconfdir}/singularity/*.conf
+%config(noreplace) %{_sysconfdir}/singularity/*.toml
+%config(noreplace) %{_sysconfdir}/singularity/*.json
+%config(noreplace) %{_sysconfdir}/singularity/*.yaml
+%config(noreplace) %{_sysconfdir}/singularity/cgroups/*
+%config(noreplace) %{_sysconfdir}/singularity/network/*
+%config(noreplace) %{_sysconfdir}/singularity/seccomp-profiles/*
 %attr(755, root, root) %{_sysconfdir}/singularity/actions/exec
 %attr(755, root, root) %{_sysconfdir}/singularity/actions/run
 %attr(755, root, root) %{_sysconfdir}/singularity/actions/shell
@@ -135,8 +157,8 @@ chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/singularity/actions/*
 %dir %{_localstatedir}/singularity
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
-# XXX: Not great since we can't control this location...
-%{_mandir}/man1/*
+%{_mandir}/man1/singularity.1.gz
+%{_mandir}/man1/singularity-*.1.gz
 
 
 %changelog
