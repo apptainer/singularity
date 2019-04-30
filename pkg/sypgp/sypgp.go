@@ -657,9 +657,8 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
 		return openpgp.ReadArmoredKeyRing(f)
-	} else {
-		return el, err
 	}
+	return el, err
 
 }
 
