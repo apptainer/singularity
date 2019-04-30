@@ -92,7 +92,7 @@ func init() {
 	SingularityCmd.AddCommand(VersionCmd)
 
 	initializePlugins()
-	plugin.AddCommands(SingularityCmd)
+	SingularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
 func setSylogMessageLevel(cmd *cobra.Command, args []string) {
@@ -424,6 +424,7 @@ var flagEnvFuncs = map[string]envHandle{
 	"detached":        envBool,
 	"builder":         envStringNSlice,
 	"library":         envStringNSlice,
+	"path":            envStringNSlice,
 	"nohttps":         envBool,
 	"no-cleanup":      envBool,
 	"tmpdir":          envStringNSlice,

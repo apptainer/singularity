@@ -36,6 +36,10 @@ func (e *EngineOperations) Config() config.EngineConfig {
 
 // PrepareConfig validates/prepares EngineConfig setup
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
+	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+		return fmt.Errorf("bad engine configuration provided")
+	}
+
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
