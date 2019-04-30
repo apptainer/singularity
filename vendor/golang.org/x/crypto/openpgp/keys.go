@@ -245,7 +245,7 @@ func ReformatGPGExportedFile(r io.Reader) io.Reader {
 
 	fmt.Println("********")
 	fmt.Println(s)
-	fmt.Prinln("*********")
+	fmt.Println("*********")
 
 	//remove trailing line at the EOF if present, otherwise return the same content
 	if s[len(s)-1] == '\n' {
