@@ -5,6 +5,7 @@
 package e2e
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -49,4 +50,17 @@ func EnsureImage(t *testing.T) {
 			b)
 		t.Fatalf("Unexpected failure: %+v", err)
 	}
+}
+
+// MakeTmpDir will make a tmp dir and return a string of the path
+func MakeTmpDir(t *testing.T) string {
+	name, err := ioutil.TempDir("", "stest.")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(name)
+	if err := os.Chmod(name, 0777); err != nil {
+		t.Fatalf("failed to chmod temporary directory: %v", err)
+	}
+	return name
 }
