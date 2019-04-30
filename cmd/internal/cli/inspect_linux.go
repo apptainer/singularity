@@ -27,7 +27,7 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
-const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename $app`\n        echo \"$APPNAME\"\n    fi\ndone\n"
+const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
 
 var (
 	labels      bool
