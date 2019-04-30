@@ -596,6 +596,8 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 		}
 	}
 
+	fmt.Println(strings.NewReader(keyText))
+
 	el, err := openpgp.ReadArmoredKeyRing(strings.NewReader(keyText))
 	if err != nil {
 		return nil, err
