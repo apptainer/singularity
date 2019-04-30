@@ -741,7 +741,7 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		var keyText string
 		keyText, err = serializePrivateEntity(entityToExport, openpgp.PrivateKeyType)
 		if err != nil {
-			return sylog.Fatalf("Failed to read private key ASCII armored format: %s\n", err)
+			sylog.Fatalf("Failed to read private key ASCII armored format: %s\n", err)
 		}
 		file.WriteString(keyText)
 	}
@@ -831,11 +831,15 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 		}
 
 		// Check if the key is encrypted, if it is, decrypt it
-		if entity.PrivateKey.Encrypted {
-			err = DecryptKey(newEntity, "Enter your old password : ")
-			if err != nil {
-				return err
+		if entity.PrivateKey != nil {
+			if entity.PrivateKey.Encrypted {
+				err = DecryptKey(newEntity, "Enter your old password : ")
+				if err != nil {
+					return err
+				}
 			}
+		} else {
+			sylog.Fatalf("Could not import the private key: wrong format")
 		}
 
 		// Get a new password for the key
