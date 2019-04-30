@@ -657,8 +657,9 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 	el, err := openpgp.ReadKeyRing(f)
 	if err != nil {
 		return openpgp.ReadArmoredKeyRing(f)
+	} else {
+		return el, err
 	}
-	return el, err
 
 }
 
@@ -867,6 +868,9 @@ func getTypesFromEntity(path string) []string {
 		// is armored, so need to identify each of the block types and store them
 		re := openpgp.ReformatGPGExportedFile(f)
 		block, err := armor.Decode(re)
+		if err != nil {
+			return fmt.Errorf("unable to decode armored block:", err)
+		}
 		types = append(types, block.Type)
 	}
 	// is not armored so obtain the types checking the privatekey field from entity
