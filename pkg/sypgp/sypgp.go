@@ -872,16 +872,14 @@ func getTypesFromEntity(path string) []string {
 			return fmt.Errorf("unable to decode armored block:", err)
 		}
 		types = append(types, block.Type)
-	} else {
-		// is not armored so obtain the types checking the privatekey field from entity
-		for _, pathEntity := range el {
-			if pathEntity.PrivateKey != nil {
-				types = append(types, PrivateKeyType)
-			} else {
-				types = append(types, PublicKeyType)
-			}
+	}
+	// is not armored so obtain the types checking the privatekey field from entity
+	for _, pathEntity := range el {
+		if pathEntity.PrivateKey != nil {
+			types = append(types, PrivateKeyType)
+		} else {
+			types = append(types, PublicKeyType)
 		}
-
 	}
 
 	return types
