@@ -58,7 +58,8 @@ func MakeTmpDir(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(name)
+	//defer os.RemoveAll(name)
+	//defer name
 	if err := os.Chmod(name, 0777); err != nil {
 		t.Fatalf("failed to chmod temporary directory: %v", err)
 	}

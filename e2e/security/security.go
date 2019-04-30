@@ -8,7 +8,9 @@
 package security
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -254,6 +256,23 @@ func testSecurity(t *testing.T) {
 
 }
 
+// pullTestContainer ...
+func pullTestContainer(t *testing.T) {
+
+	//argv := []string{"pull", "-U", "--dir", imagePath, "library://alpine:latest"}
+	argv := []string{"pull", "-U", imagePath, "library://alpine:latest"}
+
+	fmt.Println("IMAGEPATH: ", imagePath)
+
+	cmd := exec.Command(testenv.CmdPath, argv...)
+	b, err := cmd.CombinedOutput()
+
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("Unable to pull test container: %s", err)
+	}
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
@@ -262,6 +281,8 @@ func RunE2ETests(t *testing.T) {
 	}
 
 	imagePath = e2e.MakeTmpDir(t)
+	imagePath += "test_container.sif"
 
+	t.Run("pulling_test_contianer", pullTestContainer)
 	t.Run("testSecurity", testSecurity)
 }
