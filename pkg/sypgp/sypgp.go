@@ -855,7 +855,6 @@ func ImportPubKey(entity *openpgp.Entity) error {
 
 func getTypesFromEntity(path string) []string {
 	var types []string
-	var block *armor.Block
 
 	f, err := os.Open(path)
 	if err != nil {
