@@ -242,6 +242,11 @@ func ReformatGPGExportedFile(r io.Reader) io.Reader {
 	buf.ReadFrom(r)
 
 	s := buf.String()
+
+	fmt.Println("********")
+	fmt.Println(s)
+	fmt.Prinln("*********")
+
 	//remove trailing line at the EOF if present, otherwise return the same content
 	if s[len(s)-1] == '\n' {
 		keyString = s[:len(s)-1]
@@ -250,6 +255,11 @@ func ReformatGPGExportedFile(r io.Reader) io.Reader {
 	}
 	//add missing part of header
 	keyString = "--" + keyString
+
+	fmt.Println("****")
+	fmt.Println(keyString)
+	fmt.Println("****")
+
 	return strings.NewReader(keyString)
 }
 
@@ -268,10 +278,6 @@ func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
 	if block.Type != PublicKeyType && block.Type != PrivateKeyType {
 		return nil, errors.InvalidArgumentError("expected public or private key block, got: " + block.Type)
 	}
-
-	fmt.Println("****")
-	fmt.Println(block.Body)
-	fmt.Println("****")
 
 	return ReadKeyRing(block.Body)
 
