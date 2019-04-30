@@ -139,7 +139,6 @@ chmod 644 $RPM_BUILD_ROOT%{_sysconfdir}/singularity/actions/*
 %{_libexecdir}/singularity/bin/starter
 %{_libexecdir}/singularity/cni/*
 %dir %{_sysconfdir}/singularity
-%config(noreplace) %{_sysconfdir}/singularity/*
 %config(noreplace) %{_sysconfdir}/singularity/*.conf
 %config(noreplace) %{_sysconfdir}/singularity/*.toml
 %config(noreplace) %{_sysconfdir}/singularity/*.json
