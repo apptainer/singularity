@@ -14,53 +14,53 @@ import (
 const instanceStartPort = 11372
 
 type startOpts struct {
-	addCaps       string
-	allowSetuid   bool
-	applyCgroups  string
 	bind          []string
+	networkArgs   []string
+	overlay       []string
+	scratch       []string
+	security      []string
+	addCaps       string
+	applyCgroups  string
+	dns           string
+	dropCaps      string
+	home          string
+	hostname      string
+	network       string
+	workdir       string
+	allowSetuid   bool
 	boot          bool
 	cleanenv      bool
 	contain       bool
 	containall    bool
-	dns           string
 	dockerLogin   bool
-	dropCaps      string
-	home          string
-	hostname      string
 	keepPrivs     bool
 	net           bool
-	network       string
-	networkArgs   []string
 	noHome        bool
 	noPrivs       bool
 	nv            bool
-	overlay       []string
-	scratch       []string
-	security      []string
 	userns        bool
 	uts           bool
-	workdir       string
 	writable      bool
 	writableTmpfs bool
 }
 
 type listOpts struct {
-	json bool
 	user string
+	json bool
 }
 
 type stopOpts struct {
+	signal  string
+	user    string
+	timeout int
 	all     bool
 	force   bool
-	signal  string
-	timeout int
-	user    string
 }
 
 type instance struct {
+	Image    string `json:"img"`
 	Instance string `json:"instance"`
 	Pid      int    `json:"pid"`
-	Image    string `json:"img"`
 }
 
 type instanceList struct {
