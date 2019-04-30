@@ -271,6 +271,7 @@ func legacyInstanceTests(t *testing.T) {
 	}
 }
 
+// RunE2ETests is the bootstrap to run all instance tests.
 func RunE2ETests(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 

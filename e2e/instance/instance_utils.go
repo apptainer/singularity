@@ -11,10 +11,7 @@ import (
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
-const (
-	instanceStartPort  = 11372
-	instanceDefinition = "../../examples/instances/Singularity"
-)
+const instanceStartPort = 11372
 
 type startOpts struct {
 	addCaps       string
