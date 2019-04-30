@@ -869,7 +869,7 @@ func getTypesFromEntity(path string) []string {
 		re := openpgp.ReformatGPGExportedFile(f)
 		block, err := armor.Decode(re)
 		if err != nil {
-			return fmt.Errorf("unable to decode armored block:", err)
+			return types
 		}
 		types = append(types, block.Type)
 	}
