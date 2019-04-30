@@ -190,3 +190,23 @@ func ImageExec(t *testing.T, cmdPath string, action string, opts ExecOpts, image
 
 	return
 }
+
+// GenericExec executes an external program and returns its stdout and stderr.
+// If err != nil, the program did not execute successfully.
+func GenericExec(cmdPath string, argv ...string) (stdout string, stderr string, err error) {
+	var stdoutBuffer, stderrBuffer bytes.Buffer
+
+	// Execute command
+	cmd := exec.Command(cmdPath, argv...)
+	cmd.Stdout = &stdoutBuffer
+	cmd.Stderr = &stderrBuffer
+	if err = cmd.Start(); err != nil {
+		return
+	}
+
+	// Wait for command to finish and set stdout/stderr
+	err = cmd.Wait()
+	stdout = stdoutBuffer.String()
+	stderr = stderrBuffer.String()
+	return
+}
