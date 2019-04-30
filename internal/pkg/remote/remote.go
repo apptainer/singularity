@@ -56,8 +56,10 @@ func ReadFrom(r io.Reader) (*Config, error) {
 	}
 
 	if len(b) > 0 {
-		// if we had data to read in io.Reader, attempt to unmarshal as YAML
-		if err := yaml.Unmarshal(b, c); err != nil {
+		// If we had data to read in io.Reader, attempt to unmarshal as YAML.
+		// Also, it will fail if the YAML file does not have the expected
+		// structure.
+		if err := yaml.UnmarshalStrict(b, c); err != nil {
 			return nil, fmt.Errorf("failed to decode YAML data from io.Reader: %s", err)
 		}
 	}
@@ -212,7 +214,7 @@ func (e *EndPoint) VerifyToken() error {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error making request to server:\n\t%v", err)
+		return fmt.Errorf("error making request to server: %v", err)
 	}
 	defer res.Body.Close()
 
@@ -243,7 +245,7 @@ func getCloudConfig(uri string) ([]byte, error) {
 
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
+		return nil, fmt.Errorf("error making request to server: %v", err)
 	}
 	defer res.Body.Close()
 

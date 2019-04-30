@@ -10,4 +10,5 @@ package plugin
 type HookRegistration interface {
 	RegisterStringFlag(StringFlagHook) error
 	RegisterBoolFlag(BoolFlagHook) error
+	RegisterCommand(CommandHook) error
 }
