@@ -30,6 +30,12 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+// PublicKeyType is the armor type for a PGP public key.
+var PublicKeyType = "PGP PUBLIC KEY BLOCK"
+
+// PrivateKeyType is the armor type for a PGP private key.
+var PrivateKeyType = "PGP PRIVATE KEY BLOCK"
+
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
   1) View configured remotes using "singularity remote list"
   2) Identify default remote. It will be listed with square brackets.
@@ -864,12 +870,12 @@ func getTypesFromEntity(path string) []string {
 		block, err = armor.Decode(re)
 		types = append(types, block.Type)
 	} else {
-		// is not armored, so obtain the types from entitylist
+		// is not armored so obtain the types checking the privatekey field from entity
 		for _, pathEntity := range el {
 			if pathEntity.PrivateKey != nil {
-				types = append(types, "PGP PRIVATE KEY BLOCK")
+				types = append(types, PrivateKeyType)
 			} else {
-				types = append(types, "PGP PUBLIC KEY BLOCK")
+				types = append(types, PublicKeyType)
 			}
 		}
 
@@ -891,7 +897,7 @@ func ImportKey(kpath string) error {
 	}
 	for i, pathEntity := range pathEntityList {
 
-		if pathEntityTypes[i] == "PGP PRIVATE KEY BLOCK" {
+		if pathEntityTypes[i] == PrivateKeyType {
 			// Its a private key
 			err := ImportPrivateKey(pathEntity)
 			if err != nil {
@@ -899,7 +905,7 @@ func ImportKey(kpath string) error {
 			}
 
 		}
-		if pathEntityTypes[i] == "PGP PUBLIC KEY BLOCK" {
+		if pathEntityTypes[i] == PublicKeyType {
 			// Hopfully its a public key :)
 			err := ImportPubKey(pathEntity)
 			if err != nil {
