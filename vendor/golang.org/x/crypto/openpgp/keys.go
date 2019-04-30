@@ -7,6 +7,7 @@ package openpgp
 import (
 	"bytes"
 	"crypto/rsa"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -267,6 +268,10 @@ func ReadArmoredKeyRing(r io.Reader) (EntityList, error) {
 	if block.Type != PublicKeyType && block.Type != PrivateKeyType {
 		return nil, errors.InvalidArgumentError("expected public or private key block, got: " + block.Type)
 	}
+
+	fmt.Println("****")
+	fmt.Println(block.Body)
+	fmt.Println("****")
 
 	return ReadKeyRing(block.Body)
 
