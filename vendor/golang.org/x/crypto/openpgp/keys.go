@@ -7,7 +7,6 @@ package openpgp
 import (
 	"bytes"
 	"crypto/rsa"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -243,10 +242,6 @@ func ReformatGPGExportedFile(r io.Reader) io.Reader {
 
 	s := buf.String()
 
-	fmt.Println("********")
-	fmt.Println(s)
-	fmt.Println("*********")
-
 	//remove trailing line at the EOF if present, otherwise return the same content
 	if s[len(s)-1] == '\n' {
 		keyString = s[:len(s)-1]
@@ -254,11 +249,9 @@ func ReformatGPGExportedFile(r io.Reader) io.Reader {
 		keyString = s[:]
 	}
 	//add missing part of header
-	keyString = "--" + keyString
-
-	fmt.Println("****")
-	fmt.Println(keyString)
-	fmt.Println("****")
+	if keyString[0:5] != "-----" {
+		keyString = "--" + keyString
+	}
 
 	return strings.NewReader(keyString)
 }
