@@ -112,9 +112,7 @@ func testSecurityUnpriv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("unpriv "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.opts, tt.image, tt.argv)
-			//stdout, stderr, exitCode, err := e2e.ImageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
-				//t.Log(stdout, stderr, exitCode)
 				t.Log(stderr, err, exitCode)
 				t.Fatalf("unexpected failure running %q: %v", strings.Join(tt.argv, " "), err)
 			} else if !tt.expectSuccess && (exitCode != 1) {
@@ -197,7 +195,6 @@ func testSecurityPriv(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("priv "+tt.name, test.WithPrivilege(func(t *testing.T) {
-			//			stdout, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr, err, exitCode)
@@ -221,7 +218,6 @@ func testSecurityConfOwnership(t *testing.T) {
 
 	// try to run
 	t.Run("non_root_config", test.WithoutPrivilege(func(t *testing.T) {
-		//_, stderr, exitCode, err := imageExec(t, "exec", opts{}, imagePath, []string{"/bin/true"})
 		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, []string{"/bin/true"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
@@ -243,7 +239,6 @@ func testSecurity(t *testing.T) {
 		Sandbox: false,
 	}
 	if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, "../../examples/busybox/Singularity"); err == nil {
-		//if b, err := imageBuild(opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("Unexpected failure: %v", err)
 	}
@@ -274,17 +269,14 @@ func makeTmpDir(t *testing.T) {
 	name, err := ioutil.TempDir("", "stest.")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
-		//		return "", fmt.Errorf("failed to create temporary directory: %v", err)
 	}
 	//defer os.RemoveAll(name)
 	//defer name
 	if err := os.Chmod(name, 0777); err != nil {
-		//		return "", fmt.Errorf("failed to chmod temporary directory: %v", err)
 		t.Fatalf("Failed to chmod temporary directory: %v", err)
 	}
 	name += "test_container.sif"
 	imagePath = name
-	//	return name, nil
 }
 
 // RunE2ETests is the main func to trigger the test suite
@@ -293,22 +285,6 @@ func RunE2ETests(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-
-	//	imagePath = e2e.MakeTmpDir(t)
-	//	imagePath, err := e2e.MakeTmpDir()
-	//	if err != nil {
-	//		t.Fatalf("%v", err)
-	//	}
-	//	imagePath += "test_container.sif"
-	//
-
-	//	t.Run("foo", e2e.PullTestAlpineContainer(imagePath))
-
-	//	t.Run("pulling_test_alpine_container", e2e.PullTestAlpineContainer(t, imagePath))
-
-	//if err != nil {
-	//	t.Fatalf("%v", err)
-	//}
 
 	t.Run("makeing_tmp_dir", makeTmpDir)
 	t.Run("pulling_test_contianer", pullTestContainer)
