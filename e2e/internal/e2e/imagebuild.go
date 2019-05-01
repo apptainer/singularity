@@ -25,6 +25,7 @@ type BuildOpts struct {
 	Env     []string
 }
 
+// DefFileDetails is the details for a def file.
 type DefFileDetails struct {
 	Bootstrap string
 	From      string

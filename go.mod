@@ -43,7 +43,6 @@ require (
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kr/pty v1.1.3
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
-	github.com/magiconair/properties v1.8.0
 	github.com/mattn/go-colorable v0.1.1 // indirect
 	github.com/mattn/go-runewidth v0.0.2 // indirect
 	github.com/mattn/go-shellwords v1.0.3 // indirect

@@ -168,8 +168,6 @@ github.com/kelseyhightower/envconfig
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 github.com/kubernetes-sigs/cri-o/pkg/seccomp
-# github.com/magiconair/properties v1.8.0
-github.com/magiconair/properties/assert
 # github.com/mattn/go-runewidth v0.0.2
 github.com/mattn/go-runewidth
 # github.com/mattn/go-shellwords v1.0.3
