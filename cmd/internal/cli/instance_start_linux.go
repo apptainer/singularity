@@ -10,50 +10,6 @@ import (
 	"github.com/sylabs/singularity/docs"
 )
 
-func init() {
-	options := []string{
-		"add-caps",
-		"allow-setuid",
-		"apply-cgroups",
-		"bind",
-		"boot",
-		"contain",
-		"containall",
-		"containlibs",
-		"cleanenv",
-		"docker-login",
-		"docker-username",
-		"docker-password",
-		"dns",
-		"drop-caps",
-		"fakeroot",
-		"home",
-		"hostname",
-		"keep-privs",
-		"net",
-		"network",
-		"network-args",
-		"no-home",
-		"no-nv",
-		"no-privs",
-		"nv",
-		"overlay",
-		"scratch",
-		"security",
-		"userns",
-		"uts",
-		"workdir",
-		"writable",
-		"writable-tmpfs",
-	}
-
-	for _, opt := range options {
-		InstanceStartCmd.Flags().AddFlag(actionFlags.Lookup(opt))
-	}
-
-	InstanceStartCmd.Flags().SetInterspersed(false)
-}
-
 // InstanceStartCmd singularity instance start
 var InstanceStartCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(2),
