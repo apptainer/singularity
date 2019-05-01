@@ -16,6 +16,7 @@ singularity.spec
 trash.lock
 Makefile.in
 autom4te.cache/
+bin/golangci-lint
 bin/Makefile
 bin/Makefile.in
 bin/singularity
@@ -25,6 +26,9 @@ depcomp
 etc/singularity.conf
 etc/Makefile
 etc/Makefile.in
+examples/plugins/test-plugin/*.so
+examples/plugins/test-plugin/*.sif
+examples/plugins/test-plugin/*.manifest
 install-sh
 libexec/Makefile
 libexec/Makefile.in

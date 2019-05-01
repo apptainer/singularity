@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // Caplist defines a map of users/groups with associated list of capabilities
@@ -26,8 +28,8 @@ type Config struct {
 // config with the set of authorized user/group capabilities
 func ReadFrom(r io.Reader) (*Config, error) {
 	c := &Config{
-		Users:  make(Caplist, 0),
-		Groups: make(Caplist, 0),
+		Users:  make(Caplist),
+		Groups: make(Caplist),
 	}
 
 	// read all data from r into b
@@ -93,6 +95,8 @@ func (c *Config) AddUserCaps(user string, caps []string) error {
 		}
 		if !present {
 			c.Users[user] = append(c.Users[user], cap)
+		} else {
+			sylog.Warningf("Won't add capability '%s', already assigned to user %s", cap, user)
 		}
 	}
 	return nil
@@ -112,6 +116,8 @@ func (c *Config) AddGroupCaps(group string, caps []string) error {
 		}
 		if !present {
 			c.Groups[group] = append(c.Groups[group], cap)
+		} else {
+			sylog.Warningf("Won't add capability '%s', already assigned to group %s", cap, group)
 		}
 	}
 	return nil
@@ -123,14 +129,23 @@ func (c *Config) DropUserCaps(user string, caps []string) error {
 		return err
 	}
 	if _, ok := c.Users[user]; !ok {
-		return fmt.Errorf("user '%s' not found", user)
+		return fmt.Errorf("user '%s' doesn't have any capability assigned", user)
 	}
 	for _, cap := range caps {
+		dropped := false
 		for i := len(c.Users[user]) - 1; i >= 0; i-- {
 			if c.Users[user][i] == cap {
 				c.Users[user] = append(c.Users[user][:i], c.Users[user][i+1:]...)
+				dropped = true
+				break
 			}
 		}
+		if !dropped {
+			sylog.Warningf("Won't drop capability '%s', not assigned to user %s", cap, user)
+		}
+	}
+	if len(c.Users[user]) == 0 {
+		delete(c.Users, user)
 	}
 	return nil
 }
@@ -141,14 +156,23 @@ func (c *Config) DropGroupCaps(group string, caps []string) error {
 		return err
 	}
 	if _, ok := c.Groups[group]; !ok {
-		return fmt.Errorf("group '%s' not found", group)
+		return fmt.Errorf("group '%s' doesn't have any capability assigned", group)
 	}
 	for _, cap := range caps {
+		dropped := false
 		for i := len(c.Groups[group]) - 1; i >= 0; i-- {
 			if c.Groups[group][i] == cap {
 				c.Groups[group] = append(c.Groups[group][:i], c.Groups[group][i+1:]...)
+				dropped = true
+				break
 			}
 		}
+		if !dropped {
+			sylog.Warningf("Won't drop capability '%s', not assigned to group %s", cap, group)
+		}
+	}
+	if len(c.Groups[group]) == 0 {
+		delete(c.Groups, group)
 	}
 	return nil
 }

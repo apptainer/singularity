@@ -8,6 +8,7 @@
 package sif
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
@@ -156,11 +157,11 @@ func createDescriptor(fimg *FileImage, input DescriptorInput) (err error) {
 
 	// look for a free entry in the descriptor table
 	for idx, v = range fimg.DescrArr {
-		if v.Used == false {
+		if !v.Used {
 			break
 		}
 	}
-	if int64(idx) == fimg.Header.Dtotal-1 && fimg.DescrArr[idx].Used == true {
+	if int64(idx) == fimg.Header.Dtotal-1 && fimg.DescrArr[idx].Used {
 		return fmt.Errorf("no descriptor table free entry, warning: header.Dfree was > 0")
 	}
 
@@ -346,11 +347,7 @@ func (fimg *FileImage) AddObject(input DescriptorInput) error {
 
 // descrIsLast return true if passed descriptor's object is the last in a SIF file
 func objectIsLast(fimg *FileImage, descr *Descriptor) bool {
-	if fimg.Filesize == descr.Fileoff+descr.Filelen {
-		return true
-	}
-
-	return false
+	return fimg.Filesize == descr.Fileoff+descr.Filelen
 }
 
 // compactAtDescr joins data objects leading and following "descr" by compacting a SIF file
@@ -358,7 +355,7 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 	var prev Descriptor
 
 	for _, v := range fimg.DescrArr {
-		if v.Used == false || v.ID == descr.ID {
+		if !v.Used || v.ID == descr.ID {
 			continue
 		} else {
 			if v.Fileoff > prev.Fileoff {
@@ -367,7 +364,7 @@ func compactAtDescr(fimg *FileImage, descr *Descriptor) error {
 		}
 	}
 	// make sure it's not the only used descriptor first
-	if prev.Used == true {
+	if prev.Used {
 		if err := fimg.Fp.Truncate(prev.Fileoff + prev.Filelen); err != nil {
 			return err
 		}
@@ -472,9 +469,111 @@ func (di *DescriptorInput) SetSignExtra(hash Hashtype, entity string) error {
 // SetName sets the byte array field "Name" to the value of string "name"
 func (d *Descriptor) SetName(name string) {
 	copy(d.Name[:], []byte(name))
+	for i := len(name); i < len(d.Name); i++ {
+		d.Name[i] = 0
+	}
 }
 
 // SetExtra sets the extra byte array to a provided byte array
 func (d *Descriptor) SetExtra(extra []byte) {
 	copy(d.Extra[:], extra)
+	for i := len(extra); i < len(d.Extra); i++ {
+		d.Extra[i] = 0
+	}
+}
+
+// SetPrimPart sets the specified system partition to be the primary one
+func (fimg *FileImage) SetPrimPart(id uint32) error {
+	descr, _, err := fimg.GetFromDescrID(id)
+	if err != nil {
+		return err
+	}
+
+	if descr.Datatype != DataPartition {
+		return fmt.Errorf("not a volume partition")
+	}
+
+	ptype, err := descr.GetPartType()
+	if err != nil {
+		return err
+	}
+
+	// if already primary system partition, nothing to do
+	if ptype == PartPrimSys {
+		return nil
+	}
+
+	if ptype != PartSystem {
+		return fmt.Errorf("partition must be of system type")
+	}
+
+	olddescr, _, err := fimg.GetPartPrimSys()
+	if err != nil && err != ErrNotFound {
+		return err
+	}
+
+	fs, err := descr.GetFsType()
+	if err != nil {
+		return nil
+	}
+
+	arch, err := descr.GetArch()
+	if err != nil {
+		return err
+	}
+
+	copy(fimg.Header.Arch[:], arch[:])
+	fimg.PrimPartID = descr.ID
+
+	extra := Partition{
+		Fstype:   fs,
+		Parttype: PartPrimSys,
+	}
+	copy(extra.Arch[:], arch[:])
+
+	var extrabuf bytes.Buffer
+	if err := binary.Write(&extrabuf, binary.LittleEndian, extra); err != nil {
+		return err
+	}
+	descr.SetExtra(extrabuf.Bytes())
+
+	if olddescr != nil {
+		oldfs, err := olddescr.GetFsType()
+		if err != nil {
+			return nil
+		}
+		oldarch, err := olddescr.GetArch()
+		if err != nil {
+			return nil
+		}
+
+		oldextra := Partition{
+			Fstype:   oldfs,
+			Parttype: PartSystem,
+		}
+		copy(oldextra.Arch[:], oldarch[:])
+
+		var oldextrabuf bytes.Buffer
+		if err := binary.Write(&oldextrabuf, binary.LittleEndian, oldextra); err != nil {
+			return err
+		}
+		olddescr.SetExtra(oldextrabuf.Bytes())
+	}
+
+	// write down the descriptor array
+	if err := writeDescriptors(fimg); err != nil {
+		return err
+	}
+
+	fimg.Header.Mtime = time.Now().Unix()
+	// write down global header to file
+	if err := writeHeader(fimg); err != nil {
+		return err
+	}
+
+	if err := fimg.Fp.Sync(); err != nil {
+		return fmt.Errorf("while sync'ing new data object to SIF file: %s", err)
+	}
+
+	return nil
 }

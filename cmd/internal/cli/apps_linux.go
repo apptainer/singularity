@@ -16,9 +16,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 func init() {
@@ -31,9 +31,9 @@ const listAppsCommand = "for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n 
 var AppsCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Use:                   docs.AppsUse,
-	Short:                 docs.AppsUse,
-	Long:                  docs.AppsUse,
-	Example:               docs.AppsUse,
+	Short:                 docs.AppsShort,
+	Long:                  docs.AppsLong,
+	Example:               docs.AppsExample,
 
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {

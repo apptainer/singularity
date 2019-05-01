@@ -19,10 +19,10 @@ import (
 // updates content with current user information and returns content
 func Group(path string, uid int, gids []int) (content []byte, err error) {
 	duplicate := false
-	groups := make([]int, 0)
+	var groups []int
 
 	sylog.Verbosef("Checking for template group file: %s\n", path)
-	if fs.IsFile(path) == false {
+	if !fs.IsFile(path) {
 		return content, fmt.Errorf("group file doesn't exist in container, not updating")
 	}
 
@@ -55,7 +55,7 @@ func Group(path string, uid int, gids []int) (content []byte, err error) {
 			break
 		}
 	}
-	if duplicate == false {
+	if !duplicate {
 		if len(gids) == 0 {
 			groups = append(groups, int(pwInfo.GID))
 		}
@@ -65,8 +65,8 @@ func Group(path string, uid int, gids []int) (content []byte, err error) {
 		return content, fmt.Errorf("failed to read group file content in container: %s", err)
 	}
 
-	if content[len(content)-1] != '\n' {
-		content = append(content, byte('\n'))
+	if len(content) > 0 && content[len(content)-1] != '\n' {
+		content = append(content, '\n')
 	}
 
 	for _, gid := range groups {

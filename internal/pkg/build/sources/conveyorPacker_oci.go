@@ -10,6 +10,7 @@ import (
 	"bufio"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -105,6 +106,10 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 			} else {
 				cp.srcRef, err = oci.ParseReference(tmpDir)
 			}
+
+			if err != nil {
+				return fmt.Errorf("error parsing reference: %v", err)
+			}
 		}
 
 	default:
@@ -160,6 +165,11 @@ func (cp *OCIConveyorPacker) Pack() (*sytypes.Bundle, error) {
 		return nil, fmt.Errorf("While inserting docker specific environment: %v", err)
 	}
 
+	err = cp.insertOCIConfig()
+	if err != nil {
+		return nil, fmt.Errorf("While inserting oci config: %v", err)
+	}
+
 	return cp.b, nil
 }
 
@@ -189,6 +199,16 @@ func (cp *OCIConveyorPacker) getConfig() (imgspecv1.ImageConfig, error) {
 	}
 
 	return imgSpec.Config, nil
+}
+
+func (cp *OCIConveyorPacker) insertOCIConfig() error {
+	conf, err := json.Marshal(cp.imgConfig)
+	if err != nil {
+		return err
+	}
+
+	cp.b.JSONObjects["oci-config"] = conf
+	return nil
 }
 
 // Perform a dumb tar(gz) extraction with no chown, id remapping etc.
@@ -390,9 +410,9 @@ func (cp *OCIConveyorPacker) insertEnv() (err error) {
 			export = fmt.Sprintf("export %s=${%s:-}\n", envParts[0], envParts[0])
 		} else {
 			if envParts[0] == "PATH" {
-				export = fmt.Sprintf("export %s=\"%s\"\n", envParts[0], shell.Escape(envParts[1]))
+				export = fmt.Sprintf("export %s=%q\n", envParts[0], shell.Escape(envParts[1]))
 			} else {
-				export = fmt.Sprintf("export %s=${%s:-%s}\n", envParts[0], envParts[0], shell.Escape(envParts[1]))
+				export = fmt.Sprintf("export %s=${%s:-%q}\n", envParts[0], envParts[0], shell.Escape(envParts[1]))
 			}
 		}
 		_, err = f.WriteString(export)

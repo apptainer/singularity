@@ -58,6 +58,9 @@ func (t *ImageReference) NewImageSource(ctx context.Context, sys *types.SystemCo
 func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemContext, w io.Writer) (types.ImageSource, error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	policyCtx, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return nil, err
+	}
 
 	// First we are fetching into the cache
 	err = copy.Image(context.Background(), policyCtx, t.ImageReference, t.source, &copy.Options{
@@ -95,22 +98,6 @@ func parseURI(uri string) (types.ImageReference, error) {
 	}
 
 	return transport.ParseReference(split[1])
-}
-
-// TempImageExists returns whether or not the uri exists splatted out in the cache.OciTemp() directory
-func TempImageExists(uri string) (bool, string, error) {
-	sum, err := ImageSHA(uri, nil)
-	if err != nil {
-		return false, "", err
-	}
-
-	split := strings.Split(uri, ":")
-	if len(split) < 2 {
-		return false, "", fmt.Errorf("poorly formatted URI %v", uri)
-	}
-
-	exists, err := cache.OciTempExists(sum, split[1])
-	return exists, cache.OciTempImage(sum, split[1]), err
 }
 
 // ImageSHA calculates the SHA of a uri's manifest

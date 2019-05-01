@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,10 +20,10 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/gorilla/websocket"
-	"github.com/sylabs/json-resp"
+	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
+	types "github.com/sylabs/singularity/pkg/build/legacy"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 const (
@@ -161,6 +161,7 @@ func TestBuild(t *testing.T) {
 	m.httpAddr = s.Listener.Addr().String()
 
 	// Table of tests to run
+	// nolint:maligned
 	tests := []struct {
 		description        string
 		expectSuccess      bool

@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -22,10 +23,12 @@ type OciArgs struct {
 	LogPath        string
 	LogFormat      string
 	SyncSocketPath string
-	EmptyProcess   bool
 	PidFile        string
 	FromFile       string
 	KillSignal     string
+	KillTimeout    uint32
+	EmptyProcess   bool
+	ForceKill      bool
 }
 
 func getCommonConfig(containerID string) (*config.Common, error) {
@@ -33,32 +36,23 @@ func getCommonConfig(containerID string) (*config.Common, error) {
 		EngineConfig: &oci.EngineConfig{},
 	}
 
-	file, err := instance.Get(containerID)
+	file, err := instance.Get(containerID, instance.OciSubDir)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("no container found with name %s", containerID)
 	}
 
 	if err := json.Unmarshal(file.Config, &commonConfig); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read %s container configuration: %s", containerID, err)
 	}
 
 	return &commonConfig, nil
 }
 
 func getEngineConfig(containerID string) (*oci.EngineConfig, error) {
-	commonConfig := config.Common{
-		EngineConfig: &oci.EngineConfig{},
-	}
-
-	file, err := instance.Get(containerID)
+	commonConfig, err := getCommonConfig(containerID)
 	if err != nil {
 		return nil, err
 	}
-
-	if err := json.Unmarshal(file.Config, &commonConfig); err != nil {
-		return nil, err
-	}
-
 	return commonConfig.EngineConfig.(*oci.EngineConfig), nil
 }
 

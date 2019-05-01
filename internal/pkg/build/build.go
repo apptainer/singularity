@@ -9,21 +9,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"os/signal"
 	"path/filepath"
-	"strconv"
+	"strings"
 	"syscall"
-	"time"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
+	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
@@ -32,6 +29,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/build/types/parser"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 // Build is an abstracted way to look at the entire build process.
@@ -41,77 +39,101 @@ import (
 // 		Execute all of a definition using AllSections()
 // 		And finally call Assemble() to create our container image
 type Build struct {
-	// dest is the location for container after build is complete
-	dest string
-	// format is the format of built container, e.g., SIF, sandbox
-	format string
-	// c Gets and Packs data needed to build a container into a Bundle from various sources
-	c ConveyorPacker
-	// a Assembles a container from the information stored in a Bundle into various formats
-	a Assembler
-	// b is an intermediate structure that encapsulates all information for the container, e.g., metadata, filesystems
-	b *types.Bundle
+	// stages of the build
+	stages []stage
+	// Conf contains cross stage build configuration
+	Conf Config
+}
+
+// Config defines how build is executed, including things like where final image is written.
+type Config struct {
+	// Dest is the location for container after build is complete
+	Dest string
+	// Format is the format of built container, e.g., SIF, sandbox
+	Format string
+	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
+	// useful for debugging
+	NoCleanUp bool
+	// Opts for bundles
+	Opts types.Options
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
+func NewBuild(spec string, conf Config) (*Build, error) {
 	def, err := makeDef(spec, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild(def, dest, format, libraryURL, authToken, opts)
+	return newBuild([]types.Definition{def}, conf)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
-func NewBuildJSON(r io.Reader, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
+func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 	def, err := types.NewDefinitionFromJSON(r)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild(def, dest, format, libraryURL, authToken, opts)
+	return newBuild([]types.Definition{def}, conf)
 }
 
-func newBuild(d types.Definition, dest, format string, libraryURL, authToken string, opts types.Options) (*Build, error) {
+// New creates a new build struct form a slice of definitions
+func New(defs []types.Definition, conf Config) (*Build, error) {
+	return newBuild(defs, conf)
+}
+
+func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	var err error
 
 	syscall.Umask(0002)
 
 	// always build a sandbox if updating an existing sandbox
-	if opts.Update {
-		format = "sandbox"
+	if conf.Opts.Update {
+		conf.Format = "sandbox"
 	}
 
 	b := &Build{
-		format: format,
-		dest:   dest,
+		Conf: conf,
 	}
 
-	b.b, err = types.NewBundle(opts.TmpDir, "sbuild")
-	if err != nil {
-		return nil, err
-	}
-
-	b.b.Recipe = d
-	b.b.Opts = opts
-
-	// dont need to get cp if we're skipping bootstrap
-	if !opts.Update || opts.Force {
-		if c, err := getcp(b.b.Recipe, libraryURL, authToken); err == nil {
-			b.c = c
-		} else {
-			return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+	// create stages
+	for _, d := range defs {
+		// verify every definition has a header if there are multiple stages
+		if d.Header == nil {
+			return nil, fmt.Errorf("multiple stages detected, all must have headers")
 		}
+
+		s := stage{}
+		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		if err != nil {
+			return nil, err
+		}
+		s.name = d.Header["stage"]
+		s.b.Recipe = d
+
+		s.b.Opts = conf.Opts
+		// dont need to get cp if we're skipping bootstrap
+		if !conf.Opts.Update || conf.Opts.Force {
+			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken); err == nil {
+				s.c = c
+			} else {
+				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
+			}
+		}
+
+		b.stages = append(b.stages, s)
 	}
 
-	switch format {
+	// only need an assembler for last stage
+	lastStageIndex := len(defs) - 1
+	switch conf.Format {
 	case "sandbox":
-		b.a = &assemblers.SandboxAssembler{}
+		b.stages[lastStageIndex].a = &assemblers.SandboxAssembler{}
 	case "sif":
-		b.a = &assemblers.SIFAssembler{}
+		b.stages[lastStageIndex].a = &assemblers.SIFAssembler{}
 	default:
-		return nil, fmt.Errorf("unrecognized output format %s", format)
+		return nil, fmt.Errorf("unrecognized output format %s", conf.Format)
 	}
 
 	return b, nil
@@ -119,12 +141,21 @@ func newBuild(d types.Definition, dest, format string, libraryURL, authToken str
 
 // cleanUp removes remnants of build from file system unless NoCleanUp is specified
 func (b Build) cleanUp() {
-	if b.b.Opts.NoCleanUp {
-		sylog.Infof("Build performed with no clean up option, build bundle located at: %v", b.b.Path)
+	var bundlePaths []string
+	for _, s := range b.stages {
+		bundlePaths = append(bundlePaths, s.b.Path)
+	}
+
+	if b.Conf.NoCleanUp {
+		sylog.Infof("Build performed with no clean up option, build bundle(s) located at: %v", bundlePaths)
 		return
 	}
-	sylog.Debugf("Build bundle cleanup: %v", b.b.Path)
-	os.RemoveAll(b.b.Path)
+
+	for _, path := range bundlePaths {
+		os.RemoveAll(path)
+	}
+	sylog.Debugf("Build bundle(s) cleaned: %v", bundlePaths)
+
 }
 
 // Full runs a standard build from start to finish
@@ -142,163 +173,81 @@ func (b *Build) Full() error {
 	// clean up build normally
 	defer b.cleanUp()
 
-	if err := b.runPreScript(); err != nil {
-		return err
-	}
-
-	if b.b.Opts.Update && !b.b.Opts.Force {
-		//if updating, extract dest container to bundle
-		sylog.Infof("Building into existing container: %s", b.dest)
-		p, err := sources.GetLocalPacker(b.dest, b.b)
-		if err != nil {
+	// build each stage one after the other
+	for i, stage := range b.stages {
+		if err := stage.runPreScript(); err != nil {
 			return err
 		}
 
-		_, err = p.Pack()
-		if err != nil {
-			return err
+		// only update last stage if specified
+		update := stage.b.Opts.Update && !stage.b.Opts.Force && i == len(b.stages)-1
+		if update {
+			// updating, extract dest container to bundle
+			sylog.Infof("Building into existing container: %s", b.Conf.Dest)
+			p, err := sources.GetLocalPacker(b.Conf.Dest, stage.b)
+			if err != nil {
+				return err
+			}
+
+			_, err = p.Pack()
+			if err != nil {
+				return err
+			}
+		} else {
+			// regular build or force, start build from scratch
+			if err := stage.c.Get(stage.b); err != nil {
+				return fmt.Errorf("conveyor failed to get: %v", err)
+			}
+
+			_, err := stage.c.Pack()
+			if err != nil {
+				return fmt.Errorf("packer failed to pack: %v", err)
+			}
 		}
-	} else {
-		//if force, start build from scratch
-		if err := b.c.Get(b.b); err != nil {
-			return fmt.Errorf("conveyor failed to get: %v", err)
+
+		// create apps in bundle
+		a := apps.New()
+		for k, v := range stage.b.Recipe.CustomData {
+			a.HandleSection(k, v)
 		}
 
-		_, err := b.c.Pack()
-		if err != nil {
-			return fmt.Errorf("packer failed to pack: %v", err)
+		a.HandleBundle(stage.b)
+		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()
+
+		if stage.b.RunSection("files") {
+			if err := stage.copyFiles(b); err != nil {
+				return fmt.Errorf("unable to copy files a stage to container fs: %v", err)
+			}
 		}
-	}
 
-	// create apps in bundle
-	a := apps.New()
-	for k, v := range b.b.Recipe.CustomData {
-		a.HandleSection(k, v)
-	}
-
-	a.HandleBundle(b.b)
-	b.b.Recipe.BuildData.Post += a.HandlePost()
-
-	if engineRequired(b.b.Recipe) {
-		if err := b.runBuildEngine(); err != nil {
-			return fmt.Errorf("while running engine: %v", err)
+		if engineRequired(stage.b.Recipe) {
+			if err := runBuildEngine(stage.b); err != nil {
+				return fmt.Errorf("while running engine: %v", err)
+			}
 		}
-	}
 
-	sylog.Debugf("Inserting Metadata")
-	if err := b.insertMetadata(); err != nil {
-		return fmt.Errorf("While inserting metadata to bundle: %v", err)
+		sylog.Debugf("Inserting Metadata")
+		if err := stage.insertMetadata(); err != nil {
+			return fmt.Errorf("while inserting metadata to bundle: %v", err)
+		}
 	}
 
 	sylog.Debugf("Calling assembler")
-	if err := b.Assemble(b.dest); err != nil {
+	if err := b.stages[len(b.stages)-1].Assemble(b.Conf.Dest); err != nil {
 		return err
 	}
 
-	sylog.Infof("Build complete: %s", b.dest)
+	sylog.Infof("Build complete: %s", b.Conf.Dest)
 	return nil
 }
 
 // engineRequired returns true if build definition is requesting to run scripts or copy files
 func engineRequired(def types.Definition) bool {
-	return def.BuildData.Post != "" || def.BuildData.Setup != "" || def.BuildData.Test != "" || len(def.BuildData.Files) != 0
-}
-
-func (b *Build) copyFiles() error {
-
-	// iterate through files transfers
-	for _, transfer := range b.b.Recipe.BuildData.Files {
-		// sanity
-		if transfer.Src == "" {
-			sylog.Warningf("Attempt to copy file with no name...")
-			continue
-		}
-		// dest = source if not specified
-		if transfer.Dst == "" {
-			transfer.Dst = transfer.Src
-		}
-		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-		// copy each file into bundle rootfs
-		transfer.Dst = filepath.Join(b.b.Rootfs(), transfer.Dst)
-		copy := exec.Command("/bin/cp", "-fLr", transfer.Src, transfer.Dst)
-		if err := copy.Run(); err != nil {
-			return fmt.Errorf("While copying %v to %v: %v", transfer.Src, transfer.Dst, err)
-		}
-	}
-
-	return nil
-}
-
-func (b *Build) insertMetadata() (err error) {
-	// insert help
-	err = insertHelpScript(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting help script: %v", err)
-	}
-
-	// insert labels
-	err = insertLabelsJSON(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting labels JSON: %v", err)
-	}
-
-	// insert definition
-	err = insertDefinition(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting definition: %v", err)
-	}
-
-	// insert environment
-	err = insertEnvScript(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
-	}
-
-	// insert startscript
-	err = insertStartScript(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
-	}
-
-	// insert runscript
-	err = insertRunScript(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
-	}
-
-	// insert test script
-	err = insertTestScript(b.b)
-	if err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
-	}
-
-	return
-}
-
-func (b *Build) runPreScript() error {
-	if b.runPre() && b.b.Recipe.BuildData.Pre != "" {
-		if syscall.Getuid() != 0 {
-			return fmt.Errorf("Attempted to build with scripts as non-root user")
-		}
-
-		// Run %pre script here
-		pre := exec.Command("/bin/sh", "-cex", b.b.Recipe.BuildData.Pre)
-		pre.Stdout = os.Stdout
-		pre.Stderr = os.Stderr
-
-		sylog.Infof("Running pre scriptlet\n")
-		if err := pre.Start(); err != nil {
-			return fmt.Errorf("failed to start %%pre proc: %v", err)
-		}
-		if err := pre.Wait(); err != nil {
-			return fmt.Errorf("pre proc: %v", err)
-		}
-	}
-	return nil
+	return def.BuildData.Post.Script != "" || def.BuildData.Setup.Script != "" || def.BuildData.Test.Script != "" || len(def.BuildData.Files) != 0
 }
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
-func (b *Build) runBuildEngine() error {
+func runBuildEngine(b *types.Bundle) error {
 	if syscall.Getuid() != 0 {
 		return fmt.Errorf("Attempted to build with scripts as non-root user")
 	}
@@ -310,12 +259,12 @@ func (b *Build) runBuildEngine() error {
 	ociConfig := &oci.Config{}
 
 	engineConfig := &imgbuildConfig.EngineConfig{
-		Bundle:    *b.b,
+		Bundle:    *b,
 		OciConfig: ociConfig,
 	}
 
 	// surface build specific environment variables for scripts
-	sRootfs := "SINGULARITY_ROOTFS=" + b.b.Rootfs()
+	sRootfs := "SINGULARITY_ROOTFS=" + b.Rootfs()
 	sEnvironment := "SINGULARITY_ENVIRONMENT=" + "/.singularity.d/env/91-environment.sh"
 
 	ociConfig.Process = &specs.Process{}
@@ -346,10 +295,7 @@ func (b *Build) runBuildEngine() error {
 func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
-		return &sources.LibraryConveyorPacker{
-			LibraryURL: libraryURL,
-			AuthToken:  authToken,
-		}, nil
+		return &sources.LibraryConveyorPacker{}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
@@ -375,6 +321,11 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 	}
 }
 
+// MakeDef gets a definition object from a spec
+func MakeDef(spec string, remote bool) (types.Definition, error) {
+	return makeDef(spec, remote)
+}
+
 // makeDef gets a definition object from a spec
 func makeDef(spec string, remote bool) (types.Definition, error) {
 	if ok, err := uri.IsValid(spec); ok && err == nil {
@@ -396,246 +347,103 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 
 	// must be root to build from a definition
 	if os.Getuid() != 0 && !remote {
-		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+		return types.Definition{}, fmt.Errorf("you must be the root user to build from a definition file")
 	}
 
 	d, err := parser.ParseDefinitionFile(defFile)
 	if err != nil {
-		return types.Definition{}, fmt.Errorf("While parsing definition: %s: %v", spec, err)
+		return types.Definition{}, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
 
 	return d, nil
 }
 
-// runPre determines if %pre section was specified to be run from the CLI
-func (b Build) runPre() bool {
-	for _, section := range b.b.Opts.Sections {
-		if section == "none" {
-			return false
-		}
-		if section == "all" || section == "pre" {
-			return true
-		}
-	}
-	return false
+// MakeAllDefs gets a definition slice from a spec
+func MakeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+	return makeAllDefs(spec, remote)
 }
 
-// MakeDef gets a definition object from a spec
-func MakeDef(spec string, remote bool) (types.Definition, error) {
-	return makeDef(spec, remote)
-}
-
-// Assemble assembles the bundle to the specified path
-func (b *Build) Assemble(path string) error {
-	return b.a.Assemble(b.b, path)
-}
-
-func insertEnvScript(b *types.Bundle) error {
-	if b.RunSection("environment") && b.Recipe.ImageData.Environment != "" {
-		sylog.Infof("Adding environment to container")
-		envScriptPath := filepath.Join(b.Rootfs(), "/.singularity.d/env/90-environment.sh")
-		_, err := os.Stat(envScriptPath)
-		if os.IsNotExist(err) {
-			err := ioutil.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Environment+"\n"), 0755)
-			if err != nil {
-				return err
-			}
-		} else {
-			// append to script if it already exists
-			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0755)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			_, err = f.WriteString("\n" + b.Recipe.ImageData.Environment + "\n")
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-func insertRunScript(b *types.Bundle) error {
-	if b.RunSection("runscript") && b.Recipe.ImageData.Runscript != "" {
-		sylog.Infof("Adding runscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Runscript+"\n"), 0755)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func insertStartScript(b *types.Bundle) error {
-	if b.RunSection("startscript") && b.Recipe.ImageData.Startscript != "" {
-		sylog.Infof("Adding startscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/startscript"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Startscript+"\n"), 0755)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func insertTestScript(b *types.Bundle) error {
-	if b.RunSection("test") && b.Recipe.ImageData.Test != "" {
-		sylog.Infof("Adding testscript")
-		err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/test"), []byte("#!/bin/sh\n\n"+b.Recipe.ImageData.Test+"\n"), 0755)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func insertHelpScript(b *types.Bundle) error {
-	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
-		_, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"))
-		if err != nil || b.Opts.Force {
-			sylog.Infof("Adding help info")
-			err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/runscript.help"), []byte(b.Recipe.ImageData.Help+"\n"), 0644)
-			if err != nil {
-				return err
-			}
-		} else {
-			sylog.Warningf("Help message already exists and force option is false, not overwriting")
-		}
-	}
-	return nil
-}
-
-func insertDefinition(b *types.Bundle) error {
-
-	// if update, check for existing definition and move it to bootstrap history
-	if b.Opts.Update {
-		if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity")); err == nil {
-			// make bootstrap_history directory if it doesnt exist
-			if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history")); err != nil {
-				err = os.Mkdir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"), 0755)
-				if err != nil {
-					return err
-				}
-			}
-
-			// look at number of files in bootstrap_history to give correct file name
-			files, err := ioutil.ReadDir(filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history"))
-
-			// name is "Singularity" concatenated with an index based on number of other files in bootstrap_history
-			len := strconv.Itoa(len(files))
-
-			histName := "Singularity" + len
-
-			// move old definition into bootstrap_history
-			err = os.Rename(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), filepath.Join(b.Rootfs(), "/.singularity.d/bootstrap_history", histName))
-			if err != nil {
-				return err
-			}
-		}
-
+// makeAllDef gets a definition object from a spec
+func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+	if ok, err := uri.IsValid(spec); ok && err == nil {
+		// URI passed as spec
+		d, err := types.NewDefinitionFromURI(spec)
+		return []types.Definition{d}, err
 	}
 
-	err := ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/Singularity"), b.Recipe.Raw, 0644)
+	// Check if spec is an image/sandbox
+	if _, err := image.Init(spec, false); err == nil {
+		d, err := types.NewDefinitionFromURI("localimage" + "://" + spec)
+		return []types.Definition{d}, err
+	}
+
+	// default to reading file as definition
+	defFile, err := os.Open(spec)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("unable to open file %s: %v", spec, err)
+	}
+	defer defFile.Close()
+
+	// must be root to build from a definition
+	if os.Getuid() != 0 && !remote {
+		return nil, fmt.Errorf("you must be the root user to build from a definition file")
 	}
 
-	return nil
-}
-
-func insertLabelsJSON(b *types.Bundle) (err error) {
-	var text []byte
-	labels := make(map[string]string)
-
-	if err = getExistingLabels(labels, b); err != nil {
-		return err
-	}
-
-	if err = addBuildLabels(labels, b); err != nil {
-		return err
-	}
-
-	if b.RunSection("labels") && len(b.Recipe.ImageData.Labels) > 0 {
-		sylog.Infof("Adding labels")
-
-		// add new labels to new map and check for collisions
-		for key, value := range b.Recipe.ImageData.Labels {
-			// check if label already exists
-			if _, ok := labels[key]; ok {
-				// overwrite collision if it exists and force flag is set
-				if b.Opts.Force {
-					labels[key] = value
-				} else {
-					sylog.Warningf("Label: %s already exists and force option is false, not overwriting", key)
-				}
-			} else {
-				// set if it doesnt
-				labels[key] = value
-			}
-		}
-	}
-
-	// make new map into json
-	text, err = json.MarshalIndent(labels, "", "\t")
+	d, err := parser.All(defFile)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"), []byte(text), 0644)
-	return err
+	return d, nil
 }
 
-func getExistingLabels(labels map[string]string, b *types.Bundle) error {
-	// check for existing labels in bundle
-	if _, err := os.Stat(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json")); err == nil {
-
-		jsonFile, err := os.Open(filepath.Join(b.Rootfs(), "/.singularity.d/labels.json"))
-		if err != nil {
-			return err
-		}
-		defer jsonFile.Close()
-
-		jsonBytes, err := ioutil.ReadAll(jsonFile)
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal(jsonBytes, &labels)
-		if err != nil {
-			return err
+func (b *Build) findStageIndex(name string) (int, error) {
+	for i, s := range b.stages {
+		if name == s.name {
+			return i, nil
 		}
 	}
-	return nil
+
+	return -1, fmt.Errorf("stage %s was not found", name)
 }
 
-func addBuildLabels(labels map[string]string, b *types.Bundle) error {
-	// schema version
-	labels["org.label-schema.schema-version"] = "1.0"
+func (s *stage) copyFiles(b *Build) error {
+	def := s.b.Recipe
+	for _, f := range def.BuildData.Files {
+		if f.Args == "" {
+			continue
+		}
+		args := strings.Fields(f.Args)
+		if len(args) != 2 {
+			continue
+		}
 
-	// build date and time, lots of time formatting
-	currentTime := time.Now()
-	year, month, day := currentTime.Date()
-	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
-	hour, min, sec := currentTime.Clock()
-	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
-	zone, _ := currentTime.Zone()
-	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
-	labels["org.label-schema.build-date"] = timeString
+		stageIndex, err := b.findStageIndex(args[1])
+		if err != nil {
+			return err
+		}
 
-	// singularity version
-	labels["org.label-schema.usage.singularity.version"] = buildcfg.PACKAGE_VERSION
+		sylog.Debugf("Copying files from stage: %s", args[1])
 
-	// help info if help exists in the definition and is run in the build
-	if b.RunSection("help") && b.Recipe.ImageData.Help != "" {
-		labels["org.label-schema.usage"] = "/.singularity.d/runscript.help"
-		labels["org.label-schema.usage.singularity.runscript.help"] = "/.singularity.d/runscript.help"
-	}
+		// iterate through filetransfers
+		for _, transfer := range f.Files {
+			// sanity
+			if transfer.Src == "" {
+				sylog.Warningf("Attempt to copy file with no name, skipping.")
+				continue
+			}
+			// dest = source if not specified
+			if transfer.Dst == "" {
+				transfer.Dst = transfer.Src
+			}
 
-	// bootstrap header info, only if this build actually bootstrapped
-	if !b.Opts.Update || b.Opts.Force {
-		for key, value := range b.Recipe.Header {
-			labels["org.label-schema.usage.singularity.deffile."+key] = value
+			// copy each file into bundle rootfs
+			transfer.Src = filepath.Join(b.stages[stageIndex].b.Rootfs(), transfer.Src)
+			transfer.Dst = filepath.Join(s.b.Rootfs(), transfer.Dst)
+			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
+			if err := copy.Copy(transfer.Src, transfer.Dst); err != nil {
+				return err
+			}
 		}
 	}
 

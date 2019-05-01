@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 )
 
@@ -19,28 +20,66 @@ var (
 	privKey int // -k encryption key (index from 'keys list') specification
 )
 
+// -u|--url
+var signServerURIFlag = cmdline.Flag{
+	ID:           "signServerURIFlag",
+	Value:        &keyServerURI,
+	DefaultValue: defaultKeyServer,
+	Name:         "url",
+	ShortHand:    "u",
+	Usage:        "key server URL",
+	EnvKeys:      []string{"URL"},
+}
+
+// -g|--groupid
+var signSifGroupIDFlag = cmdline.Flag{
+	ID:           "signSifGroupIDFlag",
+	Value:        &sifGroupID,
+	DefaultValue: uint32(0),
+	Name:         "groupid",
+	ShortHand:    "g",
+	Usage:        "group ID to be signed",
+}
+
+// -i|--id
+var signSifDescIDFlag = cmdline.Flag{
+	ID:           "signSifDescIDFlag",
+	Value:        &sifDescID,
+	DefaultValue: uint32(0),
+	Name:         "id",
+	ShortHand:    "i",
+	Usage:        "descriptor ID to be signed",
+}
+
+// -k|--keyidx
+var signKeyIdxFlag = cmdline.Flag{
+	ID:           "signKeyIdxFlag",
+	Value:        &privKey,
+	DefaultValue: -1,
+	Name:         "keyidx",
+	ShortHand:    "k",
+	Usage:        "private key to use (index from 'keys list')",
+}
+
 func init() {
-	SignCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(SignCmd)
 
-	SignCmd.Flags().StringVarP(&keyServerURL, "url", "u", defaultKeyServer, "key server URL")
-	SignCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
-	SignCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be signed")
-	SignCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be signed")
-	SignCmd.Flags().IntVarP(&privKey, "keyidx", "k", -1, "private key to use (index from 'keys list')")
-
-	SingularityCmd.AddCommand(SignCmd)
+	cmdManager.RegisterFlagForCmd(&signServerURIFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signSifGroupIDFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signSifDescIDFlag, SignCmd)
+	cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
 }
 
 // SignCmd singularity sign
 var SignCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
-	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
+
 		// args[0] contains image path
 		fmt.Printf("Signing image: %s\n", args[0])
-		if err := doSignCmd(args[0], keyServerURL); err != nil {
+		if err := doSignCmd(args[0], keyServerURI); err != nil {
 			sylog.Errorf("signing container failed: %s", err)
 			os.Exit(2)
 		}
@@ -67,5 +106,5 @@ func doSignCmd(cpath, url string) error {
 		id = sifDescID
 	}
 
-	return signing.Sign(cpath, url, id, isGroup, privKey, authToken)
+	return signing.Sign(cpath, id, isGroup, privKey)
 }

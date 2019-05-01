@@ -6,12 +6,16 @@
 package cli
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+
+	"github.com/sylabs/singularity/pkg/cmdline"
 
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
@@ -22,7 +26,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 var (
@@ -35,74 +39,190 @@ var (
 	jsonfmt     bool
 )
 
+type inspectAttributes struct {
+	Labels      map[string]string `json:"labels,omitempty"`
+	Deffile     string            `json:"deffile,omitempty"`
+	Runscript   string            `json:"runscript,omitempty"`
+	Test        string            `json:"test,omitempty"`
+	Environment map[string]string `json:"environment,omitempty"`
+	Helpfile    string            `json:"helpfile,omitempty"`
+}
+
+type inspectFormat struct {
+	Attributes inspectAttributes `json:"attributes"`
+	Type       string            `json:"type"`
+}
+
+// --app
+var inspectAppNameFlag = cmdline.Flag{
+	ID:           "inspectAppNameFlag",
+	Value:        &AppName,
+	DefaultValue: "",
+	Name:         "app",
+	Usage:        "inspect a specific app",
+	EnvKeys:      []string{"APP"},
+}
+
+// -l|--labels
+var inspectLabelsFlag = cmdline.Flag{
+	ID:           "inspectLabelsFlag",
+	Value:        &labels,
+	DefaultValue: false,
+	Name:         "labels",
+	ShortHand:    "l",
+	Usage:        "show the labels associated with the image (default)",
+	EnvKeys:      []string{"LABELS"},
+}
+
+// -d|--deffile
+var inspectDeffileFlag = cmdline.Flag{
+	ID:           "inspectDeffileFlag",
+	Value:        &deffile,
+	DefaultValue: false,
+	Name:         "deffile",
+	ShortHand:    "d",
+	Usage:        "show the Singularity recipe file that was used to generate the image",
+	EnvKeys:      []string{"DEFFILE"},
+}
+
+// -r|--runscript
+var inspectRunscriptFlag = cmdline.Flag{
+	ID:           "inspectRunscriptFlag",
+	Value:        &runscript,
+	DefaultValue: false,
+	Name:         "runscript",
+	ShortHand:    "r",
+	Usage:        "show the runscript for the image",
+	EnvKeys:      []string{"RUNSCRIPT"},
+}
+
+// -t|--test
+var inspectTestFlag = cmdline.Flag{
+	ID:           "inspectTestFlag",
+	Value:        &testfile,
+	DefaultValue: false,
+	Name:         "test",
+	ShortHand:    "t",
+	Usage:        "show the test script for the image",
+	EnvKeys:      []string{"TEST"},
+}
+
+// -e|--environment
+var inspectEnvironmentFlag = cmdline.Flag{
+	ID:           "inspectEnvironmentFlag",
+	Value:        &environment,
+	DefaultValue: false,
+	Name:         "environment",
+	ShortHand:    "e",
+	Usage:        "show the environment settings for the image",
+	EnvKeys:      []string{"ENVIRONMENT"},
+}
+
+// -H|--helpfile
+var inspectHelpfileFlag = cmdline.Flag{
+	ID:           "inspectHelpfileFlag",
+	Value:        &helpfile,
+	DefaultValue: false,
+	Name:         "helpfile",
+	ShortHand:    "H",
+	Usage:        "inspect the runscript helpfile, if it exists",
+	EnvKeys:      []string{"HELPFILE"},
+}
+
+// -j|--json
+var inspectJSONFlag = cmdline.Flag{
+	ID:           "inspectJSONFlag",
+	Value:        &jsonfmt,
+	DefaultValue: false,
+	Name:         "json",
+	ShortHand:    "j",
+	Usage:        "print structured json instead of sections",
+	EnvKeys:      []string{"JSON"},
+}
+
 func init() {
-	InspectCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(InspectCmd)
 
-	InspectCmd.Flags().StringVar(&AppName, "app", "", "inspect a specific app")
-	InspectCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
-
-	InspectCmd.Flags().BoolVarP(&labels, "labels", "l", false, "show the labels associated with the image (default)")
-	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
-
-	InspectCmd.Flags().BoolVarP(&deffile, "deffile", "d", false, "show the Singularity recipe file that was used to generate the image")
-	InspectCmd.Flags().SetAnnotation("deffile", "envkey", []string{"DEFFILE"})
-
-	InspectCmd.Flags().BoolVarP(&runscript, "runscript", "r", false, "show the runscript for the image")
-	InspectCmd.Flags().SetAnnotation("runscript", "envkey", []string{"RUNSCRIPT"})
-
-	InspectCmd.Flags().BoolVarP(&testfile, "test", "t", false, "show the test script for the image")
-	InspectCmd.Flags().SetAnnotation("test", "envkey", []string{"TEST"})
-
-	InspectCmd.Flags().BoolVarP(&environment, "environment", "e", false, "show the environment settings for the image")
-	InspectCmd.Flags().SetAnnotation("environment", "envkey", []string{"ENVIRONMENT"})
-
-	InspectCmd.Flags().BoolVarP(&helpfile, "helpfile", "H", false, "inspect the runscript helpfile, if it exists")
-	InspectCmd.Flags().SetAnnotation("helpfile", "envkey", []string{"HELPFILE"})
-
-	InspectCmd.Flags().BoolVarP(&jsonfmt, "json", "j", false, "print structured json instead of sections")
-	InspectCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
-
-	SingularityCmd.AddCommand(InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectAppNameFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectEnvironmentFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectHelpfileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectJSONFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectRunscriptFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectTestFlag, InspectCmd)
 }
 
-func getLabelsFile(appName string) string {
+func getPathPrefix(appName string) string {
 	if appName == "" {
-		return " cat /.singularity.d/labels.json;"
+		return "/.singularity.d"
 	}
-
-	return fmt.Sprintf(" cat /scif/apps/%s/scif/labels.json;", appName)
+	return fmt.Sprintf("/scif/apps/%s/scif", appName)
 }
 
-func getRunscriptFile(appName string) string {
-	if appName == "" {
-		return " cat /.singularity.d/runscript;"
-	}
-
-	return fmt.Sprintf("/scif/apps/%s/scif/runscript", appName)
+func getSingleFileCommand(file string, label string, appName string) string {
+	var str strings.Builder
+	str.WriteString(fmt.Sprintf(" if [ -f %s/%s ]; then", getPathPrefix(appName), file))
+	str.WriteString(fmt.Sprintf("     echo %s:`wc -c < %s/%s`;", label, getPathPrefix(appName), file))
+	str.WriteString(fmt.Sprintf("     cat %s/%s;", getPathPrefix(appName), file))
+	str.WriteString(" fi;")
+	return str.String()
 }
 
-func getTestFile(appName string) string {
-	if appName == "" {
-		return " cat /.singularity.d/test;"
-	}
-
-	return fmt.Sprintf("/scif/apps/%s/scif/test", appName)
+func getLabelsCommand(appName string) string {
+	return getSingleFileCommand("labels.json", "labels", appName)
 }
 
-func getEnvFile(appName string) string {
-	if appName == "" {
-		return " find /.singularity.d/env -name 9*-environment.sh -exec echo -n == \\; -exec basename -z {} \\; -exec echo == \\; -exec cat {} \\; -exec echo \\;;"
-	}
-
-	return fmt.Sprintf(" find /scif/apps/%s/scif/env -name 9*-environment.sh -exec echo -n == \\; -exec basename -z {} \\; -exec echo == \\; -exec cat {} \\; -exec echo \\;;", appName)
+func getDefinitionCommand() string {
+	return getSingleFileCommand("Singularity", "deffile", "")
 }
 
-func getHelpFile(appName string) string {
-	if appName == "" {
-		return " cat /.singularity.d/runscript.help;"
-	}
+func getRunscriptCommand(appName string) string {
+	return getSingleFileCommand("runscript", "runscript", appName)
+}
 
-	return fmt.Sprintf("/scif/apps/%s/scif/runscript.help", appName)
+func getTestCommand(appName string) string {
+	return getSingleFileCommand("test", "test", appName)
+}
+
+func getEnvironmentCommand(appName string) string {
+	var str strings.Builder
+	str.WriteString(" for env in %s/env/9*-environment.sh; do")
+	str.WriteString("     echo ${env##*/}:`wc -c < $env`;")
+	str.WriteString("     cat $env;")
+	str.WriteString(" done;")
+	return fmt.Sprintf(str.String(), getPathPrefix(appName))
+}
+
+func getHelpCommand(appName string) string {
+	return getSingleFileCommand("runscript.help", "helpfile", appName)
+}
+
+func setAttribute(obj *inspectFormat, label string, value string) {
+	switch label {
+	case "deffile":
+		obj.Attributes.Deffile = value
+	case "test":
+		obj.Attributes.Test = value
+	case "helpfile":
+		obj.Attributes.Helpfile = value
+	case "labels":
+		if err := json.Unmarshal([]byte(value), &obj.Attributes.Labels); err != nil {
+			sylog.Warningf("Unable to parse labels: %s", value)
+		}
+	case "runscript":
+		obj.Attributes.Runscript = value
+	default:
+		if strings.HasSuffix(label, "environment.sh") {
+			obj.Attributes.Environment[label] = value
+		} else {
+			sylog.Warningf("Trying to set attribute for unknown label: %s", label)
+		}
+	}
+}
+
+func getAppCheck(appName string) string {
+	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
 }
 
 // InspectCmd represents the build command
@@ -128,111 +248,115 @@ var InspectCmd = &cobra.Command{
 		}
 		name := filepath.Base(abspath)
 
-		attributes := make(map[string]string)
-
 		a := []string{"/bin/sh", "-c", ""}
-		prefix := "@@@start"
-		delimiter := "@@@end"
+
+		// If AppName is given fail quickly (exit) if it doesn't exist
+		if AppName != "" {
+			sylog.Debugf("Inspection of App %s Selected.", AppName)
+			a[2] += getAppCheck(AppName)
+		}
 
 		if helpfile {
 			sylog.Debugf("Inspection of helpfile selected.")
-
-			// append to a[2] to run commands in container
-			a[2] += fmt.Sprintf(" echo '%v\nhelpfile';", prefix)
-			a[2] += getHelpFile(AppName)
-			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
+			a[2] += getHelpCommand(AppName)
 		}
 
 		if deffile {
 			sylog.Debugf("Inspection of deffile selected.")
-
-			// append to a[2] to run commands in container
-			a[2] += fmt.Sprintf(" echo '%v\ndeffile';", prefix)
-			a[2] += " cat .singularity.d/Singularity;" // apps share common definition file
-			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
+			a[2] += getDefinitionCommand()
 		}
 
 		if runscript {
 			sylog.Debugf("Inspection of runscript selected.")
-
-			// append to a[2] to run commands in container
-			a[2] += fmt.Sprintf(" echo '%v\nrunscript';", prefix)
-			a[2] += getRunscriptFile(AppName)
-			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
+			a[2] += getRunscriptCommand(AppName)
 		}
 
 		if testfile {
 			sylog.Debugf("Inspection of test selected.")
-
-			// append to a[2] to run commands in container
-			a[2] += fmt.Sprintf(" echo '%v\ntest';", prefix)
-			a[2] += getTestFile(AppName)
-			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
+			a[2] += getTestCommand(AppName)
 		}
 
 		if environment {
 			sylog.Debugf("Inspection of environment selected.")
-
-			// append to a[2] to run commands in container
-			a[2] += fmt.Sprintf(" echo '%v\nenvironment';", prefix)
-			a[2] += getEnvFile(AppName)
-			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
+			a[2] += getEnvironmentCommand(AppName)
 		}
 
-		// default to labels if nothing was appended
+		// Default to labels if nothing was appended
 		if labels || len(a[2]) == 0 {
-			sylog.Debugf("Inspection of labels as default.")
-
-			// append to a[2] to run commands in container
-			a[2] += fmt.Sprintf(" echo '%v\nlabels';", prefix)
-			a[2] += getLabelsFile(AppName)
-			a[2] += fmt.Sprintf(" echo '%v';", delimiter)
+			sylog.Debugf("Inspection of labels selected.")
+			a[2] += getLabelsCommand(AppName)
 		}
 
+		// Execute the compound command string.
 		fileContents, err := getFileContent(abspath, name, a)
 		if err != nil {
-			sylog.Fatalf("While getting helpfile: %v", err)
+			sylog.Fatalf("Could not inspect container: %v", err)
 		}
 
-		contentSlice := strings.Split(fileContents, delimiter)
-		for _, s := range contentSlice {
-			s = strings.TrimSpace(s)
-			if strings.HasPrefix(s, prefix) {
-				split := strings.SplitN(s, "\n", 3)
-				if len(split) == 3 {
-					attributes[split[1]] = split[2]
-				} else if len(split) == 2 {
-					sylog.Warningf("%v metadata was not found.", split[1])
+		inspectObj := inspectFormat{}
+		inspectObj.Type = "container"
+		inspectObj.Attributes.Labels = make(map[string]string)
+		inspectObj.Attributes.Environment = make(map[string]string)
+
+		// Parse the command output string into sections.
+		reader := bufio.NewReader(strings.NewReader(fileContents))
+		for {
+			section, err := reader.ReadBytes('\n')
+			if err != nil {
+				break
+			}
+			parts := strings.SplitN(strings.TrimSpace(string(section)), ":", 3)
+			if len(parts) == 2 {
+				label := parts[0]
+				sizeData, errConv := strconv.Atoi(parts[1])
+				if errConv != nil {
+					sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
+				}
+				sylog.Debugf("Section %s found with %d bytes of data.", label, sizeData)
+				data := make([]byte, sizeData)
+				n, err := io.ReadFull(reader, data)
+				if n != len(data) && err != nil {
+					sylog.Fatalf("Unable to read %d bytes.", sizeData)
+				}
+				setAttribute(&inspectObj, label, string(data))
+			} else {
+				sylog.Fatalf("Badly formatted content, can't recover: %v", parts)
+			}
+		}
+
+		// Output the inspection results (use JSON if requested).
+		if jsonfmt {
+			jsonObj, err := json.MarshalIndent(inspectObj, "", "\t")
+			if err != nil {
+				sylog.Fatalf("Could not format inspected data as JSON.")
+			}
+			fmt.Println(string(jsonObj))
+		} else {
+			if inspectObj.Attributes.Helpfile != "" {
+				fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
+			}
+			if inspectObj.Attributes.Deffile != "" {
+				fmt.Println("==deffile==\n" + inspectObj.Attributes.Deffile)
+			}
+			if inspectObj.Attributes.Runscript != "" {
+				fmt.Println("==runscript==\n" + inspectObj.Attributes.Runscript)
+			}
+			if inspectObj.Attributes.Test != "" {
+				fmt.Println("==test==\n" + inspectObj.Attributes.Test)
+			}
+			if len(inspectObj.Attributes.Environment) > 0 {
+				fmt.Println("==environment==")
+				for envLabel, envValue := range inspectObj.Attributes.Environment {
+					fmt.Println("==environment:" + envLabel + "==\n" + envValue)
+				}
+			}
+			if len(inspectObj.Attributes.Labels) > 0 {
+				fmt.Println("==labels==")
+				for labLabel, labValue := range inspectObj.Attributes.Labels {
+					fmt.Println(labLabel + ": " + labValue)
 				}
 			}
 		}
-
-		// format that data based on --json flag
-		if jsonfmt {
-			// store this in a struct, then marshal the struct to json
-			type result struct {
-				Data map[string]string `json:"attributes"`
-				T    string            `json:"type"`
-			}
-
-			d := result{
-				Data: attributes,
-				T:    "container",
-			}
-
-			b, err := json.MarshalIndent(d, "", "\t")
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			fmt.Println(string(b))
-		} else {
-			// iterate through sections of struct and print them
-			for _, value := range attributes {
-				fmt.Println("\n" + value + "\n")
-			}
-		}
-
 	},
 	TraverseChildren: true,
 }
@@ -266,12 +390,12 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("%s: %s", err, cmd.Args)
 	}
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("%s", err)
+		sylog.Fatalf("%s: %s", err, b)
 	}
 
 	return string(b), nil

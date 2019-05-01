@@ -71,6 +71,7 @@ func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDes
 		}
 	}
 
+	sylog.Verbosef("HOME = %s", homeDest)
 	g.AddProcessEnv("HOME", homeDest)
 	g.AddProcessEnv("PATH", "/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin")
 

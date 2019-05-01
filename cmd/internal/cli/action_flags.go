@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,11 +6,8 @@
 package cli
 
 import (
-	"log"
-	"os"
-
-	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 // actionflags.go contains flag variables for action-like commands to draw from
@@ -29,6 +26,8 @@ var (
 	DNS             string
 	Security        []string
 	CgroupsPath     string
+	VMRAM           string
+	VMCPU           string
 	ContainLibsPath []string
 
 	IsBoot          bool
@@ -42,6 +41,9 @@ var (
 	NoHome          bool
 	NoInit          bool
 	NoNvidia        bool
+	VM              bool
+	VMErr           bool
+	IsSyOS          bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -56,215 +58,600 @@ var (
 	DropCaps  string
 )
 
-var actionFlags = pflag.NewFlagSet("ActionFlags", pflag.ExitOnError)
+// --app
+var actionAppFlag = cmdline.Flag{
+	ID:           "actionAppFlag",
+	Value:        &AppName,
+	DefaultValue: "",
+	Name:         "app",
+	Usage:        "set an application to run inside a container",
+	EnvKeys:      []string{"APP", "APPNAME"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
 
-func getHomeDir() string {
-	user, err := user.GetPwUID(uint32(os.Getuid()))
-	if err != nil {
-		log.Fatal(err)
-		return ""
-	}
+// -B|--bind
+var actionBindFlag = cmdline.Flag{
+	ID:           "actionBindFlag",
+	Value:        &BindPaths,
+	DefaultValue: []string{},
+	Name:         "bind",
+	ShortHand:    "B",
+	Usage:        "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
+	EnvKeys:      []string{"BIND", "BINDPATH"},
+	Tag:          "<spec>",
+	EnvHandler:   cmdline.EnvAppendValue,
+}
 
-	return user.Dir
+// -H|--home
+var actionHomeFlag = cmdline.Flag{
+	ID:           "actionHomeFlag",
+	Value:        &HomePath,
+	DefaultValue: CurrentUser.HomeDir,
+	Name:         "home",
+	ShortHand:    "H",
+	Usage:        "a home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.",
+	EnvKeys:      []string{"HOME"},
+	Tag:          "<spec>",
+}
+
+// -o|--overlay
+var actionOverlayFlag = cmdline.Flag{
+	ID:           "actionOverlayFlag",
+	Value:        &OverlayPath,
+	DefaultValue: []string{},
+	Name:         "overlay",
+	ShortHand:    "o",
+	Usage:        "use an overlayFS image for persistent data storage or as read-only layer of container",
+	EnvKeys:      []string{"OVERLAY", "OVERLAYIMAGE"},
+	Tag:          "<path>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -S|--scratch
+var actionScratchFlag = cmdline.Flag{
+	ID:           "actionScratchFlag",
+	Value:        &ScratchPath,
+	DefaultValue: []string{},
+	Name:         "scratch",
+	ShortHand:    "S",
+	Usage:        "include a scratch directory within the container that is linked to a temporary dir (use -W to force location)",
+	EnvKeys:      []string{"SCRATCH", "SCRATCHDIR"},
+	Tag:          "<path>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -W|--workdir
+var actionWorkdirFlag = cmdline.Flag{
+	ID:           "actionWorkdirFlag",
+	Value:        &WorkdirPath,
+	DefaultValue: "",
+	Name:         "workdir",
+	ShortHand:    "W",
+	Usage:        "working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used)",
+	EnvKeys:      []string{"WORKDIR"},
+	Tag:          "<path>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -s|--shell
+var actionShellFlag = cmdline.Flag{
+	ID:           "actionShellFlag",
+	Value:        &ShellPath,
+	DefaultValue: "",
+	Name:         "shell",
+	ShortHand:    "s",
+	Usage:        "path to program to use for interactive shell",
+	EnvKeys:      []string{"SHELL"},
+	Tag:          "<path>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --pwd
+var actionPwdFlag = cmdline.Flag{
+	ID:           "actionPwdFlag",
+	Value:        &PwdPath,
+	DefaultValue: "",
+	Name:         "pwd",
+	Usage:        "initial working directory for payload process inside the container",
+	EnvKeys:      []string{"PWD", "TARGET_PWD"},
+	Tag:          "<path>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --hostname
+var actionHostnameFlag = cmdline.Flag{
+	ID:           "actionHostnameFlag",
+	Value:        &Hostname,
+	DefaultValue: "",
+	Name:         "hostname",
+	Usage:        "set container hostname",
+	EnvKeys:      []string{"HOSTNAME"},
+	Tag:          "<name>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --network
+var actionNetworkFlag = cmdline.Flag{
+	ID:           "actionNetworkFlag",
+	Value:        &Network,
+	DefaultValue: "bridge",
+	Name:         "network",
+	Usage:        "specify desired network type separated by commas, each network will bring up a dedicated interface inside container",
+	EnvKeys:      []string{"NETWORK"},
+	Tag:          "<name>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --network-args
+var actionNetworkArgsFlag = cmdline.Flag{
+	ID:           "actionNetworkArgsFlag",
+	Value:        &NetworkArgs,
+	DefaultValue: []string{},
+	Name:         "network-args",
+	Usage:        "specify network arguments to pass to CNI plugins",
+	EnvKeys:      []string{"NETWORK_ARGS"},
+	Tag:          "<args>",
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --dns
+var actionDNSFlag = cmdline.Flag{
+	ID:           "actionDnsFlag",
+	Value:        &DNS,
+	DefaultValue: "",
+	Name:         "dns",
+	Usage:        "list of DNS server separated by commas to add in resolv.conf",
+	EnvKeys:      []string{"DNS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --security
+var actionSecurityFlag = cmdline.Flag{
+	ID:           "actionSecurityFlag",
+	Value:        &Security,
+	DefaultValue: []string{},
+	Name:         "security",
+	Usage:        "enable security features (SELinux, Apparmor, Seccomp)",
+	EnvKeys:      []string{"SECURITY"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --apply-cgroups
+var actionApplyCgroupsFlag = cmdline.Flag{
+	ID:           "actionApplyCgroupsFlag",
+	Value:        &CgroupsPath,
+	DefaultValue: "",
+	Name:         "apply-cgroups",
+	Usage:        "apply cgroups from file for container processes (root only)",
+	EnvKeys:      []string{"APPLY_CGROUPS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --vm-ram
+var actionVMRAMFlag = cmdline.Flag{
+	ID:           "actionVMRAMFlag",
+	Value:        &VMRAM,
+	DefaultValue: "1024",
+	Name:         "vm-ram",
+	Usage:        "Amount of RAM in MiB to allocate to Virtual Machine (implies --vm)",
+	Tag:          "<size>",
+	EnvKeys:      []string{"VM_RAM"},
+}
+
+// --vm-cpu
+var actionVMCPUFlag = cmdline.Flag{
+	ID:           "actionVMCPUFlag",
+	Value:        &VMCPU,
+	DefaultValue: "1",
+	Name:         "vm-cpu",
+	Usage:        "Number of CPU cores to allocate to Virtual Machine (implies --vm)",
+	Tag:          "<CPU #>",
+	EnvKeys:      []string{"VM_CPU"},
+}
+
+// hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
+var actionContainLibsFlag = cmdline.Flag{
+	ID:           "actionContainLibsFlag",
+	Value:        &ContainLibsPath,
+	DefaultValue: []string{},
+	Name:         "containlibs",
+	Hidden:       true,
+	EnvKeys:      []string{"CONTAINLIBS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// hidden flags to handle docker credentials
+var actionDockerUsernameFlag = cmdline.Flag{
+	ID:           "actionDockerUsernameFlag",
+	Value:        &dockerUsername,
+	DefaultValue: "",
+	Name:         "docker-username",
+	Usage:        "specify a username for docker authentication",
+	Hidden:       true,
+	EnvKeys:      []string{"DOCKER_USERNAME"},
+}
+
+// --docker-password
+var actionDockerPasswordFlag = cmdline.Flag{
+	ID:           "actionDockerPasswordFlag",
+	Value:        &dockerUsername,
+	DefaultValue: "",
+	Name:         "docker-password",
+	Usage:        "specify a password for docker authentication",
+	Hidden:       true,
+	EnvKeys:      []string{"DOCKER_PASSWORD"},
+}
+
+// hidden flag to handle SINGULARITY_TMPDIR environment variable
+var actionTmpDirFlag = cmdline.Flag{
+	ID:           "actionTmpDirFlag",
+	Value:        &tmpDir,
+	DefaultValue: "",
+	Name:         "tmpdir",
+	Usage:        "specify a temporary directory to use for build",
+	Hidden:       true,
+	EnvKeys:      []string{"TMPDIR"},
+}
+
+// --boot
+var actionBootFlag = cmdline.Flag{
+	ID:           "actionBootFlag",
+	Value:        &IsBoot,
+	DefaultValue: false,
+	Name:         "boot",
+	Usage:        "execute /sbin/init to boot container (root only)",
+	EnvKeys:      []string{"BOOT"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -f|--fakeroot
+var actionFakerootFlag = cmdline.Flag{
+	ID:           "actionFakerootFlag",
+	Value:        &IsFakeroot,
+	DefaultValue: false,
+	Name:         "fakeroot",
+	ShortHand:    "f",
+	Hidden:       true,
+	Usage:        "run container in new user namespace as uid 0 (experimental)",
+	EnvKeys:      []string{"FAKEROOT"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -e|--cleanenv
+var actionCleanEnvFlag = cmdline.Flag{
+	ID:           "actionCleanEnvFlag",
+	Value:        &IsCleanEnv,
+	DefaultValue: false,
+	Name:         "cleanenv",
+	ShortHand:    "e",
+	Usage:        "clean environment before running container",
+	EnvKeys:      []string{"CLEANENV"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -c|--contain
+var actionContainFlag = cmdline.Flag{
+	ID:           "actionContainFlag",
+	Value:        &IsContained,
+	DefaultValue: false,
+	Name:         "contain",
+	ShortHand:    "c",
+	Usage:        "use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host",
+	EnvKeys:      []string{"CONTAIN"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -C|--containall
+var actionContainAllFlag = cmdline.Flag{
+	ID:           "actionContainAllFlag",
+	Value:        &IsContainAll,
+	DefaultValue: false,
+	Name:         "containall",
+	ShortHand:    "C",
+	Usage:        "contain not only file systems, but also PID, IPC, and environment",
+	EnvKeys:      []string{"CONTAINALL"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --nv
+var actionNvidiaFlag = cmdline.Flag{
+	ID:           "actionNvidiaFlag",
+	Value:        &Nvidia,
+	DefaultValue: false,
+	Name:         "nv",
+	Usage:        "enable experimental Nvidia support",
+	EnvKeys:      []string{"NV"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -w|--writable
+var actionWritableFlag = cmdline.Flag{
+	ID:           "actionWritableFlag",
+	Value:        &IsWritable,
+	DefaultValue: false,
+	Name:         "writable",
+	ShortHand:    "w",
+	Usage:        "by default all Singularity containers are available as read only. This option makes the file system accessible as read/write.",
+	EnvKeys:      []string{"WRITABLE"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --writable-tmpfs
+var actionWritableTmpfsFlag = cmdline.Flag{
+	ID:           "actionWritableTmpfsFlag",
+	Value:        &IsWritableTmpfs,
+	DefaultValue: false,
+	Name:         "writable-tmpfs",
+	Usage:        "makes the file system accessible as read-write with non persistent data (with overlay support only)",
+	EnvKeys:      []string{"WRITABLE_TMPFS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --no-home
+var actionNoHomeFlag = cmdline.Flag{
+	ID:           "actionNoHomeFlag",
+	Value:        &NoHome,
+	DefaultValue: false,
+	Name:         "no-home",
+	Usage:        "do NOT mount users home directory if home is not the current working directory",
+	EnvKeys:      []string{"NO_HOME"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --no-init
+var actionNoInitFlag = cmdline.Flag{
+	ID:           "actionNoInitFlag",
+	Value:        &NoInit,
+	DefaultValue: false,
+	Name:         "no-init",
+	Usage:        "do NOT start shim process with --pid",
+	EnvKeys:      []string{"NOSHIMINIT"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --nohttps
+var actionNoHTTPSFlag = cmdline.Flag{
+	ID:           "actionNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Usage:        "do NOT use HTTPS, for communicating with local docker registry",
+	EnvKeys:      []string{"NOHTTPS"},
+}
+
+// --docker-login
+var actionDockerLoginFlag = cmdline.Flag{
+	ID:           "actionDockerLoginFlag",
+	Value:        &dockerLogin,
+	DefaultValue: false,
+	Name:         "docker-login",
+	Usage:        "login to a Docker Repository interactively",
+	EnvKeys:      []string{"DOCKER_LOGIN"},
+}
+
+// hidden flag to disable nvidia bindings when 'always use nv = yes'
+var actionNoNvidiaFlag = cmdline.Flag{
+	ID:           "actionNoNvidiaFlag",
+	Value:        &NoNvidia,
+	DefaultValue: false,
+	Name:         "no-nv",
+	EnvKeys:      []string{"NV_OFF", "NO_NV"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --vm
+var actionVMFlag = cmdline.Flag{
+	ID:           "actionVMFlag",
+	Value:        &VM,
+	DefaultValue: false,
+	Name:         "vm",
+	Usage:        "enable VM support",
+	EnvKeys:      []string{"VM"},
+}
+
+// --vm-err
+var actionVMErrFlag = cmdline.Flag{
+	ID:           "actionVMErrFlag",
+	Value:        &VMErr,
+	DefaultValue: false,
+	Name:         "vm-err",
+	Usage:        "enable attaching stderr from VM",
+	EnvKeys:      []string{"VMERROR"},
+}
+
+// --syos
+// TODO: Keep this in production?
+var actionSyOSFlag = cmdline.Flag{
+	ID:           "actionSyOSFlag",
+	Value:        &IsSyOS,
+	DefaultValue: false,
+	Name:         "syos",
+	Usage:        "execute SyOS shell",
+	EnvKeys:      []string{"SYOS"},
+}
+
+// -p|--pid
+var actionPidNamespaceFlag = cmdline.Flag{
+	ID:           "actionPidNamespaceFlag",
+	Value:        &PidNamespace,
+	DefaultValue: false,
+	Name:         "pid",
+	ShortHand:    "p",
+	Usage:        "run container in a new PID namespace",
+	EnvKeys:      []string{"PID", "UNSHARE_PID"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -i|--ipc
+var actionIpcNamespaceFlag = cmdline.Flag{
+	ID:           "actionIpcNamespaceFlag",
+	Value:        &IpcNamespace,
+	DefaultValue: false,
+	Name:         "ipc",
+	ShortHand:    "i",
+	Usage:        "run container in a new IPC namespace",
+	EnvKeys:      []string{"IPC", "UNSHARE_IPC"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -n|--net
+var actionNetNamespaceFlag = cmdline.Flag{
+	ID:           "actionNetNamespaceFlag",
+	Value:        &NetNamespace,
+	DefaultValue: false,
+	Name:         "net",
+	ShortHand:    "n",
+	Usage:        "run container in a new network namespace (sets up a bridge network interface by default)",
+	EnvKeys:      []string{"NET", "UNSHARE_NET"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --uts
+var actionUtsNamespaceFlag = cmdline.Flag{
+	ID:           "actionUtsNamespaceFlag",
+	Value:        &UtsNamespace,
+	DefaultValue: false,
+	Name:         "uts",
+	Usage:        "run container in a new UTS namespace",
+	EnvKeys:      []string{"UTS", "UNSHARE_UTS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// -u|--userns
+var actionUserNamespaceFlag = cmdline.Flag{
+	ID:           "actionUserNamespaceFlag",
+	Value:        &UserNamespace,
+	DefaultValue: false,
+	Name:         "userns",
+	ShortHand:    "u",
+	Usage:        "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This disables some features of Singularity, for example it only works with sandbox images.",
+	EnvKeys:      []string{"USERNS", "UNSHARE_USERNS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --keep-privs
+var actionKeepPrivsFlag = cmdline.Flag{
+	ID:           "actionKeepPrivsFlag",
+	Value:        &KeepPrivs,
+	DefaultValue: false,
+	Name:         "keep-privs",
+	Usage:        "let root user keep privileges in container (root only)",
+	EnvKeys:      []string{"KEEP_PRIVS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --no-privs
+var actionNoPrivsFlag = cmdline.Flag{
+	ID:           "actionNoPrivsFlag",
+	Value:        &NoPrivs,
+	DefaultValue: false,
+	Name:         "no-privs",
+	Usage:        "drop all privileges from root user in container)",
+	EnvKeys:      []string{"NO_PRIVS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --add-caps
+var actionAddCapsFlag = cmdline.Flag{
+	ID:           "actionAddCapsFlag",
+	Value:        &AddCaps,
+	DefaultValue: "",
+	Name:         "add-caps",
+	Usage:        "a comma separated capability list to add",
+	EnvKeys:      []string{"ADD_CAPS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --drop-caps
+var actionDropCapsFlag = cmdline.Flag{
+	ID:           "actionDropCapsFlag",
+	Value:        &DropCaps,
+	DefaultValue: "",
+	Name:         "drop-caps",
+	Usage:        "a comma separated capability list to drop",
+	EnvKeys:      []string{"DROP_CAPS"},
+	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --allow-setuid
+var actionAllowSetuidFlag = cmdline.Flag{
+	ID:           "actionAllowSetuidFlag",
+	Value:        &AllowSUID,
+	DefaultValue: false,
+	Name:         "allow-setuid",
+	Usage:        "allow setuid binaries in container (root only)",
+	EnvKeys:      []string{"ALLOW_SETUID"},
+	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 func init() {
-	initPathVars()
-	initBoolVars()
-	initNamespaceVars()
-	initPrivilegeVars()
-}
+	initializePlugins()
 
-// initPathVars initializes flags that take a string argument
-func initPathVars() {
-	// --app
-	actionFlags.StringVar(&AppName, "app", "", "set an application to run inside a container")
-	actionFlags.SetAnnotation("app", "envkey", []string{"APP", "APPNAME"})
+	cmdManager.RegisterCmd(ExecCmd)
+	cmdManager.RegisterCmd(ShellCmd)
+	cmdManager.RegisterCmd(RunCmd)
+	cmdManager.RegisterCmd(TestCmd)
 
-	// -B|--bind
-	actionFlags.StringSliceVarP(&BindPaths, "bind", "B", []string{}, "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.")
-	actionFlags.SetAnnotation("bind", "argtag", []string{"<spec>"})
-	actionFlags.SetAnnotation("bind", "envkey", []string{"BIND", "BINDPATH"})
+	cmdManager.SetCmdGroup("actions", ExecCmd, ShellCmd, RunCmd, TestCmd)
+	actionsCmd := cmdManager.GetCmdGroup("actions")
 
-	// -H|--home
-	actionFlags.StringVarP(&HomePath, "home", "H", getHomeDir(), "a home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.")
-	actionFlags.SetAnnotation("home", "argtag", []string{"<spec>"})
-	actionFlags.SetAnnotation("home", "envkey", []string{"HOME"})
+	if InstanceStartCmd != nil {
+		cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, InstanceStartCmd)
+		cmdManager.RegisterFlagForCmd(&actionBootFlag, InstanceStartCmd)
+	} else {
+		cmdManager.SetCmdGroup("actions_instance", actionsCmd...)
+	}
+	actionsInstanceCmd := cmdManager.GetCmdGroup("actions_instance")
 
-	// -o|--overlay
-	actionFlags.StringSliceVarP(&OverlayPath, "overlay", "o", []string{}, "use an overlayFS image for persistent data storage or as read-only layer of container")
-	actionFlags.SetAnnotation("overlay", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("overlay", "envkey", []string{"OVERLAY", "OVERLAYIMAGE"})
+	initPlatformDefaults()
 
-	// -S|--scratch
-	actionFlags.StringSliceVarP(&ScratchPath, "scratch", "S", []string{}, "include a scratch directory within the container that is linked to a temporary dir (use -W to force location)")
-	actionFlags.SetAnnotation("scratch", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("scratch", "envkey", []string{"SCRATCH", "SCRATCHDIR"})
+	cmdManager.RegisterFlagForCmd(&actionAppFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionBindFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionHomeFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionOverlayFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionScratchFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionWorkdirFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionShellFlag, ShellCmd)
+	cmdManager.RegisterFlagForCmd(&actionHostnameFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDNSFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionSecurityFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionApplyCgroupsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMRAMFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMCPUFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionTmpDirFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionCleanEnvFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionContainFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionContainAllFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionWritableFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionWritableTmpfsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoHTTPSFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionVMErrFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&actionSyOSFlag, ShellCmd)
+	cmdManager.RegisterFlagForCmd(&actionPidNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionIpcNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNetNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionUtsNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionUserNamespaceFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionKeepPrivsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoPrivsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionAddCapsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
 
-	// -W|--workdir
-	actionFlags.StringVarP(&WorkdirPath, "workdir", "W", "", "working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used)")
-	actionFlags.SetAnnotation("workdir", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("workdir", "envkey", []string{"WORKDIR"})
-
-	// -s|--shell
-	actionFlags.StringVarP(&ShellPath, "shell", "s", "", "path to program to use for interactive shell")
-	actionFlags.SetAnnotation("shell", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("shell", "envkey", []string{"SHELL"})
-
-	// --pwd
-	actionFlags.StringVar(&PwdPath, "pwd", "", "initial working directory for payload process inside the container")
-	actionFlags.SetAnnotation("pwd", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("pwd", "envkey", []string{"PWD", "TARGET_PWD"})
-
-	// --hostname
-	actionFlags.StringVar(&Hostname, "hostname", "", "set container hostname")
-	actionFlags.SetAnnotation("hostname", "argtag", []string{"<name>"})
-	actionFlags.SetAnnotation("hostname", "envkey", []string{"HOSTNAME"})
-
-	// --network
-	actionFlags.StringVar(&Network, "network", "bridge", "specify desired network type separated by commas, each network will bring up a dedicated interface inside container")
-	actionFlags.SetAnnotation("network", "argtag", []string{"<name>"})
-	actionFlags.SetAnnotation("network", "envkey", []string{"NETWORK"})
-
-	// --network-args
-	actionFlags.StringSliceVar(&NetworkArgs, "network-args", []string{}, "specify network arguments to pass to CNI plugins")
-	actionFlags.SetAnnotation("network-args", "argtag", []string{"<name>"})
-	actionFlags.SetAnnotation("network-args", "envkey", []string{"NETWORK_ARGS"})
-
-	// --dns
-	actionFlags.StringVar(&DNS, "dns", "", "list of DNS server separated by commas to add in resolv.conf")
-	actionFlags.SetAnnotation("dns", "envkey", []string{"DNS"})
-
-	// --security
-	actionFlags.StringSliceVar(&Security, "security", []string{}, "enable security features (SELinux, Apparmor, Seccomp)")
-	actionFlags.SetAnnotation("security", "argtag", []string{""})
-	actionFlags.SetAnnotation("security", "envkey", []string{"SECURITY"})
-
-	// --apply-cgroups
-	actionFlags.StringVar(&CgroupsPath, "apply-cgroups", "", "apply cgroups from file for container processes (requires root privileges)")
-	actionFlags.SetAnnotation("apply-cgroups", "argtag", []string{"<path>"})
-	actionFlags.SetAnnotation("apply-cgroups", "envkey", []string{"APPLY_CGROUPS"})
-
-	// hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
-	actionFlags.StringSliceVar(&ContainLibsPath, "containlibs", []string{}, "")
-	actionFlags.Lookup("containlibs").Hidden = true
-	actionFlags.SetAnnotation("containlibs", "envkey", []string{"CONTAINLIBS"})
-
-	// hidden flags to handle docker credentials
-	actionFlags.StringVar(&dockerUsername, "docker-username", "", "specify a username for docker authentication")
-	actionFlags.Lookup("docker-username").Hidden = true
-	actionFlags.SetAnnotation("docker-username", "envkey", []string{"DOCKER_USERNAME"})
-
-	actionFlags.StringVar(&dockerPassword, "docker-password", "", "specify a password for docker authentication")
-	actionFlags.Lookup("docker-password").Hidden = true
-	actionFlags.SetAnnotation("docker-password", "envkey", []string{"DOCKER_PASSWORD"})
-
-	// hidden flag to handle SINGULARITY_TMPDIR environment variable
-	actionFlags.StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
-	actionFlags.Lookup("tmpdir").Hidden = true
-	actionFlags.SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
-}
-
-// initBoolVars initializes flags that take a boolean argument
-func initBoolVars() {
-	// --boot
-	actionFlags.BoolVar(&IsBoot, "boot", false, "execute /sbin/init to boot container (root only)")
-	actionFlags.SetAnnotation("boot", "envkey", []string{"BOOT"})
-
-	// -f|--fakeroot
-	actionFlags.BoolVarP(&IsFakeroot, "fakeroot", "f", false, "run container in new user namespace as uid 0 (experimental)")
-	actionFlags.Lookup("fakeroot").Hidden = true
-	actionFlags.SetAnnotation("fakeroot", "envkey", []string{"FAKEROOT"})
-
-	// -e|--cleanenv
-	actionFlags.BoolVarP(&IsCleanEnv, "cleanenv", "e", false, "clean environment before running container")
-	actionFlags.SetAnnotation("cleanenv", "envkey", []string{"CLEANENV"})
-
-	// -c|--contain
-	actionFlags.BoolVarP(&IsContained, "contain", "c", false, "use minimal /dev and empty other directories (e.g. /tmp and $HOME) instead of sharing filesystems from your host")
-	actionFlags.SetAnnotation("contain", "envkey", []string{"CONTAIN"})
-
-	// -C|--containall
-	actionFlags.BoolVarP(&IsContainAll, "containall", "C", false, "contain not only file systems, but also PID, IPC, and environment")
-	actionFlags.SetAnnotation("containall", "envkey", []string{"CONTAINALL"})
-
-	// --nv
-	actionFlags.BoolVar(&Nvidia, "nv", false, "enable experimental Nvidia support")
-	actionFlags.SetAnnotation("nv", "envkey", []string{"NV"})
-
-	// -w|--writable
-	actionFlags.BoolVarP(&IsWritable, "writable", "w", false, "by default all Singularity containers are available as read only. This option makes the file system accessible as read/write.")
-	actionFlags.SetAnnotation("writable", "envkey", []string{"WRITABLE"})
-
-	// --writable-tmpfs
-	actionFlags.BoolVar(&IsWritableTmpfs, "writable-tmpfs", false, "makes the file system accessible as read-write with non persistent data (with overlay support only)")
-	actionFlags.SetAnnotation("writable-tmpfs", "envkey", []string{"WRITABLE_TMPFS"})
-
-	// --no-home
-	actionFlags.BoolVar(&NoHome, "no-home", false, "do NOT mount users home directory if home is not the current working directory")
-	actionFlags.SetAnnotation("no-home", "envkey", []string{"NO_HOME"})
-
-	// --no-init
-	actionFlags.BoolVar(&NoInit, "no-init", false, "do NOT start shim process with --pid")
-	actionFlags.SetAnnotation("no-init", "envkey", []string{"NO_INIT", "NOSHIMINIT"})
-
-	// --nohttps
-	actionFlags.BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
-	actionFlags.SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
-
-	// --docker-login
-	actionFlags.BoolVar(&dockerLogin, "docker-login", false, "interactive prompt for docker authentication")
-	actionFlags.SetAnnotation("docker-login", "envkey", []string{"DOCKER_LOGIN"})
-
-	// hidden flag to disable nvidia bindings when 'always use nv = yes'
-	actionFlags.BoolVar(&NoNvidia, "no-nv", false, "")
-	actionFlags.Lookup("no-nv").Hidden = true
-	actionFlags.SetAnnotation("no-nv", "envkey", []string{"NV_OFF", "NO_NV"})
-
-}
-
-// initNamespaceVars initializes flags that take toggle namespace support
-func initNamespaceVars() {
-	// -p|--pid
-	actionFlags.BoolVarP(&PidNamespace, "pid", "p", false, "run container in a new PID namespace")
-	actionFlags.SetAnnotation("pid", "envkey", []string{"PID", "UNSHARE_PID"})
-
-	// -i|--ipc
-	actionFlags.BoolVarP(&IpcNamespace, "ipc", "i", false, "run container in a new IPC namespace")
-	actionFlags.SetAnnotation("ipc", "envkey", []string{"IPC", "UNSHARE_IPC"})
-
-	// -n|--net
-	actionFlags.BoolVarP(&NetNamespace, "net", "n", false, "run container in a new network namespace (sets up a bridge network interface by default)")
-	actionFlags.SetAnnotation("net", "envkey", []string{"NET", "UNSHARE_NET"})
-
-	// --uts
-	actionFlags.BoolVar(&UtsNamespace, "uts", false, "run container in a new UTS namespace")
-	actionFlags.SetAnnotation("uts", "envkey", []string{"UTS", "UNSHARE_UTS"})
-
-	// -u|--userns
-	actionFlags.BoolVarP(&UserNamespace, "userns", "u", false, "run container in a new user namespace, allowing Singularity to run completely unprivileged on recent kernels. This disables some features of Singularity, for example it only works with sandbox images.")
-	actionFlags.SetAnnotation("userns", "envkey", []string{"USERNS", "UNSHARE_USERNS"})
-}
-
-// initPrivilegeVars initializes flags that manipulate privileges
-func initPrivilegeVars() {
-	// --keep-privs
-	actionFlags.BoolVar(&KeepPrivs, "keep-privs", false, "let root user keep privileges in container")
-	actionFlags.SetAnnotation("keep-privs", "envkey", []string{"KEEP_PRIVS"})
-
-	// --no-privs
-	actionFlags.BoolVar(&NoPrivs, "no-privs", false, "drop all privileges from root user in container")
-	actionFlags.SetAnnotation("no-privs", "envkey", []string{"NO_PRIVS"})
-
-	// --add-caps
-	actionFlags.StringVar(&AddCaps, "add-caps", "", "a comma separated capability list to add")
-	actionFlags.SetAnnotation("add-caps", "envkey", []string{"ADD_CAPS"})
-
-	// --drop-caps
-	actionFlags.StringVar(&DropCaps, "drop-caps", "", "a comma separated capability list to drop")
-	actionFlags.SetAnnotation("drop-caps", "envkey", []string{"DROP_CAPS"})
-
-	// --allow-setuid
-	actionFlags.BoolVar(&AllowSUID, "allow-setuid", false, "allow setuid binaries in container (root only)")
-	actionFlags.SetAnnotation("allow-setuid", "envkey", []string{"ALLOW_SETUID"})
+	for _, cmd := range actionsCmd {
+		plugin.AddFlagHooks(cmd.Flags())
+	}
 }

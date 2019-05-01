@@ -6,6 +6,9 @@ dist: trusty
 go:
   - "1.11"
 
+# Make sure user forks of singularity build correctly
+go_import_path: github.com/sylabs/singularity
+
 addons:
   apt:
     packages:

@@ -1,0 +1,6 @@
+Bootstrap: docker
+From: python:latest
+
+%runscript
+#!/usr/bin/env python
+print("Uh-oh, there's a snake in my container")

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,7 +16,7 @@ import (
 
 	"github.com/globalsign/mgo/bson"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // HTTP timeout in seconds
@@ -219,19 +219,19 @@ func apiCreate(o interface{}, url string, authToken string) (objJSON []byte, err
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		return []byte{}, fmt.Errorf("error making request to server:\n\t%v", err)
+		return []byte{}, fmt.Errorf("error making request to server: %v", err)
 	}
 	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
 		}
-		return []byte{}, fmt.Errorf("creation did not succeed: %d %s\n\t%v",
+		return []byte{}, fmt.Errorf("creation did not succeed: %d %s %v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 	objJSON, err = ioutil.ReadAll(res.Body)
 	if err != nil {
-		return []byte{}, fmt.Errorf("error reading response from server:\n\t%v", err)
+		return []byte{}, fmt.Errorf("error reading response from server: %v", err)
 	}
 	return objJSON, nil
 }
@@ -243,7 +243,7 @@ func apiGet(url string, authToken string) (objJSON []byte, found bool, err error
 	}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return []byte{}, false, fmt.Errorf("error creating request to server:\n\t%v", err)
+		return []byte{}, false, fmt.Errorf("error creating request to server: %v", err)
 	}
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
@@ -251,7 +251,7 @@ func apiGet(url string, authToken string) (objJSON []byte, found bool, err error
 	req.Header.Set("User-Agent", useragent.Value())
 	res, err := client.Do(req)
 	if err != nil {
-		return []byte{}, false, fmt.Errorf("error making request to server:\n\t%v", err)
+		return []byte{}, false, fmt.Errorf("error making request to server: %v", err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode == http.StatusNotFound {
@@ -260,7 +260,7 @@ func apiGet(url string, authToken string) (objJSON []byte, found bool, err error
 	if res.StatusCode == http.StatusOK {
 		objJSON, err := ioutil.ReadAll(res.Body)
 		if err != nil {
-			return []byte{}, false, fmt.Errorf("error reading response from server:\n\t%v", err)
+			return []byte{}, false, fmt.Errorf("error reading response from server: %v", err)
 		}
 		return objJSON, true, nil
 	}
@@ -269,7 +269,7 @@ func apiGet(url string, authToken string) (objJSON []byte, found bool, err error
 	if err != nil {
 		jRes = ParseErrorResponse(res)
 	}
-	return []byte{}, false, fmt.Errorf("get did not succeed: %d %s\n\t%v",
+	return []byte{}, false, fmt.Errorf("get did not succeed: %d %s %v",
 		jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 }
 
@@ -280,7 +280,7 @@ func apiGetTags(url string, authToken string) (tags TagMap, err error) {
 	}
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("error creating request to server:\n\t%v", err)
+		return nil, fmt.Errorf("error creating request to server: %v", err)
 	}
 	if authToken != "" {
 		req.Header.Set("Authorization", "Bearer "+authToken)
@@ -288,14 +288,14 @@ func apiGetTags(url string, authToken string) (tags TagMap, err error) {
 	req.Header.Set("User-Agent", useragent.Value())
 	res, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error making request to server:\n\t%v", err)
+		return nil, fmt.Errorf("error making request to server: %v", err)
 	}
 	if res.StatusCode != http.StatusOK {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
 		}
-		return nil, fmt.Errorf("creation did not succeed: %d %s\n\t%v",
+		return nil, fmt.Errorf("creation did not succeed: %d %s %v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 	var tagRes TagsResponse
@@ -311,7 +311,7 @@ func apiSetTag(url string, authToken string, t ImageTag) (err error) {
 	sylog.Debugf("apiSetTag calling %s\n", url)
 	s, err := json.Marshal(t)
 	if err != nil {
-		return fmt.Errorf("error encoding object to JSON:\n\t%v", err)
+		return fmt.Errorf("error encoding object to JSON: %v", err)
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(s))
 	req.Header.Set("Content-Type", "application/json")
@@ -324,14 +324,14 @@ func apiSetTag(url string, authToken string, t ImageTag) (err error) {
 	}
 	res, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error making request to server:\n\t%v", err)
+		return fmt.Errorf("error making request to server: %v", err)
 	}
 	if res.StatusCode != http.StatusOK {
 		jRes, err := ParseErrorBody(res.Body)
 		if err != nil {
 			jRes = ParseErrorResponse(res)
 		}
-		return fmt.Errorf("creation did not succeed: %d %s\n\t%v",
+		return fmt.Errorf("creation did not succeed: %d %s %v",
 			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
 	}
 	return nil
@@ -345,7 +345,7 @@ func GetImage(baseURL string, authToken string, imageRef string) (image Image, e
 	if err != nil {
 		return Image{}, err
 	} else if !f {
-		return Image{}, fmt.Errorf("the requested image was not found in the library")
+		return Image{}, fmt.Errorf("image '%s:%s' was not found in '%s'", containerName, tags[0], baseURL)
 	}
 
 	return i, nil

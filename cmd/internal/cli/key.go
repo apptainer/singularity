@@ -7,8 +7,10 @@ package cli
 
 import (
 	"errors"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 const (
@@ -16,41 +18,32 @@ const (
 )
 
 var (
-	keyServerURL string // -u command line option
+	keyServerURI string // -u command line option
 )
 
-func init() {
-	SingularityCmd.AddCommand(KeysCmd)
-	SingularityCmd.AddCommand(KeyCmd)
-
-	// key commands
-	KeyCmd.AddCommand(KeyNewPairCmd)
-	KeyCmd.AddCommand(KeyListCmd)
-	KeyCmd.AddCommand(KeySearchCmd)
-	KeyCmd.AddCommand(KeyPullCmd)
-	KeyCmd.AddCommand(KeyPushCmd)
-
-	// keys commands
-	KeysCmd.AddCommand(KeyNewPairCmd)
-	KeysCmd.AddCommand(KeyListCmd)
-	KeysCmd.AddCommand(KeySearchCmd)
-	KeysCmd.AddCommand(KeyPullCmd)
-	KeysCmd.AddCommand(KeyPushCmd)
+// -u|--url
+var keyServerURIFlag = cmdline.Flag{
+	ID:           "keyServerURIFlag",
+	Value:        &keyServerURI,
+	DefaultValue: defaultKeyServer,
+	Name:         "url",
+	ShortHand:    "u",
+	Usage:        "specify the key server URL",
+	EnvKeys:      []string{"URL"},
 }
 
-// KeysCmd is the 'keys' command that allows management of key stores
-var KeysCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("Invalid command")
-	},
-	DisableFlagsInUseLine: true,
-	Hidden:                true,
+func init() {
+	cmdManager.RegisterCmd(KeyCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyNewPairCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyListCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeySearchCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyPullCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyPushCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyImportCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyRemoveCmd)
+	cmdManager.RegisterSubCmd(KeyCmd, KeyExportCmd)
 
-	Use:           docs.KeysUse,
-	Short:         docs.KeyShort,
-	Long:          docs.KeyLong,
-	Example:       docs.KeyExample,
-	SilenceErrors: true,
+	cmdManager.RegisterFlagForCmd(&keyServerURIFlag, KeySearchCmd, KeyPushCmd, KeyPullCmd)
 }
 
 // KeyCmd is the 'key' command that allows management of key stores
@@ -59,6 +52,7 @@ var KeyCmd = &cobra.Command{
 		return errors.New("Invalid command")
 	},
 	DisableFlagsInUseLine: true,
+	Aliases:               []string{"keys"},
 
 	Use:           docs.KeyUse,
 	Short:         docs.KeyShort,

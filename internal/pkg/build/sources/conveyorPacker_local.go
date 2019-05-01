@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/image"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
@@ -53,8 +53,8 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	case image.SQUASHFS:
 		sylog.Debugf("Packing from Squashfs")
 
-		info.Offset = imageObject.Offset
-		info.SizeLimit = imageObject.Size
+		info.Offset = imageObject.Partitions[0].Offset
+		info.SizeLimit = imageObject.Partitions[0].Size
 
 		return &SquashfsPacker{
 			srcfile: src,
@@ -64,8 +64,8 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	case image.EXT3:
 		sylog.Debugf("Packing from Ext3")
 
-		info.Offset = imageObject.Offset
-		info.SizeLimit = imageObject.Size
+		info.Offset = imageObject.Partitions[0].Offset
+		info.SizeLimit = imageObject.Partitions[0].Size
 
 		return &Ext3Packer{
 			srcfile: src,
@@ -86,6 +86,10 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 
 // Get just stores the source
 func (cp *LocalConveyorPacker) Get(b *types.Bundle) (err error) {
+	// insert base metadata before unpacking fs
+	if err = makeBaseEnv(b.Rootfs()); err != nil {
+		return fmt.Errorf("While inserting base environment: %v", err)
+	}
 
 	cp.src = filepath.Clean(b.Recipe.Header["from"])
 

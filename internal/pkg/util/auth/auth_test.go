@@ -21,12 +21,12 @@ func Test_ReadToken(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	result, w := ReadToken("/no/such/file")
+	result, _ := ReadToken("/no/such/file")
 	if result != "" {
 		t.Errorf("readToken from invalid file must give empty string")
 	}
 
-	result, w = ReadToken("test_data/test_token_toosmall")
+	_, w := ReadToken("test_data/test_token_toosmall")
 	if w != WarningTokenTooShort {
 		t.Errorf("readToken from file with bad (too small) token must give empty string")
 	}

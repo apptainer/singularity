@@ -10,7 +10,7 @@
 - [Documentation](https://www.sylabs.io/docs/)
 - [Citation](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0177459)
 
-Singularity is an open source container platform designed to be simple, fast, and secure. Singularity is optimized for EPC and HPC workloads, allowing untrusted users to run untrusted containers in a trusted way.
+Singularity is an open source container platform designed to be simple, fast, and secure. Singularity is optimized for [EPC](https://www.sylabs.io/2018/09/singularity-is-enterprise-performance-computing/) and HPC workloads, allowing untrusted users to run untrusted containers in a trusted way.
 
 Check out [who is using Singularity](https://www.sylabs.io/singularity/whos-using-singularity/) and some [use cases of Singularity](https://www.sylabs.io/category/how-tos/) on our website.
 

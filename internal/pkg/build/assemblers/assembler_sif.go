@@ -22,16 +22,16 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // SIFAssembler doesnt store anything
 type SIFAssembler struct {
 }
 
-func createSIF(path string, definition []byte, squashfile string) (err error) {
+func createSIF(path string, definition, ociConf []byte, squashfile string) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -52,6 +52,21 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 	// add this descriptor input element to creation descriptor slice
 	cinfo.InputDescr = append(cinfo.InputDescr, definput)
 
+	if len(ociConf) > 0 {
+		// data we need to create a definition file descriptor
+		ociInput := sif.DescriptorInput{
+			Datatype: sif.DataGenericJSON,
+			Groupid:  sif.DescrDefaultGroup,
+			Link:     sif.DescrUnusedLink,
+			Data:     ociConf,
+			Fname:    "oci-config.json",
+		}
+		ociInput.Size = int64(binary.Size(ociInput.Data))
+
+		// add this descriptor input element to creation descriptor slice
+		cinfo.InputDescr = append(cinfo.InputDescr, ociInput)
+	}
+
 	// data we need to create a system partition descriptor
 	parinput := sif.DescriptorInput{
 		Datatype: sif.DataPartition,
@@ -60,14 +75,19 @@ func createSIF(path string, definition []byte, squashfile string) (err error) {
 		Fname:    squashfile,
 	}
 	// open up the data object file for this descriptor
-	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
+	fp, err := os.Open(parinput.Fname)
+	if err != nil {
 		return fmt.Errorf("while opening partition file: %s", err)
 	}
-	defer parinput.Fp.Close()
-	fi, err := parinput.Fp.Stat()
+
+	defer fp.Close()
+
+	fi, err := fp.Stat()
 	if err != nil {
-		return fmt.Errorf("while calling start on partition file: %s", err)
+		return fmt.Errorf("while calling stat on partition file: %s", err)
 	}
+
+	parinput.Fp = fp
 	parinput.Size = fi.Size()
 
 	err = parinput.SetPartExtra(sif.FsSquash, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
@@ -157,7 +177,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	err = createSIF(path, b.Recipe.Raw, squashfsPath)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], squashfsPath)
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}

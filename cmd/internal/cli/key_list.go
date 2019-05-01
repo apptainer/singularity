@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sylabs/singularity/pkg/cmdline"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -16,11 +18,19 @@ import (
 
 var secret bool
 
-func init() {
-	KeyListCmd.Flags().SetInterspersed(false)
+// -s|--secret
+var keyListSecretFlag = cmdline.Flag{
+	ID:           "keyListSecretFlag",
+	Value:        &secret,
+	DefaultValue: false,
+	Name:         "secret",
+	ShortHand:    "s",
+	Usage:        "list private keys instead of the default which displays public ones",
+	EnvKeys:      []string{"SECRET"},
+}
 
-	KeyListCmd.Flags().BoolVarP(&secret, "secret", "s", false, "list private keys instead of the default which displays public ones")
-	KeyListCmd.Flags().SetAnnotation("secret", "envkey", []string{"SECRET"})
+func init() {
+	cmdManager.RegisterFlagForCmd(&keyListSecretFlag, KeyListCmd)
 }
 
 // KeyListCmd is `singularity key list' and lists local store OpenPGP keys
@@ -40,7 +50,7 @@ var KeyListCmd = &cobra.Command{
 }
 
 func doKeyListCmd(secret bool) error {
-	if secret == false {
+	if !secret {
 		fmt.Printf("Public key listing (%s):\n\n", sypgp.PublicPath())
 		sypgp.PrintPubKeyring()
 	} else {

@@ -48,21 +48,21 @@ func OciCreate(containerID string, args *OciArgs) error {
 	engineConfig.SetPidFile(args.PidFile)
 
 	// load config.json from bundle path
-	configJSON := filepath.Join(args.BundlePath, "config.json")
+	configJSON := filepath.Join(absBundle, "config.json")
 	fb, err := os.Open(configJSON)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %s", configJSON, err)
+		return fmt.Errorf("OCI specification file %q is missing or cannot be read", configJSON)
 	}
 
 	data, err := ioutil.ReadAll(fb)
 	if err != nil {
-		return fmt.Errorf("failed to read %s: %s", configJSON, err)
+		return fmt.Errorf("failed to read OCI specification file %s: %s", configJSON, err)
 	}
 
 	fb.Close()
 
 	if err := json.Unmarshal(data, generator.Config); err != nil {
-		return fmt.Errorf("failed to parse %s: %s", configJSON, err)
+		return fmt.Errorf("failed to parse OCI specification file %s: %s", configJSON, err)
 	}
 
 	Env := []string{sylog.GetEnvVar()}
@@ -83,6 +83,9 @@ func OciCreate(containerID string, args *OciArgs) error {
 
 	procName := fmt.Sprintf("Singularity OCI %s", containerID)
 	cmd, err := exec.PipeCommand(starter, []string{procName}, Env, configData)
+	if err != nil {
+		return err
+	}
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

@@ -10,72 +10,164 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var ociArgs singularity.OciArgs
 
+// -b|--bundle
+var ociBundleFlag = cmdline.Flag{
+	ID:           "ociBundleFlag",
+	Value:        &ociArgs.BundlePath,
+	DefaultValue: "",
+	Name:         "bundle",
+	ShortHand:    "b",
+	Required:     true,
+	Usage:        "specify the OCI bundle path (required)",
+	Tag:          "<path>",
+	EnvKeys:      []string{"BUNDLE"},
+}
+
+// -s|--sync-socket
+var ociSyncSocketFlag = cmdline.Flag{
+	ID:           "ociSyncSocketFlag",
+	Value:        &ociArgs.SyncSocketPath,
+	DefaultValue: "",
+	Name:         "sync-socket",
+	ShortHand:    "s",
+	Usage:        "specify the path to unix socket for state synchronization",
+	Tag:          "<path>",
+	EnvKeys:      []string{"SYNC_SOCKET"},
+}
+
+// --empty-process
+var ociCreateEmptyProcessFlag = cmdline.Flag{
+	ID:           "ociCreateEmptyProcessFlag",
+	Value:        &ociArgs.EmptyProcess,
+	DefaultValue: false,
+	Name:         "empty-process",
+	Usage:        "run container without executing container process (eg: for POD container)",
+	EnvKeys:      []string{"EMPTY_PROCESS"},
+}
+
+// -l|--log-path
+var ociLogPathFlag = cmdline.Flag{
+	ID:           "ociLogPathFlag",
+	Value:        &ociArgs.LogPath,
+	DefaultValue: "",
+	Name:         "log-path",
+	ShortHand:    "l",
+	Usage:        "specify the log file path",
+	Tag:          "<path>",
+	EnvKeys:      []string{"LOG_PATH"},
+}
+
+// --log-format
+var ociLogFormatFlag = cmdline.Flag{
+	ID:           "ociLogFormatFlag",
+	Value:        &ociArgs.LogFormat,
+	DefaultValue: "kubernetes",
+	Name:         "log-format",
+	Usage:        "specify the log file format. Available formats are basic, kubernetes and json",
+	Tag:          "<format>",
+	EnvKeys:      []string{"LOG_FORMAT"},
+}
+
+// --pid-file
+var ociPidFileFlag = cmdline.Flag{
+	ID:           "ociPidFileFlag",
+	Value:        &ociArgs.PidFile,
+	DefaultValue: "",
+	Name:         "pid-file",
+	Usage:        "specify the pid file",
+	Tag:          "<path>",
+	EnvKeys:      []string{"PID_FILE"},
+}
+
+// -s|--signal
+var ociKillSignalFlag = cmdline.Flag{
+	ID:           "ociKillSignalFlag",
+	Value:        &ociArgs.KillSignal,
+	DefaultValue: "SIGTERM",
+	Name:         "signal",
+	ShortHand:    "s",
+	Usage:        "signal sent to the container",
+	Tag:          "<signal>",
+	EnvKeys:      []string{"SIGNAL"},
+}
+
+// -f|--force
+var ociKillForceFlag = cmdline.Flag{
+	ID:           "ociKillForceFlag",
+	Value:        &ociArgs.ForceKill,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "f",
+	Usage:        "kill container process with SIGKILL",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// -t|--timeout
+var ociKillTimeoutFlag = cmdline.Flag{
+	ID:           "ociKillTimeoutFlag",
+	Value:        &ociArgs.KillTimeout,
+	DefaultValue: uint32(0),
+	Name:         "timeout",
+	ShortHand:    "t",
+	Usage:        "timeout in second before killing container",
+}
+
+// -f|--from-file
+var ociUpdateFromFileFlag = cmdline.Flag{
+	ID:           "ociUpdateFromFileFlag",
+	Value:        &ociArgs.FromFile,
+	DefaultValue: "",
+	Name:         "from-file",
+	ShortHand:    "f",
+	Usage:        "specify path to OCI JSON cgroups resource file ('-' to read from STDIN)",
+	EnvKeys:      []string{"FROM_FILE"},
+}
+
+// ociContext is a variable used to describe the context of a OCI command.
+// This variable is for example passed in to the EnsureRootPriv() function to
+// customize the output.
+var ociContext = []string{"oci"}
+
 func init() {
-	SingularityCmd.AddCommand(OciCmd)
+	cmdManager.RegisterCmd(OciCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciStartCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciCreateCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciRunCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciDeleteCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciKillCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciAttachCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciExecCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciUpdateCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciPauseCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciResumeCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciMountCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciUmountCmd)
 
-	OciCreateCmd.Flags().SetInterspersed(false)
-	OciCreateCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
-	OciCreateCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
-	OciCreateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().BoolVar(&ociArgs.EmptyProcess, "empty-process", false, "run container without executing container process (eg: for POD container)")
-	OciCreateCmd.Flags().StringVarP(&ociArgs.LogPath, "log-path", "l", "", "specify the log file path")
-	OciCreateCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
-	OciCreateCmd.Flags().StringVar(&ociArgs.LogFormat, "log-format", "kubernetes", "specify the log file format")
-	OciCreateCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
-	OciCreateCmd.Flags().StringVar(&ociArgs.PidFile, "pid-file", "", "specify the pid file")
-	OciCreateCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
+	cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd)
+	createRunCmd := cmdManager.GetCmdGroup("create_run")
 
-	OciStartCmd.Flags().SetInterspersed(false)
-	OciDeleteCmd.Flags().SetInterspersed(false)
-	OciAttachCmd.Flags().SetInterspersed(false)
-	OciExecCmd.Flags().SetInterspersed(false)
-	OciPauseCmd.Flags().SetInterspersed(false)
-	OciResumeCmd.Flags().SetInterspersed(false)
-
-	OciStateCmd.Flags().SetInterspersed(false)
-	OciStateCmd.Flags().StringVarP(&ociArgs.SyncSocketPath, "sync-socket", "s", "", "specify the path to unix socket for state synchronization (internal)")
-	OciStateCmd.Flags().SetAnnotation("sync-socket", "argtag", []string{"<path>"})
-
-	OciKillCmd.Flags().SetInterspersed(false)
-	OciKillCmd.Flags().StringVarP(&ociArgs.KillSignal, "signal", "s", "SIGTERM", "signal sent to the container (default SIGTERM)")
-
-	OciRunCmd.Flags().SetInterspersed(false)
-	OciRunCmd.Flags().StringVarP(&ociArgs.BundlePath, "bundle", "b", "", "specify the OCI bundle path")
-	OciRunCmd.Flags().SetAnnotation("bundle", "argtag", []string{"<path>"})
-	OciRunCmd.Flags().StringVarP(&ociArgs.LogPath, "log-path", "l", "", "specify the log file path")
-	OciRunCmd.Flags().SetAnnotation("log-path", "argtag", []string{"<path>"})
-	OciRunCmd.Flags().StringVar(&ociArgs.LogFormat, "log-format", "kubernetes", "specify the log file format")
-	OciRunCmd.Flags().SetAnnotation("log-format", "argtag", []string{"<format>"})
-	OciRunCmd.Flags().StringVar(&ociArgs.PidFile, "pid-file", "", "specify the pid file")
-	OciRunCmd.Flags().SetAnnotation("pid-file", "argtag", []string{"<path>"})
-
-	OciUpdateCmd.Flags().SetInterspersed(false)
-	OciUpdateCmd.Flags().StringVarP(&ociArgs.FromFile, "from-file", "f", "", "specify path to OCI JSON cgroups resource file ('-' to read from STDIN)")
-
-	OciCmd.AddCommand(OciStartCmd)
-	OciCmd.AddCommand(OciCreateCmd)
-	OciCmd.AddCommand(OciRunCmd)
-	OciCmd.AddCommand(OciDeleteCmd)
-	OciCmd.AddCommand(OciKillCmd)
-	OciCmd.AddCommand(OciStateCmd)
-	OciCmd.AddCommand(OciAttachCmd)
-	OciCmd.AddCommand(OciExecCmd)
-	OciCmd.AddCommand(OciUpdateCmd)
-	OciCmd.AddCommand(OciPauseCmd)
-	OciCmd.AddCommand(OciResumeCmd)
-	OciCmd.AddCommand(OciMountCmd)
-	OciCmd.AddCommand(OciUmountCmd)
+	cmdManager.RegisterFlagForCmd(&ociBundleFlag, createRunCmd...)
+	cmdManager.RegisterFlagForCmd(&ociSyncSocketFlag, createRunCmd...)
+	cmdManager.RegisterFlagForCmd(&ociLogPathFlag, createRunCmd...)
+	cmdManager.RegisterFlagForCmd(&ociLogFormatFlag, createRunCmd...)
+	cmdManager.RegisterFlagForCmd(&ociPidFileFlag, createRunCmd...)
+	cmdManager.RegisterFlagForCmd(&ociCreateEmptyProcessFlag, OciCreateCmd)
+	cmdManager.RegisterFlagForCmd(&ociKillForceFlag, OciKillCmd)
+	cmdManager.RegisterFlagForCmd(&ociKillSignalFlag, OciKillCmd)
+	cmdManager.RegisterFlagForCmd(&ociKillTimeoutFlag, OciKillCmd)
+	cmdManager.RegisterFlagForCmd(&ociUpdateFromFileFlag, OciUpdateCmd)
 }
 
 // OciCreateCmd represents oci create command.
 var OciCreateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciCreate(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -91,6 +183,7 @@ var OciCreateCmd = &cobra.Command{
 var OciRunCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciRun(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -106,6 +199,7 @@ var OciRunCmd = &cobra.Command{
 var OciStartCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciStart(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -121,6 +215,7 @@ var OciStartCmd = &cobra.Command{
 var OciDeleteCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciDelete(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -136,14 +231,19 @@ var OciDeleteCmd = &cobra.Command{
 var OciKillCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
+		timeout := int(ociArgs.KillTimeout)
 		killSignal := ""
 		if len(args) > 1 && args[1] != "" {
 			killSignal = args[1]
 		} else {
 			killSignal = ociArgs.KillSignal
 		}
-		if err := singularity.OciKill(args[0], killSignal, 0); err != nil {
+		if ociArgs.ForceKill {
+			killSignal = "SIGKILL"
+		}
+		if err := singularity.OciKill(args[0], killSignal, timeout); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -157,6 +257,7 @@ var OciKillCmd = &cobra.Command{
 var OciStateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciState(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -172,6 +273,7 @@ var OciStateCmd = &cobra.Command{
 var OciAttachCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciAttach(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -187,6 +289,7 @@ var OciAttachCmd = &cobra.Command{
 var OciExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciExec(args[0], args[1:]); err != nil {
 			sylog.Fatalf("%s", err)
@@ -202,6 +305,7 @@ var OciExecCmd = &cobra.Command{
 var OciUpdateCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciUpdate(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
@@ -217,6 +321,7 @@ var OciUpdateCmd = &cobra.Command{
 var OciPauseCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciPauseResume(args[0], true); err != nil {
 			sylog.Fatalf("%s", err)
@@ -232,6 +337,7 @@ var OciPauseCmd = &cobra.Command{
 var OciResumeCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciPauseResume(args[0], false); err != nil {
 			sylog.Fatalf("%s", err)
@@ -247,12 +353,13 @@ var OciResumeCmd = &cobra.Command{
 var OciMountCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(2),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciMount(args[0], args[1]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "mount",
+	Use:     docs.OciMountUse,
 	Short:   docs.OciMountShort,
 	Long:    docs.OciMountLong,
 	Example: docs.OciMountExample,
@@ -262,12 +369,13 @@ var OciMountCmd = &cobra.Command{
 var OciUmountCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
+	PreRun:                func(cmd *cobra.Command, args []string) { EnsureRootPriv(cmd, ociContext) },
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciUmount(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
-	Use:     "umount",
+	Use:     docs.OciUmountUse,
 	Short:   docs.OciUmountShort,
 	Long:    docs.OciUmountLong,
 	Example: docs.OciUmountExample,

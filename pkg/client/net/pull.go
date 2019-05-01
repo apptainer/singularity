@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"gopkg.in/cheggaaa/pb.v1"
 )
 
@@ -39,7 +39,7 @@ func DownloadImage(filePath string, libraryURL string, Force bool) error {
 	}
 	if filePath == "" {
 		refParts := strings.Split(libraryURL, "/")
-		filePath = fmt.Sprintf("%s", refParts[len(refParts)-1])
+		filePath = refParts[len(refParts)-1]
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
 	}
 

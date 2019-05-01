@@ -9,9 +9,73 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.1.0
+# Changes Since v3.2.0
 
-# v3.1.0 - [2019.02.08]
+# v3.2.0 - [2019.04.11]
+
+## New features / functionalities
+  - Introduced a new basic framework for creating and managing plugins
+  - Added the ability to create containers through multi-stage builds
+  - Created the concept of a Sylabs Cloud "remote" endpoint and added the ability for users and admins to set them through CLI and conf files 
+  - Added caching for images from Singularity Hub
+  - Made it possible to compile Singularity outside of `$GOPATH`
+  - Added a json partition to SIF files for OCI configuration when building from an OCI source
+  - Full integration with Singularity desktop for MacOS code base
+  - Added --nocolor flag to Singularity client to disable color in logging
+
+## New Commands
+ - Introduced the `plugin` command group for creating and managing plugins
+    - `compile`   Compile a singularity plugin
+    - `disable`   disable an installed singularity plugin
+    - `enable`    Enable an installed singularity plugin
+    - `inspect`   Inspect a singularity plugin (either an installed one or an image)
+    - `install`   Install a singularity plugin
+    - `list`      List installed singularity plugins
+    - `uninstall` Uninstall removes the named plugin from the system
+
+  - Introduced the `remote` command group to support management of Singularity endpoints:
+    - `add`       Create a new Sylabs Cloud remote endpoint
+    - `list`      List all remote endpoints that are configured
+    - `login`     Log into a remote endpoint using an authentication token
+    - `remove`    Remove an existing Sylabs Cloud remote endpoint
+    - `status`    Check the status of the services at an endpoint
+    - `use`       Set a remote endpoint to be used by default
+
+  - Added to the `key` command group to improve PGP key management:
+    - ` export`   Export a public or private key into a specific file
+    - ` import`   Import a local key into the local keyring
+    - ` remove`   Remove a local public key
+
+  - Added the `Stage: <name>` keyword to the definition file header and the `from <stage name>` option/argument pair to the `%files` section to support multistage builds
+
+## Deprecated / removed commands
+  - The `--token/-t` option has been deprecated in favor of the `singularity remote` command group
+
+## Changed defaults / behaviors
+  - Ask to confirm password on a newly generated PGP key
+  - Prompt to push a key to the KeyStore when generated
+  - Refuse to push an unsigned container unless overridden with `--allow-unauthenticated/-U` option
+  - Warn and prompt when pulling an unsigned container without the `--allow-unauthenticated/-U` option`
+
+# v3.1.1 - [2019.04.02]
+
+## New Commands
+  - New hidden `buildcfg` command to display compile-time parameters 
+  - Added support for `LDFLAGS`, `CFLAGS`, `CGO_` variables in build system
+  - Added `--nocolor` flag to Singularity client to disable color in logging
+
+## Removed Commands
+  - `singularity capability <add/drop> --desc` has been removed
+  - `singularity capability list <--all/--group/--user>` flags have all been removed 
+
+## New features / functionalities
+  - The `--builder` flag to the `build` command implicitly sets `--remote`
+  - Repeated binds no longer cause Singularity to exit and fail, just warn instead
+  - Corrected typos and improved docstrings throughout
+  - Removed warning when CWD does not exist on the host system
+  - Added support to spec file for RPM building on SLES 11
+
+# v3.1.0 - [2019.02.22]
 
 ## New Commands
   - Introduced the `oci` command group to support a new OCI compliant variant of the Singularity runtime:

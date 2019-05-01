@@ -13,9 +13,10 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/image/unpacker"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
@@ -33,67 +34,65 @@ func (p *SIFPacker) Pack() (*types.Bundle, error) {
 
 // First pass just assumes a single system partition, later passes will handle more complex sif files
 // unpackSIF parses through the sif file and places each component in the sandbox
-func (p *SIFPacker) unpackSIF(b *types.Bundle, rootfs string) (err error) {
-
-	// load the container
-	fimg, err := sif.LoadContainer(rootfs, true)
+func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
+	img, err := image.Init(srcfile, false)
 	if err != nil {
-		sylog.Errorf("error loading sif file %s: %s\n", rootfs, err)
-		return err
+		return fmt.Errorf("could not open image %s: %s", srcfile, err)
 	}
-	defer fimg.UnloadContainer()
+	defer img.File.Close()
 
-	// Get the default system partition image as rootfs part
-	part, _, err := fimg.GetPartPrimSys()
-	if err != nil {
-		return err
+	if !img.HasRootFs() {
+		return fmt.Errorf("no root filesystem found in %s", srcfile)
 	}
 
-	// record the fs type
-	mountType := ""
-	fstype, err := part.GetFsType()
-	if err != nil {
-		return err
-	}
-	if fstype == sif.FsSquash {
-		mountType = "squashfs"
-	} else if fstype == sif.FsExt3 {
-		mountType = "ext3"
-	} else {
-		return fmt.Errorf("unknown file system type: %v", fstype)
-	}
+	switch img.Partitions[0].Type {
+	case image.SQUASHFS:
+		// create a reader for rootfs partition
+		reader, err := image.NewPartitionReader(img, "", 0)
+		if err != nil {
+			return fmt.Errorf("could not extract root filesystem: %s", err)
+		}
 
-	info := &loop.Info64{
-		Offset:    uint64(part.Fileoff),
-		SizeLimit: uint64(part.Filelen),
-		Flags:     loop.FlagsAutoClear,
-	}
+		s := unpacker.NewSquashfs()
 
-	//copy partition contents to bundle rootfs
-	err = unpackImagePartion(fimg.Fp.Name(), b.Rootfs(), mountType, info)
-	if err != nil {
-		return fmt.Errorf("While copying partition data to bundle: %v", err)
+		// extract root filesystem
+		if err := s.ExtractAll(reader, b.Rootfs()); err != nil {
+			return fmt.Errorf("root filesystem extraction failed: %s", err)
+		}
+	case image.EXT3:
+		info := &loop.Info64{
+			Offset:    uint64(img.Partitions[0].Offset),
+			SizeLimit: uint64(img.Partitions[0].Size),
+			Flags:     loop.FlagsAutoClear,
+		}
+
+		// extract ext3 partition by mounting
+		sylog.Debugf("Ext3 partition detected, mounting to extract.")
+		err = unpackImagePartition(img.File, b.Rootfs(), "ext3", info)
+		if err != nil {
+			return fmt.Errorf("While copying partition data to bundle: %v", err)
+		}
+	default:
+		return fmt.Errorf("unrecognized partition format")
 	}
 
 	return nil
 }
 
-// unpackImagePart temporarily mounts an image parition using a loop device and then copies its contents to the destination directory
-func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err error) {
-
-	var number int
-	number = 0
+// unpackImagePartition temporarily mounts an image parition using a loop device and then copies its contents to the destination directory
+func unpackImagePartition(src *os.File, dest, mountType string, info *loop.Info64) (err error) {
+	number := 0
 	loopdev := new(loop.Device)
 	loopdev.MaxLoopDevices = 256
 	loopdev.Info = info
 
-	if err := loopdev.AttachFromPath(src, os.O_RDONLY, &number); err != nil {
+	if err := loopdev.AttachFromFile(src, os.O_RDONLY, &number); err != nil {
 		return err
 	}
 
 	tmpmnt, err := ioutil.TempDir("", "tmpmnt-")
 	if err != nil {
-		return fmt.Errorf("Failed to make tmp mount point: %v", err)
+		return fmt.Errorf("failed to make tmp mount point: %v", err)
 	}
 	defer os.RemoveAll(tmpmnt)
 
@@ -101,7 +100,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
 	err = syscall.Mount(path, tmpmnt, mountType, syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-		sylog.Errorf("Mount Failed: %s", err)
+		sylog.Errorf("mount Failed: %s", err)
 		return err
 	}
 	defer syscall.Unmount(tmpmnt, 0)
@@ -112,7 +111,7 @@ func unpackImagePartion(src, dest, mountType string, info *loop.Info64) (err err
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, dest)
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("cp Failed: %v: %v", err, stderr.String())
+		return fmt.Errorf("cp failed: %v: %v", err, stderr.String())
 	}
 
 	return nil

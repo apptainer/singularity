@@ -24,12 +24,13 @@ const imagePath = "./container.sif"
 const appsImage = "./appsImage.sif"
 
 type opts struct {
-	binds     []string
-	security  []string
 	keepPrivs bool
-	dropCaps  string
 	contain   bool
 	noHome    bool
+	userns    bool
+	binds     []string
+	security  []string
+	dropCaps  string
 	home      string
 	workdir   string
 	pwd       string
@@ -74,6 +75,9 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	}
 	if opts.app != "" {
 		argv = append(argv, "--app", opts.app)
+	}
+	if opts.userns {
+		argv = append(argv, "-u")
 	}
 	argv = append(argv, imagePath)
 	argv = append(argv, command...)
@@ -307,6 +311,13 @@ func testRunFromURI(t *testing.T) {
 		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, opts{}, false},
 		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, opts{}, false},
 		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{}, false},
+		// exec from URI with user namespace enabled
+		{"trueDockerUserns", "docker://busybox:latest", "exec", []string{"true"}, opts{userns: true}, true},
+		{"trueLibraryUserns", "library://busybox:latest", "exec", []string{"true"}, opts{userns: true}, true},
+		{"trueShubUserns", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{userns: true}, true},
+		{"falseDockerUserns", "docker://busybox:latest", "exec", []string{"false"}, opts{userns: true}, false},
+		{"falselibraryUserns", "library://busybox:latest", "exec", []string{"false"}, opts{userns: true}, false},
+		{"falseShubUserns", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{userns: true}, false},
 	}
 
 	for _, tt := range tests {

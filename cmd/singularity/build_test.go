@@ -123,7 +123,7 @@ func TestBuild(t *testing.T) {
 	}
 }
 
-func TestBuildMultiStage(t *testing.T) {
+func TestMultipleBuilds(t *testing.T) {
 	imagePath1 := path.Join(testDir, "container1")
 	imagePath2 := path.Join(testDir, "container2")
 	imagePath3 := path.Join(testDir, "container3")
@@ -211,6 +211,212 @@ func TestBadPath(t *testing.T) {
 	}
 }
 
+func TestMultiStageDefinition(t *testing.T) {
+	tmpfile, err := ioutil.TempFile(testDir, "testFile-")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer os.Remove(tmpfile.Name()) // clean up
+
+	if _, err := tmpfile.Write([]byte(testFileContent)); err != nil {
+		log.Fatal(err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		log.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		force   bool
+		sandbox bool
+		dfd     []DefFileDetail
+		correct DefFileDetail // a bit hacky, but this allows us to check final image for correct artifacts
+	}{
+		// Simple copy from stage one to final stage
+		{"FileCopySimple", false, true, []DefFileDetail{
+			{
+				Bootstrap: "docker",
+				From:      "alpine:latest",
+				Stage:     "one",
+				Files: []FilePair{
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOne2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOne.txt",
+					},
+				},
+			},
+			{
+				Bootstrap: "docker",
+				From:      "alpine:latest",
+				FilesFrom: []FileSection{
+					{
+						"one",
+						[]FilePair{
+							{
+								Src: "StageOne2.txt",
+								Dst: "StageOneCopy2.txt",
+							},
+							{
+								Src: "StageOne.txt",
+								Dst: "StageOneCopy.txt",
+							},
+						}}},
+			}},
+			DefFileDetail{
+				Files: []FilePair{
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopy2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopy.txt",
+					},
+				},
+			},
+		},
+		// Complex copy of files from stage one and two to stage three, then final copy from three to final stage
+		{"FileCopyComplex", false, true,
+			[]DefFileDetail{
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "one",
+					Files: []FilePair{
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageOne2.txt",
+						},
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageOne.txt",
+						},
+					},
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "two",
+					Files: []FilePair{
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageTwo2.txt",
+						},
+						{
+							Src: tmpfile.Name(),
+							Dst: "StageTwo.txt",
+						},
+					},
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					Stage:     "three",
+					FilesFrom: []FileSection{
+						{
+							"one",
+							[]FilePair{
+								{
+									Src: "StageOne2.txt",
+									Dst: "StageOneCopy2.txt",
+								},
+								{
+									Src: "StageOne.txt",
+									Dst: "StageOneCopy.txt",
+								},
+							}},
+						{
+							"two",
+							[]FilePair{
+								{
+									Src: "StageTwo2.txt",
+									Dst: "StageTwoCopy2.txt",
+								},
+								{
+									Src: "StageTwo.txt",
+									Dst: "StageTwoCopy.txt",
+								},
+							},
+						}},
+				},
+				{
+					Bootstrap: "docker",
+					From:      "alpine:latest",
+					FilesFrom: []FileSection{
+						{
+							"three",
+							[]FilePair{
+								{
+									Src: "StageOneCopy2.txt",
+									Dst: "StageOneCopyFinal2.txt",
+								},
+								{
+									Src: "StageOneCopy.txt",
+									Dst: "StageOneCopyFinal.txt",
+								},
+								{
+									Src: "StageTwoCopy2.txt",
+									Dst: "StageTwoCopyFinal2.txt",
+								},
+								{
+									Src: "StageTwoCopy.txt",
+									Dst: "StageTwoCopyFinal.txt",
+								},
+							}}},
+				},
+			},
+			DefFileDetail{
+				Files: []FilePair{
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopyFinal2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageOneCopyFinal.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageTwoCopyFinal2.txt",
+					},
+					{
+						Src: tmpfile.Name(),
+						Dst: "StageTwoCopyFinal.txt",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+
+			defFile := prepareMultipleDefFiles(tt.dfd)
+			defer os.Remove(defFile)
+
+			opts := buildOpts{
+				sandbox: tt.sandbox,
+			}
+
+			imagePath := path.Join(testDir, "container")
+			defer os.RemoveAll(imagePath)
+
+			if b, err := imageBuild(opts, imagePath, defFile); err != nil {
+				t.Log(string(b))
+				t.Fatalf("unexpected failure: %v", err)
+			}
+
+			definitionImageVerify(t, imagePath, tt.correct)
+		}))
+	}
+
+}
+
 func TestBuildDefinition(t *testing.T) {
 
 	tmpfile, err := ioutil.TempFile(testDir, "testFile-")
@@ -250,11 +456,11 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Files: []FilePair{
-				FilePair{
+				{
 					Src: tmpfile.Name(),
 					Dst: "NewName2.txt",
 				},
-				FilePair{
+				{
 					Src: tmpfile.Name(),
 					Dst: "NewName.txt",
 				},
@@ -330,7 +536,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Help: []string{
 						"foo help info line 1",
@@ -338,7 +544,7 @@ func TestBuildDefinition(t *testing.T) {
 						"foo help info line 3",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Help: []string{
 						"bar help info line 1",
@@ -352,7 +558,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Env: []string{
 						"testvar1=fooOne",
@@ -360,7 +566,7 @@ func TestBuildDefinition(t *testing.T) {
 						"testvar3=fooThree",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Env: []string{
 						"testvar1=barOne",
@@ -374,7 +580,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Labels: map[string]string{
 						"customLabel1": "fooOne",
@@ -382,7 +588,7 @@ func TestBuildDefinition(t *testing.T) {
 						"customLabel3": "fooThree",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Labels: map[string]string{
 						"customLabel1": "barOne",
@@ -396,27 +602,27 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Files: []FilePair{
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "FooFile2.txt",
 						},
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "FooFile.txt",
 						},
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Files: []FilePair{
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "BarFile2.txt",
 						},
-						FilePair{
+						{
 							Src: tmpfile.Name(),
 							Dst: "BarFile.txt",
 						},
@@ -428,13 +634,13 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Install: []string{
 						"FooInstallFile1",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Install: []string{
 						"BarInstallFile1",
@@ -446,7 +652,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Run: []string{
 						"echo foo runscript line 1",
@@ -454,7 +660,7 @@ func TestBuildDefinition(t *testing.T) {
 						"echo foo runscript line 3",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Run: []string{
 						"echo bar runscript line 1",
@@ -468,7 +674,7 @@ func TestBuildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Apps: []AppDetail{
-				AppDetail{
+				{
 					Name: "foo",
 					Test: []string{
 						"echo foo testscript line 1",
@@ -476,7 +682,7 @@ func TestBuildDefinition(t *testing.T) {
 						"echo foo testscript line 3",
 					},
 				},
-				AppDetail{
+				{
 					Name: "bar",
 					Test: []string{
 						"echo bar testscript line 1",
@@ -536,7 +742,7 @@ func definitionImageVerify(t *testing.T, imagePath string, dfd DefFileDetail) {
 	// verify %files section works correctly
 	for _, p := range dfd.Files {
 		var file string
-		if p.Src == "" {
+		if p.Dst == "" {
 			file = p.Src
 		} else {
 			file = p.Dst
@@ -721,7 +927,7 @@ func verifyFile(t *testing.T, original, copy string) error {
 		t.Fatalf("While reading file: %v", err)
 	}
 
-	if bytes.Compare(o, c) != 0 {
+	if !bytes.Equal(o, c) {
 		return fmt.Errorf("Incorrect file content")
 	}
 

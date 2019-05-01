@@ -20,7 +20,6 @@ type CapManageConfig struct {
 	Caps  string
 	User  string
 	Group string
-	Desc  bool
 }
 
 type manageType struct {
@@ -77,13 +76,11 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 
 	caps, ign := capabilities.Split(c.Caps)
 	if len(ign) > 0 {
-		sylog.Warningf("Ignoring unkown capabilities: %s", ign)
+		sylog.Warningf("Ignoring unknown capabilities: %s", ign)
 	}
 
-	if c.Desc {
-		for _, cap := range caps {
-			fmt.Printf("%-22s %s\n\n", cap+":", capabilities.Map[cap].Description)
-		}
+	if c.User == "" && c.Group == "" {
+		return fmt.Errorf("no user or group specified")
 	}
 
 	if c.User != "" {

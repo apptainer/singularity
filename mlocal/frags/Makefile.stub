@@ -2,7 +2,8 @@ all: $(ALL)
 
 .PHONY: man
 man:
-	$(V)go run -tags "$(GO_TAGS)" $(SOURCEDIR)/cmd/docs/docs.go man --dir $(DESTDIR)$(MANDIR)/man1
+	$(V)$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+		$(SOURCEDIR)/cmd/docs/docs.go man --dir $(DESTDIR)$(MANDIR)/man1
 
 .PHONY: collect
 collect:
@@ -17,35 +18,50 @@ collect:
 
 .PHONY: check
 check: $(go_OBJ)
-	@echo " CHECK go fmt"
+	@echo " CHECK golangci-lint"
 	$(V)cd $(SOURCEDIR) && \
-		( test -z "`go fmt -n ./... | sed 's/ -w / /' | sh | tee /dev/stderr`" || \
-		   ( echo "The above files have formatting errors."; \
-		     echo "Use 'go fmt github.com/sylabs/singularity/...' to correct the errors."; \
-		     false ) >&2 )
-	@echo "       PASS"
-	@echo " CHECK go vet"
-	$(V)cd $(SOURCEDIR) && go vet -tags "$(GO_TAGS)" -all ./...
-	@echo "       PASS"
-	@echo " CHECK go lint"
-	$(V)cd $(SOURCEDIR) && golint -set_exit_status `go list ./...`
+		(PATH=$(SOURCEDIR)/bin:$$PATH; \
+		 (command -v golangci-lint >/dev/null || \
+		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.15.0) && \
+		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
 	@echo "       PASS"
 
 .PHONY: dist
 dist:
 	$(V)(cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh)
 
+.PHONY: unit-test
+unit-test:
+	@echo " TEST sudo go test [unit]"
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+		`$(GO) list ./... | grep -v "cmd/singularity\|pkg/network\|e2e"`
+	@echo "       PASS"
+
+
+.PHONY: e2e-test
+e2e-test:
+	@echo " TEST sudo go test [e2e]"
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+		./e2e
+	@echo "       PASS"
+
+.PHONY: integration-test
+integration-test:
+	@echo " TEST sudo go test [integration]"
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+		./cmd/singularity ./pkg/network
+	@echo "       PASS"
+
 .PHONY: test
 test:
-	@echo " TEST sudo go test"
-	@# avoid travis 10 minutes of silence timeout
+	@echo " TEST sudo go test [all]"
 	$(V)M=0; eval 'while [ $$M -le 20 ]; do sleep 60; M=`expr $$M + 1`; echo "Still testing ($$M) ..."; done &' ; \
-	trap "kill $$! || true" 0; \
-	cd $(SOURCEDIR) && sudo -E `which go` test -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race ./...
+    	trap "kill $$! || true" 0; \
+		cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race ./...
 	@echo "       PASS"
 
 .PHONY: testall
-testall: vendor-check check test
+testall: check test
 
 .PHONY: rpm
 rpm: dist
@@ -72,7 +88,7 @@ cscope:
 .PHONY: clean
 clean:
 	@printf " CLEAN\n"
-	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
+	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* bin/golangci-lint $(CLEANFILES)
 
 .PHONY: install
 install: $(INSTALLFILES)
@@ -82,11 +98,6 @@ install: $(INSTALLFILES)
 .PHONY: vendor
 vendor:
 	@echo " VENDOR"
-	$(V)dep ensure >/dev/null
-
-.PHONY: vendor-check
-vendor-check:
-	@echo " VENDOR CHECK"
-	$(V)dep check
+	$(V)$(GO) mod vendor >/dev/null
 
 -include $(BUILDDIR)/mergeddeps

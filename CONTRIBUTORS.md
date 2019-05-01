@@ -29,6 +29,7 @@
     - Divya Cote <divya.cote@gmail.com>
     - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
     - Felix Abecassis <fabecassis@nvidia.com>
+    - Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
     - George Hartzell <hartzell@alerce.com>
     - Gert Hulselmans <gert.hulselmans@kuleuven.vib.be>
     - Hakon Enger <hakonenger@github.com>
@@ -50,6 +51,7 @@
     - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
     - Michael Herzberg <michael@mherzberg.de>
     - Michael Milton <ttmigueltt@gmail.com>
+    - Michael Moore <michael.moore@nuance.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Breitwieser <obreitwi@kip.uni-heidelberg.de>, <oliver@breitwieser.eu>
@@ -62,9 +64,11 @@
     - Rémy Dernat <remy.dernat@umontpellier.fr>
     - Richard Neuboeck <hawk@tbi.univie.ac.at>
     - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
+    - Satish Chebrolu  <satish@sylabs.io>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
     - Vanessa Sochat <vsochat@stanford.edu>
     - Westley Kurtzer <westley@sylabs.io>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Jack Morrison <morrisonjc@ornl.gov>

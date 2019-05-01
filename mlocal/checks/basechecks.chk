@@ -55,6 +55,45 @@ else
 	fi
 fi
 
+if [ "$hstgo" = "" ]; then
+	printf " checking: host Go compiler (at least version $hstgo_version)... "
+	for go in $hstgo_opts; do
+		if $go run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
+			hstgo=`command -v $go`
+			break
+		fi
+	done
+	if [ "$hstgo" != "" ]; then
+		echo $hstgo
+	else
+		echo "not found!"
+		usage
+		exit 1
+	fi
+else
+	printf " checking: host Go compiler (at least version $hstgo_version)... "
+	if $hstgo run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
+		hstgo=`command -v $go`
+		echo $hstgo
+	else
+		echo "$hstgo cannot compile test code!"
+		usage
+		exit 1
+	fi
+fi
+
+########################
+# host compilers options
+########################
+for opt in $cflags_opts; do
+	printf " checking: host C compiler option $opt... "
+	if $cc $opt -E -x c /dev/null >/dev/null 2>&1; then
+		echo "yes"
+		cflags="$cflags $opt"
+	else
+		echo "no"
+	fi
+done
 
 ########################
 # host tool paths

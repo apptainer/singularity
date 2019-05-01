@@ -174,7 +174,7 @@ static int prepare_stage(int stage, struct cConfig *config) {
                 debugf("Clear additional group IDs\n");
 
                 if ( setgroups(0, NULL) < 0 ) {
-                    fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
+                    fatalf("Unable to clear additional group IDs: %s\n", strerror(errno));
                 }
             }
 
@@ -616,7 +616,7 @@ static unsigned char is_suid(void) {
     verbosef("Check if we are running as setuid\n");
 
     if ( proc_auxv < 0 ) {
-        fatalf("Cant' open /proc/self/auxv: %s\n", strerror(errno));
+        fatalf("Can't open /proc/self/auxv: %s\n", strerror(errno));
     }
 
     /* use auxiliary vectors to determine if running privileged */

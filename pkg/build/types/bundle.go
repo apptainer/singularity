@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -39,12 +39,18 @@ type Bundle struct {
 	Opts        Options           `json:"opts"`
 }
 
-// Options ...
+// Options defines build time behavior to be executed on the bundle
 type Options struct {
-	// TmpDir specifies a non-standard temporary location to perform a build
-	TmpDir string
 	// sections are the parts of the definition to run during the build
 	Sections []string `json:"sections"`
+	// TmpDir specifies a non-standard temporary location to perform a build
+	TmpDir string
+	// LibraryURL contains URL to library where base images can be pulled
+	LibraryURL string `json:"libraryURL"`
+	// LibraryAuthToken contains authentication token to access specified library
+	LibraryAuthToken string `json:"libraryAuthToken"`
+	// contains docker credentials if specified
+	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// noTest indicates if build should skip running the test script
 	NoTest bool `json:"noTest"`
 	// force automatically deletes an existing container at build destination while performing build
@@ -53,8 +59,6 @@ type Options struct {
 	Update bool `json:"update"`
 	// noHTTPS
 	NoHTTPS bool `json:"noHTTPS"`
-	// contains docker credentials if specified
-	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
@@ -63,6 +67,7 @@ type Options struct {
 // NewBundle creates a Bundle environment
 func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
+	b.JSONObjects = make(map[string][]byte)
 
 	if bundlePrefix == "" {
 		bundlePrefix = "sbuild-"

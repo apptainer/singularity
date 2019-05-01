@@ -21,25 +21,25 @@ const (
 )
 
 type file struct {
+	created bool
 	mode    os.FileMode
 	uid     int
 	gid     int
 	content []byte
-	created bool
 }
 
 type dir struct {
+	created bool
 	mode    os.FileMode
 	uid     int
 	gid     int
-	created bool
 }
 
 type symlink struct {
+	created bool
 	uid     int
 	gid     int
 	target  string
-	created bool
 }
 
 // Manager manages a filesystem layout in a given path
@@ -247,9 +247,8 @@ func (m *Manager) sync() error {
 
 	for p, e := range m.entries {
 		path := m.rootPath + p
-		switch e.(type) {
+		switch entry := e.(type) {
 		case *file:
-			entry := e.(*file)
 			if entry.created {
 				continue
 			}
@@ -273,7 +272,6 @@ func (m *Manager) sync() error {
 			}
 			entry.created = true
 		case *symlink:
-			entry := e.(*symlink)
 			if entry.created {
 				continue
 			}
