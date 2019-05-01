@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/actions"
+	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -86,4 +87,5 @@ func Run(t *testing.T) {
 	t.Run("BUILD", imgbuild.RunE2ETests)
 	t.Run("ACTIONS", actions.RunE2ETests)
 	t.Run("PULL", pull.RunE2ETests)
+	t.Run("ENV", singularityenv.RunE2ETests)
 }
