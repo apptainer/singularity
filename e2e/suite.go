@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/pull"
+	"github.com/sylabs/singularity/e2e/remote"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -26,7 +27,7 @@ import (
 var runDisabled = flag.Bool("run_disabled", false, "run tests that have been temporarily disabled")
 
 // Run is the main func for the test framework, initializes the required vars
-// and set the environment for the RunE2ETests framework
+// and sets the environment for the RunE2ETests framework
 func Run(t *testing.T) {
 	flag.Parse()
 
@@ -86,4 +87,5 @@ func Run(t *testing.T) {
 	t.Run("BUILD", imgbuild.RunE2ETests)
 	t.Run("ACTIONS", actions.RunE2ETests)
 	t.Run("PULL", pull.RunE2ETests)
+	t.Run("REMOTE", remote.RunE2ETests)
 }
