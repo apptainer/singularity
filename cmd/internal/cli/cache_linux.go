@@ -13,9 +13,9 @@ import (
 )
 
 func init() {
-	SingularityCmd.AddCommand(CacheCmd)
-	CacheCmd.AddCommand(CacheCleanCmd)
-	CacheCmd.AddCommand(CacheListCmd)
+	cmdManager.RegisterCmd(CacheCmd)
+	cmdManager.RegisterSubCmd(CacheCmd, CacheCleanCmd)
+	cmdManager.RegisterSubCmd(CacheCmd, CacheListCmd)
 }
 
 // CacheCmd : aka, `singularity cache`
