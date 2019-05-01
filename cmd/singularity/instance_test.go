@@ -3,6 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// This file has been deprecated and will be removed in version 3.3 of
+// Singularity. The functionality has been moved to e2e/instance/instance*.go.
+
 package main
 
 import (
