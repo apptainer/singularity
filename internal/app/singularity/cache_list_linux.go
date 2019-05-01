@@ -53,9 +53,9 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 	case "oci":
 		cachePath = cache.OciTemp()
 	case "":
-		sylog.Fatalf("No cache type specifyed")
+		return 0, 0, fmt.Errorf("no cache type specifyed")
 	default:
-		sylog.Fatalf("Not a valid type: %v", cacheType)
+		return 0, 0, fmt.Errorf("not a valid type: %s", cacheType)
 	}
 
 	cacheTmp, err := ioutil.ReadDir(cachePath)
