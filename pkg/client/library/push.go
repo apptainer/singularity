@@ -95,7 +95,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 		}
 		sylog.Debugf("Upload completed OK\n")
 	} else {
-		sylog.Warningf("Image already exist in the library")
+		sylog.Infof("Image already exist in the library")
 	}
 
 	sylog.Debugf("Setting tags against uploaded image\n")
