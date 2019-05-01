@@ -156,8 +156,7 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 			listAll = true
 		case "":
 		default:
-			sylog.Fatalf("Not a valid type: %v", t)
-			os.Exit(2)
+			return fmt.Errorf("not a valid type: %s", t)
 		}
 	}
 
