@@ -129,7 +129,7 @@ var pullNoHTTPSFlag = cmdline.Flag{
 }
 
 // -U|--allow-unsigned
-var pullAllowUnauthenticatedFlag = cmdline.Flag{
+var pullAllowUnsignedFlag = cmdline.Flag{
 	ID:           "pullAllowUnauthenticatedFlag",
 	Value:        &unauthenticatedPull,
 	DefaultValue: false,
@@ -148,6 +148,7 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 	ShortHand:    "",
 	Usage:        "do not require a signed container",
 	EnvKeys:      []string{"ALLOW_UNAUTHENTICATED"},
+	Hidden:       true,
 }
 
 func init() {
@@ -165,6 +166,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, PullCmd)
 
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 }
 
