@@ -14,10 +14,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func init() {
-	KeyImportCmd.Flags().SetInterspersed(false)
-}
-
 // KeyImportCmd is `singularity key (or keys) import` and imports a local key into the singularity key store.
 var KeyImportCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),

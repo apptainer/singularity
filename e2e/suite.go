@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/actions"
+	"github.com/sylabs/singularity/e2e/docker"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -79,19 +80,17 @@ func Run(t *testing.T) {
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
-	opts := imgbuild.Opts{
-		Force:   true,
-		Sandbox: false,
-	}
-	if b, err := imgbuild.ImageBuild(cmdPath, opts, imagePath, "./testdata/Singularity"); err != nil {
-		t.Log(string(b))
-		t.Fatalf("unexpected failure: %v", err)
-	}
 	os.Setenv("E2E_IMAGE_PATH", imagePath)
 	defer os.Remove(imagePath)
 
 	// RunE2ETests by functionality
+
 	t.Run("BUILD", imgbuild.RunE2ETests)
+
 	t.Run("ACTIONS", actions.RunE2ETests)
+
+	t.Run("DOCKER", docker.RunE2ETests)
+
 	t.Run("PULL", pull.RunE2ETests)
+
 }
