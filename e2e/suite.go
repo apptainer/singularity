@@ -18,6 +18,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/docker"
+	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/instance"
@@ -101,4 +102,6 @@ func Run(t *testing.T) {
 	t.Run("INSTANCE", instance.RunE2ETests)
 
 	t.Run("HELP", help.RunE2ETests)
+
+	t.Run("ENV", singularityenv.RunE2ETests)
 }
