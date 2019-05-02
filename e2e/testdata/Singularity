@@ -56,7 +56,7 @@ export HELLOTHISIS
     echo "RUNNING FOO"
 
 %startscript
-    exec nc -ll -p $1 -e /bin/cat 2>/dev/null
+    exec nc -l -k -p $1 -e /bin/cat 2>/dev/null
 
 %runscript
     echo "Running command: $*"
@@ -64,6 +64,8 @@ export HELLOTHISIS
 
 %post
     echo "POST"
+    # Needed for startscript
+    yum install -y nmap-ncat
 
 %test
     exec "$@"

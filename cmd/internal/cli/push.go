@@ -14,6 +14,7 @@ import (
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 )
 
@@ -25,16 +26,32 @@ var (
 	unauthenticatedPush bool
 )
 
+// --library
+var pushLibraryURIFlag = cmdline.Flag{
+	ID:           "pushLibraryURIFlag",
+	Value:        &PushLibraryURI,
+	DefaultValue: "https://library.sylabs.io",
+	Name:         "library",
+	Usage:        "the library to push to",
+	EnvKeys:      []string{"LIBRARY"},
+}
+
+// -U|--allow-unsigned
+var pushAllowUnsignedFlag = cmdline.Flag{
+	ID:           "pushAllowUnsignedFlag",
+	Value:        &unauthenticatedPush,
+	DefaultValue: false,
+	Name:         "allow-unsigned",
+	ShortHand:    "U",
+	Usage:        "do not require a signed container",
+	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+}
+
 func init() {
-	PushCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(PushCmd)
 
-	PushCmd.Flags().StringVar(&PushLibraryURI, "library", "https://library.sylabs.io", "the library to push to")
-	PushCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
-
-	PushCmd.Flags().BoolVarP(&unauthenticatedPush, "allow-unsigned", "U", false, "do not require a signed container")
-	PushCmd.Flags().SetAnnotation("allow-unsigned", "envkey", []string{"ALLOW_UNSIGNED"})
-
-	SingularityCmd.AddCommand(PushCmd)
+	cmdManager.RegisterFlagForCmd(&pushLibraryURIFlag, PushCmd)
+	cmdManager.RegisterFlagForCmd(&pushAllowUnsignedFlag, PushCmd)
 }
 
 // PushCmd singularity push

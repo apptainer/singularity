@@ -15,13 +15,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func init() {
-	KeyPullCmd.Flags().SetInterspersed(false)
-
-	KeyPullCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "specify the key server URL")
-	KeyPullCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
-}
-
 // KeyPullCmd is `singularity key pull' and fetches public keys from a key server
 var KeyPullCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
