@@ -68,7 +68,6 @@ type Config struct {
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-//func NewBuild(spec string, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
 func NewBuild(spec string, conf Config) (*Build, error) {
 	def, err := makeDef(spec, false)
 	if err != nil {
@@ -89,7 +88,6 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 }
 
 // New creates a new build struct form a slice of definitions
-//func New(defs []types.Definition, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
 func New(defs []types.Definition, conf Config) (*Build, error) {
 	return newBuild(defs, conf)
 }
