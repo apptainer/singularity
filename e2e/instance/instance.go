@@ -1,12 +1,9 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// This file has been deprecated and will be removed in version 3.3 of
-// Singularity. The functionality has been moved to e2e/instance/instance*.go.
-
-package main
+package instance
 
 import (
 	"bufio"
@@ -16,208 +13,24 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"testing"
 
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
-const (
-	instanceStartPort  = 11372
-	instanceDefinition = "../../examples/instances/Singularity"
-	instanceImagePath  = "./instance_tests.sif"
-)
-
-type startOpts struct {
-	allowSetuid   bool
-	boot          bool
-	cleanenv      bool
-	contain       bool
-	containall    bool
-	keepPrivs     bool
-	net           bool
-	noHome        bool
-	noPrivs       bool
-	nv            bool
-	userns        bool
-	uts           bool
-	writable      bool
-	writableTmpfs bool
-	addCaps       string
-	applyCgroups  string
-	binds         []string
-	dns           string
-	dropCaps      string
-	home          string
-	hostname      string
-	network       string
-	networkArgs   string
-	overlay       string
-	scratch       string
-	security      string
-	workdir       string
+type testingEnv struct {
+	// base env for running tests
+	CmdPath     string `split_words:"true"`
+	TestDir     string `split_words:"true"`
+	RunDisabled bool   `default:"false"`
+	//  base image for tests
+	ImagePath string `split_words:"true"`
 }
 
-type listOpts struct {
-	json      bool
-	user      string
-	container string
-}
-
-type stopOpts struct {
-	all      bool
-	force    bool
-	signal   string
-	timeout  string
-	user     string
-	instance string
-}
-
-type instance struct {
-	Instance string `json:"instance"`
-	Pid      int    `json:"pid"`
-	Image    string `json:"img"`
-}
-
-type instanceList struct {
-	Instances []instance `json:"instances"`
-}
-
-func startInstance(image string, instance string, portOffset int, opts startOpts) ([]byte, error) {
-	args := []string{"instance", "start"}
-	if opts.addCaps != "" {
-		args = append(args, "--add-caps", opts.addCaps)
-	}
-	if opts.allowSetuid {
-		args = append(args, "--allow-setuid")
-	}
-	if opts.applyCgroups != "" {
-		args = append(args, "--apply-cgroups", opts.applyCgroups)
-	}
-	for _, bind := range opts.binds {
-		args = append(args, "--bind", bind)
-	}
-	if opts.boot {
-		args = append(args, "--boot")
-	}
-	if opts.cleanenv {
-		args = append(args, "--cleanenv")
-	}
-	if opts.contain {
-		args = append(args, "--contain")
-	}
-	if opts.containall {
-		args = append(args, "--containall")
-	}
-	if opts.dns != "" {
-		args = append(args, "--dns", opts.dns)
-	}
-	if opts.dropCaps != "" {
-		args = append(args, "--drop-caps", opts.dropCaps)
-	}
-	if opts.home != "" {
-		args = append(args, "--home", opts.home)
-	}
-	if opts.hostname != "" {
-		args = append(args, "--hostname", opts.hostname)
-	}
-	if opts.keepPrivs {
-		args = append(args, "--keep-privs")
-	}
-	if opts.net {
-		args = append(args, "--net")
-	}
-	if opts.network != "" {
-		args = append(args, "--network", opts.network)
-	}
-	if opts.networkArgs != "" {
-		args = append(args, "--network-args", opts.networkArgs)
-	}
-	if opts.noHome {
-		args = append(args, "--no-home")
-	}
-	if opts.noPrivs {
-		args = append(args, "--no-privs")
-	}
-	if opts.nv {
-		args = append(args, "--nv")
-	}
-	if opts.overlay != "" {
-		args = append(args, "--overlay", opts.overlay)
-	}
-	if opts.scratch != "" {
-		args = append(args, "--scratch", opts.scratch)
-	}
-	if opts.security != "" {
-		args = append(args, "--security", opts.security)
-	}
-	if opts.userns {
-		args = append(args, "--userns")
-	}
-	if opts.uts {
-		args = append(args, "--uts")
-	}
-	if opts.workdir != "" {
-		args = append(args, "--workdir", opts.workdir)
-	}
-	if opts.writable {
-		args = append(args, "--writable")
-	}
-	if opts.writableTmpfs {
-		args = append(args, "--writable-tmpfs")
-	}
-	args = append(args, image, instance, strconv.Itoa(instanceStartPort+portOffset))
-	cmd := exec.Command(cmdPath, args...)
-	return cmd.Output()
-}
-
-func listInstance(opts listOpts) ([]byte, error) {
-	args := []string{"instance", "list"}
-	if opts.json {
-		args = append(args, "--json")
-	}
-	if opts.user != "" {
-		args = append(args, "--user", opts.user)
-	}
-	if opts.container != "" {
-		args = append(args, opts.container)
-	}
-	cmd := exec.Command(cmdPath, args...)
-	return cmd.Output()
-}
-
-func stopInstance(opts stopOpts) ([]byte, error) {
-	args := []string{"instance", "stop"}
-	if opts.all {
-		args = append(args, "--all")
-	}
-	if opts.force {
-		args = append(args, "--force")
-	}
-	if opts.signal != "" {
-		args = append(args, "--signal", opts.signal)
-	}
-	if opts.timeout != "" {
-		args = append(args, "--timeout", opts.timeout)
-	}
-	if opts.user != "" {
-		args = append(args, "--user", opts.user)
-	}
-	if opts.instance != "" {
-		args = append(args, opts.instance)
-	}
-	cmd := exec.Command(cmdPath, args...)
-	return cmd.Output()
-}
-
-func execInstance(instance string, execCmd ...string) ([]byte, error) {
-	args := []string{"exec", "instance://" + instance}
-	args = append(args, execCmd...)
-	cmd := exec.Command(cmdPath, args...)
-	return cmd.Output()
-}
+var testenv testingEnv
 
 // Sends a deterministic message to an echo server and expects the same message
 // in response.
@@ -236,12 +49,12 @@ func echo(t *testing.T, port int) {
 
 // Return the number of currently running instances.
 func getNumberOfInstances(t *testing.T) int {
-	output, err := listInstance(listOpts{json: true})
+	stdout, _, err := listInstance(listOpts{json: true})
 	if err != nil {
-		t.Fatalf("Error listing instances: %v. Output:\n%s", err, string(output))
+		t.Fatalf("Error listing instances: %v", err)
 	}
 	var instances instanceList
-	if err = json.Unmarshal(output, &instances); err != nil {
+	if err = json.Unmarshal([]byte(stdout), &instances); err != nil {
 		t.Fatalf("Error decoding JSON from listInstance: %v", err)
 	}
 	return len(instances.Instances)
@@ -259,14 +72,14 @@ func testNoInstances(t *testing.T) {
 func testBasicEchoServer(t *testing.T) {
 	const instanceName = "echo1"
 	// Start the instance.
-	_, err := startInstance(instanceImagePath, instanceName, 0, startOpts{})
+	_, _, err := startInstance(startOpts{}, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
 	if err != nil {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Try to contact the instance.
 	echo(t, instanceStartPort)
 	// Stop the instance.
-	_, err = stopInstance(stopOpts{instance: instanceName})
+	_, _, err = stopInstance(stopOpts{}, instanceName)
 	if err != nil {
 		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
 	}
@@ -278,7 +91,7 @@ func testCreateManyInstances(t *testing.T) {
 	// Start n instances.
 	for i := 0; i < n; i++ {
 		instanceName := "echo" + strconv.Itoa(i+1)
-		_, err := startInstance(instanceImagePath, instanceName, i, startOpts{})
+		_, _, err := startInstance(startOpts{}, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort+i))
 		if err != nil {
 			t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 		}
@@ -295,7 +108,7 @@ func testCreateManyInstances(t *testing.T) {
 
 // Test stopping all running instances.
 func testStopAll(t *testing.T) {
-	_, err := stopInstance(stopOpts{all: true})
+	_, _, err := stopInstance(stopOpts{all: true}, "")
 	if err != nil {
 		t.Fatalf("Failed to stop all instances: %v", err)
 	}
@@ -310,7 +123,7 @@ func testBasicOptions(t *testing.T) {
 	fileContents := []byte("world")
 
 	// Create a temporary directory to serve as a home directory.
-	dir, err := ioutil.TempDir("", "TestInstance")
+	dir, err := ioutil.TempDir(testenv.TestDir, "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
@@ -327,28 +140,28 @@ func testBasicOptions(t *testing.T) {
 		cleanenv: true,
 	}
 	// Start an instance with the temporary directory as the home directory.
-	_, err = startInstance(instanceImagePath, instanceName, 0, instanceOpts)
+	_, _, err = startInstance(instanceOpts, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
 	if err != nil {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Verify we can see the file's contents from within the container.
-	output, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
+	stdout, _, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
 	if err != nil {
 		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
 	}
-	if !bytes.Equal(fileContents, output) {
-		t.Fatalf("File contents were %s, but expected %s", output, fileContents)
+	if !bytes.Equal(fileContents, []byte(stdout)) {
+		t.Fatalf("File contents were %s, but expected %s", stdout, string(fileContents))
 	}
 	// Verify that the hostname has been set correctly.
-	output, err = execInstance(instanceName, "hostname")
+	stdout, _, err = execInstance(instanceName, "hostname")
 	if err != nil {
 		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
 	}
-	if !bytes.Equal([]byte(testHostname+"\n"), output) {
-		t.Fatalf("Hostname is %s, but expected %s", output, testHostname)
+	if !bytes.Equal([]byte(testHostname+"\n"), []byte(stdout)) {
+		t.Fatalf("Hostname is %s, but expected %s", stdout, testHostname)
 	}
 	// Stop the container.
-	_, err = stopInstance(stopOpts{instance: instanceName})
+	_, _, err = stopInstance(stopOpts{}, instanceName)
 	if err != nil {
 		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
 	}
@@ -369,17 +182,17 @@ func testContain(t *testing.T) {
 		workdir: dir,
 	}
 	// Start an instance with the temporary directory as the home directory.
-	_, err = startInstance(instanceImagePath, instanceName, 0, instanceOpts)
+	_, _, err = startInstance(instanceOpts, testenv.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
 	if err != nil {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Touch a file within /tmp.
-	_, err = execInstance(instanceName, "touch", "/tmp/"+fileName)
+	_, _, err = execInstance(instanceName, "touch", "/tmp/"+fileName)
 	if err != nil {
 		t.Fatalf("Failed to touch a file: %v", err)
 	}
 	// Stop the container.
-	_, err = stopInstance(stopOpts{instance: instanceName})
+	_, _, err = stopInstance(stopOpts{}, instanceName)
 	if err != nil {
 		t.Fatalf("Failed to stop instance %s: %v", instanceName, err)
 	}
@@ -411,17 +224,17 @@ func testInstanceFromURI(t *testing.T) {
 
 	for _, i := range instances {
 		// Start an instance with the temporary directory as the home directory.
-		_, err := startInstance(i.uri, i.name, 0, startOpts{})
+		_, _, err := startInstance(startOpts{}, i.uri, i.name)
 		if err != nil {
 			t.Fatalf("Failed to start instance %s: %v", i.name, err)
 		}
 		// Exec id command.
-		_, err = execInstance(i.name, "id")
+		_, _, err = execInstance(i.name, "id")
 		if err != nil {
 			t.Fatalf("Failed to run id command: %v", err)
 		}
 		// Stop the container.
-		_, err = stopInstance(stopOpts{instance: i.name})
+		_, _, err = stopInstance(stopOpts{}, i.name)
 		if err != nil {
 			t.Fatalf("Failed to stop instance %s: %v", i.name, err)
 		}
@@ -429,14 +242,9 @@ func testInstanceFromURI(t *testing.T) {
 }
 
 // Bootstrap to run all instance tests.
-func TestInstance(t *testing.T) {
-	// Build a basic Singularity image to test instances.
-	if b, err := imageBuild(buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
-		t.Log(string(b))
-		t.Fatalf("unexpected failure: %v", err)
-	}
-	imageVerify(t, instanceImagePath, true)
-	defer os.RemoveAll(instanceImagePath)
+func legacyInstanceTests(t *testing.T) {
+	e2e.EnsureImage(t)
+
 	// Define and loop through tests.
 	tests := []struct {
 		name       string
@@ -461,4 +269,11 @@ func TestInstance(t *testing.T) {
 		}
 		t.Run(tt.name, wrappedFn)
 	}
+}
+
+// RunE2ETests is the bootstrap to run all instance tests.
+func RunE2ETests(t *testing.T) {
+	e2e.LoadEnv(t, &testenv)
+
+	t.Run("legacy", legacyInstanceTests)
 }

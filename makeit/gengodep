@@ -3,7 +3,7 @@
 srcdir=$1
 shift
 
-go list \
+go list -mod=vendor \
 	-deps \
 	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
 	"$@" |
