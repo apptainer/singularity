@@ -6,7 +6,6 @@
 package imgbuild
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -159,19 +158,11 @@ func badPath(t *testing.T) {
 }
 
 func buildMultiStageDefinition(t *testing.T) {
-	tmpfile, err := ioutil.TempFile(testenv.TestDir, "testFile-")
+	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	defer os.Remove(tmpfile.Name()) // clean up
-
-	if _, err := tmpfile.Write([]byte(testFileContent)); err != nil {
-		log.Fatal(err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		log.Fatal(err)
-	}
+	defer os.Remove(tmpfile) // clean up
 
 	tests := []struct {
 		name    string
@@ -188,11 +179,11 @@ func buildMultiStageDefinition(t *testing.T) {
 				Stage:     "one",
 				Files: []e2e.FilePair{
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageOne2.txt",
 					},
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageOne.txt",
 					},
 				},
@@ -217,11 +208,11 @@ func buildMultiStageDefinition(t *testing.T) {
 			e2e.DefFileDetails{
 				Files: []e2e.FilePair{
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageOneCopy2.txt",
 					},
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageOneCopy.txt",
 					},
 				},
@@ -236,11 +227,11 @@ func buildMultiStageDefinition(t *testing.T) {
 					Stage:     "one",
 					Files: []e2e.FilePair{
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "StageOne2.txt",
 						},
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "StageOne.txt",
 						},
 					},
@@ -251,11 +242,11 @@ func buildMultiStageDefinition(t *testing.T) {
 					Stage:     "two",
 					Files: []e2e.FilePair{
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "StageTwo2.txt",
 						},
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "StageTwo.txt",
 						},
 					},
@@ -320,19 +311,19 @@ func buildMultiStageDefinition(t *testing.T) {
 			e2e.DefFileDetails{
 				Files: []e2e.FilePair{
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageOneCopyFinal2.txt",
 					},
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageOneCopyFinal.txt",
 					},
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageTwoCopyFinal2.txt",
 					},
 					{
-						Src: tmpfile.Name(),
+						Src: tmpfile,
 						Dst: "StageTwoCopyFinal.txt",
 					},
 				},
@@ -365,20 +356,11 @@ func buildMultiStageDefinition(t *testing.T) {
 }
 
 func buildDefinition(t *testing.T) {
-
-	tmpfile, err := ioutil.TempFile(testenv.TestDir, "testFile-")
+	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	defer os.Remove(tmpfile.Name()) // clean up
-
-	if _, err := tmpfile.Write([]byte(testFileContent)); err != nil {
-		log.Fatal(err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		log.Fatal(err)
-	}
+	defer os.Remove(tmpfile) // clean up
 
 	tests := []struct {
 		name    string
@@ -404,11 +386,11 @@ func buildDefinition(t *testing.T) {
 			From:      "alpine:latest",
 			Files: []e2e.FilePair{
 				{
-					Src: tmpfile.Name(),
+					Src: tmpfile,
 					Dst: "NewName2.txt",
 				},
 				{
-					Src: tmpfile.Name(),
+					Src: tmpfile,
 					Dst: "NewName.txt",
 				},
 			},
@@ -553,11 +535,11 @@ func buildDefinition(t *testing.T) {
 					Name: "foo",
 					Files: []e2e.FilePair{
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "FooFile2.txt",
 						},
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "FooFile.txt",
 						},
 					},
@@ -566,11 +548,11 @@ func buildDefinition(t *testing.T) {
 					Name: "bar",
 					Files: []e2e.FilePair{
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "BarFile2.txt",
 						},
 						{
-							Src: tmpfile.Name(),
+							Src: tmpfile,
 							Dst: "BarFile.txt",
 						},
 					},
