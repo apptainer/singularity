@@ -88,8 +88,6 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 			t.Fatalf("unexpected failure: File %v does not exist in container", file)
 		}
 
-		fmt.Println(p.Src, filepath.Join(imagePath, file))
-		//os.Exit(1)
 		if err := verifyFile(t, p.Src, filepath.Join(imagePath, file)); err != nil {
 			t.Fatalf("unexpected failure: File %v: %v", file, err)
 		}
