@@ -34,10 +34,10 @@ var forceStop bool
 var stopTimeout int
 
 func init() {
-	SingularityCmd.AddCommand(InstanceCmd)
-	InstanceCmd.AddCommand(InstanceStartCmd)
-	InstanceCmd.AddCommand(InstanceStopCmd)
-	InstanceCmd.AddCommand(InstanceListCmd)
+	cmdManager.RegisterCmd(InstanceCmd)
+	cmdManager.RegisterSubCmd(InstanceCmd, InstanceStartCmd)
+	cmdManager.RegisterSubCmd(InstanceCmd, InstanceStopCmd)
+	cmdManager.RegisterSubCmd(InstanceCmd, InstanceListCmd)
 }
 
 // InstanceCmd singularity instance

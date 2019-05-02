@@ -10,10 +10,13 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
+	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/libexec"
@@ -22,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
@@ -48,38 +52,122 @@ var (
 	KeyServerURL = "https://keys.sylabs.io"
 	// unauthenticatedPull when true; wont ask to keep a unsigned container after pulling it
 	unauthenticatedPull bool
+	// PullDir is the path that the containers will be pulled to, if set
+	PullDir string
 )
 
+// --library
+var pullLibraryURIFlag = cmdline.Flag{
+	ID:           "pullLibraryURIFlag",
+	Value:        &PushLibraryURI,
+	DefaultValue: "https://library.sylabs.io",
+	Name:         "library",
+	Usage:        "download images from the provided library",
+	EnvKeys:      []string{"LIBRARY"},
+}
+
+// -F|--force
+var pullForceFlag = cmdline.Flag{
+	ID:           "pullForceFlag",
+	Value:        &force,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "overwrite an image file if it exists",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// --name
+var pullNameFlag = cmdline.Flag{
+	ID:           "pullNameFlag",
+	Value:        &PullImageName,
+	DefaultValue: "",
+	Name:         "name",
+	Hidden:       true,
+	Usage:        "specify a custom image name",
+	EnvKeys:      []string{"NAME"},
+}
+
+// --dir
+var pullDirFlag = cmdline.Flag{
+	ID:           "pullDirFlag",
+	Value:        &PullDir,
+	DefaultValue: "",
+	Name:         "dir",
+	Usage:        "download images to the specific directory",
+	EnvKeys:      []string{"PULLDIR", "PULLFOLDER"},
+}
+
+//<<<<<<< HEAD
+//	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unsigned", "U", false, "do not require a signed container")
+//	PullCmd.Flags().SetAnnotation("allow-unsigned", "envkey", []string{"ALLOW_UNSIGNED"})
+//
+//	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "", false, "do not require a signed container")
+//	PullCmd.Flags().Lookup("allow-unauthenticated").Hidden = true
+//=======
+// --tmpdir
+var pullTmpdirFlag = cmdline.Flag{
+	ID:           "pullTmpdirFlag",
+	Value:        &tmpDir,
+	DefaultValue: "",
+	Hidden:       true,
+	Name:         "tmpdir",
+	Usage:        "specify a temporary directory to use for build",
+	EnvKeys:      []string{"TMPDIR"},
+}
+
+//>>>>>>> upstream/master
+
+// --nohttps
+var pullNoHTTPSFlag = cmdline.Flag{
+	ID:           "pullNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Usage:        "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)",
+	EnvKeys:      []string{"NOHTTPS"},
+}
+
+// -U|--allow-unsigned
+var pullAllowUnsignedFlag = cmdline.Flag{
+	ID:           "pullAllowUnauthenticatedFlag",
+	Value:        &unauthenticatedPull,
+	DefaultValue: false,
+	Name:         "allow-unsigned",
+	ShortHand:    "U",
+	Usage:        "do not require a signed container",
+	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+}
+
+// --allow-unauthenticated
+var pullAllowUnauthenticatedFlag = cmdline.Flag{
+	ID:           "pullAllowUnauthenticatedFlag",
+	Value:        &unauthenticatedPull,
+	DefaultValue: false,
+	Name:         "allow-unauthenticated",
+	ShortHand:    "",
+	Usage:        "do not require a signed container",
+	EnvKeys:      []string{"ALLOW_UNAUTHENTICATED"},
+	Hidden:       true,
+}
+
 func init() {
-	PullCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(PullCmd)
 
-	PullCmd.Flags().StringVar(&PullLibraryURI, "library", "https://library.sylabs.io", "download images from the provided library")
-	PullCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
+	cmdManager.RegisterFlagForCmd(&pullForceFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullLibraryURIFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullNoHTTPSFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullTmpdirFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
 
-	PullCmd.Flags().BoolVarP(&force, "force", "F", false, "overwrite an image file if it exists")
-	PullCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, PullCmd)
 
-	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "U", false, "do not require a signed container")
-	PullCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
-
-	PullCmd.Flags().StringVar(&PullImageName, "name", "", "specify a custom image name")
-	PullCmd.Flags().Lookup("name").Hidden = true
-	PullCmd.Flags().SetAnnotation("name", "envkey", []string{"NAME"})
-
-	PullCmd.Flags().StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
-	PullCmd.Flags().Lookup("tmpdir").Hidden = true
-	PullCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
-
-	PullCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS with the docker:// transport (useful for local docker registries without a certificate)")
-	PullCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
-
-	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
-	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
-	PullCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
-
-	PullCmd.Flags().AddFlag(BuildCmd.Flags().Lookup("no-cleanup"))
-
-	SingularityCmd.AddCommand(PullCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 }
 
 // PullCmd singularity pull
@@ -116,6 +204,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 		name = PullImageName
 	}
 
+	if PullDir != "" {
+		name = filepath.Join(PullDir, name)
+	}
+
 	// monitor for OS signals and remove invalid file
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -130,7 +222,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		if !force {
 			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists - will not overwrite")
+				sylog.Fatalf("image file already exists: %q - will not overwrite", name)
 			}
 		}
 
@@ -148,9 +240,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 			imageName = uri.GetName(args[i])
 		}
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-		if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+		exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName)
+		if err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
-		} else if !exists {
+		}
+		if !exists {
 			sylog.Infof("Downloading library image")
 			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
@@ -183,7 +277,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// check if we pulled from the library, if so; is it signed?
-		if PullLibraryURI != "" && !unauthenticatedPull {
+		if !unauthenticatedPull {
 			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, true)
 			if err != nil {
 				// err will be: "unable to verify container: %v", err
@@ -211,30 +305,14 @@ func pullRun(cmd *cobra.Command, args []string) {
 		} else {
 			sylog.Warningf("Skipping container verification")
 		}
+		fmt.Printf("Download complete: %s\n", name)
 
 	case ShubProtocol:
 		libexec.PullShubImage(name, args[i], force, noHTTPS)
 	case HTTPProtocol, HTTPSProtocol:
 		libexec.PullNetImage(name, args[i], force)
 	case ociclient.IsSupported(transport):
-		if !force {
-			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists - will not overwrite")
-			}
-		}
-
-		authConf, err := makeDockerCredentials(cmd)
-		if err != nil {
-			sylog.Fatalf("While creating Docker credentials: %v", err)
-		}
-
-		libexec.PullOciImage(name, args[i], types.Options{
-			TmpDir:           tmpDir,
-			Force:            force,
-			NoHTTPS:          noHTTPS,
-			DockerAuthConfig: authConf,
-			NoCleanUp:        noCleanUp,
-		})
+		downloadOciImage(name, args[i], cmd)
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
@@ -242,6 +320,87 @@ func pullRun(cmd *cobra.Command, args []string) {
 	// a unknown signer, i.e, if you dont have the key in your
 	// local keyring. theres proboly a better way to do this...
 	os.Exit(exitStat)
+}
+
+// TODO: This should be a external function
+func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
+	if !force {
+		if _, err := os.Stat(name); err == nil {
+			sylog.Fatalf("Image file already exists - will not overwrite")
+		}
+	}
+
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	sysCtx := &ocitypes.SystemContext{
+		OCIInsecureSkipTLSVerify:    noHTTPS,
+		DockerInsecureSkipTLSVerify: noHTTPS,
+		DockerAuthConfig:            authConf,
+	}
+
+	sum, err := ociclient.ImageSHA(imageURI, sysCtx)
+	if err != nil {
+		sylog.Fatalf("Failed to get checksum for %s: %s", imageURI, err)
+	}
+
+	imgName := uri.GetName(imageURI)
+	cachedImgPath := cache.OciTempImage(sum, imgName)
+
+	exists, err := cache.OciTempExists(sum, imgName)
+	if err != nil {
+		sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
+	}
+	if !exists {
+		sylog.Infof("Converting OCI blobs to SIF format")
+		if err := convertDockerToSIF(imageURI, cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
+			sylog.Fatalf("%v", err)
+		}
+	} else {
+		sylog.Infof("Using cached image")
+	}
+
+	// Perms are 777 *prior* to umask
+	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		sylog.Fatalf("Unable to open file for writing: %s: %v\n", name, err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.Open(cachedImgPath)
+	if err != nil {
+		sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		sylog.Fatalf("Failed while copying files: %v\n", err)
+	}
+}
+
+func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
+	b, err := build.NewBuild(
+		image,
+		build.Config{
+			Dest:   cachedImgPath,
+			Format: "sif",
+			Opts: types.Options{
+				TmpDir:           tmpDir,
+				NoTest:           true,
+				NoHTTPS:          noHTTPS,
+				DockerAuthConfig: authConf,
+			},
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("Unable to create new build: %v", err)
+	}
+
+	return b.Full()
 }
 
 func handlePullFlags(cmd *cobra.Command) {
