@@ -49,22 +49,26 @@ var (
 	LocalVerifyBuild bool
 )
 
-<<<<<<< HEAD
-func init() {
-	BuildCmd.Flags().SetInterspersed(false)
+var buildAllowUnsignedFlag = cmdline.Flag{
+	ID:           "buildAllowUnsignedFlag",
+	Value:        &AllowUnauthenticatedBuild,
+	DefaultValue: false,
+	Name:         "allow-unsigned",
+	ShortHand:    "U",
+	Usage:        "never prompt when building from a unsigned container, only when bootstrap is library",
+	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+}
 
-	BuildCmd.Flags().BoolVarP(&AllowUnauthenticatedBuild, "allow-unauthenticated", "U", false, "never prompt when building from a unsigned container, only when bootstrap is library")
-	BuildCmd.Flags().SetAnnotation("allow-unauthenticated", "envkey", []string{"ALLOW_UNAUTHENTICATED"})
+var buildLocalVerifyFlag = cmdline.Flag{
+	ID:           "buildLocalVerifyFlag",
+	Value:        &LocalVerifyBuild,
+	DefaultValue: false,
+	Name:         "local",
+	ShortHand:    "l",
+	Usage:        "nothing here... TODO:",
+	EnvKeys:      []string{"LOCAL_VERIFY_FLAG"}, // <-- TODO:
+}
 
-	BuildCmd.Flags().BoolVarP(&LocalVerifyBuild, "local", "l", false, "nothing here...")
-	BuildCmd.Flags().SetAnnotation("local", "envkey", []string{"LOCAL_VERIFY_BUILD"}) // <-- TODO:
-
-	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "build image as sandbox format (chroot directory structure)")
-	BuildCmd.Flags().SetAnnotation("sandbox", "envkey", []string{"SANDBOX"})
-
-	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{"all"}, "only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
-	BuildCmd.Flags().SetAnnotation("section", "envkey", []string{"SECTION"})
-=======
 // -s|--sandbox
 var buildSandboxFlag = cmdline.Flag{
 	ID:           "buildSandboxFlag",
@@ -75,7 +79,6 @@ var buildSandboxFlag = cmdline.Flag{
 	Usage:        "build image as sandbox format (chroot directory structure)",
 	EnvKeys:      []string{"SANDBOX"},
 }
->>>>>>> upstream/master
 
 // --section
 var buildSectionFlag = cmdline.Flag{
