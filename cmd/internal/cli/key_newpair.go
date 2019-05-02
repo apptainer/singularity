@@ -15,10 +15,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func init() {
-	KeyNewPairCmd.Flags().SetInterspersed(false)
-}
-
 // KeyNewPairCmd is 'singularity key newpair' and generate a new OpenPGP key pair
 var KeyNewPairCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(0),

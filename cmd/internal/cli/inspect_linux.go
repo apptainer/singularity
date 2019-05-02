@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/cmdline"
+
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -51,34 +53,104 @@ type inspectFormat struct {
 	Type       string            `json:"type"`
 }
 
+// --app
+var inspectAppNameFlag = cmdline.Flag{
+	ID:           "inspectAppNameFlag",
+	Value:        &AppName,
+	DefaultValue: "",
+	Name:         "app",
+	Usage:        "inspect a specific app",
+	EnvKeys:      []string{"APP"},
+}
+
+// -l|--labels
+var inspectLabelsFlag = cmdline.Flag{
+	ID:           "inspectLabelsFlag",
+	Value:        &labels,
+	DefaultValue: false,
+	Name:         "labels",
+	ShortHand:    "l",
+	Usage:        "show the labels associated with the image (default)",
+	EnvKeys:      []string{"LABELS"},
+}
+
+// -d|--deffile
+var inspectDeffileFlag = cmdline.Flag{
+	ID:           "inspectDeffileFlag",
+	Value:        &deffile,
+	DefaultValue: false,
+	Name:         "deffile",
+	ShortHand:    "d",
+	Usage:        "show the Singularity recipe file that was used to generate the image",
+	EnvKeys:      []string{"DEFFILE"},
+}
+
+// -r|--runscript
+var inspectRunscriptFlag = cmdline.Flag{
+	ID:           "inspectRunscriptFlag",
+	Value:        &runscript,
+	DefaultValue: false,
+	Name:         "runscript",
+	ShortHand:    "r",
+	Usage:        "show the runscript for the image",
+	EnvKeys:      []string{"RUNSCRIPT"},
+}
+
+// -t|--test
+var inspectTestFlag = cmdline.Flag{
+	ID:           "inspectTestFlag",
+	Value:        &testfile,
+	DefaultValue: false,
+	Name:         "test",
+	ShortHand:    "t",
+	Usage:        "show the test script for the image",
+	EnvKeys:      []string{"TEST"},
+}
+
+// -e|--environment
+var inspectEnvironmentFlag = cmdline.Flag{
+	ID:           "inspectEnvironmentFlag",
+	Value:        &environment,
+	DefaultValue: false,
+	Name:         "environment",
+	ShortHand:    "e",
+	Usage:        "show the environment settings for the image",
+	EnvKeys:      []string{"ENVIRONMENT"},
+}
+
+// -H|--helpfile
+var inspectHelpfileFlag = cmdline.Flag{
+	ID:           "inspectHelpfileFlag",
+	Value:        &helpfile,
+	DefaultValue: false,
+	Name:         "helpfile",
+	ShortHand:    "H",
+	Usage:        "inspect the runscript helpfile, if it exists",
+	EnvKeys:      []string{"HELPFILE"},
+}
+
+// -j|--json
+var inspectJSONFlag = cmdline.Flag{
+	ID:           "inspectJSONFlag",
+	Value:        &jsonfmt,
+	DefaultValue: false,
+	Name:         "json",
+	ShortHand:    "j",
+	Usage:        "print structured json instead of sections",
+	EnvKeys:      []string{"JSON"},
+}
+
 func init() {
-	InspectCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(InspectCmd)
 
-	InspectCmd.Flags().StringVar(&AppName, "app", "", "inspect a specific app")
-	InspectCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
-
-	InspectCmd.Flags().BoolVarP(&labels, "labels", "l", false, "show the labels associated with the image (default)")
-	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
-
-	InspectCmd.Flags().BoolVarP(&deffile, "deffile", "d", false, "show the Singularity recipe file that was used to generate the image")
-	InspectCmd.Flags().SetAnnotation("deffile", "envkey", []string{"DEFFILE"})
-
-	InspectCmd.Flags().BoolVarP(&runscript, "runscript", "r", false, "show the runscript for the image")
-	InspectCmd.Flags().SetAnnotation("runscript", "envkey", []string{"RUNSCRIPT"})
-
-	InspectCmd.Flags().BoolVarP(&testfile, "test", "t", false, "show the test script for the image")
-	InspectCmd.Flags().SetAnnotation("test", "envkey", []string{"TEST"})
-
-	InspectCmd.Flags().BoolVarP(&environment, "environment", "e", false, "show the environment settings for the image")
-	InspectCmd.Flags().SetAnnotation("environment", "envkey", []string{"ENVIRONMENT"})
-
-	InspectCmd.Flags().BoolVarP(&helpfile, "helpfile", "H", false, "inspect the runscript helpfile, if it exists")
-	InspectCmd.Flags().SetAnnotation("helpfile", "envkey", []string{"HELPFILE"})
-
-	InspectCmd.Flags().BoolVarP(&jsonfmt, "json", "j", false, "print structured json instead of sections")
-	InspectCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
-
-	SingularityCmd.AddCommand(InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectAppNameFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectEnvironmentFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectHelpfileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectJSONFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectRunscriptFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectTestFlag, InspectCmd)
 }
 
 func getPathPrefix(appName string) string {
