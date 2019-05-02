@@ -21,9 +21,8 @@ var testFileContent = "Test file content\n"
 
 type testingEnv struct {
 	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+	CmdPath string `split_words:"true"`
+	TestDir string `split_words:"true"`
 }
 
 var testenv testingEnv
