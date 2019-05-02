@@ -19,7 +19,7 @@ import (
 )
 
 // ImageVerify checks for an image integrity
-func ImageVerify(t *testing.T, cmdPath string, imagePath string, labels bool, runDisabled bool) {
+func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 	type testSpec struct {
 		name          string
 		execArgs      []string
@@ -34,9 +34,7 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string, labels bool, ru
 		{"ActionsRun", []string{"test", "-f", "/.singularity.d/actions/run"}, true},
 		{"Environment", []string{"test", "-L", "/environment"}, true},
 		{"Singularity", []string{"test", "-L", "/singularity"}, true},
-	}
-	if labels && runDisabled { // TODO
-		tests = append(tests, testSpec{"Labels", []string{"test", "-f", "/.singularity.d/labels.json"}, true})
+		{"Labels", []string{"test", "-f", "/.singularity.d/labels.json"}, true},
 	}
 
 	for _, tt := range tests {

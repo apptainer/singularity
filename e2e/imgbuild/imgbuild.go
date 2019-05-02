@@ -66,7 +66,7 @@ func buildFrom(t *testing.T) {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
-			e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+			e2e.ImageVerify(t, testenv.CmdPath, imagePath)
 		}))
 	}
 }
@@ -97,7 +97,6 @@ func buildMultiple(t *testing.T) {
 		buildSpec string
 		force     bool
 		sandbox   bool
-		labels    bool
 	}
 
 	tests := []struct {
@@ -105,21 +104,21 @@ func buildMultiple(t *testing.T) {
 		steps []testSpec
 	}{
 		{"SIFToSIF", []testSpec{
-			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false, false},
-			{"SIF", imagePath2, imagePath1, false, false, false},
+			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false},
+			{"SIF", imagePath2, imagePath1, false, false},
 		}},
 		{"SandboxToSIF", []testSpec{
-			{"BusyBoxSandbox", imagePath1, "../examples/busybox/Singularity", false, true, false},
-			{"SIF", imagePath2, imagePath1, false, false, false},
+			{"BusyBoxSandbox", imagePath1, "../examples/busybox/Singularity", false, true},
+			{"SIF", imagePath2, imagePath1, false, false},
 		}},
 		{"LocalImage", []testSpec{
-			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false, false},
-			{"LocalImage", imagePath2, liDefFile, false, false, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
+			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false},
+			{"LocalImage", imagePath2, liDefFile, false, false},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false},
 		}},
 		{"LocalImageSandbox", []testSpec{
-			{"BusyBoxSandbox", imagePath2, "../examples/busybox/Singularity", true, true, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false, true},
+			{"BusyBoxSandbox", imagePath2, "../examples/busybox/Singularity", true, true},
+			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false},
 		}},
 	}
 
@@ -140,7 +139,7 @@ func buildMultiple(t *testing.T) {
 						t.Log(string(b))
 						t.Fatalf("unexpected failure: %v", err)
 					}
-					e2e.ImageVerify(t, testenv.CmdPath, ts.imagePath, ts.labels, testenv.RunDisabled)
+					e2e.ImageVerify(t, testenv.CmdPath, ts.imagePath)
 				}))
 			}
 		}))
