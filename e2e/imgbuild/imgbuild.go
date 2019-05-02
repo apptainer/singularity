@@ -71,7 +71,7 @@ func buildFrom(t *testing.T) {
 	}
 }
 
-func buildMultiple(t *testing.T) {
+func buildLocalImage(t *testing.T) {
 	imagePath1 := path.Join(testenv.TestDir, "container1")
 	imagePath2 := path.Join(testenv.TestDir, "container2")
 	imagePath3 := path.Join(testenv.TestDir, "container3")
@@ -672,7 +672,7 @@ func RunE2ETests(t *testing.T) {
 	// builds from definition file and URI
 	t.Run("From", buildFrom)
 	// build and image from an existing image
-	t.Run("multistage", buildMultiple)
+	t.Run("FromLocalImage", buildLocalImage)
 	// try to build from a non existen path
 	t.Run("badPath", badPath)
 	// builds from definition template
