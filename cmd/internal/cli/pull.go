@@ -98,6 +98,13 @@ var pullDirFlag = cmdline.Flag{
 	EnvKeys:      []string{"PULLDIR", "PULLFOLDER"},
 }
 
+//<<<<<<< HEAD
+//	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unsigned", "U", false, "do not require a signed container")
+//	PullCmd.Flags().SetAnnotation("allow-unsigned", "envkey", []string{"ALLOW_UNSIGNED"})
+//
+//	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "", false, "do not require a signed container")
+//	PullCmd.Flags().Lookup("allow-unauthenticated").Hidden = true
+//=======
 // --tmpdir
 var pullTmpdirFlag = cmdline.Flag{
 	ID:           "pullTmpdirFlag",
@@ -109,6 +116,8 @@ var pullTmpdirFlag = cmdline.Flag{
 	EnvKeys:      []string{"TMPDIR"},
 }
 
+//>>>>>>> upstream/master
+
 // --nohttps
 var pullNoHTTPSFlag = cmdline.Flag{
 	ID:           "pullNoHTTPSFlag",
@@ -119,15 +128,27 @@ var pullNoHTTPSFlag = cmdline.Flag{
 	EnvKeys:      []string{"NOHTTPS"},
 }
 
-// -U|--allow-unauthenticated
+// -U|--allow-unsigned
+var pullAllowUnsignedFlag = cmdline.Flag{
+	ID:           "pullAllowUnauthenticatedFlag",
+	Value:        &unauthenticatedPull,
+	DefaultValue: false,
+	Name:         "allow-unsigned",
+	ShortHand:    "U",
+	Usage:        "do not require a signed container",
+	EnvKeys:      []string{"ALLOW_UNSIGNED"},
+}
+
+// --allow-unauthenticated
 var pullAllowUnauthenticatedFlag = cmdline.Flag{
 	ID:           "pullAllowUnauthenticatedFlag",
 	Value:        &unauthenticatedPull,
 	DefaultValue: false,
 	Name:         "allow-unauthenticated",
-	ShortHand:    "U",
+	ShortHand:    "",
 	Usage:        "do not require a signed container",
 	EnvKeys:      []string{"ALLOW_UNAUTHENTICATED"},
+	Hidden:       true,
 }
 
 func init() {
@@ -145,6 +166,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, PullCmd)
 
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 }
 
