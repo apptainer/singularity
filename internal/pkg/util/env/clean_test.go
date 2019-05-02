@@ -48,7 +48,7 @@ func TestSetContainerEnv(t *testing.T) {
 				"SINGULARITY_NAME=lolcow.sif", "SINGULARITYENV_FOO=VAR", "CLEANENV=TRUE"}, true, "/home/tester",
 				[]string{"LD_LIBRARY_PATH=/.singularity.d/libs", "HOME=/home/tester", "PS1=test",
 					"TERM=xterm-256color", "PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin",
-					"LANG=C",  "PWD=/tmp", "LC_ALL=C","FOO=VAR"},
+					"LANG=C", "PWD=/tmp", "LC_ALL=C", "FOO=VAR"},
 			}},
 		{name: "alwaysPassKeys",
 			args: args{[]string{"LD_LIBRARY_PATH=/.singularity.d/libs", "HOME=/home/tester",
