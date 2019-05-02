@@ -58,7 +58,7 @@ fi
 if [ "$hstgo" = "" ]; then
 	printf " checking: host Go compiler (at least version $hstgo_version)... "
 	for go in $hstgo_opts; do
-		if $go run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
+		if env GO111MODULE=off $go run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
 			hstgo=`command -v $go`
 			break
 		fi
@@ -72,7 +72,7 @@ if [ "$hstgo" = "" ]; then
 	fi
 else
 	printf " checking: host Go compiler (at least version $hstgo_version)... "
-	if $hstgo run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
+	if env GO111MODULE=off $hstgo run $makeit_checksdir/version.go $hstgo_version >/dev/null 2>&1; then
 		hstgo=`command -v $go`
 		echo $hstgo
 	else
