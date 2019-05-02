@@ -94,9 +94,8 @@ func Run(t *testing.T) {
 	t.Run("DOCKER", docker.RunE2ETests)
 
 	t.Run("PULL", pull.RunE2ETests)
-  
+
 	t.Run("REMOTE", remote.RunE2ETests)
 
 	t.Run("INSTANCE", instance.RunE2ETests)
-
 }
