@@ -12,10 +12,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func init() {
-	KeyRemoveCmd.Flags().SetInterspersed(false)
-}
-
 // KeyRemoveCmd is `singularity key remove <fingerprint>' command
 var KeyRemoveCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),

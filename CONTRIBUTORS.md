@@ -54,6 +54,7 @@
     - Michael Moore <michael.moore@nuance.com>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
+    - Oliver Breitwieser <obreitwi@kip.uni-heidelberg.de>, <oliver@breitwieser.eu>
     - Oliver Freyermuth <freyermuth@physik.uni-bonn.de>
     - Olivier Sallou <olivier.sallou@irisa.fr>
     - Peter Steinbach <steinbach@scionics.de>
@@ -70,3 +71,4 @@
     - Westley Kurtzer <westley@sylabs.io>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
+    - Jack Morrison <morrisonjc@ornl.gov>
