@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/docker"
 	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/instance"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -92,5 +93,7 @@ func Run(t *testing.T) {
 	t.Run("DOCKER", docker.RunE2ETests)
 
 	t.Run("PULL", pull.RunE2ETests)
+
+	t.Run("INSTANCE", instance.RunE2ETests)
 
 }
