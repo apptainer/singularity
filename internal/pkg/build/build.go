@@ -49,23 +49,33 @@ type Build struct {
 type Config struct {
 	// Dest is the location for container after build is complete
 	Dest string
+
 	// Format is the format of built container, e.g., SIF, sandbox
 	Format string
+
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool
+
+	// AllowUnsigned will allow unsigned containers...
+	AllowUnsigned bool
+
+	// LocalVerify will verify the container localy...
+	LocalVerify bool
+
 	// Opts for bundles
 	Opts types.Options
 }
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
-func NewBuild(spec string, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
+//func NewBuild(spec string, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
+func NewBuild(spec string, conf Config) (*Build, error) {
 	def, err := makeDef(spec, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
 
-	return newBuild([]types.Definition{def}, conf, allowUnauthenticatedBuild, localVerifyBuild)
+	return newBuild([]types.Definition{def}, conf)
 }
 
 // NewBuildJSON creates a new build struct from a JSON byte slice
@@ -75,15 +85,16 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 		return nil, fmt.Errorf("unable to parse JSON: %v", err)
 	}
 
-	return newBuild([]types.Definition{def}, conf, false, false)
+	return newBuild([]types.Definition{def}, conf)
 }
 
 // New creates a new build struct form a slice of definitions
-func New(defs []types.Definition, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
-	return newBuild(defs, conf, allowUnauthenticatedBuild, localVerifyBuild)
+//func New(defs []types.Definition, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
+func New(defs []types.Definition, conf Config) (*Build, error) {
+	return newBuild(defs, conf)
 }
 
-func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild, localVerifyBuild bool) (*Build, error) {
+func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	var err error
 
 	syscall.Umask(0002)
@@ -115,7 +126,7 @@ func newBuild(defs []types.Definition, conf Config, allowUnauthenticatedBuild, l
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
-			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken, allowUnauthenticatedBuild, localVerifyBuild); err == nil {
+			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken, conf.AllowUnsigned, conf.LocalVerify); err == nil {
 				s.c = c
 			} else {
 				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)

@@ -97,8 +97,10 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 		b, err := build.NewBuild(
 			u,
 			build.Config{
-				Dest:   imgabs,
-				Format: "sif",
+				Dest:          imgabs,
+				Format:        "sif",
+				AllowUnsigned: AllowUnauthenticatedBuild,
+				LocalVerify:   LocalVerifyBuild,
 				Opts: types.Options{
 					TmpDir:           tmpDir,
 					NoTest:           true,
@@ -106,8 +108,6 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 					DockerAuthConfig: authConf,
 				},
 			},
-			AllowUnauthenticatedBuild,
-			LocalVerifyBuild,
 		)
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)

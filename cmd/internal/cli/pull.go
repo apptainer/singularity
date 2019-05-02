@@ -315,9 +315,7 @@ func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authC
 				NoHTTPS:          noHTTPS,
 				DockerAuthConfig: authConf,
 			},
-		},
-		false, false,
-	)
+		})
 	if err != nil {
 		return fmt.Errorf("Unable to create new build: %v", err)
 	}

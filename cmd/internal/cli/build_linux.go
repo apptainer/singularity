@@ -69,16 +69,16 @@ func run(cmd *cobra.Command, args []string) {
 				b, err := build.New(
 					[]types.Definition{d},
 					build.Config{
-						Dest:      args[0],
-						Format:    buildFormat,
-						NoCleanUp: noCleanUp,
+						Dest:        args[0],
+						Format:      buildFormat,
+						LocalVerify: LocalVerifyBuild,
+						NoCleanUp:   noCleanUp,
 						Opts: types.Options{
 							TmpDir: tmpDir,
 							Update: update,
 							Force:  force,
 						},
-					}, false, // <-- TODO:
-					LocalVerifyBuild)
+					})
 				if err != nil {
 					sylog.Fatalf("Unable to create build: %v", err)
 				}
@@ -125,9 +125,11 @@ func run(cmd *cobra.Command, args []string) {
 		b, err := build.New(
 			defs,
 			build.Config{
-				Dest:      dest,
-				Format:    buildFormat,
-				NoCleanUp: noCleanUp,
+				Dest:          dest,
+				Format:        buildFormat,
+				AllowUnsigned: AllowUnauthenticatedBuild,
+				LocalVerify:   LocalVerifyBuild,
+				NoCleanUp:     noCleanUp,
 				Opts: types.Options{
 					TmpDir:           tmpDir,
 					Update:           update,
@@ -139,9 +141,7 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
 				},
-			},
-			AllowUnauthenticatedBuild,
-			LocalVerifyBuild)
+			})
 		if err != nil {
 			sylog.Fatalf("Unable to create build: %v", err)
 		}
