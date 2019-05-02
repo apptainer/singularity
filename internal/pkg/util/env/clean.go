@@ -53,6 +53,10 @@ func SetContainerEnv(g *generate.Generator, env []string, cleanEnv bool, homeDes
 			sylog.Verbosef("Can't process environment variable %s", env)
 			continue
 		}
+		if strings.HasPrefix(e[0], "SINGULARITY_") {
+			sylog.Verbosef("Not forwarding %s from user to container environment", e[0])
+			continue
+		}
 
 		if e[0] == "SINGULARITYENV_PREPEND_PATH" ||
 			e[0] == "SINGULARITYENV_APPEND_PATH" ||
