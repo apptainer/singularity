@@ -39,6 +39,10 @@ func TestSplit(t *testing.T) {
 			caps:   "cap_all",
 			length: len(Map),
 		},
+		{
+			caps:   "",
+			length: 0,
+		},
 	}
 	for _, tc := range testCaps {
 		caps, _ := Split(tc.caps)
