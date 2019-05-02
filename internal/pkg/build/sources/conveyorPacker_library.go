@@ -82,6 +82,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		if err != nil {
 			sylog.Warningf("%v", err)
 		}
+		if cp.LocalVerify && !imageSigned {
+			return fmt.Errorf("unable to build container: no local key matching entity")
+		}
 		// if its not signed, print a warning
 		if !imageSigned {
 			sylog.Warningf("The base container is **NOT** signed thus, its content cant be verified!")
