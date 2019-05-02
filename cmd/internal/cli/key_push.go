@@ -17,13 +17,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func init() {
-	KeyPushCmd.Flags().SetInterspersed(false)
-
-	KeyPushCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "specify the key server URL")
-	KeyPushCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
-}
-
 // KeyPushCmd is `singularity key list' and lists local store OpenPGP keys
 var KeyPushCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
