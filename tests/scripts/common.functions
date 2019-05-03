@@ -1,0 +1,17 @@
+# generic functions
+
+expect-failure() {
+    test-exit 1 "$@"
+}
+
+expect-success() {
+    test-exit 0 "$@"
+}
+
+stdout-contains() {
+    test-search output "$@"
+}
+
+stderr-contains() {
+    test-search error "$@"
+}

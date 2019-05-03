@@ -1,0 +1,7 @@
+#!/singularity/test
+# skip on linux
+
+os="linux"
+if [ "$(which-os)" == "${os}" ]; then
+    test-skip "Those tests can't run on ${os}"
+fi

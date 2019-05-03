@@ -1,0 +1,54 @@
+#!/singularity/test
+# build tests
+
+verifyImage() {
+    name="$1"
+    image="$2"
+    test-exit 1 "${name}/False"        singularity exec ${image} false
+    test-exit 0 "${name}/RunScript"    singularity exec ${image} test -f /.singularity.d/runscript
+    test-exit 0 "${name}/OneBase"      singularity exec ${image} test -f /.singularity.d/env/01-base.sh
+    test-exit 0 "${name}/ActionsShell" singularity exec ${image} test -f /.singularity.d/actions/shell
+    test-exit 0 "${name}/ActionsExec"  singularity exec ${image} test -f /.singularity.d/actions/exec
+    test-exit 0 "${name}/ActionsRun"   singularity exec ${image} test -f /.singularity.d/actions/run
+    test-exit 0 "${name}/Environment"  singularity exec ${image} test -L /environment
+    test-exit 0 "${name}/Singularity"  singularity exec ${image} test -L /singularity
+}
+
+buildImage() {
+    options=""
+    case $1 in
+    sandbox)
+        options="-s"
+        img=`create-tmpdir`
+        ;;
+    image)
+        img=`create-tmpfile`
+        ;;
+    *)
+        test-log "build type $1 not supported"
+        return
+        ;;
+    esac
+
+    if [ "$3" != "" ]; then
+        if ! command -v $3 >/dev/null 2>&1; then
+            test-skip $2 "$3 command not found"
+            return
+        fi
+    fi
+    test-exit 0 $2 ${SUDO} singularity build -F ${options} ${img} $4
+    if has-succeeded; then
+        verifyImage $2 ${img}
+    fi
+}
+
+########## TYPE      NAME             CHECK_BINARY  DEFINITION
+buildImage "image"   "Busybox"        ""            "${SOURCEDIR}/examples/busybox/Singularity"
+buildImage "sandbox" "DockerURI"      ""            "docker://busybox"
+buildImage "sandbox" "DockerDefFile"  ""            "${SOURCEDIR}/examples/docker/Singularity"
+buildImage "sandbox" "SHubURI"        ""            "shub://GodloveD/busybox"
+buildImage "sandbox" "SHubDefFile"    ""            "${SOURCEDIR}/examples/shub/Singularity"
+buildImage "sandbox" "LibraryDefFile" ""            "${SOURCEDIR}/examples/library/Singularity"
+buildImage "sandbox" "Debootstrap"    "debootstrap" "${SOURCEDIR}/examples/debian/Singularity"
+buildImage "sandbox" "Yum"            "yum"         "${SOURCEDIR}/examples/centos/Singularity"
+buildImage "sandbox" "Zypper"         "zypper"      "${SOURCEDIR}/examples/opensuse/Singularity"

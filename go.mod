@@ -89,6 +89,7 @@ require (
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.3.0+incompatible // indirect
 	k8s.io/client-go v11.0.0+incompatible // indirect
+	mvdan.cc/sh/v3 v3.0.0-alpha1
 )
 
 replace (

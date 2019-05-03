@@ -1,0 +1,9 @@
+#!/singularity/test
+# net echo test
+
+source ${SOURCEDIR}/tests/scripts/common.functions
+
+message="a network echo"
+echo "${message}" | nc -lp 8080 >/dev/null &
+sleep 0.1
+echo "${message}" | net-echo tcp 127.0.0.1:8080 | stdout-contains "NetworkEcho" "${message}" cat
