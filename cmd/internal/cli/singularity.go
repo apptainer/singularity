@@ -100,6 +100,7 @@ var singVerboseFlag = cmdline.Flag{
 	Value:        &verbose,
 	DefaultValue: false,
 	Name:         "verbose",
+	ShortHand:    "v",
 	Usage:        "print additional information",
 }
 
