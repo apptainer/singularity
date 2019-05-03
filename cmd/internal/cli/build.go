@@ -49,6 +49,7 @@ var (
 	LocalVerifyBuild bool
 )
 
+// --allow-unsigned, -U
 var buildAllowUnsignedFlag = cmdline.Flag{
 	ID:           "buildAllowUnsignedFlag",
 	Value:        &AllowUnauthenticatedBuild,
@@ -59,6 +60,7 @@ var buildAllowUnsignedFlag = cmdline.Flag{
 	EnvKeys:      []string{"ALLOW_UNSIGNED"},
 }
 
+// --local, -l
 var buildLocalVerifyFlag = cmdline.Flag{
 	ID:           "buildLocalVerifyFlag",
 	Value:        &LocalVerifyBuild,
