@@ -22,7 +22,7 @@ func OciStart(containerID string) error {
 	}
 
 	if state.Status != ociruntime.Created {
-		return fmt.Errorf("container %s is not created", containerID)
+		return fmt.Errorf("cannot start '%s', the state of the container must be %s", containerID, ociruntime.Created)
 	}
 
 	if state.ControlSocket == "" {
@@ -39,8 +39,8 @@ func OciStart(containerID string) error {
 	defer c.Close()
 
 	enc := json.NewEncoder(c)
-	if err != nil {
-		return err
+	if enc == nil {
+		return fmt.Errorf("cannot instantiate new JSON encoder")
 	}
 
 	if err := enc.Encode(ctrl); err != nil {

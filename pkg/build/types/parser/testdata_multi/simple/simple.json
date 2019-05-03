@@ -1,0 +1,134 @@
+[
+	{
+		"header": {
+			"bootstrap": "docker",
+			"from": "centos:7",
+			"stage": "one"
+		},
+		"imageData": {
+			"metadata": null,
+			"labels": {},
+			"imageScripts": {
+				"help": {
+					"args": "",
+					"script": ""
+				},
+				"environment": {
+					"args": "",
+					"script": ""
+				},
+				"runScript": {
+					"args": "",
+					"script": ""
+				},
+				"test": {
+					"args": "",
+					"script": ""
+				},
+				"startScript": {
+					"args": "",
+					"script": ""
+				}
+			}
+		},
+		"buildData": {
+			"files": [
+				{
+					"args": "",
+					"files": [
+						{
+							"source": "hello.go",
+							"destination": "/root/go/src/hello/hello.go"
+						}
+					]
+				}
+			],
+			"buildScripts": {
+				"pre": {
+					"args": "",
+					"script": ""
+				},
+				"setup": {
+					"args": "",
+					"script": "\tmkdir -p $SINGULARITY_ROOTFS/root/go/src/hello\n\n\n"
+				},
+				"post": {
+					"args": "",
+					"script": "\tyum install wget -y\n\n\twget https://dl.google.com/go/go1.10.3.linux-amd64.tar.gz\n\ttar -C /usr/local -xzf go1.10.3.linux-amd64.tar.gz\n\texport PATH=$PATH:/usr/local/go/bin\n\n\tcd /root/go/src/hello\n\tgo build\n\t\n\t./hello\n\n\n"
+				},
+				"test": {
+					"args": "",
+					"script": ""
+				}
+			}
+		},
+		"customData": null,
+		"raw": "Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogY2VudG9zOjcKU3RhZ2U6IG9uZQoKCiVzZXR1cAoJbWtkaXIgLXAgJFNJTkdVTEFSSVRZX1JPT1RGUy9yb290L2dvL3NyYy9oZWxsbwoKCiVmaWxlcwoJaGVsbG8uZ28gL3Jvb3QvZ28vc3JjL2hlbGxvL2hlbGxvLmdvCgoKJXBvc3QKCXl1bSBpbnN0YWxsIHdnZXQgLXkKCgl3Z2V0IGh0dHBzOi8vZGwuZ29vZ2xlLmNvbS9nby9nbzEuMTAuMy5saW51eC1hbWQ2NC50YXIuZ3oKCXRhciAtQyAvdXNyL2xvY2FsIC14emYgZ28xLjEwLjMubGludXgtYW1kNjQudGFyLmd6CglleHBvcnQgUEFUSD0kUEFUSDovdXNyL2xvY2FsL2dvL2JpbgoKCWNkIC9yb290L2dvL3NyYy9oZWxsbwoJZ28gYnVpbGQKCQoJLi9oZWxsbwoKCg=="
+	},
+	{
+		"header": {
+			"bootstrap": "docker",
+			"from": "alpine:latest",
+			"stage": "two"
+		},
+		"imageData": {
+			"metadata": null,
+			"labels": {},
+			"imageScripts": {
+				"help": {
+					"args": "",
+					"script": ""
+				},
+				"environment": {
+					"args": "",
+					"script": ""
+				},
+				"runScript": {
+					"args": "",
+					"script": "\thello\n\n"
+				},
+				"test": {
+					"args": "",
+					"script": ""
+				},
+				"startScript": {
+					"args": "",
+					"script": ""
+				}
+			}
+		},
+		"buildData": {
+			"files": [
+				{
+					"args": "from one",
+					"files": [
+						{
+							"source": "/root/go/src/hello/hello",
+							"destination": "/bin/hello"
+						}
+					]
+				}
+			],
+			"buildScripts": {
+				"pre": {
+					"args": "",
+					"script": ""
+				},
+				"setup": {
+					"args": "",
+					"script": ""
+				},
+				"post": {
+					"args": "",
+					"script": ""
+				},
+				"test": {
+					"args": "",
+					"script": ""
+				}
+			}
+		},
+		"customData": null,
+		"raw": "Qm9vdHN0cmFwOiBkb2NrZXIKRnJvbTogY2VudG9zOjcKU3RhZ2U6IG9uZQoKCiVzZXR1cAoJbWtkaXIgLXAgJFNJTkdVTEFSSVRZX1JPT1RGUy9yb290L2dvL3NyYy9oZWxsbwoKCiVmaWxlcwoJaGVsbG8uZ28gL3Jvb3QvZ28vc3JjL2hlbGxvL2hlbGxvLmdvCgoKJXBvc3QKCXl1bSBpbnN0YWxsIHdnZXQgLXkKCgl3Z2V0IGh0dHBzOi8vZGwuZ29vZ2xlLmNvbS9nby9nbzEuMTAuMy5saW51eC1hbWQ2NC50YXIuZ3oKCXRhciAtQyAvdXNyL2xvY2FsIC14emYgZ28xLjEwLjMubGludXgtYW1kNjQudGFyLmd6CglleHBvcnQgUEFUSD0kUEFUSDovdXNyL2xvY2FsL2dvL2JpbgoKCWNkIC9yb290L2dvL3NyYy9oZWxsbwoJZ28gYnVpbGQKCQoJLi9oZWxsbwoKCkJvb3RzdHJhcDogZG9ja2VyCkZyb206IGFscGluZTpsYXRlc3QKU3RhZ2U6IHR3bwoKCiVmaWxlcyBmcm9tIG9uZQoJL3Jvb3QvZ28vc3JjL2hlbGxvL2hlbGxvIC9iaW4vaGVsbG8KCgolcnVuc2NyaXB0CgloZWxsbwoK"
+	}
+]

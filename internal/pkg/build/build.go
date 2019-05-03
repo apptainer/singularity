@@ -12,11 +12,13 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
+	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -76,6 +78,11 @@ func NewBuildJSON(r io.Reader, conf Config) (*Build, error) {
 	return newBuild([]types.Definition{def}, conf)
 }
 
+// New creates a new build struct form a slice of definitions
+func New(defs []types.Definition, conf Config) (*Build, error) {
+	return newBuild(defs, conf)
+}
+
 func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 	var err error
 
@@ -92,11 +99,17 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 
 	// create stages
 	for _, d := range defs {
+		// verify every definition has a header if there are multiple stages
+		if d.Header == nil {
+			return nil, fmt.Errorf("multiple stages detected, all must have headers")
+		}
+
 		s := stage{}
 		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
 		if err != nil {
 			return nil, err
 		}
+		s.name = d.Header["stage"]
 		s.b.Recipe = d
 
 		s.b.Opts = conf.Opts
@@ -161,12 +174,14 @@ func (b *Build) Full() error {
 	defer b.cleanUp()
 
 	// build each stage one after the other
-	for _, stage := range b.stages {
+	for i, stage := range b.stages {
 		if err := stage.runPreScript(); err != nil {
 			return err
 		}
 
-		if stage.b.Opts.Update && !stage.b.Opts.Force {
+		// only update last stage if specified
+		update := stage.b.Opts.Update && !stage.b.Opts.Force && i == len(b.stages)-1
+		if update {
 			// updating, extract dest container to bundle
 			sylog.Infof("Building into existing container: %s", b.Conf.Dest)
 			p, err := sources.GetLocalPacker(b.Conf.Dest, stage.b)
@@ -197,10 +212,15 @@ func (b *Build) Full() error {
 		}
 
 		a.HandleBundle(stage.b)
-		stage.b.Recipe.BuildData.Post += a.HandlePost()
+		stage.b.Recipe.BuildData.Post.Script += a.HandlePost()
+
+		if stage.b.RunSection("files") {
+			if err := stage.copyFiles(b); err != nil {
+				return fmt.Errorf("unable to copy files a stage to container fs: %v", err)
+			}
+		}
 
 		if engineRequired(stage.b.Recipe) {
-			fmt.Println("starting engine")
 			if err := runBuildEngine(stage.b); err != nil {
 				return fmt.Errorf("while running engine: %v", err)
 			}
@@ -208,7 +228,7 @@ func (b *Build) Full() error {
 
 		sylog.Debugf("Inserting Metadata")
 		if err := stage.insertMetadata(); err != nil {
-			return fmt.Errorf("While inserting metadata to bundle: %v", err)
+			return fmt.Errorf("while inserting metadata to bundle: %v", err)
 		}
 	}
 
@@ -223,7 +243,7 @@ func (b *Build) Full() error {
 
 // engineRequired returns true if build definition is requesting to run scripts or copy files
 func engineRequired(def types.Definition) bool {
-	return def.BuildData.Post != "" || def.BuildData.Setup != "" || def.BuildData.Test != "" || len(def.BuildData.Files) != 0
+	return def.BuildData.Post.Script != "" || def.BuildData.Setup.Script != "" || def.BuildData.Test.Script != "" || len(def.BuildData.Files) != 0
 }
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
@@ -327,13 +347,105 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 
 	// must be root to build from a definition
 	if os.Getuid() != 0 && !remote {
-		sylog.Fatalf("You must be the root user to build from a Singularity recipe file")
+		return types.Definition{}, fmt.Errorf("you must be the root user to build from a definition file")
 	}
 
 	d, err := parser.ParseDefinitionFile(defFile)
 	if err != nil {
-		return types.Definition{}, fmt.Errorf("While parsing definition: %s: %v", spec, err)
+		return types.Definition{}, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
 
 	return d, nil
+}
+
+// MakeAllDefs gets a definition slice from a spec
+func MakeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+	return makeAllDefs(spec, remote)
+}
+
+// makeAllDef gets a definition object from a spec
+func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+	if ok, err := uri.IsValid(spec); ok && err == nil {
+		// URI passed as spec
+		d, err := types.NewDefinitionFromURI(spec)
+		return []types.Definition{d}, err
+	}
+
+	// Check if spec is an image/sandbox
+	if _, err := image.Init(spec, false); err == nil {
+		d, err := types.NewDefinitionFromURI("localimage" + "://" + spec)
+		return []types.Definition{d}, err
+	}
+
+	// default to reading file as definition
+	defFile, err := os.Open(spec)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open file %s: %v", spec, err)
+	}
+	defer defFile.Close()
+
+	// must be root to build from a definition
+	if os.Getuid() != 0 && !remote {
+		return nil, fmt.Errorf("you must be the root user to build from a definition file")
+	}
+
+	d, err := parser.All(defFile)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing definition: %s: %v", spec, err)
+	}
+
+	return d, nil
+}
+
+func (b *Build) findStageIndex(name string) (int, error) {
+	for i, s := range b.stages {
+		if name == s.name {
+			return i, nil
+		}
+	}
+
+	return -1, fmt.Errorf("stage %s was not found", name)
+}
+
+func (s *stage) copyFiles(b *Build) error {
+	def := s.b.Recipe
+	for _, f := range def.BuildData.Files {
+		if f.Args == "" {
+			continue
+		}
+		args := strings.Fields(f.Args)
+		if len(args) != 2 {
+			continue
+		}
+
+		stageIndex, err := b.findStageIndex(args[1])
+		if err != nil {
+			return err
+		}
+
+		sylog.Debugf("Copying files from stage: %s", args[1])
+
+		// iterate through filetransfers
+		for _, transfer := range f.Files {
+			// sanity
+			if transfer.Src == "" {
+				sylog.Warningf("Attempt to copy file with no name, skipping.")
+				continue
+			}
+			// dest = source if not specified
+			if transfer.Dst == "" {
+				transfer.Dst = transfer.Src
+			}
+
+			// copy each file into bundle rootfs
+			transfer.Src = filepath.Join(b.stages[stageIndex].b.Rootfs(), transfer.Src)
+			transfer.Dst = filepath.Join(s.b.Rootfs(), transfer.Dst)
+			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
+			if err := copy.Copy(transfer.Src, transfer.Dst); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

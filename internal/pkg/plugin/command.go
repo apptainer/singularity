@@ -10,44 +10,21 @@ import (
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 )
 
-// AddCommands calls all CommandAdder plugins and adds the commands to the
-// roootCmd
-func AddCommands(rootCmd *cobra.Command) error {
-	for _, pl := range loadedPlugins {
-		if _pl, ok := (pl.Initializer).(pluginapi.CommandAdder); ok {
-			for _, cmd := range _pl.CommandAdd() {
-				rootCmd.AddCommand(cmd)
-			}
-		}
-	}
+type commandRegistry struct {
+	Commands []*cobra.Command
+}
+
+// RegisterCommand registers a CommandHook for adding a new command to the singularity
+// binary
+func (r *commandRegistry) RegisterCommand(hook pluginapi.CommandHook) error {
+	r.Commands = append(r.Commands, hook.Command)
 
 	return nil
 }
 
-// AddRootFlags calls all RootFlagAdder plugins and adds the returned flags
-// to the rootCmd
-func AddRootFlags(rootCmd *cobra.Command) error {
-	for _, pl := range loadedPlugins {
-		if _pl, ok := (pl.Initializer).(pluginapi.RootFlagAdder); ok {
-			for _, f := range _pl.RootFlagAdd() {
-				rootCmd.Flags().AddFlag(f)
-			}
-		}
-	}
-
-	return nil
-}
-
-// AddActionFlags calls all ActionFlagAdder plugins and adds the returned flags
-// to the actionCmd
-func AddActionFlags(actionCmd *cobra.Command) error {
-	for _, pl := range loadedPlugins {
-		if _pl, ok := (pl.Initializer).(pluginapi.ActionFlagAdder); ok {
-			for _, f := range _pl.ActionFlagAdd() {
-				actionCmd.Flags().AddFlag(f)
-			}
-		}
-	}
-
-	return nil
+// AllCommands returns a slice of commands registered by plugins which need to be
+// added to the main SingularityCmd. By simply returning the slice of objects, it's
+// trivial to handle this from the CLI.
+func AllCommands() []*cobra.Command {
+	return reg.commandRegistry.Commands
 }

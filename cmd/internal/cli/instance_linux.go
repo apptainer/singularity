@@ -34,10 +34,10 @@ var forceStop bool
 var stopTimeout int
 
 func init() {
-	SingularityCmd.AddCommand(InstanceCmd)
-	InstanceCmd.AddCommand(InstanceStartCmd)
-	InstanceCmd.AddCommand(InstanceStopCmd)
-	InstanceCmd.AddCommand(InstanceListCmd)
+	cmdManager.RegisterCmd(InstanceCmd)
+	cmdManager.RegisterSubCmd(InstanceCmd, InstanceStartCmd)
+	cmdManager.RegisterSubCmd(InstanceCmd, InstanceStopCmd)
+	cmdManager.RegisterSubCmd(InstanceCmd, InstanceListCmd)
 }
 
 // InstanceCmd singularity instance
@@ -59,7 +59,7 @@ func listInstance() {
 	if username != "" && uid != 0 {
 		sylog.Fatalf("only root user can list user's instances")
 	}
-	files, err := instance.List(username, "*")
+	files, err := instance.List(username, "*", instance.SingSubDir)
 	if err != nil {
 		sylog.Fatalf("failed to retrieve instance list: %s", err)
 	}
@@ -122,7 +122,7 @@ func stopInstance(name string) {
 	if forceStop {
 		sig = syscall.SIGKILL
 	}
-	files, err := instance.List(username, name)
+	files, err := instance.List(username, name, instance.SingSubDir)
 	if err != nil {
 		sylog.Fatalf("failed to retrieve instance list: %s", err)
 	}

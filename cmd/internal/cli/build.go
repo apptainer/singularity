@@ -11,13 +11,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/cmdline"
+
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/build/types/parser"
+	legacytypes "github.com/sylabs/singularity/pkg/build/legacy"
+	legacyparser "github.com/sylabs/singularity/pkg/build/legacy/parser"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
@@ -40,53 +42,162 @@ var (
 	noCleanUp      bool
 )
 
+// -s|--sandbox
+var buildSandboxFlag = cmdline.Flag{
+	ID:           "buildSandboxFlag",
+	Value:        &sandbox,
+	DefaultValue: false,
+	Name:         "sandbox",
+	ShortHand:    "s",
+	Usage:        "build image as sandbox format (chroot directory structure)",
+	EnvKeys:      []string{"SANDBOX"},
+}
+
+// --section
+var buildSectionFlag = cmdline.Flag{
+	ID:           "buildSectionFlag",
+	Value:        &sections,
+	DefaultValue: []string{"all"},
+	Name:         "section",
+	Usage:        "only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)",
+	EnvKeys:      []string{"SECTION"},
+}
+
+// --json
+var buildJSONFlag = cmdline.Flag{
+	ID:           "buildJSONFlag",
+	Value:        &isJSON,
+	DefaultValue: false,
+	Name:         "json",
+	Usage:        "interpret build definition as JSON",
+	EnvKeys:      []string{"JSON"},
+}
+
+// -F|--force
+var buildForceFlag = cmdline.Flag{
+	ID:           "buildForceFlag",
+	Value:        &force,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "F",
+	Usage:        "delete and overwrite an image if it currently exists",
+	EnvKeys:      []string{"FORCE"},
+}
+
+// -u|--update
+var buildUpdateFlag = cmdline.Flag{
+	ID:           "buildUpdateFlag",
+	Value:        &update,
+	DefaultValue: false,
+	Name:         "update",
+	ShortHand:    "u",
+	Usage:        "run definition over existing container (skips header)",
+	EnvKeys:      []string{"UPDATE"},
+}
+
+// -T|--notest
+var buildNoTestFlag = cmdline.Flag{
+	ID:           "buildNoTestFlag",
+	Value:        &noTest,
+	DefaultValue: false,
+	Name:         "notest",
+	ShortHand:    "T",
+	Usage:        "build without running tests in %test section",
+	EnvKeys:      []string{"NOTEST"},
+}
+
+// -r|--remote
+var buildRemoteFlag = cmdline.Flag{
+	ID:           "buildRemoteFlag",
+	Value:        &remote,
+	DefaultValue: false,
+	Name:         "remote",
+	ShortHand:    "r",
+	Usage:        "build image remotely (does not require root)",
+	EnvKeys:      []string{"REMOTE"},
+}
+
+// -d|--detached
+var buildDetachedFlag = cmdline.Flag{
+	ID:           "buildDetachedFlag",
+	Value:        &detached,
+	DefaultValue: false,
+	Name:         "detached",
+	ShortHand:    "d",
+	Usage:        "submit build job and print build ID (no real-time logs and requires --remote)",
+	EnvKeys:      []string{"DETACHED"},
+}
+
+// --builder
+var buildBuilderFlag = cmdline.Flag{
+	ID:           "buildBuilderFlag",
+	Value:        &builderURL,
+	DefaultValue: "https://build.sylabs.io",
+	Name:         "builder",
+	Usage:        "remote Build Service URL, setting this implies --remote",
+	EnvKeys:      []string{"BUILDER"},
+}
+
+// --library
+var buildLibraryFlag = cmdline.Flag{
+	ID:           "buildLibraryFlag",
+	Value:        &libraryURL,
+	DefaultValue: "https://library.sylabs.io",
+	Name:         "library",
+	Usage:        "container Library URL",
+	EnvKeys:      []string{"LIBRARY"},
+}
+
+// --tmpdir
+var buildTmpdirFlag = cmdline.Flag{
+	ID:           "buildTmpdirFlag",
+	Value:        &tmpDir,
+	DefaultValue: "",
+	Name:         "tmpdir",
+	Usage:        "specify a temporary directory to use for build",
+	EnvKeys:      []string{"TMPDIR"},
+}
+
+// --nohttps
+var buildNoHTTPSFlag = cmdline.Flag{
+	ID:           "buildNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Usage:        "do NOT use HTTPS, for communicating with local docker registry",
+	EnvKeys:      []string{"NOHTTPS"},
+}
+
+// --no-cleanup
+var buildNoCleanupFlag = cmdline.Flag{
+	ID:           "buildNoCleanupFlag",
+	Value:        &noCleanUp,
+	DefaultValue: false,
+	Name:         "no-cleanup",
+	Usage:        "do NOT clean up bundle after failed build, can be helpul for debugging",
+	EnvKeys:      []string{"NO_CLEANUP"},
+}
+
 func init() {
-	BuildCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(BuildCmd)
 
-	BuildCmd.Flags().BoolVarP(&sandbox, "sandbox", "s", false, "build image as sandbox format (chroot directory structure)")
-	BuildCmd.Flags().SetAnnotation("sandbox", "envkey", []string{"SANDBOX"})
+	cmdManager.RegisterFlagForCmd(&buildBuilderFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDetachedFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildForceFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildJSONFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildLibraryFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 
-	BuildCmd.Flags().StringSliceVar(&sections, "section", []string{"all"}, "only run specific section(s) of deffile (setup, post, files, environment, test, labels, none)")
-	BuildCmd.Flags().SetAnnotation("section", "envkey", []string{"SECTION"})
-
-	BuildCmd.Flags().BoolVar(&isJSON, "json", false, "interpret build definition as JSON")
-	BuildCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
-
-	BuildCmd.Flags().BoolVarP(&force, "force", "F", false, "delete and overwrite an image if it currently exists")
-	BuildCmd.Flags().SetAnnotation("force", "envkey", []string{"FORCE"})
-
-	BuildCmd.Flags().BoolVarP(&update, "update", "u", false, "run definition over existing container (skips header)")
-	BuildCmd.Flags().SetAnnotation("update", "envkey", []string{"UPDATE"})
-
-	BuildCmd.Flags().BoolVarP(&noTest, "notest", "T", false, "build without running tests in %test section")
-	BuildCmd.Flags().SetAnnotation("notest", "envkey", []string{"NOTEST"})
-
-	BuildCmd.Flags().BoolVarP(&remote, "remote", "r", false, "build image remotely (does not require root)")
-	BuildCmd.Flags().SetAnnotation("remote", "envkey", []string{"REMOTE"})
-
-	BuildCmd.Flags().BoolVarP(&detached, "detached", "d", false, "submit build job and print build ID (no real-time logs and requires --remote)")
-	BuildCmd.Flags().SetAnnotation("detached", "envkey", []string{"DETACHED"})
-
-	BuildCmd.Flags().StringVar(&builderURL, "builder", "https://build.sylabs.io", "remote Build Service URL, setting this implies --remote")
-	BuildCmd.Flags().SetAnnotation("builder", "envkey", []string{"BUILDER"})
-
-	BuildCmd.Flags().StringVar(&libraryURL, "library", "https://library.sylabs.io", "container Library URL")
-	BuildCmd.Flags().SetAnnotation("library", "envkey", []string{"LIBRARY"})
-
-	BuildCmd.Flags().StringVar(&tmpDir, "tmpdir", "", "specify a temporary directory to use for build")
-	BuildCmd.Flags().SetAnnotation("tmpdir", "envkey", []string{"TMPDIR"})
-
-	BuildCmd.Flags().BoolVar(&noHTTPS, "nohttps", false, "do NOT use HTTPS, for communicating with local docker registry")
-	BuildCmd.Flags().SetAnnotation("nohttps", "envkey", []string{"NOHTTPS"})
-
-	BuildCmd.Flags().BoolVar(&noCleanUp, "no-cleanup", false, "do NOT clean up bundle after failed build, can be helpul for debugging")
-	BuildCmd.Flags().SetAnnotation("no-cleanup", "envkey", []string{"NO_CLEANUP"})
-
-	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-username"))
-	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-password"))
-	BuildCmd.Flags().AddFlag(actionFlags.Lookup("docker-login"))
-
-	SingularityCmd.AddCommand(BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, BuildCmd)
 }
 
 // BuildCmd represents the build command
@@ -136,17 +247,19 @@ func checkBuildTarget(path string, update bool) bool {
 	return true
 }
 
-func definitionFromSpec(spec string) (def types.Definition, err error) {
+// definitionFromSpec is specifically for parsing specs for the remote builder
+// it uses a different version the the definition struct and parser
+func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 
 	// Try spec as URI first
-	def, err = types.NewDefinitionFromURI(spec)
+	def, err = legacytypes.NewDefinitionFromURI(spec)
 	if err == nil {
 		return
 	}
 
 	// Try spec as local file
 	var isValid bool
-	isValid, err = parser.IsValidDefinition(spec)
+	isValid, err = legacyparser.IsValidDefinition(spec)
 	if err != nil {
 		return
 	}
@@ -161,14 +274,14 @@ func definitionFromSpec(spec string) (def types.Definition, err error) {
 		}
 
 		defer defFile.Close()
-		def, err = parser.ParseDefinitionFile(defFile)
+		def, err = legacyparser.ParseDefinitionFile(defFile)
 
 		return
 	}
 
 	// File exists and does NOT contain a valid definition
 	// local image or sandbox
-	def = types.Definition{
+	def = legacytypes.Definition{
 		Header: map[string]string{
 			"bootstrap": "localimage",
 			"from":      spec,

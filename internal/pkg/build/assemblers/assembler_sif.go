@@ -22,9 +22,9 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // SIFAssembler doesnt store anything
@@ -75,14 +75,19 @@ func createSIF(path string, definition, ociConf []byte, squashfile string) (err 
 		Fname:    squashfile,
 	}
 	// open up the data object file for this descriptor
-	if parinput.Fp, err = os.Open(parinput.Fname); err != nil {
+	fp, err := os.Open(parinput.Fname)
+	if err != nil {
 		return fmt.Errorf("while opening partition file: %s", err)
 	}
-	defer parinput.Fp.Close()
-	fi, err := parinput.Fp.Stat()
+
+	defer fp.Close()
+
+	fi, err := fp.Stat()
 	if err != nil {
-		return fmt.Errorf("while calling start on partition file: %s", err)
+		return fmt.Errorf("while calling stat on partition file: %s", err)
 	}
+
+	parinput.Fp = fp
 	parinput.Size = fi.Size()
 
 	err = parinput.SetPartExtra(sif.FsSquash, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))

@@ -10,134 +10,137 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func findSize(size int64) (string, error) {
-	var sizeF float64
-	if size <= 1000000 {
-		sizeF = float64(size) / 1000
-		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Kb"}, ""), nil
-	} else if size <= 1000000000 {
-		sizeF = float64(size) / 1000000
-		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Mb"}, ""), nil
-	} else if size >= 1000000000 {
-		sizeF = float64(size) / 1000000000
-		return strings.Join([]string{fmt.Sprintf("%.2f", sizeF), " Gb"}, ""), nil
+// findSize takes a size in bytes and converts it to a human-readable string representation
+// expressing kB, MB, GB or TB (whatever is smaller, but still larger than one).
+func findSize(size int64) string {
+
+	var factor float64
+	var unit string
+	switch {
+	case size < 1e6:
+		factor = 1e3
+		unit = "kB"
+	case size < 1e9:
+		factor = 1e6
+		unit = "MB"
+	case size < 1e12:
+		factor = 1e9
+		unit = "GB"
+	default:
+		factor = 1e12
+		unit = "TB"
 	}
-	return "", fmt.Errorf("failed to detect file size")
+	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
 }
 
-func listLibraryCache() error {
-	// loop through library cache
-	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
+// listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.
+// Will return: the number of containers for that type (int), the total space the container type is using (int64),
+// and an error if one occurs.
+func listTypeCache(printList bool, cacheType string) (int, int64, error) {
+	var totalSize int64
+	count := 0
+	cachePath := ""
+
+	// check what cache we need to list, and set are path.
+	switch cacheType {
+	case "library":
+		cachePath = cache.Library()
+	case "oci":
+		cachePath = cache.OciTemp()
+	case "":
+		return 0, 0, fmt.Errorf("no cache type specifyed")
+	default:
+		return 0, 0, fmt.Errorf("not a valid type: %s", cacheType)
+	}
+
+	cacheTmp, err := ioutil.ReadDir(cachePath)
 	if err != nil {
-		return fmt.Errorf("unable to open library cache folder: %v", err)
+		return 0, 0, fmt.Errorf("unable to open: %s directory: %v", cacheType, err)
 	}
-	for _, f := range libraryCacheFiles {
-		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
+	for _, f := range cacheTmp {
+		checkStat, err := os.Stat(filepath.Join(cachePath, f.Name()))
 		if err != nil {
-			return fmt.Errorf("unable to look in library cache: %v", err)
+			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cachePath, f.Name()), err)
 		}
-		for _, c := range cont {
-			fileInfo, err := os.Stat(filepath.Join(cache.Library(), f.Name(), c.Name()))
+		if checkStat.Mode().IsDir() {
+			cacheFile, err := ioutil.ReadDir(filepath.Join(cachePath, f.Name()))
 			if err != nil {
-				return fmt.Errorf("unable to get stat for library cache: %v", err)
+				return 0, 0, fmt.Errorf("unable to look in: %s: %v", cachePath, err)
 			}
-			printFileSize, err := findSize(fileInfo.Size())
-			if err != nil {
-				// no need to describe the error, since it is already
-				sylog.Warningf("%v", err)
+			for _, b := range cacheFile {
+				fileInfo, err := os.Stat(filepath.Join(cachePath, f.Name(), b.Name()))
+				if err != nil {
+					return 0, 0, fmt.Errorf("unable to get stat for: %s: %v", cachePath, err)
+				}
+				if printList {
+					fmt.Printf("%-24.22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), cacheType)
+				}
+				count++
+				totalSize += fileInfo.Size()
 			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", c.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "library")
+		} else {
+			// stray file in ~/.singularity/cache
+			sylog.Debugf("stray file in cache dir: %v", filepath.Join(cachePath, f.Name()))
 		}
 	}
-	return nil
+
+	return count, totalSize, nil
 }
 
-func listOciCache() error {
-	// loop through oci-tmp cache
-	ociTmp, err := ioutil.ReadDir(cache.OciTemp())
-	if err != nil {
-		return fmt.Errorf("unable to open oci-tmp folder: %v", err)
-	}
-	for _, f := range ociTmp {
-		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
-		if err != nil {
-			return fmt.Errorf("unable to look in oci-tmp cache: %v", err)
-		}
-		for _, b := range blob {
-			fileInfo, err := os.Stat(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-			if err != nil {
-				return fmt.Errorf("unable to get stat for oci-tmp cache: %v", err)
-			}
-			printFileSize, err := findSize(fileInfo.Size())
-			if err != nil {
-				// no need to describe the error, since it is already
-				sylog.Warningf("%v", err)
-			}
-			fmt.Printf("%-22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "oci")
-		}
-	}
-	return nil
-}
-
-func listBlobCache(printList bool) error {
+func listBlobCache(printList bool) (int, int64, error) {
 	// loop through ociBlob cache
 	count := 0
 	var totalSize int64
 
 	_, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs"))
 	if os.IsNotExist(err) {
-		return nil
+		return 0, 0, nil
 	}
 	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
 	if err != nil {
-		return fmt.Errorf("unable to open oci-blob folder: %v", err)
+		return 0, 0, fmt.Errorf("unable to open oci-blob directory: %v", err)
 	}
 	for _, f := range blobs {
-		blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
+		checkStat, err := os.Stat(filepath.Join(cache.OciBlob(), "blobs", f.Name()))
 		if err != nil {
-			return fmt.Errorf("unable to look in oci-blob cache: %v", err)
+			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cache.OciBlob(), "blobs", f.Name()), err)
 		}
-		for _, b := range blob {
-			fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
+		if checkStat.Mode().IsDir() {
+			blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
 			if err != nil {
-				return fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
+				return 0, 0, fmt.Errorf("unable to look in oci-blob cache: %v", err)
 			}
-			if printList {
-				printFileSize, err := findSize(fileInfo.Size())
+			for _, b := range blob {
+				fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
 				if err != nil {
-					// no need to describe the error, since it is already
-					sylog.Warningf("%v", err)
+					return 0, 0, fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
 				}
-				fmt.Printf("%-22.20s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), printFileSize, "blob")
+				if printList {
+					fmt.Printf("%-24.22s %-22s %-16s %s\n", b.Name(), fileInfo.ModTime().Format("2006-01-02 15:04:05"), findSize(fileInfo.Size()), "blob")
+				}
+				count++
+				totalSize += fileInfo.Size()
 			}
-			count++
-			totalSize += fileInfo.Size()
+		} else {
+			// stray file in ~/.singularity/cache/library
+			sylog.Debugf("stray file in cache directory: %v", filepath.Join(cache.Library(), f.Name()))
 		}
 	}
-	if !printList && count >= 1 {
-		printFileSize, err := findSize(totalSize)
-		if err != nil {
-			// no need to describe the error, since it is already
-			sylog.Warningf("%v", err)
-		}
-		fmt.Printf("\nThere are %d blob file(s) using %v of space. Use '-T=blob' to list them\n", count, printFileSize)
-	}
-	return nil
+	return count, totalSize, nil
 }
 
-// ListSingularityCache : list local singularity cache, typeNameList : is a string of what cache
-// to list (seprate each type with a comma; like this: library,oci,blob) allList : force list all cache.
-func ListSingularityCache(cacheListTypes []string, listAll bool) error {
+// ListSingularityCache will list local singularity cache, typeNameList is a []string of what cache
+// to list (seprate each type with a comma; like: library,oci,blob) allList force list all cache.
+func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary bool) error {
 	libraryList := false
 	ociList := false
 	blobList := false
-	listBlobSum := false
+	blobSum := false
 
 	for _, t := range cacheListTypes {
 		switch t {
@@ -148,38 +151,92 @@ func ListSingularityCache(cacheListTypes []string, listAll bool) error {
 		case "blob", "blobs":
 			blobList = true
 		case "blobSum":
-			listBlobSum = true
+			blobSum = true
 		case "all":
 			listAll = true
+		case "":
 		default:
-			sylog.Fatalf("Not a valid type: %v", t)
-			os.Exit(2)
+			return fmt.Errorf("not a valid type: %s", t)
 		}
 	}
 
-	fmt.Printf("%-22s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
+	if listAll {
+		libraryList = true
+		ociList = true
+		blobList = true
+	}
 
-	if libraryList || listAll {
-		if err := listLibraryCache(); err != nil {
+	var containerCount int
+	var containerSpace int64
+	var blobCount int
+	var blobSpace int64
+
+	// this next part is very messy, but it ensures that the '--summary' flag will be
+	// compatible with '--type=', and '--all' flag.
+
+	if !cacheListSummary {
+		fmt.Printf("%-24s %-22s %-16s %s\n", "NAME", "DATE CREATED", "SIZE", "TYPE")
+	}
+
+	if listAll {
+		libraryCount, librarySize, err := listTypeCache(true, "library")
+		if err != nil {
 			return err
 		}
-	}
-	if ociList || listAll {
-		if err := listOciCache(); err != nil {
+		containerCount += libraryCount
+		containerSpace += librarySize
+	} else if libraryList {
+		libraryCount, librarySize, err := listTypeCache(!cacheListSummary, "library")
+		if err != nil {
 			return err
 		}
+		containerCount += libraryCount
+		containerSpace += librarySize
 	}
-	if blobList || listAll {
-		if err := listBlobCache(true); err != nil {
+
+	if listAll {
+		ociCount, ociSize, err := listTypeCache(true, "oci")
+		if err != nil {
 			return err
 		}
-		// dont list blob summary after listing all blobs
-		listBlobSum = false
-	}
-	if listBlobSum {
-		if err := listBlobCache(false); err != nil {
+		containerCount += ociCount
+		containerSpace += ociSize
+	} else if ociList {
+		ociCount, ociSize, err := listTypeCache(!cacheListSummary, "oci")
+		if err != nil {
 			return err
 		}
+		containerCount += ociCount
+		containerSpace += ociSize
 	}
+
+	if listAll {
+		blobsCount, blobsSize, err := listBlobCache(true)
+		if err != nil {
+			return err
+		}
+		blobCount = blobsCount
+		blobSpace = blobsSize
+	} else if blobSum {
+		blobsCount, blobsSize, err := listBlobCache(false)
+		if err != nil {
+			return err
+		}
+		blobCount = blobsCount
+		blobSpace = blobsSize
+	} else if blobList {
+		blobsCount, blobsSize, err := listBlobCache(!cacheListSummary)
+		if err != nil {
+			return err
+		}
+		blobCount = blobsCount
+		blobSpace = blobsSize
+	}
+
+	if !listAll || cacheListSummary {
+		fmt.Printf("\nThere %d containers using: %v, %d oci blob file(s) using %v of space.\n", containerCount, findSize(containerSpace), blobCount, findSize(blobSpace))
+		fmt.Printf("Total space used: %v\n", findSize(containerSpace+blobSpace))
+	}
+
 	return nil
 }

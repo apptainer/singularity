@@ -18,7 +18,7 @@ import (
 
 const (
 	// SQUASHFS constant for squashfs format
-	SQUASHFS = iota + 1
+	SQUASHFS = iota + 0x1000
 	// EXT3 constant for ext3 format
 	EXT3
 	// SANDBOX constant for directory format
@@ -29,7 +29,7 @@ const (
 
 const (
 	// RootFs partition name
-	RootFs       = "rootfs"
+	RootFs       = "!__rootfs__!"
 	launchString = " run-singularity"
 	bufferSize   = 2048
 )
@@ -134,6 +134,16 @@ func (i *Image) AuthorizedGroup(groups []string) (bool, error) {
 	return authorized, nil
 }
 
+// HasRootFs returns if image contains a root filesystem partition
+func (i *Image) HasRootFs() bool {
+	for _, p := range i.Partitions {
+		if p.Name == RootFs {
+			return true
+		}
+	}
+	return false
+}
+
 // ResolvePath returns a resolved absolute path
 func ResolvePath(path string) (string, error) {
 	abspath, err := filepath.Abs(path)
@@ -142,7 +152,7 @@ func ResolvePath(path string) (string, error) {
 	}
 	resolvedPath, err := filepath.EvalSymlinks(abspath)
 	if err != nil {
-		return "", fmt.Errorf("failed to retrieved path for %s: %s", path, err)
+		return "", fmt.Errorf("failed to retrieve path for %s: %s", path, err)
 	}
 	return resolvedPath, nil
 }
@@ -157,9 +167,8 @@ func Init(path string, writable bool) (*Image, error) {
 	}
 
 	img := &Image{
-		Path:       resolvedPath,
-		Name:       filepath.Base(resolvedPath),
-		Partitions: make([]Section, 1),
+		Path: resolvedPath,
+		Name: filepath.Base(resolvedPath),
 	}
 
 	for _, rf := range registeredFormats {

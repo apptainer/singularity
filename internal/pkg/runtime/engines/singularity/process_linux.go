@@ -331,7 +331,7 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			}
 		}
 
-		file, err := instance.Add(name, privileged)
+		file, err := instance.Add(name, privileged, instance.SingSubDir)
 		if err != nil {
 			return err
 		}

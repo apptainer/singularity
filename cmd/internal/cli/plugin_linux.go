@@ -12,15 +12,20 @@ import (
 	"github.com/sylabs/singularity/docs"
 )
 
-func init() {
-	PluginCmd.AddCommand(PluginListCmd)
-	PluginCmd.AddCommand(PluginInstallCmd)
-	PluginCmd.AddCommand(PluginUninstallCmd)
-	PluginCmd.AddCommand(PluginEnableCmd)
-	PluginCmd.AddCommand(PluginDisableCmd)
-	PluginCmd.AddCommand(PluginCompileCmd)
+// pluginContext is a variable used to describe the context of a plugin command.
+// This variable is for example passed in to the EnsureRootPriv() function to
+// customize the output.
+var pluginContext = []string{"plugin"}
 
-	SingularityCmd.AddCommand(PluginCmd)
+func init() {
+	cmdManager.RegisterCmd(PluginCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginListCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginInstallCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginUninstallCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginEnableCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginDisableCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginCompileCmd)
+	cmdManager.RegisterSubCmd(PluginCmd, PluginInspectCmd)
 }
 
 // PluginCmd is the root command for all plugin related functionalities

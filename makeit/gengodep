@@ -1,16 +1,12 @@
 #!/bin/sh
 
-repo="github.com/sylabs/singularity"
-path=`(cd $1 2>/dev/null && pwd -P || cd \`dirname $1\` && pwd -P || false)`
-gofiles="$1"
-prefix=${path%$repo*}
+srcdir=$1
+shift
 
-for dep in $(go list -f '{{ .Deps }}' $1 | tr -d '[]'); do
-    if [ ! -n "${dep%$repo*}" ]; then
-        for gofile in $(find $prefix$dep -name "*.go" 2>/dev/null); do
-            gofiles="$gofiles $gofile"
-        done
-    fi
-done
-
-echo $gofiles
+go list -mod=vendor \
+	-deps \
+	-f '{{ with $d := . }}{{ range $d.GoFiles }}{{ $d.Dir }}/{{ . }} {{ end }}{{ end }}' \
+	"$@" |
+tr ' ' '\n' |
+sort -u |
+grep "^${srcdir}"

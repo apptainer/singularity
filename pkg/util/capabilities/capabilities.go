@@ -434,6 +434,7 @@ func Normalize(capabilities []string) ([]string, []string) {
 
 	capabilities = normalize(capabilities)
 
+	// nolint:prealloc
 	var included []string
 	var excluded []string
 	for _, capb := range capabilities {
@@ -461,8 +462,10 @@ func Normalize(capabilities []string) ([]string, []string) {
 // returns a string list with normalized capability name and a
 // second list with unrecognized capabilities.
 func Split(caps string) ([]string, []string) {
-	capabilities := strings.Split(caps, ",")
-	return Normalize(capabilities)
+	if caps == "" {
+		return []string{}, []string{}
+	}
+	return Normalize(strings.Split(caps, ","))
 }
 
 // RemoveDuplicated removes duplicated capabilities from provided list.

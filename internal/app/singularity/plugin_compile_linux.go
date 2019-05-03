@@ -8,38 +8,51 @@ package singularity
 import (
 	"errors"
 	"fmt"
-	"go/build"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-var (
-	workpath   = filepath.Join(filepath.SplitList(build.Default.GOPATH)[0], repo)
-	trimpath   = filepath.Dir(workpath)
-	mangenpath = filepath.Join(workpath, "cmd/plugin_manifestgen/")
-)
+const manifestgenDir = "cmd/plugin_manifestgen"
 
-const (
-	repo = "src/github.com/sylabs/singularity"
-)
+// getSingularitySrcDir returns the source directory for singularity
+func getSingularitySrcDir() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	canary := filepath.Join(dir, "cmd", "singularity", "cli.go")
+
+	switch _, err = os.Stat(canary); {
+	case os.IsNotExist(err):
+		return "", fmt.Errorf("cannot find \"%s\"", canary)
+
+	case err != nil:
+		return "", fmt.Errorf("unexpected error while looking for \"%s\": %s", canary, err)
+
+	default:
+		return dir, nil
+	}
+}
 
 // pluginObjPath returns the path of the .so file which is built when
 // running `go build -buildmode=plugin [...]`.
 func pluginObjPath(sourceDir string) string {
-	b := filepath.Base(sourceDir)
-	return filepath.Join(sourceDir, b+".so")
+	return filepath.Join(sourceDir, "plugin.so")
 }
 
 // pluginManifestPath returns the path of the .manifest file created
 // in the container after the plugin object is built
 func pluginManifestPath(sourceDir string) string {
-	b := filepath.Base(sourceDir)
-	return filepath.Join(sourceDir, b+".manifest")
+	return filepath.Join(sourceDir, "plugin.manifest")
 }
 
 // CompilePlugin compiles a plugin. It takes as input: sourceDir, the path to the
@@ -71,6 +84,11 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 //
 // This function essentially runs the `go build -buildmode=plugin [...]` command
 func buildPlugin(sourceDir, buildTags string) (string, error) {
+	workpath, err := getSingularitySrcDir()
+	if err != nil {
+		return "", errors.New("singularity source directory not found")
+	}
+
 	// assuming that sourceDir is within trimpath for now
 	out := pluginObjPath(sourceDir)
 
@@ -83,11 +101,14 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 		"build",
 		"-o", out,
 		"-buildmode=plugin",
+		"-mod=vendor",
 		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
+		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
+		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
 		sourceDir,
 	}
+
+	sylog.Debugf("Runnig: %s %s", goTool, strings.Join(args, " "))
 
 	buildcmd := exec.Command(goTool, args...)
 
@@ -95,6 +116,7 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 	buildcmd.Stderr = os.Stderr
 	buildcmd.Stdout = os.Stdout
 	buildcmd.Stdin = os.Stdin
+	buildcmd.Env = append(os.Environ(), "GO111MODULE=on")
 
 	return out, buildcmd.Run()
 }
@@ -102,6 +124,11 @@ func buildPlugin(sourceDir, buildTags string) (string, error) {
 // generateManifest takes the path to the plugin source, sourceDir, and generates
 // its corresponding manifest file.
 func generateManifest(sourceDir, buildTags string) (string, error) {
+	workpath, err := getSingularitySrcDir()
+	if err != nil {
+		return "", errors.New("singularity source directory not found")
+	}
+
 	in := pluginObjPath(sourceDir)
 	out := pluginManifestPath(sourceDir)
 
@@ -110,11 +137,14 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 		return "", errors.New("go compiler not found")
 	}
 
+	mangenpath := filepath.Join(workpath, manifestgenDir)
+
 	args := []string{
 		"run",
+		"-mod=vendor",
 		"-tags", buildTags,
-		fmt.Sprintf("-gcflags=all=-trimpath=%s", trimpath),
-		fmt.Sprintf("-asmflags=all=-trimpath=%s", trimpath),
+		fmt.Sprintf("-gcflags=all=-trimpath=%s", workpath),
+		fmt.Sprintf("-asmflags=all=-trimpath=%s", workpath),
 		mangenpath,
 		in,
 		out,
@@ -126,6 +156,7 @@ func generateManifest(sourceDir, buildTags string) (string, error) {
 	gencmd.Stderr = os.Stderr
 	gencmd.Stdout = os.Stdout
 	gencmd.Stdin = os.Stdin
+	gencmd.Env = append(os.Environ(), "GO111MODULE=on")
 
 	return out, gencmd.Run()
 }
@@ -145,7 +176,10 @@ func makeSIF(sourceDir, sifPath string) error {
 	if err != nil {
 		return err
 	}
-	defer plObjInput.Fp.Close()
+
+	if fp, ok := plObjInput.Fp.(io.Closer); ok {
+		defer fp.Close()
+	}
 
 	// add plugin object file descriptor to sif
 	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plObjInput)
@@ -155,7 +189,9 @@ func makeSIF(sourceDir, sifPath string) error {
 	if err != nil {
 		return err
 	}
-	defer plManifestInput.Fp.Close()
+	if fp, ok := plManifestInput.Fp.(io.Closer); ok {
+		defer fp.Close()
+	}
 
 	// add plugin manifest descriptor to sif
 	plCreateInfo.InputDescr = append(plCreateInfo.InputDescr, plManifestInput)
@@ -187,16 +223,18 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 	}
 
 	// open plugin object file
-	objInput.Fp, err = os.Open(objInput.Fname)
+	fp, err := os.Open(objInput.Fname)
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", objInput.Fname, err)
 	}
 
 	// stat file to obtain size
-	fstat, err := objInput.Fp.Stat()
+	fstat, err := fp.Stat()
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", objInput.Fname, err)
 	}
+
+	objInput.Fp = fp
 	objInput.Size = fstat.Size()
 
 	// populate objInput.Extra with appropriate Fstype & Parttype
@@ -214,8 +252,6 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 //
 // Datatype: sif.DataGenericJSON
 func getPluginManifestDescr(manifestPath string) (sif.DescriptorInput, error) {
-	var err error
-
 	manifestInput := sif.DescriptorInput{
 		Datatype: sif.DataGenericJSON,
 		Groupid:  sif.DescrDefaultGroup,
@@ -224,16 +260,18 @@ func getPluginManifestDescr(manifestPath string) (sif.DescriptorInput, error) {
 	}
 
 	// open plugin object file
-	manifestInput.Fp, err = os.Open(manifestInput.Fname)
+	fp, err := os.Open(manifestInput.Fname)
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while opening plugin object file %s: %s", manifestInput.Fname, err)
 	}
 
 	// stat file to obtain size
-	fstat, err := manifestInput.Fp.Stat()
+	fstat, err := fp.Stat()
 	if err != nil {
 		return sif.DescriptorInput{}, fmt.Errorf("while calling stat on plugin object file %s: %s", manifestInput.Fname, err)
 	}
+
+	manifestInput.Fp = fp
 	manifestInput.Size = fstat.Size()
 
 	return manifestInput, nil

@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -14,16 +13,40 @@ import (
 	"text/template"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
-// Global variables for singularity CLI
+var cmdManager = cmdline.NewCommandManager(SingularityCmd)
+
+// CurrentUser holds the current user account information
+var CurrentUser = getCurrentUser()
+
+var defaultTokenFile = getDefaultTokenFile()
+
+var (
+	// TokenFile holds the path to the sylabs auth token file
+	tokenFile string
+	// authToken holds the sylabs auth token
+	authToken, authWarning string
+	// default remote configuration for comparison
+	defaultRemote = scs.EndPoint{
+		URI:    "cloud.sylabs.io",
+		Token:  "",
+		System: true,
+	}
+)
+
+const (
+	envPrefix = "SINGULARITY_"
+)
+
+// singularity command flags
 var (
 	debug   bool
 	nocolor bool
@@ -32,16 +55,75 @@ var (
 	quiet   bool
 )
 
-var (
-	// TokenFile holds the path to the sylabs auth token file
-	defaultTokenFile, tokenFile string
-	// authToken holds the sylabs auth token
-	authToken, authWarning string
-)
+// -d|--debug
+var singDebugFlag = cmdline.Flag{
+	ID:           "singDebugFlag",
+	Value:        &debug,
+	DefaultValue: false,
+	Name:         "debug",
+	ShortHand:    "d",
+	Usage:        "print debugging information (highest verbosity)",
+}
 
-const (
-	envPrefix = "SINGULARITY_"
-)
+// --nocolor
+var singNoColorFlag = cmdline.Flag{
+	ID:           "singNoColorFlag",
+	Value:        &nocolor,
+	DefaultValue: false,
+	Name:         "nocolor",
+	Usage:        "print without color output (default False)",
+}
+
+// -s|--silent
+var singSilentFlag = cmdline.Flag{
+	ID:           "singSilentFlag",
+	Value:        &silent,
+	DefaultValue: false,
+	Name:         "silent",
+	ShortHand:    "s",
+	Usage:        "only print errors",
+}
+
+// -q|--quiet
+var singQuietFlag = cmdline.Flag{
+	ID:           "singQuietFlag",
+	Value:        &quiet,
+	DefaultValue: false,
+	Name:         "quiet",
+	ShortHand:    "q",
+	Usage:        "suppress normal output",
+}
+
+// --verbose
+var singVerboseFlag = cmdline.Flag{
+	ID:           "singVerboseFlag",
+	Value:        &verbose,
+	DefaultValue: false,
+	Name:         "verbose",
+	Usage:        "print additional information",
+}
+
+var singTokenFileFlag = cmdline.Flag{
+	ID:           "singTokenFileFlag",
+	Value:        &tokenFile,
+	DefaultValue: defaultTokenFile,
+	Name:         "tokenfile",
+	ShortHand:    "t",
+	Usage:        "path to the file holding your sylabs authentication token",
+	Deprecated:   "Use 'singularity remote' to manage remote endpoints and tokens.",
+}
+
+func getCurrentUser() *user.User {
+	usr, err := user.Current()
+	if err != nil {
+		sylog.Fatalf("Couldn't determine user account information: %v", err)
+	}
+	return usr
+}
+
+func getDefaultTokenFile() string {
+	return path.Join(CurrentUser.HomeDir, ".singularity", "sylabs-token")
+}
 
 // initializePlugins should be called in any init() function which needs to interact with the plugin
 // systems internal API. This will guarantee that any internal API calls happen AFTER all plugins
@@ -67,28 +149,20 @@ func init() {
 	vt := fmt.Sprintf("%s version {{printf \"%%s\" .Version}}\n", buildcfg.PACKAGE_NAME)
 	SingularityCmd.SetVersionTemplate(vt)
 
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-	defaultTokenFile = path.Join(usr.HomeDir, ".singularity", "sylabs-token")
+	cmdManager.RegisterFlagForCmd(&singDebugFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singNoColorFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singSilentFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singQuietFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singVerboseFlag, SingularityCmd)
+	cmdManager.RegisterFlagForCmd(&singTokenFileFlag, SingularityCmd)
 
-	SingularityCmd.Flags().BoolVarP(&debug, "debug", "d", false, "print debugging information (highest verbosity)")
-	SingularityCmd.Flags().BoolVar(&nocolor, "nocolor", false, "print without color output (default False)")
-	SingularityCmd.Flags().BoolVarP(&silent, "silent", "s", false, "only print errors")
-	SingularityCmd.Flags().BoolVarP(&quiet, "quiet", "q", false, "suppress normal output")
-	SingularityCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "print additional information")
-	SingularityCmd.Flags().StringVarP(&tokenFile, "tokenfile", "t", defaultTokenFile, "path to the file holding your sylabs authentication token")
-	SingularityCmd.Flags().MarkDeprecated("tokenfile", "Use 'singularity remote' to manage remote endpoints and tokens.")
-
-	VersionCmd.Flags().SetInterspersed(false)
-	SingularityCmd.AddCommand(VersionCmd)
+	cmdManager.RegisterCmd(VersionCmd)
 
 	initializePlugins()
-	plugin.AddCommands(SingularityCmd)
+	SingularityCmd.AddCommand(plugin.AllCommands()...)
 }
 
-func setSylogMessageLevel(cmd *cobra.Command, args []string) {
+func setSylogMessageLevel() {
 	var level int
 
 	if debug {
@@ -106,7 +180,7 @@ func setSylogMessageLevel(cmd *cobra.Command, args []string) {
 	sylog.SetLevel(level)
 }
 
-func setSylogColor(cmd *cobra.Command, args []string) {
+func setSylogColor() {
 	if nocolor {
 		sylog.DisableColor()
 	}
@@ -116,9 +190,8 @@ func setSylogColor(cmd *cobra.Command, args []string) {
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	PersistentPreRun:      persistentPreRun,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("Invalid command")
+		return cmdline.CommandError("invalid command")
 	},
 
 	Use:           docs.SingularityUse,
@@ -127,13 +200,42 @@ var SingularityCmd = &cobra.Command{
 	Long:          docs.SingularityLong,
 	Example:       docs.SingularityExample,
 	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 // ExecuteSingularity adds all child commands to the root command and sets
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	if err := SingularityCmd.Execute(); err != nil {
+	setSylogMessageLevel()
+	setSylogColor()
+
+	cmdManager.UpdateCmdFlagFromEnv(envPrefix)
+
+	for _, e := range cmdManager.GetError() {
+		sylog.Errorf("%s", e)
+	}
+	// any error reported by command manager is considered as fatal
+	cliErrors := len(cmdManager.GetError())
+	if cliErrors > 0 {
+		sylog.Fatalf("CLI command manager reported %d error(s)", cliErrors)
+	}
+
+	if cmd, err := SingularityCmd.ExecuteC(); err != nil {
+		name := cmd.Name()
+		switch err.(type) {
+		case cmdline.FlagError:
+			usage := cmd.Flags().FlagUsagesWrapped(getColumns())
+			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			SingularityCmd.Printf("Options for %s command:\n\n%s\n", name, usage)
+		case cmdline.CommandError:
+			SingularityCmd.Println(cmd.UsageString())
+		default:
+			SingularityCmd.Printf("Error for command %q: %s\n\n", name, err)
+			SingularityCmd.Println(cmd.UsageString())
+		}
+		SingularityCmd.Printf("Run '%s --help' for more detailed usage information.\n",
+			cmd.CommandPath())
 		os.Exit(1)
 	}
 }
@@ -158,34 +260,6 @@ var VersionCmd = &cobra.Command{
 	Short: "Show the version for Singularity",
 }
 
-func updateFlagsFromEnv(cmd *cobra.Command) {
-	cmd.Flags().VisitAll(handleEnv)
-}
-
-func handleEnv(flag *pflag.Flag) {
-	envKeys, ok := flag.Annotations["envkey"]
-	if !ok {
-		return
-	}
-
-	for _, key := range envKeys {
-		val, set := os.LookupEnv(envPrefix + key)
-		if !set {
-			continue
-		}
-
-		updateFn := flagEnvFuncs[flag.Name]
-		updateFn(flag, val)
-	}
-
-}
-
-func persistentPreRun(cmd *cobra.Command, args []string) {
-	setSylogMessageLevel(cmd, args)
-	setSylogColor(cmd, args)
-	updateFlagsFromEnv(cmd)
-}
-
 // sylabsToken process the authentication Token
 // priority default_file < env < file_flag
 func sylabsToken(cmd *cobra.Command, args []string) {
@@ -198,159 +272,106 @@ func sylabsToken(cmd *cobra.Command, args []string) {
 	if authToken == "" {
 		authToken, authWarning = auth.ReadToken(defaultTokenFile)
 	}
-	if authToken != "" {
-		sylog.Warningf("sylabs-token files are deprecated. Use 'singularity remote' to manage remote endpoints and tokens.")
-	}
 }
 
-// sylabsRemote returns the remote in use or an error
-func sylabsRemote(filepath string) (*scs.EndPoint, error) {
-	file, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
+func loadRemoteConf(filepath string) (*scs.Config, error) {
+	f, err := os.OpenFile(filepath, os.O_RDONLY, 0600)
 	if err != nil {
-		// catch non existing remotes.yaml file or missing .singularity/
-		if os.IsNotExist(err) {
-			return nil, scs.ErrNoDefault
-		}
 		return nil, fmt.Errorf("while opening remote config file: %s", err)
 	}
-	defer file.Close()
+	defer f.Close()
 
-	c, err := scs.ReadFrom(file)
+	c, err := scs.ReadFrom(f)
 	if err != nil {
 		return nil, fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	return c.GetDefault()
+	return c, nil
 }
 
-// envAppend combines command line and environment var into a single argument
-func envAppend(flag *pflag.Flag, envvar string) {
-	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Warningf("Unable to set %s to environment variable value %s", flag.Name, envvar)
+// defaultRemoteLogin attempts to log in the default remote with the specified tokenfile
+// this will update the user remote config if it succeeds, otherwise it will return an error
+func defaultRemoteLogin(filepath string, c *scs.Config) error {
+	endpoint, err := c.GetDefault()
+	if err != nil {
+		return err
+	}
+
+	token, warning := auth.ReadToken(defaultTokenFile)
+	if warning != "" {
+		// token not found, return non logged in endpoint
+		return fmt.Errorf("token not found, cannot log in")
+	}
+
+	endpoint.Token = token
+	if err := endpoint.VerifyToken(); err != nil {
+		return err
+	}
+
+	// opening config file
+	file, err := os.OpenFile(filepath, os.O_RDWR|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("while opening remote config file: %s", err)
+	}
+	defer file.Close()
+
+	// truncating file before writing new contents and syncing to commit file
+	if err := file.Truncate(0); err != nil {
+		return fmt.Errorf("while truncating remote config file: %s", err)
+	}
+
+	if n, err := file.Seek(0, os.SEEK_SET); err != nil || n != 0 {
+		return fmt.Errorf("failed to reset %s cursor: %s", file.Name(), err)
+	}
+
+	if _, err := c.WriteTo(file); err != nil {
+		return fmt.Errorf("while writing remote config to file: %s", err)
+	}
+
+	if err := file.Sync(); err != nil {
+		return fmt.Errorf("failed to flush remote config file %s: %s", file.Name(), err)
+	}
+	return nil
+}
+
+// sylabsRemote returns the remote in use or an error
+func sylabsRemote(filepath string) (*scs.EndPoint, error) {
+	var c *scs.Config
+
+	// try to load both remotes, check for errors, sync if both exist,
+	// if neither exist return errNoDefault to return to old auth behavior
+	cSys, sysErr := loadRemoteConf(remoteConfigSys)
+	cUsr, usrErr := loadRemoteConf(filepath)
+	if sysErr != nil && usrErr != nil {
+		return nil, scs.ErrNoDefault
+	} else if sysErr != nil {
+		c = cUsr
+	} else if usrErr != nil {
+		c = cSys
 	} else {
-		flag.Changed = true
-		sylog.Debugf("Update flag Value to: %s", flag.Value)
-	}
-}
-
-// envBool sets a bool flag if the CLI option is unset and env var is set
-func envBool(flag *pflag.Flag, envvar string) {
-	if flag.Changed || envvar == "" {
-		return
-	}
-
-	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Debugf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
-		if err := flag.Value.Set("true"); err != nil {
-			sylog.Warningf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
-			return
+		// sync cUsr with system config cSys
+		if err := cUsr.SyncFrom(cSys); err != nil {
+			return nil, err
 		}
+		c = cUsr
 	}
 
-	flag.Changed = true
-	sylog.Debugf("Set %s Value to: %s", flag.Name, flag.Value)
-}
-
-// envStringNSlice writes to a string or slice flag if CLI option/argument
-// string is unset and env var is set
-func envStringNSlice(flag *pflag.Flag, envvar string) {
-	if flag.Changed {
-		return
+	endpoint, err := c.GetDefault()
+	if err != nil {
+		return endpoint, err
 	}
 
-	if err := flag.Value.Set(envvar); err != nil {
-		sylog.Warningf("Unable to set flag %s to value %s: %s", flag.Name, envvar, err)
-		return
+	// default remote without token, look for tokenfile to login with
+	if *endpoint == defaultRemote {
+		origEndpoint := *endpoint
+		err := defaultRemoteLogin(filepath, c)
+		if err != nil {
+			// failed to log in, return unmodified endpoint
+			return &origEndpoint, nil
+		}
+		sylog.Infof("Default remote in use, you are now logged in from existing tokenfile. Use 'singularity remote' commands to further manage remotes")
+		return endpoint, nil
 	}
 
-	flag.Changed = true
-	sylog.Debugf("Set %s Value to: %s", flag.Name, flag.Value)
-}
-
-type envHandle func(*pflag.Flag, string)
-
-// map of functions to use to bind flags to environment variables
-var flagEnvFuncs = map[string]envHandle{
-	// action flags
-	"bind":          envAppend,
-	"home":          envStringNSlice,
-	"overlay":       envStringNSlice,
-	"scratch":       envStringNSlice,
-	"workdir":       envStringNSlice,
-	"shell":         envStringNSlice,
-	"pwd":           envStringNSlice,
-	"hostname":      envStringNSlice,
-	"network":       envStringNSlice,
-	"network-args":  envStringNSlice,
-	"dns":           envStringNSlice,
-	"containlibs":   envStringNSlice,
-	"security":      envStringNSlice,
-	"apply-cgroups": envStringNSlice,
-	"app":           envStringNSlice,
-
-	"boot":           envBool,
-	"fakeroot":       envBool,
-	"cleanenv":       envBool,
-	"contain":        envBool,
-	"containall":     envBool,
-	"nv":             envBool,
-	"no-nv":          envBool,
-	"vm":             envBool,
-	"writable":       envBool,
-	"writable-tmpfs": envBool,
-	"no-home":        envBool,
-	"no-init":        envBool,
-
-	"pid":    envBool,
-	"ipc":    envBool,
-	"net":    envBool,
-	"uts":    envBool,
-	"userns": envBool,
-
-	"keep-privs":   envBool,
-	"no-privs":     envBool,
-	"add-caps":     envStringNSlice,
-	"drop-caps":    envStringNSlice,
-	"allow-setuid": envBool,
-
-	// build flags
-	"sandbox": envBool,
-	"section": envStringNSlice,
-	"json":    envBool,
-	"name":    envStringNSlice,
-	// "writable": envBool, // set above for now
-	"force":           envBool,
-	"update":          envBool,
-	"notest":          envBool,
-	"remote":          envBool,
-	"detached":        envBool,
-	"builder":         envStringNSlice,
-	"library":         envStringNSlice,
-	"nohttps":         envBool,
-	"no-cleanup":      envBool,
-	"tmpdir":          envStringNSlice,
-	"docker-username": envStringNSlice,
-	"docker-password": envStringNSlice,
-	"docker-login":    envBool,
-
-	// capability flags (and others)
-	"user":  envStringNSlice,
-	"group": envStringNSlice,
-	"desc":  envBool,
-	"all":   envBool,
-
-	// instance flags
-	"signal": envStringNSlice,
-
-	// keys flags
-	"secret": envBool,
-	"url":    envStringNSlice,
-
-	// inspect flags
-	"labels":      envBool,
-	"deffile":     envBool,
-	"runscript":   envBool,
-	"test":        envBool,
-	"environment": envBool,
-	"helpfile":    envBool,
+	return endpoint, nil
 }

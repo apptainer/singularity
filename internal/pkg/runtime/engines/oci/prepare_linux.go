@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/containerd/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 
@@ -59,6 +60,10 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("incorrect engine")
 	}
 
+	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+		return fmt.Errorf("bad engine configuration provided")
+	}
+
 	if starterConfig.GetIsSUID() {
 		return fmt.Errorf("SUID workflow disabled by administrator")
 	}
@@ -74,13 +79,14 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	// reset state config that could be passed to engine
 	e.EngineConfig.State = ociruntime.State{}
 
-	var gids []int
+	user := &e.EngineConfig.OciConfig.Process.User
+	gids := make([]int, 0, len(user.AdditionalGids)+1)
 
-	uid := int(e.EngineConfig.OciConfig.Process.User.UID)
-	gid := e.EngineConfig.OciConfig.Process.User.GID
+	uid := int(user.UID)
+	gid := user.GID
 
 	gids = append(gids, int(gid))
-	for _, g := range e.EngineConfig.OciConfig.Process.User.AdditionalGids {
+	for _, g := range user.AdditionalGids {
 		gids = append(gids, int(g))
 	}
 
@@ -194,6 +200,21 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	} else {
 		starterConfig.SetJoinMount(true)
+		cPath := e.EngineConfig.OciConfig.Linux.CgroupsPath
+		if cPath == "" {
+			return nil
+		}
+
+		// add executed process to container cgroups
+		ppid := os.Getppid()
+		staticPath := cgroups.StaticPath(cPath)
+		control, err := cgroups.Load(cgroups.V1, staticPath)
+		if err != nil {
+			return fmt.Errorf("failed to load cgroups: %s", err)
+		}
+		if err := control.Add(cgroups.Process{Pid: ppid}); err != nil {
+			return fmt.Errorf("failed to add exec process to cgroups %s: %s", cPath, err)
+		}
 	}
 
 	return nil

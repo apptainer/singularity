@@ -86,10 +86,14 @@ func (f *ext3Format) initializer(img *Image, fileinfo os.FileInfo) error {
 		return err
 	}
 	img.Type = EXT3
-	img.Partitions[0].Offset = offset
-	img.Partitions[0].Size = uint64(fileinfo.Size()) - offset
-	img.Partitions[0].Type = EXT3
-	img.Partitions[0].Name = RootFs
+	img.Partitions = []Section{
+		{
+			Offset: offset,
+			Size:   uint64(fileinfo.Size()) - offset,
+			Type:   EXT3,
+			Name:   RootFs,
+		},
+	}
 	return nil
 }
 

@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 func main() {

@@ -7,7 +7,7 @@ package singularity
 
 import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	singularityConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/config"
+	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 // EngineOperations describes a runtime engine

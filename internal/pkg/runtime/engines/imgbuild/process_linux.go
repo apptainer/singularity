@@ -9,12 +9,11 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"os/exec"
+	"os/user"
 	"strings"
 	"syscall"
 
 	"github.com/opencontainers/runtime-tools/generate"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 )
 
@@ -24,36 +23,15 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// clean environment in which %post and %test scripts are run in
 	e.cleanEnv()
 
-	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post != "" {
+	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post.Script != "" {
 		// Run %post script here
-		post := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Post)
-		post.Env = e.EngineConfig.OciConfig.Process.Env
-		post.Stdout = os.Stdout
-		post.Stderr = os.Stderr
-
-		sylog.Infof("Running post scriptlet\n")
-		if err := post.Start(); err != nil {
-			sylog.Fatalf("failed to start %%post proc: %v\n", err)
-		}
-		if err := post.Wait(); err != nil {
-			sylog.Fatalf("post proc: %v\n", err)
-		}
+		e.runScriptSection("post", e.EngineConfig.Recipe.BuildData.Post, true)
 	}
 
 	if e.EngineConfig.RunSection("test") {
-		if !e.EngineConfig.Opts.NoTest && e.EngineConfig.Recipe.BuildData.Test != "" {
+		if !e.EngineConfig.Opts.NoTest && e.EngineConfig.Recipe.BuildData.Test.Script != "" {
 			// Run %test script
-			test := exec.Command("/bin/sh", "-cex", e.EngineConfig.Recipe.BuildData.Test)
-			test.Stdout = os.Stdout
-			test.Stderr = os.Stderr
-
-			sylog.Infof("Running test scriptlet\n")
-			if err := test.Start(); err != nil {
-				sylog.Fatalf("failed to start %%test proc: %v\n", err)
-			}
-			if err := test.Wait(); err != nil {
-				sylog.Fatalf("test proc: %v\n", err)
-			}
+			e.runScriptSection("test", e.EngineConfig.Recipe.BuildData.Test, false)
 		}
 	}
 
@@ -102,8 +80,17 @@ func (e *EngineOperations) cleanEnv() {
 	// clean environment
 	e.EngineConfig.OciConfig.Spec.Process.Env = nil
 
+	// During image build process (run typically as root), home destination
+	// is /root
+	homeDest := "/root"
+	usr, err := user.Current()
+
+	if err == nil {
+		homeDest = usr.HomeDir
+	}
+
 	// add relevant environment variables back
-	env.SetContainerEnv(&generator, environment, true, "")
+	env.SetContainerEnv(&generator, environment, true, homeDest)
 
 	// expose build specific environment variables for scripts
 	for _, envVar := range environment {

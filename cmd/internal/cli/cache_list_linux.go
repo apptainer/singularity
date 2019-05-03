@@ -12,26 +12,55 @@ import (
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
-	cacheListTypes []string
-	allList        bool
+	cacheListTypes   []string
+	allList          bool
+	cacheListSummary bool
 )
 
-func init() {
-	CacheListCmd.Flags().SetInterspersed(false)
-
-	CacheListCmd.Flags().StringSliceVarP(&cacheListTypes, "type", "T", []string{"library", "oci", "blobSum"}, "list cache type, choose between: library, oci, and blob")
-	CacheListCmd.Flags().SetAnnotation("type", "envkey", []string{"TYPE"})
-
-	CacheListCmd.Flags().BoolVarP(&allList, "all", "a", false, "list all cache types")
-	CacheListCmd.Flags().SetAnnotation("all", "envkey", []string{"ALL"})
+// -T|--type
+var cacheListTypesFlag = cmdline.Flag{
+	ID:           "cacheListTypes",
+	Value:        &cacheListTypes,
+	DefaultValue: []string{"library", "oci", "blobSum"},
+	Name:         "type",
+	ShortHand:    "T",
+	Usage:        "a list of cache types to display, possible entries: library, oci, blob(s), blobSum, all",
+	EnvKeys:      []string{"TYPE"},
 }
 
-// CacheListCmd : is `singularity cache list' and will list your local singularity cache
+// -s|--summary
+var cacheListSummaryFlag = cmdline.Flag{
+	ID:           "cacheListSummary",
+	Value:        &cacheListSummary,
+	DefaultValue: false,
+	Name:         "summary",
+	ShortHand:    "s",
+	Usage:        "display a cache summary",
+}
+
+// -a|--all
+var cacheListAllFlag = cmdline.Flag{
+	ID:           "cacheListAllFlag",
+	Value:        &allList,
+	DefaultValue: false,
+	Name:         "all",
+	ShortHand:    "a",
+	Usage:        "list all cache types",
+	EnvKeys:      []string{"ALL"},
+}
+
+func init() {
+	cmdManager.RegisterFlagForCmd(&cacheListTypesFlag, CacheListCmd)
+	cmdManager.RegisterFlagForCmd(&cacheListSummaryFlag, CacheListCmd)
+	cmdManager.RegisterFlagForCmd(&cacheListAllFlag, CacheListCmd)
+}
+
+// CacheListCmd is 'singularity cache list' and will list your local singularity cache
 var CacheListCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(0),
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := cacheListCmd(); err != nil {
@@ -46,10 +75,9 @@ var CacheListCmd = &cobra.Command{
 }
 
 func cacheListCmd() error {
-
-	err := singularity.ListSingularityCache(cacheListTypes, allList)
+	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummary)
 	if err != nil {
-		sylog.Fatalf("Not listing cache; an error occured: %v", err)
+		sylog.Fatalf("Not listing cache; an error occurred: %v", err)
 		return err
 	}
 	return err

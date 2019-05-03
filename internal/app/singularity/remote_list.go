@@ -42,7 +42,7 @@ func RemoteList(usrConfigFile, sysConfigFile string) (err error) {
 	}
 
 	// list in alphanumeric order
-	var names []string
+	names := make([]string, 0, len(c.Remotes))
 	for n := range c.Remotes {
 		names = append(names, n)
 	}
@@ -60,7 +60,7 @@ func RemoteList(usrConfigFile, sysConfigFile string) (err error) {
 	sort.Strings(names)
 
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(tw, listLine, "NAME", "URI", "SYS")
+	fmt.Fprintf(tw, listLine, "NAME", "URI", "GLOBAL")
 	for _, n := range names {
 		sys := "NO"
 		if c.Remotes[n].System {

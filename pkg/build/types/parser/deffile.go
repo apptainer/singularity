@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -131,51 +132,103 @@ func getSectionName(line string) string {
 	return lineSplit[0]
 }
 
-// parseTokenSection splits the token into maximum 2 strings separated by a newline,
-// and then inserts the section into the sections map
-//
-func parseTokenSection(tok string, sections map[string]string) error {
+// parseTokenSection into appropriate components to be placed into a types.Script struct
+func parseTokenSection(tok string, sections map[string]*types.Script, files *[]types.Files) error {
 	split := strings.SplitN(tok, "\n", 2)
 	if len(split) != 2 {
-		return fmt.Errorf("Section %v: Could not be split into section name and body", split[0])
+		return fmt.Errorf("section %v: could not be split into section name and body", split[0])
 	}
 
 	key := getSectionName(split[0])
+
+	// parse files differently to allow multiple files sections
+	if key == "files" {
+		f := types.Files{}
+		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 2)
+		if len(sectionSplit) == 2 {
+			f.Args = sectionSplit[1]
+		}
+
+		// Files are parsed as a map[string]string
+		filesSections := strings.TrimSpace(split[1])
+		subs := strings.Split(filesSections, "\n")
+		for _, line := range subs {
+			if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
+				continue
+			}
+			var src, dst string
+			lineSubs := strings.SplitN(line, " ", 2)
+			if len(lineSubs) < 2 {
+				src = strings.TrimSpace(lineSubs[0])
+				dst = ""
+			} else {
+				src = strings.TrimSpace(lineSubs[0])
+				dst = strings.TrimSpace(lineSubs[1])
+			}
+			f.Files = append(f.Files, types.FileTransport{Src: src, Dst: dst})
+		}
+
+		// look through existing files and append to them if they already exist
+		for i, ef := range *files {
+			if ef.Args == f.Args {
+				ef.Files = append(ef.Files, f.Files...)
+				// replace old file struct with newly appended one
+				(*files)[i] = ef
+				return nil
+			}
+		}
+
+		*files = append(*files, f)
+		return nil
+	}
+
 	if appSections[key] {
 		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 3)
 		if len(sectionSplit) < 2 {
-			return fmt.Errorf("App Section %v: Could not be split into section name and app name", sectionSplit[0])
+			return fmt.Errorf("app section %v: could not be split into section name and app name", sectionSplit[0])
 		}
 
 		key = strings.Join(sectionSplit[0:2], " ")
+		// create app script pbject to populate
+		if _, ok := sections[key]; !ok {
+			sections[key] = &types.Script{}
+		}
+	} else {
+		// create section script object if its a non-standard section
+		if _, ok := sections[key]; !ok {
+			sections[key] = &types.Script{}
+		}
+		sectionSplit := strings.SplitN(strings.TrimLeft(split[0], "%"), " ", 2)
+		if len(sectionSplit) == 2 {
+			sections[key].Args = sectionSplit[1]
+		}
 	}
 
-	sections[key] += split[1]
-
+	sections[key].Script += split[1]
 	return nil
 }
 
 func doSections(s *bufio.Scanner, d *types.Definition) error {
-	sectionsMap := make(map[string]string)
-
+	sectionsMap := make(map[string]*types.Script)
+	files := []types.Files{}
 	tok := strings.TrimSpace(s.Text())
 
 	// skip initial token parsing if it is empty after trimming whitespace
 	if tok != "" {
-		//check if first thing parsed is a header/comment or just a section
+		// check if first thing parsed is a header/comment or just a section
 		if tok[0] != '%' {
 			if err := doHeader(tok, d); err != nil {
-				return fmt.Errorf("failed to parse DefFile header: %v", err)
+				return fmt.Errorf("failed to parse deffile header: %v", err)
 			}
 		} else {
-			//this is a section
-			if err := parseTokenSection(tok, sectionsMap); err != nil {
+			// this is a section
+			if err := parseTokenSection(tok, sectionsMap, &files); err != nil {
 				return err
 			}
 		}
 	}
 
-	//parse remaining sections while scanner can advance
+	// parse remaining sections while scanner can advance
 	for s.Scan() {
 		if err := s.Err(); err != nil {
 			return err
@@ -184,7 +237,7 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		tok := s.Text()
 
 		// Parse each token -> section
-		if err := parseTokenSection(tok, sectionsMap); err != nil {
+		if err := parseTokenSection(tok, sectionsMap, &files); err != nil {
 			return err
 		}
 	}
@@ -193,36 +246,21 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 		return err
 	}
 
-	return populateDefinition(sectionsMap, d)
+	return populateDefinition(sectionsMap, &files, d)
 }
 
-func populateDefinition(sections map[string]string, d *types.Definition) (err error) {
-	// Files are parsed as a map[string]string
-	filesSections := strings.TrimSpace(sections["files"])
-	subs := strings.Split(filesSections, "\n")
-	var files []types.FileTransport
-
-	for _, line := range subs {
-
-		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
-			continue
+func populateDefinition(sections map[string]*types.Script, files *[]types.Files, d *types.Definition) (err error) {
+	// initialize standard sections if not already created
+	// this function relies on standard sections being initialized in the map
+	for section := range validSections {
+		if _, ok := sections[section]; !ok {
+			sections[section] = &types.Script{}
 		}
-		var src, dst string
-		lineSubs := strings.SplitN(line, " ", 2)
-		if len(lineSubs) < 2 {
-			src = strings.TrimSpace(lineSubs[0])
-			dst = ""
-		} else {
-			src = strings.TrimSpace(lineSubs[0])
-			dst = strings.TrimSpace(lineSubs[1])
-		}
-
-		files = append(files, types.FileTransport{Src: src, Dst: dst})
 	}
 
 	// labels are parsed as a map[string]string
-	labelsSections := strings.TrimSpace(sections["labels"])
-	subs = strings.Split(labelsSections, "\n")
+	labelsSections := strings.TrimSpace(sections["labels"].Script)
+	subs := strings.Split(labelsSections, "\n")
 	labels := make(map[string]string)
 
 	for _, line := range subs {
@@ -244,20 +282,20 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 
 	d.ImageData = types.ImageData{
 		ImageScripts: types.ImageScripts{
-			Help:        sections["help"],
-			Environment: sections["environment"],
-			Runscript:   sections["runscript"],
-			Test:        sections["test"],
-			Startscript: sections["startscript"],
+			Help:        *sections["help"],
+			Environment: *sections["environment"],
+			Runscript:   *sections["runscript"],
+			Test:        *sections["test"],
+			Startscript: *sections["startscript"],
 		},
 		Labels: labels,
 	}
-	d.BuildData.Files = files
+	d.BuildData.Files = *files
 	d.BuildData.Scripts = types.Scripts{
-		Pre:   sections["pre"],
-		Setup: sections["setup"],
-		Post:  sections["post"],
-		Test:  sections["test"],
+		Pre:   *sections["pre"],
+		Setup: *sections["setup"],
+		Post:  *sections["post"],
+		Test:  *sections["test"],
 	}
 
 	// remove standard sections from map
@@ -267,7 +305,11 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 
 	// add remaining sections to CustomData and throw error for invalid section(s)
 	if len(sections) != 0 {
-		d.CustomData = sections
+		// take remaining sections and store them as custom data
+		d.CustomData = make(map[string]string)
+		for k := range sections {
+			d.CustomData[k] = sections[k].Script
+		}
 		var keys []string
 		for k := range sections {
 			sectionName := strings.Split(k, " ")
@@ -280,12 +322,9 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 		}
 	}
 
-	// make sure information was valid by checking if definition is not equal to an empty one
-	emptyDef := new(types.Definition)
-	// labels is always initialized
-	emptyDef.Labels = make(map[string]string)
-	if reflect.DeepEqual(d, emptyDef) {
-		return fmt.Errorf("parsed definition did not have any valid information")
+	// return error if no useful information was parsed into the struct
+	if isEmpty(*d) {
+		return errEmptyDefinition
 	}
 
 	return err
@@ -294,7 +333,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 func doHeader(h string, d *types.Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
-	d.Header = make(map[string]string)
+	header := make(map[string]string)
 
 	for _, line := range toks {
 		// skip empty or comment lines
@@ -314,9 +353,13 @@ func doHeader(h string, d *types.Definition) (err error) {
 		if _, ok := validHeaders[key]; !ok {
 			return fmt.Errorf("invalid header keyword found: %s", key)
 		}
-		d.Header[key] = val
+		header[key] = val
 	}
 
+	// only set header if some values are found
+	if len(header) != 0 {
+		d.Header = header
+	}
 	return
 }
 
@@ -326,7 +369,7 @@ func doHeader(h string, d *types.Definition) (err error) {
 func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	d.Raw, err = ioutil.ReadAll(r)
 	if err != nil {
-		return d, fmt.Errorf("While attempting to read in definition: %v", err)
+		return d, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
 
 	s := bufio.NewScanner(bytes.NewReader(d.Raw))
@@ -350,12 +393,68 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 	return
 }
 
+// All receives a reader from a definition file
+// and parses it into a slice of Definition structs or returns error if
+// an error is encounter while parsing
+func All(r io.Reader) ([]types.Definition, error) {
+	var stages []types.Definition
+
+	raw, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("while attempting to read in definition: %v", err)
+	}
+
+	// copy raw data for parsing
+	buf := raw
+	rgx := regexp.MustCompile(`(?mi)^bootstrap:`)
+	i := rgx.FindAllIndex(buf, -1)
+
+	splitBuf := [][]byte{}
+	// split up buffer based on index of delimiter
+	for len(i) > 0 {
+		index := i[len(i)-1][0]
+		splitBuf = append([][]byte{buf[index:]}, splitBuf...)
+		i = i[:len(i)-1]
+		buf = buf[:index]
+	}
+
+	// add anything remaining above first found Bootstrap
+	// handles case of no header
+	splitBuf = append([][]byte{buf[:]}, splitBuf...)
+
+	if len(splitBuf) == 0 {
+		return nil, errEmptyDefinition
+	}
+
+	for _, stage := range splitBuf {
+		if len(stage) == 0 {
+			continue
+		}
+
+		d, err := ParseDefinitionFile(bytes.NewReader(stage))
+		if err != nil {
+			if err == errEmptyDefinition {
+				continue
+			}
+			return nil, err
+		}
+
+		stages = append(stages, d)
+	}
+
+	// set raw of last stage to be entire specification
+	stages[len(stages)-1].Raw = raw
+
+	return stages, nil
+}
+
 // IsValidDefinition returns whether or not the given file is a valid definition
 func IsValidDefinition(source string) (valid bool, err error) {
 	defFile, err := os.Open(source)
 	if err != nil {
 		return false, err
 	}
+	defer defFile.Close()
 
 	if s, err := defFile.Stat(); err != nil {
 		return false, fmt.Errorf("unable to stat file: %v", err)
@@ -363,14 +462,27 @@ func IsValidDefinition(source string) (valid bool, err error) {
 		return false, nil
 	}
 
-	defer defFile.Close()
-
 	_, err = ParseDefinitionFile(defFile)
 	if err != nil {
 		return false, err
 	}
 
 	return true, nil
+}
+
+// isEmpty returns a bool indicating whether the given definition contains no parsed information
+// due to the unique initialization state of the empty definition for this check, it should only
+// be used by populateDefinition()
+func isEmpty(d types.Definition) bool {
+	// clear raw data for comparison
+	d.Raw = nil
+
+	// initialize empty definition fully
+	emptyDef := types.Definition{}
+	emptyDef.Labels = make(map[string]string)
+	emptyDef.BuildData.Files = make([]types.Files, 0)
+
+	return reflect.DeepEqual(d, emptyDef)
 }
 
 // validSections just contains a list of all the valid sections a definition file
@@ -411,4 +523,5 @@ var validHeaders = map[string]bool{
 	"library":    true,
 	"registry":   true,
 	"namespace":  true,
+	"stage":      true,
 }
