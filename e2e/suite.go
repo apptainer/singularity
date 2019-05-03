@@ -18,6 +18,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/docker"
+	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/instance"
 	"github.com/sylabs/singularity/e2e/pull"
@@ -98,4 +99,6 @@ func Run(t *testing.T) {
 	t.Run("REMOTE", remote.RunE2ETests)
 
 	t.Run("INSTANCE", instance.RunE2ETests)
+
+	t.Run("HELP", help.RunE2ETests)
 }
