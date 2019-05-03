@@ -31,7 +31,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-const defaultShell = "/bin/bash"
+const defaultShell = "/bin/sh"
 
 // Convert an ELF architecture into a GOARCH-style string. This is not an
 // exhaustive list, so there is a default for rare cases. Adapted from
