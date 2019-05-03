@@ -96,6 +96,7 @@ func Run(t *testing.T) {
 	t.Run("DOCKER", docker.RunE2ETests)
 
 	t.Run("PULL", pull.RunE2ETests)
+<<<<<<< HEAD
 
 	t.Run("REMOTE", remote.RunE2ETests)
 
@@ -103,5 +104,7 @@ func Run(t *testing.T) {
 
 	t.Run("HELP", help.RunE2ETests)
 
+=======
+>>>>>>> f90be5f1241517fe6c9fe77b89648c7aeadc5844
 	t.Run("ENV", singularityenv.RunE2ETests)
 }
