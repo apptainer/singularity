@@ -22,9 +22,8 @@ import (
 
 type testingEnv struct {
 	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+	CmdPath string `split_words:"true"`
+	TestDir string `split_words:"true"`
 }
 
 var testenv testingEnv
@@ -154,7 +153,7 @@ func testDockerPulls(t *testing.T) {
 			b, fullPath, err := imagePull(tt.srcURI, tt.imageName, tt.imagePath, tt.force)
 			switch {
 			case tt.expectSuccess && err == nil:
-				e2e.ImageVerify(t, testenv.CmdPath, fullPath, false, testenv.RunDisabled)
+				e2e.ImageVerify(t, testenv.CmdPath, fullPath)
 			case !tt.expectSuccess && err != nil:
 				// PASS: expecting failure, failed
 			case tt.expectSuccess && err != nil:
@@ -274,7 +273,7 @@ func testDockerWhiteoutSymlink(t *testing.T) {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
 	}
-	e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+	e2e.ImageVerify(t, testenv.CmdPath, imagePath)
 }
 
 func testDockerDefFile(t *testing.T) {
@@ -336,7 +335,7 @@ func testDockerDefFile(t *testing.T) {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %s", err)
 			}
-			e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+			e2e.ImageVerify(t, testenv.CmdPath, imagePath)
 		}))
 	}
 }
@@ -426,7 +425,7 @@ func testDockerRegistry(t *testing.T) {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				e2e.ImageVerify(t, testenv.CmdPath, imagePath, false, testenv.RunDisabled)
+				e2e.ImageVerify(t, testenv.CmdPath, imagePath)
 				//imageVerify(t, imagePath, false)
 			} else if !tt.expectSuccess && (err == nil) {
 				t.Log(string(b))

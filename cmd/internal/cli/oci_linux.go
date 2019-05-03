@@ -140,6 +140,7 @@ func init() {
 	cmdManager.RegisterSubCmd(OciCmd, OciRunCmd)
 	cmdManager.RegisterSubCmd(OciCmd, OciDeleteCmd)
 	cmdManager.RegisterSubCmd(OciCmd, OciKillCmd)
+	cmdManager.RegisterSubCmd(OciCmd, OciStateCmd)
 	cmdManager.RegisterSubCmd(OciCmd, OciAttachCmd)
 	cmdManager.RegisterSubCmd(OciCmd, OciExecCmd)
 	cmdManager.RegisterSubCmd(OciCmd, OciUpdateCmd)
@@ -161,6 +162,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&ociKillSignalFlag, OciKillCmd)
 	cmdManager.RegisterFlagForCmd(&ociKillTimeoutFlag, OciKillCmd)
 	cmdManager.RegisterFlagForCmd(&ociUpdateFromFileFlag, OciUpdateCmd)
+	cmdManager.RegisterFlagForCmd(&ociSyncSocketFlag, OciStateCmd)
 }
 
 // OciCreateCmd represents oci create command.
