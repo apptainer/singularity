@@ -32,10 +32,10 @@ import (
 )
 
 // PublicKeyType is the armor type for a PGP public key.
-var PublicKeyType = "PGP PUBLIC KEY BLOCK"
+const PublicKeyType = "PGP PUBLIC KEY BLOCK"
 
 // PrivateKeyType is the armor type for a PGP private key.
-var PrivateKeyType = "PGP PRIVATE KEY BLOCK"
+const PrivateKeyType = "PGP PRIVATE KEY BLOCK"
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
   1) View configured remotes using "singularity remote list"
@@ -741,7 +741,7 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		var keyText string
 		keyText, err = serializePrivateEntity(entityToExport, openpgp.PrivateKeyType)
 		if err != nil {
-			sylog.Fatalf("Failed to read private key ASCII armored format: %s\n", err)
+			return fmt.Errorf("failed to read ASCII key format: %s", err)
 		}
 		file.WriteString(keyText)
 	}
@@ -839,7 +839,7 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 				}
 			}
 		} else {
-			sylog.Fatalf("Could not import the private key: wrong format")
+			return fmt.Errorf("Corrupted key, unable to recover data")
 		}
 
 		// Get a new password for the key
