@@ -221,6 +221,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildAllowUnsignedFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildLocalVerifyFlag, BuildCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
