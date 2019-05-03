@@ -94,12 +94,13 @@ var singQuietFlag = cmdline.Flag{
 	Usage:        "suppress normal output",
 }
 
-// --verbose
+// -v|--verbose
 var singVerboseFlag = cmdline.Flag{
 	ID:           "singVerboseFlag",
 	Value:        &verbose,
 	DefaultValue: false,
 	Name:         "verbose",
+	ShortHand:    "v",
 	Usage:        "print additional information",
 }
 
