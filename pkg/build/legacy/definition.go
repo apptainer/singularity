@@ -11,57 +11,12 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	buildclient "github.com/sylabs/scs-build-client/client"
 )
 
-// Definition describes how to build an image.
-type Definition struct {
-	Header     map[string]string `json:"header"`
-	ImageData  `json:"imageData"`
-	BuildData  Data              `json:"buildData"`
-	CustomData map[string]string `json:"customData"`
-	Raw        []byte            `json:"raw"`
-}
-
-// ImageData contains any scripts, metadata, etc... that needs to be
-// present in some from in the final built image
-type ImageData struct {
-	Metadata     []byte            `json:"metadata"`
-	Labels       map[string]string `json:"labels"`
-	ImageScripts `json:"imageScripts"`
-}
-
-// ImageScripts contains scripts that are used after build time.
-type ImageScripts struct {
-	Help        string `json:"help"`
-	Environment string `json:"environment"`
-	Runscript   string `json:"runScript"`
-	Test        string `json:"test"`
-	Startscript string `json:"startScript"`
-}
-
-// Data contains any scripts, metadata, etc... that the Builder may
-// need to know only at build time to build the image
-type Data struct {
-	Files   []FileTransport `json:"files"`
-	Scripts `json:"buildScripts"`
-}
-
-// FileTransport holds source and destination information of files to copy into the container
-type FileTransport struct {
-	Src string `json:"source"`
-	Dst string `json:"destination"`
-}
-
-// Scripts defines scripts that are used at build time.
-type Scripts struct {
-	Pre   string `json:"pre"`
-	Setup string `json:"setup"`
-	Post  string `json:"post"`
-	Test  string `json:"test"`
-}
-
 // NewDefinitionFromURI crafts a new Definition given a URI
-func NewDefinitionFromURI(uri string) (d Definition, err error) {
+func NewDefinitionFromURI(uri string) (d buildclient.Definition, err error) {
 	var u []string
 	if strings.Contains(uri, "://") {
 		u = strings.SplitN(uri, "://", 2)
@@ -71,7 +26,7 @@ func NewDefinitionFromURI(uri string) (d Definition, err error) {
 		return d, fmt.Errorf("build URI must start with prefix:// or prefix: ")
 	}
 
-	d = Definition{
+	d = buildclient.Definition{
 		Header: map[string]string{
 			"bootstrap": u[0],
 			"from":      u[1],
@@ -86,7 +41,7 @@ func NewDefinitionFromURI(uri string) (d Definition, err error) {
 }
 
 // NewDefinitionFromJSON creates a new Definition using the supplied JSON.
-func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
+func NewDefinitionFromJSON(r io.Reader) (d buildclient.Definition, err error) {
 	decoder := json.NewDecoder(r)
 
 	for {
@@ -117,7 +72,7 @@ func writeSectionIfExists(w io.Writer, ident string, s string) {
 	}
 }
 
-func writeFilesIfExists(w io.Writer, f []FileTransport) {
+func writeFilesIfExists(w io.Writer, f []buildclient.FileTransport) {
 
 	if len(f) > 0 {
 
@@ -157,7 +112,7 @@ func writeLabelsIfExists(w io.Writer, l map[string]string) {
 
 // populateRaw is a helper func to output a Definition struct
 // into a definition file.
-func populateRaw(d *Definition, w io.Writer) {
+func populateRaw(d *buildclient.Definition, w io.Writer) {
 	for k, v := range d.Header {
 		w.Write([]byte(k))
 		w.Write([]byte(": "))

@@ -17,7 +17,7 @@ import (
 	"reflect"
 	"strings"
 
-	types "github.com/sylabs/singularity/pkg/build/legacy"
+	buildclient "github.com/sylabs/scs-build-client/client"
 )
 
 var (
@@ -154,7 +154,7 @@ func parseTokenSection(tok string, sections map[string]string) error {
 	return nil
 }
 
-func doSections(s *bufio.Scanner, d *types.Definition) error {
+func doSections(s *bufio.Scanner, d *buildclient.Definition) error {
 	sectionsMap := make(map[string]string)
 
 	tok := strings.TrimSpace(s.Text())
@@ -195,11 +195,11 @@ func doSections(s *bufio.Scanner, d *types.Definition) error {
 	return populateDefinition(sectionsMap, d)
 }
 
-func populateDefinition(sections map[string]string, d *types.Definition) (err error) {
+func populateDefinition(sections map[string]string, d *buildclient.Definition) (err error) {
 	// Files are parsed as a map[string]string
 	filesSections := strings.TrimSpace(sections["files"])
 	subs := strings.Split(filesSections, "\n")
-	var files []types.FileTransport
+	var files []buildclient.FileTransport
 
 	for _, line := range subs {
 
@@ -216,7 +216,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 			dst = strings.TrimSpace(lineSubs[1])
 		}
 
-		files = append(files, types.FileTransport{Src: src, Dst: dst})
+		files = append(files, buildclient.FileTransport{Src: src, Dst: dst})
 	}
 
 	// labels are parsed as a map[string]string
@@ -241,8 +241,8 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 		labels[key] = val
 	}
 
-	d.ImageData = types.ImageData{
-		ImageScripts: types.ImageScripts{
+	d.ImageData = buildclient.ImageData{
+		ImageScripts: buildclient.ImageScripts{
 			Help:        sections["help"],
 			Environment: sections["environment"],
 			Runscript:   sections["runscript"],
@@ -252,7 +252,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 		Labels: labels,
 	}
 	d.BuildData.Files = files
-	d.BuildData.Scripts = types.Scripts{
+	d.BuildData.Scripts = buildclient.Scripts{
 		Pre:   sections["pre"],
 		Setup: sections["setup"],
 		Post:  sections["post"],
@@ -280,7 +280,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 	}
 
 	// make sure information was valid by checking if definition is not equal to an empty one
-	emptyDef := new(types.Definition)
+	emptyDef := new(buildclient.Definition)
 	// labels is always initialized
 	emptyDef.Labels = make(map[string]string)
 	if reflect.DeepEqual(d, emptyDef) {
@@ -290,7 +290,7 @@ func populateDefinition(sections map[string]string, d *types.Definition) (err er
 	return err
 }
 
-func doHeader(h string, d *types.Definition) (err error) {
+func doHeader(h string, d *buildclient.Definition) (err error) {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	d.Header = make(map[string]string)
@@ -322,7 +322,7 @@ func doHeader(h string, d *types.Definition) (err error) {
 // ParseDefinitionFile receives a reader from a definition file
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
-func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
+func ParseDefinitionFile(r io.Reader) (d buildclient.Definition, err error) {
 	d.Raw, err = ioutil.ReadAll(r)
 	if err != nil {
 		return d, fmt.Errorf("while attempting to read in definition: %v", err)

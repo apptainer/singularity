@@ -24,6 +24,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 	types "github.com/sylabs/singularity/pkg/build/legacy"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	buildclient "github.com/sylabs/scs-build-client/client"
+
 )
 
 const (
@@ -53,7 +55,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRef string) types.ResponseData {
+func newResponse(m *mockService, buildID string, d buildclient.Definition, libraryRef string) buildclient.BuildInfo {
 	wsURL := url.URL{
 		Scheme: "ws",
 		Host:   m.httpAddr,
@@ -67,7 +69,7 @@ func newResponse(m *mockService, id bson.ObjectId, d types.Definition, libraryRe
 		libraryRef = "library://user/collection/image"
 	}
 
-	return types.ResponseData{
+	return buildclient.BuildInfo{
 		ID:         id,
 		Definition: d,
 		WSURL:      wsURL.String(),

@@ -15,6 +15,7 @@ import (
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
+	buildclient "github.com/sylabs/scs-build-client/client"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -249,7 +250,7 @@ func checkBuildTarget(path string, update bool) bool {
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
 // it uses a different version the the definition struct and parser
-func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
+func definitionFromSpec(spec string) (def buildclient.Definition, err error) {
 
 	// Try spec as URI first
 	def, err = legacytypes.NewDefinitionFromURI(spec)
@@ -281,7 +282,7 @@ func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 
 	// File exists and does NOT contain a valid definition
 	// local image or sandbox
-	def = legacytypes.Definition{
+	def = buildclient.Definition{
 		Header: map[string]string{
 			"bootstrap": "localimage",
 			"from":      spec,
