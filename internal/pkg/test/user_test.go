@@ -7,13 +7,11 @@ package test
 
 import (
 	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 func TestGetCurrentUser(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
+	DropPrivilege(t)
+	defer ResetPrivilege(t)
 
 	tests := []struct {
 		name      string
