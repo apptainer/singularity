@@ -17,6 +17,8 @@ func TestOciBlob(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	expectedDefaultCache, expectedCustomCache := getDefaultCacheValues(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -25,23 +27,27 @@ func TestOciBlob(t *testing.T) {
 		{
 			name:     "Default OCI blob",
 			env:      "",
-			expected: filepath.Join(cacheDefault, "oci"),
+			expected: filepath.Join(expectedDefaultCache, "oci"),
 		},
 		{
 			name:     "Custom OCI blob",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci"),
+			expected: filepath.Join(expectedCustomCache, "oci"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			newCache := createTempCache(t)
+			if newCache == nil {
+				t.Fatal("failed to create temporary cache")
+			}
+			defer newCache.Clean()
 
-			if r := OciBlob(); r != tt.expected {
+			if r, err := newCache.OciBlob(); err != nil || r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -52,6 +58,8 @@ func TestOciTemp(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	expectedDefaultCache, expectedCustomCache := getDefaultCacheValues(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -60,23 +68,27 @@ func TestOciTemp(t *testing.T) {
 		{
 			name:     "Default OCI temp",
 			env:      "",
-			expected: filepath.Join(cacheDefault, "oci-tmp"),
+			expected: filepath.Join(expectedDefaultCache, "oci-tmp"),
 		},
 		{
 			name:     "Custom OCI temp",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci-tmp"),
+			expected: filepath.Join(expectedCustomCache, "oci-tmp"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			newCache := createTempCache(t)
+			if newCache == nil {
+				t.Fatal("failed to create temporary cache")
+			}
+			defer newCache.Clean()
 
-			if r := OciTemp(); r != tt.expected {
+			if r, err := newCache.OciTemp(); err != nil || r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -119,9 +131,15 @@ func TestOciTempExists(t *testing.T) {
 		},
 	}
 
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := OciTempExists(test.sum, test.path)
+			exists, err := newCache.OciTempExists(test.sum, test.path)
 			if err != nil {
 				t.Fatalf("OciTempExists() failed: %s\n", err)
 			}

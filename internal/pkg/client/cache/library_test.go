@@ -21,6 +21,11 @@ func TestLibrary(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	expectedDefaultCache, expectedCustomCache := getDefaultCacheValues(t)
+
+	expectedDefaultLibCache := filepath.Join(expectedDefaultCache, "library")
+	expectedCustomLibCache := filepath.Join(expectedCustomCache, "library")
+
 	tests := []struct {
 		name     string
 		env      string
@@ -29,23 +34,27 @@ func TestLibrary(t *testing.T) {
 		{
 			name:     "Default Library",
 			env:      "",
-			expected: filepath.Join(cacheDefault, "library"),
+			expected: expectedDefaultLibCache,
 		},
 		{
 			name:     "Custom Library",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "library"),
+			expected: expectedCustomLibCache,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			newCache := createTempCache(t)
+			if newCache == nil {
+				t.Fatal("failed to create temporary cache")
+			}
+			defer newCache.Clean()
 
-			if r := Library(); r != tt.expected {
+			if r, err := newCache.Library(); err != nil || r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -55,6 +64,17 @@ func TestLibrary(t *testing.T) {
 func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	newCache := CreateTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
+	expectedCache, err := newCache.Library()
+	if err != nil {
+		t.Fatalf("failed to get library cache's path: %s", err)
+	}
 
 	// LibraryImage just return a string and there is no definition of what
 	// could be a bad string.
@@ -68,14 +88,14 @@ func TestLibraryImage(t *testing.T) {
 			name:     "General case",
 			sum:      validSHASum,
 			path:     validPath,
-			expected: Library(),
+			expected: expectedCache,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			path := LibraryImage(tt.sum, tt.path)
-			if path != tt.expected {
+			path, err := newCache.LibraryImage(tt.sum, tt.path)
+			if err != nil || path != tt.expected {
 				t.Errorf("unexpected result: %s (expected %s)", path, tt.expected)
 			}
 		})
@@ -86,8 +106,11 @@ func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	newCache := CreateTempCache(t)
+	defer newCache.Clean()
+
 	// Invalid cases
-	_, err := LibraryImageExists("", "")
+	_, err := newCache.LibraryImageExists("", "")
 	if err == nil {
 		t.Fatalf("LibraryImageExists() returned true for invalid data:  %s\n", err)
 	}
@@ -118,7 +141,7 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 
 	// Invalid case with a valid image
-	_, err = LibraryImageExists("", filename)
+	_, err = newCache.LibraryImageExists("", filename)
 	if err != nil {
 		t.Fatalf("image reported as non-existing: %s\n", err)
 	}
@@ -131,7 +154,7 @@ func TestLibraryImageExists(t *testing.T) {
 		t.Fatalf("cannot get image's hash: %s\n", err)
 	}
 
-	exists, err := LibraryImageExists(hash, filename)
+	exists, err := newCache.LibraryImageExists(hash, filename)
 	if err != nil {
 		t.Fatalf("error while checking if image exists: %s\n", err)
 	}

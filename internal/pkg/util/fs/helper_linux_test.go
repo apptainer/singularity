@@ -14,6 +14,50 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+func TestExists(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// Create a valid temporary file to simulate a valid case
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatal("failed to create temporary file")
+	}
+	validPath := f.Name()
+	f.Close()
+	defer os.Remove(validPath)
+
+	tests := []struct {
+		name      string
+		path      string
+		shallPass bool
+	}{
+		{
+			name:      "not existing file",
+			path:      "/just/a/path/not/pointing/at/anything",
+			shallPass: false,
+		},
+		{
+			name:      "valid path",
+			path:      validPath,
+			shallPass: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists, err := Exists(tt.path)
+			if tt.shallPass == true && (exists == false || err != nil) {
+				t.Fatal("valid case failed")
+			}
+
+			if tt.shallPass == false && (exists == true || err == nil) {
+				t.Fatal("invalid case failed")
+			}
+		})
+	}
+}
+
 func TestIsFile(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)

@@ -7,32 +7,16 @@ package cache
 
 import (
 	"os"
-	"os/user"
-	"path"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
-
-var cacheDefault string
-
-const cacheCustom = "/tmp/customcachedir"
-
-func TestMain(m *testing.M) {
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Errorf("Couldn't determine user home directory: %v", err)
-		os.Exit(1)
-	}
-	cacheDefault = path.Join(usr.HomeDir, RootDefault)
-
-	os.Exit(m.Run())
-}
 
 func TestRoot(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	expectedDefaultRoot, expectedCustomRoot := getDefaultCacheValues(t)
 
 	tests := []struct {
 		name     string
@@ -42,23 +26,27 @@ func TestRoot(t *testing.T) {
 		{
 			name:     "Default root",
 			env:      "",
-			expected: cacheDefault,
+			expected: expectedDefaultRoot,
 		},
 		{
 			name:     "Custom root",
 			env:      cacheCustom,
-			expected: cacheCustom,
+			expected: expectedCustomRoot,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			newCache := createTempCache(t)
+			if newCache == nil {
+				t.Fatal("failed to create temporary cache")
+			}
+			defer newCache.Clean()
 
-			if r := Root(); r != tt.expected {
+			if r := newCache.Root; r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})

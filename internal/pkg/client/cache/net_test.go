@@ -17,6 +17,8 @@ func TestNet(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	expectedDefaultCache, expectedCustomCache := getDefaultCacheValues(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -25,23 +27,27 @@ func TestNet(t *testing.T) {
 		{
 			name:     "Default Net",
 			env:      "",
-			expected: filepath.Join(cacheDefault, "net"),
+			expected: filepath.Join(expectedDefaultCache, "net"),
 		},
 		{
 			name:     "Custom Net",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "net"),
+			expected: filepath.Join(expectedCustomCache, "net"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			newCache := createTempCache(t)
+			if newCache == nil {
+				t.Fatal("failed to create temporary cache")
+			}
+			defer newCache.Clean()
 
-			if r := Net(); r != tt.expected {
+			if r, err := newCache.Net(); err != nil || r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -84,9 +90,15 @@ func TestNetImageExists(t *testing.T) {
 		},
 	}
 
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := NetImageExists(test.sum, test.path)
+			exists, err := newCache.NetImageExists(test.sum, test.path)
 			if err != nil {
 				t.Fatal("NetImageExists() failed")
 			}

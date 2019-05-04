@@ -317,9 +317,8 @@ func TestAuthorizedOwner(t *testing.T) {
 
 	// We test with the current username, note that because we are under
 	// test.DropPrivilege, this needs to be done a very specific way.
-	uid := os.Getuid()
-	me, err := user.LookupId(strconv.Itoa(uid))
-	if err != nil {
+	me, err := test.GetCurrentUser(t)
+	if me == nil || err != nil {
 		t.Fatalf("cannot get current user name for testing purposes: %s", err)
 	}
 	localUser := ownerGroupTest{

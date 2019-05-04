@@ -17,6 +17,8 @@ func TestShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	expectedDefaultCache, expectedCustomCache := getDefaultCacheValues(t)
+
 	tests := []struct {
 		name     string
 		env      string
@@ -25,23 +27,27 @@ func TestShub(t *testing.T) {
 		{
 			name:     "Default Shub",
 			env:      "",
-			expected: filepath.Join(cacheDefault, "shub"),
+			expected: filepath.Join(expectedDefaultCache, "shub"),
 		},
 		{
 			name:     "Custom Shub",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "shub"),
+			expected: filepath.Join(expectedCustomCache, "shub"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			newCache := createTempCache(t)
+			if newCache == nil {
+				t.Fatal("failed to create temporary cache")
+			}
+			defer newCache.Clean()
 
-			if r := Shub(); r != tt.expected {
+			if r, err := newCache.Shub(); err != nil || r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -84,9 +90,15 @@ func TestShubImageExists(t *testing.T) {
 		},
 	}
 
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := ShubImageExists(test.sum, test.path)
+			exists, err := newCache.ShubImageExists(test.sum, test.path)
 			if err != nil {
 				t.Fatal("ShubImageExists() failed")
 			}
