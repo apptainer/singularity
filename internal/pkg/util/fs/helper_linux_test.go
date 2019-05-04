@@ -51,7 +51,7 @@ func TestExists(t *testing.T) {
 				t.Fatal("valid case failed")
 			}
 
-			if tt.shallPass == false && (exists == true || err == nil) {
+			if tt.shallPass == false && (exists == true && err == nil) {
 				t.Fatal("invalid case failed")
 			}
 		})
