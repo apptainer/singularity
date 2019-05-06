@@ -268,7 +268,7 @@ var InspectCmd = &cobra.Command{
 		a := []string{"/bin/sh", "-c", ""}
 
 		if apps {
-			sylog.Debugf("Inspecting apps in container")
+			sylog.Debugf("Listing all apps in container")
 			a[2] += listAppsCommand
 		}
 
@@ -355,7 +355,7 @@ var InspectCmd = &cobra.Command{
 			fmt.Println(string(jsonObj))
 		} else {
 			if inspectObj.Attributes.Apps != "" {
-				fmt.Printf("==Apps==\n")
+				fmt.Printf("==apps==\n")
 				fmt.Printf("%s\n", inspectObj.Attributes.Apps)
 			}
 			if inspectObj.Attributes.Helpfile != "" {
