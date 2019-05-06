@@ -39,7 +39,7 @@ var (
 	environment bool
 	helpfile    bool
 	jsonfmt     bool
-	apps        bool
+	listApps    bool
 )
 
 type inspectAttributes struct {
@@ -60,7 +60,7 @@ type inspectFormat struct {
 // -d|--deffile
 var inspectAppsListFlag = cmdline.Flag{
 	ID:           "inspectAppsListFlag",
-	Value:        &apps,
+	Value:        &listApps,
 	DefaultValue: false,
 	Name:         "list-apps",
 	ShortHand:    "",
@@ -242,6 +242,11 @@ func getAppCheck(appName string) string {
 	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
 }
 
+// returns true if flags for other forms of information are unset
+func defaultToLabels() bool {
+	return !(helpfile || deffile || runscript || testfile || environment || listApps)
+}
+
 // InspectCmd represents the 'inspect' command
 // TODO: This should be in its own package, not cli
 var InspectCmd = &cobra.Command{
@@ -267,7 +272,7 @@ var InspectCmd = &cobra.Command{
 
 		a := []string{"/bin/sh", "-c", ""}
 
-		if apps {
+		if listApps {
 			sylog.Debugf("Listing all apps in container")
 			a[2] += listAppsCommand
 		}
@@ -303,8 +308,8 @@ var InspectCmd = &cobra.Command{
 			a[2] += getEnvironmentCommand(AppName)
 		}
 
-		// Default to labels if nothing was appended
-		if labels || len(a[2]) == 0 {
+		// Default to labels if other flags are unset, excludes --app
+		if labels || defaultToLabels() {
 			sylog.Debugf("Inspection of labels selected.")
 			a[2] += getLabelsCommand(AppName)
 		}
