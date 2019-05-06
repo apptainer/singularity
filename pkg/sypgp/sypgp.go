@@ -833,13 +833,13 @@ func ImportPrivateKey(entity *openpgp.Entity) error {
 		// Check if the key is encrypted, if it is, decrypt it
 		if entity.PrivateKey != nil {
 			if entity.PrivateKey.Encrypted {
-				err = DecryptKey(newEntity, "Enter your old password : ")
+				err := DecryptKey(newEntity, "Enter your old password : ")
 				if err != nil {
 					return err
 				}
 			}
 		} else {
-			return fmt.Errorf("Corrupted key, unable to recover data")
+			return fmt.Errorf("corrupted key, unable to recover data")
 		}
 
 		// Get a new password for the key
@@ -937,11 +937,12 @@ func ImportKey(kpath string) error {
 
 	// Load the private key as an entitylist
 	pathEntityList, err := LoadKeyringFromFile(kpath)
-	pathEntityTypes := getTypesFromEntity(kpath)
-
 	if err != nil {
 		return fmt.Errorf("unable to get entity from: %s: %v", kpath, err)
 	}
+
+	pathEntityTypes := getTypesFromEntity(kpath)
+
 	for i, pathEntity := range pathEntityList {
 
 		if pathEntityTypes[i] == PrivateKeyType {
@@ -953,7 +954,6 @@ func ImportKey(kpath string) error {
 
 		}
 		if pathEntityTypes[i] == PublicKeyType {
-			// Hopfully its a public key :)
 			err := ImportPubKey(pathEntity)
 			if err != nil {
 				return err
