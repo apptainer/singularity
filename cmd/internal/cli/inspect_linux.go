@@ -29,6 +29,8 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
+const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
+
 var (
 	labels      bool
 	deffile     bool
@@ -37,9 +39,11 @@ var (
 	environment bool
 	helpfile    bool
 	jsonfmt     bool
+	apps        bool
 )
 
 type inspectAttributes struct {
+	Apps        string            `json:"apps"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Deffile     string            `json:"deffile,omitempty"`
 	Runscript   string            `json:"runscript,omitempty"`
@@ -51,6 +55,16 @@ type inspectAttributes struct {
 type inspectFormat struct {
 	Attributes inspectAttributes `json:"attributes"`
 	Type       string            `json:"type"`
+}
+
+// -d|--deffile
+var inspectAppsListFlag = cmdline.Flag{
+	ID:           "inspectAppsListFlag",
+	Value:        &apps,
+	DefaultValue: false,
+	Name:         "list-apps",
+	ShortHand:    "",
+	Usage:        "list all apps in a contianer",
 }
 
 // --app
@@ -151,6 +165,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
 	cmdManager.RegisterFlagForCmd(&inspectRunscriptFlag, InspectCmd)
 	cmdManager.RegisterFlagForCmd(&inspectTestFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectAppsListFlag, InspectCmd)
 }
 
 func getPathPrefix(appName string) string {
@@ -200,6 +215,8 @@ func getHelpCommand(appName string) string {
 
 func setAttribute(obj *inspectFormat, label string, value string) {
 	switch label {
+	case "apps":
+		obj.Attributes.Apps = value
 	case "deffile":
 		obj.Attributes.Deffile = value
 	case "test":
@@ -225,7 +242,8 @@ func getAppCheck(appName string) string {
 	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
 }
 
-// InspectCmd represents the build command
+// InspectCmd represents the 'inspect' command
+// TODO: This should be in its own package, not cli
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
@@ -236,7 +254,6 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// Sanity check
 		if _, err := os.Stat(args[0]); err != nil {
 			sylog.Fatalf("container not found: %s", err)
@@ -249,6 +266,11 @@ var InspectCmd = &cobra.Command{
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/sh", "-c", ""}
+
+		if apps {
+			sylog.Debugf("Listing all apps in container")
+			a[2] += listAppsCommand
+		}
 
 		// If AppName is given fail quickly (exit) if it doesn't exist
 		if AppName != "" {
@@ -332,6 +354,10 @@ var InspectCmd = &cobra.Command{
 			}
 			fmt.Println(string(jsonObj))
 		} else {
+			if inspectObj.Attributes.Apps != "" {
+				fmt.Printf("==apps==\n")
+				fmt.Printf("%s\n", inspectObj.Attributes.Apps)
+			}
 			if inspectObj.Attributes.Helpfile != "" {
 				fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
 			}
@@ -386,16 +412,16 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	//record from stdout and store as a string to return as the contents of the file?
+	// Record from stdout and store as a string to return as the contents of the file
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, cmd.Args)
+		sylog.Fatalf("Unable to exec command: %s: %s", err, cmd.Args)
 	}
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, b)
+		sylog.Fatalf("Unable to prossess command: %s: %s", err, b)
 	}
 
 	return string(b), nil
