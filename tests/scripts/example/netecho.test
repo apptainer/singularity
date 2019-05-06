@@ -1,7 +1,7 @@
 #!/singularity/test
 # net echo test
 
-source ${SOURCEDIR}/tests/scripts/common.functions
+source ${SOURCEDIR}/tests/scripts/common.func
 
 message="a network echo"
 echo "${message}" | nc -lp 8080 >/dev/null &

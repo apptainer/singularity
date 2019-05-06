@@ -20,10 +20,10 @@ import (
 	"mvdan.cc/sh/v3/interp"
 )
 
-// test-search builtin
+// expect-search builtin
 // usage:
-// test-search output|error "TestName" "search_pattern" command <command_args>
-func testSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+// expect-search output|error "TestName" "search_pattern" command <command_args>
+func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if len(args) < 4 {
 		return fmt.Errorf("test-exit requires at least 4 arguments")
 	}
@@ -84,10 +84,10 @@ func testSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	return nil
 }
 
-// test-exit builtin
+// expect-exit builtin
 // usage:
-// test-exit 0 "TestName" command <command_args>
-func testExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+// expect-exit 0 "TestName" command <command_args>
+func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if len(args) < 3 {
 		return fmt.Errorf("test-exit requires at least 3 arguments")
 	}
@@ -139,10 +139,22 @@ func testLog(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 
 // test-skip builtin
 // usage:
-// test-skip "Skip reason"
+// test-skip "TestName" "Skip reason"
 func testSkip(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+	if len(args) != 2 {
+		return fmt.Errorf("test-skip requires 2 arguments")
+	}
+	t := GetTesting(ctx)
+	t.Skip(fmt.Sprintf("%sSKIP: %-30s", removeFunctionLine(), args[1]))
+	return nil
+}
+
+// test-skip-script builtin
+// usage:
+// test-skip-script "Skip reason"
+func testSkipScript(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("test-skip requires a string argument")
+		return fmt.Errorf("test-skip-script requires a string argument")
 	}
 	t := GetTesting(ctx)
 	t.Skip(fmt.Sprintf("%sSKIP: %-30s", removeFunctionLine(), args[0]))
@@ -162,9 +174,10 @@ func testError(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 }
 
 func init() {
-	RegisterTestBuiltin("test-exit", testExit, 2)
-	RegisterTestBuiltin("test-search", testSearch, 2)
-	RegisterTestBuiltin("test-skip", testSkip, -1)
+	RegisterTestBuiltin("expect-exit", expectExit, 2)
+	RegisterTestBuiltin("expect-search", expectSearch, 2)
+	RegisterTestBuiltin("test-skip", testSkip, 1)
+	RegisterTestBuiltin("test-skip-script", testSkipScript, -1)
 	RegisterTestBuiltin("test-log", testLog, -1)
 	RegisterTestBuiltin("test-error", testError, -1)
 }

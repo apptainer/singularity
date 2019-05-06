@@ -4,14 +4,14 @@
 verifyImage() {
     name="$1"
     image="$2"
-    test-exit 1 "${name}/False"        singularity exec ${image} false
-    test-exit 0 "${name}/RunScript"    singularity exec ${image} test -f /.singularity.d/runscript
-    test-exit 0 "${name}/OneBase"      singularity exec ${image} test -f /.singularity.d/env/01-base.sh
-    test-exit 0 "${name}/ActionsShell" singularity exec ${image} test -f /.singularity.d/actions/shell
-    test-exit 0 "${name}/ActionsExec"  singularity exec ${image} test -f /.singularity.d/actions/exec
-    test-exit 0 "${name}/ActionsRun"   singularity exec ${image} test -f /.singularity.d/actions/run
-    test-exit 0 "${name}/Environment"  singularity exec ${image} test -L /environment
-    test-exit 0 "${name}/Singularity"  singularity exec ${image} test -L /singularity
+    expect-exit 1 "${name}/False"        singularity exec ${image} false
+    expect-exit 0 "${name}/RunScript"    singularity exec ${image} test -f /.singularity.d/runscript
+    expect-exit 0 "${name}/OneBase"      singularity exec ${image} test -f /.singularity.d/env/01-base.sh
+    expect-exit 0 "${name}/ActionsShell" singularity exec ${image} test -f /.singularity.d/actions/shell
+    expect-exit 0 "${name}/ActionsExec"  singularity exec ${image} test -f /.singularity.d/actions/exec
+    expect-exit 0 "${name}/ActionsRun"   singularity exec ${image} test -f /.singularity.d/actions/run
+    expect-exit 0 "${name}/Environment"  singularity exec ${image} test -L /environment
+    expect-exit 0 "${name}/Singularity"  singularity exec ${image} test -L /singularity
 }
 
 buildImage() {
@@ -32,13 +32,13 @@ buildImage() {
 
     if [ "$3" != "" ]; then
         if ! command -v $3 >/dev/null 2>&1; then
-            test-skip $2 "$3 command not found"
+            test-skip "$2" "$3 command not found"
             return
         fi
     fi
-    test-exit 0 $2 ${SUDO} singularity build -F ${options} ${img} $4
+    expect-exit 0 "$2" ${SUDO} singularity build -F ${options} ${img} $4
     if has-succeeded; then
-        verifyImage $2 ${img}
+        verifyImage "$2" ${img}
     fi
 }
 

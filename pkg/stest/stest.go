@@ -186,7 +186,7 @@ func RunScript(name, script string, t *testing.T) {
 			mc, _ := interp.FromModuleContext(ctx)
 			return cb.Fn(ctx, mc, args[1:])
 		} else if path == "" {
-			return fmt.Errorf("%q: executable file not found in $PATH", args[0])
+			return fmt.Errorf("%q test/command builtin doesn't exist", args[0])
 		}
 		return interp.DefaultExec(ctx, path, args)
 	}
@@ -211,6 +211,7 @@ func RunScript(name, script string, t *testing.T) {
 
 		parser.Stmts(f, func(st *syntax.Stmt) bool {
 			line := st.Cmd.Pos().Line()
+			te.runner.Params = []string{script}
 			if err := te.runner.Run(ctx, st); err != nil {
 				atExit()
 				te.t.Fatalf("%s%s failed (at line %d) with error: %-30s", removeFunctionLine(), scriptPath, line, err)

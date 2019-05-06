@@ -3,6 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// +build stest
+
 package tests
 
 import (
@@ -14,11 +16,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
-
-	"github.com/sylabs/singularity/internal/pkg/test"
-
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/stest"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 
@@ -33,7 +33,7 @@ var testScripts = []struct {
 	{"EXAMPLE", "scripts/example/example.test"},
 	{"SKIPEXAMPLE", "scripts/example/skip.test"},
 	{"NETEXAMPLE", "scripts/example/netecho.test"},
-	//{"BUILD", "scripts/build/build.test"},
+	{"BUILD", "scripts/build/build.test"},
 }
 
 func TestMain(t *testing.T) {

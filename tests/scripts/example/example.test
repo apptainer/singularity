@@ -1,7 +1,7 @@
 #!/singularity/test
 # Example script using bash syntax
 
-source ${SOURCEDIR}/tests/scripts/common.functions
+source ${SOURCEDIR}/tests/scripts/common.func
 
 image=`create-tmpfile`
 singularity -s pull -F ${image} docker://busybox
