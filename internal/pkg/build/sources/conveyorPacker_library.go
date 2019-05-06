@@ -6,9 +6,9 @@
 package sources
 
 import (
+	"errors"
 	"fmt"
 	"os"
-	"errors"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -30,14 +30,13 @@ type LibraryConveyorPacker struct {
 	LocalVerify          bool
 }
 
-// ErrNoMatchEntity is the ...
+// ErrNoMatchEntity is the error when there are no local keys matching the entity
 var ErrNoMatchEntity = errors.New("no local key matching entity")
 
 // Get downloads container from Singularity Library
-//func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (int, error) {
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) error {
 	sylog.Debugf("Getting container from Library")
-	exitCode := 0
+	noEntity := false
 
 	cp.b = b
 
@@ -87,7 +86,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) error {
 		imageSigned, err := signing.IsSigned(imagePath, "https://keys.sylabs.io", 0, false, cp.AuthToken, cp.LocalVerify, true)
 		if imageSigned && err != nil {
 			sylog.Warningf("%v", err)
-			exitCode = 1
+			noEntity = true
 		}
 		if cp.LocalVerify && !imageSigned {
 			return fmt.Errorf("unable to build container: no local key matching entity")
@@ -118,7 +117,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) error {
 		return err
 	}
 
-	if exitCode != 0 {
+	if noEntity {
 		return ErrNoMatchEntity
 	}
 
