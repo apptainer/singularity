@@ -13,14 +13,24 @@ import (
 	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
 var (
 	out string
 )
 
+// -o|--out
+var pluginCompileOutFlag = cmdline.Flag{
+	ID:           "pluginCompileOutFlag",
+	Value:        &out,
+	DefaultValue: "",
+	Name:         "out",
+	ShortHand:    "o",
+}
+
 func init() {
-	PluginCompileCmd.Flags().StringVarP(&out, "out", "o", "", "")
+	cmdManager.RegisterFlagForCmd(&pluginCompileOutFlag, PluginCompileCmd)
 }
 
 // PluginCompileCmd allows a user to compile a plugin

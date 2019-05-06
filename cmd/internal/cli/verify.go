@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 )
 
@@ -22,18 +23,55 @@ var (
 	localVerify bool   // -l flag
 )
 
+// -u|--url
+var verifyServerURIFlag = cmdline.Flag{
+	ID:           "verifyServerURIFlag",
+	Value:        &keyServerURI,
+	DefaultValue: defaultKeyServer,
+	Name:         "url",
+	ShortHand:    "u",
+	Usage:        "key server URL",
+	EnvKeys:      []string{"URL"},
+}
+
+// -g|--groupid
+var verifySifGroupIDFlag = cmdline.Flag{
+	ID:           "verifySifGroupIDFlag",
+	Value:        &sifGroupID,
+	DefaultValue: uint32(0),
+	Name:         "groupid",
+	ShortHand:    "g",
+	Usage:        "group ID to be verified",
+}
+
+// -i|--id
+var verifySifDescIDFlag = cmdline.Flag{
+	ID:           "verifySifDescIDFlag",
+	Value:        &sifDescID,
+	DefaultValue: uint32(0),
+	Name:         "id",
+	ShortHand:    "i",
+	Usage:        "descriptor ID to be verified",
+}
+
+// -l|--local
+var verifyLocalFlag = cmdline.Flag{
+	ID:           "verifyLocalFlag",
+	Value:        &localVerify,
+	DefaultValue: false,
+	Name:         "local",
+	ShortHand:    "l",
+	Usage:        "only verify with local keys",
+	EnvKeys:      []string{"LOCAL_VERIFY"},
+}
+
 func init() {
-	VerifyCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(VerifyCmd)
 
-	// -l, --local flag
-	VerifyCmd.Flags().BoolVarP(&localVerify, "local", "l", false, "only verify with local keys")
-	VerifyCmd.Flags().SetAnnotation("local", "envkey", []string{"LOCAL_VERIFY"})
-
-	VerifyCmd.Flags().StringVarP(&keyServerURI, "url", "u", defaultKeyServer, "key server URL")
-	VerifyCmd.Flags().SetAnnotation("url", "envkey", []string{"URL"})
-	VerifyCmd.Flags().Uint32VarP(&sifGroupID, "groupid", "g", 0, "group ID to be verified")
-	VerifyCmd.Flags().Uint32VarP(&sifDescID, "id", "i", 0, "descriptor ID to be verified")
-	SingularityCmd.AddCommand(VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyServerURIFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify

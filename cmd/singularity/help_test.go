@@ -3,6 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// This file has been deprecated and will disappear with version 3.3
+// of singularity. The functionality has been moved to e2e/help/help.go
+
 package main
 
 import (

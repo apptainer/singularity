@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -95,7 +95,7 @@ func UploadImage(filePath string, libraryRef string, libraryURL string, authToke
 		}
 		sylog.Debugf("Upload completed OK\n")
 	} else {
-		sylog.Infof("Image is already present in the library - not uploading.\n")
+		sylog.Infof("Image already exist in the library")
 	}
 
 	sylog.Debugf("Setting tags against uploaded image\n")
