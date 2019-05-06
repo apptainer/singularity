@@ -65,7 +65,7 @@ export HELLOTHISIS
 %post
     echo "POST"
     # Needed for startscript
-    yum install -y nmap-ncat
+    yum install -y nmap-ncat hostname
 
 %test
     exec "$@"
