@@ -83,7 +83,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
 
-		if err := b.Full(); err != nil {
+		if _, err := b.Full(); err != nil {
 			return "", fmt.Errorf("unable to build: %v", err)
 		}
 

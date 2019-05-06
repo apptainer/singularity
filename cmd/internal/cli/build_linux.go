@@ -83,7 +83,8 @@ func run(cmd *cobra.Command, args []string) {
 					sylog.Fatalf("Unable to create build: %v", err)
 				}
 
-				if err = b.Full(); err != nil {
+				// TODO: exit code here
+				if _, err = b.Full(); err != nil {
 					sylog.Fatalf("While performing build: %v", err)
 				}
 			}()
@@ -146,9 +147,11 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to create build: %v", err)
 		}
 
-		if err = b.Full(); err != nil {
+		exitCode, err := b.Full()
+		if err != nil {
 			sylog.Fatalf("While performing build: %v", err)
 		}
+		os.Exit(exitCode)
 	}
 }
 

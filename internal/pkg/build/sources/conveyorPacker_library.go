@@ -8,6 +8,7 @@ package sources
 import (
 	"fmt"
 	"os"
+	"errors"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -29,16 +30,21 @@ type LibraryConveyorPacker struct {
 	LocalVerify          bool
 }
 
+// ErrNoMatchEntity is the ...
+var ErrNoMatchEntity = errors.New("no local key matching entity")
+
 // Get downloads container from Singularity Library
-func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
+//func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (int, error) {
+func (cp *LibraryConveyorPacker) Get(b *types.Bundle) error {
 	sylog.Debugf("Getting container from Library")
+	exitCode := 0
 
 	cp.b = b
 
 	libraryURL := b.Opts.LibraryURL
 	authToken := b.Opts.LibraryAuthToken
 
-	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
+	if err := makeBaseEnv(cp.b.Rootfs()); err != nil {
 		return fmt.Errorf("While inserting base environment: %v", err)
 	}
 
@@ -81,6 +87,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		imageSigned, err := signing.IsSigned(imagePath, "https://keys.sylabs.io", 0, false, cp.AuthToken, cp.LocalVerify, true)
 		if imageSigned && err != nil {
 			sylog.Warningf("%v", err)
+			exitCode = 1
 		}
 		if cp.LocalVerify && !imageSigned {
 			return fmt.Errorf("unable to build container: no local key matching entity")
@@ -90,7 +97,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 			sylog.Warningf("The base container is **NOT** signed thus, its content cant be verified!")
 			resp, err := sypgp.AskQuestion("Do you really want to continue? [N/y] ")
 			if err != nil {
-				sylog.Fatalf("Error parsing input: %s", err)
+				return fmt.Errorf("unable to parsing input: %s", err)
 			}
 			if resp == "" || resp != "y" && resp != "Y" {
 				fmt.Fprintf(os.Stderr, "Stoping build.\n")
@@ -104,11 +111,18 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)
+	if err != nil {
+		return err
+	}
 
-	return err
+	if exitCode != 0 {
+		return ErrNoMatchEntity
+	}
+
+	return nil
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem

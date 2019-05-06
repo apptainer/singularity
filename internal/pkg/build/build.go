@@ -43,6 +43,8 @@ type Build struct {
 	stages []stage
 	// Conf contains cross stage build configuration
 	Conf Config
+	// exitCode is the return exit code
+	exitCode int
 }
 
 // Config defines how build is executed, including things like where final image is written.
@@ -168,8 +170,9 @@ func (b Build) cleanUp() {
 }
 
 // Full runs a standard build from start to finish
-func (b *Build) Full() error {
+func (b *Build) Full() (int, error) {
 	sylog.Infof("Starting build...")
+	exitCode := 0
 
 	// monitor build for termination signal and clean up
 	c := make(chan os.Signal)
@@ -185,7 +188,7 @@ func (b *Build) Full() error {
 	// build each stage one after the other
 	for i, stage := range b.stages {
 		if err := stage.runPreScript(); err != nil {
-			return err
+			return 0, err
 		}
 
 		// only update last stage if specified
@@ -195,22 +198,26 @@ func (b *Build) Full() error {
 			sylog.Infof("Building into existing container: %s", b.Conf.Dest)
 			p, err := sources.GetLocalPacker(b.Conf.Dest, stage.b)
 			if err != nil {
-				return err
+				return 0, err
 			}
 
 			_, err = p.Pack()
 			if err != nil {
-				return err
+				return 0, err
 			}
 		} else {
 			// regular build or force, start build from scratch
-			if err := stage.c.Get(stage.b); err != nil {
-				return fmt.Errorf("conveyor failed to get: %v", err)
+			//exitCode, err := stage.c.Get(stage.b)
+			err := stage.c.Get(stage.b)
+			if err == sources.ErrNoMatchEntity {
+				exitCode = 1
+			} else if err != nil {
+				return 0, fmt.Errorf("conveyor failed to get: %v", err)
 			}
 
-			_, err := stage.c.Pack()
+			_, err = stage.c.Pack()
 			if err != nil {
-				return fmt.Errorf("packer failed to pack: %v", err)
+				return 0, fmt.Errorf("packer failed to pack: %v", err)
 			}
 		}
 
@@ -225,29 +232,29 @@ func (b *Build) Full() error {
 
 		if stage.b.RunSection("files") {
 			if err := stage.copyFiles(b); err != nil {
-				return fmt.Errorf("unable to copy files a stage to container fs: %v", err)
+				return 0, fmt.Errorf("unable to copy files a stage to container fs: %v", err)
 			}
 		}
 
 		if engineRequired(stage.b.Recipe) {
 			if err := runBuildEngine(stage.b); err != nil {
-				return fmt.Errorf("while running engine: %v", err)
+				return 0, fmt.Errorf("while running engine: %v", err)
 			}
 		}
 
 		sylog.Debugf("Inserting Metadata")
 		if err := stage.insertMetadata(); err != nil {
-			return fmt.Errorf("while inserting metadata to bundle: %v", err)
+			return 0, fmt.Errorf("while inserting metadata to bundle: %v", err)
 		}
 	}
 
 	sylog.Debugf("Calling assembler")
 	if err := b.stages[len(b.stages)-1].Assemble(b.Conf.Dest); err != nil {
-		return err
+		return 0, err
 	}
 
 	sylog.Infof("Build complete: %s", b.Conf.Dest)
-	return nil
+	return exitCode, nil
 }
 
 // engineRequired returns true if build definition is requesting to run scripts or copy files

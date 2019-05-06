@@ -407,7 +407,9 @@ func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authC
 		return fmt.Errorf("Unable to create new build: %v", err)
 	}
 
-	return b.Full()
+	_, err = b.Full()
+
+	return err
 }
 
 func handlePullFlags(cmd *cobra.Command) {
