@@ -1,4 +1,5 @@
 // Copyright (c) 2019, Sylabs Inc. All rights reserved.
+
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,12 +10,16 @@
 package help
 
 import (
+	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"gotest.tools/assert"
+	"gotest.tools/golden"
 )
 
 type testingEnv struct {
@@ -24,6 +29,41 @@ type testingEnv struct {
 }
 
 var testenv testingEnv
+
+var helpContentTests = []struct {
+	cmds []string
+}{
+	// singularity oci
+	{[]string{"help", "oci"}},
+	{[]string{"help", "oci", "attach"}},
+	{[]string{"help", "oci", "create"}},
+	{[]string{"help", "oci", "delete"}},
+	{[]string{"help", "oci", "exec"}},
+	{[]string{"help", "oci", "kill"}},
+	{[]string{"help", "oci", "mount"}},
+	{[]string{"help", "oci", "pause"}},
+	{[]string{"help", "oci", "resume"}},
+	{[]string{"help", "oci", "run"}},
+	{[]string{"help", "oci", "start"}},
+	{[]string{"help", "oci", "state"}},
+	{[]string{"help", "oci", "umount"}},
+	{[]string{"help", "oci", "update"}},
+}
+
+func testHelpContent(t *testing.T) {
+	c := test.NewCmd(testenv.CmdPath)
+
+	for _, tc := range helpContentTests {
+		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
+		path := filepath.Join("help", name)
+
+		t.Run(name, func(t *testing.T) {
+			got := c.Run(t, tc.cmds...).Stdout()
+
+			assert.Assert(t, golden.String(got, path))
+		})
+	}
+}
 
 func testCommands(t *testing.T) {
 	tests := []struct {
@@ -147,4 +187,5 @@ func RunE2ETests(t *testing.T) {
 	t.Run("testCommands", testCommands)
 	t.Run("testFailure", testFailure)
 	t.Run("testSingularity", testSingularity)
+	t.Run("testHelpContent", testHelpContent)
 }
