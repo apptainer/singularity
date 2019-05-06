@@ -3,6 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// This file is been deprecated and will disappear on with version 3.3
+// of singularity. The functionality has been moved to e2e/imgbuild/imgbuild.go
+
 package main
 
 import (
