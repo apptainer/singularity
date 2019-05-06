@@ -57,12 +57,13 @@ type inspectFormat struct {
 	Type       string            `json:"type"`
 }
 
-// --list-apps
+// -d|--deffile
 var inspectAppsListFlag = cmdline.Flag{
 	ID:           "inspectAppsListFlag",
 	Value:        &apps,
-	DefaultValue: "",
+	DefaultValue: false,
 	Name:         "list-apps",
+	ShortHand:    "",
 	Usage:        "list all apps in a contianer",
 }
 
