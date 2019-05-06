@@ -16,12 +16,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
-	"github.com/sylabs/singularity/internal/pkg/libexec"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	library "github.com/sylabs/singularity/pkg/client/library"
+	net "github.com/sylabs/singularity/pkg/client/net"
+	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
 
 const (
@@ -127,7 +128,10 @@ func handleShub(u string) (string, error) {
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
-		libexec.PullShubImage(imagePath, u, true, noHTTPS)
+		err := shub.DownloadImage(imagePath, u, true, noHTTPS)
+		if err != nil {
+			sylog.Fatalf("%v\n", err)
+		}
 	} else {
 		sylog.Verbosef("Use image from cache")
 	}
@@ -146,7 +150,10 @@ func handleNet(u string) (string, error) {
 	}
 	if !exists {
 		sylog.Infof("Downloading network image")
-		libexec.PullNetImage(imagePath, u, true)
+		err := net.DownloadImage(imagePath, u, true)
+		if err != nil {
+			sylog.Fatalf("%v\n", err)
+		}
 	} else {
 		sylog.Verbosef("Use image from cache")
 	}

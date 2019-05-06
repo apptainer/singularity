@@ -19,12 +19,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
-	"github.com/sylabs/singularity/internal/pkg/libexec"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
 	client "github.com/sylabs/singularity/pkg/client/library"
+	net "github.com/sylabs/singularity/pkg/client/net"
+	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -308,9 +309,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 		fmt.Printf("Download complete: %s\n", name)
 
 	case ShubProtocol:
-		libexec.PullShubImage(name, args[i], force, noHTTPS)
+		err := shub.DownloadImage(name, args[i], force, noHTTPS)
+		if err != nil {
+			sylog.Fatalf("%v\n", err)
+		}
 	case HTTPProtocol, HTTPSProtocol:
-		libexec.PullNetImage(name, args[i], force)
+		err := net.DownloadImage(name, args[i], force)
+		if err != nil {
+			sylog.Fatalf("%v\n", err)
+		}
 	case ociclient.IsSupported(transport):
 		downloadOciImage(name, args[i], cmd)
 	default:
