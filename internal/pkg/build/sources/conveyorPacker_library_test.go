@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -69,8 +70,8 @@ func createBundle(t *testing.T) *types.Bundle {
 func TestLibraryPacker(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	tempCacheConfig := test.CacheTestInit(t)
-	defer test.CacheTestFinalize(t, tempCacheConfig)
+	tempCacheConfig := cache.TestInit(t)
+	defer cache.TestFinalize(t, tempCacheConfig)
 
 	cp := &sources.LibraryConveyorPacker{}
 	b := createBundle(t)
@@ -93,10 +94,10 @@ func TestGet(t *testing.T) {
 
 	// We create a valid cache but we will alter it to create a specific
 	// invalid configuration
-	tempCacheConfig := test.CacheTestInit(t)
-	defer test.CacheTestFinalize(t, tempCacheConfig)
+	tempCacheConfig := cache.TestInit(t)
+	defer cache.TestFinalize(t, tempCacheConfig)
 
-	err := test.CacheTestInvalidate(t, tempCacheConfig)
+	err := cache.TestInvalidate(t, tempCacheConfig)
 	if err != nil {
 		t.Fatalf("failed to invalidate cache: %s", err)
 	}

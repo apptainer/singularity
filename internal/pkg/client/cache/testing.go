@@ -3,15 +3,13 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package test
+package cache
 
 import (
 	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
 // TempCache is a structure used as an opaque handle that stores all the
@@ -22,19 +20,19 @@ type TempCache struct {
 	previousBaseDir string
 }
 
-// CacheTestInit performs all the under the cover tasks to setup a new temporary
+// TestInit performs all the under the cover tasks to setup a new temporary
 // cache for testing. The function returns a structure that can be later on
 // used for cleanup
-func CacheTestInit(t *testing.T) *TempCache {
+func TestInit(t *testing.T) *TempCache {
 	c := new(TempCache)
 
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("cannot create temporary cache")
 	}
-	c.PreviousDirEnv = os.Getenv(cache.DirEnv)
+	c.PreviousDirEnv = os.Getenv(DirEnv)
 	c.BaseDir = dir
-	err = os.Setenv(cache.DirEnv, dir)
+	err = os.Setenv(DirEnv, dir)
 	if err != nil {
 		t.Fatalf("cannot set env variable while setting up a temporary cache")
 	}
@@ -42,9 +40,9 @@ func CacheTestInit(t *testing.T) *TempCache {
 	return c
 }
 
-// CacheTestInvalidate modifies an existing cache to make it invalidate by
+// TestInvalidate modifies an existing cache to make it invalidate by
 // setting the base directory to a file instead of a directory.
-func CacheTestInvalidate(t *testing.T, c *TempCache) error {
+func TestInvalidate(t *testing.T, c *TempCache) error {
 	if c == nil {
 		return fmt.Errorf("invalid cache configuration")
 	}
@@ -60,7 +58,7 @@ func CacheTestInvalidate(t *testing.T, c *TempCache) error {
 
 	c.previousBaseDir = c.BaseDir
 	c.BaseDir = path
-	err = os.Setenv(cache.DirEnv, path)
+	err = os.Setenv(DirEnv, path)
 	// The code path for the error case is not easily testable to instead of
 	// returning an error, we simply kill the test
 	if err != nil {
@@ -70,8 +68,8 @@ func CacheTestInvalidate(t *testing.T, c *TempCache) error {
 	return nil
 }
 
-// CacheTestFinalize cleans up the environment created when calling CacheTestInit()
-func CacheTestFinalize(t *testing.T, c *TempCache) error {
+// TestFinalize cleans up the environment created when calling CacheTestInit()
+func TestFinalize(t *testing.T, c *TempCache) error {
 	if c == nil {
 		return fmt.Errorf("undefined cache test configuration")
 	}
@@ -82,7 +80,7 @@ func CacheTestFinalize(t *testing.T, c *TempCache) error {
 		fmt.Printf("WARNING: cannot remove %s: %s\n", c.BaseDir, err)
 	}
 
-	err = os.Setenv(cache.DirEnv, c.PreviousDirEnv)
+	err = os.Setenv(DirEnv, c.PreviousDirEnv)
 	// In case of error, do not fail, we want to clean up as much as possible
 	if err != nil {
 		fmt.Printf("WARNING: cannot restore environment: %s\n", err)

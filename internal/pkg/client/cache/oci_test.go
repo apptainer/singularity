@@ -96,11 +96,15 @@ func TestOciTemp(t *testing.T) {
 }
 
 func TestOciTempImage(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	// Now a few error cases that need explicit testing
 	invalidCache := createTempCache(t)
 	if invalidCache == nil {
 		t.Fatal("unable to create temporary cache")
 	}
+	defer invalidCache.Clean()
 	invalidCache.State = StateInvalid
 	_, err := invalidCache.OciTempExists(validSHASum, validPath)
 	if err == nil {
@@ -113,14 +117,18 @@ func TestOciTempImage(t *testing.T) {
 	}
 
 	// we change the access mode of the cache's root to reach a specific error case
-	err = os.Chmod(invalidCache.Root, 0444)
-	if err != nil {
-		t.Fatal("cannot change access mode to", invalidCache.Root)
+	validCache := createTempCache(t)
+	if validCache == nil {
+		t.Fatal("unable to create temporary cache")
 	}
-	invalidCache.State = StateInitialized
-	_, err = invalidCache.OciTempImage(validSHASum, validPath)
+	defer validCache.Clean()
+	err = os.Chmod(validCache.Root, 0444)
+	if err != nil {
+		t.Fatal("cannot change access mode to", validCache.Root)
+	}
+	_, err = validCache.OciTempImage(validSHASum, validPath)
 	if err == nil {
-		t.Fatal("OciTempImage() succeeded with a unreachable cache")
+		t.Fatal("OciTempImage() succeeded with a invalid cache")
 	}
 }
 

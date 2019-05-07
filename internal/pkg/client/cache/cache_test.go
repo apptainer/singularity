@@ -8,10 +8,9 @@ package cache
 import (
 	"io/ioutil"
 	"os"
+	"os/user"
 	"path/filepath"
 	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 // Constants used throughout the tests
@@ -59,7 +58,7 @@ func cleanupCache(t *testing.T, c *SingularityCache) {
 }
 
 func getDefaultCacheValues(t *testing.T) (string, string) {
-	me, err := test.GetCurrentUser(t)
+	me, err := user.Current() //test.GetCurrentUser(t)
 	if me == nil || err != nil {
 		t.Fatal("failed getting the current user")
 	}

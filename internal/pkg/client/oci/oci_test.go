@@ -16,7 +16,7 @@ import (
 
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -275,10 +275,10 @@ func TestConvertReference(t *testing.T) {
 	}
 
 	// Specific test to cover the situation where a cache is invalid
-	tempCacheConfig := test.CacheTestInit(t)
-	defer test.CacheTestFinalize(t, tempCacheConfig)
+	tempCacheConfig := cache.TestInit(t)
+	defer cache.TestFinalize(t, tempCacheConfig)
 
-	err := test.CacheTestInvalidate(t, tempCacheConfig)
+	err := cache.TestInvalidate(t, tempCacheConfig)
 	if err != nil {
 		t.Fatalf("failed to invalidate cache: %s", err)
 	}

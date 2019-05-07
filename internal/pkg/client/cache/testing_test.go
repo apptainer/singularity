@@ -3,27 +3,27 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package test
+package cache
 
 import (
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 func TestCacheTestInvalidate(t *testing.T) {
-	DropPrivilege(t)
-	defer ResetPrivilege(t)
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
 	// Valid case first
-	c := CacheTestInit(t)
+	c := TestInit(t)
 	if c == nil {
 		t.Fatal("cannot initialize cache configuration")
 	}
-	defer CacheTestFinalize(t, c)
+	defer TestFinalize(t, c)
 
-	CacheTestInvalidate(t, c)
+	TestInvalidate(t, c)
 	// After invalidating the cache, the base directory is not supposed to be
 	// a directory
 	if fs.IsDir(c.BaseDir) {
@@ -31,23 +31,23 @@ func TestCacheTestInvalidate(t *testing.T) {
 	}
 
 	// Error case: we pass an undefined cache configuration
-	err := CacheTestInvalidate(t, nil)
+	err := TestInvalidate(t, nil)
 	if err == nil {
-		t.Fatal("CacheTestInvalidate() succeeded with an undefined cache configuration")
+		t.Fatal("TestInvalidate() succeeded with an undefined cache configuration")
 	}
 }
 
 func TestCacheTestInit(t *testing.T) {
-	DropPrivilege(t)
-	defer ResetPrivilege(t)
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
 
-	c := CacheTestInit(t)
+	c := TestInit(t)
 	if c == nil {
 		t.Fatal("cannot initialize cache configuration")
 	}
-	defer CacheTestFinalize(t, c)
+	defer TestFinalize(t, c)
 
-	tempCache, err := cache.Create()
+	tempCache, err := Create()
 	if tempCache == nil || err != nil {
 		t.Fatal("cannot create temporary cache")
 	}
@@ -66,8 +66,8 @@ func TestCacheTestInit(t *testing.T) {
 // TestCaseTestFinalize focuses on error cases, the successful path is tested
 // in the context of the other tests
 func TestCaseTestFinalize(t *testing.T) {
-	err := CacheTestFinalize(t, nil)
+	err := TestFinalize(t, nil)
 	if err == nil {
-		t.Fatal("CacheTestFinalize() succeeded with an undefined configuration")
+		t.Fatal("TestFinalize() succeeded with an undefined configuration")
 	}
 }
