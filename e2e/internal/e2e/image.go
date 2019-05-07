@@ -61,8 +61,6 @@ func MakeTmpDir(t *testing.T) (string, string) {
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	//defer os.RemoveAll(name)
-	//defer name
 	if err := os.Chmod(name, 0777); err != nil {
 		t.Fatalf("Failed to chmod temporary directory: %v", err)
 	}
@@ -72,8 +70,10 @@ func MakeTmpDir(t *testing.T) (string, string) {
 	return fullName, name
 }
 
+// PullTestAlpineContainer will pull the 'library://alpine:latest' container for tests.
+// This will pull to the pervided path ('imagePath'), and overide any image that was there.
 func PullTestAlpineContainer(cmdPath string, imagePath string) ([]byte, error) {
-	argv := []string{"pull", "-U", imagePath, "library://alpine:latest"}
+	argv := []string{"pull", "-U", "--force", imagePath, "library://alpine:latest"}
 	cmd := exec.Command(cmdPath, argv...)
 
 	return cmd.CombinedOutput()
