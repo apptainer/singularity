@@ -1,0 +1,45 @@
+#!/singularity/test
+# run tests
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+# workdir
+workdir=`create-tmpdir`
+
+# create test file
+testfile="testSingularityExec.tmp"
+echo > ${workdir}/${testfile}
+
+image=`get-test-image`
+
+# Basic tests
+expect-failure "NoCommand"          singularity exec ${image}
+expect-success "True"               singularity exec ${image} true
+expect-success "TrueAbsPath"        singularity exec ${image} /bin/true
+expect-failure "False"              singularity exec ${image} false
+expect-failure "FalseAbsPath"       singularity exec ${image} /bin/false
+
+# Scif apps tests
+expect-success "ScifTestAppGood"    singularity exec --app testapp  ${image} testapp.sh
+expect-failure "ScifTestAppBad"     singularity exec --app fakeapp  ${image} testapp.sh
+expect-success "ScifTestfolderOrg"  singularity exec                ${image} test -d /scif
+expect-success "ScifTestfolderOrg"  singularity exec                ${image} test -d /scif/apps
+expect-success "ScifTestfolderOrg"  singularity exec                ${image} test -d /scif/data
+expect-success "ScifTestfolderOrg"  singularity exec                ${image} test -d /scif/apps/foo
+expect-success "ScifTestfolderOrg"  singularity exec                ${image} test -d /scif/apps/bar
+
+# blocked by issue [scif-apps] Files created at install step fall into an unexpected path #2404
+expect-success "ScifTestfolderOrg"  singularity exec ${image} test -f /scif/apps/foo/filefoo.exec
+expect-success "ScifTestfolderOrg"  singularity exec ${image} test -f /scif/apps/bar/filebar.exec
+expect-success "ScifTestfolderOrg"  singularity exec ${image} test -d /scif/data/foo/output
+expect-success "ScifTestfolderOrg"  singularity exec ${image} test -d /scif/data/foo/input
+
+expect-failure "WorkdirContain"     singularity exec --contain --workdir ${workdir} ${image} test -f ${testfile}
+expect-success "Workdir"            singularity exec --workdir ${workdir}           ${image} test -f ${testfile}
+expect-success "PwdGood"            singularity exec --pwd /etc                     ${image} true
+expect-success "Home"               singularity exec --home ${workdir}              ${image} test -f ${testfile}
+expect-success "HomePath"           singularity exec --home ${workdir}:/home        ${image} ls -la /home/${testfile}
+expect-success "HomeTmp"            singularity exec --home /tmp                    ${image} true
+expect-success "HomeTmpExplicit"    singularity exec --home /tmp:/home              ${image} true
+
+expect-success "UserBind"           singularity exec --bind ${workdir}:/mnt         ${image} test -f /mnt/${testfile}

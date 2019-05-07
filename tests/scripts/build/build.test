@@ -37,7 +37,9 @@ buildImage() {
         fi
     fi
     expect-exit 0 "$2" ${SUDO} singularity build -F ${options} ${img} $4
-    verifyImage "$2" ${img}
+    if has-succeeded; then
+        verifyImage "$2" ${img}
+    fi
 }
 
 ########## TYPE      NAME             CHECK_BINARY  DEFINITION

@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -57,13 +58,18 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 			return err
 		}
 		readPipe = stderr
+		if mc.Stdout != os.Stdout {
+			cmd.Stdout = mc.Stdout
+		}
 	} else if stream == "output" {
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			return err
 		}
 		readPipe = stdout
-		cmd.Stderr = mc.Stderr
+		if mc.Stderr != os.Stderr {
+			cmd.Stderr = mc.Stderr
+		}
 	}
 
 	if err := cmd.Start(); err != nil {
@@ -107,6 +113,12 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	cmd.Dir = mc.Dir
 	cmd.Env = ExecEnv(mc.Env)
 	cmd.Stdin = mc.Stdin
+	if mc.Stderr != os.Stderr {
+		cmd.Stderr = mc.Stderr
+	}
+	if mc.Stdout != os.Stdout {
+		cmd.Stdout = mc.Stdout
+	}
 
 	err = cmd.Run()
 	switch x := err.(type) {

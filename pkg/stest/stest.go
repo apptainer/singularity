@@ -35,6 +35,7 @@ type testExec struct {
 	atExitFunctions *[]*AtExitFn
 	t               *testing.T
 	runner          *interp.Runner
+	lastTestFailed  bool
 }
 
 // CommandBuiltin defines a command shell builtin.
@@ -122,6 +123,12 @@ func GetTesting(ctx context.Context) *testing.T {
 	return ctx.Value(testExecContext).(*testExec).t
 }
 
+// LastTestFailed returns if latest test builtin executed
+// has failed or not.
+func LastTestFailed(ctx context.Context) bool {
+	return ctx.Value(testExecContext).(*testExec).lastTestFailed
+}
+
 // SetEnv sets an environment variables, equivalent to "export NAME=VALUE"
 func SetEnv(ctx context.Context, name string, value string) {
 	runner := ctx.Value(testExecContext).(*testExec).runner
@@ -167,6 +174,9 @@ func RunScript(name, script string, t *testing.T) {
 
 					if err := tb.Fn(ctx, mc, args[1:]); err != nil {
 						sub.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
+						te.lastTestFailed = true
+					} else {
+						te.lastTestFailed = false
 					}
 				})
 			} else {
@@ -212,14 +222,21 @@ func RunScript(name, script string, t *testing.T) {
 		parser.Stmts(f, func(st *syntax.Stmt) bool {
 			line := st.Cmd.Pos().Line()
 			if err := runner.Run(ctx, st); err != nil {
-				atExit()
-				t.Fatalf("%s%s failed (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
+				// trigger a test error and stop parsing
+				t.Errorf("%sERROR: execution failed in %s (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
+				return false
 			}
-			if t.Failed() {
-				t.Fatalf("%s%s (at line %d)", removeFunctionLine(), script, line)
+			if te.lastTestFailed {
+				t.Logf("%sLOG: test failed in %s (at line %d)", removeFunctionLine(), script, line)
 			}
 			return true
 		})
+
+		if _, has := runner.Funcs["atexit"]; has {
+			if err := runner.Run(ctx, runner.Funcs["atexit"].Cmd); err != nil {
+				t.Errorf("%sERROR: function atexit returned an error: %s", removeFunctionLine(), err)
+			}
+		}
 
 		atExit()
 	})

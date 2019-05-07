@@ -15,3 +15,22 @@ stdout-contains() {
 stderr-contains() {
     expect-search error "$@"
 }
+
+test-match() {
+    expect-exit 0 $1 /bin/sh -c "[ \"$2\" = \"$3\" ]"
+}
+
+get-test-image() {
+    image="${TESTDIR}/test.sif"
+
+    if [ ! -f "${image}" ]; then
+        definition="${SOURCEDIR}/e2e/testdata/Singularity"
+        output=`sudo singularity build -F ${image} ${definition} 2>&1`
+        if [ "$?" != 0 ]; then
+            test-error "failed to build image ${image}: ${output}"
+            exit 1
+        fi
+    fi
+
+    echo ${image}
+}

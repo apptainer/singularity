@@ -3,8 +3,7 @@
 
 source ${SOURCEDIR}/tests/scripts/common.func
 
-image=`create-tmpfile`
-singularity -s pull -F ${image} docker://busybox
+image=`get-test-image`
 
 expect-success "BasicTrue"              true
 expect-failure "BasicFalse"             false
@@ -15,7 +14,7 @@ expect-failure "SingularityVersionKO"   singularity ---version
 
 stderr-contains "SingularityError" "Available Commands:" singularity
 stdout-contains "ExecPID1"         "sinit"               singularity exec -p ${image} cat /proc/1/comm
-stdout-contains "ExecPID1NoInit"   "cat"                 singularity exec -p --no-init ${image} /bin/sh -c "sleep 0.2; cat /proc/1/comm"
+stdout-contains "ExecPID1NoInit"   "sh"                  singularity exec -p --no-init ${image} /bin/sh -c "sleep 0.2; cat /proc/1/comm"
 
 TEST="this_is_a_test"
 echo $TEST | stdout-contains "SingularitySTDINPipe" "${TEST}" singularity -d exec -u ${image} cat 2>/tmp/output

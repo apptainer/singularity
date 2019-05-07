@@ -1,0 +1,12 @@
+#!/singularity/test
+# run tests
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+image=`get-test-image`
+
+expect-success "NoCommand"          singularity run ${image}
+expect-success "True"               singularity run ${image} true
+expect-failure "False"              singularity run ${image} false
+expect-success "ScifTestAppGood"    singularity run --app testapp ${image}
+expect-failure "ScifTestAppBad"     singularity run --app fakeapp ${image}

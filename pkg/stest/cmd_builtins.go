@@ -25,7 +25,6 @@ func createTmpDir(ctx context.Context, mc interp.ModuleCtx, args []string) error
 		return err
 	}
 	fmt.Fprintf(mc.Stdout, "%s\n", dir)
-
 	cleanup := func() error {
 		os.RemoveAll(dir)
 		return nil
@@ -60,8 +59,7 @@ func createTmpFile(ctx context.Context, mc interp.ModuleCtx, args []string) erro
 // usage:
 // has-succeeded
 func hasSucceeded(ctx context.Context, mc interp.ModuleCtx, args []string) error {
-	t := GetTesting(ctx)
-	if t.Failed() {
+	if LastTestFailed(ctx) {
 		return interp.ExitStatus(1)
 	}
 	return nil

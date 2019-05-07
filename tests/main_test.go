@@ -23,6 +23,7 @@ import (
 
 	// custom builtins
 	_ "github.com/sylabs/singularity/tests/builtins/net"
+	_ "github.com/sylabs/singularity/tests/builtins/tools"
 )
 
 var testScripts = []struct {
@@ -30,9 +31,12 @@ var testScripts = []struct {
 	path string
 }{
 	{"EXAMPLE", "scripts/example/example.test"},
-	{"SKIPEXAMPLE", "scripts/example/skip.test"},
-	{"NETEXAMPLE", "scripts/example/netecho.test"},
-	{"BUILD", "scripts/build/build.test"},
+	//{"SKIPEXAMPLE", "scripts/example/skip.test"},
+	//{"NETEXAMPLE", "scripts/example/netecho.test"},
+	//{"BUILD", "scripts/build/build.test"},
+	{"OCI/BASIC", "scripts/oci/basic.test"},
+	{"ACTIONS/RUN", "scripts/actions/run.test"},
+	{"ACTIONS/EXEC", "scripts/actions/exec.test"},
 }
 
 func TestMain(t *testing.T) {
@@ -85,6 +89,13 @@ func init() {
 
 	cacheDirPriv := filepath.Join(testDir, "priv")
 	cacheDirUnpriv := filepath.Join(testDir, "unpriv")
+	if err := os.Mkdir(cacheDirPriv, 0755); err != nil {
+		sylog.Fatalf("failed to create %s: %s", cacheDirPriv, err)
+	}
+	if err := os.Mkdir(cacheDirUnpriv, 0755); err != nil {
+		sylog.Fatalf("failed to create %s: %s", cacheDirUnpriv, err)
+	}
+
 	sourceDir := filepath.Dir(buildcfg.BUILDDIR)
 	envPath := os.Getenv("PATH")
 
