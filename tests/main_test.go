@@ -18,7 +18,6 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/stest"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 
@@ -37,13 +36,15 @@ var testScripts = []struct {
 }
 
 func TestMain(t *testing.T) {
+	defer os.RemoveAll(os.Getenv("TESTDIR"))
+
 	for _, ts := range testScripts {
 		stest.RunScript(ts.name, ts.path, t)
 	}
 }
 
 func sudoExec(sudo string, args []string) error {
-	cmd := exec.Command(sudo, "true")
+	cmd := exec.Command(sudo, args...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -80,10 +81,28 @@ func init() {
 		sylog.Fatalf("%s", err)
 	}
 
-	sudoCmd := fmt.Sprintf("%s HOME=/root SINGULARITY_CACHEDIR=%s PATH=%s", sudo, test.CacheDirPriv, os.Getenv("PATH"))
+	fmt.Println("Available environment variable in test script:")
+
+	cacheDirPriv := filepath.Join(testDir, "priv")
+	cacheDirUnpriv := filepath.Join(testDir, "unpriv")
+	sourceDir := filepath.Dir(buildcfg.BUILDDIR)
+	envPath := os.Getenv("PATH")
+
+	sudoCmd := fmt.Sprintf("%s HOME=/root SINGULARITY_CACHEDIR=%s PATH=%s", sudo, cacheDirPriv, envPath)
 	os.Setenv("SUDO", sudoCmd)
+	fmt.Printf("SUDO: %s\n", sudo)
+
 	os.Setenv("TESTDIR", testDir)
-	os.Setenv("SINGULARITY_CACHEDIR", test.CacheDirUnpriv)
-	os.Setenv("CACHEDIR_PRIV", test.CacheDirPriv)
-	os.Setenv("SOURCEDIR", filepath.Dir(buildcfg.BUILDDIR))
+	fmt.Printf("TESTDIR: %s\n", testDir)
+
+	os.Setenv("SINGULARITY_CACHEDIR", cacheDirUnpriv)
+	fmt.Printf("SINGULARITY_CACHEDIR: %s\n", cacheDirUnpriv)
+
+	os.Setenv("CACHEDIR_PRIV", cacheDirPriv)
+	fmt.Printf("CACHEDIR_PRIV: %s\n", cacheDirPriv)
+
+	os.Setenv("SOURCEDIR", sourceDir)
+	fmt.Printf("SOURCEDIR: %s\n", sourceDir)
+
+	fmt.Printf("PATH: %s\n", envPath)
 }

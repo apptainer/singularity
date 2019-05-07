@@ -147,38 +147,31 @@ func removeFunctionLine() string {
 // RunScript executes the provided script from a test function as a main
 // sub test with the provided name.
 func RunScript(name, script string, t *testing.T) {
-	var te testExec
-	var testExecContext struct{}
-	var atExitFunctions []*AtExitFn
-
-	scriptPath, err := filepath.Abs(script)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	f, err := os.Open(script)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
 
-	te.atExitFunctions = &atExitFunctions
-
 	exec := func(ctx context.Context, path string, args []string) error {
 		if tb, ok := testBuiltins[args[0]]; ok {
-			scriptTest := GetTesting(ctx)
+			te := ctx.Value(testExecContext).(*testExec)
 			mc, _ := interp.FromModuleContext(ctx)
 			if tb.Index >= 0 {
-				scriptTest.Run(args[tb.Index], func(sub *testing.T) {
-					te.t = sub
+				te.t.Run(args[tb.Index], func(sub *testing.T) {
+					var subTe testExec
+					subTe.t = sub
+
+					ctx := context.TODO()
+					ctx = context.WithValue(ctx, testExecContext, &subTe)
+
 					if err := tb.Fn(ctx, mc, args[1:]); err != nil {
-						sub.Fatalf("%sERROR: %-30s", removeFunctionLine(), err)
+						sub.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
 					}
 				})
-				te.t = scriptTest
 			} else {
 				if err := tb.Fn(ctx, mc, args[1:]); err != nil {
-					scriptTest.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
+					te.t.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
 				}
 			}
 			return nil
@@ -190,37 +183,40 @@ func RunScript(name, script string, t *testing.T) {
 		}
 		return interp.DefaultExec(ctx, path, args)
 	}
-	te.runner, _ = interp.New(
+	runner, _ := interp.New(
 		interp.StdIO(os.Stdin, os.Stdout, os.Stderr),
 		interp.Module(interp.ModuleExec(exec)),
 	)
 	parser := syntax.NewParser()
+	runner.Params = []string{script}
 
 	t.Run(name, func(t *testing.T) {
+		var te testExec
+		var atExitFunctions []*AtExitFn
+
+		te.atExitFunctions = &atExitFunctions
+		te.t = t
+		te.runner = runner
+
 		ctx := context.TODO()
 		ctx = context.WithValue(ctx, testExecContext, &te)
-		te.t = t
 
 		atExit := func() {
 			for i := len(atExitFunctions) - 1; i >= 0; i-- {
 				if err := atExitFunctions[i].Fn(); err != nil {
-					te.t.Logf("%sLOG: %s: %-30s", removeFunctionLine(), atExitFunctions[i].Desc, err)
+					t.Logf("%sLOG: %s: %-30s", removeFunctionLine(), atExitFunctions[i].Desc, err)
 				}
 			}
 		}
 
 		parser.Stmts(f, func(st *syntax.Stmt) bool {
 			line := st.Cmd.Pos().Line()
-			te.runner.Params = []string{script}
-			if err := te.runner.Run(ctx, st); err != nil {
+			if err := runner.Run(ctx, st); err != nil {
 				atExit()
-				te.t.Fatalf("%s%s failed (at line %d) with error: %-30s", removeFunctionLine(), scriptPath, line, err)
-				return false
+				t.Fatalf("%s%s failed (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
 			}
-			if te.t.Failed() {
-				atExit()
-				te.t.Fatalf("%s%s (at line %d)", removeFunctionLine(), scriptPath, line)
-				return false
+			if t.Failed() {
+				t.Fatalf("%s%s (at line %d)", removeFunctionLine(), script, line)
 			}
 			return true
 		})
