@@ -236,6 +236,7 @@ func testSecurity(t *testing.T) {
 		Force:   true,
 		Sandbox: false,
 	}
+	e2e.EnsureImage(t)
 	if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, "../../examples/busybox/Singularity"); err == nil {
 		t.Log(string(b))
 		t.Fatalf("Unexpected failure: %v", err)
