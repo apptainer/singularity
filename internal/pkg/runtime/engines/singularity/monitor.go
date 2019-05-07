@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -25,10 +25,6 @@ func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal
 				continue
 			}
 			return status, nil
-		default:
-			if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {
-				return status, fmt.Errorf("interrupted by signal %s", s.String())
-			}
 		}
 	}
 }

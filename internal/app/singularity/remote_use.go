@@ -38,11 +38,17 @@ func syncSysConfig(cUsr *remote.Config, sysConfigFile string) error {
 }
 
 // RemoteUse sets remote to use
-func RemoteUse(usrConfigFile, sysConfigFile, name string) (err error) {
+func RemoteUse(usrConfigFile, sysConfigFile, name string, global bool) (err error) {
 	c := &remote.Config{}
 
+	// system config should be world readable
+	perm := os.FileMode(0600)
+	if global {
+		perm = os.FileMode(0644)
+	}
+
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, perm)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

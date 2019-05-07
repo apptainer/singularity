@@ -1,23 +1,32 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// This file has been deprecated and will disappear with version 3.3
-// of singularity. The functionality has been moved to e2e/env/env.go
+// This test sets singularity image specific environment variables and
+// verifies that they are properly set.
 
-package main
+package singularityenv
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
-func TestSingularityEnv(t *testing.T) {
+type testingEnv struct {
+	// base env for running tests
+	CmdPath string `split_words:"true"`
+}
+
+var testenv testingEnv
+
+func singularityEnv(t *testing.T) {
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
 	var defaultImage = "docker://alpine:3.8"
 	var defaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -52,7 +61,7 @@ func TestSingularityEnv(t *testing.T) {
 		t.Run(currentTest.name, test.WithoutPrivilege(func(t *testing.T) {
 			args := []string{"exec", currentTest.image, "env"}
 
-			cmd := exec.Command(cmdPath, args...)
+			cmd := exec.Command(testenv.CmdPath, args...)
 			cmd.Env = append(os.Environ(), currentTest.env...)
 			b, err := cmd.CombinedOutput()
 
@@ -65,9 +74,20 @@ func TestSingularityEnv(t *testing.T) {
 				t.Fatalf("Error running command: %v", err)
 			}
 
+			fmt.Println("Current test path is " + currentTest.path)
 			if !strings.Contains(out, currentTest.path) {
 				t.Fatalf("Command output did not contain the path '%s'", currentTest.path)
 			}
 		}))
 	}
+}
+
+// RunE2ETests is the main func to trigger the test suite
+func RunE2ETests(t *testing.T) {
+	e2e.LoadEnv(t, &testenv)
+
+	t.Log(testenv)
+
+	// try to build from a non existen path
+	t.Run("singularityEnv", singularityEnv)
 }
