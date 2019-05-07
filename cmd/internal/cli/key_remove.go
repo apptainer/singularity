@@ -9,8 +9,39 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
+
+var (
+	secretKeyRemove   bool
+	secretForceRemove bool
+)
+
+var keyRemoveSecretFlag = cmdline.Flag{
+	ID:           "keyRemoveSecretFlag",
+	Value:        &secretKeyRemove,
+	DefaultValue: false,
+	Name:         "secret",
+	ShortHand:    "s",
+	Usage:        "remove a secret key",
+}
+
+var keyRemoveForceFlag = cmdline.Flag{
+	ID:           "keyRemoveForceFlag",
+	Value:        &secretForceRemove,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "f",
+	Usage:        "remove a secret key without prompting",
+}
+
+func init() {
+	//	cmdManager.RegisterCmd(KeyRemoveCmd)
+
+	cmdManager.RegisterFlagForCmd(&keyRemoveSecretFlag, KeyRemoveCmd)
+	cmdManager.RegisterFlagForCmd(&keyRemoveForceFlag, KeyRemoveCmd)
+}
 
 // KeyRemoveCmd is `singularity key remove <fingerprint>' command
 var KeyRemoveCmd = &cobra.Command{
@@ -18,7 +49,7 @@ var KeyRemoveCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 
-		err := sypgp.RemovePubKey(args[0])
+		err := sypgp.RemoveKey(secretKeyRemove, secretForceRemove, args[0])
 		if err != nil {
 			sylog.Fatalf("Unable to remove public key: %s", err)
 		}

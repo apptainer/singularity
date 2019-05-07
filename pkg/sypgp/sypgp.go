@@ -294,8 +294,7 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 	return false, nil
 }
 
-// RemovePubKey will delete a public key matching toDelete
-func RemovePubKey(toDelete string) error {
+func removePubKey(toDelete string) error {
 	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("unable to open local keyring: %v", err)
@@ -342,6 +341,87 @@ func RemovePubKey(toDelete string) error {
 			return fmt.Errorf("could not store public key: %s", err)
 		}
 	}
+
+	return nil
+}
+
+func removePrivKey(force bool, toDelete string) error {
+	f, err := os.OpenFile(SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to open private keyring: %v", err)
+	}
+	defer f.Close()
+
+	// read all the local public keys
+	elist, err := openpgp.ReadKeyRing(f)
+	if err != nil {
+		return fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	var newKeyList []openpgp.Entity
+
+	matchKey := false
+
+	// sort through them, and remove any that match toDelete
+	for i := range elist {
+		// if the elist[i] dose not match toDelete, then add it to newKeyList
+		if !CompareKeyEntity(elist[i], toDelete) {
+			newKeyList = append(newKeyList, *elist[i])
+		} else {
+			matchKey = true
+		}
+	}
+
+	if !matchKey {
+		return fmt.Errorf("no key matching given fingerprint found")
+	}
+
+	if !force {
+		fmt.Fprintf(os.Stderr, "You are about to remove key %q from you keyring\n", toDelete)
+		ans, err := AskQuestion("Are you sure you want to continue? [n/Y] ")
+		if err != nil {
+			return err
+		}
+		if ans != "Y" && ans != "y" {
+			return fmt.Errorf("not removing key per users request")
+		}
+	}
+
+	sylog.Verbosef("Updating local keyring: %v", PublicPath())
+
+	// open the public keyring file
+	nf, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_WRONLY, 0600)
+	if err != nil {
+		return fmt.Errorf("unable to clear, and open the file: %v", err)
+	}
+	defer nf.Close()
+
+	// loop through a write all the other keys back
+	for k := range newKeyList {
+		// store the keys
+		fmt.Printf("NEW KEY: %X\n", newKeyList[k])
+		//if err := StorePubKey(&newKeyList[k]); err != nil {
+		//	return fmt.Errorf("could not store public key: %s", err)
+		//}
+	}
+
+	return nil
+}
+
+// RemoveKey will delete a key matching the fingerprint toDelete.
+func RemoveKey(secretKey, force bool, toDelete string) error {
+	if secretKey {
+		err := removePrivKey(force, toDelete)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := removePubKey(toDelete)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
