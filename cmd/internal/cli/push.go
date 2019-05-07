@@ -77,8 +77,8 @@ var PushCmd = &cobra.Command{
 				// if its not signed, print a warning
 				if !imageSigned {
 					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
-					fmt.Fprintf(os.Stderr, "\nUnable to verify your container! You REALLY should sign your container before pushing!\n")
-					fmt.Fprintf(os.Stderr, "Stopping upload.\n")
+					fmt.Fprintf(os.Stderr, "\nYou can avoid this by using the '-U' flag\n")
+					sylog.Fatalf("Unable to upload container: image not signed")
 					os.Exit(3)
 				}
 			} else {
