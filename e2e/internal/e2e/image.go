@@ -8,6 +8,7 @@ package e2e
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"testing"
 )
 
@@ -53,7 +54,8 @@ func EnsureImage(t *testing.T) {
 	}
 }
 
-// MakeTmpDir will make a tmp dir and return a string of the path
+// MakeTmpDir will make a tmp dir and return a string of the path, and a full
+// path (with a container name 'test_container.sif').
 func MakeTmpDir(t *testing.T) (string, string) {
 	name, err := ioutil.TempDir("", "stest.")
 	if err != nil {
@@ -66,5 +68,13 @@ func MakeTmpDir(t *testing.T) (string, string) {
 	}
 	fullName := name
 	fullName += "test_container.sif"
+
 	return fullName, name
+}
+
+func PullTestAlpineContainer(cmdPath string, imagePath string) ([]byte, error) {
+	argv := []string{"pull", "-U", imagePath, "library://alpine:latest"}
+	cmd := exec.Command(cmdPath, argv...)
+
+	return cmd.CombinedOutput()
 }

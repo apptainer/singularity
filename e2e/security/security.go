@@ -8,9 +8,7 @@
 package security
 
 import (
-	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
@@ -251,34 +249,6 @@ func testSecurity(t *testing.T) {
 
 }
 
-// pullTestContainer ...
-func pullTestContainer(t *testing.T) {
-	argv := []string{"pull", "-U", imagePath, "library://alpine:latest"}
-
-	cmd := exec.Command(testenv.CmdPath, argv...)
-	b, err := cmd.CombinedOutput()
-
-	if err != nil {
-		t.Log(string(b))
-		t.Fatalf("Unable to pull test container: %s", err)
-	}
-}
-
-// MakeTmpDir will make a tmp dir and return a string of the path
-func makeTmpDir(t *testing.T) {
-	name, err := ioutil.TempDir("", "stest.")
-	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
-	}
-	//defer os.RemoveAll(name)
-	//defer name
-	if err := os.Chmod(name, 0777); err != nil {
-		t.Fatalf("Failed to chmod temporary directory: %v", err)
-	}
-	name += "test_container.sif"
-	imagePath = name
-}
-
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
@@ -286,9 +256,15 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
+	// Make a tmp directory
 	imagePath, _ = e2e.MakeTmpDir(t)
 
-	//	t.Run("makeing_tmp_dir", makeTmpDir)
-	t.Run("pulling_test_contianer", pullTestContainer)
+	// pull a test image to that directory
+	b, err := e2e.PullTestAlpineContainer(testenv.CmdPath, imagePath)
+	if err != nil {
+		t.Log(string(b))
+		t.Fatalf("%s", err)
+	}
+
 	t.Run("testSecurity", testSecurity)
 }
