@@ -50,6 +50,11 @@ func CacheTestInvalidate(t *testing.T, c *TempCache) error {
 	}
 
 	file, err := ioutil.TempFile("", "")
+	// The code path for the error case is not easily testable to instead of
+	// returning an error, we simply kill the test
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %s", err)
+	}
 	path := file.Name()
 	file.Close()
 
