@@ -2,9 +2,11 @@
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
+
 package e2e
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -49,4 +51,20 @@ func EnsureImage(t *testing.T) {
 			b)
 		t.Fatalf("Unexpected failure: %+v", err)
 	}
+}
+
+// MakeTmpDir will make a tmp dir and return a string of the path
+func MakeTmpDir(t *testing.T) (string, string) {
+	name, err := ioutil.TempDir("", "stest.")
+	if err != nil {
+		t.Fatalf("Failed to create temporary directory: %v", err)
+	}
+	//defer os.RemoveAll(name)
+	//defer name
+	if err := os.Chmod(name, 0777); err != nil {
+		t.Fatalf("Failed to chmod temporary directory: %v", err)
+	}
+	fullName := name
+	fullName += "test_container.sif"
+	return fullName, name
 }

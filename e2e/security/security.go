@@ -286,7 +286,9 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Run("makeing_tmp_dir", makeTmpDir)
+	imagePath, _ = e2e.MakeTmpDir(t)
+
+	//	t.Run("makeing_tmp_dir", makeTmpDir)
 	t.Run("pulling_test_contianer", pullTestContainer)
 	t.Run("testSecurity", testSecurity)
 }
