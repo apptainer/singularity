@@ -13,6 +13,11 @@ import (
 	"testing"
 )
 
+/*
+A set of functions internal to the package for testing.
+Public helper functions for testinng are in 'testing.go'
+*/
+
 // Constants used throughout the tests
 const (
 	validSHASum   = "0"
@@ -22,7 +27,8 @@ const (
 	cacheCustom   = "/tmp/customcachedir"
 )
 
-// createTempCache create a valid Singularity cache in a temporary directory to ease testing
+// createTempCache creates a valid Singularity cache in a temporary directory
+// to ease testing
 func createTempCache(t *testing.T) *SingularityCache {
 	dir, err := ioutil.TempDir("", "")
 	if err != nil {
@@ -37,6 +43,8 @@ func createTempCache(t *testing.T) *SingularityCache {
 	return newCache
 }
 
+// setupCache abstracts the creation of a new cache, mainly all the associated
+// error checking
 func setupCache(t *testing.T) *SingularityCache {
 	newCache, err := Create()
 	if err != nil {
@@ -57,6 +65,9 @@ func cleanupCache(t *testing.T, c *SingularityCache) {
 	os.Setenv(DirEnv, c.PreviousDirEnv)
 }
 
+// getDefaultCacheValues is a helper function that returns the typical
+// expected values when creating a temporary cache. This mainly aims at
+// avoiding code duplication and abstract the location of the cache.
 func getDefaultCacheValues(t *testing.T) (string, string) {
 	me, err := user.Current() //test.GetCurrentUser(t)
 	if me == nil || err != nil {
@@ -69,6 +80,8 @@ func getDefaultCacheValues(t *testing.T) (string, string) {
 	return expectedDefaultCache, expectedCustomCache
 }
 
+// createFakeImage allocates the minimum resources required to simulate a
+// valid image in the context of cache testing.
 func createFakeImage(t *testing.T, base string) {
 	err := os.MkdirAll(filepath.Join(base, validSHASum), 0755)
 	if err != nil {

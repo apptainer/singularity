@@ -46,23 +46,38 @@ type SingularityCache struct {
 	BaseDir string
 
 	// Root directory of the cache, within the basedir. This is the directory
-	// Singularity actually manages
+	// Singularity actually manages, i.e., that can safely be deleted as
+	// opposed to the base directory that is potentially managed (passed in)
+	// by the user
 	Root string
 
-	// State of the cache. We enable manual change of the state mainly for testing
+	// State of the cache. We enable manual change of the state mainly for
+	// testing
 	State string
 
 	// Default specifies if the handle points at the default image cache or
 	// not. This enables quick lookup.
 	Default bool
 
+	// PreviousDirEnv stores the value of the DirEnv environment variable
+	// before it is implicitely modified. This is used to restore the
+	// environment configuration in some specific contexts.
 	PreviousDirEnv string
 
+	// Library provides the location of the Library cache
 	Library string
+
+	// OciTemp provides the location of the OciTemp cache
 	OciTemp string
+
+	// OciBlob provides the location of the OciBlob cache
 	OciBlob string
-	Net     string
-	Shub    string
+
+	// Net provides the location of the Net cache
+	Net string
+
+	// Shub provides the location of the Shub cache
+	Shub string
 }
 
 // Create a new Singularity cache
@@ -121,6 +136,8 @@ func Init(baseDir string) (*SingularityCache, error) {
 		return nil, fmt.Errorf("failed getting the path to the Shub cache")
 	}
 
+	// Sanity check to ensure that everything is fine before returning the
+	// handle. We do not know a way at the moment to reach the error case.
 	if !newCache.IsValid() {
 		return nil, fmt.Errorf("unable to correctly initialize new cache")
 	}
@@ -162,6 +179,9 @@ func (c *SingularityCache) IsValid() bool {
 		return false
 	}
 
+	// The root cannot be empty of the Home directory. If the root was
+	// to be the home directory, destroying the cache would delete
+	// user's data
 	if c.Root == "" || c.Root == usr.HomeDir {
 		return false
 	}
@@ -210,11 +230,13 @@ func getCacheBasedir() (string, error) {
 	return basedir, nil
 }
 
-// Figure out what the root directory is
+// getCacheRoot figures out what the root directory is
 func getCacheRoot(basedir string) string {
 	return path.Join(basedir, RootDefault)
 }
 
+// updateCacheSubdir update/create a sub-cache (directory) within the cache,
+// for example, the 'shub' cache.
 func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
 	// This function may act on an cache object that is not fully initialized
 	// so it is not a method on a SingularityCache but rather an independent
@@ -244,6 +266,7 @@ func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
 	return absdir, nil
 }
 
+// initCacheDir initializes a sub-cache within a cache, e.g., the shub sub-cache.
 func initCacheDir(dir string) error {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		sylog.Debugf("Creating cache directory: %s", dir)

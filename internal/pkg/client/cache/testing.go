@@ -12,11 +12,30 @@ import (
 	"testing"
 )
 
+/*
+A set of helper functions making it easier to write tests involving
+caches, including reaching error and corner cases.
+*/
+
 // TempCache is a structure used as an opaque handle that stores all the
 // data specific to a given test with a temporary Singularity cache
 type TempCache struct {
-	PreviousDirEnv  string
-	BaseDir         string
+	// PreviousDirEnv saves the value of the DirEnv environment variable
+	// before it was modified in the context of a test to reach an error
+	// or corner case.
+	PreviousDirEnv string
+
+	// Basedir of the temporary cache. Since the test may never have access
+	// to the cache handle, this is used to have the necessay data to setup
+	// test for error/corner cases, as well as ensure cleaning at the end
+	// of the tests.
+	BaseDir string
+
+	// previousBaseDir save the previous value of BaseDir. This is necessary
+	// when changing the base directory to a file to simulate a specific
+	// error case. This is an internal element used to track resources that
+	// are allocated and therefore perform a cleanup at the end of the tests
+	// even in the context of manually modified configurations.
 	previousBaseDir string
 }
 
