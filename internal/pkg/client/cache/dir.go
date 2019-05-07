@@ -60,7 +60,7 @@ type SingularityCache struct {
 	Default bool
 
 	// PreviousDirEnv stores the value of the DirEnv environment variable
-	// before it is implicitely modified. This is used to restore the
+	// before it is implicitly modified. This is used to restore the
 	// environment configuration in some specific contexts.
 	PreviousDirEnv string
 
