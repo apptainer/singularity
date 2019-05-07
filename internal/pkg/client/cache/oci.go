@@ -20,36 +20,47 @@ const (
 )
 
 // OciBlob returns the directory inside cache.Dir() where oci blobs are cached
-func (c *SingularityCache) OciBlob() (string, error) {
-	// updateCacheSubdir() checks whether the cache is valid, no need to do it here
-	return c.updateCacheSubdir(OciBlobDir)
+func getOciBlobCachePath(c *SingularityCache) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a SingularityCache but rather an independent
+	// function
+
+	return updateCacheSubdir(c, OciBlobDir)
 }
 
 // OciTemp returns the directory inside cache.Dir() where splatted out oci images live
-func (c *SingularityCache) OciTemp() (string, error) {
-	// updateCacheSubdir checks whether the cache is valid, no need to do it here
-	return c.updateCacheSubdir(OciTempDir)
+func getOciTempCachePath(c *SingularityCache) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a SingularityCache but rather an independent
+	// function
+
+	return updateCacheSubdir(c, OciTempDir)
 }
 
 // OciTempImage creates a OciTempDir/sum directory and returns the abs path of the image
 func (c *SingularityCache) OciTempImage(sum, name string) (string, error) {
+	if !c.IsValid() {
+		return "", fmt.Errorf("invalid cache")
+	}
+
+	// the name and sum cannot be empty strings otherwise we have name collision
+	// between images and the cache directory itself
+	if sum == "" || name == "" {
+		return "", fmt.Errorf("invalid paramters")
+	}
+
 	// updateCacheSubdir checks whether the cache is valid, no need to do it here
-	_, err := c.updateCacheSubdir(filepath.Join(OciTempDir, sum))
+	_, err := updateCacheSubdir(c, filepath.Join(OciTempDir, sum))
 	if err != nil {
 		return "", fmt.Errorf("failed to update the cache's sub-directory: %s", err)
 	}
 
-	path, err := c.OciTemp()
-	if err != nil {
-		return "", fmt.Errorf("failed to get OCI cache information: %s", err)
-	}
-
-	return filepath.Join(path, sum, name), nil
+	return filepath.Join(c.OciTemp, sum, name), nil
 }
 
 // OciTempExists returns whether the image with the given sha sum exists in the OciTemp() cache
 func (c *SingularityCache) OciTempExists(sum, name string) (bool, error) {
-	if c.IsValid() == false {
+	if !c.IsValid() {
 		return false, fmt.Errorf("invalid cache")
 	}
 	path, err := c.OciTempImage(sum, name)

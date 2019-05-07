@@ -13,6 +13,62 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+func TestNetImage(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	cacheObj := createTempCache(t)
+	if cacheObj == nil {
+		t.Fatal("cannot create cache object")
+	}
+	cacheObj.State = StateInvalid
+	defer cacheObj.Clean()
+
+	tests := []struct {
+		name     string
+		sum      string
+		path     string
+		expected bool
+	}{
+		{
+			name:     "valid data",
+			sum:      validSHASum,
+			path:     validPath,
+			expected: false,
+		},
+		{
+			name:     "invalid SHA sum; valid path",
+			sum:      invalidSHASum,
+			path:     validPath,
+			expected: false,
+		},
+		{
+			name:     "valid SHA sum; invalid path",
+			sum:      validSHASum,
+			path:     invalidPath,
+			expected: false,
+		},
+		{
+			name:     "invalid data",
+			sum:      invalidSHASum,
+			path:     invalidPath,
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := cacheObj.NetImage(tt.sum, tt.path)
+			if tt.expected == false && err == nil {
+				t.Fatal("invalid case succeeded")
+			}
+			if tt.expected == true && err != nil {
+				t.Fatal("valid case failed")
+			}
+		})
+	}
+}
+
 func TestNet(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -41,14 +97,14 @@ func TestNet(t *testing.T) {
 			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			newCache := createTempCache(t)
+			newCache := setupCache(t)
 			if newCache == nil {
 				t.Fatal("failed to create temporary cache")
 			}
-			defer newCache.Clean()
+			defer cleanupCache(t, newCache)
 
-			if r, err := newCache.Net(); err != nil || r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if newCache.Net != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", newCache.Net, tt.expected)
 			}
 		})
 	}
@@ -57,6 +113,15 @@ func TestNet(t *testing.T) {
 func TestNetImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
+	// We create a file in the cache to simulate a valid image
+	createFakeImage(t, newCache.Net)
 
 	tests := []struct {
 		name     string
@@ -74,7 +139,7 @@ func TestNetImageExists(t *testing.T) {
 			name:     "invalid SHA sum; valid path",
 			sum:      invalidSHASum,
 			path:     validPath,
-			expected: true,
+			expected: false,
 		},
 		{
 			name:     "valid SHA sum; invalid path",
@@ -90,16 +155,11 @@ func TestNetImageExists(t *testing.T) {
 		},
 	}
 
-	newCache := createTempCache(t)
-	if newCache == nil {
-		t.Fatal("failed to create temporary cache")
-	}
-	defer newCache.Clean()
-
+	// First we run the tests with a valid cache obj
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			exists, err := newCache.NetImageExists(test.sum, test.path)
-			if err != nil {
+			if test.expected == true && err != nil {
 				t.Fatal("NetImageExists() failed")
 			}
 			if test.expected == false && exists == true {
@@ -107,6 +167,18 @@ func TestNetImageExists(t *testing.T) {
 			}
 			if test.expected == true && exists == false {
 				t.Fatal("NetImageExists() failed while expected to succeed")
+			}
+		})
+	}
+
+	// Then is an invalid cache object
+	newCache.State = StateInvalid
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := newCache.NetImageExists(test.sum, test.path)
+			// the test is always supposed to fail with an invalid cache
+			if err == nil {
+				t.Fatal("test with invalid cache succeeded")
 			}
 		})
 	}

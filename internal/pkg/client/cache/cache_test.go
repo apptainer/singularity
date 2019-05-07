@@ -7,6 +7,7 @@ package cache
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -15,10 +16,10 @@ import (
 
 // Constants used throughout the tests
 const (
-	validSHASum   = ""
-	invalidSHASum = "not a SHA sum"
-	validPath     = ""
-	invalidPath   = "not an image"
+	validSHASum   = "0"
+	invalidSHASum = "" //"not a SHA sum"
+	validPath     = "a_dummy_image"
+	invalidPath   = "" //not an image"
 	cacheCustom   = "/tmp/customcachedir"
 )
 
@@ -37,6 +38,26 @@ func createTempCache(t *testing.T) *SingularityCache {
 	return newCache
 }
 
+func setupCache(t *testing.T) *SingularityCache {
+	newCache, err := Create()
+	if err != nil {
+		return nil
+	}
+	return newCache
+}
+
+// cleanupCache will free/destroy a cache ONLY if it is NOT the default cache.
+// The goal here is not interfer with the default cache that is populating
+// while using Singularity when running tests. Used in conjunction with setupCache().
+func cleanupCache(t *testing.T, c *SingularityCache) {
+	if c.Default == false {
+		c.Clean()
+	}
+
+	// We restore the previous value of DirEnv
+	os.Setenv(DirEnv, c.PreviousDirEnv)
+}
+
 func getDefaultCacheValues(t *testing.T) (string, string) {
 	me, err := test.GetCurrentUser(t)
 	if me == nil || err != nil {
@@ -47,4 +68,16 @@ func getDefaultCacheValues(t *testing.T) (string, string) {
 	expectedCustomCache := filepath.Join(cacheCustom, "cache")
 
 	return expectedDefaultCache, expectedCustomCache
+}
+
+func createFakeImage(t *testing.T, base string) {
+	err := os.MkdirAll(filepath.Join(base, validSHASum), 0755)
+	if err != nil {
+		t.Fatalf("cannot create directory %s: %s\n", filepath.Join(base, validSHASum), err)
+	}
+	validImage := filepath.Join(base, validSHASum, validPath)
+	_, err = os.Create(validImage) // no need to explicitly delete the file, it will be when cleaning the cache
+	if err != nil {
+		t.Fatalf("cannot create file %s: %s\n", validImage, err)
+	}
 }

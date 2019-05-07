@@ -20,30 +20,35 @@ const (
 )
 
 // Library returns the directory inside the cache.Dir() where library images are cached
-func (c *SingularityCache) Library() (string, error) {
-	// updateCacheSubdir checks if the cache is valid, no need to check here
-	return c.updateCacheSubdir(LibraryDir)
+func getLibraryCachePath(c *SingularityCache) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a SingularityCache but rather an independent
+	// function
+
+	return updateCacheSubdir(c, LibraryDir)
 }
 
 // LibraryImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
 func (c *SingularityCache) LibraryImage(sum, name string) (string, error) {
-	// updateCacheSubdir checks if the cache is valid, no need to check here
-	_, err := c.updateCacheSubdir(filepath.Join(LibraryDir, sum))
+	if !c.IsValid() {
+		return "", fmt.Errorf("invalid cache object")
+	}
+
+	if sum == "" || name == "" {
+		return "", fmt.Errorf("invalid parameters")
+	}
+
+	_, err := updateCacheSubdir(c, filepath.Join(LibraryDir, sum))
 	if err != nil {
 		return "", fmt.Errorf("failed to update cache sub-directory: %s", err)
 	}
 
-	path, err := c.Library()
-	if err != nil {
-		return "", fmt.Errorf("failed to get the cache directory for images")
-	}
-
-	return filepath.Join(path, sum, name), nil
+	return filepath.Join(c.Library, sum, name), nil
 }
 
 // LibraryImageExists returns whether the image with the SHA sum exists in the LibraryImage cache
 func (c *SingularityCache) LibraryImageExists(sum, name string) (bool, error) {
-	if c.IsValid() == false {
+	if !c.IsValid() {
 		return false, fmt.Errorf("invalid cache")
 	}
 
@@ -53,7 +58,7 @@ func (c *SingularityCache) LibraryImageExists(sum, name string) (bool, error) {
 	}
 
 	exists, err := fs.Exists(imagePath)
-	if exists == false || err != nil {
+	if !exists || err != nil {
 		return exists, err
 	}
 

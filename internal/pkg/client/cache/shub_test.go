@@ -41,22 +41,60 @@ func TestShub(t *testing.T) {
 			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			newCache := createTempCache(t)
+			newCache := setupCache(t)
 			if newCache == nil {
 				t.Fatal("failed to create temporary cache")
 			}
-			defer newCache.Clean()
+			defer cleanupCache(t, newCache)
 
-			if r, err := newCache.Shub(); err != nil || r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if newCache.Shub != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", newCache.Shub, tt.expected)
 			}
 		})
+	}
+}
+
+// Only tests a few corner cases, most of the testing is done while testing ShubImageExists()
+func TestShubImage(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
+	// First test, we change the access mode of the cache's root to reach a specific error case
+	err := os.Chmod(newCache.Root, 0444)
+	if err != nil {
+		t.Fatal("cannot change access mode to", newCache.Root)
+	}
+	_, err = newCache.ShubImage(validSHASum, validPath)
+	if err == nil {
+		t.Fatal("ShubImage() succeeded while expected to fail")
+	}
+
+	// Second, we test with an cache that has an invalid state
+	newCache.State = StateInvalid
+	_, err = newCache.ShubImage(validSHASum, validPath)
+	if err == nil {
+		t.Fatalf("ShubImage() succeeded with an invalid cache")
 	}
 }
 
 func TestShubImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
+	// We create a file in the cache to simulate a valid image
+	createFakeImage(t, newCache.Shub)
 
 	tests := []struct {
 		name     string
@@ -74,7 +112,7 @@ func TestShubImageExists(t *testing.T) {
 			name:     "invalid SHA sum; valid path",
 			sum:      invalidSHASum,
 			path:     validPath,
-			expected: true,
+			expected: false,
 		},
 		{
 			name:     "valid SHA sum; invalid path",
@@ -90,16 +128,10 @@ func TestShubImageExists(t *testing.T) {
 		},
 	}
 
-	newCache := createTempCache(t)
-	if newCache == nil {
-		t.Fatal("failed to create temporary cache")
-	}
-	defer newCache.Clean()
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			exists, err := newCache.ShubImageExists(test.sum, test.path)
-			if err != nil {
+			if test.expected == true && err != nil {
 				t.Fatal("ShubImageExists() failed")
 			}
 			if test.expected == false && exists == true {

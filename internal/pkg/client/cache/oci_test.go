@@ -41,14 +41,14 @@ func TestOciBlob(t *testing.T) {
 			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			newCache := createTempCache(t)
+			newCache := setupCache(t)
 			if newCache == nil {
 				t.Fatal("failed to create temporary cache")
 			}
-			defer newCache.Clean()
+			defer cleanupCache(t, newCache)
 
-			if r, err := newCache.OciBlob(); err != nil || r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if newCache.OciBlob != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", newCache.OciBlob, tt.expected)
 			}
 		})
 	}
@@ -82,22 +82,60 @@ func TestOciTemp(t *testing.T) {
 			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			newCache := createTempCache(t)
+			newCache := setupCache(t)
 			if newCache == nil {
 				t.Fatal("failed to create temporary cache")
 			}
-			defer newCache.Clean()
+			defer cleanupCache(t, newCache)
 
-			if r, err := newCache.OciTemp(); err != nil || r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if newCache.OciTemp != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", newCache.OciTemp, tt.expected)
 			}
 		})
+	}
+}
+
+func TestOciTempImage(t *testing.T) {
+	// Now a few error cases that need explicit testing
+	invalidCache := createTempCache(t)
+	if invalidCache == nil {
+		t.Fatal("unable to create temporary cache")
+	}
+	invalidCache.State = StateInvalid
+	_, err := invalidCache.OciTempExists(validSHASum, validPath)
+	if err == nil {
+		t.Fatal("OciTempExists() on an invalid cache succeeded")
+	}
+
+	_, err = invalidCache.OciTempImage(validSHASum, validPath)
+	if err == nil {
+		t.Fatal("OciTempImage() on a invalid cache succeeded")
+	}
+
+	// we change the access mode of the cache's root to reach a specific error case
+	err = os.Chmod(invalidCache.Root, 0444)
+	if err != nil {
+		t.Fatal("cannot change access mode to", invalidCache.Root)
+	}
+	invalidCache.State = StateInitialized
+	_, err = invalidCache.OciTempImage(validSHASum, validPath)
+	if err == nil {
+		t.Fatal("OciTempImage() succeeded with a unreachable cache")
 	}
 }
 
 func TestOciTempExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("failed to create temporary cache")
+	}
+	defer newCache.Clean()
+
+	// We create a file in the cache to simulate a valid image
+	createFakeImage(t, newCache.OciTemp)
 
 	tests := []struct {
 		name     string
@@ -115,7 +153,7 @@ func TestOciTempExists(t *testing.T) {
 			name:     "invalid SHA sum; valid path",
 			sum:      invalidSHASum,
 			path:     validPath,
-			expected: true,
+			expected: false,
 		},
 		{
 			name:     "valid SHA sum; invalid path",
@@ -131,16 +169,10 @@ func TestOciTempExists(t *testing.T) {
 		},
 	}
 
-	newCache := createTempCache(t)
-	if newCache == nil {
-		t.Fatal("failed to create temporary cache")
-	}
-	defer newCache.Clean()
-
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			exists, err := newCache.OciTempExists(test.sum, test.path)
-			if err != nil {
+			if test.expected == true && err != nil {
 				t.Fatalf("OciTempExists() failed: %s\n", err)
 			}
 			if test.expected == true && exists == false {

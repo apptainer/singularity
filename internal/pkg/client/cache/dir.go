@@ -31,6 +31,12 @@ const (
 	// RootDefault is the default directory created in the base directory that will actually
 	// host the cache
 	RootDefault = "cache"
+
+	// StateInitialized represents the state of a give cache after successful initialization
+	StateInitialized = "initialized"
+
+	// StateInvalid represents the state of an invalid cache
+	StateInvalid = "invalid"
 )
 
 // SingularityCache is an opaque structure representing a cache
@@ -43,8 +49,20 @@ type SingularityCache struct {
 	// Singularity actually manages
 	Root string
 
-	// State of the directory. We enable manual change of the state mainly for testing
+	// State of the cache. We enable manual change of the state mainly for testing
 	State string
+
+	// Default specifies if the handle points at the default image cache or
+	// not. This enables quick lookup.
+	Default bool
+
+	PreviousDirEnv string
+
+	Library string
+	OciTemp string
+	OciBlob string
+	Net     string
+	Shub    string
 }
 
 // Create a new Singularity cache
@@ -59,26 +77,53 @@ func Create() (*SingularityCache, error) {
 		return nil, fmt.Errorf("failed to get root of the cache: %s", err)
 	}
 
-	return Init(basedir), nil
+	return Init(basedir)
 }
 
 // Init initializes a new cache within a given directory
 func Init(baseDir string) (*SingularityCache, error) {
-	rootDir, err := getCacheRoot(baseDir)
-	if err != nil {
-		return nil, fmt.Errorf("unable to get the root directory: %s", err)
-	}
-
+	rootDir := getCacheRoot(baseDir)
 	if err := initCacheDir(rootDir); err != nil {
-		return nil, fmt.Errorf("unable to initialize caching directory: %s", err)
+		return nil, fmt.Errorf("failed initializing caching directory: %s", err)
 	}
 
 	newCache := new(SingularityCache)
-	if newCache == nil {
-		return nil, fmt.Errorf("failed to allocate new object")
+	savedDirEnv := os.Getenv(DirEnv)
+	os.Setenv(DirEnv, baseDir)
+	newCache.PreviousDirEnv = savedDirEnv
+
+	newCache.BaseDir = baseDir
+	isDefaultCache, err := isDefaultBasedir(baseDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check if this is the default cache: %s", err)
 	}
 	newCache.Root = rootDir
-	newCache.State = "initialized"
+	newCache.State = StateInitialized
+	newCache.Default = isDefaultCache
+	newCache.Library, err = getLibraryCachePath(newCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting the path to the Library cache: %s", err)
+	}
+	newCache.OciTemp, err = getOciTempCachePath(newCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting the path to the OCI temp cache")
+	}
+	newCache.OciBlob, err = getOciBlobCachePath(newCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting the path to the OCI blob cache")
+	}
+	newCache.Net, err = getNetCachePath(newCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting the path to the Net cache")
+	}
+	newCache.Shub, err = getShubCachePath(newCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed getting the path to the Shub cache")
+	}
+
+	if !newCache.IsValid() {
+		return nil, fmt.Errorf("unable to correctly initialize new cache")
+	}
 
 	return newCache, nil
 }
@@ -86,7 +131,7 @@ func Init(baseDir string) (*SingularityCache, error) {
 // Destroy a specific Singularity cache
 func (c *SingularityCache) Destroy() error {
 	sylog.Debugf("Removing: %v", c.Root)
-	if c.IsValid() == false {
+	if !c.IsValid() {
 		return fmt.Errorf("invalid cache")
 	}
 
@@ -100,16 +145,29 @@ func (c *SingularityCache) Destroy() error {
 
 // IsValid checks whether a given Singularity cache is valid or not
 func (c *SingularityCache) IsValid() bool {
+	if c.State != StateInitialized {
+		return false
+	}
+
+	if c.BaseDir == "" {
+		return false
+	}
+
 	// Since Clean/Destroy delete everything in the cache directory,
 	// we make sure that when the user set the environment variable
 	// to specify where the cache should be, it cannot be in critical
 	// directory such as $HOME
 	usr, err := user.Current()
+	if err != nil {
+		return false
+	}
+
 	if c.Root == "" || c.Root == usr.HomeDir {
 		return false
 	}
 
-	if c.State != "initialized" {
+	// Basic check of the sub-cache validity
+	if c.Library == "" || c.Net == "" || c.OciTemp == "" || c.OciBlob == "" || c.Shub == "" {
 		return false
 	}
 
@@ -120,6 +178,19 @@ func (c *SingularityCache) IsValid() bool {
 // Since renamed Destroy() but kept for backward compatibility
 func (c *SingularityCache) Clean() error {
 	return c.Destroy()
+}
+
+func isDefaultBasedir(basedir string) (bool, error) {
+	usr, err := user.Current()
+	if err != nil {
+		return false, fmt.Errorf("failed to get user: %s", err)
+	}
+
+	if basedir == path.Join(usr.HomeDir, BasedirDefault) {
+		return true, nil
+	}
+
+	return false, nil
 }
 
 // Figure out where the cache directory is.
@@ -140,15 +211,23 @@ func getCacheBasedir() (string, error) {
 }
 
 // Figure out what the root directory is
-func getCacheRoot(basedir string) (string, error) {
-	root := path.Join(basedir, RootDefault)
-
-	return root, nil
+func getCacheRoot(basedir string) string {
+	return path.Join(basedir, RootDefault)
 }
 
-func (c *SingularityCache) updateCacheSubdir(subdir string) (string, error) {
-	if c.IsValid() == false {
-		return "", fmt.Errorf("invalid cache")
+func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a SingularityCache but rather an independent
+	// function.
+	// Because the cache object may not be initialized, we do NOT check its validity
+	if c == nil {
+		return "", fmt.Errorf("invalid cache handle")
+	}
+
+	// If the subdir is empty, it will lead to new collision since it would
+	// succeed but point at the cache's root
+	if subdir == "" {
+		return "", fmt.Errorf("invalid parameter")
 	}
 
 	absdir, err := filepath.Abs(filepath.Join(c.Root, subdir))
@@ -173,6 +252,10 @@ func initCacheDir(dir string) error {
 		}
 	} else if err != nil {
 		return fmt.Errorf("unable to stat %s: %s", dir, err)
+	}
+
+	if !fs.IsDir(dir) {
+		return fmt.Errorf("%s is not a directory", dir)
 	}
 
 	return nil

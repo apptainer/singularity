@@ -18,23 +18,33 @@ const (
 )
 
 // Shub returns the directory inside the cache.Dir() where shub images are cached
-func (c *SingularityCache) Shub() (string, error) {
-	return c.updateCacheSubdir(ShubDir)
+func getShubCachePath(c *SingularityCache) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a SingularityCache but rather an independent
+	// function
+
+	// updateCacheSubdir checks if the cache is valid, no need to check here
+	return updateCacheSubdir(c, ShubDir)
 }
 
 // ShubImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
 func (c *SingularityCache) ShubImage(sum, name string) (string, error) {
-	_, err := c.updateCacheSubdir(filepath.Join(ShubDir, sum))
+	if !c.IsValid() {
+		return "", fmt.Errorf("invalid cache")
+	}
+
+	// the name and sum cannot be empty strings otherwise we have name collision
+	// between images and the cache directory itself
+	if sum == "" || name == "" {
+		return "", fmt.Errorf("invalid parameters")
+	}
+
+	_, err := updateCacheSubdir(c, filepath.Join(ShubDir, sum))
 	if err != nil {
 		return "", fmt.Errorf("failed to update the cache's sub-directory: %s", err)
 	}
 
-	path, err := c.Shub()
-	if err != nil {
-		return "", fmt.Errorf("failed to get shub cache information: %s", err)
-	}
-
-	return filepath.Join(path, sum, name), nil
+	return filepath.Join(c.Shub, sum, name), nil
 }
 
 // ShubImageExists returns whether the image with the SHA sum exists in the ShubImage cache

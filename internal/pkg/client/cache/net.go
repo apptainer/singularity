@@ -18,25 +18,33 @@ const (
 )
 
 // Net returns the directory inside the cache.Dir() where shub images are cached
-func (c *SingularityCache) Net() (string, error) {
-	// updateCacheSubdir checks if the cache is valid, no need to check here
-	return c.updateCacheSubdir(NetDir)
+func getNetCachePath(c *SingularityCache) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a SingularityCache but rather an independent
+	// function
+
+	return updateCacheSubdir(c, NetDir)
 }
 
-// NetImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
+// NetImage creates a directory inside cache.Dir() with the name of the SHA sum of the image.
+// sum and path must not be empty strings since it would create name collisions.
 func (c *SingularityCache) NetImage(sum, name string) (string, error) {
-	// updateCacheSubdir checks if the cache is valid, no need to check here
-	path, err := c.updateCacheSubdir(filepath.Join(NetDir, sum))
-	if err != nil {
-		return "", fmt.Errorf("failed to update cache's sub-directory")
+	if !c.IsValid() {
+		return "", fmt.Errorf("invalid cache")
 	}
 
-	return filepath.Join(path, sum, name), nil
+	// the name and sum cannot be empty strings otherwise we have name collision
+	// between images and the cache directory itself
+	if sum == "" || name == "" {
+		return "", fmt.Errorf("invalid arguments")
+	}
+
+	return filepath.Join(c.Net, sum, name), nil
 }
 
 // NetImageExists returns whether the image with the SHA sum exists in the net cache
 func (c *SingularityCache) NetImageExists(sum, name string) (bool, error) {
-	if c.IsValid() == false {
+	if !c.IsValid() {
 		return false, fmt.Errorf("invalid cache")
 	}
 

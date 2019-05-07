@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
@@ -48,14 +49,14 @@ func TestLibrary(t *testing.T) {
 			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			newCache := createTempCache(t)
+			newCache := setupCache(t)
 			if newCache == nil {
 				t.Fatal("failed to create temporary cache")
 			}
-			defer newCache.Clean()
+			defer cleanupCache(t, newCache)
 
-			if r, err := newCache.Library(); err != nil || r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if newCache.Library != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", newCache.Library, tt.expected)
 			}
 		})
 	}
@@ -65,16 +66,11 @@ func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	newCache := CreateTempCache(t)
+	newCache := createTempCache(t)
 	if newCache == nil {
 		t.Fatal("failed to create temporary cache")
 	}
 	defer newCache.Clean()
-
-	expectedCache, err := newCache.Library()
-	if err != nil {
-		t.Fatalf("failed to get library cache's path: %s", err)
-	}
 
 	// LibraryImage just return a string and there is no definition of what
 	// could be a bad string.
@@ -88,7 +84,7 @@ func TestLibraryImage(t *testing.T) {
 			name:     "General case",
 			sum:      validSHASum,
 			path:     validPath,
-			expected: expectedCache,
+			expected: filepath.Join(newCache.Library, validSHASum, validPath),
 		},
 	}
 
@@ -100,13 +96,23 @@ func TestLibraryImage(t *testing.T) {
 			}
 		})
 	}
+
+	// Error case using an invalid cache
+	newCache.State = StateInvalid
+	_, err := newCache.LibraryImage(validSHASum, validPath)
+	if err == nil {
+		t.Fatal("LibraryImage() succeeded with an invalid cache")
+	}
 }
 
 func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	newCache := CreateTempCache(t)
+	newCache := createTempCache(t)
+	if newCache == nil {
+		t.Fatal("unable to create cache object")
+	}
 	defer newCache.Clean()
 
 	// Invalid cases
@@ -141,9 +147,9 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 
 	// Invalid case with a valid image
-	_, err = newCache.LibraryImageExists("", filename)
-	if err != nil {
-		t.Fatalf("image reported as non-existing: %s\n", err)
+	exists, err := newCache.LibraryImageExists("", filename)
+	if err == nil && exists {
+		t.Fatalf("image with invalid sum is reported as existing: %s\n", err)
 	}
 
 	// Valid case with a valid image, the get the hash from the
@@ -154,11 +160,34 @@ func TestLibraryImageExists(t *testing.T) {
 		t.Fatalf("cannot get image's hash: %s\n", err)
 	}
 
-	exists, err := newCache.LibraryImageExists(hash, filename)
+	exists, err = newCache.LibraryImageExists(hash, filename)
 	if err != nil {
 		t.Fatalf("error while checking if image exists: %s\n", err)
 	}
 	if exists == false {
 		t.Fatal("valid image is reported as non-existing")
+	}
+
+	// Invalid case with an invalid sum
+	imgCachePath := filepath.Join(newCache.Library, hash, filename)
+	// We delete the file and put an empty one
+	err = os.Remove(imgCachePath)
+	if err != nil {
+		t.Fatalf("Failed to remove %s: %s", name, err)
+	}
+	err = fs.Touch(imgCachePath)
+	if err != nil {
+		t.Fatalf("cannot create %s: %s", name, err)
+	}
+	exists, err = newCache.LibraryImageExists(hash, filename)
+	if err != nil || exists {
+		t.Fatal("LibraryImageExists() succeeded with an invalid sum")
+	}
+
+	// Invalid case with an invalid cache
+	newCache.State = StateInvalid
+	_, err = newCache.LibraryImageExists(hash, filename)
+	if err == nil {
+		t.Fatal("LibraryImageExists() succeeded with an invalid cache")
 	}
 }
