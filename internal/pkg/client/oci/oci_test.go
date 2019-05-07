@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,6 +16,7 @@ import (
 
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -271,6 +272,20 @@ func TestConvertReference(t *testing.T) {
 				t.Fatal("test expected to fail but succeeded")
 			}
 		})
+	}
+
+	// Specific test to cover the situation where a cache is invalid
+	tempCacheConfig := test.CacheTestInit(t)
+	defer test.CacheTestFinalize(t, tempCacheConfig)
+
+	err := test.CacheTestInvalidate(t, tempCacheConfig)
+	if err != nil {
+		t.Fatalf("failed to invalidate cache: %s", err)
+	}
+
+	_, err = ConvertReference(createValidImageRef(t, ref), createValidSysCtx())
+	if err == nil {
+		t.Fatal("test succeeded with invalid cache")
 	}
 }
 

@@ -58,9 +58,16 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	}
 
 	name := uri.GetName(u)
-	imgabs := cache.OciTempImage(sum, name)
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return "", fmt.Errorf("unable to create cache object")
+	}
+	imgabs, err := c.OciTempImage(sum, name)
+	if err != nil {
+		return "", fmt.Errorf("unable to get image's data from OCI temp")
+	}
 
-	if exists, err := cache.OciTempExists(sum, name); err != nil {
+	if exists, err := c.OciTempExists(sum, name); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
@@ -98,9 +105,18 @@ func handleLibrary(u, libraryURL string) (string, error) {
 	}
 
 	imageName := uri.GetName(u)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return "", fmt.Errorf("unable to create cache object")
+	}
+
+	imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to get image's information from library cache")
+	}
+
+	if exists, err := c.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
@@ -120,9 +136,18 @@ func handleLibrary(u, libraryURL string) (string, error) {
 
 func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
-	imagePath := cache.ShubImage("hash", imageName)
 
-	exists, err := cache.ShubImageExists("hash", imageName)
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return "", fmt.Errorf("unable to create cache object")
+	}
+
+	imagePath, err := c.ShubImage("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to retrieve image data from shub cache")
+	}
+
+	exists, err := c.ShubImageExists("hash", imageName)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	}
@@ -142,9 +167,17 @@ func handleShub(u string) (string, error) {
 func handleNet(u string) (string, error) {
 	refParts := strings.Split(u, "/")
 	imageName := refParts[len(refParts)-1]
-	imagePath := cache.NetImage("hash", imageName)
 
-	exists, err := cache.NetImageExists("hash", imageName)
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return "", fmt.Errorf("unable to create cache object")
+	}
+	imagePath, err := c.NetImage("hash", imageName)
+	if err != nil {
+		return "", fmt.Errorf("unable to get image's data from net cache")
+	}
+
+	exists, err := c.NetImageExists("hash", imageName)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	}

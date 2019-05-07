@@ -240,8 +240,18 @@ func pullRun(cmd *cobra.Command, args []string) {
 		} else {
 			imageName = uri.GetName(args[i])
 		}
-		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-		exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName)
+
+		c, err := cache.Create()
+		if c == nil || err != nil {
+			sylog.Fatalf("Unable to create cache object")
+		}
+
+		imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
+		if err != nil {
+			sylog.Fatalf("Unable to get library cache's data")
+		}
+
+		exists, err := c.LibraryImageExists(libraryImage.Hash, imageName)
 		if err != nil {
 			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
 		}
@@ -354,9 +364,17 @@ func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
 	}
 
 	imgName := uri.GetName(imageURI)
-	cachedImgPath := cache.OciTempImage(sum, imgName)
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		sylog.Fatalf("Unable to create cache object")
+	}
 
-	exists, err := cache.OciTempExists(sum, imgName)
+	cachedImgPath, err := c.OciTempImage(sum, imgName)
+	if err != nil {
+		sylog.Fatalf("Unable to get image's data from OCI temp cache")
+	}
+
+	exists, err := c.OciTempExists(sum, imgName)
 	if err != nil {
 		sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
 	}

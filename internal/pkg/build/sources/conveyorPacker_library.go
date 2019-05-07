@@ -53,11 +53,19 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	imageName := uri.GetName(libURI)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return fmt.Errorf("Failed to create cache object")
+	}
+	imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
+	if err != nil {
+		return fmt.Errorf("Unable to get path to image")
+	}
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := c.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
+		fmt.Println("Downloading image...")
 		sylog.Infof("Downloading library image")
 		if err = client.DownloadImage(imagePath, libURI, libraryURL, true, authToken); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
@@ -68,6 +76,8 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		} else if cacheFileHash != libraryImage.Hash {
 			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
+	} else {
+		fmt.Println("Image ", imagePath, " exists:", imagePath)
 	}
 
 	// insert base metadata before unpacking fs

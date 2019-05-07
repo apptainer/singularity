@@ -19,7 +19,7 @@ const (
 	validSHASum   = "0"
 	invalidSHASum = "" //"not a SHA sum"
 	validPath     = "a_dummy_image"
-	invalidPath   = "" //not an image"
+	invalidPath   = ""
 	cacheCustom   = "/tmp/customcachedir"
 )
 

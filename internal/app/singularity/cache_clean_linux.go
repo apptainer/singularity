@@ -16,9 +16,14 @@ import (
 )
 
 func cleanLibraryCache() error {
-	sylog.Debugf("Removing: %v", cache.Library())
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return fmt.Errorf("unable to create the cache object")
+	}
 
-	err := os.RemoveAll(cache.Library())
+	sylog.Debugf("Removing: %v", c.Library)
+
+	err = os.RemoveAll(c.Library)
 	if err != nil {
 		return fmt.Errorf("unable to clean library cache: %v", err)
 	}
@@ -27,9 +32,14 @@ func cleanLibraryCache() error {
 }
 
 func cleanOciCache() error {
-	sylog.Debugf("Removing: %v", cache.OciTemp())
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return fmt.Errorf("unable to create the cache object")
+	}
 
-	err := os.RemoveAll(cache.OciTemp())
+	sylog.Debugf("Removing: %v", c.OciTemp)
+
+	err = os.RemoveAll(c.OciTemp)
 	if err != nil {
 		return fmt.Errorf("unable to clean oci-tmp cache: %v", err)
 	}
@@ -38,9 +48,14 @@ func cleanOciCache() error {
 }
 
 func cleanBlobCache() error {
-	sylog.Debugf("Removing: %v", cache.OciBlob())
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return fmt.Errorf("unable to create the cache object")
+	}
 
-	err := os.RemoveAll(cache.OciBlob())
+	sylog.Debugf("Removing: %v", c.OciTemp)
+
+	err = os.RemoveAll(c.OciTemp)
 	if err != nil {
 		return fmt.Errorf("unable to clean oci-blob cache: %v", err)
 	}
@@ -51,6 +66,11 @@ func cleanBlobCache() error {
 
 // CleanCache : clean a type of cache (cacheType string). will return a error if one occurs.
 func CleanCache(cacheType string) error {
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return fmt.Errorf("unable to create the cache object")
+	}
+
 	switch cacheType {
 	case "library":
 		err := cleanLibraryCache()
@@ -62,7 +82,7 @@ func CleanCache(cacheType string) error {
 		err := cleanBlobCache()
 		return err
 	case "all":
-		err := cache.Clean()
+		err := c.Clean()
 		return err
 	default:
 		// The caller checks the returned error and will exit as required
@@ -72,19 +92,24 @@ func CleanCache(cacheType string) error {
 
 func cleanLibraryCacheName(cacheName string) (bool, error) {
 	foundMatch := false
-	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
+	sCache, err := cache.Create()
+	if sCache == nil || err != nil {
+		return false, fmt.Errorf("unable to create the cache object")
+	}
+
+	libraryCacheFiles, err := ioutil.ReadDir(sCache.Library)
 	if err != nil {
 		return false, fmt.Errorf("unable to opening library cache folder: %v", err)
 	}
 	for _, f := range libraryCacheFiles {
-		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
+		cont, err := ioutil.ReadDir(filepath.Join(sCache.Library, f.Name()))
 		if err != nil {
 			return false, fmt.Errorf("unable to look in library cache folder: %v", err)
 		}
 		for _, c := range cont {
 			if c.Name() == cacheName {
-				sylog.Debugf("Removing: %v", filepath.Join(cache.Library(), f.Name(), c.Name()))
-				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name(), c.Name()))
+				sylog.Debugf("Removing: %v", filepath.Join(sCache.Library, f.Name(), c.Name()))
+				err = os.RemoveAll(filepath.Join(sCache.Library, f.Name(), c.Name()))
 				if err != nil {
 					return false, fmt.Errorf("unable to remove library cache: %v", err)
 				}
@@ -97,19 +122,25 @@ func cleanLibraryCacheName(cacheName string) (bool, error) {
 
 func cleanOciCacheName(cacheName string) (bool, error) {
 	foundMatch := false
-	blobs, err := ioutil.ReadDir(cache.OciTemp())
+
+	c, err := cache.Create()
+	if c == nil || err != nil {
+		return false, fmt.Errorf("unable to create the cache object")
+	}
+
+	blobs, err := ioutil.ReadDir(c.OciTemp)
 	if err != nil {
 		return false, fmt.Errorf("unable to opening oci-tmp cache folder: %v", err)
 	}
 	for _, f := range blobs {
-		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
+		blob, err := ioutil.ReadDir(filepath.Join(c.OciTemp, f.Name()))
 		if err != nil {
 			return false, fmt.Errorf("unable to look in oci-tmp cache folder: %v", err)
 		}
 		for _, b := range blob {
 			if b.Name() == cacheName {
-				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
+				sylog.Debugf("Removing: %v", filepath.Join(c.OciTemp, f.Name(), b.Name()))
+				err = os.RemoveAll(filepath.Join(c.OciTemp, f.Name(), b.Name()))
 				if err != nil {
 					return false, fmt.Errorf("unable to remove oci-tmp cache: %v", err)
 				}

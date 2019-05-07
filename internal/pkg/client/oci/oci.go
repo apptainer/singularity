@@ -38,7 +38,12 @@ func ConvertReference(src types.ImageReference, sys *types.SystemContext) (types
 		return nil, err
 	}
 
-	c, err := layout.ParseReference(cache.OciBlob() + ":" + cacheTag)
+	imageCache, err := cache.Create()
+	if imageCache == nil || err != nil {
+		return nil, fmt.Errorf("Failed to create cache object")
+	}
+
+	c, err := layout.ParseReference(imageCache.OciBlob + ":" + cacheTag)
 	if err != nil {
 		return nil, err
 	}
