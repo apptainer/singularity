@@ -175,8 +175,11 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanUse   string = `clean [clean options...]`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
-  This will clean your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).
-  By default only blob cache is cleaned, use '--all' to clean the entire cache.`
+  This will clean your local cache (stored at $HOME/.singularity/cache if
+  SINGULARITY_CACHEDIR is not set). By default only blob cache is cleaned,
+  use '--all' to clean the entire cache. Note: if you use Singularity as
+  root, cache will be stored in '/root/.singularity/.cache', to clean that
+  cache, you will need to run 'cache clean --all' as root, or with 'sudo'.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
@@ -713,47 +716,6 @@ Enterprise Performance Computing (EPC)`
 	InspectExample string = `
   $ singularity inspect ubuntu.sif`
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Apps
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	AppsUse   string = `apps <image path>`
-	AppsShort string = `List available apps within a container`
-	AppsLong  string = `
-  List applications (apps) installed in a container, located at
-  /scif/apps. See http://containers-ftw.org/SCI-F/
-  
-  To access apps, use shell, exec, run, inspect with --app <appname>
-
-  The following environment variables are available to you when called 
-  from the shell inside the container. The top variables are relevant 
-  to the active app (--app <app>) and the bottom available for all 
-  apps regardless of the active app:
-
-  ACTIVE APP ENVIRONMENT:
-
-      SCIF_APPNAME       the name of the application
-      SCIF_APPROOT       the application base (/scif/apps/<app>)
-      SCIF_APPMETA       the application metadata folder
-      SCIF_APPDATA       the data base folder for active app
-        SCIF_APPINPUT    expected input folder within data base folder
-        SCIF_APPOUTPUT   the output data folder within data base folder
-
-  GLOBAL APP ENVIRONMENT:
-    
-      SCIF_DATA             scif defined data base for all apps (/scif/data)
-      SCIF_APPS             scif defined install bases for all apps (/scif/apps)
-      SCIF_APPROOT_<app>    root for application <app>
-      SCIF_APPDATA_<app>    data root for application <app>
-
-
-For additional help, please visit our public documentation pages which are
-found at:
-
-  https://www.sylabs.io/docs/`
-	AppsExample string = `
-  $ singularity apps ubuntu.img
-   bar
-   foo`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

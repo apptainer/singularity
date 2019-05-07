@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/cmdline"
+
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -27,6 +29,8 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
+const listAppsCommand = "echo apps:`ls \"$app/scif/apps\" | wc -c`; for app in ${SINGULARITY_MOUNTPOINT}/scif/apps/*; do\n    if [ -d \"$app/scif\" ]; then\n        APPNAME=`basename \"$app\"`\n        echo \"$APPNAME\"\n    fi\ndone\n"
+
 var (
 	labels      bool
 	deffile     bool
@@ -35,9 +39,11 @@ var (
 	environment bool
 	helpfile    bool
 	jsonfmt     bool
+	listApps    bool
 )
 
 type inspectAttributes struct {
+	Apps        string            `json:"apps"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Deffile     string            `json:"deffile,omitempty"`
 	Runscript   string            `json:"runscript,omitempty"`
@@ -51,34 +57,115 @@ type inspectFormat struct {
 	Type       string            `json:"type"`
 }
 
+// -d|--deffile
+var inspectAppsListFlag = cmdline.Flag{
+	ID:           "inspectAppsListFlag",
+	Value:        &listApps,
+	DefaultValue: false,
+	Name:         "list-apps",
+	ShortHand:    "",
+	Usage:        "list all apps in a contianer",
+}
+
+// --app
+var inspectAppNameFlag = cmdline.Flag{
+	ID:           "inspectAppNameFlag",
+	Value:        &AppName,
+	DefaultValue: "",
+	Name:         "app",
+	Usage:        "inspect a specific app",
+	EnvKeys:      []string{"APP"},
+}
+
+// -l|--labels
+var inspectLabelsFlag = cmdline.Flag{
+	ID:           "inspectLabelsFlag",
+	Value:        &labels,
+	DefaultValue: false,
+	Name:         "labels",
+	ShortHand:    "l",
+	Usage:        "show the labels associated with the image (default)",
+	EnvKeys:      []string{"LABELS"},
+}
+
+// -d|--deffile
+var inspectDeffileFlag = cmdline.Flag{
+	ID:           "inspectDeffileFlag",
+	Value:        &deffile,
+	DefaultValue: false,
+	Name:         "deffile",
+	ShortHand:    "d",
+	Usage:        "show the Singularity recipe file that was used to generate the image",
+	EnvKeys:      []string{"DEFFILE"},
+}
+
+// -r|--runscript
+var inspectRunscriptFlag = cmdline.Flag{
+	ID:           "inspectRunscriptFlag",
+	Value:        &runscript,
+	DefaultValue: false,
+	Name:         "runscript",
+	ShortHand:    "r",
+	Usage:        "show the runscript for the image",
+	EnvKeys:      []string{"RUNSCRIPT"},
+}
+
+// -t|--test
+var inspectTestFlag = cmdline.Flag{
+	ID:           "inspectTestFlag",
+	Value:        &testfile,
+	DefaultValue: false,
+	Name:         "test",
+	ShortHand:    "t",
+	Usage:        "show the test script for the image",
+	EnvKeys:      []string{"TEST"},
+}
+
+// -e|--environment
+var inspectEnvironmentFlag = cmdline.Flag{
+	ID:           "inspectEnvironmentFlag",
+	Value:        &environment,
+	DefaultValue: false,
+	Name:         "environment",
+	ShortHand:    "e",
+	Usage:        "show the environment settings for the image",
+	EnvKeys:      []string{"ENVIRONMENT"},
+}
+
+// -H|--helpfile
+var inspectHelpfileFlag = cmdline.Flag{
+	ID:           "inspectHelpfileFlag",
+	Value:        &helpfile,
+	DefaultValue: false,
+	Name:         "helpfile",
+	ShortHand:    "H",
+	Usage:        "inspect the runscript helpfile, if it exists",
+	EnvKeys:      []string{"HELPFILE"},
+}
+
+// -j|--json
+var inspectJSONFlag = cmdline.Flag{
+	ID:           "inspectJSONFlag",
+	Value:        &jsonfmt,
+	DefaultValue: false,
+	Name:         "json",
+	ShortHand:    "j",
+	Usage:        "print structured json instead of sections",
+	EnvKeys:      []string{"JSON"},
+}
+
 func init() {
-	InspectCmd.Flags().SetInterspersed(false)
+	cmdManager.RegisterCmd(InspectCmd)
 
-	InspectCmd.Flags().StringVar(&AppName, "app", "", "inspect a specific app")
-	InspectCmd.Flags().SetAnnotation("app", "envkey", []string{"APP"})
-
-	InspectCmd.Flags().BoolVarP(&labels, "labels", "l", false, "show the labels associated with the image (default)")
-	InspectCmd.Flags().SetAnnotation("labels", "envkey", []string{"LABELS"})
-
-	InspectCmd.Flags().BoolVarP(&deffile, "deffile", "d", false, "show the Singularity recipe file that was used to generate the image")
-	InspectCmd.Flags().SetAnnotation("deffile", "envkey", []string{"DEFFILE"})
-
-	InspectCmd.Flags().BoolVarP(&runscript, "runscript", "r", false, "show the runscript for the image")
-	InspectCmd.Flags().SetAnnotation("runscript", "envkey", []string{"RUNSCRIPT"})
-
-	InspectCmd.Flags().BoolVarP(&testfile, "test", "t", false, "show the test script for the image")
-	InspectCmd.Flags().SetAnnotation("test", "envkey", []string{"TEST"})
-
-	InspectCmd.Flags().BoolVarP(&environment, "environment", "e", false, "show the environment settings for the image")
-	InspectCmd.Flags().SetAnnotation("environment", "envkey", []string{"ENVIRONMENT"})
-
-	InspectCmd.Flags().BoolVarP(&helpfile, "helpfile", "H", false, "inspect the runscript helpfile, if it exists")
-	InspectCmd.Flags().SetAnnotation("helpfile", "envkey", []string{"HELPFILE"})
-
-	InspectCmd.Flags().BoolVarP(&jsonfmt, "json", "j", false, "print structured json instead of sections")
-	InspectCmd.Flags().SetAnnotation("json", "envkey", []string{"JSON"})
-
-	SingularityCmd.AddCommand(InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectAppNameFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectDeffileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectEnvironmentFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectHelpfileFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectJSONFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectLabelsFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectRunscriptFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectTestFlag, InspectCmd)
+	cmdManager.RegisterFlagForCmd(&inspectAppsListFlag, InspectCmd)
 }
 
 func getPathPrefix(appName string) string {
@@ -128,6 +215,8 @@ func getHelpCommand(appName string) string {
 
 func setAttribute(obj *inspectFormat, label string, value string) {
 	switch label {
+	case "apps":
+		obj.Attributes.Apps = value
 	case "deffile":
 		obj.Attributes.Deffile = value
 	case "test":
@@ -153,7 +242,13 @@ func getAppCheck(appName string) string {
 	return fmt.Sprintf("if ! [ -d \"/scif/apps/%s\" ]; then echo \"App %s does not exist.\"; exit 2; fi;", appName, appName)
 }
 
-// InspectCmd represents the build command
+// returns true if flags for other forms of information are unset
+func defaultToLabels() bool {
+	return !(helpfile || deffile || runscript || testfile || environment || listApps)
+}
+
+// InspectCmd represents the 'inspect' command
+// TODO: This should be in its own package, not cli
 var InspectCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExactArgs(1),
@@ -164,7 +259,6 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
-
 		// Sanity check
 		if _, err := os.Stat(args[0]); err != nil {
 			sylog.Fatalf("container not found: %s", err)
@@ -177,6 +271,11 @@ var InspectCmd = &cobra.Command{
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/sh", "-c", ""}
+
+		if listApps {
+			sylog.Debugf("Listing all apps in container")
+			a[2] += listAppsCommand
+		}
 
 		// If AppName is given fail quickly (exit) if it doesn't exist
 		if AppName != "" {
@@ -209,8 +308,8 @@ var InspectCmd = &cobra.Command{
 			a[2] += getEnvironmentCommand(AppName)
 		}
 
-		// Default to labels if nothing was appended
-		if labels || len(a[2]) == 0 {
+		// Default to labels if other flags are unset, excludes --app
+		if labels || defaultToLabels() {
 			sylog.Debugf("Inspection of labels selected.")
 			a[2] += getLabelsCommand(AppName)
 		}
@@ -260,6 +359,10 @@ var InspectCmd = &cobra.Command{
 			}
 			fmt.Println(string(jsonObj))
 		} else {
+			if inspectObj.Attributes.Apps != "" {
+				fmt.Printf("==apps==\n")
+				fmt.Printf("%s\n", inspectObj.Attributes.Apps)
+			}
 			if inspectObj.Attributes.Helpfile != "" {
 				fmt.Println("==helpfile==\n" + inspectObj.Attributes.Helpfile)
 			}
@@ -314,16 +417,16 @@ func getFileContent(abspath, name string, args []string) (string, error) {
 		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
 	}
 
-	//record from stdout and store as a string to return as the contents of the file?
+	// Record from stdout and store as a string to return as the contents of the file
 
 	cmd, err := exec.PipeCommand(starter, []string{procname}, Env, configData)
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, cmd.Args)
+		sylog.Fatalf("Unable to exec command: %s: %s", err, cmd.Args)
 	}
 
 	b, err := cmd.Output()
 	if err != nil {
-		sylog.Fatalf("%s: %s", err, b)
+		sylog.Fatalf("Unable to prossess command: %s: %s", err, b)
 	}
 
 	return string(b), nil

@@ -1241,7 +1241,7 @@ func (c *container) addHomeMount(system *mount.System) error {
 		return nil
 	}
 
-	if !c.engine.EngineConfig.File.MountHome {
+	if !c.engine.EngineConfig.GetCustomHome() && !c.engine.EngineConfig.File.MountHome {
 		sylog.Debugf("Skipping home dir mounting (per config)")
 		return nil
 	}
