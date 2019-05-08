@@ -20,15 +20,11 @@ type Result struct {
 }
 
 func NewCmd(path string) *Cmd {
-	c := &Cmd{
-		path: path,
-	}
-
-	return c
+	return &Cmd{path: path}
 }
 
 func (c *Cmd) Run(t *testing.T, args ...string) *Result {
-	t.Logf("Running cmd %s with args %s", c.path, args)
+	t.Logf("Running cmd %q with args %q", c.path, args)
 
 	result := icmd.RunCommand(c.path, args...)
 
