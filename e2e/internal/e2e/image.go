@@ -6,7 +6,6 @@
 package e2e
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -52,20 +51,6 @@ func EnsureImage(t *testing.T) {
 			b)
 		t.Fatalf("Unexpected failure: %+v", err)
 	}
-}
-
-// MakeTmpDir will make a tmp dir and return a string of the path, and a full
-// path (with a container name 'test_container.sif').
-func MakeTmpDir(t *testing.T) string {
-	tmpPath, err := ioutil.TempDir("", "stest.")
-	if err != nil {
-		t.Fatalf("Failed to create temporary directory: %v", err)
-	}
-	if err := os.Chmod(tmpPath, 0777); err != nil {
-		t.Fatalf("Failed to chmod temporary directory: %v", err)
-	}
-
-	return tmpPath
 }
 
 // PullTestAlpineContainer will pull the 'library://alpine:latest' container for tests.
