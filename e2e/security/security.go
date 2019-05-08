@@ -8,7 +8,9 @@
 package security
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -257,10 +259,11 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	// Make a tmp directory
-	imagePath = e2e.MakeTmpDir(t)
+	//	// Make a tmp directory
+	//	imagePath = e2e.MakeTmpDir(t)
+	//	imagePath += "test_container.sif"
 
-	imagePath += "test_container.sif"
+	imagePath = filepath.Join(testenv.TestDir, "test_container.sif")
 
 	// pull a test image to that directory
 	b, err := e2e.PullTestAlpineContainer(testenv.CmdPath, imagePath)
