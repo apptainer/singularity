@@ -260,6 +260,8 @@ func RunE2ETests(t *testing.T) {
 	// Make a tmp directory
 	imagePath = e2e.MakeTmpDir(t)
 
+	imagePath += "test_container.sif"
+
 	// pull a test image to that directory
 	b, err := e2e.PullTestAlpineContainer(testenv.CmdPath, imagePath)
 	if err != nil {
