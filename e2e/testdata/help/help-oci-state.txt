@@ -1,0 +1,19 @@
+Query state of a container (root user only)
+
+Usage:
+  singularity oci state <container_ID>
+
+Description:
+  State invoke state operation to query state of a created/running/stopped container identified by container ID.
+
+Options:
+  -h, --help                 help for state
+  -s, --sync-socket string   specify the path to unix socket for state
+                             synchronization
+
+
+Examples:
+  $ singularity oci state mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/
