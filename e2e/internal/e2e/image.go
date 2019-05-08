@@ -56,24 +56,22 @@ func EnsureImage(t *testing.T) {
 
 // MakeTmpDir will make a tmp dir and return a string of the path, and a full
 // path (with a container name 'test_container.sif').
-func MakeTmpDir(t *testing.T) (string, string) {
-	name, err := ioutil.TempDir("", "stest.")
+func MakeTmpDir(t *testing.T) string {
+	tmpPath, err := ioutil.TempDir("", "stest.")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
-	if err := os.Chmod(name, 0777); err != nil {
+	if err := os.Chmod(tmpPath, 0777); err != nil {
 		t.Fatalf("Failed to chmod temporary directory: %v", err)
 	}
-	fullName := name
-	fullName += "test_container.sif"
 
-	return fullName, name
+	return tmpPath
 }
 
 // PullTestAlpineContainer will pull the 'library://alpine:latest' container for tests.
 // This will pull to the pervided path ('imagePath'), and overide any image that was there.
 func PullTestAlpineContainer(cmdPath string, imagePath string) ([]byte, error) {
-	argv := []string{"pull", "-U", "--force", imagePath, "library://alpine:latest"}
+	argv := []string{"pull", "--allow-unsigned", "--force", imagePath, "library://alpine:latest"}
 	cmd := exec.Command(cmdPath, argv...)
 
 	return cmd.CombinedOutput()

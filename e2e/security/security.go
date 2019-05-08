@@ -258,13 +258,13 @@ func RunE2ETests(t *testing.T) {
 	}
 
 	// Make a tmp directory
-	imagePath, _ = e2e.MakeTmpDir(t)
+	imagePath = e2e.MakeTmpDir(t)
 
 	// pull a test image to that directory
 	b, err := e2e.PullTestAlpineContainer(testenv.CmdPath, imagePath)
 	if err != nil {
 		t.Log(string(b))
-		t.Fatalf("%s", err)
+		t.Fatalf("Unable to pull test alpine container: %s", err)
 	}
 
 	t.Run("testSecurity", testSecurity)
