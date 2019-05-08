@@ -233,16 +233,6 @@ func testSecurityConfOwnership(t *testing.T) {
 
 func testSecurity(t *testing.T) {
 	test.EnsurePrivilege(t)
-	opts := e2e.BuildOpts{
-		Force:   true,
-		Sandbox: false,
-	}
-	e2e.EnsureImage(t)
-	if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, "../../examples/busybox/Singularity"); err == nil {
-		t.Log(string(b))
-		t.Fatalf("Unexpected failure: %v", err)
-	}
-	defer os.Remove(imagePath)
 
 	// Security
 	t.Run("Security_unpriv", testSecurityPriv)
