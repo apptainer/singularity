@@ -48,7 +48,7 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return 0, 0, fmt.Errorf("failed to create cache object")
 	}
@@ -106,7 +106,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return 0, 0, fmt.Errorf("unable to create a new cache handle: %s", err)
 	}

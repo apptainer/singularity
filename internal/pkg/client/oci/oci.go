@@ -40,7 +40,7 @@ func ConvertReference(src types.ImageReference, sys *types.SystemContext) (types
 
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	imageCache, err := cache.Create()
+	imageCache, err := cache.NewHandle()
 	if imageCache == nil || err != nil {
 		return nil, fmt.Errorf("Failed to create cache object")
 	}

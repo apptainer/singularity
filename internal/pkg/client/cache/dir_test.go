@@ -77,7 +77,7 @@ func testFakeCacheSubdir(t *testing.T, basedir string, subdir string) {
 	}
 
 	// Run the test
-	newCache, err := Init(basedir)
+	newCache, err := hdlInit(basedir)
 	if err == nil || newCache != nil {
 		if err == nil {
 			fmt.Println("No error")
@@ -95,6 +95,15 @@ func testFakeCacheSubdir(t *testing.T, basedir string, subdir string) {
 	}
 }
 
+// TestCreate creates a temporary file that is then used as base directory
+// for a new cache. This lets us have a fine-grain control over the test
+// (including switching some of the cache's directories to read-only), without
+// polluting the actual cache that the person running the test may have
+// specified via the DirEnv environment variable for another context.
+// This also allows us to know for sure that the cache is NOT already there
+// and therefore executed in a clean setup.
+// In other words, we try to control the test settings as much as possible to
+// run low-level tests related to cache creation.
 func TestCreate(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -139,6 +148,8 @@ func TestCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// testFakeCacheSubdir will fail the test if an error occurs and
+			// as a result, we do not need to check for errors here.
 			testFakeCacheSubdir(t, dir, tt.subdir)
 		})
 	}
@@ -150,7 +161,7 @@ func TestCreate(t *testing.T) {
 		t.Fatalf("cannot change mode of root: %s", err)
 	}
 
-	tempCache, err := Init(dir)
+	tempCache, err := hdlInit(dir)
 	if err == nil || tempCache != nil {
 		t.Fatal("cache creation from invalid data succeeded")
 	}

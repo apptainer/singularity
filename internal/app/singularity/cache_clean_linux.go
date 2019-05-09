@@ -18,7 +18,7 @@ import (
 func cleanLibraryCache() error {
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return fmt.Errorf("unable to create the cache object")
 	}
@@ -36,7 +36,7 @@ func cleanLibraryCache() error {
 func cleanOciCache() error {
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return fmt.Errorf("unable to create the cache object")
 	}
@@ -54,7 +54,7 @@ func cleanOciCache() error {
 func cleanBlobCache() error {
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return fmt.Errorf("unable to create the cache object")
 	}
@@ -85,7 +85,7 @@ func CleanCache(cacheType string) error {
 	case "all":
 		// Create a cache handle, which will provide access to an existing cache
 		// or create a new cache based on the current configuration.
-		c, err := cache.Create()
+		c, err := cache.NewHandle()
 		if c == nil || err != nil {
 			return fmt.Errorf("unable to create the cache object")
 		}
@@ -101,7 +101,7 @@ func cleanLibraryCacheName(cacheName string) (bool, error) {
 	foundMatch := false
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	sCache, err := cache.Create()
+	sCache, err := cache.NewHandle()
 	if sCache == nil || err != nil {
 		return false, fmt.Errorf("unable to create the cache object")
 	}
@@ -134,7 +134,7 @@ func cleanOciCacheName(cacheName string) (bool, error) {
 
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return false, fmt.Errorf("unable to create the cache object")
 	}

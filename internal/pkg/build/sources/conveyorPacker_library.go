@@ -55,7 +55,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	imageName := uri.GetName(libURI)
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		return fmt.Errorf("failed to create cache object")
 	}

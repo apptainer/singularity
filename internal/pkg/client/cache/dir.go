@@ -80,8 +80,8 @@ type SingularityCache struct {
 	Shub string
 }
 
-// Create a new Singularity cache
-func Create() (*SingularityCache, error) {
+// NewHandle creates a new Singularity cache handle that can then be used to interact with a cache. The location of the cache is driven by the DirEnv directory. If it points to a location where a cache is not already present, a new cache will implicitly be created; otherwise, the new cache handle will point at the existing cache.
+func NewHandle() (*SingularityCache, error) {
 	// Singularity makes the following assumptions:
 	// - the default location for caches is specified by RootDefault
 	// - a user can specify the environment variable specified by DirEnv to change the location
@@ -92,11 +92,11 @@ func Create() (*SingularityCache, error) {
 		return nil, fmt.Errorf("failed to get root of the cache: %s", err)
 	}
 
-	return Init(basedir)
+	return hdlInit(basedir)
 }
 
 // Init initializes a new cache within a given directory
-func Init(baseDir string) (*SingularityCache, error) {
+func hdlInit(baseDir string) (*SingularityCache, error) {
 	rootDir := getCacheRoot(baseDir)
 	if err := initCacheDir(rootDir); err != nil {
 		return nil, fmt.Errorf("failed initializing caching directory: %s", err)
@@ -145,7 +145,7 @@ func Init(baseDir string) (*SingularityCache, error) {
 	return newCache, nil
 }
 
-// Destroy a specific Singularity cache
+// Destroy a specific cache managed by a handler
 func (c *SingularityCache) Destroy() error {
 	sylog.Debugf("Removing: %v", c.Root)
 	if !c.IsValid() {
@@ -215,23 +215,27 @@ func isDefaultBasedir(basedir string) (bool, error) {
 
 // Figure out where the cache directory is.
 func getCacheBasedir() (string, error) {
-	// If the user defined the special environment variable, we use its value
-	usr, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("couldn't determine user home directory: %s", err)
-	}
-
-	// Assuming the user set the environment variable
+	// If the user defined the special environment variable, we use its value as base directory.
 	basedir := os.Getenv(DirEnv)
 	if basedir == "" {
+		// If the environment variable is not set, we use the default cache.
+		usr, err := user.Current()
+		if err != nil {
+			return "", fmt.Errorf("couldn't determine user home directory: %s", err)
+		}
 		basedir = path.Join(usr.HomeDir, BasedirDefault)
 	}
 
 	return basedir, nil
 }
 
-// getCacheRoot figures out what the root directory is
+// getCacheRoot figures out what the root directory is.
 func getCacheRoot(basedir string) string {
+	// Note: basedir and root are different and described earlier.
+	// The DirEnv environment variable can be used to set the basedir (or it
+	// is set to a default location) and the root is the actual cache directory
+	// within basedir, which we can safely delete (it is only supposed to contain
+	// files and directories that we create).
 	return path.Join(basedir, RootDefault)
 }
 
@@ -268,17 +272,15 @@ func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
 
 // initCacheDir initializes a sub-cache within a cache, e.g., the shub sub-cache.
 func initCacheDir(dir string) error {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if fInfo, err := os.Stat(dir); os.IsNotExist(err) {
 		sylog.Debugf("Creating cache directory: %s", dir)
 		if err := fs.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("couldn't create cache directory %v: %v", dir, err)
 		}
+	} else if !fInfo.IsDir() {
+		return fmt.Errorf("%s is not a directory", dir)
 	} else if err != nil {
 		return fmt.Errorf("unable to stat %s: %s", dir, err)
-	}
-
-	if !fs.IsDir(dir) {
-		return fmt.Errorf("%s is not a directory", dir)
 	}
 
 	return nil

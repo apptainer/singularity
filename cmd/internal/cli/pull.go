@@ -243,7 +243,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		// Create a cache handle, which will provide access to an existing cache
 		// or create a new cache based on the current configuration.
-		c, err := cache.Create()
+		c, err := cache.NewHandle()
 		if c == nil || err != nil {
 			sylog.Fatalf("Unable to create cache object")
 		}
@@ -368,7 +368,7 @@ func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
 	imgName := uri.GetName(imageURI)
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
+	c, err := cache.NewHandle()
 	if c == nil || err != nil {
 		sylog.Fatalf("Unable to create cache object")
 	}

@@ -47,7 +47,7 @@ func TestCacheTestInit(t *testing.T) {
 	}
 	defer TestFinalize(t, c)
 
-	tempCache, err := Create()
+	tempCache, err := NewHandle()
 	if tempCache == nil || err != nil {
 		t.Fatal("cannot create temporary cache")
 	}

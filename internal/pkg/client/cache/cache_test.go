@@ -35,7 +35,7 @@ func createTempCache(t *testing.T) *SingularityCache {
 		t.Fatal("Impossible to create temporary directory")
 	}
 
-	newCache, err := Init(dir)
+	newCache, err := hdlInit(dir)
 	if newCache == nil || err != nil {
 		t.Fatal("cannot create temporary cache")
 	}
@@ -46,7 +46,7 @@ func createTempCache(t *testing.T) *SingularityCache {
 // setupCache abstracts the creation of a new cache, mainly all the associated
 // error checking
 func setupCache(t *testing.T) *SingularityCache {
-	newCache, err := Create()
+	newCache, err := NewHandle()
 	if err != nil {
 		return nil
 	}
