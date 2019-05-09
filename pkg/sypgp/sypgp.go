@@ -564,15 +564,17 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
-	var fp [20]byte
+	var fp []byte
 	b, err := hex.DecodeString(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode fingerprint: %v", err)
 	}
-	if got, want := len(b), len(fp); got != want {
-		return nil, fmt.Errorf("unexpected fingerprint length of %v (expected %v)", got, want)
-	}
-	copy(fp[:], b)
+	//if got, want := len(b), len(fp); got != want {
+	//	return nil, fmt.Errorf("unexpected fingerprint length of %v (expected %v)", got, want)
+	//}
+
+	//	copy(fp[:], b)
+	fp = b
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
