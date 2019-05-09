@@ -277,7 +277,7 @@ func initCacheDir(dir string) error {
 		if err := fs.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("couldn't create cache directory %v: %v", dir, err)
 		}
-	} else if !fInfo.IsDir() {
+	} else if fInfo != nil && !fInfo.IsDir() {
 		return fmt.Errorf("%s is not a directory", dir)
 	} else if err != nil {
 		return fmt.Errorf("unable to stat %s: %s", dir, err)
