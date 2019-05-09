@@ -9,14 +9,14 @@ github.com/blang/semver
 # github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 github.com/containerd/cgroups
 # github.com/containerd/containerd v1.2.6
+github.com/containerd/containerd/images
 github.com/containerd/containerd/remotes/docker
 github.com/containerd/containerd/content
 github.com/containerd/containerd/errdefs
-github.com/containerd/containerd/images
 github.com/containerd/containerd/log
+github.com/containerd/containerd/platforms
 github.com/containerd/containerd/reference
 github.com/containerd/containerd/remotes
-github.com/containerd/containerd/platforms
 # github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd
 github.com/containerd/continuity/pathdriver
 # github.com/containernetworking/cni v0.6.0
@@ -97,7 +97,7 @@ github.com/cpuguy83/go-md2man/md2man
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
 github.com/d2g/dhcp4client
-# github.com/deislabs/oras v0.3.4-0.20190418061609-40d20966e9ea
+# github.com/deislabs/oras v0.4.0
 github.com/deislabs/oras/pkg/content
 github.com/deislabs/oras/pkg/context
 github.com/deislabs/oras/pkg/oras

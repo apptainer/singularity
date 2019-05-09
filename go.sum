@@ -50,6 +50,8 @@ github.com/deislabs/oras v0.3.4-0.20190417044152-550ed34caf4a h1:L6AUOfdWrh5ZpBa
 github.com/deislabs/oras v0.3.4-0.20190417044152-550ed34caf4a/go.mod h1:SXwPnImOu69FofPWaqgB+cPKKQRBmao5i+9xQRdcOiM=
 github.com/deislabs/oras v0.3.4-0.20190418061609-40d20966e9ea h1:dOOTK3sBZPAmXpGdkA/UBtNUaInZ+yA4TVd6Mu0z5fY=
 github.com/deislabs/oras v0.3.4-0.20190418061609-40d20966e9ea/go.mod h1:SXwPnImOu69FofPWaqgB+cPKKQRBmao5i+9xQRdcOiM=
+github.com/deislabs/oras v0.4.0 h1:G/wxhm9Simecxlr7dsjWy5iL0UGPAQlnuFNRZsXVJfI=
+github.com/deislabs/oras v0.4.0/go.mod h1:SXwPnImOu69FofPWaqgB+cPKKQRBmao5i+9xQRdcOiM=
 github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 h1:i5cGFDf/s0ocGJXaJHJR+NiDgMb5oLoUNpGlRZqurlY=
 github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.0.0-20180522102801-da99009bbb11 h1:p8hSDXZgVhyh/C9bPlG8QMY64VeXtVfjmjIlzaQok5Q=

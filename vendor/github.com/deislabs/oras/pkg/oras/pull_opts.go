@@ -11,6 +11,7 @@ type pullOpts struct {
 	allowedMediaTypes []string
 	dispatch          func(context.Context, images.Handler, ...ocispec.Descriptor) error
 	baseHandlers      []images.Handler
+	callbackHandlers  []images.Handler
 }
 
 // PullOpt allows callers to set options on the oras pull
@@ -49,6 +50,15 @@ func WithPullByBFS(o *pullOpts) error {
 func WithPullBaseHandler(handlers ...images.Handler) PullOpt {
 	return func(o *pullOpts) error {
 		o.baseHandlers = append(o.baseHandlers, handlers...)
+		return nil
+	}
+}
+
+// WithPullCallbackHandler provides callback handlers, which will be called after
+// any pull specific handlers.
+func WithPullCallbackHandler(handlers ...images.Handler) PullOpt {
+	return func(o *pullOpts) error {
+		o.callbackHandlers = append(o.callbackHandlers, handlers...)
 		return nil
 	}
 }

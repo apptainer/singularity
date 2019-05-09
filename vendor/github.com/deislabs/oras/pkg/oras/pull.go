@@ -67,6 +67,7 @@ func fetchContent(ctx context.Context, fetcher remotes.Fetcher, desc ocispec.Des
 		picker,
 		images.ChildrenHandler(store),
 	)
+	handlers = append(handlers, opts.callbackHandlers...)
 
 	if err := opts.dispatch(ctx, images.Handlers(handlers...), desc); err != nil {
 		return nil, err
