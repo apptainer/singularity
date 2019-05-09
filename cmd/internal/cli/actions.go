@@ -58,6 +58,8 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	}
 
 	name := uri.GetName(u)
+	// Create a cache handle, which will provide access to an existing cache
+	// or create a new cache based on the current configuration.
 	c, err := cache.Create()
 	if c == nil || err != nil {
 		return "", fmt.Errorf("unable to create cache object")
@@ -106,6 +108,8 @@ func handleLibrary(u, libraryURL string) (string, error) {
 
 	imageName := uri.GetName(u)
 
+	// Create a cache handle, which will provide access to an existing cache
+	// or create a new cache based on the current configuration.
 	c, err := cache.Create()
 	if c == nil || err != nil {
 		return "", fmt.Errorf("unable to create cache object")
@@ -137,6 +141,8 @@ func handleLibrary(u, libraryURL string) (string, error) {
 func handleShub(u string) (string, error) {
 	imageName := uri.GetName(u)
 
+	// Create a cache handle, which will provide access to an existing cache
+	// or create a new cache based on the current configuration.
 	c, err := cache.Create()
 	if c == nil || err != nil {
 		return "", fmt.Errorf("unable to create cache object")
@@ -168,6 +174,8 @@ func handleNet(u string) (string, error) {
 	refParts := strings.Split(u, "/")
 	imageName := refParts[len(refParts)-1]
 
+	// Create a cache handle, which will provide access to an existing cache
+	// or create a new cache based on the current configuration.
 	c, err := cache.Create()
 	if c == nil || err != nil {
 		return "", fmt.Errorf("unable to create cache object")
