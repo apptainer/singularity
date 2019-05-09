@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
 	"github.com/deislabs/oras/pkg/content"
 	"github.com/deislabs/oras/pkg/context"
@@ -125,6 +126,17 @@ var PushCmd = &cobra.Command{
 		case OrasProtocol:
 			ref = strings.TrimPrefix(ref, "//")
 
+			spec, err := reference.Parse(ref)
+			if err != nil {
+				sylog.Fatalf("Unable to parse oci reference: %s", err)
+			}
+
+			// append default tag if no object exists
+			if spec.Object == "" {
+				spec.Object = SifDefaultTag
+				sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
+			}
+
 			ociAuth, err := makeDockerCredentials(cmd)
 			if err != nil {
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
@@ -146,7 +158,7 @@ var PushCmd = &cobra.Command{
 
 			descriptors := []ocispec.Descriptor{desc}
 
-			if _, err := oras.Push(context.Background(), resolver, ref, store, descriptors); err != nil {
+			if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors); err != nil {
 				sylog.Fatalf("Unable to push: %s", err)
 			}
 		}

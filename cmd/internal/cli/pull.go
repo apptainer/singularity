@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
 	ocitypes "github.com/containers/image/types"
 	"github.com/deislabs/oras/pkg/content"
@@ -315,6 +316,19 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("%v\n", err)
 		}
 	case OrasProtocol:
+		ref = strings.TrimPrefix(ref, "//")
+
+		spec, err := reference.Parse(ref)
+		if err != nil {
+			sylog.Fatalf("Unable to parse oci reference: %s", err)
+		}
+
+		// append default tag if no object exists
+		if spec.Object == "" {
+			spec.Object = SifDefaultTag
+			sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
+		}
+
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
@@ -346,7 +360,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 		pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
 
-		_, _, err = oras.Pull(orasctx.Background(), resolver, strings.TrimPrefix(ref, "//"), store, allowedMediaTypes, pullHandler)
+		_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
 		if err != nil {
 			sylog.Fatalf("Unable to pull from registry: %s", err)
 		}
