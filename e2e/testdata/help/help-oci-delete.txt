@@ -1,0 +1,17 @@
+Delete container (root user only)
+
+Usage:
+  singularity oci delete <container_ID>
+
+Description:
+  Delete invoke delete operation to delete resources that were created for container identified by container ID.
+
+Options:
+  -h, --help   help for delete
+
+
+Examples:
+  $ singularity oci delete mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/

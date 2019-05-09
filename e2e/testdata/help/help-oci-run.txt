@@ -1,0 +1,32 @@
+Create/start/attach/delete a container from a bundle directory (root user only)
+
+Usage:
+  singularity oci run -b <bundle_path> [run options...] <container_ID>
+
+Description:
+  Run will invoke equivalent of create/start/attach/delete commands in a row.
+
+Options:
+  -b, --bundle string        specify the OCI bundle path (required)
+  -h, --help                 help for run
+      --log-format string    specify the log file format. Available
+                             formats are basic, kubernetes and json
+                             (default "kubernetes")
+  -l, --log-path string      specify the log file path
+      --pid-file string      specify the pid file
+  -s, --sync-socket string   specify the path to unix socket for state
+                             synchronization
+
+
+Examples:
+  $ singularity oci run -b ~/bundle mycontainer
+
+  is equivalent to :
+
+  $ singularity oci create -b ~/bundle mycontainer
+  $ singularity oci start mycontainer
+  $ singularity oci attach mycontainer
+  $ singularity oci delete mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/

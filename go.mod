@@ -87,7 +87,7 @@ require (
 	gopkg.in/cheggaaa/pb.v1 v1.0.25
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.2
-	gotest.tools v2.3.0+incompatible // indirect
+	gotest.tools v2.3.0+incompatible
 	k8s.io/client-go v11.0.0+incompatible // indirect
 	mvdan.cc/sh/v3 v3.0.0-alpha1
 )
