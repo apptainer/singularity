@@ -57,8 +57,8 @@ func init() {
 // PushCmd singularity push
 var PushCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExactArgs(2),
-	PreRun:                sylabsToken,
+	Args:   cobra.ExactArgs(2),
+	PreRun: sylabsToken,
 	Run: func(cmd *cobra.Command, args []string) {
 		handlePushFlags(cmd)
 
@@ -76,7 +76,7 @@ var PushCmd = &cobra.Command{
 				}
 				// if its not signed, print a warning
 				if !imageSigned {
-					sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
+					sylog.Infof("TIP: Learn how to sign your own containers by running 'singularity help sign'")
 					fmt.Fprintf(os.Stderr, "\nUnable to verify your container! You REALLY should sign your container before pushing!\n")
 					fmt.Fprintf(os.Stderr, "Stopping upload.\n")
 					os.Exit(3)
