@@ -29,9 +29,6 @@ const (
 	// SifDefaultTag is the tag to use when a tag is not specified
 	SifDefaultTag = "latest"
 
-	// SifConfigMediaType is the config descriptor mediaType
-	SifConfigMediaType = "application/vnd.sylabs.sif.config.v1+json"
-
 	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
 	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar+gzip"
 )
@@ -142,12 +139,6 @@ var PushCmd = &cobra.Command{
 			store := content.NewFileStore("")
 			defer store.Close()
 
-			conf, err := store.Add("$config", SifConfigMediaType, "/dev/null")
-			if err != nil {
-				sylog.Fatalf("Unable to add manifest config to FileStore: %s", err)
-			}
-			conf.Annotations = nil
-
 			desc, err := store.Add(file, SifLayerMediaType, file)
 			if err != nil {
 				sylog.Fatalf("Unable to add SIF file to FileStore: %s", err)
@@ -155,7 +146,7 @@ var PushCmd = &cobra.Command{
 
 			descriptors := []ocispec.Descriptor{desc}
 
-			if _, err := oras.Push(context.Background(), resolver, ref, store, descriptors, oras.WithConfig(conf)); err != nil {
+			if _, err := oras.Push(context.Background(), resolver, ref, store, descriptors); err != nil {
 				sylog.Fatalf("Unable to push: %s", err)
 			}
 		}
