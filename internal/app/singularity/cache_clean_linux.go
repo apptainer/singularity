@@ -72,13 +72,6 @@ func cleanBlobCache() error {
 
 // CleanCache wil clean a type of cache (cacheType). The possible options are: 'library', 'oci', 'blob', and 'all'. CleanCache will return a error if one occurs.
 func CleanCache(cacheType string) error {
-	// Create a cache handle, which will provide access to an existing cache
-	// or create a new cache based on the current configuration.
-	c, err := cache.Create()
-	if c == nil || err != nil {
-		return fmt.Errorf("unable to create the cache object")
-	}
-
 	switch cacheType {
 	case "library":
 		err := cleanLibraryCache()
@@ -90,7 +83,13 @@ func CleanCache(cacheType string) error {
 		err := cleanBlobCache()
 		return err
 	case "all":
-		err := c.Clean()
+		// Create a cache handle, which will provide access to an existing cache
+		// or create a new cache based on the current configuration.
+		c, err := cache.Create()
+		if c == nil || err != nil {
+			return fmt.Errorf("unable to create the cache object")
+		}
+		err = c.Clean()
 		return err
 	default:
 		// The caller checks the returned error and will exit as required
