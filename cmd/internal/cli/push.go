@@ -131,6 +131,13 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to parse oci reference: %s", err)
 			}
 
+			// Hostname() will panic if there is no '/' in the locator
+			// explicitly check for this and fail in order to prevent panic
+			// this case will only occur for incorrect uris
+			if !strings.Contains(spec.Locator, "/") {
+				sylog.Fatalf("Not a valid oci object uri: %s", ref)
+			}
+
 			// append default tag if no object exists
 			if spec.Object == "" {
 				spec.Object = SifDefaultTag
