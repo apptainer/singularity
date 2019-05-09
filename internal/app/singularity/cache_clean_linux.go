@@ -70,7 +70,7 @@ func cleanBlobCache() error {
 
 }
 
-// CleanCache : clean a type of cache (cacheType string). will return a error if one occurs.
+// CleanCache wil clean a type of cache (cacheType). The possible options are: 'library', 'oci', 'blob', and 'all'. CleanCache will return a error if one occurs.
 func CleanCache(cacheType string) error {
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.

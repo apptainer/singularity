@@ -33,7 +33,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	authToken := b.Opts.LibraryAuthToken
 
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	// check for custom library from definition
@@ -57,34 +57,31 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	// or create a new cache based on the current configuration.
 	c, err := cache.Create()
 	if c == nil || err != nil {
-		return fmt.Errorf("Failed to create cache object")
+		return fmt.Errorf("failed to create cache object")
 	}
 	imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
 	if err != nil {
-		return fmt.Errorf("Unable to get path to image")
+		return fmt.Errorf("unable to get path to image")
 	}
 
 	if exists, err := c.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
-		fmt.Println("Downloading image...")
 		sylog.Infof("Downloading library image")
 		if err = client.DownloadImage(imagePath, libURI, libraryURL, true, authToken); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 
 		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("Error getting ImageHash: %v", err)
+			return fmt.Errorf("error getting ImageHash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
-			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			return fmt.Errorf("cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
-	} else {
-		fmt.Println("Image ", imagePath, " exists:", imagePath)
 	}
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)

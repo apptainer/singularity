@@ -194,7 +194,7 @@ func (c *SingularityCache) IsValid() bool {
 	return true
 }
 
-// Clean : wipes all files in the cache directory, will return a error if one occurs
+// Clean wipes all files in the cache directory, will return a error if one occurs
 // Since renamed Destroy() but kept for backward compatibility
 func (c *SingularityCache) Clean() error {
 	return c.Destroy()
@@ -254,11 +254,11 @@ func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
 
 	absdir, err := filepath.Abs(filepath.Join(c.Root, subdir))
 	if err != nil {
-		return "", fmt.Errorf("Unable to get abs filepath: %v", err)
+		return "", fmt.Errorf("unable to get abs filepath: %v", err)
 	}
 
 	if err := initCacheDir(absdir); err != nil {
-		return "", fmt.Errorf("Unable to initialize caching directory: %v", err)
+		return "", fmt.Errorf("unable to initialize caching directory: %v", err)
 	}
 
 	sylog.Debugf("Caching directory set to %s", absdir)

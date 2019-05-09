@@ -108,7 +108,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 	// or create a new cache based on the current configuration.
 	c, err := cache.Create()
 	if c == nil || err != nil {
-		return 0, 0, nil
+		return 0, 0, fmt.Errorf("unable to create a new cache handle: %s", err)
 	}
 
 	_, err = os.Stat(filepath.Join(c.OciBlob, "/blobs"))
