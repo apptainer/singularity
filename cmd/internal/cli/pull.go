@@ -364,6 +364,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("Unable to pull from registry: %s", err)
 		}
+
+		// ensure container is executable
+		if err := os.Chmod(name, 0755); err != nil {
+			sylog.Fatalf("Unable to set image perms: %s", err)
+		}
 	case ociclient.IsSupported(transport):
 		if !force {
 			if _, err := os.Stat(name); err == nil {
