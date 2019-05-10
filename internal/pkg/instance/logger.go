@@ -57,6 +57,7 @@ type Logger struct {
 	file      *os.File
 	fileMutex sync.Mutex
 	formatter LogFormatter
+	wg        sync.WaitGroup
 }
 
 // NewLogger instantiates a new logger with formatter and return it.
@@ -114,8 +115,16 @@ func (l *Logger) scanOutput(data []byte, atEOF bool) (advance int, token []byte,
 // NewWriter create a new pipe pair for corresponding stream.
 func (l *Logger) NewWriter(stream string, dropCRNL bool) *io.PipeWriter {
 	reader, writer := io.Pipe()
+	l.wg.Add(1)
 	go l.scan(stream, reader, writer, dropCRNL)
 	return writer
+}
+
+// sync flushes pending writes to the destination stream and waits for
+// the reader end of the pipe to be done.
+func (l *Logger) sync() {
+	l.wg.Wait()
+	l.file.Sync()
 }
 
 func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropCRNL bool) {
@@ -127,16 +136,18 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 
 	for scanner.Scan() {
 		l.fileMutex.Lock()
+		t := scanner.Text()
 		if !dropCRNL {
-			fmt.Fprint(l.file, l.formatter(stream, r.Replace(scanner.Text())))
+			fmt.Fprint(l.file, l.formatter(stream, r.Replace(t)))
 		} else {
-			fmt.Fprint(l.file, l.formatter(stream, scanner.Text()))
+			fmt.Fprint(l.file, l.formatter(stream, t))
 		}
 		l.fileMutex.Unlock()
 	}
 
 	pr.Close()
 	pw.Close()
+	l.wg.Done()
 }
 
 // ReOpenFile closes and re-open log file (eg: log rotation).
