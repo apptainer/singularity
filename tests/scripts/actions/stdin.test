@@ -1,0 +1,17 @@
+#!/singularity/test
+# test stdin pipe
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+image=`get-test-image`
+
+echo "hi"   | expect-success "STDINPipeOK" singularity exec ${image} grep hi
+echo "bye"  | expect-failure "STDINPipeKO" singularity exec ${image} grep hi
+
+# Stdin to URI based image
+echo true   | expect-success "EchoTrueShellLibrary"     singularity shell library://busybox
+echo false  | expect-failure "EchoFalseShellLibrary"    singularity shell library://busybox
+echo true   | expect-success "EchoTrueShellDocker"      singularity shell docker://busybox
+echo false  | expect-failure "EchoFalseShellDocker"     singularity shell docker://busybox
+echo true   | expect-success "EchoTrueShellShub"        singularity shell shub://singularityhub/busybox
+echo false  | expect-failure "EchoFalseShellShub"       singularity shell shub://singularityhub/busybox

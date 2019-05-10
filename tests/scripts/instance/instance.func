@@ -1,0 +1,35 @@
+# instance functions
+
+instance_prefix="__instance_test__"
+instance_default_port="11372"
+
+check-no-instances() {
+    nbinstances=`list-instances | wc -l`
+    test-match "CheckNoTestInstances" "${nbinstances}" "0"
+    if [ $? != 0 ]; then
+        exit 1
+    fi
+}
+
+list-instances() {
+    template="{{range .instances -}}{{if ge .instance \"$instance_prefix\" -}}{{printf \"%s\n\" .instance}}{{- end}}{{- end}}"
+    singularity instance list -j | parse-json "${template}"
+}
+
+stop-instances() {
+    expect-success "StopAllInstances" singularity instance stop "${instance_prefix}*"
+}
+
+echo-instance() {
+    message="b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
+    echo "${message}" | net-echo tcp 127.0.0.1:$2 | stdout-contains "$1" "${message}" cat
+}
+
+gen-instance-name() {
+    uuid=`uuidgen`
+    echo "${instance_prefix}${uuid}"
+}
+
+# always check there is no test instances running for each
+# script sourcing this file
+check-no-instances

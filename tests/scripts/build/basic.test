@@ -1,28 +1,17 @@
 #!/singularity/test
 # build tests
 
-verifyImage() {
-    name="$1"
-    image="$2"
-    expect-exit 1 "${name}/False"        singularity exec ${image} false
-    expect-exit 0 "${name}/RunScript"    singularity exec ${image} test -f /.singularity.d/runscript
-    expect-exit 0 "${name}/OneBase"      singularity exec ${image} test -f /.singularity.d/env/01-base.sh
-    expect-exit 0 "${name}/ActionsShell" singularity exec ${image} test -f /.singularity.d/actions/shell
-    expect-exit 0 "${name}/ActionsExec"  singularity exec ${image} test -f /.singularity.d/actions/exec
-    expect-exit 0 "${name}/ActionsRun"   singularity exec ${image} test -f /.singularity.d/actions/run
-    expect-exit 0 "${name}/Environment"  singularity exec ${image} test -L /environment
-    expect-exit 0 "${name}/Singularity"  singularity exec ${image} test -L /singularity
-}
+source ${SOURCEDIR}/tests/scripts/common.func
 
 buildImage() {
     options=""
     case $1 in
     sandbox)
         options="-s"
-        img=`create-tmpdir`
+        img=`mktmpdir`
         ;;
     image)
-        img=`create-tmpfile`
+        img=`mktmpfile`
         ;;
     *)
         test-log "build type $1 not supported"
@@ -37,9 +26,7 @@ buildImage() {
         fi
     fi
     expect-exit 0 "$2" ${SUDO} singularity build -F ${options} ${img} $4
-    if has-succeeded; then
-        verifyImage "$2" ${img}
-    fi
+    verify-image "$2" ${img}
 }
 
 ########## TYPE      NAME             CHECK_BINARY  DEFINITION

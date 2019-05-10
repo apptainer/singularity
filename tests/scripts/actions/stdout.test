@@ -1,0 +1,17 @@
+#!/singularity/test
+# test stdout pipe
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+image=`get-test-image`
+
+uid=`id -u`
+
+# Checking permissions
+singularity exec ${image} id -u 2>/dev/null     | expect-success "ExecStdoutPipeUid" grep "${uid}"
+
+# testing run command properly hands arguments
+singularity run ${image} id -u 2>/dev/null      | expect-success "RunStdoutPipeUid" grep "${uid}"
+
+# Test apps
+singularity run --app foo ${image} 2>/dev/null  | expect-success "AppStdoutPipeFoo" grep FOO

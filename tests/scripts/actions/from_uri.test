@@ -1,0 +1,38 @@
+#!/singularity/test
+# run from URI
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+image=`get-test-image`
+
+runscript="${SOURCEDIR}/e2e/testdata/runscript.sh"
+option="--bind ${runscript}:/.singularity.d/runscript"
+size=`stat -c %s ${runscript}`
+
+# Run from supported URI's and check the runscript call works
+expect-success "RunFromDockerOK"    singularity run ${option} docker://busybox:latest ${size}
+expect-success "RunFromLibraryOK"   singularity run ${option} library://busybox:latest ${size}
+expect-success "RunFromShubOK"      singularity run ${option} shub://singularityhub/busybox ${size}
+expect-failure "RunFromDockerKO"    singularity run ${option} docker://busybox:latest 0
+expect-failure "RunFromLibraryKO"   singularity run ${option} library://busybox:latest 0
+expect-failure "RunFromShubKO"      singularity run ${option} shub://singularityhub/busybox 0
+
+# exec from a supported URI's and check the exit code
+expect-success "TrueDocker"         singularity exec docker://busybox:latest true
+expect-success "TrueLibrary"    	singularity exec library://busybox:latest true
+expect-success "TrueShub"   		singularity exec shub://singularityhub/busybox true
+expect-failure "FalseDocker"    	singularity exec docker://busybox:latest false
+expect-failure "Falselibrary"   	singularity exec library://busybox:latest false
+expect-failure "FalseShub"      	singularity exec shub://singularityhub/busybox false
+
+# exec from URI with user namespace enabled
+if check-namespace "user"; then
+	expect-success "TrueDockerUserns"       singularity exec -u docker://busybox:latest true
+	expect-success "TrueLibraryUserns"    	singularity exec -u library://busybox:latest true
+	expect-success "TrueShubUserns"   		singularity exec -u shub://singularityhub/busybox true
+	expect-failure "FalseDockerUserns"    	singularity exec -u docker://busybox:latest false
+	expect-failure "FalselibraryUserns"   	singularity exec -u library://busybox:latest false
+	expect-failure "FalseShubUserns"      	singularity exec -u shub://singularityhub/busybox false
+else
+	test-skip "ExecUserns" "Skipped, user namespace not enabled/supported"
+fi

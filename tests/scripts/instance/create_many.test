@@ -1,0 +1,27 @@
+#!/singularity/test
+# Run multiple instances
+
+source ${SOURCEDIR}/tests/scripts/common.func
+source ${SOURCEDIR}/tests/scripts/instance/instance.func
+
+# stop all instances at exit
+atexit() {
+    stop-instances
+}
+
+image=`get-test-image`
+instance_name=`gen-instance-name`
+port=${instance_default_port}
+
+for i in $(seq 1 10); do
+    instance_name=`gen-instance-name`
+    expect-success "StartInstance${i}" singularity instance start ${image} ${instance_name} ${port}
+    ((port++))
+done
+
+port=${instance_default_port}
+
+for i in $(seq 1 10); do
+    echo-instance  "EchoInstance${i}" ${port}
+    ((port++))
+done

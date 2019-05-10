@@ -1,0 +1,17 @@
+#!/singularity/test
+# Check instance with workdir/contain options
+
+source ${SOURCEDIR}/tests/scripts/common.func
+source ${SOURCEDIR}/tests/scripts/instance/instance.func
+
+image=`get-test-image`
+instance_name=`gen-instance-name`
+workdir=`mktmpdir`
+testfile="/tmp/a_file"
+
+options="--workdir ${workdir} --contain"
+
+expect-success "StartInstance"          singularity instance start ${options} ${image} ${instance_name} ${instance_default_port}
+expect-success "CreateContainerFile"    singularity exec instance://${instance_name} touch ${testfile}
+expect-success "StopInstance"           singularity instance stop ${instance_name}
+expect-failure "CheckContainerFile"     test -f ${testfile}

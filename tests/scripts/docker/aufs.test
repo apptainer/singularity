@@ -1,0 +1,17 @@
+#!/singularity/test
+# test docker
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+tmpdir=`mktmpdir`
+tmpimage="${tmpdir}/container.sif"
+
+# AUFS sanity tests
+run-command singularity pull --force ${tmpimage} docker://dctrud/docker-aufs-sanity
+
+expect-success  "File2" singularity exec ${tmpimage} ls /test/whiteout-dir/file2 /test/whiteout-file/file2 /test/normal-dir/file2
+expect-failure  "File1" singularity exec ${tmpimage} ls /test/whiteout-dir/file1 /test/whiteout-file/file1
+
+# Check witheout of symbolic links (issues 1592 and 1576)
+run-command singularity pull --force ${tmpimage} docker://dctrud/docker-singularity-linkwh
+verify-image    "WhiteoutSymlink"   ${tmpimage}

@@ -1,0 +1,16 @@
+#!/singularity/test
+# Run instance from different URI
+
+source ${SOURCEDIR}/tests/scripts/common.func
+source ${SOURCEDIR}/tests/scripts/instance/instance.func
+
+run-from-uri() {
+    instance_name=`gen-instance-name`
+    expect-success "StartInstance$1"    singularity instance start docker://busybox ${instance_name}
+    expect-success "ExecIdInInstance$1" singularity exec instance://${instance_name} id
+    expect-success "StopInstance$1"     singularity instance stop ${instance_name}
+}
+
+run-from-uri "Docker"   "docker://busybox"
+run-from-uri "Library"  "library://busybox"
+run-from-uri "Shub"     "shub://singularityhub/busybox"

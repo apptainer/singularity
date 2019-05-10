@@ -1,0 +1,12 @@
+#!/singularity/test
+# Test basic echo
+
+source ${SOURCEDIR}/tests/scripts/common.func
+source ${SOURCEDIR}/tests/scripts/instance/instance.func
+
+image=`get-test-image`
+instance_name=`gen-instance-name`
+
+expect-success "StartInstance"  singularity instance start ${image} ${instance_name} ${instance_default_port}
+echo-instance  "EchoInstance"   ${instance_default_port}
+expect-success "StopInstance"   singularity instance stop ${instance_name}

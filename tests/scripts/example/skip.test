@@ -1,7 +1,0 @@
-#!/singularity/test
-# skip script execution on linux
-
-os="linux"
-if [ "$(which-os)" == "${os}" ]; then
-    test-skip-script "Tests in $1 can't run on ${os}"
-fi

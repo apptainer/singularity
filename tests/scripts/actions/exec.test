@@ -4,11 +4,14 @@
 source ${SOURCEDIR}/tests/scripts/common.func
 
 # workdir
-workdir=`create-tmpdir`
+workdir=`mktmpdir`
 
-# create test file
+# create test file/dir
 testfile="testSingularityExec.tmp"
+testdir="testSingularityExec.dir"
 echo > ${workdir}/${testfile}
+
+mkdir -p ${workdir}/tmp/${testdir}
 
 image=`get-test-image`
 
@@ -34,12 +37,18 @@ expect-success "ScifTestfolderOrg"  singularity exec ${image} test -f /scif/apps
 expect-success "ScifTestfolderOrg"  singularity exec ${image} test -d /scif/data/foo/output
 expect-success "ScifTestfolderOrg"  singularity exec ${image} test -d /scif/data/foo/input
 
-expect-failure "WorkdirContain"     singularity exec --contain --workdir ${workdir} ${image} test -f ${testfile}
-expect-success "Workdir"            singularity exec --workdir ${workdir}           ${image} test -f ${testfile}
-expect-success "PwdGood"            singularity exec --pwd /etc                     ${image} true
-expect-success "Home"               singularity exec --home ${workdir}              ${image} test -f ${testfile}
-expect-success "HomePath"           singularity exec --home ${workdir}:/home        ${image} ls -la /home/${testfile}
+# --workdir
+expect-success "WorkdirContain"     singularity exec --contain --workdir ${workdir} ${image} test -d /tmp/${testdir}
+expect-failure "Workdir"            singularity exec --workdir ${workdir}           ${image} test -d /tmp/${testdir}
+
+# --home
+expect-success "Home"               singularity exec --home ${workdir}              ${image} test -f ${workdir}/${testfile}
+expect-success "HomePath"           singularity exec --home ${workdir}:/home        ${image} test -f /home/${testfile}
 expect-success "HomeTmp"            singularity exec --home /tmp                    ${image} true
 expect-success "HomeTmpExplicit"    singularity exec --home /tmp:/home              ${image} true
 
 expect-success "UserBind"           singularity exec --bind ${workdir}:/mnt         ${image} test -f /mnt/${testfile}
+
+expect-exit 2  "NoHome"             singularity exec --pwd / --no-home              ${image} ls -ld $HOME
+
+stdout-contains "PwdGood" "/etc"    singularity exec --pwd /etc                     ${image} pwd

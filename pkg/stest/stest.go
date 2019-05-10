@@ -35,7 +35,6 @@ type testExec struct {
 	atExitFunctions *[]*AtExitFn
 	t               *testing.T
 	runner          *interp.Runner
-	lastTestFailed  bool
 }
 
 // CommandBuiltin defines a command shell builtin.
@@ -123,12 +122,6 @@ func GetTesting(ctx context.Context) *testing.T {
 	return ctx.Value(testExecContext).(*testExec).t
 }
 
-// LastTestFailed returns if latest test builtin executed
-// has failed or not.
-func LastTestFailed(ctx context.Context) bool {
-	return ctx.Value(testExecContext).(*testExec).lastTestFailed
-}
-
 // SetEnv sets an environment variables, equivalent to "export NAME=VALUE"
 func SetEnv(ctx context.Context, name string, value string) {
 	runner := ctx.Value(testExecContext).(*testExec).runner
@@ -165,6 +158,7 @@ func RunScript(name, script string, t *testing.T) {
 			te := ctx.Value(testExecContext).(*testExec)
 			mc, _ := interp.FromModuleContext(ctx)
 			if tb.Index >= 0 {
+				failed := false
 				te.t.Run(args[tb.Index], func(sub *testing.T) {
 					var subTe testExec
 					subTe.t = sub
@@ -174,17 +168,19 @@ func RunScript(name, script string, t *testing.T) {
 
 					if err := tb.Fn(ctx, mc, args[1:]); err != nil {
 						sub.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
-						te.lastTestFailed = true
-					} else {
-						te.lastTestFailed = false
+						failed = true
 					}
 				})
+				if failed {
+					return interp.ExitStatus(1)
+				}
 			} else {
 				if err := tb.Fn(ctx, mc, args[1:]); err != nil {
 					te.t.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
+					return interp.ExitStatus(1)
 				}
 			}
-			return nil
+			return interp.ExitStatus(0)
 		} else if cb, ok := commandBuiltins[args[0]]; ok {
 			mc, _ := interp.FromModuleContext(ctx)
 			return cb.Fn(ctx, mc, args[1:])
@@ -211,33 +207,44 @@ func RunScript(name, script string, t *testing.T) {
 		ctx := context.TODO()
 		ctx = context.WithValue(ctx, testExecContext, &te)
 
-		atExit := func() {
+		defer func() {
 			for i := len(atExitFunctions) - 1; i >= 0; i-- {
 				if err := atExitFunctions[i].Fn(); err != nil {
 					t.Logf("%sLOG: %s: %-30s", removeFunctionLine(), atExitFunctions[i].Desc, err)
 				}
 			}
-		}
+		}()
 
 		parser.Stmts(f, func(st *syntax.Stmt) bool {
 			line := st.Cmd.Pos().Line()
-			if err := runner.Run(ctx, st); err != nil {
-				// trigger a test error and stop parsing
-				t.Errorf("%sERROR: execution failed in %s (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
-				return false
+			err := runner.Run(ctx, st)
+			if err == nil {
+				return true
 			}
-			if te.lastTestFailed {
-				t.Logf("%sLOG: test failed in %s (at line %d)", removeFunctionLine(), script, line)
+
+			switch err.(type) {
+			case interp.ExitStatus:
+				// continue execution
+				return true
+			default:
+				if _, has := err.(interp.ShellExitStatus); has {
+					// equivalent of t.Fatal
+					if err != interp.ShellExitStatus(0) {
+						t.Errorf("%sERROR: %s exited (at line %d): %-30s", removeFunctionLine(), script, line, err)
+					}
+				} else if err != nil {
+					// trigger a test error and stop parsing
+					t.Errorf("%sERROR: execution failed in %s (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
+				}
 			}
-			return true
+			return false
 		})
 
+		// if test-skip-script is called this function won't be executed
 		if _, has := runner.Funcs["atexit"]; has {
 			if err := runner.Run(ctx, runner.Funcs["atexit"].Cmd); err != nil {
 				t.Errorf("%sERROR: function atexit returned an error: %s", removeFunctionLine(), err)
 			}
 		}
-
-		atExit()
 	})
 }

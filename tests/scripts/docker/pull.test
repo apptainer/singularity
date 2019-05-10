@@ -1,0 +1,34 @@
+#!/singularity/test
+# test docker
+
+source ${SOURCEDIR}/tests/scripts/common.func
+
+tmpdir=`mktmpdir`
+tmpimage="${tmpdir}/container.sif"
+
+# test pull from docker
+expect-success  "AlpineLatestPull"          singularity pull ${tmpimage} docker://alpine:latest
+verify-image    "AlpineLatestPull"          ${tmpimage}
+
+expect-success  "Alpine3.9Pull"             singularity pull ${tmpdir}/alpine.sif docker://alpine:3.9
+verify-image    "Alpine3.9Pull"             ${tmpdir}/alpine.sif
+
+expect-success  "Alpine3.9ForcePull"        singularity pull --force ${tmpimage} docker://alpine:3.9
+verify-image    "Alpine3.9ForcePull"        ${tmpimage}
+
+expect-success  "BusyboxLatestPull"         singularity pull --force ${tmpimage} docker://busybox:latest
+verify-image    "BusyboxLatestPull"         ${tmpimage}
+
+expect-exit 255 "BusyboxLatestPullFail"     singularity pull ${tmpimage} docker://busybox:latest
+
+expect-success  "Busybox1.28Pull"           singularity pull --force ${tmpimage} docker://busybox:1.28
+verify-image    "Busybox1.28Pull"           ${tmpimage}
+
+expect-exit 255 "Busybox1.28PullFail"       singularity pull ${tmpimage} docker://busybox:1.28
+expect-exit 255 "Busybox1.28PullDirFail"    singularity pull /foo/sif.sif docker://busybox:1.28
+
+# Check force permissions for user builds (issue 977)
+run-command singularity pull --force ${tmpimage} docker://dctrud/docker-singularity-userperms
+
+expect-success  "TestDir"       singularity exec ${tmpimage} ls /testdir/
+expect-failure  "TestDirFile"   singularity exec ${tmpimage} ls /testdir/testfile

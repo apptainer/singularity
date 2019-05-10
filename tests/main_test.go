@@ -30,13 +30,24 @@ var testScripts = []struct {
 	name string
 	path string
 }{
-	{"EXAMPLE", "scripts/example/example.test"},
-	//{"SKIPEXAMPLE", "scripts/example/skip.test"},
-	//{"NETEXAMPLE", "scripts/example/netecho.test"},
-	//{"BUILD", "scripts/build/build.test"},
-	{"OCI/BASIC", "scripts/oci/basic.test"},
+	{"BUILD/BASIC", "scripts/build/basic.test"},
+	{"ACTIONS/ENV", "scripts/actions/env.test"},
 	{"ACTIONS/RUN", "scripts/actions/run.test"},
 	{"ACTIONS/EXEC", "scripts/actions/exec.test"},
+	{"ACTIONS/FROM_URI", "scripts/actions/from_uri.test"},
+	{"ACTIONS/STDOUT", "scripts/actions/stdout.test"},
+	{"ACTIONS/STDIN", "scripts/actions/stdin.test"},
+	{"ACTIONS/PERSISTENT_OVERLAY", "scripts/actions/persistent_overlay.test"},
+	{"DOCKER/PULL", "scripts/docker/pull.test"},
+	{"DOCKER/DEFINITION", "scripts/docker/definition.test"},
+	{"DOCKER/AUFS", "scripts/docker/aufs.test"},
+	{"DOCKER/REGISTRY", "scripts/docker/registry.test"},
+	{"INSTANCE/BASIC_ECHO", "scripts/instance/basic_echo.test"},
+	{"INSTANCE/BASIC_OPTIONS", "scripts/instance/basic_options.test"},
+	{"INSTANCE/FROM_URI", "scripts/instance/from_uri.test"},
+	{"INSTANCE/CONTAIN", "scripts/instance/contain.test"},
+	{"INSTANCE/CREATE_MANY", "scripts/instance/create_many.test"},
+	{"OCI/BASIC", "scripts/oci/basic.test"},
 }
 
 func TestMain(t *testing.T) {

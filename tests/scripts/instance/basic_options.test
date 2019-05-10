@@ -1,0 +1,25 @@
+#!/singularity/test
+# Test basic options like mounting a custom home directory, changing the
+# hostname, etc.
+
+source ${SOURCEDIR}/tests/scripts/common.func
+source ${SOURCEDIR}/tests/scripts/instance/instance.func
+
+image=`get-test-image`
+
+instance_name=`gen-instance-name`
+
+home=`mktmpdir`
+file="${home}/a_file"
+echo "world" > ${file}
+
+hostname="echoserver99"
+
+options="--cleanenv --hostname ${hostname} --home ${home}:/home/temp"
+
+expect-success "StartInstance"  singularity instance start ${options} ${image} ${instance_name} ${instance_default_port}
+
+stdout-contains "CheckFileContent"   "world"     singularity exec instance://${instance_name} cat /home/temp/a_file
+stdout-contains "CheckHostname"      ${hostname} singularity exec instance://${instance_name} hostname
+
+expect-success "StopInstance"   singularity instance stop ${instance_name}

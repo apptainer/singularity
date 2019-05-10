@@ -11,7 +11,7 @@ checkContainerState() {
     test-match "OciState-${state}" "${state}" "${status}"
 }
 
-bundle=`create-tmpdir`
+bundle=`mktmpdir`
 image=`get-test-image`
 containerID=`uuidgen`
 

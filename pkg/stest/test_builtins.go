@@ -26,7 +26,7 @@ import (
 // expect-search output|error "TestName" "search_pattern" command <command_args>
 func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if len(args) < 4 {
-		return fmt.Errorf("test-exit requires at least 4 arguments")
+		return fmt.Errorf("expect-search requires at least 4 arguments")
 	}
 
 	var readPipe io.ReadCloser
@@ -95,7 +95,7 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 // expect-exit 0 "TestName" command <command_args>
 func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if len(args) < 3 {
-		return fmt.Errorf("test-exit requires at least 3 arguments")
+		return fmt.Errorf("expect-exit requires at least 3 arguments")
 	}
 
 	exitCode, err := strconv.Atoi(args[0])

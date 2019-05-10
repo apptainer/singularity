@@ -20,30 +20,38 @@ import (
 // usage:
 // create-tmpdir
 func createTmpDir(ctx context.Context, mc interp.ModuleCtx, args []string) error {
-	dir, err := ioutil.TempDir(os.Getenv("TESTDIR"), "stestdir-")
+	tmpDir := ""
+	if len(args) == 1 {
+		tmpDir = args[0]
+	}
+	dir, err := ioutil.TempDir(tmpDir, "stestdir-")
 	if err != nil {
 		return err
 	}
-	fmt.Fprintf(mc.Stdout, "%s\n", dir)
+	_, err = fmt.Fprintf(mc.Stdout, "%s\n", dir)
 	cleanup := func() error {
 		os.RemoveAll(dir)
 		return nil
 	}
 	desc := fmt.Sprintf("delete directory %s", dir)
 	RegisterAtExit(ctx, &AtExitFn{Fn: cleanup, Desc: desc})
-	return nil
+	return err
 }
 
 // create-tmpfile builtin
 // usage:
 // create-tmpfile
 func createTmpFile(ctx context.Context, mc interp.ModuleCtx, args []string) error {
-	f, err := ioutil.TempFile(os.Getenv("TESTDIR"), "stestfile-")
+	tmpDir := ""
+	if len(args) == 1 {
+		tmpDir = args[0]
+	}
+	f, err := ioutil.TempFile(tmpDir, "stestfile-")
 	if err != nil {
 		return err
 	}
 	file := f.Name()
-	fmt.Fprintf(mc.Stdout, "%s\n", file)
+	_, err = fmt.Fprintf(mc.Stdout, "%s\n", file)
 
 	cleanup := func() error {
 		os.Remove(file)
@@ -52,17 +60,7 @@ func createTmpFile(ctx context.Context, mc interp.ModuleCtx, args []string) erro
 	desc := fmt.Sprintf("delete file %s", file)
 	RegisterAtExit(ctx, &AtExitFn{Fn: cleanup, Desc: desc})
 	f.Close()
-	return nil
-}
-
-// has-succeeded builtin
-// usage:
-// has-succeeded
-func hasSucceeded(ctx context.Context, mc interp.ModuleCtx, args []string) error {
-	if LastTestFailed(ctx) {
-		return interp.ExitStatus(1)
-	}
-	return nil
+	return err
 }
 
 // which-os builtin
@@ -76,6 +74,5 @@ func whichOS(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 func init() {
 	RegisterCommandBuiltin("create-tmpdir", createTmpDir)
 	RegisterCommandBuiltin("create-tmpfile", createTmpFile)
-	RegisterCommandBuiltin("has-succeeded", hasSucceeded)
 	RegisterCommandBuiltin("which-os", whichOS)
 }

@@ -20,12 +20,21 @@ test-match() {
     expect-exit 0 $1 /bin/sh -c "[ \"$2\" = \"$3\" ]"
 }
 
+mktmpdir() {
+    create-tmpdir ${TESTDIR}
+}
+
+mktmpfile() {
+    create-tmpfile ${TESTDIR}
+}
+
 get-test-image() {
     image="${TESTDIR}/test.sif"
 
     if [ ! -f "${image}" ]; then
+        echo "BUILDING TEST IMAGE" >> /tmp/test-image
         definition="${SOURCEDIR}/e2e/testdata/Singularity"
-        output=`sudo singularity build -F ${image} ${definition} 2>&1`
+        output=`${SUDO} singularity build -F ${image} ${definition} 2>&1`
         if [ "$?" != 0 ]; then
             test-error "failed to build image ${image}: ${output}"
             exit 1
@@ -33,4 +42,48 @@ get-test-image() {
     fi
 
     echo ${image}
+}
+
+verify-image() {
+    if [ $? = 0 ]; then
+        name="$1"
+        image="$2"
+        expect-exit 1 "${name}/False"        singularity exec ${image} false
+        expect-exit 0 "${name}/RunScript"    singularity exec ${image} test -f /.singularity.d/runscript
+        expect-exit 0 "${name}/OneBase"      singularity exec ${image} test -f /.singularity.d/env/01-base.sh
+        expect-exit 0 "${name}/ActionsShell" singularity exec ${image} test -f /.singularity.d/actions/shell
+        expect-exit 0 "${name}/ActionsExec"  singularity exec ${image} test -f /.singularity.d/actions/exec
+        expect-exit 0 "${name}/ActionsRun"   singularity exec ${image} test -f /.singularity.d/actions/run
+        expect-exit 0 "${name}/Environment"  singularity exec ${image} test -L /environment
+        expect-exit 0 "${name}/Singularity"  singularity exec ${image} test -L /singularity
+    fi
+}
+
+check-command() {
+    if ! command -v $1 >/dev/null 2>&1; then
+        test-skip-script "$1 command not found in PATH"
+    fi
+}
+
+check-overlayfs() {
+    sudo modprobe overlay >/dev/null 2>&1
+    check-fs overlay
+    if [ $? != 0 ]; then
+        test-skip-script "overlay filesystem seems not supported"
+    fi
+}
+
+run-command() {
+    $@ >${TESTDIR}/cmd.out 2>&1
+    if [ $? != 0 ]; then
+        output=`cat ${TESTDIR}/cmd.out`
+        test-error "$@ failed: ${output}"
+        exit 1
+    fi
+}
+
+check-kernel-version() {
+    kernel_version=`uname -r`
+    kernel_version=${kernel_version%%-*}
+    check-version "${kernel_version}" "$1"
 }
