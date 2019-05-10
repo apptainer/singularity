@@ -369,6 +369,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err := os.Chmod(name, 0755); err != nil {
 			sylog.Fatalf("Unable to set image perms: %s", err)
 		}
+		sylog.Infof("Download complete: %s\n", name)
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
 		if err != nil {
