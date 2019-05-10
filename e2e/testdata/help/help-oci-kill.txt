@@ -1,0 +1,21 @@
+Kill a container (root user only)
+
+Usage:
+  singularity oci kill [kill options...] <container_ID>
+
+Description:
+  Kill invoke kill operation to kill processes running within container identified by container ID.
+
+Options:
+  -f, --force            kill container process with SIGKILL
+  -h, --help             help for kill
+  -s, --signal string    signal sent to the container (default "SIGTERM")
+  -t, --timeout uint32   timeout in second before killing container
+
+
+Examples:
+  $ singularity oci kill mycontainer INT
+  $ singularity oci kill mycontainer -s INT
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/
