@@ -99,13 +99,6 @@ var pullDirFlag = cmdline.Flag{
 	EnvKeys:      []string{"PULLDIR", "PULLFOLDER"},
 }
 
-//<<<<<<< HEAD
-//	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unsigned", "U", false, "do not require a signed container")
-//	PullCmd.Flags().SetAnnotation("allow-unsigned", "envkey", []string{"ALLOW_UNSIGNED"})
-//
-//	PullCmd.Flags().BoolVarP(&unauthenticatedPull, "allow-unauthenticated", "", false, "do not require a signed container")
-//	PullCmd.Flags().Lookup("allow-unauthenticated").Hidden = true
-//=======
 // --tmpdir
 var pullTmpdirFlag = cmdline.Flag{
 	ID:           "pullTmpdirFlag",
@@ -116,8 +109,6 @@ var pullTmpdirFlag = cmdline.Flag{
 	Usage:        "specify a temporary directory to use for build",
 	EnvKeys:      []string{"TMPDIR"},
 }
-
-//>>>>>>> upstream/master
 
 // --nohttps
 var pullNoHTTPSFlag = cmdline.Flag{
