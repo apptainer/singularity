@@ -31,7 +31,7 @@ const (
 	SifDefaultTag = "latest"
 
 	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
-	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar+gzip"
+	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar"
 )
 
 var (
