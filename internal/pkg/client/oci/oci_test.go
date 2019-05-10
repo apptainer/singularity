@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -16,6 +17,7 @@ import (
 
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -152,6 +154,9 @@ func getTestCacheInfo(t *testing.T) (string, string, string) {
 }
 
 func TestParseURI(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
 
@@ -226,6 +231,9 @@ func createInvalidImageRef(t *testing.T, invalidRef string) types.ImageReference
 }
 
 func TestConvertReference(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
 
@@ -276,6 +284,9 @@ func TestConvertReference(t *testing.T) {
 
 // TestImageNameAndImageSHA tests both ImageName() and ImageSHA()
 func TestImageNameAndImageSHA(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	// We create a dummy OCI cache to run all our tests
 	cacheDir, _, _ := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
@@ -345,6 +356,65 @@ func TestImageNameAndImageSHA(t *testing.T) {
 			}
 			if tt.shouldPass == false && err == nil {
 				t.Fatal("test expected to fail but succeeded")
+			}
+		})
+	}
+}
+
+func TestNewImageSource(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// Because of the nature of the context.Context type, there is really
+	// not any invalid case.
+	var validCtx context.Context
+	validSys := createValidSysCtx()
+
+	tests := []struct {
+		name      string
+		ctx       context.Context
+		sys       *types.SystemContext
+		shallPass bool
+	}{
+		{
+			name:      "valid ctx, undefained sys",
+			ctx:       validCtx,
+			sys:       nil,
+			shallPass: false,
+		},
+		{
+			name:      "valid ctx, valid sys",
+			ctx:       validCtx,
+			sys:       validSys,
+			shallPass: false,
+			// In theory this case should succeed but it would require more
+			// than the minimalistic image ref we handle here and we do not
+			// have the testing helper function to do this at the moment.
+			// In a nutshell, a manifest is missing for NewImageSource() to
+			// succeed and creating a dummy manifest is non-trivial.
+			// It will be fully tested by the E2E testing framework.
+			// We keep this test because its code path is not the same than
+			// other cases.
+		},
+	}
+
+	// We create a minimastic image reference that is valid enough for testing
+	cacheDir, _, ref := getTestCacheInfo(t)
+	defer os.RemoveAll(cacheDir)
+	imgRef := createValidImageRef(t, ref)
+	validImgRef, err := ConvertReference(imgRef, nil)
+	if err != nil {
+		t.Fatalf("failed to convert image reference: %s", err)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := validImgRef.NewImageSource(tt.ctx, tt.sys)
+			if tt.shallPass == true && err != nil {
+				t.Fatalf("test %s failed while expected to succeed: %s", tt.name, err)
+			}
+			if tt.shallPass == false && err == nil {
+				t.Fatalf("test %s succeeded while expected to fail", tt.name)
 			}
 		})
 	}
