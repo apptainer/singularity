@@ -1,0 +1,24 @@
+Update container cgroups resources (root user only)
+
+Usage:
+  singularity oci update [update options...] <container_ID>
+
+Description:
+  Update will update cgroups resources for the specified container ID.
+  Container must be in a RUNNING or CREATED state.
+
+Options:
+  -f, --from-file string   specify path to OCI JSON cgroups resource file
+                           ('-' to read from STDIN)
+  -h, --help               help for update
+
+
+Examples:
+  $ singularity oci update --from-file /tmp/cgroups-update.json mycontainer
+
+  or to update from stdin :
+
+  $ cat /tmp/cgroups-update.json | singularity oci update --from-file - mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/

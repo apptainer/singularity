@@ -1,0 +1,36 @@
+Manage OCI containers
+
+Usage:
+  singularity oci
+
+Description:
+  Allow you to manage containers from OCI bundle directories.
+
+  NOTE: all oci commands requires to run as root
+
+Options:
+  -h, --help   help for oci
+
+Available Commands:
+  attach      Attach console to a running container process (root user only)
+  create      Create a container from a bundle directory (root user only)
+  delete      Delete container (root user only)
+  exec        Execute a command within container (root user only)
+  kill        Kill a container (root user only)
+  mount       Mount create an OCI bundle from SIF image (root user only)
+  pause       Suspends all processes inside the container (root user only)
+  resume      Resumes all processes previously paused inside the container (root user only)
+  run         Create/start/attach/delete a container from a bundle directory (root user only)
+  start       Start container process (root user only)
+  state       Query state of a container (root user only)
+  umount      Umount delete bundle (root user only)
+  update      Update container cgroups resources (root user only)
+
+Examples:
+  All group commands have their own help output:
+
+  $ singularity oci create -b ~/bundle mycontainer
+  $ singularity oci start mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/
