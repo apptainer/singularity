@@ -369,12 +369,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err := os.Chmod(name, 0755); err != nil {
 			sylog.Fatalf("Unable to set image perms: %s", err)
 		}
-	case ociclient.IsSupported(transport):
-		if !force {
-			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists - will not overwrite")
-			}
-		}
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
 		if err != nil {
