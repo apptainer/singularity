@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"syscall"
 
+	"strings"
+
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
@@ -37,7 +39,6 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
-	"strings"
 )
 
 const (
