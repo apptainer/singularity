@@ -6,12 +6,15 @@
 package keypublic
 
 import (
-	"fmt"
-	"os/exec"
-	"strings"
+	//	"fmt"
+	//	"os/exec"
+	//	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -22,26 +25,10 @@ type testingEnv struct {
 	RunDisabled bool   `default:"false"`
 }
 
+const defaultKeyFile = "exported_key"
+
 var testenv testingEnv
 var keyPath string
-
-func runKey(t *testing.T, commands []string, file string) (string, []byte, error) {
-	argv := []string{"key"}
-
-	argv = append(argv, commands...)
-
-	if file != "" {
-		argv = append(argv, file)
-	}
-
-	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
-	out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
-
-	t.Log("???????EXEC_COMMAND: ", cmd)
-	t.Log("???????OUTPUT: ", string(out))
-
-	return cmd, out, err
-}
 
 func testPublicKey(t *testing.T) {
 	tests := []struct {
@@ -50,18 +37,48 @@ func testPublicKey(t *testing.T) {
 		file    string
 		succeed bool
 	}{
-		// taget UID/GID
 		{
-			name:    "key_list",
-			args:    []string{"list"},
+			name:    "export_public",
+			args:    []string{"export"},
+			file:    defaultKeyFile,
+			succeed: true,
+		},
+		{
+			name:    "key_list_secret",
+			args:    []string{"list", "-s"},
 			file:    "",
 			succeed: true,
+		},
+		{
+			name:    "key_list_bad_flag",
+			args:    []string{"list", "--not-a-flag"},
+			file:    "",
+			succeed: false,
+		},
+		{
+			name:    "key_bad_cmd",
+			args:    []string{"notacmd"},
+			file:    "",
+			succeed: false,
+		},
+		{
+			name:    "key_bad_cmd_flag",
+			args:    []string{"notacmd", "--bad"},
+			file:    "",
+			succeed: false,
+		},
+		{
+			name:    "key_flag",
+			args:    []string{"--notaflag"},
+			file:    "",
+			succeed: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run("key_run "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd, out, err := runKey(t, tt.args, tt.file)
+			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
+			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "1\n")
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
