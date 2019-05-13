@@ -61,6 +61,29 @@ func AskQuestion(format string, a ...interface{}) (string, error) {
 	return response, nil
 }
 
+// askYNQuestion prompts the user expecting an answer that's either "y",
+// "n" or a blank, in which case defaultAnswer is returned.
+func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, error) {
+	ans, err := AskQuestion(format, a...)
+	if err != nil {
+		return "", err
+	}
+
+	switch ans := strings.ToLower(ans); ans {
+	case "y", "yes":
+		return "y", nil
+
+	case "n", "no":
+		return "n", nil
+
+	case "":
+		return defaultAnswer, nil
+
+	default:
+		return "", fmt.Errorf("invalid answer %q", ans)
+	}
+}
+
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
 func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	fmt.Printf(format, a...)
@@ -464,21 +487,24 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 	}
 
 	// Ask to push the new key to the keystore
-	pushKeyQ, err := AskQuestion("Would you like to push it to the keystore? [Y,n] : ")
-	if err != nil {
-		return
-	}
+	ans, err := askYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
+	switch {
+	case err != nil:
+		fmt.Fprintf(os.Stderr, "Not pushing newly created key to keystore: %s\n", err)
 
-	if pushKeyQ == "" || pushKeyQ == "y" || pushKeyQ == "Y" {
+	case ans == "y":
 		err = PushPubkey(entity, keyServiceURI, authToken)
 		if err != nil {
-			return
+			fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
+		} else {
+			fmt.Printf("Key successfully pushed to: %s\n", keyServiceURI)
 		}
-		fmt.Printf("Key successfully pushed to: %v\n", keyServiceURI)
-	}
-	fmt.Printf("Done.\n")
 
-	return
+	default:
+		fmt.Printf("NOT pushing newly created key to: %s\n", keyServiceURI)
+	}
+
+	return entity, nil
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
