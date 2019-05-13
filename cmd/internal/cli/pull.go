@@ -12,9 +12,8 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"syscall"
-
 	"strings"
+	"syscall"
 
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
