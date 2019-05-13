@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
@@ -202,6 +203,9 @@ func TestPushPubkey(t *testing.T) {
 }
 
 func TestEnsureDirPrivate(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tmpdir, err := ioutil.TempDir("", "test-ensure-dir-private")
 	if err != nil {
 		t.Fatalf("Cannot create temporary directory")
@@ -274,6 +278,9 @@ func TestEnsureDirPrivate(t *testing.T) {
 }
 
 func TestEnsureFilePrivate(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	tmpdir, err := ioutil.TempDir("", "test-ensure-file-private")
 	if err != nil {
 		t.Fatalf("Cannot create temporary directory")
