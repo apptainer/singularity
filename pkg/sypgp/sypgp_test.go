@@ -249,7 +249,7 @@ func TestEnsureDirPrivate(t *testing.T) {
 			t.Errorf("Expecting failure when calling ensureDirPrivate(%q), but got none", testEntry)
 
 		case tc.expectError && err != nil:
-			t.Logf("Expecting failure when calling ensureDirPrivate(%q), got: %+v", testEntry, err)
+			t.Errorf("Expecting failure when calling ensureDirPrivate(%q), got: %+v", testEntry, err)
 			continue
 
 		case !tc.expectError && err == nil:
