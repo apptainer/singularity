@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,7 +18,7 @@ const (
 	libraryURI = "library://alpine:latest"
 )
 
-// TestLibraryConveyor tests if we can pull an image from singularity hub
+// TestLibraryConveyor tests if we can pull an image from container library
 func TestLibraryConveyor(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
@@ -38,7 +38,7 @@ func TestLibraryConveyor(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", libraryURI, err)
 	}
 
-	cp := &sources.LibraryConveyorPacker{}
+	cp := &sources.LibraryConveyorPacker{AllowUnauthenticated: false}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
