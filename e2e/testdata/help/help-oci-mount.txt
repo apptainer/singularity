@@ -1,0 +1,17 @@
+Mount create an OCI bundle from SIF image (root user only)
+
+Usage:
+  singularity oci mount <sif_image> <bundle_path>
+
+Description:
+  Mount will mount and create an OCI bundle from a SIF image.
+
+Options:
+  -h, --help   help for mount
+
+
+Examples:
+  $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/
