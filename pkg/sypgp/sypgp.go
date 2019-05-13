@@ -595,15 +595,16 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
-	var fp [20]byte
-	b, err := hex.DecodeString(fingerprint)
+	var fp []byte
+	fp, err := hex.DecodeString(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode fingerprint: %v", err)
 	}
-	if got, want := len(b), len(fp); got != want {
-		return nil, fmt.Errorf("unexpected fingerprint length of %v (expected %v)", got, want)
+
+	// theres probably a better way to do this
+	if len(fp) != 4 && len(fp) != 20 {
+		return nil, fmt.Errorf("not a valid key lenth: only accepts 8, or 40 chars")
 	}
-	copy(fp[:], b)
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{

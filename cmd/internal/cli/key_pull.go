@@ -41,7 +41,7 @@ func doKeyPullCmd(fingerprint string, url string) error {
 	// get matching keyring
 	el, err := sypgp.FetchPubkey(fingerprint, url, authToken, false)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to pull key from server: %v", err)
 	}
 
 	elstore, err := sypgp.LoadPubKeyring()
@@ -66,7 +66,7 @@ func doKeyPullCmd(fingerprint string, url string) error {
 		}
 		if storeKey {
 			if err = e.Serialize(fp); err != nil {
-				return err
+				return fmt.Errorf("unable to serialize key: %v", err)
 			}
 			count++
 		}
