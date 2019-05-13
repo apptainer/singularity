@@ -59,3 +59,10 @@ install:
 
 script:
   - .travis/script
+
+notifications:
+  slack:
+    on_success: change
+    on_failure: always
+    rooms:
+      secure: M2+Bod7WxgiBeu6bTRuch6FgLXdsZsO+IPz3EciMtKUKOqY3tjPZcGMwI3jqIv/Z19kpp0TWu5Lxcg8BSw0rQ3Oqu7Xxh/4Y2Z6w5g5dzwFRtB9y9Dojhf4eVIRkH7LEpyNH2tzqeWnpwiGlxIPygVZprt74/MIOuQyj5uZP2fCP7NaZWU6TVisS6RmgSjAcMCtaP61pR8v8IuIQOm4ZslsWI+vPFZEWWLoWpImW0rDDdoTKlcTmiyWlv5bi8BN3dfBFl5SxsSsIadoP9gNgPEq/xep8odfcUb/UPWvDnJ4BKAZOQSkQj8/TFr6izLN5rGRto+K2kL6K/ptsQytzmC4i+KQNXJJAUSMj4WCpfN/2AU121T2S4xsD206IPjdf5YVse4qhBIkziUWR04UmLLw3bH4Y1vX9cWRG3FqqL7U/slCD0/eyeLkvCwKIAbPVlYIrQD9eL+0pW3p2Kr9VsiYPtkkDbLQ4X6sxH4yMBaw64oYZ6bCrGAHYOo2rCX3Wom/mQS9JcHcy5zPOV9BJw/NIaWab5QD+Y+8dlyP16JT0l6/ep3rpIs46msZxNA2bgdG8fyQ6Ig2JQshCTJWX20kNqZpiHBfEv7lJbW7YyghTXGECpWAFv0CTbsqYhmG/t/Q51Rzhazve68Ttco0GRuiiZUQ9boojfD9vVA8ZEHI=
