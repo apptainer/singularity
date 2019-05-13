@@ -84,7 +84,10 @@ func TestAll(t *testing.T) {
 
 	keyPath = testenv.TestDir
 
-	t.Log("######TMP_PATH: ", keyPath)
+	// Pull the default public key
+	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
 
 	t.Run("pubic_key", testPublicKey)
+
+	//t.Run("remove_default_key", test.WithoutPrivilege(func(t *testing.T) {e2e.RemoveDefaultPublicKey(t)}))
 }

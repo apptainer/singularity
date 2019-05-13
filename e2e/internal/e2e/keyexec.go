@@ -15,6 +15,36 @@ import (
 	"testing"
 )
 
+// PullDefaultPublicKey will pull the public Sylabs Admin key
+func PullDefaultPublicKey(t *testing.T) {
+	LoadEnv(t, &testenv)
+
+	//func PullDefaultPublicKey(t *testing.T, cmdPath string) {
+	argv := []string{"key", "pull", "8883491F4268F173C6E5DC49EDECE4F3F38D871E"}
+
+	execKey := exec.Command(testenv.CmdPath, argv...)
+
+	out, err := execKey.CombinedOutput()
+	if err != nil {
+		t.Log(string(out))
+		t.Fatalf("Unable to pull key: %v", err)
+	}
+}
+
+// RemoveDefaultPublicKey will pull the public Sylabs Admin key
+func RemoveDefaultPublicKey(t *testing.T) {
+	LoadEnv(t, &testenv)
+
+	argv := []string{"key", "remove", "8883491F4268F173C6E5DC49EDECE4F3F38D871E"}
+	execKey := exec.Command(testenv.CmdPath, argv...)
+
+	out, err := execKey.CombinedOutput()
+	if err != nil {
+		t.Log(string(out))
+		t.Fatalf("Unable to pull key: %v", err)
+	}
+}
+
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
 func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin string) (string, []byte, error) {
 	argv := []string{"key"}
