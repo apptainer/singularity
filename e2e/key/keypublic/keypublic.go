@@ -34,51 +34,30 @@ func testPublicKey(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
+		stdin   string
 		file    string
 		succeed bool
 	}{
 		{
 			name:    "export_public",
 			args:    []string{"export"},
+			stdin:   "0\n",
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
-			name:    "key_list_secret",
-			args:    []string{"list", "-s"},
-			file:    "",
+			name:    "export_public_armor",
+			args:    []string{"export", "--armor"},
+			stdin:   "0\n",
+			file:    defaultKeyFile,
 			succeed: true,
-		},
-		{
-			name:    "key_list_bad_flag",
-			args:    []string{"list", "--not-a-flag"},
-			file:    "",
-			succeed: false,
-		},
-		{
-			name:    "key_bad_cmd",
-			args:    []string{"notacmd"},
-			file:    "",
-			succeed: false,
-		},
-		{
-			name:    "key_bad_cmd_flag",
-			args:    []string{"notacmd", "--bad"},
-			file:    "",
-			succeed: false,
-		},
-		{
-			name:    "key_flag",
-			args:    []string{"--notaflag"},
-			file:    "",
-			succeed: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run("key_run "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
-			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "1\n")
+			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, tt.stdin)
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
