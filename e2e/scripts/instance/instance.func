@@ -4,7 +4,10 @@ instance_prefix="__instance_test__"
 instance_default_port="11372"
 
 check-no-instances() {
-    nbinstances=`list-instances | wc -l`
+    nbinstances=0
+    for i in `list-instances`; do
+        ((nbinstances++))
+    done
     test-match "CheckNoTestInstances" "${nbinstances}" "0"
     if [ $? != 0 ]; then
         exit 1

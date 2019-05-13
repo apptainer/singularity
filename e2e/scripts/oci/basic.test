@@ -1,0 +1,43 @@
+#!/singularity/test
+# oci command tests
+
+source common.func
+
+checkContainerState() {
+    state=$2
+    containerID=$1
+    sleep 0.2
+    status=$(${SUDO} singularity oci state ${containerID} | parse-json "{{.status}}")
+    test-match "OciState-${state}" "${state}" "${status}"
+}
+
+bundle=`mktmpdir`
+image=`get-test-image`
+containerID=`uuidgen`
+
+expect-exit 0   "OciMount"                  sudo singularity oci mount ${image} ${bundle}
+
+# override generated configuration with the default one, need terminal set to true
+sudo cp oci/testdata/config.json ${bundle}/config.json
+
+expect-exit 0   "OciCreate"                 sudo singularity oci create -b ${bundle} ${containerID}
+
+checkContainerState ${containerID} "created"
+
+expect-exit 0   "OciStart"                  sudo singularity oci start ${containerID}
+
+checkContainerState ${containerID} "running"
+
+expect-exit 255 "OciStartAlreadyStarted"    sudo singularity oci start ${containerID}
+
+expect-exit 0   "OciExecId"                 sudo singularity oci exec ${containerID} id
+
+expect-exit 0   "OciKill"                   sudo singularity oci kill ${containerID} KILL
+
+checkContainerState ${containerID} "stopped"
+
+expect-exit 0   "OciDelete"                 sudo singularity oci delete ${containerID}
+expect-exit 255 "OciStateAfterDelete"       sudo singularity oci state ${containerID}
+expect-exit 255 "OciKillAfterDelete"        sudo singularity oci kill ${containerID}
+expect-exit 255 "OciStartAfterDelete"       sudo singularity oci start ${containerID}
+expect-exit 0   "OciUmount"                 sudo singularity oci umount ${bundle}

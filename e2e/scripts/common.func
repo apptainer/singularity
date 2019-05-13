@@ -1,5 +1,11 @@
 # generic functions
 
+# test if singularity binary is present in $PATH
+if ! command -v singularity >/dev/null 2>&1; then
+    test-error "singularity executable not found in \$PATH"
+    exit 1
+fi
+
 expect-failure() {
     expect-exit 1 "$@"
 }
@@ -32,10 +38,10 @@ get-test-image() {
     image="${TESTDIR}/test.sif"
 
     if [ ! -f "${image}" ]; then
-        echo "BUILDING TEST IMAGE" >> /tmp/test-image
         definition="${SOURCEDIR}/e2e/testdata/Singularity"
-        output=`${SUDO} singularity build -F ${image} ${definition} 2>&1`
-        if [ "$?" != 0 ]; then
+        sudo singularity build -F ${image} ${definition} >${TESTDIR}/image.out 2>&1
+        if [ $? != 0 ]; then
+            output=`cat ${TESTDIR}/image.out`
             test-error "failed to build image ${image}: ${output}"
             exit 1
         fi
@@ -74,9 +80,9 @@ check-overlayfs() {
 }
 
 run-command() {
-    $@ >${TESTDIR}/cmd.out 2>&1
+    $@ >${TESTDIR}/run-command.out 2>&1
     if [ $? != 0 ]; then
-        output=`cat ${TESTDIR}/cmd.out`
+        output=`cat ${TESTDIR}/run-command.out`
         test-error "$@ failed: ${output}"
         exit 1
     fi
@@ -87,3 +93,19 @@ check-kernel-version() {
     kernel_version=${kernel_version%%-*}
     check-version "${kernel_version}" "$1"
 }
+
+# create sudo wrapper to pass correct environment variables
+# to singularity
+bindir="${TESTDIR}/bin"
+sudo_wrapper="${bindir}/sudo"
+
+if [ ! -f "${sudo_wrapper}" ]; then
+    mkdir "${bindir}"
+    cat > "${sudo_wrapper}" <<EOF
+#!/bin/sh
+exec ${SUDO} HOME=/root SINGULARITY_CACHEDIR=${CACHEDIR_PRIV} PATH=${PATH} "\$@"
+EOF
+    chmod 755 "${sudo_wrapper}"
+fi
+
+export PATH=${bindir}:${PATH}

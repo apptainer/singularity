@@ -1,7 +1,7 @@
 #!/singularity/test
 # run tests
 
-source ${SOURCEDIR}/tests/scripts/common.func
+source common.func
 
 # workdir
 workdir=`mktmpdir`

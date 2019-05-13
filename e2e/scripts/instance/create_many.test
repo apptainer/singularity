@@ -1,8 +1,8 @@
 #!/singularity/test
 # Run multiple instances
 
-source ${SOURCEDIR}/tests/scripts/common.func
-source ${SOURCEDIR}/tests/scripts/instance/instance.func
+source common.func
+source instance/instance.func
 
 # stop all instances at exit
 atexit() {
@@ -10,7 +10,6 @@ atexit() {
 }
 
 image=`get-test-image`
-instance_name=`gen-instance-name`
 port=${instance_default_port}
 
 for i in $(seq 1 10); do

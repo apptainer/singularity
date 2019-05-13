@@ -40,17 +40,20 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 		return fmt.Errorf("stream %s not supported", stream)
 	}
 
-	path, err := exec.LookPath(args[3])
+	path, err := LookupCommand(args[3], mc.Env)
 	if err != nil {
 		return err
 	}
 
 	fullCmd := strings.Join(args[3:], " ")
 
-	cmd := exec.Command(path, args[4:]...)
-	cmd.Dir = mc.Dir
-	cmd.Env = ExecEnv(mc.Env)
-	cmd.Stdin = mc.Stdin
+	cmd := exec.Cmd{
+		Path:  path,
+		Args:  args[3:],
+		Env:   ExecEnv(mc.Env),
+		Dir:   mc.Dir,
+		Stdin: mc.Stdin,
+	}
 
 	if stream == "error" {
 		stderr, err := cmd.StderrPipe()
@@ -102,17 +105,20 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to convert exit code %s: %s", args[0], err)
 	}
-	path, err := exec.LookPath(args[2])
+	path, err := LookupCommand(args[2], mc.Env)
 	if err != nil {
 		return err
 	}
 
 	fullCmd := strings.Join(args[2:], " ")
 
-	cmd := exec.Command(path, args[3:]...)
-	cmd.Dir = mc.Dir
-	cmd.Env = ExecEnv(mc.Env)
-	cmd.Stdin = mc.Stdin
+	cmd := exec.Cmd{
+		Path:  path,
+		Args:  args[2:],
+		Env:   ExecEnv(mc.Env),
+		Dir:   mc.Dir,
+		Stdin: mc.Stdin,
+	}
 	if mc.Stderr != os.Stderr {
 		cmd.Stderr = mc.Stderr
 	}

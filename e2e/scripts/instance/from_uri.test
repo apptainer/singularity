@@ -1,8 +1,8 @@
 #!/singularity/test
 # Run instance from different URI
 
-source ${SOURCEDIR}/tests/scripts/common.func
-source ${SOURCEDIR}/tests/scripts/instance/instance.func
+source common.func
+source instance/instance.func
 
 run-from-uri() {
     instance_name=`gen-instance-name`

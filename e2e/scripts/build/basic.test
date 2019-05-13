@@ -1,7 +1,7 @@
 #!/singularity/test
 # build tests
 
-source ${SOURCEDIR}/tests/scripts/common.func
+source common.func
 
 buildImage() {
     options=""
@@ -25,7 +25,7 @@ buildImage() {
             return
         fi
     fi
-    expect-exit 0 "$2" ${SUDO} singularity build -F ${options} ${img} $4
+    expect-exit 0 "$2" sudo singularity build -F ${options} ${img} $4
     verify-image "$2" ${img}
 }
 

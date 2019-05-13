@@ -1,8 +1,8 @@
 #!/singularity/test
 # Test basic echo
 
-source ${SOURCEDIR}/tests/scripts/common.func
-source ${SOURCEDIR}/tests/scripts/instance/instance.func
+source common.func
+source instance/instance.func
 
 image=`get-test-image`
 instance_name=`gen-instance-name`

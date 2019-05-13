@@ -3,9 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// +build stest
+// +build e2e_scripts
 
-package tests
+package e2e
 
 import (
 	"fmt"
@@ -22,40 +22,32 @@ import (
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 
 	// custom builtins
-	_ "github.com/sylabs/singularity/tests/builtins/net"
-	_ "github.com/sylabs/singularity/tests/builtins/tools"
+	_ "github.com/sylabs/singularity/e2e/scripts_builtins/net"
+	_ "github.com/sylabs/singularity/e2e/scripts_builtins/tools"
 )
 
 var testScripts = []struct {
 	name string
 	path string
 }{
-	{"BUILD/BASIC", "scripts/build/basic.test"},
-	{"ACTIONS/ENV", "scripts/actions/env.test"},
-	{"ACTIONS/RUN", "scripts/actions/run.test"},
-	{"ACTIONS/EXEC", "scripts/actions/exec.test"},
-	{"ACTIONS/FROM_URI", "scripts/actions/from_uri.test"},
-	{"ACTIONS/STDOUT", "scripts/actions/stdout.test"},
-	{"ACTIONS/STDIN", "scripts/actions/stdin.test"},
-	{"ACTIONS/PERSISTENT_OVERLAY", "scripts/actions/persistent_overlay.test"},
-	{"DOCKER/PULL", "scripts/docker/pull.test"},
-	{"DOCKER/DEFINITION", "scripts/docker/definition.test"},
-	{"DOCKER/AUFS", "scripts/docker/aufs.test"},
-	{"DOCKER/REGISTRY", "scripts/docker/registry.test"},
-	{"INSTANCE/BASIC_ECHO", "scripts/instance/basic_echo.test"},
-	{"INSTANCE/BASIC_OPTIONS", "scripts/instance/basic_options.test"},
-	{"INSTANCE/FROM_URI", "scripts/instance/from_uri.test"},
-	{"INSTANCE/CONTAIN", "scripts/instance/contain.test"},
-	{"INSTANCE/CREATE_MANY", "scripts/instance/create_many.test"},
-	{"OCI/BASIC", "scripts/oci/basic.test"},
-}
-
-func TestMain(t *testing.T) {
-	defer os.RemoveAll(os.Getenv("TESTDIR"))
-
-	for _, ts := range testScripts {
-		stest.RunScript(ts.name, ts.path, t)
-	}
+	{"BUILD/BASIC", "build/basic.test"},
+	{"ACTIONS/ENV_PATH", "actions/env_path.test"},
+	{"ACTIONS/RUN", "actions/run.test"},
+	{"ACTIONS/EXEC", "actions/exec.test"},
+	{"ACTIONS/FROM_URI", "actions/from_uri.test"},
+	{"ACTIONS/STDOUT", "actions/stdout.test"},
+	{"ACTIONS/STDIN", "actions/stdin.test"},
+	{"ACTIONS/PERSISTENT_OVERLAY", "actions/persistent_overlay.test"},
+	{"DOCKER/PULL", "docker/pull.test"},
+	{"DOCKER/DEFINITION", "docker/definition.test"},
+	{"DOCKER/AUFS", "docker/aufs.test"},
+	{"DOCKER/REGISTRY", "docker/registry.test"},
+	{"INSTANCE/BASIC_ECHO", "instance/basic_echo.test"},
+	{"INSTANCE/BASIC_OPTIONS", "instance/basic_options.test"},
+	{"INSTANCE/FROM_URI", "instance/from_uri.test"},
+	{"INSTANCE/CONTAIN", "instance/contain.test"},
+	{"INSTANCE/CREATE_MANY", "instance/create_many.test"},
+	{"OCI/BASIC", "oci/basic.test"},
 }
 
 func sudoExec(sudo string, args []string) error {
@@ -69,7 +61,7 @@ func sudoExec(sudo string, args []string) error {
 	return nil
 }
 
-func init() {
+func TestE2EScripts(t *testing.T) {
 	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
 
 	sudo, err := exec.LookPath("sudo")
@@ -95,8 +87,10 @@ func init() {
 	if err != nil {
 		sylog.Fatalf("%s", err)
 	}
-
-	fmt.Println("Available environment variable in test script:")
+	// use sudo here to remove test directory in order to
+	// delete image/files/directories that could be created
+	// by privileged run/tests
+	defer sudoExec(sudo, []string{"rm", "-rf", testDir})
 
 	cacheDirPriv := filepath.Join(testDir, "priv")
 	cacheDirUnpriv := filepath.Join(testDir, "unpriv")
@@ -110,8 +104,9 @@ func init() {
 	sourceDir := filepath.Dir(buildcfg.BUILDDIR)
 	envPath := os.Getenv("PATH")
 
-	sudoCmd := fmt.Sprintf("%s HOME=/root SINGULARITY_CACHEDIR=%s PATH=%s", sudo, cacheDirPriv, envPath)
-	os.Setenv("SUDO", sudoCmd)
+	fmt.Println("Available environment variable in test script:")
+
+	os.Setenv("SUDO", sudo)
 	fmt.Printf("SUDO: %s\n", sudo)
 
 	os.Setenv("TESTDIR", testDir)
@@ -127,4 +122,12 @@ func init() {
 	fmt.Printf("SOURCEDIR: %s\n", sourceDir)
 
 	fmt.Printf("PATH: %s\n", envPath)
+
+	if err := os.Chdir("scripts"); err != nil {
+		t.Fatalf("could not chdir to 'scripts' directory: %s", err)
+	}
+
+	for _, ts := range testScripts {
+		stest.RunScript(ts.name, ts.path, t)
+	}
 }

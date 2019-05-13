@@ -1,7 +1,7 @@
 #!/singularity/test
 # test from docker registry
 
-source ${SOURCEDIR}/tests/scripts/common.func
+source common.func
 
 check-command docker
 
@@ -23,10 +23,10 @@ run-command docker push localhost:5000/my-busybox
 # local registry without https setup
 export SINGULARITY_NOHTTPS=1
 
-expect-success  "BusyboxLocal"                  ${SUDO} singularity build ${tmpimage} ${SOURCEDIR}/tests/scripts/docker/definition_files/busybox_local.def
+expect-success  "BusyboxLocal"                  sudo singularity build ${tmpimage} docker/definition_files/busybox_local.def
 verify-image    "BusyboxLocal"                  ${tmpimage}
 
-expect-success  "BusyboxLocalRegistry"          ${SUDO} singularity build ${tmpimage} ${SOURCEDIR}/tests/scripts/docker/definition_files/busybox_local_registry.def
+expect-success  "BusyboxLocalRegistry"          sudo singularity build ${tmpimage} docker/definition_files/busybox_local_registry.def
 verify-image    "BusyboxLocalRegistry"          ${tmpimage}
 
-expect-failure  "BusyboxLocalRegistryNamespace" ${SUDO} singularity build ${tmpimage} ${SOURCEDIR}/tests/scripts/docker/definition_files/busybox_local_registry_namespace.def
+expect-failure  "BusyboxLocalRegistryNamespace" sudo singularity build ${tmpimage} docker/definition_files/busybox_local_registry_namespace.def

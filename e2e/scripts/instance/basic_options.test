@@ -2,8 +2,8 @@
 # Test basic options like mounting a custom home directory, changing the
 # hostname, etc.
 
-source ${SOURCEDIR}/tests/scripts/common.func
-source ${SOURCEDIR}/tests/scripts/instance/instance.func
+source common.func
+source instance/instance.func
 
 image=`get-test-image`
 

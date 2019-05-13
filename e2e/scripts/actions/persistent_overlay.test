@@ -1,7 +1,7 @@
 #!/singularity/test
 # persistent overlay tests
 
-source ${SOURCEDIR}/tests/scripts/common.func
+source common.func
 
 # check overlay is supported, or skip those tests
 check-overlayfs
@@ -27,20 +27,20 @@ run-command mkfs.ext3 -q -F ${ext3_overlay_image}
 image=`get-test-image`
 
 # test directory overlay
-expect-success "TouchWithDirOverlay"        ${SUDO} singularity exec -o ${overlaydir} ${image} touch /dir_overlay
-expect-success "CheckDirOverlay"            ${SUDO} singularity exec -o ${overlaydir} ${image} test -f /dir_overlay
+expect-success "TouchWithDirOverlay"        sudo singularity exec -o ${overlaydir} ${image} touch /dir_overlay
+expect-success "CheckDirOverlay"            sudo singularity exec -o ${overlaydir} ${image} test -f /dir_overlay
 
 # test ext3 overlay
-expect-success "TouchWithExt3Overlay"       ${SUDO} singularity exec -o ${ext3_overlay_image} ${image} touch /ext3_overlay
-expect-success "CheckExt3Overlay"           ${SUDO} singularity exec -o ${ext3_overlay_image} ${image} test -f /ext3_overlay
+expect-success "TouchWithExt3Overlay"       sudo singularity exec -o ${ext3_overlay_image} ${image} touch /ext3_overlay
+expect-success "CheckExt3Overlay"           sudo singularity exec -o ${ext3_overlay_image} ${image} test -f /ext3_overlay
 
 # test squashfs overlay
-expect-success "CheckSquashOverlay"         ${SUDO} singularity exec -o ${squash_overlay_img} ${image} test -f /squash_overlay
+expect-success "CheckSquashOverlay"         sudo singularity exec -o ${squash_overlay_img} ${image} test -f /squash_overlay
 
 # test multiple overlay
-expect-success "TouchWithMultipleOverlay"   ${SUDO} singularity exec -o ${ext3_overlay_image} -o ${squash_overlay_img} ${image} touch /multiple_overlay_fs
-expect-success "CheckMultipleOverlay"       ${SUDO} singularity exec -o ${ext3_overlay_image} -o ${squash_overlay_img} ${image} test -f /multiple_overlay_fs
-expect-success "CheckSquashMultipleOverlay" ${SUDO} singularity exec -o ${ext3_overlay_image} -o ${squash_overlay_img} ${image} test -f /squash_overlay
+expect-success "TouchWithMultipleOverlay"   sudo singularity exec -o ${ext3_overlay_image} -o ${squash_overlay_img} ${image} touch /multiple_overlay_fs
+expect-success "CheckMultipleOverlay"       sudo singularity exec -o ${ext3_overlay_image} -o ${squash_overlay_img} ${image} test -f /multiple_overlay_fs
+expect-success "CheckSquashMultipleOverlay" sudo singularity exec -o ${ext3_overlay_image} -o ${squash_overlay_img} ${image} test -f /squash_overlay
 
 # test without privileges
 expect-failure  "BadCheckOverlayNoPriv"     singularity exec ${image} test -f /ext3_overlay

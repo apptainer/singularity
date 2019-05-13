@@ -1,7 +1,7 @@
 #!/singularity/test
-# run tests
+# env path tests
 
-source ${SOURCEDIR}/tests/scripts/common.func
+source common.func
 
 default_image="docker://alpine:3.8"
 default_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"

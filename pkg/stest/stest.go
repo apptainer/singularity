@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -71,6 +72,22 @@ func ExecEnv(env expand.Environ) []string {
 		return true
 	})
 	return list
+}
+
+// LookupCommand searches for command path based on current PATH sets
+// in script.
+func LookupCommand(command string, env expand.Environ) (string, error) {
+	oldPath := os.Getenv("PATH")
+	vr := env.Get("PATH")
+
+	os.Setenv("PATH", vr.String())
+	path, err := exec.LookPath(command)
+	if err != nil {
+		return "", nil
+	}
+	os.Setenv("PATH", oldPath)
+
+	return path, nil
 }
 
 // RegisterTestBuiltin registers a test builtin, typically called
@@ -158,6 +175,10 @@ func RunScript(name, script string, t *testing.T) {
 			te := ctx.Value(testExecContext).(*testExec)
 			mc, _ := interp.FromModuleContext(ctx)
 			if tb.Index >= 0 {
+				if len(args) < tb.Index {
+					te.t.Errorf("wrong usage of test builtin %s", args[0])
+					return interp.ShellExitStatus(1)
+				}
 				failed := false
 				te.t.Run(args[tb.Index], func(sub *testing.T) {
 					var subTe testExec

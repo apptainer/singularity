@@ -45,6 +45,13 @@ e2e-test:
 		./e2e
 	@echo "       PASS"
 
+.PHONY: e2e-scripts
+e2e-scripts:
+	@echo " TEST sudo go test [e2e-scripts]"
+	$(V)cd $(SOURCEDIR) && $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS) e2e_scripts" -failfast -v -race \
+        ./e2e
+	@echo "       PASS"
+
 .PHONY: integration-test
 integration-test:
 	@echo " TEST sudo go test [integration]"
