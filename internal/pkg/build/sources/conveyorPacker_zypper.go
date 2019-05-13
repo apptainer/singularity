@@ -230,7 +230,7 @@ func rpmPathCheck() (err error) {
 		}
 	}
 
-	if rpmDBPath != `%{_var}/lib/rpm` {
+	if rpmDBPath != `%{_var}/lib/rpm` && rpmDBPath != `%{_usr}/lib/sysimage/rpm` {
 		return fmt.Errorf("RPM database is using a non-standard path: %s\n"+
 			"There is a way to work around this problem:\n"+
 			"Create a file at path %s/.rpmmacros.\n"+
