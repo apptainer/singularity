@@ -113,7 +113,11 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// run zypper
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("while bootstrapping from zypper: %v", err)
+		if ret, _ := system.GetExitCode(err); ret == 107 {
+			sylog.Warningf("Bootstrap succeeded, some RPM scripts failed")
+		} else {
+			return fmt.Errorf("while bootstrapping from zypper: %v", err)
+		}
 	}
 
 	return nil
