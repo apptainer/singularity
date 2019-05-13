@@ -25,10 +25,9 @@ type testingEnv struct {
 	RunDisabled bool   `default:"false"`
 }
 
-const defaultKeyFile = "exported_key"
-
 var testenv testingEnv
 var keyPath string
+var defaultKeyFile string
 
 func testPublicKey(t *testing.T) {
 	tests := []struct {
@@ -52,6 +51,13 @@ func testPublicKey(t *testing.T) {
 			file:    defaultKeyFile,
 			succeed: true,
 		},
+		{
+			name:    "export_public_armor_panic",
+			args:    []string{"export", "--armor"},
+			stdin:   "1\n",
+			file:    defaultKeyFile,
+			succeed: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -64,9 +70,8 @@ func testPublicKey(t *testing.T) {
 					t.Log(string(out))
 					t.Fatalf("Unexpected failure: %v", err)
 				}
-				t.Run("import_public_key", test.WithoutPrivilege(func(t *testing.T) {
-					e2e.ImportKey(t, filepath.Join(keyPath, defaultKeyFile))
-				}))
+				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.ImportKey(t, filepath.Join(keyPath, defaultKeyFile)) }))
+				t.Run("import_public_key_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) { e2e.ImportKey(t, filepath.Join(keyPath, defaultKeyFile)) }))
 			} else {
 				if err == nil {
 					t.Log("Command that succeed: ", cmd)
@@ -86,6 +91,7 @@ func TestAll(t *testing.T) {
 	}
 
 	keyPath = testenv.TestDir
+	defaultKeyFile = filepath.Join(keyPath, "exported_key")
 
 	// Pull the default public key
 	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
