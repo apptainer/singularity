@@ -59,13 +59,6 @@ integration-test:
 		./cmd/singularity ./pkg/network
 	@echo "       PASS"
 
-.PHONY: stest
-stest:
-	@echo " TEST go test [stest]"
-	$(V)cd $(SOURCEDIR) && $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS) stest" -failfast -v -race \
-		./tests
-	@echo "       PASS"
-
 .PHONY: test
 test:
 	@echo " TEST sudo go test [all]"
