@@ -20,6 +20,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
@@ -71,28 +72,35 @@ func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	return string(response), nil
 }
 
-// GetTokenFile returns a string describing the path to the stored token file
-func GetTokenFile() string {
+// getSingularityDir returns the directory where the user's singularity
+// configuration and data is located.
+func getSingularityDir() string {
 	user, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
-		sylog.Warningf("could not lookup user's real home folder %s", err)
-		sylog.Warningf("using current directory for %s", filepath.Join(".singularity", "sylabs-token"))
-		return filepath.Join(".singularity", "sylabs-token")
+		sylog.Warningf("Could not lookup user's real home directory: %s", err)
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			sylog.Warningf("Could not get current working directory: %s", err)
+			return ".singularity"
+		}
+
+		dir := filepath.Join(cwd, ".singularity")
+		sylog.Warningf("Using current directory: %s", dir)
+		return dir
 	}
 
-	return filepath.Join(user.Dir, ".singularity", "sylabs-token")
+	return filepath.Join(user.Dir, ".singularity")
+}
+
+// GetTokenFile returns a string describing the path to the stored token file
+func GetTokenFile() string {
+	return filepath.Join(getSingularityDir(), "sylabs-token")
 }
 
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
-	user, err := user.GetPwUID(uint32(os.Getuid()))
-	if err != nil {
-		sylog.Warningf("could not lookup user's real home folder %s", err)
-		sylog.Warningf("using current directory for %s", filepath.Join(".singularity", "sypgp"))
-		return filepath.Join(".singularity", "sypgp")
-	}
-
-	return filepath.Join(user.Dir, ".singularity", "sypgp")
+	return filepath.Join(getSingularityDir(), "sypgp")
 }
 
 // SecretPath returns a string describing the path to the private keys store
@@ -105,61 +113,84 @@ func PublicPath() string {
 	return filepath.Join(DirPath(), "pgp-public")
 }
 
-// PathsCheck creates the sypgp home folder, secret and public keyring files
-func PathsCheck() error {
-	// create the sypgp base directory
-	if err := os.MkdirAll(DirPath(), 0700); err != nil {
-		return err
-	}
+func ensureDirPrivate(dn string) error {
+	mode := os.FileMode(0700)
 
-	dirinfo, err := os.Stat(DirPath())
+	oldumask := syscall.Umask(0077)
+
+	err := os.MkdirAll(dn, mode)
+
+	// restore umask...
+	syscall.Umask(oldumask)
+
+	// ... and check if there was an error
+
 	if err != nil {
 		return err
 	}
-	if dirinfo.Mode() != os.ModeDir|0700 {
-		sylog.Warningf("directory mode (%v) on %v needs to be 0700, fixing that...", dirinfo.Mode(), DirPath())
-		if err = os.Chmod(DirPath(), 0700); err != nil {
+
+	dirinfo, err := os.Stat(dn)
+	if err != nil {
+		return err
+	}
+
+	if currentMode := dirinfo.Mode(); currentMode != os.ModeDir|mode {
+		sylog.Warningf("Directory mode (%o) on %s needs to be %o, fixing that...", currentMode & ^os.ModeDir, dn, mode)
+		if err := os.Chmod(dn, mode); err != nil {
 			return err
 		}
 	}
 
-	// create or open the secret OpenPGP key cache file
-	fs, err := os.OpenFile(SecretPath(), os.O_RDWR|os.O_CREATE, 0600)
+	return nil
+}
+
+func ensureFilePrivate(fn string) error {
+	mode := os.FileMode(0600)
+
+	// just to be extra sure that we get the correct mode
+	oldumask := syscall.Umask(0077)
+
+	fs, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE, mode)
+
+	// restore umask...
+	syscall.Umask(oldumask)
+
+	// ... and check if there was an error
 	if err != nil {
 		return err
 	}
 	defer fs.Close()
 
-	// check and fix permissions (secret cache file)
+	// check and fix permissions
 	fsinfo, err := fs.Stat()
 	if err != nil {
 		return err
 	}
-	if fsinfo.Mode() != 0600 {
-		sylog.Warningf("file mode (%v) on %v needs to be 0600, fixing that...", fsinfo.Mode(), SecretPath())
-		if err = fs.Chmod(0600); err != nil {
+
+	if currentMode := fsinfo.Mode(); currentMode != mode {
+		sylog.Warningf("File mode (%o) on %s needs to be %o, fixing that...", currentMode, fn, mode)
+		if err := fs.Chmod(mode); err != nil {
 			return err
 		}
 	}
 
-	// create or open the public OpenPGP key cache file
-	fp, err := os.OpenFile(PublicPath(), os.O_RDWR|os.O_CREATE, 0600)
-	if err != nil {
-		return err
-	}
-	defer fp.Close()
+	return nil
+}
 
-	// check and fix permissions (public cache file)
-	fpinfo, err := fp.Stat()
-	if err != nil {
+// PathsCheck creates the sypgp home folder, secret and public keyring files
+func PathsCheck() error {
+	if err := ensureDirPrivate(DirPath()); err != nil {
 		return err
 	}
-	if fpinfo.Mode() != 0600 {
-		sylog.Warningf("file mode (%v) on %v needs to be 0600, fixing that...", fpinfo.Mode(), PublicPath())
-		if err = fp.Chmod(0600); err != nil {
-			return err
-		}
+
+	if err := ensureFilePrivate(SecretPath()); err != nil {
+		return err
 	}
+
+	if err := ensureFilePrivate(PublicPath()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -564,15 +595,16 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
 
 	// Decode fingerprint and ensure proper length.
-	var fp [20]byte
-	b, err := hex.DecodeString(fingerprint)
+	var fp []byte
+	fp, err := hex.DecodeString(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode fingerprint: %v", err)
 	}
-	if got, want := len(b), len(fp); got != want {
-		return nil, fmt.Errorf("unexpected fingerprint length of %v (expected %v)", got, want)
+
+	// theres probably a better way to do this
+	if len(fp) != 4 && len(fp) != 20 {
+		return nil, fmt.Errorf("not a valid key lenth: only accepts 8, or 40 chars")
 	}
-	copy(fp[:], b)
 
 	// Get a Key Service client.
 	c, err := client.NewClient(&client.Config{
