@@ -45,6 +45,11 @@ func RemoveDefaultPublicKey(t *testing.T) {
 	}
 }
 
+// InportKey will import a key from kpath.
+func ImportKey(t *testing.T, kpath string) {
+	t.Log("foo", kpath)
+}
+
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
 func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin string) (string, []byte, error) {
 	argv := []string{"key"}

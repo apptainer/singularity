@@ -64,6 +64,9 @@ func testPublicKey(t *testing.T) {
 					t.Log(string(out))
 					t.Fatalf("Unexpected failure: %v", err)
 				}
+				t.Run("import_public_key", test.WithoutPrivilege(func(t *testing.T) {
+					e2e.ImportKey(t, filepath.Join(keyPath, defaultKeyFile))
+				}))
 			} else {
 				if err == nil {
 					t.Log("Command that succeed: ", cmd)
