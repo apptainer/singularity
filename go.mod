@@ -71,7 +71,7 @@ require (
 	github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 	github.com/spf13/pflag v1.0.3
 	github.com/sylabs/json-resp v0.5.0
-	github.com/sylabs/scs-key-client v0.2.0
+	github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/sif v1.0.3
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect
@@ -87,7 +87,7 @@ require (
 	gopkg.in/cheggaaa/pb.v1 v1.0.25
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.2
-	gotest.tools v2.3.0+incompatible // indirect
+	gotest.tools v2.3.0+incompatible
 	k8s.io/client-go v11.0.0+incompatible // indirect
 )
 

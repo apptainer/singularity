@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,10 +14,10 @@ import (
 	"runtime"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
 // Master initializes a runtime engine and runs it
@@ -119,50 +119,46 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	}
 	runtime.UnlockOSThread()
 
-	if !isInstance {
-		pgrp := syscall.Getpgrp()
-		tcpgrp := 0
-
-		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCGPGRP), uintptr(unsafe.Pointer(&tcpgrp))); err == 0 {
-			if tcpgrp > 0 && pgrp != tcpgrp {
-				signal.Ignore(syscall.SIGTTOU)
-
-				if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, 1, uintptr(syscall.TIOCSPGRP), uintptr(unsafe.Pointer(&pgrp))); err != 0 {
-					sylog.Errorf("failed to set crontrolling terminal group: %s", err.Error())
-				}
-			}
-		}
-	}
+	// reset signal handlers
+	signal.Reset()
 
 	if fatal != nil {
-		if isInstance {
-			if os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-			}
+		if isInstance && os.Getppid() == ppid {
+			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
 		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
 
+	exitCode := 0
+
 	if status.Signaled() {
-		sylog.Debugf("Child exited due to signal %d", status.Signal())
+		s := status.Signal()
+		sylog.Debugf("Child exited due to signal %d", s)
 		if isInstance && os.Getppid() == ppid {
 			syscall.Kill(ppid, syscall.SIGUSR2)
 		}
-		os.Exit(128 + int(status.Signal()))
+		exitCode = 128 + int(s)
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if isInstance {
+		if isInstance && os.Getppid() == ppid {
 			if status.ExitStatus() != 0 {
-				if os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR2)
-					sylog.Fatalf("failed to spawn instance")
-				}
-			}
-			if os.Getppid() == ppid {
+				syscall.Kill(ppid, syscall.SIGUSR2)
+				sylog.Fatalf("failed to spawn instance")
+			} else {
 				syscall.Kill(ppid, syscall.SIGUSR1)
 			}
 		}
-		os.Exit(status.ExitStatus())
+		exitCode = status.ExitStatus()
 	}
+
+	// mimic signal
+	if exitCode > 128 && exitCode < 128+int(syscall.SIGUNUSED) {
+		mainthread.Execute(func() {
+			syscall.Kill(os.Getpid(), syscall.Signal(exitCode-128))
+		})
+	}
+
+	// if previous signal didn't interrupt process
+	os.Exit(exitCode)
 }
