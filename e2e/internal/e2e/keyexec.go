@@ -11,9 +11,55 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+var importPrivKeyScript string
+
+func getS(kpath string) string {
+	// Yes, this uses /usr/bin/expect
+	return fmt.Sprintf(`
+set timeout -1
+
+set psk "e2etests"
+
+spawn singularity key import %s
+
+expect "Enter your old password : "
+send "${psk}\r"
+
+expect "Enter a new password for this key : "
+send "${psk}\r"
+
+expect "Retype your passphrase : "
+send "${psk}\r"
+
+expect eof
+`, kpath)
+}
+
+func getE(num int, kpath, armor, psk string) string {
+	// Yes, this uses /usr/bin/expect
+	return fmt.Sprintf(`
+set timeout -1
+
+set psk "e2etests"
+
+spawn singularity key export --secret %s %s
+
+expect "Enter # of signing key to use : "
+send "%v\r"
+
+expect "Enter key passphrase : "
+send "%s\r"
+
+expect eof
+`, armor, kpath, num, psk)
+}
+
+var backupSypgp = filepath.Join(HomeDir(), ".singularity/sypgp/secret-keyring-backup")
 
 // PullDefaultPublicKey will pull the public Sylabs Admin key
 func PullDefaultPublicKey(t *testing.T) {
@@ -44,7 +90,35 @@ func RemoveDefaultPublicKey(t *testing.T) {
 	}
 }
 
-// InportKey will import a key from kpath.
+// BackupSecretKeyring ...
+func BackupSecretKeyring(t *testing.T) {
+	err := os.Rename(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"), backupSypgp)
+	if err != nil {
+		t.Fatalf("Unable to rename secret keyring: %v", err)
+	}
+}
+
+// RecuverSecretKeyring ...
+func RecuverSecretKeyring(t *testing.T) {
+	if err := os.Remove("~/.singularity/sypgp/pgp-secret"); err != nil {
+		// TODO:
+		t.Log("Unable to remove secret keyring: %v", err)
+	}
+	if err := os.Rename(backupSypgp, "~/.singularity/sypgp/pgp-secret"); err != nil {
+		t.Log("Unable to rename secret keyring: %v", err)
+	}
+}
+
+// RemoveSecretKeyring ...
+func RemoveSecretKeyring(t *testing.T) {
+	err := os.Remove("~/.singularity/sypgp/pgp-secret")
+	if err != nil {
+		// TODO:
+		t.Log("Unable to remove secret keyring: %v", err)
+	}
+}
+
+// ImportKey will import a key from kpath.
 func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 	LoadEnv(t, &testenv)
 
@@ -52,6 +126,49 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
 	return execKey.CombinedOutput()
+}
+
+// ImportTestKey ...
+func ImportTestKey(t *testing.T, kpath string) {
+	s := ""
+	if kpath == "" {
+		s = getS("./key/testdata/e2e_test_key.asc")
+	} else {
+		s = getS(kpath)
+	}
+
+	err := ioutil.WriteFile("foo", []byte(s), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	argv := []string{"foo"}
+	execImport := exec.Command("/usr/bin/expect", argv...)
+
+	out, err := execImport.CombinedOutput()
+	if err != nil {
+		t.Log(string(out))
+		t.Fatalf("Unable to import test key: %v", err)
+	}
+}
+
+// ExportPrivateKey will import a private key from kpath.
+func ExportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
+	LoadEnv(t, &testenv)
+
+	s := getE(0, kpath, "", "e2etests")
+
+	t.Log("EEEEEEEEEEEEEEEEEE: ", s)
+
+	err := ioutil.WriteFile("foo", []byte(s), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	argv := []string{"foo"}
+	execImport := exec.Command("/usr/bin/expect", argv...)
+
+	return execImport.CombinedOutput()
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.

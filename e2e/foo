@@ -1,0 +1,14 @@
+
+set timeout -1
+
+set psk "e2etests"
+
+spawn singularity key export --secret  /tmp/stest.795768487/exported_private_key
+
+expect "Enter # of signing key to use : "
+send "0\r"
+
+expect "Enter key passphrase : "
+send "e2etests\r"
+
+expect eof

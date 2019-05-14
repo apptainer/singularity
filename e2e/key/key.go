@@ -10,6 +10,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/key/keyprivate"
 	"github.com/sylabs/singularity/e2e/key/keypublic"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
@@ -97,4 +98,5 @@ func RunE2ETests(t *testing.T) {
 
 	t.Run("GenralKeyCmdTest", testGenralKeyCmd)
 	t.Run("PublicKey", keypublic.TestAll)
+	t.Run("PrivateKey", keyprivate.TestAll)
 }

@@ -1,0 +1,131 @@
+// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
+package keyprivate
+
+import (
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/kelseyhightower/envconfig"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/test"
+)
+
+type testingEnv struct {
+	// base env for running tests
+	CmdPath     string `split_words:"true"`
+	TestDir     string `split_words:"true"`
+	RunDisabled bool   `default:"false"`
+}
+
+var testenv testingEnv
+var keyPath string
+var defaultKeyFile string
+
+//  coruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
+func corruptKey(t *testing.T, kpath string) {
+	input, err := ioutil.ReadFile(kpath)
+	if err != nil {
+		t.Fatalf("Unable to read file: %v", err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(line, "B") {
+			lines[i] = "P"
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(kpath, []byte(output), 0644)
+	if err != nil {
+		t.Fatalf("Unabel to write to file: %v", err)
+	}
+}
+
+func testPrivateKey(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		stdin   string
+		file    string
+		corrupt bool
+		succeed bool
+	}{
+		{
+			name:    "export_private",
+			args:    []string{"export", "--secret"},
+			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
+			file:    defaultKeyFile,
+			succeed: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("key_run "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
+			out, err := e2e.ExportPrivateKey(t, tt.file)
+			if tt.succeed {
+				if err != nil {
+					//		t.Log("Command that failed: ", cmd)
+					t.Log(string(out))
+					t.Fatalf("Unexpected failure: %v", err)
+				}
+
+				t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveSecretKeyring(t) }))
+				t.Run("import_private_keyring_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+					b, err := e2e.ImportKey(t, defaultKeyFile)
+					if err != nil {
+						t.Log(string(b))
+						t.Fatalf("Unable to import key: %v", err)
+					}
+				}))
+			} else {
+				// if the test key is corrupted, try to import it, should fail
+				if tt.corrupt {
+					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { corruptKey(t, defaultKeyFile) }))
+					t.Run("import_private_key", test.WithoutPrivilege(func(t *testing.T) {
+						b, err := e2e.ImportKey(t, defaultKeyFile)
+						if err == nil {
+							t.Fatalf("Unexpected success: %s", string(b))
+						}
+					}))
+				} else {
+					if err == nil {
+						t.Log(string(out))
+						//t.Fatalf("Unexpected success when running: %s", cmd)
+					}
+				}
+			}
+		}))
+	}
+}
+
+// TestAll is trigered by ../key.go, that is trigered by suite.go in the e3e test directory
+func TestAll(t *testing.T) {
+	err := envconfig.Process("E2E", &testenv)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+
+	t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.BackupSecretKeyring(t) }))
+	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) { e2e.ImportTestKey(t, "") }))
+
+	keyPath = testenv.TestDir
+	defaultKeyFile = filepath.Join(keyPath, "exported_private_key")
+
+	// Pull the default public key
+	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
+
+	// Run the tests
+	t.Run("pubic_key", testPrivateKey)
+
+	// Recuver the secret keyring
+	t.Run("recuvering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.RecuverSecretKeyring(t) }))
+}
