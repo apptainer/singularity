@@ -6,8 +6,6 @@
 package keypublic
 
 import (
-	//	"fmt"
-	//	"os/exec"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -143,7 +141,6 @@ func TestAll(t *testing.T) {
 	// Pull the default public key
 	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
 
+	// Run the tests
 	t.Run("pubic_key", testPublicKey)
-
-	//t.Run("remove_default_key", test.WithoutPrivilege(func(t *testing.T) {e2e.RemoveDefaultPublicKey(t)}))
 }

@@ -51,12 +51,7 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 	argv := []string{"key", "import", kpath}
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
-	//out, err := execKey.CombinedOutput()
 	return execKey.CombinedOutput()
-	//	if err != nil {
-	//		t.Log(string(out))
-	//		t.Fatalf("Unable to import key: %v", err)
-	//	}
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
