@@ -14,6 +14,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 func getImportScript(kpath string) string {
@@ -55,7 +57,7 @@ expect eof
 `, armor, kpath, num, psk)
 }
 
-var backupSypgp = filepath.Join(HomeDir(), ".singularity/sypgp/secret-keyring-backup")
+//var backupSypgp = filepath.Join(HomeDir(), ".singularity/sypgp/secret-keyring-backup")
 
 // PullDefaultPublicKey will pull the public Sylabs Admin key
 func PullDefaultPublicKey(t *testing.T) {
@@ -89,7 +91,10 @@ func RemoveDefaultPublicKey(t *testing.T) {
 // BackupSecretKeyring will take your secret keyring file, and back it up. This gets ran before the private
 // key testing.
 func BackupSecretKeyring(t *testing.T) {
-	err := os.Rename(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"), backupSypgp)
+	backupSypgp := filepath.Join(sypgp.DirPath(), "secret-keyring-backup")
+
+	//err := os.Rename(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"), backupSypgp)
+	err := os.Rename(sypgp.SecretPath(), backupSypgp)
 	if err != nil {
 		t.Fatalf("Unable to rename secret keyring: %v", err)
 	}
@@ -97,17 +102,22 @@ func BackupSecretKeyring(t *testing.T) {
 
 // RecoverSecretKeyring will recover your secret keyring, this gets ran after the private key test are complete.
 func RecoverSecretKeyring(t *testing.T) {
-	if err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
+	backupSypgp := filepath.Join(sypgp.DirPath(), "secret-keyring-backup")
+
+	//if err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
+	if err := os.Remove(sypgp.SecretPath()); err != nil {
 		t.Fatalf("Unable to remove secret keyring: %v", err)
 	}
-	if err := os.Rename(backupSypgp, filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
+	//	if err := os.Rename(backupSypgp, filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
+	if err := os.Rename(backupSypgp, sypgp.SecretPath()); err != nil {
 		t.Fatalf("Unable to rename secret keyring: %v", err)
 	}
 }
 
-// RemoveSecretKeyring will delete your secret keyring :O
+// RemoveSecretKeyring will delete your secret keyring.
 func RemoveSecretKeyring(t *testing.T) {
-	err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"))
+	//err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"))
+	err := os.Remove(sypgp.SecretPath())
 	if err != nil {
 		t.Fatalf("Unable to remove secret keyring: %v", err)
 	}
@@ -123,7 +133,7 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 	return execKey.CombinedOutput()
 }
 
-// ImportTestKey will take a private key file (kpath) and import it.
+// ImportPrivateKey will take a private key file (kpath) and import it.
 func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 	s := getImportScript(kpath)
 
@@ -139,7 +149,7 @@ func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 	}
 
 	argv := []string{importScript.Name()}
-	execImport := exec.Command("/usr/bin/expect", argv...)
+	execImport := exec.Command("expect", argv...)
 
 	return execImport.CombinedOutput()
 }
@@ -168,7 +178,7 @@ func ExportPrivateKey(t *testing.T, kpath string, num int, armor bool) ([]byte, 
 	}
 
 	argv := []string{exportScript.Name()}
-	execImport := exec.Command("/usr/bin/expect", argv...)
+	execImport := exec.Command("expect", argv...)
 
 	return execImport.CombinedOutput()
 }

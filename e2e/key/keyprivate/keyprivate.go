@@ -59,21 +59,21 @@ func testPrivateKey(t *testing.T) {
 		succeed bool
 	}{
 		{
-			name:    "export_private",
+			name:    "export private",
 			armor:   false,
 			stdin:   0, // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
-			name:    "export_private_armor",
+			name:    "export private armor",
 			armor:   true,
 			stdin:   0, // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
-			name:    "export_private_armor_corrupt",
+			name:    "export private armor corrupt",
 			armor:   true,
 			stdin:   0, // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
@@ -81,14 +81,14 @@ func testPrivateKey(t *testing.T) {
 			succeed: false,
 		},
 		{
-			name:    "export_private_panic",
+			name:    "export private panic",
 			armor:   false,
 			stdin:   1, // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: false,
 		},
 		{
-			name:    "export_private_armor_panic",
+			name:    "export private armor panic",
 			armor:   true,
 			stdin:   1, // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
@@ -97,7 +97,7 @@ func testPrivateKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("key_run "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
 			out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 			if tt.succeed {
@@ -107,7 +107,7 @@ func testPrivateKey(t *testing.T) {
 				}
 
 				t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveSecretKeyring(t) }))
-				t.Run("import_private_keyring_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
 					b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log(string(b))

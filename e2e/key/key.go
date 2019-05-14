@@ -32,37 +32,37 @@ func testGeneralKeyCmd(t *testing.T) {
 		succeed bool
 	}{
 		{
-			name:    "key_list",
+			name:    "key list",
 			args:    []string{"list"},
 			file:    "",
 			succeed: true,
 		},
 		{
-			name:    "key_list_secret",
+			name:    "key list secret",
 			args:    []string{"list", "-s"},
 			file:    "",
 			succeed: true,
 		},
 		{
-			name:    "key_list_bad_flag",
+			name:    "key list bad flag",
 			args:    []string{"list", "--not-a-flag"},
 			file:    "",
 			succeed: false,
 		},
 		{
-			name:    "key_bad_cmd",
+			name:    "key bad cmd",
 			args:    []string{"notacmd"},
 			file:    "",
 			succeed: false,
 		},
 		{
-			name:    "key_bad_cmd_flag",
+			name:    "key bad cmd flag",
 			args:    []string{"notacmd", "--bad"},
 			file:    "",
 			succeed: false,
 		},
 		{
-			name:    "key_flag",
+			name:    "key flag",
 			args:    []string{"--notaflag"},
 			file:    "",
 			succeed: false,
@@ -70,7 +70,7 @@ func testGeneralKeyCmd(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("key_run "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
 			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "")
 			if tt.succeed {
 				if err != nil {

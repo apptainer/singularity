@@ -59,28 +59,28 @@ func testPublicKey(t *testing.T) {
 		succeed bool
 	}{
 		{
-			name:    "export_public",
+			name:    "export public",
 			args:    []string{"export"},
 			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
-			name:    "export_public_armor",
+			name:    "export public armor",
 			args:    []string{"export", "--armor"},
 			stdin:   "0\n",
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
-			name:    "export_public_armor_panic",
+			name:    "export public armor panic",
 			args:    []string{"export", "--armor"},
 			stdin:   "1\n",
 			file:    defaultKeyFile,
 			succeed: false,
 		},
 		{
-			name:    "export_public_armor_corrupt",
+			name:    "export public armor corrupt",
 			args:    []string{"export", "--armor"},
 			stdin:   "0\n",
 			file:    defaultKeyFile,
@@ -90,7 +90,7 @@ func testPublicKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("key_run "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
 			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, tt.stdin)
 			if tt.succeed {
@@ -101,7 +101,7 @@ func testPublicKey(t *testing.T) {
 				}
 
 				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveDefaultPublicKey(t) }))
-				t.Run("import_public_key_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+				t.Run("import_public_key_from", test.WithoutPrivilege(func(t *testing.T) {
 					b, err := e2e.ImportKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log(string(b))
