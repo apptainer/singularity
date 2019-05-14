@@ -1,5 +1,5 @@
 #!/singularity/test
-# test docker
+# test docker build from definition files
 
 source common.func
 

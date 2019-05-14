@@ -1,11 +1,79 @@
 # generic functions
 
+fatal() {
+    test-error "$1"
+    exit 1
+}
+
 # test if singularity binary is present in $PATH
 if ! command -v singularity >/dev/null 2>&1; then
-    test-error "singularity executable not found in \$PATH"
-    exit 1
+    fatal "singularity executable not found in \$PATH"
 fi
 
+# execute/test commands interactively
+_uuid=`uuidgen`
+_script="${TESTDIR}/${_uuid}.script"
+_cmdline="${TESTDIR}/${_uuid}.cmdline"
+
+_check-script() {
+    if [ ! -f ${_script} ]; then
+        fatal "interactive function not used between start-interactive and exit-interactive calls"
+    fi
+}
+
+start-interactive() {
+    name=$1
+    shift
+    echo -n > ${_script}
+    echo "${name} ${_script} $@" > ${_cmdline}
+}
+
+interactive-send() {
+    _check-script
+    echo "send $1" >> ${_script}
+}
+
+interactive-expect() {
+    _check-script
+    echo "expect $1" >> ${_script}
+}
+
+interactive-sendline() {
+    _check-script
+    echo "sendline $1" >> ${_script}
+}
+
+interactive-ctrl-c() {
+    _check-script
+    interactive-send $'\x03'
+}
+
+interactive-ctrl-d() {
+    _check-script
+    interactive-send $'\x04'
+}
+
+interactive-eof() {
+    _check-script
+    interactive-expect "<EOF>"
+}
+
+exit-interactive() {
+    if [ $# != 1 ]; then
+        fatal "exit-interactive need an exit code argument"
+    fi
+    if [ ! -f ${_script} ]; then
+        fatal "no interactive script provided"
+    fi
+    if [ ! -f ${_cmdline} ]; then
+        fatal "no command line provided in start-interactive"
+    fi
+    expect-exit-interactive $1 `cat ${_cmdline}`
+    rm -f ${_script}
+    rm -f ${_cmdline}
+}
+
+# wrapper around default test builtin
 expect-failure() {
     expect-exit 1 "$@"
 }
@@ -26,6 +94,7 @@ test-match() {
     expect-exit 0 $1 /bin/sh -c "[ \"$2\" = \"$3\" ]"
 }
 
+# manage test file/directory
 mktmpdir() {
     create-tmpdir ${TESTDIR}
 }
@@ -34,6 +103,7 @@ mktmpfile() {
     create-tmpfile ${TESTDIR}
 }
 
+# test image
 get-test-image() {
     image="${TESTDIR}/test.sif"
 
@@ -42,8 +112,7 @@ get-test-image() {
         sudo singularity build -F ${image} ${definition} >${TESTDIR}/image.out 2>&1
         if [ $? != 0 ]; then
             output=`cat ${TESTDIR}/image.out`
-            test-error "failed to build image ${image}: ${output}"
-            exit 1
+            fatal "failed to build image ${image}: ${output}"
         fi
     fi
 
@@ -83,8 +152,7 @@ run-command() {
     $@ >${TESTDIR}/run-command.out 2>&1
     if [ $? != 0 ]; then
         output=`cat ${TESTDIR}/run-command.out`
-        test-error "$@ failed: ${output}"
-        exit 1
+        fatal "$@ failed: ${output}"
     fi
 }
 
@@ -94,8 +162,7 @@ check-kernel-version() {
     check-version "${kernel_version}" "$1"
 }
 
-# create sudo wrapper to pass correct environment variables
-# to singularity
+# create sudo wrapper to pass correct environment variables to singularity
 bindir="${TESTDIR}/bin"
 sudo_wrapper="${bindir}/sudo"
 

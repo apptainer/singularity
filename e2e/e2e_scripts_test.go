@@ -22,8 +22,8 @@ import (
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 
 	// custom builtins
-	_ "github.com/sylabs/singularity/e2e/scripts_builtins/net"
-	_ "github.com/sylabs/singularity/e2e/scripts_builtins/tools"
+	_ "github.com/sylabs/singularity/e2e/scripts_builtins/command"
+	_ "github.com/sylabs/singularity/e2e/scripts_builtins/test"
 )
 
 var testScripts = []struct {
@@ -48,6 +48,8 @@ var testScripts = []struct {
 	{"INSTANCE/CONTAIN", "instance/contain.test"},
 	{"INSTANCE/CREATE_MANY", "instance/create_many.test"},
 	{"OCI/BASIC", "oci/basic.test"},
+	{"OCI/ATTACH", "oci/attach.test"},
+	{"OCI/RUN", "oci/run.test"},
 }
 
 func sudoExec(sudo string, args []string) error {

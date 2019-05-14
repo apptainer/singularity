@@ -41,7 +41,7 @@ unit-test:
 .PHONY: e2e-test
 e2e-test:
 	@echo " TEST sudo go test [e2e]"
-	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS)" -failfast -cover -race \
+	$(V)cd $(SOURCEDIR) && sudo -E $(GO) test $(GO_MODFLAGS) -count=1 -timeout=20m -tags "$(GO_TAGS) e2e" -failfast -cover -race \
 		./e2e
 	@echo "       PASS"
 

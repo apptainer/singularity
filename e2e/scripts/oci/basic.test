@@ -1,15 +1,8 @@
 #!/singularity/test
-# oci command tests
+# oci basic command tests
 
 source common.func
-
-checkContainerState() {
-    state=$2
-    containerID=$1
-    sleep 0.2
-    status=$(${SUDO} singularity oci state ${containerID} | parse-json "{{.status}}")
-    test-match "OciState-${state}" "${state}" "${status}"
-}
+source oci/oci.func
 
 bundle=`mktmpdir`
 image=`get-test-image`
@@ -21,23 +14,32 @@ expect-exit 0   "OciMount"                  sudo singularity oci mount ${image} 
 sudo cp oci/testdata/config.json ${bundle}/config.json
 
 expect-exit 0   "OciCreate"                 sudo singularity oci create -b ${bundle} ${containerID}
-
-checkContainerState ${containerID} "created"
+check-container-state ${containerID} "created"
 
 expect-exit 0   "OciStart"                  sudo singularity oci start ${containerID}
+check-container-state ${containerID} "running"
 
-checkContainerState ${containerID} "running"
+if [ -d /sys/fs/cgroup/freezer ]; then
+    expect-exit 0   "OciPause"              sudo singularity oci pause ${containerID}
+    check-container-state ${containerID} "paused"
+
+    expect-exit 0   "OciResume"             sudo singularity oci resume ${containerID}
+    check-container-state ${containerID} "running"
+else
+    test-skip "OciPauseResume" "skip oci pause/resume, /sys/fs/cgroup/freezer is missing"
+fi
 
 expect-exit 255 "OciStartAlreadyStarted"    sudo singularity oci start ${containerID}
 
 expect-exit 0   "OciExecId"                 sudo singularity oci exec ${containerID} id
 
 expect-exit 0   "OciKill"                   sudo singularity oci kill ${containerID} KILL
-
-checkContainerState ${containerID} "stopped"
+check-container-state ${containerID} "stopped"
 
 expect-exit 0   "OciDelete"                 sudo singularity oci delete ${containerID}
+
 expect-exit 255 "OciStateAfterDelete"       sudo singularity oci state ${containerID}
 expect-exit 255 "OciKillAfterDelete"        sudo singularity oci kill ${containerID}
 expect-exit 255 "OciStartAfterDelete"       sudo singularity oci start ${containerID}
+
 expect-exit 0   "OciUmount"                 sudo singularity oci umount ${bundle}

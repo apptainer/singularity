@@ -1,5 +1,5 @@
 #!/singularity/test
-# test docker
+# test docker aufs issue
 
 source common.func
 

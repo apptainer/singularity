@@ -1,5 +1,5 @@
 #!/singularity/test
-# run tests
+# exec tests
 
 source common.func
 

@@ -1,0 +1,26 @@
+#!/singularity/test
+# oci run command tests
+
+source common.func
+source oci/oci.func
+
+bundle=`mktmpdir`
+image=`get-test-image`
+containerID=`uuidgen`
+
+expect-exit 0       "OciRunMount"            sudo singularity oci mount ${image} ${bundle}
+
+sudo cp oci/testdata/config.json ${bundle}/config.json
+
+start-interactive   "OciRunInteractive"      sudo singularity oci run -b ${bundle} ${containerID}
+interactive-sendline    "hostname"
+interactive-expect      "runc"
+interactive-sendline    "id -un"
+interactive-expect      "root"
+interactive-sendline    "exit"
+interactive-eof
+exit-interactive 0
+
+expect-exit 255     "OciRunStateFailure"     sudo singularity oci state ${containerID}
+
+expect-exit 0       "OciRunUmount"           sudo singularity oci umount ${bundle}

@@ -1,0 +1,31 @@
+#!/singularity/test
+# oci attach command tests
+
+source common.func
+source oci/oci.func
+
+bundle=`mktmpdir`
+image=`get-test-image`
+containerID=`uuidgen`
+
+expect-exit 0       "OciAttachMount"            sudo singularity oci mount ${image} ${bundle}
+
+sudo cp oci/testdata/config.json ${bundle}/config.json
+
+expect-exit 0       "OciAttachCreate"           sudo singularity oci create -b ${bundle} ${containerID}
+check-container-state ${containerID} "created"
+
+expect-exit 0       "OciAttachStart"            sudo singularity oci start ${containerID}
+check-container-state ${containerID} "running"
+
+start-interactive   "OciAttachInteractive"      sudo singularity oci attach ${containerID}
+interactive-sendline    "hostname"
+interactive-expect      "runc"
+interactive-sendline    "exit"
+interactive-eof
+exit-interactive 0
+
+check-container-state ${containerID} "stopped"
+
+expect-exit 0       "OciAttachDelete"           sudo singularity oci delete ${containerID}
+expect-exit 0       "OciAttachUmount"           sudo singularity oci umount ${bundle}

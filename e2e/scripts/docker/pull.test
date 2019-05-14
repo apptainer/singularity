@@ -1,5 +1,5 @@
 #!/singularity/test
-# test docker
+# test pull from docker URI
 
 source common.func
 

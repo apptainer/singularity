@@ -143,6 +143,9 @@ func GetTesting(ctx context.Context) *testing.T {
 func SetEnv(ctx context.Context, name string, value string) {
 	runner := ctx.Value(testExecContext).(*testExec).runner
 	vr := expand.Variable{Kind: expand.String, Exported: true, Str: value}
+	if runner.Vars == nil {
+		runner.Vars = make(map[string]expand.Variable)
+	}
 	runner.Vars[name] = vr
 }
 
@@ -183,6 +186,8 @@ func RunScript(name, script string, t *testing.T) {
 				te.t.Run(args[tb.Index], func(sub *testing.T) {
 					var subTe testExec
 					subTe.t = sub
+					subTe.runner = te.runner
+					subTe.atExitFunctions = te.atExitFunctions
 
 					ctx := context.TODO()
 					ctx = context.WithValue(ctx, testExecContext, &subTe)
