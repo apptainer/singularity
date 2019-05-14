@@ -71,7 +71,7 @@ require (
 	github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 	github.com/spf13/pflag v1.0.3
 	github.com/sylabs/json-resp v0.5.0
-	github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
+	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/sif v1.0.3
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect

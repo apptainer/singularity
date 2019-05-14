@@ -191,7 +191,6 @@ func setSylogColor() {
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	PersistentPreRun:      persistentPreRun,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmdline.CommandError("invalid command")
 	},
@@ -205,16 +204,18 @@ var SingularityCmd = &cobra.Command{
 	SilenceUsage:  true,
 }
 
-func persistentPreRun(_ *cobra.Command, _ []string) {
+func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
+	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
 // ExecuteSingularity adds all child commands to the root command and sets
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	cmdManager.UpdateCmdFlagFromEnv(envPrefix)
+	// set persistent pre run function here to avoid initialization loop error
+	SingularityCmd.PersistentPreRunE = persistentPreRunE
 
 	for _, e := range cmdManager.GetError() {
 		sylog.Errorf("%s", e)
