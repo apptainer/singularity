@@ -48,6 +48,7 @@ const helpPush = `  4) Push key using "singularity key push %[1]X"
 
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
+var errNotEncrypted = errors.New("key is not encrypted")
 
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
@@ -59,6 +60,29 @@ func AskQuestion(format string, a ...interface{}) (string, error) {
 		return "", err
 	}
 	return response, nil
+}
+
+// askYNQuestion prompts the user expecting an answer that's either "y",
+// "n" or a blank, in which case defaultAnswer is returned.
+func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, error) {
+	ans, err := AskQuestion(format, a...)
+	if err != nil {
+		return "", err
+	}
+
+	switch ans := strings.ToLower(ans); ans {
+	case "y", "yes":
+		return "y", nil
+
+	case "n", "no":
+		return "n", nil
+
+	case "":
+		return defaultAnswer, nil
+
+	default:
+		return "", fmt.Errorf("invalid answer %q", ans)
+	}
 }
 
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
@@ -224,47 +248,53 @@ func LoadPubKeyring() (openpgp.EntityList, error) {
 	return openpgp.ReadKeyRing(f)
 }
 
+// printEntity pretty prints an entity entry to w
+func printEntity(w io.Writer, index int, e *openpgp.Entity) {
+	// TODO(mem): this should not be here, this is presentation
+	for _, v := range e.Identities {
+		fmt.Fprintf(w, "%d) U: %s (%s) <%s>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
+	}
+	fmt.Fprintf(w, "   C: %s\n", e.PrimaryKey.CreationTime)
+	fmt.Fprintf(w, "   F: %0X\n", e.PrimaryKey.Fingerprint)
+	bits, _ := e.PrimaryKey.BitLength()
+	fmt.Fprintf(w, "   L: %d\n", bits)
+
+}
+
+func printEntities(w io.Writer, entities openpgp.EntityList) {
+	for i, e := range entities {
+		printEntity(w, i, e)
+		fmt.Fprint(w, "   --------\n")
+	}
+}
+
 // PrintEntity pretty prints an entity entry
 func PrintEntity(index int, e *openpgp.Entity) {
-	for _, v := range e.Identities {
-		fmt.Printf("%v) U: %v (%v) <%v>\n", index, v.UserId.Name, v.UserId.Comment, v.UserId.Email)
-	}
-	fmt.Printf("   C: %v\n", e.PrimaryKey.CreationTime)
-	fmt.Printf("   F: %0X\n", e.PrimaryKey.Fingerprint)
-	bits, _ := e.PrimaryKey.BitLength()
-	fmt.Printf("   L: %v\n", bits)
+	printEntity(os.Stdout, index, e)
 }
 
 // PrintPubKeyring prints the public keyring read from the public local store
-func PrintPubKeyring() (err error) {
-	var pubEntlist openpgp.EntityList
-
-	if pubEntlist, err = LoadPubKeyring(); err != nil {
-		return
+func PrintPubKeyring() error {
+	pubEntlist, err := LoadPubKeyring()
+	if err != nil {
+		return err
 	}
 
-	for i, e := range pubEntlist {
-		PrintEntity(i, e)
-		fmt.Println("   --------")
-	}
+	printEntities(os.Stdout, pubEntlist)
 
-	return
+	return nil
 }
 
 // PrintPrivKeyring prints the secret keyring read from the public local store
-func PrintPrivKeyring() (err error) {
-	var privEntlist openpgp.EntityList
-
-	if privEntlist, err = LoadPrivKeyring(); err != nil {
-		return
+func PrintPrivKeyring() error {
+	privEntlist, err := LoadPrivKeyring()
+	if err != nil {
+		return err
 	}
 
-	for i, e := range privEntlist {
-		PrintEntity(i, e)
-		fmt.Println("   --------")
-	}
+	printEntities(os.Stdout, privEntlist)
 
-	return
+	return nil
 }
 
 // StorePrivKey stores a private entity list into the local key cache
@@ -464,39 +494,42 @@ func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity,
 	}
 
 	// Ask to push the new key to the keystore
-	pushKeyQ, err := AskQuestion("Would you like to push it to the keystore? [Y,n] : ")
-	if err != nil {
-		return
-	}
+	ans, err := askYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
+	switch {
+	case err != nil:
+		fmt.Fprintf(os.Stderr, "Not pushing newly created key to keystore: %s\n", err)
 
-	if pushKeyQ == "" || pushKeyQ == "y" || pushKeyQ == "Y" {
+	case ans == "y":
 		err = PushPubkey(entity, keyServiceURI, authToken)
 		if err != nil {
-			return
+			fmt.Printf("Failed to push newly created key to keystore: %s\n", err)
+		} else {
+			fmt.Printf("Key successfully pushed to: %s\n", keyServiceURI)
 		}
-		fmt.Printf("Key successfully pushed to: %v\n", keyServiceURI)
-	}
-	fmt.Printf("Done.\n")
 
-	return
+	default:
+		fmt.Printf("NOT pushing newly created key to: %s\n", keyServiceURI)
+	}
+
+	return entity, nil
 }
 
 // DecryptKey decrypts a private key provided a pass phrase
 func DecryptKey(k *openpgp.Entity, message string) error {
+	if !k.PrivateKey.Encrypted {
+		return errNotEncrypted
+	}
+
 	if message == "" {
 		message = "Enter key passphrase : "
 	}
-	if k.PrivateKey.Encrypted {
-		pass, err := AskQuestionNoEcho(message)
-		if err != nil {
-			return err
-		}
 
-		if err := k.PrivateKey.Decrypt([]byte(pass)); err != nil {
-			return err
-		}
+	pass, err := AskQuestionNoEcho(message)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	return k.PrivateKey.Decrypt([]byte(pass))
 }
 
 // EncryptKey encrypts a private key using a pass phrase

@@ -201,10 +201,8 @@ github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568 h1:Bv8RD7DVhhvY
 github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568/go.mod h1:1CO+05HLIlepCW8AZHGumlYfh/6mOa6puEIt1Yv0aUM=
 github.com/sylabs/json-resp v0.5.0 h1:AWdKu6aS0WrkkltX1M0ex0lENrIcx5TISox902s2L2M=
 github.com/sylabs/json-resp v0.5.0/go.mod h1:anCzED2SGHHZQDubMuoVtwMuJZdpqQ+7iso8yDFm/nQ=
-github.com/sylabs/scs-key-client v0.2.0 h1:9nXqgcSotyvUMJEsA4lAFrKtUB14qw3xIKoF6X0pO74=
-github.com/sylabs/scs-key-client v0.2.0/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
-github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec h1:PYpPpJokBQc90ErbzDsyRQfff7gUSwtIiWDblx3AM6Y=
-github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
+github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec h1:dX97dpvwSAF8AFG1f33b1dUueCGc1onK94FUP5pHUsw=
+github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
 github.com/sylabs/sif v1.0.3 h1:oMYGL3hIKIYkQDCr+Qr62mVViC4oKdUZTKqYVDTf4co=
 github.com/sylabs/sif v1.0.3/go.mod h1:qM8girsAnds3OxqM0hXVm/ytLQnUsZvy2veADsgDDVs=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=
