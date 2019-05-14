@@ -21,10 +21,6 @@ addons:
       - libarchive-dev
       - libgpgme11-dev
       - libseccomp-dev
-  homebrew:
-    packages:
-      - squashfs
-    update: true
 
 matrix:
   include:
@@ -33,20 +29,6 @@ matrix:
       env: OS_TYPE=centos OS_VERSION=6
     - os: linux
       env: OS_TYPE=centos OS_VERSION=7
-    - os: osx
-      osx_image: xcode10.1
-      before_install:
-        - # pass
-      script:
-        - .travis/macos/build
-        - .travis/macos/test
-    - os: osx
-      osx_image: xcode9.2
-      before_install:
-        - # pass
-      script:
-        - .travis/macos/build
-        - .travis/macos/test
 
 services:
   - docker
