@@ -98,23 +98,21 @@ func BackupSecretKeyring(t *testing.T) {
 	}
 }
 
-// RecuverSecretKeyring ...
-func RecuverSecretKeyring(t *testing.T) {
-	if err := os.Remove("~/.singularity/sypgp/pgp-secret"); err != nil {
-		// TODO:
-		t.Log("Unable to remove secret keyring: %v", err)
+// RecoverSecretKeyring ...
+func RecoverSecretKeyring(t *testing.T) {
+	if err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
+		t.Fatalf("Unable to remove secret keyring: %v", err)
 	}
-	if err := os.Rename(backupSypgp, "~/.singularity/sypgp/pgp-secret"); err != nil {
-		t.Log("Unable to rename secret keyring: %v", err)
+	if err := os.Rename(backupSypgp, filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
+		t.Fatalf("Unable to rename secret keyring: %v", err)
 	}
 }
 
 // RemoveSecretKeyring ...
 func RemoveSecretKeyring(t *testing.T) {
-	err := os.Remove("~/.singularity/sypgp/pgp-secret")
+	err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"))
 	if err != nil {
-		// TODO:
-		t.Log("Unable to remove secret keyring: %v", err)
+		t.Fatalf("Unable to remove secret keyring: %v", err)
 	}
 }
 
@@ -129,7 +127,7 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 }
 
 // ImportTestKey ...
-func ImportTestKey(t *testing.T, kpath string) {
+func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 	s := ""
 	if kpath == "" {
 		s = getS("./key/testdata/e2e_test_key.asc")
@@ -137,19 +135,36 @@ func ImportTestKey(t *testing.T, kpath string) {
 		s = getS(kpath)
 	}
 
-	err := ioutil.WriteFile("foo", []byte(s), 0644)
+	t.Log("FOOOOOOOOOOO ", s)
+	t.Log("KPATH: ", kpath)
+
+	importScript, err := ioutil.TempFile("", "")
 	if err != nil {
-		panic(err)
+		t.Fatalf("Unable to create script: %v", err)
+	}
+	defer importScript.Close()
+
+	//	_, err = importScript.WriteString(s)
+	//	if err != nil {
+	//		t.Fatalf("Unable to write to file: %v", err)
+	//	}
+	//	err = importScript.Close()
+	//	if err != nil {
+	//		t.Fatalf("Unable to clise file: %v", err)
+	//	}
+
+	t.Log("HELLO: ", importScript.Name())
+
+	err = ioutil.WriteFile(importScript.Name(), []byte(s), 0644)
+	//defer importScript.Close()
+	if err != nil {
+		t.Fatalf("Unable to write tmp file: %v", err)
 	}
 
-	argv := []string{"foo"}
+	argv := []string{importScript.Name()}
 	execImport := exec.Command("/usr/bin/expect", argv...)
 
-	out, err := execImport.CombinedOutput()
-	if err != nil {
-		t.Log(string(out))
-		t.Fatalf("Unable to import test key: %v", err)
-	}
+	return execImport.CombinedOutput()
 }
 
 // ExportPrivateKey will import a private key from kpath.
@@ -158,14 +173,27 @@ func ExportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 
 	s := getE(0, kpath, "", "e2etests")
 
-	t.Log("EEEEEEEEEEEEEEEEEE: ", s)
-
-	err := ioutil.WriteFile("foo", []byte(s), 0644)
+	exportScript, err := ioutil.TempFile("", "")
 	if err != nil {
-		panic(err)
+		t.Fatalf("Unable to create script: %v", err)
+	}
+	defer exportScript.Close()
+
+	_, err = exportScript.WriteString(s)
+	if err != nil {
+		t.Fatalf("Unable to write to file: %v", err)
+	}
+	err = exportScript.Close()
+	if err != nil {
+		t.Fatalf("Unable to clise file: %v", err)
 	}
 
-	argv := []string{"foo"}
+	//	err := ioutil.WriteFile(exportScript.Name, []byte(s), 0644)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+
+	argv := []string{exportScript.Name()}
 	execImport := exec.Command("/usr/bin/expect", argv...)
 
 	return execImport.CombinedOutput()

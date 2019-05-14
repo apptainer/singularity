@@ -80,7 +80,7 @@ func testPrivateKey(t *testing.T) {
 
 				t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveSecretKeyring(t) }))
 				t.Run("import_private_keyring_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) {
-					b, err := e2e.ImportKey(t, defaultKeyFile)
+					b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log(string(b))
 						t.Fatalf("Unable to import key: %v", err)
@@ -115,7 +115,13 @@ func TestAll(t *testing.T) {
 	}
 
 	t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.BackupSecretKeyring(t) }))
-	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) { e2e.ImportTestKey(t, "") }))
+	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
+		b, err := e2e.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
+		if err != nil {
+			t.Log(string(b))
+			t.Fatalf("Unable to import test key: %v", err)
+		}
+	}))
 
 	keyPath = testenv.TestDir
 	defaultKeyFile = filepath.Join(keyPath, "exported_private_key")
@@ -126,6 +132,6 @@ func TestAll(t *testing.T) {
 	// Run the tests
 	t.Run("pubic_key", testPrivateKey)
 
-	// Recuver the secret keyring
-	t.Run("recuvering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.RecuverSecretKeyring(t) }))
+	// Recover the secret keyring
+	t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.RecoverSecretKeyring(t) }))
 }
