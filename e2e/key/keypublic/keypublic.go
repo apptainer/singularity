@@ -61,7 +61,7 @@ func testPublicKey(t *testing.T) {
 		{
 			name:    "export_public",
 			args:    []string{"export"},
-			stdin:   "0\n",
+			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: true,
 		},

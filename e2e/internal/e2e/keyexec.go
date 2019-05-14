@@ -19,7 +19,7 @@ import (
 func PullDefaultPublicKey(t *testing.T) {
 	LoadEnv(t, &testenv)
 
-	argv := []string{"key", "pull", "8883491F4268F173C6E5DC49EDECE4F3F38D871E"}
+	argv := []string{"key", "pull", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
 
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
@@ -34,7 +34,7 @@ func PullDefaultPublicKey(t *testing.T) {
 func RemoveDefaultPublicKey(t *testing.T) {
 	LoadEnv(t, &testenv)
 
-	argv := []string{"key", "remove", "8883491F4268F173C6E5DC49EDECE4F3F38D871E"}
+	argv := []string{"key", "remove", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
 	out, err := execKey.CombinedOutput()
