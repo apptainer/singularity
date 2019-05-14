@@ -73,7 +73,6 @@ func testPrivateKey(t *testing.T) {
 			out, err := e2e.ExportPrivateKey(t, tt.file)
 			if tt.succeed {
 				if err != nil {
-					//		t.Log("Command that failed: ", cmd)
 					t.Log(string(out))
 					t.Fatalf("Unexpected failure: %v", err)
 				}
@@ -99,7 +98,7 @@ func testPrivateKey(t *testing.T) {
 				} else {
 					if err == nil {
 						t.Log(string(out))
-						//t.Fatalf("Unexpected success when running: %s", cmd)
+						t.Fatalf("Unexpected success")
 					}
 				}
 			}
