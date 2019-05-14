@@ -16,8 +16,6 @@ import (
 	"testing"
 )
 
-var importPrivKeyScript string
-
 func getImportScript(kpath string) string {
 	// Yes, this uses /usr/bin/expect
 	return fmt.Sprintf(`
