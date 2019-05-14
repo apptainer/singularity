@@ -145,8 +145,12 @@ func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 }
 
 // ExportPrivateKey will import a private key from kpath.
-func ExportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
-	s := getExportScript(0, kpath, "", "e2etests")
+func ExportPrivateKey(t *testing.T, kpath string, num int, armor bool) ([]byte, error) {
+	armorFlag := ""
+	if armor {
+		armorFlag = "--armor"
+	}
+	s := getExportScript(num, kpath, armorFlag, "e2etests")
 
 	exportScript, err := ioutil.TempFile("", "")
 	if err != nil {
