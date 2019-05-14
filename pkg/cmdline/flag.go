@@ -165,7 +165,9 @@ func (m *flagManager) registerUint32Var(flag *Flag, cmds []*cobra.Command) error
 	return nil
 }
 
-func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) (errs []error) {
+func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) error {
+	var errs []error
+
 	fn := func(flag *pflag.Flag) {
 		envKeys, ok := flag.Annotations["envkey"]
 		if !ok {
@@ -192,12 +194,16 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) (e
 			}
 		}
 	}
-	// visit parent command first
-	cmd.Flags().VisitAll(fn)
 
 	// visit each child commands
-	for _, c := range cmd.Commands() {
-		c.Flags().VisitAll(fn)
+	cmd.Flags().VisitAll(fn)
+	if len(errs) > 0 {
+		errStr := ""
+		for _, e := range errs {
+			errStr += fmt.Sprintf("\n%s", e.Error())
+		}
+		return fmt.Errorf(errStr)
 	}
-	return
+
+	return nil
 }

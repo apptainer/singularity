@@ -1,0 +1,17 @@
+Suspends all processes inside the container (root user only)
+
+Usage:
+  singularity oci pause <container_ID>
+
+Description:
+  Pause will suspend all processes for the specified container ID.
+
+Options:
+  -h, --help   help for pause
+
+
+Examples:
+  $ singularity oci pause mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/

@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/instance"
+	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/e2e/remote"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -84,8 +85,13 @@ func Run(t *testing.T) {
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
+	t.Log(imagePath)
 	os.Setenv("E2E_IMAGE_PATH", imagePath)
 	defer os.Remove(imagePath)
+
+	// Start registry for tests
+	singularitye2e.PrepRegistry(t)
+	defer singularitye2e.KillRegistry(t)
 
 	// RunE2ETests by functionality
 

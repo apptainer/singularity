@@ -94,12 +94,13 @@ var singQuietFlag = cmdline.Flag{
 	Usage:        "suppress normal output",
 }
 
-// --verbose
+// -v|--verbose
 var singVerboseFlag = cmdline.Flag{
 	ID:           "singVerboseFlag",
 	Value:        &verbose,
 	DefaultValue: false,
 	Name:         "verbose",
+	ShortHand:    "v",
 	Usage:        "print additional information",
 }
 
@@ -203,14 +204,18 @@ var SingularityCmd = &cobra.Command{
 	SilenceUsage:  true,
 }
 
+func persistentPreRunE(cmd *cobra.Command, _ []string) error {
+	setSylogMessageLevel()
+	setSylogColor()
+	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
+}
+
 // ExecuteSingularity adds all child commands to the root command and sets
 // flags appropriately. This is called by main.main(). It only needs to happen
 // once to the root command (singularity).
 func ExecuteSingularity() {
-	setSylogMessageLevel()
-	setSylogColor()
-
-	cmdManager.UpdateCmdFlagFromEnv(envPrefix)
+	// set persistent pre run function here to avoid initialization loop error
+	SingularityCmd.PersistentPreRunE = persistentPreRunE
 
 	for _, e := range cmdManager.GetError() {
 		sylog.Errorf("%s", e)
