@@ -219,6 +219,9 @@ func TestCmdFlag(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	var c struct{}
+	cmds := make(map[*cobra.Command]struct{})
+
 	// create command manager
 	cm, err := newCommandManager(rootCmd)
 	if err != nil {
@@ -234,17 +237,16 @@ func TestCmdFlag(t *testing.T) {
 			t.Errorf("unexpected success for %s", d.desc)
 		} else if len(cm.GetError()) == 0 && d.envValue != "" && len(d.flag.EnvKeys) > 0 {
 			os.Setenv(d.flag.EnvKeys[0], d.envValue)
+			cmds[d.cmd] = c
 		}
 		// reset error
 		cm.errPool = make([]error, 0)
 	}
 
-	cm.errPool = make([]error, 0)
-
-	cm.UpdateCmdFlagFromEnv("")
-	errs := cm.GetError()
-	if len(errs) > 0 {
-		t.Error(errs)
+	for cmd := range cmds {
+		if err := cm.UpdateCmdFlagFromEnv(cmd, ""); err != nil {
+			t.Error(err)
+		}
 	}
 
 	for _, d := range ttData {
