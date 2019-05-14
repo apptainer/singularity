@@ -4,6 +4,7 @@ go 1.11
 
 require (
 	github.com/Microsoft/go-winio v0.4.7 // indirect
+	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect

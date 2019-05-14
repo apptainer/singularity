@@ -9,12 +9,15 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	//"time"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
@@ -155,32 +158,42 @@ func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 }
 
 // ExportPrivateKey will import a private key from kpath.
-func ExportPrivateKey(t *testing.T, kpath string, num int, armor bool) ([]byte, error) {
-	armorFlag := ""
+func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
+	//func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) ([]byte, error) {
+	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
+	if err != nil {
+		panic(err)
+	}
+	defer c.Close()
+
+	exportCmd := []string{"key", "export", "--secret"}
+
 	if armor {
-		armorFlag = "--armor"
+		exportCmd = append(exportCmd, "--armor")
 	}
-	s := getExportScript(num, kpath, armorFlag, "e2etests")
 
-	exportScript, err := ioutil.TempFile("", "")
+	cmd := exec.Command("singularity", exportCmd...)
+	cmd.Stdin = c.Tty()
+	//cmd.Stdout = c.Tty()
+	//cmd.Stderr = c.Tty()
+
+	go func() {
+		c.ExpectEOF()
+	}()
+
+	err = cmd.Start()
 	if err != nil {
-		t.Fatalf("Unable to create script: %v", err)
-	}
-	defer exportScript.Close()
-
-	_, err = exportScript.WriteString(s)
-	if err != nil {
-		t.Fatalf("Unable to write to file: %v", err)
-	}
-	err = exportScript.Close()
-	if err != nil {
-		t.Fatalf("Unable to clise file: %v", err)
+		log.Fatal(err)
 	}
 
-	argv := []string{exportScript.Name()}
-	execImport := exec.Command("expect", argv...)
+	//time.Sleep(time.Second)
+	c.Send(num)
+	//time.Sleep(time.Second)
+	c.Send("e2etests\n")
+	//	time.Sleep(time.Second)
+	//	c.SendLine(":wq")
 
-	return execImport.CombinedOutput()
+	return cmd.Wait()
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.

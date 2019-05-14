@@ -53,7 +53,7 @@ func testPrivateKey(t *testing.T) {
 	tests := []struct {
 		name    string
 		armor   bool
-		stdin   int
+		stdin   string
 		file    string
 		corrupt bool
 		succeed bool
@@ -61,21 +61,21 @@ func testPrivateKey(t *testing.T) {
 		{
 			name:    "export private",
 			armor:   false,
-			stdin:   0, // TODO: this will need to be '1' at some point in time -> issue #3199
+			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
 			name:    "export private armor",
 			armor:   true,
-			stdin:   0, // TODO: this will need to be '1' at some point in time -> issue #3199
+			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
 			name:    "export private armor corrupt",
 			armor:   true,
-			stdin:   0, // TODO: this will need to be '1' at some point in time -> issue #3199
+			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			corrupt: true,
 			succeed: false,
@@ -83,14 +83,14 @@ func testPrivateKey(t *testing.T) {
 		{
 			name:    "export private panic",
 			armor:   false,
-			stdin:   1, // TODO: this will need to be '1' at some point in time -> issue #3199
+			stdin:   "1\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: false,
 		},
 		{
 			name:    "export private armor panic",
 			armor:   true,
-			stdin:   1, // TODO: this will need to be '1' at some point in time -> issue #3199
+			stdin:   "1\n", // TODO: this will need to be '1' at some point in time -> issue #3199
 			file:    defaultKeyFile,
 			succeed: false,
 		},
@@ -99,7 +99,8 @@ func testPrivateKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
-			out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
+			//out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
+			err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 			switch {
 			case tt.succeed && err == nil:
 				t.Run("remove_private_keyring_before_importing", func(t *testing.T) { e2e.RemoveSecretKeyring(t) })
@@ -115,13 +116,14 @@ func testPrivateKey(t *testing.T) {
 				t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
 				t.Run("import_private_key", func(t *testing.T) {
 					b, err := e2e.ImportKey(t, defaultKeyFile)
+					//err := e2e.ImportKey(t, defaultKeyFile)
 					if err == nil {
 						t.Fatalf("Unexpected success: %s", string(b))
 					}
 				})
 				break
 			case !tt.succeed && err == nil:
-				t.Log(string(out))
+				//t.Log(string(out))
 				t.Fatalf("Unexpected success: %s", tt.name)
 				break
 			default:
