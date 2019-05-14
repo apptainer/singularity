@@ -653,7 +653,9 @@ Enterprise Performance Computing (EPC)`
   The sign command allows a user to create a cryptographic signature on either a 
   single data object or a list of data objects within the same SIF group. By 
   default without parameters, the command searches for the primary partition and 
-  creates a verification block that is then added to the SIF container file.`
+  creates a verification block that is then added to the SIF container file.
+  
+  To generate a keypair, see 'singularity help key newpair'`
 	SignExample string = `
   $ singularity sign container.sif`
 

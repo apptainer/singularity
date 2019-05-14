@@ -32,6 +32,7 @@ var validURIs = map[string]bool{
 	"oci-archive":    true,
 	"http":           true,
 	"https":          true,
+	"oras":           true,
 }
 
 // IsValid returns whether or not the given source is valid
