@@ -28,7 +28,7 @@ var testenv testingEnv
 var keyPath string
 var defaultKeyFile string
 
-//  coruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
+// corruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
 func corruptKey(t *testing.T, kpath string) {
 	input, err := ioutil.ReadFile(kpath)
 	if err != nil {
@@ -45,7 +45,7 @@ func corruptKey(t *testing.T, kpath string) {
 	output := strings.Join(lines, "\n")
 	err = ioutil.WriteFile(kpath, []byte(output), 0644)
 	if err != nil {
-		t.Fatalf("Unabel to write to file: %v", err)
+		t.Fatalf("Unable to write to file: %v", err)
 	}
 }
 
@@ -129,7 +129,7 @@ func TestAll(t *testing.T) {
 	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
 
 	// Run the tests
-	t.Run("pubic_key", testPrivateKey)
+	t.Run("public_key", testPrivateKey)
 
 	// Recover the secret keyring
 	t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.RecoverSecretKeyring(t) }))

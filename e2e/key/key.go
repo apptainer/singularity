@@ -24,7 +24,7 @@ type testingEnv struct {
 
 var testenv testingEnv
 
-func testGenralKeyCmd(t *testing.T) {
+func testGeneralKeyCmd(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
@@ -96,7 +96,7 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Run("GenralKeyCmdTest", testGenralKeyCmd)
+	t.Run("GeneralKeyCmdTest", testGeneralKeyCmd)
 	t.Run("PublicKey", keypublic.TestAll)
 	t.Run("PrivateKey", keyprivate.TestAll)
 }
