@@ -100,36 +100,33 @@ func testPrivateKey(t *testing.T) {
 		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
 			out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
-			if tt.succeed {
-				if err != nil {
-					t.Log(string(out))
-					t.Fatalf("Unexpected failure: %v", err)
-				}
-
-				t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveSecretKeyring(t) }))
-				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
+			switch {
+			case tt.succeed && err == nil:
+				t.Run("remove_private_keyring_before_importing", func(t *testing.T) { e2e.RemoveSecretKeyring(t) })
+				t.Run("import_private_keyring_from", func(t *testing.T) {
 					b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log(string(b))
 						t.Fatalf("Unable to import key: %v", err)
 					}
-				}))
-			} else {
-				// if the test key is corrupted, try to import it, should fail
-				if tt.corrupt {
-					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { corruptKey(t, defaultKeyFile) }))
-					t.Run("import_private_key", test.WithoutPrivilege(func(t *testing.T) {
-						b, err := e2e.ImportKey(t, defaultKeyFile)
-						if err == nil {
-							t.Fatalf("Unexpected success: %s", string(b))
-						}
-					}))
-				} else {
+				})
+				break
+			case tt.corrupt && err == nil:
+				t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
+				t.Run("import_private_key", func(t *testing.T) {
+					b, err := e2e.ImportKey(t, defaultKeyFile)
 					if err == nil {
-						t.Log(string(out))
-						t.Fatalf("Unexpected success")
+						t.Fatalf("Unexpected success: %s", string(b))
 					}
-				}
+				})
+				break
+			case !tt.succeed && err == nil:
+				t.Log(string(out))
+				t.Fatalf("Unexpected success: %s", tt.name)
+				break
+			default:
+				// test passed
+				break
 			}
 		}))
 	}
@@ -154,11 +151,11 @@ func TestAll(t *testing.T) {
 	keyPath = testenv.TestDir
 	defaultKeyFile = filepath.Join(keyPath, "exported_private_key")
 
-	// Pull the default public key
-	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
+	//	// Pull the default public key
+	//	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
 
 	// Run the tests
-	t.Run("public_key", testPrivateKey)
+	t.Run("private_key", testPrivateKey)
 
 	// Recover the secret keyring
 	t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.RecoverSecretKeyring(t) }))
