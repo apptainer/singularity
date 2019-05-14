@@ -50,7 +50,7 @@ func TestRoot(t *testing.T) {
 			}
 			defer cleanupCache(t, newCache)
 
-			if r := newCache.Root; r != tt.expected {
+			if r := newCache.rootDir; r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -59,7 +59,7 @@ func TestRoot(t *testing.T) {
 
 func testFakeCacheSubdir(t *testing.T, basedir string, subdir string) {
 	// Invalid cache: we create a file instead of a directory
-	cachePath := filepath.Join(basedir, RootDefault, subdir)
+	cachePath := filepath.Join(basedir, rootDefault, subdir)
 
 	// If the path exists, delete it so we can start from a clean state
 	exists, _ := fs.Exists(cachePath)
@@ -114,7 +114,7 @@ func TestCreate(t *testing.T) {
 	}
 
 	// Create the root of our fake cache
-	rootCachePath := filepath.Join(dir, RootDefault)
+	rootCachePath := filepath.Join(dir, rootDefault)
 	err = os.MkdirAll(rootCachePath, 0777)
 	if err != nil {
 		t.Fatalf("Failed to create directory %s: %s", rootCachePath, err)
@@ -180,7 +180,7 @@ func TestIsValid(t *testing.T) {
 	defer tempCache.Clean()
 
 	validBasedir := tempCache.BaseDir
-	validRoot := tempCache.Root
+	validRoot := tempCache.rootDir
 	validLibrary := tempCache.Library
 	validNet := tempCache.Net
 	validOcitemp := tempCache.OciTemp
@@ -262,7 +262,7 @@ func TestIsValid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tempCache.BaseDir = tt.basedir
-			tempCache.Root = tt.root
+			tempCache.rootDir = tt.root
 			tempCache.Library = tt.library
 			tempCache.Net = tt.net
 			tempCache.OciTemp = tt.ocitemp

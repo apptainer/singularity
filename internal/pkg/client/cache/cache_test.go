@@ -62,7 +62,7 @@ func cleanupCache(t *testing.T, c *SingularityCache) {
 	}
 
 	// We restore the previous value of DirEnv
-	os.Setenv(DirEnv, c.PreviousDirEnv)
+	os.Setenv(DirEnv, c.previousDirEnv)
 }
 
 // getDefaultCacheValues is a helper function that returns the typical

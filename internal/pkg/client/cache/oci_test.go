@@ -122,9 +122,9 @@ func TestOciTempImage(t *testing.T) {
 		t.Fatal("unable to create temporary cache")
 	}
 	defer validCache.Clean()
-	err = os.Chmod(validCache.Root, 0444)
+	err = os.Chmod(validCache.rootDir, 0444)
 	if err != nil {
-		t.Fatal("cannot change access mode to", validCache.Root)
+		t.Fatal("cannot change access mode to", validCache.rootDir)
 	}
 	_, err = validCache.OciTempImage(validSHASum, validPath)
 	if err == nil {

@@ -66,9 +66,9 @@ func TestShubImage(t *testing.T) {
 	defer newCache.Clean()
 
 	// First test, we change the access mode of the cache's root to reach a specific error case
-	err := os.Chmod(newCache.Root, 0444)
+	err := os.Chmod(newCache.rootDir, 0444)
 	if err != nil {
-		t.Fatal("cannot change access mode to", newCache.Root)
+		t.Fatal("cannot change access mode to", newCache.rootDir)
 	}
 	_, err = newCache.ShubImage(validSHASum, validPath)
 	if err == nil {

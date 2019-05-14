@@ -3,7 +3,31 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package cache provides support for automatic caching of any image supported by containers/image
+// Package cache provides support for automatic caching of any container
+// image.
+//
+// A user can choose the location of the cache by setting the
+// SINGULARITY_CACHEDIR environment variable. This enables users to:
+// - set the location of the Singularity image cache based on volumes with a
+//   lot of free space (image caches can be huge in term of disk space),
+// - users may want to share their cache with others,
+// - users may want to have different caches for different projects.
+// For similar reasons, it is beneficial to keep the cache location separate
+// from the rest of user-specific Singularity files. In other words,
+// $HOME/.singularity usually contains cache, instances and sypgp and it is
+// beneficial to manipulate the cache directory separately.
+//
+// Conceptually, Singularity has a cache *base directory*. By default, the
+// cache base directory is located in $HOME/.singularity. If a user sets the
+// SINGULARITY_CACHEDIR environment variable, the cache base directory is then
+// set to its value.
+// Within the cache base directory, a 'cache' directory is created that is not
+// user-configurable, i.e., the user cannot change the name of that directory.
+// That directory is also named the *root* of the cache. These choices allows
+// us to never have to delete the cache base directory which can contains user
+// data when the user sets the SINGULARITY_CACHEDIR environment variable. When
+// deleting the cache, only the root directory of the cache is deleted, which
+// is supposed to only be managed by Singularity.
 package cache
 
 import (
@@ -22,17 +46,19 @@ const (
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
 
-	// BasedirDefault specifies the directory inside of ${HOME} that images are
-	// cached in by default.
-	// Uses "~/.singularity/cache" which will not clash with any 2.x cache
+	// BasedirDefault specifies the default value of the cache base directory. The
+	// path of the user's home directory is prepended at runtime. Ultimately, the
+	// default cache base directory is ~/.singularity/cache".
+	// Using "~/.singularity/cache" also does not clash with any 2.x cache
 	// directory.
 	BasedirDefault = ".singularity"
 
-	// RootDefault is the default directory created in the base directory that will actually
-	// host the cache
-	RootDefault = "cache"
+	// RootDefault is the default cache root directory created within the base
+	// directory. This value is not supposed to be set by the user.
+	rootDefault = "cache"
 
-	// StateInitialized represents the state of a give cache after successful initialization
+	// StateInitialized represents the state of a give cache after successful
+	// initialization
 	StateInitialized = "initialized"
 
 	// StateInvalid represents the state of an invalid cache
@@ -41,18 +67,19 @@ const (
 
 // SingularityCache is an opaque structure representing a cache
 type SingularityCache struct {
-	// Basedir for the cache. This directory is never entirely deleted since it
-	// can be specified by the user via the DirEnv environment variable.
+	// BaseDir is the cache base directory. This directory is never entirely
+	// deleted since it can be specified by the user via the DirEnv environment
+	// variable.
 	BaseDir string
 
-	// Root directory of the cache, within the basedir. This is the directory
+	// rootDir is the cache root directory, within basedir. This is the directory
 	// Singularity actually manages, i.e., that can safely be deleted as
 	// opposed to the base directory that is potentially managed (passed in)
-	// by the user
-	Root string
+	// by the user.
+	rootDir string
 
 	// State of the cache. We enable manual change of the state mainly for
-	// testing
+	// testing.
 	State string
 
 	// Default specifies if the handle points at the default image cache or
@@ -61,8 +88,9 @@ type SingularityCache struct {
 
 	// PreviousDirEnv stores the value of the DirEnv environment variable
 	// before it is implicitly modified. This is used to restore the
-	// environment configuration in some specific contexts.
-	PreviousDirEnv string
+	// environment configuration in some specific contexts, and is therefore
+	// not meant to be exposed to users.
+	previousDirEnv string
 
 	// Library provides the location of the Library cache
 	Library string
@@ -105,14 +133,14 @@ func hdlInit(baseDir string) (*SingularityCache, error) {
 	newCache := new(SingularityCache)
 	savedDirEnv := os.Getenv(DirEnv)
 	os.Setenv(DirEnv, baseDir)
-	newCache.PreviousDirEnv = savedDirEnv
+	newCache.previousDirEnv = savedDirEnv
 
 	newCache.BaseDir = baseDir
 	isDefaultCache, err := isDefaultBasedir(baseDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check if this is the default cache: %s", err)
 	}
-	newCache.Root = rootDir
+	newCache.rootDir = rootDir
 	newCache.State = StateInitialized
 	newCache.Default = isDefaultCache
 	newCache.Library, err = getLibraryCachePath(newCache)
@@ -147,12 +175,12 @@ func hdlInit(baseDir string) (*SingularityCache, error) {
 
 // Destroy a specific cache managed by a handler
 func (c *SingularityCache) Destroy() error {
-	sylog.Debugf("Removing: %v", c.Root)
+	sylog.Debugf("Removing: %v", c.rootDir)
 	if !c.IsValid() {
 		return fmt.Errorf("invalid cache")
 	}
 
-	err := os.RemoveAll(c.Root)
+	err := os.RemoveAll(c.rootDir)
 	if err != nil {
 		return fmt.Errorf("failed to delete the cache: %s", err)
 	}
@@ -179,10 +207,11 @@ func (c *SingularityCache) IsValid() bool {
 		return false
 	}
 
-	// The root cannot be empty of the Home directory. If the root was
+	// The root cannot be empty or the Home directory. If the root was
 	// to be the home directory, destroying the cache would delete
-	// user's data
-	if c.Root == "" || c.Root == usr.HomeDir {
+	// user's data. Note: the root is *not* exposed to the user, only
+	// the base directory is exposed and can be set by the user.
+	if c.rootDir == "" || c.rootDir == usr.HomeDir {
 		return false
 	}
 
@@ -236,7 +265,7 @@ func getCacheRoot(basedir string) string {
 	// is set to a default location) and the root is the actual cache directory
 	// within basedir, which we can safely delete (it is only supposed to contain
 	// files and directories that we create).
-	return path.Join(basedir, RootDefault)
+	return path.Join(basedir, rootDefault)
 }
 
 // updateCacheSubdir update/create a sub-cache (directory) within the cache,
@@ -256,7 +285,7 @@ func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
 		return "", fmt.Errorf("invalid parameter")
 	}
 
-	absdir, err := filepath.Abs(filepath.Join(c.Root, subdir))
+	absdir, err := filepath.Abs(filepath.Join(c.rootDir, subdir))
 	if err != nil {
 		return "", fmt.Errorf("unable to get abs filepath: %v", err)
 	}
