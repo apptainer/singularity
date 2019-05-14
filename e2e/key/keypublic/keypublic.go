@@ -28,8 +28,8 @@ var testenv testingEnv
 var keyPath string
 var defaultKeyFile string
 
-// messUpAscii will take a key (kpath) and change some chars in it, (corrupt it).
-func messUpAscii(t *testing.T, kpath string) {
+//  coruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
+func corruptKey(t *testing.T, kpath string) {
 	input, err := ioutil.ReadFile(kpath)
 	if err != nil {
 		t.Fatalf("Unable to read file: %v", err)
@@ -109,8 +109,9 @@ func testPublicKey(t *testing.T) {
 					}
 				}))
 			} else {
+				// if the test key is corrupted, try to import it, should fail
 				if tt.corrupt {
-					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { messUpAscii(t, defaultKeyFile) }))
+					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { corruptKey(t, defaultKeyFile) }))
 					t.Run("import_key", test.WithoutPrivilege(func(t *testing.T) {
 						b, err := e2e.ImportKey(t, defaultKeyFile)
 						if err == nil {
