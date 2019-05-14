@@ -1,0 +1,17 @@
+Attach console to a running container process (root user only)
+
+Usage:
+  singularity oci attach <container_ID>
+
+Description:
+  Attach will attach console to a running container process running within container identified by container ID.
+
+Options:
+  -h, --help   help for attach
+
+
+Examples:
+  $ singularity oci attach mycontainer
+
+
+For additional help or support, please visit https://www.sylabs.io/docs/

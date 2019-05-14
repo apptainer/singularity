@@ -767,22 +767,6 @@ static void cleanup_fd(struct fdlist *fd_before, struct fdlist *fd_after) {
     free(fd_after);
 }
 
-static void set_terminal_control(pid_t pid) {
-    pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
-    pid_t pgrp = getpgrp();
-
-    if ( tcpgrp == pgrp ) {
-        debugf("Pass terminal control to child\n");
-
-        if ( setpgid(pid, pid) < 0 ) {
-            fatalf("Failed to set child process group: %s\n", strerror(errno));
-        }
-        if ( tcsetpgrp(STDIN_FILENO, pid) < 0 ) {
-            fatalf("Failed to set child as foreground process: %s\n", strerror(errno));
-        }
-    }
-}
-
 static void event_stop(int fd) {
     unsigned long long counter;
 
@@ -1153,8 +1137,6 @@ __attribute__((constructor)) static void init(void) {
             close(forkfd);
         }
 
-        set_terminal_control(stage_pid);
-
         config->container.pid = stage_pid;
 
         verbosef("Spawn master process\n");
@@ -1181,18 +1163,6 @@ __attribute__((constructor)) static void init(void) {
             }
             debugf("Wait stage 2 child process\n");
             waitpid(stage_pid, &status, 0);
-
-            pid_t pgrp = getpgrp();
-            pid_t tcpgrp = tcgetpgrp(STDIN_FILENO);
-
-            if ( tcpgrp > 0 && pgrp != tcpgrp ) {
-                if ( signal(SIGTTOU, SIG_IGN) == SIG_ERR ) {
-                    fatalf("failed to ignore SIGTTOU signal: %s\n", strerror(errno));
-                }
-                if ( tcsetpgrp(STDIN_FILENO, pgrp) < 0 ) {
-                    fatalf("Failed to set parent as foreground process: %s\n", strerror(errno));
-                }
-            }
             exit_with_status("stage 2", status);
         } else {
             close(rpc_socket[1]);

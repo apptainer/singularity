@@ -76,8 +76,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&remoteConfigFlag, RemoteCmd)
 	// use tokenfile to log in to a remote
 	cmdManager.RegisterFlagForCmd(&remoteTokenFileFlag, RemoteLoginCmd)
-	// add --global flag to remote add/remove commands
-	cmdManager.RegisterFlagForCmd(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd)
+	// add --global flag to remote add/remove/use commands
+	cmdManager.RegisterFlagForCmd(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd, RemoteUseCmd)
 }
 
 // RemoteCmd singularity remote [...]
@@ -139,9 +139,10 @@ var RemoteRemoveCmd = &cobra.Command{
 
 // RemoteUseCmd singularity remote use [remoteName]
 var RemoteUseCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args:   cobra.ExactArgs(1),
+	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, args[0]); err != nil {
+		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, args[0], global); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
