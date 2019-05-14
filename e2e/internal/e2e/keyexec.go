@@ -19,7 +19,6 @@ import (
 func PullDefaultPublicKey(t *testing.T) {
 	LoadEnv(t, &testenv)
 
-	//func PullDefaultPublicKey(t *testing.T, cmdPath string) {
 	argv := []string{"key", "pull", "8883491F4268F173C6E5DC49EDECE4F3F38D871E"}
 
 	execKey := exec.Command(testenv.CmdPath, argv...)
@@ -46,8 +45,18 @@ func RemoveDefaultPublicKey(t *testing.T) {
 }
 
 // InportKey will import a key from kpath.
-func ImportKey(t *testing.T, kpath string) {
-	t.Log("foo", kpath)
+func ImportKey(t *testing.T, kpath string) ([]byte, error) {
+	LoadEnv(t, &testenv)
+
+	argv := []string{"key", "import", kpath}
+	execKey := exec.Command(testenv.CmdPath, argv...)
+
+	//out, err := execKey.CombinedOutput()
+	return execKey.CombinedOutput()
+	//	if err != nil {
+	//		t.Log(string(out))
+	//		t.Fatalf("Unable to import key: %v", err)
+	//	}
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
@@ -79,11 +88,7 @@ func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin stri
 	}
 
 	execKey.Stdin = stdinRun
-
 	out, err := execKey.CombinedOutput()
-
-	t.Log("???????EXEC_COMMAND: ", cmd)
-	//	t.Log("???????OUTPUT: ", string(out))
 
 	return cmd, out, err
 }

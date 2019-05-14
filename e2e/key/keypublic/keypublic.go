@@ -8,9 +8,10 @@ package keypublic
 import (
 	//	"fmt"
 	//	"os/exec"
-	//	"strings"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
@@ -29,12 +30,34 @@ var testenv testingEnv
 var keyPath string
 var defaultKeyFile string
 
+// messUpAscii will take a key (kpath) and change some chars in it, (corrupt it).
+func messUpAscii(t *testing.T, kpath string) {
+	input, err := ioutil.ReadFile(kpath)
+	if err != nil {
+		t.Fatalf("Unable to read file: %v", err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(line, "B") {
+			lines[i] = "P"
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(kpath, []byte(output), 0644)
+	if err != nil {
+		t.Fatalf("Unabel to write to file: %v", err)
+	}
+}
+
 func testPublicKey(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
 		stdin   string
 		file    string
+		corrupt bool
 		succeed bool
 	}{
 		{
@@ -58,6 +81,14 @@ func testPublicKey(t *testing.T) {
 			file:    defaultKeyFile,
 			succeed: false,
 		},
+		{
+			name:    "export_public_armor_corrupt",
+			args:    []string{"export", "--armor"},
+			stdin:   "0\n",
+			file:    defaultKeyFile,
+			corrupt: true,
+			succeed: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -70,13 +101,29 @@ func testPublicKey(t *testing.T) {
 					t.Log(string(out))
 					t.Fatalf("Unexpected failure: %v", err)
 				}
-				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.ImportKey(t, filepath.Join(keyPath, defaultKeyFile)) }))
-				t.Run("import_public_key_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) { e2e.ImportKey(t, filepath.Join(keyPath, defaultKeyFile)) }))
+
+				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveDefaultPublicKey(t) }))
+				t.Run("import_public_key_from:"+tt.name, test.WithoutPrivilege(func(t *testing.T) {
+					b, err := e2e.ImportKey(t, defaultKeyFile)
+					if err != nil {
+						t.Log(string(b))
+						t.Fatalf("Unable to import key: %v", err)
+					}
+				}))
 			} else {
-				if err == nil {
-					t.Log("Command that succeed: ", cmd)
-					t.Log(string(out))
-					t.Fatalf("Unexpected success: %v", err)
+				if tt.corrupt {
+					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { messUpAscii(t, defaultKeyFile) }))
+					t.Run("import_key", test.WithoutPrivilege(func(t *testing.T) {
+						b, err := e2e.ImportKey(t, defaultKeyFile)
+						if err == nil {
+							t.Fatalf("Unexpected success: %s", string(b))
+						}
+					}))
+				} else {
+					if err == nil {
+						t.Log(string(out))
+						t.Fatalf("Unexpected success when running: %s", cmd)
+					}
 				}
 			}
 		}))
