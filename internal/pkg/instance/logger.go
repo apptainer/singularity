@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -45,6 +44,8 @@ func basicLogFormatter(stream, data string) string {
 	return fmt.Sprintf("%s %s\n", time.Now().Format(time.RFC3339Nano), data)
 }
 
+type closer func()
+
 // LogFormats contains supported log format by default.
 var LogFormats = map[string]LogFormatter{
 	BasicLogFormat:      basicLogFormatter,
@@ -57,12 +58,14 @@ type Logger struct {
 	file      *os.File
 	fileMutex sync.Mutex
 	formatter LogFormatter
+	closers   []closer
 }
 
 // NewLogger instantiates a new logger with formatter and return it.
 func NewLogger(logPath string, formatter LogFormatter) (*Logger, error) {
 	logger := &Logger{
 		formatter: formatter,
+		closers:   make([]closer, 0),
 	}
 
 	if logger.formatter == nil {
@@ -76,27 +79,17 @@ func NewLogger(logPath string, formatter LogFormatter) (*Logger, error) {
 	return logger, nil
 }
 
-func closeFile(file *os.File) {
-	file.Close()
-}
-
 func (l *Logger) openFile(path string) (err error) {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
 	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 
-	if err == nil {
-		runtime.SetFinalizer(l.file, closeFile)
-	}
-
 	return err
 }
 
 func (l *Logger) scanOutput(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	length := len(data)
-
-	if atEOF && length == 0 {
+	if atEOF && len(data) == 0 {
 		return 0, nil, nil
 	}
 
@@ -105,7 +98,7 @@ func (l *Logger) scanOutput(data []byte, atEOF bool) (advance int, token []byte,
 	}
 
 	if atEOF {
-		return length, data[0:length], nil
+		return len(data), data, nil
 	}
 
 	return 0, nil, nil
@@ -114,29 +107,51 @@ func (l *Logger) scanOutput(data []byte, atEOF bool) (advance int, token []byte,
 // NewWriter create a new pipe pair for corresponding stream.
 func (l *Logger) NewWriter(stream string, dropCRNL bool) *io.PipeWriter {
 	reader, writer := io.Pipe()
-	go l.scan(stream, reader, writer, dropCRNL)
+	closer := l.scan(stream, reader, writer, dropCRNL)
+	l.closers = append(l.closers, closer)
 	return writer
 }
 
-func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropCRNL bool) {
+func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropCRNL bool) closer {
 	r := strings.NewReplacer("\r", "\\r", "\n", "\\n")
 	scanner := bufio.NewScanner(pr)
 	if !dropCRNL {
 		scanner.Split(l.scanOutput)
 	}
 
-	for scanner.Scan() {
-		l.fileMutex.Lock()
-		if !dropCRNL {
-			fmt.Fprint(l.file, l.formatter(stream, r.Replace(scanner.Text())))
-		} else {
-			fmt.Fprint(l.file, l.formatter(stream, scanner.Text()))
-		}
-		l.fileMutex.Unlock()
-	}
+	var wg sync.WaitGroup
 
-	pr.Close()
-	pw.Close()
+	wg.Add(1)
+
+	go func() {
+		for scanner.Scan() {
+			l.fileMutex.Lock()
+			if !dropCRNL {
+				fmt.Fprint(l.file, l.formatter(stream, r.Replace(scanner.Text())))
+			} else {
+				fmt.Fprint(l.file, l.formatter(stream, scanner.Text()))
+			}
+			l.fileMutex.Unlock()
+		}
+		pr.Close()
+		wg.Done()
+	}()
+
+	return func() {
+		pw.Close()
+		wg.Wait()
+	}
+}
+
+// Close closes all pipe pairs created with NewWriter and also closes
+// log file descriptor
+func (l *Logger) Close() {
+	for _, closer := range l.closers {
+		closer()
+	}
+	l.closers = nil
+	l.file.Sync()
+	l.file.Close()
 }
 
 // ReOpenFile closes and re-open log file (eg: log rotation).
