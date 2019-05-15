@@ -83,7 +83,7 @@ func LookupCommand(command string, env expand.Environ) (string, error) {
 	os.Setenv("PATH", vr.String())
 	path, err := exec.LookPath(command)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	os.Setenv("PATH", oldPath)
 
@@ -178,13 +178,16 @@ func RunScript(name, script string, t *testing.T) {
 			te := ctx.Value(testExecContext).(*testExec)
 			mc, _ := interp.FromModuleContext(ctx)
 			if tb.Index >= 0 {
+				var err error
+
 				if len(args) < tb.Index {
 					te.t.Errorf("wrong usage of test builtin %s", args[0])
 					return interp.ShellExitStatus(1)
 				}
-				failed := false
+
 				te.t.Run(args[tb.Index], func(sub *testing.T) {
 					var subTe testExec
+
 					subTe.t = sub
 					subTe.runner = te.runner
 					subTe.atExitFunctions = te.atExitFunctions
@@ -192,13 +195,18 @@ func RunScript(name, script string, t *testing.T) {
 					ctx := context.TODO()
 					ctx = context.WithValue(ctx, testExecContext, &subTe)
 
-					if err := tb.Fn(ctx, mc, args[1:]); err != nil {
+					if err = tb.Fn(ctx, mc, args[1:]); err != nil {
 						sub.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
-						failed = true
 					}
 				})
-				if failed {
-					return interp.ExitStatus(1)
+
+				if err != nil {
+					switch err.(type) {
+					case interp.ExitStatus:
+						return err
+					default:
+						return interp.ExitStatus(1)
+					}
 				}
 			} else {
 				if err := tb.Fn(ctx, mc, args[1:]); err != nil {

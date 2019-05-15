@@ -11,9 +11,9 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -23,21 +23,26 @@ import (
 
 // expect-search builtin
 // usage:
-// expect-search output|error "TestName" "search_pattern" command <command_args>
+// expect-search output|error|combined "search_pattern" "TestName" command <command_args>
 func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+	const regexPrefix = "regex:"
+
 	if len(args) < 4 {
 		return fmt.Errorf("expect-search requires at least 4 arguments")
 	}
 
-	var readPipe io.ReadCloser
+	var re *regexp.Regexp
+	var d bytes.Buffer
 
 	stream := args[0]
-	search := args[2]
+	search := args[1]
 
-	switch stream {
-	case "output", "error":
-	default:
-		return fmt.Errorf("stream %s not supported", stream)
+	if strings.HasPrefix(search, regexPrefix) {
+		var err error
+		re, err = regexp.Compile(strings.TrimPrefix(search, regexPrefix))
+		if err != nil {
+			return fmt.Errorf("error while compiling search pattern: %s", err)
+		}
 	}
 
 	path, err := LookupCommand(args[3], mc.Env)
@@ -55,42 +60,68 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 		Stdin: mc.Stdin,
 	}
 
-	if stream == "error" {
-		stderr, err := cmd.StderrPipe()
-		if err != nil {
-			return err
+	switch stream {
+	case "error":
+		if mc.Stderr != os.Stderr {
+			cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
+		} else {
+			cmd.Stderr = &d
 		}
-		readPipe = stderr
 		if mc.Stdout != os.Stdout {
 			cmd.Stdout = mc.Stdout
 		}
-	} else if stream == "output" {
-		stdout, err := cmd.StdoutPipe()
-		if err != nil {
-			return err
+	case "output":
+		if mc.Stdout != os.Stdout {
+			cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
+		} else {
+			cmd.Stdout = &d
 		}
-		readPipe = stdout
 		if mc.Stderr != os.Stderr {
 			cmd.Stderr = mc.Stderr
 		}
+	case "combined":
+		if mc.Stderr != os.Stderr {
+			cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
+		} else {
+			cmd.Stderr = &d
+		}
+		if mc.Stdout != os.Stdout {
+			cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
+		} else {
+			cmd.Stdout = &d
+		}
+	default:
+		return fmt.Errorf("stream %s not supported", stream)
 	}
 
-	if err := cmd.Start(); err != nil {
-		return err
+	exitCode := 0
+
+	if err := cmd.Run(); err != nil {
+		if _, ok := err.(*exec.Error); ok {
+			return fmt.Errorf("error while executing %s: %s", fullCmd, err)
+		}
+		if x, ok := err.(*exec.ExitError); ok {
+			if status, ok := x.Sys().(syscall.WaitStatus); ok {
+				exitCode = status.ExitStatus()
+			}
+		}
 	}
 
-	d, _ := ioutil.ReadAll(readPipe)
-	if !bytes.Contains(d, []byte(search)) {
-		return fmt.Errorf("%s (%s stream doesn't contain %s string) %s", fullCmd, stream, search, string(d))
+	match := false
+	if re != nil {
+		if len(re.Find(d.Bytes())) > 0 {
+			match = true
+		}
+	} else {
+		if strings.Contains(d.String(), search) {
+			match = true
+		}
+	}
+	if !match {
+		return fmt.Errorf("%s (%s stream doesn't contain pattern %q string): %s", fullCmd, stream, search, d.String())
 	}
 
-	err = cmd.Wait()
-	switch err.(type) {
-	case *exec.Error:
-		return err
-	}
-
-	return nil
+	return interp.ExitStatus(exitCode)
 }
 
 // expect-exit builtin
@@ -193,7 +224,7 @@ func testError(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 
 func init() {
 	RegisterTestBuiltin("expect-exit", expectExit, 2)
-	RegisterTestBuiltin("expect-search", expectSearch, 2)
+	RegisterTestBuiltin("expect-search", expectSearch, 3)
 	RegisterTestBuiltin("test-skip", testSkip, 1)
 	RegisterTestBuiltin("test-skip-script", testSkipScript, -1)
 	RegisterTestBuiltin("test-log", testLog, -1)

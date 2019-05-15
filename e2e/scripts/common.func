@@ -83,11 +83,27 @@ expect-success() {
 }
 
 stdout-contains() {
-    expect-search output "$@"
+    test_name="$1"
+    pattern="$2"
+    shift
+    shift
+    expect-search output "${pattern}" "${test_name}" "$@" >>/tmp/cmd.output 2>&1
 }
 
 stderr-contains() {
-    expect-search error "$@"
+    test_name="$1"
+    pattern="$2"
+    shift
+    shift
+    expect-search error "${pattern}" "${test_name}" "$@" >>/tmp/cmd.output 2>&1
+}
+
+stdall-contains() {
+    test_name="$1"
+    pattern="$2"
+    shift
+    shift
+    expect-search combined "${pattern}" "${test_name}" "$@" >>/tmp/cmd.output 2>&1
 }
 
 test-match() {
