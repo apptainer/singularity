@@ -6,6 +6,7 @@
 package keyexec
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -107,7 +108,7 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 }
 
 // ImportPrivateKey will take a private key file (kpath) and import it.
-func ImportPrivateKey(t *testing.T, kpath string) error {
+func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 	//func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
@@ -122,7 +123,11 @@ func ImportPrivateKey(t *testing.T, kpath string) error {
 	cmd := exec.Command(testenv.CmdPath, exportCmd...)
 	cmd.Stdin = c.Tty()
 	//cmd.Stdout = c.Tty()
-	cmd.Stderr = c.Tty()
+	//cmd.Stderr = c.Tty()
+
+	buf := bytes.NewBuffer(nil)
+	cmd.Stderr = buf
+	cmd.Stdout = buf
 
 	go func() {
 		c.ExpectEOF()
@@ -138,11 +143,15 @@ func ImportPrivateKey(t *testing.T, kpath string) error {
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
 
-	return cmd.Wait()
+	err = cmd.Wait()
+
+	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
+
+	return cm, buf.Bytes(), err
 }
 
 // ExportPrivateKey will import a private key from kpath.
-func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
+func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
 	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
@@ -162,10 +171,12 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
 	cmd := exec.Command(testenv.CmdPath, exportCmd...)
 	cmd.Stdin = c.Tty()
 
-	// TODO: this should return the stderr/stdout
+	outErr := bytes.NewBuffer(nil)
+	cmd.Stderr = outErr
+	cmd.Stdout = outErr
 
 	//cmd.Stdout = c.Tty()
-	cmd.Stderr = c.Tty()
+	//cmd.Stderr = c.Tty()
 
 	go func() {
 		c.ExpectEOF()
@@ -173,13 +184,17 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
 
 	err = cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal("unable to run command: %v", err)
 	}
 
 	c.Send(num)
 	c.Send("e2etests\n")
 
-	return cmd.Wait()
+	err = cmd.Wait()
+
+	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
+
+	return cm, outErr.Bytes(), err
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
