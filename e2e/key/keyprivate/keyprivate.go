@@ -51,12 +51,12 @@ func corruptKey(t *testing.T, kpath string) {
 
 func testPrivateKey(t *testing.T) {
 	tests := []struct {
-		armor   bool
-		corrupt bool
-		succeed bool
 		name    string
 		stdin   string
 		file    string
+		armor   bool
+		corrupt bool
+		succeed bool
 	}{
 		{
 			name:    "export private",
