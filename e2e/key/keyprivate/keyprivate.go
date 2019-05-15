@@ -71,6 +71,13 @@ func testPrivateKey(t *testing.T) {
 			file:    defaultKeyFile,
 			succeed: false,
 		},
+		{
+			name:    "export private armor invalid",
+			armor:   true,
+			stdin:   "n\n", // TODO: this will need to be '1' at some point in time -> issue #3199
+			file:    defaultKeyFile,
+			succeed: false,
+		},
 	}
 
 	for _, tt := range tests {

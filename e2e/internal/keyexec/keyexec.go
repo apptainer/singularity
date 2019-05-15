@@ -105,7 +105,8 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
-	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
+	//c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
+	c, err := expect.NewConsole(expect.WithStdin(os.Stdin))
 	if err != nil {
 		panic(err)
 	}
@@ -144,7 +145,8 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
-	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
+	//c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
+	c, err := expect.NewConsole(expect.WithStdin(os.Stdin))
 	if err != nil {
 		panic(err)
 	}
@@ -158,10 +160,13 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 
 	exportCmd = append(exportCmd, kpath)
 
+	outErr := bytes.NewBuffer(nil)
+
 	cmd := exec.Command(testenv.CmdPath, exportCmd...)
+	//cmd.Stdin = c.Tty()
+	//cmd.Stdin = outErr
 	cmd.Stdin = c.Tty()
 
-	outErr := bytes.NewBuffer(nil)
 	cmd.Stderr = outErr
 	cmd.Stdout = outErr
 

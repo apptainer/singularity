@@ -64,6 +64,13 @@ func testPublicKey(t *testing.T) {
 			corrupt: true,
 			succeed: false,
 		},
+		{
+			name:    "export armor invalid",
+			args:    []string{"export", "--armor"},
+			stdin:   "n\n",
+			file:    defaultKeyFile,
+			succeed: false,
+		},
 	}
 
 	for _, tt := range tests {
