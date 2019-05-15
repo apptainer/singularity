@@ -1,4 +1,0 @@
-bootstrap: docker
-from: my-busybox
-registry: localhost:5000
-namespace: not-a-namespace

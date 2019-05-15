@@ -2,29 +2,15 @@
 # test docker build from definition files
 
 source common.func
-
-tmpdir=`mktmpdir`
-tmpimage="${tmpdir}/container.sif"
+source docker/docker.func
 
 # Test docker definition file
-expect-success "Busybox"    sudo singularity build ${tmpimage} docker/definition_files/busybox.def
-verify-image   "Busybox"    ${tmpimage}
-
-sudo rm ${tmpimage}
-
-expect-success "CentOS"     sudo singularity build ${tmpimage} docker/definition_files/centos.def
-verify-image   "CentOS"     ${tmpimage}
-
-sudo rm ${tmpimage}
-
-expect-success "Ubuntu"     sudo singularity build ${tmpimage} docker/definition_files/ubuntu.def
-verify-image   "Ubuntu"     ${tmpimage}
+build-from-definition "Busybox" docker/testdata/busybox.def
+build-from-definition "CentOS"  docker/testdata/centos.def
+build-from-definition "Ubuntu"  docker/testdata/ubuntu.def
 
 if check-kernel-version ">=3.0.0"; then
-    sudo rm ${tmpimage}
-
-    expect-success "Arch"   sudo singularity build ${tmpimage} docker/definition_files/arch.def
-    verify-image   "Arch"   ${tmpimage}
+    build-from-definition "Arch"  docker/testdata/arch.def
 else
     test-skip "Arch" "kernel >= 3.0.0 is required"
 fi

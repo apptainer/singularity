@@ -1,2 +1,0 @@
-bootstrap: docker
-from: ubuntu:16.04

@@ -1,2 +1,0 @@
-bootstrap: docker
-from: busybox:latest

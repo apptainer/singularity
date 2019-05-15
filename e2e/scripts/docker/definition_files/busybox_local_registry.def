@@ -1,3 +1,0 @@
-bootstrap: docker
-from: my-busybox
-registry: localhost:5000
