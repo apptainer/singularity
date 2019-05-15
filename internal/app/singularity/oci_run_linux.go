@@ -20,7 +20,7 @@ import (
 
 // OciRun runs a container (equivalent to create/start/delete)
 func OciRun(containerID string, args *OciArgs) error {
-	dir, err := instance.GetDirPrivileged(containerID, instance.OciSubDir)
+	dir, err := instance.GetDir(containerID, instance.OciSubDir)
 	if err != nil {
 		return err
 	}

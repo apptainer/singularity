@@ -76,8 +76,9 @@ var PushCmd = &cobra.Command{
 
 			err := singularity.LibraryPush(file, dest, authToken, PushLibraryURI, KeyServerURL, remoteWarning, unauthenticatedPush)
 			if err == singularity.ErrLibraryUnsigned {
-				fmt.Fprintf(os.Stderr, "\nUnable to verify your container! You REALLY should sign your container before pushing!\n")
-				fmt.Fprintf(os.Stderr, "Stopping upload.\n")
+				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
+				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
+				sylog.Fatalf("Unable to upload container: unable to verify signature")
 				os.Exit(3)
 			} else if err != nil {
 				sylog.Fatalf("Unable to push image to library: %v", err)
