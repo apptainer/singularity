@@ -76,7 +76,7 @@ func TestShubImage(t *testing.T) {
 	}
 
 	// Second, we test with an cache that has an invalid state
-	newCache.State = StateInvalid
+	newCache.ValidState = false
 	_, err = newCache.ShubImage(validSHASum, validPath)
 	if err == nil {
 		t.Fatalf("ShubImage() succeeded with an invalid cache")

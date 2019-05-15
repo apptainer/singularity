@@ -98,7 +98,7 @@ func TestLibraryImage(t *testing.T) {
 	}
 
 	// Error case using an invalid cache
-	newCache.State = StateInvalid
+	newCache.ValidState = false
 	_, err := newCache.LibraryImage(validSHASum, validPath)
 	if err == nil {
 		t.Fatal("LibraryImage() succeeded with an invalid cache")
@@ -185,7 +185,7 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 
 	// Invalid case with an invalid cache
-	newCache.State = StateInvalid
+	newCache.ValidState = false
 	_, err = newCache.LibraryImageExists(hash, filename)
 	if err == nil {
 		t.Fatal("LibraryImageExists() succeeded with an invalid cache")

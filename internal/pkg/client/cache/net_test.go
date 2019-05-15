@@ -21,7 +21,7 @@ func TestNetImage(t *testing.T) {
 	if cacheObj == nil {
 		t.Fatal("cannot create cache object")
 	}
-	cacheObj.State = StateInvalid
+	cacheObj.ValidState = false
 	defer cacheObj.Clean()
 
 	tests := []struct {
@@ -172,7 +172,7 @@ func TestNetImageExists(t *testing.T) {
 	}
 
 	// Then is an invalid cache object
-	newCache.State = StateInvalid
+	newCache.ValidState = false
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			_, err := newCache.NetImageExists(test.sum, test.path)

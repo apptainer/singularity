@@ -105,7 +105,7 @@ func TestOciTempImage(t *testing.T) {
 		t.Fatal("unable to create temporary cache")
 	}
 	defer invalidCache.Clean()
-	invalidCache.State = StateInvalid
+	invalidCache.ValidState = false
 	_, err := invalidCache.OciTempExists(validSHASum, validPath)
 	if err == nil {
 		t.Fatal("OciTempExists() on an invalid cache succeeded")

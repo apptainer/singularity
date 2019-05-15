@@ -56,13 +56,6 @@ const (
 	// RootDefault is the default cache root directory created within the base
 	// directory. This value is not supposed to be set by the user.
 	rootDefault = "cache"
-
-	// StateInitialized represents the state of a give cache after successful
-	// initialization
-	StateInitialized = "initialized"
-
-	// StateInvalid represents the state of an invalid cache
-	StateInvalid = "invalid"
 )
 
 // SingularityCache is an opaque structure representing a cache
@@ -78,9 +71,10 @@ type SingularityCache struct {
 	// by the user.
 	rootDir string
 
-	// State of the cache. We enable manual change of the state mainly for
-	// testing.
-	State string
+	// ValidState specifies if the cache is in a valid state or not. This is
+	// mainly used for testing, where a unit test can switch a cache's state
+	// from valid to invalid in order to reach error cases.
+	ValidState bool
 
 	// Default specifies if the handle points at the default image cache or
 	// not. This enables quick lookup. This is for instance used in the
@@ -145,7 +139,7 @@ func hdlInit(baseDir string) (*SingularityCache, error) {
 		return nil, fmt.Errorf("failed to check if this is the default cache: %s", err)
 	}
 	newCache.rootDir = rootDir
-	newCache.State = StateInitialized
+	newCache.ValidState = true
 	newCache.Default = isDefaultCache
 	newCache.Library, err = getLibraryCachePath(newCache)
 	if err != nil {
@@ -194,7 +188,7 @@ func (c *SingularityCache) Destroy() error {
 
 // IsValid checks whether a given Singularity cache is valid or not
 func (c *SingularityCache) IsValid() bool {
-	if c.State != StateInitialized {
+	if !c.ValidState {
 		return false
 	}
 
