@@ -101,8 +101,13 @@ func testPrivateKey(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
 			//out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 			err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
-			switch {
-			case tt.succeed && err == nil:
+
+			if tt.succeed {
+				if err != nil {
+					//t.Log(string(out))
+					t.Fatalf("Unexpected failure: %v", err)
+				}
+
 				t.Run("remove_private_keyring_before_importing", func(t *testing.T) { e2e.RemoveSecretKeyring(t) })
 				t.Run("import_private_keyring_from", func(t *testing.T) {
 					b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
@@ -111,27 +116,57 @@ func testPrivateKey(t *testing.T) {
 						t.Fatalf("Unable to import key: %v", err)
 					}
 				})
-				break
-			case tt.corrupt && err == nil:
-				t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
-				t.Run("import_private_key", func(t *testing.T) {
-					b, err := e2e.ImportKey(t, defaultKeyFile)
-					//err := e2e.ImportKey(t, defaultKeyFile)
+			} else {
+				// if the test key is corrupted, try to import it, should fail
+				if tt.corrupt {
+					t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
+					t.Run("import_private_key", func(t *testing.T) {
+						b, err := e2e.ImportKey(t, defaultKeyFile)
+						if err == nil {
+							t.Fatalf("Unexpected success: %s", string(b))
+						}
+					})
+				} else {
 					if err == nil {
-						t.Fatalf("Unexpected success: %s", string(b))
+						//	t.Log(string(out))
+						t.Fatalf("Unexpected success")
 					}
-				})
-				break
-			case !tt.succeed && err == nil:
-				//t.Log(string(out))
-				t.Fatalf("Unexpected success: %s", tt.name)
-				break
-			default:
-				// test passed
-				break
+				}
 			}
 		}))
 	}
+
+	/*			switch {
+				case tt.succeed && err == nil:
+					t.Run("remove_private_keyring_before_importing", func(t *testing.T) { e2e.RemoveSecretKeyring(t) })
+					t.Run("import_private_keyring_from", func(t *testing.T) {
+						b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
+						if err != nil {
+							t.Log(string(b))
+							t.Fatalf("Unable to import key: %v", err)
+						}
+					})
+					break
+				case tt.corrupt && err == nil:
+					t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
+					t.Run("import_private_key", func(t *testing.T) {
+						b, err := e2e.ImportKey(t, defaultKeyFile)
+						//err := e2e.ImportKey(t, defaultKeyFile)
+						if err == nil {
+							t.Fatalf("Unexpected success: %s", string(b))
+						}
+					})
+					break
+				case !tt.succeed && err == nil:
+					//t.Log(string(out))
+					t.Fatalf("Unexpected success: %s", tt.name)
+					break
+				default:
+					// test passed
+					break
+				}
+			}))*/
+
 }
 
 // TestAll is trigered by ../key.go, that is trigered by suite.go in the e3e test directory
