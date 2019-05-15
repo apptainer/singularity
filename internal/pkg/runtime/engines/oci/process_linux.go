@@ -229,7 +229,7 @@ func (engine *EngineOperations) PreStartProcess(pid int, masterConn net.Conn, fa
 	logPath := engine.EngineConfig.GetLogPath()
 	if logPath == "" {
 		containerID := engine.CommonConfig.ContainerID
-		dir, err := instance.GetDirPrivileged(containerID, instance.OciSubDir)
+		dir, err := instance.GetDir(containerID, instance.OciSubDir)
 		if err != nil {
 			return err
 		}

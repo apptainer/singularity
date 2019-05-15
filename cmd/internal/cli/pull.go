@@ -6,14 +6,23 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
+	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/remotes/docker"
 	ocitypes "github.com/containers/image/types"
+	"github.com/deislabs/oras/pkg/content"
+	orasctx "github.com/deislabs/oras/pkg/context"
+	"github.com/deislabs/oras/pkg/oras"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
@@ -42,6 +51,8 @@ const (
 	HTTPProtocol = "http"
 	// HTTPSProtocol holds the remote https base URI
 	HTTPSProtocol = "https"
+	// OrasProtocol holds the oras URI
+	OrasProtocol = "oras"
 )
 
 var (
@@ -304,6 +315,61 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
+	case OrasProtocol:
+		ref = strings.TrimPrefix(ref, "//")
+
+		spec, err := reference.Parse(ref)
+		if err != nil {
+			sylog.Fatalf("Unable to parse oci reference: %s", err)
+		}
+
+		// append default tag if no object exists
+		if spec.Object == "" {
+			spec.Object = SifDefaultTag
+			sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
+		}
+
+		ociAuth, err := makeDockerCredentials(cmd)
+		if err != nil {
+			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
+		}
+
+		credFn := func(_ string) (string, string, error) {
+			return ociAuth.Username, ociAuth.Password, nil
+		}
+		resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
+
+		wd, err := os.Getwd()
+		if err != nil {
+			sylog.Fatalf("Failed to get working directory: %s", err)
+		}
+
+		store := content.NewFileStore(wd)
+		defer store.Close()
+
+		store.AllowPathTraversalOnWrite = true
+		store.DisableOverwrite = !force
+
+		allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
+		handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+			if desc.MediaType == SifLayerMediaType {
+				nameOld, _ := content.ResolveName(desc)
+				_ = store.MapPath(nameOld, name)
+			}
+			return nil, nil
+		}
+		pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
+
+		_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
+		if err != nil {
+			sylog.Fatalf("Unable to pull from registry: %s", err)
+		}
+
+		// ensure container is executable
+		if err := os.Chmod(name, 0755); err != nil {
+			sylog.Fatalf("Unable to set image perms: %s", err)
+		}
+		sylog.Infof("Download complete: %s\n", name)
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
 		if err != nil {

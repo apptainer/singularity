@@ -9,6 +9,7 @@ require (
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
+	github.com/containerd/containerd v1.2.6
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
 	github.com/containernetworking/cni v0.6.0
 	github.com/containernetworking/plugins v0.0.0-20180606151004-2b8b1ac0af45
@@ -20,6 +21,7 @@ require (
 	github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203 // indirect
 	github.com/d2g/dhcp4server v0.0.0-20181031114812-7d4a0a7f59a5 // indirect
 	github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4 // indirect
+	github.com/deislabs/oras v0.4.0
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
 	github.com/docker/docker v0.0.0-20180522102801-da99009bbb11 // indirect
 	github.com/docker/docker-credential-helpers v0.6.0 // indirect
@@ -32,7 +34,6 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
-	github.com/gogo/protobuf v1.0.0 // indirect
 	github.com/gorilla/context v1.1.1 // indirect
 	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/websocket v1.2.0
@@ -72,7 +73,7 @@ require (
 	github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 	github.com/spf13/pflag v1.0.3
 	github.com/sylabs/json-resp v0.5.0
-	github.com/sylabs/scs-key-client v0.3.1-0.20190509220229-bce3b050c4ec
+	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/sif v1.0.3
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect
@@ -81,9 +82,10 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v0.0.0-20180618132009-1d523034197f // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
-	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
+	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223
+	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.25
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
