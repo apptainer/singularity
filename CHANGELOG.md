@@ -59,6 +59,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Prompt to push a key to the KeyStore when generated
   - Refuse to push an unsigned container unless overridden with `--allow-unauthenticated/-U` option
   - Warn and prompt when pulling an unsigned container without the `--allow-unauthenticated/-U` option
+  - `Bootstrap` must now be the first field of every header because of parser requirements for multi-stage builds
 
 # v3.1.1 - [2019.04.02]
 
