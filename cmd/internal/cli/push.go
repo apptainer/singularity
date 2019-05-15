@@ -80,7 +80,7 @@ var PushCmd = &cobra.Command{
 				fmt.Fprintf(os.Stderr, "Stopping upload.\n")
 				os.Exit(3)
 			} else if err != nil {
-				sylog.Fatalf("%v", err)
+				sylog.Fatalf("Unable to push image to library: %v", err)
 			}
 		case OrasProtocol:
 			ociAuth, err := makeDockerCredentials(cmd)
@@ -89,7 +89,7 @@ var PushCmd = &cobra.Command{
 			}
 
 			if err := singularity.OrasPush(file, ref, ociAuth); err != nil {
-				sylog.Fatalf("%v", err)
+				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 		}
 	},

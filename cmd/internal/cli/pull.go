@@ -214,7 +214,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		} else if err == singularity.ErrLibraryPullAbort {
 			exitStat = 10
 		} else if err != nil {
-			sylog.Fatalf("%v", err)
+			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
 		err := shub.DownloadImage(name, args[i], force, noHTTPS)
@@ -229,7 +229,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		err = singularity.OrasPull(name, ref, force, ociAuth)
 		if err != nil {
-			sylog.Fatalf("%v", err)
+			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
@@ -244,7 +244,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		err = singularity.OciPull(name, args[i], tmpDir, ociAuth, force, noHTTPS)
 		if err != nil {
-			sylog.Fatalf("%v", err)
+			sylog.Fatalf("While making image from oci registry: %v", err)
 		}
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)

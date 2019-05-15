@@ -73,9 +73,9 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 		}
 
 		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("Error getting ImageHash: %v", err)
+			return fmt.Errorf("error getting imagehash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
-			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
 	}
 
@@ -119,7 +119,7 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 				fmt.Fprintf(os.Stderr, "Aborting.\n")
 				err := os.Remove(name)
 				if err != nil {
-					return fmt.Errorf("unabel to delete the container: %v", err)
+					return fmt.Errorf("unable to delete the container: %v", err)
 				}
 				// set error to exit with status 10 after replying no
 				return ErrLibraryPullAbort
@@ -141,7 +141,7 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 
 	spec, err := reference.Parse(ref)
 	if err != nil {
-		return fmt.Errorf("Unable to parse oci reference: %s", err)
+		return fmt.Errorf("unable to parse oci reference: %s", err)
 	}
 
 	// append default tag if no object exists
@@ -157,7 +157,7 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 
 	wd, err := os.Getwd()
 	if err != nil {
-		return fmt.Errorf("Failed to get working directory: %s", err)
+		return fmt.Errorf("failed to get working directory: %s", err)
 	}
 
 	store := content.NewFileStore(wd)
@@ -194,7 +194,7 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 func OciPull(name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, force, noHTTPS bool) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
-			return fmt.Errorf("Image file already exists - will not overwrite")
+			return fmt.Errorf("image file already exists - will not overwrite")
 		}
 	}
 
@@ -262,7 +262,7 @@ func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authC
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("Unable to create new build: %v", err)
+		return fmt.Errorf("unable to create new build: %v", err)
 	}
 
 	return b.Full()
