@@ -653,7 +653,9 @@ Enterprise Performance Computing (EPC)`
   The sign command allows a user to create a cryptographic signature on either a 
   single data object or a list of data objects within the same SIF group. By 
   default without parameters, the command searches for the primary partition and 
-  creates a verification block that is then added to the SIF container file.`
+  creates a verification block that is then added to the SIF container file.
+  
+  To generate a keypair, see 'singularity help key newpair'`
 	SignExample string = `
   $ singularity sign container.sif`
 
@@ -716,47 +718,6 @@ Enterprise Performance Computing (EPC)`
 	InspectExample string = `
   $ singularity inspect ubuntu.sif`
 
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Apps
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	AppsUse   string = `apps <image path>`
-	AppsShort string = `List available apps within a container`
-	AppsLong  string = `
-  List applications (apps) installed in a container, located at
-  /scif/apps. See http://containers-ftw.org/SCI-F/
-  
-  To access apps, use shell, exec, run, inspect with --app <appname>
-
-  The following environment variables are available to you when called 
-  from the shell inside the container. The top variables are relevant 
-  to the active app (--app <app>) and the bottom available for all 
-  apps regardless of the active app:
-
-  ACTIVE APP ENVIRONMENT:
-
-      SCIF_APPNAME       the name of the application
-      SCIF_APPROOT       the application base (/scif/apps/<app>)
-      SCIF_APPMETA       the application metadata folder
-      SCIF_APPDATA       the data base folder for active app
-        SCIF_APPINPUT    expected input folder within data base folder
-        SCIF_APPOUTPUT   the output data folder within data base folder
-
-  GLOBAL APP ENVIRONMENT:
-    
-      SCIF_DATA             scif defined data base for all apps (/scif/data)
-      SCIF_APPS             scif defined install bases for all apps (/scif/apps)
-      SCIF_APPROOT_<app>    root for application <app>
-      SCIF_APPDATA_<app>    data root for application <app>
-
-
-For additional help, please visit our public documentation pages which are
-found at:
-
-  https://www.sylabs.io/docs/`
-	AppsExample string = `
-  $ singularity apps ubuntu.img
-   bar
-   foo`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

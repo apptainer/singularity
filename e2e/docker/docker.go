@@ -340,47 +340,12 @@ func testDockerDefFile(t *testing.T) {
 	}
 }
 
-func prepRegistry(t *testing.T) {
-	commands := [][]string{
-		{"run", "-d", "-p", "5000:5000", "--restart=always", "--name", "registry", "registry:2"},
-		{"pull", "busybox"},
-		{"tag", "busybox", "localhost:5000/my-busybox"},
-		{"push", "localhost:5000/my-busybox"},
-	}
-
-	for _, command := range commands {
-		cmd := exec.Command("docker", command...)
-		if b, err := cmd.CombinedOutput(); err != nil {
-			t.Logf(string(b))
-			t.Fatalf("command failed: %v", strings.Join(command, " "))
-		}
-	}
-}
-
-func killRegistry(t *testing.T) {
-	commands := [][]string{
-		{"kill", "registry"},
-		{"rm", "registry"},
-	}
-
-	for _, command := range commands {
-		cmd := exec.Command("docker", command...)
-		if b, err := cmd.CombinedOutput(); err != nil {
-			t.Logf(string(b))
-			t.Fatalf("command failed: %v", strings.Join(command, " "))
-		}
-	}
-}
-
 func testDockerRegistry(t *testing.T) {
 	test.EnsurePrivilege(t)
 
 	if _, err := exec.LookPath("docker"); err != nil {
 		t.Skip("docker not installed")
 	}
-
-	prepRegistry(t)
-	defer killRegistry(t)
 
 	tests := []struct {
 		name          string

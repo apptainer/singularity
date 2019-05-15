@@ -16,7 +16,15 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-//NOTE: VerifyToken() cannot be tested unless we have a dummy token for the token service to authenticate
+//NOTE: VerifyToken() cannot be fully tested unless we have a dummy token for the token service to authenticate, so we basically only test a few error cases.
+func TestVerifyToken(t *testing.T) {
+	ep := new(EndPoint)
+
+	err := ep.VerifyToken()
+	if err == nil {
+		t.Fatal("VerifyToken() succeeded with an empty endpoint")
+	}
+}
 
 func TestMain(m *testing.M) {
 	useragent.InitValue("singularity", "3.0.0-alpha.1-303-gaed8d30-dirty")
@@ -118,7 +126,6 @@ func TestWriteToReadFrom(t *testing.T) {
 		}
 
 	})
-
 }
 
 type syncTest struct {

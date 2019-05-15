@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,8 @@
 package singularity
 
 import (
+	"debug/elf"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -13,6 +15,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"reflect"
+	"runtime"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -28,11 +31,42 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+const defaultShell = "/bin/sh"
+
+// Convert an ELF architecture into a GOARCH-style string. This is not an
+// exhaustive list, so there is a default for rare cases. Adapted from
+// https://golang.org/src/cmd/internal/objfile/elf.go
+func elfToGoArch(elfFile *elf.File) string {
+	switch elfFile.Machine {
+	case elf.EM_386:
+		return "386"
+	case elf.EM_X86_64:
+		return "amd64"
+	case elf.EM_ARM:
+		return "arm"
+	case elf.EM_AARCH64:
+		return "arm64"
+	case elf.EM_PPC64:
+		if elfFile.ByteOrder == binary.LittleEndian {
+			return "ppc64le"
+		}
+		return "ppc64"
+	case elf.EM_S390:
+		return "s390x"
+	}
+	return "UNKNOWN"
+}
+
 func (engine *EngineOperations) checkExec() error {
 	shell := engine.EngineConfig.GetShell()
 
 	if shell == "" {
-		shell = "/bin/sh"
+		shell = defaultShell
+	}
+
+	// Make sure the shell exists
+	if _, err := os.Stat(shell); os.IsNotExist(err) {
+		return fmt.Errorf("shell %s doesn't exist in container", shell)
 	}
 
 	args := engine.EngineConfig.OciConfig.Process.Args
@@ -193,7 +227,27 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 	if (!isInstance && !shimProcess) || bootInstance || engine.EngineConfig.GetInstanceJoin() {
 		err := syscall.Exec(args[0], args, env)
-		return fmt.Errorf("exec %s failed: %s", args[0], err)
+		if err != nil {
+			// We know the shell exists at this point, so let's inspect its architecture
+			shell := engine.EngineConfig.GetShell()
+			if shell == "" {
+				shell = defaultShell
+			}
+			self, errElf := elf.Open(shell)
+			if errElf != nil {
+				return fmt.Errorf("failed to open %s for inspection: %s", shell, errElf)
+			}
+			defer self.Close()
+			if elfArch := elfToGoArch(self); elfArch != runtime.GOARCH {
+				return fmt.Errorf("image targets %s, cannot run on %s", elfArch, runtime.GOARCH)
+			}
+			// Assume a missing shared library on ENOENT
+			if err == syscall.ENOENT {
+				return fmt.Errorf("exec %s failed: a shared library is likely missing in the image", args[0])
+			}
+			// Return the raw error as a last resort
+			return fmt.Errorf("exec %s failed: %s", args[0], err)
+		}
 	}
 
 	// Spawn and wait container process, signal handler
@@ -202,9 +256,12 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	cmd.Env = env
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: isInstance,
+	}
 
-	var status syscall.WaitStatus
 	errChan := make(chan error, 1)
+	statusChan := make(chan syscall.WaitStatus, 1)
 	signals := make(chan os.Signal, 1)
 
 	if err := cmd.Start(); err != nil {
@@ -246,32 +303,32 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 			switch s {
 			case syscall.SIGCHLD:
 				for {
+					var status syscall.WaitStatus
+
 					wpid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
 					if wpid <= 0 || err != nil {
 						break
+					}
+					if wpid == cmd.Process.Pid && err == nil {
+						statusChan <- status
 					}
 				}
 			default:
 				signal := s.(syscall.Signal)
 				if isInstance {
-					if err := syscall.Kill(-1, signal); err == syscall.ESRCH {
+					if err := syscall.Kill(-cmd.Process.Pid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
-				} else {
-					// kill ourself with SIGKILL whatever signal was received
-					syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
 				}
 			}
 		case err := <-errChan:
 			if e, ok := err.(*exec.ExitError); ok {
-				if status, ok := e.Sys().(syscall.WaitStatus); ok {
-					if status.Signaled() {
-						syscall.Kill(syscall.Gettid(), syscall.SIGKILL)
-					}
-					os.Exit(status.ExitStatus())
+				status, ok := e.Sys().(syscall.WaitStatus)
+				if !ok {
+					return fmt.Errorf("command exit with error: %s", err)
 				}
-				return fmt.Errorf("command exit with error: %s", err)
+				statusChan <- status
 			} else if e, ok := err.(*os.SyscallError); ok {
 				// handle possible race with Wait4 call above by ignoring ECHILD
 				// error because child process was already catched
@@ -280,7 +337,16 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				}
 			}
 			if !isInstance {
-				os.Exit(0)
+				if len(statusChan) > 0 {
+					status := <-statusChan
+					if status.Signaled() {
+						os.Exit(128 + int(status.Signal()))
+					}
+					os.Exit(status.ExitStatus())
+				} else if err == nil {
+					os.Exit(0)
+				}
+				sylog.Fatalf("command exited with unknown error: %s", err)
 			}
 		}
 	}

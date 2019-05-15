@@ -180,8 +180,6 @@ func (m *CommandManager) RegisterFlagForCmd(flag *Flag, cmds ...*cobra.Command) 
 
 // UpdateCmdFlagFromEnv updates flag's values based on environment variables
 // associated with all flags belonging to command provided as argument
-func (m *CommandManager) UpdateCmdFlagFromEnv(envPrefix string) {
-	for _, e := range m.fm.updateCmdFlagFromEnv(m.rootCmd, envPrefix) {
-		m.pushError(e)
-	}
+func (m *CommandManager) UpdateCmdFlagFromEnv(cmd *cobra.Command, envPrefix string) error {
+	return m.fm.updateCmdFlagFromEnv(cmd, envPrefix)
 }
