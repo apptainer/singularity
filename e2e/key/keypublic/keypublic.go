@@ -6,10 +6,8 @@
 package keypublic
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
@@ -27,27 +25,6 @@ type testingEnv struct {
 var testenv testingEnv
 var keyPath string
 var defaultKeyFile string
-
-// corruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
-func corruptKey(t *testing.T, kpath string) {
-	input, err := ioutil.ReadFile(kpath)
-	if err != nil {
-		t.Fatalf("Unable to read file: %v", err)
-	}
-
-	lines := strings.Split(string(input), "\n")
-
-	for i, line := range lines {
-		if strings.Contains(line, "B") {
-			lines[i] = "P"
-		}
-	}
-	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(kpath, []byte(output), 0644)
-	if err != nil {
-		t.Fatalf("Unable to write to file: %v", err)
-	}
-}
 
 func testPublicKey(t *testing.T) {
 	tests := []struct {
@@ -111,7 +88,7 @@ func testPublicKey(t *testing.T) {
 			} else {
 				// if the test key is corrupted, try to import it, should fail
 				if tt.corrupt {
-					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { corruptKey(t, defaultKeyFile) }))
+					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { keyexec.CorruptKey(t, defaultKeyFile) }))
 					t.Run("import_key", test.WithoutPrivilege(func(t *testing.T) {
 						b, err := keyexec.ImportKey(t, defaultKeyFile)
 						if err == nil {

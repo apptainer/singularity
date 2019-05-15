@@ -6,10 +6,8 @@
 package keyprivate
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
@@ -27,27 +25,6 @@ type testingEnv struct {
 var testenv testingEnv
 var keyPath string
 var defaultKeyFile string
-
-// corruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
-func corruptKey(t *testing.T, kpath string) {
-	input, err := ioutil.ReadFile(kpath)
-	if err != nil {
-		t.Fatalf("Unable to read file: %v", err)
-	}
-
-	lines := strings.Split(string(input), "\n")
-
-	for i, line := range lines {
-		if strings.Contains(line, "B") {
-			lines[i] = "P"
-		}
-	}
-	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(kpath, []byte(output), 0644)
-	if err != nil {
-		t.Fatalf("Unable to write to file: %v", err)
-	}
-}
 
 func testPrivateKey(t *testing.T) {
 	tests := []struct {
@@ -99,7 +76,6 @@ func testPrivateKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
-			//out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 			c, b, err := keyexec.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 
 			switch {
@@ -108,7 +84,6 @@ func testPrivateKey(t *testing.T) {
 				t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { keyexec.RemoveSecretKeyring(t) }))
 				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
 					c, b, err := keyexec.ImportPrivateKey(t, defaultKeyFile)
-					//err := keyexec.ImportPrivateKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log("command that failed: ", c, string(b))
 						t.Fatalf("Unable to import key: %v", err)
@@ -127,17 +102,15 @@ func testPrivateKey(t *testing.T) {
 			case !tt.succeed && err == nil:
 				// FAIL: expecting failure, succeeded
 				if tt.corrupt {
-					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { corruptKey(t, defaultKeyFile) }))
+					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { keyexec.CorruptKey(t, defaultKeyFile) }))
 					t.Run("import_private_key", test.WithoutPrivilege(func(t *testing.T) {
 						c, b, err := keyexec.ImportPrivateKey(t, defaultKeyFile)
-						//err := keyexec.ImportPrivateKey(t, defaultKeyFile)
 						if err == nil {
 							t.Fatalf("Unexpected success: running: %s, %s", c, string(b))
-							//panic("ERRRRRRR")
 						}
 					}))
 				} else {
-					//t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
+					t.Logf("Running command:\n%s\nOutput:\n%s\n", c, string(b))
 					t.Fatalf("Unexpected success: command should have failed: %s, %s", c, string(b))
 				}
 			}
@@ -154,7 +127,6 @@ func TestAll(t *testing.T) {
 	t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.BackupSecretKeyring(t) }))
 	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
 		c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
-		//err := keyexec.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
 		if err != nil {
 			t.Log("command that failed: ", c, string(b))
 			t.Fatalf("Unable to import test key: %v", err)

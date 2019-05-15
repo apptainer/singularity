@@ -17,8 +17,6 @@ import (
 	"strings"
 	"testing"
 
-	//	"time"
-
 	expect "github.com/Netflix/go-expect"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -67,7 +65,6 @@ func RemoveDefaultPublicKey(t *testing.T) {
 func BackupSecretKeyring(t *testing.T) {
 	backupSypgp := filepath.Join(sypgp.DirPath(), "secret-keyring-backup")
 
-	//err := os.Rename(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"), backupSypgp)
 	err := os.Rename(sypgp.SecretPath(), backupSypgp)
 	if err != nil {
 		t.Fatalf("Unable to rename secret keyring: %v", err)
@@ -78,11 +75,9 @@ func BackupSecretKeyring(t *testing.T) {
 func RecoverSecretKeyring(t *testing.T) {
 	backupSypgp := filepath.Join(sypgp.DirPath(), "secret-keyring-backup")
 
-	//if err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
 	if err := os.Remove(sypgp.SecretPath()); err != nil {
 		t.Fatalf("Unable to remove secret keyring: %v", err)
 	}
-	//	if err := os.Rename(backupSypgp, filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret")); err != nil {
 	if err := os.Rename(backupSypgp, sypgp.SecretPath()); err != nil {
 		t.Fatalf("Unable to rename secret keyring: %v", err)
 	}
@@ -90,7 +85,6 @@ func RecoverSecretKeyring(t *testing.T) {
 
 // RemoveSecretKeyring will delete your secret keyring.
 func RemoveSecretKeyring(t *testing.T) {
-	//err := os.Remove(filepath.Join(HomeDir(), ".singularity/sypgp/pgp-secret"))
 	err := os.Remove(sypgp.SecretPath())
 	if err != nil {
 		t.Fatalf("Unable to remove secret keyring: %v", err)
@@ -109,7 +103,6 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 
 // ImportPrivateKey will take a private key file (kpath) and import it.
 func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
-	//func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
 	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
@@ -122,8 +115,6 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 
 	cmd := exec.Command(testenv.CmdPath, exportCmd...)
 	cmd.Stdin = c.Tty()
-	//cmd.Stdout = c.Tty()
-	//cmd.Stderr = c.Tty()
 
 	buf := bytes.NewBuffer(nil)
 	cmd.Stderr = buf
@@ -144,7 +135,6 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 	c.Send("e2etests\n")
 
 	err = cmd.Wait()
-
 	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
 
 	return cm, buf.Bytes(), err
@@ -175,26 +165,43 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 	cmd.Stderr = outErr
 	cmd.Stdout = outErr
 
-	//cmd.Stdout = c.Tty()
-	//cmd.Stderr = c.Tty()
-
 	go func() {
 		c.ExpectEOF()
 	}()
 
 	err = cmd.Start()
 	if err != nil {
-		t.Fatal("unable to run command: %v", err)
+		t.Fatalf("unable to run command: %v", err)
 	}
 
 	c.Send(num)
 	c.Send("e2etests\n")
 
 	err = cmd.Wait()
-
 	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
 
 	return cm, outErr.Bytes(), err
+}
+
+// CorruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
+func CorruptKey(t *testing.T, kpath string) {
+	input, err := ioutil.ReadFile(kpath)
+	if err != nil {
+		t.Fatalf("Unable to read file: %v", err)
+	}
+
+	lines := strings.Split(string(input), "\n")
+
+	for i, line := range lines {
+		if strings.Contains(line, "B") {
+			lines[i] = "P"
+		}
+	}
+	output := strings.Join(lines, "\n")
+	err = ioutil.WriteFile(kpath, []byte(output), 0644)
+	if err != nil {
+		t.Fatalf("Unable to write to file: %v", err)
+	}
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
