@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/keyexec"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -100,15 +100,15 @@ func testPrivateKey(t *testing.T) {
 		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
 			//out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
-			err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
+			err := keyexec.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 
 			switch {
 			case tt.succeed && err == nil:
 				// MAYBE PASS: expecting success, succeeded
-				t.Run("remove_private_keyring_before_importing", func(t *testing.T) { e2e.RemoveSecretKeyring(t) })
+				t.Run("remove_private_keyring_before_importing", func(t *testing.T) { keyexec.RemoveSecretKeyring(t) })
 				t.Run("import_private_keyring_from", func(t *testing.T) {
 					//b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
-					err := e2e.ImportPrivateKey(t, defaultKeyFile)
+					err := keyexec.ImportPrivateKey(t, defaultKeyFile)
 					if err != nil {
 						//t.Log(string(b))
 						t.Fatalf("Unable to import key: %v", err)
@@ -130,7 +130,7 @@ func testPrivateKey(t *testing.T) {
 					t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
 					t.Run("import_private_key", func(t *testing.T) {
 						//b, err := e2e.ImportKey(t, defaultKeyFile)
-						err := e2e.ImportPrivateKey(t, defaultKeyFile)
+						err := keyexec.ImportPrivateKey(t, defaultKeyFile)
 						if err == nil {
 							//t.Fatalf("Unexpected success: %s", string(b))
 							panic("ERRRRRRR")
@@ -184,10 +184,10 @@ func TestAll(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.BackupSecretKeyring(t) }))
+	t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.BackupSecretKeyring(t) }))
 	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
 		//b, err := e2e.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
-		err := e2e.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
+		err := keyexec.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
 		if err != nil {
 			//t.Log(string(b))
 			t.Fatalf("Unable to import test key: %v", err)
@@ -204,5 +204,5 @@ func TestAll(t *testing.T) {
 	t.Run("private_key", testPrivateKey)
 
 	// Recover the secret keyring
-	t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { e2e.RecoverSecretKeyring(t) }))
+	t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.RecoverSecretKeyring(t) }))
 }

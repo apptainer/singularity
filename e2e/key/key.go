@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/keyexec"
 	"github.com/sylabs/singularity/e2e/key/keyprivate"
 	"github.com/sylabs/singularity/e2e/key/keypublic"
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -71,7 +71,7 @@ func testGeneralKeyCmd(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
-			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "")
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "")
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)

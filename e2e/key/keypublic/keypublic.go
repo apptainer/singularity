@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/keyexec"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -90,9 +90,9 @@ func testPublicKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
-			cmd, out, err := e2e.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, tt.stdin)
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, tt.stdin)
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
@@ -100,9 +100,9 @@ func testPublicKey(t *testing.T) {
 					t.Fatalf("Unexpected failure: %v", err)
 				}
 
-				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { e2e.RemoveDefaultPublicKey(t) }))
+				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { keyexec.RemoveDefaultPublicKey(t) }))
 				t.Run("import_public_key_from", test.WithoutPrivilege(func(t *testing.T) {
-					b, err := e2e.ImportKey(t, defaultKeyFile)
+					b, err := keyexec.ImportKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log(string(b))
 						t.Fatalf("Unable to import key: %v", err)
@@ -113,7 +113,7 @@ func testPublicKey(t *testing.T) {
 				if tt.corrupt {
 					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { corruptKey(t, defaultKeyFile) }))
 					t.Run("import_key", test.WithoutPrivilege(func(t *testing.T) {
-						b, err := e2e.ImportKey(t, defaultKeyFile)
+						b, err := keyexec.ImportKey(t, defaultKeyFile)
 						if err == nil {
 							t.Fatalf("Unexpected success: %s", string(b))
 						}
@@ -140,7 +140,7 @@ func TestAll(t *testing.T) {
 	defaultKeyFile = filepath.Join(keyPath, "exported_key")
 
 	// Pull the default public key
-	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
+	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { keyexec.PullDefaultPublicKey(t) }))
 
 	// Run the tests
 	t.Run("pubic_key", testPublicKey)

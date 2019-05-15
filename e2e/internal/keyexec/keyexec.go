@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package e2e
+package keyexec
 
 import (
 	"fmt"
@@ -19,34 +19,22 @@ import (
 	//	"time"
 
 	expect "github.com/Netflix/go-expect"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
-func getImportScript(kpath string) string {
-	// Yes, this uses /usr/bin/expect
-	return fmt.Sprintf(`
-set timeout -1
-
-set psk "e2etests"
-
-spawn singularity key import %s
-
-expect "Enter your old password : "
-send "${psk}\r"
-
-expect "Enter a new password for this key : "
-send "${psk}\r"
-
-expect "Retype your passphrase : "
-send "${psk}\r"
-
-expect eof
-`, kpath)
+type testingEnv struct {
+	// base env for running tests
+	CmdPath     string `split_words:"true"`
+	TestDir     string `split_words:"true"`
+	RunDisabled bool   `default:"false"`
 }
+
+var testenv testingEnv
 
 // PullDefaultPublicKey will pull the public Sylabs Admin key
 func PullDefaultPublicKey(t *testing.T) {
-	LoadEnv(t, &testenv)
+	e2e.LoadEnv(t, &testenv)
 
 	argv := []string{"key", "pull", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
 
@@ -61,7 +49,7 @@ func PullDefaultPublicKey(t *testing.T) {
 
 // RemoveDefaultPublicKey will pull the public Sylabs Admin key
 func RemoveDefaultPublicKey(t *testing.T) {
-	LoadEnv(t, &testenv)
+	e2e.LoadEnv(t, &testenv)
 
 	argv := []string{"key", "remove", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
 	execKey := exec.Command(testenv.CmdPath, argv...)
@@ -110,7 +98,7 @@ func RemoveSecretKeyring(t *testing.T) {
 
 // ImportKey will import a key from kpath.
 func ImportKey(t *testing.T, kpath string) ([]byte, error) {
-	LoadEnv(t, &testenv)
+	e2e.LoadEnv(t, &testenv)
 
 	argv := []string{"key", "import", kpath}
 	execKey := exec.Command(testenv.CmdPath, argv...)
@@ -121,7 +109,7 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 // ImportPrivateKey will take a private key file (kpath) and import it.
 func ImportPrivateKey(t *testing.T, kpath string) error {
 	//func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
-	LoadEnv(t, &testenv)
+	e2e.LoadEnv(t, &testenv)
 
 	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
 	if err != nil {
@@ -145,38 +133,16 @@ func ImportPrivateKey(t *testing.T, kpath string) error {
 		log.Fatal(err)
 	}
 
-	//	time.Sleep(time.Second)
-	//c.Send(num)
-	//	time.Sleep(time.Second)
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
-	//	time.Sleep(time.Second)
-	//	c.SendLine(":wq")
 
 	return cmd.Wait()
-
-	/*	importScript, err := ioutil.TempFile("", "")
-		if err != nil {
-			t.Fatalf("Unable to create script: %v", err)
-		}
-		defer importScript.Close()
-
-		err = ioutil.WriteFile(importScript.Name(), []byte(s), 0644)
-		if err != nil {
-			t.Fatalf("Unable to write tmp file: %v", err)
-		}
-
-		argv := []string{importScript.Name()}
-		execImport := exec.Command("expect", argv...)
-
-		return execImport.CombinedOutput()*/
-
 }
 
 // ExportPrivateKey will import a private key from kpath.
 func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
-	LoadEnv(t, &testenv)
+	e2e.LoadEnv(t, &testenv)
 
 	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
 	if err != nil {
@@ -206,12 +172,8 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
 		log.Fatal(err)
 	}
 
-	//	time.Sleep(time.Second)
 	c.Send(num)
-	//	time.Sleep(time.Second)
 	c.Send("e2etests\n")
-	//	time.Sleep(time.Second)
-	//	c.SendLine(":wq")
 
 	return cmd.Wait()
 }
