@@ -452,7 +452,7 @@ func genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error
 		return nil, err
 	}
 
-	// encrypt private key
+	// Encrypt private key
 	if err = EncryptKey(entity, passphrase); err != nil {
 		return nil, err
 	}
@@ -469,7 +469,7 @@ func genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error
 	return entity, nil
 }
 
-// GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
+// GenKeyPair generates an PGP key pair and store them in the sypgp home folder
 func GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error) {
 	if err := PathsCheck(); err != nil {
 		return nil, err
