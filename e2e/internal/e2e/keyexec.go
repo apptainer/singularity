@@ -44,25 +44,6 @@ expect eof
 `, kpath)
 }
 
-func getExportScript(num int, kpath, armor, psk string) string {
-	// Yes, this uses /usr/bin/expect
-	return fmt.Sprintf(`
-set timeout -1
-
-spawn singularity key export --secret %s %s
-
-expect "Enter # of signing key to use : "
-send "%v\r"
-
-expect "Enter key passphrase : "
-send "%s\r"
-
-expect eof
-`, armor, kpath, num, psk)
-}
-
-//var backupSypgp = filepath.Join(HomeDir(), ".singularity/sypgp/secret-keyring-backup")
-
 // PullDefaultPublicKey will pull the public Sylabs Admin key
 func PullDefaultPublicKey(t *testing.T) {
 	LoadEnv(t, &testenv)
@@ -160,13 +141,13 @@ func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
 
 // ExportPrivateKey will import a private key from kpath.
 func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
+	LoadEnv(t, &testenv)
+
 	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
 	if err != nil {
 		panic(err)
 	}
 	defer c.Close()
-
-	t.Log("FILLLL: ", kpath)
 
 	exportCmd := []string{"key", "export", "--secret"}
 
@@ -176,13 +157,10 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
 
 	exportCmd = append(exportCmd, kpath)
 
-	cmd := exec.Command("singularity", exportCmd...)
+	cmd := exec.Command(testenv.CmdPath, exportCmd...)
 	cmd.Stdin = c.Tty()
 	cmd.Stdout = c.Tty()
 	cmd.Stderr = c.Tty()
-
-	t.Log("#################: ", cmd.Path)
-	t.Log("#################: ", cmd.Args)
 
 	go func() {
 		c.ExpectEOF()
