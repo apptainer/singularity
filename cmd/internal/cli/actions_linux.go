@@ -180,9 +180,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		if err != nil {
 			sylog.Fatalf("%s", err)
 		}
-		if !file.Privileged {
-			UserNamespace = true
-		}
+		UserNamespace = file.UserNs
 		generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
 		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
 		engineConfig.SetImage(image)
@@ -457,7 +455,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if engineConfig.GetInstance() {
-		stdout, stderr, err := instance.SetLogFile(name, int(uid), instance.SingSubDir)
+		stdout, stderr, err := instance.SetLogFile(name, int(uid), instance.LogSubDir)
 		if err != nil {
 			sylog.Fatalf("failed to create instance log files: %s", err)
 		}
