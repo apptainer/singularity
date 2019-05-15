@@ -105,7 +105,7 @@ func TestLogger(t *testing.T) {
 
 		// will recreate log file
 		logger.ReOpenFile()
-		// we call it again to just close re-opened log file
+		// we call it again to just close re-opened log file descriptor
 		logger.Close()
 
 		// delete it once again

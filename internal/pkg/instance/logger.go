@@ -56,9 +56,10 @@ var LogFormats = map[string]LogFormatter{
 // Logger defines a file logger.
 type Logger struct {
 	file      *os.File
-	fileMutex sync.Mutex
+	filename  string
 	formatter LogFormatter
 	closers   []closer
+	sync.Mutex
 }
 
 // NewLogger instantiates a new logger with formatter and return it.
@@ -83,7 +84,10 @@ func (l *Logger) openFile(path string) (err error) {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
+	l.Lock()
 	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	l.filename = l.file.Name()
+	l.Unlock()
 
 	return err
 }
@@ -108,7 +112,9 @@ func (l *Logger) scanOutput(data []byte, atEOF bool) (advance int, token []byte,
 func (l *Logger) NewWriter(stream string, dropCRNL bool) *io.PipeWriter {
 	reader, writer := io.Pipe()
 	closer := l.scan(stream, reader, writer, dropCRNL)
+	l.Lock()
 	l.closers = append(l.closers, closer)
+	l.Unlock()
 	return writer
 }
 
@@ -125,18 +131,19 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 
 	go func() {
 		for scanner.Scan() {
-			l.fileMutex.Lock()
+			l.Lock()
 			if !dropCRNL {
 				fmt.Fprint(l.file, l.formatter(stream, r.Replace(scanner.Text())))
 			} else {
 				fmt.Fprint(l.file, l.formatter(stream, scanner.Text()))
 			}
-			l.fileMutex.Unlock()
+			l.Unlock()
 		}
 		pr.Close()
 		wg.Done()
 	}()
 
+	// closer function
 	return func() {
 		pw.Close()
 		wg.Wait()
@@ -144,24 +151,28 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 }
 
 // Close closes all pipe pairs created with NewWriter and also closes
-// log file descriptor
+// log file descriptor.
 func (l *Logger) Close() {
+	// closer will terminate scan goroutines spawned with NewWriter
+	// by closing pipe write end
 	for _, closer := range l.closers {
 		closer()
 	}
+
+	l.Lock()
 	l.closers = nil
 	l.file.Sync()
 	l.file.Close()
+	l.Unlock()
 }
 
 // ReOpenFile closes and re-open log file (eg: log rotation).
 func (l *Logger) ReOpenFile() {
-	l.fileMutex.Lock()
-	defer l.fileMutex.Unlock()
-
-	path := l.file.Name()
-
+	l.Lock()
+	l.file.Sync()
 	l.file.Close()
+	l.Unlock()
 
-	l.openFile(path)
+	// open log file
+	l.openFile(l.filename)
 }
