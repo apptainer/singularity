@@ -246,14 +246,16 @@ func isDefaultBasedir(basedir string) (bool, error) {
 func getCacheBasedir() (string, error) {
 	// If the user defined the special environment variable, we use its value as base directory.
 	basedir := os.Getenv(DirEnv)
-	if basedir == "" {
-		// If the environment variable is not set, we use the default cache.
-		usr, err := user.Current()
-		if err != nil {
-			return "", fmt.Errorf("couldn't determine user home directory: %s", err)
-		}
-		basedir = path.Join(usr.HomeDir, BasedirDefault)
+	if basedir != "" {
+		return basedir, nil
 	}
+
+	// If the environment variable is not set, we use the default cache.
+	usr, err := user.Current()
+	if err != nil {
+		return "", fmt.Errorf("couldn't determine user home directory: %s", err)
+	}
+	basedir = path.Join(usr.HomeDir, BasedirDefault)
 
 	return basedir, nil
 }
