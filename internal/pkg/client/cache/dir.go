@@ -307,16 +307,23 @@ func updateCacheSubdir(c *SingularityCache, subdir string) (string, error) {
 
 // initCacheDir initializes a sub-cache within a cache, e.g., the shub sub-cache.
 func initCacheDir(dir string) error {
-	if fInfo, err := os.Stat(dir); os.IsNotExist(err) {
+	fInfo, err := os.Stat(dir)
+	switch {
+	case os.IsNotExist(err):
+		// The directory does not exist, we create it
 		sylog.Debugf("Creating cache directory: %s", dir)
 		if err := fs.MkdirAll(dir, 0755); err != nil {
 			return fmt.Errorf("couldn't create cache directory %v: %v", dir, err)
 		}
-	} else if fInfo != nil && !fInfo.IsDir() {
-		return fmt.Errorf("%s is not a directory", dir)
-	} else if err != nil {
+		return nil
+	case err != nil:
+		// A actual error occurred
 		return fmt.Errorf("unable to stat %s: %s", dir, err)
+	case !fInfo.IsDir():
+		// This is actually not a directory
+		return fmt.Errorf("%s is not a directory", dir)
+	default:
+		// The directory exists
+		return nil
 	}
-
-	return nil
 }
