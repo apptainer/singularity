@@ -121,7 +121,7 @@ func ImportPrivateKey(t *testing.T, kpath string) error {
 
 	cmd := exec.Command(testenv.CmdPath, exportCmd...)
 	cmd.Stdin = c.Tty()
-	cmd.Stdout = c.Tty()
+	//cmd.Stdout = c.Tty()
 	cmd.Stderr = c.Tty()
 
 	go func() {
@@ -133,6 +133,7 @@ func ImportPrivateKey(t *testing.T, kpath string) error {
 		log.Fatal(err)
 	}
 
+	// Send the passcode to singularity
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
@@ -160,7 +161,10 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) error {
 
 	cmd := exec.Command(testenv.CmdPath, exportCmd...)
 	cmd.Stdin = c.Tty()
-	cmd.Stdout = c.Tty()
+
+	// TODO: this should return the stderr/stdout
+
+	//cmd.Stdout = c.Tty()
 	cmd.Stderr = c.Tty()
 
 	go func() {

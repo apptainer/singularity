@@ -70,7 +70,7 @@ func testGeneralKeyCmd(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "")
 			if tt.succeed {
 				if err != nil {

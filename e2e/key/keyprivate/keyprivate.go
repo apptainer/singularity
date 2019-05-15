@@ -97,7 +97,7 @@ func testPrivateKey(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run("key_run", test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(defaultKeyFile))
 			//out, err := e2e.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 			err := keyexec.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
@@ -141,43 +141,10 @@ func testPrivateKey(t *testing.T) {
 					t.Fatalf("Unexpected success: command should have failed")
 				}
 			}
-
-			/*			if tt.succeed {
-							if err != nil {
-								//t.Log(string(out))
-								t.Fatalf("Unexpected failure: %v", err)
-							}
-
-							t.Run("remove_private_keyring_before_importing", func(t *testing.T) { e2e.RemoveSecretKeyring(t) })
-							t.Run("import_private_keyring_from", func(t *testing.T) {
-								b, err := e2e.ImportPrivateKey(t, defaultKeyFile)
-								if err != nil {
-									t.Log(string(b))
-									t.Fatalf("Unable to import key: %v", err)
-								}
-							})
-						} else {
-							// if the test key is corrupted, try to import it, should fail
-							if tt.corrupt {
-								t.Run("corrupting_key", func(t *testing.T) { corruptKey(t, defaultKeyFile) })
-								t.Run("import_private_key", func(t *testing.T) {
-									b, err := e2e.ImportKey(t, defaultKeyFile)
-									if err == nil {
-										t.Fatalf("Unexpected success: %s", string(b))
-									}
-								})
-							} else {
-								if err == nil {
-									//	t.Log(string(out))
-									t.Fatalf("Unexpected success")
-								}
-							}
-						}*/
 		}))
 	}
 }
 
-// TestAll is trigered by ../key.go, that is trigered by suite.go in the e3e test directory
 func TestAll(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
 	if err != nil {
@@ -196,9 +163,6 @@ func TestAll(t *testing.T) {
 
 	keyPath = testenv.TestDir
 	defaultKeyFile = filepath.Join(keyPath, "exported_private_key")
-
-	//	// Pull the default public key
-	//	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { e2e.PullDefaultPublicKey(t) }))
 
 	// Run the tests
 	t.Run("private_key", testPrivateKey)
