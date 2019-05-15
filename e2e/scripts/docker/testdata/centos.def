@@ -1,0 +1,2 @@
+bootstrap: docker
+from: centos:latest

@@ -1,0 +1,26 @@
+# docker functions
+
+tmpdir=`mktmpdir`
+tmpimage="${tmpdir}/container.sif"
+
+build-from-definition() {
+    sudo rm -f ${tmpimage}
+    expect-success "$1"    sudo singularity build ${tmpimage} "$2"
+    verify-image   "$1"    ${tmpimage}
+}
+
+fail-build-from-definition() {
+    expect-failure  "$1" sudo singularity build ${tmpimage} "$2"
+}
+
+prepare-registry() {
+    run-command docker run -d -p 5000:5000 --restart=always --name registry registry:2
+    run-command docker pull busybox
+    run-command docker tag busybox localhost:5000/my-busybox
+    run-command docker push localhost:5000/my-busybox
+}
+
+delete-registry() {
+    docker kill registry >/dev/null 2>&1
+    docker rm registry >/dev/null 2>&1
+}
