@@ -119,24 +119,59 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 }
 
 // ImportPrivateKey will take a private key file (kpath) and import it.
-func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
-	s := getImportScript(kpath)
+func ImportPrivateKey(t *testing.T, kpath string) error {
+	//func ImportPrivateKey(t *testing.T, kpath string) ([]byte, error) {
+	LoadEnv(t, &testenv)
 
-	importScript, err := ioutil.TempFile("", "")
+	c, err := expect.NewConsole(expect.WithStdout(os.Stdout))
 	if err != nil {
-		t.Fatalf("Unable to create script: %v", err)
+		panic(err)
 	}
-	defer importScript.Close()
+	defer c.Close()
 
-	err = ioutil.WriteFile(importScript.Name(), []byte(s), 0644)
+	exportCmd := []string{"key", "import", kpath}
+
+	cmd := exec.Command(testenv.CmdPath, exportCmd...)
+	cmd.Stdin = c.Tty()
+	cmd.Stdout = c.Tty()
+	cmd.Stderr = c.Tty()
+
+	go func() {
+		c.ExpectEOF()
+	}()
+
+	err = cmd.Start()
 	if err != nil {
-		t.Fatalf("Unable to write tmp file: %v", err)
+		log.Fatal(err)
 	}
 
-	argv := []string{importScript.Name()}
-	execImport := exec.Command("expect", argv...)
+	//	time.Sleep(time.Second)
+	//c.Send(num)
+	//	time.Sleep(time.Second)
+	c.Send("e2etests\n")
+	c.Send("e2etests\n")
+	c.Send("e2etests\n")
+	//	time.Sleep(time.Second)
+	//	c.SendLine(":wq")
 
-	return execImport.CombinedOutput()
+	return cmd.Wait()
+
+	/*	importScript, err := ioutil.TempFile("", "")
+		if err != nil {
+			t.Fatalf("Unable to create script: %v", err)
+		}
+		defer importScript.Close()
+
+		err = ioutil.WriteFile(importScript.Name(), []byte(s), 0644)
+		if err != nil {
+			t.Fatalf("Unable to write tmp file: %v", err)
+		}
+
+		argv := []string{importScript.Name()}
+		execImport := exec.Command("expect", argv...)
+
+		return execImport.CombinedOutput()*/
+
 }
 
 // ExportPrivateKey will import a private key from kpath.
