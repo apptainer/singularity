@@ -83,7 +83,11 @@ type SingularityCache struct {
 	State string
 
 	// Default specifies if the handle points at the default image cache or
-	// not. This enables quick lookup.
+	// not. This enables quick lookup. This is for instance used in the
+	// context of unit tests execution to make sure we do not delete the
+	// image cache in '$HOME/.singularity/cache' (developers may not
+	// appreciate that some unit tests always delete their default image
+	// cache).
 	Default bool
 
 	// PreviousDirEnv stores the value of the DirEnv environment variable
