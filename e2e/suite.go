@@ -110,4 +110,6 @@ func Run(t *testing.T) {
 	t.Run("HELP", help.RunE2ETests)
 
 	t.Run("ENV", singularityenv.RunE2ETests)
+
+	t.Run("VERSION", version.RunE2ETests)
 }
