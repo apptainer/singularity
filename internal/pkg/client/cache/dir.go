@@ -88,7 +88,10 @@ type SingularityCache struct {
 	// context of unit tests execution to make sure we do not delete the
 	// image cache in '$HOME/.singularity/cache' (developers may not
 	// appreciate that some unit tests always delete their default image
-	// cache).
+	// cache). Note that such unit tests can be for other packages that are
+	// using caches; reason why the symbol is exported. Default, like
+	// ValidState gives control over the state of caches so we can easily
+	// reach error and corner cases when testing other packages.
 	Default bool
 
 	// PreviousDirEnv stores the value of the DirEnv environment variable
