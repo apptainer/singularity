@@ -55,12 +55,11 @@ var LogFormats = map[string]LogFormatter{
 
 // Logger defines a file logger.
 type Logger struct {
-	file      *os.File
 	fm        sync.Mutex // protect file
-	filename  string
+	file      *os.File
 	formatter LogFormatter
-	closers   []closer
 	cm        sync.Mutex // protect closers array
+	closers   []closer
 }
 
 // NewLogger instantiates a new logger with formatter and return it.
@@ -68,7 +67,6 @@ func NewLogger(logPath string, formatter LogFormatter) (*Logger, error) {
 	logger := &Logger{
 		formatter: formatter,
 		closers:   make([]closer, 0),
-		filename:  logPath,
 	}
 
 	if logger.formatter == nil {
@@ -128,7 +126,7 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 		scanner.Split(l.scanOutput)
 	}
 
-	var wg sync.WaitGroup
+	wg := new(sync.WaitGroup)
 
 	wg.Add(1)
 
@@ -139,6 +137,7 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 			l.fm.Lock()
 			// means ReOpenFile has failed proceed with cleanup
 			if l.file == nil {
+				l.fm.Unlock()
 				break
 			}
 			if !dropCRNL {
@@ -184,11 +183,10 @@ func (l *Logger) Close() {
 // ReOpenFile closes and re-open log file (eg: log rotation).
 func (l *Logger) ReOpenFile() error {
 	l.fm.Lock()
-
+	filename := l.file.Name()
 	l.file.Sync()
 	l.file.Close()
-
-	err := l.openFile(l.filename)
+	err := l.openFile(filename)
 	l.fm.Unlock()
 
 	if err != nil {
