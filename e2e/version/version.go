@@ -55,6 +55,11 @@ func verifyVersion(t *testing.T){
 
 		outputVersionFlag, err := execVersionFlag.CombinedOutput()
 
+		if err != nil {
+			t.Log(string(outputVersionFlag))
+			t.Fatalf("Unable to run version flag: %v", err)
+		}
+
 		versionFromVersionFlag, err := semver.Make(string(outputVersionFlag))
 
 		if err != nil {
@@ -64,12 +69,9 @@ func verifyVersion(t *testing.T){
 		if versionFromVersionCmd.Compare(versionFromVersionFlag) != 0 {
 			t.Log("FAIL: singularity version command and singularity --version give a non-matching version result")			
 		} else 	{
-			t.Log("SUCCESS: singularity version command and singularity --version give the same matching version")
+			t.Log("SUCCESS: singularity version command and singularity --version give the same matching version result")
 		}
-		if err != nil {
-			t.Log(string(outputVersionFlag))
-			t.Fatalf("Unable to run version flag: %v", err)
-		}
+		
 	}))
 
 }
