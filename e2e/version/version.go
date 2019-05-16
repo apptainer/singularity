@@ -9,9 +9,9 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/blang/semver"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/blang/semver"
 )
 
 type testingEnv struct {
@@ -23,18 +23,18 @@ type testingEnv struct {
 
 var testenv testingEnv
 
-func verifyVersion(t *testing.T){
-	
-	tests := []struct{
-		name string
-		args []string
+func verifyVersion(t *testing.T) {
+
+	tests := []struct {
+		name    string
+		args    []string
 		succeed bool
 	}{
-		{"version command", []string{"version"}, true, },
-		{"version flag", []string{"--version"}, true },
+		{"version command", []string{"version"}, true},
+		{"version flag", []string{"--version"}, true},
 	}
 
-	t.Run("verify_version", test.WithoutPrivilege(func(t *testing.T){
+	t.Run("verify_version", test.WithoutPrivilege(func(t *testing.T) {
 
 		execVersionCmd := exec.Command(testenv.CmdPath, tests[0].args...)
 
@@ -45,7 +45,7 @@ func verifyVersion(t *testing.T){
 			t.Fatalf("Unable to run version command: %v", err)
 		}
 
-		versionFromVersionCmd, err := semver.Make(string(outputVersionCmd)) 
+		versionFromVersionCmd, err := semver.Make(string(outputVersionCmd))
 
 		if err != nil {
 			t.Fatalf("Unable to obtain semantic version after running version command: %v", err)
@@ -67,15 +67,14 @@ func verifyVersion(t *testing.T){
 		}
 
 		if versionFromVersionCmd.Compare(versionFromVersionFlag) != 0 {
-			t.Log("FAIL: singularity version command and singularity --version give a non-matching version result")			
-		} else 	{
+			t.Log("FAIL: singularity version command and singularity --version give a non-matching version result")
+		} else {
 			t.Log("SUCCESS: singularity version command and singularity --version give the same matching version result")
 		}
-		
+
 	}))
 
 }
-
 
 func RunE2ETests(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
