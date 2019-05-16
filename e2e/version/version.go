@@ -11,6 +11,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/blang/semver"
 )
 
 type testingEnv struct {
@@ -37,18 +38,37 @@ func verifyVersion(t *testing.T){
 
 		execVersionCmd := exec.Command(testenv.CmdPath, tests[0].args...)
 
-		out, err := execVersionCmd.CombinedOutput()
+		outputVersionCmd, err := execVersionCmd.CombinedOutput()
+
 		if err != nil {
-			t.Log(string(out))
+			t.Log(string(outputVersionCmd))
 			t.Fatalf("Unable to run version command: %v", err)
+		}
+
+		versionFromVersionCmd, err := semver.Make(string(outputVersionCmd)) 
+
+		if err != nil {
+			t.Fatalf("Unable to obtain semantic version after running version command: %v", err)
 		}
 
 		execVersionFlag := exec.Command(testenv.CmdPath, tests[1].args...)
 
-		out, err = execVersionFlag.CombinedOutput()
+		outputVersionFlag, err := execVersionFlag.CombinedOutput()
+
+		versionFromVersionFlag, err := semver.Make(string(outputVersionFlag))
+
 		if err != nil {
-			t.Log(string(out))
-			t.Fatalf("Unable to run version command: %v", err)
+			t.Fatalf("Unable to obtain semantic version after running version flag: %v", err)
+		}
+
+		if versionFromVersionCmd.Compare(versionFromVersionFlag) != 0 {
+			t.Log("FAIL: singularity version command and singularity --version give a non-matching version result")			
+		} else 	{
+			t.Log("SUCCESS: singularity version command and singularity --version give the same matching version")
+		}
+		if err != nil {
+			t.Log(string(outputVersionFlag))
+			t.Fatalf("Unable to run version flag: %v", err)
 		}
 	}))
 
