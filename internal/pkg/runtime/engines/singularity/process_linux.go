@@ -301,19 +301,20 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 			sylog.Debugf("Received signal %s", s.String())
 			switch s {
 			case syscall.SIGCHLD:
-			InnerLoop:
 				for {
 					var status syscall.WaitStatus
 
 					wpid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
-					switch {
-					case err != nil:
+					if wpid <= 0 || err != nil {
 						// We break the loop since an error occurred
-						break InnerLoop
-					case wpid <= 0:
+						break
+					}
+
+					if wpid <= 0 {
 						// We break the loop, we did not get a child process back
-						break InnerLoop
-					case wpid == cmd.Process.Pid:
+						break
+					}
+					if wpid == cmd.Process.Pid {
 						statusChan <- status
 					}
 				}
