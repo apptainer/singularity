@@ -73,7 +73,14 @@ type SingularityCache struct {
 
 	// ValidState specifies if the cache is in a valid state or not. This is
 	// mainly used for testing, where a unit test can switch a cache's state
-	// from valid to invalid in order to reach error cases.
+	// from valid to invalid in order to reach error cases. Note that it is
+	// exported because it is used to reach corner/error cases when testing
+	// other packages relying on caches (e.g., 'internal/app/singularity').
+	// In such a context, a single process runs a tests that is basically
+	// composed of two parts: the test of a capability specific of the package
+	// and the cache management. In other words, ValidState allows us to
+	// change the state of a cache in such a context, allowing us to fake
+	// invalid caches.
 	ValidState bool
 
 	// Default specifies if the handle points at the default image cache or
