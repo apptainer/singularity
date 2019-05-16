@@ -21,6 +21,10 @@ import (
 	"mvdan.cc/sh/v3/interp"
 )
 
+const (
+	commandOutput = "Command output:"
+)
+
 // expect-search builtin
 // usage:
 // expect-search output|error|combined "search_pattern" "TestName" command <command_args>
@@ -33,6 +37,7 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 
 	var re *regexp.Regexp
 	var d bytes.Buffer
+	t := GetTesting(ctx)
 
 	stream := args[0]
 	search := args[1]
@@ -98,6 +103,7 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 
 	if err := cmd.Run(); err != nil {
 		if _, ok := err.(*exec.Error); ok {
+			t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
 			return fmt.Errorf("error while executing %s: %s", fullCmd, err)
 		}
 		if x, ok := err.(*exec.ExitError); ok {
@@ -118,7 +124,8 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 		}
 	}
 	if !match {
-		return fmt.Errorf("%s (%s stream doesn't contain pattern %q string): %s", fullCmd, stream, search, d.String())
+		t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
+		return fmt.Errorf("%s (%s stream doesn't contain pattern %q string)", fullCmd, stream, search)
 	}
 
 	return interp.ExitStatus(exitCode)
@@ -141,6 +148,9 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 		return err
 	}
 
+	var d bytes.Buffer
+	t := GetTesting(ctx)
+
 	fullCmd := strings.Join(args[2:], " ")
 
 	cmd := exec.Cmd{
@@ -151,10 +161,14 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 		Stdin: mc.Stdin,
 	}
 	if mc.Stderr != os.Stderr {
-		cmd.Stderr = mc.Stderr
+		cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
+	} else {
+		cmd.Stderr = &d
 	}
 	if mc.Stdout != os.Stdout {
-		cmd.Stdout = mc.Stdout
+		cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
+	} else {
+		cmd.Stdout = &d
 	}
 
 	err = cmd.Run()
@@ -162,13 +176,16 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	case *exec.ExitError:
 		if status, ok := x.Sys().(syscall.WaitStatus); ok {
 			if exitCode != status.ExitStatus() {
+				t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
 				return fmt.Errorf("%s: %s (expected exit code %d got %d)", args[1], fullCmd, exitCode, status.ExitStatus())
 			}
 		}
 	}
 	if exitCode == 0 && err != nil {
+		t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
 		return fmt.Errorf("unexpected error while running command %q: %s", fullCmd, err)
 	} else if exitCode != 0 && err == nil {
+		t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
 		return fmt.Errorf("unexpected success while running command %q", fullCmd)
 	}
 	return nil

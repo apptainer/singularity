@@ -1,64 +1,121 @@
-# generic functions
+######################################################################
+# common test functions
+######################################################################
 
+######################################################################
+# fatal trigger a test error message and exit script with code 1.
+######################################################################
 fatal() {
-    test-error "$1"
+    message="$1"
+    test-error "${message}"
     exit 1
 }
 
-# test if singularity binary is present in $PATH
+export SCRIPT_TESTDIR=`create-tmpdir ${TESTDIR}`
+
+######################################################################
+# this function will be called at script exit to delete all temporary
+# directories and files created by running script.
+######################################################################
+_cleanup_tmp() {
+    sudo rm -rf "${SCRIPT_TESTDIR}"
+}
+register-exit-func _cleanup_tmp
+
+######################################################################
+# test if singularity binary is present in $PATH.
+######################################################################
 if ! command -v singularity >/dev/null 2>&1; then
     fatal "singularity executable not found in \$PATH"
 fi
 
+######################################################################
 # execute/test commands interactively
-_uuid=`uuidgen`
-_script="${TESTDIR}/${_uuid}.script"
-_cmdline="${TESTDIR}/${_uuid}.cmdline"
+######################################################################
+_script="${SCRIPT_TESTDIR}/interactive.script"
+_cmdline="${SCRIPT_TESTDIR}/interactive.cmdline"
 
+######################################################################
+# this function ensure interactive-XXX functions are not called
+# outside of start-interactive and exit-interactive calls.
+######################################################################
 _check-script() {
     if [ ! -f ${_script} ]; then
         fatal "interactive function not used between start-interactive and exit-interactive calls"
     fi
 }
 
+######################################################################
+# start-interactive prepare interactive command execution and must be
+# called before any interactive-XXX calls.
+######################################################################
 start-interactive() {
-    name=$1
+    name="$1"
     shift
     echo -n > ${_script}
     echo "${name} ${_script} $@" > ${_cmdline}
 }
 
+######################################################################
+# interactive-send sends the provided string to the command input
+# (equivalent to type a string without hitting ENTER)
+######################################################################
 interactive-send() {
     _check-script
-    echo "send $1" >> ${_script}
+    str="$1"
+    echo "send ${str}" >> ${_script}
 }
 
-interactive-expect() {
-    _check-script
-    echo "expect $1" >> ${_script}
-}
-
+######################################################################
+# interactive-sendline sends the provided string to the command input
+# (equivalent to type a string followed by ENTER).
+######################################################################
 interactive-sendline() {
     _check-script
-    echo "sendline $1" >> ${_script}
+    str="$1"
+    echo "sendline ${str}" >> ${_script}
 }
 
+######################################################################
+# interactive-expect expect to read the provided string from the
+# command execution output.
+######################################################################
+interactive-expect() {
+    _check-script
+    expect="$1"
+    echo "expect ${expect}" >> ${_script}
+}
+
+######################################################################
+# interactive-ctrl-c sends CTRL+C characters to the command input.
+######################################################################
 interactive-ctrl-c() {
     _check-script
     interactive-send $'\x03'
 }
 
+######################################################################
+# interactive-ctrl-d sends CTRL+D characters to the command input.
+######################################################################
 interactive-ctrl-d() {
     _check-script
     interactive-send $'\x04'
 }
 
+######################################################################
+# interactive-eof waits that command execution finishes.
+######################################################################
 interactive-eof() {
     _check-script
     interactive-expect "<EOF>"
 }
 
+######################################################################
+# exit-interactive waits that command execution finishes.
+######################################################################
 exit-interactive() {
+    exit_code=$1
+
     if [ $# != 1 ]; then
         fatal "exit-interactive need an exit code argument"
     fi
@@ -68,58 +125,103 @@ exit-interactive() {
     if [ ! -f ${_cmdline} ]; then
         fatal "no command line provided in start-interactive"
     fi
-    expect-exit-interactive $1 `cat ${_cmdline}`
+    expect-exit-interactive exit_code `cat ${_cmdline}`
     rm -f ${_script}
     rm -f ${_cmdline}
 }
 
-# wrapper around default test builtin
+######################################################################
+# expect-failure executes a command with test builtin expect-exit and
+# checks if exit code is equal to 1, if exit is not 1 the test fail.
+######################################################################
 expect-failure() {
     expect-exit 1 "$@"
 }
 
+######################################################################
+# expect-failure executes a command with test builtin expect-exit and
+# checks if exit code is equal to 0, if exit is not 0 the test fail.
+######################################################################
 expect-success() {
     expect-exit 0 "$@"
 }
 
+######################################################################
+# stdout-contains executes a command with test builtin expect-search
+# and checks if command output stream contains the provided pattern,
+# if the pattern is not found the test fail.
+# NOTE: prefixing pattern with "regex:" allows to provides regular
+# expression
+######################################################################
 stdout-contains() {
     test_name="$1"
     pattern="$2"
     shift
     shift
-    expect-search output "${pattern}" "${test_name}" "$@" >>/tmp/cmd.output 2>&1
+    expect-search output "${pattern}" "${test_name}" "$@"
 }
 
+######################################################################
+# stderr-contains executes a command with test builtin expect-search
+# and checks if command error stream contains the provided pattern,
+# if the pattern is not found the test fail.
+# NOTE: prefixing pattern with "regex:" allows to provides regular
+# expression
+######################################################################
 stderr-contains() {
     test_name="$1"
     pattern="$2"
     shift
     shift
-    expect-search error "${pattern}" "${test_name}" "$@" >>/tmp/cmd.output 2>&1
+    expect-search error "${pattern}" "${test_name}" "$@"
 }
 
+######################################################################
+# stdall-contains executes a command with test builtin expect-search
+# and checks if command output/error streams contains the provided
+# pattern, if the pattern is not found the test fail.
+# NOTE: prefixing pattern with "regex:" allows to provides regular
+# expression
+######################################################################
 stdall-contains() {
     test_name="$1"
     pattern="$2"
     shift
     shift
-    expect-search combined "${pattern}" "${test_name}" "$@" >>/tmp/cmd.output 2>&1
+    expect-search combined "${pattern}" "${test_name}" "$@"
 }
 
+######################################################################
+# test-match tests if two strings are identical
+######################################################################
 test-match() {
-    expect-exit 0 $1 /bin/sh -c "[ \"$2\" = \"$3\" ]"
+    test_name="$1"
+    expect-exit 0 "${test_name}" /bin/sh -c "[ \"$2\" = \"$3\" ]"
 }
 
-# manage test file/directory
+######################################################################
+# mktmpdir creates a temporary directory in $SCRIPT_TESTDIR,
+# directories created with mktmpdir are automatically deleted when
+# script exit.
+######################################################################
 mktmpdir() {
-    create-tmpdir ${TESTDIR}
+    create-tmpdir ${SCRIPT_TESTDIR}
 }
 
+######################################################################
+# mktmpfile creates a temporary file in $SCRIPT_TESTDIR, files created
+# with mktmpfile are automatically deleted when script exit.
+######################################################################
 mktmpfile() {
-    create-tmpfile ${TESTDIR}
+    create-tmpfile ${SCRIPT_TESTDIR}
 }
 
-# test image
+######################################################################
+# get-test-image returns the path to the test image, if the image
+# doesn't already exists, it build the test image and returns the
+# path.
+# NOTE: The test image is not deleted until all scripts are executed
+######################################################################
 get-test-image() {
     image="${TESTDIR}/test.sif"
 
@@ -135,27 +237,81 @@ get-test-image() {
     echo ${image}
 }
 
+######################################################################
+# verify-image executes a test suite to verify that a freshly builded
+# image is valid.
+# NOTE: Must be called just after a call to "expect-success" or
+# "expect-exit 0"
+######################################################################
 verify-image() {
     if [ $? = 0 ]; then
         name="$1"
         image="$2"
-        expect-exit 1 "${name}/False"        singularity exec ${image} false
-        expect-exit 0 "${name}/RunScript"    singularity exec ${image} test -f /.singularity.d/runscript
-        expect-exit 0 "${name}/OneBase"      singularity exec ${image} test -f /.singularity.d/env/01-base.sh
-        expect-exit 0 "${name}/ActionsShell" singularity exec ${image} test -f /.singularity.d/actions/shell
-        expect-exit 0 "${name}/ActionsExec"  singularity exec ${image} test -f /.singularity.d/actions/exec
-        expect-exit 0 "${name}/ActionsRun"   singularity exec ${image} test -f /.singularity.d/actions/run
-        expect-exit 0 "${name}/Environment"  singularity exec ${image} test -L /environment
-        expect-exit 0 "${name}/Singularity"  singularity exec ${image} test -L /singularity
+        expect-exit 1 "${name}/False"        singularity exec "${image}" false
+        expect-exit 0 "${name}/RunScript"    singularity exec "${image}" test -f /.singularity.d/runscript
+        expect-exit 0 "${name}/OneBase"      singularity exec "${image}" test -f /.singularity.d/env/01-base.sh
+        expect-exit 0 "${name}/ActionsShell" singularity exec "${image}" test -f /.singularity.d/actions/shell
+        expect-exit 0 "${name}/ActionsExec"  singularity exec "${image}" test -f /.singularity.d/actions/exec
+        expect-exit 0 "${name}/ActionsRun"   singularity exec "${image}" test -f /.singularity.d/actions/run
+        expect-exit 0 "${name}/Environment"  singularity exec "${image}" test -L /environment
+        expect-exit 0 "${name}/Singularity"  singularity exec "${image}" test -L /singularity
     fi
 }
 
+######################################################################
+# build-verify-image builds and verify image.
+######################################################################
+build-verify-image() {
+    image_type="$1"
+    test_name="$2"
+    check_binary="$3"
+    build_source="$4"
+
+    options=""
+    case "${image_type}" in
+    sandbox)
+        options="-s"
+        img=`mktmpdir`
+        ;;
+    image)
+        img=`mktmpfile`
+        ;;
+    *)
+        test-log "image type ${image_type} not supported"
+        return
+        ;;
+    esac
+
+    if [ "${check_binary}" != "" ]; then
+        if ! command -v ${check_binary} >/dev/null 2>&1; then
+            test-skip "${test_name}" "${check_binary} command not found"
+            return
+        fi
+    fi
+    expect-exit 0 "${test_name}" sudo singularity build -F ${options} "${img}" "${build_source}"
+    verify-image "${test_name}" "${img}"
+}
+
+######################################################################
+# check-command checks that the provided command is in $PATH. If
+# the command is not found, the script execution is interrupted and
+# test is marked as skipped.
+# NOTE: this function should be called at the beginning of script
+# before creating temporary files or directories or building image
+######################################################################
 check-command() {
-    if ! command -v $1 >/dev/null 2>&1; then
-        test-skip-script "$1 command not found in PATH"
+    cmd="$1"
+    if ! command -v ${cmd} >/dev/null 2>&1; then
+        test-skip-script "${cmd} command not found in PATH"
     fi
 }
 
+######################################################################
+# check-overlayfs checks that overlay filesystem is supported. If
+# not, the script execution is interrupted and test is marked as
+# skipped.
+# NOTE: this function should be called at the beginning of script
+######################################################################
 check-overlayfs() {
     sudo modprobe overlay >/dev/null 2>&1
     check-fs overlay
@@ -164,21 +320,35 @@ check-overlayfs() {
     fi
 }
 
+######################################################################
+# run-command executes a command and trigger a fatal error if the
+# command didn't succeed.
+######################################################################
 run-command() {
-    $@ >${TESTDIR}/run-command.out 2>&1
+    $@ >${SCRIPT_TESTDIR}/run-command.out 2>&1
     if [ $? != 0 ]; then
-        output=`cat ${TESTDIR}/run-command.out`
+        output=`cat ${SCRIPT_TESTDIR}/run-command.out`
         fatal "$@ failed: ${output}"
     fi
 }
 
+######################################################################
+# check-kernel-version compare current kernel version to range
+# provided as argument.
+# NOTE: please refer to https://github.com/blang/semver#ranges to
+# see supported ranges as argument
+######################################################################
 check-kernel-version() {
+    range="$1"
     kernel_version=`uname -r`
     kernel_version=${kernel_version%%-*}
-    check-version "${kernel_version}" "$1"
+    check-version "${kernel_version}" "${range}"
 }
 
-# create sudo wrapper to pass correct environment variables to singularity
+######################################################################
+# create sudo wrapper to pass correct environment variables
+# to singularity.
+######################################################################
 bindir="${TESTDIR}/bin"
 sudo_wrapper="${bindir}/sudo"
 

@@ -9,6 +9,8 @@ atexit() {
     stop-instances
 }
 
+register-exit-func atexit
+
 image=`get-test-image`
 port=${instance_default_port}
 

@@ -10,8 +10,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"os"
-	"runtime"
 
 	"mvdan.cc/sh/v3/interp"
 )
@@ -24,17 +22,11 @@ func createTmpDir(ctx context.Context, mc interp.ModuleCtx, args []string) error
 	if len(args) == 1 {
 		tmpDir = args[0]
 	}
-	dir, err := ioutil.TempDir(tmpDir, "stestdir-")
+	dir, err := ioutil.TempDir(tmpDir, "d-")
 	if err != nil {
 		return err
 	}
 	_, err = fmt.Fprintf(mc.Stdout, "%s\n", dir)
-	cleanup := func() error {
-		os.RemoveAll(dir)
-		return nil
-	}
-	desc := fmt.Sprintf("delete directory %s", dir)
-	RegisterAtExit(ctx, &AtExitFn{Fn: cleanup, Desc: desc})
 	return err
 }
 
@@ -46,33 +38,38 @@ func createTmpFile(ctx context.Context, mc interp.ModuleCtx, args []string) erro
 	if len(args) == 1 {
 		tmpDir = args[0]
 	}
-	f, err := ioutil.TempFile(tmpDir, "stestfile-")
+	f, err := ioutil.TempFile(tmpDir, "f-")
 	if err != nil {
 		return err
 	}
-	file := f.Name()
-	_, err = fmt.Fprintf(mc.Stdout, "%s\n", file)
-
-	cleanup := func() error {
-		os.Remove(file)
-		return nil
-	}
-	desc := fmt.Sprintf("delete file %s", file)
-	RegisterAtExit(ctx, &AtExitFn{Fn: cleanup, Desc: desc})
+	_, err = fmt.Fprintf(mc.Stdout, "%s\n", f.Name())
 	f.Close()
 	return err
 }
 
-// which-os builtin
+// register-exit-func
 // usage:
-// which-os
-func whichOS(ctx context.Context, mc interp.ModuleCtx, args []string) error {
-	_, err := fmt.Fprintf(mc.Stdout, "%s\n", runtime.GOOS)
-	return err
+// register-exit-func <function_name>
+func registerExitFunction(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+	funcName := args[0]
+	runner := ctx.Value(testExecContext).(*testExec).runner
+
+	if _, has := runner.Funcs[funcName]; has {
+		atExitFunctions := ctx.Value(testExecContext).(*testExec).atExitFunctions
+		for _, f := range *atExitFunctions {
+			if f == funcName {
+				return nil
+			}
+		}
+		*atExitFunctions = append(*atExitFunctions, funcName)
+		return nil
+	}
+
+	return fmt.Errorf("%s is not a function", funcName)
 }
 
 func init() {
 	RegisterCommandBuiltin("create-tmpdir", createTmpDir)
 	RegisterCommandBuiltin("create-tmpfile", createTmpFile)
-	RegisterCommandBuiltin("which-os", whichOS)
+	RegisterCommandBuiltin("register-exit-func", registerExitFunction)
 }

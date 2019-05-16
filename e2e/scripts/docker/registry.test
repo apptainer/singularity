@@ -2,13 +2,15 @@
 # test from docker registry
 
 source common.func
-source docker.func
+source docker/docker.func
 
 check-command docker
 
 atexit() {
     delete-registry
 }
+
+register-exit-func atexit
 
 prepare-registry
 

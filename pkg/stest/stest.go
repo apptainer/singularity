@@ -22,20 +22,15 @@ import (
 	"mvdan.cc/sh/v3/syntax"
 )
 
-// AtExitFn defines a function called when a test script terminates.
-type AtExitFn struct {
-	Fn   func() error
-	Desc string
-}
-
 // BuiltinFn defines a shell builtin function.
 type BuiltinFn func(context.Context, interp.ModuleCtx, []string) error
 
 // keep track of test execution context
 type testExec struct {
-	atExitFunctions *[]*AtExitFn
+	atExitFunctions *[]string
 	t               *testing.T
 	runner          *interp.Runner
+	verboseTest     bool
 }
 
 // CommandBuiltin defines a command shell builtin.
@@ -127,16 +122,14 @@ func GetTestBuiltin(name string) *TestBuiltin {
 	return testBuiltins[name]
 }
 
-// RegisterAtExit registers a function to execute when the script execution
-// finished.
-func RegisterAtExit(ctx context.Context, fn *AtExitFn) {
-	atExitFunctions := ctx.Value(testExecContext).(*testExec).atExitFunctions
-	*atExitFunctions = append(*atExitFunctions, fn)
-}
-
 // GetTesting returns the current test execution context.
 func GetTesting(ctx context.Context) *testing.T {
 	return ctx.Value(testExecContext).(*testExec).t
+}
+
+// IsVerboseTest returns if current test are run
+func IsVerboseTest(ctx context.Context) bool {
+	return ctx.Value(testExecContext).(*testExec).verboseTest
 }
 
 // SetEnv sets an environment variables, equivalent to "export NAME=VALUE"
@@ -166,7 +159,7 @@ func removeFunctionLine() string {
 
 // RunScript executes the provided script from a test function as a main
 // sub test with the provided name.
-func RunScript(name, script string, t *testing.T) {
+func RunScript(name, script string, t *testing.T, verboseTest bool) {
 	f, err := os.Open(script)
 	if err != nil {
 		t.Fatal(err)
@@ -175,11 +168,12 @@ func RunScript(name, script string, t *testing.T) {
 
 	exec := func(ctx context.Context, path string, args []string) error {
 		if tb, ok := testBuiltins[args[0]]; ok {
+			var exitCode interp.ExitStatus
+
 			te := ctx.Value(testExecContext).(*testExec)
 			mc, _ := interp.FromModuleContext(ctx)
-			if tb.Index >= 0 {
-				var err error
 
+			if tb.Index >= 0 {
 				if len(args) < tb.Index {
 					te.t.Errorf("wrong usage of test builtin %s", args[0])
 					return interp.ShellExitStatus(1)
@@ -190,31 +184,27 @@ func RunScript(name, script string, t *testing.T) {
 
 					subTe.t = sub
 					subTe.runner = te.runner
-					subTe.atExitFunctions = te.atExitFunctions
+					subTe.verboseTest = verboseTest
 
 					ctx := context.TODO()
 					ctx = context.WithValue(ctx, testExecContext, &subTe)
 
 					if err = tb.Fn(ctx, mc, args[1:]); err != nil {
-						sub.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
+						if x, is := err.(interp.ExitStatus); is {
+							exitCode = x
+						} else {
+							sub.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
+							exitCode = 1
+						}
 					}
 				})
-
-				if err != nil {
-					switch err.(type) {
-					case interp.ExitStatus:
-						return err
-					default:
-						return interp.ExitStatus(1)
-					}
-				}
 			} else {
 				if err := tb.Fn(ctx, mc, args[1:]); err != nil {
 					te.t.Errorf("%sERROR: %-30s", removeFunctionLine(), err)
-					return interp.ExitStatus(1)
+					exitCode = 1
 				}
 			}
-			return interp.ExitStatus(0)
+			return exitCode
 		} else if cb, ok := commandBuiltins[args[0]]; ok {
 			mc, _ := interp.FromModuleContext(ctx)
 			return cb.Fn(ctx, mc, args[1:])
@@ -232,22 +222,14 @@ func RunScript(name, script string, t *testing.T) {
 
 	t.Run(name, func(t *testing.T) {
 		var te testExec
-		var atExitFunctions []*AtExitFn
 
-		te.atExitFunctions = &atExitFunctions
 		te.t = t
 		te.runner = runner
+		te.atExitFunctions = new([]string)
+		te.verboseTest = verboseTest
 
 		ctx := context.TODO()
 		ctx = context.WithValue(ctx, testExecContext, &te)
-
-		defer func() {
-			for i := len(atExitFunctions) - 1; i >= 0; i-- {
-				if err := atExitFunctions[i].Fn(); err != nil {
-					t.Logf("%sLOG: %s: %-30s", removeFunctionLine(), atExitFunctions[i].Desc, err)
-				}
-			}
-		}()
 
 		parser.Stmts(f, func(st *syntax.Stmt) bool {
 			line := st.Cmd.Pos().Line()
@@ -274,10 +256,10 @@ func RunScript(name, script string, t *testing.T) {
 			return false
 		})
 
-		// if test-skip-script is called this function won't be executed
-		if _, has := runner.Funcs["atexit"]; has {
-			if err := runner.Run(ctx, runner.Funcs["atexit"].Cmd); err != nil {
-				t.Errorf("%sERROR: function atexit returned an error: %s", removeFunctionLine(), err)
+		// if test-skip-script is called those functions won't be executed
+		for _, funcName := range *te.atExitFunctions {
+			if err := runner.Run(ctx, runner.Funcs[funcName].Cmd); err != nil {
+				t.Errorf("%sERROR: function %s returned an error: %s", removeFunctionLine(), funcName, err)
 			}
 		}
 	})

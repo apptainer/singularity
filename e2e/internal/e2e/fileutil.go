@@ -6,6 +6,7 @@ package e2e
 
 import (
 	"io/ioutil"
+	"os"
 )
 
 // WriteTempFile creates and populates a temporary file in the specified
@@ -26,4 +27,17 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 	}
 
 	return tmpfile.Name(), nil
+}
+
+// MakeTmpDir creates a temporary directory with provided mode
+// in os.TempDir if dir is ""
+func MakeTmpDir(dir, pattern string, mode os.FileMode) (string, error) {
+	name, err := ioutil.TempDir(dir, pattern)
+	if err != nil {
+		return "", err
+	}
+	if err := os.Chmod(name, mode); err != nil {
+		return "", err
+	}
+	return name, nil
 }

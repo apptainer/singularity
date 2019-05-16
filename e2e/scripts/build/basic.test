@@ -3,39 +3,13 @@
 
 source common.func
 
-buildImage() {
-    options=""
-    case $1 in
-    sandbox)
-        options="-s"
-        img=`mktmpdir`
-        ;;
-    image)
-        img=`mktmpfile`
-        ;;
-    *)
-        test-log "build type $1 not supported"
-        return
-        ;;
-    esac
-
-    if [ "$3" != "" ]; then
-        if ! command -v $3 >/dev/null 2>&1; then
-            test-skip "$2" "$3 command not found"
-            return
-        fi
-    fi
-    expect-exit 0 "$2" sudo singularity build -F ${options} ${img} $4
-    verify-image "$2" ${img}
-}
-
-########## TYPE      NAME             CHECK_BINARY  DEFINITION
-buildImage "image"   "Busybox"        ""            "${SOURCEDIR}/examples/busybox/Singularity"
-buildImage "sandbox" "DockerURI"      ""            "docker://busybox"
-buildImage "sandbox" "DockerDefFile"  ""            "${SOURCEDIR}/examples/docker/Singularity"
-buildImage "sandbox" "SHubURI"        ""            "shub://GodloveD/busybox"
-buildImage "sandbox" "SHubDefFile"    ""            "${SOURCEDIR}/examples/shub/Singularity"
-buildImage "sandbox" "LibraryDefFile" ""            "${SOURCEDIR}/examples/library/Singularity"
-buildImage "sandbox" "Debootstrap"    "debootstrap" "${SOURCEDIR}/examples/debian/Singularity"
-buildImage "sandbox" "Yum"            "yum"         "${SOURCEDIR}/examples/centos/Singularity"
-buildImage "sandbox" "Zypper"         "zypper"      "${SOURCEDIR}/examples/opensuse/Singularity"
+##################  TYPE      NAME             CHECK_BINARY  DEFINITION
+build-verify-image  "image"   "Busybox"        ""            "${SOURCEDIR}/examples/busybox/Singularity"
+build-verify-image  "sandbox" "DockerURI"      ""            "docker://busybox"
+build-verify-image  "sandbox" "DockerDefFile"  ""            "${SOURCEDIR}/examples/docker/Singularity"
+build-verify-image  "sandbox" "SHubURI"        ""            "shub://GodloveD/busybox"
+build-verify-image  "sandbox" "SHubDefFile"    ""            "${SOURCEDIR}/examples/shub/Singularity"
+build-verify-image  "sandbox" "LibraryDefFile" ""            "${SOURCEDIR}/examples/library/Singularity"
+build-verify-image  "sandbox" "Debootstrap"    "debootstrap" "${SOURCEDIR}/examples/debian/Singularity"
+build-verify-image  "sandbox" "Yum"            "yum"         "${SOURCEDIR}/examples/centos/Singularity"
+build-verify-image  "sandbox" "Zypper"         "zypper"      "${SOURCEDIR}/examples/opensuse/Singularity"
