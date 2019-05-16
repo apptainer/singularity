@@ -37,29 +37,22 @@ func verifyVersion(t *testing.T) {
 	t.Run("verify_version", test.WithoutPrivilege(func(t *testing.T) {
 
 		execVersionCmd := exec.Command(testenv.CmdPath, tests[0].args...)
-
 		outputVersionCmd, err := execVersionCmd.CombinedOutput()
-
 		if err != nil {
 			t.Log(string(outputVersionCmd))
 			t.Fatalf("Unable to run version command: %v", err)
 		}
-
 		versionFromVersionCmd, err := semver.Make(string(outputVersionCmd))
-
 		if err != nil {
 			t.Fatalf("Unable to obtain semantic version after running version command: %v", err)
 		}
 
 		execVersionFlag := exec.Command(testenv.CmdPath, tests[1].args...)
-
 		outputVersionFlag, err := execVersionFlag.CombinedOutput()
-
 		if err != nil {
 			t.Log(string(outputVersionFlag))
 			t.Fatalf("Unable to run version flag: %v", err)
 		}
-
 		versionFromVersionFlag, err := semver.Make(string(outputVersionFlag))
 
 		if err != nil {
