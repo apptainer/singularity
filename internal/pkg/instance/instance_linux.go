@@ -9,12 +9,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 const (
@@ -27,7 +28,7 @@ const (
 )
 
 const (
-	instancePath    = ".singularity/instances"
+	instancePath    = "instances"
 	authorizedChars = `^[a-zA-Z0-9._-]+$`
 	prognameFormat  = "Singularity instance: %s [%s]"
 )
@@ -72,27 +73,28 @@ func CheckName(name string) error {
 
 // getPath returns the path where searching for instance files
 func getPath(username string, subDir string) (string, error) {
-	path := ""
-	var pw *user.User
-	var err error
-
-	if username == "" {
-		if pw, err = user.GetPwUID(uint32(os.Getuid())); err != nil {
-			return path, err
-		}
-	} else {
-		if pw, err = user.GetPwNam(username); err != nil {
-			return path, err
-		}
-	}
-
 	hostname, err := os.Hostname()
 	if err != nil {
-		return path, err
+		return "", err
 	}
 
-	path = filepath.Join(pw.Dir, instancePath, subDir, hostname, pw.Name)
-	return path, nil
+	var u *user.User
+	if username == "" {
+		u, err = user.Current()
+	} else {
+		u, err = user.Lookup(username)
+	}
+
+	if err != nil {
+		return "", err
+	}
+
+	configDir, err := syfs.ConfigDirForUsername(u.Username)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(configDir, instancePath, subDir, hostname, u.Username), nil
 }
 
 // GetDir returns directory where instances file will be stored

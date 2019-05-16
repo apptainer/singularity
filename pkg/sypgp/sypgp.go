@@ -25,7 +25,7 @@ import (
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
@@ -96,35 +96,14 @@ func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	return string(response), nil
 }
 
-// getSingularityDir returns the directory where the user's singularity
-// configuration and data is located.
-func getSingularityDir() string {
-	user, err := user.GetPwUID(uint32(os.Getuid()))
-	if err != nil {
-		sylog.Warningf("Could not lookup user's real home directory: %s", err)
-
-		cwd, err := os.Getwd()
-		if err != nil {
-			sylog.Warningf("Could not get current working directory: %s", err)
-			return ".singularity"
-		}
-
-		dir := filepath.Join(cwd, ".singularity")
-		sylog.Warningf("Using current directory: %s", dir)
-		return dir
-	}
-
-	return filepath.Join(user.Dir, ".singularity")
-}
-
 // GetTokenFile returns a string describing the path to the stored token file
 func GetTokenFile() string {
-	return filepath.Join(getSingularityDir(), "sylabs-token")
+	return filepath.Join(syfs.ConfigDir(), "sylabs-token")
 }
 
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
-	return filepath.Join(getSingularityDir(), "sypgp")
+	return filepath.Join(syfs.ConfigDir(), "sypgp")
 }
 
 // SecretPath returns a string describing the path to the private keys store
