@@ -6,13 +6,11 @@
 package version
 
 import (
-	"io/ioutil"
-	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"testing"
+
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 type testingEnv struct {
@@ -31,21 +29,13 @@ func verifyVersion(t *testing.T){
 		args []string
 		succeed bool
 	}{
-		{
-			name: "version command",
-			args: []string{"version"}
-			succeed: true
-		},
-		{
-			name: "version flag",
-			args: []string{"--version"}
-			succeed: true
-		}
+		{"version command", []string{"version"}, true, },
+		{"version flag", []string{"--version"}, true },
 	}
 
 	t.Run("verify_version", test.WithoutPrivilege(func(t *testing.T){
 
-		execVersionCmd := exec.Command(testenv.CmdPath, tests[0])
+		execVersionCmd := exec.Command(testenv.CmdPath, tests[0].args...)
 
 		out, err := execVersionCmd.CombinedOutput()
 		if err != nil {
@@ -53,9 +43,9 @@ func verifyVersion(t *testing.T){
 			t.Fatalf("Unable to run version command: %v", err)
 		}
 
-		execVersionFlag := exec.Command(testenv.CmdPath, tests[1])
+		execVersionFlag := exec.Command(testenv.CmdPath, tests[1].args...)
 
-		out, err := execVersionFlag.CombinedOutput()
+		out, err = execVersionFlag.CombinedOutput()
 		if err != nil {
 			t.Log(string(out))
 			t.Fatalf("Unable to run version command: %v", err)
