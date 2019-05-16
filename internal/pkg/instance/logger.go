@@ -56,10 +56,11 @@ var LogFormats = map[string]LogFormatter{
 // Logger defines a file logger.
 type Logger struct {
 	file      *os.File
+	fm        sync.Mutex // protect file
 	filename  string
 	formatter LogFormatter
 	closers   []closer
-	sync.Mutex
+	cm        sync.Mutex // protect closers array
 }
 
 // NewLogger instantiates a new logger with formatter and return it.
@@ -67,6 +68,7 @@ func NewLogger(logPath string, formatter LogFormatter) (*Logger, error) {
 	logger := &Logger{
 		formatter: formatter,
 		closers:   make([]closer, 0),
+		filename:  logPath,
 	}
 
 	if logger.formatter == nil {
@@ -84,11 +86,7 @@ func (l *Logger) openFile(path string) (err error) {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
-	l.Lock()
-	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
-	l.filename = l.file.Name()
-	l.Unlock()
-
+	l.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0640)
 	return err
 }
 
@@ -109,13 +107,18 @@ func (l *Logger) scanOutput(data []byte, atEOF bool) (advance int, token []byte,
 }
 
 // NewWriter create a new pipe pair for corresponding stream.
-func (l *Logger) NewWriter(stream string, dropCRNL bool) *io.PipeWriter {
+func (l *Logger) NewWriter(stream string, dropCRNL bool) (*io.PipeWriter, error) {
+	l.cm.Lock()
+	defer l.cm.Unlock()
+
+	// means Close has been called and logger is not usable
+	if l.closers == nil {
+		return nil, fmt.Errorf("logger has been closed")
+	}
 	reader, writer := io.Pipe()
 	closer := l.scan(stream, reader, writer, dropCRNL)
-	l.Lock()
 	l.closers = append(l.closers, closer)
-	l.Unlock()
-	return writer
+	return writer, nil
 }
 
 func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropCRNL bool) closer {
@@ -131,13 +134,19 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 
 	go func() {
 		for scanner.Scan() {
-			l.Lock()
+			// this section is locked to ensure that log file is
+			// not being written while ReOpenFile is called
+			l.fm.Lock()
+			// means ReOpenFile has failed proceed with cleanup
+			if l.file == nil {
+				break
+			}
 			if !dropCRNL {
 				fmt.Fprint(l.file, l.formatter(stream, r.Replace(scanner.Text())))
 			} else {
 				fmt.Fprint(l.file, l.formatter(stream, scanner.Text()))
 			}
-			l.Unlock()
+			l.fm.Unlock()
 		}
 		pr.Close()
 		wg.Done()
@@ -150,29 +159,41 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 	}
 }
 
-// Close closes all pipe pairs created with NewWriter and also closes
-// log file descriptor.
-func (l *Logger) Close() {
+func (l *Logger) endScans() {
 	// closer will terminate scan goroutines spawned with NewWriter
 	// by closing pipe write end
+	l.cm.Lock()
+	defer l.cm.Unlock()
+
 	for _, closer := range l.closers {
 		closer()
 	}
-
-	l.Lock()
 	l.closers = nil
+}
+
+// Close closes all pipe pairs created with NewWriter and also closes
+// log file descriptor.
+func (l *Logger) Close() {
+	l.endScans()
+	l.fm.Lock()
 	l.file.Sync()
 	l.file.Close()
-	l.Unlock()
+	l.fm.Unlock()
 }
 
 // ReOpenFile closes and re-open log file (eg: log rotation).
-func (l *Logger) ReOpenFile() {
-	l.Lock()
+func (l *Logger) ReOpenFile() error {
+	l.fm.Lock()
+
 	l.file.Sync()
 	l.file.Close()
-	l.Unlock()
 
-	// open log file
-	l.openFile(l.filename)
+	err := l.openFile(l.filename)
+	l.fm.Unlock()
+
+	if err != nil {
+		// logger is not usable anymore, proceed with cleanup
+		l.endScans()
+	}
+	return err
 }

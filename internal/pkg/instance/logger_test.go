@@ -85,7 +85,10 @@ func TestLogger(t *testing.T) {
 		if err != nil {
 			t.Errorf("failed to create new logger: %s", err)
 		}
-		writer := logger.NewWriter(f.stream, f.dropCRNL)
+		writer, err := logger.NewWriter(f.stream, f.dropCRNL)
+		if err != nil {
+			t.Errorf("failed to add new writer: %s", err)
+		}
 		writer.Write([]byte(f.write))
 
 		logger.Close()
@@ -104,7 +107,9 @@ func TestLogger(t *testing.T) {
 		}
 
 		// will recreate log file
-		logger.ReOpenFile()
+		if err := logger.ReOpenFile(); err != nil {
+			t.Errorf("failed to reopen log file: %s", err)
+		}
 		// we call it again to just close re-opened log file descriptor
 		logger.Close()
 
