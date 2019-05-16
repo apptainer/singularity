@@ -81,9 +81,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	}
 
 	if libraryRef != "" && !client.IsLibraryPushRef(libraryRef) {
-		err = fmt.Errorf("invalid library reference: %v", rb.ImagePath)
-		sylog.Warningf("%v", err)
-		return err
+		return fmt.Errorf("invalid library reference: %s", rb.ImagePath)
 	}
 
 	br := buildclient.BuildRequest{
@@ -95,9 +93,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 	bi, err := rb.BuildClient.Submit(ctx, br)
 	if err != nil {
-		err = errors.Wrap(err, "failed to post request to remote build service")
-		sylog.Warningf("%v", err)
-		return err
+		return errors.Wrap(err, "failed to post request to remote build service")
 	}
 	sylog.Debugf("Build response - id: %s, libref: %s", bi.ID, bi.LibraryRef)
 
@@ -105,8 +101,8 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	libraryRefRaw := strings.TrimPrefix(bi.LibraryRef, "library://")
 	if rb.IsDetached {
 		fmt.Printf("Build submitted! Once it is complete, the image can be retrieved by running:\n")
-		fmt.Printf("\tsingularity pull --library %v library://%v\n\n", bi.LibraryURL, libraryRefRaw)
-		fmt.Printf("Alternatively, you can access it from a browser at:\n\t%v/library/%v\n", CloudURI, libraryRefRaw)
+		fmt.Printf("\tsingularity pull --library %s library://%s\n\n", bi.LibraryURL, libraryRefRaw)
+		fmt.Printf("Alternatively, you can access it from a browser at:\n\t%s/library/%s\n", CloudURI, libraryRefRaw)
 		return nil
 	}
 
@@ -114,17 +110,13 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	var outputLogger stdoutLogger
 	err = rb.BuildClient.GetOutput(ctx, bi.ID, outputLogger)
 	if err != nil {
-		err = errors.Wrap(err, "failed to stream output from remote build service")
-		sylog.Warningf("%v", err)
-		return err
+		return errors.Wrap(err, "failed to stream output from remote build service")
 	}
 
 	// Get build status
 	bi, err = rb.BuildClient.GetStatus(ctx, bi.ID)
 	if err != nil {
-		err = errors.Wrap(err, "failed to get status from remote build service")
-		sylog.Warningf("%v", err)
-		return err
+		return errors.Wrap(err, "failed to get status from remote build service")
 	}
 
 	// Do not try to download image if not complete or image size is 0
@@ -139,9 +131,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	if !strings.HasPrefix(rb.ImagePath, "library://") {
 		err = client.DownloadImage(rb.ImagePath, bi.LibraryRef, bi.LibraryURL, rb.Force, rb.AuthToken)
 		if err != nil {
-			err = errors.Wrap(err, "failed to pull image file")
-			sylog.Warningf("%v", err)
-			return err
+			return errors.Wrap(err, "failed to pull image file")
 		}
 	}
 
