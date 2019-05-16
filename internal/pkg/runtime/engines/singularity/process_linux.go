@@ -310,10 +310,6 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 						break
 					}
 
-					if wpid <= 0 {
-						// We break the loop, we did not get a child process back
-						break
-					}
 					if wpid == cmd.Process.Pid {
 						statusChan <- status
 					}
