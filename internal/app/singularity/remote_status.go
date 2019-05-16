@@ -29,6 +29,8 @@ type status struct {
 }
 
 // RemoteStatus checks status of services related to an endpoint
+// If the supplied remote name is an empty string, it will attempt
+// to use the default remote.
 func RemoteStatus(usrConfigFile, sysConfigFile, name string) (err error) {
 	c := &remote.Config{}
 
@@ -52,7 +54,13 @@ func RemoteStatus(usrConfigFile, sysConfigFile, name string) (err error) {
 		return err
 	}
 
-	e, err := c.GetRemote(name)
+	var e *remote.EndPoint
+	if name == "" {
+		e, err = c.GetDefault()
+	} else {
+		e, err = c.GetRemote(name)
+	}
+
 	if err != nil {
 		return err
 	}

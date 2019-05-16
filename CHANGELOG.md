@@ -11,7 +11,10 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.2.0
 
-# v3.2.0 - [2019.04.11]
+# v3.2.0 - [2019.05.14]
+
+## [Security related fix](https://cve.mitre.org/cgi-bin/cvename.cgi?name=2019-11328)
+  - Instance files are now stored in user's home directory for privacy and many checks have been added to ensure that a user can't manipulate files to change `starter-suid` behavior when instances are joined (many thanks to Matthias Gerstner from the SUSE security team for finding and securely reporting this vulnerability) 
 
 ## New features / functionalities
   - Introduced a new basic framework for creating and managing plugins
@@ -56,6 +59,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Prompt to push a key to the KeyStore when generated
   - Refuse to push an unsigned container unless overridden with `--allow-unauthenticated/-U` option
   - Warn and prompt when pulling an unsigned container without the `--allow-unauthenticated/-U` option
+  - `Bootstrap` must now be the first field of every header because of parser requirements for multi-stage builds
 
 # v3.1.1 - [2019.04.02]
 

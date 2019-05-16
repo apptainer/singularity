@@ -16,6 +16,8 @@ import (
 )
 
 // RemoteLogin logs in remote by setting API token
+// If the supplied remote name is an empty string, it will attempt
+// to use the default remote.
 func RemoteLogin(usrConfigFile, sysConfigFile, name, tokenfile string) (err error) {
 	c := &remote.Config{}
 
@@ -36,7 +38,13 @@ func RemoteLogin(usrConfigFile, sysConfigFile, name, tokenfile string) (err erro
 		return err
 	}
 
-	r, err := c.GetRemote(name)
+	var r *remote.EndPoint
+	if name == "" {
+		r, err = c.GetDefault()
+	} else {
+		r, err = c.GetRemote(name)
+	}
+
 	if err != nil {
 		return err
 	}
