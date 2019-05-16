@@ -7,28 +7,16 @@ package cache
 
 import (
 	"os"
-	"os/user"
-	"path"
+	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
-var cacheDefault string
+var cacheDefault = filepath.Join(syfs.ConfigDir(), cacheDir)
 
 const cacheCustom = "/tmp/customcachedir"
-
-func TestMain(m *testing.M) {
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Errorf("Couldn't determine user home directory: %v", err)
-		os.Exit(1)
-	}
-	cacheDefault = path.Join(usr.HomeDir, RootDefault)
-
-	os.Exit(m.Run())
-}
 
 func TestRoot(t *testing.T) {
 	test.DropPrivilege(t)

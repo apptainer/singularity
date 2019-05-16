@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 var cmdManager = cmdline.NewCommandManager(SingularityCmd)
@@ -123,7 +124,7 @@ func getCurrentUser() *user.User {
 }
 
 func getDefaultTokenFile() string {
-	return path.Join(CurrentUser.HomeDir, ".singularity", "sylabs-token")
+	return path.Join(syfs.ConfigDir(), "sylabs-token")
 }
 
 // initializePlugins should be called in any init() function which needs to interact with the plugin
