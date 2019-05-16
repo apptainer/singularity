@@ -24,6 +24,7 @@ import (
 type testingEnv struct {
 	CmdPath     string `split_words:"true"`
 	TestDir     string `split_words:"true"`
+	ImagePath   string `split_words:"true"`
 	RunDisabled bool   `default:"false"`
 }
 
@@ -176,6 +177,13 @@ var tests = []struct {
 	{
 		desc:            "image from shub",
 		srcURI:          "shub://GodloveD/busybox",
+		force:           true,
+		unauthenticated: false,
+		expectSuccess:   true,
+	},
+	{
+		desc:            "oras transport for SIF from registry",
+		srcURI:          "oras://localhost:5000/pull_test_sif:latest",
 		force:           true,
 		unauthenticated: false,
 		expectSuccess:   true,
@@ -346,9 +354,35 @@ func testPullCmd(t *testing.T) {
 	}
 }
 
+// oras filestore does not allow for absolute paths
+// so we will give a relative path and set the directory of the push command
+func orasImagePush(t *testing.T, imgURI, imagePath string) (string, []byte, error) {
+	argv := []string{"push"}
+
+	if imagePath != "" {
+		argv = append(argv, filepath.Base(imagePath))
+	}
+
+	argv = append(argv, imgURI)
+
+	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
+	pushCmd := exec.Command(testenv.CmdPath, argv...)
+	pushCmd.Dir = filepath.Dir(imagePath)
+	out, err := pushCmd.CombinedOutput()
+	return cmd, out, err
+}
+
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
+	e2e.EnsureImage(t)
+
+	// put sif into OCI registry to pull it
+	cmd, out, err := orasImagePush(t, "oras://localhost:5000/pull_test_sif:latest", testenv.ImagePath)
+	if err != nil {
+		t.Logf("Command: %s", cmd)
+		t.Fatal(string(out))
+	}
 
 	t.Run("pull", testPullCmd)
 }

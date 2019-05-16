@@ -8,6 +8,15 @@ github.com/beorn7/perks/quantile
 github.com/blang/semver
 # github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 github.com/containerd/cgroups
+# github.com/containerd/containerd v1.2.6
+github.com/containerd/containerd/images
+github.com/containerd/containerd/reference
+github.com/containerd/containerd/remotes/docker
+github.com/containerd/containerd/content
+github.com/containerd/containerd/errdefs
+github.com/containerd/containerd/log
+github.com/containerd/containerd/platforms
+github.com/containerd/containerd/remotes
 # github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd
 github.com/containerd/continuity/pathdriver
 # github.com/containernetworking/cni v0.6.0
@@ -88,6 +97,10 @@ github.com/cpuguy83/go-md2man/md2man
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
 github.com/d2g/dhcp4client
+# github.com/deislabs/oras v0.4.0
+github.com/deislabs/oras/pkg/content
+github.com/deislabs/oras/pkg/context
+github.com/deislabs/oras/pkg/oras
 # github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572
 github.com/docker/distribution/registry/api/errcode
 github.com/docker/distribution/registry/api/v2
@@ -142,12 +155,16 @@ github.com/globalsign/mgo/bson
 github.com/globalsign/mgo/internal/json
 # github.com/godbus/dbus v4.1.0+incompatible
 github.com/godbus/dbus
-# github.com/gogo/protobuf v1.0.0
+# github.com/gogo/protobuf v1.2.0
 github.com/gogo/protobuf/gogoproto
 github.com/gogo/protobuf/proto
 github.com/gogo/protobuf/protoc-gen-gogo/descriptor
 # github.com/golang/protobuf v1.2.0
 github.com/golang/protobuf/proto
+github.com/golang/protobuf/ptypes
+github.com/golang/protobuf/ptypes/any
+github.com/golang/protobuf/ptypes/duration
+github.com/golang/protobuf/ptypes/timestamp
 # github.com/google/go-cmp v0.2.0
 github.com/google/go-cmp/cmp
 github.com/google/go-cmp/cmp/internal/diff
@@ -241,7 +258,7 @@ github.com/spf13/cobra/doc
 github.com/spf13/pflag
 # github.com/sylabs/json-resp v0.5.0
 github.com/sylabs/json-resp
-# github.com/sylabs/scs-key-client v0.2.0
+# github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/sif v1.0.3
 github.com/sylabs/sif/pkg/sif
@@ -260,7 +277,7 @@ github.com/xeipuuv/gojsonreference
 github.com/xeipuuv/gojsonschema
 # go4.org v0.0.0-20180417224846-9599cf28b011
 go4.org/errorutil
-# golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+# golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
 golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/clearsign
@@ -270,14 +287,21 @@ golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal
-# golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+# golang.org/x/net v0.0.0-20190311183353-d8887717615a
 golang.org/x/net/context/ctxhttp
 golang.org/x/net/proxy
 golang.org/x/net/context
 golang.org/x/net/internal/socks
+# golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
+golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8
+google.golang.org/genproto/googleapis/rpc/status
+# google.golang.org/grpc v1.20.0
+google.golang.org/grpc/codes
+google.golang.org/grpc/status
 # gopkg.in/cheggaaa/pb.v1 v1.0.25
 gopkg.in/cheggaaa/pb.v1
 # gopkg.in/yaml.v2 v2.2.2

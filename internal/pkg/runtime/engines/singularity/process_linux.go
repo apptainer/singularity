@@ -22,7 +22,6 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/security"
 
-	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -359,24 +358,13 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 
 	if engine.EngineConfig.GetInstance() {
 		uid := os.Getuid()
-		gid := os.Getgid()
 		name := engine.CommonConfig.ContainerID
-		privileged := true
 
 		if err := os.Chdir("/"); err != nil {
 			return fmt.Errorf("failed to change directory to /: %s", err)
 		}
 
-		if engine.EngineConfig.OciConfig.Linux != nil {
-			for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
-				if ns.Type == specs.UserNamespace {
-					privileged = false
-					break
-				}
-			}
-		}
-
-		file, err := instance.Add(name, privileged, instance.SingSubDir)
+		file, err := instance.Add(name, instance.SingSubDir)
 		if err != nil {
 			return err
 		}
@@ -395,41 +383,14 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		file.PPid = os.Getpid()
 		file.Image = engine.EngineConfig.GetImage()
 
-		if privileged {
-			var err error
-
-			mainthread.Execute(func() {
-				if err = syscall.Setresuid(0, 0, uid); err != nil {
-					err = fmt.Errorf("failed to escalate uid privileges")
-					return
-				}
-				if err = syscall.Setresgid(0, 0, gid); err != nil {
-					err = fmt.Errorf("failed to escalate gid privileges")
-					return
-				}
-				if err = file.Update(); err != nil {
-					return
-				}
-				if err = file.MountNamespaces(); err != nil {
-					return
-				}
-				if err = syscall.Setresgid(gid, gid, 0); err != nil {
-					err = fmt.Errorf("failed to escalate gid privileges")
-					return
-				}
-				if err = syscall.Setresuid(uid, uid, 0); err != nil {
-					err = fmt.Errorf("failed to escalate uid privileges")
-					return
-				}
-			})
-
-			return err
+		for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
+			if ns.Type == specs.UserNamespace {
+				file.UserNs = true
+				break
+			}
 		}
 
-		if err := file.Update(); err != nil {
-			return err
-		}
-		return file.MountNamespaces()
+		return file.Update()
 	}
 	return nil
 }

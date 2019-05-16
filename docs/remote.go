@@ -69,7 +69,8 @@ const (
 	RemoteLoginLong  string = `
 	The 'remote login' command allows you to set an authentication token for a
 	specific endpoint. This command will produce a link directing you to the token
-	service you can use to generate a valid token.`
+	service you can use to generate a valid token. If no endpoint is specified,
+	it will try the default remote.`
 	RemoteLoginExample string = `
 	$ singularity remote login SylabsCloud`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -79,7 +80,8 @@ const (
 	RemoteStatusShort string = `Check the status of the singularity services at an endpoint`
 	RemoteStatusLong  string = `
 	the 'remote status' command checks the status of the specified remote endpoint
-	and reports the availibility of services and their versions.`
+	and reports the availibility of services and their versions. If no endpoint is
+	specified, it will check the status of the default remote.`
 	RemoteStatusExample string = `
 	$ singularity remote status SylabsCloud`
 )
