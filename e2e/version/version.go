@@ -6,12 +6,10 @@
 package version
 
 import (
-	"os/exec"
-	"testing"
-
 	"github.com/blang/semver"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"testing"
 )
 
 type testingEnv struct {
@@ -23,84 +21,60 @@ type testingEnv struct {
 
 var testenv testingEnv
 var tests = []struct {
-		name    string
-		args    []string
-	}{
-		{"version command", []string{"version"}},
-		{"version flag", []string{"--version"}},
-	}
-
+	name string
+	args []string
+}{
+	{"version command", []string{"version"}},
+	{"version flag", []string{"--version"}},
+}
 
 func testSemanticVersion(t *testing.T) {
-	t.Run("test_semantic_version", test.WithoutPrivilege(func(t *testing.T) {
 
-		execVersionCmd := exec.Command(testenv.CmdPath, tests[0].args...)
-		outputVersionCmd, err := execVersionCmd.CombinedOutput()
-		if err != nil {
-			t.Log(string(outputVersionCmd))
-			t.Fatalf("Unable to run version command: %v", err)
-		}
-		versionFromVersionCmd, err := semver.Make(string(outputVersionCmd))
-		if err != nil {
-			t.Log(versionFromVersionCmd)
-			t.Fatalf("Unable to obtain semantic version after running version command: %v", err)
-		}
+	c := test.NewCmd(testenv.CmdPath)
 
-		execVersionFlag := exec.Command(testenv.CmdPath, tests[1].args...)
-		outputVersionFlag, err := execVersionFlag.CombinedOutput()
-		if err != nil {
-			t.Log(string(outputVersionFlag))
-			t.Fatalf("Unable to run version flag: %v", err)
-		}
-		versionFromVersionFlag, err := semver.Make(string(outputVersionFlag))
-
-		if err != nil {
-			t.Log(versionFromVersionFlag)
-			t.Fatalf("Unable to obtain semantic version after running version flag: %v", err)
-		}
-
-	}))
-
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := c.Run(t, tt.args...).Stdout()
+			if semanticVersion, err := semver.Make(out); err != nil {
+				t.Log(semanticVersion)
+				t.Logf("FAIL: no semantic version valid for %s command", tt.name)
+			}
+		})
+	}
 }
 
 func testEqualVersion(t *testing.T) {
 
-	t.Run("test_equal_version", test.WithoutPrivilege(func(t *testing.T) {
+	c := test.NewCmd(testenv.CmdPath)
+	var tmpVersion = ""
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			out := c.Run(t, tt.args...).Stdout()
+			if semanticVersion, err := semver.Make(out); err != nil {
+				t.Log(semanticVersion)
+				t.Logf("FAIL: no semantic version valid for %s command", tt.name)
+			}
 
-		execVersionCmd := exec.Command(testenv.CmdPath, tests[0].args...)
-		outputVersionCmd, err := execVersionCmd.CombinedOutput()
-		if err != nil {
-			t.Log(string(outputVersionCmd))
-			t.Fatalf("Unable to run version command: %v", err)
-		}
-		versionFromVersionCmd, err := semver.Make(string(outputVersionCmd))
-		if err != nil {
-			t.Log(versionFromVersionCmd)
-			t.Fatalf("Unable to obtain semantic version after running version command: %v", err)
-		}
+			tmpVersion = out
+			versionOutput, err := semver.Make(out)
+			if err != nil {
+				t.Logf("FAIL: %s", err)
+			}
+			versionTmp, err := semver.Make(tmpVersion)
+			if err != nil {
+				t.Logf("FAIL: %s", err)
+			}
 
-		execVersionFlag := exec.Command(testenv.CmdPath, tests[1].args...)
-		outputVersionFlag, err := execVersionFlag.CombinedOutput()
-		if err != nil {
-			t.Log(string(outputVersionFlag))
-			t.Fatalf("Unable to run version flag: %v", err)
-		}
-		versionFromVersionFlag, err := semver.Make(string(outputVersionFlag))
-
-		if err != nil {
-			t.Log(versionFromVersionFlag)
-			t.Fatalf("Unable to obtain semantic version after running version flag: %v", err)
-		}
-
-		if versionFromVersionCmd.Compare(versionFromVersionFlag) != 0 {
-			t.Log("FAIL: singularity version command and singularity --version give a non-matching version result")
-		} else {
-			t.Log("SUCCESS: singularity version command and singularity --version give the same matching version result")
-		}
-
-
-	}))
-
+			if tmpVersion != "" {
+				//compare versions and see if they are equal
+				if versionOutput.Compare(versionTmp) != 0 {
+					t.Log("FAIL: singularity version command and singularity --version give a non-matching version result")
+				} else {
+					t.Log("SUCCESS: singularity version command and singularity --version give the same matching version result")
+				}
+			}
+		})
+	}
 }
 
 func RunE2ETests(t *testing.T) {
