@@ -93,7 +93,9 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	return imgabs, nil
 }
 
-func handleLibrary(ctx context.Context, u, libraryURL string) (string, error) {
+func handleLibrary(u, libraryURL string) (string, error) {
+	ctx := context.TODO()
+
 	c, err := library.NewClient(&library.Config{
 		AuthToken: authToken,
 		BaseURL:   libraryURL,
@@ -186,7 +188,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Library:
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
-		image, err = handleLibrary(context.Background(), args[0], handleActionRemote(cmd))
+		image, err = handleLibrary(args[0], handleActionRemote(cmd))
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):

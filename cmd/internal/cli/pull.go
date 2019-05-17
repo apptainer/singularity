@@ -223,8 +223,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}(name)
 
-	ctx := context.Background()
-
 	switch transport {
 	case LibraryProtocol, "":
 		if !force {
@@ -255,7 +253,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		// check if image exists in library
-		libraryImage, _, err := libraryClient.GetImage(ctx, imageRef)
+		libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
 		if err != nil {
 			sylog.Fatalf("While getting image info: %v", err)
 		}
@@ -269,7 +267,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Infof("Downloading library image")
 
 			// call library download image helper
-			if err = library.DownloadImage(ctx, libraryClient, imagePath, args[i], downloadImageCallback); err != nil {
+			if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, args[i], downloadImageCallback); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
 			}
 
@@ -396,7 +394,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("%v\n", err)
 		}
 	case ociclient.IsSupported(transport):
-		downloadOciImage(ctx, name, args[i], cmd)
+		downloadOciImage(name, args[i], cmd)
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
@@ -430,7 +428,7 @@ func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
 }
 
 // TODO: This should be a external function
-func downloadOciImage(ctx context.Context, name, imageURI string, cmd *cobra.Command) {
+func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
 			sylog.Fatalf("Image file already exists - will not overwrite")
@@ -462,7 +460,7 @@ func downloadOciImage(ctx context.Context, name, imageURI string, cmd *cobra.Com
 	}
 	if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		if err := convertDockerToSIF(ctx, imageURI, cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
+		if err := convertDockerToSIF(imageURI, cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
 			sylog.Fatalf("%v", err)
 		}
 	} else {
@@ -489,7 +487,7 @@ func downloadOciImage(ctx context.Context, name, imageURI string, cmd *cobra.Com
 	}
 }
 
-func convertDockerToSIF(ctx context.Context, image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
+func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
 	b, err := build.NewBuild(
 		image,
 		build.Config{
