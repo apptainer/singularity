@@ -17,7 +17,7 @@ import (
 
 func assertAccess(dir string) {
 	if err := unix.Access(dir, unix.W_OK); err != nil {
-		sylog.Fatalf("Given directory does not exist or is not writable by calling user.")
+		sylog.Fatalf("Given directory (%s) does not exist or is not writable by calling user", dir)
 	}
 }
 
