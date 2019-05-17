@@ -131,7 +131,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 	// If image destination is local file, pull image.
 	if !strings.HasPrefix(rb.ImagePath, "library://") {
-		f, err := os.OpenFile(rb.ImagePath, os.O_CREATE|os.O_RDWR, 0777)
+		f, err := os.OpenFile(rb.ImagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0777)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("unable to open file %s for writing", rb.ImagePath))
 		}
