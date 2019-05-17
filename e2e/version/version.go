@@ -23,15 +23,28 @@ type testingEnv struct {
 
 var testenv testingEnv
 
+func hasSemanticVersion(t *testing.T){
+
+tests := []struct {
+		name    string
+		args    []string
+	}{
+		{"version command", []string{"version"}},
+		{"version flag", []string{"--version"}},
+	}
+
+
+}
+
+
 func verifyVersion(t *testing.T) {
 
 	tests := []struct {
 		name    string
 		args    []string
-		succeed bool
 	}{
-		{"version command", []string{"version"}, true},
-		{"version flag", []string{"--version"}, true},
+		{"version command", []string{"version"}},
+		{"version flag", []string{"--version"}},
 	}
 
 	t.Run("verify_version", test.WithoutPrivilege(func(t *testing.T) {
