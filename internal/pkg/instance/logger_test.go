@@ -72,22 +72,28 @@ func TestLogger(t *testing.T) {
 			search:   "",
 		},
 	}
-	for _, f := range formatTest {
-		logfile, err := ioutil.TempFile("", "log-")
-		if err != nil {
-			t.Errorf("failed to create temporary log file: %s", err)
-		}
 
-		logger, err := NewLogger(logfile.Name(), f.formatter)
+	logfile, err := ioutil.TempFile("", "log-")
+	if err != nil {
+		t.Errorf("failed to create temporary log file: %s", err)
+	}
+	filename := logfile.Name()
+	logfile.Close()
+
+	for _, f := range formatTest {
+		logger, err := NewLogger(filename, f.formatter)
 		if err != nil {
 			t.Errorf("failed to create new logger: %s", err)
 		}
-		writer := logger.NewWriter(f.stream, f.dropCRNL)
+		writer, err := logger.NewWriter(f.stream, f.dropCRNL)
+		if err != nil {
+			t.Errorf("failed to add new writer: %s", err)
+		}
 		writer.Write([]byte(f.write))
 
-		logfile.Sync()
+		logger.Close()
 
-		d, err := ioutil.ReadAll(logfile)
+		d, err := ioutil.ReadFile(filename)
 		if err != nil {
 			t.Errorf("failed to read log data: %s", err)
 		}
@@ -96,18 +102,20 @@ func TestLogger(t *testing.T) {
 			t.Errorf("failed to retrieve %s in %s", f.search, string(d))
 		}
 
-		if err := os.Remove(logfile.Name()); err != nil {
-			t.Errorf("failed while deleting log file %s: %s", logfile.Name(), err)
+		if err := os.Remove(filename); err != nil {
+			t.Errorf("failed while deleting log file %s: %s", filename, err)
 		}
 
 		// will recreate log file
-		logger.ReOpenFile()
+		if err := logger.ReOpenFile(); err != nil {
+			t.Errorf("failed to reopen log file: %s", err)
+		}
+		// we call it again to just close re-opened log file descriptor
+		logger.Close()
 
 		// delete it once again
-		if err := os.Remove(logfile.Name()); err != nil {
-			t.Errorf("failed while deleting log file %s: %s", logfile.Name(), err)
+		if err := os.Remove(filename); err != nil {
+			t.Errorf("failed while deleting log file %s: %s", filename, err)
 		}
-
-		logfile.Close()
 	}
 }
