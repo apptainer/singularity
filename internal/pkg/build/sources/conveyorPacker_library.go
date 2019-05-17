@@ -70,7 +70,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	} else if !exists {
 		sylog.Infof("Downloading library image")
 
-		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, b.Recipe.Header["from"]); err != nil {
+		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, libURI); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 

@@ -1,3 +1,8 @@
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
+
 package library
 
 import (
@@ -5,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/sylabs/scs-library-client/client"
 )
@@ -23,10 +29,34 @@ func getDownloadTag(tags []string) string {
 	return defaultTag
 }
 
+// ParseLegacyLibraryRef is intended to ensure library refs formatted as
+// "library://image:tag" are properly reformatted for passing to
+// client.Parse(). Library refs that do not match this pattern are passed
+// through verbatim for lter processing.
+func ParseLegacyLibraryRef(libraryRef string) string {
+	if !strings.HasPrefix(libraryRef, "library://") {
+		return libraryRef
+	}
+
+	parsedLibraryRef := libraryRef[10:]
+	if strings.HasPrefix(parsedLibraryRef, "/") {
+		return libraryRef
+	}
+
+	if strings.Index(parsedLibraryRef, "/") == -1 {
+		return fmt.Sprintf("library:///%s", parsedLibraryRef)
+	}
+	return libraryRef
+}
+
 // DownloadImage is a helper function to wrap library image download operation
 func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef string, callback progressCallback) error {
+
+	// handle legacy library refs (ie. "library://image:tag")
+	validLibraryRef := ParseLegacyLibraryRef(libraryRef)
+
 	// parse library ref
-	r, err := client.Parse(libraryRef)
+	r, err := client.Parse(validLibraryRef)
 	if err != nil {
 		return fmt.Errorf("error parsing library ref: %v", err)
 	}
