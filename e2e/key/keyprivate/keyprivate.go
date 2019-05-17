@@ -131,7 +131,7 @@ func TestAll(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.BackupSecretKeyring(t) }))
+	//t.Run("backingup_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.BackupSecretKeyring(t) }))
 	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
 		c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
 		if err != nil {
@@ -147,5 +147,5 @@ func TestAll(t *testing.T) {
 	t.Run("private_key", testPrivateKey)
 
 	// Recover the secret keyring
-	t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.RecoverSecretKeyring(t) }))
+	//t.Run("recovering_secret_keyring", test.WithoutPrivilege(func(t *testing.T) { keyexec.RecoverSecretKeyring(t) }))
 }

@@ -6,6 +6,8 @@
 package key
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
@@ -96,7 +98,11 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
+	os.Setenv("SINGULARITY_SYPGPDIR", filepath.Join(testenv.TestDir, "sypgp_keyring"))
+
 	t.Run("GeneralKeyCmdTest", testGeneralKeyCmd)
 	t.Run("PublicKey", keypublic.TestAll)
 	t.Run("PrivateKey", keyprivate.TestAll)
+
+	os.Unsetenv("SINGULARITY_SYPGPDIR")
 }
