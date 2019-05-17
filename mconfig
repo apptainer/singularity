@@ -813,6 +813,9 @@ if [ "$with_network" = 1 ]; then
 	cat $makeit_fragsdir/build_network.mk >> $makeit_makefile
 fi
 
+drawline $makeit_fragsdir/build_scripts.mk
+cat $makeit_fragsdir/build_scripts.mk >> $makeit_makefile
+
 drawline $makeit_fragsdir/Makefile.stub
 # here, `depends' need to happen after all other rules; at the very end
 final_all=`cat $makeit_interdir/all.mk | awk 'BEGIN { FS="all: " } { print $2 }'`
@@ -836,6 +839,8 @@ if [ "$host" = "unix" ]; then
 	fi
 	sed "s/@PACKAGE_VERSION@/$short_version/;s/@PACKAGE_RELEASE@/$release/" $sourcedir/dist/rpm/$RPMSPEC.in >$sourcedir/$RPMSPEC
 fi
+
+
 
 
 
