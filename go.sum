@@ -212,7 +212,9 @@ github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 h1:4bT0pPowCpQI
 github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50/go.mod h1:1pdIZTAHUz+HDKDVZ++5xg/duPlhKAIzw9qy42CWYp4=
 github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1w=
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
+github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9 h1:OjtuUh4ZvQpHdwDHOgi8LM0skj8imSc2Hz6966oGxKY=
 github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9/go.mod h1:Qf7xZmhvuwq9Hq4LdNLS4xabRQkPJSvEP3Bh4UFG0v4=
+github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568 h1:Bv8RD7DVhhvYw31BJbw2vhUie1jqHmRHjcypRtroG6k=
 github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568/go.mod h1:1CO+05HLIlepCW8AZHGumlYfh/6mOa6puEIt1Yv0aUM=
 github.com/sylabs/json-resp v0.5.0 h1:AWdKu6aS0WrkkltX1M0ex0lENrIcx5TISox902s2L2M=
 github.com/sylabs/json-resp v0.5.0/go.mod h1:anCzED2SGHHZQDubMuoVtwMuJZdpqQ+7iso8yDFm/nQ=
