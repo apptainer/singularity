@@ -7,7 +7,12 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
+	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/bshuster-repo/logrus-logstash-hook v0.4.1 // indirect
+	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
+	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 	github.com/containerd/containerd v1.2.6
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
@@ -31,17 +36,21 @@ require (
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/fatih/color v1.7.0 // indirect
+	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
+	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/gorilla/context v1.1.1 // indirect
+	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/mux v1.6.2 // indirect
-	github.com/gorilla/websocket v1.2.0
+	github.com/gorilla/websocket v1.4.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce // indirect
 	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56 // indirect
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0
 	github.com/kr/pty v1.1.3
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
@@ -60,6 +69,7 @@ require (
 	github.com/opencontainers/runtime-tools v0.6.0
 	github.com/opencontainers/selinux v1.0.0-rc1
 	github.com/pelletier/go-toml v1.2.0
+	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2 // indirect
 	github.com/pkg/errors v0.8.0
 	github.com/pquerna/ffjson v0.0.0-20171002144729-d49c2bc1aa13 // indirect
 	github.com/prometheus/client_golang v0.0.0-20180607123607-faf4ec335fe0 // indirect
@@ -72,7 +82,9 @@ require (
 	github.com/sirupsen/logrus v1.0.5 // indirect
 	github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 	github.com/spf13/pflag v1.0.3
+	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
 	github.com/sylabs/json-resp v0.5.0
+	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/sif v1.0.3
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
@@ -81,10 +93,15 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v0.0.0-20180618132009-1d523034197f // indirect
+	github.com/xenolf/lego v2.5.0+incompatible // indirect
+	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
+	github.com/yvasiyarov/gorelic v0.0.6 // indirect
+	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
 	golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223
+	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.20.0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.25
@@ -93,6 +110,7 @@ require (
 	gotest.tools v2.3.0+incompatible
 	k8s.io/client-go v11.0.0+incompatible // indirect
 	mvdan.cc/sh/v3 v3.0.0-alpha1
+	rsc.io/letsencrypt v0.0.1 // indirect
 )
 
 replace (

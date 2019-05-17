@@ -15,11 +15,11 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 const (
 	fileName      = "remote.yaml"
-	userDir       = ".singularity"
 	sysDir        = "singularity"
 	remoteWarning = "no authentication token, log in with 'singularity remote` commands"
 )
@@ -31,7 +31,7 @@ var (
 )
 
 // assemble values of remoteConfig for user/sys locations
-var remoteConfigUser = filepath.Join(CurrentUser.HomeDir, userDir, fileName)
+var remoteConfigUser = filepath.Join(syfs.ConfigDir(), fileName)
 var remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, fileName)
 
 // -g|--global
@@ -170,9 +170,18 @@ var RemoteListCmd = &cobra.Command{
 
 // RemoteLoginCmd singularity remote login [remoteName]
 var RemoteLoginCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, args[0], loginTokenFile); err != nil {
+		// default to empty string to signal to RemoteLogin to use default remote
+		name := ""
+		if len(args) > 0 {
+			name = args[0]
+			sylog.Infof("Authenticating with remote: %s", name)
+		} else {
+			sylog.Infof("Authenticating with default remote.")
+		}
+
+		if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, name, loginTokenFile); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -185,9 +194,18 @@ var RemoteLoginCmd = &cobra.Command{
 
 // RemoteStatusCmd singularity remote status [remoteName]
 var RemoteStatusCmd = &cobra.Command{
-	Args: cobra.ExactArgs(1),
+	Args: cobra.RangeArgs(0, 1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteStatus(remoteConfig, remoteConfigSys, args[0]); err != nil {
+		// default to empty string to signal to RemoteStatus to use default remote
+		name := ""
+		if len(args) > 0 {
+			name = args[0]
+			sylog.Infof("Checking status of remote: %s", name)
+		} else {
+			sylog.Infof("Checking status of default remote.")
+		}
+
+		if err := singularity.RemoteStatus(remoteConfig, remoteConfigSys, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

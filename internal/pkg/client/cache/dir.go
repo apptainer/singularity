@@ -9,12 +9,12 @@ package cache
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 const (
@@ -22,11 +22,12 @@ const (
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
 
-	// RootDefault specifies the directory inside of ${HOME} that images are
-	// cached in by default.
+	// cacheDir specifies the name of the directory relative to the
+	// singularity data directory where images are cached in by
+	// default.
 	// Uses "~/.singularity/cache" which will not clash with any 2.x cache
 	// directory.
-	RootDefault = ".singularity/cache"
+	cacheDir = "cache"
 )
 
 var root string
@@ -53,15 +54,10 @@ func Clean() error {
 }
 
 func updateCacheRoot() {
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-
 	if d := os.Getenv(DirEnv); d != "" {
 		root = d
 	} else {
-		root = path.Join(usr.HomeDir, RootDefault)
+		root = path.Join(syfs.ConfigDir(), cacheDir)
 	}
 
 	if err := initCacheDir(root); err != nil {
