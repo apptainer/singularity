@@ -114,7 +114,7 @@ interactive-eof() {
 # exit-interactive waits that command execution finishes.
 ######################################################################
 exit-interactive() {
-    exit_code=$1
+    exit_code="$1"
 
     if [ $# != 1 ]; then
         fatal "exit-interactive need an exit code argument"
@@ -125,7 +125,7 @@ exit-interactive() {
     if [ ! -f ${_cmdline} ]; then
         fatal "no command line provided in start-interactive"
     fi
-    expect-exit-interactive exit_code `cat ${_cmdline}`
+    expect-exit-interactive ${exit_code} `cat ${_cmdline}`
     rm -f ${_script}
     rm -f ${_cmdline}
 }

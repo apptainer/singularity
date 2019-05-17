@@ -11,6 +11,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -35,8 +36,13 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 		return fmt.Errorf("expect-search requires at least 4 arguments")
 	}
 
-	var re *regexp.Regexp
-	var d bytes.Buffer
+	var (
+		re        *regexp.Regexp
+		d         bytes.Buffer
+		errWriter io.Writer
+		outWriter io.Writer
+	)
+
 	t := GetTesting(ctx)
 
 	stream := args[0]
@@ -58,50 +64,58 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 	fullCmd := strings.Join(args[3:], " ")
 
 	cmd := exec.Cmd{
-		Path:  path,
-		Args:  args[3:],
-		Env:   ExecEnv(mc.Env),
-		Dir:   mc.Dir,
-		Stdin: mc.Stdin,
+		Path: path,
+		Args: args[3:],
+		Env:  ExecEnv(mc.Env),
+		Dir:  mc.Dir,
+	}
+	if mc.Stdin != os.Stdin {
+		cmd.Stdin = mc.Stdin
 	}
 
 	switch stream {
 	case "error":
 		if mc.Stderr != os.Stderr {
-			cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
+			errWriter = io.MultiWriter(&d, mc.Stderr)
 		} else {
-			cmd.Stderr = &d
+			errWriter = &d
 		}
 		if mc.Stdout != os.Stdout {
-			cmd.Stdout = mc.Stdout
+			outWriter = mc.Stdout
 		}
 	case "output":
 		if mc.Stdout != os.Stdout {
-			cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
+			outWriter = io.MultiWriter(&d, mc.Stdout)
 		} else {
-			cmd.Stdout = &d
+			outWriter = &d
 		}
 		if mc.Stderr != os.Stderr {
-			cmd.Stderr = mc.Stderr
+			errWriter = mc.Stderr
 		}
 	case "combined":
 		if mc.Stderr != os.Stderr {
-			cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
+			errWriter = io.MultiWriter(&d, mc.Stderr)
 		} else {
-			cmd.Stderr = &d
+			errWriter = &d
 		}
 		if mc.Stdout != os.Stdout {
-			cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
+			outWriter = io.MultiWriter(&d, mc.Stdout)
 		} else {
-			cmd.Stdout = &d
+			outWriter = &d
 		}
 	default:
 		return fmt.Errorf("stream %s not supported", stream)
 	}
 
-	exitCode := 0
+	if errWriter == nil {
+		errWriter = ioutil.Discard
+	}
+	if outWriter == nil {
+		outWriter = ioutil.Discard
+	}
 
-	if err := cmd.Run(); err != nil {
+	exitCode := 0
+	if err := RunCommand(&cmd, outWriter, errWriter); err != nil {
 		if _, ok := err.(*exec.Error); ok {
 			t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
 			return fmt.Errorf("error while executing %s: %s", fullCmd, err)
@@ -148,30 +162,39 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 		return err
 	}
 
-	var d bytes.Buffer
+	var (
+		d         bytes.Buffer
+		errWriter io.Writer
+		outWriter io.Writer
+	)
+
 	t := GetTesting(ctx)
 
 	fullCmd := strings.Join(args[2:], " ")
 
 	cmd := exec.Cmd{
-		Path:  path,
-		Args:  args[2:],
-		Env:   ExecEnv(mc.Env),
-		Dir:   mc.Dir,
-		Stdin: mc.Stdin,
-	}
-	if mc.Stderr != os.Stderr {
-		cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
-	} else {
-		cmd.Stderr = &d
-	}
-	if mc.Stdout != os.Stdout {
-		cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
-	} else {
-		cmd.Stdout = &d
+		Path: path,
+		Args: args[2:],
+		Env:  ExecEnv(mc.Env),
+		Dir:  mc.Dir,
 	}
 
-	err = cmd.Run()
+	if mc.Stdin != os.Stdin {
+		cmd.Stdin = mc.Stdin
+	}
+	if mc.Stderr != os.Stderr {
+		errWriter = io.MultiWriter(mc.Stderr, &d)
+	} else {
+		errWriter = &d
+	}
+	if mc.Stdout != os.Stdout {
+		outWriter = io.MultiWriter(mc.Stdout, &d)
+	} else {
+		outWriter = &d
+	}
+
+	err = RunCommand(&cmd, outWriter, errWriter)
+
 	switch x := err.(type) {
 	case *exec.ExitError:
 		if status, ok := x.Sys().(syscall.WaitStatus); ok {

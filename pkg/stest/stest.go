@@ -9,12 +9,14 @@ package stest
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"mvdan.cc/sh/v3/expand"
@@ -127,7 +129,7 @@ func GetTesting(ctx context.Context) *testing.T {
 	return ctx.Value(testExecContext).(*testExec).t
 }
 
-// IsVerboseTest returns if current test are run
+// IsVerboseTest returns if current test are run with -v flag.
 func IsVerboseTest(ctx context.Context) bool {
 	return ctx.Value(testExecContext).(*testExec).verboseTest
 }
@@ -155,6 +157,63 @@ func removeFunctionLine() string {
 		b.WriteByte('\b')
 	}
 	return b.String()
+}
+
+// RunCommand runs the provided command instance and will redirect
+// output/error streams to the provided output/error writers
+func RunCommand(cmd *exec.Cmd, stdout, stderr io.Writer) error {
+	var (
+		err          error
+		wg           sync.WaitGroup
+		readErrFile  *os.File
+		writeErrFile *os.File
+		readOutFile  *os.File
+		writeOutFile *os.File
+	)
+
+	if stdout == nil || stderr == nil {
+		return fmt.Errorf("nil stdout and/or stderr writers provided")
+	}
+
+	readErrFile, writeErrFile, err = os.Pipe()
+	if err != nil {
+		return fmt.Errorf("could not create stderr stream copy: %s", err)
+	}
+	cmd.Stderr = writeErrFile
+
+	readOutFile, writeOutFile, err = os.Pipe()
+	if err != nil {
+		return fmt.Errorf("could not create stdout stream copy: %s", err)
+	}
+	cmd.Stdout = writeOutFile
+
+	wg.Add(2)
+	go func() {
+		io.Copy(stderr, readErrFile)
+		wg.Done()
+	}()
+
+	go func() {
+		io.Copy(stdout, readOutFile)
+		wg.Done()
+	}()
+
+	cleanup := func() {
+		writeErrFile.Close()
+		writeOutFile.Close()
+		readErrFile.Close()
+		readOutFile.Close()
+		wg.Wait()
+	}
+
+	if err := cmd.Start(); err != nil {
+		cleanup()
+		return err
+	}
+
+	err = cmd.Wait()
+	cleanup()
+	return err
 }
 
 // RunScript executes the provided script from a test function as a main
