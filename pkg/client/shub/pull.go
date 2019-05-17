@@ -13,7 +13,6 @@ import (
 	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
-	util "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
