@@ -306,9 +306,11 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 
 					wpid, err := syscall.Wait4(-1, &status, syscall.WNOHANG, nil)
 					if wpid <= 0 || err != nil {
+						// We break the loop since an error occurred
 						break
 					}
-					if wpid == cmd.Process.Pid && err == nil {
+
+					if wpid == cmd.Process.Pid {
 						statusChan <- status
 					}
 				}
