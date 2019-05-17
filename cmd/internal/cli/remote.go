@@ -15,11 +15,11 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 const (
 	fileName      = "remote.yaml"
-	userDir       = ".singularity"
 	sysDir        = "singularity"
 	remoteWarning = "no authentication token, log in with 'singularity remote` commands"
 )
@@ -31,7 +31,7 @@ var (
 )
 
 // assemble values of remoteConfig for user/sys locations
-var remoteConfigUser = filepath.Join(CurrentUser.HomeDir, userDir, fileName)
+var remoteConfigUser = filepath.Join(syfs.ConfigDir(), fileName)
 var remoteConfigSys = filepath.Join(buildcfg.SYSCONFDIR, sysDir, fileName)
 
 // -g|--global
