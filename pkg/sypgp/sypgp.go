@@ -97,7 +97,11 @@ func GetTokenFile() string {
 
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
-	return filepath.Join(syfs.ConfigDir(), "sypgp")
+	sypgpDir := os.Getenv("SINGULARITY_SYPGPDIR")
+	if sypgpDir == "" {
+		return filepath.Join(syfs.ConfigDir(), "sypgp")
+	}
+	return sypgpDir
 }
 
 // SecretPath returns a string describing the path to the private keys store
