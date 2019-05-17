@@ -13,7 +13,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -57,29 +56,6 @@ func RemoveDefaultPublicKey(t *testing.T) {
 	if err != nil {
 		t.Log(string(out))
 		t.Fatalf("Unable to pull key: %v", err)
-	}
-}
-
-// BackupSecretKeyring will take your secret keyring file, and back it up. This gets ran before the private
-// key testing.
-func BackupSecretKeyring(t *testing.T) {
-	backupSypgp := filepath.Join(sypgp.DirPath(), "secret-keyring-backup")
-
-	err := os.Rename(sypgp.SecretPath(), backupSypgp)
-	if err != nil {
-		t.Fatalf("Unable to rename secret keyring: %v", err)
-	}
-}
-
-// RecoverSecretKeyring will recover your secret keyring, this gets ran after the private key test are complete.
-func RecoverSecretKeyring(t *testing.T) {
-	backupSypgp := filepath.Join(sypgp.DirPath(), "secret-keyring-backup")
-
-	if err := os.Remove(sypgp.SecretPath()); err != nil {
-		t.Fatalf("Unable to remove secret keyring: %v", err)
-	}
-	if err := os.Rename(backupSypgp, sypgp.SecretPath()); err != nil {
-		t.Fatalf("Unable to rename secret keyring: %v", err)
 	}
 }
 

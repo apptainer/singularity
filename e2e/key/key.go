@@ -91,7 +91,7 @@ func testGeneralKeyCmd(t *testing.T) {
 	}
 }
 
-//RunE2ETests is the main func to trigger the test suite
+// RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
 	if err != nil {
