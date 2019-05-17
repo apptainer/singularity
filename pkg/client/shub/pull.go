@@ -12,8 +12,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/sylog"
+	jsonresp "github.com/sylabs/json-resp"
 	util "github.com/sylabs/scs-library-client/client"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
@@ -79,12 +80,11 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 	sylog.Debugf("%s response received, beginning image download\n", resp.Status)
 
 	if resp.StatusCode != http.StatusOK {
-		jRes, err := util.ParseErrorBody(resp.Body)
+		err := jsonresp.ReadError(resp.Body)
 		if err != nil {
-			jRes = util.ParseErrorResponse(resp)
+			return fmt.Errorf("Download did not succeed: %s", err.Error())
 		}
-		return fmt.Errorf("Download did not succeed: %d %s\n\t%v",
-			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+		return fmt.Errorf("Download did not succeed: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	// Perms are 777 *prior* to umask
