@@ -43,7 +43,7 @@ func ParseLegacyLibraryRef(libraryRef string) string {
 		return libraryRef
 	}
 
-	if strings.Index(parsedLibraryRef, "/") == -1 {
+	if !strings.Contains(parsedLibraryRef, "/") {
 		return fmt.Sprintf("library:///%s", parsedLibraryRef)
 	}
 	return libraryRef
