@@ -92,7 +92,7 @@ func run(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("Failed to create builder: %v", err)
 		}
-		err = b.Build(b.Client, context.TODO())
+		err = b.Build(context.TODO())
 		if err != nil {
 			sylog.Fatalf("While performing build: %v", err)
 		}

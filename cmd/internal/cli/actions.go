@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
+	libraryhelper "github.com/sylabs/singularity/internal/pkg/library"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -91,7 +93,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	return imgabs, nil
 }
 
-func handleLibrary(u, libraryURL string) (string, error) {
+func handleLibrary(ctx context.Context, u, libraryURL string) (string, error) {
 	c, err := library.NewClient(&library.Config{
 		AuthToken: authToken,
 		BaseURL:   libraryURL,
@@ -100,7 +102,7 @@ func handleLibrary(u, libraryURL string) (string, error) {
 		return "", fmt.Errorf("unable to initialize client library: %v", err)
 	}
 
-	libraryImage, err := library.GetImage(c, u)
+	libraryImage, _, err := c.GetImage(ctx, u)
 	if err != nil {
 		return "", err
 	}
@@ -112,7 +114,8 @@ func handleLibrary(u, libraryURL string) (string, error) {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = library.DownloadImage(c, imagePath, u, true, nil); err != nil {
+
+		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, u); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
@@ -183,7 +186,7 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Library:
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
-		image, err = handleLibrary(args[0], handleActionRemote(cmd))
+		image, err = handleLibrary(context.Background(), args[0], handleActionRemote(cmd))
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):

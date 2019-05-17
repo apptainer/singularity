@@ -153,7 +153,21 @@ var PushCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Error initializing library client: %v", err)
 			}
-			if err := client.UploadImage(libraryClient, args[0], args[1], "No Description", &progressCallback{}); err != nil {
+
+			// split library ref into components
+			r, err := client.Parse(args[1])
+			if err != nil {
+				sylog.Fatalf("Error parsing destination: %v", err)
+			}
+
+			// open image for uploading
+			f, err := os.Open(file)
+			if err != nil {
+				sylog.Fatalf("Error opening image %s for reading: %v", file, err)
+			}
+			defer f.Close()
+
+			if err := libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, r.Tags, "No Description", &progressCallback{}); err != nil {
 				sylog.Fatalf("%v\n", err)
 			}
 

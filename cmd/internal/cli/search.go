@@ -6,9 +6,12 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/pkg/library"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
@@ -51,7 +54,7 @@ var SearchCmd = &cobra.Command{
 			sylog.Fatalf("Error initializing library client: %v", err)
 		}
 
-		if err := client.SearchLibrary(libraryClient, args[0]); err != nil {
+		if err := library.SearchLibrary(context.TODO(), libraryClient, args[0]); err != nil {
 			sylog.Fatalf("Couldn't search library: %v", err)
 		}
 

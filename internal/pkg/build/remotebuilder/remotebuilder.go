@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	buildclient "github.com/sylabs/scs-build-client/client"
 	client "github.com/sylabs/scs-library-client/client"
+	library "github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	types "github.com/sylabs/singularity/pkg/build/legacy"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -144,20 +145,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 			return errors.Wrap(err, fmt.Sprintf("error initializing library client: %v", err))
 		}
 
-		// split tag from libraryRef
-		r, err := client.Parse(bi.LibraryRef)
-		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("error parsing libraryRef: %v", err))
-		}
-		var tag string
-		if len(r.Tags) > 0 {
-			tag = r.Tags[0]
-		} else {
-			tag = "latest"
-		}
-
-		err = c.DownloadImage(ctx, f, r.Path, tag, nil)
-		if err != nil {
+		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, bi.LibraryRef); err != nil {
 			return errors.Wrap(err, "failed to pull image file")
 		}
 	}

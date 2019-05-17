@@ -6,11 +6,13 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"os"
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -54,12 +56,12 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		return err
 	}
 
-	libURI := "library://" + b.Recipe.Header["from"]
-	libraryImage, err := client.GetImage(libraryClient, libURI)
+	libraryImage, _, err := libraryClient.GetImage(context.TODO(), b.Recipe.Header["from"])
 	if err != nil {
 		return err
 	}
 
+	libURI := "library://" + b.Recipe.Header["from"]
 	imageName := uri.GetName(libURI)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
@@ -67,7 +69,8 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = client.DownloadImage(libraryClient, imagePath, libURI, true, nil); err != nil {
+
+		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, b.Recipe.Header["from"]); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 
