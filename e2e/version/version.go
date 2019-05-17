@@ -6,10 +6,11 @@
 package version
 
 import (
+	"testing"
+
 	"github.com/blang/semver"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"testing"
 )
 
 type testingEnv struct {
@@ -77,6 +78,7 @@ func testEqualVersion(t *testing.T) {
 	}
 }
 
+// RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
 	if err != nil {
