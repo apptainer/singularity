@@ -4,7 +4,7 @@
 // rights to use or distribute this software.
 
 // expand-env is a simple program that reads stdin, replaces all
-// occurences of @VAR@ by the corresponding value of VAR in the current
+// occurrences of @VAR@ by the corresponding value of VAR in the current
 // environment, and writes the result to stdout.
 package main
 
