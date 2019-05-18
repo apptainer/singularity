@@ -15,8 +15,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 
+	"github.com/docker/docker/pkg/system"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -30,8 +32,28 @@ type ZypperConveyorPacker struct {
 	b *types.Bundle
 }
 
+func machine() (string, error) {
+	var stdout bytes.Buffer
+	unamePath, err := exec.LookPath("uname")
+	if err != nil {
+		return "", err
+	}
+	cmd := exec.Command(unamePath, `-m`)
+	cmd.Stdout = &stdout
+	cmd.Stderr = os.Stderr
+	if err = cmd.Run(); err != nil {
+		return "", err
+	}
+	return stdout.String(), err
+}
+
 // Get downloads container information from the specified source
 func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
+	var suseconnectProduct, suseconnectModver string
+	var suseconnectPath string
+	var pgpfile string
+	var iosmajor int
+	var otherurl [20]string
 	cp.b = b
 
 	// check for zypper on system
@@ -46,23 +68,6 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 		return
 	}
 
-	// get mirrorURL, OSVerison, and Includes components to definition
-	mirrorurl, ok := cp.b.Recipe.Header["mirrorurl"]
-	if !ok {
-		return fmt.Errorf("invalid zypper header, no mirrorurl specified")
-	}
-
-	// look for an OS version if the mirror specifies it
-	osversion := ""
-	regex := regexp.MustCompile(`(?i)%{OSVERSION}`)
-	if regex.MatchString(mirrorurl) {
-		osversion, ok = cp.b.Recipe.Header["osversion"]
-		if !ok {
-			return fmt.Errorf("invalid zypper header, osversion referenced in mirror but no osversion specified")
-		}
-		mirrorurl = regex.ReplaceAllString(mirrorurl, osversion)
-	}
-
 	include := cp.b.Recipe.Header["include"]
 
 	// check for include environment variable and add it to requires string
@@ -73,6 +78,124 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// add aaa_base to start of include list by default
 	include = `aaa_base ` + include
+
+	// get mirrorURL, OSVerison, and Includes components to definition
+	osversion, osversionOk := cp.b.Recipe.Header["osversion"]
+	mirrorurl, mirrorurlOk := cp.b.Recipe.Header["mirrorurl"]
+	updateurl, updateurlOk := cp.b.Recipe.Header["updateurl"]
+	sleproduct, sleproductOk := cp.b.Recipe.Header["product"]
+	sleuser, sleuserOk := cp.b.Recipe.Header["user"]
+	sleregcode, sleregcodeOk := cp.b.Recipe.Header["regcode"]
+	slepgp, slepgpOk := cp.b.Recipe.Header["productpgp"]
+	sleurl, sleurlOk := cp.b.Recipe.Header["registerurl"]
+	slemodules, slemodulesOk := cp.b.Recipe.Header["modules"]
+	cnt := -1
+	if tmp, ok := cp.b.Recipe.Header["otherurl0"]; ok {
+		otherurl[0] = tmp
+		cnt = 1
+	} else {
+		if tmp, ok := cp.b.Recipe.Header["otherurl1"]; ok {
+			otherurl[0] = tmp
+			cnt = 2
+		}
+	}
+	for i := 1; cnt > 0 && i < 20; i++ {
+		numS := strconv.Itoa(cnt)
+		if tmp, ok := cp.b.Recipe.Header["otherurl"+numS]; ok {
+			otherurl[i] = tmp
+			cnt++
+		} else {
+			cnt = -1
+		}
+	}
+	regex := regexp.MustCompile(`(?i)%{OSVERSION}`)
+
+	if sleproductOk || sleuserOk || sleregcodeOk {
+		if !sleproductOk || !sleuserOk || !sleregcodeOk {
+			return fmt.Errorf("for installation of SLE 'Product', 'User' and 'Regcode' need to be set")
+		}
+		if !osversionOk {
+			return fmt.Errorf("invalid zypper header, OSVersion always required for SLE")
+		}
+		if !slepgpOk && !mirrorurlOk {
+			return fmt.Errorf("no 'ProductPGP' and no 'InstallURL' defined in bootstrap definition")
+		}
+		suseconnectPath, err = exec.LookPath("SUSEConnect")
+		if err != nil {
+			return fmt.Errorf("SUSEConnect is not in PATH: %v", err)
+		}
+
+		array := strings.SplitN(osversion, ".", -1)
+		osmajor := array[0]
+		iosmajor, err = strconv.Atoi(osmajor)
+		if err != nil {
+			return fmt.Errorf("OSVersion has wrong format %v", err)
+		}
+		osminor := ""
+		if len(array) > 1 {
+			osminor = "." + array[1]
+		}
+		if iosmajor > 12 && !mirrorurlOk {
+			return fmt.Errorf("for SLE version > 12 'MirrorURL' must be defined and point to the installer")
+		}
+		osservicepack := ""
+		tmp, err := strconv.Atoi(array[1])
+		if err != nil {
+			return fmt.Errorf("cannot convert minor version string to integer: %v", err)
+		}
+		if len(array) > 1 && tmp > 0 {
+			osservicepack = "." + array[1]
+		}
+		if mirrorurlOk {
+			mirrorurl = regex.ReplaceAllString(mirrorurl, osmajor+osservicepack)
+		}
+		sleproduct = regex.ReplaceAllString(sleproduct, osmajor+osservicepack)
+		array = strings.SplitN(sleproduct, "/", -1)
+		machine, _ := machine()
+		if len(array) == 3 {
+			machine = array[2]
+		}
+		suseconnectProduct = sleproduct
+		suseconnectModver = osmajor + osminor + "/" + machine
+		switch len(array) {
+		case 1:
+		case 2:
+			suseconnectProduct += "/" + machine
+		case 3:
+			suseconnectProduct += "/" + osversion + "/" + machine
+		default:
+			return fmt.Errorf("malformed Product setting")
+		}
+		if slepgpOk {
+			tmpfile, err := ioutil.TempFile("/tmp", "singularity-pgp")
+			if err != nil {
+				return fmt.Errorf("cannot create pgp-file: %v", err)
+			}
+			pgpfile = tmpfile.Name()
+
+			if _, err = tmpfile.WriteString(slepgp + "\n"); err != nil {
+				return fmt.Errorf("cannot write pgp-file: %v", err)
+			}
+			if err = tmpfile.Close(); err != nil {
+				return fmt.Errorf("cannot close pgp-file %v", err)
+			}
+		}
+
+		include = include + ` SUSEConnect`
+	} else {
+		if !mirrorurlOk {
+			return fmt.Errorf("invalid zypper header, no MirrorURL specified")
+		}
+		if regex.MatchString(mirrorurl) || (updateurlOk && regex.MatchString(updateurl)) {
+			if !osversionOk {
+				return fmt.Errorf("invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
+			}
+			mirrorurl = regex.ReplaceAllString(mirrorurl, osversion)
+			if updateurlOk {
+				updateurl = regex.ReplaceAllString(updateurl, osversion)
+			}
+		}
+	}
 
 	// Create the main portion of zypper config
 	err = cp.genZypperConfig()
@@ -85,27 +208,113 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("while copying pseudo devices: %v", err)
 	}
 
-	// Add mirrorURL as repo
-	cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, mirrorurl, `repo-oss`)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("while adding zypper mirror: %v", err)
+	// Add mirrorURL/installURL as repo
+	if mirrorurl != "" {
+		cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, mirrorurl, `repo`)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			return fmt.Errorf("while adding zypper mirror: %v", err)
+		}
+		// Refreshing gpg keys
+		cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			return fmt.Errorf("while refreshing gpg keys: %v", err)
+		}
+		if updateurl != "" {
+			cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, `-f`, updateurl, `update`)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err = cmd.Run(); err != nil {
+				return fmt.Errorf("while adding zypper update: %v", err)
+			}
+			cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`, `-r`, `update`)
+			if err = cmd.Run(); err != nil {
+				return fmt.Errorf("while refreshing update %v", err)
+			}
+		}
+	}
+	if pgpfile != "" {
+		rpmbase := "/usr/lib/sysimage"
+		rpmsys := "/var/lib"
+		rpmrel := "../.."
+		if iosmajor == 12 {
+			rpmbase = "/var/lib"
+			rpmsys = "/usr/lib/sysimage"
+			rpmrel = "../../.."
+		}
+		if err = os.MkdirAll(cp.b.Rootfs()+rpmbase+`/rpm`, 0755); err != nil {
+			return fmt.Errorf("cannot recreate rpm directories: %v", err)
+		}
+		if err = os.MkdirAll(cp.b.Rootfs()+rpmsys, 0755); err != nil {
+			return fmt.Errorf("cannot recreate rpm directories: %v", err)
+		}
+		if err = os.RemoveAll(cp.b.Rootfs() + rpmsys + `/rpm`); err != nil {
+			return fmt.Errorf("cannot remove rpm directory")
+		}
+		if err = os.Symlink(rpmrel+rpmbase+`/rpm`, cp.b.Rootfs()+rpmsys+`/rpm`); err != nil {
+			return fmt.Errorf("cannot create rpm symlink")
+		}
+		cmd := exec.Command("rpmkeys", `--root`, cp.b.Rootfs(), `--import`, pgpfile)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			return fmt.Errorf("while importing pgp keys: %v", err)
+		}
+		if err = os.Remove(pgpfile); err != nil {
+			return fmt.Errorf("cannot remove pgpfile")
+		}
 	}
 
-	// Refreshing gpg keys
-	cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("while refreshing gpg keys: %v", err)
+	if suseconnectPath != "" {
+		args := []string{`--root`, cp.b.Rootfs(),
+			`--product`, suseconnectProduct,
+			`--email`, sleuser,
+			`--regcode`, sleregcode}
+		if sleurlOk {
+			args = append(args, `--url`, sleurl)
+		}
+		cmd := exec.Command(suseconnectPath, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			return fmt.Errorf("while registering: %v", err)
+		}
+		if slemodulesOk {
+			array := strings.SplitN(slemodules, ",", -1)
+			for i := 0; i < len(array); i++ {
+				array[i] = strings.TrimSpace(array[i])
+				cmd := exec.Command(suseconnectPath, `--root`, cp.b.Rootfs(),
+					`--product`, array[i]+`/`+suseconnectModver)
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				if err = cmd.Run(); err != nil {
+					return fmt.Errorf("while registering: %v", err)
+				}
+			}
+		}
+	}
+	for i := 0; otherurl[i] != ""; i++ {
+		sID := strconv.Itoa(i)
+		cmd := exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `ar`, `-f`, otherurl[i], `repo-`+sID)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err = cmd.Run(); err != nil {
+			return fmt.Errorf("while adding zypper url: %s %v", otherurl[i], err)
+		}
+		cmd = exec.Command(zypperPath, `--root`, cp.b.Rootfs(), `--gpg-auto-import-keys`, `refresh`, `-r`, `repo-`+sID)
+		if err = cmd.Run(); err != nil {
+			return fmt.Errorf("while refreshing: %s %v", `repo-`+sID, err)
+		}
 	}
 
 	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.Rootfs(), zypperConf), `--root`, cp.b.Rootfs(), `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`}
 	args = append(args, strings.Fields(include)...)
 
 	// Zypper install command
-	cmd = exec.Command(zypperPath, args...)
+	cmd := exec.Command(zypperPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
