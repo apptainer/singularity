@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -250,6 +251,11 @@ func pullRun(cmd *cobra.Command, args []string) {
 			// strip "library://" from beginning of uri for GetImage() API
 			imageRef = args[i][10:]
 			imageName = uri.GetName(args[i])
+		}
+
+		re := regexp.MustCompile(`.*:.*$`)
+		if !re.Match([]byte(imageRef)) {
+			imageRef += ":" + "latest"
 		}
 
 		// check if image exists in library

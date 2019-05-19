@@ -37,23 +37,36 @@ func ParseLegacyLibraryRef(libraryRef string) string {
 	if !strings.HasPrefix(libraryRef, "library://") {
 		return libraryRef
 	}
-
 	parsedLibraryRef := libraryRef[10:]
 	if strings.HasPrefix(parsedLibraryRef, "/") {
+		// library ref is formatted correctly
 		return libraryRef
 	}
-
 	if !strings.Contains(parsedLibraryRef, "/") {
+		// prepend forward slash
 		return fmt.Sprintf("library:///%s", parsedLibraryRef)
 	}
 	return libraryRef
 }
 
+// EnsureTag adds default ":<tag>" suffix to library ref if not found
+func EnsureTag(libraryRef string) string {
+	var r string
+	if strings.HasPrefix(libraryRef, "library://") {
+		r = libraryRef[10:]
+	} else {
+		r = libraryRef
+	}
+	if strings.Contains(r, ":") {
+		return libraryRef
+	}
+	return libraryRef + ":" + defaultTag
+}
+
 // DownloadImage is a helper function to wrap library image download operation
 func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef string, callback progressCallback) error {
-
 	// handle legacy library refs (ie. "library://image:tag")
-	validLibraryRef := ParseLegacyLibraryRef(libraryRef)
+	validLibraryRef := EnsureTag(ParseLegacyLibraryRef(libraryRef))
 
 	// parse library ref
 	r, err := client.Parse(validLibraryRef)

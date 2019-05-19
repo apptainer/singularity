@@ -6,6 +6,7 @@
 package library
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/sylabs/scs-library-client/client"
@@ -41,6 +42,45 @@ func TestParseLegacyLibraryRef(t *testing.T) {
 			_, err := client.Parse(result)
 			if err != nil {
 				t.Errorf("Error parsing reformatted library ref (%s): %v", result, err)
+			}
+		})
+	}
+}
+
+func parsedTag(s string) string {
+	re := regexp.MustCompile(`(?m)(?P<key>.*):(?P<value>.*)$`)
+	template := "$value"
+
+	result := []byte{}
+
+	// For each match of the regex in the s.
+	for _, submatches := range re.FindAllStringSubmatchIndex(s, -1) {
+		// Apply the captured submatches to the template and append the output
+		// to the result.
+		result = re.ExpandString(result, template, s, submatches)
+	}
+	return string(result)
+}
+
+func TestEnsureTag(t *testing.T) {
+	tests := []struct {
+		name        string
+		libraryRef  string
+		expectedTag string
+	}{
+		{"without tag", "library://alpine", "latest"},
+		{"with tag", "library://alpine:1.0.1", "1.0.1"},
+		{"without prefix/tag", "alpine", "latest"},
+		{"without prefix", "alpine:1.0.2", "1.0.2"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := EnsureTag(tt.libraryRef)
+
+			parsedTag := parsedTag(result)
+			if tt.expectedTag != parsedTag {
+				t.Errorf("got tag %s, expected %s", parsedTag, tt.expectedTag)
 			}
 		})
 	}
