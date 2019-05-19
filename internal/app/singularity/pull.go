@@ -79,14 +79,15 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 		}
 	}
 
-	// Perms are 777 *prior* to umask
+	// Perms are 777 *prior* to umask in order to allow image to be
+	// executed with its leading shebang like a script
 	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return err
 	}
 	defer dstFile.Close()
 
-	srcFile, err := os.OpenFile(imagePath, os.O_RDONLY, 0444)
+	srcFile, err := os.Open(imagePath)
 	if err != nil {
 		return fmt.Errorf("%v", err)
 	}
@@ -105,23 +106,23 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 		if err != nil {
 			// err will be: "unable to verify container: %v", err
 			sylog.Warningf("%v", err)
-			// if theres a warning, return set error to indicate exit 1
+			// if there is a warning, return set error to indicate exit 1
 			retErr = ErrLibraryUnsigned
 		}
 		// if container is not signed, print a warning
 		if !imageSigned {
 			fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
-			resp, err := sypgp.AskQuestion("Do you with to proceed? [N/y] ")
+			resp, err := sypgp.AskQuestion("Do you want to proceed? [N/y] ")
 			if err != nil {
 				return fmt.Errorf("unable to parse input: %v", err)
 			}
+			// user aborted
 			if resp == "" || resp != "y" && resp != "Y" {
 				fmt.Fprintf(os.Stderr, "Aborting.\n")
 				err := os.Remove(name)
 				if err != nil {
 					return fmt.Errorf("unable to delete the container: %v", err)
 				}
-				// set error to exit with status 10 after replying no
 				return ErrLibraryPullAbort
 			}
 		}
@@ -194,7 +195,7 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 func OciPull(name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, force, noHTTPS bool) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
-			return fmt.Errorf("image file already exists - will not overwrite")
+			return fmt.Errorf("image file: %q already exists - will not overwrite", name)
 		}
 	}
 

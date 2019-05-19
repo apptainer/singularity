@@ -77,7 +77,7 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 	return nil
 }
 
-// OrasPush upload the image specified by file and push it to the provided oci reference,
+// OrasPush uploads the image specified by file and pushes it to the provided oci reference,
 // it will use credentials if supplied
 func OrasPush(file, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	ref = strings.TrimPrefix(ref, "//")

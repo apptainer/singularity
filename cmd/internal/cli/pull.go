@@ -219,7 +219,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case ShubProtocol:
 		err := shub.DownloadImage(name, args[i], force, noHTTPS)
 		if err != nil {
-			sylog.Fatalf("%v\n", err)
+			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
 	case OrasProtocol:
 		ociAuth, err := makeDockerCredentials(cmd)
@@ -234,7 +234,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
 		if err != nil {
-			sylog.Fatalf("%v\n", err)
+			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
 	case ociclient.IsSupported(transport):
 		ociAuth, err := makeDockerCredentials(cmd)
