@@ -32,7 +32,7 @@ func getDownloadTag(tags []string) string {
 // ParseLegacyLibraryRef is intended to ensure library refs formatted as
 // "library://image:tag" are properly reformatted for passing to
 // client.Parse(). Library refs that do not match this pattern are passed
-// through verbatim for lter processing.
+// through verbatim for later processing.
 func ParseLegacyLibraryRef(libraryRef string) string {
 	if !strings.HasPrefix(libraryRef, "library://") {
 		return libraryRef
