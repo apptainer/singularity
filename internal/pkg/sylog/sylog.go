@@ -68,11 +68,11 @@ var loggerLevel messageLevel
 func init() {
 	_level, ok := os.LookupEnv("SINGULARITY_MESSAGELEVEL")
 	if !ok {
-		loggerLevel = debug
+		loggerLevel = info
 	} else {
 		_levelint, err := strconv.Atoi(_level)
 		if err != nil {
-			loggerLevel = debug
+			loggerLevel = info
 		} else {
 			loggerLevel = messageLevel(_levelint)
 		}

@@ -193,7 +193,8 @@ Enterprise Performance Computing (EPC)`
 	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
-  This will list your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).`
+  This will list your local cache (stored at $HOME/.singularity/cache if
+  SINGULARITY_CACHEDIR is not set).`
 	CacheListExample string = `
   All group commands have their own help output:
 
@@ -208,7 +209,8 @@ Enterprise Performance Computing (EPC)`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
   Manage OpenPGP keys both locally via a Singularity keychain
-  and remotely via a Sylabs Cloud Keystore.`
+  and remotely via a Sylabs Cloud Keystore. The default keyring
+  is '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set.`
 	KeyExample string = `
   All group commands have their own help output:
 
