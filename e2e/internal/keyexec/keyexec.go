@@ -231,6 +231,8 @@ func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin stri
 	return cmd, out, err
 }
 
+// QuickTestKey will export a private, and public key (0), and then import them. This is used after
+// generating a newpair.
 func QuickTestKey(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 
@@ -243,9 +245,27 @@ func QuickTestKey(t *testing.T) {
 		succeed bool
 	}{
 		{
-			name:    "quick test",
+			name:    "quick test public",
 			private: false,
 			armor:   false,
+			succeed: true,
+		},
+		{
+			name:    "quick test public  armor",
+			private: false,
+			armor:   true,
+			succeed: true,
+		},
+		{
+			name:    "quick test private",
+			private: true,
+			armor:   false,
+			succeed: true,
+		},
+		{
+			name:    "quick test private armor",
+			private: true,
+			armor:   true,
 			succeed: true,
 		},
 	}
@@ -262,7 +282,6 @@ func QuickTestKey(t *testing.T) {
 				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"), "0\n", tt.armor)
 			} else {
 				c, b, err = RunKeyCmd(t, testenv.CmdPath, []string{"export"}, filepath.Join(tmpTestDir, "export_key.asc"), "0\n")
-				//c, b, err = RunKeyCmd(t, filepath.Join(tmpTestDir, "export_key.asc"), "0\n", tt.armor)
 			}
 			if tt.succeed {
 				if err != nil {
@@ -271,9 +290,9 @@ func QuickTestKey(t *testing.T) {
 					t.Fatalf("unepexted failure: %v", err)
 				}
 				if tt.private {
-					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemovePublicKeyring(t) }))
-				} else {
 					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemoveSecretKeyring(t) }))
+				} else {
+					t.Run("remove_public_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemovePublicKeyring(t) }))
 				}
 				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
 					c, b, err := ImportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"))
@@ -285,7 +304,7 @@ func QuickTestKey(t *testing.T) {
 			} else {
 				if err == nil {
 					t.Log(string(b))
-					t.Fatalf("unexpected succees running: %v", err)
+					t.Fatalf("unexpected succees running: %v", c)
 				}
 			}
 		}))
