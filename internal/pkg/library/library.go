@@ -19,54 +19,25 @@ const defaultTag = "latest"
 
 type progressCallback func(int64, io.Reader, io.Writer) error
 
-// getDownloadTag parses tag(s) from Ref struct
-func getDownloadTag(tags []string) string {
-	if len(tags) > 0 {
-		return tags[0]
-	}
-
-	// if library ref does not contain a tag, use "latest" as default
-	return defaultTag
-}
-
-// ParseLegacyLibraryRef is intended to ensure library refs formatted as
-// "library://image:tag" are properly reformatted for passing to
-// client.Parse(). Library refs that do not match this pattern are passed
-// through verbatim for later processing.
-func ParseLegacyLibraryRef(libraryRef string) string {
-	if !strings.HasPrefix(libraryRef, "library://") {
-		return libraryRef
-	}
-	parsedLibraryRef := libraryRef[10:]
-	if strings.HasPrefix(parsedLibraryRef, "/") {
-		// library ref is formatted correctly
-		return libraryRef
-	}
-	if !strings.Contains(parsedLibraryRef, "/") {
-		// prepend forward slash
-		return fmt.Sprintf("library:///%s", parsedLibraryRef)
-	}
-	return libraryRef
-}
-
-// EnsureTag adds default ":<tag>" suffix to library ref if not found
-func EnsureTag(libraryRef string) string {
-	var r string
+// NormalizeLibraryRef strips off leading "library://" prefix, if any, and
+// appends the default tag (latest) if none specified.
+func NormalizeLibraryRef(libraryRef string) string {
+	var ir string
 	if strings.HasPrefix(libraryRef, "library://") {
-		r = libraryRef[10:]
+		ir = libraryRef[10:]
 	} else {
-		r = libraryRef
+		ir = libraryRef
 	}
-	if strings.Contains(r, ":") {
-		return libraryRef
+	if !strings.Contains(ir, ":") {
+		return ir + ":" + defaultTag
 	}
-	return libraryRef + ":" + defaultTag
+	return ir
 }
 
 // DownloadImage is a helper function to wrap library image download operation
 func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef string, callback progressCallback) error {
-	// handle legacy library refs (ie. "library://image:tag")
-	validLibraryRef := EnsureTag(ParseLegacyLibraryRef(libraryRef))
+	// reassemble "stripped" library ref for scs-library-client
+	validLibraryRef := "library:///" + libraryRef
 
 	// parse library ref
 	r, err := client.Parse(validLibraryRef)
@@ -81,8 +52,13 @@ func DownloadImage(ctx context.Context, c *client.Client, imagePath, libraryRef 
 	}
 	defer f.Close()
 
+	var tag string
+	if len(r.Tags) > 0 {
+		tag = r.Tags[0]
+	}
+
 	// call library client to download image
-	err = c.DownloadImage(ctx, f, r.Host+r.Path, getDownloadTag(r.Tags), callback)
+	err = c.DownloadImage(ctx, f, r.Path, tag, callback)
 	if err != nil {
 		// delete incomplete image file in the event of failure
 		os.Remove(imagePath)

@@ -56,13 +56,14 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		return err
 	}
 
-	libraryImage, _, err := libraryClient.GetImage(context.TODO(), b.Recipe.Header["from"])
+	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
+
+	libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
 	if err != nil {
 		return err
 	}
 
-	libURI := "library://" + b.Recipe.Header["from"]
-	imageName := uri.GetName(libURI)
+	imageName := uri.GetName("library://" + imageRef)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
 	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
@@ -70,7 +71,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	} else if !exists {
 		sylog.Infof("Downloading library image")
 
-		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, libURI); err != nil {
+		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 

@@ -6,32 +6,27 @@
 package library
 
 import (
-	"regexp"
 	"testing"
 
 	"github.com/sylabs/scs-library-client/client"
 )
 
-// TestParseLegacyLibraryRef ensures only one legacy formatted library ref is
-// reformatted for further parsing
-func TestParseLegacyLibraryRef(t *testing.T) {
+func TestNormalizeLibraryRef(t *testing.T) {
 	tests := []struct {
-		name       string
-		libraryRef string
-		expected   string
+		name        string
+		libraryRef  string
+		expected    string
+		expectedTag string
 	}{
-		{"legacy", "library://alpine:latest", "library:///alpine:latest"},
-		{"passthrough #1", "library:///alpine:latest", "library:///alpine:latest"},
-		{"passthrough #2", "library:path:tags", "library:path:tags"},
-		{"passthrough #3", "library:/path:tags", "library:/path:tags"},
-		{"passthrough #4", "library:///path:tags", "library:///path:tags"},
-		{"passthrough #5", "library://host/path:tags", "library://host/path:tags"},
-		{"passthrough #6", "library://host:port/path:tags", "library://host:port/path:tags"},
+		{"with tag", "library://alpine:latest", "alpine:latest", "latest"},
+		{"fully qualified with tag", "library://user/collection/container:2.0.0", "user/collection/container:2.0.0", "2.0.0"},
+		{"without tag", "library://alpine", "alpine:latest", "latest"},
+		{"with tag variation", "library://alpine:1.0.1", "alpine:1.0.1", "1.0.1"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ParseLegacyLibraryRef(tt.libraryRef)
+			result := NormalizeLibraryRef(tt.libraryRef)
 
 			if result != tt.expected {
 				t.Errorf("expected %s, got %s", tt.expected, result)
@@ -39,48 +34,13 @@ func TestParseLegacyLibraryRef(t *testing.T) {
 
 			// pass (potentially) reformatted library ref to scs-library-client
 			// parser for further validation
-			_, err := client.Parse(result)
+			r, err := client.Parse("library:///" + result)
 			if err != nil {
 				t.Errorf("Error parsing reformatted library ref (%s): %v", result, err)
 			}
-		})
-	}
-}
 
-func parsedTag(s string) string {
-	re := regexp.MustCompile(`(?m)(?P<key>.*):(?P<value>.*)$`)
-	template := "$value"
-
-	result := []byte{}
-
-	// For each match of the regex in the s.
-	for _, submatches := range re.FindAllStringSubmatchIndex(s, -1) {
-		// Apply the captured submatches to the template and append the output
-		// to the result.
-		result = re.ExpandString(result, template, s, submatches)
-	}
-	return string(result)
-}
-
-func TestEnsureTag(t *testing.T) {
-	tests := []struct {
-		name        string
-		libraryRef  string
-		expectedTag string
-	}{
-		{"without tag", "library://alpine", "latest"},
-		{"with tag", "library://alpine:1.0.1", "1.0.1"},
-		{"without prefix/tag", "alpine", "latest"},
-		{"without prefix", "alpine:1.0.2", "1.0.2"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := EnsureTag(tt.libraryRef)
-
-			parsedTag := parsedTag(result)
-			if tt.expectedTag != parsedTag {
-				t.Errorf("got tag %s, expected %s", parsedTag, tt.expectedTag)
+			if r.Tags[0] != tt.expectedTag {
+				t.Errorf("Expected tag %s, got %s", tt.expectedTag, r.Tags[0])
 			}
 		})
 	}

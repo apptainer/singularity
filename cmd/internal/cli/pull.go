@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
 
@@ -242,21 +241,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Error initializing library client: %v", err)
 		}
 
-		var imageRef string
-		var imageName string
-		if transport == "" {
-			imageRef = args[i]
-			imageName = uri.GetName("library://" + args[i])
-		} else {
-			// strip "library://" from beginning of uri for GetImage() API
-			imageRef = args[i][10:]
-			imageName = uri.GetName(args[i])
-		}
+		// strip leading "library://" and append default tag, as necessary
+		imageRef := library.NormalizeLibraryRef(args[i])
 
-		re := regexp.MustCompile(`.*:.*$`)
-		if !re.Match([]byte(imageRef)) {
-			imageRef += ":" + "latest"
-		}
+		imageName := uri.GetName("library://" + imageRef)
 
 		// check if image exists in library
 		libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
@@ -273,7 +261,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Infof("Downloading library image")
 
 			// call library download image helper
-			if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, args[i], downloadImageCallback); err != nil {
+			if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
 			}
 

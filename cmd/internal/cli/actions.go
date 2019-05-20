@@ -104,12 +104,14 @@ func handleLibrary(u, libraryURL string) (string, error) {
 		return "", fmt.Errorf("unable to initialize client library: %v", err)
 	}
 
-	libraryImage, _, err := c.GetImage(ctx, u)
+	imageRef := library.NormalizeLibraryRef(u)
+
+	libraryImage, _, err := c.GetImage(ctx, imageRef)
 	if err != nil {
 		return "", err
 	}
 
-	imageName := uri.GetName(u)
+	imageName := uri.GetName("library://" + imageRef)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
 	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
@@ -117,7 +119,7 @@ func handleLibrary(u, libraryURL string) (string, error) {
 	} else if !exists {
 		sylog.Infof("Downloading library image")
 
-		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, u); err != nil {
+		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
