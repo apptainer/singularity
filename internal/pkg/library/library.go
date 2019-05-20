@@ -22,12 +22,7 @@ type progressCallback func(int64, io.Reader, io.Writer) error
 // NormalizeLibraryRef strips off leading "library://" prefix, if any, and
 // appends the default tag (latest) if none specified.
 func NormalizeLibraryRef(libraryRef string) string {
-	var ir string
-	if strings.HasPrefix(libraryRef, "library://") {
-		ir = libraryRef[10:]
-	} else {
-		ir = libraryRef
-	}
+	ir := strings.TrimPrefix(libraryRef, "library://")
 	if !strings.Contains(ir, ":") {
 		return ir + ":" + defaultTag
 	}
