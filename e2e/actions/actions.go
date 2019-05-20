@@ -6,17 +6,15 @@
 package actions
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/exec"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -186,21 +184,7 @@ func STDINPipe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd := exec.Command(tt.binName, tt.argv...)
-			if err := cmd.Start(); err != nil {
-				t.Fatalf("cmd.Start: %v", err)
-			}
-
-			if err := cmd.Wait(); err != nil {
-				exiterr, _ := err.(*exec.ExitError)
-				status, _ := exiterr.Sys().(syscall.WaitStatus)
-				if status.ExitStatus() != tt.exit {
-					// The program has exited with an unexpected exit code
-					{
-						t.Fatalf("unexpected exit code '%v': for cmd %v", status.ExitStatus(), strings.Join(tt.argv, " "))
-					}
-				}
-			}
+			exec.Command(tt.binName, tt.argv...).ExecExpectCode(t, tt.exit)
 		}))
 	}
 }
@@ -301,28 +285,13 @@ func PersistentOverlay(t *testing.T) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
+	exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root").ExecExpectCode(t, 0)
 	defer os.RemoveAll(squashfsImage)
 
 	//  Create the overlay ext3 fs
-	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
-	cmd = exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img")
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
-	}
+	exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none").ExecExpectCode(t, 0)
+
+	exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img").ExecExpectCode(t, 0)
 	defer os.Remove("ext3_fs.img")
 
 	// create a file dir
