@@ -60,7 +60,7 @@ func testPublicKey(t *testing.T) {
 		},
 		{
 			name:    "search key no key",
-			args:    []string{"search", "@doesnotexist.notakey"},
+			args:    []string{"search", "0xRANDOME123"},
 			succeed: false,
 		},
 	}
@@ -75,7 +75,6 @@ func testPublicKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
 			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "", "")
 			if tt.succeed {
 				if err != nil {

@@ -136,7 +136,7 @@ func testPrivateKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			os.RemoveAll(filepath.Join(defaultKeyFile))
+			os.RemoveAll(defaultKeyFile)
 			c, b, err := keyexec.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 
 			switch {

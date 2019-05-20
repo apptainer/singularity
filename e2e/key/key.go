@@ -30,50 +30,43 @@ func testGeneralKeyCmd(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
-		file    string
 		succeed bool
 	}{
 		{
 			name:    "key list",
 			args:    []string{"list"},
-			file:    "",
 			succeed: true,
 		},
 		{
 			name:    "key list secret",
 			args:    []string{"list", "-s"},
-			file:    "",
 			succeed: true,
 		},
 		{
 			name:    "key list bad flag",
 			args:    []string{"list", "--not-a-flag"},
-			file:    "",
 			succeed: false,
 		},
 		{
 			name:    "key bad cmd",
 			args:    []string{"notacmd"},
-			file:    "",
 			succeed: false,
 		},
 		{
 			name:    "key bad cmd flag",
 			args:    []string{"notacmd", "--bad"},
-			file:    "",
 			succeed: false,
 		},
 		{
 			name:    "key flag",
 			args:    []string{"--notaflag"},
-			file:    "",
 			succeed: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, "")
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "", "")
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
