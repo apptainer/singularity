@@ -30,6 +30,72 @@ func testPublicKey(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    []string
+		succeed bool
+	}{
+		{
+			name:    "push test key",
+			args:    []string{"push", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"},
+			succeed: true,
+		},
+		{
+			name:    "push test key fail",
+			args:    []string{"push", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3Z"},
+			succeed: false,
+		},
+		{
+			name:    "search key",
+			args:    []string{"search", "e2e test key"},
+			succeed: true,
+		},
+		{
+			name:    "search key",
+			args:    []string{"search", "e2e"},
+			succeed: true,
+		},
+		{
+			name:    "search key id",
+			args:    []string{"search", "0x1E109AF3"},
+			succeed: true,
+		},
+		{
+			name:    "search key no key",
+			args:    []string{"search", "@doesnotexist.notakey"},
+			succeed: false,
+		},
+	}
+
+	test.WithoutPrivilege(func(t *testing.T) {
+		b, err := keyexec.ImportKey(t, defaultKeyFile)
+		if err != nil {
+			t.Log(string(b))
+			t.Fatalf("Unable to import key: %v", err)
+		}
+	})
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "", "")
+			if tt.succeed {
+				if err != nil {
+					t.Log("Command that failed: ", cmd)
+					t.Log(string(out))
+					t.Fatalf("Unexpected failure: %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Log(string(out))
+					t.Fatalf("Unexpected success when running: %s", cmd)
+				}
+			}
+		}))
+	}
+}
+
+func testPublicKeyImportExport(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
 		stdin   string
 		file    string
 		corrupt bool
@@ -127,5 +193,6 @@ func TestAll(t *testing.T) {
 	t.Run("pull_default_key", test.WithoutPrivilege(func(t *testing.T) { keyexec.PullDefaultPublicKey(t) }))
 
 	// Run the tests
-	t.Run("pubic_key", testPublicKey)
+	t.Run("push_search", testPublicKey)
+	t.Run("pubic_key", testPublicKeyImportExport)
 }
