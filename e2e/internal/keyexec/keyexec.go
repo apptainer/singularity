@@ -13,11 +13,13 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	expect "github.com/Netflix/go-expect"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
@@ -59,11 +61,25 @@ func RemoveDefaultPublicKey(t *testing.T) {
 	}
 }
 
+func RemovePublicKeyring(t *testing.T) {
+	err := os.Remove(sypgp.PublicPath())
+	if err != nil {
+		t.Fatalf("Unable to remove public keyring: %v", err)
+	}
+}
+
 // RemoveSecretKeyring will delete your secret keyring.
 func RemoveSecretKeyring(t *testing.T) {
 	err := os.Remove(sypgp.SecretPath())
 	if err != nil {
 		t.Fatalf("Unable to remove secret keyring: %v", err)
+	}
+}
+
+func RemoveKeyring(t *testing.T) {
+	err := os.RemoveAll(sypgp.DirPath())
+	if err != nil {
+		t.Fatalf("Unable to remove keyring directory: %v", err)
 	}
 }
 
@@ -213,4 +229,114 @@ func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin stri
 	out, err := execKey.CombinedOutput()
 
 	return cmd, out, err
+}
+
+func QuickTestKey(t *testing.T) {
+	e2e.LoadEnv(t, &testenv)
+
+	tmpTestDir := filepath.Join(testenv.TestDir, "quick_test_key_verify")
+
+	tests := []struct {
+		name    string
+		private bool
+		armor   bool
+		succeed bool
+	}{
+		{
+			name:    "quick test",
+			private: false,
+			armor:   false,
+			succeed: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			os.RemoveAll(tmpTestDir)
+			os.MkdirAll(tmpTestDir, os.ModePerm)
+			var c string
+			var b []byte
+			var err error
+
+			if tt.private {
+				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"), "0\n", tt.armor)
+			} else {
+				c, b, err = RunKeyCmd(t, testenv.CmdPath, []string{"export"}, filepath.Join(tmpTestDir, "export_key.asc"), "0\n")
+				//c, b, err = RunKeyCmd(t, filepath.Join(tmpTestDir, "export_key.asc"), "0\n", tt.armor)
+			}
+			if tt.succeed {
+				if err != nil {
+					t.Log("Command that failed: ", c)
+					t.Log(string(b))
+					t.Fatalf("unepexted failure: %v", err)
+				}
+				if tt.private {
+					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemovePublicKeyring(t) }))
+				} else {
+					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemoveSecretKeyring(t) }))
+				}
+				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
+					c, b, err := ImportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"))
+					if err != nil {
+						t.Log("command that failed: ", c, string(b))
+						t.Fatalf("Unable to import key: %v", err)
+					}
+				}))
+			} else {
+				if err == nil {
+					t.Log(string(b))
+					t.Fatalf("unexpected succees running: %v", err)
+				}
+			}
+		}))
+	}
+}
+
+func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (string, []byte, error) {
+	e2e.LoadEnv(t, &testenv)
+
+	c, err := expect.NewConsole(expect.WithStdin(os.Stdin))
+	if err != nil {
+		t.Fatalf("Unable to open new console: %v", err)
+	}
+	defer c.Close()
+
+	exportCmd := []string{"key", "newpair"}
+	outErr := bytes.NewBuffer(nil)
+
+	cmd := exec.Command(testenv.CmdPath, exportCmd...)
+
+	cmd.Stdin = c.Tty()
+	cmd.Stderr = outErr
+	cmd.Stdout = outErr
+
+	go func() {
+		c.ExpectEOF()
+	}()
+
+	err = cmd.Start()
+	if err != nil {
+		t.Fatalf("unable to run command: %v", err)
+	}
+
+	c.Send(user)
+	c.Send(email)
+	c.Send(note)
+	c.Send(psk1)
+	if psk2 != "" {
+		c.Send(psk2)
+	} else {
+		c.Send(psk1)
+	}
+	if push {
+		c.Send("y\n")
+	} else {
+		c.Send("n\n")
+	}
+
+	err = cmd.Wait()
+	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
+
+	return cm, outErr.Bytes(), err
+
 }
