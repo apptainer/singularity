@@ -37,7 +37,6 @@ require (
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
-	github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
 	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/gorilla/context v1.1.1 // indirect
@@ -85,6 +84,7 @@ require (
 	github.com/sylabs/json-resp v0.5.0
 	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
+	github.com/sylabs/scs-library-client v0.1.0
 	github.com/sylabs/sif v1.0.3
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect

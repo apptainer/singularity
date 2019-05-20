@@ -6,20 +6,13 @@
 package client
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"regexp"
 	"strings"
-	"time"
-
-	"github.com/globalsign/mgo/bson"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 // IsLibraryPullRef returns true if the provided string is a valid library
@@ -42,7 +35,6 @@ func IsLibraryPushRef(libraryRef string) bool {
 func IsRefPart(refPart string) bool {
 	match, err := regexp.MatchString("^[a-z0-9]+(?:[._-][a-z0-9]+)*$", refPart)
 	if err != nil {
-		sylog.Debugf("Error in regex matching: %v", err)
 		return false
 	}
 	return match
@@ -56,13 +48,12 @@ func IsImageHash(refPart string) bool {
 	//  which is the unique SIF UUID
 	match, err := regexp.MatchString("^((sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))$", refPart)
 	if err != nil {
-		sylog.Debugf("Error in regex matching: %v", err)
 		return false
 	}
 	return match
 }
 
-func parseLibraryRef(libraryRef string) (entity string, collection string, container string, tags []string) {
+func ParseLibraryPath(libraryRef string) (entity string, collection string, container string, tags []string) {
 
 	libraryRef = strings.TrimPrefix(libraryRef, "library://")
 
@@ -83,9 +74,6 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 		container = refParts[0]
 	}
 
-	// Default tag is latest
-	tags = []string{"latest"}
-
 	if strings.Contains(container, ":") {
 		imageParts := strings.Split(container, ":")
 		container = imageParts[0]
@@ -95,31 +83,11 @@ func parseLibraryRef(libraryRef string) (entity string, collection string, conta
 		}
 	}
 
-	return
-}
-
-// ParseErrorBody - Parse an API format error out of the body
-func ParseErrorBody(r io.Reader) (jRes JSONResponse, err error) {
-	err = json.NewDecoder(r).Decode(&jRes)
-	if err != nil {
-		return jRes, fmt.Errorf("The server returned a response that could not be decoded: %v", err)
-	}
-	return jRes, nil
-}
-
-// ParseErrorResponse - Create a JSONResponse out of a raw HTTP response
-func ParseErrorResponse(res *http.Response) (jRes JSONResponse) {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(res.Body)
-	s := buf.String()
-	jRes.Error.Code = res.StatusCode
-	jRes.Error.Status = http.StatusText(res.StatusCode)
-	jRes.Error.Message = s
-	return jRes
+	return entity, collection, container, tags
 }
 
 // IDInSlice returns true if ID is present in the slice
-func IDInSlice(a bson.ObjectId, list []bson.ObjectId) bool {
+func IDInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
 			return true
@@ -129,9 +97,9 @@ func IDInSlice(a bson.ObjectId, list []bson.ObjectId) bool {
 }
 
 // SliceWithoutID returns slice with specified ID removed
-func SliceWithoutID(list []bson.ObjectId, a bson.ObjectId) []bson.ObjectId {
+func SliceWithoutID(list []string, a string) []string {
 
-	var newList []bson.ObjectId
+	var newList []string
 
 	for _, b := range list {
 		if b != a {
@@ -157,32 +125,30 @@ func PrettyPrint(v interface{}) {
 	println(string(b))
 }
 
-// BsonUTCNow returns a time.Time in UTC, with the precision supported by BSON
-func BsonUTCNow() time.Time {
-	return bson.Now().UTC()
-}
-
 // ImageHash returns the appropriate hash for a provided image file
 //   e.g. sif.<uuid> or sha256.<sha256>
 func ImageHash(filePath string) (result string, err error) {
 	// Currently using sha256 always
 	// TODO - use sif uuid for sif files!
-	return sha256sum(filePath)
-}
-
-// SHA256Sum computes the sha256sum of a file
-func sha256sum(filePath string) (result string, err error) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
 
+	result, _, err = sha256sum(file)
+
+	return result, err
+}
+
+// sha256sum computes the sha256sum of the specified reader; caller is
+// responsible for resetting file pointer
+func sha256sum(r io.Reader) (result string, s int64, err error) {
 	hash := sha256.New()
-	_, err = io.Copy(hash, file)
+	s, err = io.Copy(hash, r)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
-	return "sha256." + hex.EncodeToString(hash.Sum(nil)), nil
+	return "sha256." + hex.EncodeToString(hash.Sum(nil)), s, nil
 }

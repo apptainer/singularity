@@ -24,20 +24,22 @@ import (
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/internal/pkg/library"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	net "github.com/sylabs/singularity/pkg/client/net"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 const (
@@ -231,25 +233,35 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 		handlePullFlags(cmd)
 
-		libraryImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
+		libraryClient, err := client.NewClient(&client.Config{
+			BaseURL:   PullLibraryURI,
+			AuthToken: authToken,
+		})
+		if err != nil {
+			sylog.Fatalf("Error initializing library client: %v", err)
+		}
+
+		// strip leading "library://" and append default tag, as necessary
+		imageRef := library.NormalizeLibraryRef(args[i])
+
+		imageName := uri.GetName("library://" + imageRef)
+
+		// check if image exists in library
+		libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
 		if err != nil {
 			sylog.Fatalf("While getting image info: %v", err)
 		}
 
-		var imageName string
-		if transport == "" {
-			imageName = uri.GetName("library://" + args[i])
-		} else {
-			imageName = uri.GetName(args[i])
-		}
 		imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 		exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName)
 		if err != nil {
-			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
+			sylog.Fatalf("unable to check if %s exists: %v", imagePath, err)
 		}
 		if !exists {
 			sylog.Infof("Downloading library image")
-			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
+
+			// call library download image helper
+			if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
 				sylog.Fatalf("unable to Download Image: %v", err)
 			}
 
@@ -384,6 +396,29 @@ func pullRun(cmd *cobra.Command, args []string) {
 	// a unknown signer, i.e, if you dont have the key in your
 	// local keyring. theres proboly a better way to do this...
 	os.Exit(exitStat)
+}
+
+// downloadImageCallback is called to display progress bar while downloading
+// image from library
+func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
+	bar := pb.New64(totalSize).SetUnits(pb.U_BYTES)
+	bar.ShowTimeLeft = true
+	bar.ShowSpeed = true
+
+	// create proxy reader
+	bodyProgress := bar.NewProxyReader(r)
+
+	bar.Start()
+
+	// Write the body to file
+	_, err := io.Copy(w, bodyProgress)
+	if err != nil {
+		return err
+	}
+
+	bar.Finish()
+
+	return nil
 }
 
 // TODO: This should be a external function
