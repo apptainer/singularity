@@ -104,7 +104,7 @@ func handleLibrary(u, libraryURL string) (string, error) {
 		return "", fmt.Errorf("unable to initialize client library: %v", err)
 	}
 
-	imageRef := library.NormalizeLibraryRef(u)
+	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
 	libraryImage, _, err := c.GetImage(ctx, imageRef)
 	if err != nil {
