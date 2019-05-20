@@ -21,15 +21,17 @@ import (
 	orasctx "github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 var (
@@ -48,32 +50,40 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 		}
 	}
 
-	libraryImage, err := client.GetImage(libraryURI, authToken, fullURI)
+	libraryClient, err := client.NewClient(&client.Config{
+		BaseURL:   libraryURI,
+		AuthToken: authToken,
+	})
+	if err != nil {
+		return fmt.Errorf("error initializing library client: %v", err)
+	}
+
+	// strip leading "library://" and append default tag, as necessary
+	imageRef := library.NormalizeLibraryRef(fullURI)
+
+	imageName := uri.GetName("library://" + imageRef)
+
+	// check if image exists in library
+	libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
 	}
 
-	// required in order to properly allow for library pulls without transport in uri
-	// otherwise uri becomes malformed see https://github.com/sylabs/singularity/pull/2683
-	var imageName string
-	if transport == "" {
-		imageName = uri.GetName("library://" + fullURI)
-	} else {
-		imageName = uri.GetName(fullURI)
-	}
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 	exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName)
 	if err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 	}
 	if !exists {
 		sylog.Infof("Downloading library image")
-		if err = client.DownloadImage(imagePath, fullURI, libraryURI, true, authToken); err != nil {
+
+		// call library download image helper
+		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 
 		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("error getting imagehash: %v", err)
+			return fmt.Errorf("error getting ImageHash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
 			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
@@ -133,6 +143,29 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 	sylog.Infof("Download complete: %s\n", name)
 
 	return retErr
+}
+
+// downloadImageCallback is called to display progress bar while downloading
+// image from library
+func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
+	bar := pb.New64(totalSize).SetUnits(pb.U_BYTES)
+	bar.ShowTimeLeft = true
+	bar.ShowSpeed = true
+
+	// create proxy reader
+	bodyProgress := bar.NewProxyReader(r)
+
+	bar.Start()
+
+	// Write the body to file
+	_, err := io.Copy(w, bodyProgress)
+	if err != nil {
+		return err
+	}
+
+	bar.Finish()
+
+	return nil
 }
 
 // OrasPull will download the image specified by the provided oci reference and store

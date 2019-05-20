@@ -150,9 +150,8 @@ github.com/docker/go-units
 github.com/docker/libtrust
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
-# github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731
-github.com/globalsign/mgo/bson
-github.com/globalsign/mgo/internal/json
+# github.com/go-log/log v0.1.0
+github.com/go-log/log
 # github.com/godbus/dbus v4.1.0+incompatible
 github.com/godbus/dbus
 # github.com/gogo/protobuf v1.2.0
@@ -174,7 +173,7 @@ github.com/google/go-cmp/cmp/internal/value
 github.com/gorilla/context
 # github.com/gorilla/mux v1.6.2
 github.com/gorilla/mux
-# github.com/gorilla/websocket v1.2.0
+# github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
 # github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
 github.com/hashicorp/errwrap
@@ -258,8 +257,12 @@ github.com/spf13/cobra/doc
 github.com/spf13/pflag
 # github.com/sylabs/json-resp v0.5.0
 github.com/sylabs/json-resp
+# github.com/sylabs/scs-build-client v0.0.4
+github.com/sylabs/scs-build-client/client
 # github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 github.com/sylabs/scs-key-client/client
+# github.com/sylabs/scs-library-client v0.1.0
+github.com/sylabs/scs-library-client/client
 # github.com/sylabs/sif v1.0.3
 github.com/sylabs/sif/pkg/sif
 # github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e

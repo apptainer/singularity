@@ -1,0 +1,13 @@
+#!/bin/sh
+
+export GOFLAGS='@GOFLAGS@'
+export GO111MODULE='@GO111MODULE@'
+
+exec '@GO@' test \
+	-count=1 \
+	-timeout=20m \
+	-tags '@GO_TAGS@' \
+	-failfast \
+	-cover \
+	-race \
+	"$@"

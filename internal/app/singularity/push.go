@@ -8,6 +8,7 @@ package singularity
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -18,9 +19,10 @@ import (
 	"github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/signing"
+	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 const (
@@ -39,6 +41,29 @@ var (
 	// not signed, nor has an override for requiring a signature been provided
 	ErrLibraryUnsigned = errors.New("image is not signed")
 )
+
+type progressCallback struct {
+	bar *pb.ProgressBar
+	r   io.Reader
+}
+
+func (c *progressCallback) InitUpload(totalSize int64, r io.Reader) {
+	// create and start bar
+	c.bar = pb.New64(totalSize).SetUnits(pb.U_BYTES)
+	c.bar.ShowTimeLeft = true
+	c.bar.ShowSpeed = true
+
+	c.bar.Start()
+	c.r = c.bar.NewProxyReader(r)
+}
+
+func (c *progressCallback) GetReader() io.Reader {
+	return c.r
+}
+
+func (c *progressCallback) Finish() {
+	c.bar.Finish()
+}
 
 // LibraryPush will upload the image specified by file to the library specified by libraryURI.
 // Before uploading, the image will be checked for a valid signature, unless specified not to by the
@@ -70,11 +95,28 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 		sylog.Warningf("Skipping container verifying")
 	}
 
-	if err := client.UploadImage(file, dest, libraryURI, authToken, "No Description"); err != nil {
-		return err
+	libraryClient, err := client.NewClient(&client.Config{
+		BaseURL:   libraryURI,
+		AuthToken: authToken,
+	})
+	if err != nil {
+		return fmt.Errorf("error initializing library client: %v", err)
 	}
 
-	return nil
+	// split library ref into components
+	r, err := client.Parse(dest)
+	if err != nil {
+		return fmt.Errorf("error parsing destination: %v", err)
+	}
+
+	// open image for uploading
+	f, err := os.Open(file)
+	if err != nil {
+		return fmt.Errorf("error opening image %s for reading: %v", file, err)
+	}
+	defer f.Close()
+
+	return libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, r.Tags, "No Description", &progressCallback{})
 }
 
 // OrasPush uploads the image specified by file and pushes it to the provided oci reference,
