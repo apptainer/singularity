@@ -83,20 +83,20 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 	// executed with its leading shebang like a script
 	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
 	if err != nil {
-		return err
+		return fmt.Errorf("while opening destination file: %v", err)
 	}
 	defer dstFile.Close()
 
 	srcFile, err := os.Open(imagePath)
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("while opening cached image: %v", err)
 	}
 	defer srcFile.Close()
 
 	// Copy SIF from cache
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		return fmt.Errorf("%v", err)
+		return fmt.Errorf("while copying image from cache: %v", err)
 	}
 
 	var retErr error
@@ -220,7 +220,7 @@ func OciPull(name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, 
 	if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
 		if err := convertDockerToSIF(imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
-			return fmt.Errorf("%v", err)
+			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
 	} else {
 		sylog.Infof("Using cached image")
