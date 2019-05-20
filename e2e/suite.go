@@ -16,25 +16,25 @@ import (
 	"syscall"
 	"testing"
 
-	//	"github.com/sylabs/singularity/e2e/actions"
+	"github.com/sylabs/singularity/e2e/actions"
 
-	//	"github.com/sylabs/singularity/e2e/docker"
+	"github.com/sylabs/singularity/e2e/docker"
 
-	//	singularityenv "github.com/sylabs/singularity/e2e/env"
+	singularityenv "github.com/sylabs/singularity/e2e/env"
 
-	//	"github.com/sylabs/singularity/e2e/help"
+	"github.com/sylabs/singularity/e2e/help"
 
-	//	"github.com/sylabs/singularity/e2e/imgbuild"
+	"github.com/sylabs/singularity/e2e/imgbuild"
 
-	//	"github.com/sylabs/singularity/e2e/instance"
+	"github.com/sylabs/singularity/e2e/instance"
 
 	//	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
 
 	"github.com/sylabs/singularity/e2e/key"
 
-	//	"github.com/sylabs/singularity/e2e/pull"
+	"github.com/sylabs/singularity/e2e/pull"
 
-	//	"github.com/sylabs/singularity/e2e/remote"
+	"github.com/sylabs/singularity/e2e/remote"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
@@ -109,19 +109,20 @@ func Run(t *testing.T) {
 
 	t.Run("KEYCMD", key.RunE2ETests)
 
-	//	t.Run("BUILD", imgbuild.RunE2ETests)
+	t.Run("BUILD", imgbuild.RunE2ETests)
 
-	//	t.Run("ACTIONS", actions.RunE2ETests)
+	t.Run("ACTIONS", actions.RunE2ETests)
 
-	//	t.Run("DOCKER", docker.RunE2ETests)
+	t.Run("DOCKER", docker.RunE2ETests)
 
-	//	t.Run("PULL", pull.RunE2ETests)
+	t.Run("PULL", pull.RunE2ETests)
 
-	//	t.Run("REMOTE", remote.RunE2ETests)
+	t.Run("REMOTE", remote.RunE2ETests)
 
-	//	t.Run("INSTANCE", instance.RunE2ETests)
+	t.Run("INSTANCE", instance.RunE2ETests)
 
-	//	t.Run("HELP", help.RunE2ETests)
+	t.Run("HELP", help.RunE2ETests)
 
-	//	t.Run("ENV", singularityenv.RunE2ETests)
+	t.Run("ENV", singularityenv.RunE2ETests)
+
 }
