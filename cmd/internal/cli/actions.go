@@ -6,21 +6,23 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/spf13/cobra"
+	library "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
+	libraryhelper "github.com/sylabs/singularity/internal/pkg/library"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
-	library "github.com/sylabs/singularity/pkg/client/library"
 	net "github.com/sylabs/singularity/pkg/client/net"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 )
@@ -92,19 +94,32 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 }
 
 func handleLibrary(u, libraryURL string) (string, error) {
-	libraryImage, err := library.GetImage(libraryURL, authToken, u)
+	ctx := context.TODO()
+
+	c, err := library.NewClient(&library.Config{
+		AuthToken: authToken,
+		BaseURL:   libraryURL,
+	})
+	if err != nil {
+		return "", fmt.Errorf("unable to initialize client library: %v", err)
+	}
+
+	imageRef := libraryhelper.NormalizeLibraryRef(u)
+
+	libraryImage, _, err := c.GetImage(ctx, imageRef)
 	if err != nil {
 		return "", err
 	}
 
-	imageName := uri.GetName(u)
+	imageName := uri.GetName("library://" + imageRef)
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
 
 	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
-		if err = library.DownloadImage(imagePath, u, libraryURL, true, authToken); err != nil {
+
+		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 
