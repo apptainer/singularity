@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
@@ -80,7 +81,10 @@ func convertImage(filename string, unsquashfsPath string) (string, error) {
 	// keep compatibility with v2
 	tmpdir := os.Getenv("SINGULARITY_LOCALCACHEDIR")
 	if tmpdir == "" {
-		tmpdir = os.Getenv("SINGULARITY_CACHEDIR")
+		// cache.DirEnv points are the base directory for the cache.
+		// cache.DirEnv + cache.CacheDir points to the cache root directory.
+		tmpdir = os.Getenv(cache.DirEnv)
+		tmpdir = filepath.Join(tmpdir, cache.CacheDir)
 	}
 
 	// create temporary sandbox

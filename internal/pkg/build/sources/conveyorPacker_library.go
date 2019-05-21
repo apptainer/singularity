@@ -33,7 +33,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	authToken := b.Opts.LibraryAuthToken
 
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	// check for custom library from definition
@@ -53,10 +53,21 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	imageName := uri.GetName(libURI)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+	// Create a cache handle, which will provide access to an existing cache
+	// or create a new cache based on the current configuration.
+	c, err := cache.NewHandle()
+	if c == nil || err != nil {
+		return fmt.Errorf("failed to create cache object")
+	}
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
+	if err != nil {
+		return fmt.Errorf("failed to get image path: %s", err)
+	}
+
+	exists, err := c.LibraryImageExists(libraryImage.Hash, imageName)
+	if err != nil {
+		return fmt.Errorf("unable to check if %v with hash %s exists: %v", imagePath, libraryImage.Hash, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
 		if err = client.DownloadImage(imagePath, libURI, libraryURL, true, authToken); err != nil {
@@ -72,7 +83,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)

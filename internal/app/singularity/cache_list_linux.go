@@ -46,12 +46,17 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 	count := 0
 	cachePath := ""
 
+	c, err := cache.NewHandle()
+	if c == nil || err != nil {
+		return 0, 0, fmt.Errorf("failed to create cache handle")
+	}
+
 	// check what cache we need to list, and set are path.
 	switch cacheType {
 	case "library":
-		cachePath = cache.Library()
+		cachePath = c.Library
 	case "oci":
-		cachePath = cache.OciTemp()
+		cachePath = c.OciTemp
 	case "":
 		return 0, 0, fmt.Errorf("no cache type specifyed")
 	default:
@@ -97,26 +102,31 @@ func listBlobCache(printList bool) (int, int64, error) {
 	count := 0
 	var totalSize int64
 
-	_, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs"))
+	c, err := cache.NewHandle()
+	if c == nil || err != nil {
+		return 0, 0, fmt.Errorf("failed to create cache handle")
+	}
+
+	_, err = os.Stat(filepath.Join(c.OciBlob, "/blobs"))
 	if os.IsNotExist(err) {
 		return 0, 0, nil
 	}
-	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
+	blobs, err := ioutil.ReadDir(filepath.Join(c.OciBlob, "/blobs/"))
 	if err != nil {
 		return 0, 0, fmt.Errorf("unable to open oci-blob directory: %v", err)
 	}
 	for _, f := range blobs {
-		checkStat, err := os.Stat(filepath.Join(cache.OciBlob(), "blobs", f.Name()))
+		checkStat, err := os.Stat(filepath.Join(c.OciBlob, "blobs", f.Name()))
 		if err != nil {
-			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cache.OciBlob(), "blobs", f.Name()), err)
+			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(c.OciBlob, "blobs", f.Name()), err)
 		}
 		if checkStat.Mode().IsDir() {
-			blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
+			blob, err := ioutil.ReadDir(filepath.Join(c.OciBlob, "/blobs/", f.Name()))
 			if err != nil {
 				return 0, 0, fmt.Errorf("unable to look in oci-blob cache: %v", err)
 			}
 			for _, b := range blob {
-				fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
+				fileInfo, err := os.Stat(filepath.Join(c.OciBlob, "/blobs/", f.Name(), b.Name()))
 				if err != nil {
 					return 0, 0, fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
 				}
@@ -128,7 +138,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 			}
 		} else {
 			// stray file in ~/.singularity/cache/library
-			sylog.Debugf("stray file in cache directory: %v", filepath.Join(cache.Library(), f.Name()))
+			sylog.Debugf("stray file in cache directory: %v", filepath.Join(c.Library, f.Name()))
 		}
 	}
 	return count, totalSize, nil
