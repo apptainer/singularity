@@ -226,6 +226,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				ContainLibsPath = append(ContainLibsPath, libs...)
 			}
 		}
+		// bind persistenced socket if found
+		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
 	}
 
 	engineConfig.SetBindPath(BindPaths)
