@@ -82,8 +82,6 @@ github.com/garyburd/redigo v1.6.0 h1:0VruCpn7yAIIu7pWVClQC8wxCJEcG3nyzpMSHKi1PQc
 github.com/garyburd/redigo v1.6.0/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
-github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731 h1:y7wyeiA6T+TT+HGC9DYypvLkUeg99N4rqHMzn2MmjYk=
-github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731/go.mod h1:xkRDCp4j0OGD1HRkm4kmhM+pmpv3AKq5SU7GMg4oO/Q=
 github.com/go-log/log v0.1.0 h1:wudGTNsiGzrD5ZjgIkVZ517ugi2XRe9Q/xRCzwEO4/U=
 github.com/go-log/log v0.1.0/go.mod h1:4mBwpdRMFLiuXZDCwU2lKQFsoSCo72j3HqBK9d81N2M=
 github.com/godbus/dbus v4.1.0+incompatible h1:WqqLRTsQic3apZUK9qC5sGNfXthmPXzUZ7nQPrNITa4=
@@ -221,6 +219,8 @@ github.com/sylabs/scs-build-client v0.0.4 h1:y1rer0Mq+GyAFPKn0szpayJfUSTD7SGgRB3
 github.com/sylabs/scs-build-client v0.0.4/go.mod h1:TxxLkoW6RjzcQXllPAbsA5zmljX/YsHLlQ1gZ5Lkogg=
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec h1:dX97dpvwSAF8AFG1f33b1dUueCGc1onK94FUP5pHUsw=
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
+github.com/sylabs/scs-library-client v0.1.0 h1:uSxsXGGdQwY690t4QJE2Hxqm/D8iRbYIYIF2RMpjZ1U=
+github.com/sylabs/scs-library-client v0.1.0/go.mod h1:qfp6pi2pAo0Pb1QzSdhF+Oy2ZXIsy82DozLCJ7j+qIQ=
 github.com/sylabs/sif v1.0.3 h1:oMYGL3hIKIYkQDCr+Qr62mVViC4oKdUZTKqYVDTf4co=
 github.com/sylabs/sif v1.0.3/go.mod h1:qM8girsAnds3OxqM0hXVm/ytLQnUsZvy2veADsgDDVs=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=

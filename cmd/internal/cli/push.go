@@ -8,33 +8,14 @@ package cli
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"github.com/containerd/containerd/reference"
-	"github.com/containerd/containerd/remotes/docker"
-	"github.com/deislabs/oras/pkg/content"
-	"github.com/deislabs/oras/pkg/context"
-	"github.com/deislabs/oras/pkg/oras"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/signing"
-)
-
-const (
-	// SifDefaultTag is the tag to use when a tag is not specified
-	SifDefaultTag = "latest"
-
-	// SifConfigMediaType is the config descriptor mediaType
-	SifConfigMediaType = "application/vnd.sylabs.sif.config.v1+json"
-
-	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
-	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar"
 )
 
 var (
@@ -93,89 +74,23 @@ var PushCmd = &cobra.Command{
 		case LibraryProtocol, "": // Handle pushing to a library
 			handlePushFlags(cmd)
 
-			// Push to library requires a valid authToken
-			if authToken == "" {
-				sylog.Fatalf("Couldn't push image to library: %v", remoteWarning)
+			err := singularity.LibraryPush(file, dest, authToken, PushLibraryURI, KeyServerURL, remoteWarning, unauthenticatedPush)
+			if err == singularity.ErrLibraryUnsigned {
+				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
+				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
+				sylog.Fatalf("Unable to upload container: unable to verify signature")
+				os.Exit(3)
+			} else if err != nil {
+				sylog.Fatalf("Unable to push image to library: %v", err)
 			}
-
-			if _, err := os.Stat(file); os.IsNotExist(err) {
-				sylog.Fatalf("Unable to open: %v: %v", file, err)
-			}
-
-			if !unauthenticatedPush {
-				// check if the container is signed
-				imageSigned, err := signing.IsSigned(file, KeyServerURL, 0, false, authToken, true)
-				if err != nil {
-					// err will be: "unable to verify container: %v", err
-					sylog.Warningf("%v", err)
-				}
-
-				// if its not signed, print a warning
-				if !imageSigned {
-					fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
-					fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
-					sylog.Fatalf("Unable to upload container: unable to verify signature")
-					os.Exit(3)
-				}
-			} else {
-				sylog.Warningf("Skipping container verifying")
-			}
-
-			if err := client.UploadImage(file, dest, PushLibraryURI, authToken, "No Description"); err != nil {
-				sylog.Fatalf("%v\n", err)
-			}
-
-			return
 		case OrasProtocol:
-			ref = strings.TrimPrefix(ref, "//")
-
-			spec, err := reference.Parse(ref)
-			if err != nil {
-				sylog.Fatalf("Unable to parse oci reference: %s", err)
-			}
-
-			// Hostname() will panic if there is no '/' in the locator
-			// explicitly check for this and fail in order to prevent panic
-			// this case will only occur for incorrect uris
-			if !strings.Contains(spec.Locator, "/") {
-				sylog.Fatalf("Not a valid oci object uri: %s", ref)
-			}
-
-			// append default tag if no object exists
-			if spec.Object == "" {
-				spec.Object = SifDefaultTag
-				sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
-			}
-
 			ociAuth, err := makeDockerCredentials(cmd)
 			if err != nil {
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 			}
 
-			credFn := func(_ string) (string, string, error) {
-				return ociAuth.Username, ociAuth.Password, nil
-			}
-
-			resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
-
-			store := content.NewFileStore("")
-			defer store.Close()
-
-			conf, err := store.Add("$config", SifConfigMediaType, "/dev/null")
-			if err != nil {
-				sylog.Fatalf("Unable to add manifest config to FileStore: %s", err)
-			}
-			conf.Annotations = nil
-
-			desc, err := store.Add(file, SifLayerMediaType, file)
-			if err != nil {
-				sylog.Fatalf("Unable to add SIF file to FileStore: %s", err)
-			}
-
-			descriptors := []ocispec.Descriptor{desc}
-
-			if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
-				sylog.Fatalf("Unable to push: %s", err)
+			if err := singularity.OrasPush(file, ref, ociAuth); err != nil {
+				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 		}
 	},

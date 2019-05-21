@@ -6,38 +6,21 @@
 package cli
 
 import (
-	"context"
-	"fmt"
-	"io"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 
-	"github.com/containerd/containerd/images"
-	"github.com/containerd/containerd/reference"
-	"github.com/containerd/containerd/remotes/docker"
-	ocitypes "github.com/containers/image/types"
-	"github.com/deislabs/oras/pkg/content"
-	orasctx "github.com/deislabs/oras/pkg/context"
-	"github.com/deislabs/oras/pkg/oras"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/build"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/app/singularity"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/pkg/build/types"
-	client "github.com/sylabs/singularity/pkg/client/library"
 	net "github.com/sylabs/singularity/pkg/client/net"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/signing"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 const (
@@ -223,172 +206,46 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 	switch transport {
 	case LibraryProtocol, "":
-		if !force {
-			if _, err := os.Stat(name); err == nil {
-				sylog.Fatalf("image file already exists: %q - will not overwrite", name)
-			}
-		}
-
 		handlePullFlags(cmd)
 
-		libraryImage, err := client.GetImage(PullLibraryURI, authToken, args[i])
-		if err != nil {
-			sylog.Fatalf("While getting image info: %v", err)
+		err := singularity.LibraryPull(name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull)
+		if err == singularity.ErrLibraryUnsigned {
+			exitStat = 1
+		} else if err == singularity.ErrLibraryPullAbort {
+			exitStat = 10
+		} else if err != nil {
+			sylog.Fatalf("While pulling library image: %v", err)
 		}
-
-		var imageName string
-		if transport == "" {
-			imageName = uri.GetName("library://" + args[i])
-		} else {
-			imageName = uri.GetName(args[i])
-		}
-
-		// Create a cache handle, which will provide access to an existing cache
-		// or create a new cache based on the current configuration.
-		c, err := cache.NewHandle()
-		if c == nil || err != nil {
-			sylog.Fatalf("Unable to create cache object")
-		}
-
-		imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
-		if err != nil {
-			sylog.Fatalf("Unable to get library cache's data")
-		}
-
-		exists, err := c.LibraryImageExists(libraryImage.Hash, imageName)
-		if err != nil {
-			sylog.Fatalf("unable to check if %v exists: %v", imagePath, err)
-		}
-		if !exists {
-			sylog.Infof("Downloading library image")
-			if err = client.DownloadImage(imagePath, args[i], PullLibraryURI, true, authToken); err != nil {
-				sylog.Fatalf("unable to Download Image: %v", err)
-			}
-
-			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-				sylog.Fatalf("Error getting ImageHash: %v", err)
-			} else if cacheFileHash != libraryImage.Hash {
-				sylog.Fatalf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
-			}
-		}
-
-		// Perms are 777 *prior* to umask
-		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-		if err != nil {
-			sylog.Fatalf("%v\n", err)
-		}
-		defer dstFile.Close()
-
-		srcFile, err := os.OpenFile(imagePath, os.O_RDONLY, 0444)
-		if err != nil {
-			sylog.Fatalf("%v\n", err)
-		}
-		defer srcFile.Close()
-
-		// Copy SIF from cache
-		_, err = io.Copy(dstFile, srcFile)
-		if err != nil {
-			sylog.Fatalf("%v\n", err)
-		}
-
-		// check if we pulled from the library, if so; is it signed?
-		if !unauthenticatedPull {
-			imageSigned, err := signing.IsSigned(name, KeyServerURL, 0, false, authToken, true)
-			if err != nil {
-				// err will be: "unable to verify container: %v", err
-				sylog.Warningf("%v", err)
-				// if theres a warning, exit 1
-				exitStat = 1
-			}
-			// if container is not signed, print a warning
-			if !imageSigned {
-				fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
-				resp, err := sypgp.AskQuestion("Do you with to proceed? [N/y] ")
-				if err != nil {
-					sylog.Fatalf("unable to parse input: %v", err)
-				}
-				if resp == "" || resp != "y" && resp != "Y" {
-					fmt.Fprintf(os.Stderr, "Aborting.\n")
-					err := os.Remove(name)
-					if err != nil {
-						sylog.Fatalf("Unabel to delete the container: %v", err)
-					}
-					// exit status 10 after replying no
-					exitStat = 10
-				}
-			}
-		} else {
-			sylog.Warningf("Skipping container verification")
-		}
-		fmt.Printf("Download complete: %s\n", name)
-
 	case ShubProtocol:
 		err := shub.DownloadImage(name, args[i], force, noHTTPS)
 		if err != nil {
-			sylog.Fatalf("%v\n", err)
+			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
 	case OrasProtocol:
-		ref = strings.TrimPrefix(ref, "//")
-
-		spec, err := reference.Parse(ref)
-		if err != nil {
-			sylog.Fatalf("Unable to parse oci reference: %s", err)
-		}
-
-		// append default tag if no object exists
-		if spec.Object == "" {
-			spec.Object = SifDefaultTag
-			sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
-		}
-
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		credFn := func(_ string) (string, string, error) {
-			return ociAuth.Username, ociAuth.Password, nil
-		}
-		resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
-
-		wd, err := os.Getwd()
+		err = singularity.OrasPull(name, ref, force, ociAuth)
 		if err != nil {
-			sylog.Fatalf("Failed to get working directory: %s", err)
+			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
-
-		store := content.NewFileStore(wd)
-		defer store.Close()
-
-		store.AllowPathTraversalOnWrite = true
-		store.DisableOverwrite = !force
-
-		allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
-		handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-			if desc.MediaType == SifLayerMediaType {
-				nameOld, _ := content.ResolveName(desc)
-				_ = store.MapPath(nameOld, name)
-			}
-			return nil, nil
-		}
-		pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
-
-		_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
-		if err != nil {
-			sylog.Fatalf("Unable to pull from registry: %s", err)
-		}
-
-		// ensure container is executable
-		if err := os.Chmod(name, 0755); err != nil {
-			sylog.Fatalf("Unable to set image perms: %s", err)
-		}
-		sylog.Infof("Download complete: %s\n", name)
 	case HTTPProtocol, HTTPSProtocol:
 		err := net.DownloadImage(name, args[i], force)
 		if err != nil {
-			sylog.Fatalf("%v\n", err)
+			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
 	case ociclient.IsSupported(transport):
-		downloadOciImage(name, args[i], cmd)
+		ociAuth, err := makeDockerCredentials(cmd)
+		if err != nil {
+			sylog.Fatalf("While creating Docker credentials: %v", err)
+		}
+
+		err = singularity.OciPull(name, args[i], tmpDir, ociAuth, force, noHTTPS)
+		if err != nil {
+			sylog.Fatalf("While making image from oci registry: %v", err)
+		}
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
@@ -396,97 +253,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	// a unknown signer, i.e, if you dont have the key in your
 	// local keyring. theres proboly a better way to do this...
 	os.Exit(exitStat)
-}
-
-// TODO: This should be a external function
-func downloadOciImage(name, imageURI string, cmd *cobra.Command) {
-	if !force {
-		if _, err := os.Stat(name); err == nil {
-			sylog.Fatalf("Image file already exists - will not overwrite")
-		}
-	}
-
-	authConf, err := makeDockerCredentials(cmd)
-	if err != nil {
-		sylog.Fatalf("While creating Docker credentials: %v", err)
-	}
-
-	sysCtx := &ocitypes.SystemContext{
-		OCIInsecureSkipTLSVerify:    noHTTPS,
-		DockerInsecureSkipTLSVerify: noHTTPS,
-		DockerAuthConfig:            authConf,
-	}
-
-	sum, err := ociclient.ImageSHA(imageURI, sysCtx)
-	if err != nil {
-		sylog.Fatalf("Failed to get checksum for %s: %s", imageURI, err)
-	}
-
-	imgName := uri.GetName(imageURI)
-	// Create a cache handle, which will provide access to an existing cache
-	// or create a new cache based on the current configuration.
-	c, err := cache.NewHandle()
-	if c == nil || err != nil {
-		sylog.Fatalf("Unable to create cache object")
-	}
-
-	cachedImgPath, err := c.OciTempImage(sum, imgName)
-	if err != nil {
-		sylog.Fatalf("Unable to get image's data from OCI temp cache")
-	}
-
-	exists, err := c.OciTempExists(sum, imgName)
-	if err != nil {
-		sylog.Fatalf("Unable to check if %s exists: %s", imgName, err)
-	}
-	if !exists {
-		sylog.Infof("Converting OCI blobs to SIF format")
-		if err := convertDockerToSIF(imageURI, cachedImgPath, tmpDir, noHTTPS, authConf); err != nil {
-			sylog.Fatalf("%v", err)
-		}
-	} else {
-		sylog.Infof("Using cached image")
-	}
-
-	// Perms are 777 *prior* to umask
-	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		sylog.Fatalf("Unable to open file for writing: %s: %v\n", name, err)
-	}
-	defer dstFile.Close()
-
-	srcFile, err := os.Open(cachedImgPath)
-	if err != nil {
-		sylog.Fatalf("Unable to open file for reading: %s: %v\n", name, err)
-	}
-	defer srcFile.Close()
-
-	// Copy SIF from cache
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		sylog.Fatalf("Failed while copying files: %v\n", err)
-	}
-}
-
-func convertDockerToSIF(image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
-	b, err := build.NewBuild(
-		image,
-		build.Config{
-			Dest:   cachedImgPath,
-			Format: "sif",
-			Opts: types.Options{
-				TmpDir:           tmpDir,
-				NoTest:           true,
-				NoHTTPS:          noHTTPS,
-				DockerAuthConfig: authConf,
-			},
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("Unable to create new build: %v", err)
-	}
-
-	return b.Full()
 }
 
 func handlePullFlags(cmd *cobra.Command) {
