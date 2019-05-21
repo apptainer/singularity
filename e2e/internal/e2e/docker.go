@@ -6,9 +6,9 @@
 package e2e
 
 import (
-	"os/exec"
-	"strings"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 func PrepRegistry(t *testing.T) {
@@ -21,9 +21,8 @@ func PrepRegistry(t *testing.T) {
 
 	for _, command := range commands {
 		cmd := exec.Command("docker", command...)
-		if b, err := cmd.CombinedOutput(); err != nil {
-			t.Logf(string(b))
-			t.Fatalf("command failed: %v", strings.Join(command, " "))
+		if res := cmd.Run(t); res.Error != nil {
+			t.Fatalf("Command failed.\n%s", res)
 		}
 	}
 }
@@ -36,9 +35,8 @@ func KillRegistry(t *testing.T) {
 
 	for _, command := range commands {
 		cmd := exec.Command("docker", command...)
-		if b, err := cmd.CombinedOutput(); err != nil {
-			t.Logf(string(b))
-			t.Fatalf("command failed: %v", strings.Join(command, " "))
+		if res := cmd.Run(t); res.Error != nil {
+			t.Fatalf("Command failed.\n%s", res)
 		}
 	}
 }
