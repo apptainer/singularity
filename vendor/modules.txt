@@ -152,9 +152,6 @@ github.com/docker/go-units
 github.com/docker/libtrust
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
-# github.com/globalsign/mgo v0.0.0-20180615134936-113d3961e731
-github.com/globalsign/mgo/bson
-github.com/globalsign/mgo/internal/json
 # github.com/go-log/log v0.1.0
 github.com/go-log/log
 # github.com/godbus/dbus v4.1.0+incompatible
@@ -266,6 +263,8 @@ github.com/sylabs/json-resp
 github.com/sylabs/scs-build-client/client
 # github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 github.com/sylabs/scs-key-client/client
+# github.com/sylabs/scs-library-client v0.1.0
+github.com/sylabs/scs-library-client/client
 # github.com/sylabs/sif v1.0.3
 github.com/sylabs/sif/pkg/sif
 # github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e

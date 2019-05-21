@@ -168,20 +168,20 @@ func STDINPipe(t *testing.T) {
 		argv    []string
 		exit    int
 	}{
-		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | singularity exec %s grep hi", testenv.ImagePath)}, 0},
-		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | singularity exec %s grep hi", testenv.ImagePath)}, 1},
+		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | %s exec %s grep hi", testenv.CmdPath, testenv.ImagePath)}, 0},
+		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | %s exec %s grep hi", testenv.CmdPath, testenv.ImagePath)}, 1},
 		// Checking permissions
-		{"sh", "permissions", []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", testenv.ImagePath)}, 0},
+		{"sh", "permissions", []string{"-c", fmt.Sprintf("%s exec %s id -u | grep `id -u`", testenv.CmdPath, testenv.ImagePath)}, 0},
 		// testing run command properly hands arguments
-		{"sh", "arguments", []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", testenv.ImagePath)}, 0},
+		{"sh", "arguments", []string{"-c", fmt.Sprintf("%s run %s foo | grep foo", testenv.CmdPath, testenv.ImagePath)}, 0},
 		// Stdin to URI based image
-		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
-		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
-		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
+		{"sh", "library", []string{"-c", fmt.Sprintf("echo true | %s shell library://busybox", testenv.CmdPath)}, 0},
+		{"sh", "docker", []string{"-c", fmt.Sprintf("echo true | %s shell docker://busybox", testenv.CmdPath)}, 0},
+		{"sh", "shub", []string{"-c", fmt.Sprintf("echo true | %s shell shub://singularityhub/busybox", testenv.CmdPath)}, 0},
 		// Test apps
-		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", testenv.ImagePath)}, 0},
+		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("%s run --app foo %s | grep 'FOO'", testenv.CmdPath, testenv.ImagePath)}, 0},
 		// Test target pwd
-		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", testenv.ImagePath)}, 0},
+		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("%s exec --pwd /etc %s pwd | egrep '^/etc'", testenv.CmdPath, testenv.ImagePath)}, 0},
 	}
 
 	for _, tt := range tests {
