@@ -6,6 +6,7 @@
 package cache
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -30,19 +31,23 @@ func TestOciBlob(t *testing.T) {
 		{
 			name:     "Custom OCI blob",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci"),
+			expected: filepath.Join(cacheCustom, CacheDir, "oci"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			// This test is based on the default cache, do not clean up
+			c, err := NewHandle()
+			if c == nil || err != nil {
+				t.Fatal("failed to create cache handle")
+			}
 
-			if r := OciBlob(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.OciBlob != tt.expected {
+				t.Fatalf("unexpected result: %s (expected %s)", c.OciBlob, tt.expected)
 			}
 		})
 	}
@@ -65,19 +70,23 @@ func TestOciTemp(t *testing.T) {
 		{
 			name:     "Custom OCI temp",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci-tmp"),
+			expected: filepath.Join(cacheCustom, CacheDir, "oci-tmp"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			// This test is based on the default cache, do not clean it
+			c, err := NewHandle()
+			if c == nil || err != nil {
+				t.Fatal("failed to create cache handle")
+			}
 
-			if r := OciTemp(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.OciTemp != tt.expected {
+				t.Fatalf("Unexpected result: %s (expected %s)", c.OciTemp, tt.expected)
 			}
 		})
 	}
@@ -87,49 +96,66 @@ func TestOciTempExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// Create a temporary cache for testing
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary cache: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	c, err := hdlInit(dir)
+	if c == nil || err != nil {
+		t.Fatalf("failed to create cache handle: %s", err)
+	}
+	defer c.Clean("all")
+
+	validSHASum := createFakeCachedImage(t, c.OciTemp)
+
 	tests := []struct {
-		name     string
-		sum      string
-		path     string
-		expected bool
+		name      string
+		sum       string
+		path      string
+		expected  bool
+		shallPass bool
 	}{
 		{
-			name:     "empty",
-			sum:      validSHASum,
-			path:     validPath,
-			expected: true,
+			name:      "empty",
+			sum:       validSHASum,
+			path:      validName,
+			expected:  true,
+			shallPass: true,
 		},
 		{
-			name:     "invalid SHA sum; valid path",
-			sum:      invalidSHASum,
-			path:     validPath,
-			expected: true,
+			name:      "invalid SHA sum; valid path",
+			sum:       invalidSHASum,
+			path:      validName,
+			expected:  false,
+			shallPass: false,
 		},
 		{
-			name:     "valid SHA sum; invalid path",
-			sum:      validSHASum,
-			path:     invalidPath,
-			expected: false,
+			name:      "valid SHA sum; invalid path",
+			sum:       validSHASum,
+			path:      invalidName,
+			expected:  false,
+			shallPass: false,
 		},
 		{
-			name:     "invalid",
-			sum:      invalidSHASum,
-			path:     invalidPath,
-			expected: false,
+			name:      "invalid",
+			sum:       invalidSHASum,
+			path:      invalidName,
+			expected:  false,
+			shallPass: false,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			exists, err := OciTempExists(test.sum, test.path)
-			if err != nil {
-				t.Fatalf("OciTempExists() failed: %s\n", err)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists, err := c.OciTempExists(tt.sum, tt.path)
+			if tt.shallPass == true && (exists != tt.expected || err != nil) {
+				t.Fatalf("%s expected to succeed but failed", tt.name)
 			}
-			if test.expected == true && exists == false {
-				t.Fatal("test expected to succeed but failed")
-			}
-			if test.expected == false && exists == true {
-				t.Fatal("test expected to fail but succeeded")
+			if tt.shallPass == false && (exists != tt.expected && err != nil) {
+				t.Fatal("tt expected to fail but succeeded")
 			}
 		})
 	}

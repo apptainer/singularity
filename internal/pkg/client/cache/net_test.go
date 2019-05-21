@@ -6,6 +6,7 @@
 package cache
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -30,19 +31,23 @@ func TestNet(t *testing.T) {
 		{
 			name:     "Custom Net",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "net"),
+			expected: filepath.Join(cacheCustom, CacheDir, "net"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			// This test uses the default cache; do not clean it
+			c, err := NewHandle()
+			if c == nil || err != nil {
+				t.Fatalf("failed to create a cache handle")
+			}
 
-			if r := Net(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.Net != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", c.Net, tt.expected)
 			}
 		})
 	}
@@ -52,49 +57,67 @@ func TestNetImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// Create a temporary cache for testing
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary cache: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	c, err := hdlInit(dir)
+	if c == nil || err != nil {
+		t.Fatalf("failed to create cache handle: %s", err)
+	}
+	defer c.Clean("all")
+
+	// Create a dummy entry in the cache to simulate a valid image
+	validSHASum := createFakeCachedImage(t, c.Net)
+
 	tests := []struct {
-		name     string
-		sum      string
-		path     string
-		expected bool
+		name      string
+		sum       string
+		path      string
+		expected  bool
+		shallPass bool
 	}{
 		{
-			name:     "valid data",
-			sum:      validSHASum,
-			path:     validPath,
-			expected: true,
+			name:      "valid data",
+			sum:       validSHASum,
+			path:      validName,
+			expected:  true,
+			shallPass: true,
 		},
 		{
-			name:     "invalid SHA sum; valid path",
-			sum:      invalidSHASum,
-			path:     validPath,
-			expected: true,
+			name:      "invalid SHA sum; valid path",
+			sum:       invalidSHASum,
+			path:      validName,
+			expected:  false,
+			shallPass: false,
 		},
 		{
-			name:     "valid SHA sum; invalid path",
-			sum:      validSHASum,
-			path:     invalidPath,
-			expected: false,
+			name:      "valid SHA sum; invalid path",
+			sum:       validSHASum,
+			path:      invalidName,
+			expected:  false,
+			shallPass: false,
 		},
 		{
-			name:     "invalid data",
-			sum:      invalidSHASum,
-			path:     invalidPath,
-			expected: false,
+			name:      "invalid data",
+			sum:       invalidSHASum,
+			path:      invalidName,
+			expected:  false,
+			shallPass: false,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			exists, err := NetImageExists(test.sum, test.path)
-			if err != nil {
-				t.Fatal("NetImageExists() failed")
-			}
-			if test.expected == false && exists == true {
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			exists, err := c.NetImageExists(tt.sum, tt.path)
+			if tt.shallPass == false && (exists != tt.expected || err == nil) {
 				t.Fatal("NetImageExists() did not fail for an invalid case")
 			}
-			if test.expected == true && exists == false {
-				t.Fatal("NetImageExists() failed while expected to succeed")
+			if tt.shallPass == true && (exists != tt.expected || err != nil) {
+				t.Fatalf("NetImageExists() failed while expected to succeed (expected: %v)", tt.expected)
 			}
 		})
 	}

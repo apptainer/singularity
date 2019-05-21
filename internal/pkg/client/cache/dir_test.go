@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
-var cacheDefault = filepath.Join(syfs.ConfigDir(), cacheDir)
+var cacheDefault = filepath.Join(syfs.ConfigDir(), CacheDir)
 
 const cacheCustom = "/tmp/customcachedir"
 
@@ -35,19 +35,23 @@ func TestRoot(t *testing.T) {
 		{
 			name:     "Custom root",
 			env:      cacheCustom,
-			expected: cacheCustom,
+			expected: filepath.Join(cacheCustom, CacheDir),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			// This test is using the default cache, do not clean it
+			c, err := NewHandle()
+			if c == nil || err != nil {
+				t.Fatal("failed to create cache handle")
+			}
 
-			if r := Root(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.rootDir != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", c.rootDir, tt.expected)
 			}
 		})
 	}

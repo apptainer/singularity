@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
-	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 func TestLibrary(t *testing.T) {
@@ -34,18 +33,22 @@ func TestLibrary(t *testing.T) {
 		{
 			name:     "Custom Library",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "library"),
+			expected: filepath.Join(cacheCustom, CacheDir, "library"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
+			os.Setenv(DirEnv, tt.env)
 			defer os.Unsetenv(DirEnv)
 
-			os.Setenv(DirEnv, tt.env)
+			// This test is based on the default cache so do *not* clean it
+			c, err := NewHandle()
+			if c == nil || err != nil {
+				t.Fatal("failed to create new cache handle")
+			}
 
-			if r := Library(); r != tt.expected {
+			if r := c.Library; r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
@@ -55,6 +58,22 @@ func TestLibrary(t *testing.T) {
 func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	// Create a temporary cache for testing
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary cache: %s", err)
+	}
+	defer os.RemoveAll(dir)
+
+	c, err := hdlInit(dir)
+	if c == nil || err != nil {
+		t.Fatalf("failed to create cache handle: %s", err)
+	}
+	defer c.Clean("all")
+
+	// Create a dummy entry in the cache to simulate a valid image
+	validSHASum := createFakeCachedImage(t, c.Library)
 
 	// LibraryImage just return a string and there is no definition of what
 	// could be a bad string.
@@ -67,15 +86,15 @@ func TestLibraryImage(t *testing.T) {
 		{
 			name:     "General case",
 			sum:      validSHASum,
-			path:     validPath,
-			expected: Library(),
+			path:     validName,
+			expected: filepath.Join(c.Library, validSHASum, validName),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			path := LibraryImage(tt.sum, tt.path)
-			if path != tt.expected {
+			path, err := c.LibraryImage(tt.sum, tt.path)
+			if err != nil || path != tt.expected {
 				t.Errorf("unexpected result: %s (expected %s)", path, tt.expected)
 			}
 		})
@@ -86,8 +105,21 @@ func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// Create a temporary cache for testing
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary cache: %s", err)
+	}
+	os.RemoveAll(dir)
+
+	c, err := hdlInit(dir)
+	if c == nil || err != nil {
+		t.Fatalf("failed to create cache handle: %s", err)
+	}
+	defer c.Clean("all")
+
 	// Invalid cases
-	_, err := LibraryImageExists("", "")
+	_, err = c.LibraryImageExists("", "")
 	if err == nil {
 		t.Fatalf("LibraryImageExists() returned true for invalid data:  %s\n", err)
 	}
@@ -97,19 +129,17 @@ func TestLibraryImageExists(t *testing.T) {
 		t.Skip("skipping test requiring Singularity to be installed")
 	}
 
+	// We build an image in the temporary directory that we manage, which
+	// will also cache it in the cache sub-directory in the same
+	// temporary directory
 	sexec, err := exec.LookPath("singularity")
 	if err != nil {
 		t.Skip("skipping test: singularity is not installed")
 	}
-	dir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("cannot create temporary directory: %s\n", err)
-	}
-	defer os.RemoveAll(dir)
 	filename := "alpine_latest.sif"
 	name := filepath.Join(dir, filename)
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(sexec, "pull", "-F", "-U", name, "library://alpine")
+	cmd := exec.Command(sexec, "build", "-F", name, "library://alpine")
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	err = cmd.Run()
@@ -118,24 +148,25 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 
 	// Invalid case with a valid image
-	_, err = LibraryImageExists("", filename)
-	if err != nil {
-		t.Fatalf("image reported as non-existing: %s\n", err)
+	_, err = c.LibraryImageExists("", filename)
+	if err == nil {
+		t.Fatalf("invalid case with a valid image succeeded: %s\n", err)
 	}
 
 	// Valid case with a valid image, the get the hash from the
-	// file we just created and check whether it matches with what
+	// cache we just created and check whether it matches with what
 	// we have in the cache
-	hash, err := client.ImageHash(name)
-	if err != nil {
-		t.Fatalf("cannot get image's hash: %s\n", err)
+	subdirs, err := ioutil.ReadDir(c.Library)
+	if err != nil || len(subdirs) != 1 {
+		t.Fatalf("failed to find the cache directory (%d directories found in %s)", len(subdirs), c.Library)
 	}
+	hash := subdirs[0].Name()
 
-	exists, err := LibraryImageExists(hash, filename)
+	exists, err := c.LibraryImageExists(hash, filename)
 	if err != nil {
 		t.Fatalf("error while checking if image exists: %s\n", err)
 	}
 	if exists == false {
-		t.Fatal("valid image is reported as non-existing")
+		t.Fatalf("valid image (%s) is reported as non-existing", filename)
 	}
 }
