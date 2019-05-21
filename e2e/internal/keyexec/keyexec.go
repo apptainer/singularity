@@ -34,8 +34,6 @@ var testenv testingEnv
 
 // PullDefaultPublicKey will pull the public Sylabs Admin key
 func PullDefaultPublicKey(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
-
 	argv := []string{"key", "pull", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
 
 	execKey := exec.Command(testenv.CmdPath, argv...)
