@@ -6,7 +6,6 @@ source common.func
 source instance/instance.func
 
 image=`get-test-image`
-
 instance_name=`gen-instance-name`
 
 home=`mktmpdir`

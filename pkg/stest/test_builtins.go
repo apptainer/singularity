@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -37,10 +36,8 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 	}
 
 	var (
-		re        *regexp.Regexp
-		d         bytes.Buffer
-		errWriter io.Writer
-		outWriter io.Writer
+		re *regexp.Regexp
+		d  bytes.Buffer
 	)
 
 	t := GetTesting(ctx)
@@ -76,46 +73,39 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 	switch stream {
 	case "error":
 		if mc.Stderr != os.Stderr {
-			errWriter = io.MultiWriter(&d, mc.Stderr)
+			cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
 		} else {
-			errWriter = &d
+			cmd.Stderr = &d
 		}
 		if mc.Stdout != os.Stdout {
-			outWriter = mc.Stdout
+			cmd.Stdout = mc.Stdout
 		}
 	case "output":
 		if mc.Stdout != os.Stdout {
-			outWriter = io.MultiWriter(&d, mc.Stdout)
+			cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
 		} else {
-			outWriter = &d
+			cmd.Stdout = &d
 		}
 		if mc.Stderr != os.Stderr {
-			errWriter = mc.Stderr
+			cmd.Stderr = mc.Stderr
 		}
 	case "combined":
 		if mc.Stderr != os.Stderr {
-			errWriter = io.MultiWriter(&d, mc.Stderr)
+			cmd.Stderr = io.MultiWriter(&d, mc.Stderr)
 		} else {
-			errWriter = &d
+			cmd.Stderr = &d
 		}
 		if mc.Stdout != os.Stdout {
-			outWriter = io.MultiWriter(&d, mc.Stdout)
+			cmd.Stdout = io.MultiWriter(&d, mc.Stdout)
 		} else {
-			outWriter = &d
+			cmd.Stdout = &d
 		}
 	default:
 		return fmt.Errorf("stream %s not supported", stream)
 	}
 
-	if errWriter == nil {
-		errWriter = ioutil.Discard
-	}
-	if outWriter == nil {
-		outWriter = ioutil.Discard
-	}
-
 	exitCode := 0
-	if err := RunCommand(&cmd, outWriter, errWriter); err != nil {
+	if err := RunCommand(&cmd); err != nil {
 		if _, ok := err.(*exec.Error); ok {
 			t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
 			return fmt.Errorf("error while executing %s: %s", fullCmd, err)
@@ -124,6 +114,8 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 			if status, ok := x.Sys().(syscall.WaitStatus); ok {
 				exitCode = status.ExitStatus()
 			}
+		} else {
+			return fmt.Errorf("error while executing %s: %s", fullCmd, err)
 		}
 	}
 
@@ -139,7 +131,7 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 	}
 	if !match {
 		t.Logf("%sLOG: %-30s\n%s", removeFunctionLine(), commandOutput, d.String())
-		return fmt.Errorf("%s (%s stream doesn't contain pattern %q string)", fullCmd, stream, search)
+		return fmt.Errorf("%s (%s stream doesn't contain pattern %q string): exit code %d", fullCmd, stream, search, exitCode)
 	}
 
 	return interp.ExitStatus(exitCode)
@@ -162,11 +154,7 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 		return err
 	}
 
-	var (
-		d         bytes.Buffer
-		errWriter io.Writer
-		outWriter io.Writer
-	)
+	var d bytes.Buffer
 
 	t := GetTesting(ctx)
 
@@ -183,17 +171,17 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 		cmd.Stdin = mc.Stdin
 	}
 	if mc.Stderr != os.Stderr {
-		errWriter = io.MultiWriter(mc.Stderr, &d)
+		cmd.Stderr = io.MultiWriter(mc.Stderr, &d)
 	} else {
-		errWriter = &d
+		cmd.Stderr = &d
 	}
 	if mc.Stdout != os.Stdout {
-		outWriter = io.MultiWriter(mc.Stdout, &d)
+		cmd.Stdout = io.MultiWriter(mc.Stdout, &d)
 	} else {
-		outWriter = &d
+		cmd.Stdout = &d
 	}
 
-	err = RunCommand(&cmd, outWriter, errWriter)
+	err = RunCommand(&cmd)
 
 	switch x := err.(type) {
 	case *exec.ExitError:

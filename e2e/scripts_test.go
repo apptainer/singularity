@@ -206,6 +206,6 @@ func TestE2EScripts(t *testing.T) {
 	}
 
 	for _, ts := range testScripts {
-		stest.RunScript(ts.name, ts.path, t, testing.Verbose())
+		stest.RunScript(nil, ts.name, ts.path, t)
 	}
 }

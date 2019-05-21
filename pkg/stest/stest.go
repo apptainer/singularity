@@ -8,6 +8,7 @@ package stest
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"mvdan.cc/sh/v3/expand"
 	"mvdan.cc/sh/v3/interp"
@@ -32,7 +34,7 @@ type testExec struct {
 	atExitFunctions *[]string
 	t               *testing.T
 	runner          *interp.Runner
-	verboseTest     bool
+	customCtx       context.Context
 }
 
 // CommandBuiltin defines a command shell builtin.
@@ -129,9 +131,9 @@ func GetTesting(ctx context.Context) *testing.T {
 	return ctx.Value(testExecContext).(*testExec).t
 }
 
-// IsVerboseTest returns if current test are run with -v flag.
-func IsVerboseTest(ctx context.Context) bool {
-	return ctx.Value(testExecContext).(*testExec).verboseTest
+// GetCustomContext return the custom context.
+func GetCustomContext(ctx context.Context) context.Context {
+	return ctx.Value(testExecContext).(*testExec).customCtx
 }
 
 // SetEnv sets an environment variables, equivalent to "export NAME=VALUE"
@@ -161,64 +163,195 @@ func removeFunctionLine() string {
 
 // RunCommand runs the provided command instance and will redirect
 // output/error streams to the provided output/error writers
-func RunCommand(cmd *exec.Cmd, stdout, stderr io.Writer) error {
+func RunCommand(cmd *exec.Cmd) error {
 	var (
-		err          error
-		wg           sync.WaitGroup
-		readErrFile  *os.File
-		writeErrFile *os.File
-		readOutFile  *os.File
-		writeOutFile *os.File
+		err           error
+		streamCopyErr = make(chan error, 3)
+		state         *os.ProcessState
+		readErrFile   *os.File
+		writeErrFile  *os.File
+		readOutFile   *os.File
+		writeOutFile  *os.File
+		readInFile    *os.File
+		writeInFile   *os.File
+		writerMutex   sync.Mutex
+		wg            sync.WaitGroup
 	)
+	defer close(streamCopyErr)
 
-	if stdout == nil || stderr == nil {
-		return fmt.Errorf("nil stdout and/or stderr writers provided")
+	// stdin stream copy
+	if cmd.Stdin != nil {
+		readInFile, writeInFile, err = os.Pipe()
+		if err != nil {
+			return fmt.Errorf("could not create stdin stream copy: %s", err)
+		}
+
+		wg.Add(1)
+		go func() {
+			defer writeInFile.Close()
+			defer wg.Done()
+
+			_, err := io.Copy(writeInFile, cmd.Stdin)
+			if err != nil {
+				streamCopyErr <- err
+			}
+		}()
+	} else {
+		// point to /dev/null
+		readInFile, err = os.Open(os.DevNull)
+		if err != nil {
+			return fmt.Errorf("failed to open /dev/null: %s", err)
+		}
 	}
 
-	readErrFile, writeErrFile, err = os.Pipe()
-	if err != nil {
-		return fmt.Errorf("could not create stderr stream copy: %s", err)
+	// stderr stream copy
+	if cmd.Stderr != nil {
+		errWriter := cmd.Stderr
+		readErrFile, writeErrFile, err = os.Pipe()
+		if err != nil {
+			return fmt.Errorf("could not create stderr stream copy: %s", err)
+		}
+
+		wg.Add(1)
+		go func() {
+			defer readErrFile.Close()
+			defer wg.Done()
+
+			var b [1024]byte
+
+			for {
+				_, err := readErrFile.Read(b[:])
+				if err != nil {
+					if !os.IsTimeout(err) && err != io.EOF {
+						streamCopyErr <- err
+					}
+					break
+				}
+				// avoid race because cmd.Stderr may be equal
+				// to cmd.Stdout, so if writer is of type
+				// bytes.Buffer by example race may appear
+				writerMutex.Lock()
+				_, err = errWriter.Write(b[:])
+				writerMutex.Unlock()
+				if err != nil {
+					streamCopyErr <- err
+					break
+				}
+			}
+		}()
+	} else {
+		// point to /dev/null
+		writeErrFile, err = os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+		if err != nil {
+			return fmt.Errorf("failed to open /dev/null: %s", err)
+		}
 	}
-	cmd.Stderr = writeErrFile
 
-	readOutFile, writeOutFile, err = os.Pipe()
-	if err != nil {
-		return fmt.Errorf("could not create stdout stream copy: %s", err)
+	// stdout stream copy
+	if cmd.Stdout != nil {
+		outWriter := cmd.Stdout
+		readOutFile, writeOutFile, err = os.Pipe()
+		if err != nil {
+			return fmt.Errorf("could not create stderr stream copy: %s", err)
+		}
+
+		wg.Add(1)
+		go func() {
+			defer readOutFile.Close()
+			defer wg.Done()
+
+			var b [1024]byte
+
+			for {
+				_, err := readOutFile.Read(b[:])
+				if err != nil {
+					if !os.IsTimeout(err) && err != io.EOF {
+						streamCopyErr <- err
+					}
+					break
+				}
+				// avoid race with cmd.Stderr above
+				writerMutex.Lock()
+				_, err = outWriter.Write(b[:])
+				writerMutex.Unlock()
+				if err != nil {
+					streamCopyErr <- err
+					break
+				}
+			}
+		}()
+	} else {
+		// point to /dev/null
+		writeOutFile, err = os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+		if err != nil {
+			return fmt.Errorf("failed to open /dev/null: %s", err)
+		}
 	}
-	cmd.Stdout = writeOutFile
 
-	wg.Add(2)
-	go func() {
-		io.Copy(stderr, readErrFile)
-		wg.Done()
-	}()
+	// prepare process attributes
+	procAttr := &os.ProcAttr{
+		Dir: cmd.Dir,
+		Env: cmd.Env,
+		Files: []*os.File{
+			readInFile,   // stdin
+			writeOutFile, // stdout
+			writeErrFile, // stderr
+		},
+	}
 
-	go func() {
-		io.Copy(stdout, readOutFile)
-		wg.Done()
-	}()
-
-	cleanup := func() {
-		writeErrFile.Close()
+	// close useless pipe ends
+	closeAfterStart := func() {
+		readInFile.Close()
 		writeOutFile.Close()
-		readErrFile.Close()
-		readOutFile.Close()
-		wg.Wait()
+		writeErrFile.Close()
 	}
 
-	if err := cmd.Start(); err != nil {
-		cleanup()
+	// we don't use cmd.Start/cmd.Wait here because we need to manage
+	// stream copy pipes ourself. Daemon processes which doesn't close
+	// I/O file descriptors may stuck on cmd.Wait/cmd.Run with traditional
+	// approach like with CombinedOutput
+	cmd.Process, err = os.StartProcess(cmd.Path, cmd.Args, procAttr)
+	if err != nil {
+		closeAfterStart()
+		wg.Wait()
 		return err
 	}
 
-	err = cmd.Wait()
-	cleanup()
+	closeAfterStart()
+
+	state, err = cmd.Process.Wait()
+
+	// once the process finished, set the read deadline to
+	// force stream copy goroutines to exit properly
+	readErrFile.SetReadDeadline(time.Now())
+	readOutFile.SetReadDeadline(time.Now())
+
+	// wait goroutines
+	wg.Wait()
+
+	// just return the first error from stream copy
+	if len(streamCopyErr) > 0 {
+		err = <-streamCopyErr
+	}
+
+	if err != nil {
+		return err
+	} else if !state.Success() {
+		return &exec.ExitError{ProcessState: state}
+	}
+
 	return err
 }
 
 // RunScript executes the provided script from a test function as a main
 // sub test with the provided name.
-func RunScript(name, script string, t *testing.T, verboseTest bool) {
+func RunScript(customCtx context.Context, name, script string, t *testing.T) {
+	failFast := false
+	fl := flag.Lookup("test.failfast")
+	if fl != nil && fl.Value.String() == "true" {
+		failFast = true
+	}
+
 	f, err := os.Open(script)
 	if err != nil {
 		t.Fatal(err)
@@ -243,7 +376,7 @@ func RunScript(name, script string, t *testing.T, verboseTest bool) {
 
 					subTe.t = sub
 					subTe.runner = te.runner
-					subTe.verboseTest = verboseTest
+					subTe.customCtx = te.customCtx
 
 					ctx := context.TODO()
 					ctx = context.WithValue(ctx, testExecContext, &subTe)
@@ -285,12 +418,16 @@ func RunScript(name, script string, t *testing.T, verboseTest bool) {
 		te.t = t
 		te.runner = runner
 		te.atExitFunctions = new([]string)
-		te.verboseTest = verboseTest
+		te.customCtx = customCtx
 
 		ctx := context.TODO()
 		ctx = context.WithValue(ctx, testExecContext, &te)
 
 		parser.Stmts(f, func(st *syntax.Stmt) bool {
+			if failFast && t.Failed() {
+				return false
+			}
+
 			line := st.Cmd.Pos().Line()
 			err := runner.Run(ctx, st)
 			if err == nil {
@@ -312,10 +449,10 @@ func RunScript(name, script string, t *testing.T, verboseTest bool) {
 					t.Errorf("%sERROR: execution failed in %s (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
 				}
 			}
+			// stop parsing
 			return false
 		})
 
-		// if test-skip-script is called those functions won't be executed
 		for _, funcName := range *te.atExitFunctions {
 			if err := runner.Run(ctx, runner.Funcs[funcName].Cmd); err != nil {
 				t.Errorf("%sERROR: function %s returned an error: %s", removeFunctionLine(), funcName, err)

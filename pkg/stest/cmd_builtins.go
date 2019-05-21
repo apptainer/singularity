@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"regexp"
 
 	"mvdan.cc/sh/v3/interp"
 )
@@ -68,8 +69,27 @@ func registerExitFunction(ctx context.Context, mc interp.ModuleCtx, args []strin
 	return fmt.Errorf("%s is not a function", funcName)
 }
 
+// escape-meta-regex
+// usage:
+// escape-meta-regex <string> or echo "test"|escape-meta-regex
+func escapeMetaRegex(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+	str := ""
+	if len(args) == 1 {
+		str = args[0]
+	} else {
+		b, err := ioutil.ReadAll(mc.Stdin)
+		if err != nil {
+			return fmt.Errorf("escape-meta-regex error: %s", err)
+		}
+		str = string(b)
+	}
+	_, err := fmt.Fprintf(mc.Stdout, "%s\n", regexp.QuoteMeta(str))
+	return err
+}
+
 func init() {
 	RegisterCommandBuiltin("create-tmpdir", createTmpDir)
 	RegisterCommandBuiltin("create-tmpfile", createTmpFile)
+	RegisterCommandBuiltin("escape-meta-regex", escapeMetaRegex)
 	RegisterCommandBuiltin("register-exit-func", registerExitFunction)
 }
