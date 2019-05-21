@@ -88,7 +88,6 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 
 		// if its not signed, print a warning
 		if !imageSigned {
-			sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
 			return ErrLibraryUnsigned
 		}
 	} else {
