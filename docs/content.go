@@ -722,7 +722,7 @@ Enterprise Performance Computing (EPC)`
 	AppsShort string = `List available apps within a container`
 	AppsLong  string = `
   List applications (apps) installed in a container, located at
-  /scif/apps. See http://containers-ftw.org/SCI-F/
+  /scif/apps. See SCIF (Scientific Filesystem) at https://sci-f.github.io/
   
   To access apps, use shell, exec, run, inspect with --app <appname>
 
