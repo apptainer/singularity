@@ -203,6 +203,11 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 	allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
 	handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
 		if desc.MediaType == SifLayerMediaType {
+			// Ensure descriptor is of a single file
+			// AnnotationUnpack indicates that the descriptor is of a directory
+			if desc.Annotations[content.AnnotationUnpack] == "true" {
+				return nil, fmt.Errorf("descriptor is of a bundled directory, not a SIF image")
+			}
 			nameOld, _ := content.ResolveName(desc)
 			_ = store.MapPath(nameOld, name)
 		}
@@ -213,6 +218,13 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 	_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
 	if err != nil {
 		return fmt.Errorf("unable to pull from registry: %s", err)
+	}
+
+	// ensure that we have downloaded a SIF
+	if err := ensureSIF(name); err != nil {
+		// remove whatever we downloaded if it is not a SIF
+		os.RemoveAll(name)
+		return err
 	}
 
 	// ensure container is executable
