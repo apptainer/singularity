@@ -375,14 +375,18 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	uid := os.Getuid()
+	gid := os.Getgid()
+	suidRequired := uid != 0 && !file.UserNs
+
 	// basic checks:
 	// 1. a user must not use SUID workflow to join an instance
 	//    started with user namespace
 	// 2. a user must use SUID workflow to join an instance
 	//    started without user namespace
-	if starterConfig.GetIsSUID() && file.UserNs {
+	if starterConfig.GetIsSUID() && !suidRequired {
 		return fmt.Errorf("joining user namespace with SUID workflow is not allowed")
-	} else if !starterConfig.GetIsSUID() && !file.UserNs {
+	} else if !starterConfig.GetIsSUID() && suidRequired {
 		return fmt.Errorf("a setuid installation is required to join this instance")
 	}
 
@@ -425,13 +429,10 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
-	uid := os.Getuid()
-	gid := os.Getgid()
-
 	// enforce checks while joining an instance process with SUID workflow
 	// since instance file is stored in user home directory, we can't trust
 	// its content when using SUID workflow
-	if !file.UserNs && uid != 0 {
+	if suidRequired {
 		// check if instance is running with user namespace enabled
 		// by reading /proc/pid/uid_map
 		_, hid, err := proc.ReadIDMap("uid_map")

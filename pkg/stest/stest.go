@@ -59,36 +59,6 @@ var testBuiltins = make(map[string]*TestBuiltin)
 // registered command builtins
 var commandBuiltins = make(map[string]*CommandBuiltin)
 
-// ExecEnv iterates over current script environment variables and
-// returns a list of key-pair environment variable, typically to
-// use them with exec.Command.
-func ExecEnv(env expand.Environ) []string {
-	list := make([]string, 0, 64)
-	env.Each(func(name string, vr expand.Variable) bool {
-		if vr.Exported {
-			list = append(list, name+"="+vr.String())
-		}
-		return true
-	})
-	return list
-}
-
-// LookupCommand searches for command path based on current PATH sets
-// in script.
-func LookupCommand(command string, env expand.Environ) (string, error) {
-	oldPath := os.Getenv("PATH")
-	vr := env.Get("PATH")
-
-	os.Setenv("PATH", vr.String())
-	path, err := exec.LookPath(command)
-	if err != nil {
-		return "", err
-	}
-	os.Setenv("PATH", oldPath)
-
-	return path, nil
-}
-
 // RegisterTestBuiltin registers a test builtin, typically called
 // from init().
 func RegisterTestBuiltin(name string, fn BuiltinFn, index int) error {
@@ -159,6 +129,34 @@ func removeFunctionLine() string {
 		b.WriteByte('\b')
 	}
 	return b.String()
+}
+
+// ExecEnv iterates over current script environment variables and
+// returns a list of key-pair environment variable, typically to
+// use them with exec.Command.
+func ExecEnv(env expand.Environ) []string {
+	list := make([]string, 0, 64)
+	env.Each(func(name string, vr expand.Variable) bool {
+		if vr.Exported {
+			list = append(list, name+"="+vr.String())
+		}
+		return true
+	})
+	return list
+}
+
+// LookupCommand searches for command path based on current PATH sets
+// in script.
+func LookupCommand(command string, env expand.Environ) (string, error) {
+	oldPath := os.Getenv("PATH")
+	os.Setenv("PATH", env.Get("PATH").String())
+	defer os.Setenv("PATH", oldPath)
+
+	path, err := exec.LookPath(command)
+	if err != nil {
+		return "", err
+	}
+	return path, nil
 }
 
 // RunCommand runs the provided command instance and will redirect
