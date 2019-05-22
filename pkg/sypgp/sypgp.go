@@ -32,12 +32,6 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-// PublicKeyType is the armor type for a PGP public key.
-const PublicKeyType = "PGP PUBLIC KEY BLOCK"
-
-// PrivateKeyType is the armor type for a PGP private key.
-const PrivateKeyType = "PGP PRIVATE KEY BLOCK"
-
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
   1) View configured remotes using "singularity remote list"
   2) Identify default remote. It will be listed with square brackets.
@@ -103,7 +97,11 @@ func GetTokenFile() string {
 
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
-	return filepath.Join(syfs.ConfigDir(), "sypgp")
+	sypgpDir := os.Getenv("SINGULARITY_SYPGPDIR")
+	if sypgpDir == "" {
+		return filepath.Join(syfs.ConfigDir(), "sypgp")
+	}
+	return sypgpDir
 }
 
 // SecretPath returns a string describing the path to the private keys store
@@ -977,9 +975,9 @@ func getTypesFromEntity(path string) []string {
 	// is not armored so obtain the types checking the privatekey field from entity
 	for _, pathEntity := range el {
 		if pathEntity.PrivateKey != nil {
-			types = append(types, PrivateKeyType)
+			types = append(types, openpgp.PrivateKeyType)
 		} else {
-			types = append(types, PublicKeyType)
+			types = append(types, openpgp.PublicKeyType)
 		}
 	}
 
@@ -1000,7 +998,7 @@ func ImportKey(kpath string) error {
 
 	for i, pathEntity := range pathEntityList {
 
-		if pathEntityTypes[i] == PrivateKeyType {
+		if pathEntityTypes[i] == openpgp.PrivateKeyType {
 			// Its a private key
 			err := ImportPrivateKey(pathEntity)
 			if err != nil {
@@ -1008,7 +1006,7 @@ func ImportKey(kpath string) error {
 			}
 
 		}
-		if pathEntityTypes[i] == PublicKeyType {
+		if pathEntityTypes[i] == openpgp.PublicKeyType {
 			err := ImportPubKey(pathEntity)
 			if err != nil {
 				return err

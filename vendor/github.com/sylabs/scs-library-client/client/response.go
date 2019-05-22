@@ -5,47 +5,38 @@
 
 package client
 
-// JSONError - Struct for standard error returns over REST API
-type JSONError struct {
-	Code    int    `json:"code,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Message string `json:"message,omitempty"`
-}
-
-// JSONResponse - Top level container of a REST API response
-type JSONResponse struct {
-	Data  interface{} `json:"data"`
-	Error JSONError   `json:"error,omitempty"`
-}
+import (
+	jsonresp "github.com/sylabs/json-resp"
+)
 
 // EntityResponse - Response from the API for an Entity request
 type EntityResponse struct {
-	Data  Entity    `json:"data"`
-	Error JSONError `json:"error,omitempty"`
+	Data  Entity          `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
 }
 
 // CollectionResponse - Response from the API for an Collection request
 type CollectionResponse struct {
-	Data  Collection `json:"data"`
-	Error JSONError  `json:"error,omitempty"`
+	Data  Collection      `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
 }
 
 // ContainerResponse - Response from the API for an Container request
 type ContainerResponse struct {
-	Data  Container `json:"data"`
-	Error JSONError `json:"error,omitempty"`
+	Data  Container       `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
 }
 
 // ImageResponse - Response from the API for an Image request
 type ImageResponse struct {
-	Data  Image     `json:"data"`
-	Error JSONError `json:"error,omitempty"`
+	Data  Image           `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
 }
 
 // TagsResponse - Response from the API for a tags request
 type TagsResponse struct {
-	Data  TagMap    `json:"data"`
-	Error JSONError `json:"error,omitempty"`
+	Data  TagMap          `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
 }
 
 // SearchResults - Results structure for searches
@@ -57,6 +48,6 @@ type SearchResults struct {
 
 // SearchResponse - Response from the API for a search request
 type SearchResponse struct {
-	Data  SearchResults `json:"data"`
-	Error JSONError     `json:"error,omitempty"`
+	Data  SearchResults   `json:"data"`
+	Error *jsonresp.Error `json:"error,omitempty"`
 }

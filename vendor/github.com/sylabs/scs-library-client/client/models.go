@@ -9,8 +9,6 @@ import (
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/globalsign/mgo/bson"
 )
 
 // LibraryModels lists names of valid models in the database
@@ -18,19 +16,20 @@ var LibraryModels = []string{"Entity", "Collection", "Container", "Image", "Blob
 
 // ModelManager - Generic interface for models which must have a bson ObjectID
 type ModelManager interface {
-	GetID() bson.ObjectId
+	GetID() string
 }
 
 // BaseModel - has an ID, soft deletion marker, and Audit struct
 type BaseModel struct {
-	ModelManager `bson:",omitempty" json:",omitempty"`
-	Deleted      bool      `bson:"deleted" json:"deleted"`
-	CreatedBy    string    `bson:"createdBy" json:"createdBy"`
-	CreatedAt    time.Time `bson:"createdAt" json:"createdAt"`
-	UpdatedBy    string    `bson:"updatedBy,omitempty" json:"updatedBy,omitempty"`
-	UpdatedAt    time.Time `bson:"updatedAt,omitempty" json:"updatedAt,omitempty"`
-	DeletedBy    string    `bson:"deletedBy,omitempty" json:"deletedBy,omitempty"`
-	DeletedAt    time.Time `bson:"deletedAt,omitempty" json:"deletedAt,omitempty"`
+	ModelManager `json:",omitempty"`
+	Deleted      bool      `json:"deleted"`
+	CreatedBy    string    `json:"createdBy"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedBy    string    `json:"updatedBy,omitempty"`
+	UpdatedAt    time.Time `json:"updatedAt,omitempty"`
+	DeletedBy    string    `json:"deletedBy,omitempty"`
+	DeletedAt    time.Time `json:"deletedAt,omitempty"`
+	Owner        string    `json:"owner,omitempty"`
 }
 
 // IsDeleted - Convenience method to check soft deletion state if working with
@@ -64,22 +63,22 @@ var _ ModelManager = (*BaseModel)(nil)
 // for a user or group
 type Entity struct {
 	BaseModel
-	ID          bson.ObjectId   `bson:"_id" json:"id"`
-	Name        string          `bson:"name" json:"name"`
-	Description string          `bson:"description" json:"description"`
-	Collections []bson.ObjectId `bson:"collections" json:"collections"`
-	Size        int64           `bson:"size" json:"size"`
-	Quota       int64           `bson:"quota" json:"quota"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Collections []string `json:"collections"`
+	Size        int64    `json:"size"`
+	Quota       int64    `json:"quota"`
 	// DefaultPrivate set true will make any new Collections in ths entity
 	// private at the time of creation.
-	DefaultPrivate bool `bson:"defaultPrivate" json:"defaultPrivate"`
+	DefaultPrivate bool `json:"defaultPrivate"`
 	// CustomData can hold a user-provided string for integration purposes
 	// not used by the library itself.
-	CustomData string `bson:"customData" json:"customData"`
+	CustomData string `json:"customData"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
-func (e Entity) GetID() bson.ObjectId {
+func (e Entity) GetID() string {
 	return e.ID
 }
 
@@ -91,22 +90,22 @@ func (e Entity) LibraryURI() string {
 // Collection - Second level in the library, holds a collection of containers
 type Collection struct {
 	BaseModel
-	ID          bson.ObjectId   `bson:"_id" json:"id"`
-	Name        string          `bson:"name" json:"name"`
-	Description string          `bson:"description" json:"description"`
-	Entity      bson.ObjectId   `bson:"entity" json:"entity"`
-	Containers  []bson.ObjectId `bson:"containers" json:"containers"`
-	Size        int64           `bson:"size" json:"size"`
-	Private     bool            `bson:"private" json:"private"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description"`
+	Entity      string   `json:"entity"`
+	Containers  []string `json:"containers"`
+	Size        int64    `json:"size"`
+	Private     bool     `json:"private"`
 	// CustomData can hold a user-provided string for integration purposes
 	// not used by the library itself.
-	CustomData string `bson:"customData" json:"customData"`
+	CustomData string `json:"customData"`
 	// Computed fields that will not be stored - JSON response use only
-	EntityName string `bson:"-" json:"entityName,omitempty"`
+	EntityName string `json:"entityName,omitempty"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
-func (c Collection) GetID() bson.ObjectId {
+func (c Collection) GetID() string {
 	return c.ID
 }
 
@@ -119,25 +118,29 @@ func (c Collection) LibraryURI() string {
 // a particular container
 type Container struct {
 	BaseModel
-	ID            bson.ObjectId            `bson:"_id" json:"id"`
-	Name          string                   `bson:"name" json:"name"`
-	Description   string                   `bson:"description" json:"description"`
-	Collection    bson.ObjectId            `bson:"collection" json:"collection"`
-	Images        []bson.ObjectId          `bson:"images" json:"images"`
-	ImageTags     map[string]bson.ObjectId `bson:"imageTags" json:"imageTags"`
-	Size          int64                    `bson:"size" json:"size"`
-	DownloadCount int64                    `bson:"downloadCount" json:"downloadCount"`
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description"`
+	FullDescription string            `json:"fullDescription"`
+	Collection      string            `json:"collection"`
+	Images          []string          `json:"images"`
+	ImageTags       map[string]string `json:"imageTags"`
+	Size            int64             `json:"size"`
+	DownloadCount   int64             `json:"downloadCount"`
+	Stars           int               `json:"stars"`
+	Private         bool              `json:"private"`
+	ReadOnly        bool              `json:"readOnly"`
 	// CustomData can hold a user-provided string for integration purposes
 	// not used by the library itself.
-	CustomData string `bson:"customData" json:"customData"`
+	CustomData string `json:"customData"`
 	// Computed fields that will not be stored - JSON response use only
-	Entity         bson.ObjectId `bson:"-" json:"entity,omitempty"`
-	EntityName     string        `bson:"-" json:"entityName,omitempty"`
-	CollectionName string        `bson:"-" json:"collectionName,omitempty"`
+	Entity         string `json:"entity,omitempty"`
+	EntityName     string `json:"entityName,omitempty"`
+	CollectionName string `json:"collectionName,omitempty"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
-func (c Container) GetID() bson.ObjectId {
+func (c Container) GetID() string {
 	return c.ID
 }
 
@@ -160,26 +163,33 @@ func (c Container) TagList() string {
 // Container
 type Image struct {
 	BaseModel
-	ID          bson.ObjectId `bson:"_id" json:"id"`
-	Hash        string        `bson:"hash" json:"hash"`
-	Description string        `bson:"description" json:"description"`
-	Container   bson.ObjectId `bson:"container" json:"container"`
-	Blob        bson.ObjectId `bson:"blob,omitempty" json:"blob,omitempty"`
-	Size        int64         `bson:"size" json:"size"`
-	Uploaded    bool          `bson:"uploaded" json:"uploaded"`
+	ID           string   `json:"id"`
+	Hash         string   `json:"hash"`
+	Description  string   `json:"description"`
+	Container    string   `json:"container"`
+	Blob         string   `json:"blob,omitempty"`
+	Size         int64    `json:"size"`
+	Uploaded     bool     `json:"uploaded"`
+	Signed       *bool    `json:"signed,omitempty"`
+	Architecture *string  `json:"arch,omitempty"`
+	Fingerprints []string `json:"fingerprints,omitempty"`
 	// CustomData can hold a user-provided string for integration purposes
 	// not used by the library itself.
-	CustomData string `bson:"customData" json:"customData"`
+	CustomData string `json:"customData"`
 	// Computed fields that will not be stored - JSON response use only
-	Entity         bson.ObjectId `bson:"-" json:"entity,omitempty"`
-	EntityName     string        `bson:"-" json:"entityName,omitempty"`
-	Collection     bson.ObjectId `bson:"-" json:"collection,omitempty"`
-	CollectionName string        `bson:"-" json:"collectionName,omitempty"`
-	ContainerName  string        `bson:"-" json:"containerName,omitempty"`
+	Entity               string   `json:"entity,omitempty"`
+	EntityName           string   `json:"entityName,omitempty"`
+	Collection           string   `json:"collection,omitempty"`
+	CollectionName       string   `json:"collectionName,omitempty"`
+	ContainerName        string   `json:"containerName,omitempty"`
+	Tags                 []string `json:"tags,omitempty"`
+	ContainerDescription string   `json:"containerDescription,omitempty"`
+	ContainerStars       int      `json:"containerStars"`
+	ContainerDownloads   int64    `json:"containerDownloads"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
-func (img Image) GetID() bson.ObjectId {
+func (img Image) GetID() string {
 	return img.ID
 }
 
@@ -187,16 +197,16 @@ func (img Image) GetID() bson.ObjectId {
 // Uses object store bucket/key semantics
 type Blob struct {
 	BaseModel
-	ID          bson.ObjectId `bson:"_id" json:"id"`
-	Bucket      string        `bson:"bucket" json:"bucket"`
-	Key         string        `bson:"key" json:"key"`
-	Size        int64         `bson:"size" json:"size"`
-	ContentHash string        `bson:"contentHash" json:"contentHash"`
-	Status      string        `bson:"status" json:"status"`
+	ID          string `json:"id"`
+	Bucket      string `json:"bucket"`
+	Key         string `json:"key"`
+	Size        int64  `json:"size"`
+	ContentHash string `json:"contentHash"`
+	Status      string `json:"status"`
 }
 
 // GetID - Convenience method to get model ID if working with an interface
-func (b Blob) GetID() bson.ObjectId {
+func (b Blob) GetID() string {
 	return b.ID
 }
 
@@ -204,8 +214,8 @@ func (b Blob) GetID() bson.ObjectId {
 // but used by API calls setting tags
 type ImageTag struct {
 	Tag     string
-	ImageID bson.ObjectId
+	ImageID string
 }
 
 // TagMap - A map of tags to imageIDs for a container
-type TagMap map[string]bson.ObjectId
+type TagMap map[string]string

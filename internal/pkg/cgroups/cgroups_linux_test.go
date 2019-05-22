@@ -53,9 +53,8 @@ func TestCgroups(t *testing.T) {
 
 	manager := &Manager{Pid: pid, Path: path}
 	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
-		t.Errorf("%s", err)
+		t.Fatal(err)
 	}
-
 	defer manager.Remove()
 
 	rootPath := manager.GetCgroupRootPath()
@@ -132,8 +131,9 @@ func TestPauseResume(t *testing.T) {
 	manager.Path = filepath.Join("/singularity", strconv.Itoa(manager.Pid))
 
 	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
-		t.Errorf("%s", err)
+		t.Fatal(err)
 	}
+	defer manager.Remove()
 
 	manager.Pause()
 
@@ -181,8 +181,6 @@ func TestPauseResume(t *testing.T) {
 	}
 
 	file.Close()
-
-	defer manager.Remove()
 
 	pipe.Close()
 
