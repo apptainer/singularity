@@ -10,12 +10,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 // ImageVerify checks for an image integrity
@@ -330,12 +330,13 @@ func verifyEnv(t *testing.T, cmdPath, imagePath string, env []string, flags []st
 	args = append(args, imagePath, "env")
 
 	cmd := exec.Command(cmdPath, args...)
-	b, err := cmd.CombinedOutput()
+	res := cmd.Run(t)
 
-	out := string(b)
-	if err != nil {
-		t.Fatalf("Error running command: %v", err)
+	if res.Error != nil {
+		t.Fatalf("Error running command.\n%s", res)
 	}
+
+	out := res.Stdout()
 
 	for _, e := range env {
 		if !strings.Contains(out, e) {
