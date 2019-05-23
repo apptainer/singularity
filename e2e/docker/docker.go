@@ -8,7 +8,7 @@ package docker
 import (
 	"fmt"
 	"os"
-	"os/exec"
+	stdexec "os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -17,6 +17,7 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"golang.org/x/sys/unix"
 )
 
@@ -114,7 +115,7 @@ func testDockerPulls(t *testing.T) {
 		}
 	}))
 
-	imagePull := func(imgURI, imageName, imagePath string, force bool) ([]byte, string, error) {
+	imagePull := func(t *testing.T, imgURI, imageName, imagePath string, force bool) (string, *exec.Result) {
 		argv := []string{"pull"}
 		fullImagePath := ""
 
@@ -142,28 +143,23 @@ func testDockerPulls(t *testing.T) {
 
 		argv = append(argv, imgURI)
 		cmd := exec.Command(testenv.CmdPath, argv...)
-
-		b, err := cmd.CombinedOutput()
-
-		return b, fullImagePath, err
+		return fullImagePath, cmd.Run(t)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
-			b, fullPath, err := imagePull(tt.srcURI, tt.imageName, tt.imagePath, tt.force)
+			fullPath, res := imagePull(t, tt.srcURI, tt.imageName, tt.imagePath, tt.force)
 			switch {
-			case tt.expectSuccess && err == nil:
+			case tt.expectSuccess && res.Error == nil:
 				e2e.ImageVerify(t, testenv.CmdPath, fullPath)
-			case !tt.expectSuccess && err != nil:
+			case !tt.expectSuccess && res.Error != nil:
 				// PASS: expecting failure, failed
-			case tt.expectSuccess && err != nil:
+			case tt.expectSuccess && res.Error != nil:
 				// FAIL: expecting success, failed
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %s", err)
-			case !tt.expectSuccess && err == nil:
+				t.Fatalf("Unexpected failure running command.\n%s", res)
+			case !tt.expectSuccess && res.Error == nil:
 				// FAIL: expecting failure, succeeded
-				t.Log(string(b))
-				t.Fatalf("unexpected success: command should have failed")
+				t.Fatalf("Unexpected success running command.\n%s", res)
 			}
 		}))
 	}
@@ -343,7 +339,7 @@ func testDockerDefFile(t *testing.T) {
 func testDockerRegistry(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	if _, err := exec.LookPath("docker"); err != nil {
+	if _, err := stdexec.LookPath("docker"); err != nil {
 		t.Skip("docker not installed")
 	}
 
