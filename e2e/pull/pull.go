@@ -377,6 +377,8 @@ func RunE2ETests(t *testing.T) {
 	e2e.EnsureImage(t)
 
 	// put sif into OCI registry to pull it
+	// Note: the image name prevents collisions by using a package specific name
+	// as registry is shared between different test packages
 	cmd, out, err := orasImagePush(t, "oras://localhost:5000/pull_test_sif:latest", testenv.ImagePath)
 	if err != nil {
 		t.Logf("Command: %s", cmd)
