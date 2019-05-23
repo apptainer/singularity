@@ -578,10 +578,10 @@ Enterprise Performance Computing (EPC)`
 	// search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	SearchUse   string = `search [search options...] <search_query>`
-	SearchShort string = `Search a Library for images`
+	SearchShort string = `Search a Container Library for images`
 	SearchLong  string = `
-  The singularity search command will search the container library for users,
-  collection, and container names matching the arguments. (default cloud.sylabs.io)`
+  Search a Container Library for users and containers matching the search query.
+  (default cloud.sylabs.io)`
 	SearchExample string = `
   $ singularity search lolcow
   $ singularity search centos`
