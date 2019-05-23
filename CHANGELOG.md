@@ -9,7 +9,15 @@ _With the release of `v3.0.0`, we're introducing a new changelog format in an at
 
 _The old changelog can be found in the `release-2.6` branch_
 
-# Changes Since v3.2.0
+# Changes Since v3.2.1
+
+# v3.2.1 - [2019.05.23]
+
+  - This point release fixes the following bugs:
+    - Allows users to join instances with non-suid workflow
+    - Removes false warning when seccomp is disabled on the host
+    - Fixes an issue in the terminal when piping output to commands
+    - Binds NVIDIA persistenced socket when `--nv` is invoked
 
 # v3.2.0 - [2019.05.14]
 
