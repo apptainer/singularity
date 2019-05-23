@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/containerd/containerd/reference"
@@ -88,7 +89,6 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 
 		// if its not signed, print a warning
 		if !imageSigned {
-			sylog.Infof("TIP: Learn how to sign your own containers here : https://www.sylabs.io/docs/")
 			return ErrLibraryUnsigned
 		}
 	} else {
@@ -119,9 +119,9 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 	return libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, r.Tags, "No Description", &progressCallback{})
 }
 
-// OrasPush uploads the image specified by file and pushes it to the provided oci reference,
+// OrasPush uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
-func OrasPush(file, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+func OrasPush(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -157,7 +157,10 @@ func OrasPush(file, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	}
 	conf.Annotations = nil
 
-	desc, err := store.Add(file, SifLayerMediaType, file)
+	// Get the filename from path and use it as the name in the file store
+	name := filepath.Base(path)
+
+	desc, err := store.Add(name, SifLayerMediaType, path)
 	if err != nil {
 		return fmt.Errorf("unable to add SIF file to FileStore: %s", err)
 	}
