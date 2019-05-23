@@ -360,14 +360,13 @@ func orasImagePush(t *testing.T, imgURI, imagePath string) (string, []byte, erro
 	argv := []string{"push"}
 
 	if imagePath != "" {
-		argv = append(argv, filepath.Base(imagePath))
+		argv = append(argv, imagePath)
 	}
 
 	argv = append(argv, imgURI)
 
 	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
 	pushCmd := exec.Command(testenv.CmdPath, argv...)
-	pushCmd.Dir = filepath.Dir(imagePath)
 	out, err := pushCmd.CombinedOutput()
 	return cmd, out, err
 }
