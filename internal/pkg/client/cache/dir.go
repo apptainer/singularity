@@ -37,22 +37,16 @@ import (
 	"path"
 	"path/filepath"
 
+	client "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	client "github.com/sylabs/singularity/pkg/client/library"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 const (
 	// DirEnv specifies the environment variable which can set the directory
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
-
-	// BasedirDefault specifies the default value of the cache base directory.
-	// The path of the user's home directory is prepended at runtime.
-	// Ultimately, the default cache base directory is ~/.singularity/cache".
-	// Using "~/.singularity/cache" also does not clash with any 2.x cache
-	// directory.
-	basedirDefault = ".singularity"
 
 	// CacheDir specifies the name of the directory relative to the
 	// singularity data directory where images are cached in by
@@ -221,11 +215,7 @@ func getCacheBasedir() (string, error) {
 	}
 
 	// If the environment variable is not set, we use the default cache.
-	usr, err := user.Current()
-	if err != nil {
-		return "", fmt.Errorf("couldn't determine user home directory: %s", err)
-	}
-	basedir = path.Join(usr.HomeDir, basedirDefault)
+	basedir = syfs.ConfigDir()
 
 	return basedir, nil
 }
