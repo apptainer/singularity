@@ -54,6 +54,9 @@ func testEqualVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			out, err := exec.Command(testenv.CmdPath, tt.args...).CombinedOutput()
+			if err != nil {
+				t.Fatalf("Failed to obtain version: %+v", err)
+			}
 			if semanticVersion, err := semver.Make(string(out)); err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
