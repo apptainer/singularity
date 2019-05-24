@@ -10,11 +10,11 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 type testingEnv struct {
@@ -51,9 +51,8 @@ func remoteAdd(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -71,9 +70,8 @@ func remoteAdd(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err == nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected success: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		}))
 	}
@@ -107,9 +105,8 @@ func remoteRemove(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -126,9 +123,8 @@ func remoteRemove(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "remove"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -144,9 +140,8 @@ func remoteRemove(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "remove"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err == nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected success: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		}))
 	}
@@ -176,9 +171,8 @@ func remoteUse(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err == nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected success: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		}))
 	}
@@ -197,9 +191,8 @@ func remoteUse(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -216,9 +209,8 @@ func remoteUse(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -252,9 +244,8 @@ func remoteStatus(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -270,9 +261,8 @@ func remoteStatus(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "status"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -289,9 +279,8 @@ func remoteStatus(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "status"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err == nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected success: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		}))
 	}
@@ -318,9 +307,8 @@ func remoteList(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "list"}
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			fmt.Println("config.name is ", config.Name())
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -339,9 +327,8 @@ func remoteList(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -355,9 +342,8 @@ func remoteList(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -374,9 +360,8 @@ func remoteList(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}
@@ -390,9 +375,8 @@ func remoteList(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			if b, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput(); err != nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure: %v", err)
+			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		}))
 	}

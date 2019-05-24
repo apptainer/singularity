@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package test
+package exec
 
 import (
 	"testing"
@@ -13,20 +13,21 @@ import (
 
 type Cmd struct {
 	path string
+	args []string
 }
 
 type Result struct {
 	*icmd.Result
 }
 
-func NewCmd(path string) *Cmd {
-	return &Cmd{path: path}
+func Command(path string, args ...string) *Cmd {
+	return &Cmd{path: path, args: args}
 }
 
-func (c *Cmd) Run(t *testing.T, args ...string) *Result {
-	t.Logf("Running cmd %q with args %q", c.path, args)
+func (c *Cmd) Run(t *testing.T) *Result {
+	t.Logf("Running cmd %q with args %q", c.path, c.args)
 
-	result := icmd.RunCommand(c.path, args...)
+	result := icmd.RunCommand(c.path, c.args...)
 
 	return &Result{result}
 }

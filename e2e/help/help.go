@@ -10,13 +10,13 @@ package help
 
 import (
 	"fmt"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"gotest.tools/assert"
 	"gotest.tools/golden"
 )
@@ -50,14 +50,15 @@ var helpContentTests = []struct {
 }
 
 func testHelpContent(t *testing.T) {
-	c := test.NewCmd(testenv.CmdPath)
-
 	for _, tc := range helpContentTests {
 		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
-		path := filepath.Join("help", name)
 
 		t.Run(name, func(t *testing.T) {
-			got := c.Run(t, tc.cmds...).Stdout()
+			path := filepath.Join("help", name)
+
+			c := exec.Command(testenv.CmdPath, tc.cmds...)
+
+			got := c.Run(t).Stdout()
 
 			assert.Assert(t, golden.String(got, path))
 		})
@@ -110,9 +111,10 @@ func testCommands(t *testing.T) {
 
 				t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 					cmd := exec.Command(testenv.CmdPath, tt.argv...)
-					if b, err := cmd.CombinedOutput(); err != nil {
-						t.Log(string(b))
-						t.Fatalf("unexpected failure running '%s': %s", strings.Join(tt.argv, " "), err)
+					if res := cmd.Run(t); res.Error != nil {
+						t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
+							res,
+							res.Error)
 					}
 				}))
 			}
@@ -139,9 +141,8 @@ func testFailure(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			cmd := exec.Command(testenv.CmdPath, tt.argv...)
-			if b, err := cmd.CombinedOutput(); err == nil {
-				t.Log(string(b))
-				t.Fatalf("unexpected success running '%s'", strings.Join(tt.argv, " "))
+			if res := cmd.Run(t); res.Error == nil {
+				t.Fatalf("While running command:\n%s\nUnexpected success", res)
 			}
 		}))
 	}
@@ -163,13 +164,22 @@ func testSingularity(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			cmd := exec.Command(testenv.CmdPath, tt.argv...)
-			b, err := cmd.CombinedOutput()
-			if err != nil && tt.shouldPass {
-				t.Log(string(b))
-				t.Fatalf("unexpected failure running '%s': %s", strings.Join(tt.argv, " "), err)
-			} else if err == nil && !tt.shouldPass {
-				t.Log(string(b))
-				t.Fatalf("unexpected success running '%s'", strings.Join(tt.argv, " "))
+			switch res := cmd.Run(t); {
+			case res.Error == nil && tt.shouldPass:
+				// expecting PASS, passed => PASS
+
+			case res.Error != nil && !tt.shouldPass:
+				// expecting FAIL, failed => PASS
+
+			case res.Error == nil && !tt.shouldPass:
+				// expecting PASS, failed => FAIL
+				t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
+					res,
+					res.Error)
+
+			case res.Error != nil && tt.shouldPass:
+				// expecting FAIL, passed => FAIL
+				t.Fatalf("While running command:\n%s\nUnexpected success", res)
 			}
 		}))
 	}

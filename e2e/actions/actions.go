@@ -6,18 +6,16 @@
 package actions
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 type testingEnv struct {
@@ -168,38 +166,31 @@ func STDINPipe(t *testing.T) {
 		argv    []string
 		exit    int
 	}{
-		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | singularity exec %s grep hi", testenv.ImagePath)}, 0},
-		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | singularity exec %s grep hi", testenv.ImagePath)}, 1},
+		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | %s exec %s grep hi", testenv.CmdPath, testenv.ImagePath)}, 0},
+		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | %s exec %s grep hi", testenv.CmdPath, testenv.ImagePath)}, 1},
 		// Checking permissions
-		{"sh", "permissions", []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", testenv.ImagePath)}, 0},
+		{"sh", "permissions", []string{"-c", fmt.Sprintf("%s exec %s id -u | grep `id -u`", testenv.CmdPath, testenv.ImagePath)}, 0},
 		// testing run command properly hands arguments
-		{"sh", "arguments", []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", testenv.ImagePath)}, 0},
+		{"sh", "arguments", []string{"-c", fmt.Sprintf("%s run %s foo | grep foo", testenv.CmdPath, testenv.ImagePath)}, 0},
 		// Stdin to URI based image
-		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
-		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
-		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
+		{"sh", "library", []string{"-c", fmt.Sprintf("echo true | %s shell library://busybox", testenv.CmdPath)}, 0},
+		{"sh", "docker", []string{"-c", fmt.Sprintf("echo true | %s shell docker://busybox", testenv.CmdPath)}, 0},
+		{"sh", "shub", []string{"-c", fmt.Sprintf("echo true | %s shell shub://singularityhub/busybox", testenv.CmdPath)}, 0},
 		// Test apps
-		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", testenv.ImagePath)}, 0},
+		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("%s run --app foo %s | grep 'FOO'", testenv.CmdPath, testenv.ImagePath)}, 0},
 		// Test target pwd
-		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", testenv.ImagePath)}, 0},
+		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("%s exec --pwd /etc %s pwd | egrep '^/etc'", testenv.CmdPath, testenv.ImagePath)}, 0},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			cmd := exec.Command(tt.binName, tt.argv...)
-			if err := cmd.Start(); err != nil {
-				t.Fatalf("cmd.Start: %v", err)
-			}
+			res := cmd.Run(t)
 
-			if err := cmd.Wait(); err != nil {
-				exiterr, _ := err.(*exec.ExitError)
-				status, _ := exiterr.Sys().(syscall.WaitStatus)
-				if status.ExitStatus() != tt.exit {
-					// The program has exited with an unexpected exit code
-					{
-						t.Fatalf("unexpected exit code '%v': for cmd %v", status.ExitStatus(), strings.Join(tt.argv, " "))
-					}
-				}
+			if res.ExitCode != tt.exit {
+				t.Fatalf("Unexpected exit code '%d' while running command.\n%s",
+					res.ExitCode,
+					res)
 			}
 		}))
 	}
@@ -302,27 +293,22 @@ func PersistentOverlay(t *testing.T) {
 	defer os.Remove(tmpfile.Name())
 
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 	defer os.RemoveAll(squashfsImage)
 
 	//  Create the overlay ext3 fs
 	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
+
 	cmd = exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img")
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
+
 	defer os.Remove("ext3_fs.img")
 
 	// create a file dir
