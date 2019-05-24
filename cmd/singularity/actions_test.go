@@ -126,6 +126,11 @@ func testSingularityRun(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			// Because we drop the privileges during a test, we set a new image cache
+			// otherwise the test would try to use the cache from the privileged user,
+			// creating failures.
+			test.SetCacheDir(t)
+			defer test.CleanCacheDir(t)
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -199,6 +204,11 @@ func testSingularityExec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			// Because we drop the privileges during a test, we set a new image cache
+			// otherwise the test would try to use the cache from the privileged user,
+			// creating failures.
+			test.SetCacheDir(t)
+			defer test.CleanCacheDir(t)
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -216,6 +226,11 @@ func testSingularityExec(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Run("noHome", test.WithoutPrivilege(func(t *testing.T) {
+		// Because we drop the privileges during a test, we set a new image cache
+		// otherwise the test would try to use the cache from the privileged user,
+		// creating failures.
+		test.SetCacheDir(t)
+		defer test.CleanCacheDir(t)
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{noHome: true}, pwd+"/container.img", []string{"ls", "-ld", "$HOME"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
@@ -300,6 +315,11 @@ func testSTDINPipe(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			// Because we drop the privileges during a test, we set a new image cache
+			// otherwise the test would try to use the cache from the privileged user,
+			// creating failures.
+			test.SetCacheDir(t)
+			defer test.CleanCacheDir(t)
 			cmd := exec.Command(tt.binName, tt.argv...)
 			if err := cmd.Start(); err != nil {
 				t.Fatalf("cmd.Start: %v", err)
@@ -367,6 +387,11 @@ func testRunFromURI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+			// Because we drop the privileges during a test, we set a new image cache
+			// otherwise the test would try to use the cache from the privileged user,
+			// creating failures.
+			test.SetCacheDir(t)
+			defer test.CleanCacheDir(t)
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -502,6 +527,11 @@ func testPersistentOverlay(t *testing.T) {
 	}))
 	// look for the file without root privs
 	t.Run("overlay_noroot", test.WithoutPrivilege(func(t *testing.T) {
+		// Because we drop the privileges during a test, we set a new image cache
+		// otherwise the test would try to use the cache from the privileged user,
+		// creating failures.
+		test.SetCacheDir(t)
+		defer test.CleanCacheDir(t)
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"test", "-f", "/foo_overlay"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
@@ -520,7 +550,6 @@ func testPersistentOverlay(t *testing.T) {
 
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
-
 	test.SetCacheDir(t)
 	defer test.CleanCacheDir(t)
 
