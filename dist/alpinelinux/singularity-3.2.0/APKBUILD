@@ -2,7 +2,7 @@
 # Maintainer: "Tru Huynh <tru@pasteur.fr>"
 pkgname=singularity
 pkgver=3.2.0
-pkgrel=1
+pkgrel=2
 pkgdesc="Singularity: Application containers for Linux"
 url="https://www.sylabs.io/singularity"
 arch="x86_64"
@@ -12,7 +12,8 @@ depends="squashfs-tools"
 makedepends="gawk go libc-dev linux-headers libressl-dev libuuid util-linux-dev libseccomp-dev"
 install=""
 subpackages="$pkgname-doc $pkgname-examples"
-source="${pkgname}-${pkgver}.tar.gz::https://github.com/sylabs/singularity/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz"
+source="${pkgname}-${pkgver}.tar.gz::https://github.com/sylabs/singularity/releases/download/v${pkgver}/${pkgname}-${pkgver}.tar.gz
+	c0f9abf5d9877372bff12127fd7294c2e962e1ab.patch"
 options="suid !check" # no testsuite
 builddir="$srcdir/go/src/github.com/sylabs/${pkgname}"
 
@@ -80,4 +81,5 @@ examples() {
 }
 
 
-sha512sums="854425ada71d0bbe05623674c64173320dfddb2b8aa05cc94d8fd0b1655b86763acd60280be783547c09e473b3cdc28210d391da32f217a31644731b7d732d3c  singularity-3.2.0.tar.gz"
+sha512sums="854425ada71d0bbe05623674c64173320dfddb2b8aa05cc94d8fd0b1655b86763acd60280be783547c09e473b3cdc28210d391da32f217a31644731b7d732d3c  singularity-3.2.0.tar.gz
+0ac10ce764caae55d2850d32d4d9c428d5cea4b2a6b0eec3e95bf0e0e0240ec8eaca3394db62fa65e7f7b9ab202e0df54117104e08a8c1e0f185ceee5116bbc9  c0f9abf5d9877372bff12127fd7294c2e962e1ab.patch"
