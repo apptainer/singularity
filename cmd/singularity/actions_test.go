@@ -237,20 +237,65 @@ func testSTDINPipe(t *testing.T) {
 		argv    []string
 		exit    int
 	}{
-		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | singularity exec %s grep hi", imagePath)}, 0},
-		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | singularity exec %s grep hi", imagePath)}, 1},
+		{
+			binName: "sh",
+			name:    "trueSTDIN",
+			argv:    []string{"-c", fmt.Sprintf("echo hi | singularity exec %s grep hi", imagePath)},
+			exit:    0,
+		},
+		{
+			binName: "sh",
+			name:    "falseSTDIN",
+			argv:    []string{"-c", fmt.Sprintf("echo bye | singularity exec %s grep hi", imagePath)},
+			exit:    1,
+		},
 		// Checking permissions
-		{"sh", "permissions", []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", imagePath)}, 0},
+		{
+			binName: "sh",
+			name:    "permissions",
+			argv:    []string{"-c", fmt.Sprintf("singularity exec %s id -u | grep `id -u`", imagePath)},
+			exit:    0,
+		},
 		// testing run command properly hands arguments
-		{"sh", "arguments", []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", imagePath)}, 0},
+		{
+			binName: "sh",
+			name:    "arguments",
+			argv:    []string{"-c", fmt.Sprintf("singularity run %s foo | grep foo", imagePath)},
+			exit:    0,
+		},
 		// Stdin to URI based image
-		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
-		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
-		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
+		{
+			binName: "sh",
+			name:    "library",
+			argv:    []string{"-c", "echo true | singularity shell library://busybox"},
+			exit:    0,
+		},
+		{
+			binName: "sh",
+			name:    "docker",
+			argv:    []string{"-c", "echo true | singularity shell docker://busybox"},
+			exit:    0,
+		},
+		{
+			binName: "sh",
+			name:    "shub",
+			argv:    []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"},
+			exit:    0,
+		},
 		// Test apps
-		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", appsImage)}, 0},
+		{
+			binName: "sh",
+			name:    "appsFoo",
+			argv:    []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", appsImage)},
+			exit:    0,
+		},
 		// Test target pwd
-		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", imagePath)}, 0},
+		{
+			binName: "sh",
+			name:    "pwdPath",
+			argv:    []string{"-c", fmt.Sprintf("singularity exec --pwd /etc %s pwd | egrep '^/etc'", imagePath)},
+			exit:    0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -475,6 +520,10 @@ func testPersistentOverlay(t *testing.T) {
 
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	opts := buildOpts{
 		force:   true,
 		sandbox: false,

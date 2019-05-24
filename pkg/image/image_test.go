@@ -102,6 +102,9 @@ func TestReader(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	filename := downloadImage(t)
 	defer os.Remove(filename)
 
@@ -180,6 +183,9 @@ func TestReader(t *testing.T) {
 func TestAuthorizedPath(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	tests := []struct {
 		name       string
@@ -264,6 +270,9 @@ func TestRootAuthorizedOwner(t *testing.T) {
 	// Function focusing only on executing the privileged case
 	test.EnsurePrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	tests := []ownerGroupTest{
 		/* This test fails with CircleCI because of weird user management that
 		   would lead to crazy code so we deactivate it for now
@@ -297,6 +306,9 @@ func TestAuthorizedOwner(t *testing.T) {
 	// this not a privileged test
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	// Note that we do not test the "root" case; the privileged cases are
 	// tested in a separate function.
@@ -364,6 +376,9 @@ func runAuthorizedGroupTest(t *testing.T, tt groupTest, img *Image) {
 func TestPrivilegedAuthorizedGroup(t *testing.T) {
 	test.EnsurePrivilege(t) // to make sure we create the image under the correct user
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	tests := []groupTest{
 		{
 			name:       "root - empty group list",
@@ -392,6 +407,9 @@ func TestPrivilegedAuthorizedGroup(t *testing.T) {
 func TestAuthorizedGroup(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	// Note that we do not test the "root" case here, privileged cases are
 	// performed in a separate function.

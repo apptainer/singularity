@@ -25,6 +25,9 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	b, err := types.NewBundle("", "sbuild-sandboxAssembler")
 	if err != nil {
 		return

@@ -87,6 +87,9 @@ func TestOciTempExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	tests := []struct {
 		name     string
 		sum      string

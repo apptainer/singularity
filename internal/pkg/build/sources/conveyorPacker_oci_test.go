@@ -38,6 +38,9 @@ func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
 		return
@@ -63,6 +66,10 @@ func TestOCIConveyorDocker(t *testing.T) {
 func TestOCIConveyorDockerArchive(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	// Since we manipulate archives/images, we make sure to have a clean image cache
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	archive, err := getTestTar(dockerArchiveURI)
 	if err != nil {
@@ -138,6 +145,9 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download oci archive test file: %v", err)
@@ -170,6 +180,9 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 func TestOCIConveyorOCILayout(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
@@ -215,6 +228,9 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 func TestOCIPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {

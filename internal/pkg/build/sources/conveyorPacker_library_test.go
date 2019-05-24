@@ -26,6 +26,9 @@ func TestLibraryConveyor(t *testing.T) {
 
 	test.EnsurePrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	b, err := types.NewBundle("", "sbuild-library")
 	if err != nil {
 		return
@@ -51,6 +54,8 @@ func TestLibraryConveyor(t *testing.T) {
 // TestLibraryPacker checks if we can create a Bundle from the pulled image
 func TestLibraryPacker(t *testing.T) {
 	test.EnsurePrivilege(t)
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	b, err := types.NewBundle("", "sbuild-library")
 	if err != nil {

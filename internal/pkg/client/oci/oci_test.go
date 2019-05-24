@@ -365,6 +365,9 @@ func TestNewImageSource(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	// Because of the nature of the context.Context type, there is really
 	// not any invalid case.
 	var validCtx context.Context

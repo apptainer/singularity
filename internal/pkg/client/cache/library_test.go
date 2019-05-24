@@ -56,6 +56,9 @@ func TestLibraryImage(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
+
 	// LibraryImage just return a string and there is no definition of what
 	// could be a bad string.
 	tests := []struct {
@@ -85,6 +88,9 @@ func TestLibraryImage(t *testing.T) {
 func TestLibraryImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	test.SetCacheDir(t)
+	defer test.CleanCacheDir(t)
 
 	// Invalid cases
 	_, err := LibraryImageExists("", "")
@@ -123,7 +129,7 @@ func TestLibraryImageExists(t *testing.T) {
 		t.Fatalf("image reported as non-existing: %s\n", err)
 	}
 
-	// Valid case with a valid image, the get the hash from the
+	// Valid case with a valid image, we get the hash from the
 	// file we just created and check whether it matches with what
 	// we have in the cache
 	hash, err := client.ImageHash(name)
