@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	client "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
