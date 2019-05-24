@@ -716,7 +716,8 @@ Enterprise Performance Computing (EPC)`
 	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
   Inspect will show you labels, environment variables, apps and scripts associated 
-  with the image determined by the flags you pass.
+  with the image determined by the flags you pass. By default, they will be shown in 
+  plain text. If you would like to list them in json format, you should use the --json flag.
   `
 	InspectExample string = `
   $ singularity inspect ubuntu.sif
@@ -728,7 +729,8 @@ Enterprise Performance Computing (EPC)`
   The following environment variables are available to you when called 
   from the shell inside the container. The top variables are relevant 
   to the active app (--app <app>) and the bottom available for all 
-  apps regardless of the active app:
+  apps regardless of the active app. Both sets of variables are also available during development (at build time).
+
   ACTIVE APP ENVIRONMENT:
       SCIF_APPNAME       the name of the application
       SCIF_APPROOT       the application base (/scif/apps/<app>)
@@ -736,6 +738,15 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPDATA       the data base folder for active app
         SCIF_APPINPUT    expected input folder within data base folder
         SCIF_APPOUTPUT   the output data folder within data base folder
+
+      SCIF_APPENV        points to the application's environment.sh file, so for example, you could source it without knowing the entire path
+      SCIF_APPLABELS     is the labels.json in the metadata folder, if the user wanted to parse it
+      SCIF_APPBIN        is the bin folder for the app, which is automatically added to the $PATH when the app is active
+      SCIF_APPLIB        is the lib folder, same deal, but added to LD_LIBRARY_PATH
+      SCIF_APPRUN        is the runscript
+      SCIF_APPHELP       is the help file for the runscript (what you get when you do help <appname>
+      SCIF_APPTEST       is the test.sh (testing) script that you run when the user does test <appname>
+
   GLOBAL APP ENVIRONMENT:
     
       SCIF_DATA             scif defined data base for all apps (/scif/data)
@@ -743,11 +754,17 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPROOT_<app>    root for application <app>
       SCIF_APPDATA_<app>    data root for application <app>
 
+  To list all your apps:
+
   $ singularity inspect --list-apps ubuntu.sif 
+
+  To list only labels in the json format from an image:
+
+  $ singularity inspect --json --labels ubuntu.sif
 
   To verify you own a single application on your container image, use the --app <appname> flag:
 
-  $ singularity inspect --app cat ubuntu.sif`
+  $ singularity inspect --app <appname> ubuntu.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test
