@@ -319,10 +319,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					sylog.Errorf("Could not fetch key from remote keystore, key: %s", fingerprint)
-					author += fmt.Sprintf("\tmissing key: %s not found in keystore\n", fingerprint)
+					//author += fmt.Sprintf("\tmissing key: %s not found in local, or remote keystore\n", fingerprint)
+					author += fmt.Sprintf("\tMissing key: %s does not exist in local, or remote keystore\n", fingerprint)
 					continue
-					//return false, fmt.Errorf("public key (ID: %s) not found in local or remote keystore: %s", fingerprint[32:], err)
-					//return false, fmt.Errorf("could not fetch public key from server: %s", err)
 				}
 				sylog.Warningf("Key not found in local keyring, using key from remote keystore: %s", fingerprint[32:])
 				//sylog.Infof("Key ID %s retrieved successfully!", fingerprint[32:])
