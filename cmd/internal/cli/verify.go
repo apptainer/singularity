@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -87,7 +86,6 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// args[0] contains image path
-		fmt.Printf("Verifying image: %s\n", args[0])
 		doVerifyCmd(args[0], keyServerURI)
 	},
 
