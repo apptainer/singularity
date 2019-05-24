@@ -715,10 +715,39 @@ Enterprise Performance Computing (EPC)`
 	InspectUse   string = `inspect [inspect options...] <image path>`
 	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
-  Inspect will show you labels, environment variables, and scripts associated 
-  with the image determined by the flags you pass.`
+  Inspect will show you labels, environment variables, apps and scripts associated 
+  with the image determined by the flags you pass.
+  `
 	InspectExample string = `
-  $ singularity inspect ubuntu.sif`
+  $ singularity inspect ubuntu.sif
+  
+  If you want to list the applications (apps) installed in a container (located at
+  /scif/apps) you should run inspect command with --list-apps <container-image> flag.
+  ( See https://sci-f.github.io for more information on SCIF apps)
+
+  The following environment variables are available to you when called 
+  from the shell inside the container. The top variables are relevant 
+  to the active app (--app <app>) and the bottom available for all 
+  apps regardless of the active app:
+  ACTIVE APP ENVIRONMENT:
+      SCIF_APPNAME       the name of the application
+      SCIF_APPROOT       the application base (/scif/apps/<app>)
+      SCIF_APPMETA       the application metadata folder
+      SCIF_APPDATA       the data base folder for active app
+        SCIF_APPINPUT    expected input folder within data base folder
+        SCIF_APPOUTPUT   the output data folder within data base folder
+  GLOBAL APP ENVIRONMENT:
+    
+      SCIF_DATA             scif defined data base for all apps (/scif/data)
+      SCIF_APPS             scif defined install bases for all apps (/scif/apps)
+      SCIF_APPROOT_<app>    root for application <app>
+      SCIF_APPDATA_<app>    data root for application <app>
+
+  $ singularity inspect --list-apps ubuntu.sif 
+
+  To verify you own a single application on your container image, use the --app <appname> flag:
+
+  $ singularity inspect --app cat ubuntu.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test
