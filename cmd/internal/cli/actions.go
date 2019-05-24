@@ -126,17 +126,17 @@ func handleLibrary(u, libraryURL string) (string, error) {
 
 	// Create a cache handle, which will provide access to an existing cache
 	// or create a new cache based on the current configuration.
-	c, err := cache.NewHandle()
-	if c == nil || err != nil {
+	ch, err := cache.NewHandle()
+	if ch == nil || err != nil {
 		return "", fmt.Errorf("unable to create cache object")
 	}
 
-	imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
+	imagePath, err := ch.LibraryImage(libraryImage.Hash, imageName)
 	if err != nil {
 		return "", fmt.Errorf("failed to get image's path")
 	}
 
-	exists, err := c.LibraryImageExists(libraryImage.Hash, imageName)
+	exists, err := ch.LibraryImageExists(libraryImage.Hash, imageName)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
