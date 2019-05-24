@@ -247,7 +247,8 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 		return false, fmt.Errorf("unable to verify container: %v", err)
 	}
 	if noLocalKey {
-		return true, fmt.Errorf("no local key matching entity")
+		//return true, fmt.Errorf("no local key matching entity")
+		return true, nil
 	}
 	return true, nil
 }
@@ -314,17 +315,13 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			if !localVerify {
 				// download the key
 				notLocalKey = true
-				//sylog.Warningf("Key not found in local keyring, checking remote keystore for key ID: %s", fingerprint[32:])
-				//sylog.Warningf("Key with ID %s not found in local keyring, downloading from keystore...", fingerprint[24:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					sylog.Errorf("Could not fetch key from remote keystore, key: %s", fingerprint)
-					//author += fmt.Sprintf("\tmissing key: %s not found in local, or remote keystore\n", fingerprint)
 					author += fmt.Sprintf("\tMissing key: %s does not exist in local, or remote keystore\n", fingerprint)
 					continue
 				}
 				sylog.Warningf("Key not found in local keyring, using key from remote keystore: %s", fingerprint[32:])
-				//sylog.Infof("Key ID %s retrieved successfully!", fingerprint[32:])
 
 				block, _ := clearsign.Decode(data)
 				if block == nil {
