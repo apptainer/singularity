@@ -60,8 +60,12 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 
 	// strip leading "library://" and append default tag, as necessary
 	imageRef := library.NormalizeLibraryRef(fullURI)
-
 	imageName := uri.GetName("library://" + imageRef)
+
+	c, err := cache.NewHandle()
+	if c == nil || err != nil {
+		return fmt.Errorf("error impossible to create cache handle")
+	}
 
 	// check if image exists in library
 	libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
@@ -69,8 +73,11 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 		return fmt.Errorf("while getting image info: %v", err)
 	}
 
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
-	exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName)
+	imagePath, err := c.LibraryImage(libraryImage.Hash, imageName)
+	if err != nil {
+		return fmt.Errorf("cannot get image path: %s", err)
+	}
+	exists, err := c.LibraryImageExists(libraryImage.Hash, imageName)
 	if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 	}
@@ -244,9 +251,18 @@ func OciPull(name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, 
 	}
 
 	imgName := uri.GetName(imageURI)
-	cachedImgPath := cache.OciTempImage(sum, imgName)
 
-	exists, err := cache.OciTempExists(sum, imgName)
+	c, err := cache.NewHandle()
+	if c == nil || err != nil {
+		return fmt.Errorf("failed to create new cache handle")
+	}
+
+	cachedImgPath, err := c.OciTempImage(sum, imgName)
+	if err != nil {
+		return fmt.Errorf("unable to get image's path")
+	}
+
+	exists, err := c.OciTempExists(sum, imgName)
 	if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %s", imgName, err)
 	}
