@@ -36,6 +36,8 @@ import (
 
 	"github.com/sylabs/singularity/e2e/remote"
 
+	"github.com/sylabs/singularity/e2e/version"
+
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -124,5 +126,7 @@ func Run(t *testing.T) {
 	t.Run("HELP", help.RunE2ETests)
 
 	t.Run("ENV", singularityenv.RunE2ETests)
+
+	t.Run("VERSION", version.RunE2ETests)
 
 }
