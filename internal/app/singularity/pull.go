@@ -64,12 +64,15 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 	imageName := uri.GetName("library://" + imageRef)
 
 	// check if image exists in library
-	libraryImage, _, err := libraryClient.GetImage(context.TODO(), imageRef)
+	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
 	}
-	if libraryImage == nil {
+	if !existOk {
 		return fmt.Errorf("image does not exist in remote library")
+	}
+	if libraryImage == nil {
+		return fmt.Errorf("failed getting image from remote library")
 	}
 
 	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
