@@ -6,18 +6,16 @@
 package actions
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 type testingEnv struct {
@@ -187,19 +185,12 @@ func STDINPipe(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			cmd := exec.Command(tt.binName, tt.argv...)
-			if err := cmd.Start(); err != nil {
-				t.Fatalf("cmd.Start: %v", err)
-			}
+			res := cmd.Run(t)
 
-			if err := cmd.Wait(); err != nil {
-				exiterr, _ := err.(*exec.ExitError)
-				status, _ := exiterr.Sys().(syscall.WaitStatus)
-				if status.ExitStatus() != tt.exit {
-					// The program has exited with an unexpected exit code
-					{
-						t.Fatalf("unexpected exit code '%v': for cmd %v", status.ExitStatus(), strings.Join(tt.argv, " "))
-					}
-				}
+			if res.ExitCode != tt.exit {
+				t.Fatalf("Unexpected exit code '%d' while running command.\n%s",
+					res.ExitCode,
+					res)
 			}
 		}))
 	}
@@ -302,27 +293,22 @@ func PersistentOverlay(t *testing.T) {
 	defer os.Remove(tmpfile.Name())
 
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
-	var out bytes.Buffer
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 	defer os.RemoveAll(squashfsImage)
 
 	//  Create the overlay ext3 fs
 	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
+
 	cmd = exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img")
-	cmd.Stdout = &out
-	err = cmd.Run()
-	if err != nil {
-		t.Fatal(err)
+	if res := cmd.Run(t); res.Error != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
+
 	defer os.Remove("ext3_fs.img")
 
 	// create a file dir
