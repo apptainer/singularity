@@ -309,19 +309,21 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 
 		// verify the container with our local keys first
+		sylog.Verbosef("Container signature found: %s\n", fingerprint)
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
 			// if theres a error, thats proboly becuse we dont have a local key
 			if !localVerify {
 				// download the key
 				notLocalKey = true
+				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
-					sylog.Errorf("Could not fetch key from remote keystore, key: %s", fingerprint)
+					sylog.Errorf("Could not obtain key from remote keystore: \n         %s [%s]", fingerprint, err)
 					author += fmt.Sprintf("\tMissing key: %s does not exist in local, or remote keystore\n", fingerprint)
 					continue
 				}
-				sylog.Warningf("Key not found in local keyring, using key from remote keystore: %s", fingerprint[32:])
+				sylog.Infof("Found key in remote keystore: %s", fingerprint[32:])
 
 				block, _ := clearsign.Decode(data)
 				if block == nil {
@@ -336,6 +338,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			} else {
 				return false, fmt.Errorf("unable to verify container: %v", err)
 			}
+		} else {
+			sylog.Verbosef("Found key in local keystore: %s", fingerprint[32:])
 		}
 
 		// Get first Identity data for convenience
