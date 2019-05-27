@@ -319,7 +319,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
-					sylog.Errorf("Could not obtain key from remote keystore: \n         %s [%s]", fingerprint, err)
+					sylog.Errorf("Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
 					author += fmt.Sprintf("\tMissing key: %s does not exist in local, or remote keystore\n", fingerprint)
 					continue
 				}
