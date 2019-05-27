@@ -7,6 +7,7 @@ package version
 
 import (
 	"os/exec"
+	"strings"
 	"testing"
 
 	"github.com/blang/semver"
@@ -38,8 +39,10 @@ func testSemanticVersion(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to obtain version: %+v", err)
 			}
-
-			if semanticVersion, err := semver.Make(string(out)); err != nil {
+			outputVersion := strings.Replace(string(out), "singularity version ", "", -1)
+			outputIndex := strings.Index(string(out), "-")
+			outputVersion = outputVersion[:outputIndex]
+			if semanticVersion, err := semver.Make(outputVersion); err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
 			}
@@ -57,13 +60,17 @@ func testEqualVersion(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to obtain version: %+v", err)
 			}
-			if semanticVersion, err := semver.Make(string(out)); err != nil {
+			outputVersion := strings.Replace(string(out), "singularity version ", "", -1)
+			outputIndex := strings.Index(string(out), "-")
+			outputVersion = outputVersion[:outputIndex]
+
+			if semanticVersion, err := semver.Make(string(outputVersion)); err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
 			}
 
-			tmpVersion = string(out)
-			versionOutput, err := semver.Make(string(out))
+			tmpVersion = string(outputVersion)
+			versionOutput, err := semver.Make(string(outputVersion))
 			if err != nil {
 				t.Fatalf("FAIL: %s", err)
 			}
