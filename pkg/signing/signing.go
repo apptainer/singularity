@@ -281,6 +281,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
+		trusted := true
+
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
@@ -312,15 +314,17 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		sylog.Verbosef("Container signature found: %s\n", fingerprint)
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 		if err != nil {
+			trusted = false
+			notLocalKey = true
+
 			// if theres a error, thats proboly becuse we dont have a local key
 			if !localVerify {
 				// download the key
-				notLocalKey = true
 				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					sylog.Errorf("Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
-					author += fmt.Sprintf("\tMissing key: %s does not exist in local, or remote keystore\n", fingerprint)
+					author += fmt.Sprintf("\t[MISSING KEY] %s does not exist in local, or remote keystore\n", fingerprint)
 					continue
 				}
 				sylog.Infof("Found key in remote keystore: %s", fingerprint[32:])
@@ -339,6 +343,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				return false, fmt.Errorf("unable to verify container: %v", err)
 			}
 		} else {
+			trusted = true
 			sylog.Verbosef("Found key in local keystore: %s", fingerprint[32:])
 		}
 
@@ -348,7 +353,11 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			name = i.Name
 			break
 		}
-		author += fmt.Sprintf("\t%s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
+		if trusted {
+			author += fmt.Sprintf("\t[TRUSTED] %s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
+		} else {
+			author += fmt.Sprintf("\t%s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
+		}
 	}
 	fmt.Printf("\nData integrity checked, authentic and signed by:\n%v", author)
 
