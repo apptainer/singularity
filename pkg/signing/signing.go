@@ -247,8 +247,8 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 		return false, fmt.Errorf("unable to verify container: %v", err)
 	}
 	if noLocalKey {
-		//return true, fmt.Errorf("no local key matching entity")
-		return true, nil
+		return true, fmt.Errorf("no local key matching entity")
+		//return true, nil
 	}
 	return true, nil
 }
