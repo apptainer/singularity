@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -26,93 +27,119 @@ import (
 )
 
 var testScripts = []struct {
-	name string
-	path string
+	name        string
+	path        string
+	runParallel bool
 }{
 	// Build tests
 	{
-		name: "BUILD/BASIC",
-		path: "build/basic.test",
+		name:        "BUILD/BASIC",
+		path:        "build/basic.test",
+		runParallel: true,
 	},
 	// Actions tests
 	{
-		name: "ACTIONS/ENV_PATH",
-		path: "actions/env_path.test",
+		name:        "ACTIONS/ENV_PATH",
+		path:        "actions/env_path.test",
+		runParallel: true,
 	},
 	{
-		name: "ACTIONS/RUN",
-		path: "actions/run.test",
+		name:        "ACTIONS/RUN",
+		path:        "actions/run.test",
+		runParallel: true,
 	},
 	{
-		name: "ACTIONS/EXEC",
-		path: "actions/exec.test",
+		name:        "ACTIONS/EXEC",
+		path:        "actions/exec.test",
+		runParallel: true,
 	},
 	{
-		name: "ACTIONS/FROM_URI",
-		path: "actions/from_uri.test",
+		name:        "ACTIONS/FROM_URI",
+		path:        "actions/from_uri.test",
+		runParallel: true,
 	},
 	{
-		name: "ACTIONS/STDOUT",
-		path: "actions/stdout.test",
+		name:        "ACTIONS/STDOUT",
+		path:        "actions/stdout.test",
+		runParallel: true,
 	},
 	{
-		name: "ACTIONS/STDIN",
-		path: "actions/stdin.test",
+		name:        "ACTIONS/STDIN",
+		path:        "actions/stdin.test",
+		runParallel: true,
 	},
 	{
-		name: "ACTIONS/PERSISTENT_OVERLAY",
-		path: "actions/persistent_overlay.test",
+		name:        "ACTIONS/PERSISTENT_OVERLAY",
+		path:        "actions/persistent_overlay.test",
+		runParallel: true,
 	},
 	// Docker tests
 	{
-		name: "DOCKER/PULL",
-		path: "docker/pull.test",
+		name:        "DOCKER/PULL",
+		path:        "docker/pull.test",
+		runParallel: true,
 	},
 	{
-		name: "DOCKER/DEFINITION",
-		path: "docker/definition.test",
+		name:        "DOCKER/DEFINITION",
+		path:        "docker/definition.test",
+		runParallel: true,
 	},
 	{
-		name: "DOCKER/AUFS",
-		path: "docker/aufs.test",
+		name:        "DOCKER/AUFS",
+		path:        "docker/aufs.test",
+		runParallel: true,
 	},
 	{
-		name: "DOCKER/REGISTRY",
-		path: "docker/registry.test",
+		name:        "DOCKER/REGISTRY",
+		path:        "docker/registry.test",
+		runParallel: true,
 	},
 	// Instance tests
 	{
-		name: "INSTANCE/BASIC_ECHO",
-		path: "instance/basic_echo.test",
+		name:        "INSTANCE/BASIC_ECHO",
+		path:        "instance/basic_echo.test",
+		runParallel: true,
 	},
 	{
-		name: "INSTANCE/BASIC_OPTIONS",
-		path: "instance/basic_options.test",
+		name:        "INSTANCE/BASIC_OPTIONS",
+		path:        "instance/basic_options.test",
+		runParallel: true,
 	},
 	{
-		name: "INSTANCE/FROM_URI",
-		path: "instance/from_uri.test",
+		name:        "INSTANCE/FROM_URI",
+		path:        "instance/from_uri.test",
+		runParallel: true,
 	},
 	{
-		name: "INSTANCE/CONTAIN",
-		path: "instance/contain.test",
+		name:        "INSTANCE/CONTAIN",
+		path:        "instance/contain.test",
+		runParallel: true,
 	},
 	{
-		name: "INSTANCE/CREATE_MANY",
-		path: "instance/create_many.test",
+		name:        "INSTANCE/CREATE_MANY",
+		path:        "instance/create_many.test",
+		runParallel: true,
 	},
 	// OCI tests
 	{
-		name: "OCI/BASIC",
-		path: "oci/basic.test",
+		name:        "OCI/BASIC",
+		path:        "oci/basic.test",
+		runParallel: true,
 	},
 	{
-		name: "OCI/ATTACH",
-		path: "oci/attach.test",
+		name:        "OCI/ATTACH",
+		path:        "oci/attach.test",
+		runParallel: true,
 	},
 	{
-		name: "OCI/RUN",
-		path: "oci/run.test",
+		name:        "OCI/RUN",
+		path:        "oci/run.test",
+		runParallel: true,
+	},
+	{
+		name:        "EXAMPLE",
+		path:        "example/example.test",
+		runParallel: true,
 	},
 }
 
@@ -127,7 +154,7 @@ func sudoExec(sudo string, args []string) error {
 	return nil
 }
 
-func TestE2EScripts(t *testing.T) {
+func TestE2E(t *testing.T) {
 	const (
 		testDirPrefix   = "stest-"
 		privDirPrefix   = "priv-"
@@ -164,25 +191,17 @@ func TestE2EScripts(t *testing.T) {
 	// by privileged run/tests
 	defer sudoExec(sudo, []string{"rm", "-rf", testDir})
 
-	cacheDirPriv, err := e2e.MakeTmpDir(testDir, privDirPrefix, defaultDirMode)
-	if err != nil {
-		t.Fatalf("failed to create privileged cache directory: %s", err)
-	}
-
-	cacheDirUnpriv, err := e2e.MakeTmpDir(testDir, unprivDirPrefix, defaultDirMode)
-	if err != nil {
-		t.Fatalf("failed to create unprivileged cache directory: %s", err)
-	}
-
 	sourceDir, err := filepath.Abs("..")
 	if err != nil {
 		t.Fatalf("failed to determine absolute source directory: %s", err)
 	}
 
+	if err := os.Chdir("scripts"); err != nil {
+		t.Fatalf("could not chdir to 'scripts' directory: %s", err)
+	}
+
 	os.Setenv("SUDO", sudo)
 	os.Setenv("TESTDIR", testDir)
-	os.Setenv("SINGULARITY_CACHEDIR", cacheDirUnpriv)
-	os.Setenv("CACHEDIR_PRIV", cacheDirPriv)
 	os.Setenv("SOURCEDIR", sourceDir)
 	os.Setenv("GOOS", runtime.GOOS)
 	os.Setenv("GOARCH", runtime.GOARCH)
@@ -193,19 +212,44 @@ func TestE2EScripts(t *testing.T) {
 		fmt.Println("Available environment variable in test script:")
 		fmt.Printf("SUDO: %s\n", sudo)
 		fmt.Printf("TESTDIR: %s\n", testDir)
-		fmt.Printf("SINGULARITY_CACHEDIR: %s\n", cacheDirUnpriv)
-		fmt.Printf("CACHEDIR_PRIV: %s\n", cacheDirPriv)
 		fmt.Printf("SOURCEDIR: %s\n", sourceDir)
 		fmt.Printf("PATH: %s\n", os.Getenv("PATH"))
 	} else {
 		os.Setenv("VERBOSE_TEST", "0")
 	}
 
-	if err := os.Chdir("scripts"); err != nil {
-		t.Fatalf("could not chdir to 'scripts' directory: %s", err)
+	syscall.Umask(0022)
+
+	parallel := false
+	for _, a := range os.Args {
+		if strings.Contains(a, "test.parallel=") {
+			parallel = true
+			break
+		}
 	}
 
-	for _, ts := range testScripts {
-		stest.RunScript(nil, ts.name, ts.path, t)
-	}
+	t.Run("SCRIPTS", func(t *testing.T) {
+		for _, ts := range testScripts {
+			if ts.runParallel {
+				path := ts.path
+				t.Run(ts.name, func(t *testing.T) {
+					if parallel {
+						t.Parallel()
+					}
+					stest.RunScript(nil, path, t)
+				})
+			}
+		}
+	})
+
+	t.Run("SCRIPTS", func(t *testing.T) {
+		for _, ts := range testScripts {
+			if !ts.runParallel {
+				path := ts.path
+				t.Run(ts.name, func(t *testing.T) {
+					stest.RunScript(nil, path, t)
+				})
+			}
+		}
+	})
 }

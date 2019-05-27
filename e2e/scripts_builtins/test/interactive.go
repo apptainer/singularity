@@ -55,7 +55,7 @@ func expectExitInteractive(ctx context.Context, mc interp.ModuleCtx, args []stri
 		Path:   path,
 		Args:   args[3:],
 		Env:    stest.ExecEnv(mc.Env),
-		Dir:    mc.Dir,
+		Dir:    mc.Env.Get("PWD").String(),
 		Stdin:  c.Tty(),
 		Stdout: c.Tty(),
 		Stderr: c.Tty(),

@@ -1,9 +1,9 @@
 # oci test functions
 
 check-container-state() {
-    state=$2
-    containerID=$1
+    local state=$2
+    local containerID=$1
     sleep 0.2
-    status=$(sudo singularity oci state ${containerID} | parse-json "{{.status}}")
+    status=$(sudo singularity oci state ${containerID} | execute-template "{{.status}}")
     test-match "OciState-${state}" "${state}" "${status}"
 }

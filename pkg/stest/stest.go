@@ -250,7 +250,7 @@ func RunCommand(cmd *exec.Cmd) error {
 		outWriter := cmd.Stdout
 		readOutFile, writeOutFile, err = os.Pipe()
 		if err != nil {
-			return fmt.Errorf("could not create stderr stream copy: %s", err)
+			return fmt.Errorf("could not create stdout stream copy: %s", err)
 		}
 
 		wg.Add(1)
@@ -321,8 +321,8 @@ func RunCommand(cmd *exec.Cmd) error {
 
 	// once the process finished, set the read deadline to
 	// force stream copy goroutines to exit properly
-	readErrFile.SetReadDeadline(time.Now())
-	readOutFile.SetReadDeadline(time.Now())
+	readErrFile.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
+	readOutFile.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 
 	// wait goroutines
 	wg.Wait()
@@ -343,7 +343,7 @@ func RunCommand(cmd *exec.Cmd) error {
 
 // RunScript executes the provided script from a test function as a main
 // sub test with the provided name.
-func RunScript(customCtx context.Context, name, script string, t *testing.T) {
+func RunScript(customCtx context.Context, script string, t *testing.T) {
 	failFast := false
 	fl := flag.Lookup("test.failfast")
 	if fl != nil && fl.Value.String() == "true" {
@@ -410,51 +410,55 @@ func RunScript(customCtx context.Context, name, script string, t *testing.T) {
 	parser := syntax.NewParser()
 	runner.Params = []string{script}
 
-	t.Run(name, func(t *testing.T) {
-		var te testExec
+	var te testExec
 
-		te.t = t
-		te.runner = runner
-		te.atExitFunctions = new([]string)
-		te.customCtx = customCtx
+	te.t = t
+	te.runner = runner
+	te.atExitFunctions = new([]string)
+	te.customCtx = customCtx
 
-		ctx := context.TODO()
-		ctx = context.WithValue(ctx, testExecContext, &te)
+	ctx := context.TODO()
+	ctx = context.WithValue(ctx, testExecContext, &te)
 
-		parser.Stmts(f, func(st *syntax.Stmt) bool {
-			if failFast && t.Failed() {
-				return false
-			}
-
-			line := st.Cmd.Pos().Line()
-			err := runner.Run(ctx, st)
-			if err == nil {
-				return true
-			}
-
-			switch err.(type) {
-			case interp.ExitStatus:
-				// continue execution
-				return true
-			default:
-				if _, has := err.(interp.ShellExitStatus); has {
-					// equivalent of t.Fatal
-					if err != interp.ShellExitStatus(0) {
-						t.Errorf("%sERROR: %s exited (at line %d): %-30s", removeFunctionLine(), script, line, err)
-					}
-				} else if err != nil {
-					// trigger a test error and stop parsing
-					t.Errorf("%sERROR: execution failed in %s (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
-				}
-			}
-			// stop parsing
+	err = parser.Stmts(f, func(st *syntax.Stmt) bool {
+		if failFast && t.Failed() {
 			return false
-		})
+		}
 
-		for _, funcName := range *te.atExitFunctions {
-			if err := runner.Run(ctx, runner.Funcs[funcName].Cmd); err != nil {
-				t.Errorf("%sERROR: function %s returned an error: %s", removeFunctionLine(), funcName, err)
+		line := st.Cmd.Pos().Line()
+		err := runner.Run(ctx, st)
+		if err == nil {
+			return true
+		}
+
+		switch err.(type) {
+		case interp.ExitStatus:
+			// continue execution
+			return true
+		default:
+			if _, has := err.(interp.ShellExitStatus); has {
+				// equivalent of t.Fatal
+				if err != interp.ShellExitStatus(0) {
+					t.Errorf("%sERROR: %s exited (at line %d): %-30s", removeFunctionLine(), script, line, err)
+				}
+			} else if err != nil {
+				// trigger a test error and stop parsing
+				t.Errorf("%sERROR: execution failed in %s (at line %d) with error: %-30s", removeFunctionLine(), script, line, err)
 			}
 		}
+		// stop parsing
+		return false
 	})
+
+	// parser error
+	if err != nil {
+		t.Fatalf("%sERROR: %s parsing fail: %s", removeFunctionLine(), script, err)
+	}
+
+	// execute registered functions at exit
+	for _, funcName := range *te.atExitFunctions {
+		if err := runner.Run(ctx, runner.Funcs[funcName].Cmd); err != nil {
+			t.Errorf("%sERROR: function %s returned an error: %s", removeFunctionLine(), funcName, err)
+		}
+	}
 }

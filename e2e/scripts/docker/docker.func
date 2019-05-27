@@ -4,8 +4,8 @@ tmpdir=`mktmpdir`
 tmpimage="${tmpdir}/container.sif"
 
 build-from-definition() {
-    test_name="$1"
-    definition="$2"
+    local test_name="$1"
+    local definition="$2"
 
     sudo rm -f ${tmpimage}
     expect-success "${test_name}"    sudo singularity build ${tmpimage} "${definition}"
@@ -13,8 +13,8 @@ build-from-definition() {
 }
 
 fail-build-from-definition() {
-    test_name="$1"
-    definition="$2"
+    local test_name="$1"
+    local definition="$2"
     expect-failure  "${test_name}" sudo singularity build ${tmpimage} "${definition}"
 }
 

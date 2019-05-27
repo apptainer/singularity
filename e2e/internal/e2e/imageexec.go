@@ -8,6 +8,7 @@ package e2e
 import (
 	"bytes"
 	"os/exec"
+	"syscall"
 	"testing"
 )
 
@@ -77,15 +78,15 @@ func ImageExec(t *testing.T, cmdPath string, action string, opts ExecOpts, image
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 
-	if err := cmd.Start(); err != nil {
+	if err = cmd.Start(); err != nil {
 		t.Fatalf("cmd.Start: %v", err)
 	}
 
-	// retrieve exit code
-	if err := cmd.Wait(); err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			// The program has exited with an exit code != 0
-			exitCode = 1
+	err = cmd.Wait()
+	switch x := err.(type) {
+	case *exec.ExitError:
+		if status, ok := x.Sys().(syscall.WaitStatus); ok {
+			exitCode = status.ExitStatus()
 		}
 	}
 

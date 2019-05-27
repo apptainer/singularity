@@ -64,7 +64,7 @@ func expectSearch(ctx context.Context, mc interp.ModuleCtx, args []string) error
 		Path: path,
 		Args: args[3:],
 		Env:  ExecEnv(mc.Env),
-		Dir:  mc.Dir,
+		Dir:  mc.Env.Get("PWD").String(),
 	}
 	if mc.Stdin != os.Stdin {
 		cmd.Stdin = mc.Stdin
@@ -164,7 +164,7 @@ func expectExit(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 		Path: path,
 		Args: args[2:],
 		Env:  ExecEnv(mc.Env),
-		Dir:  mc.Dir,
+		Dir:  mc.Env.Get("PWD").String(),
 	}
 
 	if mc.Stdin != os.Stdin {

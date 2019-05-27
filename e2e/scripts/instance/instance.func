@@ -1,10 +1,9 @@
 # instance functions
 
 instance_prefix="__instance_test__"
-instance_default_port="11372"
 
 check-no-instances() {
-    nbinstances=0
+    local nbinstances=0
     for i in `list-instances`; do
         ((nbinstances++))
     done
@@ -15,8 +14,8 @@ check-no-instances() {
 }
 
 list-instances() {
-    template="{{range .instances -}}{{if ge .instance \"$instance_prefix\" -}}{{printf \"%s\n\" .instance}}{{- end}}{{- end}}"
-    singularity instance list -j | parse-json "${template}"
+    local template="{{range .instances -}}{{if ge .instance \"$instance_prefix\" -}}{{printf \"%s\n\" .instance}}{{- end}}{{- end}}"
+    singularity instance list -j | execute-template "${template}"
 }
 
 stop-instances() {
@@ -24,15 +23,15 @@ stop-instances() {
 }
 
 echo-instance() {
-    message="b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
+    local message="b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
     echo "${message}" | net-echo tcp 127.0.0.1:$2 | stdout-contains "$1" "${message}" cat
 }
 
-gen-instance-name() {
-    uuid=`uuidgen`
-    echo "${instance_prefix}${uuid}"
+get-echo-port() {
+    singularity exec instance://$1 cat "${SCRIPT_TESTDIR}/$1"
 }
 
-# always check there is no test instances running for each
-# script sourcing this file
-check-no-instances
+gen-instance-name() {
+    local uuid=`uuidgen`
+    echo "${instance_prefix}${uuid}"
+}

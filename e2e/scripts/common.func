@@ -6,21 +6,10 @@
 # fatal trigger a test error message and exit script with code 1.
 ######################################################################
 fatal() {
-    message="$1"
+    local message="$1"
     test-error "${message}"
     exit 1
 }
-
-export SCRIPT_TESTDIR=`create-tmpdir ${TESTDIR}`
-
-######################################################################
-# this function will be called at script exit to delete all temporary
-# directories and files created by running script.
-######################################################################
-_cleanup_tmp() {
-    sudo rm -rf "${SCRIPT_TESTDIR}"
-}
-register-exit-func _cleanup_tmp
 
 ######################################################################
 # test if singularity binary is present in $PATH.
@@ -30,10 +19,25 @@ if ! command -v singularity >/dev/null 2>&1; then
 fi
 
 ######################################################################
+# create script temporary test directory
+######################################################################
+declare -r -x SCRIPT_TESTDIR=`create-tmpdir ${TESTDIR}`
+chmod 0755 ${SCRIPT_TESTDIR}
+
+######################################################################
+# this function will be called at script exit to delete all temporary
+# directories and files created by the running script.
+######################################################################
+_cleanup_tmp() {
+    sudo rm -rf "${SCRIPT_TESTDIR}"
+}
+register-exit-func _cleanup_tmp
+
+######################################################################
 # execute/test commands interactively
 ######################################################################
-_script="${SCRIPT_TESTDIR}/interactive.script"
-_cmdline="${SCRIPT_TESTDIR}/interactive.cmdline"
+declare -r _script="${SCRIPT_TESTDIR}/interactive.script"
+declare -r _cmdline="${SCRIPT_TESTDIR}/interactive.cmdline"
 
 ######################################################################
 # this function ensure interactive-XXX functions are not called
@@ -50,7 +54,7 @@ _check-script() {
 # called before any interactive-XXX calls.
 ######################################################################
 start-interactive() {
-    name="$1"
+    local name="$1"
     shift
     echo -n > ${_script}
     echo "${name} ${_script} $@" > ${_cmdline}
@@ -62,7 +66,7 @@ start-interactive() {
 ######################################################################
 interactive-send() {
     _check-script
-    str="$1"
+    local str="$1"
     echo "send ${str}" >> ${_script}
 }
 
@@ -72,7 +76,7 @@ interactive-send() {
 ######################################################################
 interactive-sendline() {
     _check-script
-    str="$1"
+    local str="$1"
     echo "sendline ${str}" >> ${_script}
 }
 
@@ -82,7 +86,7 @@ interactive-sendline() {
 ######################################################################
 interactive-expect() {
     _check-script
-    expect="$1"
+    local expect="$1"
     echo "expect ${expect}" >> ${_script}
 }
 
@@ -114,7 +118,7 @@ interactive-eof() {
 # exit-interactive waits that command execution finishes.
 ######################################################################
 exit-interactive() {
-    exit_code="$1"
+    local exit_code="$1"
 
     if [ $# != 1 ]; then
         fatal "exit-interactive need an exit code argument"
@@ -154,8 +158,8 @@ expect-success() {
 # expression
 ######################################################################
 stdout-contains() {
-    test_name="$1"
-    pattern="$2"
+    local test_name="$1"
+    local pattern="$2"
     shift
     shift
     expect-search output "${pattern}" "${test_name}" "$@"
@@ -169,8 +173,8 @@ stdout-contains() {
 # expression
 ######################################################################
 stderr-contains() {
-    test_name="$1"
-    pattern="$2"
+    local test_name="$1"
+    local pattern="$2"
     shift
     shift
     expect-search error "${pattern}" "${test_name}" "$@"
@@ -184,8 +188,8 @@ stderr-contains() {
 # expression
 ######################################################################
 stdall-contains() {
-    test_name="$1"
-    pattern="$2"
+    local test_name="$1"
+    local pattern="$2"
     shift
     shift
     expect-search combined "${pattern}" "${test_name}" "$@"
@@ -195,7 +199,7 @@ stdall-contains() {
 # test-match tests if two strings are identical
 ######################################################################
 test-match() {
-    test_name="$1"
+    local test_name="$1"
     expect-exit 0 "${test_name}" /bin/sh -c "[ \"$2\" = \"$3\" ]"
 }
 
@@ -205,7 +209,20 @@ test-match() {
 # script exit.
 ######################################################################
 mktmpdir() {
-    create-tmpdir ${SCRIPT_TESTDIR}
+    local mode="$1"
+    local owner="$2"
+
+    if [ -z ${mode} ]; then
+        mode="0700"
+    fi
+
+    local dir=`create-tmpdir ${SCRIPT_TESTDIR}`
+    chmod ${mode} ${dir}
+    if [ ! -z ${owner} ]; then
+        sudo chown ${owner} ${dir}
+    fi
+
+    echo ${dir}
 }
 
 ######################################################################
@@ -213,7 +230,20 @@ mktmpdir() {
 # with mktmpfile are automatically deleted when script exit.
 ######################################################################
 mktmpfile() {
-    create-tmpfile ${SCRIPT_TESTDIR}
+    local mode="$1"
+    local owner="$2"
+
+    if [ -z ${mode} ]; then
+        mode="0700"
+    fi
+
+    local file=`create-tmpfile ${SCRIPT_TESTDIR}`
+    chmod ${mode} ${file}
+    if [ ! -z ${owner} ]; then
+        sudo chown ${owner} ${dir}
+    fi
+
+    echo ${file}
 }
 
 ######################################################################
@@ -223,16 +253,20 @@ mktmpfile() {
 # NOTE: The test image is not deleted until all scripts are executed
 ######################################################################
 get-test-image() {
-    image="${TESTDIR}/test.sif"
+    local image="${TESTDIR}/test.sif"
+
+    flock lock "${TESTDIR}"
 
     if [ ! -f "${image}" ]; then
-        definition="${SOURCEDIR}/e2e/testdata/Singularity"
+        local definition="${SOURCEDIR}/e2e/testdata/Singularity"
         sudo singularity build -F ${image} ${definition} >${TESTDIR}/image.out 2>&1
         if [ $? != 0 ]; then
-            output=`cat ${TESTDIR}/image.out`
+            local output=`cat ${TESTDIR}/image.out`
             fatal "failed to build image ${image}: ${output}"
         fi
     fi
+
+    flock unlock "${TESTDIR}"
 
     echo ${image}
 }
@@ -245,8 +279,8 @@ get-test-image() {
 ######################################################################
 verify-image() {
     if [ $? = 0 ]; then
-        name="$1"
-        image="$2"
+        local name="$1"
+        local image="$2"
         expect-exit 1 "${name}/False"        singularity exec "${image}" false
         expect-exit 0 "${name}/RunScript"    singularity exec "${image}" test -f /.singularity.d/runscript
         expect-exit 0 "${name}/OneBase"      singularity exec "${image}" test -f /.singularity.d/env/01-base.sh
@@ -262,12 +296,14 @@ verify-image() {
 # build-verify-image builds and verify image.
 ######################################################################
 build-verify-image() {
-    image_type="$1"
-    test_name="$2"
-    check_binary="$3"
-    build_source="$4"
+    local image_type="$1"
+    local test_name="$2"
+    local check_binary="$3"
+    local build_source="$4"
 
-    options=""
+    local options=""
+    local img=""
+
     case "${image_type}" in
     sandbox)
         options="-s"
@@ -300,7 +336,7 @@ build-verify-image() {
 # before creating temporary files or directories or building image
 ######################################################################
 check-command() {
-    cmd="$1"
+    local cmd="$1"
     if ! command -v ${cmd} >/dev/null 2>&1; then
         test-skip-script "${cmd} command not found in PATH"
     fi
@@ -327,8 +363,8 @@ check-overlayfs() {
 run-command() {
     $@ >${SCRIPT_TESTDIR}/run-command.out 2>&1
     if [ $? != 0 ]; then
-        output=`cat ${SCRIPT_TESTDIR}/run-command.out`
-        fatal "$@ failed: ${output}"
+        local output=`cat ${SCRIPT_TESTDIR}/run-command.out`
+        fatal "$@ failed:\\n${output}"
     fi
 }
 
@@ -339,24 +375,82 @@ run-command() {
 # see supported ranges as argument
 ######################################################################
 check-kernel-version() {
-    range="$1"
-    kernel_version=`uname -r`
+    local range="$1"
+    local kernel_version=`uname -r`
     kernel_version=${kernel_version%%-*}
     check-version "${kernel_version}" "${range}"
 }
 
 ######################################################################
+# process-template-data executes a command and trigger a fatal error if the
+# command didn't succeed.
+######################################################################
+process-template-data() {
+    local _template="${1:-}"
+    local _test_table="${2:-}"
+    local _custom_func="${3:-}"
+    local _func_vars="${4:-func_vars}"
+    local _template_data="${5:-template_data}"
+
+    if [ -z "${_template}" ]; then
+        fatal "test-template-data: no template argument provided"
+    fi
+
+    if [ -z "${_custom_func}" ]; then
+        fatal "test-template-data: no custom function provided"
+    fi
+
+    local _test_table_tpl='{{range $k, $test := .}}{{printf "%s>%s\n" $k (marshal $test)}}{{end}}'
+    local _tests=$(execute-template "${_test_table_tpl}" "${_test_table}")
+    if [ -z "${_tests}" ]; then
+        test-error "test-template-data: no test found"
+    fi
+
+    local IFS_ORIG="$IFS"
+    IFS=$'\n'
+
+    for i in ${_tests}; do
+        name=${i%%>*}
+        json=${i#*>}
+        data=`echo "${json}" | execute-template '{{marshal .'${_template_data}'}}' | execute-template "${_template}"`
+        if [ -z "${data}" ]; then
+            test-skip "${name}" "no template data found"
+        fi
+        local _vars=$(cat <<-EOF
+            get-var-string() {
+                echo "\$json" | execute-template '{{if .'${_func_vars}'.'\$1'}}{{.'${_func_vars}'.'\$1'}}{{end}}'
+            }
+            get-var-list() {
+                tpl='{{if .'${_func_vars}'.'\$1'}}{{range \$e := .'${_func_vars}'.'\$1'}}{{printf "%s\n" \$e}}{{end}}{{end}}'
+                echo "\$json" | execute-template "\$tpl"
+            };
+EOF
+        )
+        (eval "IFS="${IFS_ORIG}"; ${_vars} ${_custom_func}")
+    done
+
+    IFS="${IFS_ORIG}"
+}
+
+######################################################################
+# create cache directories for privileged/unprivileged users, those
+# directories are not shared between scripts
+######################################################################
+declare -r -x SINGULARITY_CACHEDIR=`mktmpdir 0755`
+declare -r -x SINGULARITY_CACHEDIR_PRIV=`mktmpdir 0755 root:root`
+
+######################################################################
 # create sudo wrapper to pass correct environment variables
 # to singularity.
 ######################################################################
-bindir="${TESTDIR}/bin"
+bindir="${SCRIPT_TESTDIR}/bin"
 sudo_wrapper="${bindir}/sudo"
 
 if [ ! -f "${sudo_wrapper}" ]; then
     mkdir "${bindir}"
     cat > "${sudo_wrapper}" <<EOF
 #!/bin/sh
-exec ${SUDO} HOME=/root SINGULARITY_CACHEDIR=${CACHEDIR_PRIV} PATH=${PATH} "\$@"
+exec ${SUDO} SINGULARITY_CACHEDIR="${SINGULARITY_CACHEDIR_PRIV}" PATH=${PATH} "\$@"
 EOF
     chmod 755 "${sudo_wrapper}"
 fi

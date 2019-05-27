@@ -16,16 +16,23 @@ import (
 	"mvdan.cc/sh/v3/interp"
 )
 
-// parse-json builtin
+var customFuncs = template.FuncMap{
+	"marshal": func(arg interface{}) string {
+		j, _ := json.Marshal(arg)
+		return string(j)
+	},
+}
+
+// execute-template builtin
 // usage:
-// parse-json "{{.a}}" /tmp/file.json
-// echo '{"a": "value"}' | parse-json "{{.a}}"
-func parseJSON(ctx context.Context, mc interp.ModuleCtx, args []string) error {
+// execute-template "{{.a}}" /tmp/file.json
+// echo '{"a": "value"}' | execute-template "{{.a}}"
+func executeTemplate(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 	if len(args) < 1 {
-		return fmt.Errorf("parse-json requires at least one argument")
+		return fmt.Errorf("execute-template requires at least one argument")
 	}
 	tpl := args[0]
-	t := template.Must(template.New("").Parse(tpl))
+	t := template.Must(template.New("").Funcs(customFuncs).Parse(tpl))
 	if t == nil {
 		return fmt.Errorf("failed to parse template %q", tpl)
 	}
@@ -57,5 +64,5 @@ func parseJSON(ctx context.Context, mc interp.ModuleCtx, args []string) error {
 }
 
 func init() {
-	stest.RegisterCommandBuiltin("parse-json", parseJSON)
+	stest.RegisterCommandBuiltin("execute-template", executeTemplate)
 }

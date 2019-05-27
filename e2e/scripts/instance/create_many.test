@@ -4,25 +4,15 @@
 source common.func
 source instance/instance.func
 
-# stop all instances at exit
-atexit() {
-    stop-instances
-}
-
-register-exit-func atexit
-
 image=`get-test-image`
-port=${instance_default_port}
+instance_name=`gen-instance-name`
 
 for i in $(seq 1 10); do
-    instance_name=`gen-instance-name`
-    expect-success "StartInstance${i}" singularity instance start ${image} ${instance_name} ${port}
-    ((port++))
+    arg="${SCRIPT_TESTDIR}/${instance_name}_${i}"
+    expect-success "StartInstance${i}" singularity instance start ${image} "${instance_name}_${i}" "${arg}"
 done
 
-port=${instance_default_port}
-
 for i in $(seq 1 10); do
-    echo-instance  "EchoInstance${i}" ${port}
-    ((port++))
+    echo-instance  "EchoInstance${i}" `get-echo-port "${instance_name}_${i}"`
+    expect-success "StopInstance${i}" singularity instance stop "${instance_name}_${i}"
 done

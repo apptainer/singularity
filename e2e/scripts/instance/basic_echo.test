@@ -7,6 +7,8 @@ source instance/instance.func
 image=`get-test-image`
 instance_name=`gen-instance-name`
 
-expect-success "StartInstance"  singularity instance start ${image} ${instance_name} ${instance_default_port}
-echo-instance  "EchoInstance"   ${instance_default_port}
+arg="${SCRIPT_TESTDIR}/${instance_name}"
+
+expect-success "StartInstance"  singularity instance start ${image} ${instance_name} "${arg}"
+echo-instance  "EchoInstance"   `get-echo-port "${instance_name}"`
 expect-success "StopInstance"   singularity instance stop ${instance_name}

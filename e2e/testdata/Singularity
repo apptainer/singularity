@@ -56,16 +56,39 @@ export HELLOTHISIS
     echo "RUNNING FOO"
 
 %startscript
-    exec nc -l -k -p $1 -e /bin/cat 2>/dev/null
+    if [ ! -z "$1" ]; then
+        exec python /echo.py 2>$1
+    fi
 
 %runscript
     echo "Running command: $*"
     exec "$@"
 
 %post
+    # required to build sandbox image from the SIF generated image
+    chmod 0755 /
     echo "POST"
     # Needed for startscript
-    yum install -y nmap-ncat hostname
+    yum install -y hostname
+
+    cat > /echo.py <<-EOF
+import sys
+import socket
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+s.bind(('', 0))
+s.listen(1)
+
+# write port to stderr
+sys.stderr.write("%d\n" % s.getsockname()[1])
+sys.stderr.flush()
+
+conn, addr = s.accept()
+data = conn.recv(1024)
+conn.sendall(data)
+conn.close()
+EOF
 
 %test
     exec "$@"

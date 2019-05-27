@@ -16,7 +16,7 @@ hostname="echoserver99"
 
 options="--cleanenv --hostname ${hostname} --home ${home}:/home/temp"
 
-expect-success "StartInstance"  singularity instance start ${options} ${image} ${instance_name} ${instance_default_port}
+expect-success "StartInstance"  singularity instance start ${options} ${image} ${instance_name}
 
 stdout-contains "CheckFileContent"   "world"     singularity exec instance://${instance_name} cat /home/temp/a_file
 stdout-contains "CheckHostname"      ${hostname} singularity exec instance://${instance_name} hostname
