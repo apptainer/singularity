@@ -99,7 +99,7 @@ require (
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go4.org v0.0.0-20180417224846-9599cf28b011 // indirect
 	golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2
-	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6 // indirect
+	golang.org/x/sync v0.0.0-20190423024810-112230192c58 // indirect
 	golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
 	google.golang.org/grpc v1.20.0 // indirect
@@ -108,7 +108,7 @@ require (
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.3.0+incompatible
-	k8s.io/client-go v11.0.0+incompatible // indirect
+	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect
 	mvdan.cc/sh/v3 v3.0.0-alpha1
 	rsc.io/letsencrypt v0.0.1 // indirect
 )
