@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -87,8 +88,13 @@ func TestOciTempExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	tests := []struct {
 		name     string

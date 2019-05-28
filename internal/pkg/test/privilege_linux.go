@@ -20,21 +20,12 @@ import (
 var origUID, origGID, unprivUID, unprivGID int
 var origHome, unprivHome string
 
-const (
-	// BaseDirPriv is the directory used by tests when running privileged
-	BaseDirPriv = "/tmp/WithPrivilege"
-	// BaseDirUnpriv is the directory used by tests when running unprivileged
-	BaseDirUnpriv = "/tmp/WithoutPrivilege"
-)
-
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
 	uid := os.Getuid()
 	if uid != 0 {
 		t.Fatal("test must be run with privilege")
 	}
-
-	os.Setenv("SINGULARITY_TESTBASEDIR", BaseDirPriv)
 }
 
 // DropPrivilege drops privilege. Use this at the start of a test that does
@@ -60,9 +51,6 @@ func DropPrivilege(t *testing.T) {
 			t.Fatalf("failed to set HOME environment variable: %v", err)
 		}
 	}
-
-	// set SINGULARITY_CACHEDIR; we do not refer to cache.DirEnv to avoid dependency cycles.
-	os.Setenv("SINGULARITY_TESTBASEDIR", BaseDirUnpriv)
 }
 
 // ResetPrivilege returns effective privilege to the original user.
@@ -78,8 +66,6 @@ func ResetPrivilege(t *testing.T) {
 	}
 
 	runtime.UnlockOSThread()
-
-	os.Setenv("SINGULARITY_TESTBASEDIR", BaseDirPriv)
 }
 
 // WithPrivilege wraps the supplied test function with calls to ensure
@@ -87,8 +73,6 @@ func ResetPrivilege(t *testing.T) {
 func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
-
-		os.Setenv("SINGULARITY_TESTBASEDIR", BaseDirPriv)
 
 		EnsurePrivilege(t)
 
@@ -104,8 +88,6 @@ func WithoutPrivilege(f func(t *testing.T)) func(t *testing.T) {
 
 		DropPrivilege(t)
 		defer ResetPrivilege(t)
-
-		os.Setenv("SINGULARITY_TESTBASEDIR", BaseDirUnpriv)
 
 		f(t)
 	}

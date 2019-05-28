@@ -19,6 +19,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
@@ -102,8 +103,13 @@ func TestReader(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cacheDir, err)
+	}
 
 	filename := downloadImage(t)
 	defer os.Remove(filename)
@@ -184,8 +190,13 @@ func TestAuthorizedPath(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	tests := []struct {
 		name       string
@@ -270,8 +281,13 @@ func TestRootAuthorizedOwner(t *testing.T) {
 	// Function focusing only on executing the privileged case
 	test.EnsurePrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	tests := []ownerGroupTest{
 		/* This test fails with CircleCI because of weird user management that
@@ -307,8 +323,13 @@ func TestAuthorizedOwner(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	// Note that we do not test the "root" case; the privileged cases are
 	// tested in a separate function.
@@ -376,8 +397,13 @@ func runAuthorizedGroupTest(t *testing.T, tt groupTest, img *Image) {
 func TestPrivilegedAuthorizedGroup(t *testing.T) {
 	test.EnsurePrivilege(t) // to make sure we create the image under the correct user
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	tests := []groupTest{
 		{
@@ -408,8 +434,13 @@ func TestAuthorizedGroup(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	// Note that we do not test the "root" case here, privileged cases are
 	// performed in a separate function.

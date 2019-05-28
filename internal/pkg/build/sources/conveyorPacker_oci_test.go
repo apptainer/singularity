@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -38,8 +39,13 @@ func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cacheDir, err)
+	}
 
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
@@ -68,8 +74,13 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// Since we manipulate archives/images, we make sure to have a clean image cache
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	archive, err := getTestTar(dockerArchiveURI)
 	if err != nil {
@@ -145,8 +156,13 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
@@ -181,8 +197,13 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	archive, err := getTestTar(ociArchiveURI)
 	if err != nil {
@@ -229,8 +250,13 @@ func TestOCIPacker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {

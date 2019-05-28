@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -129,8 +130,14 @@ func testSingularityRun(t *testing.T) {
 			// Because we drop the privileges during a test, we set a new image cache
 			// otherwise the test would try to use the cache from the privileged user,
 			// creating failures.
-			test.SetCacheDir(t)
-			defer test.CleanCacheDir(t)
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, cacheDir)
+			}
+
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -207,8 +214,14 @@ func testSingularityExec(t *testing.T) {
 			// Because we drop the privileges during a test, we set a new image cache
 			// otherwise the test would try to use the cache from the privileged user,
 			// creating failures.
-			test.SetCacheDir(t)
-			defer test.CleanCacheDir(t)
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("cannot set %s environment variable: %s", cache.DirEnv, err)
+			}
+
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -229,8 +242,14 @@ func testSingularityExec(t *testing.T) {
 		// Because we drop the privileges during a test, we set a new image cache
 		// otherwise the test would try to use the cache from the privileged user,
 		// creating failures.
-		test.SetCacheDir(t)
-		defer test.CleanCacheDir(t)
+		cacheDir := test.SetCacheDir(t, "")
+		defer test.CleanCacheDir(t, cacheDir)
+
+		err := os.Setenv(cache.DirEnv, cacheDir)
+		if err != nil {
+			t.Fatalf("cannot set %s environment variable: %s", cache.DirEnv, err)
+		}
+
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{noHome: true}, pwd+"/container.img", []string{"ls", "-ld", "$HOME"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
@@ -318,8 +337,14 @@ func testSTDINPipe(t *testing.T) {
 			// Because we drop the privileges during a test, we set a new image cache
 			// otherwise the test would try to use the cache from the privileged user,
 			// creating failures.
-			test.SetCacheDir(t)
-			defer test.CleanCacheDir(t)
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("cannot set %s environment variable: %s", cache.DirEnv, err)
+			}
+
 			cmd := exec.Command(tt.binName, tt.argv...)
 			if err := cmd.Start(); err != nil {
 				t.Fatalf("cmd.Start: %v", err)
@@ -390,8 +415,14 @@ func testRunFromURI(t *testing.T) {
 			// Because we drop the privileges during a test, we set a new image cache
 			// otherwise the test would try to use the cache from the privileged user,
 			// creating failures.
-			test.SetCacheDir(t)
-			defer test.CleanCacheDir(t)
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("cannot set %s envionment variable: %s", cache.DirEnv, err)
+			}
+
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -530,8 +561,14 @@ func testPersistentOverlay(t *testing.T) {
 		// Because we drop the privileges during a test, we set a new image cache
 		// otherwise the test would try to use the cache from the privileged user,
 		// creating failures.
-		test.SetCacheDir(t)
-		defer test.CleanCacheDir(t)
+		cacheDir := test.SetCacheDir(t, "")
+		defer test.CleanCacheDir(t, cacheDir)
+
+		err := os.Setenv(cache.DirEnv, cacheDir)
+		if err != nil {
+			t.Fatalf("cannot set %s environment variable: %s", cache.DirEnv, err)
+		}
+
 		_, stderr, exitCode, err := imageExec(t, "exec", opts{overlay: []string{dir}}, imagePath, []string{"test", "-f", "/foo_overlay"})
 		if exitCode != 1 {
 			t.Log(stderr, err)
@@ -550,8 +587,13 @@ func testPersistentOverlay(t *testing.T) {
 
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
-	test.SetCacheDir(t)
-	defer test.CleanCacheDir(t)
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cacheDir, err)
+	}
 
 	opts := buildOpts{
 		force:   true,
