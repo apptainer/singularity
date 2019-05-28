@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -430,6 +431,14 @@ func testInstanceFromURI(t *testing.T) {
 
 // Bootstrap to run all instance tests.
 func TestInstance(t *testing.T) {
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
+
 	// Build a basic Singularity image to test instances.
 	if b, err := imageBuild(buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
 		t.Log(string(b))

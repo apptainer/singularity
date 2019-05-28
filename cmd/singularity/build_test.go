@@ -21,6 +21,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -110,6 +111,14 @@ func TestBuild(t *testing.T) {
 				}
 			}
 
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+			}
+
 			opts := buildOpts{
 				sandbox: tt.sandbox,
 			}
@@ -191,6 +200,14 @@ func TestMultipleBuilds(t *testing.T) {
 						sandbox: ts.sandbox,
 					}
 
+					cacheDir := test.SetCacheDir(t, "")
+					defer test.CleanCacheDir(t, cacheDir)
+
+					err := os.Setenv(cache.DirEnv, cacheDir)
+					if err != nil {
+						t.Fatalf("cannot set %s environment variable: %s", cache.DirEnv, err)
+					}
+
 					if b, err := imageBuild(opts, ts.imagePath, ts.buildSpec); err != nil {
 						t.Log(string(b))
 						t.Fatalf("unexpected failure: %v", err)
@@ -207,6 +224,14 @@ func TestBadPath(t *testing.T) {
 
 	imagePath := path.Join(testDir, "container")
 	defer os.RemoveAll(imagePath)
+
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	if b, err := imageBuild(buildOpts{}, imagePath, "/some/dumb/path"); err == nil {
 		t.Log(string(b))
@@ -408,6 +433,14 @@ func TestMultiStageDefinition(t *testing.T) {
 
 			imagePath := path.Join(testDir, "container")
 			defer os.RemoveAll(imagePath)
+
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+			}
 
 			if b, err := imageBuild(opts, imagePath, defFile); err != nil {
 				t.Log(string(b))
@@ -709,6 +742,14 @@ func TestBuildDefinition(t *testing.T) {
 
 			imagePath := path.Join(testDir, "container")
 			defer os.RemoveAll(imagePath)
+
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+			}
 
 			if b, err := imageBuild(opts, imagePath, defFile); err != nil {
 				t.Log(string(b))

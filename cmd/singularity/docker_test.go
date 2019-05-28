@@ -36,6 +36,14 @@ func TestDocker(t *testing.T) {
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
 
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+			}
+
 			b, err := imageBuild(buildOpts{}, imagePath, tt.imagePath)
 			if tt.expectSuccess {
 				if err != nil {
@@ -57,6 +65,14 @@ func TestDockerAUFS(t *testing.T) {
 
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
+
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
 
 	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
 	if err != nil {
@@ -136,6 +152,14 @@ func TestDockerWhiteoutSymlink(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
+
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
@@ -179,6 +203,14 @@ func TestDockerDefFile(t *testing.T) {
 
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
+
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+			}
 
 			deffile := prepareDefFile(DefFileDetail{
 				Bootstrap: "docker",
@@ -266,6 +298,14 @@ func TestDockerRegistry(t *testing.T) {
 			}
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
+
+			cacheDir := test.SetCacheDir(t, "")
+			defer test.CleanCacheDir(t, cacheDir)
+
+			err := os.Setenv(cache.DirEnv, cacheDir)
+			if err != nil {
+				t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+			}
 
 			defFile := prepareDefFile(tt.dfd)
 

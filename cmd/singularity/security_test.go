@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -116,6 +117,15 @@ func testSecurityConfOwnership(t *testing.T) {
 
 func TestSecurity(t *testing.T) {
 	test.EnsurePrivilege(t)
+
+	cacheDir := test.SetCacheDir(t, "")
+	test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+	}
+
 	opts := buildOpts{
 		force:   true,
 		sandbox: false,
