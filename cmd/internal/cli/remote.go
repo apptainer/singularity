@@ -27,6 +27,7 @@ const (
 var (
 	loginTokenFile string
 	remoteConfig   string
+	remoteNoLogin  bool
 	global         bool
 )
 
@@ -63,6 +64,15 @@ var remoteTokenFileFlag = cmdline.Flag{
 	Usage:        "path to the file holding token",
 }
 
+// --no-login
+var remoteNoLoginFlag = cmdline.Flag{
+	ID:           "remoteNoLoginFlag",
+	Value:        &remoteNoLogin,
+	DefaultValue: false,
+	Name:         "no-login",
+	Usage:        "skip automatic login step",
+}
+
 func init() {
 	cmdManager.RegisterCmd(RemoteCmd)
 	cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddCmd)
@@ -75,9 +85,11 @@ func init() {
 	// default location of the remote.yaml file is the user directory
 	cmdManager.RegisterFlagForCmd(&remoteConfigFlag, RemoteCmd)
 	// use tokenfile to log in to a remote
-	cmdManager.RegisterFlagForCmd(&remoteTokenFileFlag, RemoteLoginCmd)
+	cmdManager.RegisterFlagForCmd(&remoteTokenFileFlag, RemoteLoginCmd, RemoteAddCmd)
 	// add --global flag to remote add/remove/use commands
 	cmdManager.RegisterFlagForCmd(&remoteGlobalFlag, RemoteAddCmd, RemoteRemoveCmd, RemoteUseCmd)
+	// add --no-login flag to add command
+	cmdManager.RegisterFlagForCmd(&remoteNoLoginFlag, RemoteAddCmd)
 }
 
 // RemoteCmd singularity remote [...]
@@ -112,8 +124,18 @@ var RemoteAddCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(2),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteAdd(remoteConfig, args[0], args[1], global); err != nil {
+		name := args[0]
+		uri := args[1]
+		if err := singularity.RemoteAdd(remoteConfig, name, uri, global); err != nil {
 			sylog.Fatalf("%s", err)
+		}
+		sylog.Infof("Remote %q added.", name)
+
+		if !remoteNoLogin {
+			sylog.Infof("Authenticating with remote: %s", name)
+			if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, name, loginTokenFile); err != nil {
+				sylog.Fatalf("%s", err)
+			}
 		}
 	},
 
@@ -130,9 +152,11 @@ var RemoteRemoveCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(1),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteRemove(remoteConfig, args[0]); err != nil {
+		name := args[0]
+		if err := singularity.RemoteRemove(remoteConfig, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+		sylog.Infof("Remote %q removed.", name)
 	},
 
 	Use:     docs.RemoteRemoveUse,
@@ -148,9 +172,11 @@ var RemoteUseCmd = &cobra.Command{
 	Args:   cobra.ExactArgs(1),
 	PreRun: setGlobalRemoteConfig,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, args[0], global); err != nil {
+		name := args[0]
+		if err := singularity.RemoteUse(remoteConfig, remoteConfigSys, name, global); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+		sylog.Infof("Remote %q now in use.", name)
 	},
 
 	Use:     docs.RemoteUseUse,
