@@ -21,7 +21,7 @@ import (
 const (
 	fileName      = "remote.yaml"
 	sysDir        = "singularity"
-	remoteWarning = "no authentication token, log in with 'singularity remote` commands"
+	remoteWarning = "no authentication token, log in with `singularity remote login`"
 )
 
 var (
