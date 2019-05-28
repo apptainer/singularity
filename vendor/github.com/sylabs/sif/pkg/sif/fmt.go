@@ -171,7 +171,7 @@ func (fimg *FileImage) FmtDescrList() string {
 	return s
 }
 
-// FmtDescrInfo formats the ouput of detailed info about a descriptor from a SIF file
+// FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file
 func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 
