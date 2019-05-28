@@ -21,14 +21,14 @@ import (
 
 // nvidiaContainerCli runs `nvidia-container-cli list` and returns list of
 // libraries, ipcs and binaries for proper NVIDIA work. This may return duplicates!
-func nvidiaContainerCli() ([]string, error) {
+func nvidiaContainerCli(args ...string) ([]string, error) {
 	nvidiaCLIPath, err := exec.LookPath("nvidia-container-cli")
 	if err != nil {
 		return nil, fmt.Errorf("could not find nvidia-container-cli: %v", err)
 	}
 
 	var out bytes.Buffer
-	cmd := exec.Command(nvidiaCLIPath, "list", "--binaries", "--libraries")
+	cmd := exec.Command(nvidiaCLIPath, args...)
 	cmd.Stdout = &out
 	err = cmd.Run()
 	if err != nil {
@@ -89,7 +89,7 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	}
 
 	var nvidiaFiles []string
-	nvidiaFiles, err := nvidiaContainerCli()
+	nvidiaFiles, err := nvidiaContainerCli("list", "--binaries", "--libraries")
 	if err != nil {
 		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
 		sylog.Verbosef("Falling back to nvliblist.conf")
@@ -182,4 +182,33 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 	}
 
 	return libraries, binaries, nil
+}
+
+// IpcsPath returns list of nvidia ipcs driver.
+func IpcsPath(envPath string) []string {
+	const persistencedSocket = "/var/run/nvidia-persistenced/socket"
+
+	if envPath != "" {
+		oldPath := os.Getenv("PATH")
+		os.Setenv("PATH", envPath)
+		defer os.Setenv("PATH", oldPath)
+	}
+
+	var nvidiaFiles []string
+	nvidiaFiles, err := nvidiaContainerCli("list", "--ipcs")
+	if err != nil {
+		sylog.Verbosef("nvidiaContainerCli returned: %v", err)
+		sylog.Verbosef("Falling back to default path %s", persistencedSocket)
+
+		// nvidia-container-cli may not be installed, check
+		// default path
+		_, err := os.Stat(persistencedSocket)
+		if os.IsNotExist(err) {
+			sylog.Verbosef("persistenced socket %s not found", persistencedSocket)
+		} else {
+			nvidiaFiles = append(nvidiaFiles, persistencedSocket)
+		}
+	}
+
+	return nvidiaFiles
 }
