@@ -21,7 +21,7 @@ func CreateLoop(file *os.File, offset, size uint64) (string, error) {
 		Info: &loop.Info64{
 			SizeLimit: size,
 			Offset:    offset,
-			Flags:     loop.FlagsAutoClear,
+			Flags:     loop.FlagsAutoClear | loop.FlagsReadOnly,
 		},
 	}
 	idx := 0

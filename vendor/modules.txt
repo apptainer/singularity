@@ -263,8 +263,10 @@ github.com/sylabs/scs-build-client/client
 github.com/sylabs/scs-key-client/client
 # github.com/sylabs/scs-library-client v0.1.0
 github.com/sylabs/scs-library-client/client
-# github.com/sylabs/sif v1.0.3
+# github.com/sylabs/sif v1.0.4
+github.com/sylabs/sif/pkg/siftool
 github.com/sylabs/sif/pkg/sif
+github.com/sylabs/sif/internal/app/siftool
 # github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e
 github.com/syndtr/gocapability/capability
 # github.com/vishvananda/netlink v1.0.0
@@ -295,7 +297,7 @@ golang.org/x/net/context/ctxhttp
 golang.org/x/net/proxy
 golang.org/x/net/context
 golang.org/x/net/internal/socks
-# golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
+# golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup
 # golang.org/x/sys v0.0.0-20190222072716-a9d3bda3a223
 golang.org/x/sys/unix
