@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -56,9 +55,9 @@ func TestNetImageExists(t *testing.T) {
 	cacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, cacheDir)
 
-	err := os.Setenv(cache.DirEnv, cacheDir)
+	err := os.Setenv(DirEnv, cacheDir)
 	if err != nil {
-		t.Fatalf("failed to set %s environment variable: %s", cache.DirEnv, err)
+		t.Fatalf("failed to set %s environment variable: %s", DirEnv, err)
 	}
 
 	tests := []struct {

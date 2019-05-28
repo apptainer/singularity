@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	client "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -60,7 +59,7 @@ func TestLibraryImage(t *testing.T) {
 	cacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, cacheDir)
 
-	err := os.Setenv(cache.DirEnv, cacheDir)
+	err := os.Setenv(DirEnv, cacheDir)
 	if err != nil {
 		t.Fatalf("failed to set %s environment variable: %s", cacheDir, err)
 	}
@@ -98,13 +97,13 @@ func TestLibraryImageExists(t *testing.T) {
 	cacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, cacheDir)
 
-	err := os.Setenv(cache.DirEnv, cacheDir)
+	err := os.Setenv(DirEnv, cacheDir)
 	if err != nil {
-		t.Fatalf("failed to set %s environmemt variable: %s", cache.DirEnv, err)
+		t.Fatalf("failed to set %s environmemt variable: %s", DirEnv, err)
 	}
 
 	// Invalid cases
-	_, err := LibraryImageExists("", "")
+	_, err = LibraryImageExists("", "")
 	if err == nil {
 		t.Fatalf("LibraryImageExists() returned true for invalid data:  %s\n", err)
 	}
