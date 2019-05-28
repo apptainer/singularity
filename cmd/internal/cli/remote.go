@@ -88,6 +88,8 @@ var RemoteCmd = &cobra.Command{
 	Short:   docs.RemoteShort,
 	Long:    docs.RemoteLong,
 	Example: docs.RemoteExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // setGlobalRemoteConfig will assign the appropriate value to remoteConfig if the global flag is set
@@ -119,6 +121,8 @@ var RemoteAddCmd = &cobra.Command{
 	Short:   docs.RemoteAddShort,
 	Long:    docs.RemoteAddLong,
 	Example: docs.RemoteAddExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteRemoveCmd singularity remote remove [remoteName]
@@ -135,6 +139,8 @@ var RemoteRemoveCmd = &cobra.Command{
 	Short:   docs.RemoteRemoveShort,
 	Long:    docs.RemoteRemoveLong,
 	Example: docs.RemoteRemoveExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteUseCmd singularity remote use [remoteName]
@@ -151,6 +157,8 @@ var RemoteUseCmd = &cobra.Command{
 	Short:   docs.RemoteUseShort,
 	Long:    docs.RemoteUseLong,
 	Example: docs.RemoteUseExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteListCmd singularity remote list
@@ -166,6 +174,8 @@ var RemoteListCmd = &cobra.Command{
 	Short:   docs.RemoteListShort,
 	Long:    docs.RemoteListLong,
 	Example: docs.RemoteListExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteLoginCmd singularity remote login [remoteName]
@@ -190,6 +200,8 @@ var RemoteLoginCmd = &cobra.Command{
 	Short:   docs.RemoteLoginShort,
 	Long:    docs.RemoteLoginLong,
 	Example: docs.RemoteLoginExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // RemoteStatusCmd singularity remote status [remoteName]
@@ -214,4 +226,6 @@ var RemoteStatusCmd = &cobra.Command{
 	Short:   docs.RemoteStatusShort,
 	Long:    docs.RemoteStatusLong,
 	Example: docs.RemoteStatusExample,
+
+	DisableFlagsInUseLine: true,
 }
