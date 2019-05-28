@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"golang.org/x/sys/unix"
 )
@@ -90,6 +91,14 @@ func TestDockerAUFS(t *testing.T) {
 func TestDockerPermissions(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	cacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, cacheDir)
+
+	err := os.Setenv(cache.DirEnv, cacheDir)
+	if err != nil {
+		t.Fatalf("failed to set %s envionment variable: %s", cacheDir, err)
+	}
 
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
