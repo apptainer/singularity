@@ -109,8 +109,13 @@ github.com/gotestyourself/gotestyourself v2.2.0+incompatible h1:AQwinXlbQR2HvPjQ
 github.com/gotestyourself/gotestyourself v2.2.0+incompatible/go.mod h1:zZKM6oeNM8k+FRljX1mnzVYeS8wiGgQyvST1/GafPbY=
 github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce h1:prjrVgOk2Yg6w+PflHoszQNLTUh4kaByUcEWM/9uin4=
 github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
+github.com/hashicorp/go-cleanhttp v0.5.0/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
+github.com/hashicorp/go-cleanhttp v0.5.1 h1:dH3aiDG9Jvb5r5+bYHsikaOUIpcM0xvgMXVoDkXMzJM=
+github.com/hashicorp/go-cleanhttp v0.5.1/go.mod h1:JpRdi6/HCYpAwUzNwuwqhbovhLtngrth3wmdIIUrZ80=
 github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 h1:em+tTnzgU7N22woTBMcSJAOW7tRHAkK597W+MD/CpK8=
 github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874/go.mod h1:JMRHfdO9jKNzS/+BTlxCjKNQHg/jZAft8U7LloJvN7I=
+github.com/hashicorp/go-retryablehttp v0.5.3 h1:QlWt0KvWT0lq8MFppF9tsJGF+ynG7ztc2KIPhzRGk7s=
+github.com/hashicorp/go-retryablehttp v0.5.3/go.mod h1:9B5zBasrRhHXnJnui7y6sL7es7NDiJgTc6Er0maI1Xs=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
@@ -221,6 +226,8 @@ github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec h1:dX97dpv
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
 github.com/sylabs/scs-library-client v0.1.0 h1:uSxsXGGdQwY690t4QJE2Hxqm/D8iRbYIYIF2RMpjZ1U=
 github.com/sylabs/scs-library-client v0.1.0/go.mod h1:qfp6pi2pAo0Pb1QzSdhF+Oy2ZXIsy82DozLCJ7j+qIQ=
+github.com/sylabs/scs-library-client v0.2.0 h1:qQaGE2t/FD44hGKYRSaceE4YBrkhojnXImwBCtHmH4Q=
+github.com/sylabs/scs-library-client v0.2.0/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
 github.com/sylabs/sif v1.0.3-0.20190517011411-f5e78ee40f0b h1:+kgohL9BfDuvOo0xwP/kkQhK47tqa64zfvleypige3Y=
 github.com/sylabs/sif v1.0.3-0.20190517011411-f5e78ee40f0b/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
 github.com/sylabs/sif v1.0.3 h1:oMYGL3hIKIYkQDCr+Qr62mVViC4oKdUZTKqYVDTf4co=
