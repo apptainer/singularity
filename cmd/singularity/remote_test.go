@@ -41,7 +41,7 @@ func TestRemoteAdd(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "add"}
+		argv := []string{"remote", "--config", config.Name(), "add", "--no-login"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
@@ -61,7 +61,7 @@ func TestRemoteAdd(t *testing.T) {
 	}
 
 	for _, tt := range testFail {
-		argv := []string{"remote", "--config", config.Name(), "add"}
+		argv := []string{"remote", "--config", config.Name(), "add", "--no-login"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err == nil {
@@ -93,7 +93,7 @@ func TestRemoteRemove(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
+		argv := []string{"remote", "--config", config.Name(), "add", "--no-login"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
@@ -180,7 +180,7 @@ func TestRemoteUse(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
+		argv := []string{"remote", "--config", config.Name(), "add", "--no-login"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
@@ -231,7 +231,7 @@ func TestRemoteStatus(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
+		argv := []string{"remote", "--config", config.Name(), "add", "--no-login"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
@@ -316,7 +316,7 @@ func TestRemoteList(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
+		argv := []string{"remote", "--config", config.Name(), "add", "--no-login"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			if b, err := exec.Command(cmdPath, argv...).CombinedOutput(); err != nil {
