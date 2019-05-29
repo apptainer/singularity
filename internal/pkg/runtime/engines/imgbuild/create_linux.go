@@ -60,7 +60,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 		flags = uintptr(syscall.MS_BIND | syscall.MS_REC)
 	}
 
-	sylog.Debugf("Mounting image directory %s\n", rootfs)
+	sylog.Debugf("Mounting image directory %s to %s\n", rootfs)
 	_, err = rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro")
 	if err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)

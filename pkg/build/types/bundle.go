@@ -42,6 +42,8 @@ type Bundle struct {
 
 // Options defines build time behavior to be executed on the bundle
 type Options struct {
+	// Encrypt specifies if the filesystem needs to be encrypteded
+	Encrypted bool `json:"encrypt"`
 	// sections are the parts of the definition to run during the build
 	Sections []string `json:"sections"`
 	// TmpDir specifies a non-standard temporary location to perform a build
@@ -70,7 +72,7 @@ type Options struct {
 }
 
 // NewBundle creates a Bundle environment
-func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
+func NewBundle(encrypted bool, bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
 	b.JSONObjects = make(map[string][]byte)
 
@@ -86,6 +88,10 @@ func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 
 	b.FSObjects = map[string]string{
 		"rootfs": "fs",
+	}
+
+	if encrypted == true {
+		b.Opts.Encrypted = true
 	}
 
 	for _, fso := range b.FSObjects {

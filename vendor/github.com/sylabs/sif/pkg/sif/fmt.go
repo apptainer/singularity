@@ -89,6 +89,8 @@ func fstypeStr(ftype Fstype) string {
 		return "Archive"
 	case FsRaw:
 		return "Raw"
+	case FsEncrypt:
+		return "FsEncrypt"
 	}
 	return "Unknown fs-type"
 }

@@ -7,7 +7,13 @@ package singularity
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 	"syscall"
+
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -21,7 +27,6 @@ import (
 
 // CleanupContainer cleans up the container
 func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
-	sylog.Debugf("Cleanup container")
 
 	if engine.EngineConfig.GetDeleteImage() {
 		image := engine.EngineConfig.GetImage()
@@ -56,6 +61,48 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 			return err
 		}
 		return file.Delete()
+	}
+
+	if engine.EngineConfig.CryptDev != "" {
+		cleanupCrypt(engine.EngineConfig.CryptDev)
+	}
+
+	return nil
+}
+
+func cleanupCrypt(path string) error {
+
+	// Elevate the privilege to unmount and delete the crypt device
+	runtime.LockOSThread()
+	uid := os.Getuid()
+	err := syscall.Setresuid(uid, 0, uid)
+	defer syscall.Setresuid(uid, uid, 0)
+	defer runtime.UnlockOSThread()
+	if err != nil {
+		sylog.Debugf("Err setting suid")
+		return err
+	}
+
+	err = syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "final"), syscall.MNT_DETACH)
+	if err != nil {
+		sylog.Debugf("Error while unmounting overlay FS: %s", err)
+		return err
+	}
+
+	err = syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "rootfs"), syscall.MNT_DETACH)
+	if err != nil {
+		sylog.Debugf("Error while unmounting Rootfs: %s", err)
+		return err
+	}
+
+	sp := strings.Split(path, "/")
+	devName := sp[len(sp)-1]
+
+	cryptDev := &crypt.Device{}
+	err = cryptDev.CloseCryptDevice(devName)
+	if err != nil {
+		sylog.Debugf("Unable to delete crypt device: %s", devName)
+		return err
 	}
 
 	return nil

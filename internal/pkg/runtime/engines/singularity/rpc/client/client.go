@@ -8,6 +8,7 @@ package client
 import (
 	"net/rpc"
 	"os"
+	"strings"
 
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -19,7 +20,7 @@ type RPC struct {
 	Name   string
 }
 
-// Mount calls tme mount RPC using the supplied arguments.
+// Mount calls the mount RPC using the supplied arguments.
 func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
 	arguments := &args.MountArgs{
 		Source:     source,
@@ -30,6 +31,21 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".Mount", arguments, &reply)
+	return reply, err
+}
+
+// Decrypt calls the DeCrypt RPC using the supplied arguments.
+func (t *RPC) Decrypt(offset uint64, path string) (string, error) {
+	sp := strings.Split(path, "/")
+	loopdev := sp[len(sp)-1]
+	arguments := &args.CryptArgs{
+		Offset:  offset,
+		Loopdev: loopdev,
+	}
+
+	var reply string
+	err := t.Client.Call(t.Name+".Decrypt", arguments, &reply)
+
 	return reply, err
 }
 

@@ -148,6 +148,7 @@ const (
 	FsExt3                      // EXT3 file system, RDWR (deprecated)
 	FsImmuObj                   // immutable data object archive
 	FsRaw                       // raw data
+	FsEncrypt                   // Encrypted File System
 )
 
 // Parttype represents the different SIF container partition types (system and data)
@@ -299,6 +300,7 @@ type DescriptorInput struct {
 	Link      uint32   // link to be set for new descriptor
 	Size      int64    // size of the data object for the new descriptor
 	Alignment int      // Align requirement for data object
+	Encrypt   bool
 
 	Fname string    // file containing data associated with the new descriptor
 	Fp    io.Reader // file pointer to opened 'fname'

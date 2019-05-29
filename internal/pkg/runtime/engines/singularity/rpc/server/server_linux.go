@@ -13,6 +13,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/pkg/util/crypt"
+
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
@@ -30,6 +32,18 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 	mainthread.Execute(func() {
 		err = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
+	return err
+}
+
+// DeCrypt decrypts the loop device by using dm-crypt interface
+func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
+
+	cryptDev := &crypt.Device{}
+
+	cryptName, err := cryptDev.GetCryptDevice(arguments.Loopdev)
+
+	*reply = "/dev/mapper/" + cryptName
+
 	return err
 }
 
@@ -134,6 +148,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	} else {
 		var err error
 		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
+		defer image.Close()
 		if err != nil {
 			return fmt.Errorf("could not open image file: %v", err)
 		}

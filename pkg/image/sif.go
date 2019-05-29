@@ -74,6 +74,8 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			continue
 		}
 
+		sylog.Debugf("Fs type is %s", fstype)
+
 		img.Partitions = []Section{
 			{
 				Offset: uint64(desc.Fileoff),
@@ -86,6 +88,8 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			img.Partitions[0].Type = SQUASHFS
 		} else if fstype == sif.FsExt3 {
 			img.Partitions[0].Type = EXT3
+		} else if fstype == sif.FsEncrypt {
+			img.Partitions[0].Type = ENCRYPTFS
 		} else {
 			return fmt.Errorf("unknown file system type: %v", fstype)
 		}

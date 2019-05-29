@@ -25,13 +25,15 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 // SIFAssembler doesnt store anything
 type SIFAssembler struct {
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string) (err error) {
+func createSIF(path string, definition, ociConf []byte, squashfile string, encrypted bool) (err error) {
+
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -46,6 +48,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string) (err 
 		Groupid:  sif.DescrDefaultGroup,
 		Link:     sif.DescrUnusedLink,
 		Data:     definition,
+		Encrypt:  encrypted,
 	}
 	definput.Size = int64(binary.Size(definput.Data))
 
@@ -90,7 +93,13 @@ func createSIF(path string, definition, ociConf []byte, squashfile string) (err 
 	parinput.Fp = fp
 	parinput.Size = fi.Size()
 
-	err = parinput.SetPartExtra(sif.FsSquash, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
+	sifType := sif.FsSquash
+
+	if encrypted {
+		sifType = sif.FsEncrypt
+	}
+
+	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
 	if err != nil {
 		return
 	}
@@ -139,19 +148,19 @@ func getMksquashfsPath() (string, error) {
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	sylog.Infof("Creating SIF file...")
 
+	var fsPath string
+
 	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
 		return fmt.Errorf("While searching for mksquashfs: %v", err)
 	}
-
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
-	squashfsPath := f.Name() + ".img"
+	fsPath = f.Name() + ".img"
 	f.Close()
 	os.Remove(f.Name())
-	os.Remove(squashfsPath)
-	defer os.Remove(squashfsPath)
-
-	args := []string{b.Rootfs(), squashfsPath, "-noappend"}
+	os.Remove(fsPath)
+	defer os.Remove(fsPath)
+	args := []string{b.Rootfs(), fsPath, "-noappend"}
 
 	// build squashfs with all-root flag when building as a user
 	if syscall.Getuid() != 0 {
@@ -177,7 +186,28 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], squashfsPath)
+	if b.Opts.Encrypted == true {
+
+		// A dm-crypt device needs to be created with squashfs
+		cryptDev := &crypt.Device{}
+
+		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath)
+		if err != nil {
+			sylog.Debugf("Unable to format crypt device: %s", cryptName)
+			return err
+		}
+
+		defer os.Remove(loopPath)
+
+		err = cryptDev.CloseCryptDevice(cryptName)
+		if err != nil {
+			sylog.Debugf("Unable to close crypt device: %s", cryptName)
+			return err
+		}
+		fsPath = loopPath
+	}
+
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, b.Opts.Encrypted)
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}

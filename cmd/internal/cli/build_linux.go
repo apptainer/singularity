@@ -23,6 +23,7 @@ import (
 )
 
 func run(cmd *cobra.Command, args []string) {
+
 	buildFormat := "sif"
 	if sandbox {
 		buildFormat = "sandbox"
@@ -157,6 +158,7 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
 					Fakeroot:         fakeroot,
+					Encrypted:        encrypt,
 				},
 			})
 		if err != nil {
@@ -167,6 +169,7 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	}
+	sylog.Debugf("Ending build......")
 }
 
 func checkSections() error {
