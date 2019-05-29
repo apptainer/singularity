@@ -40,8 +40,7 @@ func testSemanticVersion(t *testing.T) {
 				t.Fatalf("Failed to obtain version: %+v", err)
 			}
 			outputVersion := strings.TrimPrefix(string(out), "singularity version ")
-			outputIndex := strings.Index(outputVersion, "-")
-			outputVersion = outputVersion[:outputIndex]
+			outputVersion = strings.TrimSpace(outputVersion)
 			if semanticVersion, err := semver.Make(outputVersion); err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
@@ -62,8 +61,7 @@ func testEqualVersion(t *testing.T) {
 				t.Fatalf("Failed to obtain version: %+v", err)
 			}
 			outputVersion := strings.TrimPrefix(string(out), "singularity version ")
-			outputIndex := strings.Index(outputVersion, "-")
-			outputVersion = outputVersion[:outputIndex]
+			outputVersion = strings.TrimSpace(outputVersion)
 
 			semanticVersion, err := semver.Make(string(outputVersion))
 			if err != nil {
