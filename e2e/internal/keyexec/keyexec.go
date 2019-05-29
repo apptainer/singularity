@@ -311,7 +311,7 @@ func QuickTestExportImportKey(t *testing.T) {
 	}
 }
 
-// KeyNewPair will generate a newpair with the arguments being the key infomation; user = username, email = email, etc...
+// KeyNewPair will generate a newpair with the arguments being the key information; user = username, email = email, etc...
 // Will return a command that ran (string), the output of the command, and the error.
 func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
