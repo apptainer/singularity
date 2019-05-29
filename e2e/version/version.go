@@ -39,8 +39,8 @@ func testSemanticVersion(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to obtain version: %+v", err)
 			}
-			outputVersion := strings.Replace(string(out), "singularity version ", "", -1)
-			outputIndex := strings.Index(string(out), "-")
+			outputVersion := strings.TrimPrefix(string(out), "singularity version ")
+			outputIndex := strings.Index(outputVersion, "-")
 			outputVersion = outputVersion[:outputIndex]
 			if semanticVersion, err := semver.Make(outputVersion); err != nil {
 				t.Log(semanticVersion)
@@ -58,32 +58,29 @@ func testEqualVersion(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			out, err := exec.Command(testenv.CmdPath, tt.args...).CombinedOutput()
 			if err != nil {
+				t.Log(string(out))
 				t.Fatalf("Failed to obtain version: %+v", err)
 			}
-			outputVersion := strings.Replace(string(out), "singularity version ", "", -1)
-			outputIndex := strings.Index(string(out), "-")
+			outputVersion := strings.TrimPrefix(string(out), "singularity version ")
+			outputIndex := strings.Index(outputVersion, "-")
 			outputVersion = outputVersion[:outputIndex]
 
-			if semanticVersion, err := semver.Make(string(outputVersion)); err != nil {
+			semanticVersion, err := semver.Make(string(outputVersion))
+			if err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
 			}
-
-			tmpVersion = string(outputVersion)
-			versionOutput, err := semver.Make(string(outputVersion))
-			if err != nil {
-				t.Fatalf("FAIL: %s", err)
-			}
-			versionTmp, err := semver.Make(tmpVersion)
-			if err != nil {
-				t.Fatalf("FAIL: %s", err)
-			}
-
 			if tmpVersion != "" {
+				versionTmp, err := semver.Make(tmpVersion)
+				if err != nil {
+					t.Fatalf("FAIL: %s", err)
+				}
 				//compare versions and see if they are equal
-				if versionOutput.Compare(versionTmp) != 0 {
+				if semanticVersion.Compare(versionTmp) != 0 {
 					t.Fatalf("FAIL: singularity version command and singularity --version give a non-matching version result")
 				}
+			} else {
+				tmpVersion = outputVersion
 			}
 		})
 	}
