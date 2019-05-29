@@ -35,6 +35,12 @@ type MountArgs struct {
 	Data       string
 }
 
+// CryptArgs defines the arguments to mount.
+type CryptArgs struct {
+	Offset  uint64
+	Loopdev string
+}
+
 // ChrootArgs defines the arguments to chroot.
 type ChrootArgs struct {
 	Root   string

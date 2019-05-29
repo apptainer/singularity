@@ -8,6 +8,7 @@ package imgbuild
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/rpc"
 	"os"
@@ -57,7 +58,10 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	// sensible mount point options to avoid accidental system settings override
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV | syscall.MS_RDONLY)
 
-	sylog.Debugf("Mounting image directory %s\n", rootfs)
+	bpath := engine.EngineConfig.Bundle.Path
+	// Create a sparse file in /tmp
+	ioutil.TempFile(bpath, "temp_loop")
+	sylog.Debugf("Mounting image directory %s to %s\n", rootfs)
 	_, err = rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro")
 	if err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)

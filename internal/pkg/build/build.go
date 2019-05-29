@@ -105,10 +105,11 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 
 		s := stage{}
-		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		s.b, err = types.NewBundle(conf.Opts.Encrypt, conf.Opts.TmpDir, "sbuild")
 		if err != nil {
 			return nil, err
 		}
+
 		s.name = d.Header["stage"]
 		s.b.Recipe = d
 

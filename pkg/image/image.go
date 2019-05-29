@@ -25,6 +25,8 @@ const (
 	SANDBOX
 	// SIF constant for sif format
 	SIF
+	// ENCRYPTFS constant for encrypted format
+	ENCRYPTFS
 )
 
 const (
@@ -42,6 +44,7 @@ var registeredFormats = []struct {
 	{"sandbox", &sandboxFormat{}},
 	{"squashfs", &squashfsFormat{}},
 	{"ext3", &ext3Format{}},
+	{"encryptfs", &encryptFSFormat{}},
 }
 
 // format describes the interface that an image format type must implement.

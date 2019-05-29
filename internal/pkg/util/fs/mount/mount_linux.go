@@ -11,6 +11,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/sylog"
+
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -137,8 +139,9 @@ var authorizedTags = map[AuthorizedTag]struct {
 }
 
 var authorizedImage = map[string]fsContext{
-	"ext3":     {true},
-	"squashfs": {true},
+	"encryptfs": {true},
+	"ext3":      {true},
+	"squashfs":  {true},
 }
 
 var authorizedFS = map[string]fsContext{
@@ -577,6 +580,7 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
 		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for image mount points")
 	}
+	sylog.Debugf("FStype is %s", fstype)
 	if _, ok := authorizedImage[fstype]; !ok {
 		return fmt.Errorf("mount %s image is not authorized", fstype)
 	}

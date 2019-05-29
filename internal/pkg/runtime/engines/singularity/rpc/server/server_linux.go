@@ -7,7 +7,9 @@ package server
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
@@ -19,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 var diskGID = -1
@@ -31,6 +34,40 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 	mainthread.Execute(func() {
 		err = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
+	return err
+}
+
+// Crypt decrypts the loop device
+func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *int) (err error) {
+
+	sylog.Debugf("In Crypt RPC")
+	sylog.Debugf("Crypt RPC running in PID %d", os.Getpid())
+	sylog.Debugf("Loop device is %s", arguments.Loopdev)
+
+	fmt.Print("Enter the password to decrypt File System: ")
+	password, err := terminal.ReadPassword(int(syscall.Stdin))
+	if err != nil {
+		sylog.Fatalf("Error parsing input: %s", err)
+	}
+	cmd := exec.Command("/sbin/cryptsetup", "luksOpen", arguments.Loopdev, "sycrypt", "-v", "--debug")
+	cmd.Dir = "/dev"
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
+	stdin, err := cmd.StdinPipe()
+
+	go func() {
+		defer stdin.Close()
+		io.WriteString(stdin, string(password))
+	}()
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		sylog.Debugf("Output is %s", out)
+		sylog.Debugf("Error is %s", err)
+	} else {
+		sylog.Debugf("Decrypted the FS successfully")
+	}
+
 	return err
 }
 
@@ -135,6 +172,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	} else {
 		var err error
 		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
+		defer image.Close()
 		if err != nil {
 			return fmt.Errorf("could not open image file: %v", err)
 		}

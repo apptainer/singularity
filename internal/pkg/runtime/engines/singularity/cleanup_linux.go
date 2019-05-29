@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"os"
+	"os/exec"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/instance"
@@ -50,6 +51,32 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 		}
 		return file.Delete()
 	}
+
+	// Elevate the privilege
+	uid := os.Getuid()
+	err := syscall.Setresuid(uid, 0, uid)
+	if err != nil {
+		sylog.Debugf("Err setting suid")
+	}
+
+	err = syscall.Unmount("/usr/local/var/singularity/mnt/session/rootfs", syscall.MNT_DETACH)
+	if err != nil {
+		sylog.Debugf("Error while unmounting: %s", err)
+	}
+	cmd := exec.Command("/sbin/cryptsetup", "luksClose", "sycrypt")
+	cmd.Dir = "/dev/mapper"
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		sylog.Debugf("Output is %s", out)
+		sylog.Debugf("Error is %s", err)
+	} else {
+		sylog.Debugf("Removed decrypted device successfully out: %s\n", out)
+	}
+
+	// Restore the privilege
+	err = syscall.Setresuid(uid, uid, 0)
 
 	return nil
 }

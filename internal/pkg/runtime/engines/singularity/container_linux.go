@@ -547,7 +547,6 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	if err != nil {
 		return err
 	}
-
 	sizelimit, err := mount.GetSizeLimit(mnt.InternalOptions)
 	if err != nil {
 		return err
@@ -574,10 +573,23 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, mnt.Destination)
-	_, err = c.rpcOps.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
-	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
+
+	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
+
+	if mnt.Type == "encryptfs" {
+		sp := strings.Split(path, "/")
+		loopdev := sp[len(sp)-1]
+		_, err = c.rpcOps.Decrypt(offset, loopdev)
+
+		_, err = c.rpcOps.Mount("/dev/mapper/sycrypt", mnt.Destination, "ext3", flags, optsString)
+		if err != nil {
+			return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
+		}
+	} else {
+		_, err = c.rpcOps.Mount(path, mnt.Destination, "squashfs", flags, optsString)
+		if err != nil {
+			return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
+		}
 	}
 
 	return nil
@@ -641,11 +653,16 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
 
+	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Name)
+
 	switch imageObject.Partitions[0].Type {
 	case image.SQUASHFS:
 		mountType = "squashfs"
+		sylog.Debugf("Mount type is squashfs")
 	case image.EXT3:
 		mountType = "ext3"
+	case image.ENCRYPTFS:
+		mountType = "encryptfs"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
 		flags |= syscall.MS_BIND
@@ -884,6 +901,7 @@ func (c *container) addKernelMount(system *mount.System) error {
 	} else {
 		sylog.Verbosef("Skipping /sys mount")
 	}
+	err = system.Points.AddBind(mount.KernelTag, "/sbin", "/sbin", bindFlags)
 	return nil
 }
 

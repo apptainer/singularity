@@ -16,7 +16,6 @@ func main() {
 	// In cmd/internal/cli/singularity.go
 	cli.ExecuteSingularity()
 }
-
 func init() {
 	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
 }
