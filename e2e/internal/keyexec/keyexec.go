@@ -231,9 +231,9 @@ func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin stri
 	return cmd, out, err
 }
 
-// QuickTestKey will export a private, and public key (0), and then import them. This is used after
+// QuickTestExportImportKey will export a private, and public key (0), and then import them. This is used after
 // generating a newpair.
-func QuickTestKey(t *testing.T) {
+func QuickTestExportImportKey(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 
 	tmpTestDir := filepath.Join(testenv.TestDir, "quick_test_key_verify")
@@ -251,7 +251,7 @@ func QuickTestKey(t *testing.T) {
 			succeed: true,
 		},
 		{
-			name:    "quick test public  armor",
+			name:    "quick test public armor",
 			private: false,
 			armor:   true,
 			succeed: true,
@@ -287,7 +287,7 @@ func QuickTestKey(t *testing.T) {
 				if err != nil {
 					t.Log("Command that failed: ", c)
 					t.Log(string(b))
-					t.Fatalf("unepexted failure: %v", err)
+					t.Fatalf("unexpected failure: %v", err)
 				}
 				if tt.private {
 					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemoveSecretKeyring(t) }))
@@ -304,13 +304,15 @@ func QuickTestKey(t *testing.T) {
 			} else {
 				if err == nil {
 					t.Log(string(b))
-					t.Fatalf("unexpected succees running: %v", c)
+					t.Fatalf("unexpected success running: %v", c)
 				}
 			}
 		}))
 	}
 }
 
+// KeyNewPair will generate a newpair with the arguments being the key infomation; user = username, email = email, etc...
+// Will return a command that ran (string), the output of the command, and the error.
 func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
