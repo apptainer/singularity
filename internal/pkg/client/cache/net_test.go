@@ -30,7 +30,7 @@ func TestNet(t *testing.T) {
 		{
 			name:     "Custom Net",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "net"),
+			expected: filepath.Join(cacheCustom, "cache/net"),
 		},
 	}
 

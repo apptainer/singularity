@@ -30,7 +30,7 @@ func TestShub(t *testing.T) {
 		{
 			name:     "Custom Shub",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "shub"),
+			expected: filepath.Join(cacheCustom, "cache/shub"),
 		},
 	}
 

@@ -16,7 +16,7 @@ import (
 
 var cacheDefault = filepath.Join(syfs.ConfigDir(), cacheDir)
 
-const cacheCustom = "/tmp/customcachedir"
+const cacheCustom = "/tmp/customcachedir/cache"
 
 func TestRoot(t *testing.T) {
 	test.DropPrivilege(t)
@@ -35,7 +35,7 @@ func TestRoot(t *testing.T) {
 		{
 			name:     "Custom root",
 			env:      cacheCustom,
-			expected: cacheCustom,
+			expected: filepath.Join(cacheCustom, "cache"),
 		},
 	}
 

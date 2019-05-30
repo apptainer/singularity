@@ -30,7 +30,7 @@ func TestOciBlob(t *testing.T) {
 		{
 			name:     "Custom OCI blob",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci"),
+			expected: filepath.Join(cacheCustom, "cache/oci"),
 		},
 	}
 
@@ -65,7 +65,7 @@ func TestOciTemp(t *testing.T) {
 		{
 			name:     "Custom OCI temp",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci-tmp"),
+			expected: filepath.Join(cacheCustom, "cache/oci-tmp"),
 		},
 	}
 

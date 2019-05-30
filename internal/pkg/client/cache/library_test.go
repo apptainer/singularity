@@ -34,7 +34,7 @@ func TestLibrary(t *testing.T) {
 		{
 			name:     "Custom Library",
 			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "library"),
+			expected: filepath.Join(cacheCustom, "cache/library"),
 		},
 	}
 
