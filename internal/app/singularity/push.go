@@ -148,9 +148,12 @@ func OrasPush(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	}
 
 	credFn := func(_ string) (string, string, error) {
-		return ociAuth.Username, ociAuth.Password, nil
-	}
+		if ociAuth != nil {
+			return ociAuth.Username, ociAuth.Password, nil
+		}
 
+		return "", "", nil
+	}
 	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
 
 	store := content.NewFileStore("")

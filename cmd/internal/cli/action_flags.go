@@ -274,7 +274,7 @@ var actionDockerUsernameFlag = cmdline.Flag{
 // --docker-password
 var actionDockerPasswordFlag = cmdline.Flag{
 	ID:           "actionDockerPasswordFlag",
-	Value:        &dockerUsername,
+	Value:        &dockerPassword,
 	DefaultValue: "",
 	Name:         "docker-password",
 	Usage:        "specify a password for docker authentication",
