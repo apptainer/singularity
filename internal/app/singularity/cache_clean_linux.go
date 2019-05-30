@@ -49,21 +49,17 @@ func cleanBlobCache() error {
 
 }
 
-// CleanCache : clean a type of cache (cacheType string). will return a error if one occurs.
+// CleanCache will clean a type of cache (cacheType string). will return a error if one occurs.
 func CleanCache(cacheType string) error {
 	switch cacheType {
 	case "library":
-		err := cleanLibraryCache()
-		return err
+		return cleanLibraryCache()
 	case "oci":
-		err := cleanOciCache()
-		return err
+		return cleanOciCache()
 	case "blob", "blobs":
-		err := cleanBlobCache()
-		return err
+		return cleanBlobCache()
 	case "all":
-		err := cache.Clean()
-		return err
+		return cache.Clean()
 	default:
 		// The caller checks the returned error and will exit as required
 		return fmt.Errorf("not a valid type: %s", cacheType)
@@ -120,7 +116,7 @@ func cleanOciCacheName(cacheName string) (bool, error) {
 	return foundMatch, nil
 }
 
-// CleanCacheName : will clean a container with the same name as cacheName (in the cache directory).
+// CleanCacheName will clean a container with the same name as cacheName (in the cache directory).
 // if libraryCache is true; only search thrught library cache. if ociCache is true; only search the
 // oci-tmp cache. if both are false; search all cache, and if both are true; again, search all cache.
 func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error) {
@@ -156,8 +152,8 @@ func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error)
 	return match, nil
 }
 
-// CleanSingularityCache : the main function that drives all these other functions, if allClean is true; clean
-// all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
+// CleanSingularityCache is the main function that drives all these other functions, if cleanAll is true; clean
+// all cache. if cacheCleanTypes contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
 func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName string) error {
 	libraryClean := false

@@ -42,20 +42,19 @@ func Root() string {
 	return root
 }
 
-// Clean : wipes all files in the cache directory, will return a error if one occurs
+// Clean wipes all files in the cache directory, will return a error if one occurs
 func Clean() error {
 	sylog.Debugf("Removing: %v", Root())
 
 	if err := os.RemoveAll(Root()); err != nil {
 		return fmt.Errorf("unable to clean all cache: %s", err)
 	}
-
 	return nil
 }
 
 func updateCacheRoot() {
 	if d := os.Getenv(DirEnv); d != "" {
-		root = d
+		root = filepath.Join(d, cacheDir)
 	} else {
 		root = path.Join(syfs.ConfigDir(), cacheDir)
 	}
