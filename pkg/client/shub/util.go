@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -54,19 +54,16 @@ func shubParseReference(src string) (uri ShubURI, err error) {
 	} else if l < 2 {
 		return ShubURI{}, errors.New("Not a valid Shub reference")
 	}
-
-	// look for an @ and split if it exists
-	if strings.Contains(src, `@`) {
-		refParts = strings.Split(src, `@`)
-		uri.digest = `@` + refParts[1]
+	// look for a : and split if it exists
+	if strings.Contains(src, ":") {
+		refParts = strings.Split(src, ":")
+		uri.tag = ":" + refParts[1]
 		src = refParts[0]
 	}
 
-	// look for a : and split if it exists
-	if strings.Contains(src, `:`) {
-		refParts = strings.Split(src, `:`)
-		uri.tag = `:` + refParts[1]
-		src = refParts[0]
+	// look for an @ and split if it exists
+	if strings.Contains(src, "@") {
+		src = strings.Replace(src, "@", ":commit:", 1)
 	}
 
 	// container name is left over after other parts are split from it
