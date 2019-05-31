@@ -19,7 +19,7 @@ import (
 var (
 	cleanAll        bool
 	cacheCleanTypes []string
-	cacheName       string
+	cacheName       []string
 )
 
 // -a|--all
@@ -40,7 +40,7 @@ var cacheCleanTypesFlag = cmdline.Flag{
 	DefaultValue: []string{"blob"},
 	Name:         "type",
 	ShortHand:    "T",
-	Usage:        "clean cache type, choose between: library, oci, and blob",
+	Usage:        "clean cache type, choose between: library, oci, shub, and blob",
 	EnvKeys:      []string{"TYPE"},
 }
 
@@ -48,7 +48,7 @@ var cacheCleanTypesFlag = cmdline.Flag{
 var cacheCleanNameFlag = cmdline.Flag{
 	ID:           "cacheCleanNameFlag",
 	Value:        &cacheName,
-	DefaultValue: "",
+	DefaultValue: []string{""},
 	Name:         "name",
 	ShortHand:    "N",
 	Usage:        "specify a container cache to clean (will clear all cache with the same name)",
@@ -61,7 +61,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, CacheCleanCmd)
 }
 
-// CacheCleanCmd : is `singularity cache clean' and will clear your local singularity cache
+// CacheCleanCmd is 'singularity cache clean' and will clear your local singularity cache
 var CacheCleanCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
