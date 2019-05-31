@@ -423,7 +423,8 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// go into /proc/<pid> directory to open namespaces inodes
 	// relative to current working directory while joining
 	// namespaces within C starter code as changing directory
-	// here also affects starter process thanks to CLONE_FS.
+	// here will also affects starter process thanks to
+	// SetWorkingDirectoryFd call.
 	// Additionally it would prevent TOCTOU races and symlink
 	// usage.
 	// And if instance process exits during checks or while
@@ -431,9 +432,17 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// error because current working directory would point to a
 	// deleted inode: "/proc/self/cwd -> /proc/<pid> (deleted)"
 	path := filepath.Join("/proc", strconv.Itoa(file.Pid))
-	if err := mainthread.Chdir(path); err != nil {
+	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_DIRECTORY, 0)
+	if err != nil {
+		return fmt.Errorf("could not open proc directory %s: %s", path, err)
+	}
+	if err := mainthread.Fchdir(fd); err != nil {
 		return err
 	}
+	// will set starter (via fchdir too) in the same proc directory
+	// in order to open namespace inodes with relative paths for the
+	// right process
+	starterConfig.SetWorkingDirectoryFd(fd)
 
 	// enforce checks while joining an instance process with SUID workflow
 	// since instance file is stored in user home directory, we can't trust

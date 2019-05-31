@@ -33,14 +33,6 @@
 #define PR_GET_NO_NEW_PRIVS 39
 #endif
 
-#ifndef CLONE_NEWUSER
-#define CLONE_NEWUSER       0x10000000
-#endif
-
-#ifndef CLONE_NEWCGROUP
-#define CLONE_NEWCGROUP     0x02000000
-#endif
-
 #define CLONE_STACK_SIZE    1024*1024
 #define BUFSIZE             512
 
@@ -54,34 +46,28 @@
 #define RPC_SERVER  4
 
 #ifndef NS_CLONE_NEWPID
-#define NS_CLONE_NEWPID 0
+#define CLONE_NEWPID        0x20000000
 #endif
 
 #ifndef NS_CLONE_NEWNET
-#define NS_CLONE_NEWNET 0
+#define CLONE_NEWNET        0x40000000
 #endif
 
 #ifndef NS_CLONE_NEWIPC
-#define NS_CLONE_NEWIPC 0
-#endif
-
-#ifndef NS_CLONE_NEWNS
-#define NS_CLONE_NEWNS 0
+#define CLONE_NEWIPC        0x08000000
 #endif
 
 #ifndef NS_CLONE_NEWUTS
-#define NS_CLONE_NEWUTS 0
+#define CLONE_NEWUTS        0x04000000
 #endif
 
 #ifndef NS_CLONE_NEWUSER
-#define NS_CLONE_NEWUSER 0
+#define CLONE_NEWUSER       0x10000000
 #endif
 
 #ifndef NS_CLONE_NEWCGROUP
-#define NS_CLONE_NEWCGROUP 0
+#define CLONE_NEWCGROUP     0x02000000
 #endif
-
-#define support_nsflag(x)    (NS_##x == 1)
 
 struct fdlist {
     int *fds;
@@ -142,7 +128,7 @@ struct starter {
     unsigned char masterPropagateMount;
     int workingDirectoryFd;
 
-    /* hold file descriptors that need to be kept open during stage 1 */
+    /* hold file descriptors that need to be remains open after stage 1 */
     int fds[MAX_STARTER_FDS];
     int numfds;
 };

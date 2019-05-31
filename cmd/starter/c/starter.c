@@ -223,45 +223,21 @@ static int apply_container_privileges(struct container *container, unsigned char
 static int create_namespace(int nstype) {
     switch(nstype) {
     case CLONE_NEWNET:
-        if ( !support_nsflag(CLONE_NEWNET) ) {
-            warningf("Skipping network namespace creation, not supported\n");
-            return(0);
-        }
         verbosef("Create network namespace\n");
         break;
     case CLONE_NEWIPC:
-        if ( !support_nsflag(CLONE_NEWIPC) ) {
-            warningf("Skipping ipc namespace creation, not supported\n");
-            return(0);
-        }
         verbosef("Create ipc namespace\n");
         break;
     case CLONE_NEWNS:
-        if ( !support_nsflag(CLONE_NEWNS) ) {
-            warningf("Skipping mount namespace creation, not supported\n");
-            return(0);
-        }
         verbosef("Create mount namespace\n");
         break;
     case CLONE_NEWUTS:
-        if ( !support_nsflag(CLONE_NEWUTS) ) {
-            warningf("Skipping uts namespace creation, not supported\n");
-            return(0);
-        }
         verbosef("Create uts namespace\n");
         break;
     case CLONE_NEWUSER:
-        if ( !support_nsflag(CLONE_NEWUTS) ) {
-            warningf("Skipping user namespace creation, not supported\n");
-            return(0);
-        }
         verbosef("Create user namespace\n");
         break;
     case CLONE_NEWCGROUP:
-        if ( !support_nsflag(CLONE_NEWCGROUP) ) {
-            warningf("Skipping cgroup namespace creation, not supported\n");
-            return(0);
-        }
         verbosef("Create cgroup namespace\n");
         break;
     default:
@@ -278,49 +254,26 @@ static int enter_namespace(char *nspath, int nstype) {
 
     switch(nstype) {
     case CLONE_NEWPID:
-        if ( !support_nsflag(CLONE_NEWPID) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in pid namespace\n");
         break;
     case CLONE_NEWNET:
-        if ( !support_nsflag(CLONE_NEWNET) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in network namespace\n");
         break;
     case CLONE_NEWIPC:
-        if ( !support_nsflag(CLONE_NEWIPC) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in ipc namespace\n");
+        break;
     case CLONE_NEWNS:
-        if ( !support_nsflag(CLONE_NEWNS) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in mount namespace\n");
+        break;
     case CLONE_NEWUTS:
-        if ( !support_nsflag(CLONE_NEWUTS) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in uts namespace\n");
+        break;
     case CLONE_NEWUSER:
-        if ( !support_nsflag(CLONE_NEWUSER) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in user namespace\n");
+        break;
     case CLONE_NEWCGROUP:
-        if ( !support_nsflag(CLONE_NEWCGROUP) ) {
-            errno = EINVAL;
-            return(-1);
-        }
         verbosef("Entering in cgroup namespace\n");
+        break;
     default:
         verbosef("Entering in unknown namespace\n");
         errno = EINVAL;
@@ -431,31 +384,6 @@ static int user_namespace_init(struct namespace *nsconfig, unsigned char allowSu
             fatalf("Running setuid workflow with user namespace is not allowed\n");
         }
         verbosef("Create user namespace\n");
-        return CREATE_NAMESPACE;
-    }
-    return NO_NAMESPACE;
-}
-
-static int shared_mount_namespace_init(struct namespace *nsconfig) {
-    if ( !is_namespace_enter(nsconfig->mount) ) {
-        unsigned long propagation = nsconfig->mountPropagation;
-
-        if ( propagation == 0 ) {
-            propagation = MS_PRIVATE | MS_REC;
-        }
-        if ( unshare(CLONE_FS) < 0 ) {
-            fatalf("Failed to unshare root file system: %s\n", strerror(errno));
-        }
-        if ( create_namespace(CLONE_NEWNS) < 0 ) {
-            fatalf("Failed to create mount namespace: %s\n", strerror(errno));
-        }
-        if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
-            fatalf("Failed to set mount propagation: %s\n", strerror(errno));
-        }
-        /* set shared mount propagation to share mount points between master and container process */
-        if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
-            fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
-        }
         return CREATE_NAMESPACE;
     }
     return NO_NAMESPACE;
@@ -579,6 +507,31 @@ static int mount_namespace_init(struct namespace *nsconfig, unsigned char master
             if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
                 fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
             }
+        }
+        return CREATE_NAMESPACE;
+    }
+    return NO_NAMESPACE;
+}
+
+static int shared_mount_namespace_init(struct namespace *nsconfig) {
+    if ( !is_namespace_enter(nsconfig->mount) ) {
+        unsigned long propagation = nsconfig->mountPropagation;
+
+        if ( propagation == 0 ) {
+            propagation = MS_PRIVATE | MS_REC;
+        }
+        if ( unshare(CLONE_FS) < 0 ) {
+            fatalf("Failed to unshare root file system: %s\n", strerror(errno));
+        }
+        if ( create_namespace(CLONE_NEWNS) < 0 ) {
+            fatalf("Failed to create mount namespace: %s\n", strerror(errno));
+        }
+        if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
+            fatalf("Failed to set mount propagation: %s\n", strerror(errno));
+        }
+        /* set shared mount propagation to share mount points between master and container process */
+        if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+            fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
         }
         return CREATE_NAMESPACE;
     }
@@ -784,22 +737,34 @@ static void fix_streams(void) {
     }
 }
 
-static void exit_with_status(const char *name, int status) {
+static void wait_child(const char *name, pid_t child_pid, unsigned char stop) {
+    int status;
+
+    while ( 1 ) {
+        pid_t pid = waitpid(child_pid, &status, 0);
+        if ( pid < 0 ) {
+            fatalf("Failed to wait %s: %s", name, strerror(errno));
+        } else if ( pid == child_pid ) {
+            break;
+        } else {
+            debugf("Got a terminated child with pid %d", pid);
+        }
+    }
     if ( WIFEXITED(status) ) {
-        verbosef("%s exited with status %d\n", name, WEXITSTATUS(status));
-        exit(WEXITSTATUS(status));
+        if ( stop || WEXITSTATUS(status) != 0 ) {
+            verbosef("%s exited with status %d\n", name, WEXITSTATUS(status));
+            exit(WEXITSTATUS(status));
+        }
     } else if ( WIFSIGNALED(status) ) {
         verbosef("%s interrupted by signal number %d\n", name, WTERMSIG(status));
         kill(getpid(), WTERMSIG(status));
+    } else {
+        fatalf("%s exited with unknown status\n", name);
     }
-    fatalf("%s exited with unknown status\n", name);
 }
 
 void do_exit(int sig) {
-    if ( sig == SIGUSR1 ) {
-        exit(0);
-    }
-    exit(1);
+    exit(0);
 }
 
 /*
@@ -831,13 +796,30 @@ static void cleanenv(void) {
     }
 }
 
+static int get_pipe_exec_fd(void) {
+    int pipe_fd;
+    char *pipe_fd_env = getenv("PIPE_EXEC_FD");
+
+    if ( pipe_fd_env != NULL ) {
+        if ( sscanf(pipe_fd_env, "%d", &pipe_fd) != 1 ) {
+            fatalf("Failed to parse PIPE_EXEC_FD environment variable: %s\n", strerror(errno));
+        }
+        debugf("PIPE_EXEC_FD value: %d\n", pipe_fd);
+        if ( pipe_fd < 0 || pipe_fd >= sysconf(_SC_OPEN_MAX) ) {
+            fatalf("Bad PIPE_EXEC_FD file descriptor value\n");
+        }
+    } else {
+        fatalf("PIPE_EXEC_FD environment variable isn't set\n");
+    }
+
+    return pipe_fd;
+}
+
 __attribute__((constructor)) static void init(void) {
     uid_t uid = getuid();
     gid_t gid = getgid();
     sigset_t mask;
     pid_t stage_pid;
-    char *pipe_fd_env;
-    int status;
     int forkfd = -1;
     int pipe_fd = -1;
     int fork_flags = 0;
@@ -850,18 +832,11 @@ __attribute__((constructor)) static void init(void) {
     fatalf("Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
 #endif
 
-    pipe_fd_env = getenv("PIPE_EXEC_FD");
-    if ( pipe_fd_env != NULL ) {
-        if ( sscanf(pipe_fd_env, "%d", &pipe_fd) != 1 ) {
-            fatalf("Failed to parse PIPE_EXEC_FD environment variable: %s\n", strerror(errno));
-        }
-        debugf("PIPE_EXEC_FD value: %d\n", pipe_fd);
-        if ( pipe_fd < 0 || pipe_fd >= sysconf(_SC_OPEN_MAX) ) {
-            fatalf("Bad PIPE_EXEC_FD file descriptor value\n");
-        }
-    } else {
-        fatalf("PIPE_EXEC_FD environment variable isn't set\n");
-    }
+    /*
+     * get pipe file descriptor from environment variable PIPE_EXEC_FD
+     * to read engine configuration
+     */
+    pipe_fd = get_pipe_exec_fd();
 
     /* cleanup environment variables */
     cleanenv();
@@ -878,18 +853,18 @@ __attribute__((constructor)) static void init(void) {
         priv_drop();
     }
 
-    /* read json configuration from stdin */
-    debugf("Read json configuration from pipe\n");
+    /* read engine configuration from pipe */
+    debugf("Read engine configuration\n");
 
     if ( ( sconfig->engine.size = read(pipe_fd, sconfig->engine.config, MAX_JSON_SIZE - 1) ) <= 0 ) {
-        fatalf("Read JSON configuration from pipe failed: %s\n", strerror(errno));
+        fatalf("Read engine configuration from pipe failed: %s\n", strerror(errno));
     }
     close(pipe_fd);
 
     /* fix streams to point to /dev/null if they are closed */
     fix_streams();
 
-    /* save opened file descriptors that won't be closed when stage 1 returns */
+    /* save opened file descriptors that won't be closed when stage 1 exits */
     master_fds = list_fd();
 
     /* set an invalid value for check */
@@ -912,6 +887,7 @@ __attribute__((constructor)) static void init(void) {
          *  read capabilities, check what namespaces is required.
          */
         if ( sconfig->starter.isSuid ) {
+            /* escalate privileges in order to drop all capabilities and privileges */
             priv_escalate();
             /*
              * since all starter configuration fields are set to 0, the stage 1
@@ -921,6 +897,7 @@ __attribute__((constructor)) static void init(void) {
             apply_container_privileges(&sconfig->container, sconfig->starter.isSuid);
         }
         verbosef("Spawn stage 1\n");
+        /* proceed with Go runtime in master_linux.go */
         execute = STAGE1;
         return;
     } else if ( stage_pid < 0 ) {
@@ -928,17 +905,7 @@ __attribute__((constructor)) static void init(void) {
     }
 
     debugf("Wait completion of stage1\n");
-    if ( wait(&status) != stage_pid ) {
-        fatalf("Could not wait child process %d\n", stage_pid);
-    }
-
-    if ( WIFEXITED(status) && WEXITSTATUS(status) != 0 ) {
-        verbosef("stage 1 exited with status %d\n", WEXITSTATUS(status));
-        exit(WEXITSTATUS(status));
-    } else if ( WIFSIGNALED(status) ) {
-        verbosef("stage 1 interrupted by signal number %d\n", WTERMSIG(status));
-        kill(getpid(), WTERMSIG(status));
-    }
+    wait_child("stage 1", stage_pid, 0);
 
     /* is stage 1 want to change current working directory ? */
     if ( sconfig->starter.workingDirectoryFd >= 0 ) {
@@ -957,14 +924,17 @@ __attribute__((constructor)) static void init(void) {
     debugf("Set child signal mask\n");
     sigemptyset(&mask);
     sigaddset(&mask, SIGCHLD);
-    if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1) {
+    if ( sigprocmask(SIG_SETMASK, &mask, NULL) == -1 ) {
         fatalf("Blocked signals error: %s\n", strerror(errno));
     }
 
+    /* is container requested to run as an instance (or daemon) */
     if ( sconfig->container.isInstance ) {
         verbosef("Run as instance\n");
         int forked = fork();
         if ( forked == 0 ) {
+            set_parent_death_signal(SIGKILL);
+            /* this is the master process */
             if ( setsid() < 0 ) {
                 fatalf("Can't set session leader: %s\n", strerror(errno));
             }
@@ -978,24 +948,19 @@ __attribute__((constructor)) static void init(void) {
 
             sigemptyset(&usrmask);
             sigaddset(&usrmask, SIGUSR1);
-            sigaddset(&usrmask, SIGUSR2);
 
-            if (sigprocmask(SIG_SETMASK, &usrmask, NULL) == -1) {
+            if ( sigprocmask(SIG_SETMASK, &usrmask, NULL) == -1 ) {
                 fatalf("Blocked signals error: %s\n", strerror(errno));
             }
-            if (sigaction(SIGUSR2, &action, NULL) < 0) {
-                fatalf("Failed to install signal handler for SIGUSR2\n");
-            }
-            if (sigaction(SIGUSR1, &action, NULL) < 0) {
+            /* master process will send SIGUSR1 to detach successfully */
+            if ( sigaction(SIGUSR1, &action, NULL) < 0 ) {
                 fatalf("Failed to install signal handler for SIGUSR1\n");
             }
-            if (sigprocmask(SIG_UNBLOCK, &usrmask, NULL) == -1) {
+            if ( sigprocmask(SIG_UNBLOCK, &usrmask, NULL) == -1 ) {
                 fatalf("Unblock signals error: %s\n", strerror(errno));
             }
-            while ( waitpid(forked, &status, 0) <= 0 ) {
-                continue;
-            }
-            exit_with_status("instance", status);
+            /* loop until master process exits with error */
+            wait_child("instance", forked, 1);
         }
     }
 
@@ -1017,6 +982,7 @@ __attribute__((constructor)) static void init(void) {
         if ( create_namespace(CLONE_NEWUSER) < 0 ) {
             fatalf("Failed to create user namespace: %s\n", strerror(errno));
         }
+        /* master process will live in the same user namespace as container */
         setup_userns_mappings(&sconfig->container, getpid(), "deny");
     } else if ( ret == CREATE_NAMESPACE ) {
         /*
@@ -1027,6 +993,7 @@ __attribute__((constructor)) static void init(void) {
 
         fork_flags |= CLONE_NEWUSER;
 
+        /* for user namespace mapping synchronization */
         forkfd = eventfd(0, 0);
         if ( forkfd < 0 ) {
             fatalf("Failed to create fork sync pipe between master and child: %s\n", strerror(errno));
@@ -1080,7 +1047,7 @@ __attribute__((constructor)) static void init(void) {
         set_parent_death_signal(SIGKILL);
 
         if ( forkfd >= 0 ) {
-            // wait parent write user namespace mappings
+            /* wait parent write user namespace mappings */
             event_stop(forkfd);
             close(forkfd);
 
@@ -1106,8 +1073,6 @@ __attribute__((constructor)) static void init(void) {
         }
         close(sync_pipe[1]);
 
-        execute = STAGE2;
-
         if ( !sconfig->container.namespace.joinOnly ) {
             close(rpc_socket[0]);
 
@@ -1118,19 +1083,21 @@ __attribute__((constructor)) static void init(void) {
             int process = fork_ns(CLONE_FS);
 
             if ( process == 0 ) {
+                set_parent_death_signal(SIGKILL);
                 verbosef("Spawn RPC server\n");
+                /* proceed with Go runtime in master_linux.go */
                 execute = RPC_SERVER;
+                return;
             } else if ( process > 0 ) {
                 int status;
 
-                apply_container_privileges(&sconfig->container, sconfig->starter.isSuid);
-
-                if ( wait(&status) != process ) {
-                    fatalf("Error while waiting RPC server: %s\n", strerror(errno));
-                }
+                /* wait RPC server exits before running container process */
+                wait_child("rpc server", process, 0);
                 if ( rpc_socket[1] != -1 ) {
                     close(rpc_socket[1]);
                 }
+
+                apply_container_privileges(&sconfig->container, sconfig->starter.isSuid);
             } else {
                 fatalf("Fork failed: %s\n", strerror(errno));
             }
@@ -1139,6 +1106,8 @@ __attribute__((constructor)) static void init(void) {
             verbosef("Don't execute RPC server, joining instance\n");
             apply_container_privileges(&sconfig->container, sconfig->starter.isSuid);
         }
+        /* proceed with Go runtime in master_linux.go */
+        execute = STAGE2;
         return;
     } else if ( stage_pid > 0 ) {
         if ( is_namespace_enter(sconfig->container.namespace.pid) && is_namespace_create(&sconfig->container.namespace, CLONE_NEWNS) ) {
@@ -1160,7 +1129,7 @@ __attribute__((constructor)) static void init(void) {
 
         close(master_socket[1]);
 
-        // wait child finish namespaces initialization
+        /* wait child finish namespaces initialization */
         close(sync_pipe[1]);
         sync_pipe[1] = -1;
         if ( read(sync_pipe[0], &sync_pipe[1], sizeof(int)) < 0 ) {
@@ -1168,10 +1137,9 @@ __attribute__((constructor)) static void init(void) {
         }
         close(sync_pipe[0]);
 
-        // value not set, child has exited before sending data
+        /* value not set, child has exited before sending data */
         if ( sync_pipe[1] == -1 ) {
-            waitpid(stage_pid, &status, 0);
-            exit_with_status("stage 2", status);
+            wait_child("stage 2", stage_pid, 1);
         }
 
         if ( sconfig->container.namespace.joinOnly ) {
@@ -1179,14 +1147,15 @@ __attribute__((constructor)) static void init(void) {
                 fatalf("Failed to drop privileges permanently\n");
             }
             debugf("Wait stage 2 child process\n");
-            waitpid(stage_pid, &status, 0);
-            exit_with_status("stage 2", status);
+            wait_child("stage 2", stage_pid, 1);
         } else {
             close(rpc_socket[1]);
 
             if ( sconfig->starter.isSuid && setresuid(uid, uid, 0) < 0 ) {
                 fatalf("Failed to drop privileges\n");
             }
+
+            /* proceed with Go runtime in master_linux.go */
             execute = MASTER;
             return;
         }

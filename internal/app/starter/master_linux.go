@@ -65,9 +65,6 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		}); ok {
 			n, err := conn.Read(data)
 			if (err != nil && err != io.EOF) || n == 0 || data[0] == 'f' {
-				if isInstance && os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR2)
-				}
 				return
 			}
 			if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
@@ -85,18 +82,13 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 
 		err = engine.PostStartProcess(containerPid)
 		if err != nil {
-			if isInstance && os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-			}
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
 		if isInstance {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
-			if os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR1)
-			}
+			syscall.Kill(ppid, syscall.SIGUSR1)
 		}
 	}()
 
@@ -123,10 +115,6 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	signal.Reset()
 
 	if fatal != nil {
-		if isInstance && os.Getppid() == ppid {
-			syscall.Kill(ppid, syscall.SIGUSR2)
-		}
-		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
 
@@ -135,20 +123,9 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	if status.Signaled() {
 		s := status.Signal()
 		sylog.Debugf("Child exited due to signal %d", s)
-		if isInstance && os.Getppid() == ppid {
-			syscall.Kill(ppid, syscall.SIGUSR2)
-		}
 		exitCode = 128 + int(s)
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if isInstance && os.Getppid() == ppid {
-			if status.ExitStatus() != 0 {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-				sylog.Fatalf("failed to spawn instance")
-			} else {
-				syscall.Kill(ppid, syscall.SIGUSR1)
-			}
-		}
 		exitCode = status.ExitStatus()
 	}
 
