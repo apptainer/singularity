@@ -10,9 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 
 	jsonresp "github.com/sylabs/json-resp"
 )
@@ -164,71 +162,6 @@ func (c *Client) setTags(ctx context.Context, containerID, imageID string, tags 
 		}
 	}
 	return nil
-}
-
-func (c *Client) apiCreate(ctx context.Context, url string, o interface{}) (objJSON []byte, err error) {
-	c.Logger.Logf("apiCreate calling %s", url)
-	s, err := json.Marshal(o)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error encoding object to JSON:\n\t%v", err)
-	}
-	req, err := c.newRequest("POST", url, "", bytes.NewBuffer(s))
-	if err != nil {
-		return []byte{}, fmt.Errorf("error creating POST request:\n\t%v", err)
-	}
-
-	res, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return []byte{}, fmt.Errorf("error making request to server:\n\t%v", err)
-	}
-	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
-		err := jsonresp.ReadError(res.Body)
-		if err != nil {
-			return []byte{}, fmt.Errorf("creation did not succeed: %v", err)
-		}
-		return []byte{}, fmt.Errorf("creation did not succeed: http status code: %d", res.StatusCode)
-	}
-	objJSON, err = ioutil.ReadAll(res.Body)
-	if err != nil {
-		return []byte{}, fmt.Errorf("error reading response from server:\n\t%v", err)
-	}
-	return objJSON, nil
-}
-
-func (c *Client) apiGet(ctx context.Context, path string) (objJSON []byte, found bool, err error) {
-	c.Logger.Logf("apiGet calling %s", path)
-
-	// split url containing query into component pieces (path and raw query)
-	u, err := url.Parse(path)
-	if err != nil {
-		return []byte{}, false, fmt.Errorf("error parsing url:\n\t%v", err)
-	}
-
-	req, err := c.newRequest(http.MethodGet, u.Path, u.RawQuery, nil)
-	if err != nil {
-		return []byte{}, false, fmt.Errorf("error creating request to server:\n\t%v", err)
-	}
-	res, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return []byte{}, false, fmt.Errorf("error making request to server:\n\t%v", err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode == http.StatusNotFound {
-		return []byte{}, false, nil
-	}
-	if res.StatusCode == http.StatusOK {
-		objJSON, err := ioutil.ReadAll(res.Body)
-		if err != nil {
-			return []byte{}, false, fmt.Errorf("error reading response from server:\n\t%v", err)
-		}
-		return objJSON, true, nil
-	}
-	// Not OK, not 404.... error
-	err = jsonresp.ReadError(res.Body)
-	if err != nil {
-		return []byte{}, false, fmt.Errorf("get did not succeed: %v", err)
-	}
-	return []byte{}, false, fmt.Errorf("error reading response from server")
 }
 
 // getTags returns a tag map for the specified containerID
