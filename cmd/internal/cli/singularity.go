@@ -190,17 +190,17 @@ func setSylogColor() {
 
 // createDataDir will create ~/.singularity if it does not already exist
 func createDataDir(usr *user.User) {
-	data_dir := path.Join(usr.HomeDir, ".singularity")
+	dataDir := path.Join(usr.HomeDir, ".singularity")
 
-	if _, err := os.Stat(data_dir); err != nil {
+	if _, err := os.Stat(dataDir); err != nil {
 		if os.IsNotExist(err) {
-			sylog.Verbosef("%s does not exist. Creating.", data_dir)
-			os.Mkdir(data_dir, os.ModePerm)
+			sylog.Verbosef("%s does not exist. Creating.", dataDir)
+			os.Mkdir(dataDir, os.ModePerm)
 		} else {
-			sylog.Fatalf("Error attempting to stat %s: %s\n", data_dir, err)
+			sylog.Fatalf("Error attempting to stat %s: %s\n", dataDir, err)
 		}
 	} else {
-		sylog.Verbosef("%s already exits. Not creating.", data_dir)
+		sylog.Verbosef("%s already exits. Not creating.", dataDir)
 	}
 }
 
