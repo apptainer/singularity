@@ -188,6 +188,22 @@ func setSylogColor() {
 	}
 }
 
+// createDataDir will create ~/.singularity if it does not already exist
+func createDataDir(usr *user.User) {
+	data_dir := path.Join(usr.HomeDir, ".singularity")
+
+	if _, err := os.Stat(data_dir); err != nil {
+		if os.IsNotExist(err) {
+			sylog.Verbosef("%s does not exist. Creating.", data_dir)
+			os.Mkdir(data_dir, os.ModePerm)
+		} else {
+			sylog.Fatalf("Error attempting to stat %s: %s\n", data_dir, err)
+		}
+	} else {
+		sylog.Verbosef("%s already exits. Not creating.", data_dir)
+	}
+}
+
 // SingularityCmd is the base command when called without any subcommands
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
@@ -208,6 +224,7 @@ var SingularityCmd = &cobra.Command{
 func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
+	createDataDir(CurrentUser)
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
