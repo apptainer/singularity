@@ -19,6 +19,7 @@ import (
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
@@ -188,19 +189,27 @@ func setSylogColor() {
 	}
 }
 
-// createDataDir will create ~/.singularity if it does not already exist
-func createDataDir(usr *user.User) {
-	dataDir := path.Join(usr.HomeDir, ".singularity")
+// getConfDir queries ConfigDirForUsername() and stops execution if there is an
+// error
+func getConfDir(usr string) string {
+	confDir, err := syfs.ConfigDirForUsername(usr)
+	if err != nil {
+		sylog.Fatalf("Error attempting to determine user's config directory: %s\n", err)
+	}
+	return confDir
+}
 
-	if _, err := os.Stat(dataDir); err != nil {
-		if os.IsNotExist(err) {
-			sylog.Verbosef("%s does not exist. Creating.", dataDir)
-			os.Mkdir(dataDir, os.ModePerm)
+// createConfDir tries to create the user's configuration directory and handles
+// messages and/or errors
+func createConfDir(d string) {
+	if err := fs.Mkdir(d, os.ModePerm); err != nil {
+		if os.IsExist(err) {
+			sylog.Debugf("%s already exits. Not creating.", d)
 		} else {
-			sylog.Fatalf("Error attempting to stat %s: %s\n", dataDir, err)
+			sylog.Fatalf("Error attempting to create %s: %s", d, err)
 		}
 	} else {
-		sylog.Verbosef("%s already exits. Not creating.", dataDir)
+		sylog.Debugf("Created %s.", d)
 	}
 }
 
@@ -224,7 +233,8 @@ var SingularityCmd = &cobra.Command{
 func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
-	createDataDir(CurrentUser)
+	confDir := getConfDir(CurrentUser.Username)
+	createConfDir(confDir)
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
