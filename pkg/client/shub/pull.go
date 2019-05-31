@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,7 +13,9 @@ import (
 	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
@@ -24,6 +26,53 @@ const pullTimeout = 7200
 // DownloadImage will retrieve an image from the Container Singularityhub,
 // saving it into the specified file
 func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
+	if !force {
+		if _, err := os.Stat(filePath); err == nil {
+			return fmt.Errorf("image file already exists - will not overwrite")
+		}
+	}
+
+	imageName := uri.GetName(shubRef)
+	imagePath := cache.ShubImage("hash", imageName)
+
+	exists, err := cache.ShubImageExists("hash", imageName)
+	if err != nil {
+		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading shub image")
+		err := downloadImage(imagePath, shubRef, true, noHTTPS)
+		if err != nil {
+			return err
+		}
+	} else {
+		sylog.Infof("Use image from cache")
+	}
+
+	// Perms are 777 *prior* to umask in order to allow image to be
+	// executed with its leading shebang like a script
+	dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		return fmt.Errorf("while opening destination file: %v", err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.Open(imagePath)
+	if err != nil {
+		return fmt.Errorf("while opening cached image: %v", err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("while copying image from cache: %v", err)
+	}
+
+	return nil
+}
+
+func downloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
 
 	// use custom parser to make sure we have a valid shub URI
@@ -39,12 +88,6 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 	if filePath == "" {
 		filePath = fmt.Sprintf("%s_%s.simg", ShubURI.container, ShubURI.tag)
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
-	}
-
-	if !force {
-		if _, err := os.Stat(filePath); err == nil {
-			return fmt.Errorf("image file already exists - will not overwrite")
-		}
 	}
 
 	// Get the image manifest
@@ -121,5 +164,5 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 
 	sylog.Debugf("Download complete\n")
 
-	return err
+	return nil
 }
