@@ -232,7 +232,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
-func (e *EngineOperations) prepareFd() {
+func (e *EngineOperations) prepareFd(starterConfig *starter.Config) error {
 	fds := make([]int, 0)
 
 	if e.EngineConfig.File.UserBindControl {
@@ -288,7 +288,15 @@ func (e *EngineOperations) prepareFd() {
 		fds = append(fds, int(f.Fd()))
 	}
 
+	for _, f := range fds {
+		if err := starterConfig.KeepFileDescriptor(f); err != nil {
+			return err
+		}
+	}
+
 	e.EngineConfig.SetOpenFd(fds)
+
+	return nil
 }
 
 // prepareContainerConfig is responsible for getting and applying user supplied
@@ -361,9 +369,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	// open file descriptors (autofs bug path)
-	e.prepareFd()
-
-	return nil
+	return e.prepareFd(starterConfig)
 }
 
 // prepareInstanceJoinConfig is responsible for getting and applying configuration
@@ -531,7 +537,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	}
 
 	// tell starter that we are joining an instance
-	starterConfig.SetJoinMount(true)
+	starterConfig.SetNamespaceJoinOnly(true)
 
 	// update namespaces path relative to /proc/<pid>
 	// since starter process is in /proc/<pid> directory
@@ -689,12 +695,12 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		if err := e.prepareContainerConfig(starterConfig); err != nil {
 			return err
 		}
-		if err := e.loadImages(); err != nil {
+		if err := e.loadImages(starterConfig); err != nil {
 			return err
 		}
 	}
 
-	starterConfig.SetSharedMount(true)
+	starterConfig.SetMasterPropagateMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
@@ -708,7 +714,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	return nil
 }
 
-func (e *EngineOperations) loadImages() error {
+func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	images := make([]image.Image, 0)
 
 	// load rootfs image
@@ -742,6 +748,8 @@ func (e *EngineOperations) loadImages() error {
 		if cwd != img.Path {
 			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
 		}
+		// C starter code will position current working directory
+		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	}
 	if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
@@ -756,6 +764,10 @@ func (e *EngineOperations) loadImages() error {
 			}
 		}
 	}
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
+	}
+
 	// first image is always the root filesystem
 	images = append(images, *img)
 
@@ -773,6 +785,9 @@ func (e *EngineOperations) loadImages() error {
 		img, err := e.loadImage(splitted[0], writable)
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+		}
+		if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+			return err
 		}
 		images = append(images, *img)
 	}

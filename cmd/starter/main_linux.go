@@ -43,8 +43,7 @@ func startup() {
 		}
 	}
 
-	cconf := unsafe.Pointer(C.config)
-	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
+	sconfig := starterConfig.NewConfig(starterConfig.SConfig(unsafe.Pointer(C.sconfig)))
 	jsonConfig := sconfig.GetJSONConfig()
 
 	switch C.execute {
