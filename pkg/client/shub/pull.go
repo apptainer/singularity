@@ -114,19 +114,22 @@ func downloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	// Do the request, if status isn't success, return error
 	resp, err := httpc.Do(req)
 	if resp == nil {
-		return fmt.Errorf("No response received from singularity hub")
+		return fmt.Errorf("no response received from singularity hub")
+	}
+	if err != nil {
+		return err
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("The requested image was not found in singularity hub")
+		return fmt.Errorf("the requested image was not found in singularity hub")
 	}
 	sylog.Debugf("%s response received, beginning image download\n", resp.Status)
 
 	if resp.StatusCode != http.StatusOK {
 		err := jsonresp.ReadError(resp.Body)
 		if err != nil {
-			return fmt.Errorf("Download did not succeed: %s", err.Error())
+			return fmt.Errorf("download did not succeed: %s", err.Error())
 		}
-		return fmt.Errorf("Download did not succeed: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
+		return fmt.Errorf("download did not succeed: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	// Perms are 777 *prior* to umask
