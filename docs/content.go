@@ -162,7 +162,8 @@ Enterprise Performance Computing (EPC)`
 	CacheUse   string = `cache`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
-  Manage your local singularity cache. You can list/clean using the specific types.`
+  Manage your local singularity cache. You can list/clean using the specific 
+  types.`
 	CacheExample string = `
   All group commands have their own help output:
 
@@ -176,10 +177,10 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
   This will clean your local cache (stored at $HOME/.singularity/cache if
-  SINGULARITY_CACHEDIR is not set). By default only blob cache is cleaned,
-  use '--all' to clean the entire cache. Note: if you use Singularity as
-  root, cache will be stored in '/root/.singularity/.cache', to clean that
-  cache, you will need to run 'cache clean --all' as root, or with 'sudo'.`
+  SINGULARITY_CACHEDIR is not set). By default only blob cache is cleaned, use 
+  '--all' to clean the entire cache. Note: if you use Singularity as root, cache 
+  will be stored in '/root/.singularity/.cache', to clean that cache, you will 
+  need to run 'cache clean --all' as root, or with 'sudo'.`
 	CacheCleanExample string = `
   All group commands have their own help output:
 
@@ -208,9 +209,9 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage OpenPGP keys both locally via a Singularity keychain
-  and remotely via a Sylabs Cloud Keystore. The default keyring
-  is '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set.`
+  Manage OpenPGP keys both locally via a Singularity keychain and remotely via a 
+  Sylabs Cloud Keystore. The default keyring is '~/.singularity/sypgp' if 
+  'SINGULARITY_SYPGPDIR' is not set.`
 	KeyExample string = `
   All group commands have their own help output:
 
@@ -226,8 +227,8 @@ Enterprise Performance Computing (EPC)`
 	KeyImportUse   string = `import [import options...] <input-key>`
 	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
-  The 'key import' command allows you to add a key to your local keyring
-  from a specific file.`
+  The 'key import' command allows you to add a key to your local keyring from a 
+  specific file.`
 	KeyImportExample string = `
   $ singularity key import ./my-key.asc`
 
@@ -265,7 +266,7 @@ Enterprise Performance Computing (EPC)`
 	KeyListUse   string = `list`
 	KeyListShort string = `List keys in your local keyring`
 	KeyListLong  string = `
-  The 'key list' command allows you to list public/private keys from the 
+  The 'key list' command allows you to list public/private keys from the  
   default user's local keyring location (i.e., $HOME/.singularity/sypgp).`
 	KeyListExample string = `
   $ singularity key list`
@@ -277,8 +278,8 @@ Enterprise Performance Computing (EPC)`
 	KeySearchShort string = `Search for keys on a key server`
 	KeySearchLong  string = `
   The 'key search' command allows you to connect to a key server and look for
-  public keys matching the argument passed to the command line. You can
-  also search for a key by fingerprint or key ID by adding '0x' before the
+  public keys matching the argument passed to the command line. You can also 
+  search for a key by fingerprint or key ID by adding '0x' before the
   fingerprint. (Maximum 100 search entities)`
 	KeySearchExample string = `
   $ singularity key search sylabs.io
@@ -307,17 +308,18 @@ Enterprise Performance Computing (EPC)`
 	KeyPushUse   string = `push [push options...] <fingerprint>`
 	KeyPushShort string = `Upload a public key to a key server`
 	KeyPushLong  string = `
-  The 'key push' command allows you to connect to a key server and upload 
-  public keys from the local key store.`
+  The 'key push' command allows you to connect to a key server and upload public
+  keys from the local key store.`
 	KeyPushExample string = `
   $ singularity key push 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key remove
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyRemoveUse     string = `remove <fingerprint>`
-	KeyRemoveShort   string = `Remove a local public key from your keyring`
-	KeyRemoveLong    string = `The 'key remove' command will remove a local public key.`
+	KeyRemoveUse   string = `remove <fingerprint>`
+	KeyRemoveShort string = `Remove a local public key from your keyring`
+	KeyRemoveLong  string = `
+  The 'key remove' command will remove a local public key.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 
@@ -343,9 +345,11 @@ Enterprise Performance Computing (EPC)`
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
 	CapabilityAddShort string = `Add capabilities to a user or group (requires root)`
 	CapabilityAddLong  string = `
-  Add Linux capabilities to a user or group. NOTE: This command requires root to run.
+  Add Linux capabilities to a user or group. NOTE: This command requires root to 
+  run.
 
-  The capabilities argument must be separated by commas and is not case sensitive.
+  The capabilities argument must be separated by commas and is not case 
+  sensitive.
 
   To see available capabilities, type "singularity capability avail" or refer to
   capabilities manual "man 7 capabilities".`
@@ -363,9 +367,11 @@ Enterprise Performance Computing (EPC)`
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
 	CapabilityDropShort string = `Remove capabilities from a user or group (requires root)`
 	CapabilityDropLong  string = `
-  Remove Linux capabilities from an user/group. NOTE: This command requires root to run.
+  Remove Linux capabilities from an user/group. NOTE: This command requires root 
+  to run.
 
-  The capabilities argument must be separated by commas and is not case sensitive.
+  The capabilities argument must be separated by commas and is not case 
+  sensitive.
 
   To see available capabilities, type "singularity capability avail" or refer to
   capabilities manual "man 7 capabilities"`
@@ -682,10 +688,9 @@ Enterprise Performance Computing (EPC)`
 	RunHelpUse   string = `run-help <image path>`
 	RunHelpShort string = `Show the user-defined help for an image`
 	RunHelpLong  string = `
-  Show the help for an image.
-
-  The help text is from the '%help' section of the definition file. If you are using the '--apps' option,
-  the help text is instead from that app's '%apphelp' section.`
+  The help text is from the '%help' section of the definition file. If you are 
+  using the '--apps' option, the help text is instead from that app's '%apphelp' 
+  section.`
 	RunHelpExample string = `
   $ cat my_container.def
   Bootstrap: docker
@@ -767,28 +772,32 @@ Enterprise Performance Computing (EPC)`
 	OciCreateUse   string = `create -b <bundle_path> [create options...] <container_ID>`
 	OciCreateShort string = `Create a container from a bundle directory (root user only)`
 	OciCreateLong  string = `
-  Create invoke create operation to create a container instance from an OCI bundle directory`
+  Create invoke create operation to create a container instance from an OCI 
+  bundle directory`
 	OciCreateExample string = `
   $ singularity oci create -b ~/bundle mycontainer`
 
 	OciStartUse   string = `start <container_ID>`
 	OciStartShort string = `Start container process (root user only)`
 	OciStartLong  string = `
-  Start invoke start operation to start a previously created container identified by container ID.`
+  Start invoke start operation to start a previously created container 
+  identified by container ID.`
 	OciStartExample string = `
   $ singularity oci start mycontainer`
 
 	OciStateUse   string = `state <container_ID>`
 	OciStateShort string = `Query state of a container (root user only)`
 	OciStateLong  string = `
-  State invoke state operation to query state of a created/running/stopped container identified by container ID.`
+  State invoke state operation to query state of a created/running/stopped 
+  container identified by container ID.`
 	OciStateExample string = `
   $ singularity oci state mycontainer`
 
 	OciKillUse   string = `kill [kill options...] <container_ID>`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
-  Kill invoke kill operation to kill processes running within container identified by container ID.`
+  Kill invoke kill operation to kill processes running within container 
+  identified by container ID.`
 	OciKillExample string = `
   $ singularity oci kill mycontainer INT
   $ singularity oci kill mycontainer -s INT`
@@ -796,21 +805,24 @@ Enterprise Performance Computing (EPC)`
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`
 	OciDeleteLong  string = `
-  Delete invoke delete operation to delete resources that were created for container identified by container ID.`
+  Delete invoke delete operation to delete resources that were created for 
+  container identified by container ID.`
 	OciDeleteExample string = `
   $ singularity oci delete mycontainer`
 
 	OciAttachUse   string = `attach <container_ID>`
 	OciAttachShort string = `Attach console to a running container process (root user only)`
 	OciAttachLong  string = `
-  Attach will attach console to a running container process running within container identified by container ID.`
+  Attach will attach console to a running container process running within 
+  container identified by container ID.`
 	OciAttachExample string = `
   $ singularity oci attach mycontainer`
 
 	OciExecUse   string = `exec <container_ID> <command> <args>`
 	OciExecShort string = `Execute a command within container (root user only)`
 	OciExecLong  string = `
-  Exec will execute the provided command/arguments within container identified by container ID.`
+  Exec will execute the provided command/arguments within container identified 
+  by container ID.`
 	OciExecExample string = `
   $ singularity oci exec mycontainer id`
 
@@ -831,8 +843,8 @@ Enterprise Performance Computing (EPC)`
 	OciUpdateUse   string = `update [update options...] <container_ID>`
 	OciUpdateShort string = `Update container cgroups resources (root user only)`
 	OciUpdateLong  string = `
-  Update will update cgroups resources for the specified container ID.
-  Container must be in a RUNNING or CREATED state.`
+  Update will update cgroups resources for the specified container ID. Container 
+  smust be in a RUNNING or CREATED state.`
 	OciUpdateExample string = `
   $ singularity oci update --from-file /tmp/cgroups-update.json mycontainer
 
@@ -850,13 +862,15 @@ Enterprise Performance Computing (EPC)`
 	OciResumeUse   string = `resume <container_ID>`
 	OciResumeShort string = `Resumes all processes previously paused inside the container (root user only)`
 	OciResumeLong  string = `
-  Resume will resume all processes previously paused for the specified container ID.`
+  Resume will resume all processes previously paused for the specified container 
+  ID.`
 	OciResumeExample string = `
   $ singularity oci resume mycontainer`
 
 	OciMountUse   string = `mount <sif_image> <bundle_path>`
-	OciMountShort string = `Mount create an OCI bundle from SIF image (root user only)`
-	OciMountLong  string = `
+	OciMountShort string = `Mount create an OCI bundle from SIF image (root user 
+  only)`
+	OciMountLong string = `
   Mount will mount and create an OCI bundle from a SIF image.`
 	OciMountExample string = `
   $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example`
