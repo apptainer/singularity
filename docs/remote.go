@@ -15,7 +15,7 @@ const (
 	RemoteLong  string = `
 	The 'remote' commands allow you to manage singularity remote endpoints through its
 	subcommands. These allow you to add, log in, and use endpoints. The remote
-	configuration is stored in $HOME/.singularity/remotes.yaml by default.`
+	configuration is stored in $HOME/.singularity/remote.yaml by default.`
 	RemoteExample string = `
 	All group commands have their own help output:
 
@@ -58,7 +58,7 @@ const (
 	RemoteListShort string = `List all singularity remote endpoints that are configured`
 	RemoteListLong  string = `
 	The 'remote list' command lists all remote endpoints configured for use. If you 
-	have set a remote as a default, its name will be encompassed by brackets.`
+	have set a remote as default, its name will be encompassed by brackets.`
 	RemoteListExample string = `
 	$ singularity remote list`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
