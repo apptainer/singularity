@@ -832,31 +832,17 @@ void do_exit(int sig) {
 }
 
 /*
- * cleanenv set environ pointer to NULL, while it works
- * in C context, it doesn't have any effect with the Go
- * runtime using the real pointer, so we need to work
- * directly with environ array.
+ * cleanenv clears all the environment variables except for MSGLVL_ENV
  */
 static void cleanenv(void) {
-    extern char **environ;
-    char **e;
-    char *p = NULL;
-
-    if ( environ == NULL || *environ == NULL ) {
-        fatalf("no environment variables set\n");
+    char * cur = getenv(MSGLVL_ENV);
+    if (cur) {
+        cur = strdup(cur);
     }
-
-    /* keep only SINGULARITY_MESSAGELEVEL for GO runtime */
-    for (e = environ; *e != NULL; e++) {
-        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) == 0 ) {
-            p = *e;
-        } else {
-            *e = NULL;
-        }
-    }
-
-    if ( p != NULL ) {
-        *environ = p;
+    clearenv();
+    if (cur) {
+        setenv(MSGLVL_ENV, cur, 1);
+        free(cur);
     }
 }
 
