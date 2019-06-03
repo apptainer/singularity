@@ -113,6 +113,12 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	if err := system.RunAfterTag(mount.LayerTag, c.addIdentityMount); err != nil {
 		return err
 	}
+	// this call must occur just after all container layers are mounted
+	// to prevent user binds to screw up session final directory and
+	// consequently chroot
+	if err := system.RunAfterTag(mount.LayerTag, c.chdirFinal); err != nil {
+		return err
+	}
 	if err := system.RunAfterTag(mount.RootfsTag, c.addActionsMount); err != nil {
 		return err
 	}
@@ -162,11 +168,13 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
+	// chroot from RPC server current working directory since
+	// it's already in final directory after chdirFinal call
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
-	_, err = c.rpcOps.Chroot(c.session.FinalPath(), "pivot")
+	_, err = c.rpcOps.Chroot(".", "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = c.rpcOps.Chroot(c.session.FinalPath(), "move")
+		_, err = c.rpcOps.Chroot(".", "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
@@ -408,6 +416,13 @@ func (c *container) setPropagationMount(system *mount.System) error {
 	}
 
 	if _, err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *container) chdirFinal(system *mount.System) error {
+	if _, err := c.rpcOps.Chdir(c.session.FinalPath()); err != nil {
 		return err
 	}
 	return nil

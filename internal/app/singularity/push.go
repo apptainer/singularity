@@ -122,6 +122,11 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 // OrasPush uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
 func OrasPush(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+	// ensure that are uploading a SIF
+	if err := ensureSIF(path); err != nil {
+		return err
+	}
+
 	ref = strings.TrimPrefix(ref, "//")
 
 	spec, err := reference.Parse(ref)
@@ -143,9 +148,12 @@ func OrasPush(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	}
 
 	credFn := func(_ string) (string, string, error) {
-		return ociAuth.Username, ociAuth.Password, nil
-	}
+		if ociAuth != nil {
+			return ociAuth.Username, ociAuth.Password, nil
+		}
 
+		return "", "", nil
+	}
 	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
 
 	store := content.NewFileStore("")
