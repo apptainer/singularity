@@ -74,12 +74,11 @@ func TestPull(t *testing.T) {
 		{"ForceUnauth", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false},
 		{"Unsigned_image", "library://sylabs/tests/unsigned:1.0.0", true, true, "", "", imagePath, true},
 		{"Unsigned_image_fail", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false}, // pull a unsigned image; should fail
-		{"NotDefaultFail", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},   // pull a untrusted container; should fail
-		{"NotDefaultFail1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},    // pull a untrusted container; should fail
-		{"NotDefaultFail2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "/tmp", "", false},     // pull a untrusted container; should fail
+		{"NotDefault", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, true},        // pull a untrusted container
+		{"NotDefaultU", "library://sylabs/tests/not-default:1.0.0", true, true, "", "", imagePath, true},        // pull a untrusted container
 		{"NotDefaultSuc", "library://sylabs/tests/not-default:1.0.0", true, true, "", "", imagePath, true},      // pull a untrusted container with -U
-		{"NotDefault1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},        // pull a untrusted container; should fail
-		{"NotDefault2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},      // pull a untrusted container; should fail
+		{"NotDefault1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "", imagePath, false},     // pull a untrusted container
+		{"NotDefault2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, true},       // pull a untrusted container
 		{"NotDefaultPath", "library://sylabs/tests/not-default:1.0.0", true, true, "", "/tmp", imagePath, true}, // pull a untrusted container with -U, and --path <path>
 		{"NotDefaultFail2", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},    // pull a untrusted container; should fail
 		{"Pull_Docker", "docker://alpine:3.8", true, false, "", "", imagePath, true},                            // https://hub.docker.com/
