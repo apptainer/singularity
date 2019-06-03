@@ -23,12 +23,12 @@ import (
 // Timeout for an image pull in seconds (2 hours)
 const pullTimeout = 7200
 
-// DownloadImage will retrieve an image from the Container Singularityhub,
-// saving it into the specified file
-func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
+// PullShubImage will download a image from shub, and cache it. Next time
+// that container is downloaded this will just use that cached image.
+func PullShubImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
 	if !force {
 		if _, err := os.Stat(filePath); err == nil {
-			return fmt.Errorf("image file already exists - will not overwrite")
+			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
 		}
 	}
 
@@ -41,7 +41,7 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
-		err := downloadImage(imagePath, shubRef, true, noHTTPS)
+		err := DownloadImage(imagePath, shubRef, true, noHTTPS)
 		if err != nil {
 			return err
 		}
@@ -72,7 +72,9 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 	return nil
 }
 
-func downloadImage(filePath, shubRef string, force, noHTTPS bool) error {
+// Download image will download a shub image to a path. This will not try
+// to cache it, or use cache.
+func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
 
 	// use custom parser to make sure we have a valid shub URI
