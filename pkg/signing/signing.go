@@ -282,7 +282,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
 		trusted := true
-
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
@@ -317,7 +316,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			trusted = false
 			notLocalKey = true
 
-			// if theres a error, thats proboly becuse we dont have a local key
+			// if theres a error, thats probably because we dont have a local key
 			if !localVerify {
 				// download the key
 				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
