@@ -30,6 +30,7 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
 	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/net/html"
 )
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
@@ -595,6 +596,8 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
+
+	keyText = reformatHTML(keyText)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
@@ -610,6 +613,34 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	fmt.Printf("%v", keyText)
 
 	return nil
+}
+
+func reformatHTML(keyText string) string {
+
+	out := ""
+
+	domDocTest := html.NewTokenizer(strings.NewReader(keyText))
+
+	previousStartTokenTest := domDocTest.Token()
+loopDomTest:
+	for {
+		tt := domDocTest.Next()
+		switch {
+		case tt == html.ErrorToken:
+			break loopDomTest // End of the document,  done
+		case tt == html.StartTagToken:
+			previousStartTokenTest = domDocTest.Token()
+		case tt == html.TextToken:
+			if previousStartTokenTest.Data == "style" || previousStartTokenTest.Data == "script" {
+				continue
+			}
+			TxtContent := strings.TrimSpace(html.UnescapeString(string(domDocTest.Text())))
+			if len(TxtContent) > 0 {
+				out = out + TxtContent + "\n"
+			}
+		}
+	}
+	return out
 }
 
 // FetchPubkey pulls a public key from the Key Service.
