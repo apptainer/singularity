@@ -115,7 +115,6 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 		return fmt.Errorf("while copying image from cache: %v", err)
 	}
 
-	var retErr error
 	// check if we pulled from the library, if so; is it signed?
 	if !unauthenticated {
 		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken, true)
@@ -123,7 +122,6 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 			// err will be: "unable to verify container: %v", err
 			sylog.Warningf("%v", err)
 			// if there is a warning, return set error to indicate exit 1
-			retErr = ErrLibraryUnsigned
 		}
 		// if container is not signed, print a warning
 		if !imageSigned {
@@ -148,7 +146,7 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 
 	sylog.Infof("Download complete: %s\n", name)
 
-	return retErr
+	return nil
 }
 
 // downloadImageCallback is called to display progress bar while downloading
