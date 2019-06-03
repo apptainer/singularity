@@ -278,10 +278,10 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	sifhash := computeHashStr(&fimg, descr)
 
 	var author string
+	var trusted bool
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
-		trusted := true
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
