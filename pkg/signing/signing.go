@@ -324,7 +324,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					sylog.Errorf("Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
-					author += fmt.Sprintf("\t[MISSING KEY] %s does not exist in local, or remote keystore\n", fingerprint)
+					//author += fmt.Sprintf("[MISSING]  %s does not exist in local, or remote keystore\n", fingerprint)
+					author += fmt.Sprintf("[MISSING]  key does not exist in local, or remote keystore: %s\n", fingerprint)
 					continue
 				}
 				sylog.Infof("Found key in remote keystore: %s", fingerprint[32:])
@@ -354,9 +355,11 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			break
 		}
 		if trusted {
-			author += fmt.Sprintf("\t[TRUSTED] %s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
+			//author += fmt.Sprintf("\t[TRUSTED] %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
+			author += fmt.Sprintf("[TRUSTED]  %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
 		} else {
-			author += fmt.Sprintf("\t%s, Fingerprint %X\n", name, signer.PrimaryKey.Fingerprint)
+			//author += fmt.Sprintf("\t%s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
+			author += fmt.Sprintf("           %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
 		}
 	}
 	fmt.Printf("\nData integrity checked, authentic and signed by:\n%v", author)
