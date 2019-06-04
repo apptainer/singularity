@@ -813,18 +813,6 @@ static void fix_streams(void) {
     }
 }
 
-static char *dupenv(const char *env) {
-    char *var = getenv(env);
-
-    if ( var != NULL ) {
-        return strdup(var);
-    } else {
-        fatalf("%s environment variable isn't set\n", env);
-    }
-
-    return NULL;
-}
-
 static void exit_with_status(const char *name, int status) {
     if ( WIFEXITED(status) ) {
         verbosef("%s exited with status %d\n", name, WEXITSTATUS(status));
@@ -843,28 +831,54 @@ void do_exit(int sig) {
     exit(1);
 }
 
+/*
+ * cleanenv set environ pointer to NULL, while it works
+ * in C context, it doesn't have any effect with the Go
+ * runtime using the real pointer, so we need to work
+ * directly with environ array.
+ */
+static void cleanenv(void) {
+    extern char **environ;
+    char **e;
+    char *p = NULL;
+
+    if ( environ == NULL || *environ == NULL ) {
+        fatalf("no environment variables set\n");
+    }
+
+    /* keep only SINGULARITY_MESSAGELEVEL for GO runtime */
+    for (e = environ; *e != NULL; e++) {
+        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) == 0 ) {
+            p = *e;
+        } else {
+            *e = NULL;
+        }
+    }
+
+    if ( p != NULL ) {
+        *environ = p;
+    }
+}
+
 __attribute__((constructor)) static void init(void) {
     uid_t uid = getuid();
     gid_t gid = getgid();
     sigset_t mask;
     pid_t stage_pid;
-    char *loglevel;
     char *pipe_fd_env;
     int status;
     int forkfd = -1;
     int pipe_fd = -1;
     int fork_flags = 0;
-    int join_chroot = 0;
     int sync_pipe[2];
-    struct pollfd fds[2];
     struct fdlist *fd_before;
     struct fdlist *fd_after;
+
+    verbosef("Starter initialization\n");
 
 #ifndef SINGULARITY_NO_NEW_PRIVS
     fatalf("Host kernel is outdated and does not support PR_SET_NO_NEW_PRIVS!\n");
 #endif
-
-    loglevel = dupenv("SINGULARITY_MESSAGELEVEL");
 
     pipe_fd_env = getenv("PIPE_EXEC_FD");
     if ( pipe_fd_env != NULL ) {
@@ -879,7 +893,8 @@ __attribute__((constructor)) static void init(void) {
         fatalf("PIPE_EXEC_FD environment variable isn't set\n");
     }
 
-    verbosef("Container runtime\n");
+    /* cleanup environment variables */
+    cleanenv();
 
     // initialize starter configuration and share it with child processes
     config = (struct cConfig *)mmap(NULL, sizeof(struct cConfig), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
@@ -905,14 +920,6 @@ __attribute__((constructor)) static void init(void) {
         if ( setegid(gid) < 0 || seteuid(uid) < 0 ) {
             fatalf("Failed to drop privileges: %s\n", strerror(errno));
         }
-    }
-
-    /* reset environment variables */
-    clearenv();
-
-    if ( loglevel != NULL ) {
-        setenv("SINGULARITY_MESSAGELEVEL", loglevel, 1);
-        free(loglevel);
     }
 
     /* read json configuration from stdin */

@@ -8,6 +8,7 @@ package mainthread
 import (
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 // FuncChannel passes functions executed in main thread
@@ -47,10 +48,18 @@ func EvalSymlinks(path string) (rpath string, err error) {
 	return
 }
 
-// Chdir changes and returns current working directory from main thread
-func Chdir(path string) (err error) {
+// Chdir changes current working directory to the provided directory
+func Chdir(dir string) (err error) {
 	Execute(func() {
-		err = os.Chdir(path)
+		err = os.Chdir(dir)
+	})
+	return
+}
+
+// Fchdir changes current working directory to the directory pointed
+func Fchdir(fd int) (err error) {
+	Execute(func() {
+		err = syscall.Fchdir(fd)
 	})
 	return
 }
