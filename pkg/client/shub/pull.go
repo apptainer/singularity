@@ -13,9 +13,7 @@ import (
 	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
@@ -23,56 +21,7 @@ import (
 // Timeout for an image pull in seconds (2 hours)
 const pullTimeout = 7200
 
-// PullShubImage will download a image from shub, and cache it. Next time
-// that container is downloaded this will just use that cached image.
-func PullShubImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
-	if !force {
-		if _, err := os.Stat(filePath); err == nil {
-			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
-		}
-	}
-
-	imageName := uri.GetName(shubRef)
-	imagePath := cache.ShubImage("hash", imageName)
-
-	exists, err := cache.ShubImageExists("hash", imageName)
-	if err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	}
-	if !exists {
-		sylog.Infof("Downloading shub image")
-		err := DownloadImage(imagePath, shubRef, true, noHTTPS)
-		if err != nil {
-			return err
-		}
-	} else {
-		sylog.Infof("Use image from cache")
-	}
-
-	// Perms are 777 *prior* to umask in order to allow image to be
-	// executed with its leading shebang like a script
-	dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		return fmt.Errorf("while opening destination file: %v", err)
-	}
-	defer dstFile.Close()
-
-	srcFile, err := os.Open(imagePath)
-	if err != nil {
-		return fmt.Errorf("while opening cached image: %v", err)
-	}
-	defer srcFile.Close()
-
-	// Copy SIF from cache
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return fmt.Errorf("while copying image from cache: %v", err)
-	}
-
-	return nil
-}
-
-// Download image will download a shub image to a path. This will not try
+// DownloadImage image will download a shub image to a path. This will not try
 // to cache it, or use cache.
 func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")

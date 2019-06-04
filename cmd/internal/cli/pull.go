@@ -19,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	net "github.com/sylabs/singularity/pkg/client/net"
-	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -217,7 +216,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
-		err := shub.PullShubImage(name, args[i], force, noHTTPS)
+		err := singularity.PullShubImage(name, args[i], force, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
