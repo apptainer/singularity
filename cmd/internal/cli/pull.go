@@ -216,7 +216,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
-		err := singularity.PullShubImage(name, args[i], force, noHTTPS)
+		err := singularity.PullShub(name, args[i], force, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}

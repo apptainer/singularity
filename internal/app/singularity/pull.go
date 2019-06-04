@@ -152,9 +152,9 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 	return retErr
 }
 
-// PullShubImage will download a image from shub, and cache it. Next time
+// PullShub will download a image from shub, and cache it. Next time
 // that container is downloaded this will just use that cached image.
-func PullShubImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
+func PullShub(filePath string, shubRef string, force, noHTTPS bool) (err error) {
 	if !force {
 		if _, err := os.Stat(filePath); err == nil {
 			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
