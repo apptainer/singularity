@@ -33,17 +33,16 @@
 #define PR_GET_NO_NEW_PRIVS 39
 #endif
 
-#define CLONE_STACK_SIZE    1024*1024
-#define BUFSIZE             512
-
 #define NO_NAMESPACE        -1
 #define CREATE_NAMESPACE    0
 #define ENTER_NAMESPACE     1
 
-#define STAGE1      1
-#define STAGE2      2
-#define MASTER      3
-#define RPC_SERVER  4
+enum goexec {
+    STAGE1      = 1,
+    STAGE2      = 2,
+    MASTER      = 3,
+    RPC_SERVER  = 4
+};
 
 #ifndef NS_CLONE_NEWPID
 #define CLONE_NEWPID        0x20000000
@@ -69,10 +68,7 @@
 #define CLONE_NEWCGROUP     0x02000000
 #endif
 
-struct fdlist {
-    int *fds;
-    unsigned int num;
-};
+typedef unsigned char bool;
 
 /* container capabilities */
 struct capabilities {
@@ -85,11 +81,16 @@ struct capabilities {
 
 /* container namespaces */
 struct namespace {
+    /* namespace flags (CLONE_NEWPID, CLONE_NEWUSER ...) */
     unsigned int flags;
+    /* container mount namespace propagation */
     unsigned long mountPropagation;
-    unsigned char joinOnly;
-    unsigned char bringLoopbackInterface;
+    /* namespace join only */
+    bool joinOnly;
+    /* should bring up loopback interface with network namespace */
+    bool bringLoopbackInterface;
 
+    /* namespaces inodes paths used to join namespaces */
     char network[MAX_NS_PATH_SIZE];
     char mount[MAX_NS_PATH_SIZE];
     char user[MAX_NS_PATH_SIZE];
@@ -101,36 +102,51 @@ struct namespace {
 
 /* container privileges */
 struct privileges {
-    unsigned char noNewPrivs;
+    /* value for PR_SET_NO_NEW_PRIVS */
+    bool noNewPrivs;
 
+    /* user namespace mappings and setgroups control */
     char uidMap[MAX_MAP_SIZE];
     char gidMap[MAX_MAP_SIZE];
+    bool allowSetgroups;
 
+    /* uid/gids set for container process execution */
     uid_t targetUID;
     gid_t targetGID[MAX_GID];
     int numGID;
 
+    /* container process capabilities */
     struct capabilities capabilities;
 };
 
 /* container configuration */
 struct container {
+    /* container process ID */
     pid_t pid;
-    unsigned char isInstance;
+    /* is container will run as instance */
+    bool isInstance;
 
+    /* container privileges */
     struct privileges privileges;
+    /* container namespaces */
     struct namespace namespace;
 };
 
 /* starter behaviour */
 struct starter {
-    unsigned char isSuid;
-    unsigned char masterPropagateMount;
+    /* control starter working directory from a file descriptor */
     int workingDirectoryFd;
 
     /* hold file descriptors that need to be remains open after stage 1 */
     int fds[MAX_STARTER_FDS];
     int numfds;
+
+    /* is starter run as setuid */
+    bool isSuid;
+    /* master process will share a mount namespace for container mount propagation */
+    bool masterPropagateMount;
+    /* hybrid workflow where master process and container doesn't share user namespace */
+    bool hybridWorkflow;
 };
 
 /* engine configuration */
@@ -145,15 +161,5 @@ struct starterConfig {
     struct starter starter;
     struct engine engine;
 };
-
-/* helper to check if namespace flag is set */
-static inline unsigned char is_namespace_create(struct namespace *nsconfig, unsigned int nsflag) {
-    return (nsconfig->flags & nsflag) != 0;
-}
-
-/* helper to check if the corresponding namespace need to be joined */
-static inline unsigned char is_namespace_enter(const char *nspath) {
-    return nspath[0] != 0;
-}
 
 #endif /* _SINGULARITY_STARTER_H */

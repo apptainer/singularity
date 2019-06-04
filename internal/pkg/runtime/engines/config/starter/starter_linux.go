@@ -54,9 +54,9 @@ func (c *Config) GetContainerPid() int {
 // SetInstance sets if starter should spawn instance or not
 func (c *Config) SetInstance(instance bool) {
 	if instance {
-		c.config.container.isInstance = C.uchar(1)
+		c.config.container.isInstance = C.bool(1)
 	} else {
-		c.config.container.isInstance = C.uchar(0)
+		c.config.container.isInstance = C.bool(0)
 	}
 }
 
@@ -68,9 +68,9 @@ func (c *Config) GetInstance() bool {
 // SetNoNewPrivs sets NO_NEW_PRIVS flag
 func (c *Config) SetNoNewPrivs(noprivs bool) {
 	if noprivs {
-		c.config.container.privileges.noNewPrivs = C.uchar(1)
+		c.config.container.privileges.noNewPrivs = C.bool(1)
 	} else {
-		c.config.container.privileges.noNewPrivs = C.uchar(0)
+		c.config.container.privileges.noNewPrivs = C.bool(0)
 	}
 }
 
@@ -82,9 +82,9 @@ func (c *Config) GetNoNewPrivs() bool {
 // SetMasterPropagateMount sets if master/container shares mount point
 func (c *Config) SetMasterPropagateMount(propagate bool) {
 	if propagate {
-		c.config.starter.masterPropagateMount = C.uchar(1)
+		c.config.starter.masterPropagateMount = C.bool(1)
 	} else {
-		c.config.starter.masterPropagateMount = C.uchar(0)
+		c.config.starter.masterPropagateMount = C.bool(0)
 	}
 }
 
@@ -96,9 +96,9 @@ func (c *Config) GetMasterPropagateMount() bool {
 // SetNamespaceJoinOnly sets if container process join a mount namespace
 func (c *Config) SetNamespaceJoinOnly(join bool) {
 	if join {
-		c.config.container.namespace.joinOnly = C.uchar(1)
+		c.config.container.namespace.joinOnly = C.bool(1)
 	} else {
-		c.config.container.namespace.joinOnly = C.uchar(0)
+		c.config.container.namespace.joinOnly = C.bool(0)
 	}
 }
 
@@ -110,9 +110,9 @@ func (c *Config) GetNamespaceJoinOnly() bool {
 // SetBringLoopbackInterface sets if starter bring loopback network interface
 func (c *Config) SetBringLoopbackInterface(bring bool) {
 	if bring {
-		c.config.container.namespace.bringLoopbackInterface = C.uchar(1)
+		c.config.container.namespace.bringLoopbackInterface = C.bool(1)
 	} else {
-		c.config.container.namespace.bringLoopbackInterface = C.uchar(0)
+		c.config.container.namespace.bringLoopbackInterface = C.bool(0)
 	}
 }
 
@@ -159,6 +159,26 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 	c.config.starter.fds[c.config.starter.numfds] = C.int(fd)
 	c.config.starter.numfds++
 	return nil
+}
+
+// SetHybridWorkflow sets the flag to tell starter container setup
+// will require an hybrid workflow. Typically used for fakeroot
+func (c *Config) SetHybridWorkflow(hybrid bool) {
+	if hybrid {
+		c.config.starter.hybridWorkflow = C.bool(1)
+	} else {
+		c.config.starter.hybridWorkflow = C.bool(0)
+	}
+}
+
+// SetAllowSetgroups allows use of setgroups syscall from user
+// namespace
+func (c *Config) SetAllowSetgroups(allow bool) {
+	if allow {
+		c.config.container.privileges.allowSetgroups = C.bool(1)
+	} else {
+		c.config.container.privileges.allowSetgroups = C.bool(0)
+	}
 }
 
 // GetJSONConfig returns pointer to JSON configuration

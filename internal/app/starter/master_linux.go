@@ -85,7 +85,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
-		if isInstance {
+		if isInstance && os.Getppid() == ppid {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
 			syscall.Kill(ppid, syscall.SIGUSR1)
