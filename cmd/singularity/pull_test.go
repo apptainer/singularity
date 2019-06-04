@@ -272,7 +272,7 @@ func TestPull(t *testing.T) {
 			force:           true,
 			unauthenticated: true,
 			library:         "",
-			pullDir:         tmpDirReturn(t),
+			pullDir:         "/tmp",
 			imagePath:       imagePath,
 			success:         true,
 		},
