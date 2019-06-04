@@ -131,7 +131,11 @@ var RemoteAddCmd = &cobra.Command{
 		}
 		sylog.Infof("Remote %q added.", name)
 
-		if !remoteNoLogin {
+		// ensure that this was not called with global flag, otherwise this will store the token in the
+		// world readable config
+		if global && !remoteNoLogin {
+			sylog.Infof("Global option detected. Will not automatically log into remote.")
+		} else if !remoteNoLogin {
 			sylog.Infof("Authenticating with remote: %s", name)
 			if err := singularity.RemoteLogin(remoteConfig, remoteConfigSys, name, loginTokenFile); err != nil {
 				sylog.Fatalf("%s", err)
