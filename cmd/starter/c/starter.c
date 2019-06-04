@@ -1162,6 +1162,11 @@ __attribute__((constructor)) static void init(void) {
             }
         }
 
+        /* staying in /proc/pid could lead to "no such process" error, go to / instead */
+        if ( chdir("/") < 0 ) {
+            fatalf("Failed to change directory for /: %s\n", strerror(errno));
+        }
+
         if ( sconfig->container.namespace.joinOnly ) {
             /* joining container, don't execute Go runtime, just wait that container process exit */
             if ( sconfig->starter.isSuid && setresuid(uid, uid, uid) < 0 ) {
