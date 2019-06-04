@@ -17,7 +17,7 @@ import (
 func TestGetConfDir(t *testing.T) {
 	usr, _ := user.Current()
 	confDir := getConfDir(usr.Username)
-	hd, _ := os.UserHomeDir()
+	hd := usr.HomeDir
 	exptDir := hd + "/.singularity" // test currently assumes ~/.singularity
 	if confDir != exptDir {
 		t.Errorf("expected %s, got %s", exptDir, confDir)
