@@ -25,6 +25,11 @@ const pullTimeout = 7200
 // to cache it, or use cache.
 func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
+	if !force {
+		if _, err := os.Stat(filePath); err == nil {
+			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
+		}
+	}
 
 	// use custom parser to make sure we have a valid shub URI
 	if ok := isShubPullRef(shubRef); !ok {
