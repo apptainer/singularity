@@ -209,7 +209,7 @@ func createConfDir(d string) {
 			sylog.Fatalf("Error attempting to create %s: %s", d, err)
 		}
 	} else {
-		sylog.Debugf("Created %s.", d)
+		sylog.Debugf("Created %s", d)
 	}
 }
 
