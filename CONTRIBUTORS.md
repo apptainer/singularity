@@ -4,9 +4,10 @@
 
 # Maintainers:
 
-    - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
-    - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
+    - Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
     - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
+    - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
+    - Mike Gray <mike@sylabs.io>
 
 # Contributors:
 
@@ -35,23 +36,29 @@
     - Hakon Enger <hakonenger@github.com>
     - Hugo Meiland <hugo.meiland@microsoft.com>
     - Ian Kaneshiro <ian@sylabs.io>, <iankane@umich.edu>
+    - Jack Morrison <morrisonjc@ornl.gov>
     - Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
     - Jarrod Johnson <jjohnson2@lenovo.com>
     - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
     - Jeff Kriske <jekriske@gmail.com>
+    - Jia Li <jiali@sylabs.io>
     - Joana Chavez <joana@sylabs.io>, <j.chavezlavalle@gmail.com>
     - Josef Hrabal <josef.hrabal@vsb.cz>
+    - Justin Cook <justin@sylabs.io>
     - Justin Riley <justin_riley@harvard.edu>
     - Krishna Muriki <kmuriki@lbl.gov>
     - Kumar Sukhani <kumarsukhani@gmail.com>
     - Kundan Kumar <iamkundankumar28@gmail.com>
     - Maciej Sieczka <msieczka@sieczka.org>
+    - Marcelo Magallon <marcelo@sylabs.io>
     - Mark Egan-Fuller <markeganfuller@googlemail.com>
     - Matt Wiens <mwiens91@gmail.com>
     - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
     - Michael Herzberg <michael@mherzberg.de>
     - Michael Milton <ttmigueltt@gmail.com>
     - Michael Moore <michael.moore@nuance.com>
+    - Mike Frisch <michael.frisch@sylabs.io>
+    - Mike Gray <mike@sylabs.io>
     - Nathan Lin <nathan.lin@yale.edu>
     - Oleksandr Moskalenko <om@rc.ufl.edu>
     - Oliver Breitwieser <obreitwi@kip.uni-heidelberg.de>, <oliver@breitwieser.eu>
@@ -67,8 +74,8 @@
     - Satish Chebrolu  <satish@sylabs.io>
     - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
     - Thomas Hamel <hmlth@t-hamel.fr>
+    - Tru Huynh <tru@pasteur.fr>
     - Vanessa Sochat <vsochat@stanford.edu>
-    - Westley Kurtzer <westley@sylabs.io>
+    - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
     - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
     - Yaroslav Halchenko <debian@onerussian.com>
-    - Jack Morrison <morrisonjc@ornl.gov>
