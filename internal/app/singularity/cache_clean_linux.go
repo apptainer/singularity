@@ -15,70 +15,30 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func cleanLibraryCache() error {
-	sylog.Debugf("Removing: %v", cache.Library())
-
-	err := os.RemoveAll(cache.Library())
-	if err != nil {
-		return fmt.Errorf("unable to clean library cache: %v", err)
-	}
-
-	return nil
-}
-
-func cleanOciCache() error {
-	sylog.Debugf("Removing: %v", cache.OciTemp())
-
-	err := os.RemoveAll(cache.OciTemp())
-	if err != nil {
-		return fmt.Errorf("unable to clean oci-tmp cache: %v", err)
-	}
-
-	return nil
-}
-
-func cleanShubCache() error {
-	sylog.Debugf("Removing: %v", cache.Shub())
-
-	err := os.RemoveAll(cache.Shub())
-	if err != nil {
-		return fmt.Errorf("unable to clean shub cache: %v", err)
-	}
-
-	return nil
-}
-
-func cleanBlobCache() error {
-	sylog.Debugf("Removing: %v", cache.OciBlob())
-
-	err := os.RemoveAll(cache.OciBlob())
-	if err != nil {
-		return fmt.Errorf("unable to clean oci-blob cache: %v", err)
-	}
-
-	return nil
-}
-
 // CleanCache will clean a type of cache (cacheType string). will return a error if one occurs.
 func CleanCache(cacheType []string) error {
+	cacheToRemove := ""
 	for _, c := range cacheType {
 		switch c {
 		case "library":
-			return cleanLibraryCache()
+			cacheToRemove = cache.Library()
 		case "oci":
-			return cleanOciCache()
+			cacheToRemove = cache.OciTemp()
 		case "shub":
-			return cleanShubCache()
+			cacheToRemove = cache.Shub()
 		case "blob", "blobs":
-			return cleanBlobCache()
+			cacheToRemove = cache.OciBlob()
 		case "all":
-			return cache.Clean()
+			cacheToRemove = cache.Root()
 		default:
-			// The caller checks the returned error and will exit as required
-			return fmt.Errorf("not a valid type: %s", cacheType)
+			return fmt.Errorf("not a valid type: %s", c)
+		}
+		err := os.RemoveAll(cacheToRemove)
+		if err != nil {
+			return fmt.Errorf("unable to remove: %s: %v", cacheToRemove, err)
 		}
 	}
-	return fmt.Errorf("no cache to clean; non specified")
+	return nil
 }
 
 func cleanLibraryCacheName(cacheName string) (bool, error) {
@@ -135,7 +95,7 @@ func cleanShubCacheName(cacheName string) (bool, error) {
 	foundMatch := false
 	blobs, err := ioutil.ReadDir(cache.Shub())
 	if err != nil {
-		return false, fmt.Errorf("unable to opening shub cache folder: %v", err)
+		return false, fmt.Errorf("unable to open shub cache folder: %v", err)
 	}
 	for _, f := range blobs {
 		blob, err := ioutil.ReadDir(filepath.Join(cache.Shub(), f.Name()))
