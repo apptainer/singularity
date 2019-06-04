@@ -597,7 +597,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
 
-	keyText = reformatHTML(keyText)
+	keyText = reformatHTMLKeyOutput(keyText)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
@@ -615,7 +615,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	return nil
 }
 
-func reformatHTML(keyText string) string {
+func reformatHTMLKeyOutput(keyText string) string {
 
 	out := ""
 
@@ -631,16 +631,32 @@ loopDomTest:
 		case tt == html.StartTagToken:
 			previousStartTokenTest = domDocTest.Token()
 		case tt == html.TextToken:
-			if previousStartTokenTest.Data == "style" || previousStartTokenTest.Data == "script" {
+			//filter these types of nodes, not needed
+			if previousStartTokenTest.Data == "style" || previousStartTokenTest.Data == "script" || previousStartTokenTest.Data == "title" {
 				continue
 			}
+
 			TxtContent := strings.TrimSpace(html.UnescapeString(string(domDocTest.Text())))
+			// removing unnecessary characters
+			TxtContent = strings.Replace(TxtContent, "-", "", -1)
+
+			//remove additional long fingerprint if present
+			if strings.Contains(TxtContent, "Fingerprint=") {
+				TxtContent = TxtContent[:strings.Index(TxtContent, "Fingerprint=")]
+			}
+
 			if len(TxtContent) > 0 {
-				out = out + TxtContent + "\n"
+
+				if previousStartTokenTest.Data == "pre" {
+					out = out + "\n" + TxtContent
+				} else {
+					out = out + TxtContent + "\t"
+				}
+
 			}
 		}
 	}
-	return out
+	return out + "\n"
 }
 
 // FetchPubkey pulls a public key from the Key Service.
