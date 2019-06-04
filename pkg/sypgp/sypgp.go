@@ -635,24 +635,19 @@ loopDomTest:
 			if previousStartTokenTest.Data == "style" || previousStartTokenTest.Data == "script" || previousStartTokenTest.Data == "title" {
 				continue
 			}
-
 			TxtContent := strings.TrimSpace(html.UnescapeString(string(domDocTest.Text())))
 			// removing unnecessary characters
 			TxtContent = strings.Replace(TxtContent, "-", "", -1)
-
 			//remove additional long fingerprint if present
 			if strings.Contains(TxtContent, "Fingerprint=") {
 				TxtContent = TxtContent[:strings.Index(TxtContent, "Fingerprint=")]
 			}
-
 			if len(TxtContent) > 0 {
-
 				if previousStartTokenTest.Data == "pre" {
 					out = out + "\n" + TxtContent
 				} else {
 					out = out + TxtContent + "\t"
 				}
-
 			}
 		}
 	}
