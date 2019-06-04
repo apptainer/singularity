@@ -618,10 +618,9 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 func reformatHTMLKeyOutput(keyText string) string {
 
 	out := ""
-
 	domDocTest := html.NewTokenizer(strings.NewReader(keyText))
-
 	previousStartTokenTest := domDocTest.Token()
+
 loopDomTest:
 	for {
 		tt := domDocTest.Next()
