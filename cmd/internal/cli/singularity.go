@@ -189,16 +189,6 @@ func setSylogColor() {
 	}
 }
 
-// getConfDir queries ConfigDirForUsername() and stops execution if there is an
-// error
-func getConfDir(usr string) string {
-	confDir, err := syfs.ConfigDirForUsername(usr)
-	if err != nil {
-		sylog.Fatalf("Error attempting to determine user's config directory: %s\n", err)
-	}
-	return confDir
-}
-
 // createConfDir tries to create the user's configuration directory and handles
 // messages and/or errors
 func createConfDir(d string) {
@@ -233,8 +223,7 @@ var SingularityCmd = &cobra.Command{
 func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
-	confDir := getConfDir(CurrentUser.Username)
-	createConfDir(confDir)
+	createConfDir(syfs.ConfigDir())
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
