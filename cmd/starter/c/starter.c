@@ -1153,11 +1153,13 @@ __attribute__((constructor)) static void init(void) {
             send_event(master_socket[0]);
 
             /* force kernel to load overlay module to ease detection later */
-            if ( mount("none", "/", "overlay", MS_SILENT, "") < 0 ) {
-                if ( errno != EINVAL ) {
-                    debugf("Overlay seems not supported by kernel\n");
-                } else {
-                    debugf("Overlay seems supported by kernel\n");
+            if ( sconfig->starter.isSuid ) {
+                if ( mount("none", "/", "overlay", MS_SILENT, "") < 0 ) {
+                    if ( errno != EINVAL ) {
+                        debugf("Overlay seems not supported by kernel\n");
+                    } else {
+                        debugf("Overlay seems supported by kernel\n");
+                    }
                 }
             }
         }
