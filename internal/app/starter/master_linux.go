@@ -87,7 +87,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		}
 		// wait container process execution, EOF means container process
 		// was executed and master socket was closed by stage 2. If data
-		// byte sent is equal to 'f', it means an error occured in
+		// byte sent is equal to 'f', it means an error occurred in
 		// StartProcess, just return by waiting error and process status
 		_, err = conn.Read(data)
 		if (err != nil && err != io.EOF) || data[0] == 'f' {

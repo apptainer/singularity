@@ -769,7 +769,7 @@ static void fix_streams(void) {
 
 static void wait_child(const char *name, pid_t child_pid, bool noreturn) {
     int status;
-    int exit_code = 0;
+    int exit_status = 0;
 
     pid_t pid = waitpid(child_pid, &status, 0);
     if ( pid < 0 ) {
@@ -780,17 +780,17 @@ static void wait_child(const char *name, pid_t child_pid, bool noreturn) {
 
     if ( WIFEXITED(status) ) {
         if ( WEXITSTATUS(status) != 0 ) {
-            verbosef("%s exited with status %d\n", name, WEXITSTATUS(status));
-            exit_code = WEXITSTATUS(status);
+            exit_status = WEXITSTATUS(status);
         }
-        /* noreturn is set, terminate process with corresponding code */
+        verbosef("%s exited with status %d\n", name, exit_status);
+        /* noreturn will exit the current process with corresponding status */
         if ( noreturn ) {
-            exit(exit_code);
+            exit(exit_status);
         }
     } else if ( WIFSIGNALED(status) ) {
         verbosef("%s interrupted by signal number %d\n", name, WTERMSIG(status));
         kill(getpid(), WTERMSIG(status));
-        /* we should never return from kill with default actions */
+        /* we should never return from kill with signal default actions */
         exit(128 + WTERMSIG(status));
     } else {
         fatalf("%s exited with unknown status\n", name);
