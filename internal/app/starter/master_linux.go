@@ -63,8 +63,21 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		if obj, ok := engine.EngineOperations.(interface {
 			PreStartProcess(int, net.Conn, chan error) error
 		}); ok {
-			n, err := conn.Read(data)
-			if (err != nil && err != io.EOF) || n == 0 || data[0] == 'f' {
+			_, err := conn.Read(data)
+			if err != nil {
+				if err != io.EOF {
+					fatalChan <- fmt.Errorf("error while reading master socket data: %s", err)
+				}
+				// EOF means something goes wrong in stage 2, don't send error via
+				// fatalChan, error will be reported by stage 2 and the process
+				// status will be set accordingly via MonitorContainer method below
+				sylog.Debugf("stage 2 process was interrupted, waiting status")
+				return
+			} else if data[0] == 'f' {
+				// StartProcess reported an error in stage 2, don't send error via
+				// fatalChan, error will be reported by stage 2 and the process
+				// status will be set accordingly via MonitorContainer method below
+				sylog.Debugf("stage 2 process reported an error, waiting status")
 				return
 			}
 			if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
@@ -72,11 +85,13 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 				return
 			}
 		}
-		// wait container process execution, any error different from EOF
-		// or any data send over master connection at this point means an
-		// error occurred in StartProcess, just return by waiting error
-		n, err := conn.Read(data)
-		if (err != nil && err != io.EOF) || n > 0 {
+		// wait container process execution, EOF means container process
+		// was executed and master socket was closed by stage 2. If data
+		// byte sent is equal to 'f', it means an error occured in
+		// StartProcess, just return by waiting error and process status
+		_, err = conn.Read(data)
+		if (err != nil && err != io.EOF) || data[0] == 'f' {
+			sylog.Debugf("stage 2 process reported an error, waiting status")
 			return
 		}
 

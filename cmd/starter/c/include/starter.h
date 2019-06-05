@@ -68,7 +68,10 @@ enum goexec {
 #define CLONE_NEWCGROUP     0x02000000
 #endif
 
-typedef unsigned char bool;
+typedef enum {
+    false,
+    true
+} bool;
 
 /* container capabilities */
 struct capabilities {

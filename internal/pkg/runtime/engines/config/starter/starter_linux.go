@@ -43,7 +43,7 @@ func NewConfig(config SConfig) *Config {
 
 // GetIsSUID returns if SUID workflow is enabled or not
 func (c *Config) GetIsSUID() bool {
-	return c.config.starter.isSuid == 1
+	return c.config.starter.isSuid == C.true
 }
 
 // GetContainerPid returns container process ID
@@ -54,37 +54,37 @@ func (c *Config) GetContainerPid() int {
 // SetInstance sets if starter should spawn instance or not
 func (c *Config) SetInstance(instance bool) {
 	if instance {
-		c.config.container.isInstance = C.bool(1)
+		c.config.container.isInstance = C.true
 	} else {
-		c.config.container.isInstance = C.bool(0)
+		c.config.container.isInstance = C.false
 	}
 }
 
 // GetInstance returns if container run as instance or not
 func (c *Config) GetInstance() bool {
-	return c.config.container.isInstance == 1
+	return c.config.container.isInstance == C.true
 }
 
 // SetNoNewPrivs sets NO_NEW_PRIVS flag
 func (c *Config) SetNoNewPrivs(noprivs bool) {
 	if noprivs {
-		c.config.container.privileges.noNewPrivs = C.bool(1)
+		c.config.container.privileges.noNewPrivs = C.true
 	} else {
-		c.config.container.privileges.noNewPrivs = C.bool(0)
+		c.config.container.privileges.noNewPrivs = C.false
 	}
 }
 
 // GetNoNewPrivs returns if NO_NEW_PRIVS flag is set or not
 func (c *Config) GetNoNewPrivs() bool {
-	return c.config.container.privileges.noNewPrivs == 1
+	return c.config.container.privileges.noNewPrivs == C.true
 }
 
 // SetMasterPropagateMount sets if master/container shares mount point
 func (c *Config) SetMasterPropagateMount(propagate bool) {
 	if propagate {
-		c.config.starter.masterPropagateMount = C.bool(1)
+		c.config.starter.masterPropagateMount = C.true
 	} else {
-		c.config.starter.masterPropagateMount = C.bool(0)
+		c.config.starter.masterPropagateMount = C.false
 	}
 }
 
@@ -96,29 +96,29 @@ func (c *Config) GetMasterPropagateMount() bool {
 // SetNamespaceJoinOnly sets if container process join a mount namespace
 func (c *Config) SetNamespaceJoinOnly(join bool) {
 	if join {
-		c.config.container.namespace.joinOnly = C.bool(1)
+		c.config.container.namespace.joinOnly = C.true
 	} else {
-		c.config.container.namespace.joinOnly = C.bool(0)
+		c.config.container.namespace.joinOnly = C.false
 	}
 }
 
 // GetNamespaceJoinOnly returns if container process join a mount namespace
 func (c *Config) GetNamespaceJoinOnly() bool {
-	return c.config.container.namespace.joinOnly == 1
+	return c.config.container.namespace.joinOnly == C.true
 }
 
 // SetBringLoopbackInterface sets if starter bring loopback network interface
 func (c *Config) SetBringLoopbackInterface(bring bool) {
 	if bring {
-		c.config.container.namespace.bringLoopbackInterface = C.bool(1)
+		c.config.container.namespace.bringLoopbackInterface = C.true
 	} else {
-		c.config.container.namespace.bringLoopbackInterface = C.bool(0)
+		c.config.container.namespace.bringLoopbackInterface = C.false
 	}
 }
 
 // GetBringLoopbackInterface returns if starter bring loopback network interface
 func (c *Config) GetBringLoopbackInterface() bool {
-	return c.config.container.namespace.bringLoopbackInterface == 1
+	return c.config.container.namespace.bringLoopbackInterface == C.true
 }
 
 // SetMountPropagation sets root filesystem mount propagation
@@ -165,9 +165,9 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 // will require an hybrid workflow. Typically used for fakeroot
 func (c *Config) SetHybridWorkflow(hybrid bool) {
 	if hybrid {
-		c.config.starter.hybridWorkflow = C.bool(1)
+		c.config.starter.hybridWorkflow = C.true
 	} else {
-		c.config.starter.hybridWorkflow = C.bool(0)
+		c.config.starter.hybridWorkflow = C.false
 	}
 }
 
@@ -175,9 +175,9 @@ func (c *Config) SetHybridWorkflow(hybrid bool) {
 // namespace
 func (c *Config) SetAllowSetgroups(allow bool) {
 	if allow {
-		c.config.container.privileges.allowSetgroups = C.bool(1)
+		c.config.container.privileges.allowSetgroups = C.true
 	} else {
-		c.config.container.privileges.allowSetgroups = C.bool(0)
+		c.config.container.privileges.allowSetgroups = C.false
 	}
 }
 

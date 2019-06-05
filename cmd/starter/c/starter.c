@@ -46,13 +46,14 @@
 #include "include/message.h"
 #include "include/starter.h"
 
-/* C and JSON configuration */
+/* current starter configuration */
 struct starterConfig *sconfig;
 
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
 int master_socket[2] = {-1, -1};
 
+/* set Go execution call after init function returns */
 enum goexec goexecute;
 
 typedef struct fdlist {
@@ -97,16 +98,26 @@ static void priv_escalate(void) {
     }
 }
 
-static void priv_drop(void) {
+static void priv_drop(bool permanent) {
     uid_t uid = getuid();
     gid_t gid = getgid();
 
-    verbosef("Drop root privileges\n");
-    if ( setegid(gid) < 0 ) {
-        fatalf("Failed to set effective GID to %d\n", gid);
-    }
-    if ( seteuid(uid) < 0 ) {
-        fatalf("Failed to set effective UID to %d\n", uid);
+    if ( !permanent ) {
+        verbosef("Drop root privileges\n");
+        if ( setegid(gid) < 0 ) {
+            fatalf("Failed to set effective GID to %d\n", gid);
+        }
+        if ( seteuid(uid) < 0 ) {
+            fatalf("Failed to set effective UID to %d\n", uid);
+        }
+    } else {
+        verbosef("Drop root privileges permanently\n");
+        if ( setresgid(gid, gid, gid) < 0 ) {
+            fatalf("Failed to set all GID to %d\n", gid);
+        }
+        if ( setresuid(uid, uid, uid) < 0 ) {
+            fatalf("Failed to set all UID to %d\n", uid);
+        }
     }
 }
 
@@ -270,7 +281,6 @@ static int create_namespace(int nstype) {
 }
 
 static int enter_namespace(char *nspath, int nstype) {
-    int ret = -1;
     int ns_fd;
 
     switch(nstype) {
@@ -318,6 +328,12 @@ static int enter_namespace(char *nspath, int nstype) {
     return(0);
 }
 
+/*
+ * write user namespace mapping, this function must be called
+ * after the calling process entered in corresponding /proc/<pid>
+ * directory, because it will write setgroups/uid_map/gid_map file
+ * relative to the targeted process directory
+ */
 static void setup_userns_mappings(struct privileges *privileges) {
     FILE *map_fp;
     char *allow = "allow", *deny = "deny";
@@ -593,7 +609,7 @@ static fdlist_t *list_fd(void) {
         fatalf("Failed to list /proc/self/fd directory: %s\n", strerror(errno));
     }
 
-    while ( ( dirent = readdir(dir ) ) ) {
+    while ( ( dirent = readdir(dir) ) ) {
         if ( strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0 ) {
             continue;
         }
@@ -644,7 +660,7 @@ static void cleanup_fd(fdlist_t *master, struct starter *starter) {
         fatalf("Failed to list /proc/self/fd directory: %s\n", strerror(errno));
     }
 
-    while ( ( dirent = readdir(dir ) ) ) {
+    while ( ( dirent = readdir(dir) ) ) {
         if ( strcmp(dirent->d_name, ".") == 0 || strcmp(dirent->d_name, "..") == 0 ) {
             continue;
         }
@@ -674,7 +690,7 @@ static void cleanup_fd(fdlist_t *master, struct starter *starter) {
                 found++;
                 /* set force close on exec */
                 if ( fcntl(starter->fds[i], F_SETFD, FD_CLOEXEC) < 0 ) {
-                    debugf("Can't set FD_CLOEXEC on file descriptor %d: %s", starter->fds[i], strerror(errno));
+                    debugf("Can't set FD_CLOEXEC on file descriptor %d: %s\n", starter->fds[i], strerror(errno));
                 }
                 break;
             }
@@ -711,14 +727,14 @@ static void chdir_to_proc_pid(pid_t pid) {
     char *buffer = (char *)malloc(128);
 
     if ( buffer == NULL ) {
-        fatalf("memory allocation failed: %s", strerror(errno));
+        fatalf("memory allocation failed: %s\n", strerror(errno));
     }
 
     memset(buffer, 0, 128);
     snprintf(buffer, 127, "/proc/%d", pid);
 
     if ( chdir(buffer) < 0 ) {
-        fatalf("Failed to change directory to %s: %s", buffer, strerror(errno));
+        fatalf("Failed to change directory to %s: %s\n", buffer, strerror(errno));
     }
 
     /* check that process is a child */
@@ -741,7 +757,7 @@ static void fix_streams(void) {
     for ( ; i <= 2; i++ ) {
         if ( fstat(i, &st) < 0 && errno == EBADF ) {
             if ( dup2(null, i) < 0 ) {
-                fatalf("Error while fixing IO streams: %s", strerror(errno));
+                fatalf("Error while fixing IO streams: %s\n", strerror(errno));
             }
         }
     }
@@ -751,27 +767,31 @@ static void fix_streams(void) {
     }
 }
 
-static void wait_child(const char *name, pid_t child_pid, bool stop) {
+static void wait_child(const char *name, pid_t child_pid, bool noreturn) {
     int status;
+    int exit_code = 0;
 
-    while ( 1 ) {
-        pid_t pid = waitpid(child_pid, &status, 0);
-        if ( pid < 0 ) {
-            fatalf("Failed to wait %s: %s", name, strerror(errno));
-        } else if ( pid == child_pid ) {
-            break;
-        } else {
-            debugf("Got a terminated child with pid %d", pid);
-        }
+    pid_t pid = waitpid(child_pid, &status, 0);
+    if ( pid < 0 ) {
+        fatalf("Failed to wait %s: %s\n", name, strerror(errno));
+    } else if ( pid != child_pid ) {
+        fatalf("Unexpected child (pid %d) status received\n", pid);
     }
+
     if ( WIFEXITED(status) ) {
-        if ( stop || WEXITSTATUS(status) != 0 ) {
+        if ( WEXITSTATUS(status) != 0 ) {
             verbosef("%s exited with status %d\n", name, WEXITSTATUS(status));
-            exit(WEXITSTATUS(status));
+            exit_code = WEXITSTATUS(status);
+        }
+        /* noreturn is set, terminate process with corresponding code */
+        if ( noreturn ) {
+            exit(exit_code);
         }
     } else if ( WIFSIGNALED(status) ) {
         verbosef("%s interrupted by signal number %d\n", name, WTERMSIG(status));
         kill(getpid(), WTERMSIG(status));
+        /* we should never return from kill with default actions */
+        exit(128 + WTERMSIG(status));
     } else {
         fatalf("%s exited with unknown status\n", name);
     }
@@ -810,6 +830,10 @@ static void cleanenv(void) {
     }
 }
 
+/*
+ * get_pipe_exec_fd returns the pipe file descriptor stored in
+ * the PIPE_EXEC_FD environment variable
+ */
 static int get_pipe_exec_fd(void) {
     int pipe_fd;
     char *pipe_fd_env = getenv("PIPE_EXEC_FD");
@@ -855,7 +879,7 @@ __attribute__((constructor)) static void init(void) {
     /* cleanup environment variables */
     cleanenv();
 
-    /* initialize starter configuration and share it with child processes */
+    /* initialize starter configuration in shared memory to later share with child processes */
     sconfig = (struct starterConfig *)mmap(NULL, sizeof(struct starterConfig), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
     if ( sconfig == MAP_FAILED ) {
         fatalf("Memory allocation failed: %s\n", strerror(errno));
@@ -865,7 +889,7 @@ __attribute__((constructor)) static void init(void) {
 
     /* temporarily drop privileges while running as setuid */
     if ( sconfig->starter.isSuid ) {
-        priv_drop();
+        priv_drop(false);
     }
 
     debugf("Read engine configuration\n");
@@ -896,17 +920,13 @@ __attribute__((constructor)) static void init(void) {
     process = fork_ns(CLONE_FILES);
     if ( process == 0 ) {
         /*
-         *  stage1 is responsible for singularity configuration file parsing
-         *  handle user input, read capabilities, check what namespaces is required.
+         *  stage1 is responsible for singularity configuration file parsing,
+         *  handling user input, reading capabilities, and checking what
+         *  namespaces are required
          */
         if ( sconfig->starter.isSuid && uid != 0 ) {
-            /* reset saved gid/uid to drop all privileges */
-            if ( setresgid(gid, gid, gid) < 0 ) {
-                fatalf("failed to drop all gid\n");
-            }
-            if ( setresuid(uid, uid, uid) < 0 ) {
-                fatalf("failed to drop all uid\n");
-            }
+            /* drop privileges permanently */
+            priv_drop(true);
         }
         /* continue execution with Go runtime in main_linux.go */
         set_parent_death_signal(SIGKILL);
@@ -918,9 +938,9 @@ __attribute__((constructor)) static void init(void) {
     }
 
     debugf("Wait completion of stage1\n");
-    wait_child("stage 1", process, 0);
+    wait_child("stage 1", process, false);
 
-    /* is stage 1 want to change current working directory ? */
+    /* change current working directory if requested by stage 1 */
     if ( sconfig->starter.workingDirectoryFd >= 0 ) {
         debugf("Applying stage 1 working directory\n");
         if ( fchdir(sconfig->starter.workingDirectoryFd) < 0 ) {
@@ -973,7 +993,10 @@ __attribute__((constructor)) static void init(void) {
                 fatalf("Unblock signals error: %s\n", strerror(errno));
             }
             /* loop until master process exits with error */
-            wait_child("instance", process, 1);
+            wait_child("instance", process, true);
+
+            /* we should never return from the previous wait_child call */
+            exit(1);
         }
     }
 
@@ -1069,10 +1092,10 @@ __attribute__((constructor)) static void init(void) {
             if ( wait_event(master_socket[1]) < 0 ) {
                 fatalf("Error while waiting event for shared mount namespace\n");
             }
-            mount_namespace_init(&sconfig->container.namespace, 1);
+            mount_namespace_init(&sconfig->container.namespace, true);
         } else {
             send_event(master_socket[1]);
-            mount_namespace_init(&sconfig->container.namespace, 0);
+            mount_namespace_init(&sconfig->container.namespace, false);
         }
 
         if ( !sconfig->container.namespace.joinOnly ) {
@@ -1095,12 +1118,12 @@ __attribute__((constructor)) static void init(void) {
                 close(rpc_socket[1]);
 
                 /* wait RPC server exits before running container process */
-                wait_child("rpc server", process, 0);
+                wait_child("rpc server", process, false);
 
                 if ( sconfig->starter.hybridWorkflow ) {
                     /* make /proc/self readable by user to join instance without SUID workflow */
                     if ( prctl(PR_SET_DUMPABLE, 1) < 0 ) {
-                        fatalf("Failed to set process dumpable: %s", strerror(errno));
+                        fatalf("Failed to set process dumpable: %s\n", strerror(errno));
                     }
                 }
             } else {
@@ -1141,7 +1164,7 @@ __attribute__((constructor)) static void init(void) {
         /* wait child finish namespaces initialization */
         if ( wait_event(master_socket[0]) < 0 ) {
             /* child has exited before sending data */
-            wait_child("stage 2", sconfig->container.pid, 1);
+            wait_child("stage 2", sconfig->container.pid, true);
         }
 
         /* engine requested to propagate mount to container */
@@ -1175,7 +1198,7 @@ __attribute__((constructor)) static void init(void) {
                 fatalf("Failed to drop privileges permanently\n");
             }
             debugf("Wait stage 2 child process\n");
-            wait_child("stage 2", sconfig->container.pid, 1);
+            wait_child("stage 2", sconfig->container.pid, true);
         } else {
             close(rpc_socket[1]);
 
