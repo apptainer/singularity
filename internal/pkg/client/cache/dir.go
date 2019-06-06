@@ -48,7 +48,7 @@ func Clean() error {
 	cacheDirs := append([]string{}, Library(), OciTemp(), OciBlob(), Shub())
 
 	for _, c := range cacheDirs {
-		sylog.Debugf("Removeing: %s ...", c)
+		sylog.Debugf("Removing: %s ...", c)
 		err := os.RemoveAll(c)
 		if err != nil {
 			return fmt.Errorf("unable to remove cache dir: %s: %s", c, err)
