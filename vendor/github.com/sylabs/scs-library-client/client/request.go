@@ -7,7 +7,8 @@ package client
 
 // UploadImageRequest is sent to initiate V2 image upload
 type UploadImageRequest struct {
-	Size int64 `json:"filesize"`
+	Size        int64  `json:"filesize"`
+	MD5Checksum string `json:"md5sum"`
 }
 
 // UploadImageCompleteRequest is sent to complete V2 image upload; it is
