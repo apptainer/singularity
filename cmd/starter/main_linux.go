@@ -34,11 +34,10 @@ func getEngine(jsonConfig []byte) *engines.Engine {
 }
 
 func startup() {
-	cconf := unsafe.Pointer(C.config)
-	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
+	sconfig := starterConfig.NewConfig(starterConfig.SConfig(unsafe.Pointer(C.sconfig)))
 	jsonConfig := sconfig.GetJSONConfig()
 
-	switch C.execute {
+	switch C.goexecute {
 	case C.STAGE1:
 		sylog.Verbosef("Execute stage 1\n")
 		starter.Stage(int(C.STAGE1), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
