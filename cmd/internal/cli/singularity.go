@@ -19,6 +19,7 @@ import (
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
@@ -188,6 +189,20 @@ func setSylogColor() {
 	}
 }
 
+// createConfDir tries to create the user's configuration directory and handles
+// messages and/or errors
+func createConfDir(d string) {
+	if err := fs.Mkdir(d, os.ModePerm); err != nil {
+		if os.IsExist(err) {
+			sylog.Debugf("%s already exits. Not creating.", d)
+		} else {
+			sylog.Fatalf("Error attempting to create %s: %s", d, err)
+		}
+	} else {
+		sylog.Debugf("Created %s", d)
+	}
+}
+
 // SingularityCmd is the base command when called without any subcommands
 var SingularityCmd = &cobra.Command{
 	TraverseChildren:      true,
@@ -208,6 +223,7 @@ var SingularityCmd = &cobra.Command{
 func persistentPreRunE(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	setSylogColor()
+	createConfDir(syfs.ConfigDir())
 	return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
 }
 
