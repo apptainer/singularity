@@ -54,7 +54,7 @@ func Clean() error {
 
 func updateCacheRoot() {
 	if d := os.Getenv(DirEnv); d != "" {
-		root = filepath.Join(d, cacheDir)
+		root = d
 	} else {
 		root = path.Join(syfs.ConfigDir(), cacheDir)
 	}
