@@ -32,7 +32,8 @@ func CleanCache(cacheType []string) error {
 			if err := cache.Clean(); err != nil {
 				return err
 			}
-			break
+			// returning after cleaning all cache, otherwise clean cacheType.
+			return nil
 		default:
 			return fmt.Errorf("not a valid type: %s", c)
 		}
@@ -143,18 +144,33 @@ func CleanCacheName(cacheName string, libraryCache, ociCache, shubCache bool) (b
 	}
 
 	match := false
+	// TODO: Add oras cache
 	if libraryCache {
-		match, err := cleanLibraryCacheName(cacheName)
+		m, err := cleanLibraryCacheName(cacheName)
 		if err != nil {
 			return false, err
 		}
-		return match, nil
-	} else if ociCache {
-		match, err := cleanOciCacheName(cacheName)
+		if m {
+			match = true
+		}
+	}
+	if ociCache {
+		m, err := cleanOciCacheName(cacheName)
 		if err != nil {
 			return false, err
 		}
-		return match, nil
+		if m {
+			match = true
+		}
+	}
+	if shubCache {
+		m, err := cleanShubCacheName(cacheName)
+		if err != nil {
+			return false, err
+		}
+		if m {
+			match = true
+		}
 	}
 	return match, nil
 }
@@ -186,8 +202,9 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName []
 		}
 	}
 
-	if len(cacheName) >= 2 && !cleanAll {
+	if len(cacheName) >= 1 && !cleanAll {
 		for _, n := range cacheName {
+			sylog.Debugf("Removing cache with name %q ...", n)
 			foundMatch, err := CleanCacheName(n, libraryClean, ociClean, shubClean)
 			if err != nil {
 				return err
@@ -200,27 +217,32 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName []
 	}
 
 	if cleanAll {
+		sylog.Debugf("Cleaning all root cache...")
 		if err := CleanCache([]string{"all"}); err != nil {
 			return err
 		}
 	}
 
 	if libraryClean {
+		sylog.Debugf("Cleaning library cache...")
 		if err := CleanCache([]string{"library"}); err != nil {
 			return err
 		}
 	}
 	if ociClean {
+		sylog.Debugf("Cleaning oci cache...")
 		if err := CleanCache([]string{"oci"}); err != nil {
 			return err
 		}
 	}
 	if shubClean {
+		sylog.Debugf("Cleaning shub cache...")
 		if err := CleanCache([]string{"shub"}); err != nil {
 			return err
 		}
 	}
 	if blobClean {
+		sylog.Debugf("Cleaning blob cache...")
 		if err := CleanCache([]string{"blob"}); err != nil {
 			return err
 		}

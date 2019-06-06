@@ -48,7 +48,7 @@ var cacheCleanTypesFlag = cmdline.Flag{
 var cacheCleanNameFlag = cmdline.Flag{
 	ID:           "cacheCleanNameFlag",
 	Value:        &cacheName,
-	DefaultValue: []string{""},
+	DefaultValue: []string{},
 	Name:         "name",
 	ShortHand:    "N",
 	Usage:        "specify a container cache to clean (will clear all cache with the same name)",
