@@ -370,7 +370,14 @@ func doHeader(h string, d *types.Definition) (err error) {
 			continue
 		}
 		if _, ok := validHeaders[key]; !ok {
-			return fmt.Errorf("invalid header keyword found: %s", key)
+			rgx := regexp.MustCompile(`\d+$`)
+			tmpKey := rgx.ReplaceAllString(key, "&n")
+			if ok = tmpKey != key; ok {
+				_, ok = validHeaders[tmpKey]
+			}
+			if !ok {
+				return fmt.Errorf("invalid header keyword found: %s", key)
+			}
 		}
 		header[key] = val
 	}
