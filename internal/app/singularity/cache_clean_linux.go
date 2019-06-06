@@ -159,8 +159,8 @@ func CleanCacheName(cacheName string, libraryCache, ociCache, shubCache bool) (b
 	return match, nil
 }
 
-// CleanSingularityCache is the main function that drives all these other functions, if allClean is true; clean
-// all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
+// CleanSingularityCache is the main function that drives all these other functions, if cleanAll is true; clean
+// all cache. if cacheCleanTypes contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
 func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
 	libraryClean := false
