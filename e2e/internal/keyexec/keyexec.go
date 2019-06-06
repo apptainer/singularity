@@ -97,7 +97,7 @@ func ImportKey(t *testing.T, kpath string) ([]byte, error) {
 func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
-	c, err := expect.NewConsole(expect.WithStdin(os.Stdin))
+	c, err := expect.NewConsole()
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +136,7 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
-	c, err := expect.NewConsole(expect.WithStdin(os.Stdin))
+	c, err := expect.NewConsole()
 	if err != nil {
 		panic(err)
 	}
@@ -316,7 +316,7 @@ func QuickTestExportImportKey(t *testing.T) {
 func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
-	c, err := expect.NewConsole(expect.WithStdin(os.Stdin))
+	c, err := expect.NewConsole()
 	if err != nil {
 		t.Fatalf("Unable to open new console: %v", err)
 	}
