@@ -61,9 +61,6 @@ func CleanCache(cacheType string) error {
 	case "blob", "blobs":
 		err := cleanBlobCache()
 		return err
-	case "all":
-		err := cache.Clean()
-		return err
 	default:
 		// The caller checks the returned error and will exit as required
 		return fmt.Errorf("not a valid type: %s", cacheType)
@@ -120,97 +117,74 @@ func cleanOciCacheName(cacheName string) (bool, error) {
 	return foundMatch, nil
 }
 
-// CleanCacheName : will clean a container with the same name as cacheName (in the cache directory).
-// if libraryCache is true; only search thrught library cache. if ociCache is true; only search the
-// oci-tmp cache. if both are false; search all cache, and if both are true; again, search all cache.
-func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error) {
-	if libraryCache == ociCache {
-		matchLibrary, err := cleanLibraryCacheName(cacheName)
-		if err != nil {
+// cleanCacheEntry locates cache entries matching cacheName and removes
+// them from the specified cache types.
+func cleanCacheEntry(cacheName string, cacheTypes []string) (bool, error) {
+	matches := 0
+
+	for _, cache := range cacheTypes {
+		var cleaner func(string) (bool, error)
+
+		switch cache {
+		case "library":
+			cleaner = cleanLibraryCacheName
+
+		case "oci":
+			cleaner = cleanOciCacheName
+
+		default:
+			continue
+		}
+
+		if found, err := cleaner(cacheName); err != nil {
 			return false, err
+		} else if found {
+			matches++
 		}
-		matchOci, err := cleanOciCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		if matchLibrary || matchOci {
-			return true, nil
-		}
-		return false, nil
 	}
 
-	match := false
-	if libraryCache {
-		match, err := cleanLibraryCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		return match, nil
-	} else if ociCache {
-		match, err := cleanOciCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		return match, nil
-	}
-	return match, nil
+	return matches > 0, nil
 }
 
 // CleanSingularityCache : the main function that drives all these other functions, if allClean is true; clean
 // all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
-func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName string) error {
-	libraryClean := false
-	ociClean := false
-	blobClean := false
+func CleanSingularityCache(cacheCleanTypes []string, cacheName string) error {
+	caches := []string{}
 
 	for _, t := range cacheCleanTypes {
 		switch t {
-		case "library":
-			libraryClean = true
-		case "oci":
-			ociClean = true
-		case "blob", "blobs":
-			blobClean = true
+		case "blobs":
+			t = "blob"
+			fallthrough
+
+		case "library", "oci", "blob":
+			caches = append(caches, t)
+
 		case "all":
-			cleanAll = true
+			caches = []string{"library", "oci", "blob"}
+
 		default:
 			// The caller checks the returned error and exit when appropriate
 			return fmt.Errorf("not a valid type: %s", t)
 		}
 	}
 
-	if len(cacheName) >= 1 && !cleanAll {
-		foundMatch, err := CleanCacheName(cacheName, libraryClean, ociClean)
+	if len(cacheName) > 0 {
+		foundMatch, err := cleanCacheEntry(cacheName, caches)
 		if err != nil {
 			return err
 		}
 		if !foundMatch {
 			sylog.Warningf("No cache found with given name: %s", cacheName)
 		}
-		return nil
-	}
-
-	if cleanAll {
-		if err := CleanCache("all"); err != nil {
-			return err
+	} else {
+		for _, cache := range caches {
+			if err := CleanCache(cache); err != nil {
+				return err
+			}
 		}
 	}
 
-	if libraryClean {
-		if err := CleanCache("library"); err != nil {
-			return err
-		}
-	}
-	if ociClean {
-		if err := CleanCache("oci"); err != nil {
-			return err
-		}
-	}
-	if blobClean {
-		if err := CleanCache("blob"); err != nil {
-			return err
-		}
-	}
 	return nil
 }

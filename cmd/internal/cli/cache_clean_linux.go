@@ -77,7 +77,12 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	err := singularity.CleanSingularityCache(cleanAll, cacheCleanTypes, cacheName)
+	if cleanAll {
+		// cleanAll overrides all the other options, see above
+		cacheCleanTypes = []string{"all"}
+		cacheName = ""
+	}
+	err := singularity.CleanSingularityCache(cacheCleanTypes, cacheName)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
 		os.Exit(255)
