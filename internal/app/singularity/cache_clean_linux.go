@@ -29,7 +29,10 @@ func CleanCache(cacheType []string) error {
 		case "blob", "blobs":
 			cacheToRemove = cache.OciBlob()
 		case "all":
-			cacheToRemove = cache.Root()
+			if err := cache.Clean(); err != nil {
+				return err
+			}
+			break
 		default:
 			return fmt.Errorf("not a valid type: %s", c)
 		}
