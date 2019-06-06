@@ -19,6 +19,8 @@ const (
 	HTTP = "http"
 	// HTTPS is the keyword for https ref
 	HTTPS = "https"
+	// Oras is the keyword for an oras ref
+	Oras = "oras"
 )
 
 // validURIs contains a list of known uris
