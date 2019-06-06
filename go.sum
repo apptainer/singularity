@@ -228,6 +228,10 @@ github.com/sylabs/scs-library-client v0.1.0 h1:uSxsXGGdQwY690t4QJE2Hxqm/D8iRbYIY
 github.com/sylabs/scs-library-client v0.1.0/go.mod h1:qfp6pi2pAo0Pb1QzSdhF+Oy2ZXIsy82DozLCJ7j+qIQ=
 github.com/sylabs/scs-library-client v0.2.0 h1:qQaGE2t/FD44hGKYRSaceE4YBrkhojnXImwBCtHmH4Q=
 github.com/sylabs/scs-library-client v0.2.0/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
+github.com/sylabs/scs-library-client v0.2.1 h1:4HntlD4ju14kqeg92/fu9zGJc20Zf52R53JEYoyevgg=
+github.com/sylabs/scs-library-client v0.2.1/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
+github.com/sylabs/scs-library-client v0.2.2 h1:pHDvSduBI7F7w86N99GDULLHaryJhaCU5LBC2log0iA=
+github.com/sylabs/scs-library-client v0.2.2/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
 github.com/sylabs/sif v1.0.3-0.20190517011411-f5e78ee40f0b h1:+kgohL9BfDuvOo0xwP/kkQhK47tqa64zfvleypige3Y=
 github.com/sylabs/sif v1.0.3-0.20190517011411-f5e78ee40f0b/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
 github.com/sylabs/sif v1.0.3 h1:oMYGL3hIKIYkQDCr+Qr62mVViC4oKdUZTKqYVDTf4co=

@@ -200,7 +200,7 @@ func (c *Client) postFile(ctx context.Context, r io.Reader, fileSize int64, imag
 	defer callback.Finish()
 
 	// Make an upload request
-	req, _ := c.newRequest("POST", postURL, "", callback.GetReader())
+	req, _ := c.newRequest(http.MethodPost, postURL, "", callback.GetReader())
 	// Content length is required by the API
 	req.ContentLength = fileSize
 	res, err := c.HTTPClient.Do(req.WithContext(ctx))
@@ -245,7 +245,8 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 
 	// issue upload request (POST) to obtain presigned S3 URL
 	body := UploadImageRequest{
-		Size: fileSize,
+		Size:        fileSize,
+		MD5Checksum: metadata["md5sum"],
 	}
 
 	objJSON, err := c.apiCreate(ctx, postURL, body)
@@ -267,18 +268,13 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 		return fmt.Errorf("error getting presigned URL")
 	}
 
-	req, err := retryablehttp.NewRequest("PUT", presignedURL, callback.GetReader())
+	req, err := retryablehttp.NewRequest(http.MethodPut, presignedURL, callback.GetReader())
 	if err != nil {
 		return fmt.Errorf("error creating request: %v", err)
 	}
 
 	req.ContentLength = fileSize
 	req.Header.Set("Content-Type", "application/octet-stream")
-
-	// set S3 custom metadata containing the MD5 checksum
-	for key, value := range metadata {
-		req.Header.Set("x-amz-meta-client-"+key, value)
-	}
 
 	// redirect log output from retryablehttp to our logger
 	l := loggingAdapter{
@@ -288,10 +284,14 @@ func (c *Client) postFileV2(ctx context.Context, r io.Reader, fileSize int64, im
 	client := retryablehttp.NewClient()
 	client.Logger = &l
 
-	_, err = client.Do(req.WithContext(ctx))
+	resp, err := client.Do(req.WithContext(ctx))
 	callback.Finish()
 	if err != nil {
 		return fmt.Errorf("error uploading image: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("error uploading image: HTTP status %d", resp.StatusCode)
 	}
 
 	// send (PUT) image upload completion
