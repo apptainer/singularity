@@ -44,8 +44,11 @@ type pluginConfig struct {
 func fusecmdCallback(f *pflag.Flag, cfg *singularity.EngineConfig) {
 	cmd := f.Value.String()
 
+        // This will be called even if the flag was not used.
+        // Assume that an empty mount point means the user did not pass
+        // the flag and return silently.
 	if cmd == "" {
-                sylog.Fatalf("Empty command")
+                return
 	}
 
         words := strings.Fields(cmd)
