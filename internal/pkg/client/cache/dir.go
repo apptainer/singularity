@@ -42,12 +42,17 @@ func Root() string {
 	return root
 }
 
-// Clean : wipes all files in the cache directory, will return a error if one occurs
+// Clean wipes all files in the cache directory, will return a error if one occurs
 func Clean() error {
-	sylog.Debugf("Removing: %v", Root())
+	// TODO: add oras here
+	cacheDirs := append([]string{}, Library(), OciTemp(), OciBlob(), Shub())
 
-	if err := os.RemoveAll(Root()); err != nil {
-		return fmt.Errorf("unable to clean all cache: %s", err)
+	for _, c := range cacheDirs {
+		sylog.Debugf("Removing: %s ...", c)
+		err := os.RemoveAll(c)
+		if err != nil {
+			return fmt.Errorf("unable to remove cache dir: %s: %s", c, err)
+		}
 	}
 
 	return nil
