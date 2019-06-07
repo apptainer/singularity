@@ -6,6 +6,7 @@
 package security
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -108,13 +109,20 @@ func testSecurityUnpriv(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("unpriv "+tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.opts, tt.image, tt.argv)
+			stdout, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.opts, tt.image, tt.argv)
+
+			lines := bytes.Fields([]byte(stdout))
+
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr, err, exitCode)
 				t.Fatalf("unexpected failure running %q: %v", strings.Join(tt.argv, " "), err)
 			} else if !tt.expectSuccess && (exitCode != 1) {
 				t.Log(stderr, err, exitCode)
 				t.Fatalf("unexpected success running %q", strings.Join(tt.argv, " "))
+			}
+
+			if len(lines) == 1 && string(lines[0]) != "99" {
+				t.Fatal("test failed? expecting: 99, got: ", string(lines[0]))
 			}
 		}))
 	}
@@ -136,19 +144,19 @@ func testSecurityPriv(t *testing.T) {
 			name:          "Set_uid",
 			image:         imagePath,
 			action:        "exec",
-			argv:          []string{"id", "-u", "|", "grep", "99"},
+			argv:          []string{"id", "-u"},
 			opts:          e2e.ExecOpts{Security: []string{"uid:99"}},
-			exit:          1,
-			expectSuccess: false,
+			exit:          0,
+			expectSuccess: true,
 		},
 		{
 			name:          "Set_gid",
 			image:         imagePath,
 			action:        "exec",
-			argv:          []string{"id", "-g", "|", "grep", "99"},
+			argv:          []string{"id", "-g"},
 			opts:          e2e.ExecOpts{Security: []string{"gid:99"}},
-			exit:          1,
-			expectSuccess: false,
+			exit:          0,
+			expectSuccess: true,
 		},
 		// seccomp from json file
 		{
@@ -192,7 +200,10 @@ func testSecurityPriv(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("priv "+tt.name, test.WithPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.opts, tt.image, tt.argv)
+			stdout, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.opts, tt.image, tt.argv)
+
+			lines := bytes.Fields([]byte(stdout))
+
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr, err, exitCode)
 				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
@@ -200,6 +211,11 @@ func testSecurityPriv(t *testing.T) {
 				t.Log(stderr, err, exitCode)
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
 			}
+
+			if len(lines) == 1 && string(lines[0]) != "99" {
+				t.Fatal("test failed? expecting: 99, got: ", string(lines[0]))
+			}
+
 		}))
 	}
 }
