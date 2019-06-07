@@ -16,6 +16,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/remotes/docker"
+	"github.com/deislabs/oras/pkg/content"
+	"github.com/deislabs/oras/pkg/context"
+	"github.com/deislabs/oras/pkg/oras"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -188,6 +194,20 @@ var tests = []struct {
 		unauthenticated: false,
 		expectSuccess:   true,
 	},
+
+	// pulling of invalid images with oras
+	{
+		desc:          "oras pull of non SIF file",
+		srcURI:        "oras://localhost:5000/pull_test_:latest",
+		force:         true,
+		expectSuccess: false,
+	},
+	{
+		desc:          "oras pull of packed dir",
+		srcURI:        "oras://localhost:5000/pull_test_invalid_file:latest",
+		force:         true,
+		expectSuccess: false,
+	},
 }
 
 func imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, unauthenticated bool) (string, []byte, error) {
@@ -354,21 +374,54 @@ func testPullCmd(t *testing.T) {
 	}
 }
 
-// oras filestore does not allow for absolute paths
-// so we will give a relative path and set the directory of the push command
-func orasImagePush(t *testing.T, imgURI, imagePath string) (string, []byte, error) {
-	argv := []string{"push"}
+// this is a version of the oras push functionality that does not check that given the
+// file is a valid SIF, this allows us to push arbitrary objects to the local registry
+// to test the pull validation
+func orasPushNoCheck(file, ref string) error {
+	ref = strings.TrimPrefix(ref, "//")
 
-	if imagePath != "" {
-		argv = append(argv, imagePath)
+	spec, err := reference.Parse(ref)
+	if err != nil {
+		return fmt.Errorf("unable to parse oci reference: %s", err)
 	}
 
-	argv = append(argv, imgURI)
+	// Hostname() will panic if there is no '/' in the locator
+	// explicitly check for this and fail in order to prevent panic
+	// this case will only occur for incorrect uris
+	if !strings.Contains(spec.Locator, "/") {
+		return fmt.Errorf("not a valid oci object uri: %s", ref)
+	}
 
-	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
-	pushCmd := exec.Command(testenv.CmdPath, argv...)
-	out, err := pushCmd.CombinedOutput()
-	return cmd, out, err
+	// append default tag if no object exists
+	if spec.Object == "" {
+		spec.Object = "latest"
+	}
+
+	resolver := docker.NewResolver(docker.ResolverOptions{})
+
+	store := content.NewFileStore("")
+	defer store.Close()
+
+	conf, err := store.Add("$config", "application/vnd.sylabs.sif.config.v1+json", "/dev/null")
+	if err != nil {
+		return fmt.Errorf("unable to add manifest config to FileStore: %s", err)
+	}
+	conf.Annotations = nil
+
+	// use last element of filepath as file name in annotation
+	fileName := filepath.Base(file)
+	desc, err := store.Add(fileName, "appliciation/vnd.sylabs.sif.layer.tar", file)
+	if err != nil {
+		return fmt.Errorf("unable to add SIF file to FileStore: %s", err)
+	}
+
+	descriptors := []ocispec.Descriptor{desc}
+
+	if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
+		return fmt.Errorf("unable to push: %s", err)
+	}
+
+	return nil
 }
 
 // RunE2ETests is the main func to trigger the test suite
@@ -376,11 +429,43 @@ func RunE2ETests(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 	e2e.EnsureImage(t)
 
-	// put sif into OCI registry to pull it
-	cmd, out, err := orasImagePush(t, "oras://localhost:5000/pull_test_sif:latest", testenv.ImagePath)
+	// setup file and dir to use as invalid images
+	orasInvalidDir, err := ioutil.TempDir(testenv.TestDir, "oras_push_dir-")
 	if err != nil {
-		t.Logf("Command: %s", cmd)
-		t.Fatal(string(out))
+		t.Fatalf("unable to create src dir for push tests: %v", err)
+	}
+
+	orasInvalidFile, err := e2e.WriteTempFile(orasInvalidDir, "oras_invalid_image-", "Invalid Image Contents")
+	if err != nil {
+		t.Fatalf("unable to create src file for push tests: %v", err)
+	}
+
+	// prep local registry with oras generated artifacts
+	// Note: the image name prevents collisions by using a package specific name
+	// as the registry is shared between different test packages
+	orasImages := []struct {
+		srcPath string
+		uri     string
+	}{
+		{
+			srcPath: testenv.ImagePath,
+			uri:     "localhost:5000/pull_test_sif:latest",
+		},
+		{
+			srcPath: orasInvalidDir,
+			uri:     "localhost:5000/pull_test_dir:latest",
+		},
+		{
+			srcPath: orasInvalidFile,
+			uri:     "localhost:5000/pull_test_invalid_file:latest",
+		},
+	}
+
+	for _, i := range orasImages {
+		err = orasPushNoCheck(i.srcPath, i.uri)
+		if err != nil {
+			t.Fatalf("while prepping registry for oras tests: %v", err)
+		}
 	}
 
 	t.Run("pull", testPullCmd)

@@ -48,9 +48,16 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	root := arguments.Root
 
-	sylog.Debugf("Change current directory to %s", root)
-	if err := syscall.Chdir(root); err != nil {
-		return fmt.Errorf("failed to change directory to %s", root)
+	if root != "." {
+		sylog.Debugf("Change current directory to %s", root)
+		if err := syscall.Chdir(root); err != nil {
+			return fmt.Errorf("failed to change directory to %s", root)
+		}
+	} else {
+		cwd, err := os.Getwd()
+		if err == nil {
+			root = cwd
+		}
 	}
 
 	switch arguments.Method {
@@ -181,4 +188,9 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 		syscall.Setfsgid(arguments.GID)
 	})
 	return nil
+}
+
+// Chdir changes current working directory to path.
+func (t *Methods) Chdir(arguments *args.ChdirArgs, reply *int) error {
+	return mainthread.Chdir(arguments.Dir)
 }

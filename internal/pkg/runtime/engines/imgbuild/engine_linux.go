@@ -67,7 +67,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 
 	starterConfig.SetMountPropagation("rslave")
-	starterConfig.SetSharedMount(true)
+	starterConfig.SetMasterPropagateMount(true)
 
 	return nil
 }

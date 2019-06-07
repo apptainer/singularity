@@ -58,3 +58,8 @@ type SetFsIDArgs struct {
 	UID int
 	GID int
 }
+
+// ChdirArgs defines the arguments to chdir.
+type ChdirArgs struct {
+	Dir string
+}
