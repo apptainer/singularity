@@ -618,10 +618,13 @@ func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (op
 		return nil, fmt.Errorf("not a valid key lenth: %s: must be over 8 chars", fingerprint)
 	}
 
-	// Harvest the last 8 chars of the fingerprint string
-	sylog.Debugf("Getting the last 8 chars from: %s", fingerprint)
-	fingerprint = fingerprint[len(fingerprint)-8:]
-	sylog.Debugf("Results: %s", fingerprint)
+	// Only chop the fingerprint if its less then 40 chars
+	if len(fingerprint) < 40 {
+		// Harvest the last 8 chars of the fingerprint string
+		sylog.Debugf("Getting the last 8 chars from: %s", fingerprint)
+		fingerprint = fingerprint[len(fingerprint)-8:]
+		sylog.Debugf("Results: %s", fingerprint)
+	}
 
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
