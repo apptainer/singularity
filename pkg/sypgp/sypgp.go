@@ -25,18 +25,12 @@ import (
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
 	"golang.org/x/crypto/ssh/terminal"
 )
-
-// PublicKeyType is the armor type for a PGP public key.
-const PublicKeyType = "PGP PUBLIC KEY BLOCK"
-
-// PrivateKeyType is the armor type for a PGP private key.
-const PrivateKeyType = "PGP PRIVATE KEY BLOCK"
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
   1) View configured remotes using "singularity remote list"
@@ -96,35 +90,18 @@ func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	return string(response), nil
 }
 
-// getSingularityDir returns the directory where the user's singularity
-// configuration and data is located.
-func getSingularityDir() string {
-	user, err := user.GetPwUID(uint32(os.Getuid()))
-	if err != nil {
-		sylog.Warningf("Could not lookup user's real home directory: %s", err)
-
-		cwd, err := os.Getwd()
-		if err != nil {
-			sylog.Warningf("Could not get current working directory: %s", err)
-			return ".singularity"
-		}
-
-		dir := filepath.Join(cwd, ".singularity")
-		sylog.Warningf("Using current directory: %s", dir)
-		return dir
-	}
-
-	return filepath.Join(user.Dir, ".singularity")
-}
-
 // GetTokenFile returns a string describing the path to the stored token file
 func GetTokenFile() string {
-	return filepath.Join(getSingularityDir(), "sylabs-token")
+	return filepath.Join(syfs.ConfigDir(), "sylabs-token")
 }
 
 // DirPath returns a string describing the path to the sypgp home folder
 func DirPath() string {
-	return filepath.Join(getSingularityDir(), "sypgp")
+	sypgpDir := os.Getenv("SINGULARITY_SYPGPDIR")
+	if sypgpDir == "" {
+		return filepath.Join(syfs.ConfigDir(), "sypgp")
+	}
+	return sypgpDir
 }
 
 // SecretPath returns a string describing the path to the private keys store
@@ -444,54 +421,66 @@ func GetPassphrase(message string, retries int) (string, error) {
 	return "", errTooManyRetries
 }
 
-// GenKeyPair generates an OpenPGP key pair and store them in the sypgp home folder
-func GenKeyPair(keyServiceURI string, authToken string) (entity *openpgp.Entity, err error) {
+func genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
-	if err = PathsCheck(); err != nil {
-		return
+	entity, err := openpgp.NewEntity(name, comment, email, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	// Encrypt private key
+	if err = EncryptKey(entity, passphrase); err != nil {
+		return nil, err
+	}
+
+	// Store key parts in local key caches
+	if err = StorePrivKey(entity); err != nil {
+		return nil, err
+	}
+
+	if err = StorePubKey(entity); err != nil {
+		return nil, err
+	}
+
+	return entity, nil
+}
+
+// GenKeyPair generates an PGP key pair and store them in the sypgp home folder
+func GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error) {
+	if err := PathsCheck(); err != nil {
+		return nil, err
 	}
 
 	name, err := AskQuestion("Enter your name (e.g., John Doe) : ")
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	email, err := AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	comment, err := AskQuestion("Enter optional comment (e.g., development keys) : ")
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	// get a password
 	passphrase, err := GetPassphrase("Enter a passphrase : ", 3)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	fmt.Printf("Generating Entity and OpenPGP Key Pair...")
-	entity, err = openpgp.NewEntity(name, comment, email, conf)
+	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
+
+	entity, err := genKeyPair(name, comment, email, passphrase)
 	if err != nil {
-		return
+		return nil, err
 	}
+
 	fmt.Printf("done\n")
-
-	// encrypt private key
-	if err = EncryptKey(entity, passphrase); err != nil {
-		return
-	}
-
-	// Store key parts in local key caches
-	if err = StorePrivKey(entity); err != nil {
-		return
-	}
-	if err = StorePubKey(entity); err != nil {
-		return
-	}
 
 	// Ask to push the new key to the keystore
 	ans, err := askYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
@@ -533,12 +522,11 @@ func DecryptKey(k *openpgp.Entity, message string) error {
 }
 
 // EncryptKey encrypts a private key using a pass phrase
-func EncryptKey(k *openpgp.Entity, pass string) (err error) {
+func EncryptKey(k *openpgp.Entity, pass string) error {
 	if k.PrivateKey.Encrypted {
 		return fmt.Errorf("key already encrypted")
 	}
-	err = k.PrivateKey.Encrypt([]byte(pass))
-	return
+	return k.PrivateKey.Encrypt([]byte(pass))
 }
 
 // SelectPubKey prints a public key list to user and returns the choice
@@ -987,9 +975,9 @@ func getTypesFromEntity(path string) []string {
 	// is not armored so obtain the types checking the privatekey field from entity
 	for _, pathEntity := range el {
 		if pathEntity.PrivateKey != nil {
-			types = append(types, PrivateKeyType)
+			types = append(types, openpgp.PrivateKeyType)
 		} else {
-			types = append(types, PublicKeyType)
+			types = append(types, openpgp.PublicKeyType)
 		}
 	}
 
@@ -1010,7 +998,7 @@ func ImportKey(kpath string) error {
 
 	for i, pathEntity := range pathEntityList {
 
-		if pathEntityTypes[i] == PrivateKeyType {
+		if pathEntityTypes[i] == openpgp.PrivateKeyType {
 			// Its a private key
 			err := ImportPrivateKey(pathEntity)
 			if err != nil {
@@ -1018,7 +1006,7 @@ func ImportKey(kpath string) error {
 			}
 
 		}
-		if pathEntityTypes[i] == PublicKeyType {
+		if pathEntityTypes[i] == openpgp.PublicKeyType {
 			err := ImportPubKey(pathEntity)
 			if err != nil {
 				return err

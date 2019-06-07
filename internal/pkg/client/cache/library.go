@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	client "github.com/sylabs/singularity/pkg/client/library"
 )
 
 const (

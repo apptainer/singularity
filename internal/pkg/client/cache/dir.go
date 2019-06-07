@@ -9,12 +9,12 @@ package cache
 import (
 	"fmt"
 	"os"
-	"os/user"
 	"path"
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/syfs"
 )
 
 const (
@@ -22,11 +22,12 @@ const (
 	// for image downloads to be cached in
 	DirEnv = "SINGULARITY_CACHEDIR"
 
-	// RootDefault specifies the directory inside of ${HOME} that images are
-	// cached in by default.
+	// cacheDir specifies the name of the directory relative to the
+	// singularity data directory where images are cached in by
+	// default.
 	// Uses "~/.singularity/cache" which will not clash with any 2.x cache
 	// directory.
-	RootDefault = ".singularity/cache"
+	cacheDir = "cache"
 )
 
 var root string
@@ -41,27 +42,27 @@ func Root() string {
 	return root
 }
 
-// Clean : wipes all files in the cache directory, will return a error if one occurs
+// Clean wipes all files in the cache directory, will return a error if one occurs
 func Clean() error {
-	sylog.Debugf("Removing: %v", Root())
+	// TODO: add oras here
+	cacheDirs := append([]string{}, Library(), OciTemp(), OciBlob(), Shub())
 
-	if err := os.RemoveAll(Root()); err != nil {
-		return fmt.Errorf("unable to clean all cache: %s", err)
+	for _, c := range cacheDirs {
+		sylog.Debugf("Removing: %s ...", c)
+		err := os.RemoveAll(c)
+		if err != nil {
+			return fmt.Errorf("unable to remove cache dir: %s: %s", c, err)
+		}
 	}
 
 	return nil
 }
 
 func updateCacheRoot() {
-	usr, err := user.Current()
-	if err != nil {
-		sylog.Fatalf("Couldn't determine user home directory: %v", err)
-	}
-
 	if d := os.Getenv(DirEnv); d != "" {
 		root = d
 	} else {
-		root = path.Join(usr.HomeDir, RootDefault)
+		root = path.Join(syfs.ConfigDir(), cacheDir)
 	}
 
 	if err := initCacheDir(root); err != nil {

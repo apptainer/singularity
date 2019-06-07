@@ -232,7 +232,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
-func (e *EngineOperations) prepareFd() {
+func (e *EngineOperations) prepareFd(starterConfig *starter.Config) error {
 	fds := make([]int, 0)
 
 	if e.EngineConfig.File.UserBindControl {
@@ -288,7 +288,15 @@ func (e *EngineOperations) prepareFd() {
 		fds = append(fds, int(f.Fd()))
 	}
 
+	for _, f := range fds {
+		if err := starterConfig.KeepFileDescriptor(f); err != nil {
+			return err
+		}
+	}
+
 	e.EngineConfig.SetOpenFd(fds)
+
+	return nil
 }
 
 // prepareContainerConfig is responsible for getting and applying user supplied
@@ -361,9 +369,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	// open file descriptors (autofs bug path)
-	e.prepareFd()
-
-	return nil
+	return e.prepareFd(starterConfig)
 }
 
 // prepareInstanceJoinConfig is responsible for getting and applying configuration
@@ -375,14 +381,18 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
+	uid := os.Getuid()
+	gid := os.Getgid()
+	suidRequired := uid != 0 && !file.UserNs
+
 	// basic checks:
 	// 1. a user must not use SUID workflow to join an instance
 	//    started with user namespace
 	// 2. a user must use SUID workflow to join an instance
 	//    started without user namespace
-	if starterConfig.GetIsSUID() && file.UserNs {
+	if starterConfig.GetIsSUID() && !suidRequired {
 		return fmt.Errorf("joining user namespace with SUID workflow is not allowed")
-	} else if !starterConfig.GetIsSUID() && !file.UserNs {
+	} else if !starterConfig.GetIsSUID() && suidRequired {
 		return fmt.Errorf("a setuid installation is required to join this instance")
 	}
 
@@ -413,7 +423,8 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// go into /proc/<pid> directory to open namespaces inodes
 	// relative to current working directory while joining
 	// namespaces within C starter code as changing directory
-	// here also affects starter process thanks to CLONE_FS.
+	// here will also affects starter process thanks to
+	// SetWorkingDirectoryFd call.
 	// Additionally it would prevent TOCTOU races and symlink
 	// usage.
 	// And if instance process exits during checks or while
@@ -421,17 +432,22 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// error because current working directory would point to a
 	// deleted inode: "/proc/self/cwd -> /proc/<pid> (deleted)"
 	path := filepath.Join("/proc", strconv.Itoa(file.Pid))
-	if err := mainthread.Chdir(path); err != nil {
+	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_DIRECTORY, 0)
+	if err != nil {
+		return fmt.Errorf("could not open proc directory %s: %s", path, err)
+	}
+	if err := mainthread.Fchdir(fd); err != nil {
 		return err
 	}
-
-	uid := os.Getuid()
-	gid := os.Getgid()
+	// will set starter (via fchdir too) in the same proc directory
+	// in order to open namespace inodes with relative paths for the
+	// right process
+	starterConfig.SetWorkingDirectoryFd(fd)
 
 	// enforce checks while joining an instance process with SUID workflow
 	// since instance file is stored in user home directory, we can't trust
 	// its content when using SUID workflow
-	if !file.UserNs && uid != 0 {
+	if suidRequired {
 		// check if instance is running with user namespace enabled
 		// by reading /proc/pid/uid_map
 		_, hid, err := proc.ReadIDMap("uid_map")
@@ -530,7 +546,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	}
 
 	// tell starter that we are joining an instance
-	starterConfig.SetJoinMount(true)
+	starterConfig.SetNamespaceJoinOnly(true)
 
 	// update namespaces path relative to /proc/<pid>
 	// since starter process is in /proc/<pid> directory
@@ -688,12 +704,12 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		if err := e.prepareContainerConfig(starterConfig); err != nil {
 			return err
 		}
-		if err := e.loadImages(); err != nil {
+		if err := e.loadImages(starterConfig); err != nil {
 			return err
 		}
 	}
 
-	starterConfig.SetSharedMount(true)
+	starterConfig.SetMasterPropagateMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
@@ -707,7 +723,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	return nil
 }
 
-func (e *EngineOperations) loadImages() error {
+func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	images := make([]image.Image, 0)
 
 	// load rootfs image
@@ -731,7 +747,7 @@ func (e *EngineOperations) loadImages() error {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
-		if err := mainthread.Chdir(img.Source); err != nil {
+		if err := mainthread.Fchdir(int(img.Fd)); err != nil {
 			return err
 		}
 		cwd, err := os.Getwd()
@@ -741,6 +757,8 @@ func (e *EngineOperations) loadImages() error {
 		if cwd != img.Path {
 			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
 		}
+		// C starter code will position current working directory
+		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	}
 	if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
@@ -755,6 +773,10 @@ func (e *EngineOperations) loadImages() error {
 			}
 		}
 	}
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
+	}
+
 	// first image is always the root filesystem
 	images = append(images, *img)
 
@@ -772,6 +794,9 @@ func (e *EngineOperations) loadImages() error {
 		img, err := e.loadImage(splitted[0], writable)
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+		}
+		if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+			return err
 		}
 		images = append(images, *img)
 	}

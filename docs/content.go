@@ -193,7 +193,8 @@ Enterprise Performance Computing (EPC)`
 	CacheListUse   string = `list [list options...]`
 	CacheListShort string = `List your local Singularity cache`
 	CacheListLong  string = `
-  This will list your local cache (stored at $HOME/.singularity/cache if SINGULARITY_CACHEDIR is not set).`
+  This will list your local cache (stored at $HOME/.singularity/cache if
+  SINGULARITY_CACHEDIR is not set).`
 	CacheListExample string = `
   All group commands have their own help output:
 
@@ -208,7 +209,8 @@ Enterprise Performance Computing (EPC)`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
   Manage OpenPGP keys both locally via a Singularity keychain
-  and remotely via a Sylabs Cloud Keystore.`
+  and remotely via a Sylabs Cloud Keystore. The default keyring
+  is '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set.`
 	KeyExample string = `
   All group commands have their own help output:
 
@@ -575,14 +577,14 @@ Enterprise Performance Computing (EPC)`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// search
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	SearchUse   string = `search [search options...] <search query>`
-	SearchShort string = `Search a Library for images`
+	SearchUse   string = `search [search options...] <search_query>`
+	SearchShort string = `Search a Container Library for images`
 	SearchLong  string = `
-  The Singularity search command allows you to search within a container library 
-  of your choosing.  The container library defaults to cloud.sylabs.io when no 
-  other library argument is given.`
+  Search a Container Library for users and containers matching the search query.
+  (default cloud.sylabs.io)`
 	SearchExample string = `
-  $ singularity search lolcow`
+  $ singularity search lolcow
+  $ singularity search centos`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// run

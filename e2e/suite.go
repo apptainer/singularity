@@ -36,6 +36,12 @@ import (
 
 	"github.com/sylabs/singularity/e2e/remote"
 
+	"github.com/sylabs/singularity/e2e/push"
+
+	"github.com/sylabs/singularity/e2e/remote"
+
+	version "github.com/sylabs/singularity/e2e/version"
+
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -117,6 +123,8 @@ func Run(t *testing.T) {
 
 	t.Run("DOCKER", docker.RunE2ETests)
 
+	t.Run("PUSH", push.RunE2ETests)
+
 	t.Run("REMOTE", remote.RunE2ETests)
 
 	t.Run("INSTANCE", instance.RunE2ETests)
@@ -124,4 +132,6 @@ func Run(t *testing.T) {
 	t.Run("HELP", help.RunE2ETests)
 
 	t.Run("ENV", singularityenv.RunE2ETests)
+
+	t.Run("VERSION", version.RunE2ETests)
 }

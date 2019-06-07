@@ -180,26 +180,52 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 				}
 			}
 			e.EngineConfig.MasterPts = int(master.Fd())
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.MasterPts); err != nil {
+				return err
+			}
 			e.EngineConfig.SlavePts = int(slave.Fd())
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.SlavePts); err != nil {
+				return err
+			}
 		} else {
 			r, w, err := os.Pipe()
 			if err != nil {
 				return err
 			}
 			e.EngineConfig.OutputStreams = [2]int{int(r.Fd()), int(w.Fd())}
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.OutputStreams[0]); err != nil {
+				return err
+			}
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.OutputStreams[1]); err != nil {
+				return err
+			}
+
 			r, w, err = os.Pipe()
 			if err != nil {
 				return err
 			}
 			e.EngineConfig.ErrorStreams = [2]int{int(r.Fd()), int(w.Fd())}
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.ErrorStreams[0]); err != nil {
+				return err
+			}
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.ErrorStreams[1]); err != nil {
+				return err
+			}
+
 			r, w, err = os.Pipe()
 			if err != nil {
 				return err
 			}
 			e.EngineConfig.InputStreams = [2]int{int(w.Fd()), int(r.Fd())}
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.InputStreams[0]); err != nil {
+				return err
+			}
+			if err := starterConfig.KeepFileDescriptor(e.EngineConfig.InputStreams[1]); err != nil {
+				return err
+			}
 		}
 	} else {
-		starterConfig.SetJoinMount(true)
+		starterConfig.SetNamespaceJoinOnly(true)
 		cPath := e.EngineConfig.OciConfig.Linux.CgroupsPath
 		if cPath == "" {
 			return nil

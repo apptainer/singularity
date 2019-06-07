@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,8 +12,8 @@ import (
 	"os"
 	"time"
 
+	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	util "github.com/sylabs/singularity/pkg/client/library"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
@@ -21,10 +21,15 @@ import (
 // Timeout for an image pull in seconds (2 hours)
 const pullTimeout = 7200
 
-// DownloadImage will retrieve an image from the Container Singularityhub,
-// saving it into the specified file
-func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err error) {
+// DownloadImage image will download a shub image to a path. This will not try
+// to cache it, or use cache.
+func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	sylog.Debugf("Downloading container from Shub")
+	if !force {
+		if _, err := os.Stat(filePath); err == nil {
+			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
+		}
+	}
 
 	// use custom parser to make sure we have a valid shub URI
 	if ok := isShubPullRef(shubRef); !ok {
@@ -39,12 +44,6 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 	if filePath == "" {
 		filePath = fmt.Sprintf("%s_%s.simg", ShubURI.container, ShubURI.tag)
 		sylog.Infof("Download filename not provided. Downloading to: %s\n", filePath)
-	}
-
-	if !force {
-		if _, err := os.Stat(filePath); err == nil {
-			return fmt.Errorf("image file already exists - will not overwrite")
-		}
 	}
 
 	// Get the image manifest
@@ -71,20 +70,22 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 	// Do the request, if status isn't success, return error
 	resp, err := httpc.Do(req)
 	if resp == nil {
-		return fmt.Errorf("No response received from singularity hub")
+		return fmt.Errorf("no response received from singularity hub")
+	}
+	if err != nil {
+		return err
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("The requested image was not found in singularity hub")
+		return fmt.Errorf("the requested image was not found in singularity hub")
 	}
 	sylog.Debugf("%s response received, beginning image download\n", resp.Status)
 
 	if resp.StatusCode != http.StatusOK {
-		jRes, err := util.ParseErrorBody(resp.Body)
+		err := jsonresp.ReadError(resp.Body)
 		if err != nil {
-			jRes = util.ParseErrorResponse(resp)
+			return fmt.Errorf("download did not succeed: %s", err.Error())
 		}
-		return fmt.Errorf("Download did not succeed: %d %s\n\t%v",
-			jRes.Error.Code, jRes.Error.Status, jRes.Error.Message)
+		return fmt.Errorf("download did not succeed: %d %s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
 
 	// Perms are 777 *prior* to umask
@@ -122,5 +123,5 @@ func DownloadImage(filePath string, shubRef string, force, noHTTPS bool) (err er
 
 	sylog.Debugf("Download complete\n")
 
-	return err
+	return nil
 }
