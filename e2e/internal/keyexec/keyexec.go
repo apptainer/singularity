@@ -349,6 +349,7 @@ func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (
 	} else {
 		c.Send(psk1)
 	}
+	// TODO: Make sure CCI/Travis has an access token before pushing
 	if push {
 		c.Send("y\n")
 	} else {

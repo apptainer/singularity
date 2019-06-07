@@ -33,16 +33,17 @@ func testPublicKey(t *testing.T) {
 		args    []string
 		succeed bool
 	}{
-		{
-			name:    "push test key",
-			args:    []string{"push", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"},
-			succeed: true,
-		},
-		{
-			name:    "push test key fail",
-			args:    []string{"push", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3Z"},
-			succeed: false,
-		},
+		// TODO: Uncomment when Travis/CCI has a access token
+		/*		{
+					name:    "push test key",
+					args:    []string{"push", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"},
+					succeed: true,
+				},
+				{
+					name:    "push test key fail",
+					args:    []string{"push", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3Z"},
+					succeed: false,
+				},*/
 		{
 			name:    "search key",
 			args:    []string{"search", "e2e test key"},
