@@ -14,7 +14,6 @@ package main
 import "C"
 
 import (
-	"os"
 	"runtime"
 	"unsafe"
 
@@ -35,19 +34,10 @@ func getEngine(jsonConfig []byte) *engines.Engine {
 }
 
 func startup() {
-	loglevel := os.Getenv("SINGULARITY_MESSAGELEVEL")
-	os.Clearenv()
-	if loglevel != "" {
-		if os.Setenv("SINGULARITY_MESSAGELEVEL", loglevel) != nil {
-			sylog.Warningf("can't restore SINGULARITY_MESSAGELEVEL environment variable")
-		}
-	}
-
-	cconf := unsafe.Pointer(C.config)
-	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
+	sconfig := starterConfig.NewConfig(starterConfig.SConfig(unsafe.Pointer(C.sconfig)))
 	jsonConfig := sconfig.GetJSONConfig()
 
-	switch C.execute {
+	switch C.goexecute {
 	case C.STAGE1:
 		sylog.Verbosef("Execute stage 1\n")
 		starter.Stage(int(C.STAGE1), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))

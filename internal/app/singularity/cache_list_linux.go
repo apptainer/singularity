@@ -52,6 +52,8 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 		cachePath = cache.Library()
 	case "oci":
 		cachePath = cache.OciTemp()
+	case "shub":
+		cachePath = cache.Shub()
 	case "":
 		return 0, 0, fmt.Errorf("no cache type specifyed")
 	default:
@@ -139,6 +141,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary bool) error {
 	libraryList := false
 	ociList := false
+	shubList := false
 	blobList := false
 	blobSum := false
 
@@ -148,6 +151,8 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 			libraryList = true
 		case "oci":
 			ociList = true
+		case "shub":
+			shubList = true
 		case "blob", "blobs":
 			blobList = true
 		case "blobSum":
@@ -208,6 +213,22 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 		}
 		containerCount += ociCount
 		containerSpace += ociSize
+	}
+
+	if listAll {
+		shubCount, shubSize, err := listTypeCache(true, "shub")
+		if err != nil {
+			return err
+		}
+		containerCount += shubCount
+		containerSpace += shubSize
+	} else if shubList {
+		shubCount, shubSize, err := listTypeCache(!cacheListSummary, "shub")
+		if err != nil {
+			return err
+		}
+		containerCount += shubCount
+		containerSpace += shubSize
 	}
 
 	if listAll {

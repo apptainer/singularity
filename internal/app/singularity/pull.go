@@ -29,6 +29,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
+	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/signing"
 	"github.com/sylabs/singularity/pkg/sypgp"
 	pb "gopkg.in/cheggaaa/pb.v1"
@@ -151,6 +152,55 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 	return retErr
 }
 
+// PullShub will download a image from shub, and cache it. Next time
+// that container is downloaded this will just use that cached image.
+func PullShub(filePath string, shubRef string, force, noHTTPS bool) (err error) {
+	if !force {
+		if _, err := os.Stat(filePath); err == nil {
+			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
+		}
+	}
+
+	imageName := uri.GetName(shubRef)
+	imagePath := cache.ShubImage("hash", imageName)
+
+	exists, err := cache.ShubImageExists("hash", imageName)
+	if err != nil {
+		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+	}
+	if !exists {
+		sylog.Infof("Downloading shub image")
+		err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
+		if err != nil {
+			return err
+		}
+	} else {
+		sylog.Infof("Use image from cache")
+	}
+
+	// Perms are 777 *prior* to umask in order to allow image to be
+	// executed with its leading shebang like a script
+	dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+	if err != nil {
+		return fmt.Errorf("while opening destination file: %v", err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.Open(imagePath)
+	if err != nil {
+		return fmt.Errorf("while opening cached image: %v", err)
+	}
+	defer srcFile.Close()
+
+	// Copy image from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("while copying image from cache: %v", err)
+	}
+
+	return nil
+}
+
 // downloadImageCallback is called to display progress bar while downloading
 // image from library
 func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
@@ -191,7 +241,11 @@ func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) 
 	}
 
 	credFn := func(_ string) (string, string, error) {
-		return ociAuth.Username, ociAuth.Password, nil
+		if ociAuth != nil {
+			return ociAuth.Username, ociAuth.Password, nil
+		}
+
+		return "", "", nil
 	}
 	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
 

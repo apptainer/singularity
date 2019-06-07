@@ -76,7 +76,11 @@ func SearchLibrary(ctx context.Context, c *client.Client, value string) error {
 		return fmt.Errorf("bad query '%s'. You must search for at least 3 characters", value)
 	}
 
-	results, err := c.Search(ctx, value)
+	searchSpec := map[string]string{
+		"value": value,
+	}
+
+	results, err := c.Search(ctx, searchSpec)
 	if err != nil {
 		return err
 	}

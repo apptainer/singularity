@@ -179,8 +179,12 @@ github.com/gorilla/mux
 github.com/gorilla/websocket
 # github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
 github.com/hashicorp/errwrap
+# github.com/hashicorp/go-cleanhttp v0.5.1
+github.com/hashicorp/go-cleanhttp
 # github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874
 github.com/hashicorp/go-multierror
+# github.com/hashicorp/go-retryablehttp v0.5.3
+github.com/hashicorp/go-retryablehttp
 # github.com/inconshreveable/mousetrap v1.0.0
 github.com/inconshreveable/mousetrap
 # github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56
@@ -263,7 +267,7 @@ github.com/sylabs/json-resp
 github.com/sylabs/scs-build-client/client
 # github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 github.com/sylabs/scs-key-client/client
-# github.com/sylabs/scs-library-client v0.1.0
+# github.com/sylabs/scs-library-client v0.2.2
 github.com/sylabs/scs-library-client/client
 # github.com/sylabs/sif v1.0.4
 github.com/sylabs/sif/pkg/siftool

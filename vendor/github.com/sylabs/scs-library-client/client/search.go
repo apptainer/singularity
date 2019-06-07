@@ -12,12 +12,48 @@ import (
 	"net/url"
 )
 
-// Search searches library by name, returns any matching collections,
+// Search performs a library search, returning any matching collections,
 // containers, entities, or images.
-func (c *Client) Search(ctx context.Context, value string) (*SearchResults, error) {
-	url := fmt.Sprintf("/v1/search?value=%s", url.QueryEscape(value))
+//
+// args specifies key-value pairs to be used as a search spec, such as "arch"
+// (ie. "amd64") or "signed" (valid values "true" or "false").
+//
+// "value" is a required keyword for all searches. It will be matched against
+// all collections (Entity, Collection, Container, and Image)
+//
+// Multiple architectures may be searched by specifying a comma-separated list
+// (ie. "amd64,arm64") for the value of "arch".
+//
+// Match all collections with name "thename":
+//
+//     c.Search(ctx, map[string]string{"value": "thename"})
+//
+// Match all images with name "imagename" and arch "amd64"
+//
+//     c.Search(ctx, map[string]string{
+//         "value": "imagename",
+//         "arch": "amd64"
+//     })
+//
+// Note: if 'arch' and/or 'signed' are specified, the search is limited in
+// scope only to the "Image" collection.
+func (c *Client) Search(ctx context.Context, args map[string]string) (*SearchResults, error) {
+	// "value" is minimally required in "args"
+	value, ok := args["value"]
+	if !ok {
+		return nil, fmt.Errorf("search query ('value') must be specified")
+	}
 
-	resJSON, _, err := c.apiGet(ctx, url)
+	if len(value) < 3 {
+		return nil, fmt.Errorf("bad query '%s'. You must search for at least 3 characters", value)
+	}
+
+	v := url.Values{}
+	for key, value := range args {
+		v.Set(key, value)
+	}
+
+	resJSON, _, err := c.apiGet(ctx, "/v1/search?"+v.Encode())
 	if err != nil {
 		return nil, err
 	}
@@ -28,54 +64,4 @@ func (c *Client) Search(ctx context.Context, value string) (*SearchResults, erro
 	}
 
 	return &res.Data, nil
-}
-
-// searchLibrary will search the library for a given query and display results
-func (c *Client) searchLibrary(ctx context.Context, value string) error {
-	if len(value) < 3 {
-		return fmt.Errorf("bad query '%s'. You must search for at least 3 characters", value)
-	}
-
-	results, err := c.Search(ctx, value)
-	if err != nil {
-		return err
-	}
-
-	numEntities := len(results.Entities)
-	numCollections := len(results.Collections)
-	numContainers := len(results.Containers)
-
-	if numEntities > 0 {
-		fmt.Printf("Found %d users for '%s'\n", numEntities, value)
-		for _, ent := range results.Entities {
-			fmt.Printf("\t%s\n", ent.LibraryURI())
-		}
-		fmt.Printf("\n")
-	} else {
-		fmt.Printf("No users found for '%s'\n\n", value)
-	}
-
-	if numCollections > 0 {
-		fmt.Printf("Found %d collections for '%s'\n", numCollections, value)
-		for _, col := range results.Collections {
-			fmt.Printf("\t%s\n", col.LibraryURI())
-		}
-		fmt.Printf("\n")
-	} else {
-		fmt.Printf("No collections found for '%s'\n\n", value)
-	}
-
-	if numContainers > 0 {
-		fmt.Printf("Found %d containers for '%s'\n", numContainers, value)
-		for _, con := range results.Containers {
-			fmt.Printf("\t%s\n", con.LibraryURI())
-			fmt.Printf("\t\tTags: %s\n", con.TagList())
-		}
-		fmt.Printf("\n")
-
-	} else {
-		fmt.Printf("No containers found for '%s'\n\n", value)
-	}
-
-	return nil
 }
