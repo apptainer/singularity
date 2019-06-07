@@ -614,17 +614,20 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 
 // FetchPubkey pulls a public key from the Key Service.
 func FetchPubkey(fingerprint, keyserverURI, authToken string, noPrompt bool) (openpgp.EntityList, error) {
+	if len(fingerprint) < 8 {
+		return nil, fmt.Errorf("not a valid key lenth: %s: must be over 8 chars", fingerprint)
+	}
+
+	// Harvest the last 8 chars of the fingerprint string
+	sylog.Debugf("Getting the last 8 chars from: %s", fingerprint)
+	fingerprint = fingerprint[len(fingerprint)-8:]
+	sylog.Debugf("Results: %s", fingerprint)
 
 	// Decode fingerprint and ensure proper length.
 	var fp []byte
 	fp, err := hex.DecodeString(fingerprint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode fingerprint: %v", err)
-	}
-
-	// theres probably a better way to do this
-	if len(fp) != 4 && len(fp) != 20 {
-		return nil, fmt.Errorf("not a valid key lenth: only accepts 8, or 40 chars")
 	}
 
 	// Get a Key Service client.
