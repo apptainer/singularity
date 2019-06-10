@@ -82,7 +82,7 @@ __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(uns
     return clone(clone_fn, env, (SIGCHLD|flags), env);
 }
 
-static void priv_escalate(void) {
+static void priv_escalate(bool keep_fsuid) {
     uid_t uid = getuid();
 
     verbosef("Get root privileges\n");
@@ -90,11 +90,13 @@ static void priv_escalate(void) {
         fatalf("Failed to set effective UID to 0\n");
     }
 
-    /* Use setfsuid to address issue about root_squash filesystems option */
-    verbosef("Change filesystem uid to %d\n", uid);
-    setfsuid(uid);
-    if ( setfsuid(uid) != uid ) {
-        fatalf("Failed to set filesystem uid to %d\n", uid);
+    if ( keep_fsuid ) {
+        /* Use setfsuid to address issue about root_squash filesystems option */
+        verbosef("Change filesystem uid to %d\n", uid);
+        setfsuid(uid);
+        if ( setfsuid(uid) != uid ) {
+            fatalf("Failed to set filesystem uid to %d\n", uid);
+        }
     }
 }
 
@@ -381,8 +383,11 @@ static void setup_userns_identity(struct privileges *privileges) {
     uid_t uidMap = privileges->targetUID;
     gid_t gidMap = privileges->targetGID[0];
 
-    if ( setgroups(0, NULL) < 0 ) {
-        fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
+    /* only user namespace with setgroups set to allow can do that */
+    if ( privileges->allowSetgroups ) {
+        if ( setgroups(0, NULL) < 0 ) {
+            fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
+        }
     }
     if ( setresgid(gidMap, gidMap, gidMap) < 0 ) {
         fatalf("Failed to change namespace group identity: %s\n", strerror(errno));
@@ -784,7 +789,7 @@ static void wait_child(const char *name, pid_t child_pid, bool noreturn) {
         }
         verbosef("%s exited with status %d\n", name, exit_status);
         /* noreturn will exit the current process with corresponding status */
-        if ( noreturn ) {
+        if ( noreturn || exit_status != 0 ) {
             exit(exit_status);
         }
     } else if ( WIFSIGNALED(status) ) {
@@ -1018,7 +1023,7 @@ __attribute__((constructor)) static void init(void) {
     switch ( userns ) {
     case NO_NAMESPACE:
         /* user namespace not enabled, continue with privileged workflow */
-        priv_escalate();
+        priv_escalate(true);
         break;
     case ENTER_NAMESPACE:
         if ( sconfig->starter.isSuid && !sconfig->starter.hybridWorkflow ) {
@@ -1042,7 +1047,6 @@ __attribute__((constructor)) static void init(void) {
              * hybrid workflow, master process lives in host user namespace with the ability
              * to escalate privileges while container process lives in its own user namespace
              */
-            priv_escalate();
             clone_flags |= CLONE_NEWUSER;
         }
         break;
@@ -1084,7 +1088,7 @@ __attribute__((constructor)) static void init(void) {
          * inside container (eg: FUSE mount), additionally mount done in container namespace
          * are propagated to master process mount namespace
          */
-        if ( sconfig->starter.masterPropagateMount ) {
+        if ( sconfig->starter.masterPropagateMount && userns != ENTER_NAMESPACE ) {
             shared_mount_namespace_init(&sconfig->container.namespace);
             /* tell master to continue execution and join mount namespace */
             send_event(master_socket[1]);
@@ -1139,6 +1143,8 @@ __attribute__((constructor)) static void init(void) {
         goexecute = STAGE2;
         return;
     } else if ( process > 0 ) {
+        int cwdfd;
+
         verbosef("Spawn master process\n");
         sconfig->container.pid = process;
 
@@ -1151,12 +1157,29 @@ __attribute__((constructor)) static void init(void) {
 
         close(master_socket[1]);
 
-        /* go to /proc/<pid> to open mount namespace and set user mappings with relative paths */
+        /*
+         * go to /proc/<pid> to open mount namespace and set user mappings with relative paths,
+         * before that we open current working directory to restore it later, we don't use
+         * workingDirectoryFd because this file descriptor may have been closed by cleanup_fd
+         */
+        cwdfd = open(".", O_RDONLY | O_DIRECTORY);
+        if ( cwdfd < 0 ) {
+            fatalf("Failed to open current working directory: %s\n", strerror(errno));
+        }
         chdir_to_proc_pid(sconfig->container.pid);
 
         /* user namespace created, write user mappings */
         if ( userns == CREATE_NAMESPACE ) {
             /* set user namespace mappings */
+            if ( sconfig->starter.hybridWorkflow ) {
+                /*
+                 * hybrid workflow requires privileges for user mappings, we also preserve user
+                 * filesytem UID here otherwise we would get a permission denied error during
+                 * user mappings setup. User filesystem UID will be restored below by setresuid
+                 * call
+                 */
+                priv_escalate(false);
+            }
             setup_userns_mappings(&sconfig->container.privileges);
             send_event(master_socket[0]);
         }
@@ -1168,7 +1191,7 @@ __attribute__((constructor)) static void init(void) {
         }
 
         /* engine requested to propagate mount to container */
-        if ( sconfig->starter.masterPropagateMount ) {
+        if ( sconfig->starter.masterPropagateMount && userns != ENTER_NAMESPACE ) {
             /* join child shared mount namespace with relative path */
             if ( enter_namespace("ns/mnt", CLONE_NEWNS) < 0 ) {
                 fatalf("Failed to enter in shared mount namespace: %s\n", strerror(errno));
@@ -1187,10 +1210,11 @@ __attribute__((constructor)) static void init(void) {
             }
         }
 
-        /* staying in /proc/pid could lead to "no such process" error, go to / instead */
-        if ( chdir("/") < 0 ) {
-            fatalf("Failed to change directory for /: %s\n", strerror(errno));
+        /* staying in /proc/pid could lead to "no such process" error, go to previous working directory */
+        if ( fchdir(cwdfd) < 0 ) {
+            fatalf("Failed to restore current working directory: %s\n", strerror(errno));
         }
+        close(cwdfd);
 
         if ( sconfig->container.namespace.joinOnly ) {
             /* joining container, don't execute Go runtime, just wait that container process exit */
