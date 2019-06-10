@@ -18,9 +18,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
@@ -30,7 +32,6 @@ import (
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
 	"golang.org/x/crypto/ssh/terminal"
-	"golang.org/x/net/html"
 )
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
@@ -597,7 +598,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
 
-	keyText = reformatHTMLKeyOutput(keyText)
+	keyText = reformatMachineReadableOutput(keyText)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
@@ -610,47 +611,137 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		}
 	}
 
-	fmt.Printf("%v", keyText)
+	//fmt.Printf("%v", keyText)
 
 	return nil
 }
 
-func reformatHTMLKeyOutput(keyText string) string {
+func getEncryptionAlgorithmName(n string) (string, error) {
 
-	out := ""
-	domDocTest := html.NewTokenizer(strings.NewReader(keyText))
-	previousStartTokenTest := domDocTest.Token()
+	algorithmName := ""
 
-loopDomTest:
-	for {
-		tt := domDocTest.Next()
-		switch {
-		case tt == html.ErrorToken:
-			break loopDomTest // End of the document,  done
-		case tt == html.StartTagToken:
-			previousStartTokenTest = domDocTest.Token()
-		case tt == html.TextToken:
-			//filter these types of nodes, not needed
-			if previousStartTokenTest.Data == "style" || previousStartTokenTest.Data == "script" || previousStartTokenTest.Data == "title" {
-				continue
-			}
-			TxtContent := strings.TrimSpace(html.UnescapeString(string(domDocTest.Text())))
-			// removing unnecessary characters
-			TxtContent = strings.Replace(TxtContent, "-", "", -1)
-			//remove additional long fingerprint if present
-			if strings.Contains(TxtContent, "Fingerprint=") {
-				TxtContent = TxtContent[:strings.Index(TxtContent, "Fingerprint=")]
-			}
-			if len(TxtContent) > 0 {
-				if previousStartTokenTest.Data == "pre" {
-					out = out + "\n" + TxtContent
-				} else {
-					out = out + TxtContent + "\t"
-				}
+	code, err := strconv.ParseInt(n, 10, 64)
+	if err != nil {
+		return "", err
+	}
+	switch code {
+
+	case 1, 2, 3:
+		algorithmName = "RSA"
+	case 16:
+		algorithmName = "Elgamal"
+	case 17:
+		algorithmName = "DSA"
+	case 18:
+		algorithmName = "Elliptic Curve"
+	case 19:
+		algorithmName = "ECDSA"
+	case 20:
+		algorithmName = "Reserved"
+	case 21:
+		algorithmName = "Diffie-Hellman"
+
+	}
+	return algorithmName, nil
+}
+
+func date(s string) string {
+	ret := "NULL"
+	if s == "" {
+		return ret
+	}
+	if s == "none" {
+		return s + "		  	       "
+	}
+
+	c, _ := strconv.ParseInt(s, 10, 64)
+	ret = fmt.Sprintf("%v", time.Unix(c, 0))
+
+	return strings.TrimSpace(ret)
+}
+
+func reformatMachineReadableOutput(keyText string) string {
+
+	fmt.Println(keyText)
+
+	re_pubkey := regexp.MustCompile("pub:(.*)\n")
+	keys := re_pubkey.FindAllString(keyText, -1)
+
+	fmt.Println("            		FINGERPRINT			ALGORITHM  SIZE (BITS)	     CREATION DATE			EXPIRATION DATE		  STATUS			NAME/EMAIL")
+
+	var featuresKey []string
+
+	for _, key := range keys {
+		var emailList string
+
+		emailList = ""
+
+		detailsKey := strings.Split(key, ":")
+
+		for _, detail := range detailsKey {
+			d := strings.TrimSpace(detail)
+			if d != "" {
+				featuresKey = append(featuresKey, d)
 			}
 		}
+
+		fingerprint := featuresKey[1]
+
+		re_fingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
+		emails := re_fingerprint.FindAllString(keyText, -1)
+
+		//fetch emails and clean up
+
+		re_formatEmail := regexp.MustCompile("uid:\\w(.)+::")
+		userEmails := re_formatEmail.FindAllString(emails[0], -1)
+
+		for _, email := range userEmails {
+			emailList = emailList + "," + email
+		}
+
+		algorithm, err := getEncryptionAlgorithmName(featuresKey[2])
+
+		if err != nil {
+			return ""
+		}
+		size := featuresKey[3]
+
+		if len(size) < 4 {
+			size = size + " "
+		}
+		creationDate := featuresKey[4]
+		expiryDate := "none"
+
+		status := "enabled"
+
+		if len(featuresKey) >= 6 {
+			expiryDate = featuresKey[5]
+		}
+
+		//get timestamps
+		creationTimestamp := date(creationDate)
+		expirationTimestamp := date(expiryDate)
+
+		if len(featuresKey) == 7 {
+			if featuresKey[6] == "r" {
+				status = "revoked"
+			}
+			if featuresKey[6] == "d" {
+				status = "disabled"
+			}
+			if featuresKey[6] == "e" {
+				status = "expired"
+			}
+		}
+
+		if status == "revoked" {
+			fmt.Println("	" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "  " + status + "	" + emailList)
+		} else {
+			fmt.Println("	" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "	  " + status + "		" + emailList)
+		}
+		featuresKey = []string{}
 	}
-	return out + "\n"
+	return ""
 }
 
 // FetchPubkey pulls a public key from the Key Service.
