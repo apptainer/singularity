@@ -46,6 +46,13 @@
 #include "include/message.h"
 #include "include/starter.h"
 
+#define SELF_PID_NS     "/proc/self/ns/pid"
+#define SELF_NET_NS     "/proc/self/ns/net"
+#define SELF_UTS_NS     "/proc/self/ns/uts"
+#define SELF_IPC_NS     "/proc/self/ns/ipc"
+#define SELF_MNT_NS     "/proc/self/ns/mnt"
+#define SELF_CGROUP_NS  "/proc/self/ns/cgroup"
+
 /* current starter configuration */
 struct starterConfig *sconfig;
 
@@ -136,7 +143,35 @@ static inline bool is_namespace_create(struct namespace *nsconfig, unsigned int 
 }
 
 /* helper to check if the corresponding namespace need to be joined */
-static inline bool is_namespace_enter(const char *nspath) {
+static bool is_namespace_enter(const char *nspath, const char *selfns) {
+    if ( selfns != NULL && nspath[0] != 0 ) {
+        struct stat selfns_st;
+        struct stat ns_st;
+
+        /*
+         * errors are logged for debug purpose, and any
+         * error implies to not enter in the corresponding
+         * namespace, we can safely assume that if an error
+         * occured with those calls, it will also occurred
+         * later with open/setns call in enter_namespace
+         */
+        if ( stat(selfns, &selfns_st) < 0 ) {
+            if ( errno != ENOENT ) {
+                debugf("Could not stat %s: %s\n", selfns, strerror(errno));
+            }
+            return false;
+        }
+        if ( stat(nspath, &ns_st) < 0 ) {
+            if ( errno != ENOENT ) {
+                debugf("Could not stat %s: %s\n", nspath, strerror(errno));
+            }
+            return false;
+        }
+        /* same namespace, don't join */
+        if ( selfns_st.st_ino == ns_st.st_ino ) {
+            return false;
+        }
+    }
     return nspath[0] != 0;
 }
 
@@ -365,7 +400,7 @@ static void setup_userns_mappings(struct privileges *privileges) {
 }
 
 static int user_namespace_init(struct namespace *nsconfig) {
-    if ( is_namespace_enter(nsconfig->user) ) {
+    if ( is_namespace_enter(nsconfig->user, NULL) ) {
         if ( enter_namespace(nsconfig->user, CLONE_NEWUSER) < 0 ) {
             fatalf("Failed to enter in user namespace: %s\n", strerror(errno));
         }
@@ -378,7 +413,7 @@ static int user_namespace_init(struct namespace *nsconfig) {
 }
 
 static int pid_namespace_init(struct namespace *nsconfig) {
-    if ( is_namespace_enter(nsconfig->pid) ) {
+    if ( is_namespace_enter(nsconfig->pid, SELF_PID_NS) ) {
         if ( enter_namespace(nsconfig->pid, CLONE_NEWPID) < 0 ) {
             fatalf("Failed to enter in pid namespace: %s\n", strerror(errno));
         }
@@ -391,7 +426,7 @@ static int pid_namespace_init(struct namespace *nsconfig) {
 }
 
 static int network_namespace_init(struct namespace *nsconfig) {
-    if ( is_namespace_enter(nsconfig->network) ) {
+    if ( is_namespace_enter(nsconfig->network, SELF_NET_NS) ) {
         if ( enter_namespace(nsconfig->network, CLONE_NEWNET) < 0 ) {
             fatalf("Failed to enter in network namespace: %s\n", strerror(errno));
         }
@@ -425,7 +460,7 @@ static int network_namespace_init(struct namespace *nsconfig) {
 }
 
 static int uts_namespace_init(struct namespace *nsconfig) {
-    if ( is_namespace_enter(nsconfig->uts) ) {
+    if ( is_namespace_enter(nsconfig->uts, SELF_UTS_NS) ) {
         if ( enter_namespace(nsconfig->uts, CLONE_NEWUTS) < 0 ) {
             fatalf("Failed to enter in uts namespace: %s\n", strerror(errno));
         }
@@ -439,7 +474,7 @@ static int uts_namespace_init(struct namespace *nsconfig) {
 }
 
 static int ipc_namespace_init(struct namespace *nsconfig) {
-    if ( is_namespace_enter(nsconfig->ipc) ) {
+    if ( is_namespace_enter(nsconfig->ipc, SELF_IPC_NS) ) {
         if ( enter_namespace(nsconfig->ipc, CLONE_NEWIPC) < 0 ) {
             fatalf("Failed to enter in ipc namespace: %s\n", strerror(errno));
         }
@@ -453,7 +488,7 @@ static int ipc_namespace_init(struct namespace *nsconfig) {
 }
 
 static int cgroup_namespace_init(struct namespace *nsconfig) {
-    if ( is_namespace_enter(nsconfig->cgroup) ) {
+    if ( is_namespace_enter(nsconfig->cgroup, SELF_CGROUP_NS) ) {
         if ( enter_namespace(nsconfig->cgroup, CLONE_NEWCGROUP) < 0 ) {
             fatalf("Failed to enter in cgroup namespace: %s\n", strerror(errno));
         }
@@ -467,7 +502,7 @@ static int cgroup_namespace_init(struct namespace *nsconfig) {
 }
 
 static int mount_namespace_init(struct namespace *nsconfig, bool masterPropagateMount) {
-    if ( is_namespace_enter(nsconfig->mount) ) {
+    if ( is_namespace_enter(nsconfig->mount, SELF_MNT_NS) ) {
         if ( enter_namespace(nsconfig->mount, CLONE_NEWNS) < 0 ) {
             fatalf("Failed to enter in mount namespace: %s\n", strerror(errno));
         }
@@ -502,28 +537,25 @@ static int mount_namespace_init(struct namespace *nsconfig, bool masterPropagate
 }
 
 static int shared_mount_namespace_init(struct namespace *nsconfig) {
-    if ( !is_namespace_enter(nsconfig->mount) ) {
-        unsigned long propagation = nsconfig->mountPropagation;
+    unsigned long propagation = nsconfig->mountPropagation;
 
-        if ( propagation == 0 ) {
-            propagation = MS_PRIVATE | MS_REC;
-        }
-        if ( unshare(CLONE_FS) < 0 ) {
-            fatalf("Failed to unshare root file system: %s\n", strerror(errno));
-        }
-        if ( create_namespace(CLONE_NEWNS) < 0 ) {
-            fatalf("Failed to create mount namespace: %s\n", strerror(errno));
-        }
-        if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
-            fatalf("Failed to set mount propagation: %s\n", strerror(errno));
-        }
-        /* set shared mount propagation to share mount points between master and container process */
-        if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
-            fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
-        }
-        return CREATE_NAMESPACE;
+    if ( propagation == 0 ) {
+        propagation = MS_PRIVATE | MS_REC;
     }
-    return NO_NAMESPACE;
+    if ( unshare(CLONE_FS) < 0 ) {
+        fatalf("Failed to unshare root file system: %s\n", strerror(errno));
+    }
+    if ( create_namespace(CLONE_NEWNS) < 0 ) {
+        fatalf("Failed to create mount namespace: %s\n", strerror(errno));
+    }
+    if ( mount(NULL, "/", NULL, propagation, NULL) < 0 ) {
+        fatalf("Failed to set mount propagation: %s\n", strerror(errno));
+    }
+    /* set shared mount propagation to share mount points between master and container process */
+    if ( mount(NULL, "/", NULL, MS_SHARED|MS_REC, NULL) < 0 ) {
+        fatalf("Failed to propagate as SHARED: %s\n", strerror(errno));
+    }
+    return CREATE_NAMESPACE;
 }
 
 static bool is_suid(void) {
@@ -829,7 +861,7 @@ __attribute__((constructor)) static void init(void) {
     pid_t process;
     int pipe_fd = -1;
     int clone_flags = 0;
-    int userns = NO_NAMESPACE;
+    int userns = NO_NAMESPACE, pidns = NO_NAMESPACE;
     fdlist_t *master_fds;
 
     verbosef("Starter initialization\n");
@@ -1013,7 +1045,8 @@ __attribute__((constructor)) static void init(void) {
     }
 
     /* as we fork in any case, we set clone flag to create pid namespace during fork */
-    if ( pid_namespace_init(&sconfig->container.namespace) == CREATE_NAMESPACE ) {
+    pidns = pid_namespace_init(&sconfig->container.namespace);
+    if ( pidns == CREATE_NAMESPACE ) {
         clone_flags |= CLONE_NEWPID;
     }
 
@@ -1104,7 +1137,7 @@ __attribute__((constructor)) static void init(void) {
         sconfig->container.pid = process;
 
         /* case where we joined a PID namespace but create a new mount namespace (eg: kubernetes POD) */
-        if ( is_namespace_enter(sconfig->container.namespace.pid) && is_namespace_create(&sconfig->container.namespace, CLONE_NEWNS) ) {
+        if ( pidns == ENTER_NAMESPACE && is_namespace_create(&sconfig->container.namespace, CLONE_NEWNS) ) {
             if ( enter_namespace("/proc/self/ns/pid", CLONE_NEWPID) < 0 ) {
                 fatalf("Failed to enter in pid namespace: %s\n", strerror(errno));
             }
