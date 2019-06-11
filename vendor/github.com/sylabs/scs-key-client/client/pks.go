@@ -89,7 +89,6 @@ func (c *Client) PKSLookup(ctx context.Context, pd *PageDetails, search, operati
 	v := url.Values{}
 	v.Set("search", search)
 	v.Set("op", operation)
-
 	if 0 < len(options) {
 		v.Set("options", strings.Join(options, ","))
 	}
