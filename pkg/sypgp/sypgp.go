@@ -617,7 +617,6 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 }
 
 func getEncryptionAlgorithmName(n string) (string, error) {
-
 	algorithmName := ""
 
 	code, err := strconv.ParseInt(n, 10, 64)
@@ -640,11 +639,11 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 		algorithmName = "Reserved"
 	case 21:
 		algorithmName = "Diffie-Hellman"
-
 	}
 	return algorithmName, nil
 }
 
+//function to obtain a date format from linux epoch time
 func date(s string) string {
 	ret := "NULL"
 	if s == "" {
@@ -660,16 +659,19 @@ func date(s string) string {
 	return strings.TrimSpace(ret)
 }
 
+//function to reformat key search output in machine readable format
 func reformatMachineReadableOutput(keyText string) string {
 	var output string
 
 	rePubkey := regexp.MustCompile("pub:(.*)\n")
 	keys := rePubkey.FindAllString(keyText, -1)
 
+	//header
 	output = "      		FINGERPRINT			ALGORITHM  SIZE (BITS)	       CREATION DATE			EXPIRATION DATE		  STATUS		NAME/EMAIL" + "\n"
 
 	var featuresKey []string
 
+	//for every key obtain the characteristics: fingerprint, algorithm, size, creation date, expiration date, status and user(email)
 	for _, key := range keys {
 		var emailList string
 
@@ -686,11 +688,11 @@ func reformatMachineReadableOutput(keyText string) string {
 
 		fingerprint := featuresKey[1]
 
+		//regular expression to obtain the fingerprint of every key
 		reFingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
 		emails := reFingerprint.FindAllString(keyText, -1)
 
-		//fetch emails and clean up
-
+		//regular expression to obtain the email or emails from every key
 		reFormatEmail := regexp.MustCompile("uid:\\w(.)+::")
 		userEmails := reFormatEmail.FindAllString(emails[0], -1)
 
@@ -724,10 +726,10 @@ func reformatMachineReadableOutput(keyText string) string {
 			expiryDate = featuresKey[5]
 		}
 
-		//get timestamps
 		creationTimestamp := date(creationDate)
 		expirationTimestamp := date(expiryDate)
 
+		//check the status of each key if flags are present
 		if len(featuresKey) == 7 {
 			if featuresKey[6] == "r" {
 				status = "revoked"
