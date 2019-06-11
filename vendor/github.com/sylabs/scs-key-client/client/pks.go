@@ -89,6 +89,10 @@ func (c *Client) PKSLookup(ctx context.Context, pd *PageDetails, search, operati
 	v := url.Values{}
 	v.Set("search", search)
 	v.Set("op", operation)
+
+	// do all key lookup requests with machine readable option on
+	options = append(options, OptionMachineReadable)
+
 	if 0 < len(options) {
 		v.Set("options", strings.Join(options, ","))
 	}
