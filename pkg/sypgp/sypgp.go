@@ -595,8 +595,11 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		Size: 256,
 	}
 
+	//set the machine readable output on
+	var options []string
+	options = append(options, "mr")
 	// Retrieve first page of search results from Key Service.
-	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, nil)
+	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, options)
 
 	keyText = reformatMachineReadableOutput(keyText)
 	if err != nil {
