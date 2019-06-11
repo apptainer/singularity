@@ -662,21 +662,16 @@ func date(s string) string {
 
 //function to reformat key search output in machine readable format
 func reformatMachineReadableOutput(keyText string) string {
-	var output string
+	var output = "      		FINGERPRINT			ALGORITHM  SIZE (BITS)	       CREATION DATE			EXPIRATION DATE		  STATUS		NAME/EMAIL" + "\n"
 
 	rePubkey := regexp.MustCompile("pub:(.*)\n")
 	keys := rePubkey.FindAllString(keyText, -1)
-
-	//header
-	output = "      		FINGERPRINT			ALGORITHM  SIZE (BITS)	       CREATION DATE			EXPIRATION DATE		  STATUS		NAME/EMAIL" + "\n"
 
 	var featuresKey []string
 
 	//for every key obtain the characteristics: fingerprint, algorithm, size, creation date, expiration date, status and user(email)
 	for _, key := range keys {
-		var emailList string
-
-		emailList = ""
+		var emailList = ""
 
 		detailsKey := strings.Split(key, ":")
 
@@ -694,7 +689,7 @@ func reformatMachineReadableOutput(keyText string) string {
 		emails := reFingerprint.FindAllString(keyText, -1)
 
 		//regular expression to obtain the email or emails from every key
-		reFormatEmail := regexp.MustCompile("uid:\\w(.)+::")
+		reFormatEmail := regexp.MustCompile("uid:" + "\\w(.)+::")
 		userEmails := reFormatEmail.FindAllString(emails[0], -1)
 
 		for _, email := range userEmails {
