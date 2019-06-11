@@ -211,10 +211,7 @@ func (c *Config) Write(payload interface{}) error {
 // AddUIDMappings sets user namespace UID mapping.
 func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 	uidMap := ""
-	for i, uid := range uids {
-		if i == 0 {
-			c.SetTargetUID(int(uid.ContainerID))
-		}
+	for _, uid := range uids {
 		uidMap = uidMap + fmt.Sprintf("%d %d %d\n", uid.ContainerID, uid.HostID, uid.Size)
 	}
 
@@ -236,15 +233,9 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 
 // AddGIDMappings sets user namespace GID mapping
 func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
-	targetGids := make([]int, 0, len(gids))
 	gidMap := ""
 	for _, gid := range gids {
-		targetGids = append(targetGids, int(gid.ContainerID))
 		gidMap = gidMap + fmt.Sprintf("%d %d %d\n", gid.ContainerID, gid.HostID, gid.Size)
-	}
-
-	if len(targetGids) != 0 {
-		c.SetTargetGID(targetGids)
 	}
 
 	l := len(gidMap)
