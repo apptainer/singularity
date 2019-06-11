@@ -35,6 +35,7 @@ func TestScanDefinitionFile(t *testing.T) {
 		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
 		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum_sections.json"},
 		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper_sections.json"},
+		{"Zypper_SLE", "testdata_good/zypper_sle/zypper", "testdata_good/zypper_sle/zypper_sections.json"},
 	}
 
 	for _, tt := range tests {
@@ -175,6 +176,7 @@ func TestParseDefinitionFile(t *testing.T) {
 		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub.json"},
 		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum.json"},
 		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper.json"},
+		{"Zypper_SLE", "testdata_good/zypper_sle/zypper", "testdata_good/zypper_sle/zypper.json"},
 		{"NoHeader", "testdata_good/noheader/noheader", "testdata_good/noheader/noheader.json"},
 		{"NoHeaderComments", "testdata_good/noheadercomments/noheadercomments", "testdata_good/noheadercomments/noheadercomments.json"},
 		{"NoHeaderWhiteSpace", "testdata_good/noheaderwhitespace/noheaderwhitespace", "testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
