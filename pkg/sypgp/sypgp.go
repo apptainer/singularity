@@ -611,7 +611,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		}
 	}
 
-	//fmt.Printf("%v", keyText)
+	fmt.Printf("%v", keyText)
 
 	return nil
 }
@@ -661,13 +661,12 @@ func date(s string) string {
 }
 
 func reformatMachineReadableOutput(keyText string) string {
+	var output string
 
-	fmt.Println(keyText)
+	rePubkey := regexp.MustCompile("pub:(.*)\n")
+	keys := rePubkey.FindAllString(keyText, -1)
 
-	re_pubkey := regexp.MustCompile("pub:(.*)\n")
-	keys := re_pubkey.FindAllString(keyText, -1)
-
-	fmt.Println("            		FINGERPRINT			ALGORITHM  SIZE (BITS)	     CREATION DATE			EXPIRATION DATE		  STATUS			NAME/EMAIL")
+	output = "      		FINGERPRINT			ALGORITHM  SIZE (BITS)	       CREATION DATE			EXPIRATION DATE		  STATUS		NAME/EMAIL" + "\n"
 
 	var featuresKey []string
 
@@ -687,16 +686,23 @@ func reformatMachineReadableOutput(keyText string) string {
 
 		fingerprint := featuresKey[1]
 
-		re_fingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
-		emails := re_fingerprint.FindAllString(keyText, -1)
+		reFingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
+		emails := reFingerprint.FindAllString(keyText, -1)
 
 		//fetch emails and clean up
 
-		re_formatEmail := regexp.MustCompile("uid:\\w(.)+::")
-		userEmails := re_formatEmail.FindAllString(emails[0], -1)
+		reFormatEmail := regexp.MustCompile("uid:\\w(.)+::")
+		userEmails := reFormatEmail.FindAllString(emails[0], -1)
 
 		for _, email := range userEmails {
-			emailList = emailList + "," + email
+			detailsEmail := strings.Split(email, ":")
+
+			if emailList != "" {
+				emailList = emailList + "\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t" + detailsEmail[1] + "\n"
+			} else {
+				emailList = detailsEmail[1] + "\n"
+			}
+
 		}
 
 		algorithm, err := getEncryptionAlgorithmName(featuresKey[2])
@@ -734,14 +740,15 @@ func reformatMachineReadableOutput(keyText string) string {
 			}
 		}
 
-		if status == "revoked" {
-			fmt.Println("	" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "  " + status + "	" + emailList)
-		} else {
-			fmt.Println("	" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "	  " + status + "		" + emailList)
-		}
 		featuresKey = []string{}
+
+		if status == "revoked" {
+			output = output + "\n" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "  " + status + "	" + emailList
+		} else {
+			output = output + "\n" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "	  " + status + "	" + emailList
+		}
 	}
-	return ""
+	return output
 }
 
 // FetchPubkey pulls a public key from the Key Service.
