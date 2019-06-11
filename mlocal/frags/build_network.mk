@@ -11,7 +11,8 @@ cni_plugins_INSTALL := $(addprefix $(cni_install_DIR)/, $(notdir $(cni_plugins))
 cni_config_LIST := $(SOURCEDIR)/etc/network/00_bridge.conflist \
                    $(SOURCEDIR)/etc/network/10_ptp.conflist \
                    $(SOURCEDIR)/etc/network/20_ipvlan.conflist \
-                   $(SOURCEDIR)/etc/network/30_macvlan.conflist
+                   $(SOURCEDIR)/etc/network/30_macvlan.conflist \
+                   $(SOURCEDIR)/etc/network/40_fakeroot.conflist
 cni_config_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/network
 
 .PHONY: cniplugins
