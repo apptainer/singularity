@@ -60,7 +60,7 @@ require (
 	github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c // indirect
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
+	github.com/opencontainers/go-digest v1.0.0-rc1
 	github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
 	github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74
 	github.com/opencontainers/runc v0.1.1 // indirect
