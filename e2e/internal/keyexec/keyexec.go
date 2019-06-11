@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -99,7 +98,7 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 
 	c, err := expect.NewConsole()
 	if err != nil {
-		panic(err)
+		t.Fatal("Unable to start new console: ", err)
 	}
 	defer c.Close()
 
@@ -118,10 +117,11 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal("Unable to start command: ", err)
 	}
 
-	// Send the passcode to singularity
+	// Send the passcode to singularity. The first one is the old
+	// password, the next two are the new passowrd.
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
 	c.Send("e2etests\n")
@@ -138,7 +138,7 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 
 	c, err := expect.NewConsole()
 	if err != nil {
-		panic(err)
+		t.Fatal("Unable to start new console: ", err)
 	}
 	defer c.Close()
 
@@ -174,27 +174,6 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
 
 	return cm, outErr.Bytes(), err
-}
-
-// CorruptKey will take a ASCII key (kpath) and change some chars in it (corrupt it).
-func CorruptKey(t *testing.T, kpath string) {
-	input, err := ioutil.ReadFile(kpath)
-	if err != nil {
-		t.Fatalf("Unable to read file: %v", err)
-	}
-
-	lines := strings.Split(string(input), "\n")
-
-	for i, line := range lines {
-		if strings.Contains(line, "B") {
-			lines[i] = "P"
-		}
-	}
-	output := strings.Join(lines, "\n")
-	err = ioutil.WriteFile(kpath, []byte(output), 0644)
-	if err != nil {
-		t.Fatalf("Unable to write to file: %v", err)
-	}
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.

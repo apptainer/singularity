@@ -26,7 +26,6 @@ var testenv testingEnv
 var keyPath string
 var defaultKeyFile string
 
-// NOTE: the 'key push' tests are continued on ../keyprivate/keyprivate.go.
 func testPublicKey(t *testing.T) {
 	tests := []struct {
 		name    string

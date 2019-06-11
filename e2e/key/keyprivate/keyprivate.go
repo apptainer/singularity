@@ -154,9 +154,8 @@ func testPrivateKey(t *testing.T) {
 			case !tt.succeed && err == nil:
 				// FAIL: expecting failure, succeeded
 				if tt.corrupt {
-					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { keyexec.CorruptKey(t, defaultKeyFile) }))
 					t.Run("import_private_key", test.WithoutPrivilege(func(t *testing.T) {
-						c, b, err := keyexec.ImportPrivateKey(t, defaultKeyFile)
+						c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/public_ascii_coruppted.asc")
 						if err == nil {
 							t.Fatalf("Unexpected success: running: %s, %s", c, string(b))
 						}
@@ -175,14 +174,6 @@ func TestAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-
-	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
-		c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/e2e_test_key.asc")
-		if err != nil {
-			t.Log("command that failed: ", c, string(b))
-			t.Fatalf("Unable to import test key: %v", err)
-		}
-	}))
 
 	keyPath = testenv.TestDir
 	defaultKeyFile = filepath.Join(keyPath, "exported_private_key")
