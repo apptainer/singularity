@@ -77,7 +77,6 @@ func testPrivateKey(t *testing.T) {
 		stdin   string
 		file    string
 		armor   bool
-		corrupt bool
 		succeed bool
 	}{
 		{
@@ -93,14 +92,6 @@ func testPrivateKey(t *testing.T) {
 			stdin:   "0\n",
 			file:    defaultKeyFile,
 			succeed: true,
-		},
-		{
-			name:    "export private armor corrupt",
-			armor:   true,
-			stdin:   "0\n",
-			file:    defaultKeyFile,
-			corrupt: true,
-			succeed: false,
 		},
 		{
 			name:    "export private panic",
@@ -153,17 +144,8 @@ func testPrivateKey(t *testing.T) {
 
 			case !tt.succeed && err == nil:
 				// FAIL: expecting failure, succeeded
-				if tt.corrupt {
-					t.Run("import_private_key", test.WithoutPrivilege(func(t *testing.T) {
-						c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/public_ascii_coruppted.asc")
-						if err == nil {
-							t.Fatalf("Unexpected success: running: %s, %s", c, string(b))
-						}
-					}))
-				} else {
-					t.Logf("Running command:\n%s\nOutput:\n%s\n", c, string(b))
-					t.Fatalf("Unexpected success: command should have failed: %s, %s", c, string(b))
-				}
+				t.Logf("Running command:\n%s\nOutput:\n%s\n", c, string(b))
+				t.Fatalf("Unexpected success: command should have failed: %s, %s", c, string(b))
 			}
 		}))
 	}

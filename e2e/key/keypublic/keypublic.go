@@ -98,7 +98,6 @@ func testPublicKeyImportExport(t *testing.T) {
 		args    []string
 		stdin   string
 		file    string
-		corrupt bool
 		succeed bool
 	}{
 		{
@@ -120,14 +119,6 @@ func testPublicKeyImportExport(t *testing.T) {
 			args:    []string{"export", "--armor"},
 			stdin:   "1\n",
 			file:    defaultKeyFile,
-			succeed: false,
-		},
-		{
-			name:    "export public armor corrupt",
-			args:    []string{"export", "--armor"},
-			stdin:   "0\n",
-			file:    defaultKeyFile,
-			corrupt: true,
 			succeed: false,
 		},
 		{
@@ -159,27 +150,15 @@ func testPublicKeyImportExport(t *testing.T) {
 					}
 				}))
 			} else {
-				// if the test key is corrupted, try to import it, should fail
-				if tt.corrupt {
-					t.Run("corrupting_key", test.WithoutPrivilege(func(t *testing.T) { keyexec.CorruptKey(t, defaultKeyFile) }))
-					t.Run("import_key", test.WithoutPrivilege(func(t *testing.T) {
-						b, err := keyexec.ImportKey(t, defaultKeyFile)
-						if err == nil {
-							t.Fatalf("Unexpected success: %s", string(b))
-						}
-					}))
-				} else {
-					if err == nil {
-						t.Log(string(out))
-						t.Fatalf("Unexpected success when running: %s", cmd)
-					}
+				if err == nil {
+					t.Log(string(out))
+					t.Fatalf("Unexpected success when running: %s", cmd)
 				}
 			}
 		}))
 	}
 }
 
-// TestAll is trigered by ../key.go, that is trigered by suite.go in the e3e test directory
 func TestAll(t *testing.T) {
 	err := envconfig.Process("E2E", &testenv)
 	if err != nil {
