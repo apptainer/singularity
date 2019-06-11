@@ -28,7 +28,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/instance"
 
-	//singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
+	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
 
 	"github.com/sylabs/singularity/e2e/pull"
 
@@ -106,14 +106,12 @@ func Run(t *testing.T) {
 	defer os.Remove(imagePath)
 
 	// Start registry for tests
-	//singularitye2e.PrepRegistry(t)
-	//defer singularitye2e.KillRegistry(t)
+	singularitye2e.PrepRegistry(t)
+	defer singularitye2e.KillRegistry(t)
 
 	// RunE2ETests by functionality
 
 	t.Run("SECURITY", security.RunE2ETests)
-
-	return
 
 	t.Run("BUILD", imgbuild.RunE2ETests)
 
@@ -134,4 +132,5 @@ func Run(t *testing.T) {
 	t.Run("ENV", singularityenv.RunE2ETests)
 
 	t.Run("VERSION", version.RunE2ETests)
+
 }

@@ -34,7 +34,7 @@ func testSecurityUnpriv(t *testing.T) {
 		name          string
 		image         string
 		action        string
-		expectId      string
+		expectID      string
 		argv          []string
 		opts          e2e.ExecOpts
 		exit          int
@@ -47,7 +47,7 @@ func testSecurityUnpriv(t *testing.T) {
 			action:        "exec",
 			argv:          []string{"id", "-u"},
 			opts:          e2e.ExecOpts{Security: []string{"uid:99"}},
-			expectId:      "99",
+			expectID:      "99",
 			exit:          1,
 			expectSuccess: false,
 		},
@@ -57,7 +57,7 @@ func testSecurityUnpriv(t *testing.T) {
 			action:        "exec",
 			argv:          []string{"id", "-g"},
 			opts:          e2e.ExecOpts{Security: []string{"gid:99"}},
-			expectId:      "99",
+			expectID:      "99",
 			exit:          1,
 			expectSuccess: false,
 		},
@@ -125,7 +125,7 @@ func testSecurityUnpriv(t *testing.T) {
 			}
 
 			//if len(lines) != 1 || string(lines[0]) != "99" {
-			if len(lines) == 1 && string(lines[0]) != tt.expectId {
+			if len(lines) == 1 && string(lines[0]) != tt.expectID {
 				t.Fatal("test failed? expecting: 99, got: ", string(lines[0]))
 			}
 		}))
@@ -138,7 +138,7 @@ func testSecurityPriv(t *testing.T) {
 		name          string
 		image         string
 		action        string
-		expectId      string
+		expectID      string
 		argv          []string
 		opts          e2e.ExecOpts
 		exit          int
@@ -151,7 +151,7 @@ func testSecurityPriv(t *testing.T) {
 			action:        "exec",
 			argv:          []string{"id", "-u"},
 			opts:          e2e.ExecOpts{Security: []string{"uid:99"}},
-			expectId:      "99",
+			expectID:      "99",
 			exit:          0,
 			expectSuccess: true,
 		},
@@ -161,7 +161,7 @@ func testSecurityPriv(t *testing.T) {
 			action:        "exec",
 			argv:          []string{"id", "-g"},
 			opts:          e2e.ExecOpts{Security: []string{"gid:99"}},
-			expectId:      "99",
+			expectID:      "99",
 			exit:          0,
 			expectSuccess: true,
 		},
@@ -219,7 +219,7 @@ func testSecurityPriv(t *testing.T) {
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
 			}
 			//if len(lines) != 1 || string(lines[0]) != "99" {
-			if len(lines) == 1 && string(lines[0]) != tt.expectId {
+			if len(lines) == 1 && string(lines[0]) != tt.expectID {
 				t.Fatal("test failed? expecting: 99, got: ", string(lines[0]))
 			}
 
