@@ -7,6 +7,7 @@ package assemblers_test
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
@@ -36,9 +37,14 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	mksquashfsPath, err := exec.LookPath("mksquashfs")
+	if err != nil {
+		t.Fatalf("could not find mksquashfs: %v", err)
+	}
+
 	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
-		return
+		t.Fatalf("unable to make bundle: %v", err)
 	}
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerDockerURI)
@@ -66,7 +72,9 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	a := &assemblers.SIFAssembler{}
+	a := &assemblers.SIFAssembler{
+		MksquashfsPath: mksquashfsPath,
+	}
 
 	err = a.Assemble(b, assemblerDockerDest)
 	if err != nil {
@@ -83,9 +91,14 @@ func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	mksquashfsPath, err := exec.LookPath("mksquashfs")
+	if err != nil {
+		t.Fatalf("could not find mksquashfs: %v", err)
+	}
+
 	b, err := types.NewBundle("", "sbuild-SIFAssembler")
 	if err != nil {
-		return
+		t.Fatalf("unable to make bundle: %v", err)
 	}
 
 	b.Recipe, err = types.NewDefinitionFromURI(assemblerShubURI)
@@ -104,7 +117,9 @@ func TestSIFAssemblerShub(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerShubURI, err)
 	}
 
-	a := &assemblers.SIFAssembler{}
+	a := &assemblers.SIFAssembler{
+		MksquashfsPath: mksquashfsPath,
+	}
 
 	err = a.Assemble(b, assemblerShubDest)
 	if err != nil {
