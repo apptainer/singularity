@@ -140,11 +140,11 @@ static inline bool is_namespace_enter(const char *nspath) {
     return nspath[0] != 0;
 }
 
-static int apply_container_privileges(struct container *container, bool isSuid) {
-    uid_t uid = getuid();
+static int apply_container_privileges(struct privileges *privileges) {
+    uid_t currentUID = getuid();
+    uid_t targetUID = currentUID;
     struct __user_cap_header_struct header;
     struct __user_cap_data_struct data[2];
-    struct privileges *privileges = &container->privileges;
 
     header.version = LINUX_CAPABILITY_VERSION;
     header.pid = 0;
@@ -176,55 +176,40 @@ static int apply_container_privileges(struct container *container, bool isSuid) 
         }
     }
 
-    /* apply target UID/GID for root user */
-    if ( uid == 0 && !is_namespace_create(&container->namespace, CLONE_NEWUSER) ) {
-        if ( privileges->numGID != 0 || privileges->targetUID != 0 ) {
-            if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
-                fatalf("Failed to set securebits: %s\n", strerror(errno));
-            }
-        }
+    /*
+     * prevent capabilities from being adjusted by kernel when changing uid/gid,
+     * we need to keep capabilities to apply container capabilities during capset call
+     * and to set ambient capabilities. We can't use capset before changing uid/gid
+     * because CAP_SETUID/CAP_SETGID could be already dropped
+     */
+    if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
+        fatalf("Failed to set securebits: %s\n", strerror(errno));
+    }
 
-        if ( privileges->numGID != 0 ) {
-            debugf("Clear additional group IDs\n");
-
-            if ( setgroups(0, NULL) < 0 ) {
-                fatalf("Unable to clear additional group IDs: %s\n", strerror(errno));
-            }
-        }
-
-        if ( privileges->numGID >= 2 ) {
-            debugf("Set additional group IDs\n");
-
-            if ( setgroups(privileges->numGID-1, &privileges->targetGID[1]) < 0 ) {
-                fatalf("Failed to set additional groups: %s\n", strerror(errno));
-            }
-        }
+    /* apply target GID for root user or if setgroups is allowed within user namespace */
+    if ( currentUID == 0 || privileges->allowSetgroups ) {
         if ( privileges->numGID >= 1 ) {
             gid_t targetGID = privileges->targetGID[0];
 
-            debugf("Set main group ID\n");
-
+            debugf("Set main group ID to %d\n", targetGID);
             if ( setresgid(targetGID, targetGID, targetGID) < 0 ) {
                 fatalf("Failed to set GID %d: %s\n", targetGID, strerror(errno));
             }
-        }
-        if ( privileges->targetUID != 0 ) {
-            uid_t targetUID = privileges->targetUID;
 
-            debugf("Set user ID to %d\n", targetUID);
-
-            if ( setresuid(targetUID, targetUID, targetUID) < 0 ) {
-                fatalf("Failed to drop privileges: %s\n", strerror(errno));
+            debugf("Set %d additional group IDs\n", privileges->numGID);
+            if ( setgroups(privileges->numGID, privileges->targetGID) < 0 ) {
+                fatalf("Failed to set additional groups: %s\n", strerror(errno));
             }
         }
-    } else if ( isSuid ) {
-        if ( prctl(PR_SET_SECUREBITS, SECBIT_NO_SETUID_FIXUP|SECBIT_NO_SETUID_FIXUP_LOCKED) < 0 ) {
-            fatalf("Failed to set securebits: %s\n", strerror(errno));
-        }
+    }
+    /* apply target UID for root user, also apply if user namespace UID is zero */
+    if ( currentUID == 0 ) {
+        targetUID = privileges->targetUID;
+    }
 
-        if ( setresuid(uid, uid, uid) < 0 ) {
-            fatalf("Failed to drop privileges: %s\n", strerror(errno));
-        }
+    debugf("Set user ID to %d\n", targetUID);
+    if ( setresuid(targetUID, targetUID, targetUID) < 0 ) {
+        fatalf("Failed to set all user ID to %d: %s\n", targetUID, strerror(errno));
     }
 
     set_parent_death_signal(SIGKILL);
@@ -376,24 +361,6 @@ static void setup_userns_mappings(struct privileges *privileges) {
         }
     } else {
         fatalf("Could not write parent info to uid_map: %s\n", strerror(errno));
-    }
-}
-
-static void setup_userns_identity(struct privileges *privileges) {
-    uid_t uidMap = privileges->targetUID;
-    gid_t gidMap = privileges->targetGID[0];
-
-    /* only user namespace with setgroups set to allow can do that */
-    if ( privileges->allowSetgroups ) {
-        if ( setgroups(0, NULL) < 0 ) {
-            fatalf("Unabled to clear additional group IDs: %s\n", strerror(errno));
-        }
-    }
-    if ( setresgid(gidMap, gidMap, gidMap) < 0 ) {
-        fatalf("Failed to change namespace group identity: %s\n", strerror(errno));
-    }
-    if ( setresuid(uidMap, uidMap, uidMap) < 0 ) {
-        fatalf("Failed to change namespace user identity: %s\n", strerror(errno));
     }
 }
 
@@ -807,10 +774,10 @@ void do_exit(int sig) {
 }
 
 /*
- * cleanenv set environ pointer to NULL, while it works
- * in C context, it doesn't have any effect with the Go
+ * as clearenv set environ pointer to NULL, it only works
+ * in C context and doesn't have any effect with the Go
  * runtime using the real pointer, so we need to work
- * directly with environ array.
+ * directly with environment stack with cleanenv function.
  */
 static void cleanenv(void) {
     extern char **environ;
@@ -825,14 +792,11 @@ static void cleanenv(void) {
     for (e = environ; *e != NULL; e++) {
         if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) == 0 ) {
             p = *e;
-        } else {
-            *e = NULL;
         }
+        *e = NULL;
     }
 
-    if ( p != NULL ) {
-        *environ = p;
-    }
+    *environ = p;
 }
 
 /*
@@ -861,7 +825,6 @@ static int get_pipe_exec_fd(void) {
 /* this is the starter entrypoint executed before Go runtime in a single-thread context */
 __attribute__((constructor)) static void init(void) {
     uid_t uid = getuid();
-    gid_t gid = getgid();
     sigset_t mask;
     pid_t process;
     int pipe_fd = -1;
@@ -929,7 +892,7 @@ __attribute__((constructor)) static void init(void) {
          *  handling user input, reading capabilities, and checking what
          *  namespaces are required
          */
-        if ( sconfig->starter.isSuid && uid != 0 ) {
+        if ( sconfig->starter.isSuid ) {
             /* drop privileges permanently */
             priv_drop(true);
         }
@@ -1028,9 +991,6 @@ __attribute__((constructor)) static void init(void) {
     case ENTER_NAMESPACE:
         if ( sconfig->starter.isSuid && !sconfig->starter.hybridWorkflow ) {
             fatalf("Running setuid workflow with user namespace is not allowed\n");
-        } else if ( !sconfig->starter.masterPropagateMount ) {
-            /* case for OCI engine requiring to change identity to match the joined instance */
-            setup_userns_identity(&sconfig->container.privileges);
         }
         break;
     case CREATE_NAMESPACE:
@@ -1059,6 +1019,14 @@ __attribute__((constructor)) static void init(void) {
 
     process = fork_ns(clone_flags);
     if ( process == 0 ) {
+        /* in the user namespace without any privileges */
+        if ( userns == CREATE_NAMESPACE ) {
+            /* wait parent write user namespace mappings */
+            if ( wait_event(master_socket[1]) < 0 ) {
+                fatalf("Error while waiting event for user namespace mappings\n");
+            }
+        }
+
         /* at this stage we are PID 1 if PID namespace requested */
         set_parent_death_signal(SIGKILL);
 
@@ -1069,19 +1037,6 @@ __attribute__((constructor)) static void init(void) {
         uts_namespace_init(&sconfig->container.namespace);
         ipc_namespace_init(&sconfig->container.namespace);
         cgroup_namespace_init(&sconfig->container.namespace);
-
-        /* hybrid approach, in the user namespace without any privileges */
-        if ( userns == CREATE_NAMESPACE ) {
-            /* wait parent write user namespace mappings */
-            if ( wait_event(master_socket[1]) < 0 ) {
-                fatalf("Error while waiting event for user namespace mappings\n");
-            }
-            if ( sconfig->starter.hybridWorkflow ) {
-                /* wait parent write user namespace mappings */
-                setup_userns_identity(&sconfig->container.privileges);
-                set_parent_death_signal(SIGKILL);
-            }
-        }
 
         /*
          * depending of engines, the master process may require to propagate mount point
@@ -1124,7 +1079,7 @@ __attribute__((constructor)) static void init(void) {
                 /* wait RPC server exits before running container process */
                 wait_child("rpc server", process, false);
 
-                if ( sconfig->starter.hybridWorkflow ) {
+                if ( sconfig->starter.hybridWorkflow && sconfig->starter.isSuid ) {
                     /* make /proc/self readable by user to join instance without SUID workflow */
                     if ( prctl(PR_SET_DUMPABLE, 1) < 0 ) {
                         fatalf("Failed to set process dumpable: %s\n", strerror(errno));
@@ -1139,7 +1094,7 @@ __attribute__((constructor)) static void init(void) {
         }
 
         /* continue execution with Go runtime in main_linux.go */
-        apply_container_privileges(&sconfig->container, sconfig->starter.isSuid);
+        apply_container_privileges(&sconfig->container.privileges);
         goexecute = STAGE2;
         return;
     } else if ( process > 0 ) {
@@ -1171,7 +1126,7 @@ __attribute__((constructor)) static void init(void) {
         /* user namespace created, write user mappings */
         if ( userns == CREATE_NAMESPACE ) {
             /* set user namespace mappings */
-            if ( sconfig->starter.hybridWorkflow ) {
+            if ( sconfig->starter.hybridWorkflow && sconfig->starter.isSuid ) {
                 /*
                  * hybrid workflow requires privileges for user mappings, we also preserve user
                  * filesytem UID here otherwise we would get a permission denied error during
@@ -1199,7 +1154,7 @@ __attribute__((constructor)) static void init(void) {
             send_event(master_socket[0]);
 
             /* force kernel to load overlay module to ease detection later */
-            if ( sconfig->starter.isSuid ) {
+            if ( sconfig->starter.isSuid || uid == 0 ) {
                 if ( mount("none", "/", "overlay", MS_SILENT, "") < 0 ) {
                     if ( errno != EINVAL ) {
                         debugf("Overlay seems not supported by kernel\n");
@@ -1218,8 +1173,8 @@ __attribute__((constructor)) static void init(void) {
 
         if ( sconfig->container.namespace.joinOnly ) {
             /* joining container, don't execute Go runtime, just wait that container process exit */
-            if ( sconfig->starter.isSuid && setresuid(uid, uid, uid) < 0 ) {
-                fatalf("Failed to drop privileges permanently\n");
+            if ( sconfig->starter.isSuid ) {
+                priv_drop(true);
             }
             debugf("Wait stage 2 child process\n");
             wait_child("stage 2", sconfig->container.pid, true);
