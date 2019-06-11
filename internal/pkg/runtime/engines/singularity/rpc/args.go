@@ -46,13 +46,6 @@ type HostnameArgs struct {
 	Hostname string
 }
 
-// HasNamespaceArgs defines the arguments to compare host namespace.
-// and RPC process
-type HasNamespaceArgs struct {
-	Pid    int
-	NsType string
-}
-
 // SetFsIDArgs defines the arguments to setfsid.
 type SetFsIDArgs struct {
 	UID int

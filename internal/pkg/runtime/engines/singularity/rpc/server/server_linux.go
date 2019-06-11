@@ -17,7 +17,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
@@ -165,20 +164,6 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 // SetHostname sets hostname with the specified arguments.
 func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 	return syscall.Sethostname([]byte(arguments.Hostname))
-}
-
-// HasNamespace checks if host namespace and container namespace
-// are different and sets reply to 0 or 1.
-func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) error {
-	*reply = 0
-	has, err := proc.HasNamespace(arguments.Pid, arguments.NsType)
-	if err != nil {
-		return err
-	}
-	if has {
-		*reply = 1
-	}
-	return nil
 }
 
 // SetFsID sets filesystem uid and gid.
