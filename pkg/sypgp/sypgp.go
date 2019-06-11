@@ -616,6 +616,7 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 	return nil
 }
 
+//function to obtain the algorithm name for key encryption
 func getEncryptionAlgorithmName(n string) (string, error) {
 	algorithmName := ""
 
