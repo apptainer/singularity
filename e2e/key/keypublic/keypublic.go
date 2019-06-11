@@ -66,9 +66,9 @@ func testPublicKey(t *testing.T) {
 	}
 
 	test.WithoutPrivilege(func(t *testing.T) {
-		b, err := keyexec.ImportKey(t, defaultKeyFile)
+		c, b, err := keyexec.ImportKey(t, defaultKeyFile)
 		if err != nil {
-			t.Log(string(b))
+			t.Log("command that failed: ", c, string(b))
 			t.Fatalf("Unable to import key: %v", err)
 		}
 	})
@@ -143,9 +143,9 @@ func testPublicKeyImportExport(t *testing.T) {
 
 				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { keyexec.RemoveDefaultPublicKey(t) }))
 				t.Run("import_public_key_from", test.WithoutPrivilege(func(t *testing.T) {
-					b, err := keyexec.ImportKey(t, defaultKeyFile)
+					c, b, err := keyexec.ImportKey(t, defaultKeyFile)
 					if err != nil {
-						t.Log(string(b))
+						t.Log("command that failed: ", c, string(b))
 						t.Fatalf("Unable to import key: %v", err)
 					}
 				}))

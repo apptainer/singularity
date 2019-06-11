@@ -93,6 +93,15 @@ func RunE2ETests(t *testing.T) {
 
 	os.Setenv("SINGULARITY_SYPGPDIR", filepath.Join(testenv.TestDir, "sypgp_keyring"))
 
+	// Import a public ascii coruppted key
+	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
+		c, b, err := keyexec.ImportKey(t, "./key/testdata/public_ascii_corrupted_key.asc")
+		if err == nil {
+			t.Log("command that succeed: ", c, string(b))
+			t.Fatalf("Unexpected success, command should fail: %v", c)
+		}
+	}))
+
 	// Import a private binary key
 	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
 		c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/private_key.asc")
@@ -113,18 +122,18 @@ func RunE2ETests(t *testing.T) {
 
 	// Import a public binary key
 	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
-		b, err := keyexec.ImportKey(t, "./key/testdata/public_key.asc")
+		c, b, err := keyexec.ImportKey(t, "./key/testdata/public_key.asc")
 		if err != nil {
-			t.Log(string(b))
+			t.Log("command that failed: ", c, string(b))
 			t.Fatalf("Unable to import test key: %v", err)
 		}
 	}))
 
 	// Import a public ascii key
 	t.Run("importing_test_key", test.WithoutPrivilege(func(t *testing.T) {
-		b, err := keyexec.ImportKey(t, "./key/testdata/public_ascii_key.asc")
+		c, b, err := keyexec.ImportKey(t, "./key/testdata/public_ascii_key.asc")
 		if err != nil {
-			t.Log(string(b))
+			t.Log("command that failed: ", c, string(b))
 			t.Fatalf("Unable to import test key: %v", err)
 		}
 	}))

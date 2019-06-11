@@ -83,13 +83,17 @@ func RemoveKeyring(t *testing.T) {
 }
 
 // ImportKey will import a key from kpath.
-func ImportKey(t *testing.T, kpath string) ([]byte, error) {
+func ImportKey(t *testing.T, kpath string) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
 	argv := []string{"key", "import", kpath}
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
-	return execKey.CombinedOutput()
+	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
+
+	b, err := execKey.CombinedOutput()
+
+	return cm, b, err
 }
 
 // ImportPrivateKey will take a private key file (kpath) and import it.
