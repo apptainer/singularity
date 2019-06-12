@@ -63,7 +63,7 @@ func RemoveDefaultPublicKey(t *testing.T) {
 	}
 }
 
-func RemovePublicKeyring(t *testing.T) {
+func removePublicKeyring(t *testing.T) {
 	err := os.Remove(sypgp.PublicPath())
 	if err != nil {
 		t.Fatalf("Unable to remove public keyring: %v", err)
@@ -278,7 +278,7 @@ func QuickTestExportImportKey(t *testing.T) {
 				if tt.private {
 					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemoveSecretKeyring(t) }))
 				} else {
-					t.Run("remove_public_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemovePublicKeyring(t) }))
+					t.Run("remove_public_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { removePublicKeyring(t) }))
 				}
 				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
 					c, b, err := ImportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"))
