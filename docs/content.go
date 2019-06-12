@@ -844,7 +844,7 @@ Enterprise Performance Computing (EPC)`
 	OciUpdateShort string = `Update container cgroups resources (root user only)`
 	OciUpdateLong  string = `
   Update will update cgroups resources for the specified container ID. Container 
-  smust be in a RUNNING or CREATED state.`
+  must be in a RUNNING or CREATED state.`
 	OciUpdateExample string = `
   $ singularity oci update --from-file /tmp/cgroups-update.json mycontainer
 
@@ -868,9 +868,8 @@ Enterprise Performance Computing (EPC)`
   $ singularity oci resume mycontainer`
 
 	OciMountUse   string = `mount <sif_image> <bundle_path>`
-	OciMountShort string = `Mount create an OCI bundle from SIF image (root user 
-  only)`
-	OciMountLong string = `
+	OciMountShort string = `Mount create an OCI bundle from SIF image (root user only)`
+	OciMountLong  string = `
   Mount will mount and create an OCI bundle from a SIF image.`
 	OciMountExample string = `
   $ singularity oci mount /tmp/example.sif /var/lib/singularity/bundles/example`
@@ -878,7 +877,8 @@ Enterprise Performance Computing (EPC)`
 	OciUmountUse   string = `umount <bundle_path>`
 	OciUmountShort string = `Umount delete bundle (root user only)`
 	OciUmountLong  string = `
-  Umount will umount an OCI bundle previously mounted with singularity oci mount.`
+  Umount will umount an OCI bundle previously mounted with singularity oci 
+  mount.`
 	OciUmountExample string = `
   $ singularity oci umount /var/lib/singularity/bundles/example`
 )
