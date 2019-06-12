@@ -57,8 +57,8 @@ const (
 	RemoteListUse   string = `list`
 	RemoteListShort string = `List all singularity remote endpoints that are configured`
 	RemoteListLong  string = `
-  The 'remote list' command lists all remote endpoints configured for use. If 
-  you have set a remote as a default, its name will be encompassed by brackets.`
+  The 'remote list' command lists all remote endpoints configured for use. If a remote
+  is in use, its name will be encompassed by brackets.`
 	RemoteListExample string = `
   $ singularity remote list`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

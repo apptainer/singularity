@@ -7,7 +7,6 @@ package singularity
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -15,164 +14,108 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func cleanLibraryCache() error {
-	sylog.Debugf("Removing: %v", cache.Library())
+// cleanCacheDir cleans the cache named name in the directory dir.
+func cleanCacheDir(name, dir string) error {
+	sylog.Debugf("Removing: %v", dir)
 
-	err := os.RemoveAll(cache.Library())
+	err := os.RemoveAll(dir)
 	if err != nil {
-		return fmt.Errorf("unable to clean library cache: %v", err)
+		// wrap the error in a user-friendly message
+		err = fmt.Errorf("unable to clean %s cache: %v", name, err)
 	}
 
-	return nil
+	return err
+}
+
+func cleanLibraryCache() error {
+	return cleanCacheDir("library", cache.Library())
 }
 
 func cleanOciCache() error {
-	sylog.Debugf("Removing: %v", cache.OciTemp())
-
-	err := os.RemoveAll(cache.OciTemp())
-	if err != nil {
-		return fmt.Errorf("unable to clean oci-tmp cache: %v", err)
-	}
-
-	return nil
+	return cleanCacheDir("oci-tmp", cache.OciTemp())
 }
 
 func cleanBlobCache() error {
-	sylog.Debugf("Removing: %v", cache.OciBlob())
-
-	err := os.RemoveAll(cache.OciBlob())
-	if err != nil {
-		return fmt.Errorf("unable to clean oci-blob cache: %v", err)
-	}
-
-	return nil
-
+	return cleanCacheDir("oci-blob", cache.OciBlob())
 }
 
-// CleanCache : clean a type of cache (cacheType string). will return a error if one occurs.
-func CleanCache(cacheType string) error {
+func cleanShubCache() error {
+	return cleanCacheDir("shub", cache.Shub())
+}
+
+// cleanCache cleans the given type of cache cacheType. It will return a
+// error if one occurs.
+func cleanCache(cacheType string) error {
 	switch cacheType {
 	case "library":
-		err := cleanLibraryCache()
-		return err
+		return cleanLibraryCache()
 	case "oci":
-		err := cleanOciCache()
-		return err
+		return cleanOciCache()
+	case "shub":
+		return cleanShubCache()
 	case "blob", "blobs":
-		err := cleanBlobCache()
-		return err
-	case "all":
-		err := cache.Clean()
-		return err
+		return cleanBlobCache()
 	default:
 		// The caller checks the returned error and will exit as required
 		return fmt.Errorf("not a valid type: %s", cacheType)
 	}
 }
 
-func cleanLibraryCacheName(cacheName string) (bool, error) {
+func removeCacheEntry(name, cacheType, cacheDir string) (bool, error) {
 	foundMatch := false
-	libraryCacheFiles, err := ioutil.ReadDir(cache.Library())
-	if err != nil {
-		return false, fmt.Errorf("unable to opening library cache folder: %v", err)
-	}
-	for _, f := range libraryCacheFiles {
-		cont, err := ioutil.ReadDir(filepath.Join(cache.Library(), f.Name()))
+	done := fmt.Errorf("done")
+	err := filepath.Walk(cacheDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return false, fmt.Errorf("unable to look in library cache folder: %v", err)
+			sylog.Debugf("Error while walking directory %s for cache %s at %s while looking for entry %s: %+v",
+				cacheDir,
+				cacheType,
+				path,
+				name,
+				err)
+			return err
 		}
-		for _, c := range cont {
-			if c.Name() == cacheName {
-				sylog.Debugf("Removing: %v", filepath.Join(cache.Library(), f.Name(), c.Name()))
-				err = os.RemoveAll(filepath.Join(cache.Library(), f.Name(), c.Name()))
-				if err != nil {
-					return false, fmt.Errorf("unable to remove library cache: %v", err)
-				}
-				foundMatch = true
+		if !info.IsDir() && info.Name() == name {
+			sylog.Debugf("Removing entry %s from cache %s at %s", name, cacheType, path)
+			if err := os.Remove(path); err != nil {
+				return fmt.Errorf("unable to remove entry %s from cache %s at path %s: %v", name, cacheType, path, err)
 			}
+			foundMatch = true
+			return done
 		}
+		return nil
+	})
+	if err == done {
+		err = nil
 	}
-	return foundMatch, nil
+	return foundMatch, err
 }
 
-func cleanOciCacheName(cacheName string) (bool, error) {
-	foundMatch := false
-	blobs, err := ioutil.ReadDir(cache.OciTemp())
-	if err != nil {
-		return false, fmt.Errorf("unable to opening oci-tmp cache folder: %v", err)
-	}
-	for _, f := range blobs {
-		blob, err := ioutil.ReadDir(filepath.Join(cache.OciTemp(), f.Name()))
-		if err != nil {
-			return false, fmt.Errorf("unable to look in oci-tmp cache folder: %v", err)
-		}
-		for _, b := range blob {
-			if b.Name() == cacheName {
-				sylog.Debugf("Removing: %v", filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-				err = os.RemoveAll(filepath.Join(cache.OciTemp(), f.Name(), b.Name()))
-				if err != nil {
-					return false, fmt.Errorf("unable to remove oci-tmp cache: %v", err)
-				}
-				foundMatch = true
-			}
-		}
-	}
-	return foundMatch, nil
-}
-
-// CleanCacheName : will clean a container with the same name as cacheName (in the cache directory).
-// if libraryCache is true; only search thrught library cache. if ociCache is true; only search the
-// oci-tmp cache. if both are false; search all cache, and if both are true; again, search all cache.
-func CleanCacheName(cacheName string, libraryCache, ociCache bool) (bool, error) {
-	if libraryCache == ociCache {
-		matchLibrary, err := cleanLibraryCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		matchOci, err := cleanOciCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		if matchLibrary || matchOci {
-			return true, nil
-		}
-		return false, nil
-	}
-
-	match := false
-	if libraryCache {
-		match, err := cleanLibraryCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		return match, nil
-	} else if ociCache {
-		match, err := cleanOciCacheName(cacheName)
-		if err != nil {
-			return false, err
-		}
-		return match, nil
-	}
-	return match, nil
-}
-
-// CleanSingularityCache : the main function that drives all these other functions, if allClean is true; clean
-// all cache. if typeNameClean contains somthing; only clean that type. if cacheName contains somthing; clean only
+// CleanSingularityCache is the main function that drives all these other functions, if cleanAll is true; clean
+// all cache. if cacheCleanTypes contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
-func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName string) error {
-	libraryClean := false
-	ociClean := false
-	blobClean := false
+func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
+	cacheDirs := map[string]string{
+		"library": cache.Library(),
+		"oci":     cache.OciTemp(),
+		"shub":    cache.Shub(),
+		"blob":    cache.OciBlob(),
+	}
+	cacheTypes := []string{}
 
 	for _, t := range cacheCleanTypes {
 		switch t {
 		case "library":
-			libraryClean = true
+			cacheTypes = append(cacheTypes, t)
 		case "oci":
-			ociClean = true
+			cacheTypes = append(cacheTypes, t)
+		case "shub":
+			cacheTypes = append(cacheTypes, t)
 		case "blob", "blobs":
-			blobClean = true
+			cacheTypes = append(cacheTypes, "blob")
 		case "all":
+			// cacheTypes contains "all", fall back to
+			// cleaning all entries, but continue validating
+			// entries just to be on the safe side
 			cleanAll = true
 		default:
 			// The caller checks the returned error and exit when appropriate
@@ -180,37 +123,41 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName st
 		}
 	}
 
-	if len(cacheName) >= 1 && !cleanAll {
-		foundMatch, err := CleanCacheName(cacheName, libraryClean, ociClean)
-		if err != nil {
-			return err
-		}
-		if !foundMatch {
-			sylog.Warningf("No cache found with given name: %s", cacheName)
-		}
-		return nil
-	}
-
 	if cleanAll {
-		if err := CleanCache("all"); err != nil {
-			return err
+		// cleanAll overrides all the specified names
+		cacheTypes = []string{"library", "oci", "shub", "blob"}
+	}
+
+	if len(cacheName) > 0 {
+		// a name was specified, only clean matching entries
+		for _, name := range cacheName {
+			matches := 0
+			for _, cacheType := range cacheTypes {
+				cacheDir := cacheDirs[cacheType]
+				sylog.Debugf("Removing cache type %q with name %q from directory %q ...", cacheType, name, cacheDir)
+				foundMatch, err := removeCacheEntry(name, cacheType, cacheDir)
+				if err != nil {
+					return err
+				}
+				if foundMatch {
+					matches++
+				}
+			}
+
+			if matches == 0 {
+				sylog.Warningf("No cache found with given name: %s", name)
+			}
+		}
+	} else {
+		// no name specified, clean everything in the specified
+		// cache types
+		for _, cacheType := range cacheTypes {
+			sylog.Debugf("Cleaning %s cache...", cacheType)
+			if err := cleanCache(cacheType); err != nil {
+				return err
+			}
 		}
 	}
 
-	if libraryClean {
-		if err := CleanCache("library"); err != nil {
-			return err
-		}
-	}
-	if ociClean {
-		if err := CleanCache("oci"); err != nil {
-			return err
-		}
-	}
-	if blobClean {
-		if err := CleanCache("blob"); err != nil {
-			return err
-		}
-	}
 	return nil
 }

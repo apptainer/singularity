@@ -42,17 +42,6 @@ func Root() string {
 	return root
 }
 
-// Clean : wipes all files in the cache directory, will return a error if one occurs
-func Clean() error {
-	sylog.Debugf("Removing: %v", Root())
-
-	if err := os.RemoveAll(Root()); err != nil {
-		return fmt.Errorf("unable to clean all cache: %s", err)
-	}
-
-	return nil
-}
-
 func updateCacheRoot() {
 	if d := os.Getenv(DirEnv); d != "" {
 		root = d
@@ -92,4 +81,22 @@ func initCacheDir(dir string) error {
 	}
 
 	return nil
+}
+
+// cleanAllCaches is an utility function that wipes all files in the
+// cache directory, will return a error if one occurs
+func cleanAllCaches() {
+	// TODO: add oras here
+	cacheDirs := map[string]string{
+		"library": Library(),
+		"oci":     OciTemp(),
+		"blob":    OciBlob(),
+		"shub":    Shub(),
+	}
+
+	for name, dir := range cacheDirs {
+		if err := os.RemoveAll(dir); err != nil {
+			sylog.Verbosef("unable to clean %s cache, directory %s: %v", name, dir, err)
+		}
+	}
 }

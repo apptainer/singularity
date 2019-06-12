@@ -25,10 +25,10 @@ var (
 var cacheListTypesFlag = cmdline.Flag{
 	ID:           "cacheListTypes",
 	Value:        &cacheListTypes,
-	DefaultValue: []string{"library", "oci", "blobSum"},
+	DefaultValue: []string{"library", "oci", "shub", "blobSum"},
 	Name:         "type",
 	ShortHand:    "T",
-	Usage:        "a list of cache types to display, possible entries: library, oci, blob(s), blobSum, all",
+	Usage:        "a list of cache types to display, possible entries: library, oci, shub, blob(s), blobSum, all",
 	EnvKeys:      []string{"TYPE"},
 }
 
@@ -77,8 +77,8 @@ var CacheListCmd = &cobra.Command{
 func cacheListCmd() error {
 	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummary)
 	if err != nil {
-		sylog.Fatalf("Not listing cache; an error occurred: %v", err)
+		sylog.Fatalf("An error occurred while listing cache: %v", err)
 		return err
 	}
-	return err
+	return nil
 }

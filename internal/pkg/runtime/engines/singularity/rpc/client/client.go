@@ -79,23 +79,6 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 	return reply, err
 }
 
-// HasNamespace calls the HasNamespace RPC using the supplied arguments.
-func (t *RPC) HasNamespace(pid int, nstype string) (bool, error) {
-	arguments := &args.HasNamespaceArgs{
-		Pid:    pid,
-		NsType: nstype,
-	}
-	var reply int
-	err := t.Client.Call(t.Name+".HasNamespace", arguments, &reply)
-	if err != nil {
-		return false, err
-	}
-	if reply == 1 {
-		return true, err
-	}
-	return false, err
-}
-
 // SetFsID calls the setfsid RPC using the supplied arguments.
 func (t *RPC) SetFsID(uid int, gid int) (int, error) {
 	arguments := &args.SetFsIDArgs{

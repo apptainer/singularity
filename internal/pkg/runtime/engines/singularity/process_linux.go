@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"strings"
@@ -385,8 +386,31 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		file.PPid = os.Getpid()
 		file.Image = engine.EngineConfig.GetImage()
 
+		namespaces := []struct {
+			nstype string
+			ns     specs.LinuxNamespaceType
+		}{
+			{"pid", specs.PIDNamespace},
+			{"uts", specs.UTSNamespace},
+			{"ipc", specs.IPCNamespace},
+			{"mnt", specs.MountNamespace},
+			{"cgroup", specs.CgroupNamespace},
+			{"net", specs.NetworkNamespace},
+		}
+
+		// by default we add all namespaces except user namespace which
+		// is added conditionally. This delegates checks to C starter code
+		// which will determine if a namespace need to be joined by
+		// comparing namespace inodes
+		path := fmt.Sprintf("/proc/%d/ns", pid)
+		for _, n := range namespaces {
+			nspath := filepath.Join(path, n.nstype)
+			engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
+		}
 		for _, ns := range engine.EngineConfig.OciConfig.Linux.Namespaces {
 			if ns.Type == specs.UserNamespace {
+				nspath := filepath.Join(path, "user")
+				engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, nspath)
 				file.UserNs = true
 				break
 			}
