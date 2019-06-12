@@ -31,11 +31,14 @@ type testingEnv struct {
 
 var testenv testingEnv
 
+// E2eKeyFingerprint is the e2e test key fingerprint
+const E2eKeyFingerprint = "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"
+
 // PullDefaultPublicKey will pull the public Sylabs Admin key
 func PullDefaultPublicKey(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 
-	argv := []string{"key", "pull", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
+	argv := []string{"key", "pull", E2eKeyFingerprint}
 
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
@@ -50,7 +53,7 @@ func PullDefaultPublicKey(t *testing.T) {
 func RemoveDefaultPublicKey(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 
-	argv := []string{"key", "remove", "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"}
+	argv := []string{"key", "remove", E2eKeyFingerprint}
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
 	out, err := execKey.CombinedOutput()
