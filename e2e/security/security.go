@@ -269,19 +269,24 @@ func RunE2ETests(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
-	// Make a tmp file
-	file, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	imagePath = file.Name()
-
 	// pull a test image to that directory
-	b, err := e2e.PullTestAlpineContainer(testenv.CmdPath, imagePath)
-	if err != nil {
-		t.Log(string(b))
-		t.Fatalf("Unable to pull test alpine container: %s", err)
-	}
+	t.Run("non_root_config", test.WithoutPrivilege(func(t *testing.T) {
+
+		// Make a tmp file
+		file, err := ioutil.TempFile(testenv.TestDir, "test_container.sif")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer file.Close()
+
+		imagePath = file.Name()
+
+		b, err := e2e.PullTestAlpineContainer(testenv.CmdPath, imagePath)
+		if err != nil {
+			t.Log(string(b))
+			t.Fatalf("Unable to pull test alpine container: %s", err)
+		}
+	}))
 
 	t.Run("testSecurity", testSecurity)
 }
