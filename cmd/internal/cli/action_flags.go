@@ -396,9 +396,9 @@ var actionRocmFlag = cmdline.Flag{
 	ID:           "actionRocmFlag",
 	Value:        &Rocm,
 	DefaultValue: false,
-	Name:         "nv",
+	Name:         "rocm",
 	Usage:        "enable Rocm support",
-	EnvKeys:      []string{"NV"},
+	EnvKeys:      []string{"ROCM"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
 
@@ -659,8 +659,10 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionNoInitFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNONETFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionNoRocmFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNoPrivsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionNvidiaFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionRocmFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionOverlayFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&commonPromptForPassphraseFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&commonPEMFlag, actionsInstanceCmd...)
