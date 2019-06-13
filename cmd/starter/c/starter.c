@@ -814,21 +814,20 @@ void do_exit(int sig) {
 static void cleanenv(void) {
     extern char **environ;
     char **e;
-    char *p = NULL;
 
     if ( environ == NULL || *environ == NULL ) {
         fatalf("no environment variables set\n");
     }
 
-    /* keep only SINGULARITY_MESSAGELEVEL for GO runtime */
+    /* 
+     * keep only SINGULARITY_MESSAGELEVEL for GO runtime, set others to empty
+     * string and not NULL (see issue #3703 for why)
+     */
     for (e = environ; *e != NULL; e++) {
-        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) == 0 ) {
-            p = *e;
+        if ( strncmp(MSGLVL_ENV "=", *e, sizeof(MSGLVL_ENV)) != 0 ) {
+            *e = "";
         }
-        *e = NULL;
     }
-
-    *environ = p;
 }
 
 /*
