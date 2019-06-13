@@ -92,7 +92,7 @@ func ImportKey(t *testing.T, kpath string) (string, []byte, error) {
 	argv := []string{"key", "import", kpath}
 	execKey := exec.Command(testenv.CmdPath, argv...)
 
-	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
+	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(argv, " "))
 
 	b, err := execKey.CombinedOutput()
 
@@ -134,7 +134,7 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 	c.Send("e2etests\n")
 
 	err = cmd.Wait()
-	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
+	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(exportCmd, " "))
 
 	return cm, buf.Bytes(), err
 }
@@ -178,7 +178,7 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 	c.Send("e2etests\n")
 
 	err = cmd.Wait()
-	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
+	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(exportCmd, " "))
 
 	return cm, outErr.Bytes(), err
 }
@@ -192,7 +192,7 @@ func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin stri
 		argv = append(argv, file)
 	}
 
-	cmd := fmt.Sprintf("%s %s", cmdPath, strings.Join(argv, " "))
+	cmd := fmt.Sprintf("%s\n%s", cmdPath, strings.Join(argv, " "))
 	execKey := exec.Command(cmdPath, argv...)
 
 	stdinRun, err := ioutil.TempFile("", "")
@@ -343,7 +343,7 @@ func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (
 	}
 
 	err = cmd.Wait()
-	cm := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(exportCmd, " "))
+	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(exportCmd, " "))
 
 	return cm, outErr.Bytes(), err
 
