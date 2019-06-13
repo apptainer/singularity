@@ -14,6 +14,7 @@ import (
 type Cmd struct {
 	path string
 	args []string
+	env  []string
 }
 
 type Result struct {
