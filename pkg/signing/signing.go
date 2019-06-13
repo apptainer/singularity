@@ -312,18 +312,17 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		// verify the container with our local keys first
 		sylog.Verbosef("Container signature found: %s\n", fingerprint)
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+		// if theres a error, thats probably because we dont have a local key. So download it and try again
 		if err != nil {
 			trusted = false
 			notLocalKey = true
 
-			// if theres a error, thats probably because we dont have a local key
 			if !localVerify {
 				// download the key
 				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					sylog.Errorf("Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
-					//author += fmt.Sprintf("[MISSING]  %s does not exist in local, or remote keystore\n", fingerprint)
 					author += fmt.Sprintf("[MISSING]  key does not exist in local, or remote keystore: %s\n", fingerprint)
 					continue
 				}
@@ -334,12 +333,13 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 					return false, fmt.Errorf("failed to parse signature block")
 				}
 
-				// verify the container
+				// verify the container, again...
 				signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
 				if err != nil {
 					return false, fmt.Errorf("signature verification failed: %s", err)
 				}
 			} else {
+				sylog.Errorf("Key not in local keyring: %s", fingerprint)
 				return false, fmt.Errorf("unable to verify container: %v", err)
 			}
 		} else {
@@ -354,10 +354,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			break
 		}
 		if trusted {
-			//author += fmt.Sprintf("\t[TRUSTED] %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
 			author += fmt.Sprintf("[TRUSTED]  %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
 		} else {
-			//author += fmt.Sprintf("\t%s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
 			author += fmt.Sprintf("           %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
 		}
 	}
