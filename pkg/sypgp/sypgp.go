@@ -595,13 +595,10 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		Size: 256,
 	}
 
-	//set the machine readable output on
-	var options []string
-	options = append(options, "mr")
+	// set the machine readable output on
+	var options = []string{client.OptionMachineReadable}
 	// Retrieve first page of search results from Key Service.
 	keyText, err := c.PKSLookup(context.TODO(), &pd, search, client.OperationIndex, true, false, options)
-
-	keyText = reformatMachineReadableOutput(keyText)
 	if err != nil {
 		if jerr, ok := err.(*jsonresp.Error); ok && jerr.Code == http.StatusUnauthorized {
 			// The request failed with HTTP code unauthorized. Guide user to fix that.
@@ -614,12 +611,16 @@ func SearchPubkey(search, keyserverURI, authToken string) error {
 		}
 	}
 
+	keyText, err = reformatMachineReadableOutput(keyText)
+	if err != nil {
+		return fmt.Errorf("could not reformat key output")
+	}
 	fmt.Printf("%v", keyText)
 
 	return nil
 }
 
-//function to obtain the algorithm name for key encryption
+// getEncryptionAlgorithmName obtains the algorithm name for key encryption
 func getEncryptionAlgorithmName(n string) (string, error) {
 	algorithmName := ""
 
@@ -643,37 +644,38 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 		algorithmName = "Reserved"
 	case 21:
 		algorithmName = "Diffie-Hellman"
+	default:
+		algorithmName = "unknown"
 	}
 	return algorithmName, nil
 }
 
 //function to obtain a date format from linux epoch time
-func date(s string) string {
-	ret := "NULL"
+func date(s string) (string, error) {
 	if s == "" {
-		return ret
+		return "NULL", nil
 	}
 	if s == "none" {
-		return s + "		  	       "
+		return s + "\t\t\t", nil
 	}
-
 	c, _ := strconv.ParseInt(s, 10, 64)
-	ret = fmt.Sprintf("%v", time.Unix(c, 0))
+	ret := fmt.Sprintf("%v", time.Unix(c, 0))
 
-	return strings.TrimSpace(ret)
+	return ret, nil
 }
 
-//function to reformat key search output in machine readable format
-func reformatMachineReadableOutput(keyText string) string {
+// reformatMachineReadableOutput reformats the key search output that is in machine readable format
+// see the output format in: https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#section-5.2
+func reformatMachineReadableOutput(keyText string) (string, error) {
 
-	var output = "      		FINGERPRINT			ALGORITHM  SIZE (BITS)	       CREATION DATE			EXPIRATION DATE		  STATUS		NAME/EMAIL" + "\n"
+	var output = "\n\t\tFINGERPRINT\t\tALGORITHM  SIZE (BITS)\t\t  CREATION DATE\t\t\tEXPIRATION DATE\t\t\tSTATUS\t\t\tNAME/EMAIL" + "\n"
 
 	rePubkey := regexp.MustCompile("pub:(.*)\n")
 	keys := rePubkey.FindAllString(keyText, -1)
 
 	var featuresKey []string
 
-	//for every key obtain the characteristics: fingerprint, algorithm, size, creation date, expiration date, status and user(email)
+	// for every key obtain the features: fingerprint, algorithm, size, creation date, expiration date, status and user(email)
 	for _, key := range keys {
 		var emailList = ""
 
@@ -688,11 +690,11 @@ func reformatMachineReadableOutput(keyText string) string {
 
 		fingerprint := featuresKey[1]
 
-		//regular expression to obtain the fingerprint of every key
+		// regular expression to obtain the fingerprint of every key
 		reFingerprint := regexp.MustCompile("(" + fingerprint + ")[\\s+\\S]+?(::(\npub|\\s+$))")
 		emails := reFingerprint.FindAllString(keyText, -1)
 
-		//regular expression to obtain the email or emails from every key
+		// regular expression to obtain the email or emails from every key
 		reFormatEmail := regexp.MustCompile("uid:" + "\\w(.)+::")
 		userEmails := reFormatEmail.FindAllString(emails[0], -1)
 
@@ -708,10 +710,10 @@ func reformatMachineReadableOutput(keyText string) string {
 		}
 
 		algorithm, err := getEncryptionAlgorithmName(featuresKey[2])
-
 		if err != nil {
-			return ""
+			return "", err
 		}
+
 		size := featuresKey[3]
 
 		if len(size) < 4 {
@@ -726,8 +728,15 @@ func reformatMachineReadableOutput(keyText string) string {
 			expiryDate = featuresKey[5]
 		}
 
-		creationTimestamp := date(creationDate)
-		expirationTimestamp := date(expiryDate)
+		creationTimestamp, err := date(creationDate)
+		if err != nil {
+			return "", err
+		}
+
+		expirationTimestamp, err := date(expiryDate)
+		if err != nil {
+			return "", err
+		}
 
 		//check the status of each key if flags are present
 		if len(featuresKey) == 7 {
@@ -745,12 +754,12 @@ func reformatMachineReadableOutput(keyText string) string {
 		featuresKey = []string{}
 
 		if status == "revoked" {
-			output = output + "\n" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "  " + status + "	" + emailList
+			output = output + "\n" + fingerprint + "  " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "\t" + status + "\t\t" + emailList
 		} else {
-			output = output + "\n" + fingerprint + "	   " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "	  " + status + "	" + emailList
+			output = output + "\n" + fingerprint + "  " + algorithm + "	      " + size + "      " + creationTimestamp + "	  " + expirationTimestamp + "\t\t" + status + "\t\t" + emailList
 		}
 	}
-	return output
+	return output, nil
 }
 
 // FetchPubkey pulls a public key from the Key Service.
