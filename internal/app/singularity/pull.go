@@ -11,21 +11,14 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 
-	"github.com/containerd/containerd/images"
-	"github.com/containerd/containerd/reference"
-	"github.com/containerd/containerd/remotes/docker"
 	ocitypes "github.com/containers/image/types"
-	"github.com/deislabs/oras/pkg/content"
-	orasctx "github.com/deislabs/oras/pkg/context"
-	"github.com/deislabs/oras/pkg/oras"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/library"
+	"github.com/sylabs/singularity/internal/pkg/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -225,71 +218,68 @@ func downloadImageCallback(totalSize int64, r io.Reader, w io.Writer) error {
 // OrasPull will download the image specified by the provided oci reference and store
 // it at the location specified by file, it will use credentials if supplied
 func OrasPull(name, ref string, force bool, ociAuth *ocitypes.DockerAuthConfig) error {
-	ref = strings.TrimPrefix(ref, "//")
+	if !force {
+		if _, err := os.Stat(name); err == nil {
+			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
+		}
+	}
 
-	spec, err := reference.Parse(ref)
+	sum, err := oras.ImageSHA(ref, ociAuth)
 	if err != nil {
-		return fmt.Errorf("unable to parse oci reference: %s", err)
+		return fmt.Errorf("failed to get checksum for %s: %s", ref, err)
 	}
 
-	// append default tag if no object exists
-	if spec.Object == "" {
-		spec.Object = SifDefaultTag
-		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
+	imageName := uri.GetName("oras:" + ref)
+
+	cacheImagePath := cache.OrasImage(sum, imageName)
+	exists, err := cache.OrasImageExists(sum, imageName)
+	if err != nil {
+		return fmt.Errorf("unable to check if %s exists: %v", cacheImagePath, err)
 	}
 
-	credFn := func(_ string) (string, string, error) {
-		if ociAuth != nil {
-			return ociAuth.Username, ociAuth.Password, nil
+	if !exists {
+		sylog.Infof("Downloading image with ORAS")
+
+		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
+			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 
-		return "", "", nil
-	}
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
-
-	wd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("failed to get working directory: %s", err)
-	}
-
-	store := content.NewFileStore(wd)
-	defer store.Close()
-
-	store.AllowPathTraversalOnWrite = true
-	store.DisableOverwrite = !force
-
-	allowedMediaTypes := oras.WithAllowedMediaTypes([]string{SifLayerMediaType})
-	handlerFunc := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
-		if desc.MediaType == SifLayerMediaType {
-			// Ensure descriptor is of a single file
-			// AnnotationUnpack indicates that the descriptor is of a directory
-			if desc.Annotations[content.AnnotationUnpack] == "true" {
-				return nil, fmt.Errorf("descriptor is of a bundled directory, not a SIF image")
-			}
-			nameOld, _ := content.ResolveName(desc)
-			_ = store.MapPath(nameOld, name)
+		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
+			return fmt.Errorf("error getting ImageHash: %v", err)
+		} else if cacheFileHash != sum {
+			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
 		}
-		return nil, nil
+	} else {
+		sylog.Infof("Using cached image")
 	}
-	pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
 
-	_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
+	flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
+	if !force {
+		// fail if file was created after previous check with Stat()
+		flags |= os.O_EXCL
+	}
+
+	// Perms are 777 *prior* to umask in order to allow image to be
+	// executed with its leading shebang like a script
+	dstFile, err := os.OpenFile(name, flags, 0777)
 	if err != nil {
-		return fmt.Errorf("unable to pull from registry: %s", err)
+		return fmt.Errorf("while opening destination file: %v", err)
+	}
+	defer dstFile.Close()
+
+	srcFile, err := os.Open(cacheImagePath)
+	if err != nil {
+		return fmt.Errorf("while opening cached image: %v", err)
+	}
+	defer srcFile.Close()
+
+	// Copy SIF from cache
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return fmt.Errorf("while copying image from cache: %v", err)
 	}
 
-	// ensure that we have downloaded a SIF
-	if err := ensureSIF(name); err != nil {
-		// remove whatever we downloaded if it is not a SIF
-		os.RemoveAll(name)
-		return err
-	}
-
-	// ensure container is executable
-	if err := os.Chmod(name, 0755); err != nil {
-		return fmt.Errorf("unable to set image perms: %s", err)
-	}
-	sylog.Infof("Download complete: %s\n", name)
+	sylog.Infof("Pull complete: %s\n", name)
 
 	return nil
 }

@@ -34,14 +34,13 @@ func getEngine(jsonConfig []byte) *engines.Engine {
 }
 
 func startup() {
-	cconf := unsafe.Pointer(C.config)
-	sconfig := starterConfig.NewConfig(starterConfig.CConfig(cconf))
+	sconfig := starterConfig.NewConfig(starterConfig.SConfig(unsafe.Pointer(C.sconfig)))
 	jsonConfig := sconfig.GetJSONConfig()
 
-	switch C.execute {
+	switch C.goexecute {
 	case C.STAGE1:
 		sylog.Verbosef("Execute stage 1\n")
-		starter.Stage(int(C.STAGE1), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
+		starter.StageOne(sconfig, getEngine(jsonConfig))
 	case C.STAGE2:
 		sylog.Verbosef("Execute stage 2\n")
 		if err := sconfig.Release(); err != nil {
@@ -49,7 +48,7 @@ func startup() {
 		}
 
 		mainthread.Execute(func() {
-			starter.Stage(int(C.STAGE2), int(C.master_socket[1]), sconfig, getEngine(jsonConfig))
+			starter.StageTwo(int(C.master_socket[1]), getEngine(jsonConfig))
 		})
 	case C.MASTER:
 		sylog.Verbosef("Execute master process\n")
@@ -75,6 +74,7 @@ func startup() {
 	sylog.Fatalf("You should not be there\n")
 }
 
+// called after "starter.c" __init__ function returns.
 func init() {
 	// lock main thread for function execution loop
 	runtime.LockOSThread()
@@ -86,6 +86,7 @@ func main() {
 	// initialize runtime engines
 	engines.Init()
 
+	// spawn a goroutine to use mainthread later
 	go startup()
 
 	// run functions requiring execution in main thread

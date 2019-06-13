@@ -7,12 +7,9 @@
 package push
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -27,21 +24,6 @@ type testingEnv struct {
 }
 
 var testenv testingEnv
-
-func imagePush(t *testing.T, imagePath, imgURI string) (string, []byte, error) {
-	argv := []string{"push"}
-
-	if imagePath != "" {
-		argv = append(argv, imagePath)
-	}
-
-	argv = append(argv, imgURI)
-
-	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
-	out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
-
-	return cmd, out, err
-}
 
 func testPushCmd(t *testing.T) {
 
@@ -96,7 +78,7 @@ func testPushCmd(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpdir)
 
-			cmd, out, err := imagePush(t, tt.imagePath, tt.dstURI)
+			cmd, out, err := e2e.ImagePush(t, tt.imagePath, tt.dstURI)
 			switch {
 			case tt.expectSuccess && err == nil:
 				// PASS: expecting success, succeeded

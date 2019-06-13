@@ -223,23 +223,31 @@ func RunFromURI(t *testing.T) {
 		{"RunFromDockerOK", "docker://busybox:latest", "run", []string{size}, runOpts, true},
 		{"RunFromLibraryOK", "library://busybox:latest", "run", []string{size}, runOpts, true},
 		{"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{size}, runOpts, true},
+		{"RunFromOrasOK", "oras://localhost:5000/oras_test_sif:latest", "run", []string{size}, runOpts, true},
 		{"RunFromDockerKO", "docker://busybox:latest", "run", []string{"0"}, runOpts, false},
 		{"RunFromLibraryKO", "library://busybox:latest", "run", []string{"0"}, runOpts, false},
 		{"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"0"}, runOpts, false},
+		{"RunFromOrasKO", "oras://localhost:5000/oras_test_sif:latest", "run", []string{"0"}, runOpts, false},
+
 		// exec from a supported URI's and check the exit code
 		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{}, true},
 		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{}, true},
 		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, e2e.ExecOpts{}, true},
+		{"trueOras", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"true"}, e2e.ExecOpts{}, true},
 		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{}, false},
 		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{}, false},
 		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, e2e.ExecOpts{}, false},
+		{"falseOras", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"false"}, e2e.ExecOpts{}, false},
+
 		// exec from URI with user namespace enabled
 		{"trueDockerUserns", "docker://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
 		{"trueLibraryUserns", "library://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
 		{"trueShubUserns", "shub://singularityhub/busybox", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
+		{"trueOrasUserns", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
 		{"falseDockerUserns", "docker://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
 		{"falselibraryUserns", "library://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
 		{"falseShubUserns", "shub://singularityhub/busybox", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
+		{"falseOrasUserns", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
 	}
 
 	for _, tt := range tests {

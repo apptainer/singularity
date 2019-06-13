@@ -25,6 +25,12 @@ func PrepRegistry(t *testing.T) {
 			t.Fatalf("Command failed.\n%s", res)
 		}
 	}
+
+	EnsureImage(t)
+	cmd, _, err := ImagePush(t, testenv.ImagePath, "oras://localhost:5000/oras_test_sif:latest")
+	if err != nil {
+		t.Fatalf("while prepping registry with command %q: %v", cmd, err)
+	}
 }
 
 func KillRegistry(t *testing.T) {
