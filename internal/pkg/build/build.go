@@ -296,6 +296,8 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{}, nil
+	case "oras":
+		return &sources.OrasConveyorPacker{}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":

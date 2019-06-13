@@ -1,7 +1,7 @@
 Bootstrap: scratch
 
 %setup
-    busybox_url='https://www.busybox.net/downloads/binaries/1.28.1-defconfig-multiarch/busybox-x86_64'
+    busybox_url='https://www.busybox.net/downloads/binaries/1.28.2-defconfig-multiarch/busybox-x86_64'
 
     # Create necessary config files.
     printf 'root:!:0:0:root:/root:/bin/sh\n' > "${SINGULARITY_ROOTFS}/etc/passwd"

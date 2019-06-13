@@ -110,13 +110,13 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
-	if err := system.RunAfterTag(mount.LayerTag, c.addIdentityMount); err != nil {
+	if err := system.RunAfterTag(mount.SharedTag, c.addIdentityMount); err != nil {
 		return err
 	}
 	// this call must occur just after all container layers are mounted
 	// to prevent user binds to screw up session final directory and
 	// consequently chroot
-	if err := system.RunAfterTag(mount.LayerTag, c.chdirFinal); err != nil {
+	if err := system.RunAfterTag(mount.SharedTag, c.chdirFinal); err != nil {
 		return err
 	}
 	if err := system.RunAfterTag(mount.RootfsTag, c.addActionsMount); err != nil {
@@ -163,6 +163,11 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
+	networkSetup, err := c.prepareNetworkSetup(system, pid)
+	if err != nil {
+		return err
+	}
+
 	sylog.Debugf("Mount all")
 	if err := system.MountAll(); err != nil {
 		return err
@@ -180,47 +185,9 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		}
 	}
 
-	if c.netNS {
-		if os.Geteuid() == 0 && !c.userNS {
-			/* hold a reference to container network namespace for cleanup */
-			f, err := syscall.Open("/proc/"+strconv.Itoa(pid)+"/ns/net", os.O_RDONLY, 0)
-			if err != nil {
-				return fmt.Errorf("can't open network namespace: %s", err)
-			}
-			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f)
-			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
-
-			cniPath := &network.CNIPath{}
-
-			if engine.EngineConfig.File.CniConfPath != "" {
-				cniPath.Conf = engine.EngineConfig.File.CniConfPath
-			} else {
-				cniPath.Conf = defaultCNIConfPath
-			}
-			if engine.EngineConfig.File.CniPluginPath != "" {
-				cniPath.Plugin = engine.EngineConfig.File.CniPluginPath
-			} else {
-				cniPath.Plugin = defaultCNIPluginPath
-			}
-
-			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
-			if err != nil {
-				return fmt.Errorf("%s", err)
-			}
-			netargs := engine.EngineConfig.GetNetworkArgs()
-			if err := setup.SetArgs(netargs); err != nil {
-				return fmt.Errorf("%s", err)
-			}
-
-			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
-
-			if err := setup.AddNetworks(); err != nil {
-				return fmt.Errorf("%s", err)
-			}
-
-			engine.EngineConfig.Network = setup
-		} else if engine.EngineConfig.GetNetwork() != "none" {
-			return fmt.Errorf("Network requires root permissions or --network=none argument as user")
+	if networkSetup != nil {
+		if err := networkSetup(); err != nil {
+			return err
 		}
 	}
 
@@ -346,7 +313,7 @@ func (c *container) setupOverlayLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
@@ -357,7 +324,7 @@ func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string
 	}
 
 	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
@@ -368,7 +335,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.RootfsTag, c.setPropagationMount)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
@@ -404,6 +371,10 @@ func (c *container) mount(point *mount.Point) error {
 	return nil
 }
 
+// setPropagationMount will apply propagation flag set by
+// configuration directive, when applied master process
+// won't see mount done by RPC server anymore. Typically
+// called after SharedTag mounts
 func (c *container) setPropagationMount(system *mount.System) error {
 	pflags := uintptr(syscall.MS_REC)
 
@@ -1049,11 +1020,10 @@ func (c *container) addDevMount(system *mount.System) error {
 			if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
 				return err
 			}
-			// and also add a /dev/tty
-			if err := c.addSessionDev("/dev/tty", system); err != nil {
-				return err
-			}
 			break
+		}
+		if err := c.addSessionDev("/dev/tty", system); err != nil {
+			return err
 		}
 		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
@@ -1094,7 +1064,7 @@ func (c *container) addDevMount(system *mount.System) error {
 
 		// devices could be added in addUserbindsMount so bind session dev
 		// after that all devices have been added to the mount point list
-		if err := system.RunAfterTag(mount.LayerTag, c.addSessionDevMount); err != nil {
+		if err := system.RunAfterTag(mount.SharedTag, c.addSessionDevMount); err != nil {
 			return err
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "yes" {
@@ -1741,4 +1711,58 @@ func (c *container) addActionsMount(system *mount.System) error {
 	}
 
 	return system.Points.AddRemount(mount.BindsTag, containerDir, flags)
+}
+
+func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() error, error) {
+	if !c.netNS {
+		return nil, nil
+	}
+
+	if os.Geteuid() == 0 && !c.userNS {
+		// we hold a reference to container network namespace
+		// by binding /proc/self/ns/net (from RPC server) inside
+		// session directory
+		if err := c.session.AddFile("/netns", nil); err != nil {
+			return nil, err
+		}
+		nspath, _ := c.session.GetPath("/netns")
+		if err := system.Points.AddBind(mount.SharedTag, "/proc/self/ns/net", nspath, 0); err != nil {
+			return nil, fmt.Errorf("could not hold network namespace reference: %s", err)
+		}
+		networks := strings.Split(c.engine.EngineConfig.GetNetwork(), ",")
+
+		cniPath := &network.CNIPath{}
+
+		cniPath.Conf = c.engine.EngineConfig.File.CniConfPath
+		if cniPath.Conf == "" {
+			cniPath.Conf = defaultCNIConfPath
+		}
+		cniPath.Plugin = c.engine.EngineConfig.File.CniPluginPath
+		if cniPath.Plugin == "" {
+			cniPath.Plugin = defaultCNIPluginPath
+		}
+
+		setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+		if err != nil {
+			return nil, fmt.Errorf("network setup failed: %s", err)
+		}
+		netargs := c.engine.EngineConfig.GetNetworkArgs()
+		if err := setup.SetArgs(netargs); err != nil {
+			return nil, fmt.Errorf("error while setting network arguments: %s", err)
+		}
+
+		return func() error {
+			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
+
+			if err := setup.AddNetworks(); err != nil {
+				return fmt.Errorf("%s", err)
+			}
+			c.engine.EngineConfig.Network = setup
+			return nil
+		}, nil
+	} else if c.engine.EngineConfig.GetNetwork() != "none" {
+		return nil, fmt.Errorf("network requires root permissions or --network=none argument as user")
+	}
+
+	return nil, nil
 }

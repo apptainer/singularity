@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	libraryhelper "github.com/sylabs/singularity/internal/pkg/library"
+	"github.com/sylabs/singularity/internal/pkg/oras"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -91,6 +92,39 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	}
 
 	return imgabs, nil
+}
+
+func handleOras(cmd *cobra.Command, u string) (string, error) {
+	ociAuth, err := makeDockerCredentials(cmd)
+	if err != nil {
+		return "", fmt.Errorf("while creating docker credentials: %v", err)
+	}
+
+	_, ref := uri.Split(u)
+	sum, err := oras.ImageSHA(ref, ociAuth)
+	if err != nil {
+		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
+	}
+
+	imageName := uri.GetName(u)
+	cacheImagePath := cache.OrasImage(sum, imageName)
+	if exists, err := cache.OrasImageExists(sum, imageName); err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
+	} else if !exists {
+		sylog.Infof("Downloading image with ORAS")
+
+		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
+			return "", fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
+			return "", fmt.Errorf("error getting ImageHash: %v", err)
+		} else if cacheFileHash != sum {
+			return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
+		}
+	}
+
+	return cacheImagePath, nil
 }
 
 func handleLibrary(u, libraryURL string) (string, error) {
@@ -191,6 +225,8 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
 		image, err = handleLibrary(args[0], handleActionRemote(cmd))
+	case uri.Oras:
+		image, err = handleOras(cmd, args[0])
 	case uri.Shub:
 		image, err = handleShub(args[0])
 	case ociclient.IsSupported(t):
