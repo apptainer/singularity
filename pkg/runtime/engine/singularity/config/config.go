@@ -129,6 +129,16 @@ func (e *EngineConfig) GetNv() bool {
 	return e.JSON.Nv
 }
 
+// SetRocm sets rocm flag to bind rocm libraries into containee.JSON.
+func (e *EngineConfig) SetRocm(rocm bool) {
+	e.JSON.Rocm = rocm
+}
+
+// GetRocm returns if rocm flag is set or not.
+func (e *EngineConfig) GetRocm() bool {
+	return e.JSON.Rocm
+}
+
 // SetWorkdir sets a work directory path.
 func (e *EngineConfig) SetWorkdir(name string) {
 	e.JSON.Workdir = name
