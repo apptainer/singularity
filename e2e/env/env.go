@@ -11,14 +11,12 @@ package singularityenv
 import (
 	"fmt"
 	"os"
-
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
-
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 type testingEnv struct {
@@ -63,18 +61,11 @@ func singularityEnv(t *testing.T) {
 		t.Run(currentTest.name, test.WithoutPrivilege(func(t *testing.T) {
 			args := []string{"exec", currentTest.image, "env"}
 
-			cmd := exec.Command(testenv.CmdPath, args...)
+			cmd := exec.Command(testenv.CmdPath, args..., append(os.Environ(), currentTest.env...))
 
-			if res := cmd.Run(t); res.Error == nil {
-				t.Fatalf("While running command:\n%s\nUnexpected success", res)
-			}
-
-			cmd.env = append(os.Environ(), currentTest.env...)
-			b, err := cmd.CombinedOutput()
-
-			out := string(b)
+			out := cmd.Run(t).Stdout()
 			t.Logf("args: '%v'", strings.Join(args, " "))
-			t.Logf("env: '%v'", strings.Join(cmd.env, " "))
+			t.Logf("env: '%v'", strings.Join(cmd.Env, " "))
 			t.Log(out)
 
 			if err != nil {

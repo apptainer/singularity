@@ -21,8 +21,8 @@ type Result struct {
 	*icmd.Result
 }
 
-func Command(path string, args ...string) *Cmd {
-	return &Cmd{path: path, args: args}
+func Command(path string, args []string, env []string) *Cmd {
+	return &Cmd{path: path, args: args, env: env}
 }
 
 func (c *Cmd) Run(t *testing.T) *Result {
