@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/sys/unix"
+
 	"github.com/containernetworking/cni/libcni"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
@@ -365,6 +367,59 @@ func (m *Setup) GetNetworkInterface(network string) (string, error) {
 	}
 
 	return "", fmt.Errorf("no interface found for network %s", network)
+}
+
+// SetPortProtection provides a basic mechanism to prevent port hijacking
+func (m *Setup) SetPortProtection(network string, lowPort int) error {
+	idx := -1
+	for i := 0; i < len(m.networkConfList); i++ {
+		if m.networkConfList[i].Name == network {
+			idx = i
+			break
+		}
+	}
+	if idx < 0 {
+		return fmt.Errorf("no configuration found for network %s", network)
+	}
+
+	entries, ok := m.runtimeConf[idx].CapabilityArgs["portMappings"].([]PortMapEntry)
+	if !ok {
+		return nil
+	}
+	for _, e := range entries {
+		sockProt := unix.IPPROTO_TCP
+		sockType := unix.SOCK_STREAM
+
+		if e.HostPort <= lowPort {
+			return fmt.Errorf("not authorized to map port under %d", lowPort)
+		}
+		if e.Protocol == "udp" {
+			sockProt = unix.IPPROTO_UDP
+			sockType = unix.SOCK_DGRAM
+		}
+		fd, err := unix.Socket(unix.AF_INET, sockType, sockProt)
+		if err != nil {
+			return fmt.Errorf("failed to create %s socket on port %d: %s", e.Protocol, e.HostPort, err)
+		}
+		err = unix.SetsockoptInt(fd, unix.SOL_SOCKET, unix.SO_REUSEPORT, 1)
+		if err != nil {
+			return fmt.Errorf("failed to set reuseport for %s socket on port %d: %s", e.Protocol, e.HostPort, err)
+		}
+		sockAddr := &unix.SockaddrInet4{
+			Port: e.HostPort,
+		}
+		err = unix.Bind(fd, sockAddr)
+		if err != nil {
+			return fmt.Errorf("failed to bind %s socket on port %d: %s", e.Protocol, e.HostPort, err)
+		}
+		if sockType == unix.SOCK_STREAM {
+			err = unix.Listen(fd, 1)
+			if err != nil {
+				return fmt.Errorf("failed to listen on %s socket port %d: %s", e.Protocol, e.HostPort, err)
+			}
+		}
+	}
+	return nil
 }
 
 // SetEnvPath allows to define custom paths for PATH environment

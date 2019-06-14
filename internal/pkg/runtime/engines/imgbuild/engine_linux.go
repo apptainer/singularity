@@ -7,13 +7,17 @@ package imgbuild
 
 import (
 	"fmt"
-	"syscall"
+	"os"
+	"path/filepath"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
@@ -40,18 +44,56 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("bad engine configuration provided")
 	}
 
+	configurationFile := filepath.Join(buildcfg.SYSCONFDIR, "/singularity/singularity.conf")
+
+	// check for ownership of singularity.conf
+	if starterConfig.GetIsSUID() && !fs.IsOwner(configurationFile, 0) {
+		return fmt.Errorf("%s must be owned by root", configurationFile)
+	}
+
+	fileConfig := &singularity.FileConfig{}
+	if err := config.Parser(configurationFile, fileConfig); err != nil {
+		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+
+	if !fileConfig.AllowSetuid && e.EngineConfig.Bundle.Opts.Fakeroot {
+		return fmt.Errorf("fakeroot requires to set 'allow setuid = yes' in %s", configurationFile)
+	}
+	if !starterConfig.GetIsSUID() && os.Getuid() != 0 {
+		return fmt.Errorf("unable to run imgbuild engine as non-root user or without --fakeroot")
+	}
+	if starterConfig.GetIsSUID() && !e.EngineConfig.Bundle.Opts.Fakeroot {
+		return fmt.Errorf("unable to run imgbuild engine as non-root user or without --fakeroot")
+	}
+
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
-	if syscall.Getuid() != 0 {
-		return fmt.Errorf("unable to run imgbuild engine as non-root user")
-	}
-
-	if starterConfig.GetIsSUID() {
-		return fmt.Errorf("%s don't allow SUID workflow", e.CommonConfig.EngineName)
-	}
-
 	e.EngineConfig.OciConfig.SetupPrivileged(true)
+
+	if e.EngineConfig.Bundle.Opts.Fakeroot {
+		baseID := fileConfig.FakerootBaseID
+		allowedUsers := fileConfig.FakerootAllowedUsers
+		idRange, err := fakeroot.GetIDRange(baseID, allowedUsers)
+		if err != nil {
+			return err
+		}
+		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
+
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+
+		starterConfig.SetHybridWorkflow(true)
+		starterConfig.SetAllowSetgroups(true)
+
+		starterConfig.SetTargetUID(0)
+		starterConfig.SetTargetGID([]int{0})
+	}
 
 	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
