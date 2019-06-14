@@ -334,7 +334,10 @@ func (m *Setup) GetNetworkIP(network string, version string) (net.IP, error) {
 
 	for i := 0; i < len(m.networkConfList); i++ {
 		if m.networkConfList[i].Name == n {
-			res, _ := current.GetResult(m.result[i])
+			res, err := current.NewResultFromResult(m.result[i])
+			if err != nil {
+				return nil, fmt.Errorf("could not convert result: %v", err)
+			}
 			for _, ipResult := range res.IPs {
 				if ipResult.Version == version {
 					return ipResult.Address.IP, nil
