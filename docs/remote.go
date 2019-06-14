@@ -48,7 +48,7 @@ const (
 	RemoteUseShort string = `Set a singularity remote endpoint to be actively used`
 	RemoteUseLong  string = `
   The 'remote use' command sets the remote to be used by default by any command
-  that interacts with singularity services.`
+  that interacts with Singularity services.`
 	RemoteUseExample string = `
   $ singularity remote use SylabsCloud`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
