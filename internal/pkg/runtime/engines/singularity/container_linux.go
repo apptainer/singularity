@@ -1020,11 +1020,10 @@ func (c *container) addDevMount(system *mount.System) error {
 			if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
 				return err
 			}
-			// and also add a /dev/tty
-			if err := c.addSessionDev("/dev/tty", system); err != nil {
-				return err
-			}
 			break
+		}
+		if err := c.addSessionDev("/dev/tty", system); err != nil {
+			return err
 		}
 		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
