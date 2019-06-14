@@ -16,13 +16,15 @@ import (
 	"syscall"
 	"testing"
 
+	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
+
 	"github.com/sylabs/singularity/e2e/actions"
 	"github.com/sylabs/singularity/e2e/docker"
 	singularityenv "github.com/sylabs/singularity/e2e/env"
 	"github.com/sylabs/singularity/e2e/help"
 	"github.com/sylabs/singularity/e2e/imgbuild"
 	"github.com/sylabs/singularity/e2e/instance"
-	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
+	//singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/e2e/push"
 	"github.com/sylabs/singularity/e2e/remote"
@@ -92,10 +94,14 @@ func Run(t *testing.T) {
 	defer os.Remove(imagePath)
 
 	// Start registry for tests
-	singularitye2e.PrepRegistry(t)
-	defer singularitye2e.KillRegistry(t)
+	//	singularitye2e.PrepRegistry(t)
+	//	defer singularitye2e.KillRegistry(t)
 
 	// RunE2ETests by functionality
+
+	t.Run("INSPECT", singularityinspect.RunE2ETests)
+
+	return
 
 	t.Run("BUILD", imgbuild.RunE2ETests)
 
