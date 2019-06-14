@@ -13,7 +13,7 @@ const (
 	RemoteUse   string = `remote <subcommand>`
 	RemoteShort string = `Manage singularity remote endpoints`
 	RemoteLong  string = `
-  The 'remote' commands allow you to manage singularity remote endpoints through 
+  The 'remote' commands allow you to manage Singularity remote endpoints through 
   its subcommands. These allow you to add, log in, and use endpoints. The remote
   configuration is stored in $HOME/.singularity/remotes.yaml by default.`
 	RemoteExample string = `
