@@ -33,9 +33,10 @@ const expectedLabelsJson = `
 		"labels": {
 			"E2E": "AWSOME",
 			"HI": "\"HELLO WORLD\"",
+			"MAINTAINER": "\"WestleyK \u003cwestley@sylabs.io\u003e\"",
 			"e2e": "awsome",
 			"hi": "\"hello world\"",
-			"org.label-schema.build-date": "Friday_14_June_2019_11:59:57_PDT",
+			"org.label-schema.build-date": "Friday_14_June_2019_16:49:57_PDT",
 			"org.label-schema.schema-version": "1.0",
 			"org.label-schema.usage": "/.singularity.d/runscript.help",
 			"org.label-schema.usage.singularity.deffile.bootstrap": "library",
@@ -45,16 +46,18 @@ const expectedLabelsJson = `
 		}
 	},
 	"type": "container"
-}`
+}
+`
 
 const expectedRunscriptJson = `
 {
 	"attributes": {
 		"apps": "",
-		"runscript": "#!/bin/sh\n\necho \"E2E Test Container\"\n\n\n"
+		"runscript": "#!/bin/sh\n\ncat /.singularity.d/runscript.help\n\n\n"
 	},
 	"type": "container"
-}`
+}
+`
 
 const expectedListAppsJson = `
 {
@@ -62,7 +65,8 @@ const expectedListAppsJson = `
 		"apps": "hello\nworld\n"
 	},
 	"type": "container"
-}`
+}
+`
 
 const expectedTestJson = `
 {
@@ -71,7 +75,8 @@ const expectedTestJson = `
 		"test": "#!/bin/sh\n\nls /\ntest -d /\ntest -d /etc\n\n\n"
 	},
 	"type": "container"
-}`
+}
+`
 
 const expectedEnvironmentJson = `
 {
@@ -82,7 +87,8 @@ const expectedEnvironmentJson = `
 		}
 	},
 	"type": "container"
-}`
+}
+`
 
 func runInspectCommand(inspectType string) ([]byte, error) {
 	argv := []string{"inspect", "--json", inspectType, containerTesterSIF}
@@ -98,6 +104,12 @@ func singularityInspect(t *testing.T) {
 		json      []string // json is the path to a value that we will test
 		expectOut string   // expectOut should be a string of expected output
 	}{
+		{
+			name:      "label maintainer",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "MAINTAINER"},
+			expectOut: expectedLabelsJson,
+		},
 		{
 			name:      "label",
 			insType:   "--labels",
