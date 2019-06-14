@@ -26,7 +26,7 @@ var testenv testingEnv
 
 const containerTesterSIF = "testdata/inspecter_container.sif"
 
-const expectedLabelsJson = `
+const expectedLabelsJSON = `
 {
 	"attributes": {
 		"apps": "",
@@ -49,7 +49,7 @@ const expectedLabelsJson = `
 }
 `
 
-const expectedRunscriptJson = `
+const expectedRunscriptJSON = `
 {
 	"attributes": {
 		"apps": "",
@@ -59,7 +59,7 @@ const expectedRunscriptJson = `
 }
 `
 
-const expectedListAppsJson = `
+const expectedListAppsJSON = `
 {
 	"attributes": {
 		"apps": "hello\nworld\n"
@@ -68,7 +68,7 @@ const expectedListAppsJson = `
 }
 `
 
-const expectedTestJson = `
+const expectedTestJSON = `
 {
 	"attributes": {
 		"apps": "",
@@ -78,7 +78,7 @@ const expectedTestJson = `
 }
 `
 
-const expectedEnvironmentJson = `
+const expectedEnvironmentJSON = `
 {
 	"attributes": {
 		"apps": "",
