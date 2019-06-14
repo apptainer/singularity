@@ -15,7 +15,7 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	//	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 type testingEnv struct {
@@ -25,32 +25,89 @@ type testingEnv struct {
 
 var testenv testingEnv
 
-func singularityInspect(t *testing.T) {
-	argv := []string{"inspect", "--json", "--labels", "testdata/test.sif"}
+const expectedLabelsJson = `{
+	"attributes": {
+		"apps": "",
+		"labels": {
+			"E2E": "AWSOME",
+			"HI": "\"HELLO WORLD\"",
+			"e2e": "awsome",
+			"hi": "\"hello world\"",
+			"org.label-schema.build-date": "Friday_14_June_2019_11:59:57_PDT",
+			"org.label-schema.schema-version": "1.0",
+			"org.label-schema.usage": "/.singularity.d/runscript.help",
+			"org.label-schema.usage.singularity.deffile.bootstrap": "library",
+			"org.label-schema.usage.singularity.deffile.from": "alpine:latest",
+			"org.label-schema.usage.singularity.runscript.help": "/.singularity.d/runscript.help",
+			"org.label-schema.usage.singularity.version": "3.2.1-660.g4c8a84050"
+		}
+	},
+	"type": "container"
+}`
+
+func runInspectCommand(inspectType string) ([]byte, error) {
+	argv := []string{"inspect", "--json", inspectType, "testdata/test.sif"}
 	cmd := exec.Command("singularity", argv...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		fmt.Println(string(out))
-		panic(err)
+
+	return cmd.CombinedOutput()
+}
+
+func singularityInspect(t *testing.T) {
+	tests := []struct {
+		name      string
+		insType   string
+		json      []string
+		expectOut string
+	}{
+		{
+			name:      "label E2E",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "E2E"},
+			expectOut: expectedLabelsJson,
+		},
+		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "HI"},
+			expectOut: expectedLabelsJson,
+		},
+		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "e2e"},
+			expectOut: expectedLabelsJson,
+		},
+		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "hi"},
+			expectOut: expectedLabelsJson,
+		},
 	}
 
-	//    fmt.Println("OUT: ", string(out))
+	for _, tt := range tests {
+		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			out, err := runInspectCommand(tt.insType)
+			if err != nil {
+				t.Fatalf("Unexpected failure: %s: %s", string(out), err)
+			}
 
-	v, err := jsonparser.GetString(out, "attributes", "labels", "E2E")
-	if err != nil {
-		fmt.Println("ERROR: ", err)
-	}
-	fmt.Println(v)
+			// Check the E2E label in test.sif, does it match our expected output
+			v, err := jsonparser.GetString(out, tt.json...)
+			if err != nil {
+				fmt.Println("ERROR: ", err)
+			}
+			// Get the expected output, and compair them
+			e, err := jsonparser.GetString([]byte(tt.expectOut), tt.json...)
+			if err != nil {
+				t.Fatalf("Unable to get expected output from json: %v", err)
+			}
+			if v != e {
+				t.Fatalf("Unexpected faulure: got: %s, expecting: %s", v, e)
+			}
 
-	if v != "AWSOME" {
-		t.Fatalf("Unexpected faulure: got: %s, expecting: %s", v, "AWSOME")
+		}))
 	}
-
-	v, err = jsonparser.GetString(out, "attributes", "labels", "hi")
-	if err != nil {
-		fmt.Println("ERROR: ", err)
-	}
-	fmt.Println(v)
 
 }
 
