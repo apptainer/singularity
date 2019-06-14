@@ -367,7 +367,7 @@ Enterprise Performance Computing (EPC)`
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
 	CapabilityDropShort string = `Remove capabilities from a user or group (requires root)`
 	CapabilityDropLong  string = `
-  Remove Linux capabilities from an user/group. NOTE: This command requires root 
+  Remove Linux capabilities from a user/group. NOTE: This command requires root 
   to run.
 
   The capabilities argument must be separated by commas and is not case 
