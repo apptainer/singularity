@@ -70,7 +70,7 @@ const (
 	PluginListUse   string = `list [list options...]`
 	PluginListShort string = `List installed singularity plugins`
 	PluginListLong  string = `
-  The 'plugin list' command lists the singularity plugins installed on the host.`
+  The 'plugin list' command lists the Singularity plugins installed on the host.`
 	PluginListExample string = `
   $ singularity plugin list`
 
