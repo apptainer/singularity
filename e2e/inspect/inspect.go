@@ -25,7 +25,8 @@ type testingEnv struct {
 
 var testenv testingEnv
 
-const expectedLabelsJson = `{
+const expectedLabelsJson = `
+{
 	"attributes": {
 		"apps": "",
 		"labels": {
@@ -40,6 +41,43 @@ const expectedLabelsJson = `{
 			"org.label-schema.usage.singularity.deffile.from": "alpine:latest",
 			"org.label-schema.usage.singularity.runscript.help": "/.singularity.d/runscript.help",
 			"org.label-schema.usage.singularity.version": "3.2.1-660.g4c8a84050"
+		}
+	},
+	"type": "container"
+}`
+
+const expectedRunscriptJson = `
+{
+	"attributes": {
+		"apps": "",
+		"runscript": "#!/bin/sh\n\necho \"E2E Test Container\"\n\n\n"
+	},
+	"type": "container"
+}`
+
+const expectedListAppsJson = `
+{
+	"attributes": {
+		"apps": "hello\nworld\n"
+	},
+	"type": "container"
+}`
+
+const expectedTestJson = `
+{
+	"attributes": {
+		"apps": "",
+		"test": "#!/bin/sh\n\nls /\ntest -d /\ntest -d /etc\n\n\n"
+	},
+	"type": "container"
+}`
+
+const expectedEnvironmentJson = `
+{
+	"attributes": {
+		"apps": "",
+		"environment": {
+			"90-environment.sh": "#!/bin/sh\n#Custom environment shell code should follow\n\n\nexport test=\"testing\"\nexport e2e=\"e2e testing\"\n\n\n"
 		}
 	},
 	"type": "container"
@@ -82,6 +120,30 @@ func singularityInspect(t *testing.T) {
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "hi"},
 			expectOut: expectedLabelsJson,
+		},
+		{
+			name:      "runscript",
+			insType:   "--runscript",
+			json:      []string{"attributes", "runscript"},
+			expectOut: expectedRunscriptJson,
+		},
+		{
+			name:      "list apps",
+			insType:   "--list-apps",
+			json:      []string{"attributes", "apps"},
+			expectOut: expectedListAppsJson,
+		},
+		{
+			name:      "test",
+			insType:   "--test",
+			json:      []string{"attributes", "test"},
+			expectOut: expectedTestJson,
+		},
+		{
+			name:      "environment",
+			insType:   "--environment",
+			json:      []string{"attributes", "environment", "90-environment.sh"},
+			expectOut: expectedEnvironmentJson,
 		},
 	}
 
