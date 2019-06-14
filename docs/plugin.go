@@ -37,7 +37,7 @@ const (
 	PluginCompileUse   string = `compile [compile options...] <host_path>`
 	PluginCompileShort string = `Compile a singularity plugin`
 	PluginCompileLong  string = `
-  The 'plugin compile' command allows a developer to compile a singularity 
+  The 'plugin compile' command allows a developer to compile a Singularity 
   plugin in the expected environment. The provided host directory is the 
   location of the plugin's source code.`
 	PluginCompileExample string = `
