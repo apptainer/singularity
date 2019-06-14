@@ -9,7 +9,6 @@
 package singularityenv
 
 import (
-	"fmt"
 	"os/exec"
 	"testing"
 
@@ -24,6 +23,8 @@ type testingEnv struct {
 }
 
 var testenv testingEnv
+
+const containerTesterSIF = "testdata/inspecter_container.sif"
 
 const expectedLabelsJson = `
 {
@@ -84,7 +85,7 @@ const expectedEnvironmentJson = `
 }`
 
 func runInspectCommand(inspectType string) ([]byte, error) {
-	argv := []string{"inspect", "--json", inspectType, "testdata/test.sif"}
+	argv := []string{"inspect", "--json", inspectType, containerTesterSIF}
 	cmd := exec.Command("singularity", argv...)
 
 	return cmd.CombinedOutput()
@@ -93,12 +94,12 @@ func runInspectCommand(inspectType string) ([]byte, error) {
 func singularityInspect(t *testing.T) {
 	tests := []struct {
 		name      string
-		insType   string
-		json      []string
-		expectOut string
+		insType   string   // insType the type of 'inspect' flag, eg. '--deffile'
+		json      []string // json is the path to a value that we will test
+		expectOut string   // expectOut should be a string of expected output
 	}{
 		{
-			name:      "label E2E",
+			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "E2E"},
 			expectOut: expectedLabelsJson,
@@ -157,9 +158,9 @@ func singularityInspect(t *testing.T) {
 			// Check the E2E label in test.sif, does it match our expected output
 			v, err := jsonparser.GetString(out, tt.json...)
 			if err != nil {
-				fmt.Println("ERROR: ", err)
+				t.Fatalf("Unable to get expected output from json: %v", err)
 			}
-			// Get the expected output, and compair them
+			// Get the expected output, and compare them
 			e, err := jsonparser.GetString([]byte(tt.expectOut), tt.json...)
 			if err != nil {
 				t.Fatalf("Unable to get expected output from json: %v", err)
@@ -177,6 +178,5 @@ func singularityInspect(t *testing.T) {
 func RunE2ETests(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 
-	// try to build from a non existen path
-	t.Run("singularityEnv", singularityInspect)
+	t.Run("singularityInspect", singularityInspect)
 }
