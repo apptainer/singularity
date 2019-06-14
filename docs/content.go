@@ -162,7 +162,7 @@ Enterprise Performance Computing (EPC)`
 	CacheUse   string = `cache`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
-  Manage your local singularity cache. You can list/clean using the specific 
+  Manage your local Singularity cache. You can list/clean using the specific 
   types.`
 	CacheExample string = `
   All group commands have their own help output:
