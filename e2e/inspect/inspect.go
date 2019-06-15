@@ -3,10 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// This test sets singularity image specific environment variables and
-// verifies that they are properly set.
-
-package singularityenv
+package singularityinspect
 
 import (
 	"os/exec"
