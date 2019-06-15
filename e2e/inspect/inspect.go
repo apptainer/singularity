@@ -92,7 +92,7 @@ const expectedEnvironmentJSON = `
 
 func runInspectCommand(inspectType string) ([]byte, error) {
 	argv := []string{"inspect", "--json", inspectType, containerTesterSIF}
-	cmd := exec.Command("singularity", argv...)
+	cmd := exec.Command(testenv.CmdPath, argv...)
 
 	return cmd.CombinedOutput()
 }
@@ -108,55 +108,55 @@ func singularityInspect(t *testing.T) {
 			name:      "label maintainer",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "MAINTAINER"},
-			expectOut: expectedLabelsJson,
+			expectOut: expectedLabelsJSON,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "E2E"},
-			expectOut: expectedLabelsJson,
+			expectOut: expectedLabelsJSON,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "HI"},
-			expectOut: expectedLabelsJson,
+			expectOut: expectedLabelsJSON,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "e2e"},
-			expectOut: expectedLabelsJson,
+			expectOut: expectedLabelsJSON,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "hi"},
-			expectOut: expectedLabelsJson,
+			expectOut: expectedLabelsJSON,
 		},
 		{
 			name:      "runscript",
 			insType:   "--runscript",
 			json:      []string{"attributes", "runscript"},
-			expectOut: expectedRunscriptJson,
+			expectOut: expectedRunscriptJSON,
 		},
 		{
 			name:      "list apps",
 			insType:   "--list-apps",
 			json:      []string{"attributes", "apps"},
-			expectOut: expectedListAppsJson,
+			expectOut: expectedListAppsJSON,
 		},
 		{
 			name:      "test",
 			insType:   "--test",
 			json:      []string{"attributes", "test"},
-			expectOut: expectedTestJson,
+			expectOut: expectedTestJSON,
 		},
 		{
 			name:      "environment",
 			insType:   "--environment",
 			json:      []string{"attributes", "environment", "90-environment.sh"},
-			expectOut: expectedEnvironmentJson,
+			expectOut: expectedEnvironmentJSON,
 		},
 	}
 
