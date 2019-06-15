@@ -132,6 +132,30 @@ func singularityInspect(t *testing.T) {
 			expectOut: expectedLabelsJSON,
 		},
 		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "org.label-schema.usage"},
+			expectOut: expectedLabelsJSON,
+		},
+		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "org.label-schema.usage.singularity.deffile.bootstrap"},
+			expectOut: expectedLabelsJSON,
+		},
+		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "org.label-schema.usage.singularity.deffile.from"},
+			expectOut: expectedLabelsJSON,
+		},
+		{
+			name:      "label",
+			insType:   "--labels",
+			json:      []string{"attributes", "labels", "org.label-schema.usage.singularity.runscript.help"},
+			expectOut: expectedLabelsJSON,
+		},
+		{
 			name:      "runscript",
 			insType:   "--runscript",
 			json:      []string{"attributes", "runscript"},
