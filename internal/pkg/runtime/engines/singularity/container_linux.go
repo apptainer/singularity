@@ -14,6 +14,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/priv"
+
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -239,24 +241,48 @@ func (c *container) setupSIFOverlay(img *image.Image, writable bool) error {
 	return nil
 }
 
+// checkOverlay will test if overlay is supported/allowed.
+func (c *container) checkOverlay() bool {
+	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
+	// with the current workflow, since 4.18 we get an operation not permitted
+	if c.userNS {
+		return false
+	}
+
+	if _, err := c.rpcOps.Mount("none", "/", "overlay", syscall.MS_SILENT, ""); err != nil {
+		// if an invalid argument error is returned, overlay is supported and is allowed
+		if err.Error() != os.ErrInvalid.Error() {
+			sylog.Debugf("Overlay seems not supported and/or not allowed by kernel")
+			return false
+		}
+	}
+
+	// previous mount forced overlay module to be loaded, check if we find
+	// it in /proc/filesystems
+	if has, _ := proc.HasFilesystem("overlay"); has {
+		sylog.Debugf("Overlay seems supported and allowed by kernel")
+		switch c.engine.EngineConfig.File.EnableOverlay {
+		case "yes", "try":
+			return true
+		default:
+			sylog.Debugf("Could not use overlay, disabled by configuration")
+		}
+	}
+
+	return false
+}
+
 // setupSessionLayout will create the session layout according to the capabilities of Singularity
 // on the system. It will first attempt to use "overlay", followed by "underlay", and if neither
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existent paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
 	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
-	overlayEnabled := false
+	overlayEnabled := c.checkOverlay()
 
 	sessionPath, err := filepath.EvalSymlinks(buildcfg.SESSIONDIR)
 	if err != nil {
 		return fmt.Errorf("failed to resolved session directory %s: %s", buildcfg.SESSIONDIR, err)
-	}
-
-	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
-		switch c.engine.EngineConfig.File.EnableOverlay {
-		case "yes", "try":
-			overlayEnabled = true
-		}
 	}
 
 	imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
@@ -1714,55 +1740,79 @@ func (c *container) addActionsMount(system *mount.System) error {
 }
 
 func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() error, error) {
-	if !c.netNS {
+	const (
+		fakerootNet  = "fakeroot"
+		noneNet      = "none"
+		procNetNs    = "/proc/self/ns/net"
+		sessionNetNs = "/netns"
+	)
+
+	fakeroot := c.engine.EngineConfig.GetFakeroot()
+	net := c.engine.EngineConfig.GetNetwork()
+	euid := os.Geteuid()
+
+	if !c.netNS || net == noneNet {
 		return nil, nil
+	} else if (c.userNS || euid != 0) && !fakeroot {
+		return nil, fmt.Errorf("network requires root or --fakeroot, users need to specify --network=%s with --net", noneNet)
 	}
 
-	if os.Geteuid() == 0 && !c.userNS {
-		// we hold a reference to container network namespace
-		// by binding /proc/self/ns/net (from RPC server) inside
-		// session directory
-		if err := c.session.AddFile("/netns", nil); err != nil {
-			return nil, err
-		}
-		nspath, _ := c.session.GetPath("/netns")
-		if err := system.Points.AddBind(mount.SharedTag, "/proc/self/ns/net", nspath, 0); err != nil {
-			return nil, fmt.Errorf("could not hold network namespace reference: %s", err)
-		}
-		networks := strings.Split(c.engine.EngineConfig.GetNetwork(), ",")
+	// we hold a reference to container network namespace
+	// by binding /proc/self/ns/net (from the RPC server) inside the
+	// session directory
+	if err := c.session.AddFile(sessionNetNs, nil); err != nil {
+		return nil, err
+	}
+	nspath, _ := c.session.GetPath(sessionNetNs)
+	if err := system.Points.AddBind(mount.SharedTag, procNetNs, nspath, 0); err != nil {
+		return nil, fmt.Errorf("could not hold network namespace reference: %s", err)
+	}
+	networks := strings.Split(c.engine.EngineConfig.GetNetwork(), ",")
 
-		cniPath := &network.CNIPath{}
+	if fakeroot && euid != 0 && net != fakerootNet {
+		// set as debug message to avoid annoying warning
+		sylog.Debugf("only '%s' network is allowed for regular user, you requested '%s'", fakerootNet, net)
+		networks = []string{fakerootNet}
+	}
 
-		cniPath.Conf = c.engine.EngineConfig.File.CniConfPath
-		if cniPath.Conf == "" {
-			cniPath.Conf = defaultCNIConfPath
-		}
-		cniPath.Plugin = c.engine.EngineConfig.File.CniPluginPath
-		if cniPath.Plugin == "" {
-			cniPath.Plugin = defaultCNIPluginPath
-		}
+	cniPath := &network.CNIPath{}
 
-		setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
-		if err != nil {
-			return nil, fmt.Errorf("network setup failed: %s", err)
-		}
-		netargs := c.engine.EngineConfig.GetNetworkArgs()
-		if err := setup.SetArgs(netargs); err != nil {
-			return nil, fmt.Errorf("error while setting network arguments: %s", err)
-		}
+	cniPath.Conf = c.engine.EngineConfig.File.CniConfPath
+	if cniPath.Conf == "" {
+		cniPath.Conf = defaultCNIConfPath
+	}
+	cniPath.Plugin = c.engine.EngineConfig.File.CniPluginPath
+	if cniPath.Plugin == "" {
+		cniPath.Plugin = defaultCNIPluginPath
+	}
 
-		return func() error {
-			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
+	setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+	if err != nil {
+		return nil, fmt.Errorf("network setup failed: %s", err)
+	}
+	netargs := c.engine.EngineConfig.GetNetworkArgs()
+	if err := setup.SetArgs(netargs); err != nil {
+		return nil, fmt.Errorf("error while setting network arguments: %s", err)
+	}
 
-			if err := setup.AddNetworks(); err != nil {
-				return fmt.Errorf("%s", err)
+	return func() error {
+		if fakeroot {
+			// prevent port hijacking between user processes
+			if err := setup.SetPortProtection(fakerootNet, 0); err != nil {
+				return err
 			}
-			c.engine.EngineConfig.Network = setup
-			return nil
-		}, nil
-	} else if c.engine.EngineConfig.GetNetwork() != "none" {
-		return nil, fmt.Errorf("network requires root permissions or --network=none argument as user")
-	}
+			if euid != 0 {
+				priv.Escalate()
+				defer priv.Drop()
+			}
+		}
 
-	return nil, nil
+		setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
+
+		if err := setup.AddNetworks(); err != nil {
+			return fmt.Errorf("%s", err)
+		}
+		c.engine.EngineConfig.Network = setup
+		return nil
+	}, nil
 }

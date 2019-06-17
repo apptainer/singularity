@@ -253,6 +253,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	engineConfig.SetSecurity(Security)
 	engineConfig.SetShell(ShellPath)
 	engineConfig.SetLibrariesPath(ContainLibsPath)
+	engineConfig.SetFakeroot(IsFakeroot)
 
 	if ShellPath != "" {
 		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
@@ -365,6 +366,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	}
 
 	if NetNamespace {
+		if IsFakeroot && Network != "none" {
+			engineConfig.SetNetwork("fakeroot")
+		}
 		generator.AddOrReplaceLinuxNamespace("network", "")
 	}
 	if UtsNamespace {
@@ -386,12 +390,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	if UserNamespace {
 		generator.AddOrReplaceLinuxNamespace("user", "")
-		starter = buildcfg.LIBEXECDIR + "/singularity/bin/starter"
 
-		if IsFakeroot {
-			generator.AddLinuxUIDMapping(uid, 0, 1)
-			generator.AddLinuxGIDMapping(gid, 0, 1)
-		} else {
+		if !IsFakeroot {
+			starter = filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
 			generator.AddLinuxUIDMapping(uid, uid, 1)
 			generator.AddLinuxGIDMapping(gid, gid, 1)
 		}

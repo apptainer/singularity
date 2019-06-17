@@ -140,9 +140,12 @@ func handleLibrary(u, libraryURL string) (string, error) {
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, _, err := c.GetImage(ctx, imageRef)
+	libraryImage, existOk, err := c.GetImage(ctx, imageRef)
 	if err != nil {
 		return "", err
+	}
+	if !existOk {
+		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imageName := uri.GetName("library://" + imageRef)

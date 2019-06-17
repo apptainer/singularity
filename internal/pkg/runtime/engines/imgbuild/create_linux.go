@@ -56,6 +56,9 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	// sensible mount point options to avoid accidental system settings override
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV | syscall.MS_RDONLY)
+	if engine.EngineConfig.Opts.Fakeroot {
+		flags = uintptr(syscall.MS_BIND | syscall.MS_REC)
+	}
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
 	_, err = rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro")
@@ -96,9 +99,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
 	}
-	_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-	if err != nil {
-		return fmt.Errorf("remount proc failed: %s", err)
+	if !engine.EngineConfig.Opts.Fakeroot {
+		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
+		if err != nil {
+			return fmt.Errorf("remount proc failed: %s", err)
+		}
 	}
 
 	dest = filepath.Join(sessionPath, "sys")
@@ -107,9 +112,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
-	_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-	if err != nil {
-		return fmt.Errorf("remount sys failed: %s", err)
+	if !engine.EngineConfig.Opts.Fakeroot {
+		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
+		if err != nil {
+			return fmt.Errorf("remount sys failed: %s", err)
+		}
 	}
 
 	dest = filepath.Join(sessionPath, "dev")
@@ -125,9 +132,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
 	}
-	_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-	if err != nil {
-		return fmt.Errorf("remount /etc/resolv.conf failed: %s", err)
+	if !engine.EngineConfig.Opts.Fakeroot {
+		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
+		if err != nil {
+			return fmt.Errorf("remount /etc/resolv.conf failed: %s", err)
+		}
 	}
 
 	dest = filepath.Join(sessionPath, "etc", "hosts")
@@ -136,9 +145,11 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
-	_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-	if err != nil {
-		return fmt.Errorf("remount /etc/hosts failed: %s", err)
+	if !engine.EngineConfig.Opts.Fakeroot {
+		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
+		if err != nil {
+			return fmt.Errorf("remount /etc/hosts failed: %s", err)
+		}
 	}
 
 	sylog.Debugf("Chdir into %s\n", sessionPath)
