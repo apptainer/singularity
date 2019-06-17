@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -109,13 +109,13 @@ if test -n "${SINGULARITY_APPNAME:-}"; then
     if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test"; then
         exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/test" "$@"
     else
-        echo "No Singularity tests for contained app: ${SINGULARITY_APPNAME:-}"
+        echo "No tests for contained app: ${SINGULARITY_APPNAME:-}"
         exit 1
     fi
 elif test -x "/.singularity.d/test"; then
     exec "/.singularity.d/test" "$@"
 else
-    echo "No Singularity container test found, executing /bin/sh -c true"
+    echo "No test found in container, executing /bin/sh -c true"
     exec /bin/sh -c true
 fi
 `
@@ -123,6 +123,8 @@ fi
 	baseShFileContent = `#!/bin/sh
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# TODO: ?-> Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
@@ -147,13 +149,15 @@ fi
 `
 	// Contents of /.singularity.d/env/90-environment.sh and /.singularity.d/env/91-environment.sh
 	environmentShFileContent = `#!/bin/sh
-#Custom environment shell code should follow
+# Custom environment shell code should follow
 
 `
 	// Contents of /.singularity.d/env/95-apps.sh
 	appsShFileContent = `#!/bin/sh
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
+#
+# TODO: ?-> Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
 # https://github.com/sylabs/singularity/blob/master/COPYRIGHT.md.
@@ -208,6 +212,8 @@ fi
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
+# TODO: ?-> Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -240,7 +246,7 @@ export LD_LIBRARY_PATH PS1
 
 	// Contents of /.singularity.d/env/99-runtimevars.sh
 	base99runtimevarsShFileContent = `#!/bin/sh
-# Copyright (c) 2017-2018, SyLabs, Inc. All rights reserved.
+# Copyright (c) 2017-2019, Sylabs, Inc. All rights reserved.
 #
 # This software is licensed under a customized 3-clause BSD license.  Please
 # consult LICENSE.md file distributed with the sources of this project regarding
