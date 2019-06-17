@@ -24,8 +24,14 @@ import (
 func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engine *engines.Engine) {
 	var fatal error
 	var status syscall.WaitStatus
-
 	fatalChan := make(chan error, 1)
+
+	// we could receive signal from child with CreateContainer call so we
+	// set the signal handler earlier to queue signals until MonitorContainer
+	// is called to handle them
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
+
 	ppid := os.Getppid()
 
 	go func() {
@@ -109,11 +115,6 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 
 	go func() {
 		var err error
-
-		// catch all signals
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals)
-
 		status, err = engine.MonitorContainer(containerPid, signals)
 		fatalChan <- err
 	}()
