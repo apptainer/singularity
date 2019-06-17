@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,6 +19,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -212,11 +213,15 @@ func stopInstance(opts stopOpts) ([]byte, error) {
 	return cmd.Output()
 }
 
-func execInstance(instance string, execCmd ...string) ([]byte, error) {
+func execInstance(instance string, execCmd ...string) (string, []byte, error) {
 	args := []string{"exec", "instance://" + instance}
 	args = append(args, execCmd...)
 	cmd := exec.Command(cmdPath, args...)
-	return cmd.Output()
+
+	c := fmt.Sprintf("%s\n%s", cmdPath, strings.Join(args, " "))
+	b, err := cmd.Output()
+
+	return c, b, err
 }
 
 // Sends a deterministic message to an echo server and expects the same message
@@ -332,16 +337,18 @@ func testBasicOptions(t *testing.T) {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Verify we can see the file's contents from within the container.
-	output, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
+	c, output, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
 	if err != nil {
+		t.Log("Command that failed: ", c, string(output))
 		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
 	}
 	if !bytes.Equal(fileContents, output) {
 		t.Fatalf("File contents were %s, but expected %s", output, fileContents)
 	}
 	// Verify that the hostname has been set correctly.
-	output, err = execInstance(instanceName, "hostname")
+	c, output, err = execInstance(instanceName, "hostname")
 	if err != nil {
+		t.Log("Command that failed: ", c, string(output))
 		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
 	}
 	if !bytes.Equal([]byte(testHostname+"\n"), output) {
@@ -374,8 +381,9 @@ func testContain(t *testing.T) {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Touch a file within /tmp.
-	_, err = execInstance(instanceName, "touch", "/tmp/"+fileName)
+	c, b, err := execInstance(instanceName, "touch", "/tmp/"+fileName)
 	if err != nil {
+		t.Log("Command that failed: ", c, string(b))
 		t.Fatalf("Failed to touch a file: %v", err)
 	}
 	// Stop the container.
@@ -416,8 +424,9 @@ func testInstanceFromURI(t *testing.T) {
 			t.Fatalf("Failed to start instance %s: %v", i.name, err)
 		}
 		// Exec id command.
-		_, err = execInstance(i.name, "id")
+		c, b, err := execInstance(i.name, "id")
 		if err != nil {
+			t.Log("Command that failed: ", c, string(b))
 			t.Fatalf("Failed to run id command: %v", err)
 		}
 		// Stop the container.
