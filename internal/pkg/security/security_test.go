@@ -84,7 +84,7 @@ func TestConfigure(t *testing.T) {
 			desc: "with unconfined SELinux context",
 			spec: specs.Spec{
 				Process: &specs.Process{
-					SelinuxLabel: "unconfined_u:unconfined_r:unconfined_t",
+					SelinuxLabel: "unconfined_u:unconfined_r:unconfined_t:s0",
 				},
 			},
 			disabled: !selinux.Enabled(),

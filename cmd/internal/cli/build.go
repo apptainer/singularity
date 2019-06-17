@@ -40,6 +40,7 @@ var (
 	dockerPassword string
 	dockerLogin    bool
 	noCleanUp      bool
+	fakeroot       bool
 )
 
 // -s|--sandbox
@@ -178,6 +179,17 @@ var buildNoCleanupFlag = cmdline.Flag{
 	EnvKeys:      []string{"NO_CLEANUP"},
 }
 
+// --fakeroot
+var buildFakerootFlag = cmdline.Flag{
+	ID:           "buildFakerootFlag",
+	Value:        &fakeroot,
+	DefaultValue: false,
+	Name:         "fakeroot",
+	ShortHand:    "f",
+	Usage:        "build using user namespace to fake root user (requires a privileged installation)",
+	EnvKeys:      []string{"FAKEROOT"},
+}
+
 func init() {
 	cmdManager.RegisterCmd(BuildCmd)
 
@@ -194,6 +206,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)

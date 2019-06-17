@@ -311,8 +311,7 @@ var actionFakerootFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "fakeroot",
 	ShortHand:    "f",
-	Hidden:       true,
-	Usage:        "run container in new user namespace as uid 0 (experimental)",
+	Usage:        "run container in new user namespace as uid 0",
 	EnvKeys:      []string{"FAKEROOT"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
