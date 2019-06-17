@@ -108,6 +108,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 
+	// Check to make sure the image is there
+	if _, err := os.Stat(image); os.IsNotExist(err) {
+		sylog.Fatalf("No such file or directory: %s", image)
+	}
+
 	// Are we running from a privileged account?
 	isPrivileged := uid == 0
 	checkPrivileges := func(cond bool, desc string, fn func()) {
