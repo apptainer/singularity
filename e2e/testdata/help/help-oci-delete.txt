@@ -4,7 +4,8 @@ Usage:
   singularity oci delete <container_ID>
 
 Description:
-  Delete invoke delete operation to delete resources that were created for container identified by container ID.
+  Delete invoke delete operation to delete resources that were created for 
+  container identified by container ID.
 
 Options:
   -h, --help   help for delete
