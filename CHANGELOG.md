@@ -16,7 +16,7 @@ _The old changelog can be found in the `release-2.6` branch_
 ## Changed defaults / behaviors
 
   - Remote login and status commands will now use the default remote if a remote name is not supplied
-  - Added Singularity hub cache support when using the `pull` command
+  - Added Singularity hub (`shub`) cache support when using the `pull` command
   - Clean cache in a safer way by only deleting subdirectories
   - Improvements to the `cache clean` command 
 
