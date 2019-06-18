@@ -11,6 +11,30 @@ _The old changelog can be found in the `release-2.6` branch_
 
 # Changes Since v3.2.1
 
+# v3.3.0 - [2019.06.17]
+
+## Changed defaults / behaviors
+
+  - Remote login and status commands will now use the default remote if a remote name is not supplied
+  - Added Singularity hub cache support when using the `pull` command
+  - Clean cache in a safer way by only deleting subdirectories
+  - Improvements to the `cache clean` command 
+
+## New features / functionalities
+
+  - new `oras` URI for pushing and pulling SIF files to and from supported OCI registries
+  - added the `--fakeroot` option to `build`, `exec`, `run`, `shell`, `test`, and `instance start` commands to run container in a new user namespace as uid 0
+  - added the `fakeroot` network type for use with the `--network` option
+  - `sif` command to allow for the inspection and manipulation of SIF files with the following subcommands
+    - `add`      Add a data object to a SIF file
+    - `del`      Delete a specified object descriptor and data from SIF file
+    - `dump`     Extract and output data objects from SIF files
+    - `header`   Display SIF global headers
+    - `info`     Display detailed information of object descriptors
+    - `list`     List object descriptors from SIF files
+    - `new`      Create a new empty SIF image file
+    - `setprim`  Set primary system partition
+
 # v3.2.1 - [2019.05.28]
 
   - This point release fixes the following bugs:
