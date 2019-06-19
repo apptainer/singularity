@@ -40,7 +40,7 @@ func testSemanticVersion(t *testing.T) {
 			if res.Error != nil {
 				t.Fatalf("Failed to obtain version: %+v", res.String())
 			}
-			outputVersion := strings.TrimPrefix(string(res.String()), "singularity version ")
+			outputVersion := strings.TrimPrefix(string(res.Stdout()), "singularity version ")
 			outputVersion = strings.TrimSpace(outputVersion)
 			if semanticVersion, err := semver.Make(outputVersion); err != nil {
 				t.Log(semanticVersion)
@@ -61,7 +61,7 @@ func testEqualVersion(t *testing.T) {
 			if res.Error != nil {
 				t.Fatalf("Failed to obtain version: %+v", res.String())
 			}
-			outputVersion := strings.TrimPrefix(string(res.String()), "singularity version ")
+			outputVersion := strings.TrimPrefix(string(res.Stdout()), "singularity version ")
 			outputVersion = strings.TrimSpace(outputVersion)
 
 			semanticVersion, err := semver.Make(string(outputVersion))
