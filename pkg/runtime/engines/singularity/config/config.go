@@ -36,6 +36,7 @@ type FileConfig struct {
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
+	FakerootBaseID          uint64   `default:"4227858432" directive:"fakeroot base id"`
 	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
@@ -43,6 +44,7 @@ type FileConfig struct {
 	LimitContainerGroups    []string `directive:"limit container groups"`
 	LimitContainerPaths     []string `directive:"limit container paths"`
 	AutofsBugPath           []string `directive:"autofs bug path"`
+	FakerootAllowedUsers    []string `directive:"fakeroot allowed users"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
@@ -52,6 +54,30 @@ type FileConfig struct {
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
 type JSONConfig struct {
+	ScratchDir    []string      `json:"scratchdir,omitempty"`
+	OverlayImage  []string      `json:"overlayImage,omitempty"`
+	BindPath      []string      `json:"bindpath,omitempty"`
+	NetworkArgs   []string      `json:"networkArgs,omitempty"`
+	Security      []string      `json:"security,omitempty"`
+	LibrariesPath []string      `json:"librariesPath,omitempty"`
+	ImageList     []image.Image `json:"imageList,omitempty"`
+	OpenFd        []int         `json:"openFd,omitempty"`
+	TargetGID     []int         `json:"targetGID,omitempty"`
+	Image         string        `json:"image"`
+	Workdir       string        `json:"workdir,omitempty"`
+	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
+	HomeSource    string        `json:"homedir,omitempty"`
+	HomeDest      string        `json:"homeDest,omitempty"`
+	Command       string        `json:"command,omitempty"`
+	Shell         string        `json:"shell,omitempty"`
+	TmpDir        string        `json:"tmpdir,omitempty"`
+	AddCaps       string        `json:"addCaps,omitempty"`
+	DropCaps      string        `json:"dropCaps,omitempty"`
+	Hostname      string        `json:"hostname,omitempty"`
+	Network       string        `json:"network,omitempty"`
+	DNS           string        `json:"dns,omitempty"`
+	Cwd           string        `json:"cwd,omitempty"`
+	TargetUID     int           `json:"targetUID,omitempty"`
 	WritableImage bool          `json:"writableImage,omitempty"`
 	WritableTmpfs bool          `json:"writableTmpfs,omitempty"`
 	Contain       bool          `json:"container,omitempty"`
@@ -67,30 +93,7 @@ type JSONConfig struct {
 	NoHome        bool          `json:"noHome,omitempty"`
 	NoInit        bool          `json:"noInit,omitempty"`
 	DeleteImage   bool          `json:"deleteImage,omitempty"`
-	Image         string        `json:"image"`
-	OverlayImage  []string      `json:"overlayImage,omitempty"`
-	Workdir       string        `json:"workdir,omitempty"`
-	ScratchDir    []string      `json:"scratchdir,omitempty"`
-	HomeSource    string        `json:"homedir,omitempty"`
-	HomeDest      string        `json:"homeDest,omitempty"`
-	BindPath      []string      `json:"bindpath,omitempty"`
-	Command       string        `json:"command,omitempty"`
-	Shell         string        `json:"shell,omitempty"`
-	TmpDir        string        `json:"tmpdir,omitempty"`
-	AddCaps       string        `json:"addCaps,omitempty"`
-	DropCaps      string        `json:"dropCaps,omitempty"`
-	Hostname      string        `json:"hostname,omitempty"`
-	ImageList     []image.Image `json:"imageList,omitempty"`
-	Network       string        `json:"network,omitempty"`
-	NetworkArgs   []string      `json:"networkArgs,omitempty"`
-	DNS           string        `json:"dns,omitempty"`
-	Cwd           string        `json:"cwd,omitempty"`
-	Security      []string      `json:"security,omitempty"`
-	OpenFd        []int         `json:"openFd,omitempty"`
-	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
-	TargetUID     int           `json:"targetUID,omitempty"`
-	TargetGID     []int         `json:"targetGID,omitempty"`
-	LibrariesPath []string      `json:"librariesPath,omitempty"`
+	Fakeroot      bool          `json:"fakeroot,omitempty"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -474,6 +477,16 @@ func (e *EngineConfig) SetLibrariesPath(libraries []string) {
 // /.singularity.d/libs directory
 func (e *EngineConfig) GetLibrariesPath() []string {
 	return e.JSON.LibrariesPath
+}
+
+// SetFakeroot sets fakeroot flag
+func (e *EngineConfig) SetFakeroot(fakeroot bool) {
+	e.JSON.Fakeroot = fakeroot
+}
+
+// GetFakeroot returns if fakeroot is set or not
+func (e *EngineConfig) GetFakeroot() bool {
+	return e.JSON.Fakeroot
 }
 
 // GetDeleteImage returns if container image must be deleted after use

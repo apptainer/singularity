@@ -1184,17 +1184,6 @@ __attribute__((constructor)) static void init(void) {
                 fatalf("Failed to enter in shared mount namespace: %s\n", strerror(errno));
             }
             send_event(master_socket[0]);
-
-            /* force kernel to load overlay module to ease detection later */
-            if ( sconfig->starter.isSuid || uid == 0 ) {
-                if ( mount("none", "/", "overlay", MS_SILENT, "") < 0 ) {
-                    if ( errno != EINVAL ) {
-                        debugf("Overlay seems not supported by kernel\n");
-                    } else {
-                        debugf("Overlay seems supported by kernel\n");
-                    }
-                }
-            }
         }
 
         /* staying in /proc/pid could lead to "no such process" error, go to previous working directory */

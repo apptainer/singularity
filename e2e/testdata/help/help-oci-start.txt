@@ -4,7 +4,8 @@ Usage:
   singularity oci start <container_ID>
 
 Description:
-  Start invoke start operation to start a previously created container identified by container ID.
+  Start invoke start operation to start a previously created container 
+  identified by container ID.
 
 Options:
   -h, --help   help for start

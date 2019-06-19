@@ -20,6 +20,7 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -331,6 +332,33 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.SetMountPropagation("rslave")
 	} else {
 		starterConfig.SetMountPropagation("rprivate")
+	}
+
+	if e.EngineConfig.GetFakeroot() {
+		baseID := e.EngineConfig.File.FakerootBaseID
+		allowedUsers := e.EngineConfig.File.FakerootAllowedUsers
+		idRange, err := fakeroot.GetIDRange(baseID, allowedUsers)
+		if err != nil {
+			return err
+		}
+
+		e.EngineConfig.OciConfig.SetupPrivileged(true)
+
+		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
+
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+
+		starterConfig.SetHybridWorkflow(true)
+		starterConfig.SetAllowSetgroups(true)
+
+		starterConfig.SetTargetUID(0)
+		starterConfig.SetTargetGID([]int{0})
 	}
 
 	starterConfig.SetBringLoopbackInterface(true)
