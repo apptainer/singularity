@@ -34,7 +34,7 @@ This is one of several ways to [install and configure golang](https://golang.org
 First, download the Golang archive to `/tmp/`, then extract the archive to `/usr/local`.
 
 ```
-$ export VERSION=1.11.4 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.12.6 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
