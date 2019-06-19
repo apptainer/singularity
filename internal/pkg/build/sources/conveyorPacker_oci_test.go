@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -38,9 +39,17 @@ func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
-		return
+		t.Fatalf("failed to create new bundle: %s", err)
 	}
 
 	b.Recipe, err = types.NewDefinitionFromURI(dockerURI)
@@ -49,6 +58,10 @@ func TestOCIConveyorDocker(t *testing.T) {
 	}
 
 	cp := &sources.OCIConveyorPacker{}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set the image cache: %s", err)
+	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -82,6 +95,18 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	}
 
 	cp := &sources.OCIConveyorPacker{}
+
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set image cache: %s", err)
+	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -124,6 +149,18 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 
 	cp := &sources.OCIConveyorPacker{}
 
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set image cache: %s", err)
+	}
+
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
@@ -156,6 +193,18 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	}
 
 	cp := &sources.OCIConveyorPacker{}
+
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set cache dir: %s", err)
+	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -203,6 +252,18 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 
 	cp := &sources.OCIConveyorPacker{}
 
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set image cache: %s", err)
+	}
+
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
@@ -227,6 +288,18 @@ func TestOCIPacker(t *testing.T) {
 	}
 
 	ocp := &sources.OCIConveyorPacker{}
+
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = ocp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set image cache: %s", err)
+	}
 
 	err = ocp.Get(b)
 	// clean up tmpfs since assembler isnt called

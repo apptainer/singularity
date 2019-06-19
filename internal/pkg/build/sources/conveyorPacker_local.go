@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -82,6 +83,11 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	default:
 		return nil, fmt.Errorf("invalid image format")
 	}
+}
+
+// SetImgCache is a no-op for Local; it does not use an image cache
+func (cp *LocalConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+	return nil
 }
 
 // Get just stores the source

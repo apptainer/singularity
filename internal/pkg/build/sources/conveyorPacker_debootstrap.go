@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -22,6 +23,11 @@ type DebootstrapConveyorPacker struct {
 	mirrorurl string
 	osversion string
 	include   string
+}
+
+// SetImgCache is a no-op for debootstrap; it does not use any image cache
+func (cp *DebootstrapConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+	return nil
 }
 
 // Get downloads container information from the specified source

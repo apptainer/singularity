@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
@@ -47,6 +48,9 @@ type Build struct {
 
 // Config defines how build is executed, including things like where final image is written.
 type Config struct {
+	// Image cache handle
+	ImgCache *cache.ImgCache
+
 	// Dest is the location for container after build is complete
 	Dest string
 	// Format is the format of built container, e.g., SIF, sandbox
@@ -195,6 +199,11 @@ func (b *Build) Full() error {
 			}
 		} else {
 			// regular build or force, start build from scratch
+			if b.Conf.ImgCache == nil {
+				fmt.Println("WARNING!!! imgCache is undefined")
+				os.Exit(42)
+			}
+			stage.c.SetImgCache(b.Conf.ImgCache)
 			if err := stage.c.Get(stage.b); err != nil {
 				return fmt.Errorf("conveyor failed to get: %v", err)
 			}

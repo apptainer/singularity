@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -40,6 +41,18 @@ func TestLibraryConveyor(t *testing.T) {
 
 	cp := &sources.LibraryConveyorPacker{}
 
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set image cache: %s", err)
+	}
+
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
 	defer cp.CleanUp()
@@ -65,6 +78,18 @@ func TestLibraryPacker(t *testing.T) {
 	}
 
 	cp := &sources.LibraryConveyorPacker{}
+
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.HdlInit(imgCacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
+	err = cp.SetImgCache(imgCache)
+	if err != nil {
+		t.Fatalf("failed to set image cache: %s", err)
+	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called

@@ -29,6 +29,7 @@ import (
 	"github.com/containers/image/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	imagetools "github.com/opencontainers/image-tools/image"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
@@ -43,6 +44,14 @@ type OCIConveyorPacker struct {
 	policyCtx *signature.PolicyContext
 	imgConfig imgspecv1.ImageConfig
 	sysCtx    *types.SystemContext
+	imgCache  *cache.ImgCache
+}
+
+// SetImgCache sets the path to the OCI image cache to use for all future operations
+func (cp *OCIConveyorPacker) SetImgCache(imgCache *cache.ImgCache) (err error) {
+	cp.imgCache = imgCache
+
+	return nil
 }
 
 // Get downloads container information from the specified source
@@ -121,7 +130,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	}
 
 	// Grab the modified source ref from the cache
-	cp.srcRef, err = ociclient.ConvertReference(cp.srcRef, cp.sysCtx)
+	cp.srcRef, err = ociclient.ConvertReference(cp.imgCache, cp.srcRef, cp.sysCtx)
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ func findSize(size int64) string {
 // listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.
 // Will return: the number of containers for that type (int), the total space the container type is using (int64),
 // and an error if one occurs.
-func listTypeCache(printList bool, cacheType string) (int, int64, error) {
+func listTypeCache(imgCache *cache.ImgCache, printList bool, cacheType string) (int, int64, error) {
 	var totalSize int64
 	count := 0
 	cachePath := ""
@@ -49,11 +49,11 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 	// check what cache we need to list, and set are path.
 	switch cacheType {
 	case "library":
-		cachePath = cache.Library()
+		cachePath = imgCache.Library
 	case "oci":
-		cachePath = cache.OciTemp()
+		cachePath = imgCache.OciTemp
 	case "shub":
-		cachePath = cache.Shub()
+		cachePath = imgCache.Shub
 	case "":
 		return 0, 0, fmt.Errorf("no cache type specifyed")
 	default:
@@ -94,31 +94,31 @@ func listTypeCache(printList bool, cacheType string) (int, int64, error) {
 	return count, totalSize, nil
 }
 
-func listBlobCache(printList bool) (int, int64, error) {
+func listBlobCache(imgCache *cache.ImgCache, printList bool) (int, int64, error) {
 	// loop through ociBlob cache
 	count := 0
 	var totalSize int64
 
-	_, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs"))
+	_, err := os.Stat(filepath.Join(imgCache.OciBlob, "/blobs"))
 	if os.IsNotExist(err) {
 		return 0, 0, nil
 	}
-	blobs, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/"))
+	blobs, err := ioutil.ReadDir(filepath.Join(imgCache.OciBlob, "/blobs/"))
 	if err != nil {
 		return 0, 0, fmt.Errorf("unable to open oci-blob directory: %v", err)
 	}
 	for _, f := range blobs {
-		checkStat, err := os.Stat(filepath.Join(cache.OciBlob(), "blobs", f.Name()))
+		checkStat, err := os.Stat(filepath.Join(imgCache.OciBlob, "blobs", f.Name()))
 		if err != nil {
-			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(cache.OciBlob(), "blobs", f.Name()), err)
+			return 0, 0, fmt.Errorf("unable to open stat on: %v: %v", filepath.Join(imgCache.OciBlob, "blobs", f.Name()), err)
 		}
 		if checkStat.Mode().IsDir() {
-			blob, err := ioutil.ReadDir(filepath.Join(cache.OciBlob(), "/blobs/", f.Name()))
+			blob, err := ioutil.ReadDir(filepath.Join(imgCache.OciBlob, "/blobs/", f.Name()))
 			if err != nil {
 				return 0, 0, fmt.Errorf("unable to look in oci-blob cache: %v", err)
 			}
 			for _, b := range blob {
-				fileInfo, err := os.Stat(filepath.Join(cache.OciBlob(), "/blobs/", f.Name(), b.Name()))
+				fileInfo, err := os.Stat(filepath.Join(imgCache.OciBlob, "/blobs/", f.Name(), b.Name()))
 				if err != nil {
 					return 0, 0, fmt.Errorf("unable to get stat for oci-blob cache: %v", err)
 				}
@@ -130,7 +130,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 			}
 		} else {
 			// stray file in ~/.singularity/cache/library
-			sylog.Debugf("stray file in cache directory: %v", filepath.Join(cache.Library(), f.Name()))
+			sylog.Debugf("stray file in cache directory: %v", filepath.Join(imgCache.Library, f.Name()))
 		}
 	}
 	return count, totalSize, nil
@@ -138,7 +138,7 @@ func listBlobCache(printList bool) (int, int64, error) {
 
 // ListSingularityCache will list local singularity cache, typeNameList is a []string of what cache
 // to list (seprate each type with a comma; like: library,oci,blob) allList force list all cache.
-func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary bool) error {
+func ListSingularityCache(imgCache *cache.ImgCache, cacheListTypes []string, listAll, cacheListSummary bool) error {
 	libraryList := false
 	ociList := false
 	shubList := false
@@ -184,14 +184,14 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if listAll {
-		libraryCount, librarySize, err := listTypeCache(true, "library")
+		libraryCount, librarySize, err := listTypeCache(imgCache, true, "library")
 		if err != nil {
 			return err
 		}
 		containerCount += libraryCount
 		containerSpace += librarySize
 	} else if libraryList {
-		libraryCount, librarySize, err := listTypeCache(!cacheListSummary, "library")
+		libraryCount, librarySize, err := listTypeCache(imgCache, !cacheListSummary, "library")
 		if err != nil {
 			return err
 		}
@@ -200,14 +200,14 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if listAll {
-		ociCount, ociSize, err := listTypeCache(true, "oci")
+		ociCount, ociSize, err := listTypeCache(imgCache, true, "oci")
 		if err != nil {
 			return err
 		}
 		containerCount += ociCount
 		containerSpace += ociSize
 	} else if ociList {
-		ociCount, ociSize, err := listTypeCache(!cacheListSummary, "oci")
+		ociCount, ociSize, err := listTypeCache(imgCache, !cacheListSummary, "oci")
 		if err != nil {
 			return err
 		}
@@ -216,14 +216,14 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if listAll {
-		shubCount, shubSize, err := listTypeCache(true, "shub")
+		shubCount, shubSize, err := listTypeCache(imgCache, true, "shub")
 		if err != nil {
 			return err
 		}
 		containerCount += shubCount
 		containerSpace += shubSize
 	} else if shubList {
-		shubCount, shubSize, err := listTypeCache(!cacheListSummary, "shub")
+		shubCount, shubSize, err := listTypeCache(imgCache, !cacheListSummary, "shub")
 		if err != nil {
 			return err
 		}
@@ -232,21 +232,21 @@ func ListSingularityCache(cacheListTypes []string, listAll, cacheListSummary boo
 	}
 
 	if listAll {
-		blobsCount, blobsSize, err := listBlobCache(true)
+		blobsCount, blobsSize, err := listBlobCache(imgCache, true)
 		if err != nil {
 			return err
 		}
 		blobCount = blobsCount
 		blobSpace = blobsSize
 	} else if blobSum {
-		blobsCount, blobsSize, err := listBlobCache(false)
+		blobsCount, blobsSize, err := listBlobCache(imgCache, false)
 		if err != nil {
 			return err
 		}
 		blobCount = blobsCount
 		blobSpace = blobsSize
 	} else if blobList {
-		blobsCount, blobsSize, err := listBlobCache(!cacheListSummary)
+		blobsCount, blobsSize, err := listBlobCache(imgCache, !cacheListSummary)
 		if err != nil {
 			return err
 		}

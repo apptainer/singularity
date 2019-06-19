@@ -18,21 +18,36 @@ const (
 	OrasDir = "oras"
 )
 
+/*
 // Oras returns the directory inside the cache.Dir() where oras images are cached
 func Oras() string {
 	return updateCacheSubdir(OrasDir)
 }
+*/
+
+// Shub returns the directory inside the cache.Dir() where shub images are cached
+func getOrasCachePath(c *ImgCache) (string, error) {
+	// This function may act on an cache object that is not fully initialized
+	// so it is not a method on a ImgCache but rather an independent
+	// function
+
+	// updateCacheSubdir checks if the cache is valid, no need to check here
+	return updateCacheSubdir(c, OrasDir)
+}
 
 // OrasImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
-func OrasImage(sum, name string) string {
-	dir := updateCacheSubdir(filepath.Join(OrasDir, sum))
+func (c *ImgCache) OrasImage(sum, name string) string {
+	dir, err := updateCacheSubdir(c, filepath.Join(OrasDir, sum))
+	if err != nil {
+		return ""
+	}
 
 	return filepath.Join(dir, name)
 }
 
 // OrasImageExists returns whether the image with the SHA sum exists in the OrasImage cache
-func OrasImageExists(sum, name string) (bool, error) {
-	imagePath := OrasImage(sum, name)
+func (c *ImgCache) OrasImageExists(sum, name string) (bool, error) {
+	imagePath := c.OrasImage(sum, name)
 	_, err := os.Stat(imagePath)
 	if os.IsNotExist(err) {
 		return false, nil

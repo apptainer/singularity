@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -58,6 +59,12 @@ var baseToSkip = map[string]bool{
 // ArchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ArchConveyorPacker struct {
 	b *types.Bundle
+}
+
+// SetImgCache is a no-op for Arch
+func (cp *ArchConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+	// No op
+	return nil
 }
 
 // Get just stores the source

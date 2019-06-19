@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -40,6 +41,11 @@ type YumConveyor struct {
 // YumConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type YumConveyorPacker struct {
 	YumConveyor
+}
+
+// SetImgCache is a no-op of Yum as it does not need any image cache
+func (c *YumConveyor) SetImgCache(*cache.ImgCache) (err error) {
+	return nil
 }
 
 // Get downloads container information from the specified source
