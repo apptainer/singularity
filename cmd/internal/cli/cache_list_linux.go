@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
@@ -75,7 +76,13 @@ var CacheListCmd = &cobra.Command{
 }
 
 func cacheListCmd() error {
-	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummary)
+	// A get a handle for the current image cache
+	imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+	if imgCache == nil || err != nil {
+		sylog.Fatalf("failed to create image cache handle")
+	}
+
+	err = singularity.ListSingularityCache(imgCache, cacheListTypes, allList, cacheListSummary)
 	if err != nil {
 		sylog.Fatalf("An error occurred while listing cache: %v", err)
 		return err

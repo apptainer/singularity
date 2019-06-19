@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,17 +11,22 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 //build base image for tests
-const imagePath = "./container.sif"
-const appsImage = "./appsImage.sif"
+const imageName = "container.sif"
+const appsImageName = "appsImage.sif"
+
+var imagePath string
+var appsImage string
 
 type opts struct {
 	keepPrivs bool
@@ -82,8 +87,20 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	argv = append(argv, imagePath)
 	argv = append(argv, command...)
 
+	// We always prefer to run tests with a clean temporary image cache rather
+	// than using the cache of the user running the test.
+	// In order to unit test using the singularity cli that is thread-safe,
+	// we prepare a temporary cache that the process running the command will
+	// use.
+	tmpImgCache, err := ioutil.TempDir("", "image-cache-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	cacheEnvStr := cache.DirEnv + "=" + tmpImgCache
+
 	var outbuf, errbuf bytes.Buffer
 	cmd := exec.Command(cmdPath, argv...)
+	cmd.Env = append(os.Environ(), cacheEnvStr)
 
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
@@ -202,7 +219,7 @@ func testSingularityExec(t *testing.T) {
 			_, stderr, exitCode, err := imageExec(t, tt.action, tt.opts, tt.image, tt.argv)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
-				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
+				t.Fatalf("unexpected failure running %s ('%v'): %v", tt.name, strings.Join(tt.argv, " "), err)
 			} else if !tt.expectSuccess && (exitCode != 1) {
 				t.Log(stderr)
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
@@ -475,20 +492,47 @@ func testPersistentOverlay(t *testing.T) {
 
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
+
+	imgCacheBaseDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheBaseDir)
+	imgCache, err := cache.HdlInit(imgCacheBaseDir)
+	if imgCache == nil || err != nil {
+		t.Fatalf("failed to create image cache handle")
+	}
+
+	// Create a temporary directory to store images
+	dir, err := ioutil.TempDir("", "images-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	imagePath = filepath.Join(dir, imageName)
+	appsImage = filepath.Join(dir, appsImageName)
+
 	opts := buildOpts{
 		force:   true,
 		sandbox: false,
 	}
-	if b, err := imageBuild(opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
+	if b, err := imageBuild(imgCache, opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
 	defer os.Remove(imagePath)
-	if b, err := imageBuild(opts, appsImage, "../../examples/apps/Singularity"); err != nil {
+	if b, err := imageBuild(imgCache, opts, appsImage, "../../examples/apps/Singularity"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
 	defer os.Remove(appsImage)
+
+	// We will switch back and forth between privileged and unprivileged
+	// mode so we make sure the image can be used by both
+	err = os.Chmod(dir, 0755)
+	if err != nil {
+		t.Fatalf("failed to share directory where images are: %s", err)
+	}
+	err = os.Chmod(imagePath, 0755)
+	if err != nil {
+		t.Fatalf("failed to share image: %s", err)
+	}
 
 	// singularity run
 	t.Run("run", testSingularityRun)

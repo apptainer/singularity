@@ -23,11 +23,23 @@ import (
 type LibraryConveyorPacker struct {
 	b *types.Bundle
 	LocalPacker
+	ImgCache *cache.ImgCache
+}
+
+// SetImgCache sets the image cache to be used for all future operations
+func (cp *LibraryConveyorPacker) SetImgCache(imgCache *cache.ImgCache) (err error) {
+	cp.ImgCache = imgCache
+
+	return nil
 }
 
 // Get downloads container from Singularityhub
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
+
+	if cp.ImgCache == nil {
+		return fmt.Errorf("invalid image cache")
+	}
 
 	cp.b = b
 
@@ -70,9 +82,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+	imagePath := cp.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := cp.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")

@@ -39,10 +39,16 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	os.Setenv("USER_PATH", userPath)
 	os.Setenv("PATH", defaultPath)
 
-	replaceURIWithImage(cmd, args)
+	// create an handle for the current image cache
+	imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+	if imgCache == nil || err != nil {
+		sylog.Fatalf("failed to create a new image cache handle")
+	}
+
+	replaceURIWithImage(imgCache, cmd, args)
 }
 
-func handleOCI(cmd *cobra.Command, u string) (string, error) {
+func handleOCI(imgCache *cache.ImgCache, cmd *cobra.Command, u string) (string, error) {
 	authConf, err := makeDockerCredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
@@ -60,17 +66,18 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	}
 
 	name := uri.GetName(u)
-	imgabs := cache.OciTempImage(sum, name)
+	imgabs := imgCache.OciTempImage(sum, name)
 
-	if exists, err := cache.OciTempExists(sum, name); err != nil {
+	if exists, err := imgCache.OciTempExists(sum, name); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
 	} else if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
 		b, err := build.NewBuild(
 			u,
 			build.Config{
-				Dest:   imgabs,
-				Format: "sif",
+				Dest:     imgabs,
+				Format:   "sif",
+				ImgCache: imgCache,
 				Opts: types.Options{
 					TmpDir:           tmpDir,
 					NoTest:           true,
@@ -93,7 +100,7 @@ func handleOCI(cmd *cobra.Command, u string) (string, error) {
 	return imgabs, nil
 }
 
-func handleLibrary(u, libraryURL string) (string, error) {
+func handleLibrary(imgCache *cache.ImgCache, u, libraryURL string) (string, error) {
 	ctx := context.TODO()
 
 	c, err := library.NewClient(&library.Config{
@@ -112,9 +119,9 @@ func handleLibrary(u, libraryURL string) (string, error) {
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
@@ -133,11 +140,11 @@ func handleLibrary(u, libraryURL string) (string, error) {
 	return imagePath, nil
 }
 
-func handleShub(u string) (string, error) {
+func handleShub(imgCache *cache.ImgCache, u string) (string, error) {
 	imageName := uri.GetName(u)
-	imagePath := cache.ShubImage("hash", imageName)
+	imagePath := imgCache.ShubImage("hash", imageName)
 
-	exists, err := cache.ShubImageExists("hash", imageName)
+	exists, err := imgCache.ShubImageExists("hash", imageName)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	}
@@ -154,12 +161,12 @@ func handleShub(u string) (string, error) {
 	return imagePath, nil
 }
 
-func handleNet(u string) (string, error) {
+func handleNet(imgCache *cache.ImgCache, u string) (string, error) {
 	refParts := strings.Split(u, "/")
 	imageName := refParts[len(refParts)-1]
-	imagePath := cache.NetImage("hash", imageName)
+	imagePath := imgCache.NetImage("hash", imageName)
 
-	exists, err := cache.NetImageExists("hash", imageName)
+	exists, err := imgCache.NetImageExists("hash", imageName)
 	if err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	}
@@ -176,7 +183,7 @@ func handleNet(u string) (string, error) {
 	return imagePath, nil
 }
 
-func replaceURIWithImage(cmd *cobra.Command, args []string) {
+func replaceURIWithImage(imgCache *cache.ImgCache, cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
 	if t == "instance" || t == "" {
@@ -190,15 +197,15 @@ func replaceURIWithImage(cmd *cobra.Command, args []string) {
 	case uri.Library:
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
-		image, err = handleLibrary(args[0], handleActionRemote(cmd))
+		image, err = handleLibrary(imgCache, args[0], handleActionRemote(cmd))
 	case uri.Shub:
-		image, err = handleShub(args[0])
+		image, err = handleShub(imgCache, args[0])
 	case ociclient.IsSupported(t):
-		image, err = handleOCI(cmd, args[0])
+		image, err = handleOCI(imgCache, cmd, args[0])
 	case uri.HTTP:
-		image, err = handleNet(args[0])
+		image, err = handleNet(imgCache, args[0])
 	case uri.HTTPS:
-		image, err = handleNet(args[0])
+		image, err = handleNet(imgCache, args[0])
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}

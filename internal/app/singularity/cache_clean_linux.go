@@ -27,34 +27,47 @@ func cleanCacheDir(name, dir string) error {
 	return err
 }
 
-func cleanLibraryCache() error {
-	return cleanCacheDir("library", cache.Library())
+func cleanLibraryCache(imgCache *cache.ImgCache) error {
+	if imgCache == nil {
+		return fmt.Errorf("invalid image cache handle")
+	}
+
+	return cleanCacheDir("library", imgCache.Library)
 }
 
-func cleanOciCache() error {
-	return cleanCacheDir("oci-tmp", cache.OciTemp())
+func cleanOciCache(imgCache *cache.ImgCache) error {
+	if imgCache == nil {
+		return fmt.Errorf("invalid image cache handle")
+	}
+	return cleanCacheDir("oci-tmp", imgCache.OciTemp)
 }
 
-func cleanBlobCache() error {
-	return cleanCacheDir("oci-blob", cache.OciBlob())
+func cleanBlobCache(imgCache *cache.ImgCache) error {
+	if imgCache == nil {
+		return fmt.Errorf("invalid image cache handle")
+	}
+	return cleanCacheDir("oci-blob", imgCache.OciBlob)
 }
 
-func cleanShubCache() error {
-	return cleanCacheDir("shub", cache.Shub())
+func cleanShubCache(imgCache *cache.ImgCache) error {
+	if imgCache == nil {
+		return fmt.Errorf("invalid image cache handle")
+	}
+	return cleanCacheDir("shub", imgCache.Shub)
 }
 
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.
-func cleanCache(cacheType string) error {
+func cleanCache(imgCache *cache.ImgCache, cacheType string) error {
 	switch cacheType {
 	case "library":
-		return cleanLibraryCache()
+		return cleanLibraryCache(imgCache)
 	case "oci":
-		return cleanOciCache()
+		return cleanOciCache(imgCache)
 	case "shub":
-		return cleanShubCache()
+		return cleanShubCache(imgCache)
 	case "blob", "blobs":
-		return cleanBlobCache()
+		return cleanBlobCache(imgCache)
 	default:
 		// The caller checks the returned error and will exit as required
 		return fmt.Errorf("not a valid type: %s", cacheType)
@@ -93,12 +106,17 @@ func removeCacheEntry(name, cacheType, cacheDir string) (bool, error) {
 // CleanSingularityCache is the main function that drives all these other functions, if cleanAll is true; clean
 // all cache. if cacheCleanTypes contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
-func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
+func CleanSingularityCache(imgCache *cache.ImgCache, cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
+	imgCache, err := cache.HdlInit("")
+	if imgCache == nil || err != nil {
+		return fmt.Errorf("failed to create a new image cache handle")
+	}
+
 	cacheDirs := map[string]string{
-		"library": cache.Library(),
-		"oci":     cache.OciTemp(),
-		"shub":    cache.Shub(),
-		"blob":    cache.OciBlob(),
+		"library": imgCache.Library,
+		"oci":     imgCache.OciTemp,
+		"shub":    imgCache.Shub,
+		"blob":    imgCache.OciBlob,
 	}
 	cacheTypes := []string{}
 
@@ -153,7 +171,7 @@ func CleanSingularityCache(cleanAll bool, cacheCleanTypes []string, cacheName []
 		// cache types
 		for _, cacheType := range cacheTypes {
 			sylog.Debugf("Cleaning %s cache...", cacheType)
-			if err := cleanCache(cacheType); err != nil {
+			if err := cleanCache(imgCache, cacheType); err != nil {
 				return err
 			}
 		}

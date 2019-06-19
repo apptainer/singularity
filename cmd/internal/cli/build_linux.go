@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -61,6 +62,11 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
+				imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+				if imgCache == nil || err != nil {
+					sylog.Fatalf("failed to create an image cache handle")
+				}
+
 				d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
 				if err != nil {
 					sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
@@ -69,6 +75,7 @@ func run(cmd *cobra.Command, args []string) {
 				b, err := build.New(
 					[]types.Definition{d},
 					build.Config{
+						ImgCache:  imgCache,
 						Dest:      args[0],
 						Format:    buildFormat,
 						NoCleanUp: noCleanUp,
@@ -97,7 +104,12 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
-		err := checkSections()
+		imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+		if imgCache == nil || err != nil {
+			sylog.Fatalf("failed to create an image cache handle")
+		}
+
+		err = checkSections()
 		if err != nil {
 			sylog.Fatalf(err.Error())
 		}
@@ -124,6 +136,7 @@ func run(cmd *cobra.Command, args []string) {
 		b, err := build.New(
 			defs,
 			build.Config{
+				ImgCache:  imgCache,
 				Dest:      dest,
 				Format:    buildFormat,
 				NoCleanUp: noCleanUp,

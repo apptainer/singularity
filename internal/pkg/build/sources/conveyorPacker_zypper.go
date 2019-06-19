@@ -17,6 +17,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -28,6 +29,11 @@ const (
 // ZypperConveyorPacker only needs to hold the bundle for the container
 type ZypperConveyorPacker struct {
 	b *types.Bundle
+}
+
+// SetImgCache is a no-op for Zypper since it does not really on an image cache
+func (cp *ZypperConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+	return nil
 }
 
 // Get downloads container information from the specified source

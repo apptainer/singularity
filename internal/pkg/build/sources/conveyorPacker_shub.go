@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
@@ -17,9 +18,17 @@ import (
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ShubConveyorPacker struct {
-	recipe types.Definition
-	b      *types.Bundle
+	recipe   types.Definition
+	b        *types.Bundle
+	imgCache *cache.ImgCache
 	LocalPacker
+}
+
+// SetImgCache set the Shub image cache to be used for all future operations
+func (cp *ShubConveyorPacker) SetImgCache(imgCache *cache.ImgCache) (err error) {
+	cp.imgCache = imgCache
+
+	return
 }
 
 // Get downloads container from Singularityhub

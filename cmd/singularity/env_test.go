@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,11 +9,13 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -52,8 +54,20 @@ func TestSingularityEnv(t *testing.T) {
 		t.Run(currentTest.name, test.WithoutPrivilege(func(t *testing.T) {
 			args := []string{"exec", currentTest.image, "env"}
 
+			// We always prefer to run tests with a clean temporary image cache rather
+			// than using the cache of the user running the test.
+			// In order to unit test using the singularity cli that is thread-safe,
+			// we prepare a temporary cache that the process running the command will
+			// use.
+			tmpImgCache, err := ioutil.TempDir("", "image-cache-")
+			if err != nil {
+				t.Fatalf("failed to create temporary directory: %s", err)
+			}
+			cacheEnvStr := cache.DirEnv + "=" + tmpImgCache
+
 			cmd := exec.Command(cmdPath, args...)
 			cmd.Env = append(os.Environ(), currentTest.env...)
+			cmd.Env = append(os.Environ(), cacheEnvStr)
 			b, err := cmd.CombinedOutput()
 
 			out := string(b)

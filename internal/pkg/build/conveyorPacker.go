@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,7 @@
 package build
 
 import (
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -20,8 +21,14 @@ type Packer interface {
 	Pack() (*types.Bundle, error)
 }
 
+// CacheMgr is the type which is responsible for setting the image cache.
+type CacheMgr interface {
+	SetImgCache(*cache.ImgCache) error
+}
+
 // ConveyorPacker describes an interface that a ConveyorPacker type must implement
 type ConveyorPacker interface {
+	CacheMgr
 	Conveyor
 	Packer
 }

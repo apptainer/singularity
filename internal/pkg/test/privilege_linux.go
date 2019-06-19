@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,13 +19,6 @@ import (
 
 var origUID, origGID, unprivUID, unprivGID int
 var origHome, unprivHome string
-
-const (
-	// CacheDirPriv is the directory the cachedir gets set to when running privileged
-	CacheDirPriv = "/tmp/WithPrivilege"
-	// CacheDirUnpriv is the directory the cachedir gets set to when running unprivileged
-	CacheDirUnpriv = "/tmp/WithoutPrivilege"
-)
 
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
@@ -58,9 +51,6 @@ func DropPrivilege(t *testing.T) {
 			t.Fatalf("failed to set HOME environment variable: %v", err)
 		}
 	}
-
-	// set SINGULARITY_CACHEDIR
-	os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
 }
 
 // ResetPrivilege returns effective privilege to the original user.
@@ -76,9 +66,6 @@ func ResetPrivilege(t *testing.T) {
 	}
 
 	runtime.UnlockOSThread()
-
-	// set SINGULARITY_CACHEDIR
-	os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 }
 
 // WithPrivilege wraps the supplied test function with calls to ensure
@@ -86,9 +73,6 @@ func ResetPrivilege(t *testing.T) {
 func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
-
-		// set SINGULARITY_CACHEDIR
-		os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 
 		EnsurePrivilege(t)
 
@@ -104,9 +88,6 @@ func WithoutPrivilege(f func(t *testing.T)) func(t *testing.T) {
 
 		DropPrivilege(t)
 		defer ResetPrivilege(t)
-
-		// set SINGULARITY_CACHEDIR
-		os.Setenv("SINGULARITY_CACHEDIR", CacheDirUnpriv)
 
 		f(t)
 	}

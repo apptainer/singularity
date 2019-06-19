@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -22,6 +23,11 @@ type ScratchConveyor struct {
 // ScratchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ScratchConveyorPacker struct {
 	ScratchConveyor
+}
+
+// SetImgCache is a no-op for Scratch since it does not use any image cache
+func (c *ScratchConveyor) SetImgCache(*cache.ImgCache) (err error) {
+	return nil
 }
 
 // Get just stores the source
