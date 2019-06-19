@@ -55,7 +55,7 @@ func TestGetIDRangeUser(t *testing.T) {
 		},
 		{
 			name: "low base",
-			base: 65535,
+			base: 131071,
 		},
 		{
 			name: "high base",
@@ -63,11 +63,11 @@ func TestGetIDRangeUser(t *testing.T) {
 		},
 		{
 			name: "base not multiple of 65536",
-			base: 65537,
+			base: 131073,
 		},
 		{
 			name: "good base, no users",
-			base: 65536,
+			base: 131072,
 		},
 		{
 			name:         "good base, current user",
@@ -76,7 +76,7 @@ func TestGetIDRangeUser(t *testing.T) {
 			expectedMapping: &specs.LinuxIDMapping{
 				ContainerID: 1,
 				HostID:      65536 * 1024,
-				Size:        65535,
+				Size:        65536,
 			},
 		},
 	}
@@ -94,7 +94,7 @@ func TestGetIDRangeRoot(t *testing.T) {
 		},
 		{
 			name: "low base",
-			base: 65535,
+			base: 131071,
 		},
 		{
 			name: "high base",
@@ -102,7 +102,7 @@ func TestGetIDRangeRoot(t *testing.T) {
 		},
 		{
 			name: "base not multiple of 65536",
-			base: 65537,
+			base: 131073,
 		},
 		{
 			name: "good base, root user",
@@ -110,7 +110,7 @@ func TestGetIDRangeRoot(t *testing.T) {
 			expectedMapping: &specs.LinuxIDMapping{
 				ContainerID: 1,
 				HostID:      1,
-				Size:        65535,
+				Size:        65536,
 			},
 		},
 	}
