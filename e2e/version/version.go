@@ -6,13 +6,13 @@
 package version
 
 import (
-	"os/exec"
 	"strings"
 	"testing"
 
 	"github.com/blang/semver"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 type testingEnv struct {
@@ -35,11 +35,12 @@ var tests = []struct {
 func testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			out, err := exec.Command(testenv.CmdPath, tt.args...).CombinedOutput()
-			if err != nil {
-				t.Fatalf("Failed to obtain version: %+v", err)
+			cmd := exec.Command(testenv.CmdPath, tt.args...)
+			res := cmd.Run(t)
+			if res.Error != nil {
+				t.Fatalf("Failed to obtain version: %+v", res.String())
 			}
-			outputVersion := strings.TrimPrefix(string(out), "singularity version ")
+			outputVersion := strings.TrimPrefix(string(res.String()), "singularity version ")
 			outputVersion = strings.TrimSpace(outputVersion)
 			if semanticVersion, err := semver.Make(outputVersion); err != nil {
 				t.Log(semanticVersion)
@@ -55,12 +56,12 @@ func testEqualVersion(t *testing.T) {
 	var tmpVersion = ""
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			out, err := exec.Command(testenv.CmdPath, tt.args...).CombinedOutput()
-			if err != nil {
-				t.Log(string(out))
-				t.Fatalf("Failed to obtain version: %+v", err)
+			cmd := exec.Command(testenv.CmdPath, tt.args...)
+			res := cmd.Run(t)
+			if res.Error != nil {
+				t.Fatalf("Failed to obtain version: %+v", res.String())
 			}
-			outputVersion := strings.TrimPrefix(string(out), "singularity version ")
+			outputVersion := strings.TrimPrefix(string(res.String()), "singularity version ")
 			outputVersion = strings.TrimSpace(outputVersion)
 
 			semanticVersion, err := semver.Make(string(outputVersion))
