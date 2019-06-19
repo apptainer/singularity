@@ -123,9 +123,6 @@ fi
 	baseShFileContent = `#!/bin/sh
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
-#
-# TODO: ?-> Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
-#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
@@ -156,8 +153,6 @@ fi
 	appsShFileContent = `#!/bin/sh
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
-#
-# TODO: ?-> Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 #
 # See the COPYRIGHT.md file at the top-level directory of this distribution and at
 # https://github.com/sylabs/singularity/blob/master/COPYRIGHT.md.
@@ -211,9 +206,6 @@ fi
 	base99ShFileContent = `#!/bin/sh
 # 
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
-#
-# TODO: ?-> Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
-#
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
 # 
 # Copyright (c) 2016-2017, The Regents of the University of California,
