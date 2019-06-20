@@ -77,7 +77,7 @@ var CacheListCmd = &cobra.Command{
 
 func cacheListCmd() error {
 	// A get a handle for the current image cache
-	imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+	imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
 	if imgCache == nil || err != nil {
 		sylog.Fatalf("failed to create image cache handle")
 	}

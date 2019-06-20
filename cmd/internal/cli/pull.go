@@ -170,7 +170,7 @@ var PullCmd = &cobra.Command{
 
 func pullRun(cmd *cobra.Command, args []string) {
 	// We get a handle for the current image cache
-	imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+	imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
 	if imgCache == nil || err != nil {
 		sylog.Fatalf("failed to create an image cache handle")
 	}

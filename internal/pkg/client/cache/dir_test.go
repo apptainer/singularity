@@ -41,7 +41,7 @@ func TestRoot(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := HdlInit(tt.dir)
+			c, err := NewHandle(tt.dir)
 			if c == nil || err != nil {
 				t.Fatal("failed to create new image cache handle")
 			}

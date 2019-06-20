@@ -50,7 +50,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}

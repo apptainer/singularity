@@ -43,7 +43,7 @@ func TestLibrary(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := HdlInit(tt.dir)
+			c, err := NewHandle(tt.dir)
 			if c == nil || err != nil {
 				t.Fatal("failed to create new image cache handle")
 			}
@@ -68,7 +68,7 @@ func TestLibraryImage(t *testing.T) {
 	}
 	defer os.RemoveAll(tempImageCache)
 
-	c, err := HdlInit(tempImageCache)
+	c, err := NewHandle(tempImageCache)
 	if c == nil || err != nil {
 		t.Fatal("failed to create new image cache handle")
 	}
@@ -141,7 +141,7 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 	//defer os.RemoveAll(imageCacheDir)
 	fmt.Println("Cache is there: ", imageCacheDir)
-	c, err := HdlInit(imageCacheDir)
+	c, err := NewHandle(imageCacheDir)
 	if c == nil || err != nil {
 		t.Fatal("failed to create new image cache handle")
 	}

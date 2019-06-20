@@ -70,14 +70,14 @@ type Handle struct {
 	Oras string
 }
 
-// HdlInit initializes a new cache within a given directory. It does not set
+// NewHandle initializes a new cache within a given directory. It does not set
 // the environment variable to specify the location of the cache, the caller
 // being in charge of doing so. This also allows us to have a thread-safe
 // function, changing the value of the environment variable potentially
 // impacting other threads (e.g., while running unit tests). If baseDir is an
 // empty string, the image cache will be located to the default location, i.e.,
 // $HOME/.singularity.
-func HdlInit(baseDir string) (*Handle, error) {
+func NewHandle(baseDir string) (*Handle, error) {
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}

@@ -41,7 +41,7 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	// Create a clean image cache and associate it to the assembler
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}

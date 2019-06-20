@@ -117,7 +117,7 @@ func TestBuild(t *testing.T) {
 			// Set a clean image cache for every test
 			imgCacheDir := test.SetCacheDir(t, "")
 			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.HdlInit(imgCacheDir)
+			imgCache, err := cache.NewHandle(imgCacheDir)
 			if imgCache == nil || err != nil {
 				t.Fatal("failed to create an image cache handle")
 			}
@@ -206,7 +206,7 @@ func TestMultipleBuilds(t *testing.T) {
 					// Set a clean image cache for every tests
 					imgCacheDir := test.SetCacheDir(t, "")
 					defer test.CleanCacheDir(t, imgCacheDir)
-					imgCache, err := cache.HdlInit(imgCacheDir)
+					imgCache, err := cache.NewHandle(imgCacheDir)
 					if imgCache == nil || err != nil {
 						t.Fatal("failed to create an image cache handle")
 					}
@@ -228,7 +228,7 @@ func TestBadPath(t *testing.T) {
 	// Set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -440,7 +440,7 @@ func TestMultiStageDefinition(t *testing.T) {
 			// Set a clean image cache for every test
 			imgCacheDir := test.SetCacheDir(t, "")
 			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.HdlInit(imgCacheDir)
+			imgCache, err := cache.NewHandle(imgCacheDir)
 			if imgCache == nil || err != nil {
 				t.Fatal("failed to create an image cache handle")
 			}
@@ -738,7 +738,7 @@ func TestBuildDefinition(t *testing.T) {
 			// Set a clean image cache for every test
 			imgCacheDir := test.SetCacheDir(t, "")
 			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.HdlInit(imgCacheDir)
+			imgCache, err := cache.NewHandle(imgCacheDir)
 			if imgCache == nil || err != nil {
 				t.Fatal("failed to create an image cache handle")
 			}
