@@ -147,7 +147,7 @@ func getCacheBasedir() string {
 	}
 
 	// If the environment variable is not set, we use the default cache.
-	fmt.Println("env var not set, using default image cache")
+	sylog.Infof("environment variable %s not set, using default image cache", DirEnv)
 	basedir = syfs.ConfigDir()
 
 	return basedir
