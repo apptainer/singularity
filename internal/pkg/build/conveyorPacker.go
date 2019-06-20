@@ -6,7 +6,6 @@
 package build
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -21,14 +20,8 @@ type Packer interface {
 	Pack() (*types.Bundle, error)
 }
 
-// CacheMgr is the type which is responsible for setting the image cache.
-type CacheMgr interface {
-	SetImgCache(*cache.Handle) error
-}
-
 // ConveyorPacker describes an interface that a ConveyorPacker type must implement
 type ConveyorPacker interface {
-	CacheMgr
 	Conveyor
 	Packer
 }

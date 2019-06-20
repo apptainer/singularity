@@ -57,11 +57,9 @@ func TestOCIConveyorDocker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
 
+	b.Opts.ImgCache = imgCache
+
 	cp := &sources.OCIConveyorPacker{}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set the image cache: %s", err)
-	}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -94,8 +92,6 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
 
-	cp := &sources.OCIConveyorPacker{}
-
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
@@ -103,10 +99,9 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
+
+	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -147,8 +142,6 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", daemonURI, err)
 	}
 
-	cp := &sources.OCIConveyorPacker{}
-
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
@@ -156,10 +149,9 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
+
+	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -192,8 +184,6 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
 
-	cp := &sources.OCIConveyorPacker{}
-
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
@@ -201,10 +191,9 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set cache dir: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
+
+	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -250,8 +239,6 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", layoutURI, err)
 	}
 
-	cp := &sources.OCIConveyorPacker{}
-
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
@@ -259,10 +246,9 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
+
+	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -296,10 +282,7 @@ func TestOCIPacker(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = ocp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
 
 	err = ocp.Get(b)
 	// clean up tmpfs since assembler isnt called

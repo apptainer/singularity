@@ -45,8 +45,6 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
 	}
 
-	ocp := &sources.OCIConveyorPacker{}
-
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
@@ -54,10 +52,9 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = ocp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
+
+	ocp := &sources.OCIConveyorPacker{}
 
 	if err = ocp.Get(b); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerDockerURI, err)

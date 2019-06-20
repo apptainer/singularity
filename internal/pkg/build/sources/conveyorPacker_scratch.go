@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -23,11 +22,6 @@ type ScratchConveyor struct {
 // ScratchConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type ScratchConveyorPacker struct {
 	ScratchConveyor
-}
-
-// SetImgCache is a no-op for Scratch since it does not use any image cache
-func (c *ScratchConveyor) SetImgCache(*cache.Handle) (err error) {
-	return nil
 }
 
 // Get just stores the source

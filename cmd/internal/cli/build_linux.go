@@ -77,14 +77,14 @@ func run(cmd *cobra.Command, args []string) {
 				b, err := build.New(
 					[]types.Definition{d},
 					build.Config{
-						ImgCache:  imgCache,
 						Dest:      args[0],
 						Format:    buildFormat,
 						NoCleanUp: noCleanUp,
 						Opts: types.Options{
-							TmpDir: tmpDir,
-							Update: update,
-							Force:  force,
+							ImgCache: imgCache,
+							TmpDir:   tmpDir,
+							Update:   update,
+							Force:    force,
 						},
 					})
 				if err != nil {
@@ -143,11 +143,11 @@ func run(cmd *cobra.Command, args []string) {
 		b, err := build.New(
 			defs,
 			build.Config{
-				ImgCache:  imgCache,
 				Dest:      dest,
 				Format:    buildFormat,
 				NoCleanUp: noCleanUp,
 				Opts: types.Options{
+					ImgCache:         imgCache,
 					TmpDir:           tmpDir,
 					Update:           update,
 					Force:            force,

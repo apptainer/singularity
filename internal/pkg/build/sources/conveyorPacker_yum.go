@@ -17,7 +17,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -41,11 +40,6 @@ type YumConveyor struct {
 // YumConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type YumConveyorPacker struct {
 	YumConveyor
-}
-
-// SetImgCache is a no-op of Yum as it does not need any image cache
-func (c *YumConveyor) SetImgCache(*cache.Handle) (err error) {
-	return nil
 }
 
 // Get downloads container information from the specified source
