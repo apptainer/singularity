@@ -33,12 +33,13 @@ const (
 
 // Handle is an structure representing a cache
 type Handle struct {
-	// Basedir is the base directory of the image cache. By default, it is set
+	// basedir is the base directory of the image cache. By default, it is set
 	// to $HOME/.singularity. Users can also set the SINGULARITY_CACHEDIR
-	// environment variable to set BaseDir. BaseDir is also used when the code
+	// environment variable to set BaseDir. baseDir is also used when the code
 	// sets the SINGULARITY_CACHEDIR for a child process that needs to use the
-	// image cache.
-	BaseDir string
+	// image cache. baseDir is not meant be modified once an handle is
+	// initialized; its value can be accessed using GetBasedir()
+	baseDir string
 
 	// rootDir is the cache root directory, within BaseDir. This is the
 	// directory Singularity actually manages, i.e., that can safely be
@@ -99,7 +100,7 @@ func NewHandle(baseDir string) (*Handle, error) {
 	}
 
 	newCache := new(Handle)
-	newCache.BaseDir = baseDir
+	newCache.baseDir = baseDir
 	newCache.rootDir = rootDir
 	newCache.Library, err = getLibraryCachePath(newCache)
 	if err != nil {
@@ -160,6 +161,11 @@ func getCacheBasedir() string {
 // files and directories that we create).
 func getCacheRoot(basedir string) string {
 	return path.Join(basedir, CacheDir)
+}
+
+// GetBasedir returns the image cache's base directory.
+func (c *Handle) GetBasedir() string {
+	return c.baseDir
 }
 
 // Root is the root location where all of singularity caching happens. Library, Shub,

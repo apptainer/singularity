@@ -38,7 +38,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	// sure that the environment variable points to it for the process
 	// that will create.
 	if a.ImgCache != nil {
-		cmd.Env = append(os.Environ(), cache.DirEnv+"="+a.ImgCache.BaseDir)
+		cmd.Env = append(os.Environ(), cache.DirEnv+"="+a.ImgCache.GetBasedir())
 	}
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {

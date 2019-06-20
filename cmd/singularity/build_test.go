@@ -78,7 +78,7 @@ func imageBuild(imgCache *cache.Handle, opts buildOpts, imagePath, buildSpec str
 	}
 	argv = append(argv, imagePath, buildSpec)
 
-	cacheEnvStr := cache.DirEnv + "=" + imgCache.BaseDir
+	cacheEnvStr := cache.DirEnv + "=" + imgCache.GetBasedir()
 
 	cmd := exec.Command(cmdPath, argv...)
 	cmd.Env = append(opts.env, cacheEnvStr)
