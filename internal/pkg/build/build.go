@@ -60,7 +60,7 @@ type Config struct {
 
 // NewBuild creates a new Build struct from a spec (URI, definition file, etc...)
 func NewBuild(spec string, conf Config) (*Build, error) {
-	def, err := makeDef(spec, false)
+	def, err := MakeDef(spec)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse spec %v: %v", spec, err)
 	}
@@ -251,13 +251,19 @@ func engineRequired(def types.Definition) bool {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func runBuildEngine(b *types.Bundle) error {
-	if syscall.Getuid() != 0 {
-		return fmt.Errorf("Attempted to build with scripts as non-root user")
+	if syscall.Getuid() != 0 && !b.Opts.Fakeroot {
+		return fmt.Errorf("Attempted to build with scripts as non-root user or without --fakeroot")
 	}
 
 	sylog.Debugf("Starting build engine")
 	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
+	if b.Opts.Fakeroot {
+		starter = filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter-suid")
+		if _, err := os.Stat(starter); os.IsNotExist(err) {
+			return fmt.Errorf("fakeroot feature requires to install Singularity as root")
+		}
+	}
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
@@ -299,6 +305,8 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{}, nil
+	case "oras":
+		return &sources.OrasConveyorPacker{}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
 	case "docker", "docker-archive", "docker-daemon", "oci", "oci-archive":
@@ -325,12 +333,7 @@ func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, 
 }
 
 // MakeDef gets a definition object from a spec
-func MakeDef(spec string, remote bool) (types.Definition, error) {
-	return makeDef(spec, remote)
-}
-
-// makeDef gets a definition object from a spec
-func makeDef(spec string, remote bool) (types.Definition, error) {
+func MakeDef(spec string) (types.Definition, error) {
 	if ok, err := uri.IsValid(spec); ok && err == nil {
 		// URI passed as spec
 		return types.NewDefinitionFromURI(spec)
@@ -348,11 +351,6 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 	}
 	defer defFile.Close()
 
-	// must be root to build from a definition
-	if os.Getuid() != 0 && !remote {
-		return types.Definition{}, fmt.Errorf("you must be the root user to build from a definition file")
-	}
-
 	d, err := parser.ParseDefinitionFile(defFile)
 	if err != nil {
 		return types.Definition{}, fmt.Errorf("while parsing definition: %s: %v", spec, err)
@@ -361,13 +359,8 @@ func makeDef(spec string, remote bool) (types.Definition, error) {
 	return d, nil
 }
 
-// MakeAllDefs gets a definition slice from a spec
-func MakeAllDefs(spec string, remote bool) ([]types.Definition, error) {
-	return makeAllDefs(spec, remote)
-}
-
-// makeAllDef gets a definition object from a spec
-func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
+// MakeAllDefs gets a definition object from a spec
+func MakeAllDefs(spec string) ([]types.Definition, error) {
 	if ok, err := uri.IsValid(spec); ok && err == nil {
 		// URI passed as spec
 		d, err := types.NewDefinitionFromURI(spec)
@@ -386,11 +379,6 @@ func makeAllDefs(spec string, remote bool) ([]types.Definition, error) {
 		return nil, fmt.Errorf("unable to open file %s: %v", spec, err)
 	}
 	defer defFile.Close()
-
-	// must be root to build from a definition
-	if os.Getuid() != 0 && !remote {
-		return nil, fmt.Errorf("you must be the root user to build from a definition file")
-	}
 
 	d, err := parser.All(defFile)
 	if err != nil {

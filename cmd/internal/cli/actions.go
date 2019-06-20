@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	libraryhelper "github.com/sylabs/singularity/internal/pkg/library"
+	"github.com/sylabs/singularity/internal/pkg/oras"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -108,6 +109,39 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 	return imgabs, nil
 }
 
+func handleOras(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
+	ociAuth, err := makeDockerCredentials(cmd)
+	if err != nil {
+		return "", fmt.Errorf("while creating docker credentials: %v", err)
+	}
+
+	_, ref := uri.Split(u)
+	sum, err := oras.ImageSHA(ref, ociAuth)
+	if err != nil {
+		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
+	}
+
+	imageName := uri.GetName(u)
+	cacheImagePath := imgCache.OrasImage(sum, imageName)
+	if exists, err := imgCache.OrasImageExists(sum, imageName); err != nil {
+		return "", fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
+	} else if !exists {
+		sylog.Infof("Downloading image with ORAS")
+
+		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
+			return "", fmt.Errorf("unable to Download Image: %v", err)
+		}
+
+		if cacheFileHash, err := oras.ImageHash(cacheImagePath); err != nil {
+			return "", fmt.Errorf("error getting ImageHash: %v", err)
+		} else if cacheFileHash != sum {
+			return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, sum)
+		}
+	}
+
+	return cacheImagePath, nil
+}
+
 func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error) {
 	ctx := context.TODO()
 
@@ -121,9 +155,12 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, _, err := c.GetImage(ctx, imageRef)
+	libraryImage, existOk, err := c.GetImage(ctx, imageRef)
 	if err != nil {
 		return "", err
+	}
+	if !existOk {
+		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
@@ -206,6 +243,8 @@ func replaceURIWithImage(imgCache *cache.Handle, cmd *cobra.Command, args []stri
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 
 		image, err = handleLibrary(imgCache, args[0], handleActionRemote(cmd))
+	case uri.Oras:
+		image, err = handleOras(imgCache, cmd, args[0])
 	case uri.Shub:
 		image, err = handleShub(imgCache, args[0])
 	case ociclient.IsSupported(t):

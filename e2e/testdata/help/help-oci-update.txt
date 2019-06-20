@@ -4,8 +4,8 @@ Usage:
   singularity oci update [update options...] <container_ID>
 
 Description:
-  Update will update cgroups resources for the specified container ID.
-  Container must be in a RUNNING or CREATED state.
+  Update will update cgroups resources for the specified container ID. Container 
+  must be in a RUNNING or CREATED state.
 
 Options:
   -f, --from-file string   specify path to OCI JSON cgroups resource file

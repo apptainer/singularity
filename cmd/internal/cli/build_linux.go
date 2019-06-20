@@ -10,6 +10,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"syscall"
+
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
@@ -106,6 +109,9 @@ func run(cmd *cobra.Command, args []string) {
 		imgCache := getCacheHandle()
 		if imgCache == nil {
 			sylog.Fatalf("failed to create an image cache handle")
+
+		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) {
+			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 		}
 
 		err := checkSections()
@@ -119,7 +125,7 @@ func run(cmd *cobra.Command, args []string) {
 		}
 
 		// parse definition to determine build source
-		defs, err := build.MakeAllDefs(spec, false)
+		defs, err := build.MakeAllDefs(spec)
 		if err != nil {
 			sylog.Fatalf("Unable to build from %s: %v", spec, err)
 		}
@@ -149,6 +155,7 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryURL:       libraryURL,
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
+					Fakeroot:         fakeroot,
 				},
 			})
 		if err != nil {

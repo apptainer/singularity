@@ -63,7 +63,8 @@ type Options struct {
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
-
+	// fakeroot indicates if the build engine uses the fakeroot feature
+	Fakeroot bool `json:"fakeroot"`
 	// ImgCache stores a pointer to the image cache to use
 	ImgCache *cache.Handle
 }

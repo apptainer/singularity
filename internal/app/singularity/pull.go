@@ -63,10 +63,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		return fmt.Errorf("while getting image info: %v", err)
 	}
 	if !existOk {
-		return fmt.Errorf("image does not exist in the library")
-	}
-	if libraryImage == nil {
-		return fmt.Errorf("failed getting image from the library")
+		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
