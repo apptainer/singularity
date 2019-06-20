@@ -21,7 +21,6 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -433,13 +432,8 @@ func testInstanceFromURI(t *testing.T) {
 // Bootstrap to run all instance tests.
 func TestInstance(t *testing.T) {
 	// Create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	// Build a basic Singularity image to test instances. Once the image created, we do not need the cache anymore.
 	if b, err := imageBuild(imgCache, buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {

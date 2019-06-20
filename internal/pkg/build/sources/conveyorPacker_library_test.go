@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -42,12 +41,8 @@ func TestLibraryConveyor(t *testing.T) {
 	cp := &sources.LibraryConveyorPacker{}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(b)
@@ -77,12 +72,8 @@ func TestLibraryPacker(t *testing.T) {
 	cp := &sources.LibraryConveyorPacker{}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(b)
