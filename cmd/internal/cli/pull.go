@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -170,8 +169,8 @@ var PullCmd = &cobra.Command{
 
 func pullRun(cmd *cobra.Command, args []string) {
 	// We get a handle for the current image cache
-	imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
-	if imgCache == nil || err != nil {
+	imgCache := getCacheHandle()
+	if imgCache == nil {
 		sylog.Fatalf("failed to create an image cache handle")
 	}
 

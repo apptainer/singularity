@@ -31,6 +31,14 @@ const (
 	defaultPath = "/bin:/usr/bin:/sbin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
 )
 
+func getCacheHandle() *cache.Handle {
+	h, err := cache.NewHandle(os.Getenv(cache.DirEnv))
+	if err != nil {
+		sylog.Fatalf("failed to create an image cache handle")
+	}
+	return h
+}
+
 // actionPreRun will run replaceURIWithImage and will also do the proper path unsetting
 func actionPreRun(cmd *cobra.Command, args []string) {
 	// backup user PATH
@@ -40,8 +48,8 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	os.Setenv("PATH", defaultPath)
 
 	// create an handle for the current image cache
-	imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
-	if imgCache == nil || err != nil {
+	imgCache := getCacheHandle()
+	if imgCache == nil {
 		sylog.Fatalf("failed to create a new image cache handle")
 	}
 
