@@ -43,8 +43,8 @@ func TestLibrary(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := NewHandle(tt.dir)
-			if c == nil || err != nil {
-				t.Fatal("failed to create new image cache handle")
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
 			if tt.needCleanup {
 				defer c.cleanAllCaches()
@@ -68,8 +68,8 @@ func TestLibraryImage(t *testing.T) {
 	defer os.RemoveAll(tempImageCache)
 
 	c, err := NewHandle(tempImageCache)
-	if c == nil || err != nil {
-		t.Fatal("failed to create new image cache handle")
+	if err != nil {
+		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
 
 	// LibraryImage just return a string and there is no definition of what
@@ -139,8 +139,8 @@ func TestLibraryImageExists(t *testing.T) {
 	}
 	defer os.RemoveAll(imageCacheDir)
 	c, err := NewHandle(imageCacheDir)
-	if c == nil || err != nil {
-		t.Fatal("failed to create new image cache handle")
+	if err != nil {
+		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
 
 	// Invalid cases

@@ -237,8 +237,8 @@ func TestConvertReference(t *testing.T) {
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
 	imgCache, err := cache.NewHandle(cacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
+	if err != nil {
+		t.Fatalf("failed to create an image cache handle")
 	}
 
 	tests := []struct {
@@ -410,8 +410,8 @@ func TestNewImageSource(t *testing.T) {
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
 	imgCache, err := cache.NewHandle(cacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
+	if err != nil {
+		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
 
 	imgRef := createValidImageRef(t, ref)
