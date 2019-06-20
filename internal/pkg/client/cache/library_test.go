@@ -99,7 +99,7 @@ func TestLibraryImage(t *testing.T) {
 	}
 }
 
-func createValidFakeImageInCache(t *testing.T, c *ImgCache) (string, string, string) {
+func createValidFakeImageInCache(t *testing.T, c *Handle) (string, string, string) {
 	filename := "dummyImage.sif"
 	// At first we assume the hash is "0" and will be updated after the file is actually created
 	sum := "0"

@@ -30,9 +30,9 @@ func OciTemp() string {
 */
 
 // OciBlob returns the directory inside cache.Dir() where oci blobs are cached
-func getOciBlobCachePath(c *ImgCache) (string, error) {
+func getOciBlobCachePath(c *Handle) (string, error) {
 	// This function may act on an cache object that is not fully initialized
-	// so it is not a method on a ImgCache but rather an independent
+	// so it is not a method on a Handle but rather an independent
 	// function
 
 	return updateCacheSubdir(c, OciBlobDir)
@@ -40,16 +40,16 @@ func getOciBlobCachePath(c *ImgCache) (string, error) {
 
 // OciTemp returns the directory inside cache.Dir() where splatted out oci
 // images live
-func getOciTempCachePath(c *ImgCache) (string, error) {
+func getOciTempCachePath(c *Handle) (string, error) {
 	// This function may act on an cache object that is not fully initialized
-	// so it is not a method on a ImgCache but rather an independent
+	// so it is not a method on a Handle but rather an independent
 	// function
 
 	return updateCacheSubdir(c, OciTempDir)
 }
 
 // OciTempImage creates a OciTempDir/sum directory and returns the abs path of the image
-func (c *ImgCache) OciTempImage(sum, name string) string {
+func (c *Handle) OciTempImage(sum, name string) string {
 	_, err := updateCacheSubdir(c, filepath.Join(OciTempDir, sum))
 	if err != nil {
 		return ""
@@ -59,7 +59,7 @@ func (c *ImgCache) OciTempImage(sum, name string) string {
 }
 
 // OciTempExists returns whether the image with the given sha sum exists in the OciTemp() cache
-func (c *ImgCache) OciTempExists(sum, name string) (bool, error) {
+func (c *Handle) OciTempExists(sum, name string) (bool, error) {
 	_, err := os.Stat(c.OciTempImage(sum, name))
 	if os.IsNotExist(err) {
 		return false, nil

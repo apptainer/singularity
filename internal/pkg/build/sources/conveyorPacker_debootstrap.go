@@ -26,7 +26,7 @@ type DebootstrapConveyorPacker struct {
 }
 
 // SetImgCache is a no-op for debootstrap; it does not use any image cache
-func (cp *DebootstrapConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+func (cp *DebootstrapConveyorPacker) SetImgCache(*cache.Handle) (err error) {
 	return nil
 }
 

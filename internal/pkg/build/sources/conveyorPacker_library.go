@@ -23,11 +23,11 @@ import (
 type LibraryConveyorPacker struct {
 	b *types.Bundle
 	LocalPacker
-	ImgCache *cache.ImgCache
+	ImgCache *cache.Handle
 }
 
 // SetImgCache sets the image cache to be used for all future operations
-func (cp *LibraryConveyorPacker) SetImgCache(imgCache *cache.ImgCache) (err error) {
+func (cp *LibraryConveyorPacker) SetImgCache(imgCache *cache.Handle) (err error) {
 	cp.ImgCache = imgCache
 
 	return nil

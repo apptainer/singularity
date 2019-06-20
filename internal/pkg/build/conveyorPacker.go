@@ -23,7 +23,7 @@ type Packer interface {
 
 // CacheMgr is the type which is responsible for setting the image cache.
 type CacheMgr interface {
-	SetImgCache(*cache.ImgCache) error
+	SetImgCache(*cache.Handle) error
 }
 
 // ConveyorPacker describes an interface that a ConveyorPacker type must implement

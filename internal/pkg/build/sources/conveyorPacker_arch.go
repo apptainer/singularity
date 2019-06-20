@@ -62,7 +62,7 @@ type ArchConveyorPacker struct {
 }
 
 // SetImgCache is a no-op for Arch
-func (cp *ArchConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+func (cp *ArchConveyorPacker) SetImgCache(*cache.Handle) (err error) {
 	// No op
 	return nil
 }

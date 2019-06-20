@@ -86,7 +86,7 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 }
 
 // SetImgCache is a no-op for Local; it does not use an image cache
-func (cp *LocalConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+func (cp *LocalConveyorPacker) SetImgCache(*cache.Handle) (err error) {
 	return nil
 }
 

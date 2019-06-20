@@ -26,7 +26,7 @@ type ScratchConveyorPacker struct {
 }
 
 // SetImgCache is a no-op for Scratch since it does not use any image cache
-func (c *ScratchConveyor) SetImgCache(*cache.ImgCache) (err error) {
+func (c *ScratchConveyor) SetImgCache(*cache.Handle) (err error) {
 	return nil
 }
 

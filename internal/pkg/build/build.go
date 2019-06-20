@@ -49,7 +49,7 @@ type Build struct {
 // Config defines how build is executed, including things like where final image is written.
 type Config struct {
 	// Image cache handle
-	ImgCache *cache.ImgCache
+	ImgCache *cache.Handle
 
 	// Dest is the location for container after build is complete
 	Dest string

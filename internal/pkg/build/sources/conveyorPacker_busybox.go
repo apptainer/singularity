@@ -30,7 +30,7 @@ type BusyBoxConveyorPacker struct {
 }
 
 // SetImgCache is a no-op for busybox, it does not need an image cache
-func (c *BusyBoxConveyor) SetImgCache(*cache.ImgCache) (err error) {
+func (c *BusyBoxConveyor) SetImgCache(*cache.Handle) (err error) {
 	return nil
 }
 

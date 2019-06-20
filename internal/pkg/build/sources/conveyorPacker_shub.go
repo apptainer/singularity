@@ -20,12 +20,12 @@ import (
 type ShubConveyorPacker struct {
 	recipe   types.Definition
 	b        *types.Bundle
-	imgCache *cache.ImgCache
+	imgCache *cache.Handle
 	LocalPacker
 }
 
 // SetImgCache set the Shub image cache to be used for all future operations
-func (cp *ShubConveyorPacker) SetImgCache(imgCache *cache.ImgCache) (err error) {
+func (cp *ShubConveyorPacker) SetImgCache(imgCache *cache.Handle) (err error) {
 	cp.imgCache = imgCache
 
 	return

@@ -41,7 +41,7 @@ func findSize(size int64) string {
 // listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.
 // Will return: the number of containers for that type (int), the total space the container type is using (int64),
 // and an error if one occurs.
-func listTypeCache(imgCache *cache.ImgCache, printList bool, cacheType string) (int, int64, error) {
+func listTypeCache(imgCache *cache.Handle, printList bool, cacheType string) (int, int64, error) {
 	var totalSize int64
 	count := 0
 	cachePath := ""
@@ -94,7 +94,7 @@ func listTypeCache(imgCache *cache.ImgCache, printList bool, cacheType string) (
 	return count, totalSize, nil
 }
 
-func listBlobCache(imgCache *cache.ImgCache, printList bool) (int, int64, error) {
+func listBlobCache(imgCache *cache.Handle, printList bool) (int, int64, error) {
 	// loop through ociBlob cache
 	count := 0
 	var totalSize int64
@@ -138,7 +138,7 @@ func listBlobCache(imgCache *cache.ImgCache, printList bool) (int, int64, error)
 
 // ListSingularityCache will list local singularity cache, typeNameList is a []string of what cache
 // to list (seprate each type with a comma; like: library,oci,blob) allList force list all cache.
-func ListSingularityCache(imgCache *cache.ImgCache, cacheListTypes []string, listAll, cacheListSummary bool) error {
+func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, listAll, cacheListSummary bool) error {
 	libraryList := false
 	ociList := false
 	shubList := false

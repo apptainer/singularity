@@ -44,7 +44,7 @@ type YumConveyorPacker struct {
 }
 
 // SetImgCache is a no-op of Yum as it does not need any image cache
-func (c *YumConveyor) SetImgCache(*cache.ImgCache) (err error) {
+func (c *YumConveyor) SetImgCache(*cache.Handle) (err error) {
 	return nil
 }
 

@@ -48,7 +48,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	replaceURIWithImage(imgCache, cmd, args)
 }
 
-func handleOCI(imgCache *cache.ImgCache, cmd *cobra.Command, u string) (string, error) {
+func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
 	authConf, err := makeDockerCredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
@@ -100,7 +100,7 @@ func handleOCI(imgCache *cache.ImgCache, cmd *cobra.Command, u string) (string, 
 	return imgabs, nil
 }
 
-func handleLibrary(imgCache *cache.ImgCache, u, libraryURL string) (string, error) {
+func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error) {
 	ctx := context.TODO()
 
 	c, err := library.NewClient(&library.Config{
@@ -140,7 +140,7 @@ func handleLibrary(imgCache *cache.ImgCache, u, libraryURL string) (string, erro
 	return imagePath, nil
 }
 
-func handleShub(imgCache *cache.ImgCache, u string) (string, error) {
+func handleShub(imgCache *cache.Handle, u string) (string, error) {
 	imageName := uri.GetName(u)
 	imagePath := imgCache.ShubImage("hash", imageName)
 
@@ -161,7 +161,7 @@ func handleShub(imgCache *cache.ImgCache, u string) (string, error) {
 	return imagePath, nil
 }
 
-func handleNet(imgCache *cache.ImgCache, u string) (string, error) {
+func handleNet(imgCache *cache.Handle, u string) (string, error) {
 	refParts := strings.Split(u, "/")
 	imageName := refParts[len(refParts)-1]
 	imagePath := imgCache.NetImage("hash", imageName)
@@ -183,7 +183,7 @@ func handleNet(imgCache *cache.ImgCache, u string) (string, error) {
 	return imagePath, nil
 }
 
-func replaceURIWithImage(imgCache *cache.ImgCache, cmd *cobra.Command, args []string) {
+func replaceURIWithImage(imgCache *cache.Handle, cmd *cobra.Command, args []string) {
 	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
 	if t == "instance" || t == "" {

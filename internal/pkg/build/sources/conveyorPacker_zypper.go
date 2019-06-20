@@ -32,7 +32,7 @@ type ZypperConveyorPacker struct {
 }
 
 // SetImgCache is a no-op for Zypper since it does not really on an image cache
-func (cp *ZypperConveyorPacker) SetImgCache(*cache.ImgCache) (err error) {
+func (cp *ZypperConveyorPacker) SetImgCache(*cache.Handle) (err error) {
 	return nil
 }
 

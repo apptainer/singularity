@@ -67,7 +67,7 @@ type buildOpts struct {
 	env     []string
 }
 
-func imageBuild(imgCache *cache.ImgCache, opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
+func imageBuild(imgCache *cache.Handle, opts buildOpts, imagePath, buildSpec string) ([]byte, error) {
 	var argv []string
 	argv = append(argv, "build")
 	if opts.force {
