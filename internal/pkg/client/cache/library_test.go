@@ -6,7 +6,6 @@
 package cache
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -127,7 +126,6 @@ func createValidFakeImageInCache(t *testing.T, c *Handle) (string, string, strin
 		t.Fatalf("failed to rename directory %s to %s: %s", sumPath, newSumPath, err)
 	}
 
-	fmt.Println("File is:", filepath.Join(newSumPath, filename))
 	return filename, filepath.Join(newSumPath, filename), sum
 }
 
@@ -139,8 +137,7 @@ func TestLibraryImageExists(t *testing.T) {
 	if err != nil {
 		t.Fatal("failed to create temporary image cache directory")
 	}
-	//defer os.RemoveAll(imageCacheDir)
-	fmt.Println("Cache is there: ", imageCacheDir)
+	defer os.RemoveAll(imageCacheDir)
 	c, err := NewHandle(imageCacheDir)
 	if c == nil || err != nil {
 		t.Fatal("failed to create new image cache handle")
