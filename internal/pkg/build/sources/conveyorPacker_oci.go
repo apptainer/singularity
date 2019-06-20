@@ -44,11 +44,11 @@ type OCIConveyorPacker struct {
 	policyCtx *signature.PolicyContext
 	imgConfig imgspecv1.ImageConfig
 	sysCtx    *types.SystemContext
-	imgCache  *cache.ImgCache
+	imgCache  *cache.Handle
 }
 
 // SetImgCache sets the path to the OCI image cache to use for all future operations
-func (cp *OCIConveyorPacker) SetImgCache(imgCache *cache.ImgCache) (err error) {
+func (cp *OCIConveyorPacker) SetImgCache(imgCache *cache.Handle) (err error) {
 	cp.imgCache = imgCache
 
 	return nil

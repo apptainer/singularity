@@ -29,7 +29,7 @@ type ImageReference struct {
 }
 
 // ConvertReference converts a source reference into a cache.ImageReference to cache its blobs
-func ConvertReference(imgCache *cache.ImgCache, src types.ImageReference, sys *types.SystemContext) (types.ImageReference, error) {
+func ConvertReference(imgCache *cache.Handle, src types.ImageReference, sys *types.SystemContext) (types.ImageReference, error) {
 	if imgCache == nil {
 		return nil, fmt.Errorf("undefined image cache")
 	}
@@ -79,7 +79,7 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 
 // ParseImageName parses a uri (e.g. docker://ubuntu) into it's transport:reference
 // combination and then returns the proper reference
-func ParseImageName(imgCache *cache.ImgCache, uri string, sys *types.SystemContext) (types.ImageReference, error) {
+func ParseImageName(imgCache *cache.Handle, uri string, sys *types.SystemContext) (types.ImageReference, error) {
 	ref, err := parseURI(uri)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to parse image name %v: %v", uri, err)

@@ -31,8 +31,8 @@ const (
 	CacheDir = "cache"
 )
 
-// ImgCache is an structure representing a cache
-type ImgCache struct {
+// Handle is an structure representing a cache
+type Handle struct {
 	// Basedir is the base directory of the image cache. By default, it is set
 	// to $HOME/.singularity. Users can also set the SINGULARITY_CACHEDIR
 	// environment variable to set BaseDir. BaseDir is also used when the code
@@ -77,7 +77,7 @@ type ImgCache struct {
 // impacting other threads (e.g., while running unit tests). If baseDir is an
 // empty string, the image cache will be located to the default location, i.e.,
 // $HOME/.singularity.
-func HdlInit(baseDir string) (*ImgCache, error) {
+func HdlInit(baseDir string) (*Handle, error) {
 	if baseDir == "" {
 		baseDir = getCacheBasedir()
 	}
@@ -98,7 +98,7 @@ func HdlInit(baseDir string) (*ImgCache, error) {
 		return nil, fmt.Errorf("failed initializing caching directory: %s", err)
 	}
 
-	newCache := new(ImgCache)
+	newCache := new(Handle)
 	newCache.BaseDir = baseDir
 	newCache.rootDir = rootDir
 	newCache.Library, err = getLibraryCachePath(newCache)
@@ -167,13 +167,13 @@ func getCacheRoot(basedir string) string {
 // and oci image formats supported by containers/image repository will be cached inside
 //
 // Defaults to ${HOME}/.singularity/cache
-func (c *ImgCache) Root() string {
+func (c *Handle) Root() string {
 	updateCacheRoot(c)
 
 	return c.rootDir
 }
 
-func updateCacheRoot(c *ImgCache) {
+func updateCacheRoot(c *Handle) {
 	if d := os.Getenv(DirEnv); d != "" && d != syfs.ConfigDir() {
 		c.rootDir = d
 	} else {
@@ -187,9 +187,9 @@ func updateCacheRoot(c *ImgCache) {
 
 // updateCacheSubdir update/create a sub-cache (directory) within the cache,
 // for example, the 'shub' cache.
-func updateCacheSubdir(c *ImgCache, subdir string) (string, error) {
+func updateCacheSubdir(c *Handle, subdir string) (string, error) {
 	// This function may act on an cache object that is not fully initialized
-	// so it is not a method on a ImgCache but rather an independent
+	// so it is not a method on a Handle but rather an independent
 	// function.
 	// Because the cache object may not be initialized, we do NOT check its validity
 	if c == nil {
@@ -230,7 +230,7 @@ func initCacheDir(dir string) error {
 
 // cleanAllCaches is an utility function that wipes all files in the
 // cache directory, will return a error if one occurs
-func (c *ImgCache) cleanAllCaches() {
+func (c *Handle) cleanAllCaches() {
 	// TODO: add oras here
 	cacheDirs := map[string]string{
 		"library": c.Library,

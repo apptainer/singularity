@@ -19,7 +19,7 @@ import (
 // SandboxAssembler stores data required to assemble the image, for instannce the
 // image cache
 type SandboxAssembler struct {
-	ImgCache *cache.ImgCache
+	ImgCache *cache.Handle
 }
 
 // Assemble creates a Sandbox image from a Bundle

@@ -18,25 +18,18 @@ const (
 	LibraryDir = "library"
 )
 
-/*
-// Library returns the directory inside the cache.Dir() where library images are cached
-func Library() string {
-	return updateCacheSubdir(LibraryDir)
-}
-*/
-
 // Library returns the directory inside the cache.Dir() where library
 // images are cached
-func getLibraryCachePath(c *ImgCache) (string, error) {
+func getLibraryCachePath(c *Handle) (string, error) {
 	// This function may act on an cache object that is not fully
-	// initialized so it is not a method on a ImgCache but
+	// initialized so it is not a method on a Handle but
 	// rather an independent function.
 
 	return updateCacheSubdir(c, LibraryDir)
 }
 
 // LibraryImage creates a directory inside cache.Dir() with the name of the SHA sum of the image
-func (c *ImgCache) LibraryImage(sum, name string) string {
+func (c *Handle) LibraryImage(sum, name string) string {
 	_, err := updateCacheSubdir(c, filepath.Join(LibraryDir, sum))
 	if err != nil {
 		return ""
@@ -46,7 +39,7 @@ func (c *ImgCache) LibraryImage(sum, name string) string {
 }
 
 // LibraryImageExists returns whether the image with the SHA sum exists in the LibraryImage cache
-func (c *ImgCache) LibraryImageExists(sum, name string) (bool, error) {
+func (c *Handle) LibraryImageExists(sum, name string) (bool, error) {
 	imagePath := c.LibraryImage(sum, name)
 	_, err := os.Stat(imagePath)
 	if os.IsNotExist(err) {

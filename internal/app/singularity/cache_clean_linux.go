@@ -27,7 +27,7 @@ func cleanCacheDir(name, dir string) error {
 	return err
 }
 
-func cleanLibraryCache(imgCache *cache.ImgCache) error {
+func cleanLibraryCache(imgCache *cache.Handle) error {
 	if imgCache == nil {
 		return fmt.Errorf("invalid image cache handle")
 	}
@@ -35,21 +35,21 @@ func cleanLibraryCache(imgCache *cache.ImgCache) error {
 	return cleanCacheDir("library", imgCache.Library)
 }
 
-func cleanOciCache(imgCache *cache.ImgCache) error {
+func cleanOciCache(imgCache *cache.Handle) error {
 	if imgCache == nil {
 		return fmt.Errorf("invalid image cache handle")
 	}
 	return cleanCacheDir("oci-tmp", imgCache.OciTemp)
 }
 
-func cleanBlobCache(imgCache *cache.ImgCache) error {
+func cleanBlobCache(imgCache *cache.Handle) error {
 	if imgCache == nil {
 		return fmt.Errorf("invalid image cache handle")
 	}
 	return cleanCacheDir("oci-blob", imgCache.OciBlob)
 }
 
-func cleanShubCache(imgCache *cache.ImgCache) error {
+func cleanShubCache(imgCache *cache.Handle) error {
 	if imgCache == nil {
 		return fmt.Errorf("invalid image cache handle")
 	}
@@ -58,7 +58,7 @@ func cleanShubCache(imgCache *cache.ImgCache) error {
 
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.
-func cleanCache(imgCache *cache.ImgCache, cacheType string) error {
+func cleanCache(imgCache *cache.Handle, cacheType string) error {
 	switch cacheType {
 	case "library":
 		return cleanLibraryCache(imgCache)
@@ -106,7 +106,7 @@ func removeCacheEntry(name, cacheType, cacheDir string) (bool, error) {
 // CleanSingularityCache is the main function that drives all these other functions, if cleanAll is true; clean
 // all cache. if cacheCleanTypes contains somthing; only clean that type. if cacheName contains somthing; clean only
 // cache with that name.
-func CleanSingularityCache(imgCache *cache.ImgCache, cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
+func CleanSingularityCache(imgCache *cache.Handle, cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
 	imgCache, err := cache.HdlInit("")
 	if imgCache == nil || err != nil {
 		return fmt.Errorf("failed to create a new image cache handle")
