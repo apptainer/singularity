@@ -17,7 +17,6 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -486,12 +485,8 @@ func testPersistentOverlay(t *testing.T) {
 func TestSingularityActions(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	imgCacheBaseDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheBaseDir)
-	imgCache, err := cache.NewHandle(imgCacheBaseDir)
-	if imgCache == nil || err != nil {
-		t.Fatalf("failed to create image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	// Create a temporary directory to store images
 	dir, err := ioutil.TempDir("", "images-")

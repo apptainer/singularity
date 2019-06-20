@@ -34,18 +34,24 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func setupCache(t *testing.T) (*cache.Handle, func()) {
+	dir := test.SetCacheDir(t, "")
+	h, err := cache.NewHandle(dir)
+	if err != nil {
+		test.CleanCacheDir(t, dir)
+		t.Fatalf("failed to create an image cache handle: %s", err)
+	}
+	return h, func() { test.CleanCacheDir(t, dir) }
+}
+
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub
 func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
@@ -93,12 +99,8 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
@@ -143,12 +145,8 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 	}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
@@ -185,12 +183,8 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
@@ -240,12 +234,8 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
@@ -276,12 +266,8 @@ func TestOCIPacker(t *testing.T) {
 	ocp := &sources.OCIConveyorPacker{}
 
 	// set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 	b.Opts.ImgCache = imgCache
 
 	err = ocp.Get(b)

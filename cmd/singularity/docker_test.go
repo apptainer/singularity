@@ -16,7 +16,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"golang.org/x/sys/unix"
 )
@@ -34,12 +33,8 @@ func TestDocker(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
 			// We create a clean image cache
-			imgCacheDir := test.SetCacheDir(t, "")
-			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.NewHandle(imgCacheDir)
-			if imgCache == nil || err != nil {
-				t.Fatal("failed to create an image cache handle")
-			}
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
 
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
@@ -64,12 +59,8 @@ func TestDockerAUFS(t *testing.T) {
 	test.EnsurePrivilege(t)
 
 	// We create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
@@ -109,12 +100,8 @@ func TestDockerPermissions(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// Create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
@@ -153,12 +140,8 @@ func TestDockerWhiteoutSymlink(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// Create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
@@ -197,12 +180,8 @@ func TestDockerDefFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
-			imgCacheDir := test.SetCacheDir(t, "")
-			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.NewHandle(imgCacheDir)
-			if imgCache == nil || err != nil {
-				t.Fatal("failed to create an image cache handle")
-			}
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
 
 			if getKernelMajor(t) < tt.kernelMajorRequired {
 				t.Skipf("kernel >=%v.x required", tt.kernelMajorRequired)
@@ -293,12 +272,8 @@ func TestDockerRegistry(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
 			// We create a clean image cache
-			imgCacheDir := test.SetCacheDir(t, "")
-			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.NewHandle(imgCacheDir)
-			if imgCache == nil || err != nil {
-				t.Fatal("failed to create an image cache handle")
-			}
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
 
 			opts := buildOpts{
 				env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
