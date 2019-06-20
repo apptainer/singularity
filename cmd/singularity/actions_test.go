@@ -92,16 +92,9 @@ func imageExec(t *testing.T, action string, opts opts, imagePath string, command
 	// In order to unit test using the singularity cli that is thread-safe,
 	// we prepare a temporary cache that the process running the command will
 	// use.
-	tmpImgCache, err := ioutil.TempDir("", "image-cache-")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	cacheEnvStr := cache.DirEnv + "=" + tmpImgCache
-
 	var outbuf, errbuf bytes.Buffer
 	cmd := exec.Command(cmdPath, argv...)
-	cmd.Env = append(os.Environ(), cacheEnvStr)
-
+	setupCmdCache(t, cmd, "image-cache")
 	cmd.Stdout = &outbuf
 	cmd.Stderr = &errbuf
 

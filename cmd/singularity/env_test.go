@@ -9,13 +9,11 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -59,15 +57,9 @@ func TestSingularityEnv(t *testing.T) {
 			// In order to unit test using the singularity cli that is thread-safe,
 			// we prepare a temporary cache that the process running the command will
 			// use.
-			tmpImgCache, err := ioutil.TempDir("", "image-cache-")
-			if err != nil {
-				t.Fatalf("failed to create temporary directory: %s", err)
-			}
-			cacheEnvStr := cache.DirEnv + "=" + tmpImgCache
-
 			cmd := exec.Command(cmdPath, args...)
 			cmd.Env = append(os.Environ(), currentTest.env...)
-			cmd.Env = append(os.Environ(), cacheEnvStr)
+			setupCmdCache(t, cmd, "image-cache")
 			b, err := cmd.CombinedOutput()
 
 			out := string(b)
