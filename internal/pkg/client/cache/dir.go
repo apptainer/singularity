@@ -231,7 +231,6 @@ func initCacheDir(dir string) error {
 // cleanAllCaches is an utility function that wipes all files in the
 // cache directory, will return a error if one occurs
 func (c *Handle) cleanAllCaches() {
-	// TODO: add oras here
 	cacheDirs := map[string]string{
 		"library": c.Library,
 		"oci":     c.OciTemp,
