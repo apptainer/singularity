@@ -17,7 +17,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -65,8 +64,8 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
-				imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
-				if imgCache == nil || err != nil {
+				imgCache := getCacheHandle()
+				if imgCache == nil {
 					sylog.Fatalf("failed to create an image cache handle")
 				}
 
@@ -111,15 +110,13 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 		}
 
-		err := checkSections()
 
-		imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
-		if imgCache == nil || err != nil {
+		imgCache := getCacheHandle()
+		if imgCache == nil {
 			sylog.Fatalf("failed to create an image cache handle")
 		}
 
-		err = checkSections()
-
+		err := checkSections()
 		if err != nil {
 			sylog.Fatalf(err.Error())
 		}
