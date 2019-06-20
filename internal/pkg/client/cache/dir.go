@@ -142,7 +142,6 @@ func getCacheBasedir() string {
 	// as base directory.
 	basedir := os.Getenv(DirEnv)
 	if basedir != "" {
-		fmt.Println("cache basedir set to:", basedir)
 		return basedir
 	}
 
