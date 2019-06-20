@@ -48,10 +48,7 @@ func TestLibraryConveyor(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called
@@ -86,10 +83,7 @@ func TestLibraryPacker(t *testing.T) {
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
-	err = cp.SetImgCache(imgCache)
-	if err != nil {
-		t.Fatalf("failed to set image cache: %s", err)
-	}
+	b.Opts.ImgCache = imgCache
 
 	err = cp.Get(b)
 	// clean up tmpfs since assembler isnt called

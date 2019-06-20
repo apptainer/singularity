@@ -11,7 +11,6 @@ import (
 	"os"
 
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -23,21 +22,13 @@ import (
 type LibraryConveyorPacker struct {
 	b *types.Bundle
 	LocalPacker
-	ImgCache *cache.Handle
-}
-
-// SetImgCache sets the image cache to be used for all future operations
-func (cp *LibraryConveyorPacker) SetImgCache(imgCache *cache.Handle) (err error) {
-	cp.ImgCache = imgCache
-
-	return nil
 }
 
 // Get downloads container from Singularityhub
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
 
-	if cp.ImgCache == nil {
+	if b.Opts.ImgCache == nil {
 		return fmt.Errorf("invalid image cache")
 	}
 
@@ -82,9 +73,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
-	imagePath := cp.ImgCache.LibraryImage(libraryImage.Hash, imageName)
+	imagePath := b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cp.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")

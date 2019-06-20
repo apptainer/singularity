@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -83,11 +82,6 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 	default:
 		return nil, fmt.Errorf("invalid image format")
 	}
-}
-
-// SetImgCache is a no-op for Local; it does not use an image cache
-func (cp *LocalConveyorPacker) SetImgCache(*cache.Handle) (err error) {
-	return nil
 }
 
 // Get just stores the source

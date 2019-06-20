@@ -83,10 +83,10 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 		b, err := build.NewBuild(
 			u,
 			build.Config{
-				Dest:     imgabs,
-				Format:   "sif",
-				ImgCache: imgCache,
+				Dest:   imgabs,
+				Format: "sif",
 				Opts: types.Options{
+					ImgCache:         imgCache,
 					TmpDir:           tmpDir,
 					NoTest:           true,
 					NoHTTPS:          noHTTPS,

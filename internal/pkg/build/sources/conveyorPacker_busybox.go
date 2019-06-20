@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -27,11 +26,6 @@ type BusyBoxConveyor struct {
 // BusyBoxConveyorPacker only needs to hold the conveyor to have the needed data to pack
 type BusyBoxConveyorPacker struct {
 	BusyBoxConveyor
-}
-
-// SetImgCache is a no-op for busybox, it does not need an image cache
-func (c *BusyBoxConveyor) SetImgCache(*cache.Handle) (err error) {
-	return nil
 }
 
 // Get just stores the source

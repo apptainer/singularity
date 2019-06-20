@@ -12,7 +12,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
@@ -23,11 +22,6 @@ type DebootstrapConveyorPacker struct {
 	mirrorurl string
 	osversion string
 	include   string
-}
-
-// SetImgCache is a no-op for debootstrap; it does not use any image cache
-func (cp *DebootstrapConveyorPacker) SetImgCache(*cache.Handle) (err error) {
-	return nil
 }
 
 // Get downloads container information from the specified source

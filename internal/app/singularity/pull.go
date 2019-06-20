@@ -351,14 +351,14 @@ func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir str
 	b, err := build.NewBuild(
 		image,
 		build.Config{
-			ImgCache: imgCache,
-			Dest:     cachedImgPath,
-			Format:   "sif",
+			Dest:   cachedImgPath,
+			Format: "sif",
 			Opts: types.Options{
 				TmpDir:           tmpDir,
 				NoTest:           true,
 				NoHTTPS:          noHTTPS,
 				DockerAuthConfig: authConf,
+				ImgCache:         imgCache,
 			},
 		},
 	)
