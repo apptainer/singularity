@@ -113,8 +113,7 @@ func LibraryPull(name, ref, transport, fullURI, libraryURI, keyServerURL, authTo
 	if !unauthenticated {
 		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken, true)
 		if err != nil {
-			// err will be: "unable to verify container: %v", err
-			sylog.Warningf("%v", err)
+			sylog.Errorf("%v", err)
 			// if there is a warning, return set error to indicate exit 1
 		}
 		// if container is not signed, print a warning

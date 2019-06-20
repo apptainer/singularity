@@ -109,7 +109,7 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false)
+	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
 	if err != nil {
 		sylog.Fatalf("%v", err)
 	}

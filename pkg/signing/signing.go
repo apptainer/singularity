@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/fatih/color"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -242,13 +243,12 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 // if one occures, eg. "the container is not signed", or "container is
 // signed by a unknown signer".
 func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
-	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, noPrompt)
+	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, noPrompt, true)
 	if err != nil {
 		return false, fmt.Errorf("unable to verify container: %v", err)
 	}
 	if noLocalKey {
-		return true, fmt.Errorf("no local key matching entity")
-		//return true, nil
+		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
 	}
 	return true, nil
 }
@@ -259,7 +259,7 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 // keys in the default local keyring, if non is found, it will then looks it up
 // from a key server if access is enabled, or if localVerify is false. Returns
 // true, if theres no local key matching a signers entity.
-func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify bool, noPrompt bool) (bool, error) {
+func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, noPrompt, quiet bool) (bool, error) {
 	notLocalKey := false
 
 	fimg, err := sif.LoadContainer(cpath, true)
@@ -276,6 +276,10 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 	// the selected data object is hashed for comparison against signature block's
 	sifhash := computeHashStr(&fimg, descr)
+
+	green := color.New(color.FgGreen).SprintFunc()
+	yellow := color.New(color.FgYellow).SprintFunc()
+	red := color.New(color.FgRed).SprintFunc()
 
 	var author string
 	var trusted bool
@@ -322,11 +326,11 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
-					sylog.Errorf("Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
-					author += fmt.Sprintf("[MISSING]  key does not exist in local, or remote keystore: %s\n", fingerprint)
+					sylog.Verbosef("ERROR: Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
+					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore: %s\n", red("[MISSING]"), fingerprint)
 					continue
 				}
-				sylog.Infof("Found key in remote keystore: %s", fingerprint[32:])
+				sylog.Verbosef("Found key in remote keystore: %s", fingerprint[32:])
 
 				block, _ := clearsign.Decode(data)
 				if block == nil {
@@ -353,13 +357,17 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			name = i.Name
 			break
 		}
-		if trusted {
-			author += fmt.Sprintf("[TRUSTED]  %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
-		} else {
-			author += fmt.Sprintf("           %s, F: %X\n", name, signer.PrimaryKey.Fingerprint)
+		if !quiet {
+			if trusted {
+				author += fmt.Sprintf("%s  %s, F: %X\n", green("[TRUSTED]"), name, signer.PrimaryKey.Fingerprint)
+			} else {
+				author += fmt.Sprintf("%s   %s, F: %X\n", yellow("[REMOTE]"), name, signer.PrimaryKey.Fingerprint)
+			}
 		}
 	}
-	fmt.Printf("\nData integrity checked, authentic and signed by:\n%v", author)
+	if !quiet {
+		fmt.Printf("Data integrity checked, authentic and signed by:\n%v", author)
+	}
 
 	return notLocalKey, nil
 }
