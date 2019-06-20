@@ -200,8 +200,7 @@ func (b *Build) Full() error {
 		} else {
 			// regular build or force, start build from scratch
 			if b.Conf.ImgCache == nil {
-				fmt.Println("WARNING!!! imgCache is undefined")
-				os.Exit(42)
+				return fmt.Errorf("undefined image cache")
 			}
 			stage.c.SetImgCache(b.Conf.ImgCache)
 			if err := stage.c.Get(stage.b); err != nil {
