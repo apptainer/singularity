@@ -120,7 +120,12 @@ func TestSecurity(t *testing.T) {
 		force:   true,
 		sandbox: false,
 	}
-	if b, err := imageBuild(opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
+
+	// Create a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
+	if b, err := imageBuild(imgCache, opts, imagePath, "../../examples/busybox/Singularity"); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
