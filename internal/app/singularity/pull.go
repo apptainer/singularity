@@ -345,8 +345,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 
 func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
 	if imgCache == nil {
-		fmt.Println("Image cache is undefined")
-		os.Exit(42)
+		return fmt.Errorf("image cache is undefined")
 	}
 
 	b, err := build.NewBuild(
