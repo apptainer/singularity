@@ -40,7 +40,7 @@ func TestOciBlob(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := HdlInit(tt.dir)
+			c, err := NewHandle(tt.dir)
 			if c == nil || err != nil {
 				t.Fatal("failed to create new image cache handle")
 			}
@@ -81,7 +81,7 @@ func TestOciTemp(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c, err := HdlInit(tt.dir)
+			c, err := NewHandle(tt.dir)
 			if c == nil || err != nil {
 				t.Fatal("failed to create new image cache handle")
 			}
@@ -106,7 +106,7 @@ func TestOciTempExists(t *testing.T) {
 	}
 	defer os.RemoveAll(tempImageCache)
 
-	c, err := HdlInit(tempImageCache)
+	c, err := NewHandle(tempImageCache)
 	if c == nil || err != nil {
 		t.Fatal("failed to create new image cache handle")
 	}

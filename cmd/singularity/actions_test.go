@@ -495,7 +495,7 @@ func TestSingularityActions(t *testing.T) {
 
 	imgCacheBaseDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheBaseDir)
-	imgCache, err := cache.HdlInit(imgCacheBaseDir)
+	imgCache, err := cache.NewHandle(imgCacheBaseDir)
 	if imgCache == nil || err != nil {
 		t.Fatalf("failed to create image cache handle")
 	}

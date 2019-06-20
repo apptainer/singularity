@@ -42,7 +42,7 @@ func TestOCIConveyorDocker(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -99,7 +99,7 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -152,7 +152,7 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -197,7 +197,7 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -255,7 +255,7 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}
@@ -292,7 +292,7 @@ func TestOCIPacker(t *testing.T) {
 	// set a clean image cache
 	imgCacheDir := test.SetCacheDir(t, "")
 	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.HdlInit(imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
 	if imgCache == nil || err != nil {
 		t.Fatal("failed to create an image cache handle")
 	}

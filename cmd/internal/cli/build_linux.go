@@ -65,7 +65,7 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
-				imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+				imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
 				if imgCache == nil || err != nil {
 					sylog.Fatalf("failed to create an image cache handle")
 				}
@@ -113,7 +113,7 @@ func run(cmd *cobra.Command, args []string) {
 
 		err := checkSections()
 
-		imgCache, err := cache.HdlInit(os.Getenv(cache.DirEnv))
+		imgCache, err := cache.NewHandle(os.Getenv(cache.DirEnv))
 		if imgCache == nil || err != nil {
 			sylog.Fatalf("failed to create an image cache handle")
 		}
