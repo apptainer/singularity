@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -35,14 +34,8 @@ func TestSelfTest(t *testing.T) {
 	// In order to unit test using the singularity cli that is thread-safe,
 	// we prepare a temporary cache that the process running the command will
 	// use.
-	tmpImgCache, err := ioutil.TempDir("", "image-cache-")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	cacheEnvStr := cache.DirEnv + "=" + tmpImgCache
-
 	cmd := exec.Command(cmdPath, "selftest")
-	cmd.Env = append(os.Environ(), cacheEnvStr)
+	setupCmdCache(t, cmd, "image-cache")
 	if b, err := cmd.CombinedOutput(); err == nil {
 		t.Log(string(b))
 		t.Fatal("unexpected success running selftest")

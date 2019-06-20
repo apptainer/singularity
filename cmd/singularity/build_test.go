@@ -27,6 +27,30 @@ import (
 
 var testFileContent = "Test file content\n"
 
+func setupCache(t *testing.T) (*cache.Handle, func()) {
+	dir := test.SetCacheDir(t, "")
+	h, err := cache.NewHandle(dir)
+	if err != nil {
+		test.CleanCacheDir(t, dir)
+		t.Fatalf("failed to create an image cache handle: %s", err)
+	}
+	return h, func() {
+		test.CleanCacheDir(t, dir)
+	}
+}
+
+func setupCmdCache(t *testing.T, cmd *exec.Cmd, tag string) {
+	dir, err := ioutil.TempDir("", tag+"-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	env := cache.DirEnv + "=" + dir
+	if cmd.Env == nil {
+		cmd.Env = os.Environ()
+	}
+	cmd.Env = append(cmd.Env, env)
+}
+
 func imageVerify(t *testing.T, imagePath string, labels bool) {
 	type testSpec struct {
 		name          string
@@ -115,12 +139,8 @@ func TestBuild(t *testing.T) {
 			}
 
 			// Set a clean image cache for every test
-			imgCacheDir := test.SetCacheDir(t, "")
-			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.NewHandle(imgCacheDir)
-			if imgCache == nil || err != nil {
-				t.Fatal("failed to create an image cache handle")
-			}
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
 
 			opts := buildOpts{
 				sandbox: tt.sandbox,
@@ -204,12 +224,8 @@ func TestMultipleBuilds(t *testing.T) {
 					}
 
 					// Set a clean image cache for every tests
-					imgCacheDir := test.SetCacheDir(t, "")
-					defer test.CleanCacheDir(t, imgCacheDir)
-					imgCache, err := cache.NewHandle(imgCacheDir)
-					if imgCache == nil || err != nil {
-						t.Fatal("failed to create an image cache handle")
-					}
+					imgCache, cleanup := setupCache(t)
+					defer cleanup()
 
 					if b, err := imageBuild(imgCache, opts, ts.imagePath, ts.buildSpec); err != nil {
 						t.Log(string(b))
@@ -226,12 +242,8 @@ func TestBadPath(t *testing.T) {
 	test.EnsurePrivilege(t)
 
 	// Set a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
-	imgCache, err := cache.NewHandle(imgCacheDir)
-	if imgCache == nil || err != nil {
-		t.Fatal("failed to create an image cache handle")
-	}
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
 
 	imagePath := path.Join(testDir, "container")
 	defer os.RemoveAll(imagePath)
@@ -438,12 +450,8 @@ func TestMultiStageDefinition(t *testing.T) {
 			defer os.RemoveAll(imagePath)
 
 			// Set a clean image cache for every test
-			imgCacheDir := test.SetCacheDir(t, "")
-			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.NewHandle(imgCacheDir)
-			if imgCache == nil || err != nil {
-				t.Fatal("failed to create an image cache handle")
-			}
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
 
 			if b, err := imageBuild(imgCache, opts, imagePath, defFile); err != nil {
 				t.Log(string(b))
@@ -736,12 +744,8 @@ func TestBuildDefinition(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
 			// Set a clean image cache for every test
-			imgCacheDir := test.SetCacheDir(t, "")
-			defer test.CleanCacheDir(t, imgCacheDir)
-			imgCache, err := cache.NewHandle(imgCacheDir)
-			if imgCache == nil || err != nil {
-				t.Fatal("failed to create an image cache handle")
-			}
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
 
 			defFile := prepareDefFile(tt.dfd)
 			defer os.Remove(defFile)
@@ -1044,14 +1048,8 @@ func verifyEnv(t *testing.T, imagePath string, env []string, flags []string) err
 	// In order to unit test using the singularity cli that is thread-safe,
 	// we prepare a temporary cache that the process running the command will
 	// use.
-	tmpImgCache, err := ioutil.TempDir("", "image-cache-")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	cacheEnvStr := cache.DirEnv + "=" + tmpImgCache
-
 	cmd := exec.Command(cmdPath, args...)
-	cmd.Env = append(os.Environ(), cacheEnvStr)
+	setupCmdCache(t, cmd, "image-cache")
 	b, err := cmd.CombinedOutput()
 
 	out := string(b)
