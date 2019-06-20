@@ -34,12 +34,6 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	var stderr bytes.Buffer
 	cmd := exec.Command("mv", b.Rootfs(), path)
-	// If the assemble is associated to a specific image cache, we make
-	// sure that the environment variable points to it for the process
-	// that will create.
-	if a.ImgCache != nil {
-		cmd.Env = append(os.Environ(), cache.DirEnv+"="+a.ImgCache.GetBasedir())
-	}
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
 		return fmt.Errorf("Sandbox Assemble Failed: %v: %v", err, stderr.String())
