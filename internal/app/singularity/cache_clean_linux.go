@@ -108,8 +108,8 @@ func removeCacheEntry(name, cacheType, cacheDir string) (bool, error) {
 // cache with that name.
 func CleanSingularityCache(imgCache *cache.Handle, cleanAll bool, cacheCleanTypes []string, cacheName []string) error {
 	imgCache, err := cache.NewHandle("")
-	if imgCache == nil || err != nil {
-		return fmt.Errorf("failed to create a new image cache handle")
+	if err != nil {
+		return fmt.Errorf("failed to create a new image cache handle: %s", err)
 	}
 
 	cacheDirs := map[string]string{

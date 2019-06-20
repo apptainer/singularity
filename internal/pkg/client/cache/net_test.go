@@ -41,8 +41,8 @@ func TestNet(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c, err := NewHandle(tt.dir)
-			if c == nil || err != nil {
-				t.Fatal("failed to create new image cache handle")
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
 			if tt.needCleanup {
 				defer c.cleanAllCaches()
@@ -66,8 +66,8 @@ func TestNetImageExists(t *testing.T) {
 	defer os.RemoveAll(tempImageCache)
 
 	c, err := NewHandle(tempImageCache)
-	if c == nil || err != nil {
-		t.Fatal("failed to create new image cache handle")
+	if err != nil {
+		t.Fatalf("failed to create new image cache handle: %s", err)
 	}
 
 	tests := []struct {
