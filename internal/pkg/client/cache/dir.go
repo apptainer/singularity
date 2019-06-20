@@ -131,6 +131,7 @@ func NewHandle(baseDir string) (*Handle, error) {
 }
 
 // getCacheBaseDir figures out where the cache base directory is.
+//
 // Singularity makes the following assumptions:
 // - the default location for caches is specified by RootDefault
 // - a user can specify the environment variable specified by DirEnv to
