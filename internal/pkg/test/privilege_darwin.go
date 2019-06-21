@@ -18,13 +18,6 @@ import (
 var origUID, origGID, unprivUID, unprivGID int
 var origHome, unprivHome string
 
-const (
-	// CacheDirPriv is the directory the cachedir gets set to when running privileged
-	CacheDirPriv = "/tmp/WithPrivilege"
-	// CacheDirUnpriv is the directory the cachedir gets set to when running unprivileged
-	CacheDirUnpriv = "/tmp/WithoutPrivilege"
-)
-
 // EnsurePrivilege ensures elevated privileges are available during a test.
 func EnsurePrivilege(t *testing.T) {
 	uid := os.Getuid()
@@ -50,9 +43,6 @@ func ResetPrivilege(t *testing.T) {
 func WithPrivilege(f func(t *testing.T)) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Helper()
-
-		// set SINGULARITY_CACHEDIR
-		os.Setenv("SINGULARITY_CACHEDIR", CacheDirPriv)
 
 		EnsurePrivilege(t)
 
