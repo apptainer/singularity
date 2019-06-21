@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	ocitypes "github.com/containers/image/types"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -64,6 +65,8 @@ type Options struct {
 	NoCleanUp bool `json:"noCleanUp"`
 	// fakeroot indicates if the build engine uses the fakeroot feature
 	Fakeroot bool `json:"fakeroot"`
+	// ImgCache stores a pointer to the image cache to use
+	ImgCache *cache.Handle
 }
 
 // NewBundle creates a Bundle environment

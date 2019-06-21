@@ -8,7 +8,6 @@ package sources
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/oras"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -36,8 +35,8 @@ func (cp *OrasConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	imageName := uri.GetName(fullRef)
-	cacheImagePath := cache.OrasImage(sum, imageName)
-	if exists, err := cache.OrasImageExists(sum, imageName); err != nil {
+	cacheImagePath := b.Opts.ImgCache.OrasImage(sum, imageName)
+	if exists, err := b.Opts.ImgCache.OrasImageExists(sum, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading image with ORAS")
