@@ -57,7 +57,6 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	}
 
 	a := &assemblers.SandboxAssembler{}
-	a.ImgCache = imgCache
 
 	err = a.Assemble(b, assemblerDockerDestDir)
 	if err != nil {
