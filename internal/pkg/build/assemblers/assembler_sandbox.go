@@ -11,15 +11,13 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// SandboxAssembler stores data required to assemble the image, for instannce the
-// image cache
+// SandboxAssembler stores data required to assemble the image.
 type SandboxAssembler struct {
-	ImgCache *cache.Handle
+	// Nothing yet
 }
 
 // Assemble creates a Sandbox image from a Bundle
