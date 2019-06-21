@@ -20,7 +20,7 @@ Enterprise Performance Computing (EPC)`
 	SingularityLong string = `
   Singularity containers provide an application virtualization layer enabling
   mobility of compute via both application and environment portability. With
-  Singularity one is capable of building a root file system that runs on any 
+  Singularity one is capable of building a root file system that runs on any
   other Linux system where Singularity is installed.`
 	SingularityExample string = `
   $ singularity help <command> [<subcommand>]
@@ -42,13 +42,13 @@ Enterprise Performance Computing (EPC)`
       sandbox:    This is a read-write container within a directory structure
 
   note: It is a common workflow to use the "sandbox" mode for development of the
-  container, and then build it as a default Singularity image for production 
+  container, and then build it as a default Singularity image for production
   use. The default format is immutable.
 
   BUILD SPEC:
 
-  The build spec target is a definition (def) file, local image, or URI that can 
-  be used to create a Singularity container. Several different local target 
+  The build spec target is a definition (def) file, local image, or URI that can
+  be used to create a Singularity container. Several different local target
   formats exist:
 
       def file  : This is a recipe for building a container (examples below)
@@ -162,7 +162,7 @@ Enterprise Performance Computing (EPC)`
 	CacheUse   string = `cache`
 	CacheShort string = `Manage the local cache`
 	CacheLong  string = `
-  Manage your local Singularity cache. You can list/clean using the specific 
+  Manage your local Singularity cache. You can list/clean using the specific
   types.`
 	CacheExample string = `
   All group commands have their own help output:
@@ -177,9 +177,9 @@ Enterprise Performance Computing (EPC)`
 	CacheCleanShort string = `Clean your local Singularity cache`
 	CacheCleanLong  string = `
   This will clean your local cache (stored at $HOME/.singularity/cache if
-  SINGULARITY_CACHEDIR is not set). By default only blob cache is cleaned, use 
-  '--all' to clean the entire cache. Note: if you use Singularity as root, cache 
-  will be stored in '/root/.singularity/.cache', to clean that cache, you will 
+  SINGULARITY_CACHEDIR is not set). By default only blob cache is cleaned, use
+  '--all' to clean the entire cache. Note: if you use Singularity as root, cache
+  will be stored in '/root/.singularity/.cache', to clean that cache, you will
   need to run 'cache clean --all' as root, or with 'sudo'.`
 	CacheCleanExample string = `
   All group commands have their own help output:
@@ -209,8 +209,8 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage OpenPGP keys both locally via a Singularity keychain and remotely via a 
-  Sylabs Cloud Keystore. The default keyring is '~/.singularity/sypgp' if 
+  Manage OpenPGP keys both locally via a Singularity keychain and remotely via a
+  Sylabs Cloud Keystore. The default keyring is '~/.singularity/sypgp' if
   'SINGULARITY_SYPGPDIR' is not set.`
 	KeyExample string = `
   All group commands have their own help output:
@@ -227,7 +227,7 @@ Enterprise Performance Computing (EPC)`
 	KeyImportUse   string = `import [import options...] <input-key>`
 	KeyImportShort string = `Import a local key into the local keyring`
 	KeyImportLong  string = `
-  The 'key import' command allows you to add a key to your local keyring from a 
+  The 'key import' command allows you to add a key to your local keyring from a
   specific file.`
 	KeyImportExample string = `
   $ singularity key import ./my-key.asc`
@@ -241,11 +241,11 @@ Enterprise Performance Computing (EPC)`
   The 'key export' command allows you to export a key and save it to a file.`
 	KeyExportExample string = `
   Exporting a private key:
-  
+
   $ singularity key export --secret ./private.asc
 
   Exporting a public key:
-  
+
   $ singularity key export ./public.asc`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -255,7 +255,7 @@ Enterprise Performance Computing (EPC)`
 	KeyNewPairShort string = `Create a new key pair`
 	KeyNewPairLong  string = `
   The 'key newpair' command allows you to create a new key or public/private
-  keys to be stored in the default user local key store location (e.g., 
+  keys to be stored in the default user local key store location (e.g.,
   $HOME/.singularity/sypgp).`
 	KeyNewPairExample string = `
   $ singularity key newpair`
@@ -266,7 +266,7 @@ Enterprise Performance Computing (EPC)`
 	KeyListUse   string = `list`
 	KeyListShort string = `List keys in your local keyring`
 	KeyListLong  string = `
-  The 'key list' command allows you to list public/private keys from the  
+  The 'key list' command allows you to list public/private keys from the
   default user's local keyring location (i.e., $HOME/.singularity/sypgp).`
 	KeyListExample string = `
   $ singularity key list`
@@ -278,7 +278,7 @@ Enterprise Performance Computing (EPC)`
 	KeySearchShort string = `Search for keys on a key server`
 	KeySearchLong  string = `
   The 'key search' command allows you to connect to a key server and look for
-  public keys matching the argument passed to the command line. You can also 
+  public keys matching the argument passed to the command line. You can also
   search for a key by fingerprint or key ID by adding '0x' before the
   fingerprint. (Maximum 100 search entities)`
 	KeySearchExample string = `
@@ -296,8 +296,8 @@ Enterprise Performance Computing (EPC)`
 	KeyPullUse   string = `pull [pull options...] <fingerprint>`
 	KeyPullShort string = `Download a public key from a key server`
 	KeyPullLong  string = `
-  The 'key pull' command allows you to connect to a key server look for and 
-  download a public key. Key rings are stored into (e.g., 
+  The 'key pull' command allows you to connect to a key server look for and
+  download a public key. Key rings are stored into (e.g.,
   $HOME/.singularity/sypgp).`
 	KeyPullExample string = `
   $ singularity key pull 8883491F4268F173C6E5DC49EDECE4F3F38D871E`
@@ -345,10 +345,10 @@ Enterprise Performance Computing (EPC)`
 	CapabilityAddUse   string = `add [add options...] <capabilities>`
 	CapabilityAddShort string = `Add capabilities to a user or group (requires root)`
 	CapabilityAddLong  string = `
-  Add Linux capabilities to a user or group. NOTE: This command requires root to 
+  Add Linux capabilities to a user or group. NOTE: This command requires root to
   run.
 
-  The capabilities argument must be separated by commas and is not case 
+  The capabilities argument must be separated by commas and is not case
   sensitive.
 
   To see available capabilities, type "singularity capability avail" or refer to
@@ -367,10 +367,10 @@ Enterprise Performance Computing (EPC)`
 	CapabilityDropUse   string = `drop [drop options...] <capabilities>`
 	CapabilityDropShort string = `Remove capabilities from a user or group (requires root)`
 	CapabilityDropLong  string = `
-  Remove Linux capabilities from a user/group. NOTE: This command requires root 
+  Remove Linux capabilities from a user/group. NOTE: This command requires root
   to run.
 
-  The capabilities argument must be separated by commas and is not case 
+  The capabilities argument must be separated by commas and is not case
   sensitive.
 
   To see available capabilities, type "singularity capability avail" or refer to
@@ -425,27 +425,28 @@ Enterprise Performance Computing (EPC)`
 	formats string = `
 
   *.sif               Singularity Image Format (SIF). Native to Singularity 3.0+
-  
+
   *.sqsh              SquashFS format.  Native to Singularity 2.4+
 
   *.img               ext3 format. Native to Singularity versions < 2.4.
 
-  directory/          sandbox format. Directory containing a valid root file 
-                      system and optionally Singularity meta-data.
+  directory/          sandbox format. Directory containing a valid root file system and optionally Singularity meta-data.
 
-  instance://*        A local running instance of a container. (See the instance
-                      command group.)
+  instance://*        A local running instance of a container. (See the instance command group.)
 
-  library://*         A container hosted on a Library (default 
-                      https://cloud.sylabs.io/library)
+  library://*         A container hosted on a Library (default https://cloud.sylabs.io/library)
 
   docker://*          A container hosted on Docker Hub
 
-  shub://*            A container hosted on Singularity Hub`
+  shub://*            A container hosted on Singularity Hub
+
+  oras://*            A container from supported OCI Registries; Eg: Azure Container Registry, Local Registry Servers etc`
+
+
 	ExecUse   string = `exec [exec options...] <container> <command>`
 	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
-  singularity exec supports the following formats:` + formats
+  Singularity exec supports the following formats:` + formats
 	ExecExamples string = `
   $ singularity exec /tmp/debian.sif cat /etc/debian_version
   $ singularity exec /tmp/debian.sif python ./hello_world.py
@@ -498,7 +499,7 @@ Enterprise Performance Computing (EPC)`
   will be executed with the instance start command as well. You can optionally
   pass arguments to startscript
 
-  singularity instance start accepts the following container formats` + formats
+  Singularity instance start accepts the following container formats` + formats
 	InstanceStartExample string = `
   $ singularity instance start /tmp/my-sql.sif mysql
 
@@ -546,18 +547,23 @@ Enterprise Performance Computing (EPC)`
 	PullUse   string = `pull [pull options...] [output file] <URI>`
 	PullShort string = `Pull an image from a URI`
 	PullLong  string = `
-  The 'pull' command allows you to download or build a container from a given
-  URI.  Supported URIs include:
+	The 'pull' command allows you to download or build a container from a given URI.
+
+Supported URIs include:
 
   library: Pull an image from the currently configured library
       library://user/collection/container[:tag]
 
   docker: Pull an image from Docker Hub
       docker://user/image:tag
-    
+
   shub: Pull an image from Singularity Hub to CWD
-      shub://user/image:tag`
-	PullExample string = `
+      shub://user/image:tag
+
+  oras: Pull an image from supported OCI registries - Azure Container Registry, local Docker Registry
+      oras://user.azurecr.io/test/oras:newtest`
+
+PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
 
@@ -565,7 +571,10 @@ Enterprise Performance Computing (EPC)`
   $ singularity pull tensorflow.sif docker://tensorflow/tensorflow:latest
 
   From Shub
-  $ singularity pull singularity-images.sif shub://vsoch/singularity-images`
+  $ singularity pull singularity-images.sif shub://vsoch/singularity-images
+
+  From Azure Container Registry & other supported OCI registreis
+  $ singularity pull pull.sif oras://iantest.azurecr.io/test/oras:newtest`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
@@ -605,7 +614,7 @@ Enterprise Performance Computing (EPC)`
   automatically. All arguments following the container name will be passed
   directly to the runscript.
 
-  singularity run accepts the following container formats:` + formats
+  Singularity run accepts the following container formats:` + formats
 	RunExamples string = `
   # Here we see that the runscript prints "Hello world: "
   $ singularity exec /tmp/debian.sif cat /singularity
@@ -625,7 +634,7 @@ Enterprise Performance Computing (EPC)`
 	ShellUse   string = `shell [shell options...] <container>`
 	ShellShort string = `Run a shell within a container`
 	ShellLong  string = `
-  singularity shell supports the following formats:` + formats
+  Singularity shell supports the following formats:` + formats
 	ShellExamples string = `
   $ singularity shell /tmp/Debian.sif
   Singularity/Debian.sif> pwd
@@ -658,11 +667,11 @@ Enterprise Performance Computing (EPC)`
 	SignUse   string = `sign [sign options...] <image path>`
 	SignShort string = `Attach a cryptographic signature to an image`
 	SignLong  string = `
-  The sign command allows a user to create a cryptographic signature on either a 
-  single data object or a list of data objects within the same SIF group. By 
-  default without parameters, the command searches for the primary partition and 
+  The sign command allows a user to create a cryptographic signature on either a
+  single data object or a list of data objects within the same SIF group. By
+  default without parameters, the command searches for the primary partition and
   creates a verification block that is then added to the SIF container file.
-  
+
   To generate a keypair, see 'singularity help key newpair'`
 	SignExample string = `
   $ singularity sign container.sif`
@@ -673,11 +682,11 @@ Enterprise Performance Computing (EPC)`
 	VerifyUse   string = `verify [verify options...] <image path>`
 	VerifyShort string = `Verify cryptographic signatures attached to an image`
 	VerifyLong  string = `
-  The verify command allows a user to verify cryptographic signatures on SIF 
-  container files. There may be multiple signatures for data objects and 
-  multiple data objects signed. By default the command searches for the primary 
-  partition signature. If found, a list of all verification blocks applied on 
-  the primary partition is gathered so that data integrity (hashing) and 
+  The verify command allows a user to verify cryptographic signatures on SIF
+  container files. There may be multiple signatures for data objects and
+  multiple data objects signed. By default the command searches for the primary
+  partition signature. If found, a list of all verification blocks applied on
+  the primary partition is gathered so that data integrity (hashing) and
   signature verification is done for all those blocks.`
 	VerifyExample string = `
   $ singularity verify container.sif`
@@ -688,8 +697,8 @@ Enterprise Performance Computing (EPC)`
 	RunHelpUse   string = `run-help <image path>`
 	RunHelpShort string = `Show the user-defined help for an image`
 	RunHelpLong  string = `
-  The help text is from the '%help' section of the definition file. If you are 
-  using the '--apps' option, the help text is instead from that app's '%apphelp' 
+  The help text is from the '%help' section of the definition file. If you are
+  using the '--apps' option, the help text is instead from that app's '%apphelp'
   section.`
 	RunHelpExample string = `
   $ cat my_container.def
@@ -720,7 +729,7 @@ Enterprise Performance Computing (EPC)`
 	InspectUse   string = `inspect [inspect options...] <image path>`
 	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
-  Inspect will show you labels, environment variables, and scripts associated 
+  Inspect will show you labels, environment variables, and scripts associated
   with the image determined by the flags you pass.`
 	InspectExample string = `
   $ singularity inspect ubuntu.sif`
@@ -732,13 +741,13 @@ Enterprise Performance Computing (EPC)`
 	RunTestShort string = `Run the user-defined tests within a container`
 	RunTestLong  string = `
   The 'test' command allows you to execute a testscript (if available) inside of
-  a given container 
+  a given container
 
   NOTE:
       For instances if there is a daemon process running inside the container,
-      then subsequent container commands will all run within the same 
-      namespaces. This means that the --writable and --contain options will not 
-      be honored as the namespaces have already been configured by the 
+      then subsequent container commands will all run within the same
+      namespaces. This means that the --writable and --contain options will not
+      be honored as the namespaces have already been configured by the
       'singularity start' command.
 `
 	RunTestExample string = `
@@ -772,7 +781,7 @@ Enterprise Performance Computing (EPC)`
 	OciCreateUse   string = `create -b <bundle_path> [create options...] <container_ID>`
 	OciCreateShort string = `Create a container from a bundle directory (root user only)`
 	OciCreateLong  string = `
-  Create invoke create operation to create a container instance from an OCI 
+  Create invoke create operation to create a container instance from an OCI
   bundle directory`
 	OciCreateExample string = `
   $ singularity oci create -b ~/bundle mycontainer`
@@ -780,7 +789,7 @@ Enterprise Performance Computing (EPC)`
 	OciStartUse   string = `start <container_ID>`
 	OciStartShort string = `Start container process (root user only)`
 	OciStartLong  string = `
-  Start invoke start operation to start a previously created container 
+  Start invoke start operation to start a previously created container
   identified by container ID.`
 	OciStartExample string = `
   $ singularity oci start mycontainer`
@@ -788,7 +797,7 @@ Enterprise Performance Computing (EPC)`
 	OciStateUse   string = `state <container_ID>`
 	OciStateShort string = `Query state of a container (root user only)`
 	OciStateLong  string = `
-  State invoke state operation to query state of a created/running/stopped 
+  State invoke state operation to query state of a created/running/stopped
   container identified by container ID.`
 	OciStateExample string = `
   $ singularity oci state mycontainer`
@@ -796,7 +805,7 @@ Enterprise Performance Computing (EPC)`
 	OciKillUse   string = `kill [kill options...] <container_ID>`
 	OciKillShort string = `Kill a container (root user only)`
 	OciKillLong  string = `
-  Kill invoke kill operation to kill processes running within container 
+  Kill invoke kill operation to kill processes running within container
   identified by container ID.`
 	OciKillExample string = `
   $ singularity oci kill mycontainer INT
@@ -805,7 +814,7 @@ Enterprise Performance Computing (EPC)`
 	OciDeleteUse   string = `delete <container_ID>`
 	OciDeleteShort string = `Delete container (root user only)`
 	OciDeleteLong  string = `
-  Delete invoke delete operation to delete resources that were created for 
+  Delete invoke delete operation to delete resources that were created for
   container identified by container ID.`
 	OciDeleteExample string = `
   $ singularity oci delete mycontainer`
@@ -813,7 +822,7 @@ Enterprise Performance Computing (EPC)`
 	OciAttachUse   string = `attach <container_ID>`
 	OciAttachShort string = `Attach console to a running container process (root user only)`
 	OciAttachLong  string = `
-  Attach will attach console to a running container process running within 
+  Attach will attach console to a running container process running within
   container identified by container ID.`
 	OciAttachExample string = `
   $ singularity oci attach mycontainer`
@@ -821,7 +830,7 @@ Enterprise Performance Computing (EPC)`
 	OciExecUse   string = `exec <container_ID> <command> <args>`
 	OciExecShort string = `Execute a command within container (root user only)`
 	OciExecLong  string = `
-  Exec will execute the provided command/arguments within container identified 
+  Exec will execute the provided command/arguments within container identified
   by container ID.`
 	OciExecExample string = `
   $ singularity oci exec mycontainer id`
@@ -843,7 +852,7 @@ Enterprise Performance Computing (EPC)`
 	OciUpdateUse   string = `update [update options...] <container_ID>`
 	OciUpdateShort string = `Update container cgroups resources (root user only)`
 	OciUpdateLong  string = `
-  Update will update cgroups resources for the specified container ID. Container 
+  Update will update cgroups resources for the specified container ID. Container
   must be in a RUNNING or CREATED state.`
 	OciUpdateExample string = `
   $ singularity oci update --from-file /tmp/cgroups-update.json mycontainer
@@ -862,7 +871,7 @@ Enterprise Performance Computing (EPC)`
 	OciResumeUse   string = `resume <container_ID>`
 	OciResumeShort string = `Resumes all processes previously paused inside the container (root user only)`
 	OciResumeLong  string = `
-  Resume will resume all processes previously paused for the specified container 
+  Resume will resume all processes previously paused for the specified container
   ID.`
 	OciResumeExample string = `
   $ singularity oci resume mycontainer`
@@ -877,7 +886,7 @@ Enterprise Performance Computing (EPC)`
 	OciUmountUse   string = `umount <bundle_path>`
 	OciUmountShort string = `Umount delete bundle (root user only)`
 	OciUmountLong  string = `
-  Umount will umount an OCI bundle previously mounted with singularity oci 
+  Umount will umount an OCI bundle previously mounted with singularity oci
   mount.`
 	OciUmountExample string = `
   $ singularity oci umount /var/lib/singularity/bundles/example`
