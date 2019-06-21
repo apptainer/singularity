@@ -722,6 +722,8 @@ func RecryptKey(k *openpgp.Entity) error {
 // based on the standard format (human readable) to a reader that follows the
 // machine readable index format. The reformat allows us to easily parse the
 // keys.
+//
+// For more details about OpenPGP formats: https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#section-5.2
 func ReformatGPGExportedFile(r io.Reader) io.Reader {
 
 	var keyString string
