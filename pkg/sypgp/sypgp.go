@@ -718,6 +718,10 @@ func RecryptKey(k *openpgp.Entity) error {
 	return nil
 }
 
+// ReformatGPGExportedFile reformats a reader that parses a set of GPG keys
+// based on the standard format (human readable) to a reader that follows the
+// machine readable index format. The reformat allows us to easily parse the
+// keys.
 func ReformatGPGExportedFile(r io.Reader) io.Reader {
 
 	var keyString string
