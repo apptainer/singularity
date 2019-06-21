@@ -18,13 +18,6 @@ const (
 	OrasDir = "oras"
 )
 
-/*
-// Oras returns the directory inside the cache.Dir() where oras images are cached
-func Oras() string {
-	return updateCacheSubdir(OrasDir)
-}
-*/
-
 // Shub returns the directory inside the cache.Dir() where shub images are cached
 func getOrasCachePath(c *Handle) (string, error) {
 	// This function may act on a cache object that is not fully initialized
