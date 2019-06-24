@@ -7,6 +7,7 @@
 package cache
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/user"
@@ -17,6 +18,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
+
+var ErrBadChecksum = errors.New("hash does not match")
 
 const (
 	// DirEnv specifies the environment variable which can set the directory

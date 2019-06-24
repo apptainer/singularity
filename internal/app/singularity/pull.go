@@ -11,8 +11,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
-	"syscall"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/scs-library-client/client"
@@ -70,7 +68,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 	exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-	if err == cache.ErrCacheHashNotTheSame {
+	if err == cache.ErrBadChecksum {
 		sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
 		err := os.Remove(imagePath)
 		if err != nil {
@@ -83,15 +81,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	if !exists {
 		sylog.Infof("Downloading library image")
 
-		// monitor for OS signals and remove invalid file
-		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		go func(fileName string) {
-			<-c
-			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", imagePath)
-			os.Remove(imagePath)
-			os.Exit(1)
-		}(name)
+		go SignalHandlerInterrupt(imagePath)
 
 		// call library download image helper
 		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
@@ -179,16 +169,7 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
-
-		// monitor for OS signals and remove invalid file
-		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		go func(fileName string) {
-			<-c
-			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", imagePath)
-			os.Remove(imagePath)
-			os.Exit(1)
-		}(filePath)
+		go SignalHandlerInterrupt(imagePath)
 
 		err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
 		if err != nil {
@@ -268,16 +249,7 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 
 	if !exists {
 		sylog.Infof("Downloading image with ORAS")
-
-		// monitor for OS signals and remove invalid file
-		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		go func(fileName string) {
-			<-c
-			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", cacheImagePath)
-			os.Remove(cacheImagePath)
-			os.Exit(1)
-		}(name)
+		go SignalHandlerInterrupt(cacheImagePath)
 
 		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
@@ -351,16 +323,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	}
 	if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-
-		// monitor for OS signals and remove invalid file
-		c := make(chan os.Signal)
-		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-		go func(fileName string) {
-			<-c
-			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", cachedImgPath)
-			os.Remove(cachedImgPath)
-			os.Exit(1)
-		}(name)
+		go SignalHandlerInterrupt(imgName)
 
 		if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
