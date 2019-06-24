@@ -667,7 +667,6 @@ func date(s string) (string, error) {
 // reformatMachineReadableOutput reformats the key search output that is in machine readable format
 // see the output format in: https://tools.ietf.org/html/draft-shaw-openpgp-hkp-00#section-5.2
 func reformatMachineReadableOutput(keyText string) (string, error) {
-
 	var output = "\n\t\tFINGERPRINT\t\tALGORITHM  SIZE (BITS)\t\t  CREATION DATE\t\t\tEXPIRATION DATE\t\t\tSTATUS\t\t\tNAME/EMAIL" + "\n"
 
 	rePubkey := regexp.MustCompile("pub:(.*)\n")
