@@ -13,15 +13,17 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-func SignalHandlerInterrupt(image ...string) {
+// SignalHandlerInterrupt will watch for a interrupt signal, if theres
+// one detected, then it will remove all the specified file(s)
+func SignalHandlerInterrupt(files ...string) {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c
-	for _, f := range image {
+	for _, f := range files {
 		sylog.Debugf("Removing file: %q because of receiving termination signal", f)
 		err := os.Remove(f)
-		if err != nil {
-			sylog.Debugf("ERROR: unable to remove: %s: %v", f, err)
+		if !os.IsNotExist(err) && err != nil {
+			sylog.Errorf("unable to remove: %s: %v", f, err)
 		}
 	}
 	os.Exit(1)
