@@ -93,6 +93,7 @@ var PushCmd = &cobra.Command{
 			if err := oras.UploadImage(file, ref, ociAuth); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
+			sylog.Infof("Upload complete")
 		}
 	},
 
