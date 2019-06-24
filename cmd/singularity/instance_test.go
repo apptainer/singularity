@@ -19,7 +19,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -170,6 +169,7 @@ func startInstance(image string, instance string, portOffset int, opts startOpts
 		args = append(args, "--writable-tmpfs")
 	}
 	args = append(args, image, instance, strconv.Itoa(instanceStartPort+portOffset))
+
 	cmd := exec.Command(cmdPath, args...)
 	return cmd.Output()
 }
@@ -213,15 +213,11 @@ func stopInstance(opts stopOpts) ([]byte, error) {
 	return cmd.Output()
 }
 
-func execInstance(instance string, execCmd ...string) (string, []byte, error) {
+func execInstance(instance string, execCmd ...string) ([]byte, error) {
 	args := []string{"exec", "instance://" + instance}
 	args = append(args, execCmd...)
 	cmd := exec.Command(cmdPath, args...)
-
-	c := fmt.Sprintf("%s\n%s", cmdPath, strings.Join(args, " "))
-	b, err := cmd.Output()
-
-	return c, b, err
+	return cmd.Output()
 }
 
 // Sends a deterministic message to an echo server and expects the same message
@@ -337,18 +333,16 @@ func testBasicOptions(t *testing.T) {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Verify we can see the file's contents from within the container.
-	c, output, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
+	output, err := execInstance(instanceName, "cat", "/home/temp/"+fileName)
 	if err != nil {
-		t.Log("Command that failed: ", c, string(output))
 		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
 	}
 	if !bytes.Equal(fileContents, output) {
 		t.Fatalf("File contents were %s, but expected %s", output, fileContents)
 	}
 	// Verify that the hostname has been set correctly.
-	c, output, err = execInstance(instanceName, "hostname")
+	output, err = execInstance(instanceName, "hostname")
 	if err != nil {
-		t.Log("Command that failed: ", c, string(output))
 		t.Fatalf("Error executing command on instance %s: %v", instanceName, err)
 	}
 	if !bytes.Equal([]byte(testHostname+"\n"), output) {
@@ -381,9 +375,8 @@ func testContain(t *testing.T) {
 		t.Fatalf("Failed to start instance %s: %v", instanceName, err)
 	}
 	// Touch a file within /tmp.
-	c, b, err := execInstance(instanceName, "touch", "/tmp/"+fileName)
+	_, err = execInstance(instanceName, "touch", "/tmp/"+fileName)
 	if err != nil {
-		t.Log("Command that failed: ", c, string(b))
 		t.Fatalf("Failed to touch a file: %v", err)
 	}
 	// Stop the container.
@@ -424,9 +417,8 @@ func testInstanceFromURI(t *testing.T) {
 			t.Fatalf("Failed to start instance %s: %v", i.name, err)
 		}
 		// Exec id command.
-		c, b, err := execInstance(i.name, "id")
+		_, err = execInstance(i.name, "id")
 		if err != nil {
-			t.Log("Command that failed: ", c, string(b))
 			t.Fatalf("Failed to run id command: %v", err)
 		}
 		// Stop the container.
@@ -439,8 +431,12 @@ func testInstanceFromURI(t *testing.T) {
 
 // Bootstrap to run all instance tests.
 func TestInstance(t *testing.T) {
-	// Build a basic Singularity image to test instances.
-	if b, err := imageBuild(buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
+	// Create a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
+	// Build a basic Singularity image to test instances. Once the image created, we do not need the cache anymore.
+	if b, err := imageBuild(imgCache, buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}
