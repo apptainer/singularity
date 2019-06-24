@@ -26,6 +26,7 @@ import (
 	"github.com/deislabs/oras/pkg/oras"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sirupsen/logrus"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/image"
 )
@@ -83,6 +84,10 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 		return nil, nil
 	}
 	pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
+
+	// discard logrus output under normal log level,
+	// a higher log level (like verbose) will still allow this output to be seen
+	logrus.SetOutput(sylog.LevelWriter(1))
 
 	_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
 	if err != nil {
@@ -152,6 +157,10 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	}
 
 	descriptors := []ocispec.Descriptor{desc}
+
+	// discard logrus output under normal log level,
+	// a higher log level (like verbose) will still allow this output to be seen
+	logrus.SetOutput(sylog.LevelWriter(1))
 
 	if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
 		return fmt.Errorf("unable to push: %s", err)
