@@ -71,10 +71,10 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 	exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
 	if err == cache.ErrCacheHashNotTheSame {
-		sylog.Warningf("Removing cached image: %s; cache could be currupted", imagePath)
+		sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
 		err := os.Remove(imagePath)
 		if err != nil {
-			return fmt.Errorf("unable to remove currupted cache: %v", err)
+			return fmt.Errorf("unable to remove corrupted cache: %v", err)
 		}
 	} else if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
@@ -84,14 +84,14 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		sylog.Infof("Downloading library image")
 
 		// monitor for OS signals and remove invalid file
-		/*c := make(chan os.Signal)
+		c := make(chan os.Signal)
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 		go func(fileName string) {
 			<-c
 			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", imagePath)
 			os.Remove(imagePath)
 			os.Exit(1)
-		}(name)*/
+		}(name)
 
 		// call library download image helper
 		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
@@ -101,16 +101,8 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
 			return fmt.Errorf("error getting ImageHash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
-			//sylog.Warningf("Removing the old hash: %s; it could be currupted", cacheFileHash)
-			//fmt.Println("INFO: ", imagePath)
 			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
-
-		// call library download image helper
-		//	if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
-		//		return fmt.Errorf("unable to Download Image: %v", err)
-		//	}
-
 	}
 
 	// Perms are 777 *prior* to umask in order to allow image to be
