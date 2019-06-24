@@ -6,7 +6,6 @@
 package cache
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -14,9 +13,10 @@ import (
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
-var cacheDefault = filepath.Join(syfs.ConfigDir(), cacheDir)
-
 const cacheCustom = "/tmp/customcachedir"
+
+var expectedCacheCustomRoot = filepath.Join(cacheCustom, CacheDir)
+var cacheDefault = filepath.Join(syfs.ConfigDir(), CacheDir)
 
 func TestRoot(t *testing.T) {
 	test.DropPrivilege(t)
@@ -24,29 +24,31 @@ func TestRoot(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		env      string
+		dir      string
 		expected string
 	}{
 		{
 			name:     "Default root",
-			env:      "",
+			dir:      "",
 			expected: cacheDefault,
 		},
 		{
 			name:     "Custom root",
-			env:      cacheCustom,
-			expected: cacheCustom,
+			dir:      cacheCustom,
+			expected: expectedCacheCustomRoot,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer cleanAllCaches()
-			defer os.Unsetenv(DirEnv)
+			c, err := NewHandle(tt.dir)
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
+			}
+			/* This is evil: if the cache is the default cache, we clean it */
+			defer c.cleanAllCaches()
 
-			os.Setenv(DirEnv, tt.env)
-
-			if r := Root(); r != tt.expected {
+			if r := c.rootDir; r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})

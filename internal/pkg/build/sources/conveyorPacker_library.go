@@ -11,7 +11,6 @@ import (
 	"os"
 
 	"github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/library"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -28,6 +27,10 @@ type LibraryConveyorPacker struct {
 // Get downloads container from Singularityhub
 func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	sylog.Debugf("Getting container from Library")
+
+	if b.Opts.ImgCache == nil {
+		return fmt.Errorf("invalid image cache")
+	}
 
 	cp.b = b
 
@@ -67,9 +70,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
-	imagePath := cache.LibraryImage(libraryImage.Hash, imageName)
+	imagePath := b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := cache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+	if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
 		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading library image")

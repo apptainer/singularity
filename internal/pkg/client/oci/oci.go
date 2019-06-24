@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,7 +29,11 @@ type ImageReference struct {
 }
 
 // ConvertReference converts a source reference into a cache.ImageReference to cache its blobs
-func ConvertReference(src types.ImageReference, sys *types.SystemContext) (types.ImageReference, error) {
+func ConvertReference(imgCache *cache.Handle, src types.ImageReference, sys *types.SystemContext) (types.ImageReference, error) {
+	if imgCache == nil {
+		return nil, fmt.Errorf("undefined image cache")
+	}
+
 	// Our cache dir is an OCI directory. We are using this as a 'blob pool'
 	// storing all incoming containers under unique tags, which are a hash of
 	// their source URI.
@@ -38,7 +42,7 @@ func ConvertReference(src types.ImageReference, sys *types.SystemContext) (types
 		return nil, err
 	}
 
-	c, err := layout.ParseReference(cache.OciBlob() + ":" + cacheTag)
+	c, err := layout.ParseReference(imgCache.OciBlob + ":" + cacheTag)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +79,13 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 
 // ParseImageName parses a uri (e.g. docker://ubuntu) into it's transport:reference
 // combination and then returns the proper reference
-func ParseImageName(uri string, sys *types.SystemContext) (types.ImageReference, error) {
+func ParseImageName(imgCache *cache.Handle, uri string, sys *types.SystemContext) (types.ImageReference, error) {
 	ref, err := parseURI(uri)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to parse image name %v: %v", uri, err)
 	}
 
-	return ConvertReference(ref, sys)
+	return ConvertReference(imgCache, ref, sys)
 }
 
 func parseURI(uri string) (types.ImageReference, error) {
