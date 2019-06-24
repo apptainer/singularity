@@ -80,7 +80,6 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	if !exists {
 		sylog.Infof("Downloading library image")
-
 		go SignalHandlerInterrupt(imagePath)
 
 		// call library download image helper
