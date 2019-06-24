@@ -6,12 +6,15 @@
 package cache
 
 import (
-	"fmt"
+	"errors"
+	//"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/sylabs/scs-library-client/client"
 )
+
+var ErrCacheHashNotTheSame = errors.New("hash does not match")
 
 const (
 	// LibraryDir is the directory inside the cache.Dir where library images are cached
@@ -53,7 +56,8 @@ func (c *Handle) LibraryImageExists(sum, name string) (bool, error) {
 		return false, err
 	}
 	if cacheSum != sum {
-		return false, fmt.Errorf("cached file sum (%s) and expected sum (%s) does not match", cacheSum, sum)
+		//return false, fmt.Errorf("cached file sum (%s) and expected sum (%s) does not match", cacheSum, sum)
+		return false, ErrCacheHashNotTheSame
 	}
 
 	return true, nil

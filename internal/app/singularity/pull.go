@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	ocitypes "github.com/containers/image/types"
 	"github.com/sylabs/scs-library-client/client"
@@ -68,11 +70,28 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 	exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-	if err != nil {
+	if err == cache.ErrCacheHashNotTheSame {
+		sylog.Warningf("Removing cached image: %s; cache could be currupted", imagePath)
+		err := os.Remove(imagePath)
+		if err != nil {
+			return fmt.Errorf("unable to remove currupted cache: %v", err)
+		}
+	} else if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 	}
+
 	if !exists {
 		sylog.Infof("Downloading library image")
+
+		// monitor for OS signals and remove invalid file
+		/*c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		go func(fileName string) {
+			<-c
+			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", imagePath)
+			os.Remove(imagePath)
+			os.Exit(1)
+		}(name)*/
 
 		// call library download image helper
 		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
@@ -82,8 +101,16 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
 			return fmt.Errorf("error getting ImageHash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
+			//sylog.Warningf("Removing the old hash: %s; it could be currupted", cacheFileHash)
+			//fmt.Println("INFO: ", imagePath)
 			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
+
+		// call library download image helper
+		//	if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
+		//		return fmt.Errorf("unable to Download Image: %v", err)
+		//	}
+
 	}
 
 	// Perms are 777 *prior* to umask in order to allow image to be
@@ -160,6 +187,17 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
+
+		// monitor for OS signals and remove invalid file
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		go func(fileName string) {
+			<-c
+			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", imagePath)
+			os.Remove(imagePath)
+			os.Exit(1)
+		}(filePath)
+
 		err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
 		if err != nil {
 			return err
@@ -239,6 +277,16 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 	if !exists {
 		sylog.Infof("Downloading image with ORAS")
 
+		// monitor for OS signals and remove invalid file
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		go func(fileName string) {
+			<-c
+			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", cacheImagePath)
+			os.Remove(cacheImagePath)
+			os.Exit(1)
+		}(name)
+
 		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
@@ -311,6 +359,17 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	}
 	if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
+
+		// monitor for OS signals and remove invalid file
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		go func(fileName string) {
+			<-c
+			sylog.Debugf("Removing incomplete file: %q because of receiving Termination signal", cachedImgPath)
+			os.Remove(cachedImgPath)
+			os.Exit(1)
+		}(name)
+
 		if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
