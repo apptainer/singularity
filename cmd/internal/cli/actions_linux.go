@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
 
 	"github.com/spf13/cobra"
@@ -107,6 +108,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
+	insideUserNs, _ := namespaces.IsInsideUserNamespace(os.Getpid())
 
 	// Are we running from a privileged account?
 	isPrivileged := uid == 0
@@ -124,7 +126,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	syscall.Umask(0022)
 
-	starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
+	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
+	// setuid workflow is not required for root user or if we
+	// are already running inside a user namespace
+	if uid == 0 || insideUserNs {
+		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+	}
+	sylog.Debugf("Use starter binary %s", starter)
 
 	engineConfig := singularityConfig.NewConfig()
 
@@ -425,9 +433,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
 
-	// convert image file to sandbox if image contains
-	// a squashfs filesystem
-	if UserNamespace && fs.IsFile(image) {
+	// convert image file to sandbox if we are using user
+	// namespace or if we are currently running inside a
+	// user namespace
+	if (UserNamespace || insideUserNs) && fs.IsFile(image) {
 		unsquashfsPath := ""
 		if engineConfig.File.MksquashfsPath != "" {
 			d := filepath.Dir(engineConfig.File.MksquashfsPath)
