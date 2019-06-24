@@ -185,21 +185,21 @@ func singularityInspect(t *testing.T) {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
 			out, err := runInspectCommand(tt.insType)
 			if err != nil {
-				t.Fatalf("Unexpected failure: %s: %s", string(out), err)
+				t.Fatalf("unexpected failure: %s: %s", string(out), err)
 			}
 
 			// Check the E2E label in test.sif, does it match our expected output
 			v, err := jsonparser.GetString(out, tt.json...)
 			if err != nil {
-				t.Fatalf("Unable to get expected output from json: %v", err)
+				t.Fatalf("unable to get expected output from json: %v", err)
 			}
 			// Get the expected output, and compare them
 			e, err := jsonparser.GetString([]byte(tt.expectOut), tt.json...)
 			if err != nil {
-				t.Fatalf("Unable to get expected output from json: %v", err)
+				t.Fatalf("unable to get expected output from json: %v", err)
 			}
 			if v != e {
-				t.Fatalf("Unexpected faulure: got: %s, expecting: %s", v, e)
+				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, e)
 			}
 
 		}))
