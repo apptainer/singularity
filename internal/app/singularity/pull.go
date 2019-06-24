@@ -243,7 +243,13 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 
 	cacheImagePath := imgCache.OrasImage(sum, imageName)
 	exists, err := imgCache.OrasImageExists(sum, imageName)
-	if err != nil {
+	if err == cache.ErrBadChecksum {
+		sylog.Warningf("Removing cached image: %s: cache could be corrupted", cacheImagePath)
+		err := os.Remove(cacheImagePath)
+		if err != nil {
+			return fmt.Errorf("unable to remove corrupted cache: %v", err)
+		}
+	} else if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", cacheImagePath, err)
 	}
 
