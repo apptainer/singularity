@@ -13,9 +13,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
-// SignalHandlerInterrupt will watch for a interrupt signal, if theres
+// InterruptCleanup will watch for a interrupt signal, if theres
 // one detected, then it will remove all the specified file(s)
-func SignalHandlerInterrupt(files ...string) {
+func InterruptCleanup(files ...string) {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	<-c

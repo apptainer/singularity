@@ -80,7 +80,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	if !exists {
 		sylog.Infof("Downloading library image")
-		go SignalHandlerInterrupt(imagePath)
+		go InterruptCleanup(imagePath)
 
 		// call library download image helper
 		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
@@ -168,7 +168,7 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
-		go SignalHandlerInterrupt(imagePath)
+		go InterruptCleanup(imagePath)
 
 		err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
 		if err != nil {
@@ -254,7 +254,7 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 
 	if !exists {
 		sylog.Infof("Downloading image with ORAS")
-		go SignalHandlerInterrupt(cacheImagePath)
+		go InterruptCleanup(cacheImagePath)
 
 		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
@@ -328,7 +328,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	}
 	if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
-		go SignalHandlerInterrupt(imgName)
+		go InterruptCleanup(imgName)
 
 		if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
