@@ -56,3 +56,8 @@ func GetEnvVar() string {
 func Writer() io.Writer {
 	return ioutil.Discard
 }
+
+// LevelWriter is a dummy function returning ioutil.Discard writer.
+func LevelWriter(threshold int) io.Writer {
+	return ioutil.Discard
+}

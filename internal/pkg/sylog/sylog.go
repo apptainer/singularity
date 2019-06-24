@@ -191,3 +191,14 @@ func Writer() io.Writer {
 
 	return os.Stderr
 }
+
+// LevelWriter returns an io.Writer to pass to an external packages logging utility.
+// This allows you to set the threshold for when output should be discarded
+// i.e if passed a level of 1, this function returns ioutil.Discard unless --debug is specified
+func LevelWriter(threshold int) io.Writer {
+	if int(loggerLevel) <= threshold {
+		return ioutil.Discard
+	}
+
+	return os.Stderr
+}
