@@ -78,7 +78,7 @@ require (
 	github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/seccomp/libseccomp-golang v0.9.0
-	github.com/sirupsen/logrus v1.0.5 // indirect
+	github.com/sirupsen/logrus v1.0.5
 	github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 	github.com/spf13/pflag v1.0.3
 	github.com/stevvooe/resumable v0.0.0-20180830230917-22b14a53ba50 // indirect
