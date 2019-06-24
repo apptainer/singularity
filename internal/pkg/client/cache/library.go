@@ -7,7 +7,6 @@ package cache
 
 import (
 	"errors"
-	//"fmt"
 	"os"
 	"path/filepath"
 
@@ -56,7 +55,6 @@ func (c *Handle) LibraryImageExists(sum, name string) (bool, error) {
 		return false, err
 	}
 	if cacheSum != sum {
-		//return false, fmt.Errorf("cached file sum (%s) and expected sum (%s) does not match", cacheSum, sum)
 		return false, ErrCacheHashNotTheSame
 	}
 
