@@ -34,6 +34,7 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -103,6 +104,14 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
 	} else if engine.EngineConfig.GetAllowSUID() && !c.userNS {
 		c.suidFlag = 0
+	}
+
+	// user namespace was not requested but we need to check
+	// if we are currently running in a user namespace and set
+	// value accordingly to avoid remount errors while running
+	// inside a user namespace
+	if !c.userNS {
+		c.userNS, _ = namespaces.IsInsideUserNamespace(os.Getpid())
 	}
 
 	p := &mount.Points{}
