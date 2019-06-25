@@ -124,6 +124,8 @@ func TestMaster(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	var fakeEngine engine.Engine
+
 	tests := []struct {
 		name         string
 		rpcSocket    int
@@ -138,6 +140,14 @@ func TestMaster(t *testing.T) {
 			masterSocket: -1,
 			pid:          -1,
 			engine:       nil,
+			shallPass:    false,
+		},
+		{
+			name:         "fake engine",
+			rpcSocket:    -1,
+			masterSocket: -1,
+			pid:          -1,
+			engine:       &fakeEngine,
 			shallPass:    false,
 		},
 	}
