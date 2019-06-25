@@ -182,7 +182,7 @@ func singularityInspect(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			out, err := runInspectCommand(tt.insType)
 			if err != nil {
 				t.Fatalf("unexpected failure: %s: %s", string(out), err)
