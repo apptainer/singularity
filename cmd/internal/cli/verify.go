@@ -81,6 +81,12 @@ var VerifyCmd = &cobra.Command{
 	PreRun:                sylabsToken,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		if f, err := os.Stat(args[0]); os.IsNotExist(err) {
+			sylog.Fatalf("No such file or directory: %s", args[0])
+		} else if f.IsDir() {
+			sylog.Fatalf("File is a directory: %s", args[0])
+		}
+
 		// dont need to resolve remote endpoint
 		if !localVerify {
 			handleVerifyFlags(cmd)
