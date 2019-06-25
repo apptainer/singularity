@@ -195,6 +195,9 @@ func (b *Build) Full() error {
 			}
 		} else {
 			// regular build or force, start build from scratch
+			if b.Conf.Opts.ImgCache == nil {
+				return fmt.Errorf("undefined image cache")
+			}
 			if err := stage.c.Get(stage.b); err != nil {
 				return fmt.Errorf("conveyor failed to get: %v", err)
 			}

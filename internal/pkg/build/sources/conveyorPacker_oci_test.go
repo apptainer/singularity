@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -33,20 +34,36 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func setupCache(t *testing.T) (*cache.Handle, func()) {
+	dir := test.SetCacheDir(t, "")
+	h, err := cache.NewHandle(dir)
+	if err != nil {
+		test.CleanCacheDir(t, dir)
+		t.Fatalf("failed to create an image cache handle: %s", err)
+	}
+	return h, func() { test.CleanCacheDir(t, dir) }
+}
+
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub
 func TestOCIConveyorDocker(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// set a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
 	b, err := types.NewBundle("", "sbuild-oci")
 	if err != nil {
-		return
+		t.Fatalf("failed to create new bundle: %s", err)
 	}
 
 	b.Recipe, err = types.NewDefinitionFromURI(dockerURI)
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", dockerURI, err)
 	}
+
+	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
 
@@ -80,6 +97,11 @@ func TestOCIConveyorDockerArchive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
+
+	// set a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
 
@@ -122,6 +144,11 @@ func TestOCIConveyorDockerDaemon(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", daemonURI, err)
 	}
 
+	// set a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+	b.Opts.ImgCache = imgCache
+
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(b)
@@ -154,6 +181,11 @@ func TestOCIConveyorOCIArchive(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", archiveURI, err)
 	}
+
+	// set a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+	b.Opts.ImgCache = imgCache
 
 	cp := &sources.OCIConveyorPacker{}
 
@@ -201,6 +233,11 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", layoutURI, err)
 	}
 
+	// set a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+	b.Opts.ImgCache = imgCache
+
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(b)
@@ -227,6 +264,11 @@ func TestOCIPacker(t *testing.T) {
 	}
 
 	ocp := &sources.OCIConveyorPacker{}
+
+	// set a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+	b.Opts.ImgCache = imgCache
 
 	err = ocp.Get(b)
 	// clean up tmpfs since assembler isnt called

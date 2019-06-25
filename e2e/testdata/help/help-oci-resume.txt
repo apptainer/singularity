@@ -4,7 +4,8 @@ Usage:
   singularity oci resume <container_ID>
 
 Description:
-  Resume will resume all processes previously paused for the specified container ID.
+  Resume will resume all processes previously paused for the specified container 
+  ID.
 
 Options:
   -h, --help   help for resume

@@ -121,7 +121,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 	}
 
 	// Grab the modified source ref from the cache
-	cp.srcRef, err = ociclient.ConvertReference(cp.srcRef, cp.sysCtx)
+	cp.srcRef, err = ociclient.ConvertReference(b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
 	if err != nil {
 		return err
 	}

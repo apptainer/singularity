@@ -60,7 +60,8 @@ Enterprise Performance Computing (EPC)`
 
       library://  an image library (default https://cloud.sylabs.io/library)
       docker://   a Docker registry (default Docker Hub)
-      shub://     a Singularity registry (default Singularity Hub)`
+      shub://     a Singularity registry (default Singularity Hub)
+      oras://     a supporting OCI registry`
 
 	BuildExample string = `
 
@@ -441,7 +442,9 @@ Enterprise Performance Computing (EPC)`
 
   docker://*          A container hosted on Docker Hub
 
-  shub://*            A container hosted on Singularity Hub`
+  shub://*            A container hosted on Singularity Hub
+
+  oras://*            A container hosted on a supporting OCI registry`
 	ExecUse   string = `exec [exec options...] <container> <command>`
 	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
@@ -556,7 +559,10 @@ Enterprise Performance Computing (EPC)`
       docker://user/image:tag
     
   shub: Pull an image from Singularity Hub to CWD
-      shub://user/image:tag`
+      shub://user/image:tag
+
+  oras: Pull a SIF image from a supporting OCI registry
+      oras://registry/namespace/image:tag`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
@@ -565,20 +571,36 @@ Enterprise Performance Computing (EPC)`
   $ singularity pull tensorflow.sif docker://tensorflow/tensorflow:latest
 
   From Shub
-  $ singularity pull singularity-images.sif shub://vsoch/singularity-images`
+  $ singularity pull singularity-images.sif shub://vsoch/singularity-images
+
+  From supporting OCI registry (e.g. Azure Container Registry)
+  $ singularity pull image.sif oras://<username>.azurecr.io/namespace/image:tag`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
-	PushShort string = `Upload image to the provided library (default is "cloud.sylabs.io")`
+	PushUse   string = `push [push options...] <image> <URI>`
+	PushShort string = `Upload image to the provided URI`
 	PushLong  string = `
-  The Singularity push command allows you to upload your sif image to a library
-  of your choosing. It's always good practice to sign your containers before
-  pushing them to the library. An auth token is required to push to the remote,
-  so you may need to configure if first with 'singularity remote'.`
+  The 'push' command allows you to upload a SIF container to a given
+  URI.  Supported URIs include:
+
+  library:
+      library://user/collection/container[:tag]
+
+  oras:
+      oras://registry/namespace/repo:tag
+
+
+  NOTE: It's always good practice to sign your containers before
+  pushing them to the library. An auth token is required to push to the library,
+  so you may need to configure it first with 'singularity remote'.`
 	PushExample string = `
-  $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
+  To Library
+  $ singularity push /home/user/my.sif library://user/collection/my.sif:latest
+
+  To supported OCI registry
+  $ singularity push /home/user/my.sif oras://registry/namespace/image:tag`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// search

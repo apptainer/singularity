@@ -64,6 +64,11 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
+				imgCache := getCacheHandle()
+				if imgCache == nil {
+					sylog.Fatalf("failed to create an image cache handle")
+				}
+
 				d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
 				if err != nil {
 					sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
@@ -76,9 +81,10 @@ func run(cmd *cobra.Command, args []string) {
 						Format:    buildFormat,
 						NoCleanUp: noCleanUp,
 						Opts: types.Options{
-							TmpDir: tmpDir,
-							Update: update,
-							Force:  force,
+							ImgCache: imgCache,
+							TmpDir:   tmpDir,
+							Update:   update,
+							Force:    force,
 						},
 					})
 				if err != nil {
@@ -100,6 +106,11 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While performing build: %v", err)
 		}
 	} else {
+		imgCache := getCacheHandle()
+		if imgCache == nil {
+			sylog.Fatalf("failed to create an image cache handle")
+		}
+
 		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) {
 			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 		}
@@ -135,6 +146,7 @@ func run(cmd *cobra.Command, args []string) {
 				Format:    buildFormat,
 				NoCleanUp: noCleanUp,
 				Opts: types.Options{
+					ImgCache:         imgCache,
 					TmpDir:           tmpDir,
 					Update:           update,
 					Force:            force,

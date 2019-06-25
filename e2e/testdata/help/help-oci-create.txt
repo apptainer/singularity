@@ -4,7 +4,8 @@ Usage:
   singularity oci create -b <bundle_path> [create options...] <container_ID>
 
 Description:
-  Create invoke create operation to create a container instance from an OCI bundle directory
+  Create invoke create operation to create a container instance from an OCI 
+  bundle directory
 
 Options:
   -b, --bundle string        specify the OCI bundle path (required)
