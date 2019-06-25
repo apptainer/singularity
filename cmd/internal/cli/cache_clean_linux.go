@@ -77,10 +77,14 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	err := singularity.CleanSingularityCache(cleanAll, cacheCleanTypes, cacheName)
+	// We create a handle to access the current image cache
+	imgCache := getCacheHandle()
+	if imgCache == nil {
+		sylog.Fatalf("failed to create an image cache handle")
+	}
+	err := singularity.CleanSingularityCache(imgCache, cleanAll, cacheCleanTypes, cacheName)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
-		os.Exit(255)
 	}
 
 	return err

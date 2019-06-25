@@ -153,7 +153,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 
 	descriptors := []ocispec.Descriptor{desc}
 
-	if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
+	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
 		return fmt.Errorf("unable to push: %s", err)
 	}
 

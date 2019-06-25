@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
@@ -24,7 +25,12 @@ func pullSylabsPublicKey() ([]byte, error) {
 	return exec.Command(cmdPath, argv...).CombinedOutput()
 }
 
-func imagePull(library, pullDir string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
+func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
+	// Create a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	cacheEnvStr := cache.DirEnv + "=" + imgCacheDir
+
 	var argv []string
 	argv = append(argv, "pull")
 	if force {
@@ -44,7 +50,10 @@ func imagePull(library, pullDir string, imagePath string, sourceSpec string, for
 	}
 	argv = append(argv, sourceSpec)
 
-	return exec.Command(cmdPath, argv...).CombinedOutput()
+	cmd := exec.Command(cmdPath, argv...)
+	cmd.Env = append(os.Environ(), cacheEnvStr)
+
+	return cmd.CombinedOutput()
 }
 
 func TestPull(t *testing.T) {
@@ -96,7 +105,7 @@ func TestPull(t *testing.T) {
 	defer os.Remove(imagePath)
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			b, err := imagePull(tt.library, tt.pullDir, tt.imagePath, tt.sourceSpec, tt.force, tt.unauthenticated)
+			b, err := imagePull(t, tt.library, tt.pullDir, tt.imagePath, tt.sourceSpec, tt.force, tt.unauthenticated)
 			if tt.success {
 				if err != nil {
 					t.Log(string(b))

@@ -6,6 +6,7 @@
 package cache
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,31 +19,37 @@ func TestShub(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	tests := []struct {
-		name     string
-		env      string
-		expected string
+		name        string
+		dir         string
+		needCleanup bool
+		expected    string
 	}{
 		{
-			name:     "Default Shub",
-			env:      "",
-			expected: filepath.Join(cacheDefault, "shub"),
+			name:        "Default Shub",
+			dir:         "",
+			needCleanup: false, // Never clean up the default cache
+			expected:    filepath.Join(cacheDefault, "shub"),
 		},
 		{
-			name:     "Custom Shub",
-			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "shub"),
+			name:        "Custom Shub",
+			dir:         cacheCustom,
+			needCleanup: true,
+			expected:    filepath.Join(expectedCacheCustomRoot, "shub"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer cleanAllCaches()
-			defer os.Unsetenv(DirEnv)
+			c, err := NewHandle(tt.dir)
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
+			}
+			if tt.needCleanup {
+				defer c.cleanAllCaches()
+			}
 
-			os.Setenv(DirEnv, tt.env)
-
-			if r := Shub(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.Shub != tt.expected {
+				t.Errorf("Unexpected result for %s: %s (expected %s)", tt.name, c.Shub, tt.expected)
 			}
 		})
 	}
@@ -51,6 +58,17 @@ func TestShub(t *testing.T) {
 func TestShubImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	tempImageCache, err := ioutil.TempDir("", "image-cache-")
+	if err != nil {
+		t.Fatal("failed to create temporary image cache directory:", err)
+	}
+	os.RemoveAll(tempImageCache)
+
+	c, err := NewHandle(tempImageCache)
+	if err != nil {
+		t.Fatalf("failed to create a new image cache handle: %s", err)
+	}
 
 	tests := []struct {
 		name     string
@@ -86,7 +104,7 @@ func TestShubImageExists(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := ShubImageExists(test.sum, test.path)
+			exists, err := c.ShubImageExists(test.sum, test.path)
 			if err != nil {
 				t.Fatal("ShubImageExists() failed")
 			}

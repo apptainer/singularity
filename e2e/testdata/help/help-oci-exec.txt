@@ -4,7 +4,8 @@ Usage:
   singularity oci exec <container_ID> <command> <args>
 
 Description:
-  Exec will execute the provided command/arguments within container identified by container ID.
+  Exec will execute the provided command/arguments within container identified 
+  by container ID.
 
 Options:
   -h, --help   help for exec

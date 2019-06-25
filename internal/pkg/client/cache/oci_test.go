@@ -6,6 +6,7 @@
 package cache
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,31 +19,37 @@ func TestOciBlob(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	tests := []struct {
-		name     string
-		env      string
-		expected string
+		name        string
+		dir         string
+		needCleanup bool
+		expected    string
 	}{
 		{
-			name:     "Default OCI blob",
-			env:      "",
-			expected: filepath.Join(cacheDefault, "oci"),
+			name:        "Default OCI blob",
+			dir:         "",
+			needCleanup: false, // Never clean up the default cache
+			expected:    filepath.Join(cacheDefault, "oci"),
 		},
 		{
-			name:     "Custom OCI blob",
-			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci"),
+			name:        "Custom OCI blob",
+			dir:         cacheCustom,
+			needCleanup: true,
+			expected:    filepath.Join(expectedCacheCustomRoot, "oci"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer cleanAllCaches()
-			defer os.Unsetenv(DirEnv)
+			c, err := NewHandle(tt.dir)
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
+			}
+			if tt.needCleanup {
+				defer c.cleanAllCaches()
+			}
 
-			os.Setenv(DirEnv, tt.env)
-
-			if r := OciBlob(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.OciBlob != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", c.OciBlob, tt.expected)
 			}
 		})
 	}
@@ -53,31 +60,37 @@ func TestOciTemp(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	tests := []struct {
-		name     string
-		env      string
-		expected string
+		name        string
+		dir         string
+		needCleanup bool
+		expected    string
 	}{
 		{
-			name:     "Default OCI temp",
-			env:      "",
-			expected: filepath.Join(cacheDefault, "oci-tmp"),
+			name:        "Default OCI temp",
+			dir:         "",
+			needCleanup: false, // Never clean up default cache
+			expected:    filepath.Join(cacheDefault, "oci-tmp"),
 		},
 		{
-			name:     "Custom OCI temp",
-			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "oci-tmp"),
+			name:        "Custom OCI temp",
+			dir:         cacheCustom,
+			needCleanup: true,
+			expected:    filepath.Join(expectedCacheCustomRoot, "oci-tmp"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer cleanAllCaches()
-			defer os.Unsetenv(DirEnv)
+			c, err := NewHandle(tt.dir)
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
+			}
+			if tt.needCleanup {
+				defer c.cleanAllCaches()
+			}
 
-			os.Setenv(DirEnv, tt.env)
-
-			if r := OciTemp(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.OciTemp != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", c.OciTemp, tt.expected)
 			}
 		})
 	}
@@ -86,6 +99,17 @@ func TestOciTemp(t *testing.T) {
 func TestOciTempExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	tempImageCache, err := ioutil.TempDir("", "image-cache-")
+	if err != nil {
+		t.Fatal("failed to create temporary image cache directory:", err)
+	}
+	defer os.RemoveAll(tempImageCache)
+
+	c, err := NewHandle(tempImageCache)
+	if err != nil {
+		t.Fatalf("failed to create new image cache handle: %s", err)
+	}
 
 	tests := []struct {
 		name     string
@@ -121,7 +145,7 @@ func TestOciTempExists(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := OciTempExists(test.sum, test.path)
+			exists, err := c.OciTempExists(test.sum, test.path)
 			if err != nil {
 				t.Fatalf("OciTempExists() failed: %s\n", err)
 			}

@@ -4,7 +4,8 @@ Usage:
   singularity oci umount <bundle_path>
 
 Description:
-  Umount will umount an OCI bundle previously mounted with singularity oci mount.
+  Umount will umount an OCI bundle previously mounted with singularity oci 
+  mount.
 
 Options:
   -h, --help   help for umount
