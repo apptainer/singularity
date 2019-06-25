@@ -6,21 +6,14 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
-	"github.com/sylabs/singularity/internal/pkg/util/exec"
 	"github.com/sylabs/singularity/pkg/cmdline"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
 const (
@@ -64,33 +57,12 @@ var RunHelpCmd = &cobra.Command{
 		name := filepath.Base(abspath)
 
 		a := []string{"/bin/sh", "-c", getCommand(getHelpPath(cmd))}
-		starter := buildcfg.LIBEXECDIR + "/singularity/bin/starter-suid"
-		procname := "Singularity help"
-		Env := []string{sylog.GetEnvVar()}
 
-		engineConfig := singularityConfig.NewConfig()
-		ociConfig := &oci.Config{}
-		generator := generate.Generator{Config: &ociConfig.Spec}
-		engineConfig.OciConfig = ociConfig
-
-		generator.SetProcessArgs(a)
-		generator.SetProcessCwd("/")
-		engineConfig.SetImage(abspath)
-
-		cfg := &config.Common{
-			EngineName:   singularityConfig.Name,
-			ContainerID:  name,
-			EngineConfig: engineConfig,
-		}
-
-		configData, err := json.Marshal(cfg)
+		b, err := genericStarterCommand("Singularity help", name, abspath, a)
 		if err != nil {
-			sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
-		}
-
-		if err := exec.Pipe(starter, []string{procname}, Env, configData); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+		fmt.Printf(string(b))
 	},
 
 	Use:     docs.RunHelpUse,

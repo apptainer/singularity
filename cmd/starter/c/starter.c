@@ -888,6 +888,10 @@ __attribute__((constructor)) static void init(void) {
 
     /* temporarily drop privileges while running as setuid */
     if ( sconfig->starter.isSuid ) {
+        /* value from the generated config.h file */
+        if ( SINGULARITY_SUID == 0 ) {
+            fatalf("You could not run setuid worfklow if Singularity was compiled with '--without-suid'\n");
+        }
         priv_drop(false);
     }
 

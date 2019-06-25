@@ -6,7 +6,6 @@
 package build
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -20,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/copy"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
@@ -251,19 +249,26 @@ func engineRequired(def types.Definition) bool {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func runBuildEngine(b *types.Bundle) error {
-	if syscall.Getuid() != 0 && !b.Opts.Fakeroot {
+	isPrivileged := syscall.Getuid() == 0
+
+	if !isPrivileged && !b.Opts.Fakeroot {
 		return fmt.Errorf("Attempted to build with scripts as non-root user or without --fakeroot")
 	}
 
 	sylog.Debugf("Starting build engine")
 	env := []string{sylog.GetEnvVar()}
-	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
-	if b.Opts.Fakeroot {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter-suid")
-		if _, err := os.Stat(starter); os.IsNotExist(err) {
-			return fmt.Errorf("fakeroot feature requires to install Singularity as root")
-		}
+
+	requireSuid := b.Opts.Fakeroot && !isPrivileged
+	// to make it proper, we should read singularity configuration file
+	// and provide value for 'allow setuid' directive to LookStarterPath,
+	// but in order to simplify things and avoid import cycle issue we
+	// always  pass true and let it failed in build engine if
+	// 'allow setuid = no' is set
+	starterBinary, starterSuid := syexec.LookStarterPath(requireSuid, true)
+	if !starterSuid && b.Opts.Fakeroot {
+		return fmt.Errorf("fakeroot feature requires a setuid installation")
 	}
+
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 
@@ -285,12 +290,7 @@ func runBuildEngine(b *types.Bundle) error {
 		EngineConfig: engineConfig,
 	}
 
-	configData, err := json.Marshal(config)
-	if err != nil {
-		return fmt.Errorf("failed to marshal config.Common: %s", err)
-	}
-
-	starterCmd, err := syexec.PipeCommand(starter, progname, env, configData)
+	starterCmd, err := syexec.StarterCommand(starterBinary, progname, env, config)
 	if err != nil {
 		return fmt.Errorf("failed to create cmd type: %v", err)
 	}
