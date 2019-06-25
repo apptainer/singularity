@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package singularityinspect
+package inspect
 
 import (
 	"os/exec"
@@ -105,79 +105,101 @@ func singularityInspect(t *testing.T) {
 			name:      "label maintainer",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "MAINTAINER"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `"WestleyK <westley@sylabs.io>"`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "E2E"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `AWSOME`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "HI"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `"HELLO WORLD"`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "e2e"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `awsome`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "hi"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `"hello world"`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "org.label-schema.usage"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `/.singularity.d/runscript.help`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "org.label-schema.usage.singularity.deffile.bootstrap"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `library`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "org.label-schema.usage.singularity.deffile.from"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `alpine:latest`,
 		},
 		{
 			name:      "label",
 			insType:   "--labels",
 			json:      []string{"attributes", "labels", "org.label-schema.usage.singularity.runscript.help"},
-			expectOut: expectedLabelsJSON,
+			expectOut: `/.singularity.d/runscript.help`,
 		},
 		{
-			name:      "runscript",
-			insType:   "--runscript",
-			json:      []string{"attributes", "runscript"},
-			expectOut: expectedRunscriptJSON,
+			name:    "runscript",
+			insType: "--runscript",
+			json:    []string{"attributes", "runscript"},
+			expectOut: `#!/bin/sh
+
+cat /.singularity.d/runscript.help
+
+
+`,
 		},
 		{
-			name:      "list apps",
-			insType:   "--list-apps",
-			json:      []string{"attributes", "apps"},
-			expectOut: expectedListAppsJSON,
+			name:    "list apps",
+			insType: "--list-apps",
+			json:    []string{"attributes", "apps"},
+			expectOut: `hello
+world
+`,
 		},
 		{
-			name:      "test",
-			insType:   "--test",
-			json:      []string{"attributes", "test"},
-			expectOut: expectedTestJSON,
+			name:    "test",
+			insType: "--test",
+			json:    []string{"attributes", "test"},
+			expectOut: `#!/bin/sh
+
+ls /
+test -d /
+test -d /etc
+
+
+`,
 		},
 		{
-			name:      "environment",
-			insType:   "--environment",
-			json:      []string{"attributes", "environment", "90-environment.sh"},
-			expectOut: expectedEnvironmentJSON,
+			name:    "environment",
+			insType: "--environment",
+			json:    []string{"attributes", "environment", "90-environment.sh"},
+			expectOut: `#!/bin/sh
+#Custom environment shell code should follow
+
+
+export test="testing"
+export e2e="e2e testing"
+
+
+`,
 		},
 	}
 
@@ -194,12 +216,12 @@ func singularityInspect(t *testing.T) {
 				t.Fatalf("unable to get expected output from json: %v", err)
 			}
 			// Get the expected output, and compare them
-			e, err := jsonparser.GetString([]byte(tt.expectOut), tt.json...)
-			if err != nil {
-				t.Fatalf("unable to get expected output from json: %v", err)
-			}
-			if v != e {
-				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, e)
+			//e, err := jsonparser.GetString([]byte(tt.expectOut), tt.json...)
+			//if err != nil {
+			//	t.Fatalf("unable to get expected output from json: %v", err)
+			//}
+			if v != tt.expectOut {
+				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, tt.expectOut)
 			}
 
 		}))
