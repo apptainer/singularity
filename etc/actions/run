@@ -11,13 +11,13 @@ if test -n "${SINGULARITY_APPNAME:-}"; then
     if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript"; then
         exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/runscript" "$@"
     else
-        echo "No Singularity runscript for contained app: ${SINGULARITY_APPNAME:-}"
+        echo "No runscript for contained app: ${SINGULARITY_APPNAME:-}"
         exit 1
     fi
 
 elif test -x "/.singularity.d/runscript"; then
     exec "/.singularity.d/runscript" "$@"
 else
-    echo "No Singularity runscript found, executing /bin/sh"
+    echo "No runscript found in container, executing /bin/sh"
     exec /bin/sh "$@"
 fi
