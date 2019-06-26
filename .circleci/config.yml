@@ -1,4 +1,7 @@
-version: 2.0
+version: 2.1
+
+orbs:
+  circle-compare-url: iynere/compare-url@0.4.8
 
 defaults: &defaults
   working_directory: /go/singularity
@@ -140,6 +143,20 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/go
+      - compare-url/reconstruct
+      - compare-url/use:
+        step-name: Check changes
+        custom-logic: |
+          echo "Circle branch: $CIRCLE_BRANCH"
+          echo "Commit range: $COMMIT_RANGE"
+
+          # Skip tests if no there were no changes to e2e/ or vendor/ and the branch is not master
+          if [[ ! $(git diff $COMMIT_RANGE --name-status | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
+            echo "Skipping e2e tests"
+            circleci step halt
+            exit 0
+          fi
+
       - run:
           name: Setup environment
           command: |-
@@ -203,6 +220,3 @@ workflows:
       - e2e_tests:
           requires:
             - get_source
-          filters:
-            branches:
-              only: master
