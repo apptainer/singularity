@@ -61,7 +61,7 @@ func testPrivateKeyNewPair(t *testing.T) {
 				// This will just export the private & public key, (as ASCII and binary) and then re-import then.
 				// Since there is no keys in our keyring when we generate a newpair, the newly created key will be
 				// number 0 (the first entity).
-				keyexec.QuickTestExportImportKey(t, "0\n")
+				keyexec.QuickTestExportImportKey(t, 0)
 			} else {
 				if err == nil {
 					t.Logf("command that succeed: %s\n%s\n", c, string(b))

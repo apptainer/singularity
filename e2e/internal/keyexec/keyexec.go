@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -225,9 +226,8 @@ func RunKeyCmd(t *testing.T, commands []string, stdin string) (string, []byte, e
 }
 
 // QuickTestExportImportKey will export a private, and public key (0), and then import them. This is used after
-// generating a newpair. keyNum is the key number to test. Its a string, so the number must be used in "", and
-// end with a '\n', eg. "1\n" will test key 1.
-func QuickTestExportImportKey(t *testing.T, keyNum string) {
+// generating a newpair. keyNum is the key number to test.
+func QuickTestExportImportKey(t *testing.T, keyNum int) {
 	e2e.LoadEnv(t, &testenv)
 
 	tmpTestDir := filepath.Join(testenv.TestDir, "quick_test_key_verify")
@@ -273,6 +273,8 @@ func QuickTestExportImportKey(t *testing.T, keyNum string) {
 		},
 	}
 
+	keyToTest := strconv.Itoa(keyNum) + "\n"
+
 	// Export the keys
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
@@ -283,7 +285,7 @@ func QuickTestExportImportKey(t *testing.T, keyNum string) {
 
 			if tt.private {
 				// export the private key
-				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, tt.file), keyNum, tt.armor)
+				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, tt.file), keyToTest, tt.armor)
 			} else {
 				// export the public key
 				cmd := []string{"export"}
@@ -291,7 +293,7 @@ func QuickTestExportImportKey(t *testing.T, keyNum string) {
 					cmd = append(cmd, "--armor")
 				}
 				cmd = append(cmd, filepath.Join(tmpTestDir, tt.file))
-				c, b, err = RunKeyCmd(t, cmd, keyNum)
+				c, b, err = RunKeyCmd(t, cmd, keyToTest)
 			}
 			if tt.succeed {
 				if err != nil {
