@@ -11,6 +11,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
+// PrepRegistry run a docker registry and push a busybox
+// image and the test image with oras transport.
 func PrepRegistry(t *testing.T) {
 	commands := [][]string{
 		{"run", "-d", "-p", "5000:5000", "--restart=always", "--name", "registry", "registry:2"},
@@ -33,6 +35,7 @@ func PrepRegistry(t *testing.T) {
 	}
 }
 
+// KillRegistry stop and cleanup docker registry.
 func KillRegistry(t *testing.T) {
 	commands := [][]string{
 		{"kill", "registry"},
