@@ -69,7 +69,7 @@ func testPublicKey(t *testing.T) {
 		c, b, err := keyexec.ImportKey(t, defaultKeyFile)
 		if err != nil {
 			t.Log("command that failed: ", c, string(b))
-			t.Fatalf("Unable to import key: %v", err)
+			t.Fatalf("unable to import key: %v", err)
 		}
 	})
 
@@ -78,14 +78,13 @@ func testPublicKey(t *testing.T) {
 			cmd, out, err := keyexec.RunKeyCmd(t, tt.args, "")
 			if tt.succeed {
 				if err != nil {
-					t.Log("Command that failed: ", cmd)
-					t.Log(string(out))
-					t.Fatalf("Unexpected failure: %v", err)
+					t.Logf("command that failed: %s\n%s\n", cmd, string(out))
+					t.Fatalf("unexpected failure: %v", err)
 				}
 			} else {
 				if err == nil {
-					t.Log(string(out))
-					t.Fatalf("Unexpected success when running: %s", cmd)
+					t.Logf("command that succeed: %s\n%s\n", cmd, string(out))
+					t.Fatalf("unexpected success when running: %s", cmd)
 				}
 			}
 		}))
@@ -131,9 +130,9 @@ func testPublicKeyImportExport(t *testing.T) {
 			cmd, out, err := keyexec.RunKeyCmd(t, tt.args, tt.stdin)
 			if tt.succeed {
 				if err != nil {
-					t.Log("Command that failed: ", cmd)
+					t.Log("command that failed: ", cmd)
 					t.Log(string(out))
-					t.Fatalf("Unexpected failure: %v", err)
+					t.Fatalf("unexpected failure: %v", err)
 				}
 
 				t.Run("remove_public_key_before_importing", test.WithoutPrivilege(func(t *testing.T) { keyexec.RemoveDefaultPublicKey(t) }))
@@ -141,13 +140,13 @@ func testPublicKeyImportExport(t *testing.T) {
 					c, b, err := keyexec.ImportKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log("command that failed: ", c, string(b))
-						t.Fatalf("Unable to import key: %v", err)
+						t.Fatalf("unable to import key: %v", err)
 					}
 				}))
 			} else {
 				if err == nil {
 					t.Log(string(out))
-					t.Fatalf("Unexpected success when running: %s", cmd)
+					t.Fatalf("unexpected success when running: %s", cmd)
 				}
 			}
 		}))

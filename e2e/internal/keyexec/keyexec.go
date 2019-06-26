@@ -177,7 +177,7 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 	}
 
 	c.Send(num)
-	c.Send("e2etests\n")
+	c.Send(E2ePrivatePass + "\n")
 
 	err = cmd.Wait()
 	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(exportCmd, " "))
