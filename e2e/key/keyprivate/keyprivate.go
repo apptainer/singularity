@@ -34,7 +34,6 @@ func testPrivateKeyNewPair(t *testing.T) {
 		email   string
 		note    string
 		psk1    string
-		psk2    string
 		push    bool
 		succeed bool
 	}{
@@ -47,20 +46,22 @@ func testPrivateKeyNewPair(t *testing.T) {
 			push:    false,
 			succeed: true,
 		},
-		// TODO: add a couple more tests
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			t.Run("remove_private_keyring_before_newpair", test.WithoutPrivilege(func(t *testing.T) { keyexec.RemoveKeyring(t) }))
-			c, b, err := keyexec.KeyNewPair(t, tt.user, tt.email, tt.note, tt.psk1, tt.psk2, tt.push)
+			c, b, err := keyexec.KeyNewPair(t, tt.user, tt.email, tt.note, tt.psk1, tt.push)
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", c)
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				keyexec.QuickTestExportImportKey(t)
+				// This will just export the private & public key, (as ASCII and binary) and then re-import then.
+				// Since there is no keys in our keyring when we generate a newpair, the newly created key will be
+				// number 0 (the first entity).
+				keyexec.QuickTestExportImportKey(t, "0\n")
 			} else {
 				if err == nil {
 					t.Log(string(b))

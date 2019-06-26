@@ -225,16 +225,17 @@ func RunKeyCmd(t *testing.T, cmdPath string, commands []string, stdin string) (s
 }
 
 // QuickTestExportImportKey will export a private, and public key (0), and then import them. This is used after
-// generating a newpair.
-func QuickTestExportImportKey(t *testing.T) {
+// generating a newpair. keyNum is the key number to test. Its a string, so the number must be used in "", and
+// end with a '\n', eg. "1\n" will test key 1.
+func QuickTestExportImportKey(t *testing.T, keyNum string) {
 	e2e.LoadEnv(t, &testenv)
 
 	tmpTestDir := filepath.Join(testenv.TestDir, "quick_test_key_verify")
 
 	tests := []struct {
 		name    string
-		private bool
-		armor   bool
+		private bool // for private keys
+		armor   bool // for ASCII armor keys
 		succeed bool
 	}{
 		{
@@ -272,7 +273,7 @@ func QuickTestExportImportKey(t *testing.T) {
 			var err error
 
 			if tt.private {
-				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"), "0\n", tt.armor)
+				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"), keyNum, tt.armor)
 			} else {
 				c, b, err = RunKeyCmd(t, testenv.CmdPath, []string{"export", filepath.Join(tmpTestDir, "export_key.asc")}, "0\n")
 			}
@@ -306,7 +307,7 @@ func QuickTestExportImportKey(t *testing.T) {
 
 // KeyNewPair will generate a newpair with the arguments being the key information; user = username, email = email, etc...
 // Will return a command that ran (string), the output of the command, and the error.
-func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (string, []byte, error) {
+func KeyNewPair(t *testing.T, user, email, note, psk1 string, push bool) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
 	c, err := expect.NewConsole()
@@ -337,11 +338,8 @@ func KeyNewPair(t *testing.T, user, email, note, psk1, psk2 string, push bool) (
 	c.Send(email)
 	c.Send(note)
 	c.Send(psk1)
-	if psk2 != "" {
-		c.Send(psk2)
-	} else {
-		c.Send(psk1)
-	}
+	c.Send(psk1)
+
 	// TODO: Make sure CCI/Travis has an access token before pushing
 	if push {
 		c.Send("y\n")
