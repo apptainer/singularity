@@ -47,7 +47,7 @@ func PullDefaultPublicKey(t *testing.T) {
 	out, err := execKey.CombinedOutput()
 	if err != nil {
 		t.Log(string(out))
-		t.Fatalf("Unable to pull key: %v", err)
+		t.Fatalf("unable to pull key: %v", err)
 	}
 }
 
@@ -61,14 +61,14 @@ func RemoveDefaultPublicKey(t *testing.T) {
 	out, err := execKey.CombinedOutput()
 	if err != nil {
 		t.Log(string(out))
-		t.Fatalf("Unable to pull key: %v", err)
+		t.Fatalf("unable to pull key: %v", err)
 	}
 }
 
 func removePublicKeyring(t *testing.T) {
 	err := os.Remove(sypgp.PublicPath())
 	if err != nil {
-		t.Fatalf("Unable to remove public keyring: %v", err)
+		t.Fatalf("unable to remove public keyring: %v", err)
 	}
 }
 
@@ -76,14 +76,14 @@ func removePublicKeyring(t *testing.T) {
 func RemoveSecretKeyring(t *testing.T) {
 	err := os.Remove(sypgp.SecretPath())
 	if err != nil {
-		t.Fatalf("Unable to remove secret keyring: %v", err)
+		t.Fatalf("unable to remove secret keyring: %v", err)
 	}
 }
 
 func RemoveKeyring(t *testing.T) {
 	err := os.RemoveAll(sypgp.DirPath())
 	if err != nil {
-		t.Fatalf("Unable to remove keyring directory: %v", err)
+		t.Fatalf("unable to remove keyring directory: %v", err)
 	}
 }
 
@@ -107,7 +107,7 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 
 	c, err := expect.NewConsole()
 	if err != nil {
-		t.Fatal("Unable to start new console: ", err)
+		t.Fatal("unable to start new console: ", err)
 	}
 	defer c.Close()
 
@@ -126,7 +126,7 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 
 	err = cmd.Start()
 	if err != nil {
-		t.Fatal("Unable to start command: ", err)
+		t.Fatal("unable to start command: ", err)
 	}
 
 	// Send the passcode to singularity. The first one is the old
@@ -147,7 +147,7 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 
 	c, err := expect.NewConsole()
 	if err != nil {
-		t.Fatal("Unable to start new console: ", err)
+		t.Fatal("unable to start new console: ", err)
 	}
 	defer c.Close()
 
@@ -186,18 +186,18 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
-func RunKeyCmd(t *testing.T, cmdPath string, commands []string, stdin string) (string, []byte, error) {
+func RunKeyCmd(t *testing.T, commands []string, stdin string) (string, []byte, error) {
 	e2e.LoadEnv(t, &testenv)
 
 	argv := []string{"key"}
 	argv = append(argv, commands...)
 
-	cm := fmt.Sprintf("%s\n%s", cmdPath, strings.Join(argv, " "))
-	execKey := exec.Command(cmdPath, argv...)
+	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(argv, " "))
+	execKey := exec.Command(testenv.CmdPath, argv...)
 
 	c, err := expect.NewConsole()
 	if err != nil {
-		t.Fatal("Unable to start new console: ", err)
+		t.Fatal("unable to start new console: ", err)
 	}
 	defer c.Close()
 
@@ -231,74 +231,127 @@ func QuickTestExportImportKey(t *testing.T, keyNum string) {
 	e2e.LoadEnv(t, &testenv)
 
 	tmpTestDir := filepath.Join(testenv.TestDir, "quick_test_key_verify")
+	key := "export_key.asc"
+	keyArmor := "export_key_armor.asc"
+	keyPrivate := "export_key_private.asc"
+	keyArmorPrivate := "export_key_armor_private.asc"
 
 	tests := []struct {
 		name    string
-		private bool // for private keys
-		armor   bool // for ASCII armor keys
+		private bool   // for private keys
+		armor   bool   // for ASCII armor keys
+		file    string // is the file that the key will be exported to
 		succeed bool
 	}{
 		{
 			name:    "quick test public",
 			private: false,
 			armor:   false,
+			file:    key,
 			succeed: true,
 		},
 		{
 			name:    "quick test public armor",
 			private: false,
 			armor:   true,
+			file:    keyArmor,
 			succeed: true,
 		},
 		{
 			name:    "quick test private",
 			private: true,
 			armor:   false,
+			file:    keyPrivate,
 			succeed: true,
 		},
 		{
 			name:    "quick test private armor",
 			private: true,
 			armor:   true,
+			file:    keyArmorPrivate,
 			succeed: true,
 		},
 	}
 
+	// Export the keys
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			os.RemoveAll(tmpTestDir)
 			os.MkdirAll(tmpTestDir, os.ModePerm)
 			var c string
 			var b []byte
 			var err error
 
 			if tt.private {
-				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"), keyNum, tt.armor)
+				// export the private key
+				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, tt.file), keyNum, tt.armor)
 			} else {
-				c, b, err = RunKeyCmd(t, testenv.CmdPath, []string{"export", filepath.Join(tmpTestDir, "export_key.asc")}, "0\n")
+				// export the public key
+				cmd := []string{"export"}
+				if tt.armor {
+					cmd = append(cmd, "--armor")
+				}
+				cmd = append(cmd, filepath.Join(tmpTestDir, tt.file))
+				c, b, err = RunKeyCmd(t, cmd, keyNum)
 			}
 			if tt.succeed {
 				if err != nil {
-					t.Log("Command that failed: ", c)
-					t.Log(string(b))
-					t.Fatalf("unexpected failure: %v", err)
+					t.Log("command that failed: ", c, string(b))
+					t.Fatalf("unexpected failure while exporting key: %v", err)
 				}
-				if tt.private {
-					t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { RemoveSecretKeyring(t) }))
-				} else {
-					t.Run("remove_public_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { removePublicKeyring(t) }))
-				}
-				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
-					c, b, err := ImportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"))
-					if err != nil {
-						t.Log("command that failed: ", c, string(b))
-						t.Fatalf("Unable to import key: %v", err)
-					}
-				}))
 			} else {
 				if err == nil {
 					t.Log(string(b))
 					t.Fatalf("unexpected success running: %v", c)
+				}
+			}
+		}))
+	}
+
+	// Import the keys
+	importTests := []struct {
+		name    string
+		file    string
+		private bool
+	}{
+		{
+			name:    "import public binary",
+			file:    key,
+			private: false,
+		},
+		{
+			name:    "import public ASCII",
+			file:    keyArmor,
+			private: false,
+		},
+		{
+			name:    "import private binary",
+			file:    keyPrivate,
+			private: true,
+		},
+		{
+			name:    "import private ASCII",
+			file:    keyArmorPrivate,
+			private: true,
+		},
+	}
+	for _, tt := range importTests {
+		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+
+			if tt.private {
+				RemoveSecretKeyring(t)
+
+				c, b, err := ImportPrivateKey(t, filepath.Join(tmpTestDir, tt.file))
+				if err != nil {
+					t.Logf("command that failed: %s\n%s\n", c, string(b))
+					t.Fatalf("unable to import key: %v", err)
+				}
+			} else {
+				removePublicKeyring(t)
+
+				c, b, err := ImportKey(t, filepath.Join(tmpTestDir, tt.file))
+				if err != nil {
+					t.Logf("command that failed: %s\n%s\n", c, string(b))
+					t.Fatalf("unable to import key: %v", err)
 				}
 			}
 		}))
@@ -312,7 +365,7 @@ func KeyNewPair(t *testing.T, user, email, note, psk1 string, push bool) (string
 
 	c, err := expect.NewConsole()
 	if err != nil {
-		t.Fatalf("Unable to open new console: %v", err)
+		t.Fatalf("unable to open new console: %v", err)
 	}
 	defer c.Close()
 

@@ -75,7 +75,7 @@ func testPublicKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "")
+			cmd, out, err := keyexec.RunKeyCmd(t, tt.args, "")
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
@@ -128,7 +128,7 @@ func testPublicKeyImportExport(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
-			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.stdin)
+			cmd, out, err := keyexec.RunKeyCmd(t, tt.args, tt.stdin)
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
