@@ -205,4 +205,6 @@ workflows:
             - get_source
           filters:
             branches:
-              only: master
+              only:
+                - master
+                - /pr-e2e-*/
