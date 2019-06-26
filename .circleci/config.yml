@@ -223,6 +223,3 @@ workflows:
       - e2e_tests:
           requires:
             - get_source
-          filters:
-            branches:
-              only: master
