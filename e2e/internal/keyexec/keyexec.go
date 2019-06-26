@@ -238,9 +238,9 @@ func QuickTestExportImportKey(t *testing.T, keyNum string) {
 
 	tests := []struct {
 		name    string
+		file    string // is the file that the key will be exported to
 		private bool   // for private keys
 		armor   bool   // for ASCII armor keys
-		file    string // is the file that the key will be exported to
 		succeed bool
 	}{
 		{
