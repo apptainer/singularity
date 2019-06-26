@@ -66,7 +66,7 @@ func testGeneralKeyCmd(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "", "")
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "")
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)

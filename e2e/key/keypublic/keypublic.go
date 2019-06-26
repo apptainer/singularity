@@ -75,7 +75,7 @@ func testPublicKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "", "")
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, "")
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)
@@ -97,35 +97,30 @@ func testPublicKeyImportExport(t *testing.T) {
 		name    string
 		args    []string
 		stdin   string
-		file    string
 		succeed bool
 	}{
 		{
 			name:    "export public",
-			args:    []string{"export"},
+			args:    []string{"export", defaultKeyFile},
 			stdin:   "0\n", // TODO: this will need to be '1' at some point in time -> issue #3199
-			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
 			name:    "export public armor",
-			args:    []string{"export", "--armor"},
+			args:    []string{"export", "--armor", defaultKeyFile},
 			stdin:   "0\n",
-			file:    defaultKeyFile,
 			succeed: true,
 		},
 		{
 			name:    "export public armor panic",
-			args:    []string{"export", "--armor"},
+			args:    []string{"export", "--armor", defaultKeyFile},
 			stdin:   "1\n",
-			file:    defaultKeyFile,
 			succeed: false,
 		},
 		{
 			name:    "export armor invalid",
-			args:    []string{"export", "--armor"},
+			args:    []string{"export", "--armor", defaultKeyFile},
 			stdin:   "n\n",
-			file:    defaultKeyFile,
 			succeed: false,
 		},
 	}
@@ -133,7 +128,7 @@ func testPublicKeyImportExport(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(filepath.Join(keyPath, defaultKeyFile))
-			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.file, tt.stdin)
+			cmd, out, err := keyexec.RunKeyCmd(t, testenv.CmdPath, tt.args, tt.stdin)
 			if tt.succeed {
 				if err != nil {
 					t.Log("Command that failed: ", cmd)

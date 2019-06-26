@@ -8,8 +8,6 @@ package keyexec
 import (
 	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,10 +29,14 @@ type testingEnv struct {
 
 var testenv testingEnv
 
-// E2eKeyFingerprint is the e2e test key fingerprint
+// E2ePrivatePass is the password used for importing/exportin private keys.
+// Make sure theres a newline after the password.
+const E2ePrivatePass = "e2etests"
+
+// E2eKeyFingerprint is the e2e test key fingerprint.
 const E2eKeyFingerprint = "F69C21F759C8EA06FD32CCF4536523CE1E109AF3"
 
-// PullDefaultPublicKey will pull the public Sylabs Admin key
+// PullDefaultPublicKey will pull the public E2E test key.
 func PullDefaultPublicKey(t *testing.T) {
 	e2e.LoadEnv(t, &testenv)
 
@@ -129,9 +131,9 @@ func ImportPrivateKey(t *testing.T, kpath string) (string, []byte, error) {
 
 	// Send the passcode to singularity. The first one is the old
 	// password, the next two are the new passowrd.
-	c.Send("e2etests\n")
-	c.Send("e2etests\n")
-	c.Send("e2etests\n")
+	c.Send(E2ePrivatePass + "\n")
+	c.Send(E2ePrivatePass + "\n")
+	c.Send(E2ePrivatePass + "\n")
 
 	err = cmd.Wait()
 	cm := fmt.Sprintf("%s\n%s", testenv.CmdPath, strings.Join(exportCmd, " "))
@@ -184,37 +186,42 @@ func ExportPrivateKey(t *testing.T, kpath, num string, armor bool) (string, []by
 }
 
 // RunKeyCmd will run a 'singularty key' command, with any args that are set in commands.
-func RunKeyCmd(t *testing.T, cmdPath string, commands []string, file, stdin string) (string, []byte, error) {
+func RunKeyCmd(t *testing.T, cmdPath string, commands []string, stdin string) (string, []byte, error) {
+	e2e.LoadEnv(t, &testenv)
+
 	argv := []string{"key"}
 	argv = append(argv, commands...)
 
-	if file != "" {
-		argv = append(argv, file)
-	}
-
-	cmd := fmt.Sprintf("%s\n%s", cmdPath, strings.Join(argv, " "))
+	cm := fmt.Sprintf("%s\n%s", cmdPath, strings.Join(argv, " "))
 	execKey := exec.Command(cmdPath, argv...)
 
-	stdinRun, err := ioutil.TempFile("", "")
+	c, err := expect.NewConsole()
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatal("Unable to start new console: ", err)
 	}
-	defer stdinRun.Close()
+	defer c.Close()
 
-	_, err = io.WriteString(stdinRun, stdin)
+	outErr := bytes.NewBuffer(nil)
+
+	execKey.Stdin = c.Tty()
+
+	execKey.Stderr = outErr
+	execKey.Stdout = outErr
+
+	go func() {
+		c.ExpectEOF()
+	}()
+
+	err = execKey.Start()
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatalf("unable to run command: %v", err)
 	}
 
-	_, err = stdinRun.Seek(0, os.SEEK_SET)
-	if err != nil {
-		t.Fatalf("%v", err)
-	}
+	c.Send(stdin)
 
-	execKey.Stdin = stdinRun
-	out, err := execKey.CombinedOutput()
+	err = execKey.Wait()
 
-	return cmd, out, err
+	return cm, outErr.Bytes(), err
 }
 
 // QuickTestExportImportKey will export a private, and public key (0), and then import them. This is used after
@@ -267,7 +274,7 @@ func QuickTestExportImportKey(t *testing.T) {
 			if tt.private {
 				c, b, err = ExportPrivateKey(t, filepath.Join(tmpTestDir, "export_key.asc"), "0\n", tt.armor)
 			} else {
-				c, b, err = RunKeyCmd(t, testenv.CmdPath, []string{"export"}, filepath.Join(tmpTestDir, "export_key.asc"), "0\n")
+				c, b, err = RunKeyCmd(t, testenv.CmdPath, []string{"export", filepath.Join(tmpTestDir, "export_key.asc")}, "0\n")
 			}
 			if tt.succeed {
 				if err != nil {
