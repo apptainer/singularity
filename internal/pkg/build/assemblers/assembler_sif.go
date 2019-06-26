@@ -48,7 +48,6 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encry
 		Groupid:  sif.DescrDefaultGroup,
 		Link:     sif.DescrUnusedLink,
 		Data:     definition,
-		Encrypt:  encrypted,
 	}
 	definput.Size = int64(binary.Size(definput.Data))
 

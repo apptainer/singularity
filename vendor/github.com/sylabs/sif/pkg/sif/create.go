@@ -129,7 +129,6 @@ func writeDataObject(fimg *FileImage, index int, input DescriptorInput) error {
 			return fmt.Errorf("copying data object data to SIF file: %s", err)
 		}
 	} else {
-		fmt.Printf("Input name: %s, Input size: %d\n", input.Fname, input.Size)
 		if n, err := io.Copy(fimg.Fp, input.Fp); err != nil {
 			return fmt.Errorf("copying data object file to SIF file: %s", err)
 		} else if n != input.Size && input.Size != 0 {
