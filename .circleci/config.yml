@@ -143,8 +143,8 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/go
-      - compare-url/reconstruct
-      - compare-url/use:
+      - circle-compare-url/reconstruct
+      - circle-compare-url/use:
         step-name: Check changes
         custom-logic: |
           echo "Circle branch: $CIRCLE_BRANCH"
