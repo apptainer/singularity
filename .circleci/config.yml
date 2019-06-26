@@ -1,4 +1,4 @@
-version: 2.1
+version: 2.0
 
 orbs:
   circle-compare-url: iynere/compare-url@0.4.8
