@@ -35,23 +35,13 @@ func EnsureImage(t *testing.T) {
 			err)
 	}
 
-	opts := BuildOpts{
-		Force:   true,
-		Sandbox: false,
-	}
-
-	Privileged(func(t *testing.T) {
-		b, err := ImageBuild(
-			testenv.CmdPath,
-			opts,
-			testenv.ImagePath,
-			"./testdata/Singularity")
-
-		if err != nil {
-			t.Logf("Failed to build image %q.\nOutput:\n%s\n",
-				testenv.ImagePath,
-				b)
-			t.Fatalf("unexpected failure: %+v", err)
-		}
-	})(t)
+	RunSingularity(
+		t,
+		"BuildTestImage",
+		WithoutSubTest(),
+		WithPrivileges(true),
+		WithCommand("build"),
+		WithArgs("--force", testenv.ImagePath, "testdata/Singularity"),
+		ExpectExit(0),
+	)
 }
