@@ -12,6 +12,8 @@ import (
 	"testing"
 )
 
+// ImagePush executes a singularity push command to push
+// an image to the specified URI.
 func ImagePush(t *testing.T, imagePath, imgURI string) (string, []byte, error) {
 	argv := []string{"push"}
 

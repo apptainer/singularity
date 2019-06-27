@@ -79,11 +79,18 @@ func Run(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(name)
-	if err := os.Chmod(name, 0777); err != nil {
+	defer singularitye2e.Privileged(func(t *testing.T) {
+		os.RemoveAll(name)
+	})(t)
+
+	if err := os.Chmod(name, 0755); err != nil {
 		log.Fatalf("failed to chmod temporary directory: %v", err)
 	}
 	os.Setenv("E2E_TEST_DIR", name)
+
+	if err := singularitye2e.MakeCacheDirs(name); err != nil {
+		t.Fatal(err)
+	}
 
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
