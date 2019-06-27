@@ -73,6 +73,12 @@ func Run(t *testing.T) {
 		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)
 	}
 
+	// e2e tests need to run in a somehow agnostic environment, so we
+	// don't use environment of user executing tests in order to not
+	// wrongly interfering with cache stuff, sylabs library tokens,
+	// PGP keys
+	singularitye2e.SetupHomeDirectories(t)
+
 	// Ensure config files are installed
 	configFiles := []string{
 		sysconfdir("singularity.conf"),

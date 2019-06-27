@@ -6,10 +6,12 @@
 package e2e
 
 import (
+	"net"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 const dockerInstanceName = "e2e-docker-instance"
@@ -49,6 +51,25 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
 			ExpectExit(0),
 		)
+
+		// start script in e2e/testdata/Docker_registry.def will listen
+		// on port 5111 once docker registry is up and initialized, so
+		// we are trying to connect to this port until we got a response,
+		// without any response after 10 seconds we abort tests execution
+		// because the start script probably failed
+		retry := 0
+		for {
+			conn, err := net.Dial("tcp", "127.0.0.1:5111")
+			if err == nil {
+				conn.Close()
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
+			retry++
+			if retry == 100 {
+				t.Fatalf("docker registry unreachable after 10 seconds: %s", err)
+			}
+		}
 
 		RunSingularity(
 			t,
