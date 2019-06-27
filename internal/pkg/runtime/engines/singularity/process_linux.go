@@ -317,8 +317,18 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				}
 			default:
 				signal := s.(syscall.Signal)
+				// EPERM and EINVAL are deliberately ignored because they can't be
+				// returned in this context, this process is PID 1, so it has the
+				// permissions to send signals to its childs and EINVAL would
+				// mean to update the Go runtime or the kernel to something more
+				// stable :)
 				if isInstance {
 					if err := syscall.Kill(-cmd.Process.Pid, signal); err == syscall.ESRCH {
+						sylog.Debugf("No child process, exiting ...")
+						os.Exit(128 + int(signal))
+					}
+				} else if engine.EngineConfig.GetSignalPropagation() {
+					if err := syscall.Kill(cmd.Process.Pid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
