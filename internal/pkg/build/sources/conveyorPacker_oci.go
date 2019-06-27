@@ -356,7 +356,7 @@ fi
 # CMD only - run CMD or override with args
 if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
     if [ $# -gt 0 ]; then
-        SINGULARITY_OCI_RUN="${CMDLINE_ARGS}"
+        SINGULARITY_OCI_RUN="${OCI_CMD} ${CMDLINE_ARGS}"
     else
         SINGULARITY_OCI_RUN="${OCI_CMD}"
     fi
