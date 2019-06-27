@@ -30,8 +30,6 @@ var testenv testingEnv
 
 // run tests min fuctionality for singularity run
 func actionRun(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	tests := []struct {
 		name string
 		argv []string
@@ -77,8 +75,6 @@ func actionRun(t *testing.T) {
 
 // exec tests min fuctionality for singularity exec
 func actionExec(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
@@ -246,8 +242,6 @@ func actionExec(t *testing.T) {
 
 // Shell interaction tests
 func actionShell(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	hostname, err := os.Hostname()
 	if err != nil {
 		t.Fatalf("could not get hostname: %s", err)
@@ -303,8 +297,6 @@ func actionShell(t *testing.T) {
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
 func STDPipe(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	stdinTests := []struct {
 		name    string
 		command string
@@ -437,8 +429,6 @@ func STDPipe(t *testing.T) {
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
 func RunFromURI(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
 
@@ -618,8 +608,6 @@ func RunFromURI(t *testing.T) {
 
 // PersistentOverlay test the --overlay function
 func PersistentOverlay(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	const squashfsImage = "squashfs.simg"
 
 	dir, err := ioutil.TempDir(testenv.TestDir, "overlay_test")

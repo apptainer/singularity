@@ -98,8 +98,11 @@ func Run(t *testing.T) {
 	os.Setenv("E2E_IMAGE_PATH", imagePath)
 	defer os.Remove(imagePath)
 
+	// build test image
+	singularitye2e.EnsureImage(t)
+
 	// Start registry for tests
-	singularitye2e.PrepRegistry(t)
+	singularitye2e.PrepRegistry(t, name)
 	defer singularitye2e.KillRegistry(t)
 
 	// RunE2ETests by functionality
