@@ -75,6 +75,7 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 	for _, tt := range tests {
 		RunSingularity(
 			t,
+			cmdPath,
 			AsSubtest(tt.name),
 			WithCommand("exec"),
 			WithArgs(tt.argv...),

@@ -78,6 +78,8 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		e2e.PullImage(t, c.env, tt.imageURL, tt.imagePath)
+
 		verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			// Get the Signatures and compare it
 			eNum, err := jsonparser.GetInt(r.Stdout, keyNumPath...)
@@ -90,15 +92,12 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 		}
 
 		// Inspect the container, and get the output
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs("--json", tt.imagePath),
-			e2e.PreRun(func(t *testing.T) {
-				e2e.PullImage(t, tt.imageURL, tt.imagePath)
-			}),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
 		)
 	}
@@ -269,16 +268,15 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 		}
 		args = append(args, tt.imagePath)
 
+		e2e.PullImage(t, c.env, tt.imageURL, tt.imagePath)
+
 		// Inspect the container, and get the output
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs(args...),
-			e2e.PreRun(func(t *testing.T) {
-				e2e.PullImage(t, tt.imageURL, tt.imagePath)
-			}),
 			e2e.ExpectExit(tt.expectExit, verifyOutput),
 		)
 	}
