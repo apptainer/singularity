@@ -56,6 +56,20 @@ func cleanShubCache(imgCache *cache.Handle) error {
 	return cleanCacheDir("shub", imgCache.Shub)
 }
 
+func cleanNetCache(imgCache *cache.Handle) error {
+	if imgCache == nil {
+		return fmt.Errorf("invalid image cache handle")
+	}
+	return cleanCacheDir("net", imgCache.Net)
+}
+
+func cleanOrasCache(imgCache *cache.Handle) error {
+	if imgCache == nil {
+		return fmt.Errorf("invalid image cache handle")
+	}
+	return cleanCacheDir("oras", imgCache.Oras)
+}
+
 // cleanCache cleans the given type of cache cacheType. It will return a
 // error if one occurs.
 func cleanCache(imgCache *cache.Handle, cacheType string) error {
@@ -68,6 +82,10 @@ func cleanCache(imgCache *cache.Handle, cacheType string) error {
 		return cleanShubCache(imgCache)
 	case "blob", "blobs":
 		return cleanBlobCache(imgCache)
+	case "net":
+		return cleanNetCache(imgCache)
+	case "oras":
+		return cleanOrasCache(imgCache)
 	default:
 		// The caller checks the returned error and will exit as required
 		return fmt.Errorf("not a valid type: %s", cacheType)
@@ -117,6 +135,8 @@ func CleanSingularityCache(imgCache *cache.Handle, cleanAll bool, cacheCleanType
 		"oci":     imgCache.OciTemp,
 		"shub":    imgCache.Shub,
 		"blob":    imgCache.OciBlob,
+		"net":     imgCache.Net,
+		"oras":    imgCache.Oras,
 	}
 	cacheTypes := []string{}
 
@@ -130,6 +150,10 @@ func CleanSingularityCache(imgCache *cache.Handle, cleanAll bool, cacheCleanType
 			cacheTypes = append(cacheTypes, t)
 		case "blob", "blobs":
 			cacheTypes = append(cacheTypes, "blob")
+		case "net":
+			cacheTypes = append(cacheTypes, t)
+		case "oras":
+			cacheTypes = append(cacheTypes, t)
 		case "all":
 			// cacheTypes contains "all", fall back to
 			// cleaning all entries, but continue validating
@@ -143,7 +167,7 @@ func CleanSingularityCache(imgCache *cache.Handle, cleanAll bool, cacheCleanType
 
 	if cleanAll {
 		// cleanAll overrides all the specified names
-		cacheTypes = []string{"library", "oci", "shub", "blob"}
+		cacheTypes = []string{"library", "oci", "shub", "blob", "net", "oras"}
 	}
 
 	if len(cacheName) > 0 {
