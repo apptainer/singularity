@@ -217,7 +217,7 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	e2e.RunSingularity(
 		t,
-		tt.desc,
+		e2e.AsSubtest(tt.desc),
 		e2e.WithPrivileges(false),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(strings.Split(argv, " ")...),

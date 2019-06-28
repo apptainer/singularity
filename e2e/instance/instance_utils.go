@@ -69,18 +69,11 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 }
 
 func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (stdout string, stderr string, success bool) {
-	name := "Exec"
-
 	args := []string{"instance://" + instance}
 	args = append(args, execArgs...)
 
-	if len(execArgs) > 0 {
-		name = fmt.Sprintf("%s_%s", name, execArgs[0])
-	}
-
 	e2e.RunSingularity(
 		t,
-		name,
 		e2e.WithCommand("exec"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),

@@ -41,7 +41,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -61,7 +61,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -95,7 +95,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -114,7 +114,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		argv := []string{"--config", config.Name(), "remove", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -132,7 +132,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		argv := []string{"--config", config.Name(), "remove", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -162,7 +162,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		argv := []string{"--config", config.Name(), "use", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -183,7 +183,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -202,7 +202,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		argv := []string{"--config", config.Name(), "use", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -236,7 +236,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -254,7 +254,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		argv := []string{"--config", config.Name(), "status", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -273,7 +273,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		argv := []string{"--config", config.Name(), "status", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -300,7 +300,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		argv := []string{"--config", config.Name(), "list"}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -321,7 +321,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -338,7 +338,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		argv := []string{"--config", config.Name(), "list"}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -357,7 +357,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		argv := []string{"--config", config.Name(), "use", tt.remote}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -374,7 +374,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		argv := []string{"--config", config.Name(), "list"}
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),

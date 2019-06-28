@@ -30,8 +30,6 @@ func EnsureImage(t *testing.T, env TestEnv) {
 
 	RunSingularity(
 		t,
-		"BuildTestImage",
-		WithoutSubTest(),
 		WithPrivileges(true),
 		WithCommand("build"),
 		WithArgs("--force", env.ImagePath, "testdata/Singularity"),
@@ -56,8 +54,6 @@ func PullImage(t *testing.T, imageURL string, path string) {
 
 	RunSingularity(
 		t,
-		"PullTestImage",
-		WithoutSubTest(),
 		WithPrivileges(false),
 		WithCommand("pull"),
 		WithArgs("--force", "--allow-unsigned", path, imageURL),

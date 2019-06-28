@@ -92,7 +92,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 		// Inspect the container, and get the output
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs("--json", tt.imagePath),
@@ -272,7 +272,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 		// Inspect the container, and get the output
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("verify"),
 			e2e.WithArgs(args...),
