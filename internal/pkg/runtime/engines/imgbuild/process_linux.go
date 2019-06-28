@@ -24,14 +24,18 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	e.cleanEnv()
 
 	if e.EngineConfig.RunSection("post") && e.EngineConfig.Recipe.BuildData.Post.Script != "" {
-		// Run %post script here
-		e.runScriptSection("post", e.EngineConfig.Recipe.BuildData.Post, true)
+		// Run %post script here. At this stage RPC server exited so nil
+		// is passed for RPC operation in order to execute section script
+		// from this process
+		e.runScriptSection(nil, "post", e.EngineConfig.Recipe.BuildData.Post, true)
 	}
 
 	if e.EngineConfig.RunSection("test") {
 		if !e.EngineConfig.Opts.NoTest && e.EngineConfig.Recipe.BuildData.Test.Script != "" {
-			// Run %test script
-			e.runScriptSection("test", e.EngineConfig.Recipe.BuildData.Test, false)
+			// Run %test script. At this stage RPC server exited so nil
+			// is passed for RPC operation in order to execute section
+			// script from this process
+			e.runScriptSection(nil, "test", e.EngineConfig.Recipe.BuildData.Test, false)
 		}
 	}
 
