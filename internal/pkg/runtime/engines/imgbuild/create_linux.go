@@ -16,6 +16,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/build/files"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/rpc/client"
@@ -187,14 +188,14 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 }
 
 func (engine *EngineOperations) copyFiles(rpcOps *client.RPC) error {
-	files := types.Files{}
+	filesSection := types.Files{}
 	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
 		if f.Args == "" {
-			files = f
+			filesSection = f
 		}
 	}
 	// iterate through filetransfers
-	for _, transfer := range files.Files {
+	for _, transfer := range filesSection.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name, skipping.")
@@ -205,7 +206,7 @@ func (engine *EngineOperations) copyFiles(rpcOps *client.RPC) error {
 			transfer.Dst = transfer.Src
 		}
 		// copy each file into bundle rootfs
-		transfer.Dst = filepath.Join(engine.EngineConfig.Rootfs(), transfer.Dst)
+		transfer.Dst = files.AddPrefix(engine.EngineConfig.Rootfs(), transfer.Dst)
 		sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
 		if _, err := rpcOps.Copy(transfer.Src, transfer.Dst); err != nil {
 			return err
