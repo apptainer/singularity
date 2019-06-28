@@ -59,7 +59,6 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 
 		e2e.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -136,7 +135,6 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 
 		e2e.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -179,7 +177,6 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	e2e.RunSingularity(
 		t,
-		"test-sandbox",
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
@@ -209,19 +206,17 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	for i, tt := range tests {
 		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
-		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
-			e2e.RunSingularity(
-				t,
-				tt.name,
-				e2e.WithPrivileges(true),
-				e2e.WithCommand("build"),
-				e2e.WithArgs(imagePath, tt.buildSpec),
-				e2e.PostRun(func(t *testing.T) {
-					e2e.ImageVerify(t, c.env.CmdPath, imagePath)
-				}),
-				e2e.ExpectExit(0),
-			)
-		}))
+		e2e.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithPrivileges(true),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(imagePath, tt.buildSpec),
+			e2e.PostRun(func(t *testing.T) {
+				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
@@ -229,7 +224,6 @@ func (c *imgBuildTests) badPath(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	e2e.RunSingularity(
 		t,
-		"bad path",
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(imagePath, "/some/dumb/path"),
@@ -426,7 +420,6 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 
 		e2e.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -724,7 +717,6 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 
 		e2e.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),

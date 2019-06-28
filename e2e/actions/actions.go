@@ -61,7 +61,7 @@ func (c *actionTests) actionRun(t *testing.T) {
 	for _, tt := range tests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("run"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -229,7 +229,7 @@ func (c *actionTests) actionExec(t *testing.T) {
 	for _, tt := range tests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("exec"),
 			e2e.WithDir("/tmp"),
 			e2e.WithArgs(tt.argv...),
@@ -293,7 +293,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 	for _, tt := range tests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("shell"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ConsoleRun(tt.consoleOps...),
@@ -378,7 +378,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 	for _, tt := range stdinTests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.WithStdin(&input),
@@ -430,7 +430,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 	for _, tt := range stdoutTests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(
@@ -620,7 +620,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 	for _, tt := range tests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -754,7 +754,7 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 	for _, tt := range tests {
 		e2e.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.WithPrivileges(tt.privileged),

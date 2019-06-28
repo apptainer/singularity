@@ -209,20 +209,27 @@ type SingularityCmdOp func(*singularityCmd)
 
 // singularityCmd defines a Singularity command execution test.
 type singularityCmd struct {
-	args       []string
-	envs       []string
-	dir        string
-	privileged bool
-	subTest    bool
-	stdin      io.Reader
-	preFn      func(*testing.T)
-	postFn     func(*testing.T)
-	consoleFn  SingularityCmdOp
-	console    *expect.Console
-	resultFn   SingularityCmdOp
-	result     *SingularityCmdResult
-	waitErr    error
-	t          *testing.T
+	args        []string
+	envs        []string
+	dir         string
+	privileged  bool
+	subtestName string
+	stdin       io.Reader
+	preFn       func(*testing.T)
+	postFn      func(*testing.T)
+	consoleFn   SingularityCmdOp
+	console     *expect.Console
+	resultFn    SingularityCmdOp
+	result      *SingularityCmdResult
+	waitErr     error
+	t           *testing.T
+}
+
+// AsSubtest requests the command to be run as a subtest
+func AsSubtest(name string) SingularityCmdOp {
+	return func(s *singularityCmd) {
+		s.subtestName = name
+	}
 }
 
 // WithCommand sets the singularity command to execute.
@@ -275,14 +282,6 @@ func WithPrivileges(privileged bool) SingularityCmdOp {
 func WithStdin(r io.Reader) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.stdin = r
-	}
-}
-
-// WithoutSubTest marks singularity command as not being
-// part of a subtest. May be useful for e2e helpers.
-func WithoutSubTest() SingularityCmdOp {
-	return func(s *singularityCmd) {
-		s.subTest = false
 	}
 }
 
@@ -376,14 +375,8 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 
 // RunSingularity executes a singularity command within an test execution
 // context.
-func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
-	if name == "" {
-		t.Errorf("you must provide a test name")
-		return
-	}
-
+func RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 	s := new(singularityCmd)
-	s.subTest = true
 
 	for _, op := range cmdOps {
 		op(s)
@@ -480,8 +473,9 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 	if s.privileged {
 		fn = Privileged(fn)
 	}
-	if s.subTest {
-		t.Run(name, fn)
+
+	if s.subtestName != "" {
+		t.Run(s.subtestName, fn)
 	} else {
 		fn(t)
 	}
