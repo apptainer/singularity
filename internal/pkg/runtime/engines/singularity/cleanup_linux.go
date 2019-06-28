@@ -6,12 +6,17 @@
 package singularity
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
+	"runtime"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/priv"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 /*
@@ -21,7 +26,6 @@ import (
 
 // CleanupContainer cleans up the container
 func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStatus) error {
-	sylog.Debugf("Cleanup container")
 
 	if engine.EngineConfig.GetDeleteImage() {
 		image := engine.EngineConfig.GetImage()
@@ -56,6 +60,45 @@ func (engine *EngineOperations) CleanupContainer(fatal error, status syscall.Wai
 			return err
 		}
 		return file.Delete()
+	}
+
+	if engine.EngineConfig.CryptDev != "" {
+		cleanupCrypt(engine.EngineConfig.CryptDev)
+	}
+
+	return nil
+}
+
+func cleanupCrypt(path string) error {
+
+	// Elevate the privilege to unmount and delete the crypt device
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	uid := os.Getuid()
+	err := syscall.Setresuid(uid, 0, uid)
+	if err != nil {
+		return fmt.Errorf("error while setting root uid")
+	}
+
+	defer syscall.Setresuid(uid, uid, 0)
+
+	err = syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "final"), syscall.MNT_DETACH)
+	if err != nil {
+		return fmt.Errorf("failed while unmounting final session directory: %s", err)
+	}
+
+	err = syscall.Unmount(filepath.Join(buildcfg.SESSIONDIR, "rootfs"), syscall.MNT_DETACH)
+	if err != nil {
+		return fmt.Errorf("error while unmounting rootfs session directory: %s", err)
+	}
+
+	devName := filepath.Base(path)
+
+	cryptDev := &crypt.Device{}
+	err = cryptDev.CloseCryptDevice(devName)
+	if err != nil {
+		return fmt.Errorf("unable to delete crypt device: %s", devName)
 	}
 
 	return nil
