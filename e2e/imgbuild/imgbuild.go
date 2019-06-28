@@ -57,7 +57,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 		}
 		args = append(args, imagePath, tt.buildSpec)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
@@ -133,7 +133,7 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 		}
 		args = append(args, imagePath, tt.buildSpec)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("build"),
@@ -175,7 +175,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	sandboxImage := path.Join(tmpdir, "test-sandbox")
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("build"),
@@ -206,7 +206,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	for i, tt := range tests {
 		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(true),
@@ -222,7 +222,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 func (c *imgBuildTests) badPath(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("build"),
@@ -418,7 +418,7 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 		}
 		args = append(args, imagePath, defFile)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
@@ -715,7 +715,7 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 		}
 		args = append(args, imagePath, defFile)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),

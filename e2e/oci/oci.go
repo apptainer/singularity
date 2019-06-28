@@ -23,7 +23,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func checkOciState(t *testing.T, containerID string, state string) {
+func checkOciState(t *testing.T, cmdPath, containerID, state string) {
 	checkStateFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		s := &ociruntime.State{}
 		if err := json.Unmarshal(r.Stdout, s); err != nil {
@@ -37,6 +37,7 @@ func checkOciState(t *testing.T, containerID string, state string) {
 
 	e2e.RunSingularity(
 		t,
+		cmdPath,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci state"),
 		e2e.WithArgs(containerID),
@@ -51,7 +52,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	}
 	ociConfig := filepath.Join(bundleDir, "config.json")
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci mount"),
@@ -79,7 +80,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	)
 
 	cleanup := func() {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("oci umount"),
@@ -101,7 +102,7 @@ func (c *ctx) testOciRun(t *testing.T) {
 	defer umountFn()
 
 	// oci run -b
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci run"),
@@ -117,7 +118,7 @@ func (c *ctx) testOciRun(t *testing.T) {
 	)
 
 	// oci state should fail
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci state"),
@@ -135,7 +136,7 @@ func (c *ctx) testOciAttach(t *testing.T) {
 	// umount bundle
 	defer umountFn()
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci create"),
@@ -147,27 +148,26 @@ func (c *ctx) testOciAttach(t *testing.T) {
 		e2e.ConsoleRun(),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Created)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Created)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"OciAttachStart",
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci start"),
 		e2e.WithArgs(containerID),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Running)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Running)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci attach"),
@@ -179,13 +179,13 @@ func (c *ctx) testOciAttach(t *testing.T) {
 		),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Stopped)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Stopped)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci delete"),
@@ -203,7 +203,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 	// umount bundle
 	defer umountFn()
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci create"),
@@ -215,27 +215,26 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.ConsoleRun(),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Created)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Created)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"OciBasicStart",
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci start"),
 		e2e.WithArgs(containerID),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Running)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Running)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci pause"),
@@ -246,13 +245,13 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		}),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Paused)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Paused)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci resume"),
@@ -263,13 +262,13 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		}),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Running)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Running)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci start"),
@@ -277,7 +276,7 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.ExpectExit(255),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci exec"),
@@ -285,21 +284,20 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"OciBasicKill",
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci kill"),
 		e2e.WithArgs("-t", "2", containerID, "KILL"),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				checkOciState(t, containerID, ociruntime.Stopped)
+				checkOciState(t, c.env.CmdPath, containerID, ociruntime.Stopped)
 			}
 		}),
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci delete"),
@@ -307,21 +305,21 @@ func (c *ctx) testOciBasic(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci state"),
 		e2e.WithArgs(containerID),
 		e2e.ExpectExit(255),
 	)
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci kill"),
 		e2e.WithArgs(containerID),
 		e2e.ExpectExit(255),
 	)
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("oci start"),

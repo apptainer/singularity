@@ -34,9 +34,8 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 	args := []string{c.env.ImagePath, instanceName, strconv.Itoa(instanceStartPort)}
 
 	// Start the instance.
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		instanceName,
 		e2e.WithCommand("instance start"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
@@ -61,9 +60,8 @@ func (c *ctx) testCreateManyInstances(t *testing.T) {
 		port := instanceStartPort + i
 		instanceName := "echo" + strconv.Itoa(i+1)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			instanceName,
 			e2e.WithCommand("instance start"),
 			e2e.WithPrivileges(c.privileged),
 			e2e.WithArgs(c.env.ImagePath, instanceName, strconv.Itoa(port)),
@@ -106,9 +104,8 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	}
 
 	// Start an instance with the temporary directory as the home directory.
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		instanceName,
 		e2e.WithCommand("instance start"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(
@@ -156,9 +153,8 @@ func (c *ctx) testContain(t *testing.T) {
 	defer os.RemoveAll(dir)
 
 	// Start the instance.
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		instanceName,
 		e2e.WithCommand("instance start"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(
@@ -212,9 +208,8 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 
 	for _, i := range instances {
 		args := []string{i.uri, i.name}
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			i.name,
 			e2e.WithCommand("instance start"),
 			e2e.WithPrivileges(c.privileged),
 			e2e.WithArgs(args...),

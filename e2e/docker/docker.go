@@ -93,7 +93,7 @@ func (c *ctx) testDockerPulls(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("pull"),
@@ -118,7 +118,7 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-aufs-sanity"}...),
@@ -147,7 +147,7 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 	}
 
 	for _, tt := range fileTests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("exec"),
@@ -162,7 +162,7 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-userperms"}...),
@@ -190,7 +190,7 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 		},
 	}
 	for _, tt := range fileTests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("exec"),
@@ -205,7 +205,7 @@ func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-linkwh"}...),
@@ -267,7 +267,7 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 			From:      tt.from,
 		})
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(true),
@@ -335,7 +335,7 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 	for _, tt := range tests {
 		defFile := e2e.PrepareDefFile(tt.dfd)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),

@@ -375,7 +375,11 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 
 // RunSingularity executes a singularity command within an test execution
 // context.
-func RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
+//
+// cmdPath specifies the path to the singularity binary and cmdOps
+// provides a list of operations to be executed before or after running
+// the command.
+func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 	s := new(singularityCmd)
 
 	for _, op := range cmdOps {
@@ -388,7 +392,7 @@ func RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 
 	fn := func(t *testing.T) {
 		s.result = new(SingularityCmdResult)
-		s.result.FullCmd = fmt.Sprintf("singularity %s", strings.Join(s.args, " "))
+		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
 
 		var (
 			stdout bytes.Buffer
@@ -397,7 +401,7 @@ func RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 
 		s.t = t
 
-		cmd := exec.Command("singularity", s.args...)
+		cmd := exec.Command(cmdPath, s.args...)
 
 		cmd.Env = s.envs
 		if len(cmd.Env) == 0 {
