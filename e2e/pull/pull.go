@@ -208,6 +208,21 @@ var tests = []struct {
 		force:         true,
 		expectSuccess: false,
 	},
+
+	// pulling with library URI argument
+	{
+		desc:          "bad library URI",
+		srcURI:        "library://busybox",
+		library:       "https://bad-library.sylabs.io",
+		expectSuccess: false,
+	},
+	{
+		desc:          "default library URI",
+		srcURI:        "library://busybox",
+		library:       "https://library.sylabs.io",
+		force:         true,
+		expectSuccess: true,
+	},
 }
 
 func imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, unauthenticated bool) (string, []byte, error) {
