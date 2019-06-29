@@ -30,7 +30,7 @@ require (
 	github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4 // indirect
 	github.com/deislabs/oras v0.4.0
 	github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 // indirect
-	github.com/docker/docker v0.0.0-20180522102801-da99009bbb11 // indirect
+	github.com/docker/docker v0.0.0-20180522102801-da99009bbb11
 	github.com/docker/docker-credential-helpers v0.6.0 // indirect
 	github.com/docker/go-connections v0.3.0 // indirect
 	github.com/docker/go-metrics v0.0.0-20180209012529-399ea8c73916 // indirect
