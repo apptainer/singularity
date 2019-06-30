@@ -130,7 +130,7 @@ func singularityInspect(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unable to get expected output from json: %v", err)
 			}
-			// Compair the output, with the expected output
+			// Compare the output, with the expected output
 			if v != tt.expectOut {
 				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, tt.expectOut)
 			}
