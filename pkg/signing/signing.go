@@ -279,12 +279,14 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	// the selected data object is hashed for comparison against signature block's
 	sifhash := computeHashStr(&fimg, descr)
 
+	// setup some colors
 	green := color.New(color.FgGreen).SprintFunc()
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 
 	var author string
 	var trusted bool
+	var errRet error
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
@@ -328,8 +330,11 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
-					sylog.Verbosef("ERROR: Could not obtain key from remote keystore: %s: %s", fingerprint[32:], err)
-					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore: %s\n", red("[MISSING]"), fingerprint)
+					sylog.Verbosef("ERROR: Could not obtain key from remote keystore: %s", err)
+					author += fmt.Sprintf("Signer fingerprint: %s:\n", fingerprint)
+					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n\n", red("[MISSING]"))
+					//author += fmt.Sprintf("%s  key does not exist in local, or remote keystore: %s\n\n", red("[MISSING]"), fingerprint)
+					errRet = fmt.Errorf("unable to fetch key: %s: %v", fingerprint, err)
 					continue
 				}
 				sylog.Verbosef("Found key in remote keystore: %s", fingerprint[32:])
@@ -361,17 +366,21 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 		if !quiet {
 			if trusted {
-				author += fmt.Sprintf("%s  %s, F: %X\n", green("[TRUSTED]"), name, signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("Signer fingerprint: %X:\n", signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("%s  %s\n\n", green("[TRUSTED]"), name)
+				//author += fmt.Sprintf("%s  %s, F: %X\n\n", green("[TRUSTED]"), name, signer.PrimaryKey.Fingerprint)
 			} else {
-				author += fmt.Sprintf("%s   %s, F: %X\n", yellow("[REMOTE]"), name, signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("Signer fingerprint: %X:\n", signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("%s   %s\n\n", yellow("[REMOTE]"), name)
+				//author += fmt.Sprintf("%s   %s, F: %X\n\n", yellow("[REMOTE]"), name, signer.PrimaryKey.Fingerprint)
 			}
 		}
 	}
 	if !quiet {
-		fmt.Printf("Data integrity checked, authentic and signed by:\n%v", author)
+		fmt.Printf("Data integrity checked, authentic and signed by:\n\n%v", author)
 	}
 
-	return notLocalKey, nil
+	return notLocalKey, errRet
 }
 
 func getSignEntities(fimg *sif.FileImage) ([]string, error) {
