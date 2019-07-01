@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
@@ -109,12 +107,9 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
+	_, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
 	if err != nil {
 		sylog.Fatalf("%v", err)
-	}
-	if notLocalKey {
-		os.Exit(1)
 	}
 }
 

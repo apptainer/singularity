@@ -252,9 +252,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
-	// This will exit 1 if the pulled container is signed by
-	// a unknown signer, i.e, if you dont have the key in your
-	// local keyring. theres proboly a better way to do this...
 	os.Exit(exitStat)
 }
 
