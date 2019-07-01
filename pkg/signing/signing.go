@@ -249,6 +249,8 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 	}
 	if noLocalKey {
 		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
+	} else {
+		sylog.Infof("Container is trusted")
 	}
 	return true, nil
 }

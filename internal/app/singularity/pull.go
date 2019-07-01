@@ -122,7 +122,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 			}
 			// user aborted
 			if resp == "" || resp != "y" && resp != "Y" {
-				fmt.Fprintf(os.Stderr, "Aborting.\n")
+				fmt.Fprintf(os.Stderr, "Aborting\n")
 				err := os.Remove(name)
 				if err != nil {
 					return fmt.Errorf("unable to delete the container: %v", err)
