@@ -285,6 +285,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	red := color.New(color.FgRed).SprintFunc()
 
 	var author string
+	var signersKeys = 0
+	var missingKeys = 0
 	var trusted bool
 	var errRet error
 
@@ -331,10 +333,11 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
 				if err != nil {
 					sylog.Verbosef("ERROR: Could not obtain key from remote keystore: %s", err)
-					author += fmt.Sprintf("Signer fingerprint: %s:\n", fingerprint)
-					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n\n", red("[MISSING]"))
-					//author += fmt.Sprintf("%s  key does not exist in local, or remote keystore: %s\n\n", red("[MISSING]"), fingerprint)
+					author += fmt.Sprintf("\nVerifying signature F: %s:\n", fingerprint)
+					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n", red("[MISSING]"))
 					errRet = fmt.Errorf("unable to fetch key: %s: %v", fingerprint, err)
+					missingKeys++ // <-- TODO: may not use this var
+					signersKeys++
 					continue
 				}
 				sylog.Verbosef("Found key in remote keystore: %s", fingerprint[32:])
@@ -364,20 +367,20 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			name = i.Name
 			break
 		}
+		signersKeys++
 		if !quiet {
 			if trusted {
-				author += fmt.Sprintf("Signer fingerprint: %X:\n", signer.PrimaryKey.Fingerprint)
-				author += fmt.Sprintf("%s  %s\n\n", green("[TRUSTED]"), name)
-				//author += fmt.Sprintf("%s  %s, F: %X\n\n", green("[TRUSTED]"), name, signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("%s  %s\n", green("[TRUSTED]"), name)
 			} else {
-				author += fmt.Sprintf("Signer fingerprint: %X:\n", signer.PrimaryKey.Fingerprint)
-				author += fmt.Sprintf("%s   %s\n\n", yellow("[REMOTE]"), name)
-				//author += fmt.Sprintf("%s   %s, F: %X\n\n", yellow("[REMOTE]"), name, signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
+				author += fmt.Sprintf("%s   %s\n", yellow("[REMOTE]"), name)
 			}
 		}
 	}
 	if !quiet {
-		fmt.Printf("Data integrity checked, authentic and signed by:\n\n%v", author)
+		fmt.Printf("Container is signed by %d keys:\n", signersKeys)
+		fmt.Printf("%s\n", author)
 	}
 
 	return notLocalKey, errRet
