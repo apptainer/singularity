@@ -40,7 +40,7 @@ var cacheCleanTypesFlag = cmdline.Flag{
 	DefaultValue: []string{"blob"},
 	Name:         "type",
 	ShortHand:    "T",
-	Usage:        "clean cache type, choose between: library, oci, shub, and blob",
+	Usage:        "clean cache type, choose between: library, oci, shub, blob, net and oras",
 	EnvKeys:      []string{"TYPE"},
 }
 
