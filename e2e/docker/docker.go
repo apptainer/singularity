@@ -16,7 +16,6 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"golang.org/x/sys/unix"
 )
@@ -106,14 +105,13 @@ func testDockerPulls(t *testing.T) {
 	}
 
 	tmpImagePath := "/tmp/docker_tests"
-	t.Run("Makeing_tmp_dir", test.WithoutPrivilege(func(t *testing.T) {
-		if err := os.RemoveAll(tmpImagePath); err != nil {
-			t.Fatal(err)
-		}
-		if err := os.MkdirAll(tmpImagePath, os.ModePerm); err != nil {
-			t.Fatal(err)
-		}
-	}))
+	if err := os.RemoveAll(tmpImagePath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(tmpImagePath, os.ModePerm); err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpImagePath)
 
 	imagePull := func(t *testing.T, imgURI, imageName, imagePath string, force bool) (string, *exec.Result) {
 		argv := []string{"pull"}
@@ -147,7 +145,7 @@ func testDockerPulls(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			fullPath, res := imagePull(t, tt.srcURI, tt.imageName, tt.imagePath, tt.force)
 			switch {
 			case tt.expectSuccess && res.Error == nil:
@@ -161,17 +159,12 @@ func testDockerPulls(t *testing.T) {
 				// FAIL: expecting failure, succeeded
 				t.Fatalf("Unexpected success running command.\n%s", res)
 			}
-		}))
+		})
 	}
-	t.Run("Removing_tmp_dir", func(t *testing.T) {
-		os.RemoveAll(tmpImagePath)
-	})
 }
 
 // AUFS sanity tests
 func testDockerAUFS(t *testing.T) {
-	test.EnsurePrivilege(t)
-
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
@@ -199,7 +192,7 @@ func testDockerAUFS(t *testing.T) {
 	}
 
 	for _, tt := range fileTests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -208,15 +201,12 @@ func testDockerAUFS(t *testing.T) {
 				t.Log(stderr)
 				t.Fatalf("unexpected success running '%s'", strings.Join(tt.execArgs, " "))
 			}
-		}))
+		})
 	}
 }
 
 // Check force permissions for user builds #977
 func testDockerPermissions(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
@@ -243,7 +233,7 @@ func testDockerPermissions(t *testing.T) {
 		},
 	}
 	for _, tt := range fileTests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
@@ -252,15 +242,12 @@ func testDockerPermissions(t *testing.T) {
 				t.Log(stderr)
 				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
 			}
-		}))
+		})
 	}
 }
 
 // Check whiteout of symbolic links #1592 #1576
 func testDockerWhiteoutSymlink(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
@@ -313,7 +300,7 @@ func testDockerDefFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 			if getKernelMajor(t) < tt.kernelMajorRequired {
 				t.Skipf("kernel >=%v.x required", tt.kernelMajorRequired)
 			}
@@ -337,8 +324,6 @@ func testDockerDefFile(t *testing.T) {
 }
 
 func testDockerRegistry(t *testing.T) {
-	test.EnsurePrivilege(t)
-
 	if _, err := stdexec.LookPath("docker"); err != nil {
 		t.Skip("docker not installed")
 	}
@@ -366,7 +351,7 @@ func testDockerRegistry(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 			opts := e2e.BuildOpts{
 				Env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
 			}

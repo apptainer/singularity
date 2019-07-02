@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 // EngineOperations implements the engines.EngineOperations interface for
@@ -91,6 +92,13 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		starterConfig.SetHybridWorkflow(true)
 		starterConfig.SetAllowSetgroups(true)
 
+		starterConfig.SetTargetUID(0)
+		starterConfig.SetTargetGID([]int{0})
+	} else if insideUserNs, setgroups := namespaces.IsInsideUserNamespace(os.Getpid()); insideUserNs && setgroups {
+		// we are currently running in a user namespace, if setgroups is
+		// allowed we assume this process can fake the root user, if it's not
+		// the case, it will fail later in C starter code
+		e.EngineConfig.Bundle.Opts.Fakeroot = true
 		starterConfig.SetTargetUID(0)
 		starterConfig.SetTargetGID([]int{0})
 	}

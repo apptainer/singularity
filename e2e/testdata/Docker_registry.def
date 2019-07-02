@@ -1,0 +1,26 @@
+bootstrap: docker
+from: registry:2.7.1
+
+%post
+    apk add docker
+    # prevent docker to add iptables rules because it
+    # add few rules even with --iptables=false
+    rm -f /sbin/iptables
+
+%startscript
+    # if there is no docker0 bridge, we could safely
+    # remove the created one after the docker daemon
+    # started
+    if ! brctl show docker0; then
+        DELETE_BRIDGE=1
+    fi
+    dockerd --iptables=false --ip-forward=false --ip-masq=false --storage-driver=vfs &
+    /.singularity.d/runscript &
+    sleep 2
+    if ! -z ${DELETE_BRIDGE}; then
+        ip link set docker0 down || kill -TERM 1
+        brctl delbr docker0
+    fi
+    docker pull busybox || kill -TERM 1
+    docker tag busybox localhost:5000/my-busybox || kill -TERM 1
+    docker push localhost:5000/my-busybox || kill -TERM 1

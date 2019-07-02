@@ -53,7 +53,7 @@ var (
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
 	ID:           "pullLibraryURIFlag",
-	Value:        &PushLibraryURI,
+	Value:        &PullLibraryURI,
 	DefaultValue: "https://library.sylabs.io",
 	Name:         "library",
 	Usage:        "download images from the provided library",

@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"gotest.tools/assert"
 	"gotest.tools/golden"
@@ -91,7 +90,7 @@ func testCommands(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			tests := []struct {
 				name string
 				argv []string
@@ -109,16 +108,16 @@ func testCommands(t *testing.T) {
 					t.Skip("disabled until issue addressed")
 				}
 
-				t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+				t.Run(tt.name, func(t *testing.T) {
 					cmd := exec.Command(testenv.CmdPath, tt.argv...)
 					if res := cmd.Run(t); res.Error != nil {
 						t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
 							res,
 							res.Error)
 					}
-				}))
+				})
 			}
-		}))
+		})
 	}
 
 }
@@ -139,12 +138,12 @@ func testFailure(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(testenv.CmdPath, tt.argv...)
 			if res := cmd.Run(t); res.Error == nil {
 				t.Fatalf("While running command:\n%s\nUnexpected success", res)
 			}
-		}))
+		})
 	}
 
 }
@@ -162,7 +161,7 @@ func testSingularity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(testenv.CmdPath, tt.argv...)
 			switch res := cmd.Run(t); {
 			case res.Error == nil && tt.shouldPass:
@@ -181,7 +180,7 @@ func testSingularity(t *testing.T) {
 				// expecting FAIL, passed => FAIL
 				t.Fatalf("While running command:\n%s\nUnexpected success", res)
 			}
-		}))
+		})
 	}
 
 }

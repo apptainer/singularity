@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 type testingEnv struct {
@@ -71,7 +70,7 @@ func testPushCmd(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test.")
 			if err != nil {
 				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
@@ -98,7 +97,7 @@ func testPushCmd(t *testing.T) {
 				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
 				t.Errorf("unexpected success: command should have failed")
 			}
-		}))
+		})
 	}
 }
 
