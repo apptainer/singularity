@@ -120,13 +120,21 @@ func testPrivateKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 			os.RemoveAll(defaultKeyFile)
-			c, b, err := keyexec.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
+			keyexec.RemoveKeyring(t)
+			// Import a test key
+			c, b, err := keyexec.ImportPrivateKey(t, "./key/testdata/private_key.asc")
+			if err != nil {
+				t.Log("command that failed: ", c, string(b))
+				t.Fatalf("Unable to import test key: %v", err)
+			}
+
+			c, b, err = keyexec.ExportPrivateKey(t, tt.file, tt.stdin, tt.armor)
 
 			switch {
 			case tt.succeed && err == nil:
 				// MAYBE PASS: expecting success, succeeded
-				t.Run("remove_private_keyring_before_importing", test.WithoutPrivilege(func(t *testing.T) { keyexec.RemoveSecretKeyring(t) }))
-				t.Run("import_private_keyring_from", test.WithoutPrivilege(func(t *testing.T) {
+				keyexec.RemoveKeyring(t)
+				t.Run("re_importing_"+tt.name, test.WithoutPrivilege(func(t *testing.T) {
 					c, b, err := keyexec.ImportPrivateKey(t, defaultKeyFile)
 					if err != nil {
 						t.Log("command that failed: ", c, string(b))

@@ -340,7 +340,7 @@ func QuickTestExportImportKey(t *testing.T, keyNum int) {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
 
 			if tt.private {
-				RemoveSecretKeyring(t)
+				RemoveKeyring(t)
 
 				c, b, err := ImportPrivateKey(t, filepath.Join(tmpTestDir, tt.file))
 				if err != nil {
