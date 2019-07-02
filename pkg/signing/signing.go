@@ -286,7 +286,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 	var author string
 	var signersKeys = 0
-	var missingKeys = 0
 	var trusted bool
 	var errRet error
 
@@ -336,7 +335,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 					author += fmt.Sprintf("\nVerifying signature F: %s:\n", fingerprint)
 					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n", red("[MISSING]"))
 					errRet = fmt.Errorf("unable to fetch key: %s: %v", fingerprint, err)
-					missingKeys++ // <-- TODO: may not use this var
 					signersKeys++
 					continue
 				}
@@ -368,18 +366,19 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			break
 		}
 		signersKeys++
-		if !quiet {
-			if trusted {
-				author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
-				author += fmt.Sprintf("%s  %s\n", green("[TRUSTED]"), name)
-			} else {
-				author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
-				author += fmt.Sprintf("%s   %s\n", yellow("[REMOTE]"), name)
-			}
+		if trusted {
+			author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
+			author += fmt.Sprintf("%s  %s\n", green("[TRUSTED]"), name)
+		} else {
+			author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
+			author += fmt.Sprintf("%s   %s\n", yellow("[REMOTE]"), name)
 		}
 	}
 	if !quiet {
 		fmt.Printf("Container is signed by %d keys:\n", signersKeys)
+		if !notLocalKey {
+			fmt.Printf("Container signatures and data integrity verified\n")
+		}
 		fmt.Printf("%s\n", author)
 	}
 
