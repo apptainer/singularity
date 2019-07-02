@@ -44,16 +44,9 @@ var registeredFormats = []struct {
 	{"ext3", &ext3Format{}},
 }
 
-// ErrArchMismatch denotes that the image was built for use on a
-// different platform and the host architecture is incompatible.
-var ErrArchMismatch = fmt.Errorf("image arch doesn't match host's")
-
 // format describes the interface that an image format type must implement.
 type format interface {
 	openMode(bool) int
-	// initializer tries to init Image based on the format. If passed
-	// file is not of the format, an error is returned. When format is correct,
-	// but image was built for use on a different platform ErrArchMismatch is returned.
 	initializer(*Image, os.FileInfo) error
 }
 
@@ -202,12 +195,8 @@ func Init(path string, writable bool) (*Image, error) {
 		}
 
 		err = rf.format.initializer(img, fileinfo)
-		if err == ErrArchMismatch {
-			_ = img.File.Close()
-			return nil, ErrArchMismatch
-		}
 		if err != nil {
-			sylog.Errorf("%s format initializer returned: %s", rf.name, err)
+			sylog.Debugf("%s format initializer returned: %s", rf.name, err)
 			_ = img.File.Close()
 			continue
 		}

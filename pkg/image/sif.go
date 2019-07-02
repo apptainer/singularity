@@ -13,6 +13,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (
@@ -54,7 +55,9 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	// runtime, which is not 100% compliant with the intended workflow.
 	sifArch := string(fimg.Header.Arch[:sif.HdrArchLen-1])
 	if sifArch != sif.HdrArchUnknown && sifArch != sif.GetSIFArch(runtime.GOARCH) {
-		return ErrArchMismatch
+		err := fmt.Errorf("the image's architecture (%s) is incompatible with the host's (%s)", sif.GetGoArch(sifArch), runtime.GOARCH)
+		sylog.Errorf("%s", err)
+		return err
 	}
 
 	groupID := -1
