@@ -210,9 +210,8 @@ Enterprise Performance Computing (EPC)`
 	KeyUse   string = `key [key options...]`
 	KeyShort string = `Manage OpenPGP keys`
 	KeyLong  string = `
-  Manage OpenPGP keys both locally via a Singularity keychain and remotely via a 
-  Sylabs Cloud Keystore. The default keyring is '~/.singularity/sypgp' if 
-  'SINGULARITY_SYPGPDIR' is not set.`
+  Manage your trusted, public and private keys in your keyring
+  (default: '~/.singularity/sypgp' if 'SINGULARITY_SYPGPDIR' is not set.)`
 	KeyExample string = `
   All group commands have their own help output:
 
@@ -267,10 +266,11 @@ Enterprise Performance Computing (EPC)`
 	KeyListUse   string = `list`
 	KeyListShort string = `List keys in your local keyring`
 	KeyListLong  string = `
-  The 'key list' command allows you to list public/private keys from the  
-  default user's local keyring location (i.e., $HOME/.singularity/sypgp).`
+  List your local keys in your keyring. Will list public (trusted) keys
+  by default.`
 	KeyListExample string = `
-  $ singularity key list`
+  $ singularity key list
+  $ singularity key list --secret`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// key search
@@ -320,7 +320,8 @@ Enterprise Performance Computing (EPC)`
 	KeyRemoveUse   string = `remove <fingerprint>`
 	KeyRemoveShort string = `Remove a local public key from your keyring`
 	KeyRemoveLong  string = `
-  The 'key remove' command will remove a local public key.`
+  The 'key remove' command will remove a local public key from
+  your keyring.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
 

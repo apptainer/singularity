@@ -251,7 +251,7 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 	if noLocalKey {
 		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
 	} else {
-		sylog.Infof("Container is trusted")
+		sylog.Infof("Container is trusted - run 'singularity key list' to list your trusted keys")
 	}
 	return true, nil
 }
@@ -377,9 +377,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 	}
 	if !quiet {
-		fmt.Printf("Container is signed by %d keys:\n", signersKeys)
+		fmt.Printf("Container is signed by %d key(s):\n", signersKeys)
 		if !notLocalKey {
-			fmt.Printf("Container signatures and data integrity verified\n")
+			fmt.Printf("Signatures and data integrity verified\n")
 		}
 		fmt.Printf("%s\n", author)
 	}
