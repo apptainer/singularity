@@ -378,11 +378,12 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	}
 	if !quiet {
 		fmt.Printf("Container is signed by %d key(s):\n", signersKeys)
-		if !notLocalKey {
-			fmt.Printf("Signatures and data integrity verified\n")
-		}
 		fmt.Printf("%s\n", author)
+		if !notLocalKey {
+			fmt.Printf("Signature(s) and data integrity verified\n")
+		}
 	}
+
 	if errRet.Error() == "" {
 		errRet = nil
 	}
