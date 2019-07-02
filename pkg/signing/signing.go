@@ -10,6 +10,7 @@ import (
 	"crypto/sha512"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 
@@ -287,7 +288,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	var author string
 	var signersKeys = 0
 	var trusted bool
-	var errRet error
+	errRet := errors.New("")
 
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
@@ -334,7 +335,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 					sylog.Verbosef("ERROR: Could not obtain key from remote keystore: %s", err)
 					author += fmt.Sprintf("\nVerifying signature F: %s:\n", fingerprint)
 					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n", red("[MISSING]"))
-					errRet = fmt.Errorf("unable to fetch key: %s: %v", fingerprint, err)
+
+					errRet = fmt.Errorf("%s, unble to fetch key: %s: %v", errRet.Error(), fingerprint, err)
 					signersKeys++
 					continue
 				}
@@ -380,6 +382,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			fmt.Printf("Container signatures and data integrity verified\n")
 		}
 		fmt.Printf("%s\n", author)
+	}
+	if errRet.Error() == "" {
+		errRet = nil
 	}
 
 	return notLocalKey, errRet
