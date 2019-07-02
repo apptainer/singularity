@@ -246,7 +246,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
 	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, noPrompt, true)
 	if err != nil {
-		return false, fmt.Errorf("unable to verify container: %v", err)
+		return false, fmt.Errorf("unable to verify container%v", err)
 	}
 	if noLocalKey {
 		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
@@ -336,7 +336,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 					author += fmt.Sprintf("\nVerifying signature F: %s:\n", fingerprint)
 					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n", red("[MISSING]"))
 
-					errRet = fmt.Errorf("%s, unble to fetch key: %s: %v", errRet.Error(), fingerprint, err)
+					errRet = fmt.Errorf("%s: unble to fetch key(%s) %v", errRet.Error(), fingerprint, err)
 					signersKeys++
 					continue
 				}
