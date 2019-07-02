@@ -50,8 +50,8 @@ func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSp
 	return cmd.CombinedOutput()
 }
 
-// tmpDirReturn will return a tmp dir path in /tmp.
-func tmpDirReturn(t *testing.T) string {
+// makeTmpDir will return a tmp dir path in /tmp.
+func makeTmpDir(t *testing.T) string {
 	tmpDir, err := ioutil.TempDir("", "")
 	if err != nil {
 		t.Fatalf("Unable to make tmp dir: %v", err)
@@ -171,7 +171,7 @@ func TestPull(t *testing.T) {
 			force:           false,
 			unauthenticated: false,
 			library:         "",
-			pullDir:         tmpDirReturn(t),
+			pullDir:         makeTmpDir(t),
 			imagePath:       imagePath,
 			success:         true,
 		},
@@ -191,7 +191,7 @@ func TestPull(t *testing.T) {
 			force:           true,
 			unauthenticated: true,
 			library:         "",
-			pullDir:         tmpDirReturn(t),
+			pullDir:         makeTmpDir(t),
 			imagePath:       imagePath,
 			success:         true,
 		},
@@ -201,7 +201,7 @@ func TestPull(t *testing.T) {
 			force:           false,
 			unauthenticated: false,
 			library:         "",
-			pullDir:         tmpDirReturn(t),
+			pullDir:         makeTmpDir(t),
 			imagePath:       imagePath,
 			success:         true,
 		},
