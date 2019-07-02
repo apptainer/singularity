@@ -17,19 +17,12 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
-	//  base image for tests
-	ImagePath string `split_words:"true"`
+type actionTests struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
-
 // run tests min fuctionality for singularity run
-func actionRun(t *testing.T) {
+func (c *actionTests) actionRun(t *testing.T) {
 	tests := []struct {
 		name string
 		argv []string
@@ -37,27 +30,27 @@ func actionRun(t *testing.T) {
 	}{
 		{
 			name: "NoCommand",
-			argv: []string{testenv.ImagePath},
+			argv: []string{c.env.ImagePath},
 			exit: 0,
 		},
 		{
 			name: "True",
-			argv: []string{testenv.ImagePath, "true"},
+			argv: []string{c.env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "False",
-			argv: []string{testenv.ImagePath, "false"},
+			argv: []string{c.env.ImagePath, "false"},
 			exit: 1,
 		},
 		{
 			name: "ScifTestAppGood",
-			argv: []string{"--app", "testapp", testenv.ImagePath},
+			argv: []string{"--app", "testapp", c.env.ImagePath},
 			exit: 0,
 		},
 		{
 			name: "ScifTestAppBad",
-			argv: []string{"--app", "fakeapp", testenv.ImagePath},
+			argv: []string{"--app", "fakeapp", c.env.ImagePath},
 			exit: 1,
 		},
 	}
@@ -74,7 +67,7 @@ func actionRun(t *testing.T) {
 }
 
 // exec tests min fuctionality for singularity exec
-func actionExec(t *testing.T) {
+func (c *actionTests) actionExec(t *testing.T) {
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
@@ -101,129 +94,129 @@ func actionExec(t *testing.T) {
 	}{
 		{
 			name: "NoCommand",
-			argv: []string{testenv.ImagePath},
+			argv: []string{c.env.ImagePath},
 			exit: 1,
 		},
 		{
 			name: "True",
-			argv: []string{testenv.ImagePath, "true"},
+			argv: []string{c.env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "TrueAbsPAth",
-			argv: []string{testenv.ImagePath, "/bin/true"},
+			argv: []string{c.env.ImagePath, "/bin/true"},
 			exit: 0,
 		},
 		{
 			name: "False",
-			argv: []string{testenv.ImagePath, "false"},
+			argv: []string{c.env.ImagePath, "false"},
 			exit: 1,
 		},
 		{
 			name: "FalseAbsPath",
-			argv: []string{testenv.ImagePath, "/bin/false"},
+			argv: []string{c.env.ImagePath, "/bin/false"},
 			exit: 1,
 		},
 		// Scif apps tests
 		{
 			name: "ScifTestAppGood",
-			argv: []string{"--app", "testapp", testenv.ImagePath, "testapp.sh"},
+			argv: []string{"--app", "testapp", c.env.ImagePath, "testapp.sh"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestAppBad",
-			argv: []string{"--app", "fakeapp", testenv.ImagePath, "testapp.sh"},
+			argv: []string{"--app", "fakeapp", c.env.ImagePath, "testapp.sh"},
 			exit: 1,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif/apps"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif/apps"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif/data"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif/data"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif/apps/foo"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif/apps/foo"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif/apps/bar"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif/apps/bar"},
 			exit: 0,
 		},
 		// blocked by issue [scif-apps] Files created at install step fall into an unexpected path #2404
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-f", "/scif/apps/foo/filefoo.exec"},
+			argv: []string{c.env.ImagePath, "test", "-f", "/scif/apps/foo/filefoo.exec"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-f", "/scif/apps/bar/filebar.exec"},
+			argv: []string{c.env.ImagePath, "test", "-f", "/scif/apps/bar/filebar.exec"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif/data/foo/output"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif/data/foo/output"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{testenv.ImagePath, "test", "-d", "/scif/data/foo/input"},
+			argv: []string{c.env.ImagePath, "test", "-d", "/scif/data/foo/input"},
 			exit: 0,
 		},
 		{
 			name: "WorkdirContain",
-			argv: []string{"--contain", testenv.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfile.Name()},
 			exit: 1,
 		},
 		{
 			name: "Workdir",
-			argv: []string{"--workdir", "testdata", testenv.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--workdir", "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "PwdGood",
-			argv: []string{"--pwd", "/etc", testenv.ImagePath, "true"},
+			argv: []string{"--pwd", "/etc", c.env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "Home",
-			argv: []string{"--home", pwd + "testdata", testenv.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--home", pwd + "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "HomePath",
-			argv: []string{"--home", "/tmp:/home", testenv.ImagePath, "test", "-f", "/home/" + testfile.Name()},
+			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "test", "-f", "/home/" + testfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "HomeTmp",
-			argv: []string{"--home", "/tmp", testenv.ImagePath, "true"},
+			argv: []string{"--home", "/tmp", c.env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "HomeTmpExplicit",
-			argv: []string{"--home", "/tmp:/home", testenv.ImagePath, "true"},
+			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "UserBind",
-			argv: []string{"--bind", "/tmp:/var/tmp", testenv.ImagePath, "test", "-f", "/var/tmp/" + testfile.Name()},
+			argv: []string{"--bind", "/tmp:/var/tmp", c.env.ImagePath, "test", "-f", "/var/tmp/" + testfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "NoHome",
-			argv: []string{"--no-home", testenv.ImagePath, "ls", "-ld", user.Dir},
+			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
 			exit: 2,
 		},
 	}
@@ -241,7 +234,7 @@ func actionExec(t *testing.T) {
 }
 
 // Shell interaction tests
-func actionShell(t *testing.T) {
+func (c *actionTests) actionShell(t *testing.T) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		t.Fatalf("could not get hostname: %s", err)
@@ -255,7 +248,7 @@ func actionShell(t *testing.T) {
 	}{
 		{
 			name: "ShellExit",
-			argv: []string{testenv.ImagePath},
+			argv: []string{c.env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleExpect("Singularity"),
 				e2e.ConsoleSendLine("exit"),
@@ -264,7 +257,7 @@ func actionShell(t *testing.T) {
 		},
 		{
 			name: "ShellHostname",
-			argv: []string{testenv.ImagePath},
+			argv: []string{c.env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("hostname"),
 				e2e.ConsoleExpect(hostname),
@@ -274,7 +267,7 @@ func actionShell(t *testing.T) {
 		},
 		{
 			name: "ShellBadCommand",
-			argv: []string{testenv.ImagePath},
+			argv: []string{c.env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("_a_fake_command"),
 				e2e.ConsoleSendLine("exit"),
@@ -296,7 +289,7 @@ func actionShell(t *testing.T) {
 }
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
-func STDPipe(t *testing.T) {
+func (c *actionTests) STDPipe(t *testing.T) {
 	stdinTests := []struct {
 		name    string
 		command string
@@ -307,14 +300,14 @@ func STDPipe(t *testing.T) {
 		{
 			name:    "TrueSTDIN",
 			command: "exec",
-			argv:    []string{testenv.ImagePath, "grep", "hi"},
+			argv:    []string{c.env.ImagePath, "grep", "hi"},
 			input:   "hi",
 			exit:    0,
 		},
 		{
 			name:    "FalseSTDIN",
 			command: "exec",
-			argv:    []string{testenv.ImagePath, "grep", "hi"},
+			argv:    []string{c.env.ImagePath, "grep", "hi"},
 			input:   "bye",
 			exit:    1,
 		},
@@ -390,28 +383,28 @@ func STDPipe(t *testing.T) {
 		{
 			name:    "AppsFoo",
 			command: "run",
-			argv:    []string{"--app", "foo", testenv.ImagePath},
+			argv:    []string{"--app", "foo", c.env.ImagePath},
 			output:  "FOO",
 			exit:    0,
 		},
 		{
 			name:    "PwdPath",
 			command: "exec",
-			argv:    []string{"--pwd", "/etc", testenv.ImagePath, "pwd"},
+			argv:    []string{"--pwd", "/etc", c.env.ImagePath, "pwd"},
 			output:  "/etc",
 			exit:    0,
 		},
 		{
 			name:    "Arguments",
 			command: "run",
-			argv:    []string{testenv.ImagePath, "foo"},
+			argv:    []string{c.env.ImagePath, "foo"},
 			output:  "foo",
 			exit:    127,
 		},
 		{
 			name:    "Permissions",
 			command: "exec",
-			argv:    []string{testenv.ImagePath, "id", "-un"},
+			argv:    []string{c.env.ImagePath, "id", "-un"},
 			output:  user.Name,
 			exit:    0,
 		},
@@ -428,7 +421,7 @@ func STDPipe(t *testing.T) {
 }
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
-func RunFromURI(t *testing.T) {
+func (c *actionTests) RunFromURI(t *testing.T) {
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
 
@@ -607,17 +600,17 @@ func RunFromURI(t *testing.T) {
 }
 
 // PersistentOverlay test the --overlay function
-func PersistentOverlay(t *testing.T) {
+func (c *actionTests) PersistentOverlay(t *testing.T) {
 	const squashfsImage = "squashfs.simg"
 
-	dir, err := ioutil.TempDir(testenv.TestDir, "overlay_test")
+	dir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 
 	// Create dirfs for squashfs
-	squashDir, err := ioutil.TempDir(testenv.TestDir, "overlay_test")
+	squashDir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -663,61 +656,61 @@ func PersistentOverlay(t *testing.T) {
 	}{
 		{
 			name:       "overlay_create",
-			argv:       []string{"--overlay", dir, testenv.ImagePath, "touch", "/dir_overlay"},
+			argv:       []string{"--overlay", dir, c.env.ImagePath, "touch", "/dir_overlay"},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_find",
-			argv:       []string{"--overlay", dir, testenv.ImagePath, "test", "-f", "/dir_overlay"},
+			argv:       []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/dir_overlay"},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_ext3_create",
-			argv:       []string{"--overlay", "ext3_fs.img", testenv.ImagePath, "touch", "/ext3_overlay"},
+			argv:       []string{"--overlay", "ext3_fs.img", c.env.ImagePath, "touch", "/ext3_overlay"},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_ext3_find",
-			argv:       []string{"--overlay", "ext3_fs.img", testenv.ImagePath, "test", "-f", "/ext3_overlay"},
+			argv:       []string{"--overlay", "ext3_fs.img", c.env.ImagePath, "test", "-f", "/ext3_overlay"},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_squashFS_find",
-			argv:       []string{"--overlay", squashfsImage, testenv.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			argv:       []string{"--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_multiple_create",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, testenv.ImagePath, "touch", "/multiple_overlay_fs"},
+			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "touch", "/multiple_overlay_fs"},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_multiple_find_ext3",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, testenv.ImagePath, "test", "-f", "/multiple_overlay_fs"},
+			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_multiple_find_squashfs",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, testenv.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
 			exit:       0,
 			privileged: true,
 		},
 		{
 			name:       "overlay_noroot",
-			argv:       []string{"--overlay", dir, testenv.ImagePath, "test", "-f", "/foo_overlay"},
+			argv:       []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/foo_overlay"},
 			exit:       255,
 			privileged: false,
 		},
 		{
 			name:       "overlay_noflag",
-			argv:       []string{testenv.ImagePath, "test", "-f", "/foo_overlay"},
+			argv:       []string{c.env.ImagePath, "test", "-f", "/foo_overlay"},
 			exit:       1,
 			privileged: true,
 		},
@@ -736,19 +729,23 @@ func PersistentOverlay(t *testing.T) {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &actionTests{
+		env: env,
+	}
 
-	// singularity run
-	t.Run("run", actionRun)
-	// singularity exec
-	t.Run("exec", actionExec)
-	// stdin/stdout pipe
-	t.Run("STDPIPE", STDPipe)
-	// action_URI
-	t.Run("action_URI", RunFromURI)
-	// Persistent Overlay
-	t.Run("Persistent_Overlay", PersistentOverlay)
-	// shell interaction
-	t.Run("Shell", actionShell)
+	return func(t *testing.T) {
+		// singularity run
+		t.Run("run", c.actionRun)
+		// singularity exec
+		t.Run("exec", c.actionExec)
+		// stdin/stdout pipe
+		t.Run("STDPIPE", c.STDPipe)
+		// action_URI
+		t.Run("action_URI", c.RunFromURI)
+		// Persistent Overlay
+		t.Run("Persistent_Overlay", c.PersistentOverlay)
+		// shell interaction
+		t.Run("Shell", c.actionShell)
+	}
 }

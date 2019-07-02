@@ -26,14 +26,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 )
 
-type testingEnv struct {
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	ImagePath   string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+type ctx struct {
+	env e2e.TestEnv
 }
-
-var testenv testingEnv
 
 var tests = []struct {
 	desc            string // case description
@@ -224,7 +219,7 @@ var tests = []struct {
 	},
 }
 
-func imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, unauthenticated bool) (string, []byte, error) {
+func (c *ctx) imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, unauthenticated bool) (string, []byte, error) {
 	argv := []string{"pull"}
 
 	if force {
@@ -249,8 +244,8 @@ func imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, 
 
 	argv = append(argv, imgURI)
 
-	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
-	out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
+	cmd := fmt.Sprintf("%s %s", c.env.CmdPath, strings.Join(argv, " "))
+	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
 
 	return cmd, out, err
 }
@@ -268,7 +263,50 @@ func getImageNameFromURI(imgURI string) string {
 	return uri.GetName(imgURI)
 }
 
-func testPullCmd(t *testing.T) {
+func (c *ctx) setup(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// setup file and dir to use as invalid images
+	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")
+	if err != nil {
+		t.Fatalf("unable to create src dir for push tests: %v", err)
+	}
+
+	orasInvalidFile, err := e2e.WriteTempFile(orasInvalidDir, "oras_invalid_image-", "Invalid Image Contents")
+	if err != nil {
+		t.Fatalf("unable to create src file for push tests: %v", err)
+	}
+
+	// prep local registry with oras generated artifacts
+	// Note: the image name prevents collisions by using a package specific name
+	// as the registry is shared between different test packages
+	orasImages := []struct {
+		srcPath string
+		uri     string
+	}{
+		{
+			srcPath: c.env.ImagePath,
+			uri:     "localhost:5000/pull_test_sif:latest",
+		},
+		{
+			srcPath: orasInvalidDir,
+			uri:     "localhost:5000/pull_test_dir:latest",
+		},
+		{
+			srcPath: orasInvalidFile,
+			uri:     "localhost:5000/pull_test_invalid_file:latest",
+		},
+	}
+
+	for _, i := range orasImages {
+		err = orasPushNoCheck(i.srcPath, i.uri)
+		if err != nil {
+			t.Fatalf("while prepping registry for oras tests: %v", err)
+		}
+	}
+}
+
+func (c *ctx) testPullCmd(t *testing.T) {
 	// XXX(mem): this should come from the environment
 	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
 	// XXX(mem): we should not be modifying the
@@ -276,18 +314,18 @@ func testPullCmd(t *testing.T) {
 	// this should use a temporary configuration directory
 	// (set via environment variable, maybe?)
 	argv := []string{"key", "pull", sylabsAdminFingerprint}
-	out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
+	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
 	if err != nil {
 		t.Fatalf("Cannot pull key %q: %+v\nCommand:\n%s %s\nOutput:\n%s\n",
 			sylabsAdminFingerprint,
 			err,
-			testenv.CmdPath, strings.Join(argv, " "),
+			c.env.CmdPath, strings.Join(argv, " "),
 			out)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test.")
+			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
 			if err != nil {
 				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
 			}
@@ -338,7 +376,7 @@ func testPullCmd(t *testing.T) {
 				fh.Close()
 			}
 
-			cmd, out, err := imagePull(t, tt.srcURI, tt.library, pullDir, imagePath, tt.force, tt.unauthenticated)
+			cmd, out, err := c.imagePull(t, tt.srcURI, tt.library, pullDir, imagePath, tt.force, tt.unauthenticated)
 			switch {
 			case tt.expectSuccess && err == nil:
 				// MAYBE PASS: expecting success, succeeded
@@ -437,48 +475,13 @@ func orasPushNoCheck(file, ref string) error {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
-	e2e.EnsureImage(t)
-
-	// setup file and dir to use as invalid images
-	orasInvalidDir, err := ioutil.TempDir(testenv.TestDir, "oras_push_dir-")
-	if err != nil {
-		t.Fatalf("unable to create src dir for push tests: %v", err)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
 	}
 
-	orasInvalidFile, err := e2e.WriteTempFile(orasInvalidDir, "oras_invalid_image-", "Invalid Image Contents")
-	if err != nil {
-		t.Fatalf("unable to create src file for push tests: %v", err)
+	return func(t *testing.T) {
+		c.setup(t)
+		t.Run("pull", c.testPullCmd)
 	}
-
-	// prep local registry with oras generated artifacts
-	// Note: the image name prevents collisions by using a package specific name
-	// as the registry is shared between different test packages
-	orasImages := []struct {
-		srcPath string
-		uri     string
-	}{
-		{
-			srcPath: testenv.ImagePath,
-			uri:     "localhost:5000/pull_test_sif:latest",
-		},
-		{
-			srcPath: orasInvalidDir,
-			uri:     "localhost:5000/pull_test_dir:latest",
-		},
-		{
-			srcPath: orasInvalidFile,
-			uri:     "localhost:5000/pull_test_invalid_file:latest",
-		},
-	}
-
-	for _, i := range orasImages {
-		err = orasPushNoCheck(i.srcPath, i.uri)
-		if err != nil {
-			t.Fatalf("while prepping registry for oras tests: %v", err)
-		}
-	}
-
-	t.Run("pull", testPullCmd)
 }
