@@ -11,7 +11,6 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
@@ -34,7 +33,7 @@ var tests = []struct {
 //Test that this version uses the semantic version format
 func testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(testenv.CmdPath, tt.args...)
 			res := cmd.Run(t)
 			if res.Error != nil {
@@ -46,7 +45,7 @@ func testSemanticVersion(t *testing.T) {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
 			}
-		}))
+		})
 	}
 }
 

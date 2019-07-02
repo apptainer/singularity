@@ -54,46 +54,47 @@ type FileConfig struct {
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
 type JSONConfig struct {
-	ScratchDir    []string      `json:"scratchdir,omitempty"`
-	OverlayImage  []string      `json:"overlayImage,omitempty"`
-	BindPath      []string      `json:"bindpath,omitempty"`
-	NetworkArgs   []string      `json:"networkArgs,omitempty"`
-	Security      []string      `json:"security,omitempty"`
-	LibrariesPath []string      `json:"librariesPath,omitempty"`
-	ImageList     []image.Image `json:"imageList,omitempty"`
-	OpenFd        []int         `json:"openFd,omitempty"`
-	TargetGID     []int         `json:"targetGID,omitempty"`
-	Image         string        `json:"image"`
-	Workdir       string        `json:"workdir,omitempty"`
-	CgroupsPath   string        `json:"cgroupsPath,omitempty"`
-	HomeSource    string        `json:"homedir,omitempty"`
-	HomeDest      string        `json:"homeDest,omitempty"`
-	Command       string        `json:"command,omitempty"`
-	Shell         string        `json:"shell,omitempty"`
-	TmpDir        string        `json:"tmpdir,omitempty"`
-	AddCaps       string        `json:"addCaps,omitempty"`
-	DropCaps      string        `json:"dropCaps,omitempty"`
-	Hostname      string        `json:"hostname,omitempty"`
-	Network       string        `json:"network,omitempty"`
-	DNS           string        `json:"dns,omitempty"`
-	Cwd           string        `json:"cwd,omitempty"`
-	TargetUID     int           `json:"targetUID,omitempty"`
-	WritableImage bool          `json:"writableImage,omitempty"`
-	WritableTmpfs bool          `json:"writableTmpfs,omitempty"`
-	Contain       bool          `json:"container,omitempty"`
-	Nv            bool          `json:"nv,omitempty"`
-	CustomHome    bool          `json:"customHome,omitempty"`
-	Instance      bool          `json:"instance,omitempty"`
-	InstanceJoin  bool          `json:"instanceJoin,omitempty"`
-	BootInstance  bool          `json:"bootInstance,omitempty"`
-	RunPrivileged bool          `json:"runPrivileged,omitempty"`
-	AllowSUID     bool          `json:"allowSUID,omitempty"`
-	KeepPrivs     bool          `json:"keepPrivs,omitempty"`
-	NoPrivs       bool          `json:"noPrivs,omitempty"`
-	NoHome        bool          `json:"noHome,omitempty"`
-	NoInit        bool          `json:"noInit,omitempty"`
-	DeleteImage   bool          `json:"deleteImage,omitempty"`
-	Fakeroot      bool          `json:"fakeroot,omitempty"`
+	ScratchDir        []string      `json:"scratchdir,omitempty"`
+	OverlayImage      []string      `json:"overlayImage,omitempty"`
+	BindPath          []string      `json:"bindpath,omitempty"`
+	NetworkArgs       []string      `json:"networkArgs,omitempty"`
+	Security          []string      `json:"security,omitempty"`
+	LibrariesPath     []string      `json:"librariesPath,omitempty"`
+	ImageList         []image.Image `json:"imageList,omitempty"`
+	OpenFd            []int         `json:"openFd,omitempty"`
+	TargetGID         []int         `json:"targetGID,omitempty"`
+	Image             string        `json:"image"`
+	Workdir           string        `json:"workdir,omitempty"`
+	CgroupsPath       string        `json:"cgroupsPath,omitempty"`
+	HomeSource        string        `json:"homedir,omitempty"`
+	HomeDest          string        `json:"homeDest,omitempty"`
+	Command           string        `json:"command,omitempty"`
+	Shell             string        `json:"shell,omitempty"`
+	TmpDir            string        `json:"tmpdir,omitempty"`
+	AddCaps           string        `json:"addCaps,omitempty"`
+	DropCaps          string        `json:"dropCaps,omitempty"`
+	Hostname          string        `json:"hostname,omitempty"`
+	Network           string        `json:"network,omitempty"`
+	DNS               string        `json:"dns,omitempty"`
+	Cwd               string        `json:"cwd,omitempty"`
+	TargetUID         int           `json:"targetUID,omitempty"`
+	WritableImage     bool          `json:"writableImage,omitempty"`
+	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
+	Contain           bool          `json:"container,omitempty"`
+	Nv                bool          `json:"nv,omitempty"`
+	CustomHome        bool          `json:"customHome,omitempty"`
+	Instance          bool          `json:"instance,omitempty"`
+	InstanceJoin      bool          `json:"instanceJoin,omitempty"`
+	BootInstance      bool          `json:"bootInstance,omitempty"`
+	RunPrivileged     bool          `json:"runPrivileged,omitempty"`
+	AllowSUID         bool          `json:"allowSUID,omitempty"`
+	KeepPrivs         bool          `json:"keepPrivs,omitempty"`
+	NoPrivs           bool          `json:"noPrivs,omitempty"`
+	NoHome            bool          `json:"noHome,omitempty"`
+	NoInit            bool          `json:"noInit,omitempty"`
+	DeleteImage       bool          `json:"deleteImage,omitempty"`
+	Fakeroot          bool          `json:"fakeroot,omitempty"`
+	SignalPropagation bool          `json:"signalPropagation,omitempty"`
 }
 
 // NewConfig returns singularity.EngineConfig with a parsed FileConfig
@@ -497,4 +498,18 @@ func (e *EngineConfig) GetDeleteImage() bool {
 // SetDeleteImage sets if container image must be deleted after use
 func (e *EngineConfig) SetDeleteImage(delete bool) {
 	e.JSON.DeleteImage = delete
+}
+
+// SetSignalPropagation sets if engine must propagate signals from
+// master process -> container process when PID namespace is disabled
+// or from master process -> sinit process -> container
+// process when PID namespace is enabled
+func (e *EngineConfig) SetSignalPropagation(propagation bool) {
+	e.JSON.SignalPropagation = propagation
+}
+
+// GetSignalPropagation returns if engine propagate signals across
+// processes (see SetSignalPropagation)
+func (e *EngineConfig) GetSignalPropagation() bool {
+	return e.JSON.SignalPropagation
 }

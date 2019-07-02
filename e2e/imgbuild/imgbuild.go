@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var testFileContent = "Test file content\n"
@@ -47,7 +46,7 @@ func buildFrom(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 			if tt.dependency != "" {
 				if _, err := exec.LookPath(tt.dependency); err != nil {
 					t.Skipf("%v not found in path", tt.dependency)
@@ -122,13 +121,13 @@ func buildLocalImage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 			for _, ts := range tt.steps {
 				defer os.RemoveAll(ts.imagePath)
 			}
 
 			for _, ts := range tt.steps {
-				t.Run(ts.name, test.WithPrivilege(func(t *testing.T) {
+				t.Run(ts.name, e2e.Privileged(func(t *testing.T) {
 					opts := e2e.BuildOpts{
 						Force:   ts.force,
 						Sandbox: ts.sandbox,
@@ -146,15 +145,15 @@ func buildLocalImage(t *testing.T) {
 }
 
 func badPath(t *testing.T) {
-	test.EnsurePrivilege(t)
+	e2e.Privileged(func(t *testing.T) {
+		imagePath := path.Join(testenv.TestDir, "container")
+		defer os.RemoveAll(imagePath)
 
-	imagePath := path.Join(testenv.TestDir, "container")
-	defer os.RemoveAll(imagePath)
-
-	if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
-		t.Log(string(b))
-		t.Fatal("unexpected success")
-	}
+		if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
+			t.Log(string(b))
+			t.Fatal("unexpected success")
+		}
+	})(t)
 }
 
 func buildMultiStageDefinition(t *testing.T) {
@@ -332,7 +331,7 @@ func buildMultiStageDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 
 			defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
 			defer os.Remove(defFile)
@@ -624,7 +623,7 @@ func buildDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 
 			defFile := e2e.PrepareDefFile(tt.dfd)
 			defer os.Remove(defFile)

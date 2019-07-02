@@ -50,11 +50,11 @@ func remoteAdd(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testFail := []struct {
@@ -69,11 +69,11 @@ func remoteAdd(t *testing.T) {
 	for _, tt := range testFail {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
-		}))
+		})
 	}
 }
 
@@ -104,11 +104,11 @@ func remoteRemove(t *testing.T) {
 	for _, tt := range add {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testPass := []struct {
@@ -122,11 +122,11 @@ func remoteRemove(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "remove"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testFail := []struct {
@@ -139,11 +139,11 @@ func remoteRemove(t *testing.T) {
 	for _, tt := range testFail {
 		argv := []string{"remote", "--config", config.Name(), "remove"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
-		}))
+		})
 	}
 }
 
@@ -170,11 +170,11 @@ func remoteUse(t *testing.T) {
 	for _, tt := range testFail {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	// Prep config by adding multiple remotes
@@ -190,11 +190,11 @@ func remoteUse(t *testing.T) {
 	for _, tt := range add {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testPass := []struct {
@@ -208,11 +208,11 @@ func remoteUse(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 }
 
@@ -243,11 +243,11 @@ func remoteStatus(t *testing.T) {
 	for _, tt := range add {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testPass := []struct {
@@ -260,11 +260,11 @@ func remoteStatus(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "status"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testFail := []struct {
@@ -278,11 +278,11 @@ func remoteStatus(t *testing.T) {
 	for _, tt := range testFail {
 		argv := []string{"remote", "--config", config.Name(), "status"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
-		}))
+		})
 	}
 }
 
@@ -305,12 +305,12 @@ func remoteList(t *testing.T) {
 
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			fmt.Println("config.name is ", config.Name())
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	// Prep config by adding multiple remotes
@@ -326,11 +326,11 @@ func remoteList(t *testing.T) {
 	for _, tt := range add {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testPass = []struct {
@@ -341,11 +341,11 @@ func remoteList(t *testing.T) {
 
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	// Prep config by selecting a remote to default to
@@ -359,11 +359,11 @@ func remoteList(t *testing.T) {
 	for _, tt := range use {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 
 	testPass = []struct {
@@ -374,11 +374,11 @@ func remoteList(t *testing.T) {
 
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
-		}))
+		})
 	}
 }
 

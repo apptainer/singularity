@@ -317,8 +317,18 @@ func (engine *EngineOperations) StartProcess(masterConn net.Conn) error {
 				}
 			default:
 				signal := s.(syscall.Signal)
+				// EPERM and EINVAL are deliberately ignored because they can't be
+				// returned in this context, this process is PID 1, so it has the
+				// permissions to send signals to its childs and EINVAL would
+				// mean to update the Go runtime or the kernel to something more
+				// stable :)
 				if isInstance {
 					if err := syscall.Kill(-cmd.Process.Pid, signal); err == syscall.ESRCH {
+						sylog.Debugf("No child process, exiting ...")
+						os.Exit(128 + int(signal))
+					}
+				} else if engine.EngineConfig.GetSignalPropagation() {
+					if err := syscall.Kill(cmd.Process.Pid, signal); err == syscall.ESRCH {
 						sylog.Debugf("No child process, exiting ...")
 						os.Exit(128 + int(signal))
 					}
@@ -372,11 +382,6 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		file.Config, err = json.Marshal(engine.CommonConfig)
-		if err != nil {
-			return err
-		}
-
 		pw, err := user.GetPwUID(uint32(uid))
 		if err != nil {
 			return err
@@ -386,6 +391,11 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 		file.PPid = os.Getpid()
 		file.Image = engine.EngineConfig.GetImage()
 
+		// by default we add all namespaces except the user namespace which
+		// is added conditionally. This delegates checks to the C starter code
+		// which will determine if a namespace needs to be joined by
+		// comparing namespace inodes
+		path := fmt.Sprintf("/proc/%d/ns", pid)
 		namespaces := []struct {
 			nstype string
 			ns     specs.LinuxNamespaceType
@@ -397,12 +407,6 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			{"cgroup", specs.CgroupNamespace},
 			{"net", specs.NetworkNamespace},
 		}
-
-		// by default we add all namespaces except user namespace which
-		// is added conditionally. This delegates checks to C starter code
-		// which will determine if a namespace need to be joined by
-		// comparing namespace inodes
-		path := fmt.Sprintf("/proc/%d/ns", pid)
 		for _, n := range namespaces {
 			nspath := filepath.Join(path, n.nstype)
 			engine.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(string(n.ns), nspath)
@@ -414,6 +418,12 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 				file.UserNs = true
 				break
 			}
+		}
+
+		// grab configuration to store in instance file
+		file.Config, err = json.Marshal(engine.CommonConfig)
+		if err != nil {
+			return err
 		}
 
 		return file.Update()
