@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,8 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -275,14 +277,83 @@ func TestGetenv(t *testing.T) {
 	}
 }
 
+const testStr = "test message"
+
+type fnOut func(format string, a ...interface{})
+
+func runTestLogFn(t *testing.T, errFd *os.File, fn fnOut) {
+
+	if errFd != nil {
+		fn("%s", testStr)
+		return
+	}
+
+	SetLevel(int(debug))
+
+	rescueStderr := os.Stderr
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("failed to create pipe: %s", err)
+	}
+	os.Stderr = w
+
+	fn("%s\n", testStr)
+
+	w.Close() // This will enable the read operation
+	out, err := ioutil.ReadAll(r)
+	if err != nil {
+		t.Fatalf("failed to read from pipe: %s", err)
+	}
+	os.Stderr = rescueStderr
+
+	// We check the formatting of the output we caught
+	regExpClass := regexp.MustCompile(`^(.*) \[U=`)
+	classResult := regExpClass.FindStringSubmatch(string(out))
+	if len(classResult) < 2 {
+		t.Fatalf("unexpected format: %s", string(out))
+	}
+	class := classResult[1]
+	class = strings.Trim(class, " \t")
+	if class != "WARNING" && class != "INFO" && class != "\x1b[0mDEBUG" && class != "\x1b[0mVERBOSE" {
+		t.Fatalf("failed to recognize the type of message: %s.", class)
+	}
+
+	regExpMsg := regexp.MustCompile(`runTestLogFn\(\)(.*)\n`)
+	msgResult := regExpMsg.FindStringSubmatch(string(out))
+	if len(msgResult) < 2 {
+		t.Fatalf("unexpected format: %s", string(out))
+	}
+	msg := msgResult[1]
+	if msg[len(msg)-len(testStr):] != testStr {
+		t.Fatalf("invalid test message: %s vs. %s", msg[len(msg)-len(testStr):], testStr)
+	}
+}
+
 func TestStderrOutput(t *testing.T) {
-	// We just call a few funtions that output to stderr, not much we can test
-	// except make sure that whatever potential modification to the code does
-	// not make the code crash
-	str := "test message"
-	Errorf("%s", str)
-	Warningf("%s", str)
-	Infof("%s", str)
-	Verbosef("%s", str)
-	Debugf("%s", str)
+
+	tests := []struct {
+		name string
+		out  *os.File
+	}{
+		{
+			// We just call a few funtions that output to stderr, not much we can test
+			// except make sure that whatever potential modification to the code does
+			// not make the code crash
+			name: "default Stderr",
+			out:  os.Stderr,
+		},
+		{
+			name: "pipe",
+			out:  nil, // Since nil, the code will create a pipe for that case so we can catch what is written to stderr
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			runTestLogFn(t, tt.out, Warningf)
+			runTestLogFn(t, tt.out, Infof)
+			runTestLogFn(t, tt.out, Verbosef)
+			runTestLogFn(t, tt.out, Debugf)
+		})
+	}
 }
