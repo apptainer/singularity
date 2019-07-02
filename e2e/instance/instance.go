@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 type testingEnv struct {
@@ -263,9 +262,9 @@ func legacyInstanceTests(t *testing.T) {
 	for _, tt := range tests {
 		var wrappedFn func(*testing.T)
 		if tt.privileged {
-			wrappedFn = test.WithPrivilege(tt.function)
+			wrappedFn = e2e.Privileged(tt.function)
 		} else {
-			wrappedFn = test.WithoutPrivilege(tt.function)
+			wrappedFn = tt.function
 		}
 		t.Run(tt.name, wrappedFn)
 	}

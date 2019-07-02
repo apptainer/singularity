@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 type testingEnv struct {
@@ -58,7 +57,7 @@ func singularityEnv(t *testing.T) {
 	}
 
 	for _, currentTest := range singularityEnvTests {
-		t.Run(currentTest.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(currentTest.name, func(t *testing.T) {
 			args := []string{"exec", currentTest.image, "env"}
 
 			cmd := exec.Command(testenv.CmdPath, args...)
@@ -78,7 +77,7 @@ func singularityEnv(t *testing.T) {
 			if !strings.Contains(out, currentTest.path) {
 				t.Fatalf("Command output did not contain the path '%s'", currentTest.path)
 			}
-		}))
+		})
 	}
 }
 

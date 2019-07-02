@@ -17,6 +17,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"golang.org/x/sys/unix"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -748,7 +749,34 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
 
+	// determine if engine need to propagate signals across processes
+	e.checkSignalPropagation()
+
 	return nil
+}
+
+func (e *EngineOperations) checkSignalPropagation() {
+	// obtain the process group ID of the associated controlling
+	// terminal (if there's one).
+	pgrp := 0
+	for i := 0; i <= 2; i++ {
+		// The two possible errors:
+		// - EBADF will return 0 as process group
+		// - ENOTTY will also return 0 as process group
+		pgrp, _ = unix.IoctlGetInt(i, unix.TIOCGPGRP)
+		// based on kernel source a 0 value for process group
+		// theorically be set but really not sure it can happen
+		// with linux tty behavior
+		if pgrp != 0 {
+			break
+		}
+	}
+	// cases we need to propagate signals to container process:
+	// - when pgrp == 0 because container won't run in a terminal
+	// - when process group is different from the process group controlling terminal
+	if pgrp == 0 || (pgrp > 0 && pgrp != syscall.Getpgrp()) {
+		e.EngineConfig.SetSignalPropagation(true)
+	}
 }
 
 func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
