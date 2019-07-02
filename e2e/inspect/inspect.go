@@ -13,23 +13,20 @@ import (
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
+type ctx struct {
+	env e2e.TestEnv
 }
-
-var testenv testingEnv
 
 const containerTesterSIF = "testdata/inspecter_container.sif"
 
-func runInspectCommand(inspectType string) ([]byte, error) {
+func (c *ctx) runInspectCommand(inspectType string) ([]byte, error) {
 	argv := []string{"inspect", "--json", inspectType, containerTesterSIF}
-	cmd := exec.Command(testenv.CmdPath, argv...)
+	cmd := exec.Command(c.env.CmdPath, argv...)
 
 	return cmd.CombinedOutput()
 }
 
-func singularityInspect(t *testing.T) {
+func (c *ctx) singularityInspect(t *testing.T) {
 	tests := []struct {
 		name      string
 		insType   string   // insType the type of 'inspect' flag, eg. '--deffile'
@@ -119,7 +116,7 @@ func singularityInspect(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Inspect the container, and get the output
-			out, err := runInspectCommand(tt.insType)
+			out, err := c.runInspectCommand(tt.insType)
 			if err != nil {
 				t.Fatalf("unexpected failure: %s: %s", string(out), err)
 			}
@@ -140,8 +137,12 @@ func singularityInspect(t *testing.T) {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
+	}
 
-	t.Run("singularityInspect", singularityInspect)
+	return func(t *testing.T) {
+		t.Run("singularityInspect", c.singularityInspect)
+	}
 }

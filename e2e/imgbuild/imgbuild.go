@@ -18,15 +18,11 @@ import (
 
 var testFileContent = "Test file content\n"
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
-	TestDir string `split_words:"true"`
+type imgBuildTests struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
-
-func buildFrom(t *testing.T) {
+func (c *imgBuildTests) buildFrom(t *testing.T) {
 	tests := []struct {
 		name       string
 		dependency string
@@ -57,22 +53,22 @@ func buildFrom(t *testing.T) {
 				Sandbox: tt.sandbox,
 			}
 
-			imagePath := path.Join(testenv.TestDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
-			e2e.ImageVerify(t, testenv.CmdPath, imagePath)
+			e2e.ImageVerify(t, c.env.CmdPath, imagePath)
 		}))
 	}
 }
 
-func buildLocalImage(t *testing.T) {
-	imagePath1 := path.Join(testenv.TestDir, "container1")
-	imagePath2 := path.Join(testenv.TestDir, "container2")
-	imagePath3 := path.Join(testenv.TestDir, "container3")
+func (c *imgBuildTests) buildLocalImage(t *testing.T) {
+	imagePath1 := path.Join(c.env.TestDir, "container1")
+	imagePath2 := path.Join(c.env.TestDir, "container2")
+	imagePath3 := path.Join(c.env.TestDir, "container3")
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
@@ -133,31 +129,31 @@ func buildLocalImage(t *testing.T) {
 						Sandbox: ts.sandbox,
 					}
 
-					if b, err := e2e.ImageBuild(testenv.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
+					if b, err := e2e.ImageBuild(c.env.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
 						t.Log(string(b))
 						t.Fatalf("unexpected failure: %v", err)
 					}
-					e2e.ImageVerify(t, testenv.CmdPath, ts.imagePath)
+					e2e.ImageVerify(t, c.env.CmdPath, ts.imagePath)
 				}))
 			}
 		}))
 	}
 }
 
-func badPath(t *testing.T) {
+func (c *imgBuildTests) badPath(t *testing.T) {
 	e2e.Privileged(func(t *testing.T) {
-		imagePath := path.Join(testenv.TestDir, "container")
+		imagePath := path.Join(c.env.TestDir, "container")
 		defer os.RemoveAll(imagePath)
 
-		if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
+		if b, err := e2e.ImageBuild(c.env.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
 			t.Log(string(b))
 			t.Fatal("unexpected success")
 		}
 	})(t)
 }
 
-func buildMultiStageDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
+func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
+	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -340,22 +336,22 @@ func buildMultiStageDefinition(t *testing.T) {
 				Sandbox: tt.sandbox,
 			}
 
-			imagePath := path.Join(testenv.TestDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, defFile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
 
-			e2e.DefinitionImageVerify(t, testenv.CmdPath, imagePath, tt.correct)
+			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
 		}))
 	}
 
 }
 
-func buildDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
+func (c *imgBuildTests) buildDefinition(t *testing.T) {
+	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -443,14 +439,14 @@ func buildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Pre: []string{
-				filepath.Join(testenv.TestDir, "PreFile1"),
+				filepath.Join(c.env.TestDir, "PreFile1"),
 			},
 		}},
 		{"Setup", false, true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Setup: []string{
-				filepath.Join(testenv.TestDir, "SetupFile1"),
+				filepath.Join(c.env.TestDir, "SetupFile1"),
 			},
 		}},
 		{"Post", false, true, e2e.DefFileDetails{
@@ -632,32 +628,34 @@ func buildDefinition(t *testing.T) {
 				Sandbox: tt.sandbox,
 			}
 
-			imagePath := path.Join(testenv.TestDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, defFile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
-			e2e.DefinitionImageVerify(t, testenv.CmdPath, imagePath, tt.dfd)
+			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.dfd)
 		}))
 	}
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &imgBuildTests{
+		env: env,
+	}
 
-	t.Log(testenv)
-
-	// builds from definition file and URI
-	t.Run("From", buildFrom)
-	// build and image from an existing image
-	t.Run("FromLocalImage", buildLocalImage)
-	// try to build from a non existen path
-	t.Run("badPath", badPath)
-	// builds from definition template
-	t.Run("Definition", buildDefinition)
-	// multistage build from definition templates
-	t.Run("MultiStage", buildMultiStageDefinition)
+	return func(t *testing.T) {
+		// builds from definition file and URI
+		t.Run("From", c.buildFrom)
+		// build and image from an existing image
+		t.Run("FromLocalImage", c.buildLocalImage)
+		// try to build from a non existen path
+		t.Run("badPath", c.badPath)
+		// builds from definition template
+		t.Run("Definition", c.buildDefinition)
+		// multistage build from definition templates
+		t.Run("MultiStage", c.buildMultiStageDefinition)
+	}
 }
