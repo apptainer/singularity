@@ -12,14 +12,19 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+// TODO: actually we can't really test Master function which is
+// part of the main function, as it exits, it would require mock at
+// some point and that would make code more complex than necessary.
+// createContainer and startContainer are quickly tested and only
+// cover case with bad socket file descriptors or non socket file
+// file descriptor (stderr).
+
 func TestCreateContainer(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
 	var fatal error
 	fatalChan := make(chan error, 1)
-
-	var fakeEngine engine.Engine
 
 	tests := []struct {
 		name         string
@@ -29,24 +34,17 @@ func TestCreateContainer(t *testing.T) {
 		shallPass    bool
 	}{
 		{
-			name:         "invalid case",
+			name:         "nil engine; bad rpcSocket",
 			rpcSocket:    -1,
 			containerPid: -1,
 			engine:       nil,
 			shallPass:    false,
 		},
 		{
-			name:         "fake engine struct",
-			rpcSocket:    -1,
+			name:         "nil engine; wrong socket",
+			rpcSocket:    2,
 			containerPid: -1,
-			engine:       &fakeEngine,
-			shallPass:    false,
-		},
-		{
-			name:         "fake engine; fake rpcSocket",
-			rpcSocket:    42000,
-			containerPid: -1,
-			engine:       &fakeEngine,
+			engine:       nil,
 			shallPass:    false,
 		},
 	}
@@ -57,10 +55,12 @@ func TestCreateContainer(t *testing.T) {
 			fatal = <-fatalChan
 			if tt.shallPass && fatal != nil {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, fatal)
-			}
-
-			if !tt.shallPass && fatal == nil {
+			} else if !tt.shallPass && fatal == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
+			} else if tt.shallPass && fatal == nil {
+				// test succeed
+			} else if !tt.shallPass && fatal != nil {
+				// test succeed
 			}
 		})
 	}
@@ -73,8 +73,6 @@ func TestStartContainer(t *testing.T) {
 	var fatal error
 	fatalChan := make(chan error, 1)
 
-	var fakeEngine engine.Engine
-
 	tests := []struct {
 		name         string
 		masterSocket int
@@ -83,24 +81,17 @@ func TestStartContainer(t *testing.T) {
 		shallPass    bool
 	}{
 		{
-			name:         "invalid case",
+			name:         "nil engine; bad masterSocket",
 			masterSocket: -1,
 			containerPid: -1,
 			engine:       nil,
 			shallPass:    false,
 		},
 		{
-			name:         "fake engine",
-			masterSocket: -1,
+			name:         "nil engine; wrong socket",
+			masterSocket: 2,
 			containerPid: -1,
-			engine:       &fakeEngine,
-			shallPass:    false,
-		},
-		{
-			name:         "fake engine; fake masterSocket",
-			masterSocket: 42000,
-			containerPid: -1,
-			engine:       &fakeEngine,
+			engine:       nil,
 			shallPass:    false,
 		},
 	}
@@ -111,50 +102,13 @@ func TestStartContainer(t *testing.T) {
 			fatal = <-fatalChan
 			if tt.shallPass && fatal != nil {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, fatal)
-			}
-
-			if !tt.shallPass && fatal == nil {
+			} else if !tt.shallPass && fatal == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
+			} else if tt.shallPass && fatal == nil {
+				// test succeed
+			} else if !tt.shallPass && fatal != nil {
+				// test succeed
 			}
-		})
-	}
-}
-
-func TestMaster(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
-	var fakeEngine engine.Engine
-
-	tests := []struct {
-		name         string
-		rpcSocket    int
-		masterSocket int
-		pid          int
-		engine       *engine.Engine
-		shallPass    bool
-	}{
-		{
-			name:         "invalid case",
-			rpcSocket:    -1,
-			masterSocket: -1,
-			pid:          -1,
-			engine:       nil,
-			shallPass:    false,
-		},
-		{
-			name:         "fake engine",
-			rpcSocket:    -1,
-			masterSocket: -1,
-			pid:          -1,
-			engine:       &fakeEngine,
-			shallPass:    false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			Master(tt.rpcSocket, tt.masterSocket, tt.pid, tt.engine)
 		})
 	}
 }
