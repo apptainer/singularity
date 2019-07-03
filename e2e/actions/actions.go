@@ -24,6 +24,8 @@ type actionTests struct {
 
 // run tests min fuctionality for singularity run
 func (c *actionTests) actionRun(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	tests := []struct {
 		name string
 		argv []string
@@ -69,6 +71,8 @@ func (c *actionTests) actionRun(t *testing.T) {
 
 // exec tests min fuctionality for singularity exec
 func (c *actionTests) actionExec(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
@@ -236,6 +240,8 @@ func (c *actionTests) actionExec(t *testing.T) {
 
 // Shell interaction tests
 func (c *actionTests) actionShell(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		t.Fatalf("could not get hostname: %s", err)
@@ -298,6 +304,8 @@ func (c *actionTests) actionShell(t *testing.T) {
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
 func (c *actionTests) STDPipe(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	stdinTests := []struct {
 		name    string
 		command string
@@ -617,6 +625,8 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 
 // PersistentOverlay test the --overlay function
 func (c *actionTests) PersistentOverlay(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const squashfsImage = "squashfs.simg"
 
 	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {

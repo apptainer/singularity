@@ -114,8 +114,9 @@ func Run(t *testing.T) {
 	testenv.ImagePath = imagePath
 	defer os.Remove(imagePath)
 
-	// build test image
-	singularitye2e.EnsureImage(t, testenv)
+	// XXX(mem): Please DO NOT add a call to e2e.EnsureImage here.
+	// If you need the test image, add the call at the top of your
+	// own test.
 
 	// Start registry for tests
 	singularitye2e.PrepRegistry(t, name, testenv.ImagePath)

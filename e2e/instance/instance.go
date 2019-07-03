@@ -62,6 +62,8 @@ func (c *ctx) testNoInstances(t *testing.T) {
 // Test that a basic echo server instance can be started, communicated with,
 // and stopped.
 func (c *ctx) testBasicEchoServer(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const instanceName = "echo1"
 	// Start the instance.
 	_, _, err := c.startInstance(startOpts{}, c.env.ImagePath, instanceName, strconv.Itoa(instanceStartPort))
@@ -79,6 +81,8 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 
 // Test creating many instances, but don't stop them.
 func (c *ctx) testCreateManyInstances(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const n = 10
 	// Start n instances.
 	for i := 0; i < n; i++ {
@@ -109,6 +113,8 @@ func (c *ctx) testStopAll(t *testing.T) {
 // Test basic options like mounting a custom home directory, changing the
 // hostname, etc.
 func (c *ctx) testBasicOptions(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const fileName = "hello"
 	const instanceName = "testbasic"
 	const testHostname = "echoserver99"
@@ -161,6 +167,8 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 
 // Test that contain works.
 func (c *ctx) testContain(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const instanceName = "testcontain"
 	const fileName = "thegreattestfile"
 	// Create a temporary directory to serve as a contain directory.
