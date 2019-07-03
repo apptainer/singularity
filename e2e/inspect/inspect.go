@@ -11,7 +11,6 @@ import (
 
 	"github.com/buger/jsonparser"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 type testingEnv struct {
@@ -118,7 +117,7 @@ func singularityInspect(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			// Inspect the container, and get the output
 			out, err := runInspectCommand(tt.insType)
 			if err != nil {
@@ -135,7 +134,7 @@ func singularityInspect(t *testing.T) {
 				t.Fatalf("unexpected failure: got: %s, expecting: %s", v, tt.expectOut)
 			}
 
-		}))
+		})
 	}
 
 }
