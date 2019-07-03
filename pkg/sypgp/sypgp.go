@@ -59,6 +59,8 @@ func (e *KeyExistsError) Error() string {
 // Note that we could imagine a simpler code but we want to make sure that the
 // code works properly in the normal case with the default Stdin and when
 // redirecting stdin (for testing or when using pipes).
+//
+// TODO: use a io.ReadSeeker instead of a *os.File
 func askQuestionUsingGenericDescr(f *os.File) (string, error) {
 	// Get the initial position in the buffer so we can later seek the correct
 	// position based on how much data we read. Doing so, we can still benefit
