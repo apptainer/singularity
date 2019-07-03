@@ -14,40 +14,72 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 // ImageVerify checks for an image integrity
 func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 	type testSpec struct {
-		name          string
-		execArgs      []string
-		expectSuccess bool
+		name string
+		argv []string
+		exit int
 	}
 	tests := []testSpec{
-		{"False", []string{"false"}, false},
-		{"RunScript", []string{"test", "-f", "/.singularity.d/runscript"}, true},
-		{"OneBase", []string{"test", "-f", "/.singularity.d/env/01-base.sh"}, true},
-		{"ActionsShell", []string{"test", "-f", "/.singularity.d/actions/shell"}, true},
-		{"ActionsExec", []string{"test", "-f", "/.singularity.d/actions/exec"}, true},
-		{"ActionsRun", []string{"test", "-f", "/.singularity.d/actions/run"}, true},
-		{"Environment", []string{"test", "-L", "/environment"}, true},
-		{"Singularity", []string{"test", "-L", "/singularity"}, true},
-		{"Labels", []string{"test", "-f", "/.singularity.d/labels.json"}, true},
+		{
+			name: "False",
+			argv: []string{imagePath, "false"},
+			exit: 1,
+		},
+		{
+			name: "RunScript",
+			argv: []string{imagePath, "test", "-f", "/.singularity.d/runscript"},
+			exit: 0,
+		},
+		{
+			name: "OneBase",
+			argv: []string{imagePath, "test", "-f", "/.singularity.d/env/01-base.sh"},
+			exit: 0,
+		},
+		{
+			name: "ActionsShell",
+			argv: []string{imagePath, "test", "-f", "/.singularity.d/actions/shell"},
+			exit: 0,
+		},
+		{
+			name: "ActionsExec",
+			argv: []string{imagePath, "test", "-f", "/.singularity.d/actions/exec"},
+			exit: 0,
+		},
+		{
+			name: "ActionsRun",
+			argv: []string{imagePath, "test", "-f", "/.singularity.d/actions/run"},
+			exit: 0,
+		},
+		{
+			name: "Environment",
+			argv: []string{imagePath, "test", "-L", "/environment"},
+			exit: 0,
+		},
+		{
+			name: "Singularity",
+			argv: []string{imagePath, "test", "-L", "/singularity"},
+			exit: 0,
+		},
+		{
+			name: "Labels",
+			argv: []string{imagePath, "test", "-f", "/.singularity.d/labels.json"},
+			exit: 0,
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := ImageExec(t, cmdPath, "exec", ExecOpts{}, imagePath, tt.execArgs)
-			if tt.expectSuccess && (exitCode != 0) {
-				t.Log(stderr)
-				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.execArgs, " "), err)
-			} else if !tt.expectSuccess && (exitCode != 1) {
-				t.Log(stderr)
-				t.Fatalf("unexpected success running '%v'", strings.Join(tt.execArgs, " "))
-			}
-		}))
+		RunSingularity(
+			t,
+			tt.name,
+			WithCommand("exec"),
+			WithArgs(tt.argv...),
+			ExpectExit(tt.exit),
+		)
 	}
 }
 

@@ -109,6 +109,7 @@ type singularityCmd struct {
 	envs       []string
 	dir        string
 	privileged bool
+	subTest    bool
 	stdin      io.Reader
 	preFn      func(*testing.T)
 	postFn     func(*testing.T)
@@ -161,8 +162,6 @@ func WithDir(dir string) SingularityCmdOp {
 // are also executed with privileges.
 func WithPrivileges(privileged bool) SingularityCmdOp {
 	return func(s *singularityCmd) {
-		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirPriv)
-		s.envs = append(s.envs, cacheDirEnv)
 		s.privileged = privileged
 	}
 }
@@ -172,6 +171,14 @@ func WithPrivileges(privileged bool) SingularityCmdOp {
 func WithStdin(r io.Reader) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.stdin = r
+	}
+}
+
+// WithoutSubTest marks singularity command as not being
+// part of a subtest. May be useful for e2e helpers.
+func WithoutSubTest() SingularityCmdOp {
+	return func(s *singularityCmd) {
+		s.subTest = false
 	}
 }
 
@@ -266,7 +273,13 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 // RunSingularity executes a singularity command within an test execution
 // context.
 func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
+	if name == "" {
+		t.Errorf("you must provide a test name")
+		return
+	}
+
 	s := new(singularityCmd)
+	s.subTest = true
 
 	for _, op := range cmdOps {
 		op(s)
@@ -288,7 +301,16 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 		s.t = t
 
 		cmd := exec.Command("singularity", s.args...)
+
 		cmd.Env = s.envs
+		if len(cmd.Env) == 0 {
+			cmd.Env = os.Environ()
+		}
+		if s.privileged {
+			cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirPriv)
+			cmd.Env = append(cmd.Env, cacheDirEnv)
+		}
+
 		cmd.Dir = s.dir
 		cmd.Stdin = s.stdin
 		cmd.Stdout = &stdout
@@ -353,5 +375,9 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 	if s.privileged {
 		fn = Privileged(fn)
 	}
-	t.Run(name, fn)
+	if s.subTest {
+		t.Run(name, fn)
+	} else {
+		fn(t)
+	}
 }
