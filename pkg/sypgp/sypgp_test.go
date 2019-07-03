@@ -722,6 +722,17 @@ func TestGenKeyPair(t *testing.T) {
 		},
 	}
 
+	// Create a temporary directory to store the keyring
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory")
+	}
+	// TODO: setting the environment variable is not thread-safe.
+	err = os.Setenv("SINGULARITY_SYPGPDIR", dir)
+	if err != nil {
+		t.Fatalf("failed to set SINGULARITY_SYPGPDIR environment variable: %s", err)
+	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup the input file that will act as stdin
