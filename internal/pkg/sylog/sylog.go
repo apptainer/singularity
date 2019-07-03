@@ -109,7 +109,7 @@ func prefix(level messageLevel) string {
 	return fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, level, colorReset, uidStr, funcName)
 }
 
-func writef(level messageLevel, format string, a ...interface{}) {
+func writef(w io.Writer, level messageLevel, format string, a ...interface{}) {
 	if loggerLevel < level {
 		return
 	}
@@ -117,42 +117,42 @@ func writef(level messageLevel, format string, a ...interface{}) {
 	message := fmt.Sprintf(format, a...)
 	message = strings.TrimSuffix(message, "\n")
 
-	fmt.Fprintf(os.Stderr, "%s%s\n", prefix(level), message)
+	fmt.Fprintf(w, "%s%s\n", prefix(level), message)
 }
 
 // Fatalf is equivalent to a call to Errorf followed by os.Exit(255). Code that
 // may be imported by other projects should NOT use Fatalf.
 func Fatalf(format string, a ...interface{}) {
-	writef(fatal, format, a...)
+	writef(os.Stderr, fatal, format, a...)
 	os.Exit(255)
 }
 
 // Errorf writes an ERROR level message to the log but does not exit. This
 // should be called when an error is being returned to the calling thread
 func Errorf(format string, a ...interface{}) {
-	writef(error, format, a...)
+	writef(os.Stderr, error, format, a...)
 }
 
 // Warningf writes a WARNING level message to the log.
 func Warningf(format string, a ...interface{}) {
-	writef(warn, format, a...)
+	writef(os.Stderr, warn, format, a...)
 }
 
 // Infof writes an INFO level message to the log. By default, INFO level messages
 // will always be output (unless running in silent)
 func Infof(format string, a ...interface{}) {
-	writef(info, format, a...)
+	writef(os.Stderr, info, format, a...)
 }
 
 // Verbosef writes a VERBOSE level message to the log. This should probably be
 // deprecated since the granularity is often too fine to be useful.
 func Verbosef(format string, a ...interface{}) {
-	writef(verbose, format, a...)
+	writef(os.Stderr, verbose, format, a...)
 }
 
 // Debugf writes a DEBUG level message to the log.
 func Debugf(format string, a ...interface{}) {
-	writef(debug, format, a...)
+	writef(os.Stderr, debug, format, a...)
 }
 
 // SetLevel explicitly sets the loggerLevel
