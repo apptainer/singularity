@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package copy
+package files
 
 import (
 	"io/ioutil"
@@ -14,12 +14,98 @@ import (
 
 var sourceFileContent = "Source File Content\n"
 
+func TestMakeParentDir(t *testing.T) {
+	tests := []struct {
+		name   string
+		srcNum int
+		path   string
+		parent bool // this specifies if the correct path should have the full path created or just the parent
+	}{
+		{
+			name:   "basic",
+			srcNum: 1,
+			path:   "basic/path",
+			parent: true,
+		},
+		{
+			name:   "trailing slash",
+			srcNum: 1,
+			path:   "trailing/slash/",
+			parent: false,
+		},
+		{
+			name:   "multiple",
+			srcNum: 2,
+			path:   "multiple/files",
+			parent: false,
+		},
+		{
+			name:   "multiple trailing slash",
+			srcNum: 2,
+			path:   "multiple/trailing/slash/",
+			parent: false,
+		},
+		{
+			name:   "exists",
+			srcNum: 1,
+			path:   "", // this will create a path of just the testdir, which will always exist
+			parent: false,
+		},
+		{
+			name:   "exists mutliple",
+			srcNum: 2,
+			path:   "", // this will create a path of just the testdir, which will always exist
+			parent: false,
+		},
+	}
+
+	// while running tetss, make sure to remove everything past the tmp dir created so tests to accidentially collide
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// create tmpdir for each test
+			dir, err := ioutil.TempDir("", "parent-dir-test-")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer os.RemoveAll(dir)
+
+			// concatenate test path with directory, do not use a join function so that we do not remove a trailing slash
+			path := dir + tt.path
+			if err := makeParentDir(path, tt.srcNum); err != nil {
+				t.Errorf("")
+			}
+
+			clean := filepath.Clean(path)
+			if tt.parent {
+				// full path should not exist
+				_, err := os.Stat(clean)
+				if !os.IsNotExist(err) {
+					t.Errorf("full path created when only parent should have been made")
+				}
+
+				// parent should exist
+				_, err = os.Stat(filepath.Dir(clean))
+				if os.IsNotExist(err) {
+					t.Errorf("parent not created when it should have been made")
+				}
+			} else {
+				// full path should exist
+				_, err := os.Stat(clean)
+				if os.IsNotExist(err) {
+					t.Errorf("full path not created when it should have been made")
+				}
+			}
+		})
+	}
+}
+
 func TestCopyFile(t *testing.T) {
 	// create tmpdir
 	dir, err := ioutil.TempDir("", "copy-test-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer os.RemoveAll(dir)
 
 	// prep src file to copy
 	srcFile := filepath.Join(dir, "sourceFile")

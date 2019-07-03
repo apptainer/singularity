@@ -23,7 +23,6 @@ import (
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 )
 
@@ -208,6 +207,21 @@ var tests = []struct {
 		force:         true,
 		expectSuccess: false,
 	},
+
+	// pulling with library URI argument
+	{
+		desc:          "bad library URI",
+		srcURI:        "library://busybox",
+		library:       "https://bad-library.sylabs.io",
+		expectSuccess: false,
+	},
+	{
+		desc:          "default library URI",
+		srcURI:        "library://busybox",
+		library:       "https://library.sylabs.io",
+		force:         true,
+		expectSuccess: true,
+	},
 }
 
 func imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, unauthenticated bool) (string, []byte, error) {
@@ -255,26 +269,24 @@ func getImageNameFromURI(imgURI string) string {
 }
 
 func testPullCmd(t *testing.T) {
-	test.WithoutPrivilege(func(t *testing.T) {
-		// XXX(mem): this should come from the environment
-		sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
-		// XXX(mem): we should not be modifying the
-		// configuration of the user that is running the test,
-		// this should use a temporary configuration directory
-		// (set via environment variable, maybe?)
-		argv := []string{"key", "pull", sylabsAdminFingerprint}
-		out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
-		if err != nil {
-			t.Fatalf("Cannot pull key %q: %+v\nCommand:\n%s %s\nOutput:\n%s\n",
-				sylabsAdminFingerprint,
-				err,
-				testenv.CmdPath, strings.Join(argv, " "),
-				out)
-		}
-	})(t)
+	// XXX(mem): this should come from the environment
+	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
+	// XXX(mem): we should not be modifying the
+	// configuration of the user that is running the test,
+	// this should use a temporary configuration directory
+	// (set via environment variable, maybe?)
+	argv := []string{"key", "pull", sylabsAdminFingerprint}
+	out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
+	if err != nil {
+		t.Fatalf("Cannot pull key %q: %+v\nCommand:\n%s %s\nOutput:\n%s\n",
+			sylabsAdminFingerprint,
+			err,
+			testenv.CmdPath, strings.Join(argv, " "),
+			out)
+	}
 
 	for _, tt := range tests {
-		t.Run(tt.desc, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.desc, func(t *testing.T) {
 			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test.")
 			if err != nil {
 				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
@@ -370,7 +382,7 @@ func testPullCmd(t *testing.T) {
 				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
 				t.Errorf("unexpected success: command should have failed")
 			}
-		}))
+		})
 	}
 }
 

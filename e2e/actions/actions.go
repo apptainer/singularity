@@ -6,15 +6,14 @@
 package actions
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
@@ -31,41 +30,52 @@ var testenv testingEnv
 
 // run tests min fuctionality for singularity run
 func actionRun(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	tests := []struct {
-		name   string
-		image  string
-		action string
-		argv   []string
-		e2e.ExecOpts
-		exit          int
-		expectSuccess bool
+		name string
+		argv []string
+		exit int
 	}{
-		{"NoCommand", testenv.ImagePath, "run", []string{}, e2e.ExecOpts{}, 0, true},
-		{"true", testenv.ImagePath, "run", []string{"true"}, e2e.ExecOpts{}, 0, true},
-		{"false", testenv.ImagePath, "run", []string{"false"}, e2e.ExecOpts{}, 1, false},
-		{"ScifTestAppGood", testenv.ImagePath, "run", []string{}, e2e.ExecOpts{App: "testapp"}, 0, true},
-		{"ScifTestAppBad", testenv.ImagePath, "run", []string{}, e2e.ExecOpts{App: "fakeapp"}, 1, false},
+		{
+			name: "NoCommand",
+			argv: []string{testenv.ImagePath},
+			exit: 0,
+		},
+		{
+			name: "True",
+			argv: []string{testenv.ImagePath, "true"},
+			exit: 0,
+		},
+		{
+			name: "False",
+			argv: []string{testenv.ImagePath, "false"},
+			exit: 1,
+		},
+		{
+			name: "ScifTestAppGood",
+			argv: []string{"--app", "testapp", testenv.ImagePath},
+			exit: 0,
+		},
+		{
+			name: "ScifTestAppBad",
+			argv: []string{"--app", "fakeapp", testenv.ImagePath},
+			exit: 1,
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.ExecOpts, tt.image, tt.argv)
-			if tt.expectSuccess && (exitCode != 0) {
-				t.Log(stderr)
-				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
-			} else if !tt.expectSuccess && (exitCode != 1) {
-				t.Log(stderr)
-				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
-			}
-		}))
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("run"),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit),
+		)
 	}
 }
 
 // exec tests min fuctionality for singularity exec
 func actionExec(t *testing.T) {
-	e2e.EnsureImage(t)
+	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
 	tmpfile, err := ioutil.TempFile("", "testSingularityExec.tmp")
@@ -85,114 +95,335 @@ func actionExec(t *testing.T) {
 	}
 
 	tests := []struct {
-		name   string
-		image  string
-		action string
-		argv   []string
-		e2e.ExecOpts
-		exit          int
-		expectSuccess bool
+		name string
+		argv []string
+		exit int
 	}{
-		{"NoCommand", testenv.ImagePath, "exec", []string{}, e2e.ExecOpts{}, 1, false},
-		{"true", testenv.ImagePath, "exec", []string{"true"}, e2e.ExecOpts{}, 0, true},
-		{"trueAbsPAth", testenv.ImagePath, "exec", []string{"/bin/true"}, e2e.ExecOpts{}, 0, true},
-		{"false", testenv.ImagePath, "exec", []string{"false"}, e2e.ExecOpts{}, 1, false},
-		{"falseAbsPath", testenv.ImagePath, "exec", []string{"/bin/false"}, e2e.ExecOpts{}, 1, false},
+		{
+			name: "NoCommand",
+			argv: []string{testenv.ImagePath},
+			exit: 1,
+		},
+		{
+			name: "True",
+			argv: []string{testenv.ImagePath, "true"},
+			exit: 0,
+		},
+		{
+			name: "TrueAbsPAth",
+			argv: []string{testenv.ImagePath, "/bin/true"},
+			exit: 0,
+		},
+		{
+			name: "False",
+			argv: []string{testenv.ImagePath, "false"},
+			exit: 1,
+		},
+		{
+			name: "FalseAbsPath",
+			argv: []string{testenv.ImagePath, "/bin/false"},
+			exit: 1,
+		},
 		// Scif apps tests
-		{"ScifTestAppGood", testenv.ImagePath, "exec", []string{"testapp.sh"}, e2e.ExecOpts{App: "testapp"}, 0, true},
-		{"ScifTestAppBad", testenv.ImagePath, "exec", []string{"testapp.sh"}, e2e.ExecOpts{App: "fakeapp"}, 1, false},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif/apps"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif/data"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif/apps/foo"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif/apps/bar"}, e2e.ExecOpts{}, 0, true},
+		{
+			name: "ScifTestAppGood",
+			argv: []string{"--app", "testapp", testenv.ImagePath, "testapp.sh"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestAppBad",
+			argv: []string{"--app", "fakeapp", testenv.ImagePath, "testapp.sh"},
+			exit: 1,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif/apps"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif/data"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif/apps/foo"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif/apps/bar"},
+			exit: 0,
+		},
 		// blocked by issue [scif-apps] Files created at install step fall into an unexpected path #2404
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-f", "/scif/apps/foo/filefoo.exec"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-f", "/scif/apps/bar/filebar.exec"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif/data/foo/output"}, e2e.ExecOpts{}, 0, true},
-		{"ScifTestfolderOrg", testenv.ImagePath, "exec", []string{"test", "-d", "/scif/data/foo/input"}, e2e.ExecOpts{}, 0, true},
-		{"WorkdirContain", testenv.ImagePath, "exec", []string{"test", "-f", tmpfile.Name()}, e2e.ExecOpts{Workdir: "testdata", Contain: true}, 0, false},
-		{"Workdir", testenv.ImagePath, "exec", []string{"test", "-f", tmpfile.Name()}, e2e.ExecOpts{Workdir: "testdata"}, 0, true},
-		{"pwdGood", testenv.ImagePath, "exec", []string{"true"}, e2e.ExecOpts{Pwd: "/etc"}, 0, true},
-		{"home", testenv.ImagePath, "exec", []string{"test", "-f", tmpfile.Name()}, e2e.ExecOpts{Home: pwd + "testdata"}, 0, true},
-		{"homePath", testenv.ImagePath, "exec", []string{"test", "-f", "/home/" + testfile.Name()}, e2e.ExecOpts{Home: "/tmp:/home"}, 0, true},
-		{"homeTmp", testenv.ImagePath, "exec", []string{"true"}, e2e.ExecOpts{Home: "/tmp"}, 0, true},
-		{"homeTmpExplicit", testenv.ImagePath, "exec", []string{"true"}, e2e.ExecOpts{Home: "/tmp:/home"}, 0, true},
-		{"ScifTestAppGood", testenv.ImagePath, "exec", []string{"testapp.sh"}, e2e.ExecOpts{App: "testapp"}, 0, true},
-		{"ScifTestAppBad", testenv.ImagePath, "exec", []string{"testapp.sh"}, e2e.ExecOpts{App: "fakeapp"}, 1, false},
-		//
-		{"userBind", testenv.ImagePath, "exec", []string{"test", "-f", "/var/tmp/" + testfile.Name()}, e2e.ExecOpts{Binds: []string{"/tmp:/var/tmp"}}, 0, true},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-f", "/scif/apps/foo/filefoo.exec"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-f", "/scif/apps/bar/filebar.exec"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif/data/foo/output"},
+			exit: 0,
+		},
+		{
+			name: "ScifTestfolderOrg",
+			argv: []string{testenv.ImagePath, "test", "-d", "/scif/data/foo/input"},
+			exit: 0,
+		},
+		{
+			name: "WorkdirContain",
+			argv: []string{"--contain", testenv.ImagePath, "test", "-f", tmpfile.Name()},
+			exit: 1,
+		},
+		{
+			name: "Workdir",
+			argv: []string{"--workdir", "testdata", testenv.ImagePath, "test", "-f", tmpfile.Name()},
+			exit: 0,
+		},
+		{
+			name: "PwdGood",
+			argv: []string{"--pwd", "/etc", testenv.ImagePath, "true"},
+			exit: 0,
+		},
+		{
+			name: "Home",
+			argv: []string{"--home", pwd + "testdata", testenv.ImagePath, "test", "-f", tmpfile.Name()},
+			exit: 0,
+		},
+		{
+			name: "HomePath",
+			argv: []string{"--home", "/tmp:/home", testenv.ImagePath, "test", "-f", "/home/" + testfile.Name()},
+			exit: 0,
+		},
+		{
+			name: "HomeTmp",
+			argv: []string{"--home", "/tmp", testenv.ImagePath, "true"},
+			exit: 0,
+		},
+		{
+			name: "HomeTmpExplicit",
+			argv: []string{"--home", "/tmp:/home", testenv.ImagePath, "true"},
+			exit: 0,
+		},
+		{
+			name: "UserBind",
+			argv: []string{"--bind", "/tmp:/var/tmp", testenv.ImagePath, "test", "-f", "/var/tmp/" + testfile.Name()},
+			exit: 0,
+		},
+		{
+			name: "NoHome",
+			argv: []string{"--no-home", testenv.ImagePath, "ls", "-ld", user.Dir},
+			exit: 2,
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.ExecOpts, tt.image, tt.argv)
-			if tt.expectSuccess && (exitCode != 0) {
-				t.Log(stderr)
-				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
-			} else if !tt.expectSuccess && (exitCode != 1) {
-				t.Log(stderr)
-				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
-			}
-		}))
-	}
-
-	// test --no-home option
-	err = os.Chdir("/tmp")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Run("noHome", test.WithoutPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{NoHome: true}, pwd+"/container.img", []string{"ls", "-ld", "$HOME"})
-		if exitCode != 1 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"ls", "-ld", "$HOME"}, " "))
-		}
-	}))
-	// return to test SOURCEDIR
-	err = os.Chdir(pwd)
-	if err != nil {
-		t.Fatal(err)
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("exec"),
+			e2e.WithDir("/tmp"),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit),
+		)
 	}
 }
 
-// STDINPipe tests pipe stdin to singularity actions cmd
-func STDINPipe(t *testing.T) {
-	e2e.EnsureImage(t)
+// Shell interaction tests
+func actionShell(t *testing.T) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Fatalf("could not get hostname: %s", err)
+	}
 
 	tests := []struct {
-		binName string
-		name    string
-		argv    []string
-		exit    int
+		name       string
+		argv       []string
+		consoleOps []e2e.SingularityConsoleOp
+		exit       int
 	}{
-		{"sh", "trueSTDIN", []string{"-c", fmt.Sprintf("echo hi | %s exec %s grep hi", testenv.CmdPath, testenv.ImagePath)}, 0},
-		{"sh", "falseSTDIN", []string{"-c", fmt.Sprintf("echo bye | %s exec %s grep hi", testenv.CmdPath, testenv.ImagePath)}, 1},
-		// Checking permissions
-		{"sh", "permissions", []string{"-c", fmt.Sprintf("%s exec %s id -u | grep `id -u`", testenv.CmdPath, testenv.ImagePath)}, 0},
-		// testing run command properly hands arguments
-		{"sh", "arguments", []string{"-c", fmt.Sprintf("%s run %s foo | grep foo", testenv.CmdPath, testenv.ImagePath)}, 0},
-		// Stdin to URI based image
-		{"sh", "library", []string{"-c", fmt.Sprintf("echo true | %s shell library://busybox", testenv.CmdPath)}, 0},
-		{"sh", "docker", []string{"-c", fmt.Sprintf("echo true | %s shell docker://busybox", testenv.CmdPath)}, 0},
-		{"sh", "shub", []string{"-c", fmt.Sprintf("echo true | %s shell shub://singularityhub/busybox", testenv.CmdPath)}, 0},
-		// Test apps
-		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("%s run --app foo %s | grep 'FOO'", testenv.CmdPath, testenv.ImagePath)}, 0},
-		// Test target pwd
-		{"sh", "pwdPath", []string{"-c", fmt.Sprintf("%s exec --pwd /etc %s pwd | egrep '^/etc'", testenv.CmdPath, testenv.ImagePath)}, 0},
+		{
+			name: "ShellExit",
+			argv: []string{testenv.ImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleExpect("Singularity"),
+				e2e.ConsoleSendLine("exit"),
+			},
+			exit: 0,
+		},
+		{
+			name: "ShellHostname",
+			argv: []string{testenv.ImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("hostname"),
+				e2e.ConsoleExpect(hostname),
+				e2e.ConsoleSendLine("exit"),
+			},
+			exit: 0,
+		},
+		{
+			name: "ShellBadCommand",
+			argv: []string{testenv.ImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("_a_fake_command"),
+				e2e.ConsoleSendLine("exit"),
+			},
+			exit: 127,
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd := exec.Command(tt.binName, tt.argv...)
-			res := cmd.Run(t)
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("shell"),
+			e2e.WithArgs(tt.argv...),
+			e2e.ConsoleRun(tt.consoleOps...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
 
-			if res.ExitCode != tt.exit {
-				t.Fatalf("Unexpected exit code '%d' while running command.\n%s",
-					res.ExitCode,
-					res)
-			}
-		}))
+// STDPipe tests pipe stdin/stdout to singularity actions cmd
+func STDPipe(t *testing.T) {
+	stdinTests := []struct {
+		name    string
+		command string
+		argv    []string
+		input   string
+		exit    int
+	}{
+		{
+			name:    "TrueSTDIN",
+			command: "exec",
+			argv:    []string{testenv.ImagePath, "grep", "hi"},
+			input:   "hi",
+			exit:    0,
+		},
+		{
+			name:    "FalseSTDIN",
+			command: "exec",
+			argv:    []string{testenv.ImagePath, "grep", "hi"},
+			input:   "bye",
+			exit:    1,
+		},
+		{
+			name:    "TrueLibrary",
+			command: "shell",
+			argv:    []string{"library://busybox"},
+			input:   "true",
+			exit:    0,
+		},
+		{
+			name:    "FalseLibrary",
+			command: "shell",
+			argv:    []string{"library://busybox"},
+			input:   "false",
+			exit:    1,
+		},
+		{
+			name:    "TrueDocker",
+			command: "shell",
+			argv:    []string{"docker://busybox"},
+			input:   "true",
+			exit:    0,
+		},
+		{
+			name:    "FalseDocker",
+			command: "shell",
+			argv:    []string{"docker://busybox"},
+			input:   "false",
+			exit:    1,
+		},
+		{
+			name:    "TrueShub",
+			command: "shell",
+			argv:    []string{"shub://singularityhub/busybox"},
+			input:   "true",
+			exit:    0,
+		},
+		{
+			name:    "FalseShub",
+			command: "shell",
+			argv:    []string{"shub://singularityhub/busybox"},
+			input:   "false",
+			exit:    1,
+		},
+	}
+
+	var input bytes.Buffer
+
+	for _, tt := range stdinTests {
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.argv...),
+			e2e.WithStdin(&input),
+			e2e.PreRun(func(t *testing.T) {
+				input.WriteString(tt.input)
+			}),
+			e2e.ExpectExit(tt.exit),
+		)
+		input.Reset()
+	}
+
+	user := e2e.CurrentUser(t)
+	stdoutTests := []struct {
+		name    string
+		command string
+		argv    []string
+		output  string
+		exit    int
+	}{
+		{
+			name:    "AppsFoo",
+			command: "run",
+			argv:    []string{"--app", "foo", testenv.ImagePath},
+			output:  "FOO",
+			exit:    0,
+		},
+		{
+			name:    "PwdPath",
+			command: "exec",
+			argv:    []string{"--pwd", "/etc", testenv.ImagePath, "pwd"},
+			output:  "/etc",
+			exit:    0,
+		},
+		{
+			name:    "Arguments",
+			command: "run",
+			argv:    []string{testenv.ImagePath, "foo"},
+			output:  "foo",
+			exit:    127,
+		},
+		{
+			name:    "Permissions",
+			command: "exec",
+			argv:    []string{testenv.ImagePath, "id", "-un"},
+			output:  user.Name,
+			exit:    0,
+		},
+	}
+	for _, tt := range stdoutTests {
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit, e2e.ExpectOutput(tt.output)),
+		)
 	}
 }
 
@@ -201,10 +432,6 @@ func RunFromURI(t *testing.T) {
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
 
-	runOpts := e2e.ExecOpts{
-		Binds: []string{bind},
-	}
-
 	fi, err := os.Stat(runScript)
 	if err != nil {
 		t.Fatalf("can't find %s", runScript)
@@ -212,76 +439,185 @@ func RunFromURI(t *testing.T) {
 	size := strconv.Itoa(int(fi.Size()))
 
 	tests := []struct {
-		name   string
-		image  string
-		action string
-		argv   []string
-		e2e.ExecOpts
-		expectSuccess bool
+		name    string
+		command string
+		argv    []string
+		exit    int
 	}{
 		// Run from supported URI's and check the runscript call works
-		{"RunFromDockerOK", "docker://busybox:latest", "run", []string{size}, runOpts, true},
-		{"RunFromLibraryOK", "library://busybox:latest", "run", []string{size}, runOpts, true},
-		{"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{size}, runOpts, true},
-		{"RunFromOrasOK", "oras://localhost:5000/oras_test_sif:latest", "run", []string{size}, runOpts, true},
-		{"RunFromDockerKO", "docker://busybox:latest", "run", []string{"0"}, runOpts, false},
-		{"RunFromLibraryKO", "library://busybox:latest", "run", []string{"0"}, runOpts, false},
-		{"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"0"}, runOpts, false},
-		{"RunFromOrasKO", "oras://localhost:5000/oras_test_sif:latest", "run", []string{"0"}, runOpts, false},
+		{
+			name:    "RunFromDockerOK",
+			command: "run",
+			argv:    []string{"--bind", bind, "docker://busybox:latest", size},
+			exit:    0,
+		},
+		{
+			name:    "RunFromLibraryOK",
+			command: "run",
+			argv:    []string{"--bind", bind, "library://busybox:latest", size},
+			exit:    0,
+		},
+		{
+			name:    "RunFromShubOK",
+			command: "run",
+			argv:    []string{"--bind", bind, "shub://singularityhub/busybox", size},
+			exit:    0,
+		},
+		{
+			name:    "RunFromOrasOK",
+			command: "run",
+			argv:    []string{"--bind", bind, "oras://localhost:5000/oras_test_sif:latest", size},
+			exit:    0,
+		},
+		{
+			name:    "RunFromDockerKO",
+			command: "run",
+			argv:    []string{"--bind", bind, "docker://busybox:latest", "0"},
+			exit:    1,
+		},
+		{
+			name:    "RunFromLibraryKO",
+			command: "run",
+			argv:    []string{"--bind", bind, "library://busybox:latest", "0"},
+			exit:    1,
+		},
+		{
+			name:    "RunFromShubKO",
+			command: "run",
+			argv:    []string{"--bind", bind, "shub://singularityhub/busybox", "0"},
+			exit:    1,
+		},
+		{
+			name:    "RunFromOrasKO",
+			command: "run",
+			argv:    []string{"--bind", bind, "oras://localhost:5000/oras_test_sif:latest", "0"},
+			exit:    1,
+		},
 
 		// exec from a supported URI's and check the exit code
-		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{}, true},
-		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{}, true},
-		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, e2e.ExecOpts{}, true},
-		{"trueOras", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"true"}, e2e.ExecOpts{}, true},
-		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{}, false},
-		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{}, false},
-		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, e2e.ExecOpts{}, false},
-		{"falseOras", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"false"}, e2e.ExecOpts{}, false},
+		{
+			name:    "ExecTrueDocker",
+			command: "exec",
+			argv:    []string{"docker://busybox:latest", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecTrueLibrary",
+			command: "exec",
+			argv:    []string{"library://busybox:latest", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecTrueShub",
+			command: "exec",
+			argv:    []string{"shub://singularityhub/busybox", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecTrueOras",
+			command: "exec",
+			argv:    []string{"oras://localhost:5000/oras_test_sif:latest", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecFalseDocker",
+			command: "exec",
+			argv:    []string{"docker://busybox:latest", "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecFalseLibrary",
+			command: "exec",
+			argv:    []string{"library://busybox:latest", "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecFalseShub",
+			command: "exec",
+			argv:    []string{"shub://singularityhub/busybox", "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecFalseOras",
+			command: "exec",
+			argv:    []string{"oras://localhost:5000/oras_test_sif:latest", "false"},
+			exit:    1,
+		},
 
 		// exec from URI with user namespace enabled
-		{"trueDockerUserns", "docker://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
-		{"trueLibraryUserns", "library://busybox:latest", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
-		{"trueShubUserns", "shub://singularityhub/busybox", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
-		{"trueOrasUserns", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"true"}, e2e.ExecOpts{Userns: true}, true},
-		{"falseDockerUserns", "docker://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
-		{"falselibraryUserns", "library://busybox:latest", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
-		{"falseShubUserns", "shub://singularityhub/busybox", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
-		{"falseOrasUserns", "oras://localhost:5000/oras_test_sif:latest", "exec", []string{"false"}, e2e.ExecOpts{Userns: true}, false},
+		{
+			name:    "ExecTrueDockerUserns",
+			command: "exec",
+			argv:    []string{"--userns", "docker://busybox:latest", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecTrueLibraryUserns",
+			command: "exec",
+			argv:    []string{"--userns", "library://busybox:latest", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecTrueShubUserns",
+			command: "exec",
+			argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecTrueOrasUserns",
+			command: "exec",
+			argv:    []string{"--userns", "oras://localhost:5000/oras_test_sif:latest", "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecFalseDockerUserns",
+			command: "exec",
+			argv:    []string{"--userns", "docker://busybox:latest", "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecFalseLibraryUserns",
+			command: "exec",
+			argv:    []string{"--userns", "library://busybox:latest", "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecFalseShubUserns",
+			command: "exec",
+			argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecFalseOrasUserns",
+			command: "exec",
+			argv:    []string{"--userns", "oras://localhost:5000/oras_test_sif:latest", "false"},
+			exit:    1,
+		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, tt.action, tt.ExecOpts, tt.image, tt.argv)
-			if tt.expectSuccess && (exitCode != 0) {
-				t.Log(stderr)
-				t.Fatalf("unexpected failure running '%v': %v", strings.Join(tt.argv, " "), err)
-			} else if !tt.expectSuccess && (exitCode != 1) {
-				t.Log(stderr)
-				t.Fatalf("unexpected success running '%v'", strings.Join(tt.argv, " "))
-			}
-		}))
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit),
+		)
 	}
 }
 
 // PersistentOverlay test the --overlay function
 func PersistentOverlay(t *testing.T) {
-	e2e.EnsureImage(t)
-
 	const squashfsImage = "squashfs.simg"
-	//  Create the overlay dir
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	dir, err := ioutil.TempDir(cwd, "overlay_test")
+
+	dir, err := ioutil.TempDir(testenv.TestDir, "overlay_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 
 	// Create dirfs for squashfs
-	squashDir, err := ioutil.TempDir(cwd, "overlay_test")
+	squashDir, err := ioutil.TempDir(testenv.TestDir, "overlay_test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -319,85 +655,84 @@ func PersistentOverlay(t *testing.T) {
 
 	defer os.Remove("ext3_fs.img")
 
-	// create a file dir
-	t.Run("overlay_create", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{dir}}, testenv.ImagePath, []string{"touch", "/dir_overlay"})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/dir_overlay"}, " "))
-		}
-	}))
-	// look for the file dir
-	t.Run("overlay_find", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{dir}}, testenv.ImagePath, []string{"test", "-f", "/dir_overlay"})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/dir_overlay"}, " "))
-		}
-	}))
-	// create a file ext3
-	t.Run("overlay_ext3_create", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{"ext3_fs.img"}}, testenv.ImagePath, []string{"touch", "/ext3_overlay"})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/ext3_overlay"}, " "))
-		}
-	}))
-	// look for the file ext3
-	t.Run("overlay_ext3_find", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{"ext3_fs.img"}}, testenv.ImagePath, []string{"test", "-f", "/ext3_overlay"})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "/ext3_overlay"}, " "))
-		}
-	}))
-	// look for the file squashFs
-	t.Run("overlay_squashFS_find", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{squashfsImage}}, testenv.ImagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())}, " "))
-		}
-	}))
-	// create a file multiple overlays
-	t.Run("overlay_multiple_create", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{"ext3_fs.img", squashfsImage}}, testenv.ImagePath, []string{"touch", "/multiple_overlay_fs"})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"touch", "/multiple_overlay_fs"}, " "))
-		}
-	}))
-	// look for the file with multiple overlays
-	t.Run("overlay_multiple_find_ext3", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{"ext3_fs.img", squashfsImage}}, testenv.ImagePath, []string{"test", "-f", "/multiple_overlay_fs"})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", "multiple_overlay_fs"}, " "))
-		}
-	}))
-	t.Run("overlay_multiple_find_squashfs", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{"ext3_fs.img", squashfsImage}}, testenv.ImagePath, []string{"test", "-f", fmt.Sprintf("/%s", tmpfile.Name())})
-		if exitCode != 0 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected failure running '%v'", strings.Join([]string{"test", "-f", tmpfile.Name()}, " "))
-		}
-	}))
-	// look for the file without root privs
-	t.Run("overlay_noroot", test.WithoutPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{Overlay: []string{dir}}, testenv.ImagePath, []string{"test", "-f", "/foo_overlay"})
-		if exitCode != 1 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
-		}
-	}))
-	// look for the file without --overlay
-	t.Run("overlay_noflag", test.WithPrivilege(func(t *testing.T) {
-		_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, testenv.ImagePath, []string{"test", "-f", "/foo_overlay"})
-		if exitCode != 1 {
-			t.Log(stderr, err)
-			t.Fatalf("unexpected success running '%v'", strings.Join([]string{"test", "-f", "/foo_overlay"}, " "))
-		}
-	}))
+	tests := []struct {
+		name       string
+		argv       []string
+		exit       int
+		privileged bool
+	}{
+		{
+			name:       "overlay_create",
+			argv:       []string{"--overlay", dir, testenv.ImagePath, "touch", "/dir_overlay"},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_find",
+			argv:       []string{"--overlay", dir, testenv.ImagePath, "test", "-f", "/dir_overlay"},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_ext3_create",
+			argv:       []string{"--overlay", "ext3_fs.img", testenv.ImagePath, "touch", "/ext3_overlay"},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_ext3_find",
+			argv:       []string{"--overlay", "ext3_fs.img", testenv.ImagePath, "test", "-f", "/ext3_overlay"},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_squashFS_find",
+			argv:       []string{"--overlay", squashfsImage, testenv.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_multiple_create",
+			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, testenv.ImagePath, "touch", "/multiple_overlay_fs"},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_multiple_find_ext3",
+			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, testenv.ImagePath, "test", "-f", "/multiple_overlay_fs"},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_multiple_find_squashfs",
+			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, testenv.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
+			exit:       0,
+			privileged: true,
+		},
+		{
+			name:       "overlay_noroot",
+			argv:       []string{"--overlay", dir, testenv.ImagePath, "test", "-f", "/foo_overlay"},
+			exit:       255,
+			privileged: false,
+		},
+		{
+			name:       "overlay_noflag",
+			argv:       []string{testenv.ImagePath, "test", "-f", "/foo_overlay"},
+			exit:       1,
+			privileged: true,
+		},
+	}
+
+	for _, tt := range tests {
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.argv...),
+			e2e.WithPrivileges(tt.privileged),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
 }
 
 // RunE2ETests is the main func to trigger the test suite
@@ -408,10 +743,12 @@ func RunE2ETests(t *testing.T) {
 	t.Run("run", actionRun)
 	// singularity exec
 	t.Run("exec", actionExec)
-	// stdin pipe
-	t.Run("STDIN", STDINPipe)
+	// stdin/stdout pipe
+	t.Run("STDPIPE", STDPipe)
 	// action_URI
 	t.Run("action_URI", RunFromURI)
 	// Persistent Overlay
 	t.Run("Persistent_Overlay", PersistentOverlay)
+	// shell interaction
+	t.Run("Shell", actionShell)
 }
