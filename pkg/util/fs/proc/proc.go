@@ -144,7 +144,10 @@ func ReadIDMap(path string) (uint32, uint32, error) {
 	defer r.Close()
 
 	scanner := bufio.NewScanner(r)
-	scanner.Scan()
+	tok := scanner.Scan()
+	if !tok {
+		return 0, 0, scanner.Err()
+	}
 	fields := strings.Fields(scanner.Text())
 
 	containerID, err := strconv.ParseUint(fields[0], 10, 32)
