@@ -14,7 +14,8 @@ On Debian-based systems:
 ```
 $ sudo apt-get update && \
   sudo apt-get install -y build-essential \
-  libssl-dev uuid-dev libgpgme11-dev libseccomp-dev pkg-config squashfs-tools
+  libssl-dev uuid-dev libgpgme11-dev libseccomp-dev \
+  pkg-config squashfs-tools cryptsetup-bin
 ```
 
 On CentOS/RHEL:
@@ -22,10 +23,12 @@ On CentOS/RHEL:
 ```
 $ sudo yum groupinstall -y 'Development Tools' && \
   sudo yum install -y epel-release && \
-  sudo yum install -y golang openssl-devel libuuid-devel libseccomp-devel squashfs-tools
+  sudo yum install -y golang openssl-devel libuuid-devel \
+  libseccomp-devel squashfs-tools cryptsetup-bin
 ```
 
-On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
+_NOTE:_ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
+Also, `cryptsetup-bin` is only necessary if you are using encrypted containers.
 
 ## Install Golang
 
