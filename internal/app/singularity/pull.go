@@ -28,7 +28,7 @@ import (
 )
 
 var (
-	// ErrLibraryPullAbort indicates that the interactive portion of the
+	// ErrLibraryPullUnsigned indicates that the interactive portion of the
 	// pull was aborted
 	ErrLibraryPullUnsigned = errors.New("failed to verify container")
 )
