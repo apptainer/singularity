@@ -627,7 +627,7 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	// We create a temporary file that will act as stdin
 	testFile, err := ioutil.TempFile("", "inputTest")
 	if err != nil {
-		t.Fatal("failed to create temporary file:", err)
+		t.Fatalf("failed to create temporary file: %s", err)
 	}
 	defer testFile.Close()
 	defer os.Remove(testFile.Name())
