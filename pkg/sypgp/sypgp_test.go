@@ -641,7 +641,7 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	// Reposition to the beginning to ensure there is data to read
 	_, err = testFile.Seek(0, 0)
 	if err != nil {
-		t.Fatal("failed to reposition to beginning of file:", err)
+		t.Fatalf("failed to reposition to beginning of file: %s", err)
 	}
 
 	// Redirect Stdin
