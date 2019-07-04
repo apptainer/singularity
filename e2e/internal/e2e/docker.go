@@ -7,49 +7,66 @@ package e2e
 
 import (
 	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"testing"
 )
 
 const dockerInstanceName = "e2e-docker-instance"
 
+var registrySetup struct {
+	sync.Once
+	up uint32 // 1 if the registry is running, 0 otherwise
+}
+
 // PrepRegistry run a docker registry and push a busybox
 // image and the test image with oras transport.
-func PrepRegistry(t *testing.T, baseDir, imagePath string) {
-	dockerDefinition := "testdata/Docker_registry.def"
-	dockerImage := filepath.Join(baseDir, "docker-e2e.sif")
+func PrepRegistry(t *testing.T, env TestEnv) {
+	registrySetup.Do(func() {
+		atomic.StoreUint32(&registrySetup.up, 1)
 
-	RunSingularity(
-		t,
-		"BuildDockerRegistry",
-		WithoutSubTest(),
-		WithPrivileges(true),
-		WithCommand("build"),
-		WithArgs("-s", dockerImage, dockerDefinition),
-		ExpectExit(0),
-	)
+		EnsureImage(t, env)
 
-	RunSingularity(
-		t,
-		"RunDockerRegistry",
-		WithoutSubTest(),
-		WithPrivileges(true),
-		WithCommand("instance start"),
-		WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
-		ExpectExit(0),
-	)
+		dockerDefinition := "testdata/Docker_registry.def"
+		dockerImage := filepath.Join(env.TestDir, "docker-e2e.sif")
 
-	RunSingularity(
-		t,
-		"OrasPushTestImage",
-		WithoutSubTest(),
-		WithCommand("push"),
-		WithArgs(imagePath, "oras://localhost:5000/oras_test_sif:latest"),
-		ExpectExit(0),
-	)
+		RunSingularity(
+			t,
+			"BuildDockerRegistry",
+			WithoutSubTest(),
+			WithPrivileges(true),
+			WithCommand("build"),
+			WithArgs("-s", dockerImage, dockerDefinition),
+			ExpectExit(0),
+		)
+
+		RunSingularity(
+			t,
+			"RunDockerRegistry",
+			WithoutSubTest(),
+			WithPrivileges(true),
+			WithCommand("instance start"),
+			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
+			ExpectExit(0),
+		)
+
+		RunSingularity(
+			t,
+			"OrasPushTestImage",
+			WithoutSubTest(),
+			WithCommand("push"),
+			WithArgs(env.ImagePath, env.OrasTestImage),
+			ExpectExit(0),
+		)
+	})
 }
 
 // KillRegistry stop and cleanup docker registry.
 func KillRegistry(t *testing.T) {
+	if !atomic.CompareAndSwapUint32(&registrySetup.up, 1, 0) {
+		return
+	}
+
 	RunSingularity(
 		t,
 		"KillDockerRegistry",

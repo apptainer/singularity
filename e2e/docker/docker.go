@@ -318,6 +318,8 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 }
 
 func (c *ctx) testDockerRegistry(t *testing.T) {
+	e2e.PrepRegistry(t, c.env)
+
 	if _, err := stdexec.LookPath("docker"); err != nil {
 		t.Skip("docker not installed")
 	}
@@ -329,17 +331,17 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 	}{
 		{"BusyBox", true, e2e.DefFileDetails{
 			Bootstrap: "docker",
-			From:      "localhost:5000/my-busybox",
+			From:      fmt.Sprintf("%s/my-busybox", c.env.TestRegistry),
 		}},
 		{"BusyBoxRegistry", true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "my-busybox",
-			Registry:  "localhost:5000",
+			Registry:  c.env.TestRegistry,
 		}},
 		{"BusyBoxNamespace", false, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "my-busybox",
-			Registry:  "localhost:5000",
+			Registry:  c.env.TestRegistry,
 			Namespace: "not-a-namespace",
 		}},
 	}
