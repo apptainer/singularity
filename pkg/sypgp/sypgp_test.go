@@ -601,7 +601,7 @@ func TestAskQuestion(t *testing.T) {
 
 	// We analyze the result
 	if output != "" {
-		t.Fatal("AskQuestion() returned", output, "instead of an empty string")
+		t.Fatalf("AskQuestion() returned: %s instead of an empty string", output)
 	}
 
 	// Test with the final line
