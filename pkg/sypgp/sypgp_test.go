@@ -607,7 +607,7 @@ func TestAskQuestion(t *testing.T) {
 	// Test with the final line
 	output, err = AskQuestion("Question test 4: ")
 	if err != nil {
-		t.Fatal("failed to get response:", err)
+		t.Fatalf("failed to get response: %s", err)
 	}
 	fmt.Println(output)
 
