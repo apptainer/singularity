@@ -23,6 +23,8 @@ type imgBuildTests struct {
 }
 
 func (c *imgBuildTests) buildFrom(t *testing.T) {
+	e2e.PrepRegistry(t, c.env)
+
 	tests := []struct {
 		name       string
 		dependency string
@@ -38,7 +40,7 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 		// TODO(mem): reenable this; disabled while shub is down
 		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
 		{"LibraryDefFile", "", "../examples/library/Singularity", true},
-		{"OrasURI", "", "oras://localhost:5000/oras_test_sif:latest", true},
+		{"OrasURI", "", c.env.OrasTestImage, true},
 		{"Yum", "yum", "../examples/centos/Singularity", true},
 		{"Zypper", "zypper", "../examples/opensuse/Singularity", true},
 	}

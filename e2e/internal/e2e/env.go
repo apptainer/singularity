@@ -6,8 +6,10 @@
 package e2e
 
 type TestEnv struct {
-	RunDisabled bool
-	CmdPath     string
-	TestDir     string
-	ImagePath   string
+	RunDisabled   bool
+	CmdPath       string
+	ImagePath     string
+	OrasTestImage string
+	TestDir       string
+	TestRegistry  string
 }
