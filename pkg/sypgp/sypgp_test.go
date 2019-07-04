@@ -8,7 +8,6 @@ package sypgp
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
