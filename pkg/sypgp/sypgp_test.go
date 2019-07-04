@@ -568,7 +568,7 @@ func TestAskQuestion(t *testing.T) {
 	// Actual test, run the test with the first line
 	output, err := AskQuestion("Question test: ")
 	if err != nil {
-		t.Fatal("failed to get response from AskQuestion()", err)
+		t.Fatalf("failed to get response from AskQuestion(): %s", err)
 	}
 	fmt.Println(output)
 
