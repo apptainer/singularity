@@ -250,6 +250,12 @@ func (c *actionTests) actionShell(t *testing.T) {
 			name: "ShellExit",
 			argv: []string{c.env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
+				// "cd /" to work around issue where a long
+				// working directory name causes the test
+				// to fail because the "Singularity" that
+				// we are looking for is chopped from the
+				// front.
+				e2e.ConsoleSendLine("cd /"),
 				e2e.ConsoleExpect("Singularity"),
 				e2e.ConsoleSendLine("exit"),
 			},
