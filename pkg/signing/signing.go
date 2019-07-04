@@ -369,7 +369,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		signersKeys++
 		if trusted {
 			author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
-			author += fmt.Sprintf("%s  %s\n", green("[LOCAL]  "), name)
+			author += fmt.Sprintf("%s    %s\n", green("[LOCAL]"), name)
 		} else {
 			author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
 			author += fmt.Sprintf("%s   %s\n", yellow("[REMOTE]"), name)
