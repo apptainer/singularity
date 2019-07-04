@@ -613,7 +613,7 @@ func TestAskQuestion(t *testing.T) {
 
 	finalAnswer := restAnswer[len(secondAnswer)+2:] // We have to account for 2 "\n"
 	if output != finalAnswer {
-		t.Fatal("AskQuestion() returned", output, "instead of", finalAnswer)
+		t.Fatalf("AskQuestion() returned: %s instead of: %s", output, finalAnswer)
 	}
 }
 
