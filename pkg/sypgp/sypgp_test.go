@@ -589,7 +589,7 @@ func TestAskQuestion(t *testing.T) {
 	// We analyze the result
 	secondAnswer := restAnswer[:strings.Index(restAnswer, "\n")]
 	if output != secondAnswer {
-		t.Fatal("AskQuestion() returned", output, "instead of", secondAnswer)
+		t.Fatalf("AskQuestion() returned: %s instead of: %s", output, secondAnswer)
 	}
 
 	// Test with the third line
