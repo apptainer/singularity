@@ -681,7 +681,7 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	// Test with third line
 	output, err = AskQuestionNoEcho("Test question 3: ")
 	if err != nil {
-		t.Fatal("failed to get output from AskQuestionNoEcho():", err)
+		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
 	}
 
 	// We analyze the answer
