@@ -716,8 +716,13 @@ func TestGenKeyPair(t *testing.T) {
 		shallPass bool
 	}{
 		{
-			name: "valid case", input: "A tester\ntest@my.info\n\nfakepassphrase\nfakepassphrase\nn\n", shallPass: true,
-		}, {name: "passphrases not matching", input: "Another tester\ntest2@my.info\n\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nn\n",
+			name:      "valid case",
+			input:     "A tester\ntest@my.info\n\nfakepassphrase\nfakepassphrase\nn\n",
+			shallPass: true,
+		},
+		{
+			name:      "passphrases not matching",
+			input:     "Another tester\ntest2@my.info\n\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nn\n",
 			shallPass: false,
 		},
 	}
