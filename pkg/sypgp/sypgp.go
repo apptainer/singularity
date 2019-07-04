@@ -568,7 +568,7 @@ func EncryptKey(k *openpgp.Entity, pass string) error {
 
 // SelectPubKey prints a public key list to user and returns the choice
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	if len(el) < 1 {
+	if len(el) <= 0 {
 		return nil, ErrEmptyKeyring
 	}
 	PrintPubKeyring()
@@ -594,7 +594,7 @@ func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 
 // SelectPrivKey prints a secret key list to user and returns the choice
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	if len(el) < 1 {
+	if len(el) <= 0 {
 		return nil, ErrEmptyKeyring
 	}
 	PrintPrivKeyring()
