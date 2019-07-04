@@ -570,7 +570,6 @@ func TestAskQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get response from AskQuestion(): %s", err)
 	}
-	fmt.Println(output)
 
 	// We analyze the result. We always make sure we do not get the '\n'
 	firstAnswer := testStr[:strings.Index(testStr, "\n")]
@@ -584,7 +583,6 @@ func TestAskQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get response: %s", err)
 	}
-	fmt.Println(output)
 
 	// We analyze the result
 	secondAnswer := restAnswer[:strings.Index(restAnswer, "\n")]
@@ -597,7 +595,6 @@ func TestAskQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get response: %s", err)
 	}
-	fmt.Println(output)
 
 	// We analyze the result
 	if output != "" {
@@ -609,7 +606,6 @@ func TestAskQuestion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get response: %s", err)
 	}
-	fmt.Println(output)
 
 	finalAnswer := restAnswer[len(secondAnswer)+2:] // We have to account for 2 "\n"
 	if output != finalAnswer {
@@ -656,7 +652,6 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
 	}
-	fmt.Println(output)
 
 	// Analyze the result
 	firstAnswer := testStr[:strings.Index(testStr, "\n")]
@@ -670,7 +665,6 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
 	}
-	fmt.Println(output)
 
 	// We analyze the answer
 	secondAnswer := restAnswer[:strings.Index(restAnswer, "\n")]
@@ -694,7 +688,6 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
 	}
-	fmt.Println(output)
 
 	finalAnswer := restAnswer[len(secondAnswer)+2:] // We have to account for 2 "\n"
 	if output != finalAnswer {
