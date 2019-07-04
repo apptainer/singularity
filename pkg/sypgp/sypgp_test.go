@@ -635,7 +635,7 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	// Write the data that AskQuestionNoEcho will later on read
 	_, err = testFile.Write(testBytes)
 	if err != nil {
-		t.Fatal("failed to write to temporary file:", err)
+		t.Fatalf("failed to write to temporary file: %s", err)
 	}
 
 	// Reposition to the beginning to ensure there is data to read
