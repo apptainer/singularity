@@ -12,27 +12,23 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
-	TestDir string `split_words:"true"`
+type ctx struct {
+	env e2e.TestEnv
 }
-
-var testenv testingEnv
 
 // remoteAdd checks the functionality of "singularity remote add" command.
 // It Verifies that adding valid endpoints results in success and invalid
 // one's results in failure.
-func remoteAdd(t *testing.T) {
+func (c *ctx) remoteAdd(t *testing.T) {
 
 	test.DropPrivilege(t)
 
-	config, err := ioutil.TempFile(testenv.TestDir, "testConfig-")
+	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,7 +47,7 @@ func remoteAdd(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -70,7 +66,7 @@ func remoteAdd(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		})
@@ -81,10 +77,10 @@ func remoteAdd(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Deletes the already added entries
 // 3. Verfies that removing an invalid entry results in a failure
-func remoteRemove(t *testing.T) {
+func (c *ctx) remoteRemove(t *testing.T) {
 	test.DropPrivilege(t)
 
-	config, err := ioutil.TempFile(testenv.TestDir, "testConfig-")
+	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -105,7 +101,7 @@ func remoteRemove(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -123,7 +119,7 @@ func remoteRemove(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "remove"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -140,7 +136,7 @@ func remoteRemove(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "remove"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		})
@@ -150,10 +146,10 @@ func remoteRemove(t *testing.T) {
 // remoteUse tests the functionality of "singularity remote use" command.
 // 1. Tries to use non-existing remote entry
 // 2. Adds remote entries and tries to use those
-func remoteUse(t *testing.T) {
+func (c *ctx) remoteUse(t *testing.T) {
 	test.DropPrivilege(t)
 
-	config, err := ioutil.TempFile(testenv.TestDir, "testConfig-")
+	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -171,7 +167,7 @@ func remoteUse(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		})
@@ -191,7 +187,7 @@ func remoteUse(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -209,7 +205,7 @@ func remoteUse(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -220,10 +216,10 @@ func remoteUse(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Verifies that remote status command succeeds on existing endpoints
 // 3. Verifies that remote status command fails on non-existing endpoints
-func remoteStatus(t *testing.T) {
+func (c *ctx) remoteStatus(t *testing.T) {
 	test.DropPrivilege(t)
 
-	config, err := ioutil.TempFile(testenv.TestDir, "testConfig-")
+	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -244,7 +240,7 @@ func remoteStatus(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -261,7 +257,7 @@ func remoteStatus(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "status"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -279,7 +275,7 @@ func remoteStatus(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "status"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error == nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
 				t.Fatalf("Unexpected success.\n%s", res)
 			}
 		})
@@ -287,10 +283,10 @@ func remoteStatus(t *testing.T) {
 }
 
 // remoteList tests the functionality of "singularity remote list" command
-func remoteList(t *testing.T) {
+func (c *ctx) remoteList(t *testing.T) {
 	test.DropPrivilege(t)
 
-	config, err := ioutil.TempFile(testenv.TestDir, "testConfig-")
+	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -307,7 +303,7 @@ func remoteList(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "list"}
 		t.Run(tt.name, func(t *testing.T) {
 			fmt.Println("config.name is ", config.Name())
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -327,7 +323,7 @@ func remoteList(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "add"}
 		argv = append(argv, tt.remote, tt.uri)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -342,7 +338,7 @@ func remoteList(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -360,7 +356,7 @@ func remoteList(t *testing.T) {
 		argv := []string{"remote", "--config", config.Name(), "use"}
 		argv = append(argv, tt.remote)
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -375,7 +371,7 @@ func remoteList(t *testing.T) {
 	for _, tt := range testPass {
 		argv := []string{"remote", "--config", config.Name(), "list"}
 		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(testenv.CmdPath, argv...).Run(t); res.Error != nil {
+			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
 				t.Fatalf("Unexpected failure.\n%s", res)
 			}
 		})
@@ -383,16 +379,16 @@ func remoteList(t *testing.T) {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	err := envconfig.Process("E2E", &testenv)
-
-	if err != nil {
-		t.Fatal(err.Error())
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
 	}
 
-	t.Run("remote_add", remoteAdd)
-	t.Run("remote_remove", remoteRemove)
-	t.Run("remote_use", remoteUse)
-	t.Run("remote_status", remoteStatus)
-	t.Run("remote_list", remoteList)
+	return func(t *testing.T) {
+		t.Run("add", c.remoteAdd)
+		t.Run("remove", c.remoteRemove)
+		t.Run("use", c.remoteUse)
+		t.Run("status", c.remoteStatus)
+		t.Run("list", c.remoteList)
+	}
 }

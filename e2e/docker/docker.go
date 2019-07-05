@@ -14,22 +14,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"golang.org/x/sys/unix"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
-	TestDir string `split_words:"true"`
+type ctx struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
-var testDir string
-
-func testDockerPulls(t *testing.T) {
+func (c *ctx) testDockerPulls(t *testing.T) {
 	tests := []struct {
 		desc          string
 		srcURI        string
@@ -140,7 +134,7 @@ func testDockerPulls(t *testing.T) {
 		}
 
 		argv = append(argv, imgURI)
-		cmd := exec.Command(testenv.CmdPath, argv...)
+		cmd := exec.Command(c.env.CmdPath, argv...)
 		return fullImagePath, cmd.Run(t)
 	}
 
@@ -149,7 +143,7 @@ func testDockerPulls(t *testing.T) {
 			fullPath, res := imagePull(t, tt.srcURI, tt.imageName, tt.imagePath, tt.force)
 			switch {
 			case tt.expectSuccess && res.Error == nil:
-				e2e.ImageVerify(t, testenv.CmdPath, fullPath)
+				e2e.ImageVerify(t, c.env.CmdPath, fullPath)
 			case !tt.expectSuccess && res.Error != nil:
 				// PASS: expecting failure, failed
 			case tt.expectSuccess && res.Error != nil:
@@ -164,11 +158,11 @@ func testDockerPulls(t *testing.T) {
 }
 
 // AUFS sanity tests
-func testDockerAUFS(t *testing.T) {
-	imagePath := path.Join(testDir, "container")
+func (c *ctx) testDockerAUFS(t *testing.T) {
+	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	b, err := e2e.ImageBuild(c.env.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
@@ -193,7 +187,7 @@ func testDockerAUFS(t *testing.T) {
 
 	for _, tt := range fileTests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := e2e.ImageExec(t, c.env.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%s': %s", strings.Join(tt.execArgs, " "), err)
@@ -206,11 +200,11 @@ func testDockerAUFS(t *testing.T) {
 }
 
 // Check force permissions for user builds #977
-func testDockerPermissions(t *testing.T) {
-	imagePath := path.Join(testDir, "container")
+func (c *ctx) testDockerPermissions(t *testing.T) {
+	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	b, err := e2e.ImageBuild(c.env.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
@@ -234,7 +228,7 @@ func testDockerPermissions(t *testing.T) {
 	}
 	for _, tt := range fileTests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, stderr, exitCode, err := e2e.ImageExec(t, testenv.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
+			_, stderr, exitCode, err := e2e.ImageExec(t, c.env.CmdPath, "exec", e2e.ExecOpts{}, imagePath, tt.execArgs)
 			if tt.expectSuccess && (exitCode != 0) {
 				t.Log(stderr)
 				t.Fatalf("unexpected failure running '%s': %s", strings.Join(tt.execArgs, " "), err)
@@ -247,19 +241,19 @@ func testDockerPermissions(t *testing.T) {
 }
 
 // Check whiteout of symbolic links #1592 #1576
-func testDockerWhiteoutSymlink(t *testing.T) {
-	imagePath := path.Join(testDir, "container")
+func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
+	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
+	b, err := e2e.ImageBuild(c.env.CmdPath, e2e.BuildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %s", err)
 	}
-	e2e.ImageVerify(t, testenv.CmdPath, imagePath)
+	e2e.ImageVerify(t, c.env.CmdPath, imagePath)
 }
 
-func testDockerDefFile(t *testing.T) {
+func (c *ctx) testDockerDefFile(t *testing.T) {
 	getKernelMajor := func(t *testing.T) (major int) {
 		var buf unix.Utsname
 		if err := unix.Uname(&buf); err != nil {
@@ -305,7 +299,7 @@ func testDockerDefFile(t *testing.T) {
 				t.Skipf("kernel >=%v.x required", tt.kernelMajorRequired)
 			}
 
-			imagePath := path.Join(testDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.Remove(imagePath)
 
 			deffile := e2e.PrepareDefFile(e2e.DefFileDetails{
@@ -314,16 +308,16 @@ func testDockerDefFile(t *testing.T) {
 			})
 			defer os.Remove(deffile)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, deffile); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, e2e.BuildOpts{}, imagePath, deffile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %s", err)
 			}
-			e2e.ImageVerify(t, testenv.CmdPath, imagePath)
+			e2e.ImageVerify(t, c.env.CmdPath, imagePath)
 		}))
 	}
 }
 
-func testDockerRegistry(t *testing.T) {
+func (c *ctx) testDockerRegistry(t *testing.T) {
 	if _, err := stdexec.LookPath("docker"); err != nil {
 		t.Skip("docker not installed")
 	}
@@ -358,20 +352,20 @@ func testDockerRegistry(t *testing.T) {
 			//opts := buildOpts{
 			//	env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
 			//}
-			imagePath := path.Join(testDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.Remove(imagePath)
 
 			defFile := e2e.PrepareDefFile(tt.dfd)
 			//defFile := prepareDefFile(tt.dfd)
 
-			b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile)
+			b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, defFile)
 			//b, err := imageBuild(opts, imagePath, defFile)
 			if tt.expectSuccess {
 				if err != nil {
 					t.Log(string(b))
 					t.Fatalf("unexpected failure: %v", err)
 				}
-				e2e.ImageVerify(t, testenv.CmdPath, imagePath)
+				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
 				//imageVerify(t, imagePath, false)
 			} else if !tt.expectSuccess && (err == nil) {
 				t.Log(string(b))
@@ -382,16 +376,17 @@ func testDockerRegistry(t *testing.T) {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	err := envconfig.Process("E2E", &testenv)
-	if err != nil {
-		t.Fatal(err.Error())
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
 	}
 
-	t.Run("dockerPulls", testDockerPulls)
-	t.Run("testDockerAUFS", testDockerAUFS)
-	t.Run("testDockerPermissions", testDockerPermissions)
-	t.Run("testDockerWhiteoutSymlink", testDockerWhiteoutSymlink)
-	t.Run("testDockerDefFile", testDockerDefFile)
-	t.Run("testDockerRegistry", testDockerRegistry)
+	return func(t *testing.T) {
+		t.Run("dockerPulls", c.testDockerPulls)
+		t.Run("testDockerAUFS", c.testDockerAUFS)
+		t.Run("testDockerPermissions", c.testDockerPermissions)
+		t.Run("testDockerWhiteoutSymlink", c.testDockerWhiteoutSymlink)
+		t.Run("testDockerDefFile", c.testDockerDefFile)
+		t.Run("testDockerRegistry", c.testDockerRegistry)
+	}
 }
