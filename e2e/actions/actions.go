@@ -339,20 +339,22 @@ func (c *actionTests) STDPipe(t *testing.T) {
 			input:   "false",
 			exit:    1,
 		},
-		{
-			name:    "TrueShub",
-			command: "shell",
-			argv:    []string{"shub://singularityhub/busybox"},
-			input:   "true",
-			exit:    0,
-		},
-		{
-			name:    "FalseShub",
-			command: "shell",
-			argv:    []string{"shub://singularityhub/busybox"},
-			input:   "false",
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "TrueShub",
+		// 	command: "shell",
+		// 	argv:    []string{"shub://singularityhub/busybox"},
+		// 	input:   "true",
+		// 	exit:    0,
+		// },
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "FalseShub",
+		// 	command: "shell",
+		// 	argv:    []string{"shub://singularityhub/busybox"},
+		// 	input:   "false",
+		// 	exit:    1,
+		// },
 	}
 
 	var input bytes.Buffer
@@ -450,12 +452,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--bind", bind, "library://busybox:latest", size},
 			exit:    0,
 		},
-		{
-			name:    "RunFromShubOK",
-			command: "run",
-			argv:    []string{"--bind", bind, "shub://singularityhub/busybox", size},
-			exit:    0,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "RunFromShubOK",
+		// 	command: "run",
+		// 	argv:    []string{"--bind", bind, "shub://singularityhub/busybox", size},
+		// 	exit:    0,
+		// },
 		{
 			name:    "RunFromOrasOK",
 			command: "run",
@@ -474,12 +477,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--bind", bind, "library://busybox:latest", "0"},
 			exit:    1,
 		},
-		{
-			name:    "RunFromShubKO",
-			command: "run",
-			argv:    []string{"--bind", bind, "shub://singularityhub/busybox", "0"},
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "RunFromShubKO",
+		// 	command: "run",
+		// 	argv:    []string{"--bind", bind, "shub://singularityhub/busybox", "0"},
+		// 	exit:    1,
+		// },
 		{
 			name:    "RunFromOrasKO",
 			command: "run",
@@ -500,12 +504,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"library://busybox:latest", "true"},
 			exit:    0,
 		},
-		{
-			name:    "ExecTrueShub",
-			command: "exec",
-			argv:    []string{"shub://singularityhub/busybox", "true"},
-			exit:    0,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecTrueShub",
+		// 	command: "exec",
+		// 	argv:    []string{"shub://singularityhub/busybox", "true"},
+		// 	exit:    0,
+		// },
 		{
 			name:    "ExecTrueOras",
 			command: "exec",
@@ -524,12 +529,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"library://busybox:latest", "false"},
 			exit:    1,
 		},
-		{
-			name:    "ExecFalseShub",
-			command: "exec",
-			argv:    []string{"shub://singularityhub/busybox", "false"},
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecFalseShub",
+		// 	command: "exec",
+		// 	argv:    []string{"shub://singularityhub/busybox", "false"},
+		// 	exit:    1,
+		// },
 		{
 			name:    "ExecFalseOras",
 			command: "exec",
@@ -550,12 +556,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--userns", "library://busybox:latest", "true"},
 			exit:    0,
 		},
-		{
-			name:    "ExecTrueShubUserns",
-			command: "exec",
-			argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
-			exit:    0,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecTrueShubUserns",
+		// 	command: "exec",
+		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
+		// 	exit:    0,
+		// },
 		{
 			name:    "ExecTrueOrasUserns",
 			command: "exec",
@@ -574,12 +581,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--userns", "library://busybox:latest", "false"},
 			exit:    1,
 		},
-		{
-			name:    "ExecFalseShubUserns",
-			command: "exec",
-			argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecFalseShubUserns",
+		// 	command: "exec",
+		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
+		// 	exit:    1,
+		// },
 		{
 			name:    "ExecFalseOrasUserns",
 			command: "exec",
