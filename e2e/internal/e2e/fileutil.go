@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 var (
@@ -40,32 +41,19 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 	return tmpfile.Name(), nil
 }
 
-// MakeTmpDir creates a temporary directory with provided mode
-// in os.TempDir if basedir is ""
-func MakeTmpDir(basedir, pattern string, mode os.FileMode) (string, error) {
-	name, err := ioutil.TempDir(basedir, pattern)
-	if err != nil {
-		return "", err
-	}
-	if err := os.Chmod(name, mode); err != nil {
-		return "", err
-	}
-	return name, nil
-}
-
 // MakeCacheDirs creates cache directories for privileged and unprivileged
 // tests. Also set SINGULARITY_CACHEDIR environment variable for unprivileged
 // context.
 func MakeCacheDirs(baseDir string) error {
 	if cacheDirPriv == "" {
-		dir, err := MakeTmpDir(baseDir, "privcache-", 0755)
+		dir, err := fs.MakeTmpDir(baseDir, "privcache-", 0755)
 		if err != nil {
 			return fmt.Errorf("failed to create privileged cache directory: %s", err)
 		}
 		cacheDirPriv = dir
 	}
 	if cacheDirUnpriv == "" {
-		dir, err := MakeTmpDir(baseDir, "unprivcache-", 0755)
+		dir, err := fs.MakeTmpDir(baseDir, "unprivcache-", 0755)
 		if err != nil {
 			return fmt.Errorf("failed to create unprivileged cache directory: %s", err)
 		}

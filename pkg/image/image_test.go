@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
@@ -54,8 +55,8 @@ func downloadImage(t *testing.T) string {
 	f.Close()
 
 	// Create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCacheDir := testCache.MakeDir(t, "")
+	defer testCache.DeleteDir(t, imgCacheDir)
 	// We use SINGULARITY_CACHEDIR instead of cache.DirEnv to avoid a dependency cycle
 	cacheEnvStr := "SINGULARITY_CACHEDIR=" + imgCacheDir
 
