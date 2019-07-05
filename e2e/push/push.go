@@ -20,6 +20,8 @@ type ctx struct {
 }
 
 func (c *ctx) testPushCmd(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	// setup file and dir to use as invalid sources
 	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")
 	if err != nil {

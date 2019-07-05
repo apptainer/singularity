@@ -599,10 +599,29 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, mnt.Destination)
-	_, err = c.rpcOps.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
+
+	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
+
+	mountType := mnt.Type
+
+	if mountType == "encryptfs" {
+		cryptDev, err := c.rpcOps.Decrypt(offset, path)
+
+		if err != nil {
+			return fmt.Errorf("Unable to decrypt the file system: %s", err)
+		}
+
+		path = cryptDev
+
+		// Save this device to cleanup later
+		c.engine.EngineConfig.CryptDev = cryptDev
+
+		// Currently we only support encrypted squashfs file system
+		mountType = "squashfs"
+	}
+	_, err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
 	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
+		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
 	}
 
 	return nil
@@ -666,11 +685,15 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
 
+	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
+
 	switch imageObject.Partitions[0].Type {
 	case image.SQUASHFS:
 		mountType = "squashfs"
 	case image.EXT3:
 		mountType = "ext3"
+	case image.ENCRYPTSQUASHFS:
+		mountType = "encryptfs"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
 		flags |= syscall.MS_BIND
