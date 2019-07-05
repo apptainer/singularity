@@ -114,7 +114,7 @@ func Run(t *testing.T) {
 	testenv.ImagePath = imagePath
 	defer os.Remove(imagePath)
 
-	// XXX(mem): Please DO NOT add a call to e2e.EnsureImage here.
+	// WARNING(Sylabs-team): Please DO NOT add a call to e2e.EnsureImage here.
 	// If you need the test image, add the call at the top of your
 	// own test.
 
