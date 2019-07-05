@@ -25,6 +25,8 @@ const (
 	SANDBOX
 	// SIF constant for sif format
 	SIF
+	// ENCRYPTSQUASHFS constant for encrypted squashfs format
+	ENCRYPTSQUASHFS
 )
 
 const (
