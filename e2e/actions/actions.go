@@ -255,6 +255,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 				// to fail because the "Singularity" that
 				// we are looking for is chopped from the
 				// front.
+				// TODO(mem): This test was added back in 491a71716013654acb2276e4b37c2e015d2dfe09
 				e2e.ConsoleSendLine("cd /"),
 				e2e.ConsoleExpect("Singularity"),
 				e2e.ConsoleSendLine("exit"),
