@@ -15,6 +15,8 @@ import (
 )
 
 func TestShub(t *testing.T) {
+	// TODO(mem): reenable this; disabled while shub is down
+	t.Skip("Skipping tests that access singularity hub")
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -56,6 +58,8 @@ func TestShub(t *testing.T) {
 }
 
 func TestShubImageExists(t *testing.T) {
+	// TODO(mem): reenable this; disabled while shub is down
+	t.Skip("Skipping tests that access singularity hub")
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

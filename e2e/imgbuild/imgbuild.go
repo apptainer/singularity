@@ -33,8 +33,10 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 		{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
 		{"DockerDefFile", "", "../examples/docker/Singularity", true},
-		{"ShubURI", "", "shub://GodloveD/busybox", true},
-		{"ShubDefFile", "", "../examples/shub/Singularity", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"ShubURI", "", "shub://GodloveD/busybox", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
 		{"LibraryDefFile", "", "../examples/library/Singularity", true},
 		{"OrasURI", "", "oras://localhost:5000/oras_test_sif:latest", true},
 		{"Yum", "yum", "../examples/centos/Singularity", true},

@@ -174,13 +174,14 @@ var tests = []struct {
 		unauthenticated: false,
 		expectSuccess:   true,
 	},
-	{
-		desc:            "image from shub",
-		srcURI:          "shub://GodloveD/busybox",
-		force:           true,
-		unauthenticated: false,
-		expectSuccess:   true,
-	},
+	// TODO(mem): reenable this; disabled while shub is down
+	// {
+	// 	desc:            "image from shub",
+	// 	srcURI:          "shub://GodloveD/busybox",
+	// 	force:           true,
+	// 	unauthenticated: false,
+	// 	expectSuccess:   true,
+	// },
 	{
 		desc:            "oras transport for SIF from registry",
 		srcURI:          "oras://localhost:5000/pull_test_sif:latest",

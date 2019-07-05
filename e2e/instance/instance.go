@@ -208,10 +208,11 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 			name: "test_from_library",
 			uri:  "library://busybox",
 		},
-		{
-			name: "test_from_shub",
-			uri:  "shub://singularityhub/busybox",
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name: "test_from_shub",
+		// 	uri:  "shub://singularityhub/busybox",
+		// },
 	}
 
 	for _, i := range instances {
