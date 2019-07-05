@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	stdexec "os/exec"
 	"strconv"
 	"testing"
 
@@ -617,6 +618,10 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 // PersistentOverlay test the --overlay function
 func (c *actionTests) PersistentOverlay(t *testing.T) {
 	const squashfsImage = "squashfs.simg"
+
+	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {
+		t.Skip("mkfs.ext3 not found")
+	}
 
 	dir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
 	if err != nil {
