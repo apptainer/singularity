@@ -66,6 +66,10 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 }
 
 // ReadKeyFromStdin reads key from terminal and returns it
+// TODO (schebro): Fix #3816, #3851
+// Currently keys are being read interactively from the terminal.
+// Keys should be non-interactive, preferably in a keyfile that can
+// be passed to cryptsetup utility
 func (crypt *Device) ReadKeyFromStdin(confirm bool) (string, error) {
 
 	fmt.Print("Enter the Key: ")
@@ -122,6 +126,17 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	// NOTE: This routine runs with root privileges. It's not necessary
 	// to explicitly set cmd's uid or gid here
+	// TODO (schebro): Fix #3818, #3821
+	// Currently we are relying on host's cryptsetup utility to encrypt and decrypt
+	// the SIF. The possiblity to saving a version of cryptsetup inside the container should be
+	// investigated. To do that, at least one additional partition is required, which is
+	// not encrypted.
+
+	// TODO (schebro): Fix #3819
+	// If we choose not to save a version of cryptsetup in container, host's cryptsetup utility's
+	// paty should be saved in a configuration file at build time (similar to mksquashfs) for
+	// security reasons
+
 	cmd := exec.Command("/sbin/cryptsetup", "luksFormat", cryptF.Name())
 	stdin, err := cmd.StdinPipe()
 

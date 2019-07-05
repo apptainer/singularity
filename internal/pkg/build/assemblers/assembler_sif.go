@@ -186,6 +186,10 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// A dm-crypt device needs to be created with squashfs
 		cryptDev := &crypt.Device{}
 
+		// TODO (schebro): Fix #3876
+		// Detach the following code from the squashfs creation. SIF can be
+		// created first and encrypted after. This gives the flexibility to
+		// encrypt an existing SIF
 		key, err := cryptDev.ReadKeyFromStdin(true)
 		if err != nil {
 			return fmt.Errorf("unable to read key from stdin")
