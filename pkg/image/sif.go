@@ -94,6 +94,8 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			img.Partitions[0].Type = SQUASHFS
 		} else if fstype == sif.FsExt3 {
 			img.Partitions[0].Type = EXT3
+		} else if fstype == sif.FsEncryptedSquashfs {
+			img.Partitions[0].Type = ENCRYPTSQUASHFS
 		} else {
 			return fmt.Errorf("unknown file system type: %v", fstype)
 		}

@@ -244,6 +244,8 @@ github.com/sylabs/sif v1.0.4-0.20190517011411-f5e78ee40f0b h1:GhPf6kQvxegETxi+uJ
 github.com/sylabs/sif v1.0.4-0.20190517011411-f5e78ee40f0b/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
 github.com/sylabs/sif v1.0.4 h1:/jkycAIWe0Ro5+QrT23/TCeWSmHHcnMGaPHX6xovqMU=
 github.com/sylabs/sif v1.0.4/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
+github.com/sylabs/sif v1.0.5 h1:33QYALonFWAIfW1pr1luwyI90UyVVAn7rCJWyQDgIho=
+github.com/sylabs/sif v1.0.5/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
