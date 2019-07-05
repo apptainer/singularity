@@ -14,6 +14,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/priv"
+
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
@@ -32,6 +34,7 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -103,6 +106,14 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		c.suidFlag = 0
 	}
 
+	// user namespace was not requested but we need to check
+	// if we are currently running in a user namespace and set
+	// value accordingly to avoid remount errors while running
+	// inside a user namespace
+	if !c.userNS {
+		c.userNS, _ = namespaces.IsInsideUserNamespace(os.Getpid())
+	}
+
 	p := &mount.Points{}
 	system := &mount.System{Points: p, Mount: c.mount}
 
@@ -110,7 +121,13 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
-	if err := system.RunAfterTag(mount.LayerTag, c.addIdentityMount); err != nil {
+	if err := system.RunAfterTag(mount.SharedTag, c.addIdentityMount); err != nil {
+		return err
+	}
+	// this call must occur just after all container layers are mounted
+	// to prevent user binds to screw up session final directory and
+	// consequently chroot
+	if err := system.RunAfterTag(mount.SharedTag, c.chdirFinal); err != nil {
 		return err
 	}
 	if err := system.RunAfterTag(mount.RootfsTag, c.addActionsMount); err != nil {
@@ -157,62 +174,31 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		return err
 	}
 
+	networkSetup, err := c.prepareNetworkSetup(system, pid)
+	if err != nil {
+		return err
+	}
+
 	sylog.Debugf("Mount all")
 	if err := system.MountAll(); err != nil {
 		return err
 	}
 
+	// chroot from RPC server current working directory since
+	// it's already in final directory after chdirFinal call
 	sylog.Debugf("Chroot into %s\n", c.session.FinalPath())
-	_, err = c.rpcOps.Chroot(c.session.FinalPath(), "pivot")
+	_, err = c.rpcOps.Chroot(".", "pivot")
 	if err != nil {
 		sylog.Debugf("Fallback to move/chroot")
-		_, err = c.rpcOps.Chroot(c.session.FinalPath(), "move")
+		_, err = c.rpcOps.Chroot(".", "move")
 		if err != nil {
 			return fmt.Errorf("chroot failed: %s", err)
 		}
 	}
 
-	if c.netNS {
-		if os.Geteuid() == 0 && !c.userNS {
-			/* hold a reference to container network namespace for cleanup */
-			f, err := syscall.Open("/proc/"+strconv.Itoa(pid)+"/ns/net", os.O_RDONLY, 0)
-			if err != nil {
-				return fmt.Errorf("can't open network namespace: %s", err)
-			}
-			nspath := fmt.Sprintf("/proc/%d/fd/%d", os.Getpid(), f)
-			networks := strings.Split(engine.EngineConfig.GetNetwork(), ",")
-
-			cniPath := &network.CNIPath{}
-
-			if engine.EngineConfig.File.CniConfPath != "" {
-				cniPath.Conf = engine.EngineConfig.File.CniConfPath
-			} else {
-				cniPath.Conf = defaultCNIConfPath
-			}
-			if engine.EngineConfig.File.CniPluginPath != "" {
-				cniPath.Plugin = engine.EngineConfig.File.CniPluginPath
-			} else {
-				cniPath.Plugin = defaultCNIPluginPath
-			}
-
-			setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
-			if err != nil {
-				return fmt.Errorf("%s", err)
-			}
-			netargs := engine.EngineConfig.GetNetworkArgs()
-			if err := setup.SetArgs(netargs); err != nil {
-				return fmt.Errorf("%s", err)
-			}
-
-			setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
-
-			if err := setup.AddNetworks(); err != nil {
-				return fmt.Errorf("%s", err)
-			}
-
-			engine.EngineConfig.Network = setup
-		} else if engine.EngineConfig.GetNetwork() != "none" {
-			return fmt.Errorf("Network requires root permissions or --network=none argument as user")
+	if networkSetup != nil {
+		if err := networkSetup(); err != nil {
+			return err
 		}
 	}
 
@@ -264,24 +250,48 @@ func (c *container) setupSIFOverlay(img *image.Image, writable bool) error {
 	return nil
 }
 
+// checkOverlay will test if overlay is supported/allowed.
+func (c *container) checkOverlay() bool {
+	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
+	// with the current workflow, since 4.18 we get an operation not permitted
+	if c.userNS {
+		return false
+	}
+
+	if _, err := c.rpcOps.Mount("none", "/", "overlay", syscall.MS_SILENT, ""); err != nil {
+		// if an invalid argument error is returned, overlay is supported and is allowed
+		if err.Error() != os.ErrInvalid.Error() {
+			sylog.Debugf("Overlay seems not supported and/or not allowed by kernel")
+			return false
+		}
+	}
+
+	// previous mount forced overlay module to be loaded, check if we find
+	// it in /proc/filesystems
+	if has, _ := proc.HasFilesystem("overlay"); has {
+		sylog.Debugf("Overlay seems supported and allowed by kernel")
+		switch c.engine.EngineConfig.File.EnableOverlay {
+		case "yes", "try":
+			return true
+		default:
+			sylog.Debugf("Could not use overlay, disabled by configuration")
+		}
+	}
+
+	return false
+}
+
 // setupSessionLayout will create the session layout according to the capabilities of Singularity
 // on the system. It will first attempt to use "overlay", followed by "underlay", and if neither
 // are available it will not use either. If neither are used, we will not be able to bind mount
 // to non-existent paths within the container
 func (c *container) setupSessionLayout(system *mount.System) error {
 	writableTmpfs := c.engine.EngineConfig.GetWritableTmpfs()
-	overlayEnabled := false
+	overlayEnabled := c.checkOverlay()
 
 	sessionPath, err := filepath.EvalSymlinks(buildcfg.SESSIONDIR)
 	if err != nil {
 		return fmt.Errorf("failed to resolved session directory %s: %s", buildcfg.SESSIONDIR, err)
-	}
-
-	if enabled, _ := proc.HasFilesystem("overlay"); enabled && !c.userNS {
-		switch c.engine.EngineConfig.File.EnableOverlay {
-		case "yes", "try":
-			overlayEnabled = true
-		}
 	}
 
 	imgObject, err := c.loadImage(c.engine.EngineConfig.GetImage(), true)
@@ -338,7 +348,7 @@ func (c *container) setupOverlayLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "overlay"
-	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // setupUnderlayLayout sets up the session with underlay "filesystem"
@@ -349,7 +359,7 @@ func (c *container) setupUnderlayLayout(system *mount.System, sessionPath string
 	}
 
 	c.sessionLayerType = "underlay"
-	return system.RunAfterTag(mount.LayerTag, c.setPropagationMount)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // setupDefaultLayout sets up the session without overlay or underlay
@@ -360,7 +370,7 @@ func (c *container) setupDefaultLayout(system *mount.System, sessionPath string)
 	}
 
 	c.sessionLayerType = "none"
-	return system.RunAfterTag(mount.RootfsTag, c.setPropagationMount)
+	return system.RunAfterTag(mount.SharedTag, c.setPropagationMount)
 }
 
 // isLayerEnabled returns whether or not overlay or underlay system
@@ -396,6 +406,10 @@ func (c *container) mount(point *mount.Point) error {
 	return nil
 }
 
+// setPropagationMount will apply propagation flag set by
+// configuration directive, when applied master process
+// won't see mount done by RPC server anymore. Typically
+// called after SharedTag mounts
 func (c *container) setPropagationMount(system *mount.System) error {
 	pflags := uintptr(syscall.MS_REC)
 
@@ -408,6 +422,13 @@ func (c *container) setPropagationMount(system *mount.System) error {
 	}
 
 	if _, err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *container) chdirFinal(system *mount.System) error {
+	if _, err := c.rpcOps.Chdir(c.session.FinalPath()); err != nil {
 		return err
 	}
 	return nil
@@ -519,6 +540,25 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 	}
 	_, err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
+	// when using user namespace we always try to apply mount flags with
+	// remount, then if we get a permission denied error, we continue
+	// execution by ignoring the error and warn user if the bind mount
+	// need to be mounted read-only
+	if remount && err != nil && c.userNS {
+		// this needs to compare error strings because we are dropping
+		// the original error value in the RPC call. In order to keep
+		// the original error values, we would have to add them to the
+		// corresponding struct passed over RPC and add the necessary
+		// GOB encoding / decoding functions.
+		if err.Error() == syscall.Errno(syscall.EPERM).Error() {
+			if flags&syscall.MS_RDONLY != 0 {
+				sylog.Warningf("Could not remount %s read-only: %s", dest, err)
+			} else {
+				sylog.Verbosef("Could not remount %s: %s", dest, err)
+			}
+			return nil
+		}
+	}
 	return err
 }
 
@@ -559,10 +599,29 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, mnt.Destination)
-	_, err = c.rpcOps.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
+
+	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
+
+	mountType := mnt.Type
+
+	if mountType == "encryptfs" {
+		cryptDev, err := c.rpcOps.Decrypt(offset, path)
+
+		if err != nil {
+			return fmt.Errorf("Unable to decrypt the file system: %s", err)
+		}
+
+		path = cryptDev
+
+		// Save this device to cleanup later
+		c.engine.EngineConfig.CryptDev = cryptDev
+
+		// Currently we only support encrypted squashfs file system
+		mountType = "squashfs"
+	}
+	_, err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
 	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
+		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
 	}
 
 	return nil
@@ -626,11 +685,15 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
 
+	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
+
 	switch imageObject.Partitions[0].Type {
 	case image.SQUASHFS:
 		mountType = "squashfs"
 	case image.EXT3:
 		mountType = "ext3"
+	case image.ENCRYPTSQUASHFS:
+		mountType = "encryptfs"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
 		flags |= syscall.MS_BIND
@@ -1034,11 +1097,10 @@ func (c *container) addDevMount(system *mount.System) error {
 			if err := c.addSessionDevAt(ttylink, "/dev/console", system); err != nil {
 				return err
 			}
-			// and also add a /dev/tty
-			if err := c.addSessionDev("/dev/tty", system); err != nil {
-				return err
-			}
 			break
+		}
+		if err := c.addSessionDev("/dev/tty", system); err != nil {
+			return err
 		}
 		if err := c.addSessionDev("/dev/null", system); err != nil {
 			return err
@@ -1079,7 +1141,7 @@ func (c *container) addDevMount(system *mount.System) error {
 
 		// devices could be added in addUserbindsMount so bind session dev
 		// after that all devices have been added to the mount point list
-		if err := system.RunAfterTag(mount.LayerTag, c.addSessionDevMount); err != nil {
+		if err := system.RunAfterTag(mount.SharedTag, c.addSessionDevMount); err != nil {
 			return err
 		}
 	} else if c.engine.EngineConfig.File.MountDev == "yes" {
@@ -1272,13 +1334,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 	devicesMounted := 0
 	devPrefix := "/dev"
 	userBindControl := c.engine.EngineConfig.File.UserBindControl
-	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
+	defaultFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
 		return nil
 	}
 
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
+		flags := defaultFlags
 		splitted := strings.Split(b, ":")
 
 		src, err := filepath.Abs(splitted[0])
@@ -1328,13 +1391,12 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		sylog.Debugf("Adding %s to mount list\n", src)
 
-		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil && err == mount.ErrMountExists {
+		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err == mount.ErrMountExists {
 			sylog.Warningf("destination %s already in mount list: %s", src, err)
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
-			flags &^= syscall.MS_RDONLY
 		}
 	}
 
@@ -1726,4 +1788,82 @@ func (c *container) addActionsMount(system *mount.System) error {
 	}
 
 	return system.Points.AddRemount(mount.BindsTag, containerDir, flags)
+}
+
+func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func() error, error) {
+	const (
+		fakerootNet  = "fakeroot"
+		noneNet      = "none"
+		procNetNs    = "/proc/self/ns/net"
+		sessionNetNs = "/netns"
+	)
+
+	fakeroot := c.engine.EngineConfig.GetFakeroot()
+	net := c.engine.EngineConfig.GetNetwork()
+	euid := os.Geteuid()
+
+	if !c.netNS || net == noneNet {
+		return nil, nil
+	} else if (c.userNS || euid != 0) && !fakeroot {
+		return nil, fmt.Errorf("network requires root or --fakeroot, users need to specify --network=%s with --net", noneNet)
+	}
+
+	// we hold a reference to container network namespace
+	// by binding /proc/self/ns/net (from the RPC server) inside the
+	// session directory
+	if err := c.session.AddFile(sessionNetNs, nil); err != nil {
+		return nil, err
+	}
+	nspath, _ := c.session.GetPath(sessionNetNs)
+	if err := system.Points.AddBind(mount.SharedTag, procNetNs, nspath, 0); err != nil {
+		return nil, fmt.Errorf("could not hold network namespace reference: %s", err)
+	}
+	networks := strings.Split(c.engine.EngineConfig.GetNetwork(), ",")
+
+	if fakeroot && euid != 0 && net != fakerootNet {
+		// set as debug message to avoid annoying warning
+		sylog.Debugf("only '%s' network is allowed for regular user, you requested '%s'", fakerootNet, net)
+		networks = []string{fakerootNet}
+	}
+
+	cniPath := &network.CNIPath{}
+
+	cniPath.Conf = c.engine.EngineConfig.File.CniConfPath
+	if cniPath.Conf == "" {
+		cniPath.Conf = defaultCNIConfPath
+	}
+	cniPath.Plugin = c.engine.EngineConfig.File.CniPluginPath
+	if cniPath.Plugin == "" {
+		cniPath.Plugin = defaultCNIPluginPath
+	}
+
+	setup, err := network.NewSetup(networks, strconv.Itoa(pid), nspath, cniPath)
+	if err != nil {
+		return nil, fmt.Errorf("network setup failed: %s", err)
+	}
+	netargs := c.engine.EngineConfig.GetNetworkArgs()
+	if err := setup.SetArgs(netargs); err != nil {
+		return nil, fmt.Errorf("error while setting network arguments: %s", err)
+	}
+
+	return func() error {
+		if fakeroot {
+			// prevent port hijacking between user processes
+			if err := setup.SetPortProtection(fakerootNet, 0); err != nil {
+				return err
+			}
+			if euid != 0 {
+				priv.Escalate()
+				defer priv.Drop()
+			}
+		}
+
+		setup.SetEnvPath("/bin:/sbin:/usr/bin:/usr/sbin")
+
+		if err := setup.AddNetworks(); err != nil {
+			return fmt.Errorf("%s", err)
+		}
+		c.engine.EngineConfig.Network = setup
+		return nil
+	}, nil
 }

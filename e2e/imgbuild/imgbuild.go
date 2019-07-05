@@ -14,20 +14,15 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
 var testFileContent = "Test file content\n"
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
-	TestDir string `split_words:"true"`
+type imgBuildTests struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
-
-func buildFrom(t *testing.T) {
+func (c *imgBuildTests) buildFrom(t *testing.T) {
 	tests := []struct {
 		name       string
 		dependency string
@@ -38,15 +33,18 @@ func buildFrom(t *testing.T) {
 		{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
 		{"DockerDefFile", "", "../examples/docker/Singularity", true},
-		{"SHubURI", "", "shub://GodloveD/busybox", true},
-		{"SHubDefFile", "", "../examples/shub/Singularity", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"ShubURI", "", "shub://GodloveD/busybox", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
 		{"LibraryDefFile", "", "../examples/library/Singularity", true},
+		{"OrasURI", "", "oras://localhost:5000/oras_test_sif:latest", true},
 		{"Yum", "yum", "../examples/centos/Singularity", true},
 		{"Zypper", "zypper", "../examples/opensuse/Singularity", true},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 			if tt.dependency != "" {
 				if _, err := exec.LookPath(tt.dependency); err != nil {
 					t.Skipf("%v not found in path", tt.dependency)
@@ -57,22 +55,22 @@ func buildFrom(t *testing.T) {
 				Sandbox: tt.sandbox,
 			}
 
-			imagePath := path.Join(testenv.TestDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, tt.buildSpec); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
-			e2e.ImageVerify(t, testenv.CmdPath, imagePath)
+			e2e.ImageVerify(t, c.env.CmdPath, imagePath)
 		}))
 	}
 }
 
-func buildLocalImage(t *testing.T) {
-	imagePath1 := path.Join(testenv.TestDir, "container1")
-	imagePath2 := path.Join(testenv.TestDir, "container2")
-	imagePath3 := path.Join(testenv.TestDir, "container3")
+func (c *imgBuildTests) buildLocalImage(t *testing.T) {
+	imagePath1 := path.Join(c.env.TestDir, "container1")
+	imagePath2 := path.Join(c.env.TestDir, "container2")
+	imagePath3 := path.Join(c.env.TestDir, "container3")
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
@@ -121,43 +119,43 @@ func buildLocalImage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 			for _, ts := range tt.steps {
 				defer os.RemoveAll(ts.imagePath)
 			}
 
 			for _, ts := range tt.steps {
-				t.Run(ts.name, test.WithPrivilege(func(t *testing.T) {
+				t.Run(ts.name, e2e.Privileged(func(t *testing.T) {
 					opts := e2e.BuildOpts{
 						Force:   ts.force,
 						Sandbox: ts.sandbox,
 					}
 
-					if b, err := e2e.ImageBuild(testenv.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
+					if b, err := e2e.ImageBuild(c.env.CmdPath, opts, ts.imagePath, ts.buildSpec); err != nil {
 						t.Log(string(b))
 						t.Fatalf("unexpected failure: %v", err)
 					}
-					e2e.ImageVerify(t, testenv.CmdPath, ts.imagePath)
+					e2e.ImageVerify(t, c.env.CmdPath, ts.imagePath)
 				}))
 			}
 		}))
 	}
 }
 
-func badPath(t *testing.T) {
-	test.EnsurePrivilege(t)
+func (c *imgBuildTests) badPath(t *testing.T) {
+	e2e.Privileged(func(t *testing.T) {
+		imagePath := path.Join(c.env.TestDir, "container")
+		defer os.RemoveAll(imagePath)
 
-	imagePath := path.Join(testenv.TestDir, "container")
-	defer os.RemoveAll(imagePath)
-
-	if b, err := e2e.ImageBuild(testenv.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
-		t.Log(string(b))
-		t.Fatal("unexpected success")
-	}
+		if b, err := e2e.ImageBuild(c.env.CmdPath, e2e.BuildOpts{}, imagePath, "/some/dumb/path"); err == nil {
+			t.Log(string(b))
+			t.Fatal("unexpected success")
+		}
+	})(t)
 }
 
-func buildMultiStageDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
+func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
+	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -331,7 +329,7 @@ func buildMultiStageDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 
 			defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
 			defer os.Remove(defFile)
@@ -340,22 +338,22 @@ func buildMultiStageDefinition(t *testing.T) {
 				Sandbox: tt.sandbox,
 			}
 
-			imagePath := path.Join(testenv.TestDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, defFile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
 
-			e2e.DefinitionImageVerify(t, testenv.CmdPath, imagePath, tt.correct)
+			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
 		}))
 	}
 
 }
 
-func buildDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(testenv.TestDir, "testFile-", testFileContent)
+func (c *imgBuildTests) buildDefinition(t *testing.T) {
+	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -443,14 +441,14 @@ func buildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Pre: []string{
-				filepath.Join(testenv.TestDir, "PreFile1"),
+				filepath.Join(c.env.TestDir, "PreFile1"),
 			},
 		}},
 		{"Setup", false, true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Setup: []string{
-				filepath.Join(testenv.TestDir, "SetupFile1"),
+				filepath.Join(c.env.TestDir, "SetupFile1"),
 			},
 		}},
 		{"Post", false, true, e2e.DefFileDetails{
@@ -623,7 +621,7 @@ func buildDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
 
 			defFile := e2e.PrepareDefFile(tt.dfd)
 			defer os.Remove(defFile)
@@ -632,32 +630,34 @@ func buildDefinition(t *testing.T) {
 				Sandbox: tt.sandbox,
 			}
 
-			imagePath := path.Join(testenv.TestDir, "container")
+			imagePath := path.Join(c.env.TestDir, "container")
 			defer os.RemoveAll(imagePath)
 
-			if b, err := e2e.ImageBuild(testenv.CmdPath, opts, imagePath, defFile); err != nil {
+			if b, err := e2e.ImageBuild(c.env.CmdPath, opts, imagePath, defFile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
-			e2e.DefinitionImageVerify(t, testenv.CmdPath, imagePath, tt.dfd)
+			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.dfd)
 		}))
 	}
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &imgBuildTests{
+		env: env,
+	}
 
-	t.Log(testenv)
-
-	// builds from definition file and URI
-	t.Run("From", buildFrom)
-	// build and image from an existing image
-	t.Run("FromLocalImage", buildLocalImage)
-	// try to build from a non existen path
-	t.Run("badPath", badPath)
-	// builds from definition template
-	t.Run("Definition", buildDefinition)
-	// multistage build from definition templates
-	t.Run("MultiStage", buildMultiStageDefinition)
+	return func(t *testing.T) {
+		// builds from definition file and URI
+		t.Run("From", c.buildFrom)
+		// build and image from an existing image
+		t.Run("FromLocalImage", c.buildLocalImage)
+		// try to build from a non existen path
+		t.Run("badPath", c.badPath)
+		// builds from definition template
+		t.Run("Definition", c.buildDefinition)
+		// multistage build from definition templates
+		t.Run("MultiStage", c.buildMultiStageDefinition)
+	}
 }

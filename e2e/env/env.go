@@ -16,17 +16,13 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath string `split_words:"true"`
+type ctx struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
-
-func singularityEnv(t *testing.T) {
+func (c *ctx) singularityEnv(t *testing.T) {
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
 	var defaultImage = "docker://alpine:3.8"
 	var defaultPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
@@ -58,10 +54,10 @@ func singularityEnv(t *testing.T) {
 	}
 
 	for _, currentTest := range singularityEnvTests {
-		t.Run(currentTest.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(currentTest.name, func(t *testing.T) {
 			args := []string{"exec", currentTest.image, "env"}
 
-			cmd := exec.Command(testenv.CmdPath, args...)
+			cmd := exec.Command(c.env.CmdPath, args...)
 			cmd.Env = append(os.Environ(), currentTest.env...)
 			b, err := cmd.CombinedOutput()
 
@@ -78,16 +74,18 @@ func singularityEnv(t *testing.T) {
 			if !strings.Contains(out, currentTest.path) {
 				t.Fatalf("Command output did not contain the path '%s'", currentTest.path)
 			}
-		}))
+		})
 	}
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
+	}
 
-	t.Log(testenv)
-
-	// try to build from a non existen path
-	t.Run("singularityEnv", singularityEnv)
+	return func(t *testing.T) {
+		// try to build from a non existen path
+		t.Run("singularityEnv", c.singularityEnv)
+	}
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,8 +15,9 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-// SandboxAssembler doesnt store anything
+// SandboxAssembler stores data required to assemble the image.
 type SandboxAssembler struct {
+	// Nothing yet
 }
 
 // Assemble creates a Sandbox image from a Bundle
@@ -28,6 +29,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	if _, err := os.Stat(path); err == nil {
 		os.RemoveAll(path)
 	}
+
 	var stderr bytes.Buffer
 	cmd := exec.Command("mv", b.Rootfs(), path)
 	cmd.Stderr = &stderr

@@ -4,7 +4,8 @@ Usage:
   singularity oci state <container_ID>
 
 Description:
-  State invoke state operation to query state of a created/running/stopped container identified by container ID.
+  State invoke state operation to query state of a created/running/stopped 
+  container identified by container ID.
 
 Options:
   -h, --help                 help for state

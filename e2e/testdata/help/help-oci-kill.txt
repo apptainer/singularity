@@ -4,7 +4,8 @@ Usage:
   singularity oci kill [kill options...] <container_ID>
 
 Description:
-  Kill invoke kill operation to kill processes running within container identified by container ID.
+  Kill invoke kill operation to kill processes running within container 
+  identified by container ID.
 
 Options:
   -f, --force            kill container process with SIGKILL

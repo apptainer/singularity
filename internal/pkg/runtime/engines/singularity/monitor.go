@@ -25,6 +25,12 @@ func (engine *EngineOperations) MonitorContainer(pid int, signals chan os.Signal
 				continue
 			}
 			return status, nil
+		default:
+			if engine.EngineConfig.GetSignalPropagation() {
+				if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {
+					return status, fmt.Errorf("interrupted by signal %s", s.String())
+				}
+			}
 		}
 	}
 }

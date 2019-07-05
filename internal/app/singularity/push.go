@@ -10,31 +10,12 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/containerd/containerd/reference"
-	"github.com/containerd/containerd/remotes/docker"
-	ocitypes "github.com/containers/image/types"
-	"github.com/deislabs/oras/pkg/content"
 	"github.com/deislabs/oras/pkg/context"
-	"github.com/deislabs/oras/pkg/oras"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/signing"
 	pb "gopkg.in/cheggaaa/pb.v1"
-)
-
-const (
-	// SifDefaultTag is the tag to use when a tag is not specified
-	SifDefaultTag = "latest"
-
-	// SifConfigMediaType is the config descriptor mediaType
-	SifConfigMediaType = "application/vnd.sylabs.sif.config.v1+json"
-
-	// SifLayerMediaType is the mediaType for the "layer" which contains the actual SIF file
-	SifLayerMediaType = "appliciation/vnd.sylabs.sif.layer.tar"
 )
 
 var (
@@ -117,59 +98,4 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 	defer f.Close()
 
 	return libraryClient.UploadImage(context.Background(), f, r.Host+r.Path, r.Tags, "No Description", &progressCallback{})
-}
-
-// OrasPush uploads the image specified by path and pushes it to the provided oci reference,
-// it will use credentials if supplied
-func OrasPush(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
-	ref = strings.TrimPrefix(ref, "//")
-
-	spec, err := reference.Parse(ref)
-	if err != nil {
-		return fmt.Errorf("unable to parse oci reference: %s", err)
-	}
-
-	// Hostname() will panic if there is no '/' in the locator
-	// explicitly check for this and fail in order to prevent panic
-	// this case will only occur for incorrect uris
-	if !strings.Contains(spec.Locator, "/") {
-		return fmt.Errorf("not a valid oci object uri: %s", ref)
-	}
-
-	// append default tag if no object exists
-	if spec.Object == "" {
-		spec.Object = SifDefaultTag
-		sylog.Infof("No tag or digest found, using default: %s", SifDefaultTag)
-	}
-
-	credFn := func(_ string) (string, string, error) {
-		return ociAuth.Username, ociAuth.Password, nil
-	}
-
-	resolver := docker.NewResolver(docker.ResolverOptions{Credentials: credFn})
-
-	store := content.NewFileStore("")
-	defer store.Close()
-
-	conf, err := store.Add("$config", SifConfigMediaType, "/dev/null")
-	if err != nil {
-		return fmt.Errorf("unable to add manifest config to FileStore: %s", err)
-	}
-	conf.Annotations = nil
-
-	// Get the filename from path and use it as the name in the file store
-	name := filepath.Base(path)
-
-	desc, err := store.Add(name, SifLayerMediaType, path)
-	if err != nil {
-		return fmt.Errorf("unable to add SIF file to FileStore: %s", err)
-	}
-
-	descriptors := []ocispec.Descriptor{desc}
-
-	if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
-		return fmt.Errorf("unable to push: %s", err)
-	}
-
-	return nil
 }

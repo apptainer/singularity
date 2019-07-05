@@ -15,19 +15,14 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"gotest.tools/assert"
 	"gotest.tools/golden"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+type ctx struct {
+	env e2e.TestEnv
 }
-
-var testenv testingEnv
 
 var helpContentTests = []struct {
 	cmds []string
@@ -49,14 +44,14 @@ var helpContentTests = []struct {
 	{[]string{"help", "oci", "update"}},
 }
 
-func testHelpContent(t *testing.T) {
+func (c *ctx) testHelpContent(t *testing.T) {
 	for _, tc := range helpContentTests {
 		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
 
 		t.Run(name, func(t *testing.T) {
 			path := filepath.Join("help", name)
 
-			c := exec.Command(testenv.CmdPath, tc.cmds...)
+			c := exec.Command(c.env.CmdPath, tc.cmds...)
 
 			got := c.Run(t).Stdout()
 
@@ -65,7 +60,7 @@ func testHelpContent(t *testing.T) {
 	}
 }
 
-func testCommands(t *testing.T) {
+func (c *ctx) testCommands(t *testing.T) {
 	tests := []struct {
 		name string
 		argv []string
@@ -91,7 +86,7 @@ func testCommands(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			tests := []struct {
 				name string
 				argv []string
@@ -105,26 +100,26 @@ func testCommands(t *testing.T) {
 				{"PreCommand", append([]string{"help"}, tt.argv...), false},
 			}
 			for _, tt := range tests {
-				if tt.skip && !testenv.RunDisabled {
+				if tt.skip && !c.env.RunDisabled {
 					t.Skip("disabled until issue addressed")
 				}
 
-				t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-					cmd := exec.Command(testenv.CmdPath, tt.argv...)
+				t.Run(tt.name, func(t *testing.T) {
+					cmd := exec.Command(c.env.CmdPath, tt.argv...)
 					if res := cmd.Run(t); res.Error != nil {
 						t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
 							res,
 							res.Error)
 					}
-				}))
+				})
 			}
-		}))
+		})
 	}
 
 }
 
-func testFailure(t *testing.T) {
-	if !testenv.RunDisabled {
+func (c *ctx) testFailure(t *testing.T) {
+	if !c.env.RunDisabled {
 		t.Skip("disabled until issue addressed") // TODO
 	}
 
@@ -139,17 +134,17 @@ func testFailure(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd := exec.Command(testenv.CmdPath, tt.argv...)
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(c.env.CmdPath, tt.argv...)
 			if res := cmd.Run(t); res.Error == nil {
 				t.Fatalf("While running command:\n%s\nUnexpected success", res)
 			}
-		}))
+		})
 	}
 
 }
 
-func testSingularity(t *testing.T) {
+func (c *ctx) testSingularity(t *testing.T) {
 	tests := []struct {
 		name       string
 		argv       []string
@@ -162,8 +157,8 @@ func testSingularity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd := exec.Command(testenv.CmdPath, tt.argv...)
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(c.env.CmdPath, tt.argv...)
 			switch res := cmd.Run(t); {
 			case res.Error == nil && tt.shouldPass:
 				// expecting PASS, passed => PASS
@@ -181,20 +176,22 @@ func testSingularity(t *testing.T) {
 				// expecting FAIL, passed => FAIL
 				t.Fatalf("While running command:\n%s\nUnexpected success", res)
 			}
-		}))
+		})
 	}
 
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
+	}
 
-	t.Log(testenv)
-
-	// try to build from a non existen path
-	t.Run("testCommands", testCommands)
-	t.Run("testFailure", testFailure)
-	t.Run("testSingularity", testSingularity)
-	t.Run("testHelpContent", testHelpContent)
+	return func(t *testing.T) {
+		// try to build from a non existen path
+		t.Run("testCommands", c.testCommands)
+		t.Run("testFailure", c.testFailure)
+		t.Run("testSingularity", c.testSingularity)
+		t.Run("testHelpContent", c.testHelpContent)
+	}
 }

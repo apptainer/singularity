@@ -88,6 +88,9 @@ const (
 	PreLayerTag = "prelayer"
 	// LayerTag defines tag for overlay/underlay final mount point
 	LayerTag = "layer"
+	// SharedTag defines tag for shared mount point between master
+	// and container processes
+	SharedTag = "shared"
 	// DevTag defines tag for dev related mount point
 	DevTag = "dev"
 	// HostfsTag defines tag for host filesystem mount point
@@ -122,23 +125,25 @@ var authorizedTags = map[AuthorizedTag]struct {
 	RootfsTag:    {false, 1},
 	PreLayerTag:  {true, 2},
 	LayerTag:     {false, 3},
-	DevTag:       {true, 4},
-	HostfsTag:    {true, 5},
-	BindsTag:     {true, 6},
-	KernelTag:    {true, 7},
-	HomeTag:      {false, 8},
-	TmpTag:       {true, 9},
-	ScratchTag:   {true, 10},
-	CwdTag:       {false, 11},
-	FilesTag:     {true, 12},
-	UserbindsTag: {true, 13},
-	OtherTag:     {true, 14},
-	FinalTag:     {true, 15},
+	SharedTag:    {true, 4},
+	DevTag:       {true, 5},
+	HostfsTag:    {true, 6},
+	BindsTag:     {true, 7},
+	KernelTag:    {true, 8},
+	HomeTag:      {false, 9},
+	TmpTag:       {true, 10},
+	ScratchTag:   {true, 11},
+	CwdTag:       {false, 12},
+	FilesTag:     {true, 13},
+	UserbindsTag: {true, 14},
+	OtherTag:     {true, 15},
+	FinalTag:     {true, 16},
 }
 
 var authorizedImage = map[string]fsContext{
-	"ext3":     {true},
-	"squashfs": {true},
+	"encryptfs": {true},
+	"ext3":      {true},
+	"squashfs":  {true},
 }
 
 var authorizedFS = map[string]fsContext{

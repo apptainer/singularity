@@ -8,6 +8,7 @@ package client
 import (
 	"net/rpc"
 	"os"
+	"path/filepath"
 
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -19,7 +20,7 @@ type RPC struct {
 	Name   string
 }
 
-// Mount calls tme mount RPC using the supplied arguments.
+// Mount calls the mount RPC using the supplied arguments.
 func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) (int, error) {
 	arguments := &args.MountArgs{
 		Source:     source,
@@ -30,6 +31,20 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".Mount", arguments, &reply)
+	return reply, err
+}
+
+// Decrypt calls the DeCrypt RPC using the supplied arguments.
+func (t *RPC) Decrypt(offset uint64, path string) (string, error) {
+	loopdev := filepath.Base(path)
+	arguments := &args.CryptArgs{
+		Offset:  offset,
+		Loopdev: loopdev,
+	}
+
+	var reply string
+	err := t.Client.Call(t.Name+".Decrypt", arguments, &reply)
+
 	return reply, err
 }
 
@@ -79,23 +94,6 @@ func (t *RPC) SetHostname(hostname string) (int, error) {
 	return reply, err
 }
 
-// HasNamespace calls the HasNamespace RPC using the supplied arguments.
-func (t *RPC) HasNamespace(pid int, nstype string) (bool, error) {
-	arguments := &args.HasNamespaceArgs{
-		Pid:    pid,
-		NsType: nstype,
-	}
-	var reply int
-	err := t.Client.Call(t.Name+".HasNamespace", arguments, &reply)
-	if err != nil {
-		return false, err
-	}
-	if reply == 1 {
-		return true, err
-	}
-	return false, err
-}
-
 // SetFsID calls the setfsid RPC using the supplied arguments.
 func (t *RPC) SetFsID(uid int, gid int) (int, error) {
 	arguments := &args.SetFsIDArgs{
@@ -104,5 +102,15 @@ func (t *RPC) SetFsID(uid int, gid int) (int, error) {
 	}
 	var reply int
 	err := t.Client.Call(t.Name+".SetFsID", arguments, &reply)
+	return reply, err
+}
+
+// Chdir calls the chdir RPC using the supplied arguments.
+func (t *RPC) Chdir(dir string) (int, error) {
+	arguments := &args.ChdirArgs{
+		Dir: dir,
+	}
+	var reply int
+	err := t.Client.Call(t.Name+".Chdir", arguments, &reply)
 	return reply, err
 }

@@ -6,6 +6,7 @@
 package cache
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,31 +19,37 @@ func TestNet(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	tests := []struct {
-		name     string
-		env      string
-		expected string
+		name        string
+		dir         string
+		needCleanup bool
+		expected    string
 	}{
 		{
-			name:     "Default Net",
-			env:      "",
-			expected: filepath.Join(cacheDefault, "net"),
+			name:        "Default Net",
+			dir:         "",
+			needCleanup: false, // Never cleanup the default cache
+			expected:    filepath.Join(cacheDefault, "net"),
 		},
 		{
-			name:     "Custom Net",
-			env:      cacheCustom,
-			expected: filepath.Join(cacheCustom, "net"),
+			name:        "Custom Net",
+			dir:         cacheCustom,
+			needCleanup: true,
+			expected:    filepath.Join(expectedCacheCustomRoot, "net"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer Clean()
-			defer os.Unsetenv(DirEnv)
+			c, err := NewHandle(tt.dir)
+			if err != nil {
+				t.Fatalf("failed to create new image cache handle: %s", err)
+			}
+			if tt.needCleanup {
+				defer c.cleanAllCaches()
+			}
 
-			os.Setenv(DirEnv, tt.env)
-
-			if r := Net(); r != tt.expected {
-				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
+			if c.Net != tt.expected {
+				t.Errorf("Unexpected result: %s (expected %s)", c.Net, tt.expected)
 			}
 		})
 	}
@@ -51,6 +58,17 @@ func TestNet(t *testing.T) {
 func TestNetImageExists(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
+
+	tempImageCache, err := ioutil.TempDir("", "image-cache-")
+	if err != nil {
+		t.Fatal("failed to create temporary image cache directory:", err)
+	}
+	defer os.RemoveAll(tempImageCache)
+
+	c, err := NewHandle(tempImageCache)
+	if err != nil {
+		t.Fatalf("failed to create new image cache handle: %s", err)
+	}
 
 	tests := []struct {
 		name     string
@@ -86,7 +104,7 @@ func TestNetImageExists(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			exists, err := NetImageExists(test.sum, test.path)
+			exists, err := c.NetImageExists(test.sum, test.path)
 			if err != nil {
 				t.Fatal("NetImageExists() failed")
 			}
