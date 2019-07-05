@@ -52,8 +52,10 @@ var runDisabled = flag.Bool("run_disabled", false, "run tests that have been tem
 func Run(t *testing.T) {
 	flag.Parse()
 
+	var testenv singularitye2e.TestEnv
+
 	if *runDisabled {
-		os.Setenv("E2E_RUN_DISABLED", "true")
+		testenv.RunDisabled = true
 	}
 	// init buildcfg values
 	useragent.InitValue(buildcfg.PACKAGE_NAME, buildcfg.PACKAGE_VERSION)
@@ -64,7 +66,7 @@ func Run(t *testing.T) {
 		log.Fatalf("singularity is not installed on this system: %v", err)
 	}
 
-	os.Setenv("E2E_CMD_PATH", cmdPath)
+	testenv.CmdPath = cmdPath
 
 	sysconfdir := func(fn string) string {
 		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)
@@ -100,7 +102,7 @@ func Run(t *testing.T) {
 	if err := os.Chmod(name, 0755); err != nil {
 		log.Fatalf("failed to chmod temporary directory: %v", err)
 	}
-	os.Setenv("E2E_TEST_DIR", name)
+	testenv.TestDir = name
 
 	if err := singularitye2e.MakeCacheDirs(name); err != nil {
 		t.Fatal(err)
@@ -109,37 +111,37 @@ func Run(t *testing.T) {
 	// Build a base image for tests
 	imagePath := path.Join(name, "test.sif")
 	t.Log(imagePath)
-	os.Setenv("E2E_IMAGE_PATH", imagePath)
+	testenv.ImagePath = imagePath
 	defer os.Remove(imagePath)
 
 	// build test image
-	singularitye2e.EnsureImage(t)
+	singularitye2e.EnsureImage(t, testenv)
 
 	// Start registry for tests
-	singularitye2e.PrepRegistry(t, name)
+	singularitye2e.PrepRegistry(t, name, testenv.ImagePath)
 	defer singularitye2e.KillRegistry(t)
 
 	// RunE2ETests by functionality
 
-	t.Run("INSPECT", singularityinspect.RunE2ETests)
+	t.Run("INSPECT", singularityinspect.RunE2ETests(testenv))
 
-	t.Run("BUILD", imgbuild.RunE2ETests)
+	t.Run("BUILD", imgbuild.RunE2ETests(testenv))
 
-	t.Run("ACTIONS", actions.RunE2ETests)
+	t.Run("ACTIONS", actions.RunE2ETests(testenv))
 
-	t.Run("DOCKER", docker.RunE2ETests)
+	t.Run("DOCKER", docker.RunE2ETests(testenv))
 
-	t.Run("PULL", pull.RunE2ETests)
+	t.Run("PULL", pull.RunE2ETests(testenv))
 
-	t.Run("PUSH", push.RunE2ETests)
+	t.Run("PUSH", push.RunE2ETests(testenv))
 
-	t.Run("REMOTE", remote.RunE2ETests)
+	t.Run("REMOTE", remote.RunE2ETests(testenv))
 
-	t.Run("INSTANCE", instance.RunE2ETests)
+	t.Run("INSTANCE", instance.RunE2ETests(testenv))
 
-	t.Run("HELP", help.RunE2ETests)
+	t.Run("HELP", help.RunE2ETests(testenv))
 
-	t.Run("ENV", singularityenv.RunE2ETests)
+	t.Run("ENV", singularityenv.RunE2ETests(testenv))
 
-	t.Run("VERSION", version.RunE2ETests)
+	t.Run("VERSION", version.RunE2ETests(testenv))
 }

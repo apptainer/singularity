@@ -15,19 +15,13 @@ import (
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
-type testingEnv struct {
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	ImagePath   string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+type ctx struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
-
-func testPushCmd(t *testing.T) {
-
+func (c *ctx) testPushCmd(t *testing.T) {
 	// setup file and dir to use as invalid sources
-	orasInvalidDir, err := ioutil.TempDir(testenv.TestDir, "oras_push_dir-")
+	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")
 	if err != nil {
 		t.Fatalf("unable to create src dir for push tests: %v", err)
 	}
@@ -63,7 +57,7 @@ func testPushCmd(t *testing.T) {
 		},
 		{
 			desc:          "standard SIF push",
-			imagePath:     testenv.ImagePath,
+			imagePath:     c.env.ImagePath,
 			dstURI:        "oras://localhost:5000/standard_sif:test",
 			expectSuccess: true,
 		},
@@ -71,13 +65,13 @@ func testPushCmd(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			tmpdir, err := ioutil.TempDir(testenv.TestDir, "pull_test.")
+			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
 			if err != nil {
 				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
 			}
 			defer os.RemoveAll(tmpdir)
 
-			cmd, out, err := e2e.ImagePush(t, tt.imagePath, tt.dstURI)
+			cmd, out, err := e2e.ImagePush(t, c.env.CmdPath, tt.imagePath, tt.dstURI)
 			switch {
 			case tt.expectSuccess && err == nil:
 				// PASS: expecting success, succeeded
@@ -102,9 +96,14 @@ func testPushCmd(t *testing.T) {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	e2e.LoadEnv(t, &testenv)
-	e2e.EnsureImage(t)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
+	}
 
-	t.Run("push", testPushCmd)
+	return func(t *testing.T) {
+		e2e.EnsureImage(t, c.env)
+
+		t.Run("push", c.testPushCmd)
+	}
 }

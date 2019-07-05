@@ -319,7 +319,8 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 		if s.consoleFn != nil {
 			var err error
 
-			s.console, err = expect.NewConsole(
+			s.console, err = expect.NewTestConsole(
+				t,
 				expect.WithStdout(cmd.Stdout),
 				expect.WithDefaultTimeout(1*time.Second),
 			)
