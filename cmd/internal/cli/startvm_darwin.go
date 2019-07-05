@@ -44,6 +44,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		"-m", VMRAM,
 		"-c", VMCPU,
 		"-s", "0:0,hostbridge",
+		"-s", "3,virtio-net",
 		"-s", "31,lpc",
 		"-l", "com1,stdio",
 	}
@@ -138,7 +139,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 		sylog.Fatalf("Error getting working directory: %s", err)
 	}
 
-	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, cliExtra, strings.Join(singBinds, "|"))
+	kexecArgs := fmt.Sprintf("kexec,%s,%s,console=ttyS0 quiet root=/dev/ram0 loglevel=0 sing_img_name=%s sing_user=%s sing_cwd=%s singularity_action=%s ipv4=%s singularity_arguments=\"%s\" singularity_binds=\"%v\"", bzImage, initramfs, filepath.Base(sifImage), userInfo, cwdDir, singAction, VMIP, cliExtra, strings.Join(singBinds, "|"))
 
 	// Add our actual kexec entry
 	args = append(args, "-f", kexecArgs)
