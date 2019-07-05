@@ -77,6 +77,8 @@ func TestSIFAssemblerDocker(t *testing.T) {
 
 // TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
 func TestSIFAssemblerShub(t *testing.T) {
+	// TODO(mem): reenable this; disabled while shub is down
+	t.Skip("Skipping tests that access singularity hub")
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 

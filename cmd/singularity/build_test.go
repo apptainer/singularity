@@ -123,8 +123,10 @@ func TestBuild(t *testing.T) {
 		{"Debootstrap", "debootstrap", "../../examples/debian/Singularity", true},
 		{"DockerURI", "", "docker://busybox", true},
 		{"DockerDefFile", "", "../../examples/docker/Singularity", true},
-		{"SHubURI", "", "shub://GodloveD/busybox", true},
-		{"SHubDefFile", "", "../../examples/shub/Singularity", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"SHubURI", "", "shub://GodloveD/busybox", true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"SHubDefFile", "", "../../examples/shub/Singularity", true},
 		{"LibraryDefFile", "", "../../examples/library/Singularity", true},
 		{"Yum", "yum", "../../examples/centos/Singularity", true},
 		{"Zypper", "zypper", "../../examples/opensuse/Singularity", true},

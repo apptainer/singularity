@@ -52,7 +52,7 @@ require (
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/kelseyhightower/envconfig v1.3.0
+	github.com/kelseyhightower/envconfig v1.3.0 // indirect
 	github.com/kr/pty v1.1.3
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 	github.com/mattn/go-colorable v0.1.1 // indirect
@@ -88,7 +88,7 @@ require (
 	github.com/sylabs/scs-build-client v0.0.4
 	github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 	github.com/sylabs/scs-library-client v0.2.2
-	github.com/sylabs/sif v1.0.4
+	github.com/sylabs/sif v1.0.5
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
 	github.com/vishvananda/netlink v1.0.0 // indirect
 	github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936 // indirect
