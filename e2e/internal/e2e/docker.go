@@ -14,7 +14,7 @@ const dockerInstanceName = "e2e-docker-instance"
 
 // PrepRegistry run a docker registry and push a busybox
 // image and the test image with oras transport.
-func PrepRegistry(t *testing.T, baseDir string) {
+func PrepRegistry(t *testing.T, baseDir, imagePath string) {
 	dockerDefinition := "testdata/Docker_registry.def"
 	dockerImage := filepath.Join(baseDir, "docker-e2e.sif")
 
@@ -43,7 +43,7 @@ func PrepRegistry(t *testing.T, baseDir string) {
 		"OrasPushTestImage",
 		WithoutSubTest(),
 		WithCommand("push"),
-		WithArgs(testenv.ImagePath, "oras://localhost:5000/oras_test_sif:latest"),
+		WithArgs(imagePath, "oras://localhost:5000/oras_test_sif:latest"),
 		ExpectExit(0),
 	)
 }
