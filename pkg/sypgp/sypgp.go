@@ -44,6 +44,7 @@ var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 var errNotEncrypted = errors.New("key is not encrypted")
 
+// KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
 	fingerprint [20]byte
 }
@@ -52,16 +53,57 @@ func (e *KeyExistsError) Error() string {
 	return fmt.Sprintf("the key with fingerprint %X already belongs to the keyring", e.fingerprint)
 }
 
-// AskQuestion prompts the user with a question and return the response
-func AskQuestion(format string, a ...interface{}) (string, error) {
-	fmt.Printf(format, a...)
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
+// askQuestionUsingGenericDescr reads from a file descriptor (more precisely
+// from a *os.File object) one line at a time. The file can be a normal file or
+// os.Stdin.
+// Note that we could imagine a simpler code but we want to make sure that the
+// code works properly in the normal case with the default Stdin and when
+// redirecting stdin (for testing or when using pipes).
+//
+// TODO: use a io.ReadSeeker instead of a *os.File
+func askQuestionUsingGenericDescr(f *os.File) (string, error) {
+	// Get the initial position in the buffer so we can later seek the correct
+	// position based on how much data we read. Doing so, we can still benefit
+	// from buffered IO and still have a fine-grain controlover reading
+	// operations.
+	// Note that we do not check for errirs since some cases (e.g., pipes) will
+	// actually not allow to perform a seek. This is intended and basically a
+	// no-op in that context.
+	pos, _ := f.Seek(0, os.SEEK_CUR)
+	// Get the data
+	scanner := bufio.NewScanner(f)
+	tok := scanner.Scan()
+	if !tok {
+		return "", scanner.Err()
+	}
 	response := scanner.Text()
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
+	// We did a buffered read (for good reasons, it is generic), so we make
+	// sure we reposition ourselves at the end of the data that was read, not
+	// the end of the buffer, so we can make sure that we read the data line
+	// by line and do not drop data after a lot more data was read from the
+	// file descriptor. In other terms, we may have read a very small subset
+	// of the available data and make sure we reposition ourselves at the
+	// end of the data we handled, not at the end of the data that was read
+	// from the file descriptor.
+	strLen := 1 // We always move forward, even if we get an empty response
+	if len(response) > 1 {
+		strLen += len(response)
+	}
+	// Note that we do not check for errors since some cases (e.g., pipes)
+	// will actually not allow to perform a Seek(). This is intended and
+	// will not create a problem.
+	f.Seek(pos+int64(strLen), os.SEEK_SET)
+
 	return response, nil
+}
+
+// AskQuestion prompts the user with a question and return the response
+func AskQuestion(format string, a ...interface{}) (string, error) {
+	fmt.Printf(format, a...)
+	return askQuestionUsingGenericDescr(os.Stdin)
 }
 
 // askYNQuestion prompts the user expecting an answer that's either "y",
@@ -90,11 +132,30 @@ func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, erro
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
 func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	fmt.Printf(format, a...)
-	response, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println("")
-	if err != nil {
-		return "", err
+
+	var response string
+	var err error
+	// Go provides a package for handling terminal and more specifically
+	// reading password from terminal. We want to use the package when possible
+	// since it gives us an easy and secure way to interactively get the
+	// password from the user. However, this is only working when the
+	// underlying file descriptor is associated to a VT100 terminal, not with
+	// other file descriptors, including when redirecting Stdin to an actual
+	// file in the context of testing or in the context of pipes.
+	if terminal.IsTerminal(int(os.Stdin.Fd())) {
+		var resp []byte
+		resp, err = terminal.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			return "", err
+		}
+		response = string(resp)
+	} else {
+		response, err = askQuestionUsingGenericDescr(os.Stdin)
+		if err != nil {
+			return "", err
+		}
 	}
+	fmt.Println("")
 	return string(response), nil
 }
 
