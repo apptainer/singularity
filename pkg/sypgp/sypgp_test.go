@@ -355,20 +355,21 @@ func TestEnsureFilePrivate(t *testing.T) {
 	}
 }
 
-func TestPrintEntity(t *testing.T) {
-	getPublicKey := func(data string) *packet.PublicKey {
-		pkt, err := packet.Read(readerFromHex(data))
-		if err != nil {
-			panic(err)
-		}
-
-		pk, ok := pkt.(*packet.PublicKey)
-		if !ok {
-			panic("expecting packet.PublicKey, got something else")
-		}
-
-		return pk
+func getPublicKey(data string) *packet.PublicKey {
+	pkt, err := packet.Read(readerFromHex(data))
+	if err != nil {
+		panic(err)
 	}
+
+	pk, ok := pkt.(*packet.PublicKey)
+	if !ok {
+		panic("expecting packet.PublicKey, got something else")
+	}
+
+	return pk
+}
+
+func TestPrintEntity(t *testing.T) {
 
 	cases := []struct {
 		name     string
@@ -458,20 +459,6 @@ func TestPrintEntity(t *testing.T) {
 }
 
 func TestPrintEntities(t *testing.T) {
-	getPublicKey := func(data string) *packet.PublicKey {
-		pkt, err := packet.Read(readerFromHex(data))
-		if err != nil {
-			panic(err)
-		}
-
-		pk, ok := pkt.(*packet.PublicKey)
-		if !ok {
-			panic("expecting packet.PublicKey, got something else")
-		}
-
-		return pk
-	}
-
 	entities := []*openpgp.Entity{
 		{
 			PrimaryKey: getPublicKey(rsaPkDataHex),
@@ -824,6 +811,280 @@ func TestGetPassphrase(t *testing.T) {
 			}
 			if !tt.shallPass && err == nil {
 				t.Fatalf("invalid case %s succeeded", tt.name)
+			}
+		})
+	}
+}
+
+func TestCompareKeyEntity(t *testing.T) {
+	cases := []struct {
+		name        string
+		entity      *openpgp.Entity
+		fingerprint string
+		expected    bool
+	}{
+		{
+			name: "RSA key correct fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			expected:    true,
+		},
+		{
+			name: "RSA key incorrect fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "0FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			expected:    false,
+		},
+		{
+			name: "RSA key fingerprint too long",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB00",
+			expected:    false,
+		},
+		{
+			name: "RSA key fingerprint too short",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31",
+			expected:    false,
+		},
+		{
+			name: "RSA key empty fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "",
+			expected:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := compareKeyEntity(tc.entity, tc.fingerprint)
+
+			if actual != tc.expected {
+				t.Errorf("Unexpected result from compareKeyEntity: expecting %v, got %v",
+					tc.expected,
+					actual)
+			}
+		})
+	}
+}
+
+func TestFindKeyByPringerprint(t *testing.T) {
+	cases := []struct {
+		name        string
+		list        openpgp.EntityList
+		fingerprint string
+		exists      bool
+	}{
+		{
+			name:        "nil list, empty needle",
+			list:        nil,
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "nil list, non-empty needle",
+			list:        nil,
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			exists:      false,
+		},
+		{
+			name:        "empty list, empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "empty list, non-empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			exists:      false,
+		},
+		{
+			name: "non-empty list, empty needle",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name: "non-empty list, non-empty needle, exists",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "non-empty list, non-empty needle, does not exist",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			found := findKeyByFingerprint(tc.list, tc.fingerprint)
+
+			switch {
+			case found == nil && tc.exists:
+				// not found, but it exists
+				t.Errorf("Searching for %q found nothing but it exists in the entity list",
+					tc.fingerprint)
+
+			case found != nil && !tc.exists:
+				// found, but it does not exist
+				t.Errorf("Searching for %q found %q but it should not exist in the entity list",
+					tc.fingerprint,
+					found.PrimaryKey.Fingerprint)
+
+			case found == nil && !tc.exists:
+				// not found, it does not exist
+				return
+
+			case found != nil && tc.exists:
+				// found, it exists, is it the expected one?
+				if !compareKeyEntity(found, tc.fingerprint) {
+					t.Errorf("Searching for %q found %q",
+						tc.fingerprint,
+						found.PrimaryKey.Fingerprint)
+				}
+			}
+		})
+	}
+}
+
+func TestRemoveKey(t *testing.T) {
+	cases := []struct {
+		name        string
+		list        openpgp.EntityList
+		fingerprint string
+		exists      bool
+	}{
+		{
+			name:        "nil list, empty needle",
+			list:        nil,
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "empty list, empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "nil list, non-empty needle",
+			list:        nil,
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name:        "empty list, non-empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name: "list with many elements, needle does not exist",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "0892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name: "list with one element, needle exists",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle at the begining",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle in the middle",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle at the end",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			newList := removeKey(tc.list, tc.fingerprint)
+
+			switch {
+			case tc.exists && newList == nil:
+				// needle does exist, no new list returned
+				t.Errorf("Removing %q returned a nil list but it exists in the entity list",
+					tc.fingerprint)
+
+			case !tc.exists && newList != nil:
+				// needle does not exist, new list returned
+				t.Errorf("Removing %q returned a non-nil list but it does not exist in the entity list",
+					tc.fingerprint)
+
+			case !tc.exists && newList == nil:
+				// needle does not exist, no new list returned
+				return
+
+			case tc.exists && newList != nil:
+				// needle does exist, new list returned
+				if len(newList) != len(tc.list)-1 {
+					t.Errorf("After removing key %q the new list should have exactly one less element than the original, actual: %d, expected: %d",
+						tc.fingerprint,
+						len(newList),
+						len(tc.list)-1)
+				}
+
+				if found := findKeyByFingerprint(newList, tc.fingerprint); found != nil {
+					t.Errorf("After removing key %q it should not be present in the new list, but it was found there",
+						tc.fingerprint)
+				}
 			}
 		})
 	}

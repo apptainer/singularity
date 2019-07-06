@@ -43,6 +43,7 @@ const helpPush = `  4) Push key using "singularity key push %[1]X"
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 var errNotEncrypted = errors.New("key is not encrypted")
+var errInvalidChoice = errors.New("invalid choice")
 
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
@@ -127,6 +128,26 @@ func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, erro
 	default:
 		return "", fmt.Errorf("invalid answer %q", ans)
 	}
+}
+
+func askNumberInRange(start, end int, format string, a ...interface{}) (int, error) {
+	ans, err := AskQuestion(format, a...)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err := strconv.ParseInt(ans, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	m := int(n)
+
+	if m < start || m > end {
+		return 0, errInvalidChoice
+	}
+
+	return m, nil
 }
 
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
@@ -216,6 +237,14 @@ func ensureDirPrivate(dn string) error {
 	}
 
 	return nil
+}
+
+// createOrAppendPrivateFile creates the named filename, making sure
+// it's only accessible to the current user.
+//
+// TODO(mem): move this function to a common location
+func createOrAppendPrivateFile(fn string) (*os.File, error) {
+	return os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 }
 
 // ensureFilePrivate makes sure that the file system mode for the named
@@ -375,26 +404,48 @@ func PrintPrivKeyring() error {
 	return nil
 }
 
+// storePrivKeys writes all the private keys in list to the writer w.
+func storePrivKeys(w io.Writer, list openpgp.EntityList) error {
+	for _, e := range list {
+		if err := e.SerializePrivate(w, nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // appendPrivateKey appends a private key entity to the local keyring
 func appendPrivateKey(e *openpgp.Entity) error {
-	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := createOrAppendPrivateFile(SecretPath())
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	return e.SerializePrivate(f, nil)
+	return storePrivKeys(f, openpgp.EntityList{e})
+}
+
+// storePubKeys writes all the public keys in list to the writer w.
+func storePubKeys(w io.Writer, list openpgp.EntityList) error {
+	for _, e := range list {
+		if err := e.Serialize(w); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // appendPubKey appends a public key entity to the local keyring
 func appendPubKey(e *openpgp.Entity) error {
-	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := createOrAppendPrivateFile(PublicPath())
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	return e.Serialize(f)
+	return storePubKeys(f, openpgp.EntityList{e})
 }
 
 // storePubKeyring overwrites the public keyring with the listed keys
@@ -414,11 +465,21 @@ func storePubKeyring(keys openpgp.EntityList) error {
 	return nil
 }
 
-// CompareKeyEntity compares a key ID with a string, returning true if the
+// compareKeyEntity compares a key ID with a string, returning true if the
 // key and oldToken match.
-func CompareKeyEntity(e *openpgp.Entity, oldToken string) bool {
+func compareKeyEntity(e *openpgp.Entity, oldToken string) bool {
 	// TODO: there must be a better way to do this...
 	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+}
+
+func findKeyByFingerprint(entities openpgp.EntityList, fingerprint string) *openpgp.Entity {
+	for _, e := range entities {
+		if compareKeyEntity(e, fingerprint) {
+			return e
+		}
+	}
+
+	return nil
 }
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
@@ -434,12 +495,25 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 		return false, fmt.Errorf("unable to load local keyring: %v", err)
 	}
 
-	for i := range elist {
-		if CompareKeyEntity(elist[i], ckey) {
-			return true, nil
+	return findKeyByFingerprint(elist, ckey) != nil, nil
+}
+
+// removeKey removes one key identified by fingerprint from list.
+//
+// removeKey returns a new list with the key removed, or nil if the key
+// was not found. The elements of the new list are the _same_ pointers
+// found in the original list.
+func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
+	for idx, e := range list {
+		if compareKeyEntity(e, fingerprint) {
+			newList := make(openpgp.EntityList, len(list)-1)
+			copy(newList, list[:idx])
+			copy(newList[idx:], list[idx+1:])
+			return newList
 		}
 	}
-	return false, nil
+
+	return nil
 }
 
 // RemovePubKey will delete a public key matching toDelete
@@ -454,21 +528,8 @@ func RemovePubKey(toDelete string) error {
 		return fmt.Errorf("unable to list local keyring: %v", err)
 	}
 
-	var newKeyList openpgp.EntityList
-
-	matchKey := false
-
-	// sort through them, and remove any that match toDelete
-	for i := range elist {
-		// if the elist[i] dose not match toDelete, then add it to newKeyList
-		if !CompareKeyEntity(elist[i], toDelete) {
-			newKeyList = append(newKeyList, elist[i])
-		} else {
-			matchKey = true
-		}
-	}
-
-	if !matchKey {
+	newKeyList := removeKey(elist, toDelete)
+	if newKeyList == nil {
 		return fmt.Errorf("no key matching given fingerprint found")
 	}
 
@@ -625,48 +686,26 @@ func EncryptKey(k *openpgp.Entity, pass string) error {
 
 // SelectPubKey prints a public key list to user and returns the choice
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	PrintPubKeyring()
+	printEntities(os.Stdout, el)
 
-	index, err := AskQuestion("Enter # of public key to use : ")
-	if err != nil {
-		return nil, err
-	}
-	if index == "" {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-	i, err := strconv.ParseUint(index, 10, 32)
+	n, err := askNumberInRange(0, len(el)-1, "Enter # of public key to use : ")
 	if err != nil {
 		return nil, err
 	}
 
-	if i < 0 || i > uint64(len(el))-1 {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-
-	return el[i], nil
+	return el[n], nil
 }
 
 // SelectPrivKey prints a secret key list to user and returns the choice
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
-	PrintPrivKeyring()
+	printEntities(os.Stdout, el)
 
-	index, err := AskQuestion("Enter # of signing key to use : ")
-	if err != nil {
-		return nil, err
-	}
-	if index == "" {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-	i, err := strconv.ParseUint(index, 10, 32)
+	n, err := askNumberInRange(0, len(el)-1, "Enter # of private key to use : ")
 	if err != nil {
 		return nil, err
 	}
 
-	if i < 0 || i > uint64(len(el))-1 {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-
-	return el[i], nil
+	return el[n], nil
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
@@ -793,20 +832,17 @@ func serializePrivateEntity(e *openpgp.Entity, blockType string) (string, error)
 
 // RecryptKey Will decrypt a entity, then recrypt it with the same password.
 // This function seems pritty usless, but its not!
-func RecryptKey(k *openpgp.Entity) error {
-	if k.PrivateKey.Encrypted {
-		pass, err := AskQuestionNoEcho("Enter key passphrase : ")
-		if err != nil {
-			return err
-		}
-		err = k.PrivateKey.Decrypt([]byte(pass))
-		if err != nil {
-			return err
-		}
-		err = k.PrivateKey.Encrypt([]byte(pass))
-		if err != nil {
-			return err
-		}
+func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
+	if !k.PrivateKey.Encrypted {
+		return errNotEncrypted
+	}
+
+	if err := k.PrivateKey.Decrypt(passphrase); err != nil {
+		return err
+	}
+
+	if err := k.PrivateKey.Encrypt(passphrase); err != nil {
+		return err
 	}
 
 	return nil
@@ -825,7 +861,12 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		return err
 	}
 
-	err = RecryptKey(entityToExport)
+	pass, err := AskQuestionNoEcho("Enter key passphrase : ")
+	if err != nil {
+		return err
+	}
+
+	err = RecryptKey(entityToExport, []byte(pass))
 	if err != nil {
 		return err
 	}
@@ -835,6 +876,7 @@ func ExportPrivateKey(kpath string, armor bool) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	if !armor {
 		// Export the key to the file
@@ -847,7 +889,6 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		}
 		file.WriteString(keyText)
 	}
-	defer file.Close()
 
 	if err != nil {
 		return fmt.Errorf("unable to serialize private key: %v", err)
