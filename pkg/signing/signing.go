@@ -296,7 +296,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
-			return false, fmt.Errorf("failed to parse signature block")
+			//return false, fmt.Errorf("failed to parse signature block")
+			sylog.Errorf("key corrupted; skipping corrupted key")
+			continue
 		}
 
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
