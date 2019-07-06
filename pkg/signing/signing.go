@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
+	openpgperrors "golang.org/x/crypto/openpgp/errors"
 )
 
 // computeHashStr generates a hash from data object(s) and generates a string
@@ -321,8 +322,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		// verify the container with our local keys first
 		sylog.Verbosef("Container signature found: %s\n", fingerprint)
 		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
-		// if theres a error, thats probably because we dont have a local key. So download it and try again
-		if err != nil {
+		if err == openpgperrors.ErrUnknownIssuer {
 			trusted = false
 			notLocalKey = true
 
@@ -355,6 +355,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				sylog.Errorf("Key not in local keyring: %s", fingerprint)
 				return false, fmt.Errorf("unable to verify container: %v", err)
 			}
+		} else if err != nil {
+			return false, fmt.Errorf("failed verifying image: %v", err)
 		} else {
 			trusted = true
 			sylog.Verbosef("Found key in local keystore: %s", fingerprint[32:])
