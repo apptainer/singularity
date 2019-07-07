@@ -18,9 +18,9 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/sypgp"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 	"github.com/sylabs/singularity/pkg/util/loop"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Device describes a crypt device
@@ -70,28 +70,22 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 // Keys should be non-interactive, preferably in a keyfile that can
 // be passed to cryptsetup utility
 func (crypt *Device) ReadKeyFromStdin(confirm bool) (string, error) {
-	fmt.Print("Enter the Key: ")
-	password, err := terminal.ReadPassword(int(syscall.Stdin))
+	pass1, err := sypgp.AskQuestionNoEcho("Enter a passphrase: ")
 	if err != nil {
-		return "", fmt.Errorf("unable parsing input: %s", err)
+		return "", fmt.Errorf("unable getting input: %s", err)
 	}
 
-	input := string(password)
-	fmt.Println()
 	if confirm {
-		fmt.Print("Confirm the Key: ")
-		password2, err := terminal.ReadPassword(int(syscall.Stdin))
+		pass2, err := sypgp.AskQuestionNoEcho("Confirm the passphrase: ")
 		if err != nil {
 			return "", fmt.Errorf("unable parsing input: %s", err)
 		}
-		input2 := string(password2)
-		fmt.Println()
-		if input != input2 {
-			return "", errors.New("keys don't match")
+		if pass1 != pass2 {
+			return "", fmt.Errorf("passphrases don't match")
 		}
 	}
 
-	return input, nil
+	return pass1, nil
 }
 
 // FormatCryptDevice allocates a loop device, encrypts, and returns the loop device name, and encrypted device name

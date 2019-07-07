@@ -192,7 +192,10 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// encrypt an existing SIF
 		key, err := cryptDev.ReadKeyFromStdin(true)
 		if err != nil {
-			return fmt.Errorf("unable to read key from stdin: %s", err)
+			return fmt.Errorf("error getting passphrase: %s", err)
+		}
+		if key == "" {
+			return fmt.Errorf("passphrase empty")
 		}
 		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, key)
 		if err != nil {
