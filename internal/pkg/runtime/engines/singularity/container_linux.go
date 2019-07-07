@@ -608,7 +608,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		cryptDev, err := c.rpcOps.Decrypt(offset, path)
 
 		if err != nil {
-			return fmt.Errorf("Unable to decrypt the file system: %s", err)
+			return fmt.Errorf("unable to decrypt the file system: %s", err)
 		}
 
 		path = cryptDev
@@ -621,7 +621,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 	_, err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
 	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
+		return fmt.Errorf("failed to mount: %s filesystem: %s", mountType, err)
 	}
 
 	return nil

@@ -192,25 +192,25 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// encrypt an existing SIF
 		key, err := cryptDev.ReadKeyFromStdin(true)
 		if err != nil {
-			return fmt.Errorf("unable to read key from stdin")
+			return fmt.Errorf("unable to read key from stdin: %s", err)
 		}
 		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, key)
 		if err != nil {
-			return fmt.Errorf("unable to format crypt device: %s", cryptName)
+			return fmt.Errorf("unable to format crypt device: %s: %s", cryptName, err)
 		}
 
 		defer os.Remove(loopPath)
 
 		err = cryptDev.CloseCryptDevice(cryptName)
 		if err != nil {
-			return fmt.Errorf("unable to close crypt device: %s", cryptName)
+			return fmt.Errorf("unable to close crypt device: %s: %s", cryptName, err)
 		}
 		fsPath = loopPath
 	}
 
 	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, b.Opts.Encrypted)
 	if err != nil {
-		return fmt.Errorf("While creating SIF: %v", err)
+		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
 	return

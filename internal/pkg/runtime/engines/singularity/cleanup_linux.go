@@ -78,7 +78,7 @@ func cleanupCrypt(path string) error {
 	uid := os.Getuid()
 	err := syscall.Setresuid(uid, 0, uid)
 	if err != nil {
-		return fmt.Errorf("error while setting root uid")
+		return fmt.Errorf("error while setting root uid: %s", err)
 	}
 
 	defer syscall.Setresuid(uid, uid, 0)
@@ -98,7 +98,7 @@ func cleanupCrypt(path string) error {
 	cryptDev := &crypt.Device{}
 	err = cryptDev.CloseCryptDevice(devName)
 	if err != nil {
-		return fmt.Errorf("unable to delete crypt device: %s", devName)
+		return fmt.Errorf("unable to delete crypt device: %s: %s", devName, err)
 	}
 
 	return nil

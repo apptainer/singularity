@@ -40,7 +40,7 @@ func createLoop(file *os.File, offset, size uint64) (string, error) {
 	}
 	idx := 0
 	if err := loopDev.AttachFromFile(file, os.O_RDWR, &idx); err != nil {
-		return "", fmt.Errorf("failed to attach image %s: %s", file.Name(), err)
+		return "", fmt.Errorf("failed to attach image: %s: %s", file.Name(), err)
 	}
 	return fmt.Sprintf("/dev/loop%d", idx), nil
 }
@@ -58,8 +58,7 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	defer lock.Release(fd)
 	err = cmd.Run()
 	if err != nil {
-		sylog.Debugf("Unable to delete the crypt device %s", err)
-		return err
+		return fmt.Errorf("unable to delete the crypt device: %s", err)
 	}
 
 	return nil
@@ -71,11 +70,10 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 // Keys should be non-interactive, preferably in a keyfile that can
 // be passed to cryptsetup utility
 func (crypt *Device) ReadKeyFromStdin(confirm bool) (string, error) {
-
 	fmt.Print("Enter the Key: ")
 	password, err := terminal.ReadPassword(int(syscall.Stdin))
 	if err != nil {
-		sylog.Fatalf("Error parsing the key: %s", err)
+		return "", fmt.Errorf("unable parsing input: %s", err)
 	}
 
 	input := string(password)
@@ -84,12 +82,12 @@ func (crypt *Device) ReadKeyFromStdin(confirm bool) (string, error) {
 		fmt.Print("Confirm the Key: ")
 		password2, err := terminal.ReadPassword(int(syscall.Stdin))
 		if err != nil {
-			sylog.Fatalf("Error parsing the key: %s", err)
+			return "", fmt.Errorf("unable parsing input: %s", err)
 		}
 		input2 := string(password2)
 		fmt.Println()
 		if input != input2 {
-			return "", errors.New("Keys don't match")
+			return "", errors.New("keys don't match")
 		}
 	}
 
@@ -109,8 +107,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	// Create a temporary file to format with crypt header
 	cryptF, err := ioutil.TempFile("", "crypt-")
 	if err != nil {
-		sylog.Debugf("Error creating temporary crypt file")
-		return "", "", err
+		return "", "", fmt.Errorf("error creating temporary crypt file: ", err)
 	}
 	defer cryptF.Close()
 
@@ -120,8 +117,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	err = os.Truncate(cryptF.Name(), devSize)
 	if err != nil {
-		sylog.Debugf("Unable to truncate crypt file to size %d", devSize)
-		return "", "", err
+		return "", "", fmt.Errorf("unable to truncate crypt file to size: %d: %s", devSize, err)
 	}
 
 	// NOTE: This routine runs with root privileges. It's not necessary
@@ -151,7 +147,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	err = cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("unable to format crypt device: %s", cryptF.Name())
+		return "", "", fmt.Errorf("unable to format crypt device: %s: %s", cryptF.Name(), err)
 	}
 
 	// Associate the temporary crypt file with a loop device
@@ -164,7 +160,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
-		return "", "", fmt.Errorf("unable to acquire lock on /dev/mapper")
+		return "", "", fmt.Errorf("unable to acquire lock on /dev/mapper: %s", err)
 	}
 	defer lock.Release(fd)
 
@@ -183,8 +179,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	err = cmd.Run()
 	if err != nil {
-		sylog.Verbosef("Unable to open crypt device: %s", nextCrypt)
-		return "", "", err
+		return "", "", fmt.Errorf("unable to open crypt device: %s", nextCrypt, err)
 	}
 
 	copyDeviceContents(path, "/dev/mapper/"+nextCrypt, fSize)
@@ -192,8 +187,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	// Open a new Temp file to stash the loop contents
 	loopF, err := ioutil.TempFile("", "loop-")
 	if err != nil {
-		sylog.Debugf("Error creating temporary crypt file")
-		return "", "", err
+		return "", "", fmt.Errorf("error creating temporary crypt file: %s", err)
 	}
 
 	copyDeviceContents("/dev/"+loopdev, loopF.Name(), devSize)
@@ -206,13 +200,13 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 func copyDeviceContents(source, dest string, size int64) error {
 	sourceFd, err := syscall.Open(source, syscall.O_RDWR, 0777)
 	if err != nil {
-		return fmt.Errorf("Unable to open the file %s", source)
+		return fmt.Errorf("unable to open the file: %s: %s", source, err)
 	}
 	defer syscall.Close(sourceFd)
 
 	destFd, err := syscall.Open(dest, syscall.O_RDWR, 0777)
 	if err != nil {
-		return fmt.Errorf("Unable to open the file: %s", dest)
+		return fmt.Errorf("unable to open the file: %s: %s", dest, err)
 	}
 	defer syscall.Close(destFd)
 
@@ -222,13 +216,14 @@ func copyDeviceContents(source, dest string, size int64) error {
 	for writtenSoFar < size {
 		numRead, err := syscall.Read(sourceFd, buffer)
 		if err != nil {
-			return fmt.Errorf("Unable to read the the file %s", source)
+			return fmt.Errorf("unable to read the the file: %s: %s", source, err)
 		}
 		numWritten, err := syscall.Write(destFd, buffer)
 		if err != nil {
-			return fmt.Errorf("Unable to write to destination %s", dest)
+			return fmt.Errorf("unable to write to destination: %s: %s", dest, err)
 		}
 
+		// TODO: is this really necessary???
 		if numRead != numWritten {
 			sylog.Debugf("numRead != numWritten")
 		}
@@ -246,8 +241,7 @@ func getNextAvailableCryptDevice() string {
 func (crypt *Device) GetCryptDevice(key, loopDev string) (string, error) {
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
-		sylog.Debugf("Unable to acquire lock on /dev/mapper while decrypting")
-		return "", err
+		return "", fmt.Errorf("unable to acquire lock on /dev/mapper while decrypting: %s", err)
 	}
 	defer lock.Release(fd)
 
@@ -257,7 +251,7 @@ retry:
 	numRetries := 0
 	nextCrypt := getNextAvailableCryptDevice()
 	if nextCrypt == "" {
-		return "", errors.New("Crypt Device not available")
+		return "", errors.New("crypt device not available")
 	}
 
 	cmd := exec.Command("/sbin/cryptsetup", "luksOpen", loopDev, nextCrypt)
