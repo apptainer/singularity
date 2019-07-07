@@ -70,22 +70,22 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 // Keys should be non-interactive, preferably in a keyfile that can
 // be passed to cryptsetup utility
 func (crypt *Device) ReadKeyFromStdin(confirm bool) (string, error) {
-	pass1, err := sypgp.AskQuestionNoEcho("Enter a passphrase: ")
+	passphrase, err := sypgp.AskQuestionNoEcho("Enter a passphrase: ")
 	if err != nil {
-		return "", fmt.Errorf("unable getting input: %s", err)
+		return "", fmt.Errorf("unable to get passphrase: %s", err)
 	}
 
 	if confirm {
-		pass2, err := sypgp.AskQuestionNoEcho("Confirm the passphrase: ")
+		confirmPassphrase, err := sypgp.AskQuestionNoEcho("Confirm the passphrase: ")
 		if err != nil {
-			return "", fmt.Errorf("unable parsing input: %s", err)
+			return "", fmt.Errorf("unable to get passphrase: %s", err)
 		}
-		if pass1 != pass2 {
+		if passphrase != confirmPassphrase {
 			return "", fmt.Errorf("passphrases don't match")
 		}
 	}
 
-	return pass1, nil
+	return passphrase, nil
 }
 
 // FormatCryptDevice allocates a loop device, encrypts, and returns the loop device name, and encrypted device name
@@ -101,7 +101,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	// Create a temporary file to format with crypt header
 	cryptF, err := ioutil.TempFile("", "crypt-")
 	if err != nil {
-		return "", "", fmt.Errorf("error creating temporary crypt file: ", err)
+		return "", "", fmt.Errorf("error creating temporary crypt file: %s", err)
 	}
 	defer cryptF.Close()
 
@@ -173,7 +173,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	err = cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("unable to open crypt device: %s", nextCrypt, err)
+		return "", "", fmt.Errorf("unable to open crypt device: %s: %s", nextCrypt, err)
 	}
 
 	copyDeviceContents(path, "/dev/mapper/"+nextCrypt, fSize)
@@ -217,7 +217,6 @@ func copyDeviceContents(source, dest string, size int64) error {
 			return fmt.Errorf("unable to write to destination: %s: %s", dest, err)
 		}
 
-		// TODO: is this really necessary???
 		if numRead != numWritten {
 			sylog.Debugf("numRead != numWritten")
 		}
