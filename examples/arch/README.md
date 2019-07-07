@@ -11,6 +11,7 @@ docker run -it  --privileged pritunl/archlinux bash
 ```
 
 ```bash
+echo 'Server = https://archive.archlinux.org/repos/2018/08/11/$repo/os/$arch' > /etc/pacman.d/mirrorlist
 pacman -S -y git autoconf libtool automake gcc python make sudo vim arch-install-scripts wget
 git clone https://github.com/sylabs/singularity
 cd singularity
