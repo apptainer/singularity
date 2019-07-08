@@ -148,7 +148,7 @@ jobs:
           step-name: Check changes
           custom-logic: |
             echo "Circle branch: $CIRCLE_BRANCH"
-            echo "Commit range: $COMMIT_RANGE"
+            echo "Commit range: '${COMMIT_RANGE}'"
 
             # Skip if there were no changes to the e2e or vendor directories and the branch is not master
             if [[ ! $(git diff "$COMMIT_RANGE" --name-status | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
