@@ -151,7 +151,7 @@ jobs:
             echo "Commit range: $COMMIT_RANGE"
 
             # Skip if there were no changes to the e2e or vendor directories and the branch is not master
-            if [[ ! $(git diff $COMMIT_RANGE --name-status | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
+            if [[ ! $(git diff "$COMMIT_RANGE" --name-status | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
               echo "Skipping e2e tests"
               circleci step halt
             fi
