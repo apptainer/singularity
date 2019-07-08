@@ -18,4 +18,5 @@ type EngineConfig struct {
 	File      *FileConfig      `json:"-"`
 	Network   *network.Setup   `json:"-"`
 	Cgroups   *cgroups.Manager `json:"-"`
+	CryptDev  string           `json:"-"`
 }

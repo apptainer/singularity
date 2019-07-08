@@ -144,10 +144,11 @@ type Fstype int32
 
 // List of supported file systems
 const (
-	FsSquash  Fstype = iota + 1 // Squashfs file system, RDONLY
-	FsExt3                      // EXT3 file system, RDWR (deprecated)
-	FsImmuObj                   // immutable data object archive
-	FsRaw                       // raw data
+	FsSquash            Fstype = iota + 1 // Squashfs file system, RDONLY
+	FsExt3                                // EXT3 file system, RDWR (deprecated)
+	FsImmuObj                             // immutable data object archive
+	FsRaw                                 // raw data
+	FsEncryptedSquashfs                   // Encrypted Squashfs file system, RDONLY
 )
 
 // Parttype represents the different SIF container partition types (system and data)

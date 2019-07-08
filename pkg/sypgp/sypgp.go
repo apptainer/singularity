@@ -43,11 +43,13 @@ const helpPush = `  4) Push key using "singularity key push %[1]X"
 var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 var errNotEncrypted = errors.New("key is not encrypted")
+var errInvalidChoice = errors.New("invalid choice")
 
 // ErrEmptyKeyring is the error when the public, or private keyring
 // empty.
 var ErrEmptyKeyring = errors.New("no key in keyring")
 
+// KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
 	fingerprint [20]byte
 }
@@ -56,16 +58,57 @@ func (e *KeyExistsError) Error() string {
 	return fmt.Sprintf("the key with fingerprint %X already belongs to the keyring", e.fingerprint)
 }
 
-// AskQuestion prompts the user with a question and return the response
-func AskQuestion(format string, a ...interface{}) (string, error) {
-	fmt.Printf(format, a...)
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
+// askQuestionUsingGenericDescr reads from a file descriptor (more precisely
+// from a *os.File object) one line at a time. The file can be a normal file or
+// os.Stdin.
+// Note that we could imagine a simpler code but we want to make sure that the
+// code works properly in the normal case with the default Stdin and when
+// redirecting stdin (for testing or when using pipes).
+//
+// TODO: use a io.ReadSeeker instead of a *os.File
+func askQuestionUsingGenericDescr(f *os.File) (string, error) {
+	// Get the initial position in the buffer so we can later seek the correct
+	// position based on how much data we read. Doing so, we can still benefit
+	// from buffered IO and still have a fine-grain controlover reading
+	// operations.
+	// Note that we do not check for errirs since some cases (e.g., pipes) will
+	// actually not allow to perform a seek. This is intended and basically a
+	// no-op in that context.
+	pos, _ := f.Seek(0, os.SEEK_CUR)
+	// Get the data
+	scanner := bufio.NewScanner(f)
+	tok := scanner.Scan()
+	if !tok {
+		return "", scanner.Err()
+	}
 	response := scanner.Text()
 	if err := scanner.Err(); err != nil {
 		return "", err
 	}
+	// We did a buffered read (for good reasons, it is generic), so we make
+	// sure we reposition ourselves at the end of the data that was read, not
+	// the end of the buffer, so we can make sure that we read the data line
+	// by line and do not drop data after a lot more data was read from the
+	// file descriptor. In other terms, we may have read a very small subset
+	// of the available data and make sure we reposition ourselves at the
+	// end of the data we handled, not at the end of the data that was read
+	// from the file descriptor.
+	strLen := 1 // We always move forward, even if we get an empty response
+	if len(response) > 1 {
+		strLen += len(response)
+	}
+	// Note that we do not check for errors since some cases (e.g., pipes)
+	// will actually not allow to perform a Seek(). This is intended and
+	// will not create a problem.
+	f.Seek(pos+int64(strLen), os.SEEK_SET)
+
 	return response, nil
+}
+
+// AskQuestion prompts the user with a question and return the response
+func AskQuestion(format string, a ...interface{}) (string, error) {
+	fmt.Printf(format, a...)
+	return askQuestionUsingGenericDescr(os.Stdin)
 }
 
 // askYNQuestion prompts the user expecting an answer that's either "y",
@@ -91,14 +134,53 @@ func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, erro
 	}
 }
 
+func askNumberInRange(start, end int, format string, a ...interface{}) (int, error) {
+	ans, err := AskQuestion(format, a...)
+	if err != nil {
+		return 0, err
+	}
+
+	n, err := strconv.ParseInt(ans, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+
+	m := int(n)
+
+	if m < start || m > end {
+		return 0, errInvalidChoice
+	}
+
+	return m, nil
+}
+
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
 func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	fmt.Printf(format, a...)
-	response, err := terminal.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println("")
-	if err != nil {
-		return "", err
+
+	var response string
+	var err error
+	// Go provides a package for handling terminal and more specifically
+	// reading password from terminal. We want to use the package when possible
+	// since it gives us an easy and secure way to interactively get the
+	// password from the user. However, this is only working when the
+	// underlying file descriptor is associated to a VT100 terminal, not with
+	// other file descriptors, including when redirecting Stdin to an actual
+	// file in the context of testing or in the context of pipes.
+	if terminal.IsTerminal(int(os.Stdin.Fd())) {
+		var resp []byte
+		resp, err = terminal.ReadPassword(int(os.Stdin.Fd()))
+		if err != nil {
+			return "", err
+		}
+		response = string(resp)
+	} else {
+		response, err = askQuestionUsingGenericDescr(os.Stdin)
+		if err != nil {
+			return "", err
+		}
 	}
+	fmt.Println("")
 	return string(response), nil
 }
 
@@ -159,6 +241,14 @@ func ensureDirPrivate(dn string) error {
 	}
 
 	return nil
+}
+
+// createOrAppendPrivateFile creates the named filename, making sure
+// it's only accessible to the current user.
+//
+// TODO(mem): move this function to a common location
+func createOrAppendPrivateFile(fn string) (*os.File, error) {
+	return os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 }
 
 // ensureFilePrivate makes sure that the file system mode for the named
@@ -318,26 +408,48 @@ func PrintPrivKeyring() error {
 	return nil
 }
 
+// storePrivKeys writes all the private keys in list to the writer w.
+func storePrivKeys(w io.Writer, list openpgp.EntityList) error {
+	for _, e := range list {
+		if err := e.SerializePrivate(w, nil); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // appendPrivateKey appends a private key entity to the local keyring
 func appendPrivateKey(e *openpgp.Entity) error {
-	f, err := os.OpenFile(SecretPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := createOrAppendPrivateFile(SecretPath())
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	return e.SerializePrivate(f, nil)
+	return storePrivKeys(f, openpgp.EntityList{e})
+}
+
+// storePubKeys writes all the public keys in list to the writer w.
+func storePubKeys(w io.Writer, list openpgp.EntityList) error {
+	for _, e := range list {
+		if err := e.Serialize(w); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // appendPubKey appends a public key entity to the local keyring
 func appendPubKey(e *openpgp.Entity) error {
-	f, err := os.OpenFile(PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := createOrAppendPrivateFile(PublicPath())
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 
-	return e.Serialize(f)
+	return storePubKeys(f, openpgp.EntityList{e})
 }
 
 // storePubKeyring overwrites the public keyring with the listed keys
@@ -357,11 +469,21 @@ func storePubKeyring(keys openpgp.EntityList) error {
 	return nil
 }
 
-// CompareKeyEntity compares a key ID with a string, returning true if the
+// compareKeyEntity compares a key ID with a string, returning true if the
 // key and oldToken match.
-func CompareKeyEntity(e *openpgp.Entity, oldToken string) bool {
+func compareKeyEntity(e *openpgp.Entity, oldToken string) bool {
 	// TODO: there must be a better way to do this...
 	return fmt.Sprintf("%X", e.PrimaryKey.Fingerprint) == oldToken
+}
+
+func findKeyByFingerprint(entities openpgp.EntityList, fingerprint string) *openpgp.Entity {
+	for _, e := range entities {
+		if compareKeyEntity(e, fingerprint) {
+			return e
+		}
+	}
+
+	return nil
 }
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
@@ -377,12 +499,25 @@ func CheckLocalPubKey(ckey string) (bool, error) {
 		return false, fmt.Errorf("unable to load local keyring: %v", err)
 	}
 
-	for i := range elist {
-		if CompareKeyEntity(elist[i], ckey) {
-			return true, nil
+	return findKeyByFingerprint(elist, ckey) != nil, nil
+}
+
+// removeKey removes one key identified by fingerprint from list.
+//
+// removeKey returns a new list with the key removed, or nil if the key
+// was not found. The elements of the new list are the _same_ pointers
+// found in the original list.
+func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
+	for idx, e := range list {
+		if compareKeyEntity(e, fingerprint) {
+			newList := make(openpgp.EntityList, len(list)-1)
+			copy(newList, list[:idx])
+			copy(newList[idx:], list[idx+1:])
+			return newList
 		}
 	}
-	return false, nil
+
+	return nil
 }
 
 // RemovePubKey will delete a public key matching toDelete
@@ -397,21 +532,8 @@ func RemovePubKey(toDelete string) error {
 		return fmt.Errorf("unable to list local keyring: %v", err)
 	}
 
-	var newKeyList openpgp.EntityList
-
-	matchKey := false
-
-	// sort through them, and remove any that match toDelete
-	for i := range elist {
-		// if the elist[i] dose not match toDelete, then add it to newKeyList
-		if !CompareKeyEntity(elist[i], toDelete) {
-			newKeyList = append(newKeyList, elist[i])
-		} else {
-			matchKey = true
-		}
-	}
-
-	if !matchKey {
+	newKeyList := removeKey(elist, toDelete)
+	if newKeyList == nil {
 		return fmt.Errorf("no key matching given fingerprint found")
 	}
 
@@ -571,25 +693,14 @@ func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	if len(el) == 0 {
 		return nil, ErrEmptyKeyring
 	}
-	PrintPubKeyring()
+	printEntities(os.Stdout, el)
 
-	index, err := AskQuestion("Enter # of public key to use : ")
-	if err != nil {
-		return nil, err
-	}
-	if index == "" {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-	i, err := strconv.ParseUint(index, 10, 32)
+	n, err := askNumberInRange(0, len(el)-1, "Enter # of public key to use : ")
 	if err != nil {
 		return nil, err
 	}
 
-	if i < 0 || i > uint64(len(el))-1 {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-
-	return el[i], nil
+	return el[n], nil
 }
 
 // SelectPrivKey prints a secret key list to user and returns the choice
@@ -597,25 +708,14 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	if len(el) == 0 {
 		return nil, ErrEmptyKeyring
 	}
-	PrintPrivKeyring()
+	printEntities(os.Stdout, el)
 
-	index, err := AskQuestion("Enter # of private key to use : ")
-	if err != nil {
-		return nil, err
-	}
-	if index == "" {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-	i, err := strconv.ParseUint(index, 10, 32)
+	n, err := askNumberInRange(0, len(el)-1, "Enter # of private key to use : ")
 	if err != nil {
 		return nil, err
 	}
 
-	if i < 0 || i > uint64(len(el))-1 {
-		return nil, fmt.Errorf("invalid key choice")
-	}
-
-	return el[i], nil
+	return el[n], nil
 }
 
 // SearchPubkey connects to a key server and searches for a specific key
@@ -742,20 +842,17 @@ func serializePrivateEntity(e *openpgp.Entity, blockType string) (string, error)
 
 // RecryptKey Will decrypt a entity, then recrypt it with the same password.
 // This function seems pritty usless, but its not!
-func RecryptKey(k *openpgp.Entity) error {
-	if k.PrivateKey.Encrypted {
-		pass, err := AskQuestionNoEcho("Enter key passphrase : ")
-		if err != nil {
-			return err
-		}
-		err = k.PrivateKey.Decrypt([]byte(pass))
-		if err != nil {
-			return err
-		}
-		err = k.PrivateKey.Encrypt([]byte(pass))
-		if err != nil {
-			return err
-		}
+func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
+	if !k.PrivateKey.Encrypted {
+		return errNotEncrypted
+	}
+
+	if err := k.PrivateKey.Decrypt(passphrase); err != nil {
+		return err
+	}
+
+	if err := k.PrivateKey.Encrypt(passphrase); err != nil {
+		return err
 	}
 
 	return nil
@@ -774,7 +871,12 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		return err
 	}
 
-	err = RecryptKey(entityToExport)
+	pass, err := AskQuestionNoEcho("Enter key passphrase : ")
+	if err != nil {
+		return err
+	}
+
+	err = RecryptKey(entityToExport, []byte(pass))
 	if err != nil {
 		return err
 	}
@@ -784,6 +886,7 @@ func ExportPrivateKey(kpath string, armor bool) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 
 	if !armor {
 		// Export the key to the file
@@ -796,7 +899,6 @@ func ExportPrivateKey(kpath string, armor bool) error {
 		}
 		file.WriteString(keyText)
 	}
-	defer file.Close()
 
 	if err != nil {
 		return fmt.Errorf("unable to serialize private key: %v", err)

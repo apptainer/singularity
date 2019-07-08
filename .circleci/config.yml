@@ -176,6 +176,7 @@ jobs:
             sudo make -C ./builddir install
       - run:
           name: Run E2E tests
+          no_output_timeout: 45m
           command: |-
             cd $HOME/go/singularity
             make -C ./builddir integration-test e2e-test
