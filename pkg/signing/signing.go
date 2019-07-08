@@ -330,7 +330,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
-			fmt.Fprintf(w, "%s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
+			fmt.Fprintf(w, "%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
 			fail = true
 			continue
 		}
@@ -340,27 +340,27 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
-				fmt.Fprintf(w, "%s %s\n", red("[MISSING]"), err)
+				fmt.Fprintf(w, "%-18s %s\n", red("[MISSING]"), err)
 			} else {
-				fmt.Fprintf(w, "%s %s\n", red("[FAIL]"), err)
+				fmt.Fprintf(w, "%-18s %s\n", red("[FAIL]"), err)
 			}
 			fail = true
 		} else {
-			prefix := green("[LOCAL] ")
+			prefix := green("[LOCAL]")
 			if !local {
 				prefix = yellow("[REMOTE]")
 				notLocalKey = true
 			}
 
-			fmt.Fprintf(w, "%s  %s\n", prefix, i)
+			fmt.Fprintf(w, "%-18s %s\n", prefix, i)
 		}
 
 		// (2) Verify data integrity by comparing hashes
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			fmt.Fprintf(w, "%s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
+			fmt.Fprintf(w, "%-18s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
 			fail = true
 		} else {
-			fmt.Fprintf(w, "%s Data integrity verified\n", green("[OK]"))
+			fmt.Fprintf(w, "%-18s Data integrity verified\n", green("[OK]"))
 		}
 		fmt.Fprintf(w, "\n")
 	}
