@@ -145,6 +145,7 @@ jobs:
           at: ~/go
       - circle-compare-url/reconstruct
       - circle-compare-url/use:
+        step-name: Check changes
         custom-logic: |
           echo "Circle branch: $CIRCLE_BRANCH"
           echo "Commit range: $COMMIT_RANGE"
