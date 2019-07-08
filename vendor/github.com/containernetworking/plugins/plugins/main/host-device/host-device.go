@@ -17,26 +17,39 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/vishvananda/netlink"
 
 	"github.com/containernetworking/cni/pkg/skel"
 	"github.com/containernetworking/cni/pkg/types"
 	"github.com/containernetworking/cni/pkg/types/current"
 	"github.com/containernetworking/cni/pkg/version"
+
+	"github.com/containernetworking/plugins/pkg/ip"
+	"github.com/containernetworking/plugins/pkg/ipam"
 	"github.com/containernetworking/plugins/pkg/ns"
-	"github.com/vishvananda/netlink"
+	bv "github.com/containernetworking/plugins/pkg/utils/buildversion"
 )
 
+const (
+	sysBusPCI = "/sys/bus/pci/devices"
+)
+
+//NetConf for host-device config, look the README to learn how to use those parameters
 type NetConf struct {
 	types.NetConf
 	Device     string `json:"device"`     // Device-Name, something like eth0 or can0 etc.
 	HWAddr     string `json:"hwaddr"`     // MAC Address of target network interface
 	KernelPath string `json:"kernelpath"` // Kernelpath of the device
+	PCIAddr    string `json:"pciBusID"`   // PCI Address of target network device
 }
 
 func init() {
@@ -51,8 +64,8 @@ func loadConf(bytes []byte) (*NetConf, error) {
 	if err := json.Unmarshal(bytes, n); err != nil {
 		return nil, fmt.Errorf("failed to load netconf: %v", err)
 	}
-	if n.Device == "" && n.HWAddr == "" && n.KernelPath == "" {
-		return nil, fmt.Errorf(`specify either "device", "hwaddr" or "kernelpath"`)
+	if n.Device == "" && n.HWAddr == "" && n.KernelPath == "" && n.PCIAddr == "" {
+		return nil, fmt.Errorf(`specify either "device", "hwaddr", "kernelpath" or "pciBusID"`)
 	}
 	return n, nil
 }
@@ -68,7 +81,7 @@ func cmdAdd(args *skel.CmdArgs) error {
 	}
 	defer containerNs.Close()
 
-	hostDev, err := getLink(cfg.Device, cfg.HWAddr, cfg.KernelPath)
+	hostDev, err := getLink(cfg.Device, cfg.HWAddr, cfg.KernelPath, cfg.PCIAddr)
 	if err != nil {
 		return fmt.Errorf("failed to find host device: %v", err)
 	}
@@ -77,13 +90,67 @@ func cmdAdd(args *skel.CmdArgs) error {
 	if err != nil {
 		return fmt.Errorf("failed to move link %v", err)
 	}
+
+	var result *current.Result
+	// run the IPAM plugin and get back the config to apply
+	if cfg.IPAM.Type != "" {
+		r, err := ipam.ExecAdd(cfg.IPAM.Type, args.StdinData)
+		if err != nil {
+			return err
+		}
+
+		// Invoke ipam del if err to avoid ip leak
+		defer func() {
+			if err != nil {
+				ipam.ExecDel(cfg.IPAM.Type, args.StdinData)
+			}
+		}()
+
+		// Convert whatever the IPAM result was into the current Result type
+		result, err = current.NewResultFromResult(r)
+		if err != nil {
+			return err
+		}
+
+		if len(result.IPs) == 0 {
+			return errors.New("IPAM plugin returned missing IP config")
+		}
+
+		result.Interfaces = []*current.Interface{{
+			Name:    contDev.Attrs().Name,
+			Mac:     contDev.Attrs().HardwareAddr.String(),
+			Sandbox: containerNs.Path(),
+		}}
+		for _, ipc := range result.IPs {
+			// All addresses apply to the container interface (move from host)
+			ipc.Interface = current.Int(0)
+		}
+
+		err = containerNs.Do(func(_ ns.NetNS) error {
+			if err := ipam.ConfigureIface(args.IfName, result); err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+
+		result.DNS = cfg.DNS
+
+		return types.PrintResult(result, cfg.CNIVersion)
+	}
+
 	return printLink(contDev, cfg.CNIVersion, containerNs)
 }
 
 func cmdDel(args *skel.CmdArgs) error {
-	_, err := loadConf(args.StdinData)
+	cfg, err := loadConf(args.StdinData)
 	if err != nil {
 		return err
+	}
+	if args.Netns == "" {
+		return nil
 	}
 	containerNs, err := ns.GetNS(args.Netns)
 	if err != nil {
@@ -93,6 +160,12 @@ func cmdDel(args *skel.CmdArgs) error {
 
 	if err := moveLinkOut(containerNs, args.IfName); err != nil {
 		return err
+	}
+
+	if cfg.IPAM.Type != "" {
+		if err := ipam.ExecDel(cfg.IPAM.Type, args.StdinData); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -173,7 +246,7 @@ func printLink(dev netlink.Link, cniVersion string, containerNs ns.NetNS) error 
 	return types.PrintResult(&result, cniVersion)
 }
 
-func getLink(devname, hwaddr, kernelpath string) (netlink.Link, error) {
+func getLink(devname, hwaddr, kernelpath, pciaddr string) (netlink.Link, error) {
 	links, err := netlink.LinkList()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list node links: %v", err)
@@ -211,11 +284,128 @@ func getLink(devname, hwaddr, kernelpath string) (netlink.Link, error) {
 				}
 			}
 		}
+	} else if len(pciaddr) > 0 {
+		netDir := filepath.Join(sysBusPCI, pciaddr, "net")
+		if _, err := os.Lstat(netDir); err != nil {
+			return nil, fmt.Errorf("no net directory under pci device %s: %q", pciaddr, err)
+		}
+		fInfo, err := ioutil.ReadDir(netDir)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read net directory %s: %q", netDir, err)
+		}
+		if len(fInfo) > 0 {
+			return netlink.LinkByName(fInfo[0].Name())
+		}
+		return nil, fmt.Errorf("failed to find device name for pci address %s", pciaddr)
 	}
 
 	return nil, fmt.Errorf("failed to find physical interface")
 }
 
 func main() {
-	skel.PluginMain(cmdAdd, cmdDel, version.All)
+	skel.PluginMain(cmdAdd, cmdCheck, cmdDel, version.All, bv.BuildString("host-device"))
+}
+
+func cmdCheck(args *skel.CmdArgs) error {
+
+	cfg, err := loadConf(args.StdinData)
+	if err != nil {
+		return err
+	}
+	netns, err := ns.GetNS(args.Netns)
+	if err != nil {
+		return fmt.Errorf("failed to open netns %q: %v", args.Netns, err)
+	}
+	defer netns.Close()
+
+	// run the IPAM plugin and get back the config to apply
+	if cfg.IPAM.Type != "" {
+		err = ipam.ExecCheck(cfg.IPAM.Type, args.StdinData)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Parse previous result.
+	if cfg.NetConf.RawPrevResult == nil {
+		return fmt.Errorf("Required prevResult missing")
+	}
+
+	if err := version.ParsePrevResult(&cfg.NetConf); err != nil {
+		return err
+	}
+
+	result, err := current.NewResultFromResult(cfg.PrevResult)
+	if err != nil {
+		return err
+	}
+
+	var contMap current.Interface
+	// Find interfaces for name we know, that of host-device inside container
+	for _, intf := range result.Interfaces {
+		if args.IfName == intf.Name {
+			if args.Netns == intf.Sandbox {
+				contMap = *intf
+				continue
+			}
+		}
+	}
+
+	// The namespace must be the same as what was configured
+	if args.Netns != contMap.Sandbox {
+		return fmt.Errorf("Sandbox in prevResult %s doesn't match configured netns: %s",
+			contMap.Sandbox, args.Netns)
+	}
+
+	//
+	// Check prevResults for ips, routes and dns against values found in the container
+	if err := netns.Do(func(_ ns.NetNS) error {
+
+		// Check interface against values found in the container
+		err := validateCniContainerInterface(contMap)
+		if err != nil {
+			return err
+		}
+
+		err = ip.ValidateExpectedInterfaceIPs(args.IfName, result.IPs)
+		if err != nil {
+			return err
+		}
+
+		err = ip.ValidateExpectedRoute(result.Routes)
+		if err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	//
+	return nil
+}
+
+func validateCniContainerInterface(intf current.Interface) error {
+
+	var link netlink.Link
+	var err error
+
+	if intf.Name == "" {
+		return fmt.Errorf("Container interface name missing in prevResult: %v", intf.Name)
+	}
+	link, err = netlink.LinkByName(intf.Name)
+	if err != nil {
+		return fmt.Errorf("Container Interface name in prevResult: %s not found", intf.Name)
+	}
+	if intf.Sandbox == "" {
+		return fmt.Errorf("Error: Container interface %s should not be in host namespace", link.Attrs().Name)
+	}
+
+	if intf.Mac != "" {
+		if intf.Mac != link.Attrs().HardwareAddr.String() {
+			return fmt.Errorf("Interface %s Mac %s doesn't match container Mac: %s", intf.Name, intf.Mac, link.Attrs().HardwareAddr)
+		}
+	}
+
+	return nil
 }
