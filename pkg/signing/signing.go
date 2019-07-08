@@ -309,7 +309,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		w = ioutil.Discard
 	}
 
-	var fail bool
+	//var fail bool
 	var errRet error
 
 	fmt.Fprintf(w, "Container is signed by %d key(s):\n\n", len(signatures))
@@ -319,10 +319,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
 			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", v.ID, err)
-			fail = true
+			//		fail = true
 			continue
 		}
-
 		fmt.Fprintf(w, "Verifying signature F: %s:\n", fingerprint)
 
 		// Extract hash string from signature block
@@ -330,7 +329,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		block, _ := clearsign.Decode(data)
 		if block == nil {
 			fmt.Fprintf(w, "%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
-			fail = true
+			//		fail = true
 			continue
 		}
 
@@ -344,7 +343,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				fmt.Fprintf(w, "%-18s %s\n", red("[FAIL]"), err)
 			}
 			errRet = err
-			fail = true
+			//		fail = true
 		} else {
 			prefix := green("[LOCAL]")
 			if !local {
@@ -358,17 +357,17 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		// (2) Verify data integrity by comparing hashes
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
 			fmt.Fprintf(w, "%-18s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
-			fail = true
+			//		fail = true
 		} else {
 			fmt.Fprintf(w, "%-18s Data integrity verified\n", green("[OK]"))
 		}
 		fmt.Fprintf(w, "\n")
 	}
 
-	if fail {
-		sylog.Debugf("")
-		//errRet = fmt.Errorf("")
-	}
+	//if fail {
+	//	sylog.Debugf("")
+	//errRet = fmt.Errorf("")
+	//}
 
 	return notLocalKey, errRet
 }
