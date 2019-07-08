@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  circle-compe-url: iynere/compare-url@1.2.0
+  circle-compare-url: iynere/compare-url@1.2.0
 
 defaults: &defaults
   working_directory: /go/singularity
@@ -145,7 +145,6 @@ jobs:
           at: ~/go
       - circle-compare-url/reconstruct
       - circle-compare-url/use:
-        step-name: Check changes
         custom-logic: |
           echo "Circle branch: $CIRCLE_BRANCH"
           echo "Commit range: $COMMIT_RANGE"
@@ -155,7 +154,6 @@ jobs:
             echo "Skipping e2e tests"
             circleci step halt
           fi
-      
       - run:
           name: Setup environment
           command: |-
