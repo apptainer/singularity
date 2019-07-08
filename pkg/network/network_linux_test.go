@@ -32,7 +32,7 @@ var confFiles = []struct {
 		name: "test-bridge",
 		file: "00_test-bridge.conflist",
 		content: `{
-			"cniVersion": "0.3.1",
+			"cniVersion": "0.4.0",
 			"name": "test-bridge",
 			"plugins": [
 				{
@@ -61,14 +61,14 @@ var confFiles = []struct {
 	},
 	{
 		name: "test-badbridge",
-		file: "10_badbridge.conf",
+		file: "10_badbridge.conflist",
 		content: `{
-			"cniVersion": "0.3.1",
+			"cniVersion": "0.4.0",
 			"name": "test-badbridge",
 			"plugins": [
 				{
 					"type": "badbridge",
-					"bridge": "tbr0"
+					"bridge": "bbr0"
 				}
 			]
 		}`,
@@ -77,7 +77,7 @@ var confFiles = []struct {
 		name: "test-bridge-iprange",
 		file: "20_bridge_iprange.conflist",
 		content: `{
-			"cniVersion": "0.3.1",
+			"cniVersion": "0.4.0",
 			"name": "test-bridge-iprange",
 			"plugins": [
 				{
@@ -356,7 +356,7 @@ func TestNewSetup(t *testing.T) {
 func testPingIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
 	testIP := "10.111.111.10"
 
-	setup, err := NewSetup([]string{"test-bridge"}, "", nsPath, cniPath)
+	setup, err := NewSetup([]string{"test-bridge"}, "_test_", nsPath, cniPath)
 	if err != nil {
 		return err
 	}
@@ -386,7 +386,7 @@ func testPingIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io
 
 // ping random acquired IP from host
 func testPingRandomIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
-	setup, err := NewSetup([]string{"test-bridge"}, "", nsPath, cniPath)
+	setup, err := NewSetup([]string{"test-bridge"}, "_test_", nsPath, cniPath)
 	if err != nil {
 		return err
 	}
@@ -412,7 +412,7 @@ func testPingRandomIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, std
 
 // ping IP from host within requested IP range
 func testPingIPRange(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
-	setup, err := NewSetup([]string{"test-bridge-iprange"}, "", nsPath, cniPath)
+	setup, err := NewSetup([]string{"test-bridge-iprange"}, "_test_", nsPath, cniPath)
 	if err != nil {
 		return err
 	}
@@ -446,7 +446,7 @@ func testPingIPRange(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdo
 // test port mapping by connecting to port 80 mapped inside container
 // to 31080 on host
 func testHTTPPortmap(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io.ReadCloser) error {
-	setup, err := NewSetup([]string{"test-bridge"}, "", nsPath, cniPath)
+	setup, err := NewSetup([]string{"test-bridge"}, "_test_", nsPath, cniPath)
 	if err != nil {
 		return err
 	}
@@ -523,28 +523,34 @@ func TestAddDelNetworks(t *testing.T) {
 	}
 
 	for _, c := range []struct {
+		name    string
 		command string
 		args    []string
 		runFunc func(string, *CNIPath, io.WriteCloser, io.ReadCloser) error
 	}{
 		{
+			name:    "TestPingIP",
 			command: "cat",
 			runFunc: testPingIP,
 		},
 		{
+			name:    "TestPingRandomIP",
 			command: "cat",
 			runFunc: testPingRandomIP,
 		},
 		{
+			name:    "TestHTTPPortmap",
 			command: "nc",
 			args:    []string{"-l", "-p", "80"},
 			runFunc: testHTTPPortmap,
 		},
 		{
+			name:    "TestPingIPRange",
 			command: "cat",
 			runFunc: testPingIPRange,
 		},
 		{
+			name:    "TestBadBridge",
 			command: "cat",
 			runFunc: testBadBridge,
 		},
@@ -577,7 +583,7 @@ func TestAddDelNetworks(t *testing.T) {
 
 		nsPath := fmt.Sprintf("/proc/%d/ns/net", cmd.Process.Pid)
 		if err := c.runFunc(nsPath, cniPath, stdinPipe, stdoutPipe); err != nil {
-			t.Error(err)
+			t.Errorf("unexpected failure for %q: %s", c.name, err)
 		}
 
 		stdoutPipe.Close()
