@@ -143,11 +143,12 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/go
-      - compare-url/reconstruct
+      - compare-url/reconstruct:
+          project-path: ~/go/singularity
       - compare-url/use:
           step-name: Check changes
           custom-logic: |
-            echo "Circle branch: $CIRCLE_BRANCH"
+            echo "Circle branch: '${CIRCLE_BRANCH}'"
             echo "Commit range: '${COMMIT_RANGE}'"
 
             # Skip if there were no changes to the e2e or vendor directories and the branch is not master
