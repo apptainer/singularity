@@ -102,6 +102,8 @@ jobs:
       - run:
           name: Setup environment
           command: |-
+            pwd
+            ls
             echo 'export GOPATH=$HOME/go' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
