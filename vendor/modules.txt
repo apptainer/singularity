@@ -298,9 +298,9 @@ go4.org/errorutil
 golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/openpgp
 golang.org/x/crypto/openpgp/clearsign
-golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/armor
 golang.org/x/crypto/openpgp/packet
+golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal
