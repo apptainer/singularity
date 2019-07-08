@@ -110,11 +110,8 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken, true)
 		if err != nil {
 			sylog.Errorf("%v", err)
-			// if there is a warning, return set error to indicate exit 1
 		}
-		// if container is not signed, print a warning
 		if !imageSigned {
-			fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
 			return ErrLibraryPullUnsigned
 		}
 	} else {

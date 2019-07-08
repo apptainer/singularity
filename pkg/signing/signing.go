@@ -10,7 +10,10 @@ import (
 	"crypto/sha512"
 	"encoding/binary"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/fatih/color"
@@ -19,7 +22,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/clearsign"
-	openpgperrors "golang.org/x/crypto/openpgp/errors"
 )
 
 // computeHashStr generates a hash from data object(s) and generates a string
@@ -256,6 +258,22 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 	return true, nil
 }
 
+type keyTrust int
+
+const (
+	trusted = iota
+	remote
+	missing
+)
+
+type verifyResult struct {
+	dataIntegrity bool
+	fingerprint   string
+	identity      string
+	trust         keyTrust
+	err           error
+}
+
 // Verify takes a container path (cpath), and look for a verification block
 // for a specified descriptor. If found, the signature block is used to verify
 // the partition hash against the signer's version. Verify will look for OpenPGP
@@ -285,109 +303,130 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 
-	var author string
-	var signersKeys = 0
-	var trusted bool
+	w := io.Writer(os.Stdout)
+
+	if quiet {
+		w = ioutil.Discard
+	}
+
+	var fail bool
 	var errRet error
 
+	fmt.Fprintf(w, "Container is signed by %d key(s):\n\n", len(signatures))
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
-		// Extract hash string from signature block
-		data := v.GetData(&fimg)
-		block, _ := clearsign.Decode(data)
-		if block == nil {
-			//return false, fmt.Errorf("failed to parse signature block")
-			sylog.Errorf("key corrupted; skipping corrupted key")
-			continue
-		}
-
-		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			sylog.Infof("NOTE: group signatures will fail if new data is added to a group")
-			sylog.Infof("after the group signature is created.")
-			return false, fmt.Errorf("hashes differ, data may be corrupted")
-		}
-
-		// (1) Data integrity is verified, (2) now validate identify of signers
 
 		// get the entity fingerprint for the signature block
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
-			return false, fmt.Errorf("could not get the signing entity fingerprint: %s", err)
+			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", v.ID, err)
+			fail = true
+			continue
 		}
 
-		// load the public keys available locally from the cache
-		elist, err := sypgp.LoadPubKeyring()
+		fmt.Fprintf(w, "Verifying signature F: %s:\n", fingerprint)
+
+		// Extract hash string from signature block
+		data := v.GetData(&fimg)
+		block, _ := clearsign.Decode(data)
+		if block == nil {
+			fmt.Fprintf(w, "%s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
+			fail = true
+			continue
+		}
+
+		// (1) try to get identity of signer
+		i, local, err := getSignerIdentity(v, block, data, fingerprint, keyServiceURI, authToken, noPrompt, localVerify)
 		if err != nil {
-			return false, fmt.Errorf("could not load public keyring: %s", err)
-		}
-
-		// verify the container with our local keys first
-		sylog.Verbosef("Container signature found: %s\n", fingerprint)
-		signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
-		if err == openpgperrors.ErrUnknownIssuer {
-			trusted = false
-			notLocalKey = true
-
-			if !localVerify {
-				// download the key
-				sylog.Verbosef("Key not found locally, checking remote keystore: %s\n", fingerprint[32:])
-				netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
-				if err != nil {
-					sylog.Verbosef("ERROR: Could not obtain key from remote keystore: %s", err)
-					author += fmt.Sprintf("\nVerifying signature F: %s:\n", fingerprint)
-					author += fmt.Sprintf("%s  key does not exist in local, or remote keystore\n", red("[MISSING]"))
-
-					errRet = fmt.Errorf("unble to fetch key %s: %v", fingerprint, err)
-					signersKeys++
-					continue
-				}
-				sylog.Verbosef("Found key in remote keystore: %s", fingerprint[32:])
-
-				block, _ := clearsign.Decode(data)
-				if block == nil {
-					return false, fmt.Errorf("failed to parse signature block")
-				}
-
-				// verify the container, again...
-				signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
-				if err != nil {
-					return false, fmt.Errorf("signature verification failed: %s", err)
-				}
+			// use [MISSING] if we get an error we expect
+			if err == errNotFound || err == errNotFoundLocal {
+				fmt.Fprintf(w, "%s %s\n", red("[MISSING]"), err)
 			} else {
-				sylog.Errorf("Key not in local keyring: %s", fingerprint)
-				return false, fmt.Errorf("unable to verify container: %v", err)
+				fmt.Fprintf(w, "%s %s\n", red("[FAIL]"), err)
 			}
-		} else if err != nil {
-			return false, fmt.Errorf("failed verifying image: %v", err)
+			fail = true
 		} else {
-			trusted = true
-			sylog.Verbosef("Found key in local keystore: %s", fingerprint[32:])
+			prefix := green("[LOCAL] ")
+			if !local {
+				prefix = yellow("[REMOTE]")
+				notLocalKey = true
+			}
+
+			fmt.Fprintf(w, "%s  %s\n", prefix, i)
 		}
 
-		// Get first Identity data for convenience
-		var name string
-		for _, i := range signer.Identities {
-			name = i.Name
-			break
-		}
-		signersKeys++
-		if trusted {
-			author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
-			author += fmt.Sprintf("%s    %s\n", green("[LOCAL]"), name)
+		// (2) Verify data integrity by comparing hashes
+		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
+			fmt.Fprintf(w, "%s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
+			fail = true
 		} else {
-			author += fmt.Sprintf("\nVerifying signature F: %X:\n", signer.PrimaryKey.Fingerprint)
-			author += fmt.Sprintf("%s   %s\n", yellow("[REMOTE]"), name)
+			fmt.Fprintf(w, "%s Data integrity verified\n", green("[OK]"))
 		}
+		fmt.Fprintf(w, "\n")
 	}
-	if !quiet {
-		fmt.Printf("Container is signed by %d key(s):\n", signersKeys)
-		fmt.Printf("%s\n", author)
-		if !notLocalKey {
-			fmt.Printf("Signature(s) and data integrity verified\n")
-		}
+
+	if fail {
+		errRet = fmt.Errorf("")
 	}
 
 	return notLocalKey, errRet
+}
+
+func verifyDescriptor(v *sif.Descriptor, fimg sif.FileImage, keyServiceURI, authToken string, noPrompt bool) {
+
+}
+
+// Get first Identity data for convenience
+func getFirstIdentity(e *openpgp.Entity) string {
+	for _, i := range e.Identities {
+		return i.Name
+	}
+	return ""
+}
+
+var errNotFound = errors.New("key does not exist in local, or remote keystore")
+var errNotFoundLocal = errors.New("key not in local keyring")
+
+func getSignerIdentity(v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, noPrompt, local bool) (string, bool, error) {
+	// load the public keys available locally from the cache
+	elist, err := sypgp.LoadPubKeyring()
+	if err != nil {
+		return "", false, fmt.Errorf("could not load public keyring: %s", err)
+	}
+
+	// search local keyring for key that matches signature first
+	signer, err := openpgp.CheckDetachedSignature(elist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+	if err == nil {
+		return getFirstIdentity(signer), true, nil
+	}
+
+	// if theres a error, thats probably because we dont have a local key. So download it and try again
+	// skip downloading and say we failed
+	if local {
+		return "", false, errNotFoundLocal
+	}
+
+	// this is needed to reset the block objects reader since it is consumed in the last call
+	block, _ = clearsign.Decode(data)
+	if block == nil {
+		return "", false, fmt.Errorf("failed to parse signature block")
+	}
+
+	// download the key
+	sylog.Verbosef("Key not found in local keyring, checking remote keystore: %s\n", fingerprint[32:])
+	netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, noPrompt)
+	if err != nil {
+		return "", false, errNotFound
+	}
+
+	sylog.Verbosef("Found key in remote keystore: %s", fingerprint[32:])
+	// search remote keyring for key that matches signature
+	signer, err = openpgp.CheckDetachedSignature(netlist, bytes.NewBuffer(block.Bytes), block.ArmoredSignature.Body)
+	if err == nil {
+		return getFirstIdentity(signer), false, nil
+	}
+
+	return "", false, err
 }
 
 func getSignEntities(fimg *sif.FileImage) ([]string, error) {

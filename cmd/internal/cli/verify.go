@@ -115,13 +115,11 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	localKeyOk, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
+	_, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
 	if err != nil {
-		sylog.Fatalf("Failed to verify: %s: %v", cpath, err)
+		sylog.Fatalf("Failed to verify: %s %s", cpath, err)
 	}
-	if localKeyOk {
-		os.Exit(1)
-	}
+	sylog.Infof("Container verified: %s", cpath)
 }
 
 func handleVerifyFlags(cmd *cobra.Command) {

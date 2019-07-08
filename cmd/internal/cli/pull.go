@@ -79,7 +79,7 @@ var pullNameFlag = cmdline.Flag{
 	Name:         "name",
 	Hidden:       true,
 	Usage:        "specify a custom image name",
-	EnvKeys:      []string{"PULL_NAME"},
+	EnvKeys:      []string{"NAME"},
 }
 
 // --dir
