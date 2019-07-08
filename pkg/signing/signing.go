@@ -248,7 +248,7 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string, noPrompt bool) (bool, error) {
 	noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, noPrompt, true)
 	if err != nil {
-		return false, fmt.Errorf("unable to verify container: %v", err)
+		return false, fmt.Errorf("unable to verify container: %s", cpath)
 	}
 	if noLocalKey {
 		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
@@ -315,7 +315,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	fmt.Fprintf(w, "Container is signed by %d key(s):\n\n", len(signatures))
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
-
 		// get the entity fingerprint for the signature block
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
@@ -344,6 +343,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			} else {
 				fmt.Fprintf(w, "%-18s %s\n", red("[FAIL]"), err)
 			}
+			errRet = err
 			fail = true
 		} else {
 			prefix := green("[LOCAL]")
@@ -366,7 +366,8 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	}
 
 	if fail {
-		errRet = fmt.Errorf("")
+		sylog.Debugf("")
+		//errRet = fmt.Errorf("")
 	}
 
 	return notLocalKey, errRet

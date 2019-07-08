@@ -112,6 +112,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 			sylog.Errorf("%v", err)
 		}
 		if !imageSigned {
+			fmt.Printf("Unable to verify image, and thus its contents cannot be verified\n")
 			return ErrLibraryPullUnsigned
 		}
 	} else {
