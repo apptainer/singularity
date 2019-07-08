@@ -47,7 +47,7 @@ var errInvalidChoice = errors.New("invalid choice")
 
 // ErrEmptyKeyring is the error when the public, or private keyring
 // empty.
-var ErrEmptyKeyring = errors.New("no key in keyring")
+var ErrEmptyKeyring = errors.New("keyring is empty")
 
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
