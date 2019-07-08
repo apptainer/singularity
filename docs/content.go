@@ -759,10 +759,10 @@ Enterprise Performance Computing (EPC)`
   apps regardless of the active app. Both sets of variables are also available during development (at build time).
 
   ACTIVE APP ENVIRONMENT:
-      SCIF_APPNAME       the name of the application
-      SCIF_APPROOT       the application base (/scif/apps/<app>)
+      SCIF_APPNAME       the name for the active application
+      SCIF_APPROOT       the installation folder for the application created at /scif/apps/<app>
       SCIF_APPMETA       the application metadata folder
-      SCIF_APPDATA       the data base folder for active app
+      SCIF_APPDATA       the data folder created for the application at /scif/data/<app>
         SCIF_APPINPUT    expected input folder within data base folder
         SCIF_APPOUTPUT   the output data folder within data base folder
 
@@ -772,7 +772,10 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPLIB        is the application's library folder that is added to the LD_LIBRARY_PATH
       SCIF_APPRUN        is the runscript
       SCIF_APPHELP       is the help file for the runscript
-      SCIF_APPTEST       is the testing script (test.sh) associated with the application
+      SCIF_APPTEST       is the testing script (test.sh) associated with the applicatio
+      SCIF_APPNAME       the name for the active application
+      SCIF_APPFILES      the files section associated with the application that are added to
+
 
   GLOBAL APP ENVIRONMENT:
     
