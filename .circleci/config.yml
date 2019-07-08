@@ -102,8 +102,6 @@ jobs:
       - run:
           name: Setup environment
           command: |-
-            pwd
-            ls
             echo 'export GOPATH=$HOME/go' >> $BASH_ENV
             echo 'export GOROOT=/usr/local/go' >> $BASH_ENV
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
@@ -146,10 +144,11 @@ jobs:
       - attach_workspace:
           at: ~/go
       - compare-url/reconstruct:
-          project-path: ~/go/singularity
+          project-path: $HOME/go/singularity
       - compare-url/use:
           step-name: Check changes
           custom-logic: |
+            cd $HOME/go/singularity
             echo "Circle branch: '${CIRCLE_BRANCH}'"
             echo "Commit range: '${COMMIT_RANGE}'"
 
