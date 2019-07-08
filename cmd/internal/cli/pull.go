@@ -19,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	net "github.com/sylabs/singularity/pkg/client/net"
-	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/cmdline"
 )
 
@@ -54,7 +53,7 @@ var (
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
 	ID:           "pullLibraryURIFlag",
-	Value:        &PushLibraryURI,
+	Value:        &PullLibraryURI,
 	DefaultValue: "https://library.sylabs.io",
 	Name:         "library",
 	Usage:        "download images from the provided library",
@@ -80,7 +79,7 @@ var pullNameFlag = cmdline.Flag{
 	Name:         "name",
 	Hidden:       true,
 	Usage:        "specify a custom image name",
-	EnvKeys:      []string{"NAME"},
+	EnvKeys:      []string{"PULL_NAME"},
 }
 
 // --dir
@@ -169,6 +168,12 @@ var PullCmd = &cobra.Command{
 }
 
 func pullRun(cmd *cobra.Command, args []string) {
+	// We get a handle for the current image cache
+	imgCache := getCacheHandle()
+	if imgCache == nil {
+		sylog.Fatalf("failed to create an image cache handle")
+	}
+
 	exitStat := 0
 	i := len(args) - 1 // uri is stored in args[len(args)-1]
 	transport, ref := uri.Split(args[i])
@@ -208,7 +213,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 
-		err := singularity.LibraryPull(name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull)
+		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull)
 		if err == singularity.ErrLibraryUnsigned {
 			exitStat = 1
 		} else if err == singularity.ErrLibraryPullAbort {
@@ -217,7 +222,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
-		err := shub.DownloadImage(name, args[i], force, noHTTPS)
+		err := singularity.PullShub(imgCache, name, args[i], force, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -227,7 +232,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		err = singularity.OrasPull(name, ref, force, ociAuth)
+		err = singularity.OrasPull(imgCache, name, ref, force, ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
@@ -242,7 +247,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(name, args[i], tmpDir, ociAuth, force, noHTTPS)
+		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, force, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}

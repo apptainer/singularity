@@ -17,9 +17,11 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"golang.org/x/sys/unix"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -232,7 +234,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 	return nil
 }
 
-func (e *EngineOperations) prepareFd() {
+func (e *EngineOperations) prepareFd(starterConfig *starter.Config) error {
 	fds := make([]int, 0)
 
 	if e.EngineConfig.File.UserBindControl {
@@ -288,7 +290,15 @@ func (e *EngineOperations) prepareFd() {
 		fds = append(fds, int(f.Fd()))
 	}
 
+	for _, f := range fds {
+		if err := starterConfig.KeepFileDescriptor(f); err != nil {
+			return err
+		}
+	}
+
 	e.EngineConfig.SetOpenFd(fds)
+
+	return nil
 }
 
 // prepareContainerConfig is responsible for getting and applying user supplied
@@ -323,6 +333,33 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.SetMountPropagation("rslave")
 	} else {
 		starterConfig.SetMountPropagation("rprivate")
+	}
+
+	if e.EngineConfig.GetFakeroot() {
+		baseID := e.EngineConfig.File.FakerootBaseID
+		allowedUsers := e.EngineConfig.File.FakerootAllowedUsers
+		idRange, err := fakeroot.GetIDRange(baseID, allowedUsers)
+		if err != nil {
+			return err
+		}
+
+		e.EngineConfig.OciConfig.SetupPrivileged(true)
+
+		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
+
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
+
+		starterConfig.SetHybridWorkflow(true)
+		starterConfig.SetAllowSetgroups(true)
+
+		starterConfig.SetTargetUID(0)
+		starterConfig.SetTargetGID([]int{0})
 	}
 
 	starterConfig.SetBringLoopbackInterface(true)
@@ -361,9 +398,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	// open file descriptors (autofs bug path)
-	e.prepareFd()
-
-	return nil
+	return e.prepareFd(starterConfig)
 }
 
 // prepareInstanceJoinConfig is responsible for getting and applying configuration
@@ -417,7 +452,8 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// go into /proc/<pid> directory to open namespaces inodes
 	// relative to current working directory while joining
 	// namespaces within C starter code as changing directory
-	// here also affects starter process thanks to CLONE_FS.
+	// here will also affects starter process thanks to
+	// SetWorkingDirectoryFd call.
 	// Additionally it would prevent TOCTOU races and symlink
 	// usage.
 	// And if instance process exits during checks or while
@@ -425,9 +461,17 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// error because current working directory would point to a
 	// deleted inode: "/proc/self/cwd -> /proc/<pid> (deleted)"
 	path := filepath.Join("/proc", strconv.Itoa(file.Pid))
-	if err := mainthread.Chdir(path); err != nil {
+	fd, err := syscall.Open(path, syscall.O_RDONLY|syscall.O_DIRECTORY, 0)
+	if err != nil {
+		return fmt.Errorf("could not open proc directory %s: %s", path, err)
+	}
+	if err := mainthread.Fchdir(fd); err != nil {
 		return err
 	}
+	// will set starter (via fchdir too) in the same proc directory
+	// in order to open namespace inodes with relative paths for the
+	// right process
+	starterConfig.SetWorkingDirectoryFd(fd)
 
 	// enforce checks while joining an instance process with SUID workflow
 	// since instance file is stored in user home directory, we can't trust
@@ -531,7 +575,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	}
 
 	// tell starter that we are joining an instance
-	starterConfig.SetJoinMount(true)
+	starterConfig.SetNamespaceJoinOnly(true)
 
 	// update namespaces path relative to /proc/<pid>
 	// since starter process is in /proc/<pid> directory
@@ -689,12 +733,12 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		if err := e.prepareContainerConfig(starterConfig); err != nil {
 			return err
 		}
-		if err := e.loadImages(); err != nil {
+		if err := e.loadImages(starterConfig); err != nil {
 			return err
 		}
 	}
 
-	starterConfig.SetSharedMount(true)
+	starterConfig.SetMasterPropagateMount(true)
 	starterConfig.SetNoNewPrivs(e.EngineConfig.OciConfig.Process.NoNewPrivileges)
 
 	if e.EngineConfig.OciConfig.Process != nil && e.EngineConfig.OciConfig.Process.Capabilities != nil {
@@ -705,10 +749,37 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		starterConfig.SetCapabilities(capabilities.Ambient, e.EngineConfig.OciConfig.Process.Capabilities.Ambient)
 	}
 
+	// determine if engine need to propagate signals across processes
+	e.checkSignalPropagation()
+
 	return nil
 }
 
-func (e *EngineOperations) loadImages() error {
+func (e *EngineOperations) checkSignalPropagation() {
+	// obtain the process group ID of the associated controlling
+	// terminal (if there's one).
+	pgrp := 0
+	for i := 0; i <= 2; i++ {
+		// The two possible errors:
+		// - EBADF will return 0 as process group
+		// - ENOTTY will also return 0 as process group
+		pgrp, _ = unix.IoctlGetInt(i, unix.TIOCGPGRP)
+		// based on kernel source a 0 value for process group
+		// theorically be set but really not sure it can happen
+		// with linux tty behavior
+		if pgrp != 0 {
+			break
+		}
+	}
+	// cases we need to propagate signals to container process:
+	// - when pgrp == 0 because container won't run in a terminal
+	// - when process group is different from the process group controlling terminal
+	if pgrp == 0 || (pgrp > 0 && pgrp != syscall.Getpgrp()) {
+		e.EngineConfig.SetSignalPropagation(true)
+	}
+}
+
+func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	images := make([]image.Image, 0)
 
 	// load rootfs image
@@ -732,7 +803,7 @@ func (e *EngineOperations) loadImages() error {
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
-		if err := mainthread.Chdir(img.Source); err != nil {
+		if err := mainthread.Fchdir(int(img.Fd)); err != nil {
 			return err
 		}
 		cwd, err := os.Getwd()
@@ -742,6 +813,8 @@ func (e *EngineOperations) loadImages() error {
 		if cwd != img.Path {
 			return fmt.Errorf("path mismatch for sandbox %s != %s", cwd, img.Path)
 		}
+		// C starter code will position current working directory
+		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 	}
 	if img.Type == image.SIF {
 		// query the ECL module, proceed if an ecl config file is found
@@ -756,6 +829,10 @@ func (e *EngineOperations) loadImages() error {
 			}
 		}
 	}
+	if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+		return err
+	}
+
 	// first image is always the root filesystem
 	images = append(images, *img)
 
@@ -773,6 +850,9 @@ func (e *EngineOperations) loadImages() error {
 		img, err := e.loadImage(splitted[0], writable)
 		if err != nil {
 			return fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+		}
+		if err := starterConfig.KeepFileDescriptor(int(img.Fd)); err != nil {
+			return err
 		}
 		images = append(images, *img)
 	}

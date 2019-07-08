@@ -25,6 +25,7 @@ import (
 
 var (
 	remote         bool
+	encrypt        bool
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -40,6 +41,7 @@ var (
 	dockerPassword string
 	dockerLogin    bool
 	noCleanUp      bool
+	fakeroot       bool
 )
 
 // -s|--sandbox
@@ -117,6 +119,17 @@ var buildRemoteFlag = cmdline.Flag{
 	EnvKeys:      []string{"REMOTE"},
 }
 
+// -e|--encrypt
+var buildEncryptFlag = cmdline.Flag{
+	ID:           "buildEncryptFlag",
+	Value:        &encrypt,
+	DefaultValue: false,
+	Name:         "encrypt",
+	ShortHand:    "e",
+	Usage:        "Encrypt the file system after building (requires root)",
+	EnvKeys:      []string{"ENCRYPT"},
+}
+
 // -d|--detached
 var buildDetachedFlag = cmdline.Flag{
 	ID:           "buildDetachedFlag",
@@ -178,6 +191,17 @@ var buildNoCleanupFlag = cmdline.Flag{
 	EnvKeys:      []string{"NO_CLEANUP"},
 }
 
+// --fakeroot
+var buildFakerootFlag = cmdline.Flag{
+	ID:           "buildFakerootFlag",
+	Value:        &fakeroot,
+	DefaultValue: false,
+	Name:         "fakeroot",
+	ShortHand:    "f",
+	Usage:        "build using user namespace to fake root user (requires a privileged installation)",
+	EnvKeys:      []string{"FAKEROOT"},
+}
+
 func init() {
 	cmdManager.RegisterCmd(BuildCmd)
 
@@ -190,10 +214,12 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)

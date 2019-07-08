@@ -89,6 +89,8 @@ func fstypeStr(ftype Fstype) string {
 		return "Archive"
 	case FsRaw:
 		return "Raw"
+	case FsEncryptedSquashfs:
+		return "Encrypted squashfs"
 	}
 	return "Unknown fs-type"
 }
@@ -171,7 +173,7 @@ func (fimg *FileImage) FmtDescrList() string {
 	return s
 }
 
-// FmtDescrInfo formats the ouput of detailed info about a descriptor from a SIF file
+// FmtDescrInfo formats the output of detailed info about a descriptor from a SIF file
 func (fimg *FileImage) FmtDescrInfo(id uint32) string {
 	var s string
 

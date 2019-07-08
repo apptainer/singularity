@@ -24,8 +24,14 @@ import (
 func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engine *engines.Engine) {
 	var fatal error
 	var status syscall.WaitStatus
-
 	fatalChan := make(chan error, 1)
+
+	// we could receive signal from child with CreateContainer call so we
+	// set the signal handler earlier to queue signals until MonitorContainer
+	// is called to handle them
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals)
+
 	ppid := os.Getppid()
 
 	go func() {
@@ -63,11 +69,21 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		if obj, ok := engine.EngineOperations.(interface {
 			PreStartProcess(int, net.Conn, chan error) error
 		}); ok {
-			n, err := conn.Read(data)
-			if (err != nil && err != io.EOF) || n == 0 || data[0] == 'f' {
-				if isInstance && os.Getppid() == ppid {
-					syscall.Kill(ppid, syscall.SIGUSR2)
+			_, err := conn.Read(data)
+			if err != nil {
+				if err != io.EOF {
+					fatalChan <- fmt.Errorf("error while reading master socket data: %s", err)
 				}
+				// EOF means something goes wrong in stage 2, don't send error via
+				// fatalChan, error will be reported by stage 2 and the process
+				// status will be set accordingly via MonitorContainer method below
+				sylog.Debugf("stage 2 process was interrupted, waiting status")
+				return
+			} else if data[0] == 'f' {
+				// StartProcess reported an error in stage 2, don't send error via
+				// fatalChan, error will be reported by stage 2 and the process
+				// status will be set accordingly via MonitorContainer method below
+				sylog.Debugf("stage 2 process reported an error, waiting status")
 				return
 			}
 			if err := obj.PreStartProcess(containerPid, conn, fatalChan); err != nil {
@@ -75,38 +91,30 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 				return
 			}
 		}
-		// wait container process execution, any error different from EOF
-		// or any data send over master connection at this point means an
-		// error occurred in StartProcess, just return by waiting error
-		n, err := conn.Read(data)
-		if (err != nil && err != io.EOF) || n > 0 {
+		// wait container process execution, EOF means container process
+		// was executed and master socket was closed by stage 2. If data
+		// byte sent is equal to 'f', it means an error occurred in
+		// StartProcess, just return by waiting error and process status
+		_, err = conn.Read(data)
+		if (err != nil && err != io.EOF) || data[0] == 'f' {
+			sylog.Debugf("stage 2 process reported an error, waiting status")
 			return
 		}
 
 		err = engine.PostStartProcess(containerPid)
 		if err != nil {
-			if isInstance && os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-			}
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
 		}
-		if isInstance {
+		if isInstance && os.Getppid() == ppid {
 			// sleep a bit to see if child exit
 			time.Sleep(100 * time.Millisecond)
-			if os.Getppid() == ppid {
-				syscall.Kill(ppid, syscall.SIGUSR1)
-			}
+			syscall.Kill(ppid, syscall.SIGUSR1)
 		}
 	}()
 
 	go func() {
 		var err error
-
-		// catch all signals
-		signals := make(chan os.Signal, 1)
-		signal.Notify(signals)
-
 		status, err = engine.MonitorContainer(containerPid, signals)
 		fatalChan <- err
 	}()
@@ -123,10 +131,6 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	signal.Reset()
 
 	if fatal != nil {
-		if isInstance && os.Getppid() == ppid {
-			syscall.Kill(ppid, syscall.SIGUSR2)
-		}
-		syscall.Kill(containerPid, syscall.SIGKILL)
 		sylog.Fatalf("%s", fatal)
 	}
 
@@ -135,20 +139,9 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 	if status.Signaled() {
 		s := status.Signal()
 		sylog.Debugf("Child exited due to signal %d", s)
-		if isInstance && os.Getppid() == ppid {
-			syscall.Kill(ppid, syscall.SIGUSR2)
-		}
 		exitCode = 128 + int(s)
 	} else if status.Exited() {
 		sylog.Debugf("Child exited with exit status %d", status.ExitStatus())
-		if isInstance && os.Getppid() == ppid {
-			if status.ExitStatus() != 0 {
-				syscall.Kill(ppid, syscall.SIGUSR2)
-				sylog.Fatalf("failed to spawn instance")
-			} else {
-				syscall.Kill(ppid, syscall.SIGUSR1)
-			}
-		}
 		exitCode = status.ExitStatus()
 	}
 

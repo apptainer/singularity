@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/oras"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
@@ -89,9 +90,10 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 			}
 
-			if err := singularity.OrasPush(file, ref, ociAuth); err != nil {
+			if err := oras.UploadImage(file, ref, ociAuth); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
+			sylog.Infof("Upload complete")
 		}
 	},
 

@@ -5,7 +5,7 @@
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 
 BootStrap: busybox
-MirrorURL: https://www.busybox.net/downloads/binaries/1.26.1-defconfig-multiarch/busybox-x86_64
+MirrorURL: https://www.busybox.net/downloads/binaries/1.26.2-defconfig-multiarch/busybox-x86_64
 
 
 %post

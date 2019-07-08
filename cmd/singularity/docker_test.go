@@ -32,10 +32,14 @@ func TestDocker(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			// We create a clean image cache
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
+
 			imagePath := path.Join(testDir, "container")
 			defer os.Remove(imagePath)
 
-			b, err := imageBuild(buildOpts{}, imagePath, tt.imagePath)
+			b, err := imageBuild(imgCache, buildOpts{}, imagePath, tt.imagePath)
 			if tt.expectSuccess {
 				if err != nil {
 					t.Log(string(b))
@@ -54,10 +58,14 @@ func TestDocker(t *testing.T) {
 func TestDockerAUFS(t *testing.T) {
 	test.EnsurePrivilege(t)
 
+	// We create a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-aufs-sanity")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -91,10 +99,14 @@ func TestDockerPermissions(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// Create a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-singularity-userperms")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -127,10 +139,14 @@ func TestDockerWhiteoutSymlink(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	// Create a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
 	imagePath := path.Join(testDir, "container")
 	defer os.Remove(imagePath)
 
-	b, err := imageBuild(buildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
+	b, err := imageBuild(imgCache, buildOpts{}, imagePath, "docker://dctrud/docker-singularity-linkwh")
 	if err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
@@ -164,6 +180,9 @@ func TestDockerDefFile(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
+
 			if getKernelMajor(t) < tt.kernelMajorRequired {
 				t.Skipf("kernel >=%v.x required", tt.kernelMajorRequired)
 			}
@@ -177,7 +196,7 @@ func TestDockerDefFile(t *testing.T) {
 			})
 			defer os.Remove(deffile)
 
-			if b, err := imageBuild(buildOpts{}, imagePath, deffile); err != nil {
+			if b, err := imageBuild(imgCache, buildOpts{}, imagePath, deffile); err != nil {
 				t.Log(string(b))
 				t.Fatalf("unexpected failure: %v", err)
 			}
@@ -252,6 +271,10 @@ func TestDockerRegistry(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, test.WithPrivilege(func(t *testing.T) {
+			// We create a clean image cache
+			imgCache, cleanup := setupCache(t)
+			defer cleanup()
+
 			opts := buildOpts{
 				env: append(os.Environ(), "SINGULARITY_NOHTTPS=true"),
 			}
@@ -260,7 +283,7 @@ func TestDockerRegistry(t *testing.T) {
 
 			defFile := prepareDefFile(tt.dfd)
 
-			b, err := imageBuild(opts, imagePath, defFile)
+			b, err := imageBuild(imgCache, opts, imagePath, defFile)
 			if tt.expectSuccess {
 				if err != nil {
 					t.Log(string(b))

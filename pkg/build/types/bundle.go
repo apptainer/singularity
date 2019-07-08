@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	ocitypes "github.com/containers/image/types"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
@@ -51,6 +52,8 @@ type Options struct {
 	LibraryAuthToken string `json:"libraryAuthToken"`
 	// contains docker credentials if specified
 	DockerAuthConfig *ocitypes.DockerAuthConfig
+	// Encrypted specifies if the filesystem needs to be encrypteded
+	Encrypted bool `json:"encrypt"`
 	// noTest indicates if build should skip running the test script
 	NoTest bool `json:"noTest"`
 	// force automatically deletes an existing container at build destination while performing build
@@ -62,10 +65,14 @@ type Options struct {
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
+	// fakeroot indicates if the build engine uses the fakeroot feature
+	Fakeroot bool `json:"fakeroot"`
+	// ImgCache stores a pointer to the image cache to use
+	ImgCache *cache.Handle
 }
 
-// NewBundle creates a Bundle environment
-func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
+// Common code between NewBundle and NewEncryptedBundle
+func bundleCommon(encrypted bool, bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
 	b.JSONObjects = make(map[string][]byte)
 
@@ -83,6 +90,8 @@ func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 		"rootfs": "fs",
 	}
 
+	b.Opts.Encrypted = encrypted
+
 	for _, fso := range b.FSObjects {
 		if err = os.MkdirAll(filepath.Join(b.Path, fso), 0755); err != nil {
 			return
@@ -90,6 +99,17 @@ func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	}
 
 	return b, nil
+
+}
+
+// NewEncryptedBundle creates an Encrypted Bundle environment
+func NewEncryptedBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
+	return bundleCommon(true, bundleDir, bundlePrefix)
+}
+
+// NewBundle creates a Bundle environment
+func NewBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
+	return bundleCommon(false, bundleDir, bundlePrefix)
 }
 
 // Rootfs give the path to the root filesystem in the Bundle

@@ -17,51 +17,48 @@ import (
 )
 
 var (
-	cleanAll        bool
+	cacheCleanForce bool
 	cacheCleanTypes []string
-	cacheName       string
+	cacheCleanNames []string
 )
-
-// -a|--all
-var cacheCleanAllFlag = cmdline.Flag{
-	ID:           "cacheCleanAllFlag",
-	Value:        &cleanAll,
-	DefaultValue: false,
-	Name:         "all",
-	ShortHand:    "a",
-	Usage:        "clean all cache (will override all other options)",
-	EnvKeys:      []string{"ALL"},
-}
 
 // -T|--type
 var cacheCleanTypesFlag = cmdline.Flag{
-	ID:           "cacheCleanTypesFlag",
+	ID:           "cacheCleanTypes",
 	Value:        &cacheCleanTypes,
-	DefaultValue: []string{"blob"},
+	DefaultValue: []string{"all"},
 	Name:         "type",
 	ShortHand:    "T",
-	Usage:        "clean cache type, choose between: library, oci, and blob",
-	EnvKeys:      []string{"TYPE"},
+	Usage:        "a list of cache types to clean (possible values: library, oci, shub, blob, net, oras, all)",
 }
 
 // -N|--name
 var cacheCleanNameFlag = cmdline.Flag{
 	ID:           "cacheCleanNameFlag",
-	Value:        &cacheName,
-	DefaultValue: "",
+	Value:        &cacheCleanNames,
+	DefaultValue: []string{},
 	Name:         "name",
 	ShortHand:    "N",
 	Usage:        "specify a container cache to clean (will clear all cache with the same name)",
-	EnvKeys:      []string{"NAME"},
+}
+
+// -f|--force
+var cacheCleanForceFlag = cmdline.Flag{
+	ID:           "cacheCleanForceFlag",
+	Value:        &cacheCleanForce,
+	DefaultValue: false,
+	Name:         "force",
+	ShortHand:    "f",
+	Usage:        "force cleaning the cache (otherwise operate in dry run mode)",
 }
 
 func init() {
-	cmdManager.RegisterFlagForCmd(&cacheCleanAllFlag, CacheCleanCmd)
 	cmdManager.RegisterFlagForCmd(&cacheCleanTypesFlag, CacheCleanCmd)
 	cmdManager.RegisterFlagForCmd(&cacheCleanNameFlag, CacheCleanCmd)
+	cmdManager.RegisterFlagForCmd(&cacheCleanForceFlag, CacheCleanCmd)
 }
 
-// CacheCleanCmd : is `singularity cache clean' and will clear your local singularity cache
+// CacheCleanCmd is 'singularity cache clean' and will clear your local singularity cache
 var CacheCleanCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
@@ -77,10 +74,14 @@ var CacheCleanCmd = &cobra.Command{
 }
 
 func cacheCleanCmd() error {
-	err := singularity.CleanSingularityCache(cleanAll, cacheCleanTypes, cacheName)
+	// We create a handle to access the current image cache
+	imgCache := getCacheHandle()
+	if imgCache == nil {
+		sylog.Fatalf("failed to create an image cache handle")
+	}
+	err := singularity.CleanSingularityCache(imgCache, cacheCleanForce, cacheCleanTypes, cacheCleanNames)
 	if err != nil {
 		sylog.Fatalf("Failed while clean cache: %v", err)
-		os.Exit(255)
 	}
 
 	return err

@@ -274,7 +274,7 @@ var actionDockerUsernameFlag = cmdline.Flag{
 // --docker-password
 var actionDockerPasswordFlag = cmdline.Flag{
 	ID:           "actionDockerPasswordFlag",
-	Value:        &dockerUsername,
+	Value:        &dockerPassword,
 	DefaultValue: "",
 	Name:         "docker-password",
 	Usage:        "specify a password for docker authentication",
@@ -311,8 +311,7 @@ var actionFakerootFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "fakeroot",
 	ShortHand:    "f",
-	Hidden:       true,
-	Usage:        "run container in new user namespace as uid 0 (experimental)",
+	Usage:        "run container in new user namespace as uid 0",
 	EnvKeys:      []string{"FAKEROOT"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }

@@ -53,11 +53,11 @@ void _print(int level, const char *function, const char *file_in, char *format, 
     va_list args;
 
     if ( messagelevel == -99 ) {
-        char *messagelevel_string = getenv("SINGULARITY_MESSAGELEVEL");
+        char *messagelevel_string = getenv(MSGLVL_ENV);
 
         if ( messagelevel_string == NULL ) {
             messagelevel = 5;
-            singularity_message(DEBUG, "SINGULARITY_MESSAGELEVEL undefined, setting level 5 (debug)\n");
+            singularity_message(DEBUG, MSGLVL_ENV " undefined, setting level 5 (debug)\n");
         } else {
             messagelevel = atoi(messagelevel_string);
             if ( messagelevel > 9 ) {

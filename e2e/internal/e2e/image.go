@@ -2,6 +2,7 @@
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
+
 package e2e
 
 import (
@@ -9,15 +10,10 @@ import (
 	"testing"
 )
 
-var testenv = struct {
-	CmdPath   string `split_words:"true"` // singularity program
-	ImagePath string `split_words:"true"` // base image for tests
-}{}
-
-func EnsureImage(t *testing.T) {
-	LoadEnv(t, &testenv)
-
-	switch _, err := os.Stat(testenv.ImagePath); {
+// EnsureImage checks if e2e test image is already built or built
+// it otherwise.
+func EnsureImage(t *testing.T, env TestEnv) {
+	switch _, err := os.Stat(env.ImagePath); {
 	case err == nil:
 		// OK: file exists, return
 		return
@@ -28,25 +24,17 @@ func EnsureImage(t *testing.T) {
 	default:
 		// FATAL: something else is wrong
 		t.Fatalf("Failed when checking image %q: %+v\n",
-			testenv.ImagePath,
+			env.ImagePath,
 			err)
 	}
 
-	opts := BuildOpts{
-		Force:   true,
-		Sandbox: false,
-	}
-
-	b, err := ImageBuild(
-		testenv.CmdPath,
-		opts,
-		testenv.ImagePath,
-		"./testdata/Singularity")
-
-	if err != nil {
-		t.Logf("Failed to build image %q.\nOutput:\n%s\n",
-			testenv.ImagePath,
-			b)
-		t.Fatalf("Unexpected failure: %+v", err)
-	}
+	RunSingularity(
+		t,
+		"BuildTestImage",
+		WithoutSubTest(),
+		WithPrivileges(true),
+		WithCommand("build"),
+		WithArgs("--force", env.ImagePath, "testdata/Singularity"),
+		ExpectExit(0),
+	)
 }

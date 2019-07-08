@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/loop"
 )
 
@@ -31,6 +31,21 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 	mainthread.Execute(func() {
 		err = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
+	return err
+}
+
+// DeCrypt decrypts the loop device
+func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
+	cryptDev := &crypt.Device{}
+
+	key, err := cryptDev.ReadKeyFromStdin(false)
+	if err != nil {
+		return fmt.Errorf("Unable to read key from stdin")
+	}
+	cryptName, err := cryptDev.GetCryptDevice(key, arguments.Loopdev)
+
+	*reply = "/dev/mapper/" + cryptName
+
 	return err
 }
 
@@ -48,9 +63,16 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, reply *int) (err error) {
 func (t *Methods) Chroot(arguments *args.ChrootArgs, reply *int) error {
 	root := arguments.Root
 
-	sylog.Debugf("Change current directory to %s", root)
-	if err := syscall.Chdir(root); err != nil {
-		return fmt.Errorf("failed to change directory to %s", root)
+	if root != "." {
+		sylog.Debugf("Change current directory to %s", root)
+		if err := syscall.Chdir(root); err != nil {
+			return fmt.Errorf("failed to change directory to %s", root)
+		}
+	} else {
+		cwd, err := os.Getwd()
+		if err == nil {
+			root = cwd
+		}
 	}
 
 	switch arguments.Method {
@@ -128,6 +150,7 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	} else {
 		var err error
 		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
+		defer image.Close()
 		if err != nil {
 			return fmt.Errorf("could not open image file: %v", err)
 		}
@@ -160,20 +183,6 @@ func (t *Methods) SetHostname(arguments *args.HostnameArgs, reply *int) error {
 	return syscall.Sethostname([]byte(arguments.Hostname))
 }
 
-// HasNamespace checks if host namespace and container namespace
-// are different and sets reply to 0 or 1.
-func (t *Methods) HasNamespace(arguments *args.HasNamespaceArgs, reply *int) error {
-	*reply = 0
-	has, err := proc.HasNamespace(arguments.Pid, arguments.NsType)
-	if err != nil {
-		return err
-	}
-	if has {
-		*reply = 1
-	}
-	return nil
-}
-
 // SetFsID sets filesystem uid and gid.
 func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 	mainthread.Execute(func() {
@@ -181,4 +190,9 @@ func (t *Methods) SetFsID(arguments *args.SetFsIDArgs, reply *int) error {
 		syscall.Setfsgid(arguments.GID)
 	})
 	return nil
+}
+
+// Chdir changes current working directory to path.
+func (t *Methods) Chdir(arguments *args.ChdirArgs, reply *int) error {
+	return mainthread.Chdir(arguments.Dir)
 }

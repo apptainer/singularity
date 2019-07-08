@@ -35,6 +35,12 @@ type MountArgs struct {
 	Data       string
 }
 
+// CryptArgs defines the arguments to mount.
+type CryptArgs struct {
+	Offset  uint64
+	Loopdev string
+}
+
 // ChrootArgs defines the arguments to chroot.
 type ChrootArgs struct {
 	Root   string
@@ -46,15 +52,13 @@ type HostnameArgs struct {
 	Hostname string
 }
 
-// HasNamespaceArgs defines the arguments to compare host namespace.
-// and RPC process
-type HasNamespaceArgs struct {
-	Pid    int
-	NsType string
-}
-
 // SetFsIDArgs defines the arguments to setfsid.
 type SetFsIDArgs struct {
 	UID int
 	GID int
+}
+
+// ChdirArgs defines the arguments to chdir.
+type ChdirArgs struct {
+	Dir string
 }
