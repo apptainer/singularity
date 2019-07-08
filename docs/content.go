@@ -766,13 +766,13 @@ Enterprise Performance Computing (EPC)`
         SCIF_APPINPUT    expected input folder within data base folder
         SCIF_APPOUTPUT   the output data folder within data base folder
 
-      SCIF_APPENV        points to the application's environment.sh file, so for example, you could source it without knowing the entire path
-      SCIF_APPLABELS     is the labels.json in the metadata folder, if the user wanted to parse it
+      SCIF_APPENV        points to the application's custom environment.sh file in its metadata folder
+      SCIF_APPLABELS     is the application's labels.json in the metadata folder
       SCIF_APPBIN        is the bin folder for the app, which is automatically added to the $PATH when the app is active
-      SCIF_APPLIB        is the lib folder, same deal, but added to LD_LIBRARY_PATH
+      SCIF_APPLIB        is the application's library folder that is added to the LD_LIBRARY_PATH
       SCIF_APPRUN        is the runscript
-      SCIF_APPHELP       is the help file for the runscript (what you get when you do help <appname>
-      SCIF_APPTEST       is the test.sh (testing) script that you run when the user does test <appname>
+      SCIF_APPHELP       is the help file for the runscript
+      SCIF_APPTEST       is the testing script (test.sh) associated with the application
 
   GLOBAL APP ENVIRONMENT:
     
