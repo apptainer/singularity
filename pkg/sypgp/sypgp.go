@@ -45,6 +45,10 @@ var errTooManyRetries = errors.New("too many retries while getting a passphrase"
 var errNotEncrypted = errors.New("key is not encrypted")
 var errInvalidChoice = errors.New("invalid choice")
 
+// ErrEmptyKeyring is the error when the public, or private keyring
+// empty.
+var ErrEmptyKeyring = errors.New("keyring is empty")
+
 // KeyExistsError is a type representing an error associated to a specific key.
 type KeyExistsError struct {
 	fingerprint [20]byte
@@ -686,6 +690,9 @@ func EncryptKey(k *openpgp.Entity, pass string) error {
 
 // SelectPubKey prints a public key list to user and returns the choice
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	if len(el) == 0 {
+		return nil, ErrEmptyKeyring
+	}
 	printEntities(os.Stdout, el)
 
 	n, err := askNumberInRange(0, len(el)-1, "Enter # of public key to use : ")
@@ -698,6 +705,9 @@ func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 
 // SelectPrivKey prints a secret key list to user and returns the choice
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	if len(el) == 0 {
+		return nil, ErrEmptyKeyring
+	}
 	printEntities(os.Stdout, el)
 
 	n, err := askNumberInRange(0, len(el)-1, "Enter # of private key to use : ")
