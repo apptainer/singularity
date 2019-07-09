@@ -197,9 +197,11 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		if key == "" {
 			return fmt.Errorf("passphrase empty")
 		}
+
+		sylog.Infof("Encrypting container...")
 		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, key)
 		if err != nil {
-			return fmt.Errorf("unable to format crypt device: %s: %s", cryptName, err)
+			return fmt.Errorf("unable to format crypt device: %s: %s. are you root?", cryptName, err)
 		}
 
 		defer os.Remove(loopPath)

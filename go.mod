@@ -4,6 +4,7 @@ go 1.11
 
 require (
 	github.com/Microsoft/go-winio v0.4.7 // indirect
+	github.com/Microsoft/hcsshim v0.8.6 // indirect
 	github.com/Netflix/go-expect v0.0.0-20180928190340-9d1f4485533b
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
@@ -17,8 +18,8 @@ require (
 	github.com/containerd/cgroups v0.0.0-20181208203134-65ce98b3dfeb
 	github.com/containerd/containerd v1.2.6
 	github.com/containerd/continuity v0.0.0-20180612233548-246e49050efd // indirect
-	github.com/containernetworking/cni v0.6.0
-	github.com/containernetworking/plugins v0.0.0-20180606151004-2b8b1ac0af45
+	github.com/containernetworking/cni v0.7.1
+	github.com/containernetworking/plugins v0.8.1
 	github.com/containers/image v0.0.0-20180612162315-2e4f799f5eba
 	github.com/containers/storage v0.0.0-20180604200230-88d80428f9b1 // indirect
 	github.com/coreos/go-iptables v0.3.0 // indirect
@@ -51,6 +52,7 @@ require (
 	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56 // indirect
+	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kelseyhightower/envconfig v1.3.0 // indirect
 	github.com/kr/pty v1.1.3
@@ -90,7 +92,7 @@ require (
 	github.com/sylabs/scs-library-client v0.2.2
 	github.com/sylabs/sif v1.0.5
 	github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e // indirect
-	github.com/vishvananda/netlink v1.0.0 // indirect
+	github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 // indirect
 	github.com/vishvananda/netns v0.0.0-20171111001504-be1fbeda1936 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
