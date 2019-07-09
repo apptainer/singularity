@@ -44,6 +44,10 @@ var errPassphraseMismatch = errors.New("passphrases do not match")
 var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 var errNotEncrypted = errors.New("key is not encrypted")
 
+// ErrEmptyKeyring is the error when the public, or private keyring
+// empty.
+var ErrEmptyKeyring = errors.New("keyring is empty")
+
 // AskQuestion prompts the user with a question and return the response
 func AskQuestion(format string, a ...interface{}) (string, error) {
 	fmt.Printf(format, a...)
@@ -531,6 +535,9 @@ func EncryptKey(k *openpgp.Entity, pass string) error {
 
 // SelectPubKey prints a public key list to user and returns the choice
 func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	if len(el) == 0 {
+		return nil, ErrEmptyKeyring
+	}
 	PrintPubKeyring()
 
 	index, err := AskQuestion("Enter # of public key to use : ")
@@ -554,6 +561,9 @@ func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 
 // SelectPrivKey prints a secret key list to user and returns the choice
 func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+	if len(el) == 0 {
+		return nil, ErrEmptyKeyring
+	}
 	PrintPrivKeyring()
 
 	index, err := AskQuestion("Enter # of signing key to use : ")
