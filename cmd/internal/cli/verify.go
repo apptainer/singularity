@@ -6,7 +6,6 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -93,7 +92,6 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// args[0] contains image path
-		fmt.Printf("Verifying image: %s\n", args[0])
 		doVerifyCmd(args[0], keyServerURI)
 	},
 
@@ -117,13 +115,13 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false)
-	if err != nil {
-		sylog.Fatalf("%v", err)
+	_, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
+	if err == signing.ErrVerificationFail {
+		sylog.Fatalf("Failed to verify: %s", cpath)
+	} else if err != nil {
+		sylog.Fatalf("Failed to verify: %s: %s", cpath, err)
 	}
-	if notLocalKey {
-		os.Exit(1)
-	}
+	sylog.Infof("Container verified: %s", cpath)
 }
 
 func handleVerifyFlags(cmd *cobra.Command) {
