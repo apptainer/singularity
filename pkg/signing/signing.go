@@ -12,8 +12,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/fatih/color"
@@ -258,22 +256,6 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 	return true, nil
 }
 
-type keyTrust int
-
-const (
-	trusted = iota
-	remote
-	missing
-)
-
-type verifyResult struct {
-	dataIntegrity bool
-	fingerprint   string
-	identity      string
-	trust         keyTrust
-	err           error
-}
-
 // Verify takes a container path (cpath), and look for a verification block
 // for a specified descriptor. If found, the signature block is used to verify
 // the partition hash against the signer's version. Verify will look for OpenPGP
@@ -303,16 +285,11 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 
-	w := io.Writer(os.Stdout)
-
-	if quiet {
-		w = ioutil.Discard
-	}
-
 	var fail bool
 	var errRet error
+	var author string
 
-	fmt.Fprintf(w, "Container is signed by %d key(s):\n\n", len(signatures))
+	author += fmt.Sprintf("Container is signed by %d key(s):\n\n", len(signatures))
 	// compare freshly computed hash with hashes stored in signatures block(s)
 	for _, v := range signatures {
 		// get the entity fingerprint for the signature block
@@ -322,13 +299,14 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			fail = true
 			continue
 		}
-		fmt.Fprintf(w, "Verifying signature F: %s:\n", fingerprint)
+		author += fmt.Sprintf("Verifying signature F: %s:\n", fingerprint)
 
 		// Extract hash string from signature block
 		data := v.GetData(&fimg)
 		block, _ := clearsign.Decode(data)
 		if block == nil {
-			fmt.Fprintf(w, "%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
+			sylog.Verbosef("%s signature key (%s) corrupted, unable to read data", red("error:"), fingerprint)
+			author += fmt.Sprintf("%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
 			fail = true
 			continue
 		}
@@ -338,9 +316,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
-				fmt.Fprintf(w, "%-18s %s\n", red("[MISSING]"), err)
+				author += fmt.Sprintf("%-18s %s\n", red("[MISSING]"), err)
 			} else {
-				fmt.Fprintf(w, "%-18s %s\n", red("[FAIL]"), err)
+				author += fmt.Sprintf("%-18s %s\n", red("[FAIL]"), err)
 			}
 			fail = true
 		} else {
@@ -350,17 +328,22 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 				notLocalKey = true
 			}
 
-			fmt.Fprintf(w, "%-18s %s\n", prefix, i)
+			author += fmt.Sprintf("%-18s %s\n", prefix, i)
 		}
 
 		// (2) Verify data integrity by comparing hashes
 		if !bytes.Equal(bytes.TrimRight(block.Plaintext, "\n"), []byte(sifhash)) {
-			fmt.Fprintf(w, "%-18s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
+			sylog.Verbosef("%s key (%s) hash differs, data may be corrupted", red("error:"), fingerprint)
+			author += fmt.Sprintf("%-18s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
 			fail = true
 		} else {
-			fmt.Fprintf(w, "%-18s Data integrity verified\n", green("[OK]"))
+			author += fmt.Sprintf("%-18s Data integrity verified\n", green("[OK]"))
 		}
-		fmt.Fprintf(w, "\n")
+		author += fmt.Sprintf("\n")
+	}
+
+	if !quiet {
+		fmt.Printf("%s", author)
 	}
 
 	if fail {
@@ -368,10 +351,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	}
 
 	return notLocalKey, errRet
-}
-
-func verifyDescriptor(v *sif.Descriptor, fimg sif.FileImage, keyServiceURI, authToken string, noPrompt bool) {
-
 }
 
 // Get first Identity data for convenience
