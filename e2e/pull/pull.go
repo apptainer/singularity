@@ -184,7 +184,7 @@ var tests = []struct {
 	// },
 	{
 		desc:            "oras transport for SIF from registry",
-		srcURI:          "oras://localhost:5000/pull_test_sif:latest",
+		srcURI:          "oras://localhost:5000/pull_test_sif:latest", // TODO(mem): obtain registry from context
 		force:           true,
 		unauthenticated: false,
 		expectSuccess:   true,
@@ -193,13 +193,13 @@ var tests = []struct {
 	// pulling of invalid images with oras
 	{
 		desc:          "oras pull of non SIF file",
-		srcURI:        "oras://localhost:5000/pull_test_:latest",
+		srcURI:        "oras://localhost:5000/pull_test_:latest", // TODO(mem): obtain registry from context
 		force:         true,
 		expectSuccess: false,
 	},
 	{
 		desc:          "oras pull of packed dir",
-		srcURI:        "oras://localhost:5000/pull_test_invalid_file:latest",
+		srcURI:        "oras://localhost:5000/pull_test_invalid_file:latest", // TODO(mem): obtain registry from context
 		force:         true,
 		expectSuccess: false,
 	},
@@ -266,6 +266,7 @@ func getImageNameFromURI(imgURI string) string {
 
 func (c *ctx) setup(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
+	e2e.PrepRegistry(t, c.env)
 
 	// setup file and dir to use as invalid images
 	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")
@@ -287,15 +288,15 @@ func (c *ctx) setup(t *testing.T) {
 	}{
 		{
 			srcPath: c.env.ImagePath,
-			uri:     "localhost:5000/pull_test_sif:latest",
+			uri:     fmt.Sprintf("%s/pull_test_sif:latest", c.env.TestRegistry),
 		},
 		{
 			srcPath: orasInvalidDir,
-			uri:     "localhost:5000/pull_test_dir:latest",
+			uri:     fmt.Sprintf("%s/pull_test_dir:latest", c.env.TestRegistry),
 		},
 		{
 			srcPath: orasInvalidFile,
-			uri:     "localhost:5000/pull_test_invalid_file:latest",
+			uri:     fmt.Sprintf("%s/pull_test_invalid_file:latest", c.env.TestRegistry),
 		},
 	}
 

@@ -743,10 +743,59 @@ Enterprise Performance Computing (EPC)`
 	InspectUse   string = `inspect [inspect options...] <image path>`
 	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
-  Inspect will show you labels, environment variables, and scripts associated 
-  with the image determined by the flags you pass.`
+  Inspect will show you labels, environment variables, apps and scripts associated 
+  with the image determined by the flags you pass. By default, they will be shown in 
+  plain text. If you would like to list them in json format, you should use the --json flag.
+  `
 	InspectExample string = `
-  $ singularity inspect ubuntu.sif`
+  $ singularity inspect ubuntu.sif
+  
+  If you want to list the applications (apps) installed in a container (located at
+  /scif/apps) you should run inspect command with --list-apps <container-image> flag.
+  ( See https://sci-f.github.io for more information on SCIF apps)
+
+  The following environment variables are available to you when called 
+  from the shell inside the container. The top variables are relevant 
+  to the active app (--app <app>) and the bottom available for all 
+  apps regardless of the active app. Both sets of variables are also available during development (at build time).
+
+  ACTIVE APP ENVIRONMENT:
+      SCIF_APPNAME       the name for the active application
+      SCIF_APPROOT       the installation folder for the application created at /scif/apps/<app>
+      SCIF_APPMETA       the application metadata folder
+      SCIF_APPDATA       the data folder created for the application at /scif/data/<app>
+        SCIF_APPINPUT    expected input folder within data base folder
+        SCIF_APPOUTPUT   the output data folder within data base folder
+
+      SCIF_APPENV        points to the application's custom environment.sh file in its metadata folder
+      SCIF_APPLABELS     is the application's labels.json in the metadata folder
+      SCIF_APPBIN        is the bin folder for the app, which is automatically added to the $PATH when the app is active
+      SCIF_APPLIB        is the application's library folder that is added to the LD_LIBRARY_PATH
+      SCIF_APPRUN        is the runscript
+      SCIF_APPHELP       is the help file for the runscript
+      SCIF_APPTEST       is the testing script (test.sh) associated with the applicatio
+      SCIF_APPNAME       the name for the active application
+      SCIF_APPFILES      the files section associated with the application that are added to
+
+
+  GLOBAL APP ENVIRONMENT:
+    
+      SCIF_DATA             scif defined data base for all apps (/scif/data)
+      SCIF_APPS             scif defined install bases for all apps (/scif/apps)
+      SCIF_APPROOT_<app>    root for application <app>
+      SCIF_APPDATA_<app>    data root for application <app>
+
+  To list all your apps:
+
+  $ singularity inspect --list-apps ubuntu.sif 
+
+  To list only labels in the json format from an image:
+
+  $ singularity inspect --json --labels ubuntu.sif
+
+  To verify you own a single application on your container image, use the --app <appname> flag:
+
+  $ singularity inspect --app <appname> ubuntu.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test

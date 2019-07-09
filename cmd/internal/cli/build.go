@@ -25,6 +25,7 @@ import (
 
 var (
 	remote         bool
+	encrypt        bool
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -118,6 +119,17 @@ var buildRemoteFlag = cmdline.Flag{
 	EnvKeys:      []string{"REMOTE"},
 }
 
+// -e|--encrypt
+var buildEncryptFlag = cmdline.Flag{
+	ID:           "buildEncryptFlag",
+	Value:        &encrypt,
+	DefaultValue: false,
+	Name:         "encrypt",
+	ShortHand:    "e",
+	Usage:        "Encrypt the file system after building (requires root)",
+	EnvKeys:      []string{"ENCRYPT"},
+}
+
 // -d|--detached
 var buildDetachedFlag = cmdline.Flag{
 	ID:           "buildDetachedFlag",
@@ -202,6 +214,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)

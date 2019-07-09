@@ -141,8 +141,9 @@ var authorizedTags = map[AuthorizedTag]struct {
 }
 
 var authorizedImage = map[string]fsContext{
-	"ext3":     {true},
-	"squashfs": {true},
+	"encryptfs": {true},
+	"ext3":      {true},
+	"squashfs":  {true},
 }
 
 var authorizedFS = map[string]fsContext{

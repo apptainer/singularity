@@ -14,6 +14,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -354,20 +355,21 @@ func TestEnsureFilePrivate(t *testing.T) {
 	}
 }
 
-func TestPrintEntity(t *testing.T) {
-	getPublicKey := func(data string) *packet.PublicKey {
-		pkt, err := packet.Read(readerFromHex(data))
-		if err != nil {
-			panic(err)
-		}
-
-		pk, ok := pkt.(*packet.PublicKey)
-		if !ok {
-			panic("expecting packet.PublicKey, got something else")
-		}
-
-		return pk
+func getPublicKey(data string) *packet.PublicKey {
+	pkt, err := packet.Read(readerFromHex(data))
+	if err != nil {
+		panic(err)
 	}
+
+	pk, ok := pkt.(*packet.PublicKey)
+	if !ok {
+		panic("expecting packet.PublicKey, got something else")
+	}
+
+	return pk
+}
+
+func TestPrintEntity(t *testing.T) {
 
 	cases := []struct {
 		name     string
@@ -457,20 +459,6 @@ func TestPrintEntity(t *testing.T) {
 }
 
 func TestPrintEntities(t *testing.T) {
-	getPublicKey := func(data string) *packet.PublicKey {
-		pkt, err := packet.Read(readerFromHex(data))
-		if err != nil {
-			panic(err)
-		}
-
-		pk, ok := pkt.(*packet.PublicKey)
-		if !ok {
-			panic("expecting packet.PublicKey, got something else")
-		}
-
-		return pk
-	}
-
 	entities := []*openpgp.Entity{
 		{
 			PrimaryKey: getPublicKey(rsaPkDataHex),
@@ -525,6 +513,580 @@ func TestPrintEntities(t *testing.T) {
 		t.Errorf("Unexpected output from printEntities: expecting %q, got %q",
 			expected,
 			actual)
+	}
+}
+
+func TestAskQuestion(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	// Each line of the string represents a virtual different answer from a user
+	testStr := "test test test\ntest2 test2\n\ntest3"
+	testBytes := []byte(testStr)
+
+	// we create a temporary file that will act as Stdin
+	testFile, err := ioutil.TempFile("", "inputTest")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %s", err)
+	}
+	defer testFile.Close()
+	defer os.Remove(testFile.Name())
+
+	// Write the data that AskQuestion() will later on need
+	_, err = testFile.Write(testBytes)
+	if err != nil {
+		t.Fatalf("failed to write to %s: %s", testFile.Name(), err)
+	}
+
+	// Reposition to the beginning of file to ensure there is something to read
+	_, err = testFile.Seek(0, os.SEEK_SET)
+	if err != nil {
+		t.Fatalf("failed to seek to beginning of file %s: %s", testFile.Name(), err)
+	}
+
+	// Redirect Stdin
+	savedStdin := os.Stdin
+	defer func() {
+		os.Stdin = savedStdin
+	}()
+	os.Stdin = testFile
+
+	// Actual test, run the test with the first line
+	output, err := AskQuestion("Question test: ")
+	if err != nil {
+		t.Fatalf("failed to get response from AskQuestion(): %s", err)
+	}
+
+	// We analyze the result. We always make sure we do not get the '\n'
+	firstAnswer := testStr[:strings.Index(testStr, "\n")]
+	restAnswer := testStr[len(firstAnswer)+1:]
+	if output != firstAnswer {
+		t.Fatal("AskQuestion() returned", output, "instead of", firstAnswer)
+	}
+
+	// Test with the second line
+	output, err = AskQuestion("Question test 2: ")
+	if err != nil {
+		t.Fatalf("failed to get response: %s", err)
+	}
+
+	// We analyze the result
+	secondAnswer := restAnswer[:strings.Index(restAnswer, "\n")]
+	if output != secondAnswer {
+		t.Fatalf("AskQuestion() returned: %s instead of: %s", output, secondAnswer)
+	}
+
+	// Test with the third line
+	output, err = AskQuestion("Question test 3: ")
+	if err != nil {
+		t.Fatalf("failed to get response: %s", err)
+	}
+
+	// We analyze the result
+	if output != "" {
+		t.Fatalf("AskQuestion() returned: %s instead of an empty string", output)
+	}
+
+	// Test with the final line
+	output, err = AskQuestion("Question test 4: ")
+	if err != nil {
+		t.Fatalf("failed to get response: %s", err)
+	}
+
+	finalAnswer := restAnswer[len(secondAnswer)+2:] // We have to account for 2 "\n"
+	if output != finalAnswer {
+		t.Fatalf("AskQuestion() returned: %s instead of: %s", output, finalAnswer)
+	}
+}
+
+func TestAskQuestionNoEcho(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	testStr := "test test\ntest2 test2 test2\n\ntest3 test3 test3 test3"
+	testBytes := []byte(testStr)
+
+	// We create a temporary file that will act as stdin
+	testFile, err := ioutil.TempFile("", "inputTest")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %s", err)
+	}
+	defer testFile.Close()
+	defer os.Remove(testFile.Name())
+
+	// Write the data that AskQuestionNoEcho will later on read
+	_, err = testFile.Write(testBytes)
+	if err != nil {
+		t.Fatalf("failed to write to temporary file: %s", err)
+	}
+
+	// Reposition to the beginning to ensure there is data to read
+	_, err = testFile.Seek(0, 0)
+	if err != nil {
+		t.Fatalf("failed to reposition to beginning of file: %s", err)
+	}
+
+	// Redirect Stdin
+	savedStdin := os.Stdin
+	defer func() {
+		os.Stdin = savedStdin
+	}()
+	os.Stdin = testFile
+
+	// Test AskQuestionNoEcho(), starting with the first line
+	output, err := AskQuestionNoEcho("Test question 1: ")
+	if err != nil {
+		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
+	}
+
+	// Analyze the result
+	firstAnswer := testStr[:strings.Index(testStr, "\n")]
+	restAnswer := testStr[len(firstAnswer)+1:] // Ignore "\n"
+	if output != firstAnswer {
+		t.Fatalf("AskQuestionNoEcho() returned %s instead of %s", output, firstAnswer)
+	}
+
+	// Test with the second line
+	output, err = AskQuestionNoEcho("Test question 2: ")
+	if err != nil {
+		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
+	}
+
+	// We analyze the answer
+	secondAnswer := restAnswer[:strings.Index(restAnswer, "\n")]
+	if output != secondAnswer {
+		t.Fatalf("AskQuestionNoEcho() returned %s instead of %s", output, secondAnswer)
+	}
+
+	// Test with third line
+	output, err = AskQuestionNoEcho("Test question 3: ")
+	if err != nil {
+		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
+	}
+
+	// We analyze the answer
+	if output != "" {
+		t.Fatalf("AskQuestionNoEcho() returned %s instead of an empty string", output)
+	}
+
+	// Test with the final line
+	output, err = AskQuestionNoEcho("Test question 4: ")
+	if err != nil {
+		t.Fatalf("failed to get output from AskQuestionNoEcho(): %s", err)
+	}
+
+	finalAnswer := restAnswer[len(secondAnswer)+2:] // We have to account for 2 "\n"
+	if output != finalAnswer {
+		t.Fatalf("AskQuestionNoEcho() returned %s instead of %s", output, finalAnswer)
+	}
+}
+
+func TestGenKeyPair(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	myToken := "MyToken"
+	myURI := "MyURI"
+
+	// Prepare all the answers that GenKeyPair() is expecting.
+	tests := []struct {
+		name      string
+		input     string
+		shallPass bool
+	}{
+		{
+			name:      "valid case",
+			input:     "A tester\ntest@my.info\n\nfakepassphrase\nfakepassphrase\nn\n",
+			shallPass: true,
+		},
+		{
+			name:      "passphrases not matching",
+			input:     "Another tester\ntest2@my.info\n\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nfakepassphrase\nfakepassphrase2\nn\n",
+			shallPass: false,
+		},
+	}
+
+	// Create a temporary directory to store the keyring
+	dir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory")
+	}
+	// TODO: setting the environment variable is not thread-safe.
+	err = os.Setenv("SINGULARITY_SYPGPDIR", dir)
+	if err != nil {
+		t.Fatalf("failed to set SINGULARITY_SYPGPDIR environment variable: %s", err)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup the input file that will act as stdin
+			tempFile, err := ioutil.TempFile("", "inputFile-")
+			if err != nil {
+				t.Fatal("failed to create temporary file:", err)
+			}
+			defer tempFile.Close()
+			defer os.Remove(tempFile.Name())
+
+			_, err = tempFile.Write([]byte(tt.input))
+			if err != nil {
+				t.Fatalf("failed to write to %s: %s", tempFile.Name(), err)
+			}
+
+			// reposition to the beginning of the file to have something to read
+			_, err = tempFile.Seek(0, 0)
+			if err != nil {
+				t.Fatalf("failed to reposition to beginning of file %s: %s", tempFile.Name(), err)
+			}
+
+			// Redirect stdin
+			savedStdin := os.Stdin
+			defer func() {
+				os.Stdin = savedStdin
+			}()
+			os.Stdin = tempFile
+
+			_, err = GenKeyPair(myURI, myToken)
+			if tt.shallPass && err != nil {
+				t.Fatalf("valid case %s failed: %s", tt.name, err)
+			}
+			if !tt.shallPass && err == nil {
+				t.Fatalf("invalid case %s succeeded", tt.name)
+			}
+		})
+	}
+}
+
+func TestGetPassphrase(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tests := []struct {
+		name      string
+		input     string
+		shallPass bool
+	}{
+		{
+			name:      "valid case",
+			input:     "mypassphrase\nmypassphrase\n",
+			shallPass: true,
+		},
+		{
+			name:      "unmatching passphrases",
+			input:     "mypassphrase\nsomethingelse\n",
+			shallPass: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a temporary file that will act as input from stdin
+			tempFile, err := ioutil.TempFile("", "inputFile-")
+			if err != nil {
+				t.Fatal("failed to create temporary file:", err)
+			}
+			defer tempFile.Close()
+			defer os.Remove(tempFile.Name())
+
+			// Populate the file
+			_, err = tempFile.Write([]byte(tt.input))
+			if err != nil {
+				t.Fatalf("failed to write data to %s: %s", tempFile.Name(), err)
+			}
+
+			// Re-position to the beginning of file to have something to read
+			_, err = tempFile.Seek(0, 0)
+			if err != nil {
+				t.Fatalf("failed to seek to beginning of %s: %s", tempFile.Name(), err)
+			}
+
+			// Redirect stdin
+			savedStdin := os.Stdin
+			defer func() {
+				os.Stdin = savedStdin
+			}()
+			os.Stdin = tempFile
+
+			pass, err := GetPassphrase("Test: ", 1)
+			if tt.shallPass && (err != nil || pass != "mypassphrase") {
+				t.Fatalf("test %s is expected to succeed but failed: %s", tt.name, err)
+			}
+			if !tt.shallPass && err == nil {
+				t.Fatalf("invalid case %s succeeded", tt.name)
+			}
+		})
+	}
+}
+
+func TestCompareKeyEntity(t *testing.T) {
+	cases := []struct {
+		name        string
+		entity      *openpgp.Entity
+		fingerprint string
+		expected    bool
+	}{
+		{
+			name: "RSA key correct fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			expected:    true,
+		},
+		{
+			name: "RSA key incorrect fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "0FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			expected:    false,
+		},
+		{
+			name: "RSA key fingerprint too long",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB00",
+			expected:    false,
+		},
+		{
+			name: "RSA key fingerprint too short",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31",
+			expected:    false,
+		},
+		{
+			name: "RSA key empty fingerprint",
+			entity: &openpgp.Entity{
+				PrimaryKey: getPublicKey(rsaPkDataHex),
+			},
+			fingerprint: "",
+			expected:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := compareKeyEntity(tc.entity, tc.fingerprint)
+
+			if actual != tc.expected {
+				t.Errorf("Unexpected result from compareKeyEntity: expecting %v, got %v",
+					tc.expected,
+					actual)
+			}
+		})
+	}
+}
+
+func TestFindKeyByPringerprint(t *testing.T) {
+	cases := []struct {
+		name        string
+		list        openpgp.EntityList
+		fingerprint string
+		exists      bool
+	}{
+		{
+			name:        "nil list, empty needle",
+			list:        nil,
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "nil list, non-empty needle",
+			list:        nil,
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			exists:      false,
+		},
+		{
+			name:        "empty list, empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "empty list, non-empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "5FB74B1D03B1E3CB31BC2F8AA34D7E18C20C31BB",
+			exists:      false,
+		},
+		{
+			name: "non-empty list, empty needle",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name: "non-empty list, non-empty needle, exists",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "non-empty list, non-empty needle, does not exist",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			found := findKeyByFingerprint(tc.list, tc.fingerprint)
+
+			switch {
+			case found == nil && tc.exists:
+				// not found, but it exists
+				t.Errorf("Searching for %q found nothing but it exists in the entity list",
+					tc.fingerprint)
+
+			case found != nil && !tc.exists:
+				// found, but it does not exist
+				t.Errorf("Searching for %q found %q but it should not exist in the entity list",
+					tc.fingerprint,
+					found.PrimaryKey.Fingerprint)
+
+			case found == nil && !tc.exists:
+				// not found, it does not exist
+				return
+
+			case found != nil && tc.exists:
+				// found, it exists, is it the expected one?
+				if !compareKeyEntity(found, tc.fingerprint) {
+					t.Errorf("Searching for %q found %q",
+						tc.fingerprint,
+						found.PrimaryKey.Fingerprint)
+				}
+			}
+		})
+	}
+}
+
+func TestRemoveKey(t *testing.T) {
+	cases := []struct {
+		name        string
+		list        openpgp.EntityList
+		fingerprint string
+		exists      bool
+	}{
+		{
+			name:        "nil list, empty needle",
+			list:        nil,
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "empty list, empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "",
+			exists:      false,
+		},
+		{
+			name:        "nil list, non-empty needle",
+			list:        nil,
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name:        "empty list, non-empty needle",
+			list:        openpgp.EntityList{},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name: "list with many elements, needle does not exist",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "0892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      false,
+		},
+		{
+			name: "list with one element, needle exists",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle at the begining",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle in the middle",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+		{
+			name: "list with many elements, needle at the end",
+			list: openpgp.EntityList{
+				{PrimaryKey: getPublicKey(rsaPkDataHex)},
+				{PrimaryKey: getPublicKey(dsaPkDataHex)},
+				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
+			},
+			fingerprint: "9892270B38B8980B05C8D56D43FE956C542CA00B",
+			exists:      true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			newList := removeKey(tc.list, tc.fingerprint)
+
+			switch {
+			case tc.exists && newList == nil:
+				// needle does exist, no new list returned
+				t.Errorf("Removing %q returned a nil list but it exists in the entity list",
+					tc.fingerprint)
+
+			case !tc.exists && newList != nil:
+				// needle does not exist, new list returned
+				t.Errorf("Removing %q returned a non-nil list but it does not exist in the entity list",
+					tc.fingerprint)
+
+			case !tc.exists && newList == nil:
+				// needle does not exist, no new list returned
+				return
+
+			case tc.exists && newList != nil:
+				// needle does exist, new list returned
+				if len(newList) != len(tc.list)-1 {
+					t.Errorf("After removing key %q the new list should have exactly one less element than the original, actual: %d, expected: %d",
+						tc.fingerprint,
+						len(newList),
+						len(tc.list)-1)
+				}
+
+				if found := findKeyByFingerprint(newList, tc.fingerprint); found != nil {
+					t.Errorf("After removing key %q it should not be present in the new list, but it was found there",
+						tc.fingerprint)
+				}
+			}
+		})
 	}
 }
 

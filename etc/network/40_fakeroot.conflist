@@ -1,5 +1,5 @@
 {
-    "cniVersion": "0.3.1",
+    "cniVersion": "0.4.0",
     "name": "fakeroot",
     "plugins": [
         {
@@ -12,6 +12,9 @@
                     { "dst": "0.0.0.0/0" }
                 ]
             }
+        },
+        {
+            "type": "firewall"
         },
         {
             "type": "portmap",

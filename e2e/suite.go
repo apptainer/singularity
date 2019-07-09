@@ -7,6 +7,7 @@ package e2e
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -114,11 +115,19 @@ func Run(t *testing.T) {
 	testenv.ImagePath = imagePath
 	defer os.Remove(imagePath)
 
-	// build test image
-	singularitye2e.EnsureImage(t, testenv)
+	// WARNING(Sylabs-team): Please DO NOT add a call to e2e.EnsureImage here.
+	// If you need the test image, add the call at the top of your
+	// own test.
 
-	// Start registry for tests
-	singularitye2e.PrepRegistry(t, name, testenv.ImagePath)
+	testenv.TestRegistry = "localhost:5000"
+	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
+
+	// WARNING(Sylabs-team): Please DO NOT add a call to
+	// e2e.PrepRegistry here. If you need to access the local
+	// registry, add the call at the top of your own test.
+	//
+	// e2e.KillRegistry is called here to ensure that the registry
+	// is stopped after tests run.
 	defer singularitye2e.KillRegistry(t)
 
 	// RunE2ETests by functionality
