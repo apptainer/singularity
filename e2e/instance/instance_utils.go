@@ -67,7 +67,7 @@ type instanceList struct {
 	Instances []instance `json:"instances"`
 }
 
-func startInstance(opts startOpts, containerPath, instanceName string, argv ...string) (stdout string, stderr string, err error) {
+func (c *ctx) startInstance(opts startOpts, containerPath, instanceName string, argv ...string) (stdout string, stderr string, err error) {
 	args := []string{"instance", "start"}
 	if opts.addCaps != "" {
 		args = append(args, "--add-caps", opts.addCaps)
@@ -155,10 +155,10 @@ func startInstance(opts startOpts, containerPath, instanceName string, argv ...s
 	}
 	args = append(args, containerPath, instanceName)
 	args = append(args, argv...)
-	return e2e.GenericExec(testenv.CmdPath, args...)
+	return e2e.GenericExec(c.env.CmdPath, args...)
 }
 
-func listInstance(opts listOpts) (stdout string, stderr string, err error) {
+func (c *ctx) listInstance(opts listOpts) (stdout string, stderr string, err error) {
 	args := []string{"instance", "list"}
 	if opts.json {
 		args = append(args, "--json")
@@ -166,10 +166,10 @@ func listInstance(opts listOpts) (stdout string, stderr string, err error) {
 	if opts.user != "" {
 		args = append(args, "--user", opts.user)
 	}
-	return e2e.GenericExec(testenv.CmdPath, args...)
+	return e2e.GenericExec(c.env.CmdPath, args...)
 }
 
-func stopInstance(opts stopOpts, instance string) (stdout string, stderr string, err error) {
+func (c *ctx) stopInstance(opts stopOpts, instance string) (stdout string, stderr string, err error) {
 	args := []string{"instance", "stop"}
 	if opts.all {
 		args = append(args, "--all")
@@ -189,11 +189,11 @@ func stopInstance(opts stopOpts, instance string) (stdout string, stderr string,
 	if instance != "" {
 		args = append(args, instance)
 	}
-	return e2e.GenericExec(testenv.CmdPath, args...)
+	return e2e.GenericExec(c.env.CmdPath, args...)
 }
 
-func execInstance(instance string, execCmd ...string) (stdout string, stderr string, err error) {
+func (c *ctx) execInstance(instance string, execCmd ...string) (stdout string, stderr string, err error) {
 	args := []string{"exec", "instance://" + instance}
 	args = append(args, execCmd...)
-	return e2e.GenericExec(testenv.CmdPath, args...)
+	return e2e.GenericExec(c.env.CmdPath, args...)
 }

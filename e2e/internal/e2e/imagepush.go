@@ -12,7 +12,9 @@ import (
 	"testing"
 )
 
-func ImagePush(t *testing.T, imagePath, imgURI string) (string, []byte, error) {
+// ImagePush executes a singularity push command to push
+// an image to the specified URI.
+func ImagePush(t *testing.T, cmdPath, imagePath, imgURI string) (string, []byte, error) {
 	argv := []string{"push"}
 
 	if imagePath != "" {
@@ -21,8 +23,8 @@ func ImagePush(t *testing.T, imagePath, imgURI string) (string, []byte, error) {
 
 	argv = append(argv, imgURI)
 
-	cmd := fmt.Sprintf("%s %s", testenv.CmdPath, strings.Join(argv, " "))
-	out, err := exec.Command(testenv.CmdPath, argv...).CombinedOutput()
+	cmd := fmt.Sprintf("%s %s", cmdPath, strings.Join(argv, " "))
+	out, err := exec.Command(cmdPath, argv...).CombinedOutput()
 
 	return cmd, out, err
 

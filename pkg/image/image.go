@@ -25,6 +25,8 @@ const (
 	SANDBOX
 	// SIF constant for sif format
 	SIF
+	// ENCRYPTSQUASHFS constant for encrypted squashfs format
+	ENCRYPTSQUASHFS
 )
 
 const (
@@ -92,49 +94,47 @@ func (i *Image) AuthorizedPath(paths []string) (bool, error) {
 	return authorized, nil
 }
 
-// AuthorizedOwner checks if image is owned by user supplied in users list
+// AuthorizedOwner checks whether the image is owned by any user from the supplied users list.
 func (i *Image) AuthorizedOwner(owners []string) (bool, error) {
-	authorized := false
 	fileinfo, err := i.File.Stat()
 	if err != nil {
-		return authorized, fmt.Errorf("failed to get stat for %s", i.Path)
+		return false, fmt.Errorf("failed to get stat for %s", i.Path)
 	}
+
 	uid := fileinfo.Sys().(*syscall.Stat_t).Uid
 	for _, owner := range owners {
 		pw, err := user.GetPwNam(owner)
 		if err != nil {
-			return authorized, fmt.Errorf("failed to retrieve user information for %s: %s", owner, err)
+			return false, fmt.Errorf("failed to retrieve user information for %s: %s", owner, err)
 		}
 		if pw.UID == uid {
-			authorized = true
-			break
+			return true, nil
 		}
 	}
-	return authorized, nil
+	return false, nil
 }
 
-// AuthorizedGroup checks if image is owned by group supplied in groups list
+// AuthorizedGroup checks whether the image is owned by any group from the supplied groups list.
 func (i *Image) AuthorizedGroup(groups []string) (bool, error) {
-	authorized := false
 	fileinfo, err := i.File.Stat()
 	if err != nil {
-		return authorized, fmt.Errorf("failed to get stat for %s", i.Path)
+		return false, fmt.Errorf("failed to get stat for %s", i.Path)
 	}
+
 	gid := fileinfo.Sys().(*syscall.Stat_t).Gid
 	for _, group := range groups {
 		gr, err := user.GetGrNam(group)
 		if err != nil {
-			return authorized, fmt.Errorf("failed to retrieve group information for %s: %s", group, err)
+			return false, fmt.Errorf("failed to retrieve group information for %s: %s", group, err)
 		}
 		if gr.GID == gid {
-			authorized = true
-			break
+			return true, nil
 		}
 	}
-	return authorized, nil
+	return false, nil
 }
 
-// HasRootFs returns if image contains a root filesystem partition
+// HasRootFs returns true if image contains a root filesystem partition.
 func (i *Image) HasRootFs() bool {
 	for _, p := range i.Partitions {
 		if p.Name == RootFs {
@@ -144,7 +144,7 @@ func (i *Image) HasRootFs() bool {
 	return false
 }
 
-// ResolvePath returns a resolved absolute path
+// ResolvePath returns a resolved absolute path.
 func ResolvePath(path string) (string, error) {
 	abspath, err := filepath.Abs(path)
 	if err != nil {
@@ -157,7 +157,7 @@ func ResolvePath(path string) (string, error) {
 	return resolvedPath, nil
 }
 
-// Init initializes an image object based on given path
+// Init initializes an image object based on given path.
 func Init(path string, writable bool) (*Image, error) {
 	sylog.Debugf("Entering image format intializer")
 
@@ -192,14 +192,14 @@ func Init(path string, writable bool) (*Image, error) {
 		}
 		fileinfo, err := img.File.Stat()
 		if err != nil {
-			img.File.Close()
+			_ = img.File.Close()
 			return nil, err
 		}
 
 		err = rf.format.initializer(img, fileinfo)
 		if err != nil {
-			sylog.Debugf("%s format initializer returns: %s", rf.name, err)
-			img.File.Close()
+			sylog.Debugf("%s format initializer returned: %s", rf.name, err)
+			_ = img.File.Close()
 			continue
 		}
 		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, img.File.Fd(), syscall.F_SETFD, syscall.O_CLOEXEC); err != 0 {

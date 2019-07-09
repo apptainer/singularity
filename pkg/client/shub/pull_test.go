@@ -19,6 +19,8 @@ const (
 
 // TestDownloadImage tests if we can pull an image from Singularity Hub
 func TestDownloadImage(t *testing.T) {
+	// TODO(mem): reenable this; disabled while shub is down
+	t.Skip("Skipping tests that access singularity hub")
 
 	if testing.Short() {
 		t.SkipNow()

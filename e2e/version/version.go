@@ -10,19 +10,14 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
-type testingEnv struct {
-	// base env for running tests
-	CmdPath     string `split_words:"true"`
-	TestDir     string `split_words:"true"`
-	RunDisabled bool   `default:"false"`
+type ctx struct {
+	env e2e.TestEnv
 }
 
-var testenv testingEnv
 var tests = []struct {
 	name string
 	args []string
@@ -32,10 +27,10 @@ var tests = []struct {
 }
 
 //Test that this version uses the semantic version format
-func testSemanticVersion(t *testing.T) {
+func (c *ctx) testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
-		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
-			cmd := exec.Command(testenv.CmdPath, tt.args...)
+		t.Run(tt.name, func(t *testing.T) {
+			cmd := exec.Command(c.env.CmdPath, tt.args...)
 			res := cmd.Run(t)
 			if res.Error != nil {
 				t.Fatalf("Failed to obtain version: %+v", res.String())
@@ -46,17 +41,17 @@ func testSemanticVersion(t *testing.T) {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
 			}
-		}))
+		})
 	}
 }
 
 //Test that both versions when running: singularity --version and
 // singularity version give the same result
-func testEqualVersion(t *testing.T) {
+func (c *ctx) testEqualVersion(t *testing.T) {
 	var tmpVersion = ""
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(testenv.CmdPath, tt.args...)
+			cmd := exec.Command(c.env.CmdPath, tt.args...)
 			res := cmd.Run(t)
 			if res.Error != nil {
 				t.Fatalf("Failed to obtain version: %+v", res.String())
@@ -86,12 +81,13 @@ func testEqualVersion(t *testing.T) {
 }
 
 // RunE2ETests is the main func to trigger the test suite
-func RunE2ETests(t *testing.T) {
-	err := envconfig.Process("E2E", &testenv)
-	if err != nil {
-		t.Fatal(err)
+func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
+	c := &ctx{
+		env: env,
 	}
 
-	t.Run("test_semantic_version", testSemanticVersion)
-	t.Run("test_equal_version", testEqualVersion)
+	return func(t *testing.T) {
+		t.Run("test_semantic_version", c.testSemanticVersion)
+		t.Run("test_equal_version", c.testEqualVersion)
+	}
 }

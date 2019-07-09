@@ -1,4 +1,7 @@
-version: 2.0
+version: 2.1
+
+orbs:
+  compare-url: iynere/compare-url@1.2.0
 
 defaults: &defaults
   working_directory: /go/singularity
@@ -33,7 +36,7 @@ jobs:
           paths:
             - '/go/pkg/mod'
 
-  go1.11.9-stretch:
+  go111-stretch:
     <<: *defaults
     docker:
       - image: sylabsio/golang:1.11.9-stretch
@@ -50,7 +53,7 @@ jobs:
           command: |-
             make -j$(nproc) -C ./builddir check
 
-  go1.11.9-alpine:
+  go111-alpine:
     <<: *defaults
     docker:
       - image: sylabsio/golang:1.11.9-alpine
@@ -67,7 +70,7 @@ jobs:
           command: |-
             make -j$(nproc) -C ./builddir check
 
-  go1.11-macos:
+  go-macos:
     macos:
       xcode: "10.2.0"
     working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
@@ -140,6 +143,20 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/go
+      - compare-url/reconstruct:
+          project-path: $HOME/go/singularity
+      - compare-url/use:
+          step-name: Check changes
+          custom-logic: |
+            cd $HOME/go/singularity
+            echo "Circle branch: '${CIRCLE_BRANCH}'"
+            echo "Commit range: '${COMMIT_RANGE}'"
+
+            # Skip if there were no changes to the e2e or vendor directories and the branch is not master
+            if [[ ! $(git diff "$COMMIT_RANGE" --name-status | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
+              echo "Skipping e2e tests"
+              circleci step halt
+            fi
       - run:
           name: Setup environment
           command: |-
@@ -176,6 +193,7 @@ jobs:
             sudo make -C ./builddir install
       - run:
           name: Run E2E tests
+          no_output_timeout: 45m
           command: |-
             cd $HOME/go/singularity
             make -C ./builddir integration-test e2e-test
@@ -188,13 +206,13 @@ workflows:
       - cache_go_mod:
           requires:
             - get_source
-      - go1.11.9-stretch:
+      - go111-stretch:
           requires:
             - cache_go_mod
-      - go1.11.9-alpine:
+      - go111-alpine:
           requires:
             - cache_go_mod
-      - go1.11-macos:
+      - go-macos:
           requires:
             - get_source
       - unit_tests:
@@ -203,6 +221,3 @@ workflows:
       - e2e_tests:
           requires:
             - get_source
-          filters:
-            branches:
-              only: master

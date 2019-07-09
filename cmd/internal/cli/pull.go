@@ -53,7 +53,7 @@ var (
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
 	ID:           "pullLibraryURIFlag",
-	Value:        &PushLibraryURI,
+	Value:        &PullLibraryURI,
 	DefaultValue: "https://library.sylabs.io",
 	Name:         "library",
 	Usage:        "download images from the provided library",
@@ -79,7 +79,7 @@ var pullNameFlag = cmdline.Flag{
 	Name:         "name",
 	Hidden:       true,
 	Usage:        "specify a custom image name",
-	EnvKeys:      []string{"NAME"},
+	EnvKeys:      []string{"PULL_NAME"},
 }
 
 // --dir

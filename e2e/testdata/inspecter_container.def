@@ -1,0 +1,32 @@
+bootstrap: library
+from: alpine:latest
+
+%help
+This is a e2e test container used for testing the 'inspect'
+command. This container "inspector_container.sif" should be placed
+in the "e2e/testdata" directory of Singularity.
+
+%labels
+MAINTAINER "WestleyK <westley@sylabs.io>"
+e2e awsome
+E2E AWSOME
+hi "hello world"
+HI "HELLO WORLD"
+
+%test
+ls /
+test -d /
+test -d /etc
+
+%environment
+export test="testing"
+export e2e="e2e testing"
+
+%runscript
+cat /.singularity.d/runscript.help
+
+%apprun hello
+echo "hello"
+
+%apprun world
+echo "world"

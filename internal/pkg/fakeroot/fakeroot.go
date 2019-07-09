@@ -16,14 +16,22 @@ import (
 // GetIDRange returns the allocated ID range based on base ID
 // and a list of allowed users
 func GetIDRange(base uint64, allowedUsers []string) (*specs.LinuxIDMapping, error) {
+	const (
+		// rangeSize corresponds to the size of UID/GID allocated for each users
+		rangeSize = uint64(65536)
+		// minBase is the minimal base ID allocation authorized by configuration
+		minBase = uint64(131072)
+		// maxBase is the maximal base ID allocation authorized by configuration
+		maxBase = uint64(4294901760)
+	)
 	userinfo, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
 		return nil, err
 	}
-	if base%65536 != 0 {
-		return nil, fmt.Errorf("fakeroot base id is not a multiple of 65536")
-	} else if base < 65536 || base > 4294901760 {
-		return nil, fmt.Errorf("fakeroot base id is not set between 65536 and 4294901760")
+	if base%rangeSize != 0 {
+		return nil, fmt.Errorf("fakeroot base id is not a multiple of %d", rangeSize)
+	} else if base < minBase || base > maxBase {
+		return nil, fmt.Errorf("fakeroot base id is not set between %d and %d", minBase, maxBase)
 	}
 
 	// root user is always authorized and has a 1:1 mapping
@@ -31,7 +39,7 @@ func GetIDRange(base uint64, allowedUsers []string) (*specs.LinuxIDMapping, erro
 		return &specs.LinuxIDMapping{
 			ContainerID: 1,
 			HostID:      1,
-			Size:        65535,
+			Size:        uint32(rangeSize),
 		}, nil
 	}
 
@@ -39,8 +47,8 @@ func GetIDRange(base uint64, allowedUsers []string) (*specs.LinuxIDMapping, erro
 		if userinfo.Name == name {
 			return &specs.LinuxIDMapping{
 				ContainerID: 1,
-				HostID:      uint32(base) + uint32(i*65536),
-				Size:        65535,
+				HostID:      uint32(base) + uint32(i*int(rangeSize)),
+				Size:        uint32(rangeSize),
 			}, nil
 		}
 	}

@@ -18,7 +18,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/build/apps"
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
-	"github.com/sylabs/singularity/internal/pkg/build/copy"
+	"github.com/sylabs/singularity/internal/pkg/build/files"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
@@ -105,7 +105,11 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 
 		s := stage{}
-		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		if conf.Opts.Encrypted {
+			s.b, err = types.NewEncryptedBundle(conf.Opts.TmpDir, "sbuild")
+		} else {
+			s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -429,10 +433,11 @@ func (s *stage) copyFiles(b *Build) error {
 			}
 
 			// copy each file into bundle rootfs
-			transfer.Src = filepath.Join(b.stages[stageIndex].b.Rootfs(), transfer.Src)
-			transfer.Dst = filepath.Join(s.b.Rootfs(), transfer.Dst)
+			// prepend appropriate bundle path to supplied paths
+			transfer.Src = files.AddPrefix(b.stages[stageIndex].b.Rootfs(), transfer.Src)
+			transfer.Dst = files.AddPrefix(s.b.Rootfs(), transfer.Dst)
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-			if err := copy.Copy(transfer.Src, transfer.Dst); err != nil {
+			if err := files.Copy(transfer.Src, transfer.Dst); err != nil {
 				return err
 			}
 		}

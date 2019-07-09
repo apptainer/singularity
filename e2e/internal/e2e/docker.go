@@ -6,43 +6,74 @@
 package e2e
 
 import (
+	"path/filepath"
+	"sync"
+	"sync/atomic"
 	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
-func PrepRegistry(t *testing.T) {
-	commands := [][]string{
-		{"run", "-d", "-p", "5000:5000", "--restart=always", "--name", "registry", "registry:2"},
-		{"pull", "busybox"},
-		{"tag", "busybox", "localhost:5000/my-busybox"},
-		{"push", "localhost:5000/my-busybox"},
-	}
+const dockerInstanceName = "e2e-docker-instance"
 
-	for _, command := range commands {
-		cmd := exec.Command("docker", command...)
-		if res := cmd.Run(t); res.Error != nil {
-			t.Fatalf("Command failed.\n%s", res)
-		}
-	}
-
-	EnsureImage(t)
-	cmd, _, err := ImagePush(t, testenv.ImagePath, "oras://localhost:5000/oras_test_sif:latest")
-	if err != nil {
-		t.Fatalf("while prepping registry with command %q: %v", cmd, err)
-	}
+var registrySetup struct {
+	sync.Once
+	up uint32 // 1 if the registry is running, 0 otherwise
 }
 
+// PrepRegistry run a docker registry and push a busybox
+// image and the test image with oras transport.
+func PrepRegistry(t *testing.T, env TestEnv) {
+	registrySetup.Do(func() {
+		atomic.StoreUint32(&registrySetup.up, 1)
+
+		EnsureImage(t, env)
+
+		dockerDefinition := "testdata/Docker_registry.def"
+		dockerImage := filepath.Join(env.TestDir, "docker-e2e.sif")
+
+		RunSingularity(
+			t,
+			"BuildDockerRegistry",
+			WithoutSubTest(),
+			WithPrivileges(true),
+			WithCommand("build"),
+			WithArgs("-s", dockerImage, dockerDefinition),
+			ExpectExit(0),
+		)
+
+		RunSingularity(
+			t,
+			"RunDockerRegistry",
+			WithoutSubTest(),
+			WithPrivileges(true),
+			WithCommand("instance start"),
+			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
+			ExpectExit(0),
+		)
+
+		RunSingularity(
+			t,
+			"OrasPushTestImage",
+			WithoutSubTest(),
+			WithCommand("push"),
+			WithArgs(env.ImagePath, env.OrasTestImage),
+			ExpectExit(0),
+		)
+	})
+}
+
+// KillRegistry stop and cleanup docker registry.
 func KillRegistry(t *testing.T) {
-	commands := [][]string{
-		{"kill", "registry"},
-		{"rm", "registry"},
+	if !atomic.CompareAndSwapUint32(&registrySetup.up, 1, 0) {
+		return
 	}
 
-	for _, command := range commands {
-		cmd := exec.Command("docker", command...)
-		if res := cmd.Run(t); res.Error != nil {
-			t.Fatalf("Command failed.\n%s", res)
-		}
-	}
+	RunSingularity(
+		t,
+		"KillDockerRegistry",
+		WithoutSubTest(),
+		WithPrivileges(true),
+		WithCommand("instance stop"),
+		WithArgs("-s", "KILL", dockerInstanceName),
+		ExpectExit(0),
+	)
 }

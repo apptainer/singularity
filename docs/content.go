@@ -60,7 +60,8 @@ Enterprise Performance Computing (EPC)`
 
       library://  an image library (default https://cloud.sylabs.io/library)
       docker://   a Docker registry (default Docker Hub)
-      shub://     a Singularity registry (default Singularity Hub)`
+      shub://     a Singularity registry (default Singularity Hub)
+      oras://     a supporting OCI registry`
 
 	BuildExample string = `
 
@@ -441,7 +442,9 @@ Enterprise Performance Computing (EPC)`
 
   docker://*          A container hosted on Docker Hub
 
-  shub://*            A container hosted on Singularity Hub`
+  shub://*            A container hosted on Singularity Hub
+
+  oras://*            A container hosted on a supporting OCI registry`
 	ExecUse   string = `exec [exec options...] <container> <command>`
 	ExecShort string = `Run a command within a container`
 	ExecLong  string = `
@@ -556,7 +559,10 @@ Enterprise Performance Computing (EPC)`
       docker://user/image:tag
     
   shub: Pull an image from Singularity Hub to CWD
-      shub://user/image:tag`
+      shub://user/image:tag
+
+  oras: Pull a SIF image from a supporting OCI registry
+      oras://registry/namespace/image:tag`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
@@ -565,20 +571,36 @@ Enterprise Performance Computing (EPC)`
   $ singularity pull tensorflow.sif docker://tensorflow/tensorflow:latest
 
   From Shub
-  $ singularity pull singularity-images.sif shub://vsoch/singularity-images`
+  $ singularity pull singularity-images.sif shub://vsoch/singularity-images
+
+  From supporting OCI registry (e.g. Azure Container Registry)
+  $ singularity pull image.sif oras://<username>.azurecr.io/namespace/image:tag`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// push
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	PushUse   string = `push [push options...] <image> library://user/collection/container[:tag]`
-	PushShort string = `Upload image to the provided library (default is "cloud.sylabs.io")`
+	PushUse   string = `push [push options...] <image> <URI>`
+	PushShort string = `Upload image to the provided URI`
 	PushLong  string = `
-  The Singularity push command allows you to upload your sif image to a library
-  of your choosing. It's always good practice to sign your containers before
-  pushing them to the library. An auth token is required to push to the remote,
-  so you may need to configure if first with 'singularity remote'.`
+  The 'push' command allows you to upload a SIF container to a given
+  URI.  Supported URIs include:
+
+  library:
+      library://user/collection/container[:tag]
+
+  oras:
+      oras://registry/namespace/repo:tag
+
+
+  NOTE: It's always good practice to sign your containers before
+  pushing them to the library. An auth token is required to push to the library,
+  so you may need to configure it first with 'singularity remote'.`
 	PushExample string = `
-  $ singularity push /home/user/my.sif library://user/collection/my.sif:latest`
+  To Library
+  $ singularity push /home/user/my.sif library://user/collection/my.sif:latest
+
+  To supported OCI registry
+  $ singularity push /home/user/my.sif oras://registry/namespace/image:tag`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// search
@@ -720,10 +742,59 @@ Enterprise Performance Computing (EPC)`
 	InspectUse   string = `inspect [inspect options...] <image path>`
 	InspectShort string = `Show metadata for an image`
 	InspectLong  string = `
-  Inspect will show you labels, environment variables, and scripts associated 
-  with the image determined by the flags you pass.`
+  Inspect will show you labels, environment variables, apps and scripts associated 
+  with the image determined by the flags you pass. By default, they will be shown in 
+  plain text. If you would like to list them in json format, you should use the --json flag.
+  `
 	InspectExample string = `
-  $ singularity inspect ubuntu.sif`
+  $ singularity inspect ubuntu.sif
+  
+  If you want to list the applications (apps) installed in a container (located at
+  /scif/apps) you should run inspect command with --list-apps <container-image> flag.
+  ( See https://sci-f.github.io for more information on SCIF apps)
+
+  The following environment variables are available to you when called 
+  from the shell inside the container. The top variables are relevant 
+  to the active app (--app <app>) and the bottom available for all 
+  apps regardless of the active app. Both sets of variables are also available during development (at build time).
+
+  ACTIVE APP ENVIRONMENT:
+      SCIF_APPNAME       the name for the active application
+      SCIF_APPROOT       the installation folder for the application created at /scif/apps/<app>
+      SCIF_APPMETA       the application metadata folder
+      SCIF_APPDATA       the data folder created for the application at /scif/data/<app>
+        SCIF_APPINPUT    expected input folder within data base folder
+        SCIF_APPOUTPUT   the output data folder within data base folder
+
+      SCIF_APPENV        points to the application's custom environment.sh file in its metadata folder
+      SCIF_APPLABELS     is the application's labels.json in the metadata folder
+      SCIF_APPBIN        is the bin folder for the app, which is automatically added to the $PATH when the app is active
+      SCIF_APPLIB        is the application's library folder that is added to the LD_LIBRARY_PATH
+      SCIF_APPRUN        is the runscript
+      SCIF_APPHELP       is the help file for the runscript
+      SCIF_APPTEST       is the testing script (test.sh) associated with the applicatio
+      SCIF_APPNAME       the name for the active application
+      SCIF_APPFILES      the files section associated with the application that are added to
+
+
+  GLOBAL APP ENVIRONMENT:
+    
+      SCIF_DATA             scif defined data base for all apps (/scif/data)
+      SCIF_APPS             scif defined install bases for all apps (/scif/apps)
+      SCIF_APPROOT_<app>    root for application <app>
+      SCIF_APPDATA_<app>    data root for application <app>
+
+  To list all your apps:
+
+  $ singularity inspect --list-apps ubuntu.sif 
+
+  To list only labels in the json format from an image:
+
+  $ singularity inspect --json --labels ubuntu.sif
+
+  To verify you own a single application on your container image, use the --app <appname> flag:
+
+  $ singularity inspect --app <appname> ubuntu.sif`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Test
