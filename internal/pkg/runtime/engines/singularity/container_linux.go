@@ -540,6 +540,25 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 	}
 	_, err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
+	// when using user namespace we always try to apply mount flags with
+	// remount, then if we get a permission denied error, we continue
+	// execution by ignoring the error and warn user if the bind mount
+	// need to be mounted read-only
+	if remount && err != nil && c.userNS {
+		// this needs to compare error strings because we are dropping
+		// the original error value in the RPC call. In order to keep
+		// the original error values, we would have to add them to the
+		// corresponding struct passed over RPC and add the necessary
+		// GOB encoding / decoding functions.
+		if err.Error() == syscall.Errno(syscall.EPERM).Error() {
+			if flags&syscall.MS_RDONLY != 0 {
+				sylog.Warningf("Could not remount %s read-only: %s", dest, err)
+			} else {
+				sylog.Verbosef("Could not remount %s: %s", dest, err)
+			}
+			return nil
+		}
+	}
 	return err
 }
 
@@ -580,10 +599,29 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	path := fmt.Sprintf("/dev/loop%d", number)
-	sylog.Debugf("Mounting loop device %s to %s\n", path, mnt.Destination)
-	_, err = c.rpcOps.Mount(path, mnt.Destination, mnt.Type, flags, optsString)
+
+	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
+
+	mountType := mnt.Type
+
+	if mountType == "encryptfs" {
+		cryptDev, err := c.rpcOps.Decrypt(offset, path)
+
+		if err != nil {
+			return fmt.Errorf("Unable to decrypt the file system: %s", err)
+		}
+
+		path = cryptDev
+
+		// Save this device to cleanup later
+		c.engine.EngineConfig.CryptDev = cryptDev
+
+		// Currently we only support encrypted squashfs file system
+		mountType = "squashfs"
+	}
+	_, err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
 	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mnt.Type, err)
+		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
 	}
 
 	return nil
@@ -647,11 +685,15 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
 
+	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
+
 	switch imageObject.Partitions[0].Type {
 	case image.SQUASHFS:
 		mountType = "squashfs"
 	case image.EXT3:
 		mountType = "ext3"
+	case image.ENCRYPTSQUASHFS:
+		mountType = "encryptfs"
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
 		flags |= syscall.MS_BIND
@@ -1292,13 +1334,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 	devicesMounted := 0
 	devPrefix := "/dev"
 	userBindControl := c.engine.EngineConfig.File.UserBindControl
-	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
+	defaultFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
 		return nil
 	}
 
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
+		flags := defaultFlags
 		splitted := strings.Split(b, ":")
 
 		src, err := filepath.Abs(splitted[0])
@@ -1348,13 +1391,12 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		sylog.Debugf("Adding %s to mount list\n", src)
 
-		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil && err == mount.ErrMountExists {
+		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err == mount.ErrMountExists {
 			sylog.Warningf("destination %s already in mount list: %s", src, err)
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
-			flags &^= syscall.MS_RDONLY
 		}
 	}
 

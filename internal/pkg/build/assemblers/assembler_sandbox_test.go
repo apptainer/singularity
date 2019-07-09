@@ -68,6 +68,8 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 
 // TestSandboxAssemblerShub sees if we can build a sandbox from an image from a Singularity registry
 func TestSandboxAssemblerShub(t *testing.T) {
+	// TODO(mem): reenable this; disabled while shub is down
+	t.Skip("Skipping tests that access singularity hub")
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
