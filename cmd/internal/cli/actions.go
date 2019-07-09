@@ -109,7 +109,7 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 	return imgabs, nil
 }
 
-func handleOras(cmd *cobra.Command, u string) (string, error) {
+func handleOras(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, error) {
 	ociAuth, err := makeDockerCredentials(cmd)
 	if err != nil {
 		return "", fmt.Errorf("while creating docker credentials: %v", err)
@@ -122,8 +122,8 @@ func handleOras(cmd *cobra.Command, u string) (string, error) {
 	}
 
 	imageName := uri.GetName(u)
-	cacheImagePath := cache.OrasImage(sum, imageName)
-	if exists, err := cache.OrasImageExists(sum, imageName); err != nil {
+	cacheImagePath := imgCache.OrasImage(sum, imageName)
+	if exists, err := imgCache.OrasImageExists(sum, imageName); err != nil {
 		return "", fmt.Errorf("unable to check if %v exists: %v", cacheImagePath, err)
 	} else if !exists {
 		sylog.Infof("Downloading image with ORAS")
@@ -243,7 +243,7 @@ func replaceURIWithImage(imgCache *cache.Handle, cmd *cobra.Command, args []stri
 		sylabsToken(cmd, args) // Fetch Auth Token for library access
 		image, err = handleLibrary(imgCache, args[0], handleActionRemote(cmd))
 	case uri.Oras:
-		image, err = handleOras(cmd, args[0])
+		image, err = handleOras(imgCache, cmd, args[0])
 	case uri.Shub:
 		image, err = handleShub(imgCache, args[0])
 	case ociclient.IsSupported(t):
