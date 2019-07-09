@@ -7,6 +7,7 @@
 package push
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -21,6 +22,7 @@ type ctx struct {
 
 func (c *ctx) testPushCmd(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
+	e2e.PrepRegistry(t, c.env)
 
 	// setup file and dir to use as invalid sources
 	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")
@@ -42,25 +44,25 @@ func (c *ctx) testPushCmd(t *testing.T) {
 		{
 			desc:          "non existent image",
 			imagePath:     filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
-			dstURI:        "oras://localhost:5000/non_existent:test",
+			dstURI:        fmt.Sprintf("oras://%s/non_existent:test", c.env.TestRegistry),
 			expectSuccess: false,
 		},
 		{
 			desc:          "non SIF file",
 			imagePath:     orasInvalidFile,
-			dstURI:        "oras://localhost:5000/non_sif:test",
+			dstURI:        fmt.Sprintf("oras://%s/non_sif:test", c.env.TestRegistry),
 			expectSuccess: false,
 		},
 		{
 			desc:          "directory",
 			imagePath:     orasInvalidDir,
-			dstURI:        "oras://localhost:5000/directory:test",
+			dstURI:        fmt.Sprintf("oras://%s/directory:test", c.env.TestRegistry),
 			expectSuccess: false,
 		},
 		{
 			desc:          "standard SIF push",
 			imagePath:     c.env.ImagePath,
-			dstURI:        "oras://localhost:5000/standard_sif:test",
+			dstURI:        fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
 			expectSuccess: true,
 		},
 	}

@@ -440,6 +440,8 @@ func (c *actionTests) STDPipe(t *testing.T) {
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
 func (c *actionTests) RunFromURI(t *testing.T) {
+	e2e.PrepRegistry(t, c.env)
+
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
 
@@ -478,7 +480,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "RunFromOrasOK",
 			command: "run",
-			argv:    []string{"--bind", bind, "oras://localhost:5000/oras_test_sif:latest", size},
+			argv:    []string{"--bind", bind, c.env.OrasTestImage, size},
 			exit:    0,
 		},
 		{
@@ -503,7 +505,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "RunFromOrasKO",
 			command: "run",
-			argv:    []string{"--bind", bind, "oras://localhost:5000/oras_test_sif:latest", "0"},
+			argv:    []string{"--bind", bind, c.env.OrasTestImage, "0"},
 			exit:    1,
 		},
 
@@ -530,7 +532,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecTrueOras",
 			command: "exec",
-			argv:    []string{"oras://localhost:5000/oras_test_sif:latest", "true"},
+			argv:    []string{c.env.OrasTestImage, "true"},
 			exit:    0,
 		},
 		{
@@ -555,7 +557,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecFalseOras",
 			command: "exec",
-			argv:    []string{"oras://localhost:5000/oras_test_sif:latest", "false"},
+			argv:    []string{c.env.OrasTestImage, "false"},
 			exit:    1,
 		},
 
@@ -582,7 +584,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecTrueOrasUserns",
 			command: "exec",
-			argv:    []string{"--userns", "oras://localhost:5000/oras_test_sif:latest", "true"},
+			argv:    []string{"--userns", c.env.OrasTestImage, "true"},
 			exit:    0,
 		},
 		{
@@ -607,7 +609,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecFalseOrasUserns",
 			command: "exec",
-			argv:    []string{"--userns", "oras://localhost:5000/oras_test_sif:latest", "false"},
+			argv:    []string{"--userns", c.env.OrasTestImage, "false"},
 			exit:    1,
 		},
 	}
