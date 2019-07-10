@@ -146,7 +146,7 @@ jobs:
             cd $HOME/go/singularity
 
             # Skip if there were no changes to the e2e or vendor directories and the branch is not master
-            if [[ ! $(git --no-pager diff --name-only HEAD origin/master) | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
+            if [[ ! $(git --no-pager diff --name-only HEAD origin/master | grep -e "^e2e" -e "^vendor") && "$CIRCLE_BRANCH" != "master" ]]; then
               echo "Skipping e2e tests"
               circleci step halt
             fi
