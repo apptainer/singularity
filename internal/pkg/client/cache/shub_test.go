@@ -5,15 +5,7 @@
 
 package cache
 
-import (
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
-
-	"github.com/sylabs/singularity/internal/pkg/test"
-)
-
+/*
 func TestShub(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -117,3 +109,4 @@ func TestShubImageExists(t *testing.T) {
 		})
 	}
 }
+*/

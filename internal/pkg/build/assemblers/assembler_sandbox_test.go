@@ -66,6 +66,7 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	defer os.RemoveAll(assemblerDockerDestDir)
 }
 
+/*
 // TestSandboxAssemblerShub sees if we can build a sandbox from an image from a Singularity registry
 func TestSandboxAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
@@ -100,3 +101,4 @@ func TestSandboxAssemblerShub(t *testing.T) {
 
 	defer os.RemoveAll(assemblerShubDestDir)
 }
+*/

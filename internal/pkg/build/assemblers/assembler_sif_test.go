@@ -75,6 +75,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	defer os.Remove(assemblerDockerDest)
 }
 
+/*
 // TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
 func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
@@ -110,3 +111,4 @@ func TestSIFAssemblerShub(t *testing.T) {
 
 	defer os.Remove(assemblerShubDest)
 }
+*/

@@ -5,6 +5,7 @@
 
 package sources_test
 
+/*
 import (
 	"testing"
 
@@ -76,3 +77,4 @@ func TestShubPacker(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", shubURI, err)
 	}
 }
+*/
