@@ -110,7 +110,6 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 		}
 
-
 		imgCache := getCacheHandle()
 		if imgCache == nil {
 			sylog.Fatalf("failed to create an image cache handle")

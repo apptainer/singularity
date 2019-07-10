@@ -20,8 +20,8 @@ import (
 const (
 	assemblerDockerURI  = "docker://alpine"
 	assemblerDockerDest = "/tmp/docker_alpine_assemble_test.sif"
-	assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
-	assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
+	// assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
+	// assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
 )
 
 func TestMain(m *testing.M) {

@@ -18,7 +18,7 @@ import (
 
 const (
 	assemblerDockerDestDir = "/tmp/docker_alpine_assemble_test"
-	assemblerShubDestDir   = "/tmp/shub_alpine_assemble_test"
+	// assemblerShubDestDir   = "/tmp/shub_alpine_assemble_test"
 )
 
 // TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
