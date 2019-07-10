@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
@@ -37,8 +38,8 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	}
 
 	// Create a clean image cache and associate it to the assembler
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCacheDir := testCache.MakeDir(t, "")
+	defer testCache.DeleteDir(t, imgCacheDir)
 	imgCache, err := cache.NewHandle(imgCacheDir)
 	if err != nil {
 		t.Fatalf("failed to create an image cache handle: %s", err)

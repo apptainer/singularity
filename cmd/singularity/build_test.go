@@ -23,19 +23,20 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 )
 
 var testFileContent = "Test file content\n"
 
 func setupCache(t *testing.T) (*cache.Handle, func()) {
-	dir := test.SetCacheDir(t, "")
+	dir := testCache.MakeDir(t, "")
 	h, err := cache.NewHandle(dir)
 	if err != nil {
-		test.CleanCacheDir(t, dir)
+		testCache.DeleteDir(t, dir)
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
 	return h, func() {
-		test.CleanCacheDir(t, dir)
+		testCache.DeleteDir(t, dir)
 	}
 }
 
