@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	stdexec "os/exec"
 	"strconv"
 	"testing"
 
@@ -23,6 +24,8 @@ type actionTests struct {
 
 // run tests min fuctionality for singularity run
 func (c *actionTests) actionRun(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	tests := []struct {
 		name string
 		argv []string
@@ -68,6 +71,8 @@ func (c *actionTests) actionRun(t *testing.T) {
 
 // exec tests min fuctionality for singularity exec
 func (c *actionTests) actionExec(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	user := e2e.CurrentUser(t)
 
 	// Create a temp testfile
@@ -235,6 +240,8 @@ func (c *actionTests) actionExec(t *testing.T) {
 
 // Shell interaction tests
 func (c *actionTests) actionShell(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	hostname, err := os.Hostname()
 	if err != nil {
 		t.Fatalf("could not get hostname: %s", err)
@@ -250,6 +257,13 @@ func (c *actionTests) actionShell(t *testing.T) {
 			name: "ShellExit",
 			argv: []string{c.env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
+				// "cd /" to work around issue where a long
+				// working directory name causes the test
+				// to fail because the "Singularity" that
+				// we are looking for is chopped from the
+				// front.
+				// TODO(mem): This test was added back in 491a71716013654acb2276e4b37c2e015d2dfe09
+				e2e.ConsoleSendLine("cd /"),
 				e2e.ConsoleExpect("Singularity"),
 				e2e.ConsoleSendLine("exit"),
 			},
@@ -290,6 +304,8 @@ func (c *actionTests) actionShell(t *testing.T) {
 
 // STDPipe tests pipe stdin/stdout to singularity actions cmd
 func (c *actionTests) STDPipe(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	stdinTests := []struct {
 		name    string
 		command string
@@ -339,20 +355,22 @@ func (c *actionTests) STDPipe(t *testing.T) {
 			input:   "false",
 			exit:    1,
 		},
-		{
-			name:    "TrueShub",
-			command: "shell",
-			argv:    []string{"shub://singularityhub/busybox"},
-			input:   "true",
-			exit:    0,
-		},
-		{
-			name:    "FalseShub",
-			command: "shell",
-			argv:    []string{"shub://singularityhub/busybox"},
-			input:   "false",
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "TrueShub",
+		// 	command: "shell",
+		// 	argv:    []string{"shub://singularityhub/busybox"},
+		// 	input:   "true",
+		// 	exit:    0,
+		// },
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "FalseShub",
+		// 	command: "shell",
+		// 	argv:    []string{"shub://singularityhub/busybox"},
+		// 	input:   "false",
+		// 	exit:    1,
+		// },
 	}
 
 	var input bytes.Buffer
@@ -422,6 +440,8 @@ func (c *actionTests) STDPipe(t *testing.T) {
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
 func (c *actionTests) RunFromURI(t *testing.T) {
+	e2e.PrepRegistry(t, c.env)
+
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
 
@@ -450,16 +470,17 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--bind", bind, "library://busybox:latest", size},
 			exit:    0,
 		},
-		{
-			name:    "RunFromShubOK",
-			command: "run",
-			argv:    []string{"--bind", bind, "shub://singularityhub/busybox", size},
-			exit:    0,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "RunFromShubOK",
+		// 	command: "run",
+		// 	argv:    []string{"--bind", bind, "shub://singularityhub/busybox", size},
+		// 	exit:    0,
+		// },
 		{
 			name:    "RunFromOrasOK",
 			command: "run",
-			argv:    []string{"--bind", bind, "oras://localhost:5000/oras_test_sif:latest", size},
+			argv:    []string{"--bind", bind, c.env.OrasTestImage, size},
 			exit:    0,
 		},
 		{
@@ -474,16 +495,17 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--bind", bind, "library://busybox:latest", "0"},
 			exit:    1,
 		},
-		{
-			name:    "RunFromShubKO",
-			command: "run",
-			argv:    []string{"--bind", bind, "shub://singularityhub/busybox", "0"},
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "RunFromShubKO",
+		// 	command: "run",
+		// 	argv:    []string{"--bind", bind, "shub://singularityhub/busybox", "0"},
+		// 	exit:    1,
+		// },
 		{
 			name:    "RunFromOrasKO",
 			command: "run",
-			argv:    []string{"--bind", bind, "oras://localhost:5000/oras_test_sif:latest", "0"},
+			argv:    []string{"--bind", bind, c.env.OrasTestImage, "0"},
 			exit:    1,
 		},
 
@@ -500,16 +522,17 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"library://busybox:latest", "true"},
 			exit:    0,
 		},
-		{
-			name:    "ExecTrueShub",
-			command: "exec",
-			argv:    []string{"shub://singularityhub/busybox", "true"},
-			exit:    0,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecTrueShub",
+		// 	command: "exec",
+		// 	argv:    []string{"shub://singularityhub/busybox", "true"},
+		// 	exit:    0,
+		// },
 		{
 			name:    "ExecTrueOras",
 			command: "exec",
-			argv:    []string{"oras://localhost:5000/oras_test_sif:latest", "true"},
+			argv:    []string{c.env.OrasTestImage, "true"},
 			exit:    0,
 		},
 		{
@@ -524,16 +547,17 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"library://busybox:latest", "false"},
 			exit:    1,
 		},
-		{
-			name:    "ExecFalseShub",
-			command: "exec",
-			argv:    []string{"shub://singularityhub/busybox", "false"},
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecFalseShub",
+		// 	command: "exec",
+		// 	argv:    []string{"shub://singularityhub/busybox", "false"},
+		// 	exit:    1,
+		// },
 		{
 			name:    "ExecFalseOras",
 			command: "exec",
-			argv:    []string{"oras://localhost:5000/oras_test_sif:latest", "false"},
+			argv:    []string{c.env.OrasTestImage, "false"},
 			exit:    1,
 		},
 
@@ -550,16 +574,17 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--userns", "library://busybox:latest", "true"},
 			exit:    0,
 		},
-		{
-			name:    "ExecTrueShubUserns",
-			command: "exec",
-			argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
-			exit:    0,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecTrueShubUserns",
+		// 	command: "exec",
+		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
+		// 	exit:    0,
+		// },
 		{
 			name:    "ExecTrueOrasUserns",
 			command: "exec",
-			argv:    []string{"--userns", "oras://localhost:5000/oras_test_sif:latest", "true"},
+			argv:    []string{"--userns", c.env.OrasTestImage, "true"},
 			exit:    0,
 		},
 		{
@@ -574,16 +599,17 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 			argv:    []string{"--userns", "library://busybox:latest", "false"},
 			exit:    1,
 		},
-		{
-			name:    "ExecFalseShubUserns",
-			command: "exec",
-			argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
-			exit:    1,
-		},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {
+		// 	name:    "ExecFalseShubUserns",
+		// 	command: "exec",
+		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
+		// 	exit:    1,
+		// },
 		{
 			name:    "ExecFalseOrasUserns",
 			command: "exec",
-			argv:    []string{"--userns", "oras://localhost:5000/oras_test_sif:latest", "false"},
+			argv:    []string{"--userns", c.env.OrasTestImage, "false"},
 			exit:    1,
 		},
 	}
@@ -601,7 +627,13 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 
 // PersistentOverlay test the --overlay function
 func (c *actionTests) PersistentOverlay(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const squashfsImage = "squashfs.simg"
+
+	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {
+		t.Skip("mkfs.ext3 not found")
+	}
 
 	dir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
 	if err != nil {

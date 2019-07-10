@@ -1,9 +1,10 @@
 {
-    "cniVersion": "0.3.1",
+    "cniVersion": "0.4.0",
     "name": "ptp",
     "plugins": [
         {
             "type": "ptp",
+            "ipMasq": true,
             "ipam": {
                 "type": "host-local",
                 "subnet": "10.23.0.0/16",
@@ -11,6 +12,14 @@
                     { "dst": "0.0.0.0/0" }
                 ]
             }
+        },
+        {
+            "type": "firewall"
+        },
+        {
+            "type": "portmap",
+            "capabilities": {"portMappings": true},
+            "snat": true
         }
     ]
 }

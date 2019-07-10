@@ -105,7 +105,11 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		}
 
 		s := stage{}
-		s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		if conf.Opts.Encrypted {
+			s.b, err = types.NewEncryptedBundle(conf.Opts.TmpDir, "sbuild")
+		} else {
+			s.b, err = types.NewBundle(conf.Opts.TmpDir, "sbuild")
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -252,7 +256,7 @@ func engineRequired(def types.Definition) bool {
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func runBuildEngine(b *types.Bundle) error {
 	if syscall.Getuid() != 0 && !b.Opts.Fakeroot {
-		return fmt.Errorf("Attempted to build with scripts as non-root user or without --fakeroot")
+		return fmt.Errorf("attempted to build with scripts as non-root user or without --fakeroot")
 	}
 
 	sylog.Debugf("Starting build engine")

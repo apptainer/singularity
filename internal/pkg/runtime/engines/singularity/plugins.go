@@ -26,6 +26,7 @@ import (
 	_ "github.com/containernetworking/plugins/plugins/main/ptp"
 	_ "github.com/containernetworking/plugins/plugins/main/vlan"
 	_ "github.com/containernetworking/plugins/plugins/meta/bandwidth"
+	_ "github.com/containernetworking/plugins/plugins/meta/firewall"
 	_ "github.com/containernetworking/plugins/plugins/meta/flannel"
 	_ "github.com/containernetworking/plugins/plugins/meta/portmap"
 	_ "github.com/containernetworking/plugins/plugins/meta/tuning"

@@ -255,7 +255,8 @@ func testSTDINPipe(t *testing.T) {
 		// Stdin to URI based image
 		{"sh", "library", []string{"-c", "echo true | singularity shell library://busybox"}, 0},
 		{"sh", "docker", []string{"-c", "echo true | singularity shell docker://busybox"}, 0},
-		{"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"sh", "shub", []string{"-c", "echo true | singularity shell shub://singularityhub/busybox"}, 0},
 		// Test apps
 		{"sh", "appsFoo", []string{"-c", fmt.Sprintf("singularity run --app foo %s | grep 'FOO'", appsImage)}, 0},
 		// Test target pwd
@@ -309,24 +310,30 @@ func testRunFromURI(t *testing.T) {
 		// Run from supported URI's and check the runscript call works
 		{"RunFromDockerOK", "docker://busybox:latest", "run", []string{size}, runOpts, true},
 		{"RunFromLibraryOK", "library://busybox:latest", "run", []string{size}, runOpts, true},
-		{"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{size}, runOpts, true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"RunFromShubOK", "shub://singularityhub/busybox", "run", []string{size}, runOpts, true},
 		{"RunFromDockerKO", "docker://busybox:latest", "run", []string{"0"}, runOpts, false},
 		{"RunFromLibraryKO", "library://busybox:latest", "run", []string{"0"}, runOpts, false},
-		{"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"0"}, runOpts, false},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"RunFromShubKO", "shub://singularityhub/busybox", "run", []string{"0"}, runOpts, false},
 		// exec from a supported URI's and check the exit code
 		{"trueDocker", "docker://busybox:latest", "exec", []string{"true"}, opts{}, true},
 		{"trueLibrary", "library://busybox:latest", "exec", []string{"true"}, opts{}, true},
-		{"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{}, true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"trueShub", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{}, true},
 		{"falseDocker", "docker://busybox:latest", "exec", []string{"false"}, opts{}, false},
 		{"falselibrary", "library://busybox:latest", "exec", []string{"false"}, opts{}, false},
-		{"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{}, false},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"falseShub", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{}, false},
 		// exec from URI with user namespace enabled
 		{"trueDockerUserns", "docker://busybox:latest", "exec", []string{"true"}, opts{userns: true}, true},
 		{"trueLibraryUserns", "library://busybox:latest", "exec", []string{"true"}, opts{userns: true}, true},
-		{"trueShubUserns", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{userns: true}, true},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"trueShubUserns", "shub://singularityhub/busybox", "exec", []string{"true"}, opts{userns: true}, true},
 		{"falseDockerUserns", "docker://busybox:latest", "exec", []string{"false"}, opts{userns: true}, false},
 		{"falselibraryUserns", "library://busybox:latest", "exec", []string{"false"}, opts{userns: true}, false},
-		{"falseShubUserns", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{userns: true}, false},
+		// TODO(mem): reenable this; disabled while shub is down
+		// {"falseShubUserns", "shub://singularityhub/busybox", "exec", []string{"false"}, opts{userns: true}, false},
 	}
 
 	for _, tt := range tests {

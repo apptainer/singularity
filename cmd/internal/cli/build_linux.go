@@ -12,14 +12,14 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
 )
 
 func run(cmd *cobra.Command, args []string) {
@@ -111,7 +111,7 @@ func run(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("failed to create an image cache handle")
 		}
 
-		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) {
+		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) && !isImage(spec) {
 			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 		}
 
@@ -157,6 +157,7 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
 					Fakeroot:         fakeroot,
+					Encrypted:        encrypt,
 				},
 			})
 		if err != nil {
@@ -188,6 +189,11 @@ func checkSections() error {
 	}
 
 	return nil
+}
+
+func isImage(spec string) bool {
+	_, err := image.Init(spec, false)
+	return err == nil
 }
 
 // standard builds should just warn and fall back to CLI default if we cannot resolve library URL
