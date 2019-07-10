@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -35,13 +36,13 @@ func TestMain(m *testing.M) {
 }
 
 func setupCache(t *testing.T) (*cache.Handle, func()) {
-	dir := test.SetCacheDir(t, "")
+	dir := testCache.MakeDir(t, "")
 	h, err := cache.NewHandle(dir)
 	if err != nil {
-		test.CleanCacheDir(t, dir)
+		testCache.DeleteDir(t, dir)
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
-	return h, func() { test.CleanCacheDir(t, dir) }
+	return h, func() { testCache.DeleteDir(t, dir) }
 }
 
 // TestOCIConveyorDocker tests if we can pull an alpine image from dockerhub

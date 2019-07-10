@@ -17,12 +17,13 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 )
 
 func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
 	// Create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCacheDir := testCache.MakeDir(t, "")
+	defer testCache.DeleteDir(t, imgCacheDir)
 	cacheEnvStr := cache.DirEnv + "=" + imgCacheDir
 
 	var argv []string

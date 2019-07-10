@@ -18,6 +18,7 @@ import (
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 )
 
 func TestFromSif(t *testing.T) {
@@ -43,8 +44,8 @@ func TestFromSif(t *testing.T) {
 	args := []string{"build", "-F", sifFile, "docker://busybox"}
 
 	// create a clean image cache
-	imgCacheDir := test.SetCacheDir(t, "")
-	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCacheDir := testCache.MakeDir(t, "")
+	defer testCache.DeleteDir(t, imgCacheDir)
 
 	// build SIF image
 	cmd := exec.Command(sing, args...)
