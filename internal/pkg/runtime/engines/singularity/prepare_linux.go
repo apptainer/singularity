@@ -52,6 +52,7 @@ var nsProcName = map[specs.LinuxNamespaceType]string{
 func (e *EngineOperations) prepareUserCaps() error {
 	uid := os.Getuid()
 	commonCaps := make([]string, 0)
+	commonUnauthorizedCaps := make([]string, 0)
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
@@ -78,12 +79,12 @@ func (e *EngineOperations) prepareUserCaps() error {
 	caps = append(caps, e.EngineConfig.OciConfig.Process.Capabilities.Permitted...)
 
 	authorizedCaps, unauthorizedCaps := capConfig.CheckUserCaps(pw.Name, caps)
-	if len(unauthorizedCaps) > 0 {
-		sylog.Warningf("not authorized to add capability: %s", strings.Join(unauthorizedCaps, ","))
-	}
 	if len(authorizedCaps) > 0 {
 		sylog.Debugf("User capabilities %s added", strings.Join(authorizedCaps, ","))
 		commonCaps = authorizedCaps
+	}
+	if len(unauthorizedCaps) > 0 {
+		commonUnauthorizedCaps = append(commonUnauthorizedCaps, unauthorizedCaps...)
 	}
 
 	groups, err := os.Getgroups()
@@ -97,14 +98,32 @@ func (e *EngineOperations) prepareUserCaps() error {
 			sylog.Debugf("Ignoring group %d: %s", g, err)
 			continue
 		}
-		authorizedCaps, _ := capConfig.CheckGroupCaps(gr.Name, caps)
+		authorizedCaps, unauthorizedCaps := capConfig.CheckGroupCaps(gr.Name, caps)
 		if len(authorizedCaps) > 0 {
 			sylog.Debugf("%s group capabilities %s added", gr.Name, strings.Join(authorizedCaps, ","))
 			commonCaps = append(commonCaps, authorizedCaps...)
 		}
+		if len(unauthorizedCaps) > 0 {
+			commonUnauthorizedCaps = append(commonUnauthorizedCaps, unauthorizedCaps...)
+		}
 	}
 
 	commonCaps = capabilities.RemoveDuplicated(commonCaps)
+	commonUnauthorizedCaps = capabilities.RemoveDuplicated(commonUnauthorizedCaps)
+
+	// remove authorized capabilities from unauthorized capabilities list
+	// to end with the really unauthorized capabilities
+	for _, c := range commonCaps {
+		for i := len(commonUnauthorizedCaps) - 1; i >= 0; i-- {
+			if commonUnauthorizedCaps[i] == c {
+				commonUnauthorizedCaps = append(commonUnauthorizedCaps[:i], commonUnauthorizedCaps[i+1:]...)
+				break
+			}
+		}
+	}
+	if len(commonUnauthorizedCaps) > 0 {
+		sylog.Warningf("not authorized to add capability: %s", strings.Join(commonUnauthorizedCaps, ","))
+	}
 
 	caps, ignoredCaps = capabilities.Split(e.EngineConfig.GetDropCaps())
 	if len(ignoredCaps) > 0 {
