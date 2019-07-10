@@ -9,6 +9,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -18,13 +19,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 )
-
-// pullSylabsPublicKey will pull the default Sylabs public key.
-func pullSylabsPublicKey() ([]byte, error) {
-	var argv []string
-	argv = append(argv, "key", "pull", "8883491F4268F173C6E5DC49EDECE4F3F38D871E")
-	return exec.Command(cmdPath, argv...).CombinedOutput()
-}
 
 func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSpec string, force, unauthenticated bool) ([]byte, error) {
 	// Create a clean image cache
@@ -44,7 +38,7 @@ func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSp
 		argv = append(argv, "--library", library)
 	}
 	if pullDir != "" {
-		argv = append(argv, "--dir", "/tmp")
+		argv = append(argv, "--dir", pullDir)
 	}
 	if imagePath != "" {
 		argv = append(argv, imagePath)
@@ -57,15 +51,19 @@ func imagePull(t *testing.T, library, pullDir string, imagePath string, sourceSp
 	return cmd.CombinedOutput()
 }
 
+// makeTmpDir will return a tmp dir path in /tmp.
+func makeTmpDir(t *testing.T) string {
+	tmpDir, err := ioutil.TempDir("", "")
+	if err != nil {
+		t.Fatalf("Unable to make tmp dir: %v", err)
+	}
+	return tmpDir
+}
+
 func TestPull(t *testing.T) {
 	test.DropPrivilege(t)
 
 	imagePath := "./test_pull.sif"
-
-	if b, err := pullSylabsPublicKey(); err != nil {
-		t.Log(string(b))
-		t.Fatalf("Unable to download default key: %v", err)
-	}
 
 	// nolint:maligned
 	tests := []struct {
@@ -78,31 +76,237 @@ func TestPull(t *testing.T) {
 		imagePath       string
 		success         bool
 	}{
-		{"Pull_Library", "library://alpine:3.8", false, true, "", "", imagePath, true}, // pull --allow-unauthenticated ./test_pull.sif library://alpine:3.8
-		{"ForceAuth", "library://alpine:3.8", true, true, "", "", imagePath, true},     // pull --force --allow-unauthenticated ./test_pull.sif library://alpine:3.8
-		{"Force", "library://alpine:3.8", true, false, "", "", imagePath, true},        // pull --force ./test_pull.sif library://alpine:3.8
-		{"ForceUnauth", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false},
-		{"Unsigned_image", "library://sylabs/tests/unsigned:1.0.0", true, true, "", "", imagePath, true},
-		{"Unsigned_image_fail", "library://sylabs/tests/unsigned:1.0.0", true, false, "", "", imagePath, false}, // pull a unsigned image; should fail
-		{"NotDefaultFail", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},   // pull a untrusted container; should fail
-		{"NotDefaultFail1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},    // pull a untrusted container; should fail
-		{"NotDefaultFail2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "/tmp", "", false},     // pull a untrusted container; should fail
-		{"NotDefaultSuc", "library://sylabs/tests/not-default:1.0.0", true, true, "", "", imagePath, true},      // pull a untrusted container with -U
-		{"NotDefault1", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},        // pull a untrusted container; should fail
-		{"NotDefault2", "library://sylabs/tests/not-default:1.0.0", true, false, "", "", imagePath, false},      // pull a untrusted container; should fail
-		{"NotDefaultPath", "library://sylabs/tests/not-default:1.0.0", true, true, "", "/tmp", imagePath, true}, // pull a untrusted container with -U, and --path <path>
-		{"NotDefaultFail2", "library://sylabs/tests/not-default:1.0.0", false, false, "", "/tmp", "", false},    // pull a untrusted container; should fail
-		{"Pull_Docker", "docker://alpine:3.8", true, false, "", "", imagePath, true},                            // https://hub.docker.com/
-		// TODO(mem): reenable this; disabled while shub is down
-		// {"Pull_Shub", "shub://GodloveD/busybox", true, false, "", "", imagePath, true},                          // https://singularity-hub.org/
-		{"PullWithHash", "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c", true, true, "", "", imagePath, true},
-		{"PullWithoutTransportProtocol", "alpine:3.8", true, true, "", "", imagePath, true},
-		{"PullNonExistent", "library://this_should_not/exist/not_exist", true, false, "", "", imagePath, false}, // pull a non-existent container
-		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},                 // https://cloud.sylabs.io/library
-		{"Pull_Library_Latest", "library://alpine:latest", true, true, "", "", imagePath, true},                 // https://cloud.sylabs.io/library
-		{"Pull_Dir_name", "library://alpine:3.9", true, true, "", "/tmp", imagePath, true},                      // Pull the image to /tmp/test_pull.sif
-		{"PullDirNameFail", "library://alpine:3.9", false, true, "", "/tmp", imagePath, false},                  // Pull the image to /tmp/test_pull.sif
-		{"PullDirNameFail1", "library://alpine:3.9", false, false, "", "/tmp", imagePath, false},                // Pull the image to /tmp/test_pull.sif
+		{
+			name:            "Pull_Library",
+			sourceSpec:      "library://alpine:3.8",
+			force:           false,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "ForceAuth",
+			sourceSpec:      "library://alpine:3.8",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "Force",
+			sourceSpec:      "library://alpine:3.8",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "ForceUnauth",
+			sourceSpec:      "library://sylabs/tests/unsigned:1.0.0",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         false,
+		},
+		{
+			name:            "Unsigned_image",
+			sourceSpec:      "library://sylabs/tests/unsigned:1.0.0",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "Unsigned_image_fail",
+			sourceSpec:      "library://sylabs/tests/unsigned:1.0.0",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         false,
+		},
+		{
+			name:            "NotDefault",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "NotDefaultU",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "NotDefaultSuc",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "NotDefault1",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           false,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         makeTmpDir(t),
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "NotDefault2",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "NotDefaultPath",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         makeTmpDir(t),
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "NotDefaultPath2",
+			sourceSpec:      "library://sylabs/tests/not-default:1.0.0",
+			force:           false,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         makeTmpDir(t),
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "Pull_Docker",
+			sourceSpec:      "docker://alpine:3.8",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		// TODO: Uncomment when shub is working
+		/*		{
+				name:            "Pull_Shub",
+				sourceSpec:      "shub://GodloveD/busybox",
+				force:           true,
+				unauthenticated: false,
+				library:         "",
+				pullDir:         "",
+				imagePath:       imagePath,
+				success:         true,
+			},*/
+		{
+			name:            "PullWithHash",
+			sourceSpec:      "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "PullWithoutTransportProtocol",
+			sourceSpec:      "alpine:3.8",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "PullNonExistent",
+			sourceSpec:      "library://sylabs/exist/not_exist",
+			force:           true,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         false,
+		},
+		{
+			name:            "Pull_Library_Latest",
+			sourceSpec:      "library://alpine:latest",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "Pull_Library_Latest",
+			sourceSpec:      "library://alpine:latest",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "Pull_Dir_name",
+			sourceSpec:      "library://alpine:3.9",
+			force:           true,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "/tmp",
+			imagePath:       imagePath,
+			success:         true,
+		},
+		{
+			name:            "PullDirNameFail",
+			sourceSpec:      "library://alpine:3.9",
+			force:           false,
+			unauthenticated: true,
+			library:         "",
+			pullDir:         "/tmp",
+			imagePath:       imagePath,
+			success:         false,
+		},
+		{
+			name:            "PullDirNameFail1",
+			sourceSpec:      "library://alpine:3.9",
+			force:           false,
+			unauthenticated: false,
+			library:         "",
+			pullDir:         "/tmp",
+			imagePath:       imagePath,
+			success:         false,
+		},
 	}
 	defer os.Remove(imagePath)
 	for _, tt := range tests {

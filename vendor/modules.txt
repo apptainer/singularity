@@ -175,6 +175,8 @@ github.com/docker/go-metrics
 github.com/docker/go-units
 # github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 github.com/docker/libtrust
+# github.com/fatih/color v1.7.0
+github.com/fatih/color
 # github.com/ghodss/yaml v1.0.0
 github.com/ghodss/yaml
 # github.com/go-log/log v0.1.0
@@ -220,6 +222,10 @@ github.com/juju/errors
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 github.com/kubernetes-sigs/cri-o/pkg/seccomp
+# github.com/mattn/go-colorable v0.1.1
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.5
+github.com/mattn/go-isatty
 # github.com/mattn/go-runewidth v0.0.2
 github.com/mattn/go-runewidth
 # github.com/mattn/go-shellwords v1.0.3
