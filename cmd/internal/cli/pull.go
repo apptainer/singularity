@@ -214,9 +214,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		handlePullFlags(cmd)
 
 		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull)
-		if err == singularity.ErrLibraryUnsigned {
-			exitStat = 1
-		} else if err == singularity.ErrLibraryPullAbort {
+		if err == singularity.ErrLibraryPullUnsigned {
 			exitStat = 10
 		} else if err != nil {
 			sylog.Fatalf("While pulling library image: %v", err)
@@ -254,9 +252,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", transport)
 	}
-	// This will exit 1 if the pulled container is signed by
-	// a unknown signer, i.e, if you dont have the key in your
-	// local keyring. theres proboly a better way to do this...
 	os.Exit(exitStat)
 }
 

@@ -37,7 +37,7 @@ require (
 	github.com/docker/go-units v0.3.3 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
-	github.com/fatih/color v1.7.0 // indirect
+	github.com/fatih/color v1.7.0
 	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/godbus/dbus v4.1.0+incompatible // indirect
@@ -53,8 +53,9 @@ require (
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56 // indirect
 	github.com/juju/errors v0.0.0-20190207033735-e65537c515d7 // indirect
+	github.com/juju/loggo v0.0.0-20190526231331-6e530bcce5d8 // indirect
+	github.com/juju/testing v0.0.0-20190613124551-e81189438503 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/kelseyhightower/envconfig v1.3.0 // indirect
 	github.com/kr/pty v1.1.3
 	github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
 	github.com/mattn/go-colorable v0.1.1 // indirect
@@ -109,6 +110,7 @@ require (
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.25
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.3.0+incompatible
 	k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38 // indirect
