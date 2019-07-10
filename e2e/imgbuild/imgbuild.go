@@ -78,6 +78,76 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 	}
 }
 
+func (c *imgBuildTests) nonRootBuild(t *testing.T) {
+	tests := []struct {
+		name      string
+		buildSpec string
+		sandbox   bool
+	}{
+		{
+			name:      "local sif",
+			buildSpec: "testdata/busybox.sif",
+			sandbox:   false,
+		},
+		{
+			name:      "local sif to sandbox",
+			buildSpec: "testdata/busybox.sif",
+			sandbox:   true,
+		},
+		{
+			name:      "library sif",
+			buildSpec: "library://sylabs/tests/busybox:1.0.0",
+			sandbox:   false,
+		},
+		{
+			name:      "library sif sandbox",
+			buildSpec: "library://sylabs/tests/busybox:1.0.0",
+			sandbox:   true,
+		},
+		{
+			name:      "library sif sha",
+			buildSpec: "library://sylabs/tests/busybox:sha256.8b5478b0f2962eba3982be245986eb0ea54f5164d90a65c078af5b83147009ba",
+			sandbox:   false,
+		},
+		// TODO: uncomment when shub is working
+		//{
+		//		name:      "shub busybox",
+		//		buildSpec: "shub://GodloveD/busybox",
+		//		sandbox:   false,
+		//},
+		{
+			name:      "docker busybox",
+			buildSpec: "docker://busybox:latest",
+			sandbox:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		imagePath := path.Join(c.env.TestDir, "container")
+
+		// conditionally build a sandbox
+		args := []string{}
+		if tt.sandbox {
+			args = []string{"--sandbox"}
+		}
+		args = append(args, imagePath, tt.buildSpec)
+
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(args...),
+			e2e.PostRun(func(t *testing.T) {
+				defer os.RemoveAll(imagePath)
+
+				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 	imagePath1 := path.Join(c.env.TestDir, "container1")
 	imagePath2 := path.Join(c.env.TestDir, "container2")
@@ -688,6 +758,8 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("From", c.buildFrom)
 		// build and image from an existing image
 		t.Run("FromLocalImage", c.buildLocalImage)
+		// build sifs from non-root
+		t.Run("NonRootBuild", c.nonRootBuild)
 		// try to build from a non existen path
 		t.Run("badPath", c.badPath)
 		// builds from definition template
