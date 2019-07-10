@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -228,5 +229,108 @@ func TestTouch(t *testing.T) {
 
 	if _, err := os.Stat(testing); os.IsNotExist(err) {
 		t.Errorf("creation of %s failed", testing)
+	}
+}
+
+func TestMakeTempDir(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tests := []struct {
+		name          string
+		basedir       string
+		pattern       string
+		mode          os.FileMode
+		expectSuccess bool
+	}{
+		{"tmp directory with 0700", "", "atmp-", 0700, true},
+		{"tmp directory with 0755", "", "btmp-", 0755, true},
+		{"root directory 0700", "/", "bad-", 0700, false},
+		{"with non-existent basedir", "/tmp/__utest__", "ctmp-", 0700, false},
+		{"with existent basedir", "/var/tmp", "dtmp-", 0700, true},
+	}
+	for _, tt := range tests {
+		d, err := MakeTmpDir(tt.basedir, tt.pattern, tt.mode)
+		if err != nil && tt.expectSuccess {
+			t.Errorf("%s: unexpected failure: %s", tt.name, err)
+		} else if err == nil && !tt.expectSuccess {
+			t.Errorf("%s: unexpected success", tt.name)
+		} else if err != nil && !tt.expectSuccess {
+			// no check, fail as expected
+			continue
+		}
+		defer os.Remove(d)
+
+		fi, err := os.Stat(d)
+		if err != nil {
+			t.Fatalf("%s: could not stat %s: %s", tt.name, d, err)
+		}
+		expectedMode := tt.mode | os.ModeDir
+		if fi.Mode() != expectedMode {
+			t.Fatalf(
+				"%s: unexpected mode returned for directory %s, %o instead of %o",
+				tt.name, d, fi.Mode(), expectedMode,
+			)
+		}
+		expectedPrefix := filepath.Join(os.TempDir(), tt.pattern)
+		if tt.basedir != "" {
+			expectedPrefix = filepath.Join(tt.basedir, tt.pattern)
+		}
+		if !strings.HasPrefix(d, expectedPrefix) {
+			t.Fatalf("%s: unexpected prefix returned in path %s, expected %s", tt.name, d, expectedPrefix)
+		}
+	}
+}
+
+func TestMakeTempFile(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tests := []struct {
+		name          string
+		basedir       string
+		pattern       string
+		mode          os.FileMode
+		expectSuccess bool
+	}{
+		{"tmp file with 0700", "", "atmp-", 0700, true},
+		{"tmp file with 0755", "", "btmp-", 0755, true},
+		{"root directory tmp file 0700", "/", "bad-", 0700, false},
+		{"with non-existent basedir", "/tmp/__utest__", "ctmp-", 0700, false},
+		{"with existent basedir", "/var/tmp", "dtmp-", 0700, true},
+	}
+	for _, tt := range tests {
+		f, err := MakeTmpFile(tt.basedir, tt.pattern, tt.mode)
+		if err != nil && tt.expectSuccess {
+			t.Errorf("%s: unexpected failure: %s", tt.name, err)
+		} else if err == nil && !tt.expectSuccess {
+			t.Errorf("%s: unexpected success", tt.name)
+		} else if err != nil && !tt.expectSuccess {
+			// no check, fail as expected
+			continue
+		}
+		defer f.Close()
+		defer os.Remove(f.Name())
+
+		fileName := f.Name()
+
+		fi, err := f.Stat()
+		if err != nil {
+			t.Fatalf("%s: could not stat %s: %s", tt.name, fileName, err)
+		}
+		expectedMode := tt.mode
+		if fi.Mode() != expectedMode {
+			t.Fatalf(
+				"%s: unexpected mode returned for file %s, %o instead of %o",
+				tt.name, fileName, fi.Mode(), expectedMode,
+			)
+		}
+		expectedPrefix := filepath.Join(os.TempDir(), tt.pattern)
+		if tt.basedir != "" {
+			expectedPrefix = filepath.Join(tt.basedir, tt.pattern)
+		}
+		if !strings.HasPrefix(fileName, expectedPrefix) {
+			t.Fatalf("%s: unexpected prefix returned in path %s, expected %s", tt.name, fileName, expectedPrefix)
+		}
 	}
 }
