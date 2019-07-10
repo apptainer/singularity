@@ -49,36 +49,6 @@ var tests = []struct {
 
 	// --allow-unauthenticated tests
 	{
-		desc:            "signed image known signature require authenticated",
-		srcURI:          "library://alpine:3.8",
-		unauthenticated: false,
-		expectSuccess:   true,
-	},
-	{
-		desc:            "signed image known signature allow unauthenticated",
-		srcURI:          "library://alpine:3.8",
-		unauthenticated: true,
-		expectSuccess:   true,
-	},
-	{
-		desc:            "signed image unknown signature require authenticated",
-		srcURI:          "library://sylabs/tests/not-default:1.0.0",
-		unauthenticated: false,
-		expectSuccess:   false,
-	},
-	{
-		desc:            "signed image unknown signature allow unauthenticated",
-		srcURI:          "library://sylabs/tests/not-default:1.0.0",
-		unauthenticated: true,
-		expectSuccess:   true,
-	},
-	{
-		desc:            "unsigned image require authenticated",
-		srcURI:          "library://sylabs/tests/unsigned:1.0.0",
-		unauthenticated: false,
-		expectSuccess:   false,
-	},
-	{
 		desc:            "unsigned image allow unauthenticated",
 		srcURI:          "library://sylabs/tests/unsigned:1.0.0",
 		unauthenticated: true,
@@ -106,14 +76,6 @@ var tests = []struct {
 		// --force should not have an effect on --allow-unauthenticated=false
 		desc:            "unsigned image force require authenticated",
 		srcURI:          "library://sylabs/tests/unsigned:1.0.0",
-		force:           true,
-		unauthenticated: false,
-		expectSuccess:   false,
-	},
-	{
-		// --force should not have an effect on --allow-unauthenticated=false
-		desc:            "signed image unknown signature force require authenticated",
-		srcURI:          "library://sylabs/tests/not-default:1.0.0",
 		force:           true,
 		unauthenticated: false,
 		expectSuccess:   false,
