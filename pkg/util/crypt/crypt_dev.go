@@ -12,7 +12,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -61,6 +60,7 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 		return err
 	}
 	defer lock.Release(fd)
+	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
 		sylog.Debugf("Unable to delete the crypt device %s", err)
@@ -121,13 +121,21 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 
 	// Truncate the file taking the squashfs size and crypt header into account
 	// Crypt header is around 2MB in size. Slightly over-allocate to be safe
-	devSize := fSize + 4*1024*1024 // 4MB for LUKS header
+	devSize := fSize + 16*1024*1024 // 16MB for LUKS header
 
 	err = os.Truncate(cryptF.Name(), devSize)
 	if err != nil {
 		sylog.Debugf("Unable to truncate crypt file to size %d", devSize)
 		return "", "", err
 	}
+
+	// Associate the temporary crypt file with a loop device
+	loop, err := createLoop(cryptF, 0, uint64(devSize))
+	if err != nil {
+		return "", "", err
+	}
+
+	cryptF.Close()
 
 	// NOTE: This routine runs with root privileges. It's not necessary
 	// to explicitly set cmd's uid or gid here
@@ -142,7 +150,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 		return "", "", err
 	}
 
-	cmd := exec.Command(cryptsetup, "luksFormat", cryptF.Name())
+	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
 	stdin, err := cmd.StdinPipe()
 
 	if err != nil {
@@ -150,22 +158,15 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	}
 
 	go func() {
-		defer stdin.Close()
 		io.WriteString(stdin, key)
+		stdin.Close()
 	}()
 
+	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
 		return "", "", fmt.Errorf("unable to format crypt device: %s", cryptF.Name())
 	}
-
-	// Associate the temporary crypt file with a loop device
-	loop, err := createLoop(cryptF, 0, uint64(devSize))
-	if err != nil {
-		return "", "", err
-	}
-
-	loopdev := filepath.Base(loop)
 
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
@@ -174,16 +175,16 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	defer lock.Release(fd)
 
 	nextCrypt := getNextAvailableCryptDevice()
-	cmd = exec.Command(cryptsetup, "luksOpen", loopdev, nextCrypt)
-	cmd.Dir = "/dev"
+	cmd = exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", loop, nextCrypt)
+	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	stdin, err = cmd.StdinPipe()
 	if err != nil {
 		return "", "", err
 	}
 
 	go func() {
-		defer stdin.Close()
 		io.WriteString(stdin, key)
+		stdin.Close()
 	}()
 
 	err = cmd.Run()
@@ -201,7 +202,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 		return "", "", err
 	}
 
-	copyDeviceContents("/dev/"+loopdev, loopF.Name(), devSize)
+	copyDeviceContents(loop, loopF.Name(), devSize)
 
 	return loopF.Name(), nextCrypt, err
 }
@@ -274,6 +275,7 @@ retry:
 	cmd.Dir = "/dev"
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
+	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return "", err
