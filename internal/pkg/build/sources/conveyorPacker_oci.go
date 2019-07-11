@@ -301,33 +301,33 @@ func (cp *OCIConveyorPacker) unpackTmpfs() (err error) {
 
 		uidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Geteuid()))
 		if err != nil {
-			return fmt.Errorf("failure parsing uidmap: %s", err)
+			return fmt.Errorf("error parsing uidmap: %s", err)
 		}
 		mapOptions.UIDMappings = append(mapOptions.UIDMappings, uidMap)
 
 		gidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Getegid()))
 		if err != nil {
-			return fmt.Errorf("failure parsing gidmap: %s", err)
+			return fmt.Errorf("error parsing gidmap: %s", err)
 		}
 		mapOptions.GIDMappings = append(mapOptions.GIDMappings, gidMap)
 	}
 
 	engineExt, err := umoci.OpenLayout(cp.b.Path)
 	if err != nil {
-		return fmt.Errorf("Failed to open layout: %s", err)
+		return fmt.Errorf("error opening layout: %s", err)
 	}
 
 	// Obtain the manifest
 	imageSource, err := cp.tmpfsRef.NewImageSource(context.Background(), cp.sysCtx)
 	if err != nil {
-		return fmt.Errorf("Create image source: %s", err)
+		return fmt.Errorf("error creating image source: %s", err)
 	}
 	manifestData, mediaType, err := imageSource.GetManifest(context.Background(), nil)
 	if err != nil {
-		return fmt.Errorf("Obtain manifest source: %s", err)
+		return fmt.Errorf("error obtaining manifest source: %s", err)
 	}
 	if mediaType != imgspecv1.MediaTypeImageManifest {
-		return fmt.Errorf("Manifest has invalid MIMEtype: %s", mediaType)
+		return fmt.Errorf("error verifying manifest media type: %s", mediaType)
 	}
 	var manifest imgspecv1.Manifest
 	json.Unmarshal(manifestData, &manifest)
