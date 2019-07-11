@@ -21,6 +21,7 @@ addons:
       - libarchive-dev
       - libgpgme11-dev
       - libseccomp-dev
+      - cryptsetup
 
 matrix:
   include:

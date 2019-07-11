@@ -18,6 +18,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"golang.org/x/crypto/ssh/terminal"
@@ -47,8 +48,12 @@ func createLoop(file *os.File, offset, size uint64) (string, error) {
 
 // CloseCryptDevice closes the crypt device
 func (crypt *Device) CloseCryptDevice(path string) error {
+	cryptsetup, err := bin.Cryptsetup()
+	if err != nil {
+		return err
+	}
 
-	cmd := exec.Command("/sbin/cryptsetup", "luksClose", path)
+	cmd := exec.Command(cryptsetup, "luksClose", path)
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
 	fd, err := lock.Exclusive("/dev/mapper")
@@ -132,12 +137,12 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	// investigated. To do that, at least one additional partition is required, which is
 	// not encrypted.
 
-	// TODO (schebro): Fix #3819
-	// If we choose not to save a version of cryptsetup in container, host's cryptsetup utility's
-	// paty should be saved in a configuration file at build time (similar to mksquashfs) for
-	// security reasons
+	cryptsetup, err := bin.Cryptsetup()
+	if err != nil {
+		return "", "", err
+	}
 
-	cmd := exec.Command("/sbin/cryptsetup", "luksFormat", cryptF.Name())
+	cmd := exec.Command(cryptsetup, "luksFormat", cryptF.Name())
 	stdin, err := cmd.StdinPipe()
 
 	if err != nil {
@@ -169,7 +174,7 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 	defer lock.Release(fd)
 
 	nextCrypt := getNextAvailableCryptDevice()
-	cmd = exec.Command("/sbin/cryptsetup", "luksOpen", loopdev, nextCrypt)
+	cmd = exec.Command(cryptsetup, "luksOpen", loopdev, nextCrypt)
 	cmd.Dir = "/dev"
 	stdin, err = cmd.StdinPipe()
 	if err != nil {
@@ -260,7 +265,12 @@ retry:
 		return "", errors.New("Crypt Device not available")
 	}
 
-	cmd := exec.Command("/sbin/cryptsetup", "luksOpen", loopDev, nextCrypt)
+	cryptsetup, err := bin.Cryptsetup()
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(cryptsetup, "luksOpen", loopDev, nextCrypt)
 	cmd.Dir = "/dev"
 	cmd.SysProcAttr = &syscall.SysProcAttr{}
 	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
