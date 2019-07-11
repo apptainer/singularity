@@ -243,6 +243,7 @@ func (c *Handle) cleanAllCaches() {
 		"blob":    c.OciBlob,
 		"shub":    c.Shub,
 		"oras":    c.Oras,
+		"net":     c.Net,
 	}
 
 	for name, dir := range cacheDirs {
