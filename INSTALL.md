@@ -28,7 +28,6 @@ $ sudo yum groupinstall -y 'Development Tools' && \
 ```
 
 _NOTE:_ On CentOS/RHEL 6 or less, you may skip `libseccomp-devel`.
-Also, `cryptsetup` is only necessary if you are using encrypted containers.
 
 ## Install Golang
 

@@ -28,7 +28,8 @@ var KeyImportCmd = &cobra.Command{
 }
 
 func importRun(cmd *cobra.Command, args []string) {
-	if err := sypgp.ImportKey(args[0]); err != nil {
+	keyring := sypgp.NewHandle("")
+	if err := keyring.ImportKey(args[0]); err != nil {
 		sylog.Errorf("key import command failed: %s", err)
 		os.Exit(2)
 	}

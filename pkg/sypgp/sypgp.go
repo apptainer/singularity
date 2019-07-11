@@ -54,6 +54,11 @@ type KeyExistsError struct {
 	fingerprint [20]byte
 }
 
+// Handle is a structure representing a keyring
+type Handle struct {
+	path string
+}
+
 func (e *KeyExistsError) Error() string {
 	return fmt.Sprintf("the key with fingerprint %X already belongs to the keyring", e.fingerprint)
 }
@@ -189,8 +194,8 @@ func GetTokenFile() string {
 	return filepath.Join(syfs.ConfigDir(), "sylabs-token")
 }
 
-// DirPath returns a string describing the path to the sypgp home folder
-func DirPath() string {
+// dirPath returns a string describing the path to the sypgp home folder
+func dirPath() string {
 	sypgpDir := os.Getenv("SINGULARITY_SYPGPDIR")
 	if sypgpDir == "" {
 		return filepath.Join(syfs.ConfigDir(), "sypgp")
@@ -198,14 +203,26 @@ func DirPath() string {
 	return sypgpDir
 }
 
+// NewHandle initializes a new keyring in path.
+func NewHandle(path string) *Handle {
+	if path == "" {
+		path = dirPath()
+	}
+
+	newHandle := new(Handle)
+	newHandle.path = path
+
+	return newHandle
+}
+
 // SecretPath returns a string describing the path to the private keys store
-func SecretPath() string {
-	return filepath.Join(DirPath(), "pgp-secret")
+func (keyring *Handle) SecretPath() string {
+	return filepath.Join(keyring.path, "pgp-secret")
 }
 
 // PublicPath returns a string describing the path to the public keys store
-func PublicPath() string {
-	return filepath.Join(DirPath(), "pgp-public")
+func (keyring *Handle) PublicPath() string {
+	return filepath.Join(keyring.path, "pgp-public")
 }
 
 // ensureDirPrivate makes sure that the file system mode for the named
@@ -290,16 +307,16 @@ func ensureFilePrivate(fn string) error {
 }
 
 // PathsCheck creates the sypgp home folder, secret and public keyring files
-func PathsCheck() error {
-	if err := ensureDirPrivate(DirPath()); err != nil {
+func (keyring *Handle) PathsCheck() error {
+	if err := ensureDirPrivate(keyring.path); err != nil {
 		return err
 	}
 
-	if err := ensureFilePrivate(SecretPath()); err != nil {
+	if err := ensureFilePrivate(keyring.SecretPath()); err != nil {
 		return err
 	}
 
-	if err := ensureFilePrivate(PublicPath()); err != nil {
+	if err := ensureFilePrivate(keyring.PublicPath()); err != nil {
 		return err
 	}
 
@@ -317,21 +334,21 @@ func loadKeyring(fn string) (openpgp.EntityList, error) {
 }
 
 // LoadPrivKeyring loads the private keys from local store into an EntityList
-func LoadPrivKeyring() (openpgp.EntityList, error) {
-	if err := PathsCheck(); err != nil {
+func (keyring *Handle) LoadPrivKeyring() (openpgp.EntityList, error) {
+	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
 
-	return loadKeyring(SecretPath())
+	return loadKeyring(keyring.SecretPath())
 }
 
 // LoadPubKeyring loads the public keys from local store into an EntityList
-func LoadPubKeyring() (openpgp.EntityList, error) {
-	if err := PathsCheck(); err != nil {
+func (keyring *Handle) LoadPubKeyring() (openpgp.EntityList, error) {
+	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
 
-	return loadKeyring(PublicPath())
+	return loadKeyring(keyring.PublicPath())
 }
 
 // loadKeysFromFile loads one or more keys from the specified file.
@@ -385,8 +402,8 @@ func PrintEntity(index int, e *openpgp.Entity) {
 }
 
 // PrintPubKeyring prints the public keyring read from the public local store
-func PrintPubKeyring() error {
-	pubEntlist, err := LoadPubKeyring()
+func (keyring *Handle) PrintPubKeyring() error {
+	pubEntlist, err := keyring.LoadPubKeyring()
 	if err != nil {
 		return err
 	}
@@ -397,8 +414,8 @@ func PrintPubKeyring() error {
 }
 
 // PrintPrivKeyring prints the secret keyring read from the public local store
-func PrintPrivKeyring() error {
-	privEntlist, err := LoadPrivKeyring()
+func (keyring *Handle) PrintPrivKeyring() error {
+	privEntlist, err := keyring.LoadPrivKeyring()
 	if err != nil {
 		return err
 	}
@@ -420,8 +437,8 @@ func storePrivKeys(w io.Writer, list openpgp.EntityList) error {
 }
 
 // appendPrivateKey appends a private key entity to the local keyring
-func appendPrivateKey(e *openpgp.Entity) error {
-	f, err := createOrAppendPrivateFile(SecretPath())
+func (keyring *Handle) appendPrivateKey(e *openpgp.Entity) error {
+	f, err := createOrAppendPrivateFile(keyring.SecretPath())
 	if err != nil {
 		return err
 	}
@@ -442,8 +459,8 @@ func storePubKeys(w io.Writer, list openpgp.EntityList) error {
 }
 
 // appendPubKey appends a public key entity to the local keyring
-func appendPubKey(e *openpgp.Entity) error {
-	f, err := createOrAppendPrivateFile(PublicPath())
+func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
+	f, err := createOrAppendPrivateFile(keyring.PublicPath())
 	if err != nil {
 		return err
 	}
@@ -453,8 +470,8 @@ func appendPubKey(e *openpgp.Entity) error {
 }
 
 // storePubKeyring overwrites the public keyring with the listed keys
-func storePubKeyring(keys openpgp.EntityList) error {
-	f, err := os.OpenFile(PublicPath(), os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
+func (keyring *Handle) storePubKeyring(keys openpgp.EntityList) error {
+	f, err := os.OpenFile(keyring.PublicPath(), os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -488,9 +505,9 @@ func findKeyByFingerprint(entities openpgp.EntityList, fingerprint string) *open
 
 // CheckLocalPubKey will check if we have a local public key matching ckey string
 // returns true if there's a match.
-func CheckLocalPubKey(ckey string) (bool, error) {
+func (keyring *Handle) CheckLocalPubKey(ckey string) (bool, error) {
 	// read all the local public keys
-	elist, err := loadKeyring(PublicPath())
+	elist, err := loadKeyring(keyring.PublicPath())
 	switch {
 	case os.IsNotExist(err):
 		return false, nil
@@ -521,9 +538,9 @@ func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
 }
 
 // RemovePubKey will delete a public key matching toDelete
-func RemovePubKey(toDelete string) error {
+func (keyring *Handle) RemovePubKey(toDelete string) error {
 	// read all the local public keys
-	elist, err := loadKeyring(PublicPath())
+	elist, err := loadKeyring(keyring.PublicPath())
 	switch {
 	case os.IsNotExist(err):
 		return nil
@@ -537,9 +554,9 @@ func RemovePubKey(toDelete string) error {
 		return fmt.Errorf("no key matching given fingerprint found")
 	}
 
-	sylog.Verbosef("Updating local keyring: %v", PublicPath())
+	sylog.Verbosef("Updating local keyring: %v", keyring.PublicPath())
 
-	return storePubKeyring(newKeyList)
+	return keyring.storePubKeyring(newKeyList)
 }
 
 // GetPassphrase will ask the user for a password with int number of
@@ -580,7 +597,7 @@ func GetPassphrase(message string, retries int) (string, error) {
 	return "", errTooManyRetries
 }
 
-func genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error) {
+func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
 	entity, err := openpgp.NewEntity(name, comment, email, conf)
@@ -594,11 +611,11 @@ func genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error
 	}
 
 	// Store key parts in local key caches
-	if err = appendPrivateKey(entity); err != nil {
+	if err = keyring.appendPrivateKey(entity); err != nil {
 		return nil, err
 	}
 
-	if err = appendPubKey(entity); err != nil {
+	if err = keyring.appendPubKey(entity); err != nil {
 		return nil, err
 	}
 
@@ -606,8 +623,8 @@ func genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error
 }
 
 // GenKeyPair generates an PGP key pair and store them in the sypgp home folder
-func GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error) {
-	if err := PathsCheck(); err != nil {
+func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error) {
+	if err := keyring.PathsCheck(); err != nil {
 		return nil, err
 	}
 
@@ -634,7 +651,7 @@ func GenKeyPair(keyServiceURI string, authToken string) (*openpgp.Entity, error)
 
 	fmt.Printf("Generating Entity and OpenPGP Key Pair... ")
 
-	entity, err := genKeyPair(name, comment, email, passphrase)
+	entity, err := keyring.genKeyPair(name, comment, email, passphrase)
 	if err != nil {
 		return nil, err
 	}
@@ -859,8 +876,8 @@ func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
 }
 
 // ExportPrivateKey Will export a private key into a file (kpath).
-func ExportPrivateKey(kpath string, armor bool) error {
-	localEntityList, err := loadKeyring(SecretPath())
+func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
+	localEntityList, err := loadKeyring(keyring.SecretPath())
 	if err != nil {
 		return fmt.Errorf("unable to load private keyring: %v", err)
 	}
@@ -909,8 +926,8 @@ func ExportPrivateKey(kpath string, armor bool) error {
 }
 
 // ExportPubKey Will export a public key into a file (kpath).
-func ExportPubKey(kpath string, armor bool) error {
-	localEntityList, err := loadKeyring(PublicPath())
+func (keyring *Handle) ExportPubKey(kpath string, armor bool) error {
+	localEntityList, err := loadKeyring(keyring.PublicPath())
 	if err != nil {
 		return fmt.Errorf("unable to open local keyring: %v", err)
 	}
@@ -954,9 +971,9 @@ func findEntityByFingerprint(entities openpgp.EntityList, fingerprint [20]byte) 
 
 // importPrivateKey imports the specified openpgp Entity, which should
 // represent a private key. The entity is added to the private keyring.
-func importPrivateKey(entity *openpgp.Entity) error {
+func (keyring *Handle) importPrivateKey(entity *openpgp.Entity) error {
 	// Load the local private keys as entitylist
-	privateEntityList, err := LoadPrivKeyring()
+	privateEntityList, err := keyring.LoadPrivKeyring()
 	if err != nil {
 		return err
 	}
@@ -996,7 +1013,7 @@ func importPrivateKey(entity *openpgp.Entity) error {
 	}
 
 	// Store the private key
-	if err := appendPrivateKey(newEntity); err != nil {
+	if err := keyring.appendPrivateKey(newEntity); err != nil {
 		return err
 	}
 
@@ -1005,9 +1022,9 @@ func importPrivateKey(entity *openpgp.Entity) error {
 
 // importPublicKey imports the specified openpgp Entity, which should
 // represent a public key. The entity is added to the public keyring.
-func importPublicKey(entity *openpgp.Entity) error {
+func (keyring *Handle) importPublicKey(entity *openpgp.Entity) error {
 	// Load the local public keys as entitylist
-	publicEntityList, err := LoadPubKeyring()
+	publicEntityList, err := keyring.LoadPubKeyring()
 	if err != nil {
 		return err
 	}
@@ -1016,7 +1033,7 @@ func importPublicKey(entity *openpgp.Entity) error {
 		return &KeyExistsError{fingerprint: entity.PrimaryKey.Fingerprint}
 	}
 
-	if err := appendPubKey(entity); err != nil {
+	if err := keyring.appendPubKey(entity); err != nil {
 		return err
 	}
 
@@ -1026,7 +1043,7 @@ func importPublicKey(entity *openpgp.Entity) error {
 // ImportKey imports one or more keys from the specified file. The keys
 // can be either a public or private keys, and the file can be either in
 // binary or ascii-armored format.
-func ImportKey(kpath string) error {
+func (keyring *Handle) ImportKey(kpath string) error {
 	// Load the private key as an entitylist
 	pathEntityList, err := loadKeysFromFile(kpath)
 	if err != nil {
@@ -1036,7 +1053,7 @@ func ImportKey(kpath string) error {
 	for _, pathEntity := range pathEntityList {
 		if pathEntity.PrivateKey != nil {
 			// We have a private key
-			err := importPrivateKey(pathEntity)
+			err := keyring.importPrivateKey(pathEntity)
 			if err != nil {
 				return err
 			}
@@ -1049,7 +1066,7 @@ func ImportKey(kpath string) error {
 		// both a private and public keys
 		if pathEntity.PrimaryKey != nil {
 			// We have a public key
-			err := importPublicKey(pathEntity)
+			err := keyring.importPublicKey(pathEntity)
 			if err != nil {
 				return err
 			}
