@@ -711,11 +711,8 @@ func TestGenKeyPair(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temporary directory")
 	}
-	// TODO: setting the environment variable is not thread-safe.
-	err = os.Setenv("SINGULARITY_SYPGPDIR", dir)
-	if err != nil {
-		t.Fatalf("failed to set SINGULARITY_SYPGPDIR environment variable: %s", err)
-	}
+
+	keyring := NewHandle(dir)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -745,7 +742,7 @@ func TestGenKeyPair(t *testing.T) {
 			}()
 			os.Stdin = tempFile
 
-			_, err = GenKeyPair(myURI, myToken)
+			_, err = keyring.GenKeyPair(myURI, myToken)
 			if tt.shallPass && err != nil {
 				t.Fatalf("valid case %s failed: %s", tt.name, err)
 			}

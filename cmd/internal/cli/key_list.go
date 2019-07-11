@@ -50,12 +50,13 @@ var KeyListCmd = &cobra.Command{
 }
 
 func doKeyListCmd(secret bool) error {
+	keyring := sypgp.NewHandle("")
 	if !secret {
-		fmt.Printf("Public key listing (%s):\n\n", sypgp.PublicPath())
-		sypgp.PrintPubKeyring()
+		fmt.Printf("Public key listing (%s):\n\n", keyring.PublicPath())
+		keyring.PrintPubKeyring()
 	} else {
-		fmt.Printf("Private key listing (%s):\n\n", sypgp.SecretPath())
-		sypgp.PrintPrivKeyring()
+		fmt.Printf("Private key listing (%s):\n\n", keyring.SecretPath())
+		keyring.PrintPrivKeyring()
 	}
 
 	return nil
