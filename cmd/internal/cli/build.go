@@ -25,7 +25,7 @@ import (
 
 var (
 	remote         bool
-	encrypt        bool
+	encryptionKey  string
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -122,12 +122,12 @@ var buildRemoteFlag = cmdline.Flag{
 // -e|--encrypt
 var buildEncryptFlag = cmdline.Flag{
 	ID:           "buildEncryptFlag",
-	Value:        &encrypt,
-	DefaultValue: false,
-	Name:         "encrypt",
+	Value:        &encryptionKey,
+	DefaultValue: "",
+	Name:         "encryption-key",
 	ShortHand:    "e",
-	Usage:        "Encrypt the file system after building (requires root)",
-	EnvKeys:      []string{"ENCRYPT"},
+	Usage:        "Key for encrypting the filesystem after building (requires root)",
+	EnvKeys:      []string{"ENCRYPTION_KEY"},
 }
 
 // -d|--detached
