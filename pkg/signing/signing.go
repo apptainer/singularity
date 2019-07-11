@@ -99,7 +99,9 @@ func descrToSign(fimg *sif.FileImage, id uint32, isGroup bool) (descr []*sif.Des
 // its system partition. Sign uses the private keys found in the default
 // location.
 func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
-	elist, err := sypgp.LoadPrivKeyring()
+	keyring := sypgp.NewHandle("")
+
+	elist, err := keyring.LoadPrivKeyring()
 	if err != nil {
 		return fmt.Errorf("could not load private keyring: %s", err)
 	}
@@ -269,6 +271,8 @@ func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken str
 // from a key server if access is enabled, or if localVerify is false. Returns
 // true, if theres no local key matching a signers entity.
 func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken string, localVerify, noPrompt, quiet bool) (bool, error) {
+	keyring := sypgp.NewHandle("")
+
 	notLocalKey := false
 
 	fimg, err := sif.LoadContainer(cpath, true)
@@ -318,7 +322,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		}
 
 		// (1) try to get identity of signer
-		i, local, err := getSignerIdentity(v, block, data, fingerprint, keyServiceURI, authToken, noPrompt, localVerify)
+		i, local, err := getSignerIdentity(keyring, v, block, data, fingerprint, keyServiceURI, authToken, noPrompt, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
 			if err == errNotFound || err == errNotFoundLocal {
@@ -367,9 +371,9 @@ func getFirstIdentity(e *openpgp.Entity) string {
 	return ""
 }
 
-func getSignerIdentity(v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, noPrompt, local bool) (string, bool, error) {
+func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsign.Block, data []byte, fingerprint, keyServiceURI, authToken string, noPrompt, local bool) (string, bool, error) {
 	// load the public keys available locally from the cache
-	elist, err := sypgp.LoadPubKeyring()
+	elist, err := keyring.LoadPubKeyring()
 	if err != nil {
 		return "", false, fmt.Errorf("could not load public keyring: %s", err)
 	}
