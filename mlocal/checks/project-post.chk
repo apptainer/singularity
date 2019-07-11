@@ -14,6 +14,7 @@ config_add_def PACKAGE_BUGREPORT \"support@sylabs.io\"
 config_add_def PACKAGE_URL \"\"
 
 config_add_def BUILDDIR \"$builddir\"
+config_add_def SOURCEDIR \"$sourcedir\"
 config_add_def PREFIX \"$prefix\"
 config_add_def EXECPREFIX \"$exec_prefix\"
 config_add_def BINDIR \"$bindir\"
