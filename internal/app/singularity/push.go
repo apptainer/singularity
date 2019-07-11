@@ -62,7 +62,7 @@ func LibraryPush(file, dest, authToken, libraryURI, keyServerURL, remoteWarning 
 
 	if !unauthenticated {
 		// check if the container is signed
-		imageSigned, err := signing.IsSigned(file, keyServerURL, 0, false, authToken, true)
+		imageSigned, err := signing.IsSigned(file, keyServerURL, 0, false, authToken)
 		if err != nil {
 			// err will be: "unable to verify container: %v", err
 			sylog.Warningf("%v", err)
