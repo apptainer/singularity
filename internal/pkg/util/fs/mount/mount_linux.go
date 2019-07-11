@@ -157,7 +157,7 @@ var authorizedFS = map[string]fsContext{
 	"cgroup":  {false},
 }
 
-var internalOptions = []string{"loop", "offset", "sizelimit"}
+var internalOptions = []string{"loop", "offset", "sizelimit", "key"}
 
 // Point describes a mount point
 type Point struct {
@@ -303,6 +303,16 @@ func GetSizeLimit(options []string) (uint64, error) {
 		}
 	}
 	return 0, fmt.Errorf("sizelimit option not found")
+}
+
+// GetKey returns key value for image options
+func GetKey(options []string) (string, error) {
+	for _, opt := range options {
+		if strings.HasPrefix(opt, "key=") {
+			return strings.TrimPrefix(opt, "key="), nil
+		}
+	}
+	return "", fmt.Errorf("key option not found")
 }
 
 // HasRemountFlag checks if remount flag is set or not.
@@ -495,6 +505,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 			var err error
 			var offset uint64
 			var sizelimit uint64
+			var key string
 
 			flags, options := ConvertOptions(point.Options)
 			// check if this is a mount point to remount
@@ -524,10 +535,13 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 				if strings.HasPrefix(option, "sizelimit=") {
 					fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 				}
+				if strings.HasPrefix(option, "key=") {
+					key = strings.TrimPrefix(option, "key=")
+				}
 			}
 
 			// check if this is an image mount point
-			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
+			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit, key); err == nil {
 				continue
 			}
 
@@ -571,7 +585,7 @@ func (p *Points) ImportFromSpec(mounts []specs.Mount) error {
 }
 
 // AddImage adds an image mount point
-func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
+func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64, key string) error {
 	options := ""
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
@@ -588,7 +602,7 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 	if sizelimit == 0 {
 		return fmt.Errorf("invalid image size, zero length")
 	}
-	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
+	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,key=%s,errors=remount-ro", offset, sizelimit, key)
 	return p.add(tag, source, dest, fstype, flags, options)
 }
 

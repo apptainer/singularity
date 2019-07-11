@@ -20,7 +20,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 	"github.com/sylabs/singularity/pkg/util/loop"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 // Device describes a crypt device
@@ -68,37 +67,6 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	}
 
 	return nil
-}
-
-// ReadKeyFromStdin reads key from terminal and returns it
-// TODO (schebro): Fix #3816, #3851
-// Currently keys are being read interactively from the terminal.
-// Keys should be non-interactive, preferably in a keyfile that can
-// be passed to cryptsetup utility
-func (crypt *Device) ReadKeyFromStdin(confirm bool) (string, error) {
-
-	fmt.Print("Enter the Key: ")
-	password, err := terminal.ReadPassword(int(syscall.Stdin))
-	if err != nil {
-		sylog.Fatalf("Error parsing the key: %s", err)
-	}
-
-	input := string(password)
-	fmt.Println()
-	if confirm {
-		fmt.Print("Confirm the Key: ")
-		password2, err := terminal.ReadPassword(int(syscall.Stdin))
-		if err != nil {
-			sylog.Fatalf("Error parsing the key: %s", err)
-		}
-		input2 := string(password2)
-		fmt.Println()
-		if input != input2 {
-			return "", errors.New("Keys don't match")
-		}
-	}
-
-	return input, nil
 }
 
 // FormatCryptDevice allocates a loop device, encrypts, and returns the loop device name, and encrypted device name

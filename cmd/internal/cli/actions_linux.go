@@ -238,6 +238,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
 	}
 
+	engineConfig.SetEncryptionKey(encryptionKey)
+
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetNetwork(Network)
 	engineConfig.SetDNS(DNS)
