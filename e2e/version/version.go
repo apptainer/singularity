@@ -61,7 +61,7 @@ func (c *ctx) testEqualVersion(t *testing.T) {
 		checkEqualVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity version ")
 			outputVer = strings.TrimSpace(outputVer)
-			semanticVersion, err := semver.Make(string(outputVer))
+			semanticVersion, err := semver.Make(outputVer)
 			if err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
