@@ -1,0 +1,36 @@
+language: go
+
+# `make ci` uses Docker.
+sudo: required
+services:
+  - docker
+
+go:
+  - 1.x
+
+before_install:
+  - sudo sh -c "apt-get -qq update && apt-get install -y gcc-multilib"
+  - go get -u github.com/cpuguy83/go-md2man
+  - go get -u github.com/vbatts/git-validation
+  - go get -u golang.org/x/lint/golint
+  - go get -u github.com/securego/gosec/cmd/gosec
+
+env:
+  - DOCKER_IMAGE="opensuse/leap:latest"
+  - DOCKER_IMAGE="centos:latest"
+  - DOCKER_IMAGE="debian:latest"
+  - DOCKER_IMAGE="ubuntu:latest"
+  - DOCKER_IMAGE="fedora:latest"
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - env: DOCKER_IMAGE="fedora:latest"
+
+notifications:
+  email: false
+
+script:
+  - chmod a+rwx . # Necessary to make Travis co-operate with Docker.
+  - make GOARCH=386 local-validate-build # Make sure 32-bit builds work.
+  - make DOCKER_IMAGE=$DOCKER_IMAGE ci

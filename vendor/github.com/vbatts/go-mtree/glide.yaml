@@ -1,0 +1,16 @@
+package: github.com/vbatts/go-mtree
+description: File systems verification utility and library, in likeness of mtree(8)
+homepage: https://github.com/vbatts/go-mtree
+license: BSD-3-Clause
+import:
+- package: golang.org/x/crypto
+  subpackages:
+  - ripemd160
+- package: github.com/sirupsen/logrus
+  version: ^1.0.0
+- package: golang.org/x/sys
+  version: 8dbc5d05d6edcc104950cc299a1ce6641235bc86
+  subpackages:
+  - unix
+- package: github.com/fatih/color
+  version: ^1.6.0
