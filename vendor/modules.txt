@@ -24,6 +24,8 @@ github.com/Microsoft/hcsshim/internal/safefile
 github.com/Netflix/go-expect
 # github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 github.com/alexflint/go-filemutex
+# github.com/apex/log v1.1.0
+github.com/apex/log
 # github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 github.com/beorn7/perks/quantile
 # github.com/blang/semver v3.5.1+incompatible
@@ -120,6 +122,8 @@ github.com/coreos/go-systemd/dbus
 github.com/coreos/go-systemd/activation
 # github.com/cpuguy83/go-md2man v1.0.10
 github.com/cpuguy83/go-md2man/md2man
+# github.com/cyphar/filepath-securejoin v0.2.2
+github.com/cyphar/filepath-securejoin
 # github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c
 github.com/d2g/dhcp4
 # github.com/d2g/dhcp4client v0.0.0-20180611075603-e61299896203
@@ -204,11 +208,11 @@ github.com/gorilla/context
 github.com/gorilla/mux
 # github.com/gorilla/websocket v1.4.0
 github.com/gorilla/websocket
-# github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
+# github.com/hashicorp/errwrap v0.0.0-20180715044906-d6c0cd880357
 github.com/hashicorp/errwrap
 # github.com/hashicorp/go-cleanhttp v0.5.1
 github.com/hashicorp/go-cleanhttp
-# github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874
+# github.com/hashicorp/go-multierror v0.0.0-20180717150148-3d5d8f294aa0
 github.com/hashicorp/go-multierror
 # github.com/hashicorp/go-retryablehttp v0.5.3
 github.com/hashicorp/go-retryablehttp
@@ -218,6 +222,14 @@ github.com/inconshreveable/mousetrap
 github.com/j-keck/arping
 # github.com/juju/errors v0.0.0-20190207033735-e65537c515d7
 github.com/juju/errors
+# github.com/klauspost/compress v1.4.1
+github.com/klauspost/compress/flate
+# github.com/klauspost/cpuid v1.2.0
+github.com/klauspost/cpuid
+# github.com/klauspost/crc32 v0.0.0-20161016154125-cb6bfca970f6
+github.com/klauspost/crc32
+# github.com/klauspost/pgzip v0.0.0-20170402124221-0bf5dcad4ada
+github.com/klauspost/pgzip
 # github.com/kr/pty v1.1.3
 github.com/kr/pty
 # github.com/kubernetes-sigs/cri-o v0.0.0-20180917213123-8afc34092907
@@ -234,20 +246,33 @@ github.com/mattn/go-shellwords
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c
 github.com/mtrmac/gpgme
+# github.com/openSUSE/umoci v0.4.4
+github.com/openSUSE/umoci
+github.com/openSUSE/umoci/oci/layer
+github.com/openSUSE/umoci/oci/cas/dir
+github.com/openSUSE/umoci/oci/casext
+github.com/openSUSE/umoci/oci/config/generate
+github.com/openSUSE/umoci/pkg/idtools
+github.com/openSUSE/umoci/oci/cas
+github.com/openSUSE/umoci/oci/config/convert
+github.com/openSUSE/umoci/pkg/fseval
+github.com/openSUSE/umoci/pkg/system
+github.com/openSUSE/umoci/pkg/testutils
+github.com/openSUSE/umoci/pkg/unpriv
+github.com/openSUSE/umoci/third_party/shared
+github.com/openSUSE/umoci/pkg/hardening
+github.com/openSUSE/umoci/third_party/user
 # github.com/opencontainers/go-digest v1.0.0-rc1
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
+# github.com/opencontainers/image-spec v1.0.0 => github.com/opencontainers/image-spec v0.0.0-20180411145040-e562b0440392
 github.com/opencontainers/image-spec/specs-go/v1
 github.com/opencontainers/image-spec/specs-go
-github.com/opencontainers/image-spec/schema
-# github.com/opencontainers/image-tools v0.0.0-20180129025323-c95f76cbae74 => github.com/sylabs/image-tools v0.0.0-20181006203805-2814f4980568
-github.com/opencontainers/image-tools/image
 # github.com/opencontainers/runc v0.1.1
 github.com/opencontainers/runc/libcontainer/system
 github.com/opencontainers/runc/libcontainer/user
-# github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
+# github.com/opencontainers/runtime-spec v1.0.0 => github.com/opencontainers/runtime-spec v0.0.0-20180913141938-5806c3563733
 github.com/opencontainers/runtime-spec/specs-go
-# github.com/opencontainers/runtime-tools v0.6.0
+# github.com/opencontainers/runtime-tools v0.7.0
 github.com/opencontainers/runtime-tools/generate
 github.com/opencontainers/runtime-tools/generate/seccomp
 github.com/opencontainers/runtime-tools/validate
@@ -277,6 +302,8 @@ github.com/prometheus/procfs
 github.com/prometheus/procfs/nfs
 github.com/prometheus/procfs/xfs
 github.com/prometheus/procfs/internal/util
+# github.com/rootless-containers/proto v0.1.0
+github.com/rootless-containers/proto/go-proto
 # github.com/russross/blackfriday v1.5.2
 github.com/russross/blackfriday
 # github.com/safchain/ethtool v0.0.0-20180504150752-6e3f4faa84e1
@@ -285,7 +312,7 @@ github.com/safchain/ethtool
 github.com/satori/go.uuid
 # github.com/seccomp/libseccomp-golang v0.9.0
 github.com/seccomp/libseccomp-golang
-# github.com/sirupsen/logrus v1.0.5
+# github.com/sirupsen/logrus v1.0.6
 github.com/sirupsen/logrus
 # github.com/spf13/cobra v0.0.0-20190321000552-67fc4837d267
 github.com/spf13/cobra
@@ -306,6 +333,12 @@ github.com/sylabs/sif/pkg/sif
 github.com/sylabs/sif/internal/app/siftool
 # github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e
 github.com/syndtr/gocapability/capability
+# github.com/urfave/cli v1.20.0
+github.com/urfave/cli
+# github.com/vbatts/go-mtree v0.4.3
+github.com/vbatts/go-mtree
+github.com/vbatts/go-mtree/pkg/govis
+github.com/vbatts/go-mtree/xattr
 # github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6
 github.com/vishvananda/netlink
 github.com/vishvananda/netlink/nl
@@ -315,10 +348,8 @@ github.com/vishvananda/netns
 github.com/xeipuuv/gojsonpointer
 # github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415
 github.com/xeipuuv/gojsonreference
-# github.com/xeipuuv/gojsonschema v0.0.0-20180618132009-1d523034197f
+# github.com/xeipuuv/gojsonschema v0.0.0-20180719132039-b84684d0e066
 github.com/xeipuuv/gojsonschema
-# go4.org v0.0.0-20180417224846-9599cf28b011
-go4.org/errorutil
 # golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2 => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
 golang.org/x/crypto/ssh/terminal
 golang.org/x/crypto/openpgp
@@ -329,10 +360,11 @@ golang.org/x/crypto/openpgp/errors
 golang.org/x/crypto/openpgp/s2k
 golang.org/x/crypto/cast5
 golang.org/x/crypto/openpgp/elgamal
+golang.org/x/crypto/ripemd160
 # golang.org/x/net v0.0.0-20190311183353-d8887717615a
 golang.org/x/net/context/ctxhttp
-golang.org/x/net/proxy
 golang.org/x/net/context
+golang.org/x/net/proxy
 golang.org/x/net/internal/socks
 # golang.org/x/sync v0.0.0-20190423024810-112230192c58
 golang.org/x/sync/errgroup

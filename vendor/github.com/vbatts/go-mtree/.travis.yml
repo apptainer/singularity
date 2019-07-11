@@ -1,0 +1,20 @@
+language: go
+go:
+  - 1.x
+  - 1.10.x
+  - 1.9.x
+  - 1.8.x
+
+sudo: false
+
+before_install:
+  - git config --global url."https://".insteadOf git://
+  - make install.tools
+  - mkdir -p $GOPATH/src/github.com/vbatts && ln -sf $(pwd) $GOPATH/src/github.com/vbatts/go-mtree
+
+install: true
+
+script:
+  - make validation
+  - make validation.tags
+  - make build.arches

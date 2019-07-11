@@ -27,8 +27,10 @@ import (
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/signature"
 	"github.com/containers/image/types"
+	"github.com/openSUSE/umoci"
+	umocilayer "github.com/openSUSE/umoci/oci/layer"
+	"github.com/openSUSE/umoci/pkg/idtools"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	imagetools "github.com/opencontainers/image-tools/image"
 	ociclient "github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
@@ -289,9 +291,47 @@ func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
 }
 
 func (cp *OCIConveyorPacker) unpackTmpfs() (err error) {
-	refs := []string{"name=tmp"}
-	err = imagetools.UnpackLayout(cp.b.Path, cp.b.Rootfs(), "amd64", refs)
-	return err
+	var mapOptions umocilayer.MapOptions
+
+	// Allow unpacking as non-root
+	if os.Geteuid() != 0 {
+		mapOptions.Rootless = true
+
+		uidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Geteuid()))
+		if err != nil {
+			return fmt.Errorf("failure parsing uidmap: %s", err)
+		}
+		mapOptions.UIDMappings = append(mapOptions.UIDMappings, uidMap)
+
+		gidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Getegid()))
+		if err != nil {
+			return fmt.Errorf("failure parsing gidmap: %s", err)
+		}
+		mapOptions.GIDMappings = append(mapOptions.GIDMappings, gidMap)
+	}
+
+	engineExt, err := umoci.OpenLayout(cp.b.Path)
+	if err != nil {
+		return fmt.Errorf("Failed to open layout: %s", err)
+	}
+
+	// Obtain the manifest
+	imageSource, err := cp.tmpfsRef.NewImageSource(context.Background(), cp.sysCtx)
+	if err != nil {
+		return fmt.Errorf("Create image source: %s", err)
+	}
+	manifestData, mediaType, err := imageSource.GetManifest(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("Obtain manifest source: %s", err)
+	}
+	if mediaType != imgspecv1.MediaTypeImageManifest {
+		return fmt.Errorf("Manifest has invalid MIMEtype: %s", mediaType)
+	}
+	var manifest imgspecv1.Manifest
+	json.Unmarshal(manifestData, &manifest)
+
+	// Unpack root filesystem
+	return umocilayer.UnpackRootfs(context.Background(), engineExt, cp.b.Rootfs(), manifest, &mapOptions)
 }
 
 func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {
