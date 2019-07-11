@@ -38,11 +38,7 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
 	cryptDev := &crypt.Device{}
 
-	key, err := cryptDev.ReadKeyFromStdin(false)
-	if err != nil {
-		return fmt.Errorf("unable to read key from stdin")
-	}
-	cryptName, err := cryptDev.GetCryptDevice(key, arguments.Loopdev)
+	cryptName, err := cryptDev.GetCryptDevice(arguments.Key, arguments.Loopdev)
 
 	*reply = "/dev/mapper/" + cryptName
 
