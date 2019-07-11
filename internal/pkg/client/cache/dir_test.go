@@ -142,8 +142,8 @@ func TestRoot(t *testing.T) {
 				t.Fatalf("failed to create new image cache: %s", err)
 			}
 
-			root := imgCache.Root()
-			if root == tt.expectedResult {
+			root := imgCache.rootDir
+			if root != tt.expectedResult {
 				t.Fatalf("test %s returned %s instead of %s", tt.name, root, tt.expectedResult)
 			}
 
