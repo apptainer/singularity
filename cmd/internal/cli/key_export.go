@@ -58,14 +58,15 @@ var KeyExportCmd = &cobra.Command{
 }
 
 func exportRun(cmd *cobra.Command, args []string) {
+	keyring := sypgp.NewHandle("")
 	if secretExport {
-		err := sypgp.ExportPrivateKey(args[0], armor)
+		err := keyring.ExportPrivateKey(args[0], armor)
 		if err != nil {
 			sylog.Errorf("key export command failed: %s", err)
 			os.Exit(10)
 		}
 	} else {
-		err := sypgp.ExportPubKey(args[0], armor)
+		err := keyring.ExportPubKey(args[0], armor)
 		if err != nil {
 			sylog.Errorf("key export command failed: %s", err)
 			os.Exit(10)
