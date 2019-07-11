@@ -204,16 +204,13 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	//TODO: I am using the field from the old code (Encrypted) to pass the keyfile.
-	// The field needs to be renamed
-
-	if b.Opts.Encrypted != "" {
+	if b.Opts.PubKeyFile != "" {
 
 		// A dm-crypt device needs to be created with squashfs
 		cryptDev := &crypt.Device{}
 
 		randomStr, _ := getRandomString(32)
-		publicKey, err := crypt.GetPublicKey(b.Opts.Encrypted)
+		publicKey, err := crypt.GetPublicKey(b.Opts.PubKeyFile)
 		if err != nil {
 			sylog.Debugf("Error parsing public key %s", err)
 			return err

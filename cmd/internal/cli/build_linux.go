@@ -31,10 +31,6 @@ func run(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
 
-	if encrypt == "" {
-		sylog.Fatalf("encrypt flag needs path of file containing public key")
-	}
-
 	// check if target collides with existing file
 	if ok := checkBuildTarget(dest, update); !ok {
 		os.Exit(1)
@@ -161,7 +157,7 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
 					Fakeroot:         fakeroot,
-					Encrypted:        encrypt,
+					PubKeyFile:       encrypt,
 				},
 			})
 		if err != nil {

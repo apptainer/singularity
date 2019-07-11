@@ -53,7 +53,7 @@ type Options struct {
 	// contains docker credentials if specified
 	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// Encrypted specifies if the filesystem needs to be encrypteded
-	Encrypted string `json:"encrypt"`
+	PubKeyFile string `json:"pubKeyFile"`
 	// noTest indicates if build should skip running the test script
 	NoTest bool `json:"noTest"`
 	// force automatically deletes an existing container at build destination while performing build
@@ -72,7 +72,7 @@ type Options struct {
 }
 
 // Common code between NewBundle and NewEncryptedBundle
-func bundleCommon(encrypted string, bundleDir, bundlePrefix string) (b *Bundle, err error) {
+func bundleCommon(keyFile string, bundleDir, bundlePrefix string) (b *Bundle, err error) {
 	b = &Bundle{}
 	b.JSONObjects = make(map[string][]byte)
 
@@ -90,7 +90,7 @@ func bundleCommon(encrypted string, bundleDir, bundlePrefix string) (b *Bundle, 
 		"rootfs": "fs",
 	}
 
-	b.Opts.Encrypted = encrypted
+	b.Opts.PubKeyFile = keyFile
 
 	for _, fso := range b.FSObjects {
 		if err = os.MkdirAll(filepath.Join(b.Path, fso), 0755); err != nil {
@@ -103,8 +103,8 @@ func bundleCommon(encrypted string, bundleDir, bundlePrefix string) (b *Bundle, 
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment
-func NewEncryptedBundle(bundleDir, bundlePrefix string) (b *Bundle, err error) {
-	return bundleCommon("", bundleDir, bundlePrefix)
+func NewEncryptedBundle(bundleDir, bundlePrefix string, pubKeyFile string) (b *Bundle, err error) {
+	return bundleCommon(pubKeyFile, bundleDir, bundlePrefix)
 }
 
 // NewBundle creates a Bundle environment
