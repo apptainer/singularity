@@ -169,28 +169,6 @@ func (c *Handle) GetBasedir() string {
 	return c.baseDir
 }
 
-// Root is the root location where all of singularity caching happens. Library, Shub,
-// and oci image formats supported by containers/image repository will be cached inside
-//
-// Defaults to ${HOME}/.singularity/cache
-func (c *Handle) Root() string {
-	updateCacheRoot(c)
-
-	return c.rootDir
-}
-
-func updateCacheRoot(c *Handle) {
-	if d := os.Getenv(DirEnv); d != "" && d != syfs.ConfigDir() {
-		c.rootDir = d
-	} else {
-		c.rootDir = path.Join(syfs.ConfigDir(), CacheDir)
-	}
-
-	if err := initCacheDir(c.rootDir); err != nil {
-		sylog.Fatalf("Unable to initialize caching directory: %v", err)
-	}
-}
-
 // updateCacheSubdir update/create a sub-cache (directory) within the cache,
 // for example, the 'shub' cache.
 func updateCacheSubdir(c *Handle, subdir string) (string, error) {
@@ -243,6 +221,7 @@ func (c *Handle) cleanAllCaches() {
 		"blob":    c.OciBlob,
 		"shub":    c.Shub,
 		"oras":    c.Oras,
+		"net":     c.Net,
 	}
 
 	for name, dir := range cacheDirs {
