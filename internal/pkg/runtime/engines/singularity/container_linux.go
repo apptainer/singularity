@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -578,6 +579,13 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		return err
 	}
 
+	cipher, err := mount.GetCipher(mnt.InternalOptions)
+	if err != nil {
+		return err
+	}
+
+	decodedCipher, _ := base64.URLEncoding.DecodeString(cipher)
+
 	attachFlag := os.O_RDWR
 	loopFlags := uint32(loop.FlagsAutoClear)
 
@@ -605,7 +613,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	mountType := mnt.Type
 
 	if mountType == "encryptfs" {
-		cryptDev, err := c.rpcOps.Decrypt(offset, path)
+		cryptDev, err := c.rpcOps.Decrypt(offset, path, []byte(decodedCipher))
 
 		if err != nil {
 			return fmt.Errorf("Unable to decrypt the file system: %s", err)
@@ -684,6 +692,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	mountType := ""
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
+	cipher := imageObject.Partitions[0].Cipher
 
 	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
 
@@ -715,6 +724,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		flags,
 		offset,
 		size,
+		cipher,
 	); err != nil {
 		return err
 	}
@@ -824,13 +834,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				ov.AddLowerDir(filepath.Join(dst, "upper"))
 			}
 
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size, []byte{})
 			if err != nil {
 				return fmt.Errorf("while adding ext3 image: %s", err)
 			}
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size, []byte{})
 			if err != nil {
 				return err
 			}

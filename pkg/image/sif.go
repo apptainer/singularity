@@ -74,10 +74,16 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 		if err != nil {
 			continue
 		}
+
 		if ptype != sif.PartPrimSys {
 			continue
 		}
 		fstype, err := desc.GetFsType()
+		if err != nil {
+			continue
+		}
+
+		cipher, err := desc.GetCipher()
 		if err != nil {
 			continue
 		}
@@ -87,6 +93,7 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 				Offset: uint64(desc.Fileoff),
 				Size:   uint64(desc.Filelen),
 				Name:   RootFs,
+				Cipher: cipher,
 			},
 		}
 
@@ -122,10 +129,16 @@ func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 			if err != nil {
 				continue
 			}
+			cipher, err := desc.GetCipher()
+			if err != nil {
+				continue
+			}
+			sylog.Debugf("Non primary cipher is %s", string(cipher))
 			partition := Section{
 				Offset: uint64(desc.Fileoff),
 				Size:   uint64(desc.Filelen),
 				Name:   desc.GetName(),
+				Cipher: cipher,
 			}
 			switch fstype {
 			case sif.FsSquash:

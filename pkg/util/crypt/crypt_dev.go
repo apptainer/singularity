@@ -6,6 +6,9 @@
 package crypt
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
@@ -68,6 +71,56 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	}
 
 	return nil
+}
+
+// GetPublicKey returns public key in the file at path
+func GetPublicKey(path string) (*rsa.PublicKey, error) {
+
+	dat, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return nil, fmt.Errorf("Unable to read public key file: %s", path)
+	}
+
+	block, _ := pem.Decode(dat)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block containing public key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		sylog.Debugf("Can't parse using ParsePCKS1PublicKey ")
+		return nil, err
+	}
+	pub1, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		sylog.Debugf("Not of type rsa.PublicKey")
+	}
+
+	return pub1, nil
+}
+
+// GetPrivateKey returns private key in the file at path
+func GetPrivateKey(path string) (*rsa.PrivateKey, error) {
+
+	dat, err := ioutil.ReadFile(path)
+
+	if err != nil {
+		return nil, fmt.Errorf("Unable to read private key file: %s", path)
+	}
+
+	block, _ := pem.Decode(dat)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block containing private key")
+	}
+
+	pri, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		sylog.Debugf("Can't parse using ParsePCKS1PrivateKey ")
+		return nil, err
+	}
+
+	return pri, nil
 }
 
 // ReadKeyFromStdin reads key from terminal and returns it

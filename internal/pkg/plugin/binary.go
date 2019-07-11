@@ -464,6 +464,7 @@ type sifReader interface {
 	GetFsType(name string) (sif.Fstype, error)
 	GetPartType(name string) (sif.Parttype, error)
 	GetData(name string) []byte
+	GetCipher(name string) ([]byte, error)
 }
 
 type sifFileImageReader struct {
@@ -494,6 +495,11 @@ func (r *sifFileImageReader) GetFsType(name string) (sif.Fstype, error) {
 func (r *sifFileImageReader) GetPartType(name string) (sif.Parttype, error) {
 	n := r.descriptors[name]
 	return r.fi.DescrArr[n].GetPartType()
+}
+
+func (r *sifFileImageReader) GetCipher(name string) ([]byte, error) {
+	n := r.descriptors[name]
+	return r.fi.DescrArr[n].GetCipher()
 }
 
 func (r *sifFileImageReader) GetData(name string) []byte {

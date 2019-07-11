@@ -58,6 +58,7 @@ type Section struct {
 	Offset uint64 `json:"offset"`
 	Type   uint32 `json:"type"`
 	Name   string `json:"name"`
+	Cipher []byte `json:"cipher"`
 }
 
 // Image describes an image object, an image is composed of one

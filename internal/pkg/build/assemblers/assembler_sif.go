@@ -6,6 +6,10 @@
 package assemblers
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
@@ -32,7 +36,12 @@ import (
 type SIFAssembler struct {
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string, encrypted bool) (err error) {
+type sifEncrypt struct {
+	encrypt bool
+	cipher  []byte
+}
+
+func createSIF(path string, definition, ociConf []byte, squashfile string, encrypted sifEncrypt) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -74,6 +83,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encry
 		Groupid:  sif.DescrDefaultGroup,
 		Link:     sif.DescrUnusedLink,
 		Fname:    squashfile,
+		Cipher:   encrypted.cipher,
 	}
 	// open up the data object file for this descriptor
 	fp, err := os.Open(parinput.Fname)
@@ -93,11 +103,11 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encry
 
 	sifType := sif.FsSquash
 
-	if encrypted {
+	if encrypted.encrypt {
 		sifType = sif.FsEncryptedSquashfs
 	}
 
-	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH))
+	err = parinput.SetPartExtra(sifType, sif.PartPrimSys, sif.GetSIFArch(runtime.GOARCH), encrypted.cipher)
 	if err != nil {
 		return
 	}
@@ -142,11 +152,23 @@ func getMksquashfsPath() (string, error) {
 	return exec.LookPath(p)
 }
 
+func getRandomString(size int) (string, error) {
+	b := make([]byte, size)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", fmt.Errorf("unable to generate random key")
+	}
+	return base64.URLEncoding.EncodeToString(b), nil
+
+}
+
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	sylog.Infof("Creating SIF file...")
 
 	var fsPath string
+	var encrypted = false
+	var cipher []byte
 
 	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
@@ -182,19 +204,37 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	if b.Opts.Encrypted {
+	//TODO: I am using the field from the old code (Encrypted) to pass the keyfile.
+	// The field needs to be renamed
+
+	if b.Opts.Encrypted != "" {
+
 		// A dm-crypt device needs to be created with squashfs
 		cryptDev := &crypt.Device{}
 
-		// TODO (schebro): Fix #3876
+		randomStr, _ := getRandomString(32)
+		publicKey, err := crypt.GetPublicKey(b.Opts.Encrypted)
+		if err != nil {
+			sylog.Debugf("Error parsing public key %s", err)
+			return err
+		}
+
+		cipher, err = rsa.EncryptOAEP(sha256.New(), rand.Reader, publicKey, []byte(randomStr), nil)
+		if err != nil {
+			sylog.Debugf("Unable to encrypt with public key")
+			return err
+		}
+
 		// Detach the following code from the squashfs creation. SIF can be
 		// created first and encrypted after. This gives the flexibility to
 		// encrypt an existing SIF
-		key, err := cryptDev.ReadKeyFromStdin(true)
-		if err != nil {
-			return fmt.Errorf("unable to read key from stdin")
-		}
-		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, key)
+		/*
+			key, err := cryptDev.ReadKeyFromStdin(true)
+			if err != nil {
+				return fmt.Errorf("unable to read key from stdin")
+			}
+		*/
+		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, randomStr)
 		if err != nil {
 			return fmt.Errorf("unable to format crypt device: %s", cryptName)
 		}
@@ -206,9 +246,10 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 			return fmt.Errorf("unable to close crypt device: %s", cryptName)
 		}
 		fsPath = loopPath
+		encrypted = true
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, b.Opts.Encrypted)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, sifEncrypt{encrypted, cipher})
 	if err != nil {
 		return fmt.Errorf("While creating SIF: %v", err)
 	}

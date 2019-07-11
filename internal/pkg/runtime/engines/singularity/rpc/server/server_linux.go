@@ -6,6 +6,9 @@
 package server
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"runtime"
@@ -37,12 +40,26 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 // DeCrypt decrypts the loop device
 func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
 	cryptDev := &crypt.Device{}
+	cipher := arguments.Cipher
 
-	key, err := cryptDev.ReadKeyFromStdin(false)
+	// Read the private key file
+	// Currently I hardcoded this path. TODO: This is where we need to add the
+	// TPM integration to get the private key
+
+	// TODO: Move the following into it's own function
+	privateKey, err := crypt.GetPrivateKey("/home/vagrant/mykey.pem")
 	if err != nil {
-		return fmt.Errorf("Unable to read key from stdin")
+		sylog.Debugf("Error parsing private key %s", err)
+		return err
 	}
-	cryptName, err := cryptDev.GetCryptDevice(key, arguments.Loopdev)
+
+	plain, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, cipher, nil)
+	if err != nil {
+		sylog.Debugf("Unable to decrypt with public key: %s", err)
+		return err
+	}
+
+	cryptName, err := cryptDev.GetCryptDevice(string(plain), arguments.Loopdev)
 
 	*reply = "/dev/mapper/" + cryptName
 

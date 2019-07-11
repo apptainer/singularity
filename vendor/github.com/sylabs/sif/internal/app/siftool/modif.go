@@ -139,7 +139,7 @@ func Add(containerFile, dataFile string, opts AddOptions) error {
 			return fmt.Errorf("usage")
 		}
 
-		err := input.SetPartExtra(sif.Fstype(*opts.Partfs), sif.Parttype(*opts.Parttype), a)
+		err := input.SetPartExtra(sif.Fstype(*opts.Partfs), sif.Parttype(*opts.Parttype), a, []byte{0})
 		if err != nil {
 			return err
 		}

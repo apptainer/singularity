@@ -238,7 +238,7 @@ func getPluginObjDescr(objPath string) (sif.DescriptorInput, error) {
 	objInput.Size = fstat.Size()
 
 	// populate objInput.Extra with appropriate Fstype & Parttype
-	err = objInput.SetPartExtra(sif.FsRaw, sif.PartData, sif.GetSIFArch(runtime.GOARCH))
+	err = objInput.SetPartExtra(sif.FsRaw, sif.PartData, sif.GetSIFArch(runtime.GOARCH), []byte{0})
 	if err != nil {
 		return sif.DescriptorInput{}, err
 	}

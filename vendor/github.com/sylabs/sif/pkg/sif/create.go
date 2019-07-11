@@ -68,6 +68,7 @@ func getUserIDs() (int64, int64, error) {
 
 // Fill all of the fields of a Descriptor
 func fillDescriptor(fimg *FileImage, index int, input DescriptorInput) (err error) {
+
 	descr := &fimg.DescrArr[index]
 
 	curoff, err := fimg.Fp.Seek(0, 1)
@@ -430,7 +431,7 @@ func (fimg *FileImage) DeleteObject(id uint32, flags int) error {
 }
 
 // SetPartExtra serializes the partition and fs type info into a binary buffer
-func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) error {
+func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string, cipher []byte) error {
 	extra := Partition{
 		Fstype:   fs,
 		Parttype: part,
@@ -439,6 +440,7 @@ func (di *DescriptorInput) SetPartExtra(fs Fstype, part Parttype, arch string) e
 		return fmt.Errorf("architecture not supported: %v", arch)
 	}
 	copy(extra.Arch[:], arch[:])
+	copy(extra.Cipher[:], cipher[:])
 
 	// serialize the partition data for integration with the base descriptor input
 	if err := binary.Write(&di.Extra, binary.LittleEndian, extra); err != nil {

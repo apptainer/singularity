@@ -6,6 +6,7 @@
 package mount
 
 import (
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -157,7 +158,7 @@ var authorizedFS = map[string]fsContext{
 	"cgroup":  {false},
 }
 
-var internalOptions = []string{"loop", "offset", "sizelimit"}
+var internalOptions = []string{"loop", "offset", "sizelimit", "cipher"}
 
 // Point describes a mount point
 type Point struct {
@@ -293,6 +294,24 @@ func GetOffset(options []string) (uint64, error) {
 	return 0, fmt.Errorf("offset option not found")
 }
 
+// GetCipher returns cipher value for image options
+func GetCipher(options []string) (string, error) {
+	for _, opt := range options {
+		if strings.HasPrefix(opt, "cipher=") {
+
+			// TODO: Sscanf reads the string until it encounters a white space
+			// The following approach needs to be fixed with a cleaner solution.
+			i := strings.Index(opt, "cipher=")
+			i += len("cipher=")
+
+			// TODO: We need to save the cipher length to use here instead of assuming
+			// that cipher is going to be the last option
+			return opt[i:], nil
+		}
+	}
+	return "", fmt.Errorf("cipher option not found")
+}
+
 // GetSizeLimit returns sizelimit value for image options
 func GetSizeLimit(options []string) (uint64, error) {
 	var size uint64
@@ -398,6 +417,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 		context := fmt.Sprintf("context=%q", p.context)
 		mountOpts = append(mountOpts, context)
 	}
+
 	p.points[tag] = append(p.points[tag], Point{
 		Mount: specs.Mount{
 			Source:      source,
@@ -527,7 +547,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 			}
 
 			// check if this is an image mount point
-			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit); err == nil {
+			if err = p.AddImage(tag, point.Source, point.Destination, point.Type, flags, offset, sizelimit, []byte{}); err == nil {
 				continue
 			}
 
@@ -571,7 +591,7 @@ func (p *Points) ImportFromSpec(mounts []specs.Mount) error {
 }
 
 // AddImage adds an image mount point
-func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64) error {
+func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64, cipher []byte) error {
 	options := ""
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
@@ -588,7 +608,12 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 	if sizelimit == 0 {
 		return fmt.Errorf("invalid image size, zero length")
 	}
-	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro", offset, sizelimit)
+	// Need to encode the cipher. Otherwise if cipher contains a ",", func (p *Points) add function
+	// is going to split the options with the delimiter as ","
+	// Maybe StdEncoding works too
+	encodedCipher := base64.URLEncoding.EncodeToString(cipher)
+	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,errors=remount-ro,cipher=%s", offset, sizelimit, encodedCipher)
+
 	return p.add(tag, source, dest, fstype, flags, options)
 }
 

@@ -277,6 +277,20 @@ func (descr *Descriptor) GetFsType() (Fstype, error) {
 	return pinfo.Fstype, nil
 }
 
+// GetCipher extracts the cipher from the partition descriptor
+func (descr *Descriptor) GetCipher() ([]byte, error) {
+	if descr.Datatype != DataPartition {
+		return []byte{0}, fmt.Errorf("expected DataPartition, got %v", descr.Datatype)
+	}
+	var pinfo Partition
+	b := bytes.NewReader(descr.Extra[:])
+	if err := binary.Read(b, binary.LittleEndian, &pinfo); err != nil {
+		return []byte{0}, fmt.Errorf("while extracting Partition extra info: %s", err)
+	}
+
+	return []byte(pinfo.Cipher[:]), nil
+}
+
 // GetPartType extracts the Parttype field from the Extra field of a Partition Descriptor
 func (descr *Descriptor) GetPartType() (Parttype, error) {
 	if descr.Datatype != DataPartition {

@@ -215,6 +215,7 @@ type Envvar struct {
 type Partition struct {
 	Fstype   Fstype
 	Parttype Parttype
+	Cipher   [128]byte
 	Arch     [HdrArchLen]byte // arch the image is built for
 }
 
@@ -300,6 +301,7 @@ type DescriptorInput struct {
 	Link      uint32   // link to be set for new descriptor
 	Size      int64    // size of the data object for the new descriptor
 	Alignment int      // Align requirement for data object
+	Cipher    []byte   // Cipher if encrypted
 
 	Fname string    // file containing data associated with the new descriptor
 	Fp    io.Reader // file pointer to opened 'fname'
