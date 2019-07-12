@@ -61,7 +61,7 @@ func (c *ctx) testHelpContent(t *testing.T) {
 }
 
 func (c *ctx) testCommands(t *testing.T) {
-	tests := []struct {
+	testCommands := []struct {
 		name string
 		argv []string
 	}{
@@ -85,9 +85,11 @@ func (c *ctx) testCommands(t *testing.T) {
 		{"InstanceStop", []string{"instance", "stop"}},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tests := []struct {
+	for _, tt := range testCommands {
+
+		testCmdsFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+
+			testFlags := []struct {
 				name string
 				argv []string
 				skip bool
@@ -99,21 +101,31 @@ func (c *ctx) testCommands(t *testing.T) {
 				{"PreFlagLong", append([]string{"--help"}, tt.argv...), false},
 				{"PreCommand", append([]string{"help"}, tt.argv...), false},
 			}
-			for _, tt := range tests {
-				if tt.skip && !c.env.RunDisabled {
+
+			for _, tf := range testFlags {
+				if tf.skip && !c.env.RunDisabled {
 					t.Skip("disabled until issue addressed")
 				}
 
-				t.Run(tt.name, func(t *testing.T) {
-					cmd := exec.Command(c.env.CmdPath, tt.argv...)
-					if res := cmd.Run(t); res.Error != nil {
-						t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
-							res,
-							res.Error)
-					}
-				})
+				e2e.RunSingularity(t, tf.name, e2e.WithArgs(tf.argv...),
+					e2e.PostRun(func(t *testing.T) {
+						if t.Failed() {
+							t.Fatalf("Failed to run help flag while running command:\n%s\n", tt.name)
+						}
+					}),
+					e2e.ExpectExit(0))
 			}
-		})
+
+		}
+
+		e2e.RunSingularity(t, tt.name, e2e.WithArgs(tt.argv...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Log("Failed to run help command")
+				}
+			}),
+			e2e.ExpectExit(0, testCmdsFn))
+
 	}
 
 }
