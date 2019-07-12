@@ -217,8 +217,11 @@ func getNextAvailableCryptDevice() string {
 	return (uuid.NewV4()).String()
 }
 
-// GetCryptDevice returns the next available device in /dev/mapper for encryption/decryption
-func (crypt *Device) GetCryptDevice(key, loopDev string) (string, error) {
+// Open opens the encrypted filesystem specified by path (usually a loop
+// device, but any encrypted block device will do) using the given key
+// and returns the name assigned to it that can be later used to close
+// the device.
+func (crypt *Device) Open(key, path string) (string, error) {
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
 		sylog.Debugf("Unable to acquire lock on /dev/mapper while decrypting")
