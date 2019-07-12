@@ -90,7 +90,7 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 
 	// Truncate the file taking the squashfs size and crypt header into account
 	// Crypt header is around 2MB in size. Slightly over-allocate to be safe
-	devSize := fSize + 16*1024*1024 // 16MB for LUKS header
+	devSize := fSize + 1*1024*1024 // 16MB for LUKS header
 
 	err = os.Truncate(cryptF.Name(), devSize)
 	if err != nil {
@@ -119,7 +119,7 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 		return "", "", err
 	}
 
-	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
+	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", "--luks2-metadata-size", "64k", "--luks2-keyslots-size", "512k", loop)
 	stdin, err := cmd.StdinPipe()
 
 	if err != nil {
