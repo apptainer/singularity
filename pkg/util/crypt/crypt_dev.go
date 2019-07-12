@@ -134,46 +134,25 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("unable to format crypt device: %s", cryptF.Name())
+		return "", fmt.Errorf("unable to format crypt device: %s", cryptF.Name())
 	}
 
-	fd, err := lock.Exclusive("/dev/mapper")
+	nextCrypt, err := crypt.Open(key, loop)
 	if err != nil {
-		return "", "", fmt.Errorf("unable to acquire lock on /dev/mapper")
-	}
-	defer lock.Release(fd)
-
-	nextCrypt := getNextAvailableCryptDevice()
-	cmd = exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", loop, nextCrypt)
-	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
-	stdin, err = cmd.StdinPipe()
-	if err != nil {
-		return "", "", err
-	}
-
-	go func() {
-		io.WriteString(stdin, key)
-		stdin.Close()
-	}()
-
-	err = cmd.Run()
-	if err != nil {
-		sylog.Verbosef("Unable to open crypt device: %s", nextCrypt)
-		return "", "", err
+		sylog.Verbosef("Unable to open encrypted device %s: %s", loop, err)
+		return "", err
 	}
 
 	copyDeviceContents(path, "/dev/mapper/"+nextCrypt, fSize)
 
-	// Open a new Temp file to stash the loop contents
-	loopF, err := ioutil.TempFile("", "loop-")
+	cmd = exec.Command(cryptsetup, "close", nextCrypt)
+	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
+	err = cmd.Run()
 	if err != nil {
-		sylog.Debugf("Error creating temporary crypt file")
-		return "", "", err
+		return "", err
 	}
 
-	copyDeviceContents(loop, loopF.Name(), devSize)
-
-	return loopF.Name(), nextCrypt, err
+	return cryptF.Name(), err
 }
 
 // copyDeviceContents copies the contents of source to destination.
