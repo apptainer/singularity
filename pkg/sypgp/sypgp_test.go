@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
@@ -522,124 +521,6 @@ const (
 	myToken          = "MyToken"
 	myURI            = "MyURI"
 )
-
-func TestExportKeys(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
-	// Create a temporary keyring
-	tempDir, err := ioutil.TempDir("", "keyring-")
-	if err != nil {
-		t.Fatalf("failed to create temporary keyring: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
-	keyring := NewHandle(tempDir)
-	secretDir := keyring.SecretPath()
-	publicDir := keyring.PublicPath()
-	err = fs.Touch(secretDir)
-	if err != nil {
-		t.Fatalf("failed to create file for secret keys: %s", err)
-	}
-	err = fs.Touch(publicDir)
-	if err != nil {
-		t.Fatalf("failed to create file for public keys: %s", err)
-	}
-
-	privKeyExportFile := filepath.Join(tempDir, "priv-keys")
-	pubKeyExportFile := filepath.Join(tempDir, "pub-keys")
-
-	/*
-		tests := []struct {
-			name           string
-			fingerprint    string
-			expectedToPass bool
-		}{
-			{
-				name:           "invalid key",
-				fingerprint:    invalidKeyFingerprint,
-				expectedToPass: false,
-			},
-			{
-				name:           "valid key",
-				fingerprint:    validKeyFingerprint,
-				expectedToPass: true,
-			},
-		}
-
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-			})
-		}
-	*/
-	err = keyring.ExportPrivateKey(privKeyExportFile, false)
-	if err == nil {
-		t.Fatalf("test successfully loaded an empty keyring but should have failed")
-	}
-
-	err = keyring.ExportPubKey(pubKeyExportFile, false)
-	if err == nil {
-		t.Fatalf("test successfully loaded an empty keyring but should have failed")
-	}
-
-	// Setup the input file that will act as stdin
-	tempFile, err := ioutil.TempFile("", "inputFile-")
-	if err != nil {
-		t.Fatal("failed to create temporary file:", err)
-	}
-	defer tempFile.Close()
-	defer os.Remove(tempFile.Name())
-
-	_, err = tempFile.Write([]byte(validKeyGenInput))
-	if err != nil {
-		t.Fatalf("failed to write to %s: %s", tempFile.Name(), err)
-	}
-
-	// reposition to the beginning of the file to have something to read
-	_, err = tempFile.Seek(0, 0)
-	if err != nil {
-		t.Fatalf("failed to reposition to beginning of file %s: %s", tempFile.Name(), err)
-	}
-
-	// Redirect stdin
-	savedStdin := os.Stdin
-	defer func() {
-		os.Stdin = savedStdin
-	}()
-	os.Stdin = tempFile
-
-	_, err = keyring.GenKeyPair(myURI, myToken)
-	if err != nil {
-
-		t.Fatalf("failed to create new keys: %s", err)
-	}
-
-	_, err = tempFile.Seek(0, 0)
-	if err != nil {
-		t.Fatalf("failed to reposition to beginning of file %s: %s", tempFile.Name(), err)
-	}
-	keySelectionInput := "0\n" + dummyPassPhrase
-	_, err = tempFile.Write([]byte(keySelectionInput))
-	if err != nil {
-		t.Fatalf("failed to write to %s: %s", tempFile.Name(), err)
-	}
-
-	// reposition to the beginning of the file to have something to read
-	_, err = tempFile.Seek(0, 0)
-	if err != nil {
-		t.Fatalf("failed to reposition to beginning of file %s: %s", tempFile.Name(), err)
-	}
-
-	err = keyring.ExportPrivateKey(privKeyExportFile, false)
-	if err != nil {
-		t.Fatalf("failed to load the private key: %s", err)
-	}
-	/*
-		err = keyring.ExportPubKey(pubKeyExportFile, false)
-		if err != nil {
-			t.Fatalf("failed to load the public key: %s", err)
-		}
-	*/
-}
 
 func TestGenKeyPair(t *testing.T) {
 	test.DropPrivilege(t)
