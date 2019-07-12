@@ -199,12 +199,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
 		}
 
-		defer os.Remove(loopPath)
-
-		err = cryptDev.CloseCryptDevice(cryptName)
-		if err != nil {
-			return fmt.Errorf("unable to close crypt device: %s", cryptName)
-		}
 		fsPath = loopPath
 	}
 
