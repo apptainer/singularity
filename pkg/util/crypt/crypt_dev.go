@@ -51,14 +51,16 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 		return err
 	}
 
-	cmd := exec.Command(cryptsetup, "luksClose", path)
-	cmd.SysProcAttr = &syscall.SysProcAttr{}
-	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
 		return err
 	}
 	defer lock.Release(fd)
+
+	cmd := exec.Command(cryptsetup, "close", path)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Credential: &syscall.Credential{Uid: 0, Gid: 0},
+	}
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
@@ -75,7 +77,7 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	f, err := os.Stat(path)
 	if err != nil {
-		return "", "", fmt.Errorf("failed getting size of %s", path)
+		return "", fmt.Errorf("failed getting size of %s", path)
 	}
 
 	fSize := f.Size()
@@ -84,7 +86,7 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	cryptF, err := ioutil.TempFile("", "crypt-")
 	if err != nil {
 		sylog.Debugf("Error creating temporary crypt file")
-		return "", "", err
+		return "", err
 	}
 	defer cryptF.Close()
 
@@ -95,7 +97,7 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	err = os.Truncate(cryptF.Name(), devSize)
 	if err != nil {
 		sylog.Debugf("Unable to truncate crypt file to size %d", devSize)
-		return "", "", err
+		return "", err
 	}
 
 	cryptF.Close()
@@ -103,7 +105,7 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	// Associate the temporary crypt file with a loop device
 	loop, err := createLoop(cryptF.Name(), 0, uint64(devSize))
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	// NOTE: This routine runs with root privileges. It's not necessary
@@ -116,14 +118,14 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 
 	cryptsetup, err := bin.Cryptsetup()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", "--luks2-metadata-size", "64k", "--luks2-keyslots-size", "512k", loop)
 	stdin, err := cmd.StdinPipe()
 
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	go func() {
@@ -206,8 +208,7 @@ func getNextAvailableCryptDevice() string {
 func (crypt *Device) Open(key, path string) (string, error) {
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
-		sylog.Debugf("Unable to acquire lock on /dev/mapper while decrypting")
-		return "", err
+		return "", fmt.Errorf("unable to acquire lock on /dev/mapper")
 	}
 	defer lock.Release(fd)
 
