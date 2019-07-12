@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
@@ -20,7 +21,7 @@ const cacheCustom = "/tmp/customcachedir"
 var expectedCacheCustomRoot = filepath.Join(cacheCustom, CacheDir)
 var cacheDefault = filepath.Join(syfs.ConfigDir(), CacheDir)
 
-func TestCleanAllCaches(t *testing.T) {
+func TestNewHandle(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
@@ -47,13 +48,54 @@ func TestCleanAllCaches(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create new image cache handle: %s", err)
 			}
-			/* This is evil: if the cache is the default cache, we clean it */
-			defer c.cleanAllCaches()
 
 			if r := c.rootDir; r != tt.expected {
 				t.Errorf("Unexpected result: %s (expected %s)", r, tt.expected)
 			}
 		})
+	}
+}
+
+func TestCleanAllCaches(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	imageCacheDir, err := ioutil.TempDir("", "image-cache-")
+	if err != nil {
+		t.Fatalf("failed to create a temporary image cache")
+	}
+	defer os.RemoveAll(imageCacheDir)
+
+	c, err := NewHandle(imageCacheDir)
+	if err != nil {
+		t.Fatalf("failed to create new image cache handle: %s", err)
+	}
+
+	// list of subdirs to iterate over
+	cacheDirs := map[string]string{
+		"library": c.Library,
+		"oci":     c.OciTemp,
+		"blob":    c.OciBlob,
+		"shub":    c.Shub,
+		"oras":    c.Oras,
+		"net":     c.Net,
+	}
+
+	testfile := "test"
+	for _, dir := range cacheDirs {
+		if err := fs.Touch(filepath.Join(dir, testfile)); err != nil {
+			t.Fatalf("Failed to create file in test cache: %v", err)
+		}
+	}
+
+	// clean out our cache
+	c.cleanAllCaches()
+
+	for name, dir := range cacheDirs {
+		_, err := os.Stat(filepath.Join(dir, testfile))
+		if !os.IsNotExist(err) {
+			t.Errorf("Failed to clean %q cache at: %s", name, dir)
+		}
 	}
 }
 
@@ -100,8 +142,8 @@ func TestRoot(t *testing.T) {
 				t.Fatalf("failed to create new image cache: %s", err)
 			}
 
-			root := imgCache.Root()
-			if root == tt.expectedResult {
+			root := imgCache.rootDir
+			if root != tt.expectedResult {
 				t.Fatalf("test %s returned %s instead of %s", tt.name, root, tt.expectedResult)
 			}
 
