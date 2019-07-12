@@ -46,7 +46,7 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(cp.b.FSObjects["shubImg"], cp.b)

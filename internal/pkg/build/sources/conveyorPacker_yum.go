@@ -53,28 +53,28 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 	} else if installCommandPath, err = exec.LookPath("yum"); err == nil {
 		sylog.Debugf("Found yum at: %v", installCommandPath)
 	} else {
-		return fmt.Errorf("Neither yum nor dnf in PATH")
+		return fmt.Errorf("neither yum nor dnf in path")
 	}
 
 	// check for rpm on system
 	err = c.getRPMPath()
 	if err != nil {
-		return fmt.Errorf("While checking rpm path: %v", err)
+		return fmt.Errorf("while checking rpm path: %v", err)
 	}
 
 	err = c.getBootstrapOptions()
 	if err != nil {
-		return fmt.Errorf("While getting bootstrap options: %v", err)
+		return fmt.Errorf("while getting bootstrap options: %v", err)
 	}
 
 	err = c.genYumConfig()
 	if err != nil {
-		return fmt.Errorf("While generating Yum config: %v", err)
+		return fmt.Errorf("while generating yum config: %v", err)
 	}
 
 	err = c.copyPseudoDevices()
 	if err != nil {
-		return fmt.Errorf("While copying pseudo devices: %v", err)
+		return fmt.Errorf("while copying pseudo devices: %v", err)
 	}
 
 	args := []string{`--noplugins`, `-c`, filepath.Join(c.b.Rootfs(), yumConf), `--installroot`, c.b.Rootfs(), `--releasever=` + c.osversion, `-y`, `install`}
@@ -86,7 +86,7 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 	// cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While bootstrapping: %v", err)
+		return fmt.Errorf("while bootstrapping: %v", err)
 	}
 
 	// clean up bootstrap packages
@@ -99,12 +99,12 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 func (cp *YumConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v", err)
+		return nil, fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	return cp.b, nil
@@ -115,7 +115,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 
 	c.rpmPath, err = exec.LookPath("rpm")
 	if err != nil {
-		return fmt.Errorf("RPM is not in PATH: %v", err)
+		return fmt.Errorf("rpm is not in path: %v", err)
 	}
 
 	cmd := exec.Command("rpm", "--showrc")
@@ -139,7 +139,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 	}
 
 	if rpmDBPath == "" {
-		return fmt.Errorf("Could not find dbpath")
+		return fmt.Errorf("could not find dbpath")
 	} else if rpmDBPath != `%{_var}/lib/rpm` {
 		return fmt.Errorf("RPM database is using a weird path: %s\n"+
 			"You are probably running this bootstrap on Debian or Ubuntu.\n"+
@@ -166,7 +166,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	// get mirrorURL, updateURL, OSVerison, and Includes components to definition
 	c.mirrorurl, ok = c.b.Recipe.Header["mirrorurl"]
 	if !ok {
-		return fmt.Errorf("Invalid yum header, no MirrorURL specified")
+		return fmt.Errorf("invalid yum header, no mirrorurl specified")
 	}
 
 	c.updateurl = c.b.Recipe.Header["updateurl"]
@@ -176,7 +176,7 @@ func (c *YumConveyor) getBootstrapOptions() (err error) {
 	if regex.MatchString(c.mirrorurl) || regex.MatchString(c.updateurl) {
 		c.osversion, ok = c.b.Recipe.Header["osversion"]
 		if !ok {
-			return fmt.Errorf("Invalid yum header, OSVersion referenced in mirror but no OSVersion specified")
+			return fmt.Errorf("invalid yum header, osversion referenced in mirror but no osversion specified")
 		}
 		c.mirrorurl = regex.ReplaceAllString(c.mirrorurl, c.osversion)
 		c.updateurl = regex.ReplaceAllString(c.updateurl, c.osversion)
@@ -252,19 +252,19 @@ func (c *YumConveyor) genYumConfig() (err error) {
 
 	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/etc"), 0775)
 	if err != nil {
-		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), "/etc"), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), "/etc"), err)
 	}
 
 	err = ioutil.WriteFile(filepath.Join(c.b.Rootfs(), yumConf), []byte(fileContent), 0664)
 	if err != nil {
-		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), yumConf), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), yumConf), err)
 	}
 
 	// if gpg key is specified, import it
 	if c.gpg != "" {
 		err = c.importGPGKey()
 		if err != nil {
-			return fmt.Errorf("While importing GPG key: %v", err)
+			return fmt.Errorf("while importing gpg key: %v", err)
 		}
 	} else {
 		sylog.Infof("Skipping GPG Key Import")
@@ -278,26 +278,26 @@ func (c *YumConveyor) importGPGKey() (err error) {
 
 	// make sure gpg is being imported over https
 	if !strings.HasPrefix(c.gpg, "https://") {
-		return fmt.Errorf("GPG key must be fetched with https")
+		return fmt.Errorf("gpg key must be fetched with https")
 	}
 
 	// make sure curl is installed so rpm can import gpg key
 	if _, err = exec.LookPath("curl"); err != nil {
-		return fmt.Errorf("Neither yum nor dnf in PATH")
+		return fmt.Errorf("neither yum nor dnf in path")
 	}
 
 	cmd := exec.Command(c.rpmPath, "--root", c.b.Rootfs(), "--initdb")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While initializing new rpm db: %v", err)
+		return fmt.Errorf("while initializing new rpm db: %v", err)
 	}
 
 	cmd = exec.Command(c.rpmPath, "--root", c.b.Rootfs(), "--import", c.gpg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While importing GPG key with rpm: %v", err)
+		return fmt.Errorf("while importing gpg key with rpm: %v", err)
 	}
 
 	sylog.Infof("GPG key import complete!")
@@ -308,7 +308,7 @@ func (c *YumConveyor) importGPGKey() (err error) {
 func (c *YumConveyor) copyPseudoDevices() (err error) {
 	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/dev"), 0775)
 	if err != nil {
-		return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), "/dev"), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), "/dev"), err)
 	}
 
 	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
@@ -320,7 +320,7 @@ func (c *YumConveyor) copyPseudoDevices() (err error) {
 		if err = cmd.Run(); err != nil {
 			f, err := os.Create(c.b.Rootfs() + "/.singularity.d/runscript")
 			if err != nil {
-				return fmt.Errorf("While creating %v: %v", filepath.Join(c.b.Rootfs(), dev), err)
+				return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), dev), err)
 			}
 
 			defer f.Close()

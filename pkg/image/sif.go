@@ -24,7 +24,7 @@ type sifFormat struct{}
 
 func (f *sifFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
-		return fmt.Errorf("not a SIF file image")
+		return fmt.Errorf("not a sif file image")
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {

@@ -592,7 +592,7 @@ func List(libexecdir string) ([]*Meta, error) {
 	pattern := filepath.Join(pluginDir, "*.meta")
 	entries, err := filepath.Glob(pattern)
 	if err != nil {
-		return nil, fmt.Errorf("Cannot list plugins in directory %q", pluginDir)
+		return nil, fmt.Errorf("cannot list plugins in directory %q", pluginDir)
 	}
 
 	metas := []*Meta{}

@@ -134,7 +134,7 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
 	if err != nil {
-		return fmt.Errorf("failed to load SIF container file: %s", err)
+		return fmt.Errorf("failed to load sif container file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 
@@ -277,7 +277,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 	fimg, err := sif.LoadContainer(cpath, true)
 	if err != nil {
-		return false, fmt.Errorf("failed to load SIF container file: %s", err)
+		return false, fmt.Errorf("failed to load sif container file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 

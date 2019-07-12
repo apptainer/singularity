@@ -35,22 +35,22 @@ func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
 	// get mirrorURL, OSVerison, and Includes components to definition
 	mirrorurl, ok := b.Recipe.Header["mirrorurl"]
 	if !ok {
-		return fmt.Errorf("Invalid busybox header, no MirrurURL specified")
+		return fmt.Errorf("invalid busybox header, no mirrur url specified")
 	}
 
 	err = c.insertBaseEnv()
 	if err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = c.insertBaseFiles()
 	if err != nil {
-		return fmt.Errorf("While inserting files: %v", err)
+		return fmt.Errorf("while inserting files: %v", err)
 	}
 
 	busyBoxPath, err := c.insertBusyBox(mirrorurl)
 	if err != nil {
-		return fmt.Errorf("While inserting busybox: %v", err)
+		return fmt.Errorf("while inserting busybox: %v", err)
 	}
 
 	cmd := exec.Command(busyBoxPath, `--install`, filepath.Join(c.b.Rootfs(), "/bin"))
@@ -59,7 +59,7 @@ func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("While performing busybox install: %v", err)
+		return fmt.Errorf("while performing busybox install: %v", err)
 	}
 
 	return nil
@@ -69,7 +69,7 @@ func (c *BusyBoxConveyor) Get(b *types.Bundle) (err error) {
 func (cp *BusyBoxConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	return cp.b, nil
@@ -96,7 +96,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 
 	resp, err := http.Get(mirrorurl)
 	if err != nil {
-		return "", fmt.Errorf("While performing http request: %v", err)
+		return "", fmt.Errorf("while performing http request: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -113,7 +113,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 
 	//Simple check to make sure file received is the correct size
 	if bytesWritten != resp.ContentLength {
-		return "", fmt.Errorf("File received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
+		return "", fmt.Errorf("file received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	err = os.Chmod(f.Name(), 0755)

@@ -426,7 +426,7 @@ func copy(src, dst string) error {
 	copy.Stderr = &stderr
 	sylog.Debugf("Copying %v to %v", src, dst)
 	if err := copy.Run(); err != nil {
-		return fmt.Errorf("While copying %v to %v: %v: %v", src, dst, err, stderr.String())
+		return fmt.Errorf("while copying %v to %v: %v: %v", src, dst, err, stderr.String())
 	}
 
 	return nil

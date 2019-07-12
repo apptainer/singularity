@@ -80,10 +80,10 @@ func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error
 	// Do the request, if status isn't success, return error
 	res, err := httpc.Do(req)
 	if res == nil {
-		return ShubAPIResponse{}, fmt.Errorf("No response received from singularity hub")
+		return ShubAPIResponse{}, fmt.Errorf("no response received from singularity hub")
 	}
 	if res.StatusCode == http.StatusNotFound {
-		return ShubAPIResponse{}, fmt.Errorf("The requested manifest was not found in singularity hub")
+		return ShubAPIResponse{}, fmt.Errorf("the requested manifest was not found in singularity hub")
 	}
 	sylog.Debugf("%s response received, beginning manifest download\n", res.Status)
 

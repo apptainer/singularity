@@ -32,5 +32,5 @@ func IsValidAssembler(c string) (valid bool, err error) {
 		return true, nil
 	}
 
-	return false, fmt.Errorf("Invalid Assembler %s", c)
+	return false, fmt.Errorf("invalid assembler %s", c)
 }

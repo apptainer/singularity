@@ -203,7 +203,7 @@ func shouldRun(ecl *EclConfig, fp *os.File) (ok bool, err error) {
 		return checkBlackList(fp, egroup)
 	}
 
-	return false, fmt.Errorf("ECL config file invalid")
+	return false, fmt.Errorf("ecl config file invalid")
 }
 
 // ShouldRun determines if a container should run according to its execgroup rules

@@ -35,7 +35,7 @@ func IsNetPullRef(libraryRef string) bool {
 func DownloadImage(filePath string, libraryURL string, Force bool) error {
 
 	if !IsNetPullRef(libraryURL) {
-		return fmt.Errorf("Not a valid url reference: %s", libraryURL)
+		return fmt.Errorf("not a valid url reference: %s", libraryURL)
 	}
 	if filePath == "" {
 		refParts := strings.Split(libraryURL, "/")
@@ -70,7 +70,7 @@ func DownloadImage(filePath string, libraryURL string, Force bool) error {
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("The requested image was not found in the library")
+		return fmt.Errorf("the requested image was not found in the library")
 	}
 
 	if res.StatusCode != http.StatusOK {

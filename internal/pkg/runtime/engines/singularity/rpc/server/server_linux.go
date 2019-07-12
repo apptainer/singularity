@@ -40,7 +40,7 @@ func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) 
 
 	key, err := cryptDev.ReadKeyFromStdin(false)
 	if err != nil {
-		return fmt.Errorf("Unable to read key from stdin")
+		return fmt.Errorf("unable to read key from stdin")
 	}
 	cryptName, err := cryptDev.GetCryptDevice(key, arguments.Loopdev)
 
