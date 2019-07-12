@@ -177,6 +177,31 @@ func (c *ctx) testSingularity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+
+		printSuccessOrFailureFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			if r.Stdout != nil {
+				t.Logf(string(r.Stdout) + "\n")
+			}
+			if r.Stderr != nil {
+				t.Logf(string(r.Stderr) + "\n")
+			}
+		}
+
+		e2e.RunSingularity(t, tt.name, e2e.WithArgs(tt.argv...),
+			e2e.PostRun(func(t *testing.T) {
+
+				if !t.Failed() && !tt.shouldPass {
+					// expecting PASS, failed => FAIL
+					t.Fatalf("While running command:\n%s\nUnexpected failure", tt.name)
+				}
+				if t.Failed() && tt.shouldPass {
+					// expecting FAIL, failed => PASS
+					t.Fatalf("While running command:\n%s\nUnexpected success", tt.name)
+				}
+
+			}),
+			e2e.ExpectExit(0, printSuccessOrFailureFn))
+
 		t.Run(tt.name, func(t *testing.T) {
 			cmd := exec.Command(c.env.CmdPath, tt.argv...)
 			switch res := cmd.Run(t); {
