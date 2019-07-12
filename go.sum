@@ -33,7 +33,7 @@ github.com/containernetworking/cni v0.7.1 h1:fE3r16wpSEyaqY4Z4oFrLMmIGfBYIKpPrHK
 github.com/containernetworking/cni v0.7.1/go.mod h1:LGwApLUm2FpoOfxTDEeq8T9ipbpZ61X79hmU3w8FmsY=
 github.com/containernetworking/plugins v0.8.1 h1:dJbykiiSIS3Xvo8d+A6rSXcUEFGfvCjUA+bUED4qegQ=
 github.com/containernetworking/plugins v0.8.1/go.mod h1:dagHaAhNjXjT9QYOklkKJDGaQPTg4pf//FrUcJeb7FU=
-github.com/containers/image v0.0.0-20180612162315-2e4f799f5eba h1:kUvFz4PWuB3DGy730A29+433HSykc53uvAKhWmoCPXU=
+github.com/containers/image v0.0.0-20180612162315-2e4f799f5eba h1:gSB68H7q2WphSW/Qv2b8/vquMvB6Hx0I7KkYO6pulsQ=
 github.com/containers/image v0.0.0-20180612162315-2e4f799f5eba/go.mod h1:8Vtij257IWSanUQKe1tAeNOm2sRVkSqQTVQ1IlwI3+M=
 github.com/containers/storage v0.0.0-20180604200230-88d80428f9b1 h1:XxYkhkQbl5U+c930nkoJM46gy4xn/UbZlpZ/2kkAKWo=
 github.com/containers/storage v0.0.0-20180604200230-88d80428f9b1/go.mod h1:+RirK6VQAqskQlaTBrOG6ulDvn4si2QjFE1NZCn06MM=
@@ -59,7 +59,7 @@ github.com/deislabs/oras v0.4.0 h1:G/wxhm9Simecxlr7dsjWy5iL0UGPAQlnuFNRZsXVJfI=
 github.com/deislabs/oras v0.4.0/go.mod h1:SXwPnImOu69FofPWaqgB+cPKKQRBmao5i+9xQRdcOiM=
 github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 h1:i5cGFDf/s0ocGJXaJHJR+NiDgMb5oLoUNpGlRZqurlY=
 github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
-github.com/docker/docker v0.0.0-20180522102801-da99009bbb11 h1:UIlbTLoIplW1xQDT+7yqI8ihfHxg73S5vyUsScDWTZc=
+github.com/docker/docker v0.0.0-20180522102801-da99009bbb11 h1:p8hSDXZgVhyh/C9bPlG8QMY64VeXtVfjmjIlzaQok5Q=
 github.com/docker/docker v0.0.0-20180522102801-da99009bbb11/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/docker-credential-helpers v0.6.0 h1:5bhDRLn1roGiNjz8IezRngHxMfoeaXGyr0BeMHq4rD8=
 github.com/docker/docker-credential-helpers v0.6.0/go.mod h1:WRaJzqw3CTB9bk10avuGsjVBZsD05qeibJ1/TYlvc0Y=
@@ -160,7 +160,7 @@ github.com/mtrmac/gpgme v0.0.0-20170102180018-b2432428689c/go.mod h1:GhAqVMEWnTc
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/ginkgo v1.8.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
 github.com/onsi/gomega v1.5.0/go.mod h1:ex+gbHU/CVuBBDIJjb2X0qEXbFg53c61hWP/1CpauHY=
-github.com/openSUSE/umoci v0.4.4 h1:pTM5xAnCpYfWugNp8ZL1e83NiwDxFopqwU3RVSU6l9Y=
+github.com/openSUSE/umoci v0.4.4 h1:CNwlje61gxLf8Yg8wvfFFURN2a9UtczO+6HQS9x+r+s=
 github.com/openSUSE/umoci v0.4.4/go.mod h1:WC0knmZfXsEOZyJUv/k3zDOCzjyaFTGMvooGTe4NzIw=
 github.com/opencontainers/go-digest v1.0.0-rc1 h1:WzifXhOVOEOuFYOJAW6aQqW0TooG2iki3E3Ii+WN7gQ=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
@@ -190,7 +190,7 @@ github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1 h1:osmNoEW2SCW3L
 github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1/go.mod h1:daVV7qP5qjZbuso7PdcryaAu0sAZbrN9i7WWcTMWvro=
 github.com/prometheus/procfs v0.0.0-20180612222113-7d6f385de8be h1:MoyXp/VjXUwM0GyDcdwT7Ubea2gxOSHpPaFo3qV+Y2A=
 github.com/prometheus/procfs v0.0.0-20180612222113-7d6f385de8be/go.mod h1:c3At6R/oaqEKCNdg8wHV1ftS6bRYblBhIjjI8uT2IGk=
-github.com/rootless-containers/proto v0.1.0 h1:+VUNCatWCjNzgrheqcy9qN/VThibH8/cGHQG9UJy2ag=
+github.com/rootless-containers/proto v0.1.0 h1:gS1JOMEtk1YDYHCzBAf/url+olMJbac7MTrgSeP6zh4=
 github.com/rootless-containers/proto v0.1.0/go.mod h1:vgkUFZbQd0gcE/K/ZwtE4MYjZPu0UNHLXIQxhyqAFh8=
 github.com/russross/blackfriday v1.5.2 h1:HyvC0ARfnZBqnXwABFeSZHpKvJHJJfPz81GNueLj0oo=
 github.com/russross/blackfriday v1.5.2/go.mod h1:JO/DiYxRf+HjHt06OyowR9PTA263kcR/rfWxYHBV53g=
@@ -229,7 +229,7 @@ github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e/go.mod h1:hkRG
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
 github.com/urfave/cli v1.20.0 h1:fDqGv3UG/4jbVl/QkFwEdddtEDjh/5Ov6X+0B/3bPaw=
 github.com/urfave/cli v1.20.0/go.mod h1:70zkFmudgCuE/ngEzBv17Jvp/497gISqfk5gWijbERA=
-github.com/vbatts/go-mtree v0.4.3 h1:U57BeTKpgmNcMu7lRJHzx6GHsstjGT7A9+iqviOuvtQ=
+github.com/vbatts/go-mtree v0.4.3 h1:IC2s9EpogK3QzU+VsfuEdM7POkwnW43XDGAWO2Rb1Bo=
 github.com/vbatts/go-mtree v0.4.3/go.mod h1:3sazBqLG4bZYmgRTgdh9X3iKTzwBpp5CrREJDzrNSXY=
 github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6 h1:YqlaLDyh/+jUHgh83iNy8KiCvD4LeqnSS5U5a9cgYqU=
 github.com/vishvananda/netlink v1.0.1-0.20190618143317-99a56c251ae6/go.mod h1:+SR5DhBJrl6ZM7CoCKvpw5BKroDKQ+PJqOg65H/2ktk=
@@ -282,7 +282,7 @@ gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7/go.mod h1:dt/ZhP58zS4L8KSrWD
 gopkg.in/yaml.v2 v2.2.1/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
 gopkg.in/yaml.v2 v2.2.2 h1:ZCJp+EgiOT7lHqUV2J862kp8Qj64Jo6az82+3Td9dZw=
 gopkg.in/yaml.v2 v2.2.2/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
-gotest.tools v2.3.0+incompatible h1:zANm08BR3aLMhyvHi+AxtY5IhnqJOnWsNhtRkKkZhmM=
+gotest.tools v2.3.0+incompatible h1:oTCKjb7ZuVfn37AQodk7UysjQQL/S5Dep3pzi59u1NQ=
 gotest.tools v2.3.0+incompatible/go.mod h1:R//lfYlUuTOTfblYI3lGoAAAebUdzjvbmQsuB7Ykd90=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 k8s.io/client-go v0.0.0-20181010045704-56e7a63b5e38/go.mod h1:7vJpHMYJwNQCWgzmNV+VYUl1zCObLyodBc8nIyt8L5s=
