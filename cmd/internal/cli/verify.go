@@ -6,6 +6,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -20,6 +21,7 @@ var (
 	sifGroupID  uint32 // -g groupid specification
 	sifDescID   uint32 // -i id specification
 	localVerify bool   // -l flag
+	jsonVerify  bool   // -j flag
 )
 
 // -u|--url
@@ -64,6 +66,16 @@ var verifyLocalFlag = cmdline.Flag{
 	EnvKeys:      []string{"LOCAL_VERIFY"},
 }
 
+// -j|--json
+var verifyJSONFlag = cmdline.Flag{
+	ID:           "verifyJsonFlag",
+	Value:        &jsonVerify,
+	DefaultValue: false,
+	Name:         "json",
+	ShortHand:    "j",
+	Usage:        "output json",
+}
+
 func init() {
 	cmdManager.RegisterCmd(VerifyCmd)
 
@@ -71,6 +83,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify
@@ -115,7 +128,8 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	_, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false, false)
+	author, _, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, jsonVerify)
+	fmt.Printf("%s", author)
 	if err == signing.ErrVerificationFail {
 		sylog.Fatalf("Failed to verify: %s", cpath)
 	} else if err != nil {
