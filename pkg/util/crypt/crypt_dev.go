@@ -90,9 +90,17 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	}
 	defer cryptF.Close()
 
-	// Truncate the file taking the squashfs size and crypt header into account
-	// Crypt header is around 2MB in size. Slightly over-allocate to be safe
-	devSize := fSize + 1*1024*1024 // 16MB for LUKS header
+	// Truncate the file taking the squashfs size and crypt header
+	// into account. With the options specified below
+	// (--luks2-metadata-size 64k, --luks2-keyslots-size 512k) the
+	// LUKS header is less than 1MB in size. Slightly over-allocate
+	// to compensate for the encryption overhead itself.
+	//
+	// TODO(mem): the encryption overhead might depend on the size
+	// of the data we are encrypting. For very large images, we
+	// might not be overallocating enough. Figure out what's the
+	// actual percentage we need to overallocate.
+	devSize := fSize + 1*1024*1024
 
 	err = os.Truncate(cryptF.Name(), devSize)
 	if err != nil {
