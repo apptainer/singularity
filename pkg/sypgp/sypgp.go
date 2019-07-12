@@ -7,7 +7,6 @@
 package sypgp
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"crypto"
@@ -18,18 +17,17 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 
 	jsonresp "github.com/sylabs/json-resp"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"golang.org/x/crypto/openpgp"
 	"golang.org/x/crypto/openpgp/armor"
 	"golang.org/x/crypto/openpgp/packet"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 const helpAuth = `Access token is expired or missing. To update or obtain a token:
@@ -40,10 +38,7 @@ const helpAuth = `Access token is expired or missing. To update or obtain a toke
 const helpPush = `  4) Push key using "singularity key push %[1]X"
 `
 
-var errPassphraseMismatch = errors.New("passphrases do not match")
-var errTooManyRetries = errors.New("too many retries while getting a passphrase")
 var errNotEncrypted = errors.New("key is not encrypted")
-var errInvalidChoice = errors.New("invalid choice")
 
 // ErrEmptyKeyring is the error when the public, or private keyring
 // empty.
@@ -61,132 +56,6 @@ type Handle struct {
 
 func (e *KeyExistsError) Error() string {
 	return fmt.Sprintf("the key with fingerprint %X already belongs to the keyring", e.fingerprint)
-}
-
-// askQuestionUsingGenericDescr reads from a file descriptor (more precisely
-// from a *os.File object) one line at a time. The file can be a normal file or
-// os.Stdin.
-// Note that we could imagine a simpler code but we want to make sure that the
-// code works properly in the normal case with the default Stdin and when
-// redirecting stdin (for testing or when using pipes).
-//
-// TODO: use a io.ReadSeeker instead of a *os.File
-func askQuestionUsingGenericDescr(f *os.File) (string, error) {
-	// Get the initial position in the buffer so we can later seek the correct
-	// position based on how much data we read. Doing so, we can still benefit
-	// from buffered IO and still have a fine-grain controlover reading
-	// operations.
-	// Note that we do not check for errirs since some cases (e.g., pipes) will
-	// actually not allow to perform a seek. This is intended and basically a
-	// no-op in that context.
-	pos, _ := f.Seek(0, os.SEEK_CUR)
-	// Get the data
-	scanner := bufio.NewScanner(f)
-	tok := scanner.Scan()
-	if !tok {
-		return "", scanner.Err()
-	}
-	response := scanner.Text()
-	if err := scanner.Err(); err != nil {
-		return "", err
-	}
-	// We did a buffered read (for good reasons, it is generic), so we make
-	// sure we reposition ourselves at the end of the data that was read, not
-	// the end of the buffer, so we can make sure that we read the data line
-	// by line and do not drop data after a lot more data was read from the
-	// file descriptor. In other terms, we may have read a very small subset
-	// of the available data and make sure we reposition ourselves at the
-	// end of the data we handled, not at the end of the data that was read
-	// from the file descriptor.
-	strLen := 1 // We always move forward, even if we get an empty response
-	if len(response) > 1 {
-		strLen += len(response)
-	}
-	// Note that we do not check for errors since some cases (e.g., pipes)
-	// will actually not allow to perform a Seek(). This is intended and
-	// will not create a problem.
-	f.Seek(pos+int64(strLen), os.SEEK_SET)
-
-	return response, nil
-}
-
-// AskQuestion prompts the user with a question and return the response
-func AskQuestion(format string, a ...interface{}) (string, error) {
-	fmt.Printf(format, a...)
-	return askQuestionUsingGenericDescr(os.Stdin)
-}
-
-// askYNQuestion prompts the user expecting an answer that's either "y",
-// "n" or a blank, in which case defaultAnswer is returned.
-func askYNQuestion(defaultAnswer, format string, a ...interface{}) (string, error) {
-	ans, err := AskQuestion(format, a...)
-	if err != nil {
-		return "", err
-	}
-
-	switch ans := strings.ToLower(ans); ans {
-	case "y", "yes":
-		return "y", nil
-
-	case "n", "no":
-		return "n", nil
-
-	case "":
-		return defaultAnswer, nil
-
-	default:
-		return "", fmt.Errorf("invalid answer %q", ans)
-	}
-}
-
-func askNumberInRange(start, end int, format string, a ...interface{}) (int, error) {
-	ans, err := AskQuestion(format, a...)
-	if err != nil {
-		return 0, err
-	}
-
-	n, err := strconv.ParseInt(ans, 10, 32)
-	if err != nil {
-		return 0, err
-	}
-
-	m := int(n)
-
-	if m < start || m > end {
-		return 0, errInvalidChoice
-	}
-
-	return m, nil
-}
-
-// AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
-func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
-	fmt.Printf(format, a...)
-
-	var response string
-	var err error
-	// Go provides a package for handling terminal and more specifically
-	// reading password from terminal. We want to use the package when possible
-	// since it gives us an easy and secure way to interactively get the
-	// password from the user. However, this is only working when the
-	// underlying file descriptor is associated to a VT100 terminal, not with
-	// other file descriptors, including when redirecting Stdin to an actual
-	// file in the context of testing or in the context of pipes.
-	if terminal.IsTerminal(int(os.Stdin.Fd())) {
-		var resp []byte
-		resp, err = terminal.ReadPassword(int(os.Stdin.Fd()))
-		if err != nil {
-			return "", err
-		}
-		response = string(resp)
-	} else {
-		response, err = askQuestionUsingGenericDescr(os.Stdin)
-		if err != nil {
-			return "", err
-		}
-	}
-	fmt.Println("")
-	return string(response), nil
 }
 
 // GetTokenFile returns a string describing the path to the stored token file
@@ -559,44 +428,6 @@ func (keyring *Handle) RemovePubKey(toDelete string) error {
 	return keyring.storePubKeyring(newKeyList)
 }
 
-// GetPassphrase will ask the user for a password with int number of
-// retries.
-func GetPassphrase(message string, retries int) (string, error) {
-	ask := func() (string, error) {
-		pass1, err := AskQuestionNoEcho(message)
-		if err != nil {
-			return "", err
-		}
-
-		pass2, err := AskQuestionNoEcho("Retype your passphrase : ")
-		if err != nil {
-			return "", err
-		}
-
-		if pass1 != pass2 {
-			return "", errPassphraseMismatch
-		}
-
-		return pass1, nil
-	}
-
-	for i := 0; i < retries; i++ {
-		switch passphrase, err := ask(); err {
-		case nil:
-			// we got it!
-			return passphrase, nil
-		case errPassphraseMismatch:
-			// retry
-			sylog.Warningf("%v", err)
-		default:
-			// something else went wrong, bail out
-			return "", err
-		}
-	}
-
-	return "", errTooManyRetries
-}
-
 func (keyring *Handle) genKeyPair(name, comment, email, passphrase string) (*openpgp.Entity, error) {
 	conf := &packet.Config{RSABits: 4096, DefaultHash: crypto.SHA384}
 
@@ -628,23 +459,23 @@ func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*open
 		return nil, err
 	}
 
-	name, err := AskQuestion("Enter your name (e.g., John Doe) : ")
+	name, err := interactive.AskQuestion("Enter your name (e.g., John Doe) : ")
 	if err != nil {
 		return nil, err
 	}
 
-	email, err := AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
+	email, err := interactive.AskQuestion("Enter your email address (e.g., john.doe@example.com) : ")
 	if err != nil {
 		return nil, err
 	}
 
-	comment, err := AskQuestion("Enter optional comment (e.g., development keys) : ")
+	comment, err := interactive.AskQuestion("Enter optional comment (e.g., development keys) : ")
 	if err != nil {
 		return nil, err
 	}
 
 	// get a password
-	passphrase, err := GetPassphrase("Enter a passphrase : ", 3)
+	passphrase, err := interactive.GetPassphrase("Enter a passphrase : ", 3)
 	if err != nil {
 		return nil, err
 	}
@@ -659,7 +490,7 @@ func (keyring *Handle) GenKeyPair(keyServiceURI string, authToken string) (*open
 	fmt.Printf("done\n")
 
 	// Ask to push the new key to the keystore
-	ans, err := askYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
+	ans, err := interactive.AskYNQuestion("y", "Would you like to push it to the keystore? [Y,n] ")
 	switch {
 	case err != nil:
 		fmt.Fprintf(os.Stderr, "Not pushing newly created key to keystore: %s\n", err)
@@ -689,7 +520,7 @@ func DecryptKey(k *openpgp.Entity, message string) error {
 		message = "Enter key passphrase : "
 	}
 
-	pass, err := AskQuestionNoEcho(message)
+	pass, err := interactive.AskQuestionNoEcho(message)
 	if err != nil {
 		return err
 	}
@@ -705,14 +536,14 @@ func EncryptKey(k *openpgp.Entity, pass string) error {
 	return k.PrivateKey.Encrypt([]byte(pass))
 }
 
-// SelectPubKey prints a public key list to user and returns the choice
-func SelectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
+// selectPubKey prints a public key list to user and returns the choice
+func selectPubKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	if len(el) == 0 {
 		return nil, ErrEmptyKeyring
 	}
 	printEntities(os.Stdout, el)
 
-	n, err := askNumberInRange(0, len(el)-1, "Enter # of public key to use : ")
+	n, err := interactive.AskNumberInRange(0, len(el)-1, "Enter # of public key to use : ")
 	if err != nil {
 		return nil, err
 	}
@@ -727,7 +558,7 @@ func SelectPrivKey(el openpgp.EntityList) (*openpgp.Entity, error) {
 	}
 	printEntities(os.Stdout, el)
 
-	n, err := askNumberInRange(0, len(el)-1, "Enter # of private key to use : ")
+	n, err := interactive.AskNumberInRange(0, len(el)-1, "Enter # of private key to use : ")
 	if err != nil {
 		return nil, err
 	}
@@ -865,10 +696,12 @@ func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
 	}
 
 	if err := k.PrivateKey.Decrypt(passphrase); err != nil {
+		fmt.Printf("failed to decrypt key with %s", string(passphrase))
 		return err
 	}
 
 	if err := k.PrivateKey.Encrypt(passphrase); err != nil {
+		fmt.Println("failed to encrypt key")
 		return err
 	}
 
@@ -888,7 +721,7 @@ func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
 		return err
 	}
 
-	pass, err := AskQuestionNoEcho("Enter key passphrase : ")
+	pass, err := interactive.AskQuestionNoEcho("Enter key passphrase : ")
 	if err != nil {
 		return err
 	}
@@ -932,7 +765,7 @@ func (keyring *Handle) ExportPubKey(kpath string, armor bool) error {
 		return fmt.Errorf("unable to open local keyring: %v", err)
 	}
 
-	entityToExport, err := SelectPubKey(localEntityList)
+	entityToExport, err := selectPubKey(localEntityList)
 	if err != nil {
 		return err
 	}
@@ -1003,7 +836,7 @@ func (keyring *Handle) importPrivateKey(entity *openpgp.Entity) error {
 	}
 
 	// Get a new password for the key
-	newPass, err := GetPassphrase("Enter a new password for this key : ", 3)
+	newPass, err := interactive.GetPassphrase("Enter a new password for this key : ", 3)
 	if err != nil {
 		return err
 	}
