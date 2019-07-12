@@ -69,9 +69,10 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	return nil
 }
 
-// FormatCryptDevice allocates a loop device, encrypts, and returns the loop device name, and encrypted device name
-func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error) {
-
+// EncryptFilesystem takes the path to a file containing a non-encrypted
+// filesystem, encrypts it using the provided key, and returns a path to
+// a file that can be later used as an encrypted volume with cryptsetup.
+func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	f, err := os.Stat(path)
 	if err != nil {
 		return "", "", fmt.Errorf("failed getting size of %s", path)
