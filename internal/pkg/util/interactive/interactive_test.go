@@ -14,6 +14,39 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test"
 )
 
+func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {
+	// Each line of the string represents a virtual different answer from a user
+	testBytes := []byte(input)
+
+	// we create a temporary file that will act as Stdin
+	testFile, err := ioutil.TempFile("", "inputTest")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %s", err)
+	}
+
+	// Write the data that we will later on need
+	_, err = testFile.Write(testBytes)
+	if err != nil {
+		testFile.Close()
+		os.Remove(testFile.Name())
+		t.Fatalf("failed to write to %s: %s", testFile.Name(), err)
+	}
+
+	// Reposition to the beginning of file to ensure there is something to read
+	_, err = testFile.Seek(0, os.SEEK_SET)
+	if err != nil {
+		testFile.Close()
+		os.Remove(testFile.Name())
+		t.Fatalf("failed to seek to beginning of file %s: %s", testFile.Name(), err)
+	}
+
+	// Redirect Stdin
+	savedStdin := os.Stdin
+	os.Stdin = testFile
+
+	return testFile, savedStdin
+}
+
 func TestAskNYQuestion(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -68,35 +101,12 @@ func TestAskNYQuestion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Each line of the string represents a virtual different answer from a user
-			testBytes := []byte(tt.input)
-
-			// we create a temporary file that will act as Stdin
-			testFile, err := ioutil.TempFile("", "inputTest")
-			if err != nil {
-				t.Fatalf("failed to create temporary file: %s", err)
-			}
-			defer testFile.Close()
-			defer os.Remove(testFile.Name())
-
-			// Write the data that we will later on need
-			_, err = testFile.Write(testBytes)
-			if err != nil {
-				t.Fatalf("failed to write to %s: %s", testFile.Name(), err)
-			}
-
-			// Reposition to the beginning of file to ensure there is something to read
-			_, err = testFile.Seek(0, os.SEEK_SET)
-			if err != nil {
-				t.Fatalf("failed to seek to beginning of file %s: %s", testFile.Name(), err)
-			}
-
-			// Redirect Stdin
-			savedStdin := os.Stdin
+			tempFile, savedStdin := generateQuestionInput(t, tt.input)
+			defer tempFile.Close()
+			defer os.RemoveAll(tempFile.Name())
 			defer func() {
 				os.Stdin = savedStdin
 			}()
-			os.Stdin = testFile
 
 			res, err := AskYNQuestion(defaultAnswer, "")
 			if tt.shallPass == true && (err != nil || res != tt.expectedOutput) {
@@ -145,35 +155,12 @@ func TestAskNumberInRange(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Each line of the string represents a virtual different answer from a user
-			testBytes := []byte(tt.input)
-
-			// we create a temporary file that will act as Stdin
-			testFile, err := ioutil.TempFile("", "inputTest")
-			if err != nil {
-				t.Fatalf("failed to create temporary file: %s", err)
-			}
-			defer testFile.Close()
-			defer os.Remove(testFile.Name())
-
-			// Write the data that we will later on need
-			_, err = testFile.Write(testBytes)
-			if err != nil {
-				t.Fatalf("failed to write to %s: %s", testFile.Name(), err)
-			}
-
-			// Reposition to the beginning of file to ensure there is something to read
-			_, err = testFile.Seek(0, os.SEEK_SET)
-			if err != nil {
-				t.Fatalf("failed to seek to beginning of file %s: %s", testFile.Name(), err)
-			}
-
-			// Redirect Stdin
-			savedStdin := os.Stdin
+			tempFile, savedStdin := generateQuestionInput(t, tt.input)
+			defer tempFile.Close()
+			defer os.RemoveAll(tempFile.Name())
 			defer func() {
 				os.Stdin = savedStdin
 			}()
-			os.Stdin = testFile
 
 			res, err := AskNumberInRange(rangeStart, rangeEnd, "")
 			if tt.shallPass == true && (err != nil || res != tt.expectedOutput) {
@@ -192,34 +179,12 @@ func TestAskQuestion(t *testing.T) {
 
 	// Each line of the string represents a virtual different answer from a user
 	testStr := "test test test\ntest2 test2\n\ntest3"
-	testBytes := []byte(testStr)
-
-	// we create a temporary file that will act as Stdin
-	testFile, err := ioutil.TempFile("", "inputTest")
-	if err != nil {
-		t.Fatalf("failed to create temporary file: %s", err)
-	}
-	defer testFile.Close()
-	defer os.Remove(testFile.Name())
-
-	// Write the data that AskQuestion() will later on need
-	_, err = testFile.Write(testBytes)
-	if err != nil {
-		t.Fatalf("failed to write to %s: %s", testFile.Name(), err)
-	}
-
-	// Reposition to the beginning of file to ensure there is something to read
-	_, err = testFile.Seek(0, os.SEEK_SET)
-	if err != nil {
-		t.Fatalf("failed to seek to beginning of file %s: %s", testFile.Name(), err)
-	}
-
-	// Redirect Stdin
-	savedStdin := os.Stdin
+	tempFile, savedStdin := generateQuestionInput(t, testStr)
+	defer tempFile.Close()
+	defer os.RemoveAll(tempFile.Name())
 	defer func() {
 		os.Stdin = savedStdin
 	}()
-	os.Stdin = testFile
 
 	// Actual test, run the test with the first line
 	output, err := AskQuestion("Question test: ")
@@ -274,34 +239,12 @@ func TestAskQuestionNoEcho(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	testStr := "test test\ntest2 test2 test2\n\ntest3 test3 test3 test3"
-	testBytes := []byte(testStr)
-
-	// We create a temporary file that will act as stdin
-	testFile, err := ioutil.TempFile("", "inputTest")
-	if err != nil {
-		t.Fatalf("failed to create temporary file: %s", err)
-	}
-	defer testFile.Close()
-	defer os.Remove(testFile.Name())
-
-	// Write the data that AskQuestionNoEcho will later on read
-	_, err = testFile.Write(testBytes)
-	if err != nil {
-		t.Fatalf("failed to write to temporary file: %s", err)
-	}
-
-	// Reposition to the beginning to ensure there is data to read
-	_, err = testFile.Seek(0, 0)
-	if err != nil {
-		t.Fatalf("failed to reposition to beginning of file: %s", err)
-	}
-
-	// Redirect Stdin
-	savedStdin := os.Stdin
+	tempFile, savedStdin := generateQuestionInput(t, testStr)
+	defer tempFile.Close()
+	defer os.RemoveAll(tempFile.Name())
 	defer func() {
 		os.Stdin = savedStdin
 	}()
-	os.Stdin = testFile
 
 	// Test AskQuestionNoEcho(), starting with the first line
 	output, err := AskQuestionNoEcho("Test question 1: ")
@@ -374,31 +317,12 @@ func TestGetPassphrase(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a temporary file that will act as input from stdin
-			tempFile, err := ioutil.TempFile("", "inputFile-")
-			if err != nil {
-				t.Fatal("failed to create temporary file:", err)
-			}
+			tempFile, savedStdin := generateQuestionInput(t, tt.input)
 			defer tempFile.Close()
-			defer os.Remove(tempFile.Name())
-
-			// Populate the file
-			_, err = tempFile.Write([]byte(tt.input))
-			if err != nil {
-				t.Fatalf("failed to write data to %s: %s", tempFile.Name(), err)
-			}
-
-			// Re-position to the beginning of file to have something to read
-			_, err = tempFile.Seek(0, 0)
-			if err != nil {
-				t.Fatalf("failed to seek to beginning of %s: %s", tempFile.Name(), err)
-			}
-
-			// Redirect stdin
-			savedStdin := os.Stdin
+			defer os.RemoveAll(tempFile.Name())
 			defer func() {
 				os.Stdin = savedStdin
 			}()
-			os.Stdin = tempFile
 
 			pass, err := GetPassphrase("Test: ", 1)
 			if tt.shallPass && (err != nil || pass != "mypassphrase") {
