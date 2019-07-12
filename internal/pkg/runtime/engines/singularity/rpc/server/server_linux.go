@@ -146,7 +146,6 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) error {
 	} else {
 		var err error
 		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0600)
-		defer image.Close()
 		if err != nil {
 			return fmt.Errorf("could not open image file: %v", err)
 		}
