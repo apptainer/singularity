@@ -24,39 +24,46 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-var helpContentTests = []struct {
+var helpOciContentTests = []struct {
+	name string
 	cmds []string
 }{
 	// singularity oci
-	{[]string{"help", "oci"}},
-	{[]string{"help", "oci", "attach"}},
-	{[]string{"help", "oci", "create"}},
-	{[]string{"help", "oci", "delete"}},
-	{[]string{"help", "oci", "exec"}},
-	{[]string{"help", "oci", "kill"}},
-	{[]string{"help", "oci", "mount"}},
-	{[]string{"help", "oci", "pause"}},
-	{[]string{"help", "oci", "resume"}},
-	{[]string{"help", "oci", "run"}},
-	{[]string{"help", "oci", "start"}},
-	{[]string{"help", "oci", "state"}},
-	{[]string{"help", "oci", "umount"}},
-	{[]string{"help", "oci", "update"}},
+	{"HelpOci", []string{"help", "oci"}},
+	{"HelpOciAttach", []string{"help", "oci", "attach"}},
+	{"HelpOciCreate", []string{"help", "oci", "create"}},
+	{"HelpOciDelete", []string{"help", "oci", "delete"}},
+	{"HelpOciExec", []string{"help", "oci", "exec"}},
+	{"HelpOciKill", []string{"help", "oci", "kill"}},
+	{"HelpOciMount", []string{"help", "oci", "mount"}},
+	{"HelpOciPause", []string{"help", "oci", "pause"}},
+	{"HelpOciResume", []string{"help", "oci", "resume"}},
+	{"HelpOciRun", []string{"help", "oci", "run"}},
+	{"HelpOciStart", []string{"help", "oci", "start"}},
+	{"HelpOciState", []string{"help", "oci", "state"}},
+	{"HelpOciUmount", []string{"help", "oci", "umount"}},
+	{"HelpOciUpdate", []string{"help", "oci", "update"}},
 }
 
-func (c *ctx) testHelpContent(t *testing.T) {
-	for _, tc := range helpContentTests {
+func (c *ctx) testHelpOciContent(t *testing.T) {
+	for _, tc := range helpOciContentTests {
+
 		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
 
-		t.Run(name, func(t *testing.T) {
+		testHelpOciContentFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			path := filepath.Join("help", name)
-
-			c := exec.Command(c.env.CmdPath, tc.cmds...)
-
-			got := c.Run(t).Stdout()
-
+			got := string(r.Stdout)
 			assert.Assert(t, golden.String(got, path))
-		})
+		}
+
+		e2e.RunSingularity(t, tc.name, e2e.WithArgs(tc.cmds...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Fatalf("Failed to run help command on test: %s", tc.name)
+				}
+			}),
+			e2e.ExpectExit(0, testHelpOciContentFn))
+
 	}
 }
 
@@ -204,6 +211,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("testCommands", c.testCommands)
 		t.Run("testFailure", c.testFailure)
 		t.Run("testSingularity", c.testSingularity)
-		t.Run("testHelpContent", c.testHelpContent)
+		t.Run("testHelpContent", c.testHelpOciContent)
 	}
 }
