@@ -132,7 +132,6 @@ func (c *ctx) testCommands(t *testing.T) {
 				}
 			}),
 			e2e.ExpectExit(0, testCmdsFn))
-
 	}
 
 }
@@ -153,12 +152,14 @@ func (c *ctx) testFailure(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(c.env.CmdPath, tt.argv...)
-			if res := cmd.Run(t); res.Error == nil {
-				t.Fatalf("While running command:\n%s\nUnexpected success", res)
-			}
-		})
+
+		e2e.RunSingularity(t, tt.name, e2e.WithArgs(tt.argv...),
+			e2e.PostRun(func(t *testing.T) {
+				if !t.Failed() {
+					t.Fatalf("While running command:\n%s\nUnexpected success", tt.name)
+				}
+			}),
+			e2e.ExpectExit(0))
 	}
 
 }
