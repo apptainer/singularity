@@ -25,9 +25,9 @@ import (
 // Device describes a crypt device
 type Device struct{}
 
-// createLoop attaches the file to the next available loop device and
-// sets the sizelimit on it
-func createLoop(file *os.File, offset, size uint64) (string, error) {
+// createLoop attaches the specified file to the next available loop
+// device and sets the sizelimit on it
+func createLoop(path string, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
 		MaxLoopDevices: 256,
 		Shared:         true,
@@ -38,8 +38,8 @@ func createLoop(file *os.File, offset, size uint64) (string, error) {
 		},
 	}
 	idx := 0
-	if err := loopDev.AttachFromFile(file, os.O_RDWR, &idx); err != nil {
-		return "", fmt.Errorf("failed to attach image %s: %s", file.Name(), err)
+	if err := loopDev.AttachFromPath(path, os.O_RDWR, &idx); err != nil {
+		return "", fmt.Errorf("failed to attach image %s: %s", path, err)
 	}
 	return fmt.Sprintf("/dev/loop%d", idx), nil
 }
@@ -98,13 +98,13 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 		return "", "", err
 	}
 
+	cryptF.Close()
+
 	// Associate the temporary crypt file with a loop device
-	loop, err := createLoop(cryptF, 0, uint64(devSize))
+	loop, err := createLoop(cryptF.Name(), 0, uint64(devSize))
 	if err != nil {
 		return "", "", err
 	}
-
-	cryptF.Close()
 
 	// NOTE: This routine runs with root privileges. It's not necessary
 	// to explicitly set cmd's uid or gid here
