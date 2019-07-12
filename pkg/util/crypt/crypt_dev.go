@@ -231,47 +231,45 @@ func (crypt *Device) Open(key, path string) (string, error) {
 
 	maxRetries := 3 // Arbitrary number of retries.
 
-retry:
-	numRetries := 0
-	nextCrypt := getNextAvailableCryptDevice()
-	if nextCrypt == "" {
-		return "", errors.New("Crypt Device not available")
-	}
-
 	cryptsetup, err := bin.Cryptsetup()
 	if err != nil {
 		return "", err
 	}
 
-	cmd := exec.Command(cryptsetup, "luksOpen", loopDev, nextCrypt)
-	cmd.Dir = "/dev"
-	cmd.SysProcAttr = &syscall.SysProcAttr{}
-	cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
-	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return "", err
-	}
-
-	go func() {
-		defer stdin.Close()
-		io.WriteString(stdin, key)
-	}()
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		if strings.Contains(string(out), "No key available") {
-			sylog.Debugf("Invalid password")
+	for i := 0; i < maxRetries; i++ {
+		nextCrypt := getNextAvailableCryptDevice()
+		if nextCrypt == "" {
+			return "", errors.New("Crypt device not available")
 		}
-		if strings.Contains(string(out), "Device already exists") {
-			numRetries++
-			if numRetries < maxRetries {
-				goto retry
+
+		cmd := exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", path, nextCrypt)
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
+		sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
+		stdin, err := cmd.StdinPipe()
+		if err != nil {
+			return "", err
+		}
+
+		go func() {
+			io.WriteString(stdin, key)
+			stdin.Close()
+		}()
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			if strings.Contains(string(out), "No key available") {
+				sylog.Debugf("Invalid password")
 			}
+			if strings.Contains(string(out), "Device already exists") {
+				continue
+			}
+			return "", err
 		}
-		return "", err
-	}
-	sylog.Debugf("Decrypted the FS successfully")
 
-	return nextCrypt, nil
+		sylog.Debugf("Sucessfully opened encrypted device %s", path)
+		return nextCrypt, nil
+	}
+
+	return "", errors.New("Unable to open crypt device")
 }
