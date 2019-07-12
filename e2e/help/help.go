@@ -72,7 +72,6 @@ func (c *ctx) testCommands(t *testing.T) {
 		name string
 		argv []string
 	}{
-		{"Apps", []string{"apps"}},
 		{"Bootstrap", []string{"bootstrap"}},
 		{"Build", []string{"build"}},
 		{"Check", []string{"check"}},
