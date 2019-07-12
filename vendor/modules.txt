@@ -249,10 +249,10 @@ github.com/mtrmac/gpgme
 # github.com/openSUSE/umoci v0.4.4
 github.com/openSUSE/umoci
 github.com/openSUSE/umoci/oci/layer
+github.com/openSUSE/umoci/pkg/idtools
 github.com/openSUSE/umoci/oci/cas/dir
 github.com/openSUSE/umoci/oci/casext
 github.com/openSUSE/umoci/oci/config/generate
-github.com/openSUSE/umoci/pkg/idtools
 github.com/openSUSE/umoci/oci/cas
 github.com/openSUSE/umoci/oci/config/convert
 github.com/openSUSE/umoci/pkg/fseval
