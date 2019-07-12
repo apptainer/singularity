@@ -179,13 +179,15 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 // copyDeviceContents copies the contents of source to destination.
 // source and dest can either be a file or a block device
 func copyDeviceContents(source, dest string, size int64) error {
-	sourceFd, err := syscall.Open(source, syscall.O_RDWR, 0777)
+	sylog.Debugf("Copying %s to %s, size %d", source, dest, size)
+
+	sourceFd, err := syscall.Open(source, syscall.O_RDONLY, 0000)
 	if err != nil {
 		return fmt.Errorf("unable to open the file %s", source)
 	}
 	defer syscall.Close(sourceFd)
 
-	destFd, err := syscall.Open(dest, syscall.O_RDWR, 0777)
+	destFd, err := syscall.Open(dest, syscall.O_WRONLY, 0666)
 	if err != nil {
 		return fmt.Errorf("unable to open the file: %s", dest)
 	}
@@ -193,21 +195,22 @@ func copyDeviceContents(source, dest string, size int64) error {
 
 	var writtenSoFar int64
 
-	buffer := make([]byte, 1024)
+	buffer := make([]byte, 10240)
 	for writtenSoFar < size {
+		buffer = buffer[:cap(buffer)]
 		numRead, err := syscall.Read(sourceFd, buffer)
 		if err != nil {
 			return fmt.Errorf("unable to read the the file %s", source)
 		}
-		numWritten, err := syscall.Write(destFd, buffer)
-		if err != nil {
-			return fmt.Errorf("unable to write to destination %s", dest)
+		buffer = buffer[:numRead]
+		for n := 0; n < numRead; {
+			numWritten, err := syscall.Write(destFd, buffer[n:])
+			if err != nil {
+				return fmt.Errorf("unable to write to destination %s", dest)
+			}
+			n += numWritten
+			writtenSoFar += int64(numWritten)
 		}
-
-		if numRead != numWritten {
-			sylog.Debugf("numRead != numWritten")
-		}
-		writtenSoFar += int64(numWritten)
 	}
 
 	return nil
