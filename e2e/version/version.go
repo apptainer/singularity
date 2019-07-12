@@ -41,7 +41,7 @@ func (c *ctx) testSemanticVersion(t *testing.T) {
 		e2e.RunSingularity(
 			t,
 			tt.name,
-			e2e.WithArgs(tt.args),
+			e2e.WithArgs(tt.args...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
 					t.Log("Failed to obtain version")
@@ -83,7 +83,7 @@ func (c *ctx) testEqualVersion(t *testing.T) {
 		e2e.RunSingularity(
 			t,
 			tt.name,
-			e2e.WithArgs(tt.args),
+			e2e.WithArgs(tt.args...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
 					t.Log("Failed to obtain version")
