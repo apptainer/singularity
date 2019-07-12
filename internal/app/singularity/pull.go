@@ -107,7 +107,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	// check if we pulled from the library, if so; is it signed?
 	if !unauthenticated {
-		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken, true)
+		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
 		if err != nil {
 			sylog.Errorf("%v", err)
 		}
