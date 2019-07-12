@@ -38,7 +38,7 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
 func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
 	cryptDev := &crypt.Device{}
 
-	cryptName, err := cryptDev.GetCryptDevice(arguments.Key, arguments.Loopdev)
+	cryptName, err := cryptDev.Open(arguments.Key, arguments.Loopdev)
 
 	*reply = "/dev/mapper/" + cryptName
 
