@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/containerd/cgroups"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
@@ -54,22 +55,29 @@ func Filesystem(t *testing.T, fs string) {
 	}
 }
 
-// CgroupMount checks that /sys/fs/cgroup mount is present,
-// if no cgroup mount is found, the current test is skipped
-// with a message.
-func CgroupMount(t *testing.T) {
-	// check first that cgroup is enabled
-	Filesystem(t, "cgroup")
-
-	mounts, err := proc.ParseMountInfo("/proc/self/mountinfo")
+// Cgroups checks that cgroups is enabled, if not the
+// current test is skipped with a message.
+func Cgroups(t *testing.T) {
+	_, err := cgroups.V1()
 	if err != nil {
-		t.Fatalf("could not obtain mount information: %s", err)
+		t.Skipf("cgroups disabled")
 	}
-	// checks if /sys/fs/cgroup is mounted
-	_, hasCgroupMount := mounts["/sys/fs/cgroup"]
-	if !hasCgroupMount {
-		t.Skipf("no /sys/fs/cgroup mount found")
+}
+
+// CgroupsFreezer checks that cgroup freezer subsystem is
+// available, if not the current test is skipped with a
+// message
+func CgroupsFreezer(t *testing.T) {
+	subSys, err := cgroups.V1()
+	if err != nil {
+		t.Skipf("cgroups disabled")
 	}
+	for _, s := range subSys {
+		if s.Name() == "freezer" {
+			return
+		}
+	}
+	t.Skipf("no cgroups freezer subsystem available")
 }
 
 // Command checks if the provided command is found
