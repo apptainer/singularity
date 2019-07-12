@@ -228,6 +228,10 @@ var BuildCmd = &cobra.Command{
 }
 
 func preRun(cmd *cobra.Command, args []string) {
+	if fakeroot {
+		fakerootExec(args)
+	}
+
 	// Always perform remote build when builder flag is set
 	if cmd.Flags().Lookup("builder").Changed {
 		cmd.Flags().Lookup("remote").Value.Set("true")

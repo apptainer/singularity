@@ -67,10 +67,10 @@ func TestLoadSeccompConfig(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	if err := LoadSeccompConfig(nil, false); err == nil {
+	if err := LoadSeccompConfig(nil, false, 1); err == nil {
 		t.Errorf("shoud have failed with an empty config")
 	}
-	if err := LoadSeccompConfig(defaultProfile(), true); err != nil {
+	if err := LoadSeccompConfig(defaultProfile(), true, 1); err != nil {
 		t.Errorf("%s", err)
 	}
 
@@ -91,7 +91,7 @@ func TestLoadProfileFromFile(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := LoadSeccompConfig(gen.Config.Linux.Seccomp, true); err != nil {
+	if err := LoadSeccompConfig(gen.Config.Linux.Seccomp, true, 1); err != nil {
 		t.Errorf("%s", err)
 	}
 
