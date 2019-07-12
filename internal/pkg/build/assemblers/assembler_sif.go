@@ -194,9 +194,9 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// Detach the following code from the squashfs creation. SIF can be
 		// created first and encrypted after. This gives the flexibility to
 		// encrypt an existing SIF
-		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, b.Opts.EncryptionKey)
+		loopPath, err := cryptDev.EncryptFilesystem(fsPath, b.Opts.EncryptionKey)
 		if err != nil {
-			return fmt.Errorf("unable to format crypt device: %s", cryptName)
+			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
 		}
 
 		defer os.Remove(loopPath)
