@@ -11,7 +11,6 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
 )
 
 type ctx struct {
@@ -29,19 +28,27 @@ var tests = []struct {
 //Test that this version uses the semantic version format
 func (c *ctx) testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(c.env.CmdPath, tt.args...)
-			res := cmd.Run(t)
-			if res.Error != nil {
-				t.Fatalf("Failed to obtain version: %+v", res.String())
-			}
-			outputVersion := strings.TrimPrefix(string(res.Stdout()), "singularity version ")
-			outputVersion = strings.TrimSpace(outputVersion)
-			if semanticVersion, err := semver.Make(outputVersion); err != nil {
+
+		checkSemanticVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity version ")
+			outputVer = strings.TrimSpace(outputVer)
+			if semanticVersion, err := semver.Make(outputVer); err != nil {
 				t.Log(semanticVersion)
-				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
+				t.Errorf("no semantic version valid for %s command", tt.name)
 			}
-		})
+		}
+
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithArgs(tt.args...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Log("Failed to obtain version")
+				}
+			}),
+			e2e.ExpectExit(0, checkSemanticVersionFn),
+		)
 	}
 }
 
@@ -50,16 +57,11 @@ func (c *ctx) testSemanticVersion(t *testing.T) {
 func (c *ctx) testEqualVersion(t *testing.T) {
 	var tmpVersion = ""
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(c.env.CmdPath, tt.args...)
-			res := cmd.Run(t)
-			if res.Error != nil {
-				t.Fatalf("Failed to obtain version: %+v", res.String())
-			}
-			outputVersion := strings.TrimPrefix(string(res.Stdout()), "singularity version ")
-			outputVersion = strings.TrimSpace(outputVersion)
 
-			semanticVersion, err := semver.Make(string(outputVersion))
+		checkEqualVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity version ")
+			outputVer = strings.TrimSpace(outputVer)
+			semanticVersion, err := semver.Make(outputVer)
 			if err != nil {
 				t.Log(semanticVersion)
 				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
@@ -74,9 +76,22 @@ func (c *ctx) testEqualVersion(t *testing.T) {
 					t.Fatalf("FAIL: singularity version command and singularity --version give a non-matching version result")
 				}
 			} else {
-				tmpVersion = outputVersion
+				tmpVersion = outputVer
 			}
-		})
+		}
+
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithArgs(tt.args...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Log("Failed to obtain version")
+				}
+			}),
+			e2e.ExpectExit(0, checkEqualVersionFn),
+		)
+
 	}
 }
 
