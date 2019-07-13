@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
 	"gotest.tools/assert"
 	"gotest.tools/golden"
 )
@@ -70,24 +69,24 @@ func (c *ctx) testHelpOciContent(t *testing.T) {
 func (c *ctx) testCommands(t *testing.T) {
 	testCommands := []struct {
 		name string
-		argv []string
+		cmd  string
 	}{
-		{"Build", []string{"build"}},
-		{"Check", []string{"check"}},
-		{"Create", []string{"create"}},
-		{"Exec", []string{"exec"}},
-		{"Inspect", []string{"inspect"}},
-		{"Mount", []string{"mount"}},
-		{"Pull", []string{"pull"}},
-		{"Run", []string{"run"}},
-		{"Shell", []string{"shell"}},
-		{"Test", []string{"test"}},
-		{"InstanceDotStart", []string{"instance.start"}},
-		{"InstanceDotList", []string{"instance.list"}},
-		{"InstanceDotStop", []string{"instance.stop"}},
-		{"InstanceStart", []string{"instance", "start"}},
-		{"InstanceList", []string{"instance", "list"}},
-		{"InstanceStop", []string{"instance", "stop"}},
+		{"Build", "build"},
+		{"Check", "check"},
+		{"Create", "create"},
+		{"Exec", "exec"},
+		{"Inspect", "inspect"},
+		{"Mount", "mount"},
+		{"Pull", "pull"},
+		{"Run", "run"},
+		{"Shell", "shell"},
+		{"Test", "test"},
+		{"InstanceDotStart", "instance.start"},
+		{"InstanceDotList", "instance.list"},
+		{"InstanceDotStop", "instance.stop"},
+		{"InstanceStart", "instance start"},
+		{"InstanceList", "instance list"},
+		{"InstanceStop", "instance stop"},
 	}
 
 	for _, tt := range testCommands {
@@ -96,15 +95,15 @@ func (c *ctx) testCommands(t *testing.T) {
 
 			testFlags := []struct {
 				name string
-				argv []string
+				argv string
 				skip bool
 			}{
-				{"PostFlagShort", append(tt.argv, "-h"), true}, // TODO
-				{"PostFlagLong", append(tt.argv, "--help"), false},
-				{"PostCommand", append(tt.argv, "help"), false},
-				{"PreFlagShort", append([]string{"-h"}, tt.argv...), false},
-				{"PreFlagLong", append([]string{"--help"}, tt.argv...), false},
-				{"PreCommand", append([]string{"help"}, tt.argv...), false},
+				{"PostFlagShort", "-h", true}, // TODO
+				{"PostFlagLong", "--help", false},
+				{"PostCommand", "help", false},
+				{"PreFlagShort", "-h", false},
+				{"PreFlagLong", "--help", false},
+				{"PreCommand", "help", false},
 			}
 
 			for _, tf := range testFlags {
@@ -112,7 +111,7 @@ func (c *ctx) testCommands(t *testing.T) {
 					t.Skip("disabled until issue addressed")
 				}
 
-				e2e.RunSingularity(t, tf.name, e2e.WithArgs(tf.argv...),
+				e2e.RunSingularity(t, tf.name, e2e.WithCommand(tt.cmd), e2e.WithArgs(tf.argv),
 					e2e.PostRun(func(t *testing.T) {
 						if t.Failed() {
 							t.Fatalf("Failed to run help flag while running command:\n%s\n", tt.name)
@@ -123,7 +122,7 @@ func (c *ctx) testCommands(t *testing.T) {
 
 		}
 
-		e2e.RunSingularity(t, tt.name, e2e.WithArgs(tt.argv...),
+		e2e.RunSingularity(t, tt.name, e2e.WithCommand(tt.cmd),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
 					t.Log("Failed to run help command")
@@ -164,14 +163,14 @@ func (c *ctx) testFailure(t *testing.T) {
 
 func (c *ctx) testSingularity(t *testing.T) {
 	tests := []struct {
-		name       string
-		argv       []string
-		shouldPass bool
+		name string
+		argv []string
+		exit int
 	}{
-		{"NoCommand", []string{}, false},
-		{"FlagShort", []string{"-h"}, true},
-		{"FlagLong", []string{"--help"}, true},
-		{"Command", []string{"help"}, true},
+		{"NoCommand", []string{}, 0},
+		{"FlagShort", []string{"-h"}, 1},
+		{"FlagLong", []string{"--help"}, 1},
+		{"Command", []string{"help"}, 1},
 	}
 
 	for _, tt := range tests {
@@ -186,40 +185,7 @@ func (c *ctx) testSingularity(t *testing.T) {
 		}
 
 		e2e.RunSingularity(t, tt.name, e2e.WithArgs(tt.argv...),
-			e2e.PostRun(func(t *testing.T) {
-
-				if !t.Failed() && !tt.shouldPass {
-					// expecting PASS, failed => FAIL
-					t.Fatalf("While running command:\n%s\nUnexpected failure", tt.name)
-				}
-				if t.Failed() && tt.shouldPass {
-					// expecting FAIL, failed => PASS
-					t.Fatalf("While running command:\n%s\nUnexpected success", tt.name)
-				}
-
-			}),
-			e2e.ExpectExit(0, printSuccessOrFailureFn))
-
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(c.env.CmdPath, tt.argv...)
-			switch res := cmd.Run(t); {
-			case res.Error == nil && tt.shouldPass:
-				// expecting PASS, passed => PASS
-
-			case res.Error != nil && !tt.shouldPass:
-				// expecting FAIL, failed => PASS
-
-			case res.Error == nil && !tt.shouldPass:
-				// expecting PASS, failed => FAIL
-				t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
-					res,
-					res.Error)
-
-			case res.Error != nil && tt.shouldPass:
-				// expecting FAIL, passed => FAIL
-				t.Fatalf("While running command:\n%s\nUnexpected success", res)
-			}
-		})
+			e2e.ExpectExit(tt.exit, printSuccessOrFailureFn))
 	}
 
 }
