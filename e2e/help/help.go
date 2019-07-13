@@ -28,20 +28,20 @@ var helpOciContentTests = []struct {
 	cmds []string
 }{
 	// singularity oci
-	{"HelpOci", []string{"help", "oci"}},
-	{"HelpOciAttach", []string{"help", "oci", "attach"}},
-	{"HelpOciCreate", []string{"help", "oci", "create"}},
-	{"HelpOciDelete", []string{"help", "oci", "delete"}},
-	{"HelpOciExec", []string{"help", "oci", "exec"}},
-	{"HelpOciKill", []string{"help", "oci", "kill"}},
-	{"HelpOciMount", []string{"help", "oci", "mount"}},
-	{"HelpOciPause", []string{"help", "oci", "pause"}},
-	{"HelpOciResume", []string{"help", "oci", "resume"}},
-	{"HelpOciRun", []string{"help", "oci", "run"}},
-	{"HelpOciStart", []string{"help", "oci", "start"}},
-	{"HelpOciState", []string{"help", "oci", "state"}},
-	{"HelpOciUmount", []string{"help", "oci", "umount"}},
-	{"HelpOciUpdate", []string{"help", "oci", "update"}},
+	{"HelpOci", []string{"oci"}},
+	{"HelpOciAttach", []string{"oci", "attach"}},
+	{"HelpOciCreate", []string{"oci", "create"}},
+	{"HelpOciDelete", []string{"oci", "delete"}},
+	{"HelpOciExec", []string{"oci", "exec"}},
+	{"HelpOciKill", []string{"oci", "kill"}},
+	{"HelpOciMount", []string{"oci", "mount"}},
+	{"HelpOciPause", []string{"oci", "pause"}},
+	{"HelpOciResume", []string{"oci", "resume"}},
+	{"HelpOciRun", []string{"oci", "run"}},
+	{"HelpOciStart", []string{"oci", "start"}},
+	{"HelpOciState", []string{"oci", "state"}},
+	{"HelpOciUmount", []string{"oci", "umount"}},
+	{"HelpOciUpdate", []string{"oci", "update"}},
 }
 
 func (c *ctx) testHelpOciContent(t *testing.T) {
@@ -55,7 +55,7 @@ func (c *ctx) testHelpOciContent(t *testing.T) {
 			assert.Assert(t, golden.String(got, path))
 		}
 
-		e2e.RunSingularity(t, tc.name, e2e.WithArgs(tc.cmds...),
+		e2e.RunSingularity(t, tc.name, e2e.WithCommand("help"), e2e.WithArgs(tc.cmds...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
 					t.Fatalf("Failed to run help command on test: %s", tc.name)
