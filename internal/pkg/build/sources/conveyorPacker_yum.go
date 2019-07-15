@@ -16,6 +16,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -72,7 +73,7 @@ func (c *YumConveyor) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("while generating yum config: %v", err)
 	}
 
-	err = c.copyPseudoDevices()
+	err = c.makePseudoDevices()
 	if err != nil {
 		return fmt.Errorf("while copying pseudo devices: %v", err)
 	}
@@ -305,25 +306,31 @@ func (c *YumConveyor) importGPGKey() (err error) {
 	return nil
 }
 
-func (c *YumConveyor) copyPseudoDevices() (err error) {
-	err = os.Mkdir(filepath.Join(c.b.Rootfs(), "/dev"), 0775)
+func (c *YumConveyor) makePseudoDevices() (err error) {
+	devPath := filepath.Join(c.b.Rootfs(), "dev")
+	err = os.Mkdir(devPath, 0775)
 	if err != nil {
-		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), "/dev"), err)
+		return fmt.Errorf("while creating %v: %v", devPath, err)
 	}
 
-	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
+	devs := []struct {
+		major int
+		minor int
+		path  string
+		mode  uint32
+	}{
+		{1, 3, "/dev/null", syscall.S_IFCHR | 0666},
+		{1, 8, "/dev/random", syscall.S_IFCHR | 0666},
+		{1, 9, "/dev/urandom", syscall.S_IFCHR | 0666},
+		{1, 5, "/dev/zero", syscall.S_IFCHR | 0666},
+	}
 
 	for _, dev := range devs {
-		cmd := exec.Command("cp", "-a", dev, filepath.Join(c.b.Rootfs(), "/dev"))
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err = cmd.Run(); err != nil {
-			f, err := os.Create(c.b.Rootfs() + "/.singularity.d/runscript")
-			if err != nil {
-				return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.Rootfs(), dev), err)
-			}
+		d := int((dev.major << 8) | (dev.minor & 0xff) | ((dev.minor & 0xfff00) << 12))
+		path := filepath.Join(c.b.Rootfs(), dev.path)
 
-			defer f.Close()
+		if err := syscall.Mknod(path, dev.mode, d); err != nil {
+			return fmt.Errorf("while creating %s: %s", path, err)
 		}
 	}
 

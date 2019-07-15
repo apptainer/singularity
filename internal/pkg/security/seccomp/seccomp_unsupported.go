@@ -21,7 +21,7 @@ func Enabled() bool {
 }
 
 // LoadSeccompConfig returns an error for unsupported platforms or without seccomp support
-func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
+func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16) error {
 	if runtime.GOOS == "linux" {
 		return fmt.Errorf("can't load seccomp filter: not enabled at compilation time")
 	}

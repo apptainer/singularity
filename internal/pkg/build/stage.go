@@ -35,7 +35,7 @@ func (s *stage) Assemble(path string) error {
 // runPreScript() executes the stages pre script on host
 func (s *stage) runPreScript() error {
 	if s.b.RunSection("pre") && s.b.Recipe.BuildData.Pre.Script != "" {
-		if syscall.Getuid() != 0 && !s.b.Opts.Fakeroot {
+		if syscall.Getuid() != 0 {
 			return fmt.Errorf("attempted to build with scripts as non-root user or without --fakeroot")
 		}
 
