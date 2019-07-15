@@ -142,8 +142,6 @@ func Run(t *testing.T) {
 
 	t.Run("VERIFY", singularityverify.RunE2ETests(testenv))
 
-	return
-
 	t.Run("INSPECT", singularityinspect.RunE2ETests(testenv))
 
 	t.Run("BUILD", imgbuild.RunE2ETests(testenv))
