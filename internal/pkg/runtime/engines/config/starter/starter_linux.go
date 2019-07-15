@@ -217,7 +217,7 @@ func (c *Config) AddUIDMappings(uids []specs.LinuxIDMapping) error {
 
 	l := len(uidMap)
 	if l >= C.MAX_MAP_SIZE-1 {
-		return fmt.Errorf("UID map too big")
+		return fmt.Errorf("uid map too big")
 	}
 
 	if l > 0 {
@@ -240,7 +240,7 @@ func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 
 	l := len(gidMap)
 	if l >= C.MAX_MAP_SIZE-1 {
-		return fmt.Errorf("GID map too big")
+		return fmt.Errorf("gid map too big")
 	}
 
 	if l > 0 {

@@ -28,27 +28,27 @@ var (
 func (e *EngineOperations) checkCapabilities() error {
 	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Permitted {
 		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("Unrecognized capabilities %s", cap)
+			return fmt.Errorf("unrecognized capabilities %s", cap)
 		}
 	}
 	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Effective {
 		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("Unrecognized capabilities %s", cap)
+			return fmt.Errorf("unrecognized capabilities %s", cap)
 		}
 	}
 	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Inheritable {
 		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("Unrecognized capabilities %s", cap)
+			return fmt.Errorf("unrecognized capabilities %s", cap)
 		}
 	}
 	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Bounding {
 		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("Unrecognized capabilities %s", cap)
+			return fmt.Errorf("unrecognized capabilities %s", cap)
 		}
 	}
 	for _, cap := range e.EngineConfig.OciConfig.Process.Capabilities.Ambient {
 		if _, ok := capabilities.Map[cap]; !ok {
-			return fmt.Errorf("Unrecognized capabilities %s", cap)
+			return fmt.Errorf("unrecognized capabilities %s", cap)
 		}
 	}
 	return nil
@@ -65,7 +65,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 
 	if starterConfig.GetIsSUID() {
-		return fmt.Errorf("SUID workflow disabled by administrator")
+		return fmt.Errorf("suid workflow disabled by administrator")
 	}
 
 	if e.EngineConfig.OciConfig.Process == nil {

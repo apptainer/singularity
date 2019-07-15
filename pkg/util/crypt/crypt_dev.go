@@ -211,13 +211,13 @@ func (crypt *Device) FormatCryptDevice(path, key string) (string, string, error)
 func copyDeviceContents(source, dest string, size int64) error {
 	sourceFd, err := syscall.Open(source, syscall.O_RDWR, 0777)
 	if err != nil {
-		return fmt.Errorf("Unable to open the file %s", source)
+		return fmt.Errorf("unable to open the file %s", source)
 	}
 	defer syscall.Close(sourceFd)
 
 	destFd, err := syscall.Open(dest, syscall.O_RDWR, 0777)
 	if err != nil {
-		return fmt.Errorf("Unable to open the file: %s", dest)
+		return fmt.Errorf("unable to open the file: %s", dest)
 	}
 	defer syscall.Close(destFd)
 
@@ -227,11 +227,11 @@ func copyDeviceContents(source, dest string, size int64) error {
 	for writtenSoFar < size {
 		numRead, err := syscall.Read(sourceFd, buffer)
 		if err != nil {
-			return fmt.Errorf("Unable to read the the file %s", source)
+			return fmt.Errorf("unable to read the the file %s", source)
 		}
 		numWritten, err := syscall.Write(destFd, buffer)
 		if err != nil {
-			return fmt.Errorf("Unable to write to destination %s", dest)
+			return fmt.Errorf("unable to write to destination %s", dest)
 		}
 
 		if numRead != numWritten {

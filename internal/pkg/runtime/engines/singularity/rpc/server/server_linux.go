@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -40,7 +40,7 @@ func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) 
 
 	key, err := cryptDev.ReadKeyFromStdin(false)
 	if err != nil {
-		return fmt.Errorf("Unable to read key from stdin")
+		return fmt.Errorf("unable to read key from stdin")
 	}
 	cryptName, err := cryptDev.GetCryptDevice(key, arguments.Loopdev)
 

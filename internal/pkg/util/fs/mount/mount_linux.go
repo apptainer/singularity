@@ -580,7 +580,7 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 		return fmt.Errorf("source must be an absolute path")
 	}
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
-		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for image mount points")
+		return fmt.Errorf("ms_bind, ms_rec or ms_remount are not valid flags for image mount points")
 	}
 	if _, ok := authorizedImage[fstype]; !ok {
 		return fmt.Errorf("mount %s image is not authorized", fstype)
@@ -640,7 +640,7 @@ func (p *Points) GetAllBinds() []Point {
 // AddOverlay adds an overlay mount point
 func (p *Points) AddOverlay(tag AuthorizedTag, dest string, flags uintptr, lowerdir string, upperdir string, workdir string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
-		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for overlay mount points")
+		return fmt.Errorf("ms_bind, ms_rec or ms_remount are not valid flags for overlay mount points")
 	}
 	if lowerdir == "" {
 		return fmt.Errorf("overlay mount point %s should have at least lowerdir option", dest)
@@ -688,7 +688,7 @@ func (p *Points) AddFS(tag AuthorizedTag, dest string, fstype string, flags uint
 // AddFSWithSource adds a filesystem mount point
 func (p *Points) AddFSWithSource(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, options string) error {
 	if flags&(syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_REC) != 0 {
-		return fmt.Errorf("MS_BIND, MS_REC or MS_REMOUNT are not valid flags for FS mount points")
+		return fmt.Errorf("ms_bind, ms_rec or ms_remount are not valid flags for fs mount points")
 	}
 	if _, ok := authorizedFS[fstype]; !ok {
 		return fmt.Errorf("mount %s file system is not authorized", fstype)

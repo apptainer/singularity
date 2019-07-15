@@ -182,10 +182,10 @@ func checkSections() error {
 	}
 
 	if all && len(sections) > 1 {
-		return fmt.Errorf("Section specification error: Cannot have all and any other option")
+		return fmt.Errorf("section specification error: cannot have all and any other option")
 	}
 	if none && len(sections) > 1 {
-		return fmt.Errorf("Section specification error: Cannot have none and any other option")
+		return fmt.Errorf("section specification error: cannot have none and any other option")
 	}
 
 	return nil
