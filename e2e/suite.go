@@ -41,6 +41,8 @@ import (
 
 	version "github.com/sylabs/singularity/e2e/version"
 
+	"github.com/sylabs/singularity/e2e/oci"
+
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -159,4 +161,6 @@ func Run(t *testing.T) {
 	t.Run("ENV", singularityenv.RunE2ETests(testenv))
 
 	t.Run("VERSION", version.RunE2ETests(testenv))
+
+	t.Run("OCI", oci.RunE2ETests(testenv))
 }
