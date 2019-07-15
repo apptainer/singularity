@@ -38,7 +38,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	authToken := b.Opts.LibraryAuthToken
 
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	// check for custom library from definition
@@ -78,19 +78,19 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		sylog.Infof("Downloading library image")
 
 		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
-			return fmt.Errorf("unable to Download Image: %v", err)
+			return fmt.Errorf("unable to download image: %v", err)
 		}
 
 		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("Error getting ImageHash: %v", err)
+			return fmt.Errorf("error getting image hash: %v", err)
 		} else if cacheFileHash != libraryImage.Hash {
-			return fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			return fmt.Errorf("cached file hash(%s) and expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
 		}
 	}
 
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(cp.b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.LocalPacker, err = GetLocalPacker(imagePath, cp.b)

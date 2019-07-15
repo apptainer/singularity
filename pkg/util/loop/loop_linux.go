@@ -102,7 +102,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 	}
 
 	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
-		return fmt.Errorf("Failed to set loop flags on loop device: %s", syscall.Errno(err))
+		return fmt.Errorf("failed to set loop flags on loop device: %s", syscall.Errno(err))
 	}
 
 	return nil
@@ -123,7 +123,7 @@ func GetStatusFromFd(fd uintptr) (*Info64, error) {
 	info := &Info64{}
 	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, CmdGetStatus64, uintptr(unsafe.Pointer(info)))
 	if err != syscall.ENXIO && err != 0 {
-		return nil, fmt.Errorf("Failed to get loop flags for loop device: %s", err.Error())
+		return nil, fmt.Errorf("failed to get loop flags for loop device: %s", err.Error())
 	}
 	return info, nil
 }

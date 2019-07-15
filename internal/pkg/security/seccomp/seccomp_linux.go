@@ -76,7 +76,7 @@ func Enabled() bool {
 }
 
 // LoadSeccompConfig loads seccomp configuration filter for the current process
-func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
+func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool, errNo int16) error {
 	if err := prctl(syscall.PR_GET_SECCOMP, 0, 0, 0, 0); err == syscall.EINVAL {
 		return fmt.Errorf("can't load seccomp filter: not supported by kernel")
 	}
@@ -103,7 +103,7 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 		return fmt.Errorf("invalid action '%s' specified", config.DefaultAction)
 	}
 	if scmpAction == lseccomp.ActErrno {
-		scmpAction = scmpAction.SetReturnCode(1)
+		scmpAction = scmpAction.SetReturnCode(errNo)
 	}
 
 	filter, err := lseccomp.NewFilter(scmpAction)
@@ -136,7 +136,7 @@ func LoadSeccompConfig(config *specs.LinuxSeccomp, noNewPrivs bool) error {
 			return fmt.Errorf("invalid action '%s' specified", syscall.Action)
 		}
 		if scmpAction == lseccomp.ActErrno {
-			scmpAction = scmpAction.SetReturnCode(1)
+			scmpAction = scmpAction.SetReturnCode(errNo)
 		}
 
 		for _, sysName := range syscall.Names {

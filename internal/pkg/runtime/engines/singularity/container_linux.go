@@ -208,7 +208,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 			cgroupPath := filepath.Join("/singularity", strconv.Itoa(pid))
 			manager := &cgroups.Manager{Pid: pid, Path: cgroupPath}
 			if err := manager.ApplyFromFile(path); err != nil {
-				return fmt.Errorf("Failed to apply cgroups resources restriction: %s", err)
+				return fmt.Errorf("failed to apply cgroups resources restriction: %s", err)
 			}
 			engine.EngineConfig.Cgroups = manager
 		}
@@ -608,7 +608,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		cryptDev, err := c.rpcOps.Decrypt(offset, path)
 
 		if err != nil {
-			return fmt.Errorf("Unable to decrypt the file system: %s", err)
+			return fmt.Errorf("unable to decrypt the file system: %s", err)
 		}
 
 		path = cryptDev
@@ -1025,7 +1025,7 @@ func (c *container) addDevMount(system *mount.System) error {
 
 		if c.engine.EngineConfig.File.MountDevPts {
 			if _, err := os.Stat("/dev/pts/ptmx"); os.IsNotExist(err) {
-				return fmt.Errorf("Multiple devpts instances unsupported and /dev/pts configured")
+				return fmt.Errorf("multiple devpts instances unsupported and /dev/pts configured")
 			}
 
 			sylog.Debugf("Creating temporary staged /dev/pts")
@@ -1037,7 +1037,7 @@ func (c *container) addDevMount(system *mount.System) error {
 			if !c.userNS {
 				group, err := user.GetGrNam("tty")
 				if err != nil {
-					return fmt.Errorf("Problem resolving 'tty' group GID: %s", err)
+					return fmt.Errorf("problem resolving 'tty' group gid: %s", err)
 				}
 				options = fmt.Sprintf("%s,gid=%d", options, group.GID)
 
@@ -1310,7 +1310,7 @@ func (c *container) addHomeMount(system *mount.System) error {
 
 	// check if user attempt to mount a custom home when not allowed to
 	if c.engine.EngineConfig.GetCustomHome() && !c.engine.EngineConfig.File.UserBindControl {
-		return fmt.Errorf("Not mounting user requested home: user bind control is disallowed")
+		return fmt.Errorf("not mounting user requested home: user bind control is disallowed")
 	}
 
 	source, dest, err := c.getHomePaths()
