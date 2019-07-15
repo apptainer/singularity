@@ -34,6 +34,7 @@ import (
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -103,6 +104,14 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		c.sessionSize = int(engine.EngineConfig.File.SessiondirMaxSize)
 	} else if engine.EngineConfig.GetAllowSUID() && !c.userNS {
 		c.suidFlag = 0
+	}
+
+	// user namespace was not requested but we need to check
+	// if we are currently running in a user namespace and set
+	// value accordingly to avoid remount errors while running
+	// inside a user namespace
+	if !c.userNS {
+		c.userNS, _ = namespaces.IsInsideUserNamespace(os.Getpid())
 	}
 
 	p := &mount.Points{}
@@ -531,6 +540,25 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 		}
 	}
 	_, err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
+	// when using user namespace we always try to apply mount flags with
+	// remount, then if we get a permission denied error, we continue
+	// execution by ignoring the error and warn user if the bind mount
+	// need to be mounted read-only
+	if remount && err != nil && c.userNS {
+		// this needs to compare error strings because we are dropping
+		// the original error value in the RPC call. In order to keep
+		// the original error values, we would have to add them to the
+		// corresponding struct passed over RPC and add the necessary
+		// GOB encoding / decoding functions.
+		if err.Error() == syscall.Errno(syscall.EPERM).Error() {
+			if flags&syscall.MS_RDONLY != 0 {
+				sylog.Warningf("Could not remount %s read-only: %s", dest, err)
+			} else {
+				sylog.Verbosef("Could not remount %s: %s", dest, err)
+			}
+			return nil
+		}
+	}
 	return err
 }
 
@@ -1283,13 +1311,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 	devicesMounted := 0
 	devPrefix := "/dev"
 	userBindControl := c.engine.EngineConfig.File.UserBindControl
-	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
+	defaultFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if len(c.engine.EngineConfig.GetBindPath()) == 0 {
 		return nil
 	}
 
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
+		flags := defaultFlags
 		splitted := strings.Split(b, ":")
 
 		src, err := filepath.Abs(splitted[0])
@@ -1339,13 +1368,12 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 
 		sylog.Debugf("Adding %s to mount list\n", src)
 
-		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err != nil && err == mount.ErrMountExists {
+		if err := system.Points.AddBind(mount.UserbindsTag, src, dst, flags); err == mount.ErrMountExists {
 			sylog.Warningf("destination %s already in mount list: %s", src, err)
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
-			flags &^= syscall.MS_RDONLY
 		}
 	}
 

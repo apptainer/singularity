@@ -195,6 +195,9 @@ func (b *Build) Full() error {
 			}
 		} else {
 			// regular build or force, start build from scratch
+			if b.Conf.Opts.ImgCache == nil {
+				return fmt.Errorf("undefined image cache")
+			}
 			if err := stage.c.Get(stage.b); err != nil {
 				return fmt.Errorf("conveyor failed to get: %v", err)
 			}
@@ -248,19 +251,13 @@ func engineRequired(def types.Definition) bool {
 
 // runBuildEngine creates an imgbuild engine and creates a container out of our bundle in order to execute %post %setup scripts in the bundle
 func runBuildEngine(b *types.Bundle) error {
-	if syscall.Getuid() != 0 && !b.Opts.Fakeroot {
-		return fmt.Errorf("Attempted to build with scripts as non-root user or without --fakeroot")
+	if syscall.Getuid() != 0 {
+		return fmt.Errorf("attempted to build with scripts as non-root user or without --fakeroot")
 	}
 
 	sylog.Debugf("Starting build engine")
 	env := []string{sylog.GetEnvVar()}
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
-	if b.Opts.Fakeroot {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter-suid")
-		if _, err := os.Stat(starter); os.IsNotExist(err) {
-			return fmt.Errorf("fakeroot feature requires to install Singularity as root")
-		}
-	}
 	progname := []string{"singularity image-build"}
 	ociConfig := &oci.Config{}
 

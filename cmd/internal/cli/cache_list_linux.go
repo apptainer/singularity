@@ -75,7 +75,13 @@ var CacheListCmd = &cobra.Command{
 }
 
 func cacheListCmd() error {
-	err := singularity.ListSingularityCache(cacheListTypes, allList, cacheListSummary)
+	// A get a handle for the current image cache
+	imgCache := getCacheHandle()
+	if imgCache == nil {
+		sylog.Fatalf("failed to create image cache handle")
+	}
+
+	err := singularity.ListSingularityCache(imgCache, cacheListTypes, allList, cacheListSummary)
 	if err != nil {
 		sylog.Fatalf("An error occurred while listing cache: %v", err)
 		return err

@@ -53,8 +53,15 @@ func downloadImage(t *testing.T) string {
 	name := f.Name()
 	f.Close()
 
+	// Create a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	// We use SINGULARITY_CACHEDIR instead of cache.DirEnv to avoid a dependency cycle
+	cacheEnvStr := "SINGULARITY_CACHEDIR=" + imgCacheDir
+
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(sexec, "build", "-F", name, "docker://busybox")
+	cmd.Env = append(os.Environ(), cacheEnvStr)
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
 	if err := cmd.Run(); err != nil {

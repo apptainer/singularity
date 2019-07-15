@@ -5,6 +5,7 @@
 
 package client
 
+/*
 import (
 	"os"
 	"testing"
@@ -38,3 +39,4 @@ func TestDownloadImage(t *testing.T) {
 		t.Fatalf("failed to clean up test environment: %v", err)
 	}
 }
+*/

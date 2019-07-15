@@ -6,8 +6,8 @@
 package imgbuild
 
 import (
+	"bytes"
 	"fmt"
-	"io"
 	"net"
 	"net/rpc"
 	"os"
@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/client"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 // CreateContainer creates a container
@@ -36,6 +37,14 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 	if rpcOps.Client == nil {
 		return fmt.Errorf("failed to initialiaze RPC client")
+	}
+
+	insideUserNs, setgroups := namespaces.IsInsideUserNamespace(os.Getpid())
+	// if we are running inside a user namespace, at this stage we
+	// are a root user in this user namespace, but if setgroups is
+	// denied build may not work correctly, so warn user about that
+	if insideUserNs && !setgroups {
+		sylog.Warningf("Running inside a user namespace, but setgroups is denied, build may not work correctly")
 	}
 
 	rootfs := engine.EngineConfig.Rootfs()
@@ -56,7 +65,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	// sensible mount point options to avoid accidental system settings override
 	flags := uintptr(syscall.MS_BIND | syscall.MS_NOSUID | syscall.MS_NOEXEC | syscall.MS_NODEV | syscall.MS_RDONLY)
-	if engine.EngineConfig.Opts.Fakeroot {
+	if insideUserNs {
 		flags = uintptr(syscall.MS_BIND | syscall.MS_REC)
 	}
 
@@ -99,7 +108,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
+	if !insideUserNs {
 		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
 		if err != nil {
 			return fmt.Errorf("remount proc failed: %s", err)
@@ -112,7 +121,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
+	if !insideUserNs {
 		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
 		if err != nil {
 			return fmt.Errorf("remount sys failed: %s", err)
@@ -132,7 +141,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
+	if !insideUserNs {
 		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
 		if err != nil {
 			return fmt.Errorf("remount /etc/resolv.conf failed: %s", err)
@@ -145,7 +154,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	if err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
-	if !engine.EngineConfig.Opts.Fakeroot {
+	if !insideUserNs {
 		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
 		if err != nil {
 			return fmt.Errorf("remount /etc/hosts failed: %s", err)
@@ -187,14 +196,14 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 }
 
 func (engine *EngineOperations) copyFiles() error {
-	files := types.Files{}
+	filesSection := types.Files{}
 	for _, f := range engine.EngineConfig.Recipe.BuildData.Files {
 		if f.Args == "" {
-			files = f
+			filesSection = f
 		}
 	}
 	// iterate through filetransfers
-	for _, transfer := range files.Files {
+	for _, transfer := range filesSection.Files {
 		// sanity
 		if transfer.Src == "" {
 			sylog.Warningf("Attempt to copy file with no name, skipping.")
@@ -215,35 +224,30 @@ func (engine *EngineOperations) copyFiles() error {
 	return nil
 }
 
+// runScriptSection executes the provided script by piping the
+// script to /bin/sh command.
 func (engine *EngineOperations) runScriptSection(name string, s types.Script, setEnv bool) {
 	args := []string{"-ex"}
 	// trim potential trailing comment from args and append to args list
 	args = append(args, strings.Fields(strings.Split(s.Args, "#")[0])...)
 
-	cmd := exec.Command("/bin/sh", args...)
+	envs := []string{}
 	if setEnv {
-		cmd.Env = engine.EngineConfig.OciConfig.Process.Env
-	}
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		sylog.Fatalf("while creating %s proc pipe: %v", name, err)
+		envs = engine.EngineConfig.OciConfig.Process.Env
 	}
 
 	sylog.Infof("Running %s scriptlet\n", name)
-	if err := cmd.Start(); err != nil {
-		sylog.Fatalf("failed to start %%%s proc: %v\n", name, err)
-	}
 
-	// pipe in script
-	go func() {
-		defer stdin.Close()
-		io.WriteString(stdin, s.Script)
-	}()
+	var b bytes.Buffer
+	b.WriteString(s.Script)
 
-	if err := cmd.Wait(); err != nil {
-		sylog.Fatalf("%s proc: %v\n", name, err)
+	cmd := exec.Command("/bin/sh", args...)
+	cmd.Env = envs
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = &b
+
+	if err := cmd.Run(); err != nil {
+		sylog.Fatalf("failed to execute %%%s proc: %v\n", name, err)
 	}
 }

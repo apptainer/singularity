@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -169,6 +169,7 @@ func startInstance(image string, instance string, portOffset int, opts startOpts
 		args = append(args, "--writable-tmpfs")
 	}
 	args = append(args, image, instance, strconv.Itoa(instanceStartPort+portOffset))
+
 	cmd := exec.Command(cmdPath, args...)
 	return cmd.Output()
 }
@@ -403,10 +404,10 @@ func testInstanceFromURI(t *testing.T) {
 			name: "test_from_library",
 			uri:  "library://busybox",
 		},
-		{
-			name: "test_from_shub",
-			uri:  "shub://singularityhub/busybox",
-		},
+		// {
+		// 	name: "test_from_shub",
+		// 	uri:  "shub://singularityhub/busybox",
+		// },
 	}
 
 	for _, i := range instances {
@@ -430,8 +431,12 @@ func testInstanceFromURI(t *testing.T) {
 
 // Bootstrap to run all instance tests.
 func TestInstance(t *testing.T) {
-	// Build a basic Singularity image to test instances.
-	if b, err := imageBuild(buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
+	// Create a clean image cache
+	imgCache, cleanup := setupCache(t)
+	defer cleanup()
+
+	// Build a basic Singularity image to test instances. Once the image created, we do not need the cache anymore.
+	if b, err := imageBuild(imgCache, buildOpts{force: true, sandbox: false}, instanceImagePath, instanceDefinition); err != nil {
 		t.Log(string(b))
 		t.Fatalf("unexpected failure: %v", err)
 	}

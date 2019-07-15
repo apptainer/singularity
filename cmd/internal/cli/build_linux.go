@@ -7,20 +7,91 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	osExec "os/exec"
+	"path/filepath"
 	"syscall"
-
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/exec"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/pkg/image"
 )
+
+func fakerootExec(cmdArgs []string) {
+	if remote {
+		return
+	}
+
+	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
+	if _, err := os.Stat(starter); err != nil {
+		sylog.Fatalf("fakeroot feature requires a setuid installation")
+	}
+
+	short := "-" + buildFakerootFlag.ShortHand
+	long := "--" + buildFakerootFlag.Name
+	envKey := fmt.Sprintf("SINGULARITY_%s", buildFakerootFlag.EnvKeys[0])
+	fakerootEnv := os.Getenv(envKey) != ""
+
+	argsLen := len(os.Args) - 1
+	if fakerootEnv {
+		argsLen = len(os.Args)
+		os.Unsetenv(envKey)
+	}
+	args := make([]string, argsLen)
+	idx := 0
+	for i, arg := range os.Args {
+		if i == 0 {
+			path, _ := osExec.LookPath(arg)
+			arg = path
+		}
+		if arg != short && arg != long {
+			args[idx] = arg
+			idx++
+		}
+
+	}
+
+	user, err := user.GetPwUID(uint32(os.Getuid()))
+	if err != nil {
+		sylog.Fatalf("failed to retrieve user information: %s", err)
+	}
+
+	engineConfig := &fakerootConfig.EngineConfig{
+		Args: args,
+		Envs: os.Environ(),
+		Home: user.Dir,
+	}
+
+	cfg := &config.Common{
+		EngineName:   fakerootConfig.Name,
+		ContainerID:  "fakeroot",
+		EngineConfig: engineConfig,
+	}
+
+	configData, err := json.Marshal(cfg)
+	if err != nil {
+		sylog.Fatalf("CLI Failed to marshal CommonEngineConfig: %s\n", err)
+	}
+
+	Env := []string{"SINGULARITY_MESSAGELEVEL=0"}
+
+	if err := exec.Pipe(starter, []string{"Singularity fakeroot"}, Env, configData); err != nil {
+		sylog.Fatalf("%s", err)
+	}
+}
 
 func run(cmd *cobra.Command, args []string) {
 	buildFormat := "sif"
@@ -64,6 +135,11 @@ func run(cmd *cobra.Command, args []string) {
 			// build from sif downloaded in tmp location
 			defer func() {
 				sylog.Debugf("Building sandbox from downloaded SIF")
+				imgCache := getCacheHandle()
+				if imgCache == nil {
+					sylog.Fatalf("failed to create an image cache handle")
+				}
+
 				d, err := types.NewDefinitionFromURI("localimage" + "://" + dest)
 				if err != nil {
 					sylog.Fatalf("Unable to create definition for sandbox build: %v", err)
@@ -76,9 +152,10 @@ func run(cmd *cobra.Command, args []string) {
 						Format:    buildFormat,
 						NoCleanUp: noCleanUp,
 						Opts: types.Options{
-							TmpDir: tmpDir,
-							Update: update,
-							Force:  force,
+							ImgCache: imgCache,
+							TmpDir:   tmpDir,
+							Update:   update,
+							Force:    force,
 						},
 					})
 				if err != nil {
@@ -101,6 +178,15 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	} else {
 		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) {
+			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
+		}
+
+		imgCache := getCacheHandle()
+		if imgCache == nil {
+			sylog.Fatalf("failed to create an image cache handle")
+		}
+
+		if syscall.Getuid() != 0 && !fakeroot && fs.IsFile(spec) && !isImage(spec) {
 			sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 		}
 
@@ -135,6 +221,7 @@ func run(cmd *cobra.Command, args []string) {
 				Format:    buildFormat,
 				NoCleanUp: noCleanUp,
 				Opts: types.Options{
+					ImgCache:         imgCache,
 					TmpDir:           tmpDir,
 					Update:           update,
 					Force:            force,
@@ -144,7 +231,6 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryURL:       libraryURL,
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
-					Fakeroot:         fakeroot,
 				},
 			})
 		if err != nil {
@@ -176,6 +262,11 @@ func checkSections() error {
 	}
 
 	return nil
+}
+
+func isImage(spec string) bool {
+	_, err := image.Init(spec, false)
+	return err == nil
 }
 
 // standard builds should just warn and fall back to CLI default if we cannot resolve library URL

@@ -17,6 +17,7 @@ import (
 
 	oci "github.com/containers/image/oci/layout"
 	"github.com/containers/image/types"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	buildTypes "github.com/sylabs/singularity/pkg/build/types"
 )
@@ -112,10 +113,9 @@ func createDummyOCICache(t *testing.T) (string, string) {
 		t.Fatalf("cannot create temporary directory: %s\n", err)
 	}
 
-	// Create the directory structure
+	// Create the directory structure.
 	blobPath := filepath.Join(dir, "blobs")
 	shaPath := filepath.Join(blobPath, "sha256")
-	//sum := sha256.Sum256([]byte("dummy"))
 	sum := sha256.New()
 	sumFilename := hex.EncodeToString(sum.Sum(nil))
 	path := filepath.Join(shaPath, sumFilename)
@@ -236,6 +236,10 @@ func TestConvertReference(t *testing.T) {
 
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
+	imgCache, err := cache.NewHandle(cacheDir)
+	if err != nil {
+		t.Fatalf("failed to create an image cache handle")
+	}
 
 	tests := []struct {
 		name       string
@@ -271,7 +275,7 @@ func TestConvertReference(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := ConvertReference(tt.ref, tt.ctx)
+			_, err := ConvertReference(imgCache, tt.ref, tt.ctx)
 			if tt.shouldPass == true && err != nil {
 				t.Fatalf("test expected to succeeded but failed: %s\n", err)
 			}
@@ -290,6 +294,10 @@ func TestImageNameAndImageSHA(t *testing.T) {
 	// We create a dummy OCI cache to run all our tests
 	cacheDir, _, _ := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
+	imgCache, err := cache.NewHandle(cacheDir)
+	if imgCache == nil || err != nil {
+		t.Fatal("failed to create an image cache handle")
+	}
 
 	validSysCtx := createValidSysCtx()
 	tests := []struct {
@@ -339,7 +347,7 @@ func TestImageNameAndImageSHA(t *testing.T) {
 	for _, tt := range tests {
 		testName := "ParseImageName - " + tt.name
 		t.Run(testName, func(t *testing.T) {
-			_, err := ParseImageName(tt.uri, tt.ctx)
+			_, err := ParseImageName(imgCache, tt.uri, tt.ctx)
 			if tt.shouldPass == true && err != nil {
 				t.Fatalf("test expected to succeeded but failed: %s\n", err)
 			}
@@ -398,11 +406,16 @@ func TestNewImageSource(t *testing.T) {
 		},
 	}
 
-	// We create a minimastic image reference that is valid enough for testing
+	// We create a minimalistic image reference that is valid enough for testing
 	cacheDir, _, ref := getTestCacheInfo(t)
 	defer os.RemoveAll(cacheDir)
+	imgCache, err := cache.NewHandle(cacheDir)
+	if err != nil {
+		t.Fatalf("failed to create an image cache handle: %s", err)
+	}
+
 	imgRef := createValidImageRef(t, ref)
-	validImgRef, err := ConvertReference(imgRef, nil)
+	validImgRef, err := ConvertReference(imgCache, imgRef, nil)
 	if err != nil {
 		t.Fatalf("failed to convert image reference: %s", err)
 	}

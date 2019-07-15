@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -11,13 +11,14 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
 const (
 	assemblerDockerDestDir = "/tmp/docker_alpine_assemble_test"
-	assemblerShubDestDir   = "/tmp/shub_alpine_assemble_test"
+	// assemblerShubDestDir   = "/tmp/shub_alpine_assemble_test"
 )
 
 // TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
@@ -34,6 +35,15 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
 	}
+
+	// Create a clean image cache and associate it to the assembler
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
+	if err != nil {
+		t.Fatalf("failed to create an image cache handle: %s", err)
+	}
+	b.Opts.ImgCache = imgCache
 
 	ocp := &sources.OCIConveyorPacker{}
 
@@ -56,6 +66,7 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 	defer os.RemoveAll(assemblerDockerDestDir)
 }
 
+/*
 // TestSandboxAssemblerShub sees if we can build a sandbox from an image from a Singularity registry
 func TestSandboxAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
@@ -83,7 +94,6 @@ func TestSandboxAssemblerShub(t *testing.T) {
 	}
 
 	a := &assemblers.SIFAssembler{}
-
 	err = a.Assemble(b, assemblerShubDestDir)
 	if err != nil {
 		t.Fatalf("failed to assemble from %s: %v\n", assemblerShubURI, err)
@@ -91,3 +101,4 @@ func TestSandboxAssemblerShub(t *testing.T) {
 
 	defer os.RemoveAll(assemblerShubDestDir)
 }
+*/

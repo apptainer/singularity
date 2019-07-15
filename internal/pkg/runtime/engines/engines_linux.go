@@ -15,6 +15,8 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/oci"
@@ -103,9 +105,11 @@ var (
 
 // ServeRuntimeEngineRequests serves runtime engine requests with corresponding registered engine methods.
 func ServeRuntimeEngineRequests(name string, conn net.Conn) {
-	methods := registeredEngineRPCMethods[name]
-	rpc.RegisterName(name, methods)
-	rpc.ServeConn(conn)
+	methods, ok := registeredEngineRPCMethods[name]
+	if ok {
+		rpc.RegisterName(name, methods)
+		rpc.ServeConn(conn)
+	}
 }
 
 // Init initializes registered runtime engines
@@ -114,6 +118,7 @@ func Init() {
 	registeredEngineOperations[singularityConfig.Name] = &singularity.EngineOperations{EngineConfig: singularityConfig.NewConfig()}
 	registeredEngineOperations[imgbuildConfig.Name] = &imgbuild.EngineOperations{EngineConfig: &imgbuildConfig.EngineConfig{}}
 	registeredEngineOperations[oci.Name] = &oci.EngineOperations{EngineConfig: &oci.EngineConfig{}}
+	registeredEngineOperations[fakerootConfig.Name] = &fakeroot.EngineOperations{EngineConfig: &fakerootConfig.EngineConfig{}}
 
 	// register singularity rpc methods
 	methods := new(server.Methods)

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/build/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -19,8 +20,8 @@ import (
 const (
 	assemblerDockerURI  = "docker://alpine"
 	assemblerDockerDest = "/tmp/docker_alpine_assemble_test.sif"
-	assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
-	assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
+	// assemblerShubURI    = "shub://ikaneshiro/singularityhub:latest"
+	// assemblerShubDest   = "/tmp/shub_alpine_assemble_test.sif"
 )
 
 func TestMain(m *testing.M) {
@@ -44,9 +45,18 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("unable to parse URI %s: %v\n", assemblerDockerURI, err)
 	}
 
+	// set a clean image cache
+	imgCacheDir := test.SetCacheDir(t, "")
+	defer test.CleanCacheDir(t, imgCacheDir)
+	imgCache, err := cache.NewHandle(imgCacheDir)
+	if err != nil {
+		t.Fatalf("failed to create an image cache handle: %s", err)
+	}
+	b.Opts.ImgCache = imgCache
+
 	ocp := &sources.OCIConveyorPacker{}
 
-	if err := ocp.Get(b); err != nil {
+	if err = ocp.Get(b); err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", assemblerDockerURI, err)
 	}
 
@@ -65,6 +75,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 	defer os.Remove(assemblerDockerDest)
 }
 
+/*
 // TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
 func TestSIFAssemblerShub(t *testing.T) {
 	test.DropPrivilege(t)
@@ -100,3 +111,4 @@ func TestSIFAssemblerShub(t *testing.T) {
 
 	defer os.Remove(assemblerShubDest)
 }
+*/

@@ -180,13 +180,13 @@ var tests = []struct {
 		unauthenticated: false,
 		expectSuccess:   true,
 	},
-	{
-		desc:            "image from shub",
-		srcURI:          "shub://GodloveD/busybox",
-		force:           true,
-		unauthenticated: false,
-		expectSuccess:   true,
-	},
+	// {
+	// 	desc:            "image from shub",
+	// 	srcURI:          "shub://GodloveD/busybox",
+	// 	force:           true,
+	// 	unauthenticated: false,
+	// 	expectSuccess:   true,
+	// },
 	{
 		desc:            "oras transport for SIF from registry",
 		srcURI:          "oras://localhost:5000/pull_test_sif:latest",
@@ -207,6 +207,21 @@ var tests = []struct {
 		srcURI:        "oras://localhost:5000/pull_test_invalid_file:latest",
 		force:         true,
 		expectSuccess: false,
+	},
+
+	// pulling with library URI argument
+	{
+		desc:          "bad library URI",
+		srcURI:        "library://busybox",
+		library:       "https://bad-library.sylabs.io",
+		expectSuccess: false,
+	},
+	{
+		desc:          "default library URI",
+		srcURI:        "library://busybox",
+		library:       "https://library.sylabs.io",
+		force:         true,
+		expectSuccess: true,
 	},
 }
 

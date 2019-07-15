@@ -31,7 +31,7 @@ func TestScanDefinitionFile(t *testing.T) {
 		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker_sections.json"},
 		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage_sections.json"},
 		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch_sections.json"},
-		{"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
+		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
 		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum_sections.json"},
 		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper_sections.json"},
 	}
@@ -170,7 +170,7 @@ func TestParseDefinitionFile(t *testing.T) {
 		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker.json"},
 		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage.json"},
 		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch.json"},
-		{"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub.json"},
+		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub.json"},
 		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum.json"},
 		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper.json"},
 		{"NoHeader", "testdata_good/noheader/noheader", "testdata_good/noheader/noheader.json"},
@@ -334,7 +334,7 @@ func TestIsValidDefinition(t *testing.T) {
 		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker_sections.json"},
 		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage_sections.json"},
 		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch_sections.json"},
-		{"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
+		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
 		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum_sections.json"},
 		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper_sections.json"},
 	}
