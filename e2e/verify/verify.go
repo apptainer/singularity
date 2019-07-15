@@ -7,8 +7,6 @@ package verify
 
 import (
 	"bytes"
-	//"encoding/json"
-	"fmt"
 	"os/exec"
 	"testing"
 
@@ -20,23 +18,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-const containerTesterSIF = "testdata/verify_container_corrupted.sif"
-
-type Key struct {
-	Signer KeyEntity `json:"Signer"`
-}
-
-// KeyEntity holds all the key info, used for json output.
-type KeyEntity struct {
-	Name        string `json:"Name"`
-	Fingerprint string `json:"Fingerprint"`
-	Local       bool   `json:"Local"`
-	KeyCheck    bool   `json:"KeyCheck"`
-	DataCheck   bool   `json:"DataCheck"`
-}
-
-// KeyList is a list of one or more keys.
-type KeyList []*Key
+const containerTesterSIF = "testdata/verify_container.sif"
 
 func (c *ctx) runVerifyCommand() ([]byte, []byte, error) {
 	argv := []string{"verify", "--json", containerTesterSIF}
@@ -58,76 +40,140 @@ func (c *ctx) runVerifyCommand() ([]byte, []byte, error) {
 		return cmdStdout.Bytes(), cmdStdout.Bytes(), err
 	}
 
-	fmt.Println("CMD: ", string(cmdStdout.Bytes()))
-
 	return cmdStdout.Bytes(), cmdStderr.Bytes(), nil
 }
 
 func (c *ctx) singularityInspect(t *testing.T) {
 	tests := []struct {
-		name      string
-		keyNum    int
-		entity    string
-		expectOut string // expectOut should be a string of expected output
+		name       string
+		jsonPath   []string
+		expectOut  string
+		expectExit string
 	}{
+		// Key number
 		{
-			name:      "corrupted verify test",
-			keyNum:    0,
-			entity:    "Name",
-			expectOut: "unknown",
+			name:       "verify number signers",
+			jsonPath:   []string{"Signatures"},
+			expectOut:  `3`,
+			expectExit: "exit status 255",
+		},
+
+		// Signer 0
+		{
+			name:       "verify signer 0 Name",
+			jsonPath:   []string{"SignerKeys", "[0]", "Signer", "Name"},
+			expectOut:  `unknown`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 0 Fingerprint",
+			jsonPath:   []string{"SignerKeys", "[0]", "Signer", "Fingerprint"},
+			expectOut:  `8883491F4268F173C6E5DC49EDECE4F3F38D871E`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 0 Local",
+			jsonPath:   []string{"SignerKeys", "[0]", "Signer", "Local"},
+			expectOut:  `false`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 0 KeyCheck",
+			jsonPath:   []string{"SignerKeys", "[0]", "Signer", "KeyCheck"},
+			expectOut:  `true`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 0 DataCheck",
+			jsonPath:   []string{"SignerKeys", "[0]", "Signer", "DataCheck"},
+			expectOut:  `false`,
+			expectExit: "exit status 255",
+		},
+
+		// Signer 1
+		{
+			name:       "verify signer 1 Name",
+			jsonPath:   []string{"SignerKeys", "[1]", "Signer", "Name"},
+			expectOut:  `westleyk (examples) \u003cwestley@sylabs.io\u003e`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 1 Fingerprint",
+			jsonPath:   []string{"SignerKeys", "[1]", "Signer", "Fingerprint"},
+			expectOut:  `4E28E95609D65D3C5BEA9731F1E47D55A7F3A56C`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 1 Local",
+			jsonPath:   []string{"SignerKeys", "[1]", "Signer", "Local"},
+			expectOut:  `false`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 1 KeyCheck",
+			jsonPath:   []string{"SignerKeys", "[1]", "Signer", "KeyCheck"},
+			expectOut:  `true`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 1 DataCheck",
+			jsonPath:   []string{"SignerKeys", "[1]", "Signer", "DataCheck"},
+			expectOut:  `true`,
+			expectExit: "exit status 255",
+		},
+
+		// Signer 2
+		{
+			name:       "verify signer 2 Name",
+			jsonPath:   []string{"SignerKeys", "[2]", "Signer", "Name"},
+			expectOut:  `unknown`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 2 Fingerprint",
+			jsonPath:   []string{"SignerKeys", "[2]", "Signer", "Fingerprint"},
+			expectOut:  `C7E7C8C3635DD06930669A2283B30190FEEF8162`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 2 Local",
+			jsonPath:   []string{"SignerKeys", "[2]", "Signer", "Local"},
+			expectOut:  `false`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 2 KeyCheck",
+			jsonPath:   []string{"SignerKeys", "[2]", "Signer", "KeyCheck"},
+			expectOut:  `false`,
+			expectExit: "exit status 255",
+		},
+		{
+			name:       "verify signer 2 DataCheck",
+			jsonPath:   []string{"SignerKeys", "[2]", "Signer", "DataCheck"},
+			expectOut:  `false`,
+			expectExit: "exit status 255",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Inspect the container, and get the output
-			stdout, _, err := c.runVerifyCommand()
-			if err != nil {
-				fmt.Println("ERRRRRUNNINF: ", err)
-				//t.Fatalf("unexpected failure: %s: %s", string(out), err)
+			stdout, stderr, err := c.runVerifyCommand()
+			if err.Error() != tt.expectExit && err != nil { // TODO: theres probably a better way to do this
+				t.Fatalf("unexpected failure: %s %s: %s", string(stdout), string(stderr), err) // TODO: improve error message
 			}
 
-			//var key []map[string]map[string]interface{}
-
-			//err = json.Unmarshal(stdout, &key)
-			//if err != nil {
-			//	fmt.Println("ERROR: ", err)
-			//}
-
-			//fmt.Println("BARRRRRRRRRRR: ", key[0]["Signer"]["Name"])
-			//fmt.Printf("FFFFFFFFFFOOO: %+v\n", key)
-
-			//var key KeyList
-
-			//v := key[0].Signer.Name
-
-			//	for i := 0; i < len(key.Signer); i++ {
-			//		fmt.Println("User Type: " + key.Signer[i].Name)
-			//		fmt.Println("User Name: " + key.Signer[i].Fingerprint)
-			//	}
-
-			//fmt.Println("INFP___: ", key[0].Signer.Name)
-			//fmt.Println("INFP___: ", key[tt.keyNum].Signer)
-
-			// Parse the output
-
-			foo := []string{"SignerKeys", "Signer", "Name"}
-
-			v, err := jsonparser.GetString(stdout, foo...)
+			bOut, _, _, err := jsonparser.Get(stdout, tt.jsonPath...)
 			if err != nil {
 				t.Fatalf("unable to get expected output from json: %v", err)
 			}
+
 			// Compare the output, with the expected output
-
-			fmt.Println("VVV: ", v)
-
-			//if v != tt.expectOut {
-			//	t.Fatalf("unexpected failure: got: %s, expecting: %s", v, tt.expectOut)
-			//}
-
+			if string(bOut) != tt.expectOut {
+				t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", string(bOut), tt.expectOut)
+			}
 		})
 	}
-
 }
 
 // RunE2ETests is the main func to trigger the test suite

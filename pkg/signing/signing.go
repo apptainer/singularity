@@ -44,7 +44,10 @@ type KeyEntity struct {
 }
 
 // KeyList is a list of one or more keys.
-type KeyList []*Key
+type KeyList struct {
+	Signatures int
+	SignerKeys []*Key
+}
 
 // computeHashStr generates a hash from data object(s) and generates a string
 // to be stored in the signature block
@@ -342,7 +345,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			author += fmt.Sprintf("%-18s Signature corrupted, unable to read data\n\n", red("[FAIL]"))
 
 			keySigner = makeKeyEntity("", fingerprint, false, false, false)
-			keyEntityList = append(keyEntityList, keySigner)
+			keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 
 			fail = true
 			continue
@@ -380,9 +383,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		author += fmt.Sprintf("\n")
 
 		keySigner = makeKeyEntity(i, fingerprint, local, true, dataCheck)
-		keyEntityList = append(keyEntityList, keySigner)
-
+		keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 	}
+	keyEntityList.Signatures = len(signatures)
 
 	if jsonVerify {
 		jsonData, err := json.MarshalIndent(keyEntityList, "", "  ")
