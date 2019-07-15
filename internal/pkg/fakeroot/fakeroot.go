@@ -53,5 +53,6 @@ func GetIDRange(base uint64, allowedUsers []string) (*specs.LinuxIDMapping, erro
 		}
 	}
 
-	return nil, fmt.Errorf("you are not allowed to use fakeroot")
+	msg := "you are not allowed to use fakeroot as you are not listed in 'fakeroot allowed users' in singularity.conf"
+	return nil, fmt.Errorf(msg)
 }

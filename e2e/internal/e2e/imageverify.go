@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
 // ImageVerify checks for an image integrity
