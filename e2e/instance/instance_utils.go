@@ -6,56 +6,17 @@
 package instance
 
 import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"net"
 	"strconv"
+	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
 const instanceStartPort = 11372
-
-type startOpts struct {
-	bind          []string
-	networkArgs   []string
-	overlay       []string
-	scratch       []string
-	security      []string
-	addCaps       string
-	applyCgroups  string
-	dns           string
-	dropCaps      string
-	home          string
-	hostname      string
-	network       string
-	workdir       string
-	allowSetuid   bool
-	boot          bool
-	cleanenv      bool
-	contain       bool
-	containall    bool
-	dockerLogin   bool
-	keepPrivs     bool
-	net           bool
-	noHome        bool
-	noPrivs       bool
-	nv            bool
-	userns        bool
-	uts           bool
-	writable      bool
-	writableTmpfs bool
-}
-
-type listOpts struct {
-	user string
-	json bool
-}
-
-type stopOpts struct {
-	signal  string
-	user    string
-	timeout int
-	all     bool
-	force   bool
-}
 
 type instance struct {
 	Image    string `json:"img"`
@@ -67,133 +28,114 @@ type instanceList struct {
 	Instances []instance `json:"instances"`
 }
 
-func (c *ctx) startInstance(opts startOpts, containerPath, instanceName string, argv ...string) (stdout string, stderr string, err error) {
-	args := []string{"instance", "start"}
-	if opts.addCaps != "" {
-		args = append(args, "--add-caps", opts.addCaps)
-	}
-	if opts.allowSetuid {
-		args = append(args, "--allow-setuid")
-	}
-	if opts.applyCgroups != "" {
-		args = append(args, "--apply-cgroups", opts.applyCgroups)
-	}
-	for _, bind := range opts.bind {
-		args = append(args, "--bind", bind)
-	}
-	if opts.boot {
-		args = append(args, "--boot")
-	}
-	if opts.cleanenv {
-		args = append(args, "--cleanenv")
-	}
-	if opts.contain {
-		args = append(args, "--contain")
-	}
-	if opts.containall {
-		args = append(args, "--containall")
-	}
-	if opts.dns != "" {
-		args = append(args, "--dns", opts.dns)
-	}
-	if opts.dockerLogin {
-		args = append(args, "--docker-login")
-	}
-	if opts.dropCaps != "" {
-		args = append(args, "--drop-caps", opts.dropCaps)
-	}
-	if opts.home != "" {
-		args = append(args, "--home", opts.home)
-	}
-	if opts.hostname != "" {
-		args = append(args, "--hostname", opts.hostname)
-	}
-	if opts.keepPrivs {
-		args = append(args, "--keep-privs")
-	}
-	if opts.net {
-		args = append(args, "--net")
-	}
-	if opts.network != "" {
-		args = append(args, "--network", opts.network)
-	}
-	for _, networkArgs := range opts.networkArgs {
-		args = append(args, "--network-args", networkArgs)
-	}
-	if opts.noHome {
-		args = append(args, "--no-home")
-	}
-	if opts.noPrivs {
-		args = append(args, "--no-privs")
-	}
-	if opts.nv {
-		args = append(args, "--nv")
-	}
-	for _, overlay := range opts.overlay {
-		args = append(args, "--overlay", overlay)
-	}
-	for _, scratch := range opts.scratch {
-		args = append(args, "--scratch", scratch)
-	}
-	for _, security := range opts.security {
-		args = append(args, "--security", security)
-	}
-	if opts.userns {
-		args = append(args, "--userns")
-	}
-	if opts.uts {
-		args = append(args, "--uts")
-	}
-	if opts.workdir != "" {
-		args = append(args, "--workdir", opts.workdir)
-	}
-	if opts.writable {
-		args = append(args, "--writable")
-	}
-	if opts.writableTmpfs {
-		args = append(args, "--writable-tmpfs")
-	}
-	args = append(args, containerPath, instanceName)
-	args = append(args, argv...)
-	return e2e.GenericExec(c.env.CmdPath, args...)
+func (c *ctx) listInstance(t *testing.T, listArgs ...string) (stdout string, stderr string, success bool) {
+	var args []string
+
+	e2e.RunSingularity(
+		t,
+		"List",
+		e2e.WithCommand("instance list"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs(args...),
+		e2e.PostRun(func(t *testing.T) {
+			success = !t.Failed()
+		}),
+		e2e.ExpectExit(0, e2e.GetStreams(&stdout, &stderr)),
+	)
+
+	return
 }
 
-func (c *ctx) listInstance(opts listOpts) (stdout string, stderr string, err error) {
-	args := []string{"instance", "list"}
-	if opts.json {
-		args = append(args, "--json")
-	}
-	if opts.user != "" {
-		args = append(args, "--user", opts.user)
-	}
-	return e2e.GenericExec(c.env.CmdPath, args...)
-}
+func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (stdout string, stderr string, success bool) {
+	args := stopArgs
 
-func (c *ctx) stopInstance(opts stopOpts, instance string) (stdout string, stderr string, err error) {
-	args := []string{"instance", "stop"}
-	if opts.all {
-		args = append(args, "--all")
-	}
-	if opts.force {
-		args = append(args, "--force")
-	}
-	if opts.signal != "" {
-		args = append(args, "--signal", opts.signal)
-	}
-	if opts.timeout != 0 {
-		args = append(args, "--timeout", strconv.Itoa(opts.timeout))
-	}
-	if opts.user != "" {
-		args = append(args, "--user", opts.user)
-	}
 	if instance != "" {
 		args = append(args, instance)
 	}
-	return e2e.GenericExec(c.env.CmdPath, args...)
+
+	e2e.RunSingularity(
+		t,
+		"Stop",
+		e2e.WithCommand("instance stop"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs(args...),
+		e2e.PostRun(func(t *testing.T) {
+			success = !t.Failed()
+		}),
+		e2e.ExpectExit(0, e2e.GetStreams(&stdout, &stderr)),
+	)
+
+	return
 }
 
-func (c *ctx) execInstance(instance string, execCmd ...string) (stdout string, stderr string, err error) {
-	args := []string{"exec", "instance://" + instance}
-	args = append(args, execCmd...)
-	return e2e.GenericExec(c.env.CmdPath, args...)
+func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (stdout string, stderr string, success bool) {
+	name := "Exec"
+
+	args := []string{"instance://" + instance}
+	args = append(args, execArgs...)
+
+	if len(execArgs) > 0 {
+		name = fmt.Sprintf("%s_%s", name, execArgs[0])
+	}
+
+	e2e.RunSingularity(
+		t,
+		name,
+		e2e.WithCommand("exec"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs(args...),
+		e2e.PostRun(func(t *testing.T) {
+			success = !t.Failed()
+		}),
+		e2e.ExpectExit(0, e2e.GetStreams(&stdout, &stderr)),
+	)
+
+	return
+}
+
+// Return the number of currently running instances.
+func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
+	nbInstances := -1
+
+	listInstancesFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+		var instances instanceList
+
+		if err := json.Unmarshal([]byte(r.Stdout), &instances); err != nil {
+			t.Errorf("Error while decoding JSON from 'instance list': %v", err)
+		}
+		nbInstances = len(instances.Instances)
+	}
+
+	e2e.RunSingularity(
+		t,
+		"GetNumberOfInstances",
+		e2e.WithCommand("instance list"),
+		e2e.WithPrivileges(c.privileged),
+		e2e.WithArgs([]string{"--json"}...),
+		e2e.PostRun(func(t *testing.T) {
+			if !t.Failed() && n != nbInstances {
+				t.Errorf("%d instance(s) are running, was expecting %d", nbInstances, n)
+			}
+		}),
+		e2e.ExpectExit(0, listInstancesFn),
+	)
+}
+
+// Sends a deterministic message to an echo server and expects the same message
+// in response.
+func echo(t *testing.T, port int) {
+	const message = "b40cbeaaea293f7e8bd40fb61f389cfca9823467\n"
+
+	sock, sockErr := net.Dial("tcp", "127.0.0.1:"+strconv.Itoa(port))
+	if sockErr != nil {
+		t.Errorf("Failed to dial echo server: %v", sockErr)
+		return
+	}
+
+	fmt.Fprintf(sock, message)
+
+	response, responseErr := bufio.NewReader(sock).ReadString('\n')
+	if responseErr != nil || response != message {
+		t.Errorf("Bad response: err = %v, response = %v", responseErr, response)
+	}
 }

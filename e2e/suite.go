@@ -136,7 +136,7 @@ func Run(t *testing.T) {
 	//
 	// e2e.KillRegistry is called here to ensure that the registry
 	// is stopped after tests run.
-	defer singularitye2e.KillRegistry(t)
+	defer singularitye2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
 
