@@ -150,7 +150,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	mksquashfs, err := getMksquashfsPath()
 	if err != nil {
-		return fmt.Errorf("While searching for mksquashfs: %v", err)
+		return fmt.Errorf("while searching for mksquashfs: %v", err)
 	}
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
 	fsPath = f.Name()
@@ -166,23 +166,27 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	mksquashfsCmd := exec.Command(mksquashfs, args...)
 	stderr, err := mksquashfsCmd.StderrPipe()
 	if err != nil {
-		return fmt.Errorf("While setting up stderr pipe: %v", err)
+		return fmt.Errorf("while setting up stderr pipe: %v", err)
 	}
 
 	if err := mksquashfsCmd.Start(); err != nil {
-		return fmt.Errorf("While starting mksquashfs: %v", err)
+		return fmt.Errorf("while starting mksquashfs: %v", err)
 	}
 
 	errOut, err := ioutil.ReadAll(stderr)
 	if err != nil {
-		return fmt.Errorf("While reading mksquashfs stderr: %v", err)
+		return fmt.Errorf("while reading mksquashfs stderr: %v", err)
 	}
 
 	if err := mksquashfsCmd.Wait(); err != nil {
-		return fmt.Errorf("While running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
+		return fmt.Errorf("while running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	if b.Opts.Encrypted {
+	encrypted := false
+
+	if b.Opts.EncryptionKey != "" {
+		encrypted = true
+
 		// A dm-crypt device needs to be created with squashfs
 		cryptDev := &crypt.Device{}
 
@@ -190,27 +194,17 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// Detach the following code from the squashfs creation. SIF can be
 		// created first and encrypted after. This gives the flexibility to
 		// encrypt an existing SIF
-		key, err := cryptDev.ReadKeyFromStdin(true)
+		loopPath, err := cryptDev.EncryptFilesystem(fsPath, b.Opts.EncryptionKey)
 		if err != nil {
-			return fmt.Errorf("unable to read key from stdin")
-		}
-		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, key)
-		if err != nil {
-			return fmt.Errorf("unable to format crypt device: %s", cryptName)
+			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
 		}
 
-		defer os.Remove(loopPath)
-
-		err = cryptDev.CloseCryptDevice(cryptName)
-		if err != nil {
-			return fmt.Errorf("unable to close crypt device: %s", cryptName)
-		}
 		fsPath = loopPath
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, b.Opts.Encrypted)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encrypted)
 	if err != nil {
-		return fmt.Errorf("While creating SIF: %v", err)
+		return fmt.Errorf("while creating sif: %v", err)
 	}
 
 	return

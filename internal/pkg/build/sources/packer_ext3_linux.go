@@ -36,7 +36,7 @@ func (p *Ext3Packer) Pack() (*types.Bundle, error) {
 func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs string) error {
 	tmpmnt, err := ioutil.TempDir(p.b.Path, "mnt")
 	if err != nil {
-		return fmt.Errorf("While making tmp mount point: %v", err)
+		return fmt.Errorf("while making tmp mount point: %v", err)
 	}
 
 	var number int
@@ -54,7 +54,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	sylog.Debugf("Mounting loop device %s to %s\n", path, tmpmnt)
 	err = syscall.Mount(path, tmpmnt, "ext3", syscall.MS_NOSUID|syscall.MS_RDONLY|syscall.MS_NODEV, "errors=remount-ro")
 	if err != nil {
-		return fmt.Errorf("While mounting image: %v", err)
+		return fmt.Errorf("while mounting image: %v", err)
 	}
 	defer syscall.Unmount(tmpmnt, 0)
 
@@ -64,7 +64,7 @@ func (p *Ext3Packer) unpackExt3(b *types.Bundle, info *loop.Info64, rootfs strin
 	cmd := exec.Command("cp", "-r", tmpmnt+`/.`, b.Rootfs())
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("While copying files: %v: %v", err, stderr.String())
+		return fmt.Errorf("while copying files: %v: %v", err, stderr.String())
 	}
 
 	return err

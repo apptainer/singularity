@@ -14,6 +14,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
+func fakerootExec(cmdArgs []string) {
+	sylog.Fatalf("fakeroot is not supported on this platform")
+}
+
 func run(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]

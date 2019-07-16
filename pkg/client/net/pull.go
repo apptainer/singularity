@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -35,7 +35,7 @@ func IsNetPullRef(libraryRef string) bool {
 func DownloadImage(filePath string, libraryURL string, Force bool) error {
 
 	if !IsNetPullRef(libraryURL) {
-		return fmt.Errorf("Not a valid url reference: %s", libraryURL)
+		return fmt.Errorf("not a valid url reference: %s", libraryURL)
 	}
 	if filePath == "" {
 		refParts := strings.Split(libraryURL, "/")
@@ -70,7 +70,7 @@ func DownloadImage(filePath string, libraryURL string, Force bool) error {
 	defer res.Body.Close()
 
 	if res.StatusCode == http.StatusNotFound {
-		return fmt.Errorf("The requested image was not found in the library")
+		return fmt.Errorf("the requested image was not found in the library")
 	}
 
 	if res.StatusCode != http.StatusOK {

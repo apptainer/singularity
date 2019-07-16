@@ -40,7 +40,6 @@ func EnsureImage(t *testing.T, env TestEnv) {
 }
 
 // PullImage will pull a test image.
-//func PullImage(t *testing.T, imageURL string, env TestEnv) {
 func PullImage(t *testing.T, imageURL string, path string) {
 	switch _, err := os.Stat(path); {
 	case err == nil:

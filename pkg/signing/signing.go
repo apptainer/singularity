@@ -38,7 +38,7 @@ type Key struct {
 type KeyEntity struct {
 	Name        string
 	Fingerprint string
-	Local       bool
+	KeyLocal    bool
 	KeyCheck    bool
 	DataCheck   bool
 }
@@ -155,7 +155,7 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
 	if err != nil {
-		return fmt.Errorf("failed to load SIF container file: %s", err)
+		return fmt.Errorf("failed to load sif container file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 
@@ -411,7 +411,7 @@ func makeKeyEntity(name, fingerprint string, local, corrupted, dataCheck bool) *
 		Signer: KeyEntity{
 			Name:        name,
 			Fingerprint: fingerprint,
-			Local:       local,
+			KeyLocal:    local,
 			KeyCheck:    corrupted,
 			DataCheck:   dataCheck,
 		},

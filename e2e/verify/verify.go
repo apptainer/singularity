@@ -14,7 +14,9 @@ import (
 )
 
 type ctx struct {
-	env e2e.TestEnv
+	env            e2e.TestEnv
+	corruptedImage string
+	successImage   string
 }
 
 const successURL = "library://sylabs/tests/verify_success:1.0.1"
@@ -29,7 +31,7 @@ func getFingerprintJSON(keyNum string) []string {
 }
 
 func getLocalJSON(keyNum string) []string {
-	return []string{"SignerKeys", keyNum, "Signer", "Local"}
+	return []string{"SignerKeys", keyNum, "Signer", "KeyLocal"}
 }
 
 func getKeyCheckJSON(keyNum string) []string {
@@ -41,9 +43,6 @@ func getDataCheckJSON(keyNum string) []string {
 }
 
 func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
-	corruptedImage := filepath.Join(c.env.TestDir, "verify_corrupted.sif")
-	successImage := filepath.Join(c.env.TestDir, "verify_success.sif")
-
 	keyNumPath := []string{"Signatures"}
 
 	tests := []struct {
@@ -57,14 +56,14 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 			name:         "verify number signers",
 			expectNumOut: 3,
 			imageURL:     corruptedURL,
-			imagePath:    corruptedImage,
+			imagePath:    c.corruptedImage,
 			expectExit:   255,
 		},
 		{
 			name:         "verify number signers success container",
 			expectNumOut: 1,
 			imageURL:     successURL,
-			imagePath:    successImage,
+			imagePath:    c.successImage,
 			expectExit:   0,
 		},
 	}
@@ -99,9 +98,6 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 }
 
 func (c *ctx) singularityVerifySigner(t *testing.T) {
-	corruptedImage := filepath.Join(c.env.TestDir, "verify_corrupted.sif")
-	successImage := filepath.Join(c.env.TestDir, "verify_success.sif")
-
 	tests := []struct {
 		name                 string
 		jsonPath             []string
@@ -125,7 +121,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			expectKeyCheckOut:    true,
 			expectDataCheckOut:   false,
 			imageURL:             corruptedURL,
-			imagePath:            corruptedImage,
+			imagePath:            c.corruptedImage,
 			expectExit:           255,
 		},
 
@@ -139,7 +135,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			expectKeyCheckOut:    true,
 			expectDataCheckOut:   true,
 			imageURL:             corruptedURL,
-			imagePath:            corruptedImage,
+			imagePath:            c.corruptedImage,
 			expectExit:           255,
 		},
 
@@ -153,7 +149,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			expectKeyCheckOut:    false,
 			expectDataCheckOut:   false,
 			imageURL:             corruptedURL,
-			imagePath:            corruptedImage,
+			imagePath:            c.corruptedImage,
 			expectExit:           255,
 		},
 
@@ -167,7 +163,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			expectKeyCheckOut:    true,
 			expectDataCheckOut:   true,
 			imageURL:             successURL,
-			imagePath:            successImage,
+			imagePath:            c.successImage,
 			expectExit:           0,
 		},
 	}
@@ -230,7 +226,6 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 				e2e.PreRun(func(t *testing.T) {
 					e2e.PullImage(t, tt.imageURL, tt.imagePath)
 				}),
-
 				e2e.ExpectExit(tt.expectExit, verifyOutput),
 			)
 		})
@@ -240,7 +235,9 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
-		env: env,
+		env:            env,
+		corruptedImage: filepath.Join(env.TestDir, "verify_corrupted.sif"),
+		successImage:   filepath.Join(env.TestDir, "verify_success.sif"),
 	}
 
 	return func(t *testing.T) {

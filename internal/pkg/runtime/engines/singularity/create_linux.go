@@ -28,7 +28,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
 	if err := config.Parser(configurationFile, engine.EngineConfig.File); err != nil {
-		return fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
 	rpcOps := &client.RPC{
