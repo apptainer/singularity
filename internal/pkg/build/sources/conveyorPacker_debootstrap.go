@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -39,7 +39,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 	}
 
 	if os.Getuid() != 0 {
-		return fmt.Errorf("You must be root to build with debootstrap")
+		return fmt.Errorf("you must be root to build with debootstrap")
 	}
 
 	// run debootstrap command
@@ -51,7 +51,7 @@ func (cp *DebootstrapConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// run debootstrap
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While debootstrapping: %v", err)
+		return fmt.Errorf("while debootstrapping: %v", err)
 	}
 
 	return nil
@@ -62,17 +62,17 @@ func (cp *DebootstrapConveyorPacker) Pack() (*types.Bundle, error) {
 
 	//change root directory permissions to 0755
 	if err := os.Chmod(cp.b.Rootfs(), 0755); err != nil {
-		return nil, fmt.Errorf("While changing bundle rootfs perms: %v", err)
+		return nil, fmt.Errorf("while changing bundle rootfs perms: %v", err)
 	}
 
 	err := cp.insertBaseEnv(cp.b)
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environtment: %v", err)
+		return nil, fmt.Errorf("while inserting base environtment: %v", err)
 	}
 
 	err = cp.insertRunScript(cp.b)
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v", err)
+		return nil, fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	return cp.b, nil
@@ -84,12 +84,12 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 	//get mirrorURL, OSVerison, and Includes components to definition
 	cp.mirrorurl, ok = cp.b.Recipe.Header["mirrorurl"]
 	if !ok {
-		return fmt.Errorf("Invalid debootstrap header, no MirrorURL specified")
+		return fmt.Errorf("invalid debootstrap header, no mirrorurl specified")
 	}
 
 	cp.osversion, ok = cp.b.Recipe.Header["osversion"]
 	if !ok {
-		return fmt.Errorf("Invalid debootstrap header, no OSVersion specified")
+		return fmt.Errorf("invalid debootstrap header, no osversion specified")
 	}
 
 	include := cp.b.Recipe.Header["include"]

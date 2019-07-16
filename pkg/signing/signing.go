@@ -152,7 +152,7 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	// load the container
 	fimg, err := sif.LoadContainer(cpath, false)
 	if err != nil {
-		return fmt.Errorf("failed to load SIF container file: %s", err)
+		return fmt.Errorf("failed to load sif container file: %s", err)
 	}
 	defer fimg.UnloadContainer()
 

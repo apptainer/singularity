@@ -43,14 +43,14 @@ func IsValid(source string) (valid bool, err error) {
 	u := strings.SplitN(source, ":", 2)
 
 	if len(u) != 2 {
-		return false, fmt.Errorf("Invalid URI %s", source)
+		return false, fmt.Errorf("invalid uri %s", source)
 	}
 
 	if _, ok := validURIs[u[0]]; ok {
 		return true, nil
 	}
 
-	return false, fmt.Errorf("Invalid URI %s", source)
+	return false, fmt.Errorf("invalid uri %s", source)
 }
 
 // GetName turns a transport:ref URI into a name containing the top-level identifier
