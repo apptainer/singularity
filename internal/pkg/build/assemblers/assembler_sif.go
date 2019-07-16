@@ -182,7 +182,11 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("while running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	if b.Opts.Encrypted {
+	encrypted := false
+
+	if b.Opts.EncryptionKey != "" {
+		encrypted = true
+
 		// A dm-crypt device needs to be created with squashfs
 		cryptDev := &crypt.Device{}
 
@@ -190,25 +194,15 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// Detach the following code from the squashfs creation. SIF can be
 		// created first and encrypted after. This gives the flexibility to
 		// encrypt an existing SIF
-		key, err := cryptDev.ReadKeyFromStdin(true)
+		loopPath, err := cryptDev.EncryptFilesystem(fsPath, b.Opts.EncryptionKey)
 		if err != nil {
-			return fmt.Errorf("unable to read key from stdin")
-		}
-		loopPath, cryptName, err := cryptDev.FormatCryptDevice(fsPath, key)
-		if err != nil {
-			return fmt.Errorf("unable to format crypt device: %s", cryptName)
+			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
 		}
 
-		defer os.Remove(loopPath)
-
-		err = cryptDev.CloseCryptDevice(cryptName)
-		if err != nil {
-			return fmt.Errorf("unable to close crypt device: %s", cryptName)
-		}
 		fsPath = loopPath
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, b.Opts.Encrypted)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encrypted)
 	if err != nil {
 		return fmt.Errorf("while creating sif: %v", err)
 	}

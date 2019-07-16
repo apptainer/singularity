@@ -227,7 +227,7 @@ func run(cmd *cobra.Command, args []string) {
 					LibraryURL:       libraryURL,
 					LibraryAuthToken: authToken,
 					DockerAuthConfig: authConf,
-					Encrypted:        encrypt,
+					EncryptionKey:    encryptionKey,
 				},
 			})
 		if err != nil {

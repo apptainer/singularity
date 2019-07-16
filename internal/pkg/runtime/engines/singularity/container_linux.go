@@ -605,7 +605,12 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	mountType := mnt.Type
 
 	if mountType == "encryptfs" {
-		cryptDev, err := c.rpcOps.Decrypt(offset, path)
+		key, err := mount.GetKey(mnt.InternalOptions)
+		if err != nil {
+			return err
+		}
+
+		cryptDev, err := c.rpcOps.Decrypt(offset, path, key)
 
 		if err != nil {
 			return fmt.Errorf("unable to decrypt the file system: %s", err)
@@ -684,6 +689,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	mountType := ""
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
+	key := ""
 
 	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
 
@@ -694,6 +700,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		mountType = "ext3"
 	case image.ENCRYPTSQUASHFS:
 		mountType = "encryptfs"
+		key = c.engine.EngineConfig.GetEncryptionKey()
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)
 		flags |= syscall.MS_BIND
@@ -715,6 +722,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 		flags,
 		offset,
 		size,
+		key,
 	); err != nil {
 		return err
 	}
@@ -824,13 +832,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				ov.AddLowerDir(filepath.Join(dst, "upper"))
 			}
 
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size, "")
 			if err != nil {
 				return fmt.Errorf("while adding ext3 image: %s", err)
 			}
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size)
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size, "")
 			if err != nil {
 				return err
 			}
