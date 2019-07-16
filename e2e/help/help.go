@@ -96,12 +96,12 @@ func (c *ctx) testCommands(t *testing.T) {
 			argv []string
 			skip bool
 		}{
-			{"PostFlagShort", append([]string{"-h"}), true}, // TODO
-			{"PostFlagLong", append([]string{"--help"}), false},
-			{"PostCommand", append([]string{"help"}), false},
-			{"PreFlagShort", append([]string{"-h"}), false},
-			{"PreFlagLong", append([]string{"--help"}), false},
-			{"PreCommand", append([]string{"help"}), false},
+			{"PostFlagShort", []string{"-h"}, true}, // TODO
+			{"PostFlagLong", []string{"--help"}, false},
+			{"PostCommand", []string{"help"}, false},
+			{"PreFlagShort", []string{"-h"}, false},
+			{"PreFlagLong", []string{"--help"}, false},
+			{"PreCommand", []string{"help"}, false},
 		}
 
 		for _, tf := range testFlags {
