@@ -105,7 +105,6 @@ func AskNumberInRange(start, end int, format string, a ...interface{}) (int, err
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("Answer:", ans)
 
 	n, err := strconv.ParseInt(ans, 10, 32)
 	if err != nil {
