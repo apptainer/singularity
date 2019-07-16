@@ -94,7 +94,7 @@ func AskYNQuestion(defaultAnswer, format string, a ...interface{}) (string, erro
 		return defaultAnswer, nil
 
 	default:
-		return "", fmt.Errorf("invalid answer %q", ans)
+		return "", fmt.Errorf("invalid answer: %q", ans)
 	}
 }
 
