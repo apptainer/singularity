@@ -38,7 +38,7 @@ type Key struct {
 type KeyEntity struct {
 	Name        string
 	Fingerprint string
-	Local       bool
+	KeyLocal    bool
 	KeyCheck    bool
 	DataCheck   bool
 }
@@ -411,7 +411,7 @@ func makeKeyEntity(name, fingerprint string, local, corrupted, dataCheck bool) *
 		Signer: KeyEntity{
 			Name:        name,
 			Fingerprint: fingerprint,
-			Local:       local,
+			KeyLocal:    local,
 			KeyCheck:    corrupted,
 			DataCheck:   dataCheck,
 		},
