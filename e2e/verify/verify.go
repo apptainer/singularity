@@ -6,6 +6,7 @@
 package verify
 
 import (
+	"path/filepath"
 	"testing"
 
 	"github.com/buger/jsonparser"
@@ -15,6 +16,9 @@ import (
 type ctx struct {
 	env e2e.TestEnv
 }
+
+const successURL = "library://sylabs/tests/verify_success:1.0.1"
+const corruptedURL = "library://sylabs/tests/verify_corrupted:1.0.1"
 
 func getNameJSON(keyNum string) []string {
 	return []string{"SignerKeys", keyNum, "Signer", "Name"}
@@ -37,24 +41,30 @@ func getDataCheckJSON(keyNum string) []string {
 }
 
 func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
+	corruptedImage := filepath.Join(c.env.TestDir, "verify_corrupted.sif")
+	successImage := filepath.Join(c.env.TestDir, "verify_success.sif")
+
 	keyNumPath := []string{"Signatures"}
 
 	tests := []struct {
 		name         string
 		expectNumOut int64  // Is the expected number of Signatures
-		cpath        string // Is the path to the container
+		imageURL     string // Is the URL to the container
+		imagePath    string // Is the path to the container
 		expectExit   int
 	}{
 		{
 			name:         "verify number signers",
 			expectNumOut: 3,
-			cpath:        "testdata/verify_container_corrupted.sif",
+			imageURL:     corruptedURL,
+			imagePath:    corruptedImage,
 			expectExit:   255,
 		},
 		{
 			name:         "verify number signers success container",
 			expectNumOut: 1,
-			cpath:        "testdata/verify_container_success.sif",
+			imageURL:     successURL,
+			imagePath:    successImage,
 			expectExit:   0,
 		},
 	}
@@ -68,7 +78,7 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 					t.Fatalf("unable to get expected output from json: %s", err)
 				}
 				if eNum != tt.expectNumOut {
-					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eNum, tt.expectNumOut)
+					t.Fatalf("unexpected failure: got: '%d', expecting: '%d'", eNum, tt.expectNumOut)
 				}
 			}
 
@@ -78,7 +88,10 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 				tt.name,
 				e2e.WithPrivileges(false),
 				e2e.WithCommand("verify"),
-				e2e.WithArgs("--json", tt.cpath),
+				e2e.WithArgs("--json", tt.imagePath),
+				e2e.PreRun(func(t *testing.T) {
+					e2e.PullImage(t, tt.imageURL, tt.imagePath)
+				}),
 				e2e.ExpectExit(tt.expectExit, verifyOutput),
 			)
 		})
@@ -86,11 +99,15 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 }
 
 func (c *ctx) singularityVerifySigner(t *testing.T) {
+	corruptedImage := filepath.Join(c.env.TestDir, "verify_corrupted.sif")
+	successImage := filepath.Join(c.env.TestDir, "verify_success.sif")
+
 	tests := []struct {
 		name                 string
 		jsonPath             []string
 		keyNum               string // Is the number of which key to test. Must be in '[]' bracket
-		cpath                string // Is the path to the container
+		imagePath            string // Is the path to the container
+		imageURL             string // Is the URL to the container
 		expectNameOut        string // The expected out for Name
 		expectFingerprintOut string // The expected out for Fingerprint
 		expectLocalOut       bool   // The expected out for Local
@@ -107,7 +124,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			expectLocalOut:       false,
 			expectKeyCheckOut:    true,
 			expectDataCheckOut:   false,
-			cpath:                "testdata/verify_container_corrupted.sif",
+			imageURL:             corruptedURL,
+			imagePath:            corruptedImage,
 			expectExit:           255,
 		},
 
@@ -115,12 +133,13 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 		{
 			name:                 "verify signer 1",
 			keyNum:               "[1]",
-			expectNameOut:        "westleyk (examples) \u003cwestley@sylabs.io\u003e",
-			expectFingerprintOut: "4E28E95609D65D3C5BEA9731F1E47D55A7F3A56C",
+			expectNameOut:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
+			expectFingerprintOut: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
 			expectLocalOut:       false,
 			expectKeyCheckOut:    true,
 			expectDataCheckOut:   true,
-			cpath:                "testdata/verify_container_corrupted.sif",
+			imageURL:             corruptedURL,
+			imagePath:            corruptedImage,
 			expectExit:           255,
 		},
 
@@ -129,11 +148,12 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			name:                 "verify signer 2",
 			keyNum:               "[2]",
 			expectNameOut:        "unknown",
-			expectFingerprintOut: "C7E7C8C3635DD06930669A2283B30190FEEF8162",
+			expectFingerprintOut: "F69C21F759C8EA06FD32CCF4536523CE1E109AF3",
 			expectLocalOut:       false,
 			expectKeyCheckOut:    false,
 			expectDataCheckOut:   false,
-			cpath:                "testdata/verify_container_corrupted.sif",
+			imageURL:             corruptedURL,
+			imagePath:            corruptedImage,
 			expectExit:           255,
 		},
 
@@ -146,7 +166,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			expectLocalOut:       false,
 			expectKeyCheckOut:    true,
 			expectDataCheckOut:   true,
-			cpath:                "testdata/verify_container_success.sif",
+			imageURL:             successURL,
+			imagePath:            successImage,
 			expectExit:           0,
 		},
 	}
@@ -205,7 +226,11 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 				tt.name,
 				e2e.WithPrivileges(false),
 				e2e.WithCommand("verify"),
-				e2e.WithArgs("--json", tt.cpath),
+				e2e.WithArgs("--json", tt.imagePath),
+				e2e.PreRun(func(t *testing.T) {
+					e2e.PullImage(t, tt.imageURL, tt.imagePath)
+				}),
+
 				e2e.ExpectExit(tt.expectExit, verifyOutput),
 			)
 		})
