@@ -696,12 +696,10 @@ func RecryptKey(k *openpgp.Entity, passphrase []byte) error {
 	}
 
 	if err := k.PrivateKey.Decrypt(passphrase); err != nil {
-		fmt.Printf("failed to decrypt key with %s", string(passphrase))
 		return err
 	}
 
 	if err := k.PrivateKey.Encrypt(passphrase); err != nil {
-		fmt.Println("failed to encrypt key")
 		return err
 	}
 
