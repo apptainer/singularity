@@ -70,7 +70,7 @@ func (p *SIFPacker) unpackSIF(b *types.Bundle, srcfile string) (err error) {
 		sylog.Debugf("Ext3 partition detected, mounting to extract.")
 		err = unpackImagePartition(img.File, b.Rootfs(), "ext3", info)
 		if err != nil {
-			return fmt.Errorf("While copying partition data to bundle: %v", err)
+			return fmt.Errorf("while copying partition data to bundle: %v", err)
 		}
 	default:
 		return fmt.Errorf("unrecognized partition format")

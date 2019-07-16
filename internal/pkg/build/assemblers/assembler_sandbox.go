@@ -34,7 +34,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	cmd := exec.Command("mv", b.Rootfs(), path)
 	cmd.Stderr = &stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("Sandbox Assemble Failed: %v: %v", err, stderr.String())
+		return fmt.Errorf("sandbox assemble failed: %v: %v", err, stderr.String())
 	}
 
 	return nil

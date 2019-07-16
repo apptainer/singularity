@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -32,5 +32,5 @@ func IsValidAssembler(c string) (valid bool, err error) {
 		return true, nil
 	}
 
-	return false, fmt.Errorf("Invalid Assembler %s", c)
+	return false, fmt.Errorf("invalid assembler %s", c)
 }
