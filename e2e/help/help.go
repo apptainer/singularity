@@ -93,26 +93,28 @@ func (c *ctx) testCommands(t *testing.T) {
 
 		testFlags := []struct {
 			name string
-			argv string
+			argv []string
 			skip bool
 		}{
-			{"PostFlagShort", "-h", true}, // TODO
-			{"PostFlagLong", "--help", false},
-			{"PostCommand", "help", false},
-			{"PreFlagShort", "-h", false},
-			{"PreFlagLong", "--help", false},
-			{"PreCommand", "help", false},
+			{"PostFlagShort", append([]string{tt.cmd}, "-h"), true}, // TODO
+			{"PostFlagLong", append([]string{tt.cmd}, "--help"), false},
+			{"PostCommand", append([]string{tt.cmd}, "help"), false},
+			{"PreFlagShort", append([]string{tt.cmd}, "-h"), false},
+			{"PreFlagLong", append([]string{tt.cmd}, "--help"), false},
+			{"PreCommand", append([]string{tt.cmd}, "help"), false},
 		}
 
 		for _, tf := range testFlags {
-			if tf.skip && !c.env.RunDisabled {
-				t.Skip("disabled until issue addressed")
-			}
 
-			e2e.RunSingularity(t, tf.name, e2e.WithCommand(tt.cmd), e2e.WithArgs(tf.argv),
+			e2e.RunSingularity(t, tf.name, e2e.WithCommand(tt.cmd), e2e.WithArgs(tf.argv...),
 				e2e.PostRun(func(t *testing.T) {
 					if t.Failed() {
 						t.Fatalf("Failed to run help flag while running command:\n%s\n", tt.name)
+					}
+				}),
+				e2e.PreRun(func(t *testing.T) {
+					if tf.skip && !c.env.RunDisabled {
+						t.Skip("disabled until issue addressed")
 					}
 				}),
 				e2e.ExpectExit(0))
@@ -159,7 +161,7 @@ func (c *ctx) testSingularity(t *testing.T) {
 		{"NoCommand", []string{}, 0},
 		{"FlagShort", []string{"-h"}, 1},
 		{"FlagLong", []string{"--help"}, 1},
-		{"Command", []string{"help"}, 1},
+		{"Command", []string{"help"}, 0},
 	}
 
 	for _, tt := range tests {
