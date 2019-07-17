@@ -30,79 +30,84 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-var tests = []struct {
-	desc            string // case description
-	srcURI          string // source URI for image
-	library         string // use specific library, XXX(mem): not tested yet
-	force           bool   // pass --force
-	createDst       bool   // create destination file before pull
-	unauthenticated bool   // pass --allow-unauthenticated
-	setImagePath    bool   // pass destination path
-	setPullDir      bool   // pass --dir
-	expectSuccess   bool   // singularity should exit with code 0
-}{
+type testStruct struct {
+	desc             string // case description
+	srcURI           string // source URI for image
+	library          string // use specific library, XXX(mem): not tested yet
+	force            bool   // pass --force
+	createDst        bool   // create destination file before pull
+	unauthenticated  bool   // pass --allow-unauthenticated
+	setImagePath     bool   // pass destination path
+	setPullDir       bool   // pass --dir
+	expectedExitCode int
+	pullDir          string
+	imagePath        string
+	expectedImage    string
+}
+
+var tests = []testStruct{
 	{
-		desc:          "non existent image",
-		srcURI:        "library://sylabs/tests/does_not_exist:0",
-		expectSuccess: false,
+		desc:             "non existent image",
+		srcURI:           "library://sylabs/tests/does_not_exist:0",
+		expectedExitCode: 255,
 	},
 
 	// --allow-unauthenticated tests
 	{
-		desc:            "unsigned image allow unauthenticated",
-		srcURI:          "library://sylabs/tests/unsigned:1.0.0",
-		unauthenticated: true,
-		expectSuccess:   true,
+		desc:             "unsigned image allow unauthenticated",
+		srcURI:           "library://sylabs/tests/unsigned:1.0.0",
+		unauthenticated:  true,
+		expectedExitCode: 0,
 	},
 
 	// --force tests
 	{
-		desc:            "force existing file",
-		srcURI:          "library://alpine:3.8",
-		force:           true,
-		createDst:       true,
-		unauthenticated: true,
-		expectSuccess:   true,
+		desc:             "force existing file",
+		srcURI:           "library://alpine:3.8",
+		force:            true,
+		createDst:        true,
+		unauthenticated:  true,
+		expectedExitCode: 0,
 	},
 	{
-		desc:            "force non-existing file",
-		srcURI:          "library://alpine:3.8",
-		force:           true,
-		createDst:       false,
-		unauthenticated: true,
-		expectSuccess:   true,
+		desc:             "force non-existing file",
+		srcURI:           "library://alpine:3.8",
+		force:            true,
+		createDst:        false,
+		unauthenticated:  true,
+		expectedExitCode: 0,
 	},
 	{
 		// --force should not have an effect on --allow-unauthenticated=false
-		desc:            "unsigned image force require authenticated",
-		srcURI:          "library://sylabs/tests/unsigned:1.0.0",
-		force:           true,
-		unauthenticated: false,
-		expectSuccess:   false,
+		desc:             "unsigned image force require authenticated",
+		srcURI:           "library://sylabs/tests/unsigned:1.0.0",
+		force:            true,
+		unauthenticated:  false,
+		expectedExitCode: 10,
 	},
 
 	// test version specifications
 	{
-		desc:            "image with specific hash",
-		srcURI:          "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c",
-		unauthenticated: true,
-		expectSuccess:   true,
+		desc:             "image with specific hash",
+		srcURI:           "library://sylabs/tests/signed:sha256.5c439fd262095766693dae95fb81334c3a02a7f0e4dc6291e0648ed4ddc61c6c",
+		unauthenticated:  true,
+		expectedExitCode: 0,
 	},
 	{
-		desc:            "latest tag",
-		srcURI:          "library://alpine:latest",
-		unauthenticated: true,
-		expectSuccess:   true,
+		desc:             "latest tag",
+		srcURI:           "library://alpine:latest",
+		unauthenticated:  true,
+		expectedExitCode: 0,
 	},
 
 	// --dir tests
 	{
-		desc:            "dir no image path",
-		srcURI:          "library://alpine:3.9",
-		unauthenticated: true,
-		setPullDir:      true,
-		setImagePath:    false,
-		expectSuccess:   true,
+		desc:             "dir no image path",
+		srcURI:           "library://alpine:3.9",
+		unauthenticated:  true,
+		setPullDir:       true,
+		setImagePath:     false,
+		expectedExitCode: 0,
 	},
 	{
 		// XXX(mem): this specific test is passing both --path and an image path to
@@ -112,29 +117,29 @@ var tests = []struct {
 		// /tmp/a/b/image.sif, the code expects to find /tmp/a/b/c/tmp/a/b/image.sif. Since
 		// the directory /tmp/a/b/c/tmp/a/b does not exist, it fails to create the file
 		// image.sif in there.
-		desc:            "dir image path",
-		srcURI:          "library://alpine:3.9",
-		unauthenticated: true,
-		setPullDir:      true,
-		setImagePath:    true,
-		expectSuccess:   false,
+		desc:             "dir image path",
+		srcURI:           "library://alpine:3.9",
+		unauthenticated:  true,
+		setPullDir:       true,
+		setImagePath:     true,
+		expectedExitCode: 255,
 	},
 
 	// transport tests
 	{
-		desc:            "bare image name",
-		srcURI:          "alpine:3.8",
-		force:           true,
-		unauthenticated: true,
-		expectSuccess:   true,
+		desc:             "bare image name",
+		srcURI:           "alpine:3.8",
+		force:            true,
+		unauthenticated:  true,
+		expectedExitCode: 0,
 	},
 
 	{
-		desc:            "image from docker",
-		srcURI:          "docker://alpine:3.8",
-		force:           true,
-		unauthenticated: false,
-		expectSuccess:   true,
+		desc:             "image from docker",
+		srcURI:           "docker://alpine:3.8",
+		force:            true,
+		unauthenticated:  false,
+		expectedExitCode: 0,
 	},
 	// TODO(mem): reenable this; disabled while shub is down
 	// {
@@ -145,79 +150,90 @@ var tests = []struct {
 	// 	expectSuccess:   true,
 	// },
 	{
-		desc:            "oras transport for SIF from registry",
-		srcURI:          "oras://localhost:5000/pull_test_sif:latest", // TODO(mem): obtain registry from context
-		force:           true,
-		unauthenticated: false,
-		expectSuccess:   true,
+		desc:             "oras transport for SIF from registry",
+		srcURI:           "oras://localhost:5000/pull_test_sif:latest", // TODO(mem): obtain registry from context
+		force:            true,
+		unauthenticated:  false,
+		expectedExitCode: 0,
 	},
 
 	// pulling of invalid images with oras
 	{
-		desc:          "oras pull of non SIF file",
-		srcURI:        "oras://localhost:5000/pull_test_:latest", // TODO(mem): obtain registry from context
-		force:         true,
-		expectSuccess: false,
+		desc:             "oras pull of non SIF file",
+		srcURI:           "oras://localhost:5000/pull_test_:latest", // TODO(mem): obtain registry from context
+		force:            true,
+		expectedExitCode: 255,
 	},
 	{
-		desc:          "oras pull of packed dir",
-		srcURI:        "oras://localhost:5000/pull_test_invalid_file:latest", // TODO(mem): obtain registry from context
-		force:         true,
-		expectSuccess: false,
+		desc:             "oras pull of packed dir",
+		srcURI:           "oras://localhost:5000/pull_test_invalid_file:latest", // TODO(mem): obtain registry from context
+		force:            true,
+		expectedExitCode: 255,
 	},
 
 	// pulling with library URI argument
 	{
-		desc:          "bad library URI",
-		srcURI:        "library://busybox",
-		library:       "https://bad-library.sylabs.io",
-		expectSuccess: false,
+		desc:             "bad library URI",
+		srcURI:           "library://busybox",
+		library:          "https://bad-library.sylabs.io",
+		expectedExitCode: 255,
 	},
 	{
-		desc:          "default library URI",
-		srcURI:        "library://busybox",
-		library:       "https://library.sylabs.io",
-		force:         true,
-		expectSuccess: true,
+		desc:             "default library URI",
+		srcURI:           "library://busybox",
+		library:          "https://library.sylabs.io",
+		force:            true,
+		expectedExitCode: 0,
 	},
 }
 
-func (c *ctx) imagePull(t *testing.T, imgURI, library, pullDir, imagePath string, force, unauthenticated bool) (string, []byte, error) {
-	argv := []string{"pull"}
+func (c *ctx) imagePull(t *testing.T, tt testStruct) {
+	// We use a string rather than a slice of strings to avoid having an empty
+	// element in the slice, which would cause the command to fail, wihtout
+	// over-complicating the code.
+	argv := ""
 
-	if force {
-		argv = append(argv, "--force")
+	if tt.force {
+		argv += "--force "
 	}
 
-	if unauthenticated {
-		argv = append(argv, "--allow-unauthenticated")
+	if tt.unauthenticated {
+		argv += "--allow-unauthenticated "
 	}
 
-	if pullDir != "" {
-		argv = append(argv, "--dir", pullDir)
+	if tt.pullDir != "" {
+		argv += "--dir " + tt.pullDir + " "
 	}
 
-	if library != "" {
-		argv = append(argv, "--library", library)
+	if tt.library != "" {
+		argv += "--library " + tt.library + " "
 	}
 
-	if imagePath != "" {
-		argv = append(argv, imagePath)
+	if tt.imagePath != "" {
+		argv += tt.imagePath + " "
 	}
 
-	argv = append(argv, imgURI)
+	argv += tt.srcURI
 
-	cmd := fmt.Sprintf("%s %s", c.env.CmdPath, strings.Join(argv, " "))
-	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
-
-	return cmd, out, err
+	e2e.RunSingularity(
+		t,
+		tt.desc,
+		e2e.WithPrivileges(false),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(strings.Split(argv, " ")...),
+		e2e.WithEnv(append(os.Environ(), "c.env.KeyringDir")), // We make sure to include Environ to find utilities such as mksquashfs
+		e2e.ExpectExit(tt.expectedExitCode),
+		e2e.PostRun(func(t *testing.T) {
+			checkPullResult(t, tt)
+		}),
+	)
 }
 
 func getImageNameFromURI(imgURI string) string {
 	// XXX(mem): this function should be part of the code, not the test
 	switch transport, ref := uri.Split(imgURI); {
 	case ref == "":
-		return "" //, errInvalidURI
+		return "" // Invalid URI
 
 	case transport == "":
 		imgURI = "library://" + imgURI
@@ -273,10 +289,14 @@ func (c *ctx) setup(t *testing.T) {
 func (c *ctx) testPullCmd(t *testing.T) {
 	// XXX(mem): this should come from the environment
 	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
-	// XXX(mem): we should not be modifying the
-	// configuration of the user that is running the test,
-	// this should use a temporary configuration directory
-	// (set via environment variable, maybe?)
+	tempKeyringDir, err := ioutil.TempDir("", "tempKeyringDir-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	defer os.RemoveAll(tempKeyringDir)
+
+	keyringEnv := "SINGULARITY_SYPGPDIR=" + tempKeyringDir
+	c.env.KeyringDir = keyringEnv
 	argv := []string{"key", "pull", sylabsAdminFingerprint}
 	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
 	if err != nil {
@@ -295,18 +315,16 @@ func (c *ctx) testPullCmd(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpdir)
 
-			var pullDir string
 			if tt.setPullDir {
-				pullDir, err = ioutil.TempDir(tmpdir, "pull_dir.")
+				tt.pullDir, err = ioutil.TempDir(tmpdir, "pull_dir.")
 				if err != nil {
 					t.Fatalf("Failed to create temporary directory for pull dir: %+v", err)
 				}
 			}
 
-			var imagePath, expectedImage string
 			if tt.setImagePath {
-				imagePath = filepath.Join(tmpdir, "image.sif")
-				expectedImage = imagePath
+				tt.imagePath = filepath.Join(tmpdir, "image.sif")
+				tt.expectedImage = tt.imagePath
 			} else {
 				// Since we are not passing an image name, change the current
 				// working directory to the temporary directory we just created so
@@ -323,68 +341,51 @@ func (c *ctx) testPullCmd(t *testing.T) {
 				os.Chdir(tmpdir)
 
 				// if there's a pullDir, that's where we expect to find the image
-				if pullDir != "" {
-					os.Chdir(pullDir)
+				if tt.pullDir != "" {
+					os.Chdir(tt.pullDir)
 				}
 
-				expectedImage = getImageNameFromURI(tt.srcURI)
+				tt.expectedImage = getImageNameFromURI(tt.srcURI)
 			}
 
 			// In order to actually test force, there must already be a file present in
 			// the expected location
 			if tt.createDst {
-				fh, err := os.Create(expectedImage)
+				fh, err := os.Create(tt.expectedImage)
 				if err != nil {
-					t.Fatalf("Failed to create file %q: %+v\n", expectedImage, err)
+					t.Fatalf("failed to create file %q: %+v\n", tt.expectedImage, err)
 				}
 				fh.Close()
 			}
 
-			cmd, out, err := c.imagePull(t, tt.srcURI, tt.library, pullDir, imagePath, tt.force, tt.unauthenticated)
-			switch {
-			case tt.expectSuccess && err == nil:
-				// MAYBE PASS: expecting success, succeeded
-
-				_, err := os.Stat(expectedImage)
-				switch err {
-				case nil:
-					// PASS
-					return
-
-				case os.ErrNotExist:
-					// FAIL
-					t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-					t.Errorf("expecting image at %q, not found: %+v\n", expectedImage, err)
-
-				default:
-					// FAIL
-					t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-					t.Errorf("unable to stat image at %q: %+v\n", expectedImage, err)
-				}
-
-				// XXX(mem): This is running a bunch of commands in the downloaded
-				// images. Do we really want this here? If yes, we need to have a
-				// way to do this in a generic fashion, as it's going to be shared
-				// with build as well.
-
-				// imageVerify(t, tt.imagePath, false)
-
-			case !tt.expectSuccess && err != nil:
-				// PASS: expecting failure, failed
-
-			case tt.expectSuccess && err != nil:
-				// FAIL: expecting success, failed
-
-				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-				t.Errorf("unexpected failure: %v", err)
-
-			case !tt.expectSuccess && err == nil:
-				// FAIL: expecting failure, succeeded
-
-				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-				t.Errorf("unexpected success: command should have failed")
-			}
+			c.imagePull(t, tt)
 		})
+	}
+}
+
+func checkPullResult(t *testing.T, tt testStruct) {
+	if tt.expectedExitCode == 0 {
+		_, err := os.Stat(tt.expectedImage)
+		switch err {
+		case nil:
+			// PASS
+			return
+
+		case os.ErrNotExist:
+			// FAIL
+			t.Errorf("expecting image at %q, not found: %+v\n", tt.expectedImage, err)
+
+		default:
+			// FAIL
+			t.Errorf("unable to stat image at %q: %+v\n", tt.expectedImage, err)
+		}
+
+		// XXX(mem): This is running a bunch of commands in the downloaded
+		// images. Do we really want this here? If yes, we need to have a
+		// way to do this in a generic fashion, as it's going to be shared
+		// with build as well.
+
+		// imageVerify(t, tt.imagePath, false)
 	}
 }
 
