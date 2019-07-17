@@ -67,11 +67,19 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
 	exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-	if err != nil {
+	if err == cache.ErrBadChecksum {
+		sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
+		err := os.Remove(imagePath)
+		if err != nil {
+			return fmt.Errorf("unable to remove corrupted cache: %v", err)
+		}
+	} else if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 	}
+
 	if !exists {
 		sylog.Infof("Downloading library image")
+		go interruptCleanup(imagePath)
 
 		// call library download image helper
 		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
@@ -141,6 +149,8 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 	}
 	if !exists {
 		sylog.Infof("Downloading shub image")
+		go interruptCleanup(imagePath)
+
 		err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
 		if err != nil {
 			return err
@@ -213,12 +223,19 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 
 	cacheImagePath := imgCache.OrasImage(sum, imageName)
 	exists, err := imgCache.OrasImageExists(sum, imageName)
-	if err != nil {
+	if err == cache.ErrBadChecksum {
+		sylog.Warningf("Removing cached image: %s: cache could be corrupted", cacheImagePath)
+		err := os.Remove(cacheImagePath)
+		if err != nil {
+			return fmt.Errorf("unable to remove corrupted cache: %v", err)
+		}
+	} else if err != nil {
 		return fmt.Errorf("unable to check if %s exists: %v", cacheImagePath, err)
 	}
 
 	if !exists {
 		sylog.Infof("Downloading image with ORAS")
+		go interruptCleanup(cacheImagePath)
 
 		if err := oras.DownloadImage(cacheImagePath, ref, ociAuth); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
@@ -292,6 +309,8 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 	}
 	if !exists {
 		sylog.Infof("Converting OCI blobs to SIF format")
+		go interruptCleanup(imgName)
+
 		if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
