@@ -176,7 +176,7 @@ func (c *ctx) testSingularity(t *testing.T) {
 		exit int
 	}{
 		{"NoCommand", []string{}, 1},
-		{"FlagShort", []string{"-h"}, 1},
+		{"FlagShort", []string{"-h"}, 0},
 		{"FlagLong", []string{"--help"}, 1},
 		{"Command", []string{"help"}, 0},
 	}
