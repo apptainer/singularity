@@ -1,15 +1,17 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE.md file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package user
 
-import "strconv"
-import osuser "os/user"
+import (
+	"os"
+	osuser "os/user"
+	"strconv"
+
+	"github.com/sylabs/singularity/pkg/util/namespaces"
+)
 
 // User represents an Unix user account information
 type User struct {
@@ -89,4 +91,22 @@ func GetGrNam(name string) (*Group, error) {
 		return nil, err
 	}
 	return convertGroup(g)
+}
+
+// Current returns a pointer to User structure associated with current
+// user
+func Current() (*User, error) {
+	return GetPwUID(uint32(os.Getuid()))
+}
+
+// CurrentOriginal returns a pointer to User structure associated with the
+// original current user, if current user is inside a user namespace with a
+// custom user mappings, it will returns information about the original user
+// otherwise it returns information about the current user
+func CurrentOriginal() (*User, error) {
+	uid, err := namespaces.HostUID()
+	if err != nil {
+		return nil, err
+	}
+	return GetPwUID(uint32(uid))
 }

@@ -6,53 +6,73 @@
 package fakeroot
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
-// GetIDRange returns the allocated ID range based on base ID
-// and a list of allowed users
-func GetIDRange(base uint64, allowedUsers []string) (*specs.LinuxIDMapping, error) {
-	const (
-		// rangeSize corresponds to the size of UID/GID allocated for each users
-		rangeSize = uint64(65536)
-		// minBase is the minimal base ID allocation authorized by configuration
-		minBase = uint64(131072)
-		// maxBase is the maximal base ID allocation authorized by configuration
-		maxBase = uint64(4294901760)
-	)
-	userinfo, err := user.GetPwUID(uint32(os.Getuid()))
+const (
+	// SubUIDFile is the path to /etc/subuid file
+	SubUIDFile = "/etc/subuid"
+	// SubGIDFile is the path to /etc/subgid file
+	SubGIDFile = "/etc/subgid"
+)
+
+// GetIDRange determines UID/GID mappings based on configuration
+// file provided in path.
+func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
+	const validRangeCount = 65536
+	var line int
+	var entries []string
+
+	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not open %s: %s", path, err)
 	}
-	if base%rangeSize != 0 {
-		return nil, fmt.Errorf("fakeroot base id is not a multiple of %d", rangeSize)
-	} else if base < minBase || base > maxBase {
-		return nil, fmt.Errorf("fakeroot base id is not set between %d and %d", minBase, maxBase)
-	}
+	defer f.Close()
 
-	// root user is always authorized and has a 1:1 mapping
-	if userinfo.UID == 0 {
-		return &specs.LinuxIDMapping{
-			ContainerID: 1,
-			HostID:      1,
-			Size:        uint32(rangeSize),
-		}, nil
+	userinfo, err := user.GetPwUID(uid)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve user with UID %d: %s", uid, err)
 	}
+	uidStr := strconv.FormatUint(uint64(uid), 10)
 
-	for i, name := range allowedUsers {
-		if userinfo.Name == name {
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line++
+		splitted := strings.Split(scanner.Text(), ":")
+		switch splitted[0] {
+		case userinfo.Name, uidStr:
+			size, err := strconv.ParseUint(splitted[2], 10, 32)
+			if err != nil {
+				return nil, fmt.Errorf("could not convert %s: %s", splitted[2], err)
+			}
+			// fakeroot requires a range count of 65536
+			if size != validRangeCount {
+				entries = append(entries, strconv.Itoa(line))
+				continue
+			}
+			hostID, err := strconv.ParseUint(splitted[1], 10, 32)
+			if err != nil {
+				return nil, fmt.Errorf("could not convert %s: %s", splitted[1], err)
+			}
 			return &specs.LinuxIDMapping{
 				ContainerID: 1,
-				HostID:      uint32(base) + uint32(i*int(rangeSize)),
-				Size:        uint32(rangeSize),
+				HostID:      uint32(hostID),
+				Size:        uint32(size),
 			}, nil
 		}
 	}
-
-	msg := "you are not allowed to use fakeroot as you are not listed in 'fakeroot allowed users' in singularity.conf"
-	return nil, fmt.Errorf(msg)
+	if len(entries) > 0 {
+		return nil, fmt.Errorf(
+			"entry for user %s found in %s at line %s but all with a range count different from %d",
+			userinfo.Name, f.Name(), strings.Join(entries, ", "), validRangeCount,
+		)
+	}
+	return nil, fmt.Errorf("user %s not found in %s", userinfo.Name, f.Name())
 }
