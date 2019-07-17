@@ -6,6 +6,7 @@
 package verify
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 
@@ -19,27 +20,35 @@ type ctx struct {
 	successImage   string
 }
 
+type verifyOutput struct {
+	name        string
+	fingerprint string
+	local       bool
+	keyCheck    bool
+	dataCheck   bool
+}
+
 const successURL = "library://sylabs/tests/verify_success:1.0.1"
 const corruptedURL = "library://sylabs/tests/verify_corrupted:1.0.1"
 
-func getNameJSON(keyNum string) []string {
-	return []string{"SignerKeys", keyNum, "Signer", "Name"}
+func getNameJSON(keyNum int) []string {
+	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "Name"}
 }
 
-func getFingerprintJSON(keyNum string) []string {
-	return []string{"SignerKeys", keyNum, "Signer", "Fingerprint"}
+func getFingerprintJSON(keyNum int) []string {
+	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "Fingerprint"}
 }
 
-func getLocalJSON(keyNum string) []string {
-	return []string{"SignerKeys", keyNum, "Signer", "KeyLocal"}
+func getLocalJSON(keyNum int) []string {
+	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "KeyLocal"}
 }
 
-func getKeyCheckJSON(keyNum string) []string {
-	return []string{"SignerKeys", keyNum, "Signer", "KeyCheck"}
+func getKeyCheckJSON(keyNum int) []string {
+	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "KeyCheck"}
 }
 
-func getDataCheckJSON(keyNum string) []string {
-	return []string{"SignerKeys", keyNum, "Signer", "DataCheck"}
+func getDataCheckJSON(keyNum int) []string {
+	return []string{"SignerKeys", fmt.Sprintf("[%d]", keyNum), "Signer", "DataCheck"}
 }
 
 func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
@@ -53,14 +62,14 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 		expectExit   int
 	}{
 		{
-			name:         "verify number signers",
+			name:         "verify number signers fail",
 			expectNumOut: 3,
 			imageURL:     corruptedURL,
 			imagePath:    c.corruptedImage,
 			expectExit:   255,
 		},
 		{
-			name:         "verify number signers success container",
+			name:         "verify number signers success",
 			expectNumOut: 1,
 			imageURL:     successURL,
 			imagePath:    c.successImage,
@@ -69,166 +78,209 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
-				// Get the Signatures and compare it
-				eNum, err := jsonparser.GetInt(r.Stdout, keyNumPath...)
-				if err != nil {
-					t.Fatalf("unable to get expected output from json: %s", err)
-				}
-				if eNum != tt.expectNumOut {
-					t.Fatalf("unexpected failure: got: '%d', expecting: '%d'", eNum, tt.expectNumOut)
-				}
+		verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			// Get the Signatures and compare it
+			eNum, err := jsonparser.GetInt(r.Stdout, keyNumPath...)
+			if err != nil {
+				t.Fatalf("unable to get expected output from json: %s", err)
 			}
+			if eNum != tt.expectNumOut {
+				t.Fatalf("unexpected failure: got: '%d', expecting: '%d'", eNum, tt.expectNumOut)
+			}
+		}
 
-			// Inspect the container, and get the output
-			e2e.RunSingularity(
-				t,
-				tt.name,
-				e2e.WithPrivileges(false),
-				e2e.WithCommand("verify"),
-				e2e.WithArgs("--json", tt.imagePath),
-				e2e.PreRun(func(t *testing.T) {
-					e2e.PullImage(t, tt.imageURL, tt.imagePath)
-				}),
-				e2e.ExpectExit(tt.expectExit, verifyOutput),
-			)
-		})
+		// Inspect the container, and get the output
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("verify"),
+			e2e.WithArgs("--json", tt.imagePath),
+			e2e.PreRun(func(t *testing.T) {
+				e2e.PullImage(t, tt.imageURL, tt.imagePath)
+			}),
+			e2e.ExpectExit(tt.expectExit, verifyOutput),
+		)
 	}
 }
 
 func (c *ctx) singularityVerifySigner(t *testing.T) {
 	tests := []struct {
-		name                 string
-		jsonPath             []string
-		keyNum               string // Is the number of which key to test. Must be in '[]' bracket
-		imagePath            string // Is the path to the container
-		imageURL             string // Is the URL to the container
-		expectNameOut        string // The expected out for Name
-		expectFingerprintOut string // The expected out for Fingerprint
-		expectLocalOut       bool   // The expected out for Local
-		expectKeyCheckOut    bool   // The expected out for KeyCheck
-		expectDataCheckOut   bool   // The expected out for DataCheck
-		expectExit           int
+		expectOutput []verifyOutput
+		name         string
+		imagePath    string
+		imageURL     string
+		expectExit   int
+		verifyLocal  bool
 	}{
-		// Signer 0
+		// corrupted verify
 		{
-			name:                 "verify signer 0",
-			keyNum:               "[0]",
-			expectNameOut:        "unknown",
-			expectFingerprintOut: "8883491F4268F173C6E5DC49EDECE4F3F38D871E",
-			expectLocalOut:       false,
-			expectKeyCheckOut:    true,
-			expectDataCheckOut:   false,
-			imageURL:             corruptedURL,
-			imagePath:            c.corruptedImage,
-			expectExit:           255,
+			name:        "corrupted signatures",
+			verifyLocal: false,
+			imageURL:    corruptedURL,
+			imagePath:   c.corruptedImage,
+			expectExit:  255,
+			expectOutput: []verifyOutput{
+				verifyOutput{
+					name:        "unknown",
+					fingerprint: "8883491F4268F173C6E5DC49EDECE4F3F38D871E",
+					local:       false,
+					keyCheck:    true,
+					dataCheck:   false,
+				},
+				verifyOutput{
+					name:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
+					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
+					local:       false,
+					keyCheck:    true,
+					dataCheck:   true,
+				},
+				verifyOutput{
+					name:        "unknown",
+					fingerprint: "F69C21F759C8EA06FD32CCF4536523CE1E109AF3",
+					local:       false,
+					keyCheck:    false,
+					dataCheck:   false,
+				},
+			},
 		},
 
-		// Signer 1
+		// corrupted verify with --local
 		{
-			name:                 "verify signer 1",
-			keyNum:               "[1]",
-			expectNameOut:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
-			expectFingerprintOut: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
-			expectLocalOut:       false,
-			expectKeyCheckOut:    true,
-			expectDataCheckOut:   true,
-			imageURL:             corruptedURL,
-			imagePath:            c.corruptedImage,
-			expectExit:           255,
-		},
-
-		// Signer 2
-		{
-			name:                 "verify signer 2",
-			keyNum:               "[2]",
-			expectNameOut:        "unknown",
-			expectFingerprintOut: "F69C21F759C8EA06FD32CCF4536523CE1E109AF3",
-			expectLocalOut:       false,
-			expectKeyCheckOut:    false,
-			expectDataCheckOut:   false,
-			imageURL:             corruptedURL,
-			imagePath:            c.corruptedImage,
-			expectExit:           255,
+			name:        "corrupted signatures local",
+			imageURL:    corruptedURL,
+			imagePath:   c.corruptedImage,
+			verifyLocal: true,
+			expectExit:  255,
+			expectOutput: []verifyOutput{
+				verifyOutput{
+					name:        "unknown",
+					fingerprint: "8883491F4268F173C6E5DC49EDECE4F3F38D871E",
+					local:       false,
+					keyCheck:    true,
+					dataCheck:   false,
+				},
+				verifyOutput{
+					name:        "unknown",
+					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
+					local:       false,
+					keyCheck:    true,
+					dataCheck:   true,
+				},
+				verifyOutput{
+					name:        "unknown",
+					fingerprint: "F69C21F759C8EA06FD32CCF4536523CE1E109AF3",
+					local:       false,
+					keyCheck:    false,
+					dataCheck:   false,
+				},
+			},
 		},
 
 		// Verify 'verify_container_success.sif'
 		{
-			name:                 "verify success container",
-			keyNum:               "[0]",
-			expectNameOut:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
-			expectFingerprintOut: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
-			expectLocalOut:       false,
-			expectKeyCheckOut:    true,
-			expectDataCheckOut:   true,
-			imageURL:             successURL,
-			imagePath:            c.successImage,
-			expectExit:           0,
+			name:        "verify success",
+			verifyLocal: false,
+			imageURL:    successURL,
+			imagePath:   c.successImage,
+			expectExit:  0,
+			expectOutput: []verifyOutput{
+				verifyOutput{
+					name:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
+					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
+					local:       false,
+					keyCheck:    true,
+					dataCheck:   true,
+				},
+			},
+		},
+
+		// Verify 'verify_container_success.sif' with --local
+		{
+			name:        "verify non local fail",
+			imageURL:    successURL,
+			imagePath:   c.successImage,
+			verifyLocal: true,
+			expectExit:  255,
+			expectOutput: []verifyOutput{
+				verifyOutput{
+					name:        "unknown",
+					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
+					local:       false,
+					keyCheck:    true,
+					dataCheck:   true,
+				},
+			},
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
-				eName, err := jsonparser.GetString(r.Stdout, getNameJSON(tt.keyNum)...)
+		verifyOutput := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			for keyNum, vo := range tt.expectOutput {
+				eName, err := jsonparser.GetString(r.Stdout, getNameJSON(keyNum)...)
 				if err != nil {
 					t.Fatalf("unable to get expected output from json: %s", err)
 				}
-				if eName != tt.expectNameOut {
-					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eName, tt.expectNameOut)
+				if eName != vo.name {
+					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eName, vo.name)
 				}
 
 				// Get the Fingerprint and compare it
-				eFingerprint, err := jsonparser.GetString(r.Stdout, getFingerprintJSON(tt.keyNum)...)
+				eFingerprint, err := jsonparser.GetString(r.Stdout, getFingerprintJSON(keyNum)...)
 				if err != nil {
 					t.Fatalf("unable to get expected output from json: %s", err)
 				}
-				if eFingerprint != tt.expectFingerprintOut {
-					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eFingerprint, tt.expectFingerprintOut)
+				if eFingerprint != vo.fingerprint {
+					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eFingerprint, vo.fingerprint)
 				}
 
 				// Get the Local and compare it
-				eLocal, err := jsonparser.GetBoolean(r.Stdout, getLocalJSON(tt.keyNum)...)
+				eLocal, err := jsonparser.GetBoolean(r.Stdout, getLocalJSON(keyNum)...)
 				if err != nil {
 					t.Fatalf("unable to get expected output from json: %s", err)
 				}
-				if eLocal != tt.expectLocalOut {
-					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eLocal, tt.expectLocalOut)
+				if eLocal != vo.local {
+					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eLocal, vo.local)
 				}
 
 				// Get the KeyCheck and compare it
-				eKeyCheck, err := jsonparser.GetBoolean(r.Stdout, getKeyCheckJSON(tt.keyNum)...)
+				eKeyCheck, err := jsonparser.GetBoolean(r.Stdout, getKeyCheckJSON(keyNum)...)
 				if err != nil {
 					t.Fatalf("unable to get expected output from json: %s", err)
 				}
-				if eKeyCheck != tt.expectKeyCheckOut {
-					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eKeyCheck, tt.expectKeyCheckOut)
+				if eKeyCheck != vo.keyCheck {
+					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eKeyCheck, vo.keyCheck)
 				}
 
 				// Get the DataCheck and compare it
-				eDataCheck, err := jsonparser.GetBoolean(r.Stdout, getDataCheckJSON(tt.keyNum)...)
+				eDataCheck, err := jsonparser.GetBoolean(r.Stdout, getDataCheckJSON(keyNum)...)
 				if err != nil {
 					t.Fatalf("unable to get expected output from json: %s", err)
 				}
-				if eDataCheck != tt.expectDataCheckOut {
-					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eDataCheck, tt.expectDataCheckOut)
+				if eDataCheck != vo.dataCheck {
+					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eDataCheck, vo.dataCheck)
 				}
 			}
+		}
 
-			// Inspect the container, and get the output
-			e2e.RunSingularity(
-				t,
-				tt.name,
-				e2e.WithPrivileges(false),
-				e2e.WithCommand("verify"),
-				e2e.WithArgs("--json", tt.imagePath),
-				e2e.PreRun(func(t *testing.T) {
-					e2e.PullImage(t, tt.imageURL, tt.imagePath)
-				}),
-				e2e.ExpectExit(tt.expectExit, verifyOutput),
-			)
-		})
+		args := []string{"--json"}
+		if tt.verifyLocal {
+			args = append(args, "--local")
+		}
+		args = append(args, tt.imagePath)
+
+		// Inspect the container, and get the output
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("verify"),
+			e2e.WithArgs(args...),
+			e2e.PreRun(func(t *testing.T) {
+				e2e.PullImage(t, tt.imageURL, tt.imagePath)
+			}),
+			e2e.ExpectExit(tt.expectExit, verifyOutput),
+		)
 	}
 }
 
