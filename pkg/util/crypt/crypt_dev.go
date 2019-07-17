@@ -258,7 +258,7 @@ func (crypt *Device) Open(key, path string) (string, error) {
 			return "", err
 		}
 
-		sylog.Debugf("Sucessfully opened encrypted device %s", path)
+		sylog.Debugf("Successfully opened encrypted device %s", path)
 		return nextCrypt, nil
 	}
 
