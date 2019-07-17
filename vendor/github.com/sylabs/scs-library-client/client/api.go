@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 
 	jsonresp "github.com/sylabs/json-resp"
 )
@@ -298,9 +299,17 @@ func (c *Client) setTagV2(ctx context.Context, containerID string, t ArchImageTa
 
 // GetImage returns the Image object if exists; returns ErrNotFound if image is
 // not found, otherwise error.
-func (c *Client) GetImage(ctx context.Context, imageRef string) (*Image, error) {
-	url := "/v1/images/" + imageRef
-	imgJSON, err := c.apiGet(ctx, url)
+func (c *Client) GetImage(ctx context.Context, arch string, imageRef string) (*Image, error) {
+	apiPath := "/v1/images/" + imageRef
+	apiURL, err := url.Parse(apiPath)
+	if err != nil{
+		return nil, fmt.Errorf("error constructing API url: %v", err)
+	}
+	q := apiURL.Query()
+	q.Add("arch", arch)
+	apiURL.RawQuery = q.Encode()
+
+	imgJSON, err := c.apiGet(ctx, apiURL.String())
 	if err != nil {
 		return nil, err
 	}

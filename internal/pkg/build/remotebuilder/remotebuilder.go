@@ -147,7 +147,9 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 		imageRef := library.NormalizeLibraryRef(bi.LibraryRef)
 
-		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, imageRef); err != nil {
+		// TODO - remotebuilder is *only* amd64 right now, but this will change
+		// in future.
+		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, "amd64", imageRef); err != nil {
 			return errors.Wrap(err, "failed to pull image file")
 		}
 	}

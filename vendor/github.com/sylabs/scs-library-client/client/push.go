@@ -153,7 +153,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path, arch st
 	}
 
 	// Find or create image
-	image, err := c.GetImage(ctx, computedName+":"+imageHash)
+	image, err := c.GetImage(ctx, arch, computedName+":"+imageHash)
 	if err != nil {
 		if err != ErrNotFound {
 			return err
@@ -187,7 +187,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path, arch st
 	c.Logger.Logf("Setting tags against uploaded image")
 
 	if c.isV2API(ctx) {
-		return c.setTagsV2(ctx, container.ID, image.ID, arch, append(tags, parsedTags...))
+		return c.setTagsV2(ctx, container.ID, arch, image.ID, append(tags, parsedTags...))
 	}
 	c.Logger.Logf("This library does not support multiple architecture per tag.")
 	c.Logger.Logf("This tag will replace any already uploaded with the same name.")

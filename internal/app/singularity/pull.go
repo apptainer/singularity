@@ -36,7 +36,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken string, force, unauthenticated bool) error {
+func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken string, force, unauthenticated bool, arch string) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
 			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
@@ -57,12 +57,9 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	imageName := uri.GetName("library://" + imageRef)
 
 	// check if image exists in library
-	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
+	libraryImage, err := libraryClient.GetImage(context.TODO(), arch, imageRef)
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
-	}
-	if !existOk {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
@@ -74,7 +71,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		sylog.Infof("Downloading library image")
 
 		// call library download image helper
-		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, imageRef, downloadImageCallback); err != nil {
+		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, arch, imageRef, downloadImageCallback); err != nil {
 			return fmt.Errorf("unable to Download Image: %v", err)
 		}
 

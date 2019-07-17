@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -48,7 +49,19 @@ var (
 	unauthenticatedPull bool
 	// PullDir is the path that the containers will be pulled to, if set
 	PullDir string
+	// PullArch is the architecture for which containers will be pulled
+	PullArch string
 )
+
+// --library
+var pullArchFlag = cmdline.Flag{
+	ID:           "pullArchFlag",
+	Value:        &PullArch,
+	DefaultValue: runtime.GOARCH,
+	Name:         "arch",
+	Usage:        "Architecture to pull from library",
+	EnvKeys:      []string{"ARCH"},
+}
 
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
@@ -153,6 +166,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
 }
 
 // PullCmd singularity pull
@@ -213,7 +227,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 
-		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull)
+		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, PullArch)
 		if err == singularity.ErrLibraryPullUnsigned {
 			exitStat = 10
 		} else if err != nil {

@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	ocitypes "github.com/containers/image/types"
@@ -155,12 +156,9 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 
 	imageRef := libraryhelper.NormalizeLibraryRef(u)
 
-	libraryImage, existOk, err := c.GetImage(ctx, imageRef)
+	libraryImage, err := c.GetImage(ctx, runtime.GOARCH, imageRef)
 	if err != nil {
 		return "", err
-	}
-	if !existOk {
-		return "", fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
@@ -171,7 +169,7 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 	} else if !exists {
 		sylog.Infof("Downloading library image")
 
-		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
+		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 

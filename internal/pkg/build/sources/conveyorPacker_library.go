@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/internal/pkg/library"
@@ -61,12 +62,9 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	imageRef := library.NormalizeLibraryRef(b.Recipe.Header["from"])
 
-	libraryImage, existOk, err := libraryClient.GetImage(context.TODO(), imageRef)
+	libraryImage, err := libraryClient.GetImage(context.TODO(), runtime.GOARCH, imageRef)
 	if err != nil {
 		return fmt.Errorf("while getting image info: %v", err)
-	}
-	if !existOk {
-		return fmt.Errorf("image does not exist in the library: %s", imageRef)
 	}
 
 	imageName := uri.GetName("library://" + imageRef)
@@ -77,7 +75,7 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 	} else if !exists {
 		sylog.Infof("Downloading library image")
 
-		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
+		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 

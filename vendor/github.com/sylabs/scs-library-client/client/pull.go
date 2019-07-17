@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
 	jsonresp "github.com/sylabs/json-resp"
@@ -19,7 +20,7 @@ import (
 // into the specified io.Writer. The timeout value for this operation is set
 // within the context. It is recommended to use a large value (ie. 1800 seconds)
 // to prevent timeout when downloading large images.
-func (c *Client) DownloadImage(ctx context.Context, w io.Writer, path, tag string, callback func(int64, io.Reader, io.Writer) error) error {
+func (c *Client) DownloadImage(ctx context.Context, w io.Writer, arch, path, tag string, callback func(int64, io.Reader, io.Writer) error) error {
 
 	if strings.Contains(path, ":") {
 		return fmt.Errorf("malformed image path: %s", path)
@@ -29,11 +30,21 @@ func (c *Client) DownloadImage(ctx context.Context, w io.Writer, path, tag strin
 		tag = "latest"
 	}
 
-	url := fmt.Sprintf("/v1/imagefile/%s:%s", path, tag)
+	// TODO REFACTOR THIS
+	apiPath := fmt.Sprintf("/v1/imagefile/%s:%s", path, tag)
+	apiURL, err := url.Parse(apiPath)
+	if err != nil{
+		return fmt.Errorf("error constructing API url: %v", err)
+	}
+	q := url.Values{}
+	q.Add("arch", arch)
+	apiURL.RawQuery = q.Encode()
 
-	c.Logger.Logf("Pulling from URL: %s", url)
+	fmt.Printf("Pulling from URL: %s", apiURL.String())
 
-	req, err := c.newRequest(http.MethodGet, url, "", nil)
+	c.Logger.Logf("Pulling from URL: %s", apiURL.String())
+
+	req, err := c.newRequest(http.MethodGet, apiURL.Path, apiURL.RawQuery, nil)
 	if err != nil {
 		return err
 	}
