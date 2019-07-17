@@ -32,7 +32,7 @@ func TestCreateConfDir(t *testing.T) {
 		ioutil.WriteFile(dir+"/foo", []byte(""), 655)
 		createConfDir(dir)
 		if _, err := os.Stat(dir + "/foo"); os.IsNotExist(err) {
-			t.Errorf("inadvertantly overwrote existing directory %s", dir)
+			t.Errorf("inadvertently overwrote existing directory %s", dir)
 		}
 	}
 }
