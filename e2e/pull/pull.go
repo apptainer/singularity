@@ -224,7 +224,7 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 		// We make sure to include os.Environ() in addition of KeyringDir to find utilities such as mksquashfs.
 		// If nothing is specified with WithEnv(), the framework will pick up os.Environ(); if we need to had a
 		// new environment variable, we need to explicitly also add os.Environ()
-		e2e.WithEnv(append(os.Environ(), "c.env.KeyringDir")), 
+		e2e.WithEnv(append(os.Environ(), c.env.KeyringDir)),
 		e2e.ExpectExit(tt.expectedExitCode),
 		e2e.PostRun(func(t *testing.T) {
 			checkPullResult(t, tt)
