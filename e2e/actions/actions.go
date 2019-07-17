@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
 type actionTests struct {
@@ -402,7 +402,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 			name:    "AppsFoo",
 			command: "run",
 			argv:    []string{"--app", "foo", c.env.ImagePath},
-			output:  "FOO",
+			output:  "RUNNING FOO",
 			exit:    0,
 		},
 		{
@@ -416,7 +416,7 @@ func (c *actionTests) STDPipe(t *testing.T) {
 			name:    "Arguments",
 			command: "run",
 			argv:    []string{c.env.ImagePath, "foo"},
-			output:  "foo",
+			output:  "Running command: foo",
 			exit:    127,
 		},
 		{
@@ -433,7 +433,10 @@ func (c *actionTests) STDPipe(t *testing.T) {
 			tt.name,
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
-			e2e.ExpectExit(tt.exit, e2e.ExpectOutput(tt.output)),
+			e2e.ExpectExit(
+				tt.exit,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.output),
+			),
 		)
 	}
 }

@@ -3,17 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package rpc
+// +build !linux
 
-// CopyArgs defines the arguments to copy.
-type CopyArgs struct {
-	Source string
-	Dest   string
-}
+package init
 
-// RunScriptArgs defines the arguments to run script.
-type RunScriptArgs struct {
-	Script string
-	Args   []string
-	Envs   []string
-}
+// do nothing on unsupported platform

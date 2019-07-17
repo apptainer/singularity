@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,8 @@
 package fs
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -139,4 +141,34 @@ func Touch(path string) error {
 	}
 	f.Close()
 	return nil
+}
+
+// MakeTmpDir creates a temporary directory with provided mode
+// in os.TempDir if basedir is "". This function assumes that
+// basedir exists, so it's the caller's responsibility to create
+// it before calling it.
+func MakeTmpDir(basedir, pattern string, mode os.FileMode) (string, error) {
+	name, err := ioutil.TempDir(basedir, pattern)
+	if err != nil {
+		return "", fmt.Errorf("failed to create temporary directory: %s", err)
+	}
+	if err := os.Chmod(name, mode); err != nil {
+		return "", fmt.Errorf("failed to change permission of %s: %s", name, err)
+	}
+	return name, nil
+}
+
+// MakeTmpFile creates a temporary file with provided mode
+// in os.TempDir if basedir is "". This function assumes that
+// basedir exists, so it's the caller's responsibility to create
+// it before calling it.
+func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
+	f, err := ioutil.TempFile(basedir, pattern)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary file: %s", err)
+	}
+	if err := f.Chmod(mode); err != nil {
+		return nil, fmt.Errorf("failed to change permission of %s: %s", f.Name(), err)
+	}
+	return f, nil
 }

@@ -41,6 +41,8 @@ import (
 
 	version "github.com/sylabs/singularity/e2e/version"
 
+	"github.com/sylabs/singularity/e2e/oci"
+
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -72,6 +74,12 @@ func Run(t *testing.T) {
 	sysconfdir := func(fn string) string {
 		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)
 	}
+
+	// e2e tests need to run in a somehow agnostic environment, so we
+	// don't use environment of user executing tests in order to not
+	// wrongly interfering with cache stuff, sylabs library tokens,
+	// PGP keys
+	singularitye2e.SetupHomeDirectories(t)
 
 	// Ensure config files are installed
 	configFiles := []string{
@@ -153,4 +161,6 @@ func Run(t *testing.T) {
 	t.Run("ENV", singularityenv.RunE2ETests(testenv))
 
 	t.Run("VERSION", version.RunE2ETests(testenv))
+
+	t.Run("OCI", oci.RunE2ETests(testenv))
 }

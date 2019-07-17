@@ -35,12 +35,12 @@ func (c *ScratchConveyor) Get(b *types.Bundle) (err error) {
 func (cp *ScratchConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v", err)
+		return nil, fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	return cp.b, nil

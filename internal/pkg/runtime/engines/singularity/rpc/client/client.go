@@ -8,7 +8,6 @@ package client
 import (
 	"net/rpc"
 	"os"
-	"path/filepath"
 
 	args "github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc"
 	"github.com/sylabs/singularity/pkg/util/loop"
@@ -35,11 +34,11 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 }
 
 // Decrypt calls the DeCrypt RPC using the supplied arguments.
-func (t *RPC) Decrypt(offset uint64, path string) (string, error) {
-	loopdev := filepath.Base(path)
+func (t *RPC) Decrypt(offset uint64, path string, key string) (string, error) {
 	arguments := &args.CryptArgs{
 		Offset:  offset,
-		Loopdev: loopdev,
+		Loopdev: path,
+		Key:     key,
 	}
 
 	var reply string

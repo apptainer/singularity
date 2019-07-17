@@ -18,14 +18,13 @@ import (
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	legacytypes "github.com/sylabs/singularity/pkg/build/legacy"
 	legacyparser "github.com/sylabs/singularity/pkg/build/legacy/parser"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (
 	remote         bool
-	encrypt        bool
 	builderURL     string
 	detached       bool
 	libraryURL     string
@@ -119,17 +118,6 @@ var buildRemoteFlag = cmdline.Flag{
 	EnvKeys:      []string{"REMOTE"},
 }
 
-// -e|--encrypt
-var buildEncryptFlag = cmdline.Flag{
-	ID:           "buildEncryptFlag",
-	Value:        &encrypt,
-	DefaultValue: false,
-	Name:         "encrypt",
-	ShortHand:    "e",
-	Usage:        "Encrypt the file system after building (requires root)",
-	EnvKeys:      []string{"ENCRYPT"},
-}
-
 // -d|--detached
 var buildDetachedFlag = cmdline.Flag{
 	ID:           "buildDetachedFlag",
@@ -214,7 +202,6 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildNoHTTPSFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildNoTestFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildRemoteFlag, BuildCmd)
-	cmdManager.RegisterFlagForCmd(&buildEncryptFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
@@ -224,6 +211,8 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&actionDockerLoginFlag, BuildCmd)
+
+	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, BuildCmd)
 }
 
 // BuildCmd represents the build command
@@ -241,6 +230,10 @@ var BuildCmd = &cobra.Command{
 }
 
 func preRun(cmd *cobra.Command, args []string) {
+	if fakeroot {
+		fakerootExec(args)
+	}
+
 	// Always perform remote build when builder flag is set
 	if cmd.Flags().Lookup("builder").Changed {
 		cmd.Flags().Lookup("remote").Value.Set("true")
@@ -323,7 +316,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 
 	if dockerLogin {
 		if !usernameFlag.Changed {
-			dockerUsername, err = sypgp.AskQuestion("Enter Docker Username: ")
+			dockerUsername, err = interactive.AskQuestion("Enter Docker Username: ")
 			if err != nil {
 				return
 			}
@@ -331,7 +324,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 			usernameFlag.Changed = true
 		}
 
-		dockerPassword, err = sypgp.AskQuestionNoEcho("Enter Docker Password: ")
+		dockerPassword, err = interactive.AskQuestionNoEcho("Enter Docker Password: ")
 		if err != nil {
 			return
 		}

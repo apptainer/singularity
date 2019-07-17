@@ -24,43 +24,43 @@ func (s *stage) insertMetadata() (err error) {
 	// insert help
 	err = insertHelpScript(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting help script: %v", err)
+		return fmt.Errorf("while inserting help script: %v", err)
 	}
 
 	// insert labels
 	err = insertLabelsJSON(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting labels JSON: %v", err)
+		return fmt.Errorf("while inserting labels json: %v", err)
 	}
 
 	// insert definition
 	err = insertDefinition(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting definition: %v", err)
+		return fmt.Errorf("while inserting definition: %v", err)
 	}
 
 	// insert environment
 	err = insertEnvScript(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting environment script: %v", err)
+		return fmt.Errorf("while inserting environment script: %v", err)
 	}
 
 	// insert startscript
 	err = insertStartScript(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting startscript: %v", err)
+		return fmt.Errorf("while inserting startscript: %v", err)
 	}
 
 	// insert runscript
 	err = insertRunScript(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting runscript: %v", err)
+		return fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	// insert test script
 	err = insertTestScript(s.b)
 	if err != nil {
-		return fmt.Errorf("While inserting test script: %v", err)
+		return fmt.Errorf("while inserting test script: %v", err)
 	}
 
 	return

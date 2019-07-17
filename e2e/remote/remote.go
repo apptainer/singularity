@@ -13,8 +13,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/test/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
 type ctx struct {
@@ -25,9 +24,6 @@ type ctx struct {
 // It Verifies that adding valid endpoints results in success and invalid
 // one's results in failure.
 func (c *ctx) remoteAdd(t *testing.T) {
-
-	test.DropPrivilege(t)
-
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -78,8 +74,6 @@ func (c *ctx) remoteAdd(t *testing.T) {
 // 2. Deletes the already added entries
 // 3. Verfies that removing an invalid entry results in a failure
 func (c *ctx) remoteRemove(t *testing.T) {
-	test.DropPrivilege(t)
-
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -147,8 +141,6 @@ func (c *ctx) remoteRemove(t *testing.T) {
 // 1. Tries to use non-existing remote entry
 // 2. Adds remote entries and tries to use those
 func (c *ctx) remoteUse(t *testing.T) {
-	test.DropPrivilege(t)
-
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -217,8 +209,6 @@ func (c *ctx) remoteUse(t *testing.T) {
 // 2. Verifies that remote status command succeeds on existing endpoints
 // 3. Verifies that remote status command fails on non-existing endpoints
 func (c *ctx) remoteStatus(t *testing.T) {
-	test.DropPrivilege(t)
-
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
@@ -284,8 +274,6 @@ func (c *ctx) remoteStatus(t *testing.T) {
 
 // remoteList tests the functionality of "singularity remote list" command
 func (c *ctx) remoteList(t *testing.T) {
-	test.DropPrivilege(t)
-
 	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)

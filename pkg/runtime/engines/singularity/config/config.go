@@ -50,6 +50,7 @@ type FileConfig struct {
 	CniConfPath             string   `directive:"cni configuration path"`
 	CniPluginPath           string   `directive:"cni plugin path"`
 	MksquashfsPath          string   `directive:"mksquashfs path"`
+	CryptsetupPath          string   `directive:"cryptsetup path"`
 }
 
 // JSONConfig stores engine specific confguration that is allowed to be set by the user
@@ -77,6 +78,7 @@ type JSONConfig struct {
 	Network           string        `json:"network,omitempty"`
 	DNS               string        `json:"dns,omitempty"`
 	Cwd               string        `json:"cwd,omitempty"`
+	EncryptionKey     string        `json:"encryptionKey,omitempty"`
 	TargetUID         int           `json:"targetUID,omitempty"`
 	WritableImage     bool          `json:"writableImage,omitempty"`
 	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
@@ -116,6 +118,16 @@ func (e *EngineConfig) SetImage(name string) {
 // GetImage retrieves the container image path.
 func (e *EngineConfig) GetImage() string {
 	return e.JSON.Image
+}
+
+// SetKey sets the key for the image's system partition
+func (e *EngineConfig) SetEncryptionKey(key string) {
+	e.JSON.EncryptionKey = key
+}
+
+// GetKey retrieves the key for image's system partition
+func (e *EngineConfig) GetEncryptionKey() string {
+	return e.JSON.EncryptionKey
 }
 
 // SetWritableImage defines the container image as writable or not.

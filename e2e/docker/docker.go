@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
 )
 
@@ -23,7 +24,7 @@ type ctx struct {
 func (c *ctx) testDockerPulls(t *testing.T) {
 	const tmpContainerFile = "test_container.sif"
 
-	tmpPath, err := e2e.MakeTmpDir(c.env.TestDir, "docker-", 0755)
+	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0755)
 	if err != nil {
 		t.Fatalf("failed to create temporary directory in %s: %s", c.env.TestDir, err)
 	}

@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"syscall"
 	"testing"
@@ -32,24 +33,119 @@ type SingularityCmdResult struct {
 	FullCmd string
 }
 
-// ExpectOutput tests if the command output stream contains the
-// pattern string.
-func ExpectOutput(pattern string) SingularityCmdResultOp {
+// MatchType defines the type of match for ExpectOuput and ExpectError
+// functions
+type MatchType uint8
+
+const (
+	// ContainMatch is for contain match
+	ContainMatch MatchType = iota
+	// ExactMatch is for exact match
+	ExactMatch
+	// RegexMatch is for regular expression match
+	RegexMatch
+)
+
+// streamType defines a stream type
+type streamType uint8
+
+const (
+	// outputStream is the command output stream
+	outputStream streamType = iota
+	// errorStream is the command error stream
+	errorStream
+)
+
+func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, pattern string) error {
+	var output string
+	var streamName string
+
+	switch stream {
+	case outputStream:
+		output = string(r.Stdout)
+		streamName = "output"
+	case errorStream:
+		output = string(r.Stderr)
+		streamName = "error"
+	}
+
+	switch mt {
+	case ContainMatch:
+		if !strings.Contains(output, pattern) {
+			return fmt.Errorf(
+				"Command %q:\nExpect %s stream contains:\n%s\nCommand %s stream:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	case ExactMatch:
+		// get rid of the trailing newline
+		if strings.TrimSuffix(output, "\n") != pattern {
+			return fmt.Errorf(
+				"Command %q:\nExpect %s stream exact match:\n%s\nCommand %s output:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	case RegexMatch:
+		matched, err := regexp.MatchString(pattern, output)
+		if err != nil {
+			return fmt.Errorf(
+				"compilation of regular expression %q failed: %s",
+				pattern, err,
+			)
+		}
+		if !matched {
+			return fmt.Errorf(
+				"Command %q:\nExpect %s stream match regular expression:\n%s\nCommand %s output:\n%s",
+				r.FullCmd, streamName, pattern, streamName, output,
+			)
+		}
+	}
+
+	return nil
+}
+
+// ExpectOutput tests if the command output stream match the
+// pattern string based on the type of match.
+func ExpectOutput(mt MatchType, pattern string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
-		stdout := string(r.Stdout)
-		if !strings.Contains(stdout, pattern) {
-			t.Errorf("unexpected output for %q, got %s instead of %s", r.FullCmd, stdout, pattern)
+		err := r.expectMatch(mt, outputStream, pattern)
+		if err != nil {
+			t.Error(err)
 		}
 	}
 }
 
-// ExpectError tests if the command error stream contains the
-// pattern string.
-func ExpectError(pattern string) SingularityCmdResultOp {
+// ExpectOutputf tests if the command output stream match the
+// formatted string pattern based on the type of match.
+func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
-		stderr := string(r.Stderr)
-		if !strings.Contains(stderr, pattern) {
-			t.Errorf("unexpected error for %q, got %s instead of %s", r.FullCmd, stderr, pattern)
+		pattern := fmt.Sprintf(formatPattern, a...)
+		err := r.expectMatch(mt, outputStream, pattern)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+}
+
+// ExpectError tests if the command error stream match the
+// pattern string based on the type of match.
+func ExpectError(mt MatchType, pattern string) SingularityCmdResultOp {
+	return func(t *testing.T, r *SingularityCmdResult) {
+		err := r.expectMatch(mt, errorStream, pattern)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+}
+
+// ExpectErrorf tests if the command error stream match the
+// pattern string based on the type of match.
+func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
+	return func(t *testing.T, r *SingularityCmdResult) {
+		pattern := fmt.Sprintf(formatPattern, a...)
+		err := r.expectMatch(mt, errorStream, pattern)
+		if err != nil {
+			t.Error(err)
 		}
 	}
 }

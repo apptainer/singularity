@@ -52,7 +52,7 @@ func TestMakeParentDir(t *testing.T) {
 			parent: false,
 		},
 		{
-			name:   "exists mutliple",
+			name:   "exists multiple",
 			srcNum: 2,
 			path:   "", // this will create a path of just the testdir, which will always exist
 			parent: false,

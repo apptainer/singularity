@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -488,7 +488,7 @@ func (c *container) addCgroups(pid int, system *mount.System) error {
 	manager := &cgroups.Manager{Path: cgroupsPath, Pid: pid}
 
 	if err := manager.ApplyFromSpec(c.engine.EngineConfig.OciConfig.Linux.Resources); err != nil {
-		return fmt.Errorf("Failed to apply cgroups resources restriction: %s", err)
+		return fmt.Errorf("failed to apply cgroups resources restriction: %s", err)
 	}
 
 	if c.cgroupIndex >= 0 {

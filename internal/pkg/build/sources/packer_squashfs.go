@@ -43,7 +43,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 
 	trimfile, err := ioutil.TempFile(p.b.Path, "trim.squashfs")
 	if err != nil {
-		return fmt.Errorf("While making tmp file: %v", err)
+		return fmt.Errorf("while making tmp file: %v", err)
 	}
 
 	// trim header
@@ -51,7 +51,7 @@ func (p *SquashfsPacker) unpackSquashfs(b *types.Bundle, info *loop.Info64, root
 	cmd := exec.Command("dd", "bs="+strconv.Itoa(int(info.Offset)), "skip=1", "if="+rootfs, "of="+trimfile.Name())
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("Trimming header Failed: %v: %v", err, stderr.String())
+		return fmt.Errorf("trimming header failed: %v: %v", err, stderr.String())
 	}
 
 	// copy filesystem into bundle rootfs

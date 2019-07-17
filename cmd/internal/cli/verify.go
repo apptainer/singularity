@@ -21,6 +21,7 @@ var (
 	sifGroupID  uint32 // -g groupid specification
 	sifDescID   uint32 // -i id specification
 	localVerify bool   // -l flag
+	jsonVerify  bool   // -j flag
 )
 
 // -u|--url
@@ -65,6 +66,16 @@ var verifyLocalFlag = cmdline.Flag{
 	EnvKeys:      []string{"LOCAL_VERIFY"},
 }
 
+// -j|--json
+var verifyJSONFlag = cmdline.Flag{
+	ID:           "verifyJsonFlag",
+	Value:        &jsonVerify,
+	DefaultValue: false,
+	Name:         "json",
+	ShortHand:    "j",
+	Usage:        "output json",
+}
+
 func init() {
 	cmdManager.RegisterCmd(VerifyCmd)
 
@@ -72,6 +83,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&verifySifGroupIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
 	cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
+	cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
 }
 
 // VerifyCmd singularity verify
@@ -93,7 +105,6 @@ var VerifyCmd = &cobra.Command{
 		}
 
 		// args[0] contains image path
-		fmt.Printf("Verifying image: %s\n", args[0])
 		doVerifyCmd(args[0], keyServerURI)
 	},
 
@@ -117,13 +128,14 @@ func doVerifyCmd(cpath, url string) {
 		id = sifDescID
 	}
 
-	notLocalKey, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, false)
-	if err != nil {
-		sylog.Fatalf("%v", err)
+	author, _, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, jsonVerify)
+	fmt.Printf("%s", author)
+	if err == signing.ErrVerificationFail {
+		sylog.Fatalf("Failed to verify: %s", cpath)
+	} else if err != nil {
+		sylog.Fatalf("Failed to verify: %s: %s", cpath, err)
 	}
-	if notLocalKey {
-		os.Exit(1)
-	}
+	sylog.Infof("Container verified: %s", cpath)
 }
 
 func handleVerifyFlags(cmd *cobra.Command) {

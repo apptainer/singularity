@@ -38,7 +38,7 @@ func RemoteStatus(usrConfigFile, sysConfigFile, name string) (err error) {
 	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("No Remote configurations")
+			return fmt.Errorf("no remote configurations")
 		}
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

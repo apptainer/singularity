@@ -38,7 +38,8 @@ var KeyPushCmd = &cobra.Command{
 }
 
 func doKeyPushCmd(fingerprint string, url string) error {
-	el, err := sypgp.LoadPubKeyring()
+	keyring := sypgp.NewHandle("")
+	el, err := keyring.LoadPubKeyring()
 	if err != nil {
 		return err
 	}

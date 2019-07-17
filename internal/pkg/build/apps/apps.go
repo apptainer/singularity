@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -426,7 +426,7 @@ func copy(src, dst string) error {
 	copy.Stderr = &stderr
 	sylog.Debugf("Copying %v to %v", src, dst)
 	if err := copy.Run(); err != nil {
-		return fmt.Errorf("While copying %v to %v: %v: %v", src, dst, err, stderr.String())
+		return fmt.Errorf("while copying %v to %v: %v: %v", src, dst, err, stderr.String())
 	}
 
 	return nil

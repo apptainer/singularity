@@ -23,19 +23,20 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
 )
 
 var testFileContent = "Test file content\n"
 
 func setupCache(t *testing.T) (*cache.Handle, func()) {
-	dir := test.SetCacheDir(t, "")
+	dir := testCache.MakeDir(t, "")
 	h, err := cache.NewHandle(dir)
 	if err != nil {
-		test.CleanCacheDir(t, dir)
+		testCache.DeleteDir(t, dir)
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
 	return h, func() {
-		test.CleanCacheDir(t, dir)
+		testCache.DeleteDir(t, dir)
 	}
 }
 
@@ -962,11 +963,11 @@ func verifyFile(t *testing.T, original, copy string) error {
 	}
 
 	if ofi.Size() != cfi.Size() {
-		return fmt.Errorf("Incorrect file sizes. Original: %v, Copy: %v", ofi.Size(), cfi.Size())
+		return fmt.Errorf("incorrect file sizes. original: %v, copy: %v", ofi.Size(), cfi.Size())
 	}
 
 	if ofi.Mode() != cfi.Mode() {
-		return fmt.Errorf("Incorrect file modes. Original: %v, Copy: %v", ofi.Mode(), cfi.Mode())
+		return fmt.Errorf("incorrect file modes. original: %v, copy: %v", ofi.Mode(), cfi.Mode())
 	}
 
 	o, err := ioutil.ReadFile(original)
@@ -980,7 +981,7 @@ func verifyFile(t *testing.T, original, copy string) error {
 	}
 
 	if !bytes.Equal(o, c) {
-		return fmt.Errorf("Incorrect file content")
+		return fmt.Errorf("incorrect file content")
 	}
 
 	return nil
@@ -994,7 +995,7 @@ func verifyHelp(t *testing.T, fileName string, contents []string) error {
 
 	// do perm check
 	if fi.Mode().Perm() != 0644 {
-		return fmt.Errorf("Incorrect help script perms: %v", fi.Mode().Perm())
+		return fmt.Errorf("incorrect help script perms: %v", fi.Mode().Perm())
 	}
 
 	s, err := ioutil.ReadFile(fileName)
@@ -1005,7 +1006,7 @@ func verifyHelp(t *testing.T, fileName string, contents []string) error {
 	helpScript := string(s)
 	for _, c := range contents {
 		if !strings.Contains(helpScript, c) {
-			return fmt.Errorf("Missing help script content")
+			return fmt.Errorf("missing help script content")
 		}
 	}
 
@@ -1020,7 +1021,7 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 
 	// do perm check
 	if fi.Mode().Perm() != 0755 {
-		return fmt.Errorf("Incorrect script perms: %v", fi.Mode().Perm())
+		return fmt.Errorf("incorrect script perms: %v", fi.Mode().Perm())
 	}
 
 	s, err := ioutil.ReadFile(fileName)
@@ -1031,7 +1032,7 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 	script := string(s)
 	for _, c := range contents {
 		if !strings.Contains(script, c) {
-			return fmt.Errorf("Missing script content")
+			return fmt.Errorf("missing script content")
 		}
 	}
 
@@ -1062,7 +1063,7 @@ func verifyEnv(t *testing.T, imagePath string, env []string, flags []string) err
 
 	for _, e := range env {
 		if !strings.Contains(out, e) {
-			return fmt.Errorf("Environment is missing: %v", e)
+			return fmt.Errorf("environment is missing: %v", e)
 		}
 	}
 
@@ -1083,7 +1084,7 @@ func verifyLabels(t *testing.T, imagePath string, labels map[string]string) erro
 
 	for k, v := range labels {
 		if l, ok := fileLabels[k]; !ok || v != l {
-			return fmt.Errorf("Missing label: %v:%v", k, v)
+			return fmt.Errorf("missing label: %v:%v", k, v)
 		}
 	}
 
@@ -1096,7 +1097,7 @@ func verifyLabels(t *testing.T, imagePath string, labels map[string]string) erro
 
 	for _, l := range defaultLabels {
 		if _, ok := fileLabels[l]; !ok {
-			return fmt.Errorf("Missing label: %v", l)
+			return fmt.Errorf("missing label: %v", l)
 		}
 	}
 
@@ -1117,7 +1118,7 @@ func verifyAppLabels(t *testing.T, imagePath, appName string, labels map[string]
 
 	for k, v := range labels {
 		if l, ok := fileLabels[k]; !ok || v != l {
-			return fmt.Errorf("Missing label: %v:%v", k, v)
+			return fmt.Errorf("missing label: %v:%v", k, v)
 		}
 	}
 

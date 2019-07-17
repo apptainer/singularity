@@ -38,19 +38,21 @@ var KeyPullCmd = &cobra.Command{
 func doKeyPullCmd(fingerprint string, url string) error {
 	var count int
 
+	keyring := sypgp.NewHandle("")
+
 	// get matching keyring
 	el, err := sypgp.FetchPubkey(fingerprint, url, authToken, false)
 	if err != nil {
 		return fmt.Errorf("unable to pull key from server: %v", err)
 	}
 
-	elstore, err := sypgp.LoadPubKeyring()
+	elstore, err := keyring.LoadPubKeyring()
 	if err != nil {
 		return err
 	}
 
 	// store in local cache
-	fp, err := os.OpenFile(sypgp.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	fp, err := os.OpenFile(keyring.PublicPath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return err
 	}
@@ -72,7 +74,7 @@ func doKeyPullCmd(fingerprint string, url string) error {
 		}
 	}
 
-	fmt.Printf("%v key(s) added to keyring of trust %s\n", count, sypgp.PublicPath())
+	fmt.Printf("%v key(s) added to keyring of trust %s\n", count, keyring.PublicPath())
 
 	return nil
 }

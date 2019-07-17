@@ -20,7 +20,7 @@ import (
 func Configure(config *specs.Spec) error {
 	if config.Process != nil {
 		if config.Process.SelinuxLabel != "" && config.Process.ApparmorProfile != "" {
-			return fmt.Errorf("You can't specify both an apparmor profile and a SELinux label")
+			return fmt.Errorf("you can't specify both an apparmor profile and a selinux label")
 		}
 		if config.Process.SelinuxLabel != "" {
 			if selinux.Enabled() {
@@ -42,7 +42,7 @@ func Configure(config *specs.Spec) error {
 	}
 	if config.Linux != nil && config.Linux.Seccomp != nil {
 		if seccomp.Enabled() {
-			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp, config.Process.NoNewPrivileges); err != nil {
+			if err := seccomp.LoadSeccompConfig(config.Linux.Seccomp, config.Process.NoNewPrivileges, 1); err != nil {
 				return err
 			}
 		} else {

@@ -24,14 +24,13 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 	shub "github.com/sylabs/singularity/pkg/client/shub"
 	"github.com/sylabs/singularity/pkg/signing"
-	"github.com/sylabs/singularity/pkg/sypgp"
 	pb "gopkg.in/cheggaaa/pb.v1"
 )
 
 var (
-	// ErrLibraryPullAbort indicates that the interactive portion of the
+	// ErrLibraryPullUnsigned indicates that the interactive portion of the
 	// pull was aborted
-	ErrLibraryPullAbort = errors.New("library pull aborted")
+	ErrLibraryPullUnsigned = errors.New("failed to verify container")
 )
 
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
@@ -114,32 +113,14 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		return fmt.Errorf("while copying image from cache: %v", err)
 	}
 
-	var retErr error
 	// check if we pulled from the library, if so; is it signed?
 	if !unauthenticated {
-		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken, true)
+		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
 		if err != nil {
-			// err will be: "unable to verify container: %v", err
-			sylog.Warningf("%v", err)
-			// if there is a warning, return set error to indicate exit 1
-			retErr = ErrLibraryUnsigned
+			sylog.Errorf("%v", err)
 		}
-		// if container is not signed, print a warning
 		if !imageSigned {
-			fmt.Fprintf(os.Stderr, "This image is not signed, and thus its contents cannot be verified.\n")
-			resp, err := sypgp.AskQuestion("Do you want to proceed? [N/y] ")
-			if err != nil {
-				return fmt.Errorf("unable to parse input: %v", err)
-			}
-			// user aborted
-			if resp == "" || resp != "y" && resp != "Y" {
-				fmt.Fprintf(os.Stderr, "Aborting.\n")
-				err := os.Remove(name)
-				if err != nil {
-					return fmt.Errorf("unable to delete the container: %v", err)
-				}
-				return ErrLibraryPullAbort
-			}
+			return ErrLibraryPullUnsigned
 		}
 	} else {
 		sylog.Warningf("Skipping container verification")
@@ -147,7 +128,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 	sylog.Infof("Download complete: %s\n", name)
 
-	return retErr
+	return nil
 }
 
 // PullShub will download a image from shub, and cache it. Next time
