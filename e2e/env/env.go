@@ -9,10 +9,6 @@
 package singularityenv
 
 import (
-	"fmt"
-	"os"
-	"os/exec"
-	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -37,44 +33,75 @@ func (c *ctx) singularityEnv(t *testing.T) {
 	// Overwrite the path with this one.
 	var overwrittenPath = "/usr/bin:/bin"
 
-	var singularityEnvTests = []struct {
+	var tests = []struct {
 		name  string
 		image string
 		path  string
 		env   []string
 	}{
-		{"DefaultPath", defaultImage, defaultPath, []string{}},
-		{"CustomPath", customImage, customPath, []string{}},
-		{"AppendToDefaultPath", defaultImage, defaultPath + ":" + partialPath, []string{"SINGULARITYENV_APPEND_PATH=/foo"}},
-		{"AppendToCustomPath", customImage, customPath + ":" + partialPath, []string{"SINGULARITYENV_APPEND_PATH=/foo"}},
-		{"PrependToDefaultPath", defaultImage, partialPath + ":" + defaultPath, []string{"SINGULARITYENV_PREPEND_PATH=/foo"}},
-		{"PrependToCustomPath", customImage, partialPath + ":" + customPath, []string{"SINGULARITYENV_PREPEND_PATH=/foo"}},
-		{"OverwriteDefaultPath", defaultImage, overwrittenPath, []string{"SINGULARITYENV_PATH=" + overwrittenPath}},
-		{"OverwriteCustomPath", customImage, overwrittenPath, []string{"SINGULARITYENV_PATH=" + overwrittenPath}},
+		{
+			name:  "DefaultPath",
+			image: defaultImage,
+			path:  defaultPath,
+			env:   []string{},
+		},
+		{
+			name:  "CustomPath",
+			image: customImage,
+			path:  customPath,
+			env:   []string{},
+		},
+		{
+			name:  "AppendToDefaultPath",
+			image: defaultImage,
+			path:  defaultPath + ":" + partialPath,
+			env:   []string{"SINGULARITYENV_APPEND_PATH=/foo"},
+		},
+		{
+			name:  "AppendToCustomPath",
+			image: customImage,
+			path:  customPath + ":" + partialPath,
+			env:   []string{"SINGULARITYENV_APPEND_PATH=/foo"},
+		},
+		{
+			name:  "PrependToDefaultPath",
+			image: defaultImage,
+			path:  partialPath + ":" + defaultPath,
+			env:   []string{"SINGULARITYENV_PREPEND_PATH=/foo"},
+		},
+		{
+			name:  "PrependToCustomPath",
+			image: customImage,
+			path:  partialPath + ":" + customPath,
+			env:   []string{"SINGULARITYENV_PREPEND_PATH=/foo"},
+		},
+		{
+			name:  "OverwriteDefaultPath",
+			image: defaultImage,
+			path:  overwrittenPath,
+			env:   []string{"SINGULARITYENV_PATH=" + overwrittenPath},
+		},
+		{
+			name:  "OverwriteCustomPath",
+			image: customImage,
+			path:  overwrittenPath,
+			env:   []string{"SINGULARITYENV_PATH=" + overwrittenPath},
+		},
 	}
 
-	for _, currentTest := range singularityEnvTests {
-		t.Run(currentTest.name, func(t *testing.T) {
-			args := []string{"exec", currentTest.image, "env"}
-
-			cmd := exec.Command(c.env.CmdPath, args...)
-			cmd.Env = append(os.Environ(), currentTest.env...)
-			b, err := cmd.CombinedOutput()
-
-			out := string(b)
-			t.Logf("args: '%v'", strings.Join(args, " "))
-			t.Logf("env: '%v'", strings.Join(cmd.Env, " "))
-			t.Log(out)
-
-			if err != nil {
-				t.Fatalf("Error running command: %v", err)
-			}
-
-			fmt.Println("Current test path is " + currentTest.path)
-			if !strings.Contains(out, currentTest.path) {
-				t.Fatalf("Command output did not contain the path '%s'", currentTest.path)
-			}
-		})
+	for _, tt := range tests {
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("exec"),
+			e2e.WithEnv(tt.env),
+			e2e.WithArgs(tt.image, "env"),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.ContainMatch, tt.path),
+			),
+		)
 	}
 }
 

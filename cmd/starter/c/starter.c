@@ -152,7 +152,7 @@ static bool is_namespace_enter(const char *nspath, const char *selfns) {
          * errors are logged for debug purpose, and any
          * error implies to not enter in the corresponding
          * namespace, we can safely assume that if an error
-         * occured with those calls, it will also occurred
+         * occurred with those calls, it will also occurred
          * later with open/setns call in enter_namespace
          */
         if ( stat(selfns, &selfns_st) < 0 ) {
@@ -1094,7 +1094,7 @@ __attribute__((constructor)) static void init(void) {
 
             /*
              * use CLONE_FS here, because we want that pivot_root/chroot
-             * occuring in RPC server process also affect stage 2 process
+             * occurring in RPC server process also affect stage 2 process
              * which is the final container process
              */
             process = fork_ns(CLONE_FS);

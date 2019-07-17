@@ -192,7 +192,7 @@ func ImageSHA(uri string, ociAuth *ocitypes.DockerAuthConfig) (string, error) {
 
 	// ensure that we received an image manifest descriptor
 	if desc.MediaType != ocispec.MediaTypeImageManifest {
-		return "", fmt.Errorf("could not get image manifest, recieved mediaType: %s", desc.MediaType)
+		return "", fmt.Errorf("could not get image manifest, received mediaType: %s", desc.MediaType)
 	}
 
 	fetcher, err := resolver.Fetcher(context.Background(), ref)
