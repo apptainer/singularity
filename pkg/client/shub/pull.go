@@ -38,7 +38,7 @@ func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 
 	ShubURI, err := shubParseReference(shubRef)
 	if err != nil {
-		return fmt.Errorf("Failed to parse shub URI: %v", err)
+		return fmt.Errorf("failed to parse shub uri: %v", err)
 	}
 
 	if filePath == "" {
@@ -49,7 +49,7 @@ func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	// Get the image manifest
 	manifest, err := getManifest(ShubURI, noHTTPS)
 	if err != nil {
-		return fmt.Errorf("Failed to get manifest from Shub: %v", err)
+		return fmt.Errorf("failed to get manifest from shub: %v", err)
 	}
 
 	// Get the image based on the manifest
@@ -116,7 +116,7 @@ func DownloadImage(filePath, shubRef string, force, noHTTPS bool) error {
 	}
 	// Simple check to make sure image received is the correct size
 	if bytesWritten != resp.ContentLength {
-		return fmt.Errorf("Image received is not the right size. Supposed to be: %v  Actually: %v", resp.ContentLength, bytesWritten)
+		return fmt.Errorf("image received is not the right size. supposed to be: %v  actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	bar.Finish()

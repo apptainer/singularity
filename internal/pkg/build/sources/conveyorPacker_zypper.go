@@ -49,7 +49,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	// get mirrorURL, OSVerison, and Includes components to definition
 	mirrorurl, ok := cp.b.Recipe.Header["mirrorurl"]
 	if !ok {
-		return fmt.Errorf("Invalid zypper header, no MirrorURL specified")
+		return fmt.Errorf("invalid zypper header, no mirrorurl specified")
 	}
 
 	// look for an OS version if the mirror specifies it
@@ -58,7 +58,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	if regex.MatchString(mirrorurl) {
 		osversion, ok = cp.b.Recipe.Header["osversion"]
 		if !ok {
-			return fmt.Errorf("Invalid zypper header, OSVersion referenced in mirror but no OSVersion specified")
+			return fmt.Errorf("invalid zypper header, osversion referenced in mirror but no osversion specified")
 		}
 		mirrorurl = regex.ReplaceAllString(mirrorurl, osversion)
 	}
@@ -77,12 +77,12 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	// Create the main portion of zypper config
 	err = cp.genZypperConfig()
 	if err != nil {
-		return fmt.Errorf("While generating Zypper config: %v", err)
+		return fmt.Errorf("while generating zypper config: %v", err)
 	}
 
 	err = cp.copyPseudoDevices()
 	if err != nil {
-		return fmt.Errorf("While copying pseudo devices: %v", err)
+		return fmt.Errorf("while copying pseudo devices: %v", err)
 	}
 
 	// Add mirrorURL as repo
@@ -90,7 +90,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While adding zypper mirror: %v", err)
+		return fmt.Errorf("while adding zypper mirror: %v", err)
 	}
 
 	// Refreshing gpg keys
@@ -98,7 +98,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While refreshing gpg keys: %v", err)
+		return fmt.Errorf("while refreshing gpg keys: %v", err)
 	}
 
 	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.Rootfs(), zypperConf), `--root`, cp.b.Rootfs(), `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`}
@@ -113,7 +113,7 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	// run zypper
 	if err = cmd.Run(); err != nil {
-		return fmt.Errorf("While bootstrapping from zypper: %v", err)
+		return fmt.Errorf("while bootstrapping from zypper: %v", err)
 	}
 
 	return nil
@@ -123,12 +123,12 @@ func (cp *ZypperConveyorPacker) Get(b *types.Bundle) (err error) {
 func (cp *ZypperConveyorPacker) Pack() (b *types.Bundle, err error) {
 	err = cp.insertBaseEnv()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting base environment: %v", err)
+		return nil, fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	err = cp.insertRunScript()
 	if err != nil {
-		return nil, fmt.Errorf("While inserting runscript: %v", err)
+		return nil, fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	return cp.b, nil
@@ -171,7 +171,7 @@ func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
 func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 	err = os.MkdirAll(filepath.Join(cp.b.Rootfs(), "/etc/zypp"), 0775)
 	if err != nil {
-		return fmt.Errorf("While creating %v: %v", filepath.Join(cp.b.Rootfs(), "/etc/zypp"), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), "/etc/zypp"), err)
 	}
 
 	err = ioutil.WriteFile(filepath.Join(cp.b.Rootfs(), zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0664)
@@ -185,7 +185,7 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 	err = os.Mkdir(filepath.Join(cp.b.Rootfs(), "/dev"), 0775)
 	if err != nil {
-		return fmt.Errorf("While creating %v: %v", filepath.Join(cp.b.Rootfs(), "/dev"), err)
+		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), "/dev"), err)
 	}
 
 	devs := []string{"/dev/null", "/dev/zero", "/dev/random", "/dev/urandom"}
@@ -197,7 +197,7 @@ func (cp *ZypperConveyorPacker) copyPseudoDevices() (err error) {
 		if err = cmd.Run(); err != nil {
 			f, err := os.Create(cp.b.Rootfs() + "/.singularity.d/runscript")
 			if err != nil {
-				return fmt.Errorf("While creating %v: %v", filepath.Join(cp.b.Rootfs(), dev), err)
+				return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.Rootfs(), dev), err)
 			}
 
 			defer f.Close()

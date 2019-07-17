@@ -12,7 +12,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/auth"
-	"github.com/sylabs/singularity/pkg/sypgp"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 )
 
 // RemoteLogin logs in remote by setting API token
@@ -57,7 +57,7 @@ func RemoteLogin(usrConfigFile, sysConfigFile, name, tokenfile string) (err erro
 		}
 	} else {
 		fmt.Printf("Generate an API Key at https://%s/auth/tokens, and paste here:\n", r.URI)
-		r.Token, err = sypgp.AskQuestionNoEcho("API Key: ")
+		r.Token, err = interactive.AskQuestionNoEcho("API Key: ")
 		if err != nil {
 			return err
 		}

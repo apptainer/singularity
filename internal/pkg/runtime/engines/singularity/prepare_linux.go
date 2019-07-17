@@ -439,7 +439,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// 2. a user must use SUID workflow to join an instance
 	//    started without user namespace
 	if starterConfig.GetIsSUID() && !suidRequired {
-		return fmt.Errorf("joining user namespace with SUID workflow is not allowed")
+		return fmt.Errorf("joining user namespace with suid workflow is not allowed")
 	} else if !starterConfig.GetIsSUID() && suidRequired {
 		return fmt.Errorf("a setuid installation is required to join this instance")
 	}
@@ -698,7 +698,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	}
 
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
-		return fmt.Errorf("SUID workflow disabled by administrator")
+		return fmt.Errorf("suid workflow disabled by administrator")
 	}
 
 	if starterConfig.GetIsSUID() {
@@ -900,21 +900,21 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 		if authorized, err := imgObject.AuthorizedPath(e.EngineConfig.File.LimitContainerPaths); err != nil {
 			return nil, err
 		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not in an allowed configured path")
+			return nil, fmt.Errorf("singularity image is not in an allowed configured path")
 		}
 	}
 	if len(e.EngineConfig.File.LimitContainerGroups) != 0 {
 		if authorized, err := imgObject.AuthorizedGroup(e.EngineConfig.File.LimitContainerGroups); err != nil {
 			return nil, err
 		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not owned by required group(s)")
+			return nil, fmt.Errorf("singularity image is not owned by required group(s)")
 		}
 	}
 	if len(e.EngineConfig.File.LimitContainerOwners) != 0 {
 		if authorized, err := imgObject.AuthorizedOwner(e.EngineConfig.File.LimitContainerOwners); err != nil {
 			return nil, err
 		} else if !authorized {
-			return nil, fmt.Errorf("Singularity image is not owned by required user(s)")
+			return nil, fmt.Errorf("singularity image is not owned by required user(s)")
 		}
 	}
 

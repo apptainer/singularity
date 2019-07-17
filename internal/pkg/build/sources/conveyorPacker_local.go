@@ -88,7 +88,7 @@ func GetLocalPacker(src string, b *types.Bundle) (LocalPacker, error) {
 func (cp *LocalConveyorPacker) Get(b *types.Bundle) (err error) {
 	// insert base metadata before unpacking fs
 	if err = makeBaseEnv(b.Rootfs()); err != nil {
-		return fmt.Errorf("While inserting base environment: %v", err)
+		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
 	cp.src = filepath.Clean(b.Recipe.Header["from"])
