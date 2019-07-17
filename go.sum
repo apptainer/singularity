@@ -60,6 +60,8 @@ github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4 h1:itqmmf1PFpC4n5
 github.com/d2g/hardwareaddr v0.0.0-20190221164911-e7d9fbe030e4/go.mod h1:bMl4RjIciD2oAxI7DmWRx6gbeqrkoLqv3MV0vzNad+I=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/dctrud/scs-library-client v0.3.1-0.20190717012307-ccb60946d240 h1:DYC55MV3rWu82OwZAt7Y3bl13Qp756fFThaCoTZ2FeY=
+github.com/dctrud/scs-library-client v0.3.1-0.20190717012307-ccb60946d240/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
 github.com/deislabs/oras v0.4.0 h1:G/wxhm9Simecxlr7dsjWy5iL0UGPAQlnuFNRZsXVJfI=
 github.com/deislabs/oras v0.4.0/go.mod h1:SXwPnImOu69FofPWaqgB+cPKKQRBmao5i+9xQRdcOiM=
 github.com/docker/distribution v0.0.0-20180611183926-749f6afb4572 h1:i5cGFDf/s0ocGJXaJHJR+NiDgMb5oLoUNpGlRZqurlY=
@@ -97,6 +99,7 @@ github.com/gofrs/uuid v3.2.0+incompatible/go.mod h1:b2aQJv3Z4Fp6yNu3cdSllBxTCLRx
 github.com/gogo/googleapis v1.1.0/go.mod h1:gf4bu3Q80BeJ6H1S1vYPm8/ELATdvryBaNFGgqEef3s=
 github.com/gogo/protobuf v1.2.0 h1:xU6/SpYbvkNYiptHJYEDRseDLvYE7wSqhYYNy0QSUzI=
 github.com/gogo/protobuf v1.2.0/go.mod h1:r8qH/GZQm5c6nD/R0oafs1akxWv10x8SbQlK7atdtwQ=
+github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b h1:VKtxabqXZkF25pY9ekfRL6a582T4P37/31XEstQ5p58=
 github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b/go.mod h1:SBH7ygxi8pfUlaOkMMuAQtPIUF8ecWP5IEl/CR7VP2Q=
 github.com/golang/mock v1.1.1/go.mod h1:oTYuIxOrZwtPieC+H1uAHpcLFnEyAGVDL/k47Jfbm0A=
 github.com/golang/protobuf v1.2.0 h1:P3YflyNX/ehuJFLhxviNdFxQPkGK5cDcApsge1SqnvM=

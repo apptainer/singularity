@@ -298,7 +298,7 @@ github.com/sylabs/json-resp
 github.com/sylabs/scs-build-client/client
 # github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec
 github.com/sylabs/scs-key-client/client
-# github.com/sylabs/scs-library-client v0.2.2
+# github.com/sylabs/scs-library-client v0.2.2 => github.com/dctrud/scs-library-client v0.3.1-0.20190717012307-ccb60946d240
 github.com/sylabs/scs-library-client/client
 # github.com/sylabs/sif v1.0.5
 github.com/sylabs/sif/pkg/siftool
