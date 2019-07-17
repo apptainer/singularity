@@ -17,6 +17,8 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"os/exec"
 	"strings"
 	"syscall"
 	"unsafe"
@@ -24,6 +26,10 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+)
+
+const (
+	searchPath = "/usr/bin:/usr/sbin:/bin:/sbin:/usr/local/bin:/usr/local/sbin"
 )
 
 // SConfig is the common type for C.struct_starterConfig
@@ -254,6 +260,47 @@ func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 	return nil
 }
 
+func setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
+	os.Setenv("PATH", searchPath)
+	defer os.Unsetenv("PATH")
+
+	path, err := exec.LookPath(command)
+	if err != nil {
+		return fmt.Errorf(
+			"%s was not found in PATH (%s), required with fakeroot and unprivileged installation",
+			command, searchPath,
+		)
+	}
+
+	lpath := len(path)
+	size := C.size_t(lpath)
+	if lpath >= C.MAX_PATH_SIZE-1 {
+		return fmt.Errorf("%s path too long", command)
+	}
+
+	cpath := unsafe.Pointer(C.CString(path))
+	C.memcpy(pathPointer, cpath, size)
+	C.free(cpath)
+
+	return nil
+}
+
+// SetNewUIDMapPath sets absolute path to newuidmap binary if found
+func (c *Config) SetNewUIDMapPath() error {
+	return setNewIDMapPath(
+		"newuidmap",
+		unsafe.Pointer(&c.config.container.privileges.newuidmapPath[0]),
+	)
+}
+
+// SetNewGIDMapPath sets absolute path to newgidmap binary if found
+func (c *Config) SetNewGIDMapPath() error {
+	return setNewIDMapPath(
+		"newgidmap",
+		unsafe.Pointer(&c.config.container.privileges.newgidmapPath[0]),
+	)
+}
+
 // SetNsFlags sets namespaces flag directly from flags argument
 func (c *Config) SetNsFlags(flags int) {
 	c.config.container.namespace.flags = C.uint(flags)
@@ -290,7 +337,7 @@ func (c *Config) SetNsPath(nstype specs.LinuxNamespaceType, path string) error {
 	l := len(path)
 	size := C.size_t(l)
 
-	if l > C.MAX_NS_PATH_SIZE-1 {
+	if l > C.MAX_PATH_SIZE-1 {
 		return fmt.Errorf("%s namespace path too big", nstype)
 	}
 
@@ -324,7 +371,7 @@ func (c *Config) SetNsPathFromSpec(namespaces []specs.LinuxNamespace) error {
 			l := len(namespace.Path)
 			size := C.size_t(l)
 
-			if l > C.MAX_NS_PATH_SIZE-1 {
+			if l > C.MAX_PATH_SIZE-1 {
 				return fmt.Errorf("%s namespace path too big", namespace.Type)
 			}
 

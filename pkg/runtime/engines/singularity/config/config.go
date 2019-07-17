@@ -36,7 +36,6 @@ type FileConfig struct {
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
-	FakerootBaseID          uint64   `default:"4227858432" directive:"fakeroot base id"`
 	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
@@ -44,7 +43,6 @@ type FileConfig struct {
 	LimitContainerGroups    []string `directive:"limit container groups"`
 	LimitContainerPaths     []string `directive:"limit container paths"`
 	AutofsBugPath           []string `directive:"autofs bug path"`
-	FakerootAllowedUsers    []string `directive:"fakeroot allowed users"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
