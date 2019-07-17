@@ -12,4 +12,5 @@ type TestEnv struct {
 	OrasTestImage string
 	TestDir       string
 	TestRegistry  string
+	KeyringDir    string
 }
