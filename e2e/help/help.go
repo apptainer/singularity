@@ -72,7 +72,6 @@ func (c *ctx) testCommands(t *testing.T) {
 		cmd  string
 	}{
 		{"Build", "build"},
-		{"Create", "create"},
 		{"Exec", "exec"},
 		{"Inspect", "inspect"},
 		{"Mount", "mount"},
