@@ -47,7 +47,7 @@ var helpOciContentTests = []struct {
 func (c *ctx) testHelpOciContent(t *testing.T) {
 	for _, tc := range helpOciContentTests {
 
-		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
+		name := fmt.Sprintf("help-%s.txt", strings.Join(tc.cmds, "-"))
 
 		testHelpOciContentFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			path := filepath.Join("help", name)
