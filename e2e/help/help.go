@@ -93,20 +93,30 @@ func (c *ctx) testCommands(t *testing.T) {
 
 		testFlags := []struct {
 			name string
-			argv []string
+			argv string
 			skip bool
 		}{
-			{"PostFlagShort", []string{"-h"}, true}, // TODO
-			{"PostFlagLong", []string{"--help"}, false},
-			{"PostCommand", []string{"help"}, false},
-			{"PreFlagShort", []string{"-h"}, false},
-			{"PreFlagLong", []string{"--help"}, false},
-			{"PreCommand", []string{"help"}, false},
+			{"PostFlagShort", "-h", true}, // TODO
+			{"PostFlagLong", "--help", false},
+			{"PostCommand", "help", false},
+			{"PreFlagShort", "-h", false},
+			{"PreFlagLong", "--help", false},
+			{"PreCommand", "help", false},
 		}
 
 		for _, tf := range testFlags {
 
-			e2e.RunSingularity(t, tf.name, e2e.WithCommand(tt.cmd), e2e.WithArgs(tf.argv...),
+			var cmdRun, argRun string
+
+			if tf.name == "PostCommand" || tf.name == "PreCommand" {
+				cmdRun = tf.argv
+				argRun = ""
+			} else {
+				cmdRun = tt.cmd
+				argRun = tf.argv
+			}
+
+			e2e.RunSingularity(t, tf.name, e2e.WithCommand(cmdRun), e2e.WithArgs(argRun),
 				e2e.PostRun(func(t *testing.T) {
 					if t.Failed() {
 						t.Fatalf("Failed to run help flag while running command:\n%s\n", tt.name)
