@@ -178,7 +178,7 @@ func (c *ctx) testSingularity(t *testing.T) {
 		{"NoCommand", []string{}, 1},
 		{"FlagShort", []string{"-h"}, 0},
 		{"FlagLong", []string{"--help"}, 0},
-		{"Command", []string{"help"}, 1},
+		{"Command", []string{"help"}, 0},
 	}
 
 	for _, tt := range tests {
