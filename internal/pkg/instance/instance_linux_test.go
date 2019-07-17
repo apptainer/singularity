@@ -113,7 +113,7 @@ func TestCheckName(t *testing.T) {
 			expectFailure: false,
 		},
 		{
-			desc:          "with valid name containg number",
+			desc:          "with valid name containing number",
 			name:          "test123",
 			expectFailure: false,
 		},
