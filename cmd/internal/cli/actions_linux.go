@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/image/unpacker"
+	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/nvidia"
 
@@ -254,7 +255,12 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		BindPaths = append(BindPaths, nvidia.IpcsPath(userPath)...)
 	}
 
-	engineConfig.SetEncryptionKey(encryptionKey)
+	plaintextKey, err := crypt.PlaintextKey(encryptionKey, engineConfig.GetImage())
+	if err != nil {
+		sylog.Fatalf("Cannot retrieve key from image %s: %+v", engineConfig.GetImage(), err)
+	}
+
+	engineConfig.SetEncryptionKey(plaintextKey)
 
 	engineConfig.SetBindPath(BindPaths)
 	engineConfig.SetNetwork(Network)
