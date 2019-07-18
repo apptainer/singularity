@@ -350,6 +350,65 @@ static int enter_namespace(char *nspath, int nstype) {
     return(0);
 }
 
+static void set_mappings_external(const char *name, char *cmdpath, pid_t pid, char *map) {
+    int ret;
+    char *ptr;
+    char *cmd = (char *)malloc(MAX_CMD_SIZE);
+
+    if ( !cmdpath[0] ) {
+        fatalf("%s is not installed on your system\n", name);
+    }
+
+    if ( cmd == NULL ) {
+        fatalf("memory allocation failed: %s", strerror(errno));
+    }
+    memset(cmd, 0, MAX_CMD_SIZE);
+
+    /* replace newlines by space for command execution */
+    ptr = map;
+    while ( *ptr != '\0' ) {
+        if ( *ptr == '\n' ) {
+            *ptr = 0x20;
+        }
+        ptr++;
+    }
+
+    /* prepare command line */
+    ret = snprintf(cmd, MAX_CMD_SIZE-1, "%s %d %s>/dev/null", cmdpath, pid, map);
+    if ( ret > MAX_CMD_SIZE-1 ) {
+        fatalf("%s command line truncated", name);
+    }
+
+    /* scary !? it's fine as it's never called by setuid context */
+    if ( system(cmd) < 0 ) {
+        fatalf("'%s' execution failed", cmd);
+    }
+
+    free(cmd);
+}
+
+/*
+ * write user namespace mapping via external binaries newuidmap
+ * and newgidmap. This function is only called by unprivileged
+ * installation
+ */
+static void setup_userns_mappings_external(struct container *container) {
+    struct privileges *privileges = &container->privileges;
+
+    set_mappings_external(
+        "newgidmap",
+        privileges->newgidmapPath,
+        container->pid,
+        privileges->gidMap
+    );
+    set_mappings_external(
+        "newuidmap",
+        privileges->newuidmapPath,
+        container->pid,
+        privileges->uidMap
+    );
+}
+
 /*
  * write user namespace mapping, this function must be called
  * after the calling process entered in corresponding /proc/<pid>
@@ -1158,16 +1217,30 @@ __attribute__((constructor)) static void init(void) {
         /* user namespace created, write user mappings */
         if ( userns == CREATE_NAMESPACE ) {
             /* set user namespace mappings */
-            if ( sconfig->starter.hybridWorkflow && sconfig->starter.isSuid ) {
-                /*
-                 * hybrid workflow requires privileges for user mappings, we also preserve user
-                 * filesytem UID here otherwise we would get a permission denied error during
-                 * user mappings setup. User filesystem UID will be restored below by setresuid
-                 * call
-                 */
-                priv_escalate(false);
+            if ( sconfig->starter.hybridWorkflow ) {
+                if ( sconfig->starter.isSuid ) {
+                    /*
+                     * hybrid workflow requires privileges for user mappings, we also preserve user
+                     * filesytem UID here otherwise we would get a permission denied error during
+                     * user mappings setup. User filesystem UID will be restored below by setresuid
+                     * call
+                     */
+                    priv_escalate(false);
+                    setup_userns_mappings(&sconfig->container.privileges);
+                } else {
+                    /* use newuidmap/newgidmap as fallback for hybrid workflow */
+                    setup_userns_mappings_external(&sconfig->container);
+                    /*
+                     * without setuid, we could not join mount namespace below, so
+                     * we need to join the fakeroot user namespace first
+                     */
+                    if ( enter_namespace("ns/user", CLONE_NEWUSER) < 0 ) {
+                        fatalf("Failed to enter in fakeroot user namespace: %s\n", strerror(errno));
+                    }
+                }
+            } else {
+                setup_userns_mappings(&sconfig->container.privileges);
             }
-            setup_userns_mappings(&sconfig->container.privileges);
             send_event(master_socket[0]);
         }
 

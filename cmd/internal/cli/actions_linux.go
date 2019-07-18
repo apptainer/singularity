@@ -126,14 +126,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	syscall.Umask(0022)
 
-	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
-	// setuid workflow is not required for root user or if we
-	// are already running inside a user namespace
-	if uid == 0 || insideUserNs {
-		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
-	}
-	sylog.Debugf("Use starter binary %s", starter)
-
 	engineConfig := singularityConfig.NewConfig()
 
 	configurationFile := buildcfg.SYSCONFDIR + "/singularity/singularity.conf"
@@ -201,6 +193,30 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Fatalf("Failed to determine image absolute path for %s: %s", image, err)
 		}
 		engineConfig.SetImage(abspath)
+	}
+
+	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
+	// singularity was compiled with '--without-suid' option
+	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
+		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+	}
+
+	// use non privileged starter binary:
+	// - if we are the root user
+	// - if we are already running inside a user namespace
+	// - if user namespace is requested
+	// - if 'allow setuid = no' is set in singularity.conf
+	if uid == 0 || insideUserNs || UserNamespace || !engineConfig.File.AllowSetuid {
+		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+		if buildcfg.SINGULARITY_SUID_INSTALL == 1 && !engineConfig.File.AllowSetuid {
+			sylog.Verbosef("'allow setuid' set to 'no' by configuration, fallback to user namespace")
+			UserNamespace = true
+		}
+	}
+
+	sylog.Debugf("Use starter binary %s", starter)
+	if _, err := os.Stat(starter); os.IsNotExist(err) {
+		sylog.Fatalf("%s not found, please check your installation", starter)
 	}
 
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
@@ -283,6 +299,11 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	homeFlag := cobraCmd.Flag("home")
 	engineConfig.SetCustomHome(homeFlag.Changed)
 
+	if !homeFlag.Changed && IsFakeroot {
+		engineConfig.SetCustomHome(true)
+		HomePath = fmt.Sprintf("%s:/root", HomePath)
+	}
+
 	// set home directory for the targeted UID if it exists on host system
 	if !homeFlag.Changed && targetUID != 0 {
 		if targetUID > 500 {
@@ -335,7 +356,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetHomeDest(homeSlice[1])
 	}
 
-	if !engineConfig.File.AllowSetuid || IsFakeroot {
+	if IsFakeroot {
 		UserNamespace = true
 	}
 
@@ -378,6 +399,17 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	if NetNamespace {
 		if IsFakeroot && Network != "none" {
 			engineConfig.SetNetwork("fakeroot")
+
+			// unprivileged installation could not use fakeroot
+			// network because it requires a setuid installation
+			// so we fallback to none
+			if buildcfg.SINGULARITY_SUID_INSTALL == 0 || !engineConfig.File.AllowSetuid {
+				sylog.Warningf(
+					"fakeroot with unprivileged installation or 'allow setuid = no' " +
+						"could not use 'fakeroot' network, fallback to 'none' network",
+				)
+				engineConfig.SetNetwork("none")
+			}
 		}
 		generator.AddOrReplaceLinuxNamespace("network", "")
 	}
@@ -402,7 +434,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		generator.AddOrReplaceLinuxNamespace("user", "")
 
 		if !IsFakeroot {
-			starter = filepath.Join(buildcfg.LIBEXECDIR, "/singularity/bin/starter")
 			generator.AddLinuxUIDMapping(uid, uid, 1)
 			generator.AddLinuxGIDMapping(gid, gid, 1)
 		}
