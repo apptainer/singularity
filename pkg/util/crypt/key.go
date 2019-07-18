@@ -18,11 +18,14 @@ import (
 	"net/url"
 
 	"github.com/pkg/errors"
+	"github.com/sylabs/sif/pkg/sif"
 )
 
 var (
-	ErrUnsupportedKeyURI = errors.New("unsupported key URI")
-	ErrNoPEMData         = errors.New("No PEM data")
+	ErrEncryptedKeyNotFound = errors.New("encrypted key not found")
+	ErrUnsupportedKeyURI    = errors.New("unsupported key URI")
+	ErrNoEncryptedKeyData   = errors.New("no encrypted key data")
+	ErrNoPEMData            = errors.New("No PEM data")
 )
 
 func getRandomBytes(size int) ([]byte, error) {
@@ -90,6 +93,60 @@ func EncryptKey(keyURI string, plaintext []byte) ([]byte, error) {
 	}
 }
 
+func PlaintextKey(keyURI, image string) ([]byte, error) {
+	u, err := url.Parse(keyURI)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot parse URI %s", keyURI)
+	}
+
+	switch u.Scheme {
+	case "pem":
+		privateKey, err := loadPEMPrivateKey(u.Path)
+		if err != nil {
+			return nil, errors.Wrap(err, "loading private key for key decryption")
+		}
+
+		pemKey, err := getEncryptionKeyFromImage(image)
+		if err != nil {
+			return nil, errors.Wrapf(err, "loading encrypted key SIF image %s", image)
+		}
+
+		pemBuf := bytes.NewReader(pemKey)
+
+		encKey, err := loadPEMMessage(pemBuf)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unpacking PEM message from SIF image %s", image)
+		}
+
+		plaintext, err := rsa.DecryptOAEP(sha256.New(), rand.Reader, privateKey, encKey, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "decrypting key from image %s", image)
+		}
+
+		return plaintext, nil
+
+	case "":
+		return []byte(u.Path), nil
+
+	default:
+		return nil, ErrUnsupportedKeyURI
+	}
+}
+
+func loadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
+	b, err := ioutil.ReadFile(fn)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(b)
+	if block == nil {
+		return nil, errors.Wrapf(ErrNoPEMData, "reading %s", fn)
+	}
+
+	return x509.ParsePKCS1PrivateKey(block.Bytes)
+}
+
 func loadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
 	b, err := ioutil.ReadFile(fn)
 	if err != nil {
@@ -104,6 +161,25 @@ func loadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
 	return x509.ParsePKCS1PublicKey(block.Bytes)
 }
 
+func loadPEMMessage(r io.Reader) ([]byte, error) {
+	b, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(b)
+	if block == nil {
+		return nil, errors.Wrapf(ErrNoPEMData, "reading PEM block")
+	}
+
+	var buf []byte
+	if _, err := asn1.Unmarshal(block.Bytes, &buf); err != nil {
+		return nil, errors.Wrapf(err, "unmarshalling ASN.1 data")
+	}
+
+	return buf, nil
+}
+
 func savePEMMessage(w io.Writer, msg []byte) error {
 	asn1Bytes, err := asn1.Marshal(msg)
 	if err != nil {
@@ -116,4 +192,44 @@ func savePEMMessage(w io.Writer, msg []byte) error {
 	}
 
 	return pem.Encode(w, b)
+}
+
+func getEncryptionKeyFromImage(fn string) ([]byte, error) {
+	img, err := sif.LoadContainer(fn, true)
+	if err != nil {
+		return nil, errors.Wrapf(err, "loading container image from %s", fn)
+	}
+	defer img.UnloadContainer()
+
+	primDescr, _, err := img.GetPartPrimSys()
+	if err != nil {
+		return nil, errors.Wrapf(err, "retrieving primary system partition from %s", fn)
+	}
+
+	descr, _, err := img.GetFromLinkedDescr(primDescr.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "retrieving linked descriptors for primary system partition from %s", fn)
+	}
+
+	for _, d := range descr {
+		if d.Datatype != sif.DataGeneric {
+			continue
+		}
+
+		// TODO(mem): add a specific data type for encrypted
+		// keys. For now, assume the first generic descriptor
+		// linking to the primary system partition contains the
+		// key
+		data := d.GetData(&img)
+		if data == nil {
+			return nil, errors.Wrapf(ErrNoEncryptedKeyData, "retrieving encrypted key data from %s", fn)
+		}
+
+		key := make([]byte, len(data))
+		copy(key, data)
+
+		return key, nil
+	}
+
+	return nil, errors.Wrapf(ErrEncryptedKeyNotFound, "reading from %s", fn)
 }
