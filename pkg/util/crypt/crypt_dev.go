@@ -8,7 +8,6 @@ package crypt
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -74,7 +73,7 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 // EncryptFilesystem takes the path to a file containing a non-encrypted
 // filesystem, encrypts it using the provided key, and returns a path to
 // a file that can be later used as an encrypted volume with cryptsetup.
-func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
+func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) {
 	f, err := os.Stat(path)
 	if err != nil {
 		return "", fmt.Errorf("failed getting size of %s", path)
@@ -137,7 +136,7 @@ func (crypt *Device) EncryptFilesystem(path, key string) (string, error) {
 	}
 
 	go func() {
-		io.WriteString(stdin, key)
+		stdin.Write(key)
 		stdin.Close()
 	}()
 
@@ -213,7 +212,7 @@ func getNextAvailableCryptDevice() string {
 // device, but any encrypted block device will do) using the given key
 // and returns the name assigned to it that can be later used to close
 // the device.
-func (crypt *Device) Open(key, path string) (string, error) {
+func (crypt *Device) Open(key []byte, path string) (string, error) {
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
 		return "", fmt.Errorf("unable to acquire lock on /dev/mapper")
@@ -243,7 +242,7 @@ func (crypt *Device) Open(key, path string) (string, error) {
 		}
 
 		go func() {
-			io.WriteString(stdin, key)
+			stdin.Write(key)
 			stdin.Close()
 		}()
 
@@ -258,7 +257,7 @@ func (crypt *Device) Open(key, path string) (string, error) {
 			return "", err
 		}
 
-		sylog.Debugf("Sucessfully opened encrypted device %s", path)
+		sylog.Debugf("Successfully opened encrypted device %s", path)
 		return nextCrypt, nil
 	}
 

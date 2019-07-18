@@ -58,3 +58,51 @@ func IsInsideUserNamespace(pid int) (bool, bool) {
 
 	return insideUserNs, setgroupsAllowed
 }
+
+// HostUID attempts to find the original host UID if the current
+// process is running inside a user namespace, if it doesn't it
+// simply returns the current UID
+func HostUID() (int, error) {
+	const uidMap = "/proc/self/uid_map"
+
+	currentUID := os.Getuid()
+
+	f, err := os.Open(uidMap)
+	if err != nil {
+		return 0, fmt.Errorf("failed to read: %s: %s", uidMap, err)
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		fields := strings.Fields(scanner.Text())
+
+		size, err := strconv.ParseUint(fields[2], 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert size field %s: %s", fields[2], err)
+		}
+		// not in a user namespace, use current UID
+		if uint32(size) == ^uint32(0) {
+			break
+		}
+
+		// we are inside a user namespace
+		containerID, err := strconv.ParseUint(fields[0], 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("failed to convert container UID field %s: %s", fields[0], err)
+		}
+		// we can safely assume that a user won't have two
+		// consequent UID and we look if current UID match
+		// a 1:1 user mapping
+		if size == 1 && uint32(currentUID) == uint32(containerID) {
+			uid, err := strconv.ParseUint(fields[1], 10, 32)
+			if err != nil {
+				return 0, fmt.Errorf("failed to convert host UID field %s: %s", fields[1], err)
+			}
+			return int(uid), nil
+		}
+	}
+
+	// return current UID by default
+	return currentUID, nil
+}

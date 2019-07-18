@@ -18,9 +18,9 @@ import (
 	"github.com/sylabs/singularity/docs"
 	scs "github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	legacytypes "github.com/sylabs/singularity/pkg/build/legacy"
 	legacyparser "github.com/sylabs/singularity/pkg/build/legacy/parser"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (
@@ -230,7 +230,7 @@ var BuildCmd = &cobra.Command{
 }
 
 func preRun(cmd *cobra.Command, args []string) {
-	if fakeroot {
+	if fakeroot && !remote {
 		fakerootExec(args)
 	}
 
@@ -316,7 +316,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 
 	if dockerLogin {
 		if !usernameFlag.Changed {
-			dockerUsername, err = sypgp.AskQuestion("Enter Docker Username: ")
+			dockerUsername, err = interactive.AskQuestion("Enter Docker Username: ")
 			if err != nil {
 				return
 			}
@@ -324,7 +324,7 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 			usernameFlag.Changed = true
 		}
 
-		dockerPassword, err = sypgp.AskQuestionNoEcho("Enter Docker Password: ")
+		dockerPassword, err = interactive.AskQuestionNoEcho("Enter Docker Password: ")
 		if err != nil {
 			return
 		}

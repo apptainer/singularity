@@ -15,7 +15,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/opencontainers/runtime-tools/generate"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	fakerootUtil "github.com/sylabs/singularity/internal/pkg/fakeroot"
+	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
@@ -59,25 +59,42 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
-	if !fileConfig.AllowSetuid {
-		return fmt.Errorf("fakeroot requires to set 'allow setuid = yes' in %s", configurationFile)
+	if starterConfig.GetIsSUID() {
+		if !fileConfig.AllowSetuid {
+			return fmt.Errorf("fakeroot requires to set 'allow setuid = yes' in %s", configurationFile)
+		}
+	} else {
+		sylog.Verbosef("Fakeroot requested with unprivileged workflow, fallback to newuidmap/newgidmap")
+		sylog.Debugf("Search for newuidmap binary")
+		if err := starterConfig.SetNewUIDMapPath(); err != nil {
+			return err
+		}
+		sylog.Debugf("Search for newgidmap binary")
+		if err := starterConfig.SetNewGIDMapPath(); err != nil {
+			return err
+		}
 	}
 
-	baseID := fileConfig.FakerootBaseID
-	allowedUsers := fileConfig.FakerootAllowedUsers
-	idRange, err := fakerootUtil.GetIDRange(baseID, allowedUsers)
-	if err != nil {
-		return err
-	}
 	g.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
 	g.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 	g.AddOrReplaceLinuxNamespace(string(specs.PIDNamespace), "")
 
-	g.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
+	uid := uint32(os.Getuid())
+	gid := uint32(os.Getgid())
+
+	g.AddLinuxUIDMapping(uid, 0, 1)
+	idRange, err := fakerootutil.GetIDRange(fakerootutil.SubUIDFile, uid)
+	if err != nil {
+		return fmt.Errorf("could not use fakeroot: %s", err)
+	}
 	g.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
 	starterConfig.AddUIDMappings(g.Config.Linux.UIDMappings)
 
-	g.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
+	g.AddLinuxGIDMapping(gid, 0, 1)
+	idRange, err = fakerootutil.GetIDRange(fakerootutil.SubGIDFile, uid)
+	if err != nil {
+		return fmt.Errorf("could not use fakeroot: %s", err)
+	}
 	g.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
 	starterConfig.AddGIDMappings(g.Config.Linux.GIDMappings)
 

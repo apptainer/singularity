@@ -17,18 +17,6 @@ const (
 	OciTempDir = "oci-tmp"
 )
 
-/*
-// OciBlob returns the directory inside cache.Dir() where oci blobs are cached
-func OciBlob() string {
-	return updateCacheSubdir(OciBlobDir)
-}
-
-// OciTemp returns the directory inside cache.Dir() where splatted out oci images live
-func OciTemp() string {
-	return updateCacheSubdir(OciTempDir)
-}
-*/
-
 // OciBlob returns the directory inside cache.Dir() where oci blobs are cached
 func getOciBlobCachePath(c *Handle) (string, error) {
 	// This function may act on an cache object that is not fully initialized

@@ -121,21 +121,21 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			imagePath:   c.corruptedImage,
 			expectExit:  255,
 			expectOutput: []verifyOutput{
-				verifyOutput{
+				{
 					name:        "unknown",
 					fingerprint: "8883491F4268F173C6E5DC49EDECE4F3F38D871E",
 					local:       false,
 					keyCheck:    true,
 					dataCheck:   false,
 				},
-				verifyOutput{
+				{
 					name:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
 					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
 					local:       false,
 					keyCheck:    true,
 					dataCheck:   true,
 				},
-				verifyOutput{
+				{
 					name:        "unknown",
 					fingerprint: "F69C21F759C8EA06FD32CCF4536523CE1E109AF3",
 					local:       false,
@@ -153,21 +153,21 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			verifyLocal: true,
 			expectExit:  255,
 			expectOutput: []verifyOutput{
-				verifyOutput{
+				{
 					name:        "unknown",
 					fingerprint: "8883491F4268F173C6E5DC49EDECE4F3F38D871E",
 					local:       false,
 					keyCheck:    true,
 					dataCheck:   false,
 				},
-				verifyOutput{
+				{
 					name:        "unknown",
 					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
 					local:       false,
 					keyCheck:    true,
 					dataCheck:   true,
 				},
-				verifyOutput{
+				{
 					name:        "unknown",
 					fingerprint: "F69C21F759C8EA06FD32CCF4536523CE1E109AF3",
 					local:       false,
@@ -185,7 +185,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			imagePath:   c.successImage,
 			expectExit:  0,
 			expectOutput: []verifyOutput{
-				verifyOutput{
+				{
 					name:        "WestleyK (Testing key; used for signing test containers) \u003cwestley@sylabs.io\u003e",
 					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
 					local:       false,
@@ -203,7 +203,7 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			verifyLocal: true,
 			expectExit:  255,
 			expectOutput: []verifyOutput{
-				verifyOutput{
+				{
 					name:        "unknown",
 					fingerprint: "7605BC2716168DF057D6C600ACEEC62C8BD91BEE",
 					local:       false,
