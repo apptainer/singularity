@@ -40,6 +40,7 @@ config_add_def SINGULARITY_CONFDIR SYSCONFDIR \"/singularity\"
 config_add_def CAPABILITY_FILE SINGULARITY_CONFDIR \"/capability.json\"
 config_add_def ECL_FILE SINGULARITY_CONFDIR \"/ecl.toml\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
+config_add_def SINGULARITY_SUID_INSTALL $with_suid
 
 build_runtime=0
 if [ "$host" = "unix" ]; then

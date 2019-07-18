@@ -202,7 +202,7 @@ func create(engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 		}
 	}
 
-	if os.Geteuid() == 0 {
+	if os.Geteuid() == 0 && !c.userNS {
 		path := engine.EngineConfig.GetCgroupsPath()
 		if path != "" {
 			cgroupPath := filepath.Join("/singularity", strconv.Itoa(pid))
@@ -1208,7 +1208,7 @@ func (c *container) getHomePaths() (source string, dest string, err error) {
 		dest = filepath.Clean(c.engine.EngineConfig.GetHomeDest())
 		source, err = filepath.Abs(filepath.Clean(c.engine.EngineConfig.GetHomeSource()))
 	} else {
-		pw, err := user.GetPwUID(uint32(os.Getuid()))
+		pw, err := user.Current()
 		if err == nil {
 			dest = pw.Dir
 			source = pw.Dir
@@ -1607,7 +1607,8 @@ func (c *container) addLibsMount(system *mount.System) error {
 }
 
 func (c *container) addIdentityMount(system *mount.System) error {
-	if os.Geteuid() == 0 && c.engine.EngineConfig.GetTargetUID() == 0 {
+	if (os.Geteuid() == 0 && c.engine.EngineConfig.GetTargetUID() == 0) ||
+		c.engine.EngineConfig.GetFakeroot() {
 		sylog.Verbosef("Not updating passwd/group files, running as root!")
 		return nil
 	}

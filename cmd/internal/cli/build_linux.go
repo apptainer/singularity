@@ -31,13 +31,14 @@ import (
 )
 
 func fakerootExec(cmdArgs []string) {
-	if remote {
-		return
-	}
-
 	starter := filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter-suid")
-	if _, err := os.Stat(starter); err != nil {
-		sylog.Fatalf("fakeroot feature requires a setuid installation")
+
+	// singularity was compiled with '--without-suid' option
+	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
+		starter = filepath.Join(buildcfg.LIBEXECDIR, "singularity/bin/starter")
+	}
+	if _, err := os.Stat(starter); os.IsNotExist(err) {
+		sylog.Fatalf("%s not found, please check your installation", starter)
 	}
 
 	short := "-" + buildFakerootFlag.ShortHand

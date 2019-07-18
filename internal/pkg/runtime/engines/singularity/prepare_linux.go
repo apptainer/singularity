@@ -21,7 +21,7 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/fakeroot"
+	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
@@ -49,8 +49,7 @@ var nsProcName = map[specs.LinuxNamespaceType]string{
 
 // prepareUserCaps is responsible for checking that user's requested
 // capabilities are authorized
-func (e *EngineOperations) prepareUserCaps() error {
-	uid := os.Getuid()
+func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 	commonCaps := make([]string, 0)
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
@@ -66,7 +65,7 @@ func (e *EngineOperations) prepareUserCaps() error {
 		return fmt.Errorf("while parsing capability config data: %s", err)
 	}
 
-	pw, err := user.GetPwUID(uint32(uid))
+	pw, err := user.Current()
 	if err != nil {
 		return err
 	}
@@ -77,31 +76,35 @@ func (e *EngineOperations) prepareUserCaps() error {
 	}
 	caps = append(caps, e.EngineConfig.OciConfig.Process.Capabilities.Permitted...)
 
-	authorizedCaps, unauthorizedCaps := capConfig.CheckUserCaps(pw.Name, caps)
-	if len(unauthorizedCaps) > 0 {
-		sylog.Warningf("not authorized to add capability: %s", strings.Join(unauthorizedCaps, ","))
-	}
-	if len(authorizedCaps) > 0 {
-		sylog.Debugf("User capabilities %s added", strings.Join(authorizedCaps, ","))
-		commonCaps = authorizedCaps
-	}
-
-	groups, err := os.Getgroups()
-	if err != nil {
-		return err
-	}
-
-	for _, g := range groups {
-		gr, err := user.GetGrGID(uint32(g))
-		if err != nil {
-			sylog.Debugf("Ignoring group %d: %s", g, err)
-			continue
+	if enforced {
+		authorizedCaps, unauthorizedCaps := capConfig.CheckUserCaps(pw.Name, caps)
+		if len(unauthorizedCaps) > 0 {
+			sylog.Warningf("not authorized to add capability: %s", strings.Join(unauthorizedCaps, ","))
 		}
-		authorizedCaps, _ := capConfig.CheckGroupCaps(gr.Name, caps)
 		if len(authorizedCaps) > 0 {
-			sylog.Debugf("%s group capabilities %s added", gr.Name, strings.Join(authorizedCaps, ","))
-			commonCaps = append(commonCaps, authorizedCaps...)
+			sylog.Debugf("User capabilities %s added", strings.Join(authorizedCaps, ","))
+			commonCaps = authorizedCaps
 		}
+
+		groups, err := os.Getgroups()
+		if err != nil {
+			return err
+		}
+
+		for _, g := range groups {
+			gr, err := user.GetGrGID(uint32(g))
+			if err != nil {
+				sylog.Debugf("Ignoring group %d: %s", g, err)
+				continue
+			}
+			authorizedCaps, _ := capConfig.CheckGroupCaps(gr.Name, caps)
+			if len(authorizedCaps) > 0 {
+				sylog.Debugf("%s group capabilities %s added", gr.Name, strings.Join(authorizedCaps, ","))
+				commonCaps = append(commonCaps, authorizedCaps...)
+			}
+		}
+	} else {
+		commonCaps = caps
 	}
 
 	commonCaps = capabilities.RemoveDuplicated(commonCaps)
@@ -324,7 +327,8 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 			return err
 		}
 	} else {
-		if err := e.prepareUserCaps(); err != nil {
+		enforced := starterConfig.GetIsSUID()
+		if err := e.prepareUserCaps(enforced); err != nil {
 			return err
 		}
 	}
@@ -336,24 +340,41 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if e.EngineConfig.GetFakeroot() {
-		baseID := e.EngineConfig.File.FakerootBaseID
-		allowedUsers := e.EngineConfig.File.FakerootAllowedUsers
-		idRange, err := fakeroot.GetIDRange(baseID, allowedUsers)
-		if err != nil {
-			return err
+		if !starterConfig.GetIsSUID() {
+			// no SUID workflow, check if newuidmap/newgidmap are present
+			sylog.Verbosef("Fakeroot requested with unprivileged workflow, fallback to newuidmap/newgidmap")
+			sylog.Debugf("Search for newuidmap binary")
+			if err := starterConfig.SetNewUIDMapPath(); err != nil {
+				return err
+			}
+			sylog.Debugf("Search for newgidmap binary")
+			if err := starterConfig.SetNewGIDMapPath(); err != nil {
+				return err
+			}
 		}
+
+		uid := uint32(os.Getuid())
+		gid := uint32(os.Getgid())
+
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uid, 0, 1)
+		idRange, err := fakerootutil.GetIDRange(fakerootutil.SubUIDFile, uid)
+		if err != nil {
+			return fmt.Errorf("could not use fakeroot: %s", err)
+		}
+		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
+
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(gid, 0, 1)
+		idRange, err = fakerootutil.GetIDRange(fakerootutil.SubGIDFile, uid)
+		if err != nil {
+			return fmt.Errorf("could not use fakeroot: %s", err)
+		}
+		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
+		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 
 		e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
-
-		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uint32(os.Getuid()), 0, 1)
-		e.EngineConfig.OciConfig.AddLinuxUIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
-		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
-
-		e.EngineConfig.OciConfig.AddLinuxGIDMapping(uint32(os.Getgid()), 0, 1)
-		e.EngineConfig.OciConfig.AddLinuxGIDMapping(idRange.HostID, idRange.ContainerID, idRange.Size)
-		starterConfig.AddGIDMappings(e.EngineConfig.OciConfig.Linux.GIDMappings)
 
 		starterConfig.SetHybridWorkflow(true)
 		starterConfig.SetAllowSetgroups(true)
@@ -556,22 +577,19 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 	}
 
-	// get starter binary in use
-	dest, err := mainthread.Readlink("/proc/self/exe")
+	path, err = filepath.Abs("comm")
 	if err != nil {
-		return fmt.Errorf("failed to read /proc/self/exe link: %s", err)
+		return fmt.Errorf("failed to determine absolute path for comm: %s", err)
 	}
-	// should be either starter-suid or starter
-	exe := filepath.Base(dest)
-	path = filepath.Join("..", strconv.Itoa(file.PPid), "comm")
-	b, err := ioutil.ReadFile(path)
+
+	// we must read "sinit\n"
+	b, err := ioutil.ReadFile("comm")
 	if err != nil {
 		return fmt.Errorf("failed to read %s: %s", path, err)
 	}
-	// check that the right starter binary is used according
-	// to namespace configuration and joined instance
-	if exe != strings.Trim(string(b), "\n") {
-		return fmt.Errorf("%s not found in %s, wrong instance process", exe, path)
+	// check that we are currently joining sinit process
+	if "sinit" != strings.Trim(string(b), "\n") {
+		return fmt.Errorf("sinit not found in %s, wrong instance process", path)
 	}
 
 	// tell starter that we are joining an instance
@@ -613,10 +631,20 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 			return err
 		}
 	} else {
-		if err := e.prepareUserCaps(); err != nil {
+		if err := e.prepareUserCaps(suidRequired); err != nil {
 			return err
 		}
 	}
+
+	// set UID/GID for the fakeroot context
+	if instanceEngineConfig.GetFakeroot() {
+		starterConfig.SetTargetUID(0)
+		starterConfig.SetTargetGID([]int{0})
+	}
+
+	// restore HOME environment variable to match the
+	// one set during instance start
+	e.EngineConfig.OciConfig.AddProcessEnv("HOME", instanceEngineConfig.GetHomeDest())
 
 	// restore apparmor profile or apply a new one if provided
 	param := security.GetParam(e.EngineConfig.GetSecurity(), "apparmor")

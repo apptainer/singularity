@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,12 +9,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/syfs"
 )
 
@@ -80,21 +80,21 @@ func getPath(username string, subDir string) (string, error) {
 
 	var u *user.User
 	if username == "" {
-		u, err = user.Current()
+		u, err = user.CurrentOriginal()
 	} else {
-		u, err = user.Lookup(username)
+		u, err = user.GetPwNam(username)
 	}
 
 	if err != nil {
 		return "", err
 	}
 
-	configDir, err := syfs.ConfigDirForUsername(u.Username)
+	configDir, err := syfs.ConfigDirForUsername(u.Name)
 	if err != nil {
 		return "", err
 	}
 
-	return filepath.Join(configDir, instancePath, subDir, hostname, u.Username), nil
+	return filepath.Join(configDir, instancePath, subDir, hostname, u.Name), nil
 }
 
 // GetDir returns directory where instances file will be stored
