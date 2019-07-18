@@ -20,53 +20,53 @@ func TestImage(t *testing.T) {
 
 	points := &Points{}
 
-	if err := points.AddImage(RootfsTag, "", "/fake", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "", "/fake", "ext3", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "", "ext3", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with empty destination")
 	}
 
-	if err := points.AddImage(RootfsTag, "fake", "/", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "fake", "/", "ext3", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed as source is not an absolute path")
 	}
-	if err := points.AddImage(RootfsTag, "/", "fake", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/", "fake", "ext3", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed as destination is not an absolute path")
 	}
 
-	if err := points.AddImage(RootfsTag, "", "/", "ext3", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "", "/", "ext3", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/", "xfs", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "xfs", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with bad filesystem type")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_BIND, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_BIND, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with bad bind flag")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_REMOUNT, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with bad remount flag")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_REC, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "ext3", syscall.MS_REC, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with bad recursive flag")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/ext3", "ext3", 0, 0, 10, ""); err != nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/ext3", "ext3", 0, 0, 10, nil); err != nil {
 		t.Errorf("should have passed with ext3 filesystem")
 	}
 	points.RemoveAll()
-	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10, ""); err != nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10, nil); err != nil {
 		t.Errorf("should have passed with squashfs filesystem")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", 0, 0, 0, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", 0, 0, 0, nil); err == nil {
 		t.Errorf("should have failed with 0 size limit")
 	}
-	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10, ""); err == nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10, nil); err == nil {
 		t.Errorf("nil error returned, should have returned non-nil mount.ErrMountExists")
 	} else if err != ErrMountExists {
 		t.Errorf("non-nil error should have been mount.ErrMountExists")
 	}
 	points.RemoveAll()
 
-	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10, ""); err != nil {
+	if err := points.AddImage(RootfsTag, "/fake", "/", "squashfs", syscall.MS_NOSUID, 31, 10, nil); err != nil {
 		t.Fatalf("should have passed with squashfs filesystem")
 	}
 	images := points.GetAllImages()
