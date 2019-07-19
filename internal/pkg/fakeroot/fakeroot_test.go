@@ -10,19 +10,29 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+
 	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
 type set struct {
 	name            string
-	base            uint64
-	allowedUsers    []string
+	path            string
+	uid             uint32
 	expectedMapping *specs.LinuxIDMapping
 }
 
+var subIDContent = `
+root:100000:65536
+1:165536:1
+1:165536:65536
+2:2000000:-1
+3:-1:65536
+4:2065536:1
+`
+
 func testGetIDRange(t *testing.T, s set) {
-	idRange, err := GetIDRange(s.base, s.allowedUsers)
+	idRange, err := GetIDRange(s.path, s.uid)
 	if err != nil && s.expectedMapping != nil {
 		t.Errorf("unexpected error for %q: %s", s.name, err)
 	} else if err == nil && s.expectedMapping == nil {
@@ -40,78 +50,74 @@ func testGetIDRange(t *testing.T, s set) {
 	}
 }
 
-func TestGetIDRangeUser(t *testing.T) {
+func TestGetIDRangePath(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	userinfo, err := user.GetPwUID(uint32(os.Getuid()))
+	f, err := fs.MakeTmpFile("", "subid-", 0700)
 	if err != nil {
-		t.Fatalf("failed to retrieve user information: %s", err)
+		t.Fatalf("failed to create temporary file")
 	}
+	defer os.Remove(f.Name())
+
+	f.WriteString(subIDContent)
+	f.Close()
 
 	tests := []set{
 		{
-			name: "empty",
+			name: "empty path",
+			path: "",
+			uid:  0,
 		},
 		{
-			name: "low base",
-			base: 131071,
+			name: "bad path",
+			path: "/a/bad/path",
+			uid:  0,
 		},
 		{
-			name: "high base",
-			base: 65536 * 65536,
+			name: "temporary file, bad uid",
+			path: f.Name(),
+			uid:  ^uint32(0),
 		},
 		{
-			name: "base not multiple of 65536",
-			base: 131073,
-		},
-		{
-			name: "good base, no users",
-			base: 131072,
-		},
-		{
-			name:         "good base, current user",
-			base:         65536 * 1024,
-			allowedUsers: []string{userinfo.Name},
+			name: "temporary file, user root (good)",
+			path: f.Name(),
+			uid:  0,
 			expectedMapping: &specs.LinuxIDMapping{
 				ContainerID: 1,
-				HostID:      65536 * 1024,
+				HostID:      100000,
 				Size:        65536,
 			},
 		},
-	}
-	for _, test := range tests {
-		testGetIDRange(t, test)
-	}
-}
-
-func TestGetIDRangeRoot(t *testing.T) {
-	test.EnsurePrivilege(t)
-
-	tests := []set{
 		{
-			name: "empty",
-		},
-		{
-			name: "low base",
-			base: 131071,
-		},
-		{
-			name: "high base",
-			base: 65536 * 65536,
-		},
-		{
-			name: "base not multiple of 65536",
-			base: 131073,
-		},
-		{
-			name: "good base, root user",
-			base: 65536 * 1024,
+			name: "temporary file, uid 1 (multiple good)",
+			path: f.Name(),
+			uid:  1,
 			expectedMapping: &specs.LinuxIDMapping{
 				ContainerID: 1,
-				HostID:      1,
+				HostID:      165536,
 				Size:        65536,
 			},
+		},
+		{
+			name: "temporary file, uid 2 (bad size)",
+			path: f.Name(),
+			uid:  2,
+		},
+		{
+			name: "temporary file, uid 2 (bad containerID)",
+			path: f.Name(),
+			uid:  3,
+		},
+		{
+			name: "temporary file, uid 4 (multiple bad)",
+			path: f.Name(),
+			uid:  4,
+		},
+		{
+			name: "temporary file, uid 8 (doesn't exist)",
+			path: f.Name(),
+			uid:  8,
 		},
 	}
 	for _, test := range tests {
