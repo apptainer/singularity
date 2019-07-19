@@ -49,7 +49,8 @@ var (
 	unauthenticatedPull bool
 	// PullDir is the path that the containers will be pulled to, if set
 	PullDir string
-	// PullArch is the architecture for which containers will be pulled
+	// PullArch is the architecture for which containers will be pulled from the
+	// SCS library
 	PullArch string
 )
 
@@ -60,7 +61,7 @@ var pullArchFlag = cmdline.Flag{
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
 	Usage:        "Architecture to pull from library",
-	EnvKeys:      []string{"ARCH"},
+	EnvKeys:      []string{"PULL_ARCH"},
 }
 
 // --library
