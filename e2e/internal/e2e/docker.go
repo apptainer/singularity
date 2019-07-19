@@ -42,6 +42,8 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			ExpectExit(0),
 		)
 
+		var umountFn func(*testing.T)
+
 		RunSingularity(
 			t,
 			"RunDockerRegistry",
@@ -49,6 +51,14 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			WithPrivileges(true),
 			WithCommand("instance start"),
 			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
+			PreRun(func(t *testing.T) {
+				umountFn = shadowInstanceDirectory(t, env)
+			}),
+			PostRun(func(t *testing.T) {
+				if umountFn != nil {
+					umountFn(t)
+				}
+			}),
 			ExpectExit(0),
 		)
 
@@ -83,10 +93,12 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 }
 
 // KillRegistry stop and cleanup docker registry.
-func KillRegistry(t *testing.T) {
+func KillRegistry(t *testing.T, env TestEnv) {
 	if !atomic.CompareAndSwapUint32(&registrySetup.up, 1, 0) {
 		return
 	}
+
+	var umountFn func(*testing.T)
 
 	RunSingularity(
 		t,
@@ -95,6 +107,14 @@ func KillRegistry(t *testing.T) {
 		WithPrivileges(true),
 		WithCommand("instance stop"),
 		WithArgs("-s", "KILL", dockerInstanceName),
+		PreRun(func(t *testing.T) {
+			umountFn = shadowInstanceDirectory(t, env)
+		}),
+		PostRun(func(t *testing.T) {
+			if umountFn != nil {
+				umountFn(t)
+			}
+		}),
 		ExpectExit(0),
 	)
 }
