@@ -150,6 +150,14 @@ func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) Singular
 	}
 }
 
+// GetStreams gets command stdout and stderr result.
+func GetStreams(stdout *string, stderr *string) SingularityCmdResultOp {
+	return func(t *testing.T, r *SingularityCmdResult) {
+		*stdout = string(r.Stdout)
+		*stderr = string(r.Stderr)
+	}
+}
+
 // SingularityConsoleOp is a function type passed to ConsoleRun
 // to execute interactive commands.
 type SingularityConsoleOp func(*testing.T, *expect.Console)

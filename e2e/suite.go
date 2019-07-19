@@ -19,6 +19,8 @@ import (
 
 	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 
+	singularityverify "github.com/sylabs/singularity/e2e/verify"
+
 	"github.com/sylabs/singularity/e2e/actions"
 
 	"github.com/sylabs/singularity/e2e/docker"
@@ -136,9 +138,11 @@ func Run(t *testing.T) {
 	//
 	// e2e.KillRegistry is called here to ensure that the registry
 	// is stopped after tests run.
-	defer singularitye2e.KillRegistry(t)
+	defer singularitye2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
+
+	t.Run("VERIFY", singularityverify.RunE2ETests(testenv))
 
 	t.Run("INSPECT", singularityinspect.RunE2ETests(testenv))
 

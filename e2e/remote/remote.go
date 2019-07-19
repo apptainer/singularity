@@ -6,14 +6,12 @@
 package remote
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
 
 type ctx struct {
@@ -40,13 +38,14 @@ func (c *ctx) remoteAdd(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "add"}
-		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testFail := []struct {
@@ -59,13 +58,14 @@ func (c *ctx) remoteAdd(t *testing.T) {
 	}
 
 	for _, tt := range testFail {
-		argv := []string{"remote", "--config", config.Name(), "add"}
-		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
-				t.Fatalf("Unexpected success.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(255),
+		)
 	}
 }
 
@@ -92,13 +92,14 @@ func (c *ctx) remoteRemove(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
-		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testPass := []struct {
@@ -110,13 +111,14 @@ func (c *ctx) remoteRemove(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "remove"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "remove", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testFail := []struct {
@@ -127,13 +129,14 @@ func (c *ctx) remoteRemove(t *testing.T) {
 	}
 
 	for _, tt := range testFail {
-		argv := []string{"remote", "--config", config.Name(), "remove"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
-				t.Fatalf("Unexpected success.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "remove", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(255),
+		)
 	}
 }
 
@@ -156,13 +159,14 @@ func (c *ctx) remoteUse(t *testing.T) {
 	}
 
 	for _, tt := range testFail {
-		argv := []string{"remote", "--config", config.Name(), "use"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
-				t.Fatalf("Unexpected success.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "use", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(255),
+		)
 	}
 
 	// Prep config by adding multiple remotes
@@ -176,13 +180,14 @@ func (c *ctx) remoteUse(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
-		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testPass := []struct {
@@ -194,13 +199,14 @@ func (c *ctx) remoteUse(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "use"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "use", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
@@ -227,13 +233,14 @@ func (c *ctx) remoteStatus(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
-		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testPass := []struct {
@@ -244,13 +251,14 @@ func (c *ctx) remoteStatus(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "status"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "status", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testFail := []struct {
@@ -262,13 +270,14 @@ func (c *ctx) remoteStatus(t *testing.T) {
 	}
 
 	for _, tt := range testFail {
-		argv := []string{"remote", "--config", config.Name(), "status"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error == nil {
-				t.Fatalf("Unexpected success.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "status", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(255),
+		)
 	}
 }
 
@@ -288,13 +297,14 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "list"}
-		t.Run(tt.name, func(t *testing.T) {
-			fmt.Println("config.name is ", config.Name())
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "list"}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	// Prep config by adding multiple remotes
@@ -308,13 +318,14 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 
 	for _, tt := range add {
-		argv := []string{"remote", "--config", config.Name(), "add"}
-		argv = append(argv, tt.remote, tt.uri)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "add", tt.remote, tt.uri}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testPass = []struct {
@@ -324,12 +335,14 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "list"}
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "list"}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	// Prep config by selecting a remote to default to
@@ -341,13 +354,14 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 
 	for _, tt := range use {
-		argv := []string{"remote", "--config", config.Name(), "use"}
-		argv = append(argv, tt.remote)
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "use", tt.remote}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 
 	testPass = []struct {
@@ -357,12 +371,14 @@ func (c *ctx) remoteList(t *testing.T) {
 	}
 
 	for _, tt := range testPass {
-		argv := []string{"remote", "--config", config.Name(), "list"}
-		t.Run(tt.name, func(t *testing.T) {
-			if res := exec.Command(c.env.CmdPath, argv...).Run(t); res.Error != nil {
-				t.Fatalf("Unexpected failure.\n%s", res)
-			}
-		})
+		argv := []string{"--config", config.Name(), "list"}
+		e2e.RunSingularity(
+			t,
+			tt.name,
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 

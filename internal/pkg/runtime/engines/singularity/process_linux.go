@@ -370,7 +370,6 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 	sylog.Debugf("Post start process")
 
 	if engine.EngineConfig.GetInstance() {
-		uid := os.Getuid()
 		name := engine.CommonConfig.ContainerID
 
 		if err := os.Chdir("/"); err != nil {
@@ -382,7 +381,7 @@ func (engine *EngineOperations) PostStartProcess(pid int) error {
 			return err
 		}
 
-		pw, err := user.GetPwUID(uint32(uid))
+		pw, err := user.CurrentOriginal()
 		if err != nil {
 			return err
 		}

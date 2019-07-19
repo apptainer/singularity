@@ -120,3 +120,34 @@ func SetupHomeDirectories(t *testing.T) {
 		}
 	})(t)
 }
+
+// shadowInstanceDirectory creates a temporary instances directory which
+// will be bound on top of current user home directory in order to execute
+// a "shadow" instance (eg: docker registry).
+func shadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
+	u := CurrentUser(t)
+
+	// $TESTDIR/.singularity directory
+	fakeSingularityDir := filepath.Join(env.TestDir, ".singularity")
+	// $TESTDIR/.singularity/instances symlink
+	fakeInstanceSymlink := filepath.Join(fakeSingularityDir, "instances")
+
+	// create directory $TESTDIR/.singularity
+	if err := os.Mkdir(fakeSingularityDir, 0755); err != nil && !os.IsExist(err) {
+		t.Fatalf("failed to create fake singularity directory %s: %s", fakeSingularityDir, err)
+	}
+	// mount $TESTDIR on top of $HOME
+	if err := syscall.Mount(env.TestDir, u.Dir, "", syscall.MS_BIND, ""); err != nil {
+		t.Fatalf("failed to mount %s to %s: %s", env.TestDir, u.Dir, err)
+	}
+	// create symlink $HOME/.singularity/instances -> $TESTDIR/.singularity
+	if err := os.Symlink(fakeSingularityDir, fakeInstanceSymlink); err != nil && !os.IsExist(err) {
+		t.Fatalf("failed to create symlink %s -> %s: %s", fakeSingularityDir, fakeInstanceSymlink, err)
+	}
+
+	return func(t *testing.T) {
+		if err := syscall.Unmount(u.Dir, syscall.MNT_DETACH); err != nil {
+			t.Fatalf("failed to unmount %s: %s", u.Dir, err)
+		}
+	}
+}

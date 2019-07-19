@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/oras"
-	"github.com/sylabs/singularity/internal/pkg/sylog"
 )
 
 const (
@@ -53,8 +52,7 @@ func (c *Handle) OrasImageExists(sum, name string) (bool, error) {
 		return false, err
 	}
 	if cacheSum != sum {
-		sylog.Debugf("Cached File Sum(%s) and Expected Sum(%s) does not match", cacheSum, sum)
-		return false, nil
+		return false, ErrBadChecksum
 	}
 
 	return true, nil
