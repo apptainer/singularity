@@ -10,7 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"reflect"
+	"strconv"
 	"testing"
 )
 
@@ -58,6 +58,22 @@ files-test-dir/
 ├── file
 └── .file
 */
+
+func formatSlice(slice []string) (s string) {
+	for _, elm := range slice {
+		s += strconv.Quote(elm) + "\n"
+	}
+	return s
+}
+
+func contains(slice []string, s string) bool {
+	for _, elm := range slice {
+		if elm == s {
+			return true
+		}
+	}
+	return false
+}
 
 func createTestDirLayout(t *testing.T) string {
 	testDirName, err := ioutil.TempDir("", "files-test-dir-")
@@ -226,10 +242,13 @@ func TestExpandPath(t *testing.T) {
 				correct = append(correct, testDir+"/"+c)
 			}
 
-			if !reflect.DeepEqual(files, correct) {
-				t.Logf("Generated %d results: %s", len(files), files)
-				t.Logf("Correct %d results: %s", len(correct), correct)
-				t.Errorf("matched files are not correct")
+			for _, c := range correct {
+				if !contains(files, c) {
+					t.Logf("Generated %d results: %s", len(files), formatSlice(files))
+					t.Logf("Correct %d results: %s", len(correct), formatSlice(correct))
+					t.Errorf("matched files are not correct")
+					break
+				}
 			}
 		})
 	}
