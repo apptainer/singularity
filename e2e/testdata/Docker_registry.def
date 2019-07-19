@@ -17,7 +17,7 @@ from: registry:2.7.1
     dockerd --iptables=false --ip-forward=false --ip-masq=false --storage-driver=vfs &
     /.singularity.d/runscript &
     # wait until docker registry is up
-    while ! wget 127.0.0.1:5000 >/dev/null 2>&1; do sleep 0.2; done
+    while ! wget -O /dev/null 127.0.0.1:5000 >/dev/null 2>&1 ; do sleep 0.2; done
     if [ ! -z "${DELETE_BRIDGE}" ]; then
         ip link set docker0 down || kill -TERM 1
         brctl delbr docker0
