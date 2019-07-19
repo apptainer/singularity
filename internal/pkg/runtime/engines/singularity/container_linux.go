@@ -689,7 +689,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	mountType := ""
 	offset := imageObject.Partitions[0].Offset
 	size := imageObject.Partitions[0].Size
-	key := ""
+	var key []byte
 
 	sylog.Debugf("Image type is %v", imageObject.Partitions[0].Type)
 
@@ -832,13 +832,13 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				ov.AddLowerDir(filepath.Join(dst, "upper"))
 			}
 
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size, "")
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "ext3", flags, offset, size, nil)
 			if err != nil {
 				return fmt.Errorf("while adding ext3 image: %s", err)
 			}
 		case image.SQUASHFS:
 			flags := uintptr(c.suidFlag | syscall.MS_NODEV | syscall.MS_RDONLY)
-			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size, "")
+			err = system.Points.AddImage(mount.PreLayerTag, src, dst, "squashfs", flags, offset, size, nil)
 			if err != nil {
 				return err
 			}

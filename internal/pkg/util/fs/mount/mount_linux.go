@@ -6,6 +6,7 @@
 package mount
 
 import (
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -306,13 +307,14 @@ func GetSizeLimit(options []string) (uint64, error) {
 }
 
 // GetKey returns key value for image options
-func GetKey(options []string) (string, error) {
+func GetKey(options []string) ([]byte, error) {
 	for _, opt := range options {
 		if strings.HasPrefix(opt, "key=") {
-			return strings.TrimPrefix(opt, "key="), nil
+			keyB64 := strings.TrimPrefix(opt, "key=")
+			return base64.StdEncoding.DecodeString(keyB64)
 		}
 	}
-	return "", fmt.Errorf("key option not found")
+	return nil, fmt.Errorf("key option not found")
 }
 
 // HasRemountFlag checks if remount flag is set or not.
@@ -505,7 +507,7 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 			var err error
 			var offset uint64
 			var sizelimit uint64
-			var key string
+			var key []byte
 
 			flags, options := ConvertOptions(point.Options)
 			// check if this is a mount point to remount
@@ -536,7 +538,11 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 					fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 				}
 				if strings.HasPrefix(option, "key=") {
-					key = strings.TrimPrefix(option, "key=")
+					keyB64 := strings.TrimPrefix(option, "key=")
+					key, err = base64.StdEncoding.DecodeString(keyB64)
+					if err != nil {
+						return err
+					}
 				}
 			}
 
@@ -585,7 +591,7 @@ func (p *Points) ImportFromSpec(mounts []specs.Mount) error {
 }
 
 // AddImage adds an image mount point
-func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64, key string) error {
+func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype string, flags uintptr, offset uint64, sizelimit uint64, key []byte) error {
 	options := ""
 	if source == "" {
 		return fmt.Errorf("an image mount point must contain a source")
@@ -602,7 +608,8 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 	if sizelimit == 0 {
 		return fmt.Errorf("invalid image size, zero length")
 	}
-	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,key=%s,errors=remount-ro", offset, sizelimit, key)
+	keyB64 := base64.StdEncoding.EncodeToString(key)
+	options = fmt.Sprintf("loop,offset=%d,sizelimit=%d,key=%s,errors=remount-ro", offset, sizelimit, keyB64)
 	return p.add(tag, source, dest, fstype, flags, options)
 }
 

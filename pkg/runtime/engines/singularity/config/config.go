@@ -76,7 +76,7 @@ type JSONConfig struct {
 	Network           string        `json:"network,omitempty"`
 	DNS               string        `json:"dns,omitempty"`
 	Cwd               string        `json:"cwd,omitempty"`
-	EncryptionKey     string        `json:"encryptionKey,omitempty"`
+	EncryptionKey     []byte        `json:"encryptionKey,omitempty"`
 	TargetUID         int           `json:"targetUID,omitempty"`
 	WritableImage     bool          `json:"writableImage,omitempty"`
 	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
@@ -119,12 +119,12 @@ func (e *EngineConfig) GetImage() string {
 }
 
 // SetKey sets the key for the image's system partition
-func (e *EngineConfig) SetEncryptionKey(key string) {
+func (e *EngineConfig) SetEncryptionKey(key []byte) {
 	e.JSON.EncryptionKey = key
 }
 
 // GetKey retrieves the key for image's system partition
-func (e *EngineConfig) GetEncryptionKey() string {
+func (e *EngineConfig) GetEncryptionKey() []byte {
 	return e.JSON.EncryptionKey
 }
 

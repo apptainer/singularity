@@ -39,7 +39,7 @@ type MountArgs struct {
 type CryptArgs struct {
 	Offset  uint64
 	Loopdev string
-	Key     string
+	Key     []byte
 }
 
 // ChrootArgs defines the arguments to chroot.
