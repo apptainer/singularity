@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -39,7 +40,7 @@ func (c *ctx) testPushCmd(t *testing.T) {
 		desc          string // case description
 		dstURI        string // destination URI for image
 		imagePath     string // src image path
-		expectSuccess bool   // singularity should exit with code 0
+		expectSuccess bool   // expection regarding the test's success
 	}{
 		{
 			desc:          "non existent image",
@@ -75,26 +76,24 @@ func (c *ctx) testPushCmd(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpdir)
 
-			cmd, out, err := e2e.ImagePush(t, c.env.CmdPath, tt.imagePath, tt.dstURI)
-			switch {
-			case tt.expectSuccess && err == nil:
-				// PASS: expecting success, succeeded
-
-			case !tt.expectSuccess && err != nil:
-				// PASS: expecting failure, failed
-
-			case tt.expectSuccess && err != nil:
-				// FAIL: expecting success, failed
-
-				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-				t.Errorf("unexpected failure: %v", err)
-
-			case !tt.expectSuccess && err == nil:
-				// FAIL: expecting failure, succeeded
-
-				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-				t.Errorf("unexpected success: command should have failed")
+			args := tt.dstURI
+			if tt.imagePath != "" {
+				args = tt.imagePath + " " + args
 			}
+
+			expectedExitCode := 0
+			if !tt.expectSuccess {
+				expectedExitCode = 255
+			}
+
+			e2e.RunSingularity(
+				t,
+				tt.desc,
+				e2e.WithPrivileges(false),
+				e2e.WithCommand("push"),
+				e2e.WithArgs(strings.Split(args, " ")...),
+				e2e.ExpectExit(expectedExitCode),
+			)
 		})
 	}
 }
