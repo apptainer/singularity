@@ -18,7 +18,7 @@ import (
 )
 
 // ImageVerify checks for an image integrity
-func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
+func ImageVerify(t *testing.T, cmdPath SingularityCmdPath, imagePath string) {
 	type testSpec struct {
 		name string
 		argv []string
@@ -75,7 +75,7 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 	for _, tt := range tests {
 		RunSingularity(
 			t,
-			cmdPath,
+			SingularityCmdPath(cmdPath),
 			AsSubtest(tt.name),
 			WithCommand("exec"),
 			WithArgs(tt.argv...),
@@ -85,7 +85,7 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 }
 
 // DefinitionImageVerify checks for image correctness based off off supplied DefFileDetail
-func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileDetails) {
+func DefinitionImageVerify(t *testing.T, cmdPath SingularityCmdPath, imagePath string, dfd DefFileDetails) {
 	if dfd.Help != nil {
 		helpPath := filepath.Join(imagePath, `/.singularity.d/runscript.help`)
 		if !fileExists(t, helpPath) {
@@ -355,14 +355,14 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 	return nil
 }
 
-func verifyEnv(t *testing.T, cmdPath, imagePath string, env []string, flags []string) error {
+func verifyEnv(t *testing.T, cmdPath SingularityCmdPath, imagePath string, env []string, flags []string) error {
 	args := []string{"exec"}
 	if flags != nil {
 		args = append(args, flags...)
 	}
 	args = append(args, imagePath, "env")
 
-	cmd := exec.Command(cmdPath, args...)
+	cmd := exec.Command(string(cmdPath), args...)
 	res := cmd.Run(t)
 
 	if res.Error != nil {

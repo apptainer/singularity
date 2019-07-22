@@ -9,7 +9,7 @@ import "testing"
 
 type TestEnv struct {
 	RunDisabled   bool
-	CmdPath       string
+	CmdPath       SingularityCmdPath
 	ImagePath     string
 	OrasTestImage string
 	TestDir       string

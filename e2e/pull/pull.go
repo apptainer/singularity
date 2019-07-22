@@ -301,7 +301,7 @@ func (c *ctx) testPullCmd(t *testing.T) {
 	keyringEnv := "SINGULARITY_SYPGPDIR=" + tempKeyringDir
 	c.env.KeyringDir = keyringEnv
 	argv := []string{"key", "pull", sylabsAdminFingerprint}
-	out, err := exec.Command(c.env.CmdPath, argv...).CombinedOutput()
+	out, err := exec.Command(string(c.env.CmdPath), argv...).CombinedOutput()
 	if err != nil {
 		t.Fatalf("Cannot pull key %q: %+v\nCommand:\n%s %s\nOutput:\n%s\n",
 			sylabsAdminFingerprint,

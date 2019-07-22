@@ -14,7 +14,7 @@ import (
 
 // ImagePush executes a singularity push command to push
 // an image to the specified URI.
-func ImagePush(t *testing.T, cmdPath, imagePath, imgURI string) (string, []byte, error) {
+func ImagePush(t *testing.T, cmdPath SingularityCmdPath, imagePath, imgURI string) (string, []byte, error) {
 	argv := []string{"push"}
 
 	if imagePath != "" {
@@ -24,7 +24,7 @@ func ImagePush(t *testing.T, cmdPath, imagePath, imgURI string) (string, []byte,
 	argv = append(argv, imgURI)
 
 	cmd := fmt.Sprintf("%s %s", cmdPath, strings.Join(argv, " "))
-	out, err := exec.Command(cmdPath, argv...).CombinedOutput()
+	out, err := exec.Command(string(cmdPath), argv...).CombinedOutput()
 
 	return cmd, out, err
 

@@ -33,6 +33,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/instance"
 
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
 
 	"github.com/sylabs/singularity/e2e/pull"
@@ -71,7 +72,7 @@ func Run(t *testing.T) {
 		log.Fatalf("singularity is not installed on this system: %v", err)
 	}
 
-	testenv.CmdPath = cmdPath
+	testenv.CmdPath = e2e.SingularityCmdPath(cmdPath)
 
 	sysconfdir := func(fn string) string {
 		return filepath.Join(buildcfg.SYSCONFDIR, "singularity", fn)

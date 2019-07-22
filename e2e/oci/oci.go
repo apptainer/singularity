@@ -24,7 +24,7 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func checkOciState(t *testing.T, cmdPath, containerID, state string) {
+func checkOciState(t *testing.T, cmdPath e2e.SingularityCmdPath, containerID, state string) {
 	checkStateFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		s := &ociruntime.State{}
 		if err := json.Unmarshal(r.Stdout, s); err != nil {

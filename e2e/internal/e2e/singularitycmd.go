@@ -38,6 +38,10 @@ type SingularityCmdResult struct {
 // functions
 type MatchType uint8
 
+// SingularityCmdPath is used to specify the path to the singularity
+// command
+type SingularityCmdPath string
+
 const (
 	// ContainMatch is for contain match
 	ContainMatch MatchType = iota
@@ -401,7 +405,7 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 // cmdPath specifies the path to the singularity binary and cmdOps
 // provides a list of operations to be executed before or after running
 // the command.
-func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
+func RunSingularity(t *testing.T, cmdPath SingularityCmdPath, cmdOps ...SingularityCmdOp) {
 	s := new(singularityCmd)
 
 	for _, op := range cmdOps {
@@ -423,7 +427,7 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 
 		s.t = t
 
-		cmd := exec.Command(cmdPath, s.args...)
+		cmd := exec.Command(string(cmdPath), s.args...)
 
 		cmd.Env = s.envs
 		if len(cmd.Env) == 0 {

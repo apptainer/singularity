@@ -6,6 +6,7 @@
 package inspect
 
 import (
+	"os/exec"
 	"testing"
 
 	"github.com/buger/jsonparser"
@@ -17,6 +18,13 @@ type ctx struct {
 }
 
 const containerTesterSIF = "testdata/inspecter_container.sif"
+
+func (c *ctx) runInspectCommand(inspectType string) ([]byte, error) {
+	argv := []string{"inspect", "--json", inspectType, containerTesterSIF}
+	cmd := exec.Command(string(c.env.CmdPath), argv...)
+
+	return cmd.CombinedOutput()
+}
 
 func (c *ctx) singularityInspect(t *testing.T) {
 	tests := []struct {
