@@ -85,7 +85,7 @@ func (c *ctx) testPushCmd(t *testing.T) {
 				args = tt.imagePath + " " + args
 			}
 
-			e2e.RunSingularity(
+			c.env.RunSingularity(
 				t,
 				tt.desc,
 				e2e.WithPrivileges(false),
