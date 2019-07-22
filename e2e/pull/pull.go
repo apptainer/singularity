@@ -215,9 +215,9 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	argv += tt.srcURI
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		tt.desc,
+		e2e.AsSubtest(tt.desc),
 		e2e.WithPrivileges(false),
 		e2e.WithCommand("pull"),
 		e2e.WithArgs(strings.Split(argv, " ")...),
@@ -225,11 +225,9 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 		// If nothing is specified with WithEnv(), the framework will pick up os.Environ(); if we need to had a
 		// new environment variable, we need to explicitly also add os.Environ()
 		e2e.WithEnv(append(os.Environ(), c.env.KeyringDir)),
-		e2e.ExpectExit(tt.expectedExitCode),
-		e2e.PostRun(func(t *testing.T) {
-			checkPullResult(t, tt)
-		}),
-	)
+		e2e.ExpectExit(tt.expectedExitCode))
+
+	checkPullResult(t, tt)
 }
 
 func getImageNameFromURI(imgURI string) string {

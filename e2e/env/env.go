@@ -90,9 +90,8 @@ func (c *ctx) singularityEnv(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("exec"),
 			e2e.WithEnv(tt.env),

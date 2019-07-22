@@ -1,0 +1,8 @@
+[
+   {
+      "Header":"Bootstrap: zypper\nOSVersion: 15.1\nMirrorURL: ftp://example.org/SLE-15-SP1-Installer-DVD-x86_64-GM-DVD1\nProduct: SLE_HPC/%{OSVERSION}/x86_64\nUser: test@user.org\nRegcode: REG-CODE-1a2b3c\nRegisterUrl: https://scc.suse.com\nProductPGP: -----BEGIN PGP PUBLIC KEY BLOCK-----\\n\\\nVersion: rpm-4.11.2 (NSS-3)\\n\\\n\\n\\\nmQENBFEKlmsBCADbpZZbbSC5Zi+HxCR/ynYsVxU5JNNiSSZabN5GMgc9Z0hxeXxp\\n\\\nYWvFoE/4n0+IXIsp83iKvxf06Eu8je/DXp0lMqDZu7WiT3XXAlkOPSNV4akHTDoY\\n\\\n91SJaZCpgUJ7K1QXOPABNbREsAMN1a7rxBowjNjBUyiTJ2YuvQRLtGdK1kExsVma\\n\\\nhieh/QxpoDyYd5w/aky3z23erCoEd+OPfAqEHd5tQIa6LOosa63BSCEl3milJ7J9\\n\\\nvDmoGPAoS6ui7S2R5X4/+PLN8Mm2kOBrFjhmL93LX0mrGCMxsNsKgP6zabYKQEb8\\n\\\nL028SXvl7EGoA+Vw5Vd3wIGbM73PfbgNrXjfABEBAAG0KFN1U0UgUGFja2FnZSBT\\n\\\naWduaW5nIEtleSA8YnVpbGRAc3VzZS5kZT6JATwEEwECACYCGwMGCwkIBwMCBBUC\\n\\\nCAMEFgIDAQIeAQIXgAUCWEfrHwUJDsIitAAKCRBwr56BOdt8gpqUB/wPSSS5BcDu\\n\\\nOi4n02cj4Hdt7WITKBjjo0lG1fXG1ppx1wOST+s8FertMVFY53TW6FGjcYtwVOIq\\n\\\nrsMYiV6kf1NxUV/jcAy7VmC5EZnO0R/D3sT4Oh5hsLtERauZolK5BZmd0S51Qa8e\\n\\\nTxZ5mX9PL2i3s/ShETc30drf83ugc7B4yZPNQWXNDPgGcC+hEeC5qw48RzHYIpUt\\n\\\nRzHmefR5Z3ioTUbDlzy+SGP2uA7mhR4Lfk/df5fYxWfCoKlyGjtrvA65cB+Pksyn\\n\\\nxrAeBuB+vBM+KnDrxW2Sn4AbWkzH//dfz9OJDJu4UM91hb7qxM0OkrXHQV3iNqzg\\n\\\nMDEhky/9NqMy\\n\\\n=GdP5\\n\\\n-----END PGP PUBLIC KEY BLOCK-----\nModules: sle-module-basesystem,sle-module-hpc\nOtherurl0: https://download.example.org/repositories/project1/SLE_15_SP1\nOtherurl1: https://download.example.org/repositories/project2/SLE_15_SP1\nInclude: somepackage\n"
+   }
+]
+
+
+

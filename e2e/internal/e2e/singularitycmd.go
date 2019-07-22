@@ -209,20 +209,27 @@ type SingularityCmdOp func(*singularityCmd)
 
 // singularityCmd defines a Singularity command execution test.
 type singularityCmd struct {
-	args       []string
-	envs       []string
-	dir        string
-	privileged bool
-	subTest    bool
-	stdin      io.Reader
-	preFn      func(*testing.T)
-	postFn     func(*testing.T)
-	consoleFn  SingularityCmdOp
-	console    *expect.Console
-	resultFn   SingularityCmdOp
-	result     *SingularityCmdResult
-	waitErr    error
-	t          *testing.T
+	args        []string
+	envs        []string
+	dir         string
+	privileged  bool
+	subtestName string
+	stdin       io.Reader
+	preFn       func(*testing.T)
+	postFn      func(*testing.T)
+	consoleFn   SingularityCmdOp
+	console     *expect.Console
+	resultFn    SingularityCmdOp
+	result      *SingularityCmdResult
+	waitErr     error
+	t           *testing.T
+}
+
+// AsSubtest requests the command to be run as a subtest
+func AsSubtest(name string) SingularityCmdOp {
+	return func(s *singularityCmd) {
+		s.subtestName = name
+	}
 }
 
 // WithCommand sets the singularity command to execute.
@@ -275,14 +282,6 @@ func WithPrivileges(privileged bool) SingularityCmdOp {
 func WithStdin(r io.Reader) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.stdin = r
-	}
-}
-
-// WithoutSubTest marks singularity command as not being
-// part of a subtest. May be useful for e2e helpers.
-func WithoutSubTest() SingularityCmdOp {
-	return func(s *singularityCmd) {
-		s.subTest = false
 	}
 }
 
@@ -376,14 +375,12 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 
 // RunSingularity executes a singularity command within an test execution
 // context.
-func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
-	if name == "" {
-		t.Errorf("you must provide a test name")
-		return
-	}
-
+//
+// cmdPath specifies the path to the singularity binary and cmdOps
+// provides a list of operations to be executed before or after running
+// the command.
+func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 	s := new(singularityCmd)
-	s.subTest = true
 
 	for _, op := range cmdOps {
 		op(s)
@@ -395,7 +392,7 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 
 	fn := func(t *testing.T) {
 		s.result = new(SingularityCmdResult)
-		s.result.FullCmd = fmt.Sprintf("singularity %s", strings.Join(s.args, " "))
+		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
 
 		var (
 			stdout bytes.Buffer
@@ -404,7 +401,7 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 
 		s.t = t
 
-		cmd := exec.Command("singularity", s.args...)
+		cmd := exec.Command(cmdPath, s.args...)
 
 		cmd.Env = s.envs
 		if len(cmd.Env) == 0 {
@@ -480,8 +477,9 @@ func RunSingularity(t *testing.T, name string, cmdOps ...SingularityCmdOp) {
 	if s.privileged {
 		fn = Privileged(fn)
 	}
-	if s.subTest {
-		t.Run(name, fn)
+
+	if s.subtestName != "" {
+		t.Run(s.subtestName, fn)
 	} else {
 		fn(t)
 	}
