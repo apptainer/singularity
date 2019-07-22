@@ -31,9 +31,8 @@ type instanceList struct {
 func (c *ctx) listInstance(t *testing.T, listArgs ...string) (stdout string, stderr string, success bool) {
 	var args []string
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"List",
 		e2e.WithCommand("instance list"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
@@ -53,9 +52,8 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 		args = append(args, instance)
 	}
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"Stop",
 		e2e.WithCommand("instance stop"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
@@ -69,18 +67,11 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 }
 
 func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (stdout string, stderr string, success bool) {
-	name := "Exec"
-
 	args := []string{"instance://" + instance}
 	args = append(args, execArgs...)
 
-	if len(execArgs) > 0 {
-		name = fmt.Sprintf("%s_%s", name, execArgs[0])
-	}
-
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		name,
 		e2e.WithCommand("exec"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs(args...),
@@ -106,9 +97,8 @@ func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
 		nbInstances = len(instances.Instances)
 	}
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"GetNumberOfInstances",
 		e2e.WithCommand("instance list"),
 		e2e.WithPrivileges(c.privileged),
 		e2e.WithArgs([]string{"--json"}...),
