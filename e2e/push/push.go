@@ -76,6 +76,10 @@ func (c *ctx) testPushCmd(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpdir)
 
+			// We create the list of arguments using a string instead of a slice of
+			// strings because using slices of strings most of the type ends up adding
+			// an empty elements to the list when passing it to the command, which
+			// will create a failure.
 			args := tt.dstURI
 			if tt.imagePath != "" {
 				args = tt.imagePath + " " + args
