@@ -23,11 +23,25 @@ import (
 	"golang.org/x/crypto/openpgp/clearsign"
 )
 
-// ErrVerificationFail is the error when the verify fails
-var ErrVerificationFail = errors.New("verification failed")
+var (
+	// ErrVerificationFail is the error when a Verify() fails
+	ErrVerificationFail = errors.New("verification failed")
 
-var errNotFound = errors.New("key does not exist in local, or remote keystore")
-var errNotFoundLocal = errors.New("key not in local keyring")
+	// ErrUnsigned is the error when a container is not signed
+	ErrUnsigned = errors.New("no signatures found")
+
+	// ErrKeyNotLocal is the error when the key is not in your local keyring
+	ErrKeyNotLocal = errors.New("signature key not in local keyring")
+
+	// ErrKeyNotFound is the error when a key does not exist in your local, or remote keystore
+	ErrKeyNotFound = errors.New("key does not exist in local or remote keystore")
+
+	// ErrHashCorrupted is the error when the key hash is corrupted, (data could also be corrupted)
+	ErrHashCorrupted = errors.New("data integrity check failed, could be corrupted")
+
+	// ErrKeyCorrupted is when a key is corrupted
+	ErrKeyCorrupted = errors.New("signature corrupted, unable to read data")
+)
 
 // Key is for json formatting.
 type Key struct {
@@ -210,7 +224,7 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 
 	sigs, _, err = fimg.GetFromLinkedDescr(descr[0].ID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("no signatures found for system partition")
+		return nil, nil, ErrUnsigned
 	}
 
 	return
@@ -275,12 +289,10 @@ func getSigsForSelection(fimg *sif.FileImage, id uint32, isGroup bool) (sigs []*
 func IsSigned(cpath, keyServerURI string, id uint32, isGroup bool, authToken string) (bool, error) {
 	_, noLocalKey, err := Verify(cpath, keyServerURI, id, isGroup, authToken, false, false)
 	if err != nil {
-		return false, fmt.Errorf("unable to verify container: %s", cpath)
+		return false, err
 	}
 	if noLocalKey {
-		sylog.Warningf("Container might not be trusted; run 'singularity verify %s' to show who signed it", cpath)
-	} else {
-		sylog.Infof("Container is trusted - run 'singularity key list' to list your trusted keys")
+		return true, ErrKeyNotLocal
 	}
 	return true, nil
 }
@@ -305,7 +317,9 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 
 	// get all signature blocks (signatures) for ID/GroupID selected (descr) from SIF file
 	signatures, descr, err := getSigsForSelection(&fimg, id, isGroup)
-	if err != nil {
+	if err == ErrUnsigned {
+		return "", false, ErrUnsigned
+	} else if err != nil {
 		return "", false, fmt.Errorf("error while searching for signature blocks: %s", err)
 	}
 
@@ -317,7 +331,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 	yellow := color.New(color.FgYellow).SprintFunc()
 	red := color.New(color.FgRed).SprintFunc()
 
-	var fail bool
 	var errRet error
 	var author string
 
@@ -332,7 +345,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		fingerprint, err := v.GetEntityString()
 		if err != nil {
 			sylog.Errorf("could not get the signing entity fingerprint from partition ID: %d: %s", v.ID, err)
-			fail = true
 			continue
 		}
 		author += fmt.Sprintf("Verifying signature F: %s:\n", fingerprint)
@@ -347,7 +359,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			keySigner = makeKeyEntity("", fingerprint, false, false, false)
 			keyEntityList.SignerKeys = append(keyEntityList.SignerKeys, keySigner)
 
-			fail = true
+			errRet = ErrKeyCorrupted
 			continue
 		}
 
@@ -355,12 +367,12 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 		i, local, err := getSignerIdentity(keyring, v, block, data, fingerprint, keyServiceURI, authToken, localVerify)
 		if err != nil {
 			// use [MISSING] if we get an error we expect
-			if err == errNotFound || err == errNotFoundLocal {
+			if err == ErrKeyNotFound || err == ErrKeyNotLocal {
 				author += fmt.Sprintf("%-18s %s\n", red("[MISSING]"), err)
 			} else {
 				author += fmt.Sprintf("%-18s %s\n", red("[FAIL]"), err)
 			}
-			fail = true
+			errRet = err
 		} else {
 			prefix := green("[LOCAL]")
 			if !local {
@@ -376,7 +388,7 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			sylog.Verbosef("%s key (%s) hash differs, data may be corrupted", red("error:"), fingerprint)
 			author += fmt.Sprintf("%-18s system partition hash differs, data may be corrupted\n", red("[FAIL]"))
 			dataCheck = false
-			fail = true
+			errRet = ErrHashCorrupted
 		} else {
 			author += fmt.Sprintf("%-18s Data integrity verified\n", green("[OK]"))
 		}
@@ -393,10 +405,6 @@ func Verify(cpath, keyServiceURI string, id uint32, isGroup bool, authToken stri
 			return "", notLocalKey, fmt.Errorf("unable to parse json: %s", err)
 		}
 		author = string(jsonData) + "\n"
-	}
-
-	if fail {
-		errRet = ErrVerificationFail
 	}
 
 	return author, notLocalKey, errRet
@@ -444,7 +452,7 @@ func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsig
 	// if theres a error, thats probably because we dont have a local key. So download it and try again
 	// skip downloading and say we failed
 	if local {
-		return "", false, errNotFoundLocal
+		return "", false, ErrKeyNotLocal
 	}
 
 	// this is needed to reset the block objects reader since it is consumed in the last call
@@ -457,7 +465,7 @@ func getSignerIdentity(keyring *sypgp.Handle, v *sif.Descriptor, block *clearsig
 	sylog.Verbosef("Key not found in local keyring, checking remote keystore: %s\n", fingerprint[32:])
 	netlist, err := sypgp.FetchPubkey(fingerprint, keyServiceURI, authToken, true)
 	if err != nil {
-		return "", false, errNotFound
+		return "", false, ErrKeyNotFound
 	}
 
 	sylog.Verbosef("Found key in remote keystore: %s", fingerprint[32:])

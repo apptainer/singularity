@@ -117,7 +117,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	if !unauthenticated {
 		imageSigned, err := signing.IsSigned(name, keyServerURL, 0, false, authToken)
 		if err != nil {
-			sylog.Errorf("%v", err)
+			sylog.Errorf("Failed to verify container: %s: %s", name, err)
 		}
 		if !imageSigned {
 			return ErrLibraryPullUnsigned

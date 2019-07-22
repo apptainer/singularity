@@ -130,10 +130,8 @@ func doVerifyCmd(cpath, url string) {
 
 	author, _, err := signing.Verify(cpath, url, id, isGroup, authToken, localVerify, jsonVerify)
 	fmt.Printf("%s", author)
-	if err == signing.ErrVerificationFail {
-		sylog.Fatalf("Failed to verify: %s", cpath)
-	} else if err != nil {
-		sylog.Fatalf("Failed to verify: %s: %s", cpath, err)
+	if err != nil {
+		sylog.Fatalf("Failed to verify %q: %s", cpath, err)
 	}
 	sylog.Infof("Container verified: %s", cpath)
 }
