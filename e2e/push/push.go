@@ -40,7 +40,7 @@ func (c *ctx) testPushCmd(t *testing.T) {
 		desc          string // case description
 		dstURI        string // destination URI for image
 		imagePath     string // src image path
-		expectSuccess bool   // expection regarding the test's success
+		expectSuccess bool   // expectation regarding the test's success
 	}{
 		{
 			desc:          "non existent image",
