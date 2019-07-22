@@ -37,34 +37,34 @@ func (c *ctx) testPushCmd(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc          string // case description
-		dstURI        string // destination URI for image
-		imagePath     string // src image path
-		expectSuccess bool   // expectation regarding the test's success
+		desc             string // case description
+		dstURI           string // destination URI for image
+		imagePath        string // src image path
+		expectedExitCode int    // expected exit code for the test
 	}{
 		{
-			desc:          "non existent image",
-			imagePath:     filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
-			dstURI:        fmt.Sprintf("oras://%s/non_existent:test", c.env.TestRegistry),
-			expectSuccess: false,
+			desc:             "non existent image",
+			imagePath:        filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
+			dstURI:           fmt.Sprintf("oras://%s/non_existent:test", c.env.TestRegistry),
+			expectedExitCode: 255,
 		},
 		{
-			desc:          "non SIF file",
-			imagePath:     orasInvalidFile,
-			dstURI:        fmt.Sprintf("oras://%s/non_sif:test", c.env.TestRegistry),
-			expectSuccess: false,
+			desc:             "non SIF file",
+			imagePath:        orasInvalidFile,
+			dstURI:           fmt.Sprintf("oras://%s/non_sif:test", c.env.TestRegistry),
+			expectedExitCode: 255,
 		},
 		{
-			desc:          "directory",
-			imagePath:     orasInvalidDir,
-			dstURI:        fmt.Sprintf("oras://%s/directory:test", c.env.TestRegistry),
-			expectSuccess: false,
+			desc:             "directory",
+			imagePath:        orasInvalidDir,
+			dstURI:           fmt.Sprintf("oras://%s/directory:test", c.env.TestRegistry),
+			expectedExitCode: 255,
 		},
 		{
-			desc:          "standard SIF push",
-			imagePath:     c.env.ImagePath,
-			dstURI:        fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
-			expectSuccess: true,
+			desc:             "standard SIF push",
+			imagePath:        c.env.ImagePath,
+			dstURI:           fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
+			expectedExitCode: 0,
 		},
 	}
 
@@ -81,18 +81,13 @@ func (c *ctx) testPushCmd(t *testing.T) {
 				args = tt.imagePath + " " + args
 			}
 
-			expectedExitCode := 0
-			if !tt.expectSuccess {
-				expectedExitCode = 255
-			}
-
 			e2e.RunSingularity(
 				t,
 				tt.desc,
 				e2e.WithPrivileges(false),
 				e2e.WithCommand("push"),
 				e2e.WithArgs(strings.Split(args, " ")...),
-				e2e.ExpectExit(expectedExitCode),
+				e2e.ExpectExit(tt.expectedExitCode),
 			)
 		})
 	}
