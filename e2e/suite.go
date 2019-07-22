@@ -33,7 +33,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/instance"
 
-	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/e2e/internal/e2e"
 
 	"github.com/sylabs/singularity/e2e/pull"
 
@@ -57,7 +57,7 @@ var runDisabled = flag.Bool("run_disabled", false, "run tests that have been tem
 func Run(t *testing.T) {
 	flag.Parse()
 
-	var testenv singularitye2e.TestEnv
+	var testenv e2e.TestEnv
 
 	if *runDisabled {
 		testenv.RunDisabled = true
@@ -81,7 +81,7 @@ func Run(t *testing.T) {
 	// don't use environment of user executing tests in order to not
 	// wrongly interfering with cache stuff, sylabs library tokens,
 	// PGP keys
-	singularitye2e.SetupHomeDirectories(t)
+	e2e.SetupHomeDirectories(t)
 
 	// Ensure config files are installed
 	configFiles := []string{
@@ -106,7 +106,7 @@ func Run(t *testing.T) {
 	if err != nil {
 		log.Fatalf("failed to create temporary directory: %v", err)
 	}
-	defer singularitye2e.Privileged(func(t *testing.T) {
+	defer e2e.Privileged(func(t *testing.T) {
 		os.RemoveAll(name)
 	})(t)
 
@@ -115,7 +115,7 @@ func Run(t *testing.T) {
 	}
 	testenv.TestDir = name
 
-	if err := singularitye2e.MakeCacheDirs(name); err != nil {
+	if err := e2e.MakeCacheDirs(name); err != nil {
 		t.Fatal(err)
 	}
 
@@ -138,27 +138,32 @@ func Run(t *testing.T) {
 	//
 	// e2e.KillRegistry is called here to ensure that the registry
 	// is stopped after tests run.
-	defer singularitye2e.KillRegistry(t, testenv)
+	defer e2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
 
-	suites := map[string]func(*testing.T){
-		"ACTIONS":  actions.RunE2ETests(testenv),
-		"BUILD":    imgbuild.RunE2ETests(testenv),
-		"DOCKER":   docker.RunE2ETests(testenv),
-		"ENV":      singularityenv.RunE2ETests(testenv),
-		"HELP":     help.RunE2ETests(testenv),
-		"INSPECT":  singularityinspect.RunE2ETests(testenv),
-		"INSTANCE": instance.RunE2ETests(testenv),
-		"OCI":      oci.RunE2ETests(testenv),
-		"PULL":     pull.RunE2ETests(testenv),
-		"PUSH":     push.RunE2ETests(testenv),
-		"REMOTE":   remote.RunE2ETests(testenv),
-		"VERIFY":   singularityverify.RunE2ETests(testenv),
-		"VERSION":  version.RunE2ETests(testenv),
+	suites := map[string]func(e2e.TestEnv) func(*testing.T){
+		"ACTIONS":  actions.RunE2ETests,
+		"BUILD":    imgbuild.RunE2ETests,
+		"DOCKER":   docker.RunE2ETests,
+		"ENV":      singularityenv.RunE2ETests,
+		"HELP":     help.RunE2ETests,
+		"INSPECT":  singularityinspect.RunE2ETests,
+		"INSTANCE": instance.RunE2ETests,
+		"OCI":      oci.RunE2ETests,
+		"PULL":     pull.RunE2ETests,
+		"PUSH":     push.RunE2ETests,
+		"REMOTE":   remote.RunE2ETests,
+		"VERIFY":   singularityverify.RunE2ETests,
+		"VERSION":  version.RunE2ETests,
 	}
 
 	for name, fn := range suites {
-		t.Run(name, fn)
+		name := name
+		fn := fn(testenv)
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			fn(t)
+		})
 	}
 }
