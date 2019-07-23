@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -20,11 +19,9 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/pkg/build/types"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
@@ -149,32 +146,13 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 	return nil
 }
 
-func getMksquashfsPath() (string, error) {
-	// Parse singularity configuration file
-	c := &singularityConfig.FileConfig{}
-	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
-	}
-
-	// p is either "" or the string value in the conf file
-	p := c.MksquashfsPath
-
-	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
-	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
-		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
-	}
-
-	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
-	return exec.LookPath(p)
-}
-
 // Assemble creates a SIF image from a Bundle
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	sylog.Infof("Creating SIF file...")
 
 	var fsPath string
 
-	mksquashfs, err := getMksquashfsPath()
+	mksquashfs, err := squashfs.GetPath()
 	if err != nil {
 		return fmt.Errorf("while searching for mksquashfs: %v", err)
 	}
