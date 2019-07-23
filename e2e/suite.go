@@ -19,33 +19,37 @@ import (
 
 	singularitykey "github.com/sylabs/singularity/e2e/key"
 
-	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
+	/*
+		singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 
-	singularityverify "github.com/sylabs/singularity/e2e/verify"
+		singularityverify "github.com/sylabs/singularity/e2e/verify"
 
-	"github.com/sylabs/singularity/e2e/actions"
+		"github.com/sylabs/singularity/e2e/actions"
 
-	"github.com/sylabs/singularity/e2e/docker"
+		"github.com/sylabs/singularity/e2e/docker"
 
-	singularityenv "github.com/sylabs/singularity/e2e/env"
+		singularityenv "github.com/sylabs/singularity/e2e/env"
 
-	"github.com/sylabs/singularity/e2e/help"
+		"github.com/sylabs/singularity/e2e/help"
 
-	"github.com/sylabs/singularity/e2e/imgbuild"
+		"github.com/sylabs/singularity/e2e/imgbuild"
 
-	"github.com/sylabs/singularity/e2e/instance"
+		"github.com/sylabs/singularity/e2e/instance"
+
+
+		"github.com/sylabs/singularity/e2e/pull"
+
+		"github.com/sylabs/singularity/e2e/push"
+
+		"github.com/sylabs/singularity/e2e/remote"
+
+		version "github.com/sylabs/singularity/e2e/version"
+
+		"github.com/sylabs/singularity/e2e/oci"
+
+	*/
 
 	singularitye2e "github.com/sylabs/singularity/e2e/internal/e2e"
-
-	"github.com/sylabs/singularity/e2e/pull"
-
-	"github.com/sylabs/singularity/e2e/push"
-
-	"github.com/sylabs/singularity/e2e/remote"
-
-	version "github.com/sylabs/singularity/e2e/version"
-
-	"github.com/sylabs/singularity/e2e/oci"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 
@@ -145,8 +149,8 @@ func Run(t *testing.T) {
 	// RunE2ETests by functionality
 
 	suites := map[string]func(*testing.T){
-		"KEY":      singularitykey.RunE2ETests(testenv),
-		"ACTIONS":  actions.RunE2ETests(testenv),
+		"KEY": singularitykey.RunE2ETests(testenv),
+		/*"ACTIONS":  actions.RunE2ETests(testenv),
 		"BUILD":    imgbuild.RunE2ETests(testenv),
 		"DOCKER":   docker.RunE2ETests(testenv),
 		"ENV":      singularityenv.RunE2ETests(testenv),
@@ -158,7 +162,7 @@ func Run(t *testing.T) {
 		"PUSH":     push.RunE2ETests(testenv),
 		"REMOTE":   remote.RunE2ETests(testenv),
 		"VERIFY":   singularityverify.RunE2ETests(testenv),
-		"VERSION":  version.RunE2ETests(testenv),
+		"VERSION":  version.RunE2ETests(testenv),*/
 	}
 
 	for name, fn := range suites {
