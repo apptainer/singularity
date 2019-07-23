@@ -17,6 +17,8 @@ import (
 	"syscall"
 	"testing"
 
+	singularitykey "github.com/sylabs/singularity/e2e/key"
+
 	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 
 	singularityverify "github.com/sylabs/singularity/e2e/verify"
@@ -141,6 +143,10 @@ func Run(t *testing.T) {
 	defer singularitye2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
+
+	t.Run("KEY", singularitykey.RunE2ETests(testenv))
+
+	return
 
 	t.Run("VERIFY", singularityverify.RunE2ETests(testenv))
 
