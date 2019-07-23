@@ -91,12 +91,15 @@ func TestEncrypt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := dev.EncryptFilesystem(tt.path, tt.key)
+			devPath, err := dev.EncryptFilesystem(tt.path, tt.key)
 			if tt.shallPass && err != nil {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, err)
 			}
 			if !tt.shallPass && err == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
+			}
+			if tt.shallPass {
+				err = dev.CloseCryptDevice(devPath)
 			}
 		})
 	}
