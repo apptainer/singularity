@@ -22,7 +22,7 @@ func GetPath() (string, error) {
 	// Parse singularity configuration file
 	c := &singularityConfig.FileConfig{}
 	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
+		return "", fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
 	// p is either "" or the string value in the conf file
