@@ -8,10 +8,19 @@ package crypt
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
 )
 
 func TestEncrypt(t *testing.T) {
+	test.EnsurePrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	dev := &Device{}
 
 	emptyFile, err := ioutil.TempFile("", "")
@@ -20,6 +29,39 @@ func TestEncrypt(t *testing.T) {
 	}
 	emptyFile.Close()
 	defer os.Remove(emptyFile.Name())
+
+	// Create a dummy squashfs file
+	dummyDir, err := ioutil.TempDir("", "dummy-fs-")
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %s", err)
+	}
+	defer os.RemoveAll(dummyDir)
+	dummyRootDir := filepath.Join(dummyDir, "root")
+	err = os.MkdirAll(dummyRootDir, 0755)
+	if err != nil {
+		t.Fatalf("failed to create %s: %s", dummyRootDir, err)
+	}
+	dummyRootFile := filepath.Join(dummyRootDir, "EMPTYFILE")
+	err = fs.Touch(dummyRootFile)
+	if err != nil {
+		t.Fatalf("failed to create dummy file %s: %s", dummyRootFile, err)
+	}
+	squashfsBin, err := squashfs.GetPath()
+	if err != nil {
+		t.Fatalf("failed to get path to squashfs binary: %s", err)
+	}
+	tempTargetFile, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("failed to create temporary file: %s", err)
+	}
+	tempTargetFile.Close()
+	defer os.Remove(tempTargetFile.Name())
+	squashfsArgs := []string{dummyDir, tempTargetFile.Name(), "-noappend"}
+	cmd := exec.Command(squashfsBin, squashfsArgs...)
+	err = cmd.Run()
+	if err != nil {
+		t.Fatalf("failed to create squashfs file: %s", err)
+	}
 
 	tests := []struct {
 		name      string
@@ -38,6 +80,12 @@ func TestEncrypt(t *testing.T) {
 			path:      emptyFile.Name(),
 			key:       []byte("dummyKey"),
 			shallPass: false,
+		},
+		{
+			name:      "valid file",
+			path:      tempTargetFile.Name(),
+			key:       []byte("dummyKey"),
+			shallPass: true,
 		},
 	}
 
