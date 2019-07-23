@@ -235,8 +235,8 @@ github.com/sylabs/scs-build-client v0.0.4 h1:y1rer0Mq+GyAFPKn0szpayJfUSTD7SGgRB3
 github.com/sylabs/scs-build-client v0.0.4/go.mod h1:TxxLkoW6RjzcQXllPAbsA5zmljX/YsHLlQ1gZ5Lkogg=
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec h1:dX97dpvwSAF8AFG1f33b1dUueCGc1onK94FUP5pHUsw=
 github.com/sylabs/scs-key-client v0.3.0-0.20190509220229-bce3b050c4ec/go.mod h1:nMF8PplFD5ZmDz//GHjaip7+MlQ0z4Qe0RCzaT5Xjes=
-github.com/sylabs/scs-library-client v0.4.0 h1:6qnbcnW8VGrmki3zP5o9nAy8c0gFUP35z2A0ahvdYjw=
-github.com/sylabs/scs-library-client v0.4.0/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
+github.com/sylabs/scs-library-client v0.4.1 h1:D9tMqVBs7M2mTfpGrRlHFxp6iL0Ri9PgrjvuPxmjwb4=
+github.com/sylabs/scs-library-client v0.4.1/go.mod h1:89vH+0RQemCEcOnaUUQwnsRVQQmupVh8VQlBbW0ZHss=
 github.com/sylabs/sif v1.0.5 h1:33QYALonFWAIfW1pr1luwyI90UyVVAn7rCJWyQDgIho=
 github.com/sylabs/sif v1.0.5/go.mod h1:YSrurscNfLqBihRfK4gWYv22UThLcwK76nXg3fLP43o=
 github.com/syndtr/gocapability v0.0.0-20180223013746-33e07d32887e h1:QjF5rxNgRSLHJDwKUvfYP3qOx1vTDzUi/+oSC8FXnCI=
