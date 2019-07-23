@@ -168,7 +168,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path, arch st
 
 	if !image.Uploaded {
 		c.Logger.Log("Now uploading to the library")
-		if c.isV2API(ctx) {
+		if c.apiAtLeast(ctx, APIVersionV2Upload) {
 			// use v2 post file api
 			metadata := map[string]string{
 				"md5sum": md5Checksum,
@@ -186,7 +186,7 @@ func (c *Client) UploadImage(ctx context.Context, r io.ReadSeeker, path, arch st
 
 	c.Logger.Logf("Setting tags against uploaded image")
 
-	if c.isV2API(ctx) {
+	if c.apiAtLeast(ctx, APIVersionV2ArchTags) {
 		return c.setTagsV2(ctx, container.ID, arch, image.ID, append(tags, parsedTags...))
 	}
 	c.Logger.Logf("This library does not support multiple architecture per tag.")

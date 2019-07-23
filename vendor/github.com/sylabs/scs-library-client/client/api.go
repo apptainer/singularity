@@ -302,7 +302,7 @@ func (c *Client) setTagV2(ctx context.Context, containerID string, t ArchImageTa
 func (c *Client) GetImage(ctx context.Context, arch string, imageRef string) (*Image, error) {
 	apiPath := "/v1/images/" + imageRef
 	apiURL, err := url.Parse(apiPath)
-	if err != nil{
+	if err != nil {
 		return nil, fmt.Errorf("error constructing API url: %v", err)
 	}
 	q := apiURL.Query()
