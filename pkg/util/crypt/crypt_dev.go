@@ -143,7 +143,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("unable to format crypt device: %s", cryptF.Name())
+		return "", fmt.Errorf("unable to format crypt device %s: %s", cryptF.Name(), err)
 	}
 
 	nextCrypt, err := crypt.Open(key, loop)
