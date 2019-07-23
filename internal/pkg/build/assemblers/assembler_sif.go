@@ -17,7 +17,7 @@ import (
 	"strings"
 	"syscall"
 
-	squashfs "github.com/sylabs/singularity/pkg/util/fs/squashfs"
+	squashfs "github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
