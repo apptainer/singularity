@@ -15,7 +15,23 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
-const zyppDef = "../../../../examples/opensuse/Singularity"
+var zyppDef = [...]string{
+	"../../../../examples/opensuse/Singularity",
+	"../../../../examples/sle/Singularity",
+}
+
+func testForSLE(t *testing.T, b *types.Bundle) {
+	if _, ok := b.Recipe.Header["product"]; ok {
+		if _, err := exec.LookPath("SUSEConnect"); err != nil {
+			t.Skip("skipping test, SUSEConnect not found")
+		}
+		user := b.Recipe.Header["user"]
+		regcode := b.Recipe.Header["user"]
+		if user == "" || regcode == "" {
+			t.Skip("skipping test: specify valid SLE user and regcode")
+		}
+	}
+}
 
 func TestZypperConveyor(t *testing.T) {
 	if testing.Short() {
@@ -28,30 +44,34 @@ func TestZypperConveyor(t *testing.T) {
 		t.Skip("skipping test, zypper not found")
 	}
 
-	defFile, err := os.Open(zyppDef)
-	if err != nil {
-		t.Fatalf("unable to open file %s: %v\n", zyppDef, err)
-	}
-	defer defFile.Close()
+	for _, defName := range zyppDef {
+		defFile, err := os.Open(defName)
+		if err != nil {
+			t.Fatalf("unable to open file %s: %v\n", defName, err)
+		}
+		defer defFile.Close()
 
-	// create bundle to build into
-	b, err := types.NewBundle("", "sbuild-zypper")
-	if err != nil {
-		return
-	}
+		// create bundle to build into
+		b, err := types.NewBundle("", "sbuild-zypper")
+		if err != nil {
+			return
+		}
 
-	b.Recipe, err = parser.ParseDefinitionFile(defFile)
-	if err != nil {
-		t.Fatalf("failed to parse definition file %s: %v\n", zyppDef, err)
-	}
+		b.Recipe, err = parser.ParseDefinitionFile(defFile)
+		if err != nil {
+			t.Fatalf("failed to parse definition file %s: %v\n", defName, err)
+		}
 
-	zc := &ZypperConveyorPacker{}
+		testForSLE(t, b)
 
-	err = zc.Get(b)
-	// clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(zc.b.Path)
-	if err != nil {
-		t.Fatalf("failed to Get from %s: %v\n", zyppDef, err)
+		zc := &ZypperConveyorPacker{}
+
+		err = zc.Get(b)
+		// clean up tmpfs since assembler isnt called
+		defer os.RemoveAll(zc.b.Path)
+		if err != nil {
+			t.Fatalf("failed to Get from %s: %v\n", defName, err)
+		}
 	}
 }
 
@@ -62,34 +82,38 @@ func TestZypperPacker(t *testing.T) {
 		t.Skip("skipping test, zypper not found")
 	}
 
-	defFile, err := os.Open(zyppDef)
-	if err != nil {
-		t.Fatalf("unable to open file %s: %v\n", zyppDef, err)
-	}
-	defer defFile.Close()
+	for _, defName := range zyppDef {
+		defFile, err := os.Open(defName)
+		if err != nil {
+			t.Fatalf("unable to open file %s: %v\n", defName, err)
+		}
+		defer defFile.Close()
 
-	// create bundle to build into
-	b, err := types.NewBundle("", "sbuild-zypper")
-	if err != nil {
-		return
-	}
+		// create bundle to build into
+		b, err := types.NewBundle("", "sbuild-zypper")
+		if err != nil {
+			return
+		}
 
-	b.Recipe, err = parser.ParseDefinitionFile(defFile)
-	if err != nil {
-		t.Fatalf("failed to parse definition file %s: %v\n", zyppDef, err)
-	}
+		b.Recipe, err = parser.ParseDefinitionFile(defFile)
+		if err != nil {
+			t.Fatalf("failed to parse definition file %s: %v\n", defName, err)
+		}
 
-	zcp := &ZypperConveyorPacker{}
+		testForSLE(t, b)
 
-	err = zcp.Get(b)
-	// clean up tmpfs since assembler isnt called
-	defer os.RemoveAll(zcp.b.Path)
-	if err != nil {
-		t.Fatalf("failed to Get from %s: %v\n", zyppDef, err)
-	}
+		zcp := &ZypperConveyorPacker{}
 
-	_, err = zcp.Pack()
-	if err != nil {
-		t.Fatalf("failed to Pack from %s: %v\n", zyppDef, err)
+		err = zcp.Get(b)
+		// clean up tmpfs since assembler isnt called
+		defer os.RemoveAll(zcp.b.Path)
+		if err != nil {
+			t.Fatalf("failed to Get from %s: %v\n", defName, err)
+		}
+
+		_, err = zcp.Pack()
+		if err != nil {
+			t.Fatalf("failed to Pack from %s: %v\n", defName, err)
+		}
 	}
 }

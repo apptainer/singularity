@@ -93,9 +93,9 @@ func (c *ctx) testDockerPulls(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("pull"),
 			e2e.WithArgs(append(tt.options, tt.image, tt.uri)...),
 			e2e.PostRun(func(t *testing.T) {
@@ -118,10 +118,8 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"DockerAUFS",
-		e2e.WithoutSubTest(),
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-aufs-sanity"}...),
 		e2e.ExpectExit(0),
@@ -149,9 +147,9 @@ func (c *ctx) testDockerAUFS(t *testing.T) {
 	}
 
 	for _, tt := range fileTests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -164,10 +162,8 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"DockerPermissions",
-		e2e.WithoutSubTest(),
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-userperms"}...),
 		e2e.ExpectExit(0),
@@ -194,9 +190,9 @@ func (c *ctx) testDockerPermissions(t *testing.T) {
 		},
 	}
 	for _, tt := range fileTests {
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -209,10 +205,8 @@ func (c *ctx) testDockerWhiteoutSymlink(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
 	defer os.Remove(imagePath)
 
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"DockerWhiteoutSymlink",
-		e2e.WithoutSubTest(),
 		e2e.WithCommand("build"),
 		e2e.WithArgs([]string{imagePath, "docker://dctrud/docker-singularity-linkwh"}...),
 		e2e.PostRun(func(t *testing.T) {
@@ -273,9 +267,9 @@ func (c *ctx) testDockerDefFile(t *testing.T) {
 			From:      tt.from,
 		})
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
+			e2e.AsSubtest(tt.name),
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs([]string{imagePath, deffile}...),
@@ -341,9 +335,8 @@ func (c *ctx) testDockerRegistry(t *testing.T) {
 	for _, tt := range tests {
 		defFile := e2e.PrepareDefFile(tt.dfd)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs([]string{imagePath, defFile}...),
