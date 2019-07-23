@@ -18,7 +18,6 @@ import (
 	"syscall"
 
 	squashfs "github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
-
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
