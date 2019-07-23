@@ -8,13 +8,19 @@ package key
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
 type ctx struct {
-	env e2e.TestEnv
+	env                    e2e.TestEnv
+	publicExportPath       string
+	publicExportASCIIPath  string
+	privateExportPath      string
+	privateExportASCIIPath string
+	keyRing                string
 }
 
 func (c *ctx) singularityKeyList(t *testing.T) {
@@ -68,24 +74,95 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 	}
 }
 
-func (c *ctx) singularityKeyRemovePub(t *testing.T) {
+// singularityKeyExport will export a private, and public (binary and ASCII) key.
+func (c *ctx) singularityKeyExport(t *testing.T) {
+	tests := []struct {
+		name       string
+		armor      bool
+		secret     bool
+		exportPath string
+		consoleOps []e2e.SingularityConsoleOp
+	}{
+		{
+			name:       "export public binary",
+			exportPath: c.publicExportPath,
+			armor:      false,
+			secret:     false,
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("0"),
+			},
+		},
+		{
+			name:       "export private binary",
+			exportPath: c.publicExportPath,
+			armor:      false,
+			secret:     true,
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("0"),
+				e2e.ConsoleSendLine("e2etests"),
+			},
+		},
+	}
 
+	prepCmd := func(exportPath string, secret, armor bool) []string {
+		cmd := []string{"export"}
+
+		if armor {
+			cmd = append(cmd, "--armor")
+		}
+		if secret {
+			cmd = append(cmd, "--secret")
+		}
+
+		cmd = append(cmd, exportPath)
+
+		return cmd
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(prepCmd(tt.exportPath, tt.secret, tt.armor)...),
+			e2e.ConsoleRun(tt.consoleOps...),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
+func (c *ctx) singularityResetKeyring(t *testing.T) {
 	fmt.Println("EENNNVVVV: ", os.Getenv("SINGULARITY_SYPGPDIR"))
+	fmt.Println("Removing: ", c.keyRing)
 
+	//if err := os.RemoveAll(c.keyRing); err != nil {
+	//	t.Fatalf("unable to remove tmp keyring: %s", err)
+	//}
 }
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	c := &ctx{
-		env: env,
+		env:                    env,
+		publicExportPath:       filepath.Join(env.TestDir, "public_key.asc"),
+		publicExportASCIIPath:  filepath.Join(env.TestDir, "public_ascii_key.asc"),
+		privateExportPath:      filepath.Join(env.TestDir, "private_key.asc"),
+		privateExportASCIIPath: filepath.Join(env.TestDir, "private_ascii_key.asc"),
+		keyRing:                filepath.Join(env.TestDir, "sypgp-test-keyring"),
 	}
+
+	if err := os.Setenv("SINGULARITY_SYPGPDIR", c.keyRing); err != nil {
+		panic(fmt.Sprintf("unable to set keyring: %s", err))
+	}
+
+	fmt.Println("NEW__EENNNVVVV: ", os.Getenv("SINGULARITY_SYPGPDIR"))
 
 	return func(t *testing.T) {
 		t.Run("singularityKeyList", c.singularityKeyList)
 		t.Run("singularityKeyNewpair", c.singularityKeyNewpair)
 		t.Run("singularityKeyList", c.singularityKeyList)
-		t.Run("singularityKeyRemovePub", c.singularityKeyRemovePub)
-		//t.Run("singularityKeyImport", c.singularityKey)
-		//t.Run("singularityKeyExport", c.singularityKey)
+		t.Run("singularityKeyExport", c.singularityKeyExport)
+		t.Run("singularityResetKeyring", c.singularityResetKeyring)
+		//t.Run("singularityKeyList", c.singularityKeyList)
 	}
 }
