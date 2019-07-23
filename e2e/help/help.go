@@ -15,7 +15,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 	"gotest.tools/assert"
 	"gotest.tools/golden"
 )
@@ -24,96 +23,120 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-var helpContentTests = []struct {
+var helpOciContentTests = []struct {
+	name string
 	cmds []string
 }{
 	// singularity oci
-	{[]string{"help", "oci"}},
-	{[]string{"help", "oci", "attach"}},
-	{[]string{"help", "oci", "create"}},
-	{[]string{"help", "oci", "delete"}},
-	{[]string{"help", "oci", "exec"}},
-	{[]string{"help", "oci", "kill"}},
-	{[]string{"help", "oci", "mount"}},
-	{[]string{"help", "oci", "pause"}},
-	{[]string{"help", "oci", "resume"}},
-	{[]string{"help", "oci", "run"}},
-	{[]string{"help", "oci", "start"}},
-	{[]string{"help", "oci", "state"}},
-	{[]string{"help", "oci", "umount"}},
-	{[]string{"help", "oci", "update"}},
+	{"HelpOci", []string{"oci"}},
+	{"HelpOciAttach", []string{"oci", "attach"}},
+	{"HelpOciCreate", []string{"oci", "create"}},
+	{"HelpOciDelete", []string{"oci", "delete"}},
+	{"HelpOciExec", []string{"oci", "exec"}},
+	{"HelpOciKill", []string{"oci", "kill"}},
+	{"HelpOciMount", []string{"oci", "mount"}},
+	{"HelpOciPause", []string{"oci", "pause"}},
+	{"HelpOciResume", []string{"oci", "resume"}},
+	{"HelpOciRun", []string{"oci", "run"}},
+	{"HelpOciStart", []string{"oci", "start"}},
+	{"HelpOciState", []string{"oci", "state"}},
+	{"HelpOciUmount", []string{"oci", "umount"}},
+	{"HelpOciUpdate", []string{"oci", "update"}},
 }
 
-func (c *ctx) testHelpContent(t *testing.T) {
-	for _, tc := range helpContentTests {
-		name := fmt.Sprintf("%s.txt", strings.Join(tc.cmds, "-"))
+func (c *ctx) testHelpOciContent(t *testing.T) {
+	for _, tc := range helpOciContentTests {
 
-		t.Run(name, func(t *testing.T) {
+		name := fmt.Sprintf("help-%s.txt", strings.Join(tc.cmds, "-"))
+
+		testHelpOciContentFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			path := filepath.Join("help", name)
-
-			c := exec.Command(c.env.CmdPath, tc.cmds...)
-
-			got := c.Run(t).Stdout()
-
+			got := string(r.Stdout)
 			assert.Assert(t, golden.String(got, path))
-		})
+		}
+
+		c.env.RunSingularity(t, e2e.AsSubtest(tc.name), e2e.WithCommand("help"), e2e.WithArgs(tc.cmds...),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() {
+					t.Fatalf("Failed to run help command on test: %s", tc.name)
+				}
+			}),
+			e2e.ExpectExit(0, testHelpOciContentFn))
+
 	}
 }
 
 func (c *ctx) testCommands(t *testing.T) {
-	tests := []struct {
+	testCommands := []struct {
 		name string
-		argv []string
+		cmd  string
 	}{
-		{"Apps", []string{"apps"}},
-		{"Bootstrap", []string{"bootstrap"}},
-		{"Build", []string{"build"}},
-		{"Check", []string{"check"}},
-		{"Create", []string{"create"}},
-		{"Exec", []string{"exec"}},
-		{"Inspect", []string{"inspect"}},
-		{"Mount", []string{"mount"}},
-		{"Pull", []string{"pull"}},
-		{"Run", []string{"run"}},
-		{"Shell", []string{"shell"}},
-		{"Test", []string{"test"}},
-		{"InstanceDotStart", []string{"instance.start"}},
-		{"InstanceDotList", []string{"instance.list"}},
-		{"InstanceDotStop", []string{"instance.stop"}},
-		{"InstanceStart", []string{"instance", "start"}},
-		{"InstanceList", []string{"instance", "list"}},
-		{"InstanceStop", []string{"instance", "stop"}},
+		{"Build", "build"},
+		{"Cache", "cache"},
+		{"Capability", "capability"},
+		{"Exec", "exec"},
+		{"Instance", "instance"},
+		{"Key", "key"},
+		{"OCI", "oci"},
+		{"Plugin", "plugin"},
+		{"Inspect", "inspect"},
+		{"Pull", "pull"},
+		{"Push", "push"},
+		{"Run", "run"},
+		{"Run-help", "run-help"},
+		{"Remote", "remote"},
+		{"Search", "search"},
+		{"Shell", "shell"},
+		{"SIF", "sif"},
+		{"Sign", "sign"},
+		{"Test", "test"},
+		{"Verify", "verify"},
+		{"InstanceStart", "instance start"},
+		{"InstanceList", "instance list"},
+		{"InstanceStop", "instance stop"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tests := []struct {
-				name string
-				argv []string
-				skip bool
-			}{
-				{"PostFlagShort", append(tt.argv, "-h"), true}, // TODO
-				{"PostFlagLong", append(tt.argv, "--help"), false},
-				{"PostCommand", append(tt.argv, "help"), false},
-				{"PreFlagShort", append([]string{"-h"}, tt.argv...), false},
-				{"PreFlagLong", append([]string{"--help"}, tt.argv...), false},
-				{"PreCommand", append([]string{"help"}, tt.argv...), false},
-			}
-			for _, tt := range tests {
-				if tt.skip && !c.env.RunDisabled {
-					t.Skip("disabled until issue addressed")
-				}
+	for _, tt := range testCommands {
 
-				t.Run(tt.name, func(t *testing.T) {
-					cmd := exec.Command(c.env.CmdPath, tt.argv...)
-					if res := cmd.Run(t); res.Error != nil {
-						t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
-							res,
-							res.Error)
-					}
-				})
+		testFlags := []struct {
+			name string
+			argv string
+			skip bool
+		}{
+			{"PostFlagShort", "-h", true}, // TODO
+			{"PostFlagLong", "--help", false},
+			{"PostCommand", "help", false},
+			{"PreFlagShort", "-h", false},
+			{"PreFlagLong", "--help", false},
+			{"PreCommand", "help", false},
+		}
+
+		for _, tf := range testFlags {
+
+			var cmdRun, argRun string
+
+			if tf.name == "PostCommand" || tf.name == "PreCommand" {
+				cmdRun = tf.argv
+				argRun = ""
+			} else {
+				cmdRun = tt.cmd
+				argRun = tf.argv
 			}
-		})
+
+			c.env.RunSingularity(t, e2e.AsSubtest(tf.name), e2e.WithCommand(cmdRun), e2e.WithArgs(argRun),
+				e2e.PostRun(func(t *testing.T) {
+					if t.Failed() {
+						t.Fatalf("Failed to run help flag while running command:\n%s\n", tt.name)
+					}
+				}),
+				e2e.PreRun(func(t *testing.T) {
+					if tf.skip && !c.env.RunDisabled {
+						t.Skip("disabled until issue addressed")
+					}
+				}),
+				e2e.ExpectExit(0))
+		}
+
 	}
 
 }
@@ -134,49 +157,43 @@ func (c *ctx) testFailure(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(c.env.CmdPath, tt.argv...)
-			if res := cmd.Run(t); res.Error == nil {
-				t.Fatalf("While running command:\n%s\nUnexpected success", res)
-			}
-		})
+
+		c.env.RunSingularity(t, e2e.AsSubtest(tt.name), e2e.WithArgs(tt.argv...),
+			e2e.PostRun(func(t *testing.T) {
+				if !t.Failed() {
+					t.Fatalf("While running command:\n%s\nUnexpected success", tt.name)
+				}
+			}),
+			e2e.ExpectExit(0))
 	}
 
 }
 
 func (c *ctx) testSingularity(t *testing.T) {
 	tests := []struct {
-		name       string
-		argv       []string
-		shouldPass bool
+		name string
+		argv []string
+		exit int
 	}{
-		{"NoCommand", []string{}, false},
-		{"FlagShort", []string{"-h"}, true},
-		{"FlagLong", []string{"--help"}, true},
-		{"Command", []string{"help"}, true},
+		{"NoCommand", []string{}, 1},
+		{"FlagShort", []string{"-h"}, 0},
+		{"FlagLong", []string{"--help"}, 0},
+		{"Command", []string{"help"}, 0},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cmd := exec.Command(c.env.CmdPath, tt.argv...)
-			switch res := cmd.Run(t); {
-			case res.Error == nil && tt.shouldPass:
-				// expecting PASS, passed => PASS
 
-			case res.Error != nil && !tt.shouldPass:
-				// expecting FAIL, failed => PASS
-
-			case res.Error == nil && !tt.shouldPass:
-				// expecting PASS, failed => FAIL
-				t.Fatalf("While running command:\n%s\nUnexpected failure: %+v",
-					res,
-					res.Error)
-
-			case res.Error != nil && tt.shouldPass:
-				// expecting FAIL, passed => FAIL
-				t.Fatalf("While running command:\n%s\nUnexpected success", res)
+		printSuccessOrFailureFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
+			if r.Stdout != nil {
+				t.Logf(string(r.Stdout) + "\n")
 			}
-		})
+			if r.Stderr != nil {
+				t.Logf(string(r.Stderr) + "\n")
+			}
+		}
+
+		c.env.RunSingularity(t, e2e.AsSubtest(tt.name), e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit, printSuccessOrFailureFn))
 	}
 
 }
@@ -192,6 +209,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		t.Run("testCommands", c.testCommands)
 		t.Run("testFailure", c.testFailure)
 		t.Run("testSingularity", c.testSingularity)
-		t.Run("testHelpContent", c.testHelpContent)
+		t.Run("testHelpContent", c.testHelpOciContent)
 	}
 }

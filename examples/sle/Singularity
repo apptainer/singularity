@@ -1,0 +1,38 @@
+BootStrap: zypper
+OSVersion: 12.4
+Product: SLE-HPC/%{OSVERSION}/x86_64
+User: 
+Regcode: 
+# MirrorURL: 
+#  Modules: sle-module-basesystem,sle-module-server-applications,sle-module-web-scripting,sle-module-hpc
+Include: zypper
+# Otherurl0: 
+# Otherurl1: 
+ProductPGP: -----BEGIN PGP PUBLIC KEY BLOCK-----\n\
+Version: rpm-4.11.2 (NSS-3)\n\
+\n\
+mQENBFEKlmsBCADbpZZbbSC5Zi+HxCR/ynYsVxU5JNNiSSZabN5GMgc9Z0hxeXxp\n\
+YWvFoE/4n0+IXIsp83iKvxf06Eu8je/DXp0lMqDZu7WiT3XXAlkOPSNV4akHTDoY\n\
+91SJaZCpgUJ7K1QXOPABNbREsAMN1a7rxBowjNjBUyiTJ2YuvQRLtGdK1kExsVma\n\
+hieh/QxpoDyYd5w/aky3z23erCoEd+OPfAqEHd5tQIa6LOosa63BSCEl3milJ7J9\n\
+vDmoGPAoS6ui7S2R5X4/+PLN8Mm2kOBrFjhmL93LX0mrGCMxsNsKgP6zabYKQEb8\n\
+L028SXvl7EGoA+Vw5Vd3wIGbM73PfbgNrXjfABEBAAG0KFN1U0UgUGFja2FnZSBT\n\
+aWduaW5nIEtleSA8YnVpbGRAc3VzZS5kZT6JATwEEwECACYCGwMGCwkIBwMCBBUC\n\
+CAMEFgIDAQIeAQIXgAUCWEfrHwUJDsIitAAKCRBwr56BOdt8gpqUB/wPSSS5BcDu\n\
+Oi4n02cj4Hdt7WITKBjjo0lG1fXG1ppx1wOST+s8FertMVFY53TW6FGjcYtwVOIq\n\
+rsMYiV6kf1NxUV/jcAy7VmC5EZnO0R/D3sT4Oh5hsLtERauZolK5BZmd0S51Qa8e\n\
+TxZ5mX9PL2i3s/ShETc30drf83ugc7B4yZPNQWXNDPgGcC+hEeC5qw48RzHYIpUt\n\
+RzHmefR5Z3ioTUbDlzy+SGP2uA7mhR4Lfk/df5fYxWfCoKlyGjtrvA65cB+Pksyn\n\
+xrAeBuB+vBM+KnDrxW2Sn4AbWkzH//dfz9OJDJu4UM91hb7qxM0OkrXHQV3iNqzg\n\
+MDEhky/9NqMy\n\
+=GdP5\n\
+-----END PGP PUBLIC KEY BLOCK-----
+
+%runscript
+    echo "This is what happens when you run the container..."
+
+
+%post
+    echo "Hello from inside the container"
+    zypper lr -d
+    SUSEConnect -l

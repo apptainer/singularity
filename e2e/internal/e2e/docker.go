@@ -32,23 +32,29 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 		dockerDefinition := "testdata/Docker_registry.def"
 		dockerImage := filepath.Join(env.TestDir, "docker-e2e.sif")
 
-		RunSingularity(
+		env.RunSingularity(
 			t,
-			"BuildDockerRegistry",
-			WithoutSubTest(),
 			WithPrivileges(true),
 			WithCommand("build"),
 			WithArgs("-s", dockerImage, dockerDefinition),
 			ExpectExit(0),
 		)
 
-		RunSingularity(
+		var umountFn func(*testing.T)
+
+		env.RunSingularity(
 			t,
-			"RunDockerRegistry",
-			WithoutSubTest(),
 			WithPrivileges(true),
 			WithCommand("instance start"),
 			WithArgs("-w", "-B", "/sys", dockerImage, dockerInstanceName),
+			PreRun(func(t *testing.T) {
+				umountFn = shadowInstanceDirectory(t, env)
+			}),
+			PostRun(func(t *testing.T) {
+				if umountFn != nil {
+					umountFn(t)
+				}
+			}),
 			ExpectExit(0),
 		)
 
@@ -71,10 +77,8 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			}
 		}
 
-		RunSingularity(
+		env.RunSingularity(
 			t,
-			"OrasPushTestImage",
-			WithoutSubTest(),
 			WithCommand("push"),
 			WithArgs(env.ImagePath, env.OrasTestImage),
 			ExpectExit(0),
@@ -83,18 +87,26 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 }
 
 // KillRegistry stop and cleanup docker registry.
-func KillRegistry(t *testing.T) {
+func KillRegistry(t *testing.T, env TestEnv) {
 	if !atomic.CompareAndSwapUint32(&registrySetup.up, 1, 0) {
 		return
 	}
 
-	RunSingularity(
+	var umountFn func(*testing.T)
+
+	env.RunSingularity(
 		t,
-		"KillDockerRegistry",
-		WithoutSubTest(),
 		WithPrivileges(true),
 		WithCommand("instance stop"),
 		WithArgs("-s", "KILL", dockerInstanceName),
+		PreRun(func(t *testing.T) {
+			umountFn = shadowInstanceDirectory(t, env)
+		}),
+		PostRun(func(t *testing.T) {
+			if umountFn != nil {
+				umountFn(t)
+			}
+		}),
 		ExpectExit(0),
 	)
 }

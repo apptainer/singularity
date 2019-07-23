@@ -19,6 +19,8 @@ import (
 
 	singularityinspect "github.com/sylabs/singularity/e2e/inspect"
 
+	singularityverify "github.com/sylabs/singularity/e2e/verify"
+
 	"github.com/sylabs/singularity/e2e/actions"
 
 	"github.com/sylabs/singularity/e2e/docker"
@@ -136,31 +138,27 @@ func Run(t *testing.T) {
 	//
 	// e2e.KillRegistry is called here to ensure that the registry
 	// is stopped after tests run.
-	defer singularitye2e.KillRegistry(t)
+	defer singularitye2e.KillRegistry(t, testenv)
 
 	// RunE2ETests by functionality
 
-	t.Run("INSPECT", singularityinspect.RunE2ETests(testenv))
+	suites := map[string]func(*testing.T){
+		"ACTIONS":  actions.RunE2ETests(testenv),
+		"BUILD":    imgbuild.RunE2ETests(testenv),
+		"DOCKER":   docker.RunE2ETests(testenv),
+		"ENV":      singularityenv.RunE2ETests(testenv),
+		"HELP":     help.RunE2ETests(testenv),
+		"INSPECT":  singularityinspect.RunE2ETests(testenv),
+		"INSTANCE": instance.RunE2ETests(testenv),
+		"OCI":      oci.RunE2ETests(testenv),
+		"PULL":     pull.RunE2ETests(testenv),
+		"PUSH":     push.RunE2ETests(testenv),
+		"REMOTE":   remote.RunE2ETests(testenv),
+		"VERIFY":   singularityverify.RunE2ETests(testenv),
+		"VERSION":  version.RunE2ETests(testenv),
+	}
 
-	t.Run("BUILD", imgbuild.RunE2ETests(testenv))
-
-	t.Run("ACTIONS", actions.RunE2ETests(testenv))
-
-	t.Run("DOCKER", docker.RunE2ETests(testenv))
-
-	t.Run("PULL", pull.RunE2ETests(testenv))
-
-	t.Run("PUSH", push.RunE2ETests(testenv))
-
-	t.Run("REMOTE", remote.RunE2ETests(testenv))
-
-	t.Run("INSTANCE", instance.RunE2ETests(testenv))
-
-	t.Run("HELP", help.RunE2ETests(testenv))
-
-	t.Run("ENV", singularityenv.RunE2ETests(testenv))
-
-	t.Run("VERSION", version.RunE2ETests(testenv))
-
-	t.Run("OCI", oci.RunE2ETests(testenv))
+	for name, fn := range suites {
+		t.Run(name, fn)
+	}
 }

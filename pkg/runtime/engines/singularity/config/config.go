@@ -36,7 +36,6 @@ type FileConfig struct {
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
 	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
-	FakerootBaseID          uint64   `default:"4227858432" directive:"fakeroot base id"`
 	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try" directive:"enable overlay"`
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
@@ -44,7 +43,6 @@ type FileConfig struct {
 	LimitContainerGroups    []string `directive:"limit container groups"`
 	LimitContainerPaths     []string `directive:"limit container paths"`
 	AutofsBugPath           []string `directive:"autofs bug path"`
-	FakerootAllowedUsers    []string `directive:"fakeroot allowed users"`
 	RootDefaultCapabilities string   `default:"full" authorized:"full,file,no" directive:"root default capabilities"`
 	MemoryFSType            string   `default:"tmpfs" authorized:"tmpfs,ramfs" directive:"memory fs type"`
 	CniConfPath             string   `directive:"cni configuration path"`
@@ -78,7 +76,7 @@ type JSONConfig struct {
 	Network           string        `json:"network,omitempty"`
 	DNS               string        `json:"dns,omitempty"`
 	Cwd               string        `json:"cwd,omitempty"`
-	EncryptionKey     string        `json:"encryptionKey,omitempty"`
+	EncryptionKey     []byte        `json:"encryptionKey,omitempty"`
 	TargetUID         int           `json:"targetUID,omitempty"`
 	WritableImage     bool          `json:"writableImage,omitempty"`
 	WritableTmpfs     bool          `json:"writableTmpfs,omitempty"`
@@ -121,12 +119,12 @@ func (e *EngineConfig) GetImage() string {
 }
 
 // SetKey sets the key for the image's system partition
-func (e *EngineConfig) SetEncryptionKey(key string) {
+func (e *EngineConfig) SetEncryptionKey(key []byte) {
 	e.JSON.EncryptionKey = key
 }
 
 // GetKey retrieves the key for image's system partition
-func (e *EngineConfig) GetEncryptionKey() string {
+func (e *EngineConfig) GetEncryptionKey() []byte {
 	return e.JSON.EncryptionKey
 }
 
