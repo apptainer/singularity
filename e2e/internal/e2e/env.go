@@ -5,6 +5,8 @@
 
 package e2e
 
+import "testing"
+
 type TestEnv struct {
 	RunDisabled   bool
 	CmdPath       string
@@ -12,4 +14,13 @@ type TestEnv struct {
 	OrasTestImage string
 	TestDir       string
 	TestRegistry  string
+	KeyringDir    string
+}
+
+// RunSingularity is a convinience wrapper for the standalone
+// RunSingularity function, ensuring that RunSingularity gets called
+// with the correct singularity path as specified by the test
+// environment.
+func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
+	RunSingularity(t, env.CmdPath, cmdOps...)
 }

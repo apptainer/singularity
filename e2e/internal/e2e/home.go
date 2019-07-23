@@ -15,3 +15,9 @@ import "testing"
 // in a dedicated mount namespace.
 func SetupHomeDirectories(t *testing.T) {
 }
+
+// shadowInstanceDirectory creates a temporary instances directory which
+// will be bound on top of current user home directory in order to execute
+// a "shadow" instance (eg: docker registry).
+func shadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
+}

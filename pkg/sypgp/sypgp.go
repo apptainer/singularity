@@ -1039,7 +1039,7 @@ func (keyring *Handle) ImportKey(kpath string) error {
 				return err
 			}
 
-			fmt.Printf("Key with fingerprint %X succesfully added to the private keyring\n",
+			fmt.Printf("Key with fingerprint %X successfully added to the private keyring\n",
 				pathEntity.PrivateKey.Fingerprint)
 		}
 
@@ -1052,7 +1052,7 @@ func (keyring *Handle) ImportKey(kpath string) error {
 				return err
 			}
 
-			fmt.Printf("Key with fingerprint %X succesfully added to the public keyring\n",
+			fmt.Printf("Key with fingerprint %X successfully added to the public keyring\n",
 				pathEntity.PrimaryKey.Fingerprint)
 		}
 	}

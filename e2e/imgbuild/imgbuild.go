@@ -6,6 +6,8 @@
 package imgbuild
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -55,9 +57,8 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 		}
 		args = append(args, imagePath, tt.buildSpec)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -132,9 +133,8 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 		}
 		args = append(args, imagePath, tt.buildSpec)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(false),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -149,13 +149,18 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 }
 
 func (c *imgBuildTests) buildLocalImage(t *testing.T) {
-	imagePath1 := path.Join(c.env.TestDir, "container1")
-	imagePath2 := path.Join(c.env.TestDir, "container2")
-	imagePath3 := path.Join(c.env.TestDir, "container3")
+	e2e.EnsureImage(t, c.env)
+
+	tmpdir, err := ioutil.TempDir(c.env.TestDir, "build-local-image.")
+	if err != nil {
+		t.Errorf("Cannot create temporary directory: %+v", err)
+	}
+
+	defer os.RemoveAll(tmpdir)
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
-		From:      imagePath1,
+		From:      c.env.ImagePath,
 	})
 	defer os.Remove(liDefFile)
 
@@ -163,81 +168,62 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 	labels["FOO"] = "bar"
 	liLabelDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
-		From:      imagePath2,
+		From:      c.env.ImagePath,
 		Labels:    labels,
 	})
 	defer os.Remove(liLabelDefFile)
 
-	type testSpec struct {
-		name      string
-		imagePath string
-		buildSpec string
-		force     bool
-		sandbox   bool
-	}
+	sandboxImage := path.Join(tmpdir, "test-sandbox")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithPrivileges(true),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
+		e2e.PostRun(func(t *testing.T) {
+			e2e.ImageVerify(t, c.env.CmdPath, sandboxImage)
+		}),
+		e2e.ExpectExit(0),
+	)
+
+	localSandboxDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
+		Bootstrap: "localimage",
+		From:      sandboxImage,
+		Labels:    labels,
+	})
+	defer os.Remove(localSandboxDefFile)
 
 	tests := []struct {
-		name  string
-		steps []testSpec
+		name      string
+		buildSpec string
 	}{
-		{"SIFToSIF", []testSpec{
-			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false},
-			{"SIF", imagePath2, imagePath1, false, false},
-		}},
-		{"SandboxToSIF", []testSpec{
-			{"BusyBoxSandbox", imagePath1, "../examples/busybox/Singularity", false, true},
-			{"SIF", imagePath2, imagePath1, false, false},
-		}},
-		{"LocalImage", []testSpec{
-			{"BusyBox", imagePath1, "../examples/busybox/Singularity", false, false},
-			{"LocalImage", imagePath2, liDefFile, false, false},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false},
-		}},
-		{"LocalImageSandbox", []testSpec{
-			{"BusyBoxSandbox", imagePath2, "../examples/busybox/Singularity", true, true},
-			{"LocalImageLabel", imagePath3, liLabelDefFile, false, false},
-		}},
+		{"SIFToSIF", c.env.ImagePath},
+		{"SandboxToSIF", sandboxImage},
+		{"LocalImage", liDefFile},
+		{"LocalImageLabel", liLabelDefFile},
+		{"LocalImageSandbox", localSandboxDefFile},
 	}
 
-	for _, tt := range tests {
-
-		// prep targets for removal
-		t.Run(tt.name, e2e.Privileged(func(t *testing.T) {
-			for _, ts := range tt.steps {
-				defer os.RemoveAll(ts.imagePath)
-			}
-
-			for _, ts := range tt.steps {
-				args := []string{}
-				if ts.force {
-					args = append([]string{"--force"}, args...)
-				}
-				if ts.sandbox {
-					args = append([]string{"--sandbox"}, args...)
-				}
-				args = append(args, ts.imagePath, ts.buildSpec)
-
-				e2e.RunSingularity(
-					t,
-					tt.name,
-					e2e.WithPrivileges(true),
-					e2e.WithCommand("build"),
-					e2e.WithArgs(args...),
-					e2e.PostRun(func(t *testing.T) {
-						e2e.ImageVerify(t, c.env.CmdPath, ts.imagePath)
-					}),
-					e2e.ExpectExit(0),
-				)
-			}
-		}))
+	for i, tt := range tests {
+		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithPrivileges(true),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(imagePath, tt.buildSpec),
+			e2e.PostRun(func(t *testing.T) {
+				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+			}),
+			e2e.ExpectExit(0),
+		)
 	}
 }
 
 func (c *imgBuildTests) badPath(t *testing.T) {
 	imagePath := path.Join(c.env.TestDir, "container")
-	e2e.RunSingularity(
+	c.env.RunSingularity(
 		t,
-		"bad path",
 		e2e.WithPrivileges(true),
 		e2e.WithCommand("build"),
 		e2e.WithArgs(imagePath, "/some/dumb/path"),
@@ -432,9 +418,8 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 		}
 		args = append(args, imagePath, defFile)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
@@ -730,9 +715,8 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 		}
 		args = append(args, imagePath, defFile)
 
-		e2e.RunSingularity(
+		c.env.RunSingularity(
 			t,
-			tt.name,
 			e2e.WithPrivileges(true),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),

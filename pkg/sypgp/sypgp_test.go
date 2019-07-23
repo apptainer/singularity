@@ -797,7 +797,7 @@ func TestRemoveKey(t *testing.T) {
 			exists:      true,
 		},
 		{
-			name: "list with many elements, needle at the begining",
+			name: "list with many elements, needle at the beginning",
 			list: openpgp.EntityList{
 				{PrimaryKey: getPublicKey(ecdsaPkDataHex)},
 				{PrimaryKey: getPublicKey(rsaPkDataHex)},

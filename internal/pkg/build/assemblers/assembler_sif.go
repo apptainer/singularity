@@ -32,7 +32,12 @@ import (
 type SIFAssembler struct {
 }
 
-func createSIF(path string, definition, ociConf []byte, squashfile string, encrypted bool) (err error) {
+type encryptionOptions struct {
+	keyURI    string
+	plaintext []byte
+}
+
+func createSIF(path string, definition, ociConf []byte, squashfile string, encOpts *encryptionOptions) (err error) {
 	// general info for the new SIF file creation
 	cinfo := sif.CreateInfo{
 		Pathname:   path,
@@ -93,7 +98,7 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encry
 
 	sifType := sif.FsSquash
 
-	if encrypted {
+	if encOpts != nil {
 		sifType = sif.FsEncryptedSquashfs
 	}
 
@@ -104,6 +109,27 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encry
 
 	// add this descriptor input element to the list
 	cinfo.InputDescr = append(cinfo.InputDescr, parinput)
+
+	if encOpts != nil {
+		data, err := crypt.EncryptKey(encOpts.keyURI, encOpts.plaintext)
+		if err != nil {
+			return fmt.Errorf("while encrypting filesystem key: %s", err)
+		}
+
+		if data != nil {
+			// TODO(mem): replace sif.DataGeneric with
+			// something specific to encryption keys
+			syspartID := uint32(len(cinfo.InputDescr))
+			part := sif.DescriptorInput{
+				Datatype: sif.DataGeneric,
+				Groupid:  sif.DescrDefaultGroup,
+				Link:     syspartID,
+				Data:     data,
+				Size:     int64(len(data)),
+			}
+			cinfo.InputDescr = append(cinfo.InputDescr, part)
+		}
+	}
 
 	// remove anything that may exist at the build destination at last moment
 	os.RemoveAll(path)
@@ -182,10 +208,13 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("while running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
 	}
 
-	encrypted := false
+	var encOpts *encryptionOptions
 
 	if b.Opts.EncryptionKey != "" {
-		encrypted = true
+		plaintext, err := crypt.NewPlaintextKey(b.Opts.EncryptionKey)
+		if err != nil {
+			return fmt.Errorf("unable to obtain encryption key: %+v", err)
+		}
 
 		// A dm-crypt device needs to be created with squashfs
 		cryptDev := &crypt.Device{}
@@ -194,15 +223,21 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		// Detach the following code from the squashfs creation. SIF can be
 		// created first and encrypted after. This gives the flexibility to
 		// encrypt an existing SIF
-		loopPath, err := cryptDev.EncryptFilesystem(fsPath, b.Opts.EncryptionKey)
+		loopPath, err := cryptDev.EncryptFilesystem(fsPath, plaintext)
 		if err != nil {
 			return fmt.Errorf("unable to encrypt filesystem at %s: %+v", fsPath, err)
 		}
 
 		fsPath = loopPath
+
+		encOpts = &encryptionOptions{
+			keyURI:    b.Opts.EncryptionKey,
+			plaintext: plaintext,
+		}
+
 	}
 
-	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encrypted)
+	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
 	if err != nil {
 		return fmt.Errorf("while creating sif: %v", err)
 	}

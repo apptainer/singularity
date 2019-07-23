@@ -28,13 +28,35 @@ func EnsureImage(t *testing.T, env TestEnv) {
 			err)
 	}
 
-	RunSingularity(
+	env.RunSingularity(
 		t,
-		"BuildTestImage",
-		WithoutSubTest(),
 		WithPrivileges(true),
 		WithCommand("build"),
 		WithArgs("--force", env.ImagePath, "testdata/Singularity"),
+		ExpectExit(0),
+	)
+}
+
+// PullImage will pull a test image.
+func PullImage(t *testing.T, env TestEnv, imageURL string, path string) {
+	switch _, err := os.Stat(path); {
+	case err == nil:
+		// OK: file exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: file does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n", path, err)
+	}
+
+	env.RunSingularity(
+		t,
+		WithPrivileges(false),
+		WithCommand("pull"),
+		WithArgs("--force", "--allow-unsigned", path, imageURL),
 		ExpectExit(0),
 	)
 }
