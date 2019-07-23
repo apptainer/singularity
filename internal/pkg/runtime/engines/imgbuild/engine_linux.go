@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,11 +12,13 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
 	imgbuildConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/imgbuild/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
-// EngineOperations implements the engines.EngineOperations interface for
+// EngineOperations implements the the engine.Operations interface for
 // the image build process
 type EngineOperations struct {
 	CommonConfig *config.Common               `json:"-"`
@@ -67,4 +69,17 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	starterConfig.SetMasterPropagateMount(true)
 
 	return nil
+}
+
+func init() {
+	engine.RegisterOperations(
+		imgbuildConfig.Name,
+		&EngineOperations{
+			EngineConfig: &imgbuildConfig.EngineConfig{},
+		},
+	)
+	engine.RegisterRPCMethods(
+		imgbuildConfig.Name,
+		new(server.Methods),
+	)
 }

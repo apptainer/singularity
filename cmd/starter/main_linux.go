@@ -18,29 +18,42 @@ import (
 	"unsafe"
 
 	"github.com/sylabs/singularity/internal/app/starter"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
 	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+
+	// register engines
+	_ "github.com/sylabs/singularity/cmd/starter/engines"
 )
 
-func getEngine(jsonConfig []byte) *engines.Engine {
-	engine, err := engines.NewEngine(jsonConfig)
+func getEngine(jsonConfig []byte) *engine.Engine {
+	engine, err := engine.Get(jsonConfig)
 	if err != nil {
-		sylog.Fatalf("failed to initialize runtime: %s\n", err)
+		sylog.Fatalf("Failed to initialize runtime engine: %s\n", err)
 	}
 	return engine
 }
 
 func startup() {
-	sconfig := starterConfig.NewConfig(starterConfig.SConfig(unsafe.Pointer(C.sconfig)))
+	// global variable defined in cmd/starter/c/starter.c,
+	// C.sconfig points to a shared memory area
+	csconf := unsafe.Pointer(C.sconfig)
+	// initialize starter configuration
+	sconfig := starterConfig.NewConfig(starterConfig.SConfig(csconf))
+	// get JSON configuration originally passed from CLI
 	jsonConfig := sconfig.GetJSONConfig()
+
+	// get engine operations previously registered
+	// by the above import
+	e := getEngine(jsonConfig)
+	sylog.Debugf("%s runtime engine selected", e.EngineName)
 
 	switch C.goexecute {
 	case C.STAGE1:
 		sylog.Verbosef("Execute stage 1\n")
-		starter.StageOne(sconfig, getEngine(jsonConfig))
+		starter.StageOne(sconfig, e)
 	case C.STAGE2:
 		sylog.Verbosef("Execute stage 2\n")
 		if err := sconfig.Release(); err != nil {
@@ -48,7 +61,7 @@ func startup() {
 		}
 
 		mainthread.Execute(func() {
-			starter.StageTwo(int(C.master_socket[1]), getEngine(jsonConfig))
+			starter.StageTwo(int(C.master_socket[1]), e)
 		})
 	case C.MASTER:
 		sylog.Verbosef("Execute master process\n")
@@ -60,7 +73,7 @@ func startup() {
 			sylog.Fatalf("%s", err)
 		}
 
-		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, getEngine(jsonConfig))
+		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), isInstance, pid, e)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 
@@ -68,8 +81,7 @@ func startup() {
 			sylog.Fatalf("%s", err)
 		}
 
-		name := engines.GetName(jsonConfig)
-		starter.RPCServer(int(C.rpc_socket[1]), name)
+		starter.RPCServer(int(C.rpc_socket[1]), e)
 	}
 	sylog.Fatalf("You should not be there\n")
 }
@@ -83,9 +95,6 @@ func init() {
 }
 
 func main() {
-	// initialize runtime engines
-	engines.Init()
-
 	// spawn a goroutine to use mainthread later
 	go startup()
 
