@@ -7,6 +7,8 @@ package singularity
 
 import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/singularity/rpc/server"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 )
 
@@ -26,4 +28,18 @@ func (e *EngineOperations) InitConfig(cfg *config.Common) {
 // field.
 func (e *EngineOperations) Config() config.EngineConfig {
 	return e.EngineConfig
+}
+
+func init() {
+	engine.RegisterOperations(
+		singularityConfig.Name,
+		&EngineOperations{
+			EngineConfig: singularityConfig.NewConfig(),
+		},
+	)
+
+	engine.RegisterRPCMethods(
+		singularityConfig.Name,
+		new(server.Methods),
+	)
 }
