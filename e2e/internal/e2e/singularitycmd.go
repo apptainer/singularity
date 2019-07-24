@@ -18,6 +18,7 @@ import (
 	"time"
 
 	expect "github.com/Netflix/go-expect"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 )
 
@@ -46,6 +47,19 @@ const (
 	RegexMatch
 )
 
+func (m MatchType) String() string {
+	switch m {
+	case ContainMatch:
+		return "ContainMatch"
+	case ExactMatch:
+		return "ExactMatch"
+	case RegexMatch:
+		return "RegexMatch"
+	default:
+		return "unknown match"
+	}
+}
+
 // streamType defines a stream type
 type streamType uint8
 
@@ -72,7 +86,7 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 	switch mt {
 	case ContainMatch:
 		if !strings.Contains(output, pattern) {
-			return fmt.Errorf(
+			return errors.Errorf(
 				"Command %q:\nExpect %s stream contains:\n%s\nCommand %s stream:\n%s",
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
@@ -80,7 +94,7 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 	case ExactMatch:
 		// get rid of the trailing newline
 		if strings.TrimSuffix(output, "\n") != pattern {
-			return fmt.Errorf(
+			return errors.Errorf(
 				"Command %q:\nExpect %s stream exact match:\n%s\nCommand %s output:\n%s",
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
@@ -88,13 +102,13 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 	case RegexMatch:
 		matched, err := regexp.MatchString(pattern, output)
 		if err != nil {
-			return fmt.Errorf(
+			return errors.Errorf(
 				"compilation of regular expression %q failed: %s",
 				pattern, err,
 			)
 		}
 		if !matched {
-			return fmt.Errorf(
+			return errors.Errorf(
 				"Command %q:\nExpect %s stream match regular expression:\n%s\nCommand %s output:\n%s",
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
@@ -109,8 +123,9 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 func ExpectOutput(mt MatchType, pattern string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
 		err := r.expectMatch(mt, outputStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
 		if err != nil {
-			t.Error(err)
+			t.Errorf("failed to match pattern: %+v", err)
 		}
 	}
 }
@@ -121,8 +136,9 @@ func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) Singula
 	return func(t *testing.T, r *SingularityCmdResult) {
 		pattern := fmt.Sprintf(formatPattern, a...)
 		err := r.expectMatch(mt, outputStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
 		if err != nil {
-			t.Error(err)
+			t.Errorf("failed to match pattern: %+v", err)
 		}
 	}
 }
@@ -132,8 +148,9 @@ func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) Singula
 func ExpectError(mt MatchType, pattern string) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
 		err := r.expectMatch(mt, errorStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
 		if err != nil {
-			t.Error(err)
+			t.Errorf("failed to match pattern: %+v", err)
 		}
 	}
 }
@@ -144,8 +161,9 @@ func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) Singular
 	return func(t *testing.T, r *SingularityCmdResult) {
 		pattern := fmt.Sprintf(formatPattern, a...)
 		err := r.expectMatch(mt, errorStream, pattern)
+		err = errors.Wrapf(err, "matching %q of type %s in output stream", pattern, mt)
 		if err != nil {
-			t.Error(err)
+			t.Errorf("failed to match pattern: %+v", err)
 		}
 	}
 }
@@ -167,9 +185,10 @@ type SingularityConsoleOp func(*testing.T, *expect.Console)
 func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if o, err := c.Expectf(format, args...); err != nil {
+			err = errors.Wrap(err, "checking console output")
 			expected := fmt.Sprintf(format, args...)
 			t.Logf("\nConsole output: %s\nExpected output: %s", o, expected)
-			t.Errorf("error while reading from the console: %s", err)
+			t.Errorf("error while reading from the console: %+v", err)
 		}
 	}
 }
@@ -179,8 +198,9 @@ func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
 func ConsoleExpect(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if o, err := c.ExpectString(s); err != nil {
+			err = errors.Wrap(err, "checking console output")
 			t.Logf("\nConsole output: %s\nExpected output: %s", o, s)
-			t.Errorf("error while reading from the console: %s", err)
+			t.Errorf("error while reading from the console: %+v", err)
 		}
 	}
 }
@@ -189,7 +209,8 @@ func ConsoleExpect(s string) SingularityConsoleOp {
 func ConsoleSend(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if _, err := c.Send(s); err != nil {
-			t.Errorf("error while writing string to the console: %s", err)
+			err = errors.Wrapf(err, "sending %q to console", s)
+			t.Errorf("error while writing string to the console: %+v", err)
 		}
 	}
 }
@@ -198,7 +219,8 @@ func ConsoleSend(s string) SingularityConsoleOp {
 func ConsoleSendLine(s string) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		if _, err := c.SendLine(s); err != nil {
-			t.Errorf("error while writing string to the console: %s", err)
+			err = errors.Wrapf(err, "sending line %q to console", s)
+			t.Errorf("error while writing string to the console: %+v", err)
 		}
 	}
 }
@@ -340,28 +362,28 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 			return
 		}
 
-		err := s.waitErr
-		switch x := err.(type) {
+		cause := errors.Cause(s.waitErr)
+		switch x := cause.(type) {
 		case *exec.ExitError:
 			if status, ok := x.Sys().(syscall.WaitStatus); ok {
 				if code != status.ExitStatus() {
 					t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
-					t.Errorf("got %d as exit code and was expecting %d)", status.ExitStatus(), code)
+					t.Errorf("got %d as exit code and was expecting %d: %+v", status.ExitStatus(), code, s.waitErr)
 					return
 				}
 			}
 		default:
-			if err != nil {
-				t.Errorf("command execution of %q failed: %s", r.FullCmd, err)
+			if s.waitErr != nil {
+				t.Errorf("command execution of %q failed: %+v", r.FullCmd, s.waitErr)
 				return
 			}
 		}
 
-		if code == 0 && err != nil {
+		if code == 0 && s.waitErr != nil {
 			t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
 			t.Errorf("unexpected failure while executing %q", r.FullCmd)
 			return
-		} else if code != 0 && err == nil {
+		} else if code != 0 && s.waitErr == nil {
 			t.Logf("\n%q output:\n%s%s\n", r.FullCmd, string(r.Stderr), string(r.Stdout))
 			t.Errorf("unexpected success while executing %q", r.FullCmd)
 			return
@@ -425,8 +447,9 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 				expect.WithStdout(cmd.Stdout),
 				expect.WithDefaultTimeout(1*time.Second),
 			)
+			err = errors.Wrap(err, "creating expect console")
 			if err != nil {
-				t.Errorf("console initialization failed: %s", err)
+				t.Errorf("console initialization failed: %+v", err)
 				return
 			}
 			defer s.console.Close()
@@ -456,7 +479,8 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 
 		t.Logf("Running command %q", s.result.FullCmd)
 		if err := cmd.Start(); err != nil {
-			t.Errorf("command execution of %q failed: %s", s.result.FullCmd, err)
+			err = errors.Wrapf(err, "running command %q", s.result.FullCmd)
+			t.Errorf("command execution of %q failed: %+v", s.result.FullCmd, err)
 			return
 		}
 
@@ -468,7 +492,7 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 			}
 		}
 
-		s.waitErr = cmd.Wait()
+		s.waitErr = errors.Wrapf(cmd.Wait(), "waiting for command %q", s.result.FullCmd)
 		s.result.Stdout = stdout.Bytes()
 		s.result.Stderr = stderr.Bytes()
 		s.resultFn(s)

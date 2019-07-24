@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/blang/semver"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
@@ -62,17 +63,19 @@ func (c *ctx) testEqualVersion(t *testing.T) {
 			outputVer = strings.TrimSpace(outputVer)
 			semanticVersion, err := semver.Make(outputVer)
 			if err != nil {
-				t.Log(semanticVersion)
-				t.Fatalf("FAIL: no semantic version valid for %s command", tt.name)
+				err = errors.Wrapf(err, "creating semver version from %q", outputVer)
+				t.Fatalf("Creating semver version: %+v", err)
 			}
 			if tmpVersion != "" {
 				versionTmp, err := semver.Make(tmpVersion)
 				if err != nil {
-					t.Fatalf("FAIL: %s", err)
+					err = errors.Wrapf(err, "creating semver version from %q", tmpVersion)
+					t.Fatalf("Creating semver version: %+v", err)
 				}
 				//compare versions and see if they are equal
 				if semanticVersion.Compare(versionTmp) != 0 {
-					t.Fatalf("FAIL: singularity version command and singularity --version give a non-matching version result")
+					err = errors.Wrapf(err, "comparing versions %q and %q", outputVer, tmpVersion)
+					t.Fatalf("singularity version command and singularity --version give a non-matching version result: %+v", err)
 				}
 			} else {
 				tmpVersion = outputVer

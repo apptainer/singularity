@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
@@ -47,15 +48,17 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 func MakeCacheDirs(baseDir string) error {
 	if cacheDirPriv == "" {
 		dir, err := fs.MakeTmpDir(baseDir, "privcache-", 0755)
+		err = errors.Wrapf(err, "creating temporary privileged cache directory at %s", baseDir)
 		if err != nil {
-			return fmt.Errorf("failed to create privileged cache directory: %s", err)
+			return fmt.Errorf("failed to create privileged cache directory: %+v", err)
 		}
 		cacheDirPriv = dir
 	}
 	if cacheDirUnpriv == "" {
 		dir, err := fs.MakeTmpDir(baseDir, "unprivcache-", 0755)
+		err = errors.Wrapf(err, "creating temporary unprivileged cache directory at %s", baseDir)
 		if err != nil {
-			return fmt.Errorf("failed to create unprivileged cache directory: %s", err)
+			return fmt.Errorf("failed to create unprivileged cache directory: %+v", err)
 		}
 		cacheDirUnpriv = dir
 		os.Setenv(cache.DirEnv, cacheDirUnpriv)

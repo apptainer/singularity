@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
 )
@@ -243,8 +244,9 @@ func (c *actionTests) actionShell(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	hostname, err := os.Hostname()
+	err = errors.Wrap(err, "getting hostname")
 	if err != nil {
-		t.Fatalf("could not get hostname: %s", err)
+		t.Fatalf("could not get hostname: %+v", err)
 	}
 
 	tests := []struct {
