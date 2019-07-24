@@ -6,6 +6,7 @@
 package crypt
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -130,6 +131,9 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 
 	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", "--luks2-metadata-size", "64k", "--luks2-keyslots-size", "512k", loop)
 	stdin, err := cmd.StdinPipe()
+	var stdout, stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	cmd.Stdout = &stdout
 
 	if err != nil {
 		return "", err
@@ -143,7 +147,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
-		return "", fmt.Errorf("unable to format crypt device %s: %s", cryptF.Name(), err)
+		return "", fmt.Errorf("unable to format crypt device %s: %s (stderr: %s; stdout: %s)", cryptF.Name(), err, stderr.String(), stdout.String())
 	}
 
 	nextCrypt, err := crypt.Open(key, loop)
