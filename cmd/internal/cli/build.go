@@ -159,6 +159,16 @@ var buildTmpdirFlag = cmdline.Flag{
 	EnvKeys:      []string{"TMPDIR"},
 }
 
+// --disable-cache
+var buildDisableCacheFlag = cmdline.Flag{
+	ID:           "buildDisableCacheFlag",
+	Value:        &disableCache,
+	DefaultValue: false,
+	Name:         "disable-cache",
+	Usage:        "do not use cache or create cache",
+	EnvKeys:      []string{"DISABLE_CACHE"},
+}
+
 // --nohttps
 var buildNoHTTPSFlag = cmdline.Flag{
 	ID:           "buildNoHTTPSFlag",
@@ -205,6 +215,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
 
