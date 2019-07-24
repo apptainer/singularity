@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -36,34 +37,34 @@ func (c *ctx) testPushCmd(t *testing.T) {
 	}
 
 	tests := []struct {
-		desc          string // case description
-		dstURI        string // destination URI for image
-		imagePath     string // src image path
-		expectSuccess bool   // singularity should exit with code 0
+		desc             string // case description
+		dstURI           string // destination URI for image
+		imagePath        string // src image path
+		expectedExitCode int    // expected exit code for the test
 	}{
 		{
-			desc:          "non existent image",
-			imagePath:     filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
-			dstURI:        fmt.Sprintf("oras://%s/non_existent:test", c.env.TestRegistry),
-			expectSuccess: false,
+			desc:             "non existent image",
+			imagePath:        filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
+			dstURI:           fmt.Sprintf("oras://%s/non_existent:test", c.env.TestRegistry),
+			expectedExitCode: 255,
 		},
 		{
-			desc:          "non SIF file",
-			imagePath:     orasInvalidFile,
-			dstURI:        fmt.Sprintf("oras://%s/non_sif:test", c.env.TestRegistry),
-			expectSuccess: false,
+			desc:             "non SIF file",
+			imagePath:        orasInvalidFile,
+			dstURI:           fmt.Sprintf("oras://%s/non_sif:test", c.env.TestRegistry),
+			expectedExitCode: 255,
 		},
 		{
-			desc:          "directory",
-			imagePath:     orasInvalidDir,
-			dstURI:        fmt.Sprintf("oras://%s/directory:test", c.env.TestRegistry),
-			expectSuccess: false,
+			desc:             "directory",
+			imagePath:        orasInvalidDir,
+			dstURI:           fmt.Sprintf("oras://%s/directory:test", c.env.TestRegistry),
+			expectedExitCode: 255,
 		},
 		{
-			desc:          "standard SIF push",
-			imagePath:     c.env.ImagePath,
-			dstURI:        fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
-			expectSuccess: true,
+			desc:             "standard SIF push",
+			imagePath:        c.env.ImagePath,
+			dstURI:           fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
+			expectedExitCode: 0,
 		},
 	}
 
@@ -75,26 +76,23 @@ func (c *ctx) testPushCmd(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpdir)
 
-			cmd, out, err := e2e.ImagePush(t, c.env.CmdPath, tt.imagePath, tt.dstURI)
-			switch {
-			case tt.expectSuccess && err == nil:
-				// PASS: expecting success, succeeded
-
-			case !tt.expectSuccess && err != nil:
-				// PASS: expecting failure, failed
-
-			case tt.expectSuccess && err != nil:
-				// FAIL: expecting success, failed
-
-				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-				t.Errorf("unexpected failure: %v", err)
-
-			case !tt.expectSuccess && err == nil:
-				// FAIL: expecting failure, succeeded
-
-				t.Logf("Running command:\n%s\nOutput:\n%s\n", cmd, out)
-				t.Errorf("unexpected success: command should have failed")
+			// We create the list of arguments using a string instead of a slice of
+			// strings because using slices of strings most of the type ends up adding
+			// an empty elements to the list when passing it to the command, which
+			// will create a failure.
+			args := tt.dstURI
+			if tt.imagePath != "" {
+				args = tt.imagePath + " " + args
 			}
+
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.desc),
+				e2e.WithPrivileges(false),
+				e2e.WithCommand("push"),
+				e2e.WithArgs(strings.Split(args, " ")...),
+				e2e.ExpectExit(tt.expectedExitCode),
+			)
 		})
 	}
 }

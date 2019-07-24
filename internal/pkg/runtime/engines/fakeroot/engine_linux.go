@@ -18,6 +18,7 @@ import (
 	fakerootutil "github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engines/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
@@ -26,8 +27,7 @@ import (
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
-// EngineOperations implements the engines.EngineOperations interface for
-// the image build process
+// EngineOperations describes a runtime engine
 type EngineOperations struct {
 	CommonConfig *config.Common               `json:"-"`
 	EngineConfig *fakerootConfig.EngineConfig `json:"engineConfig"`
@@ -203,4 +203,13 @@ func (e *EngineOperations) CleanupContainer(fatal error, status syscall.WaitStat
 // PostStartProcess actually does nothing for the fakeroot engine
 func (e *EngineOperations) PostStartProcess(pid int) error {
 	return nil
+}
+
+func init() {
+	engine.RegisterOperations(
+		fakerootConfig.Name,
+		&EngineOperations{
+			EngineConfig: &fakerootConfig.EngineConfig{},
+		},
+	)
 }
