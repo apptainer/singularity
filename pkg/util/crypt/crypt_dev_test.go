@@ -65,10 +65,11 @@ func TestEncrypt(t *testing.T) {
 	}
 
 	tests := []struct {
-		name      string
-		path      string
-		key       []byte
-		shallPass bool
+		name        string
+		path        string
+		key         []byte
+		skipCleanup bool
+		shallPass   bool
 	}{
 		{
 			name:      "empty path",
@@ -93,18 +94,21 @@ func TestEncrypt(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			devPath, err := dev.EncryptFilesystem(tt.path, tt.key)
+			needCleanup := true
 			if tt.shallPass && err != nil {
 				// cryptsetup is currently creating issues with our CI so
 				// if it is only that, we assume it is fine until we can precisely
 				// figure out why it is not working.
 				if !strings.Contains(err.Error(), "--luks2-metadata-size: unknown option") {
 					t.Fatalf("test %s expected to succeed but failed: %s", tt.name, err)
+				} else {
+					needCleanup = false
 				}
 			}
 			if !tt.shallPass && err == nil {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
 			}
-			if tt.shallPass {
+			if tt.shallPass && needCleanup {
 				devName, err := dev.Open(tt.key, devPath)
 				if err != nil {
 					t.Fatalf("failed to open encrypted device: %s", err)
