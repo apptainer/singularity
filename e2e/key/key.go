@@ -26,7 +26,7 @@ type ctx struct {
 func (c *ctx) singularityKeyList(t *testing.T) {
 
 	printOut := func(t *testing.T, r *e2e.SingularityCmdResult) {
-		fmt.Println("STDOUT: ", string(r.Stdout))
+		t.Log("stdout from 'key list' : ", string(r.Stdout))
 	}
 
 	c.env.RunSingularity(
@@ -34,12 +34,6 @@ func (c *ctx) singularityKeyList(t *testing.T) {
 		e2e.WithPrivileges(false),
 		e2e.WithCommand("key"),
 		e2e.WithArgs("list"),
-		//		e2e.PostRun(func(t *testing.T) {
-		//			defer os.Remove(defFile)
-		//			defer os.RemoveAll(imagePath)
-		//
-		//			e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.dfd)
-		//		}),
 		e2e.ExpectExit(0, printOut),
 	)
 }
@@ -72,6 +66,7 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 			e2e.ExpectExit(0),
 		)
 	}
+	//t.Run("singularityKeyExport", c.singularityKeyExport)
 }
 
 // singularityKeyExport will export a private, and public (binary and ASCII) key.
@@ -94,8 +89,27 @@ func (c *ctx) singularityKeyExport(t *testing.T) {
 		},
 		{
 			name:       "export private binary",
-			exportPath: c.publicExportPath,
+			exportPath: c.privateExportPath,
 			armor:      false,
+			secret:     true,
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("0"),
+				e2e.ConsoleSendLine("e2etests"),
+			},
+		},
+		{
+			name:       "export public ascii",
+			exportPath: c.publicExportASCIIPath,
+			armor:      true,
+			secret:     false,
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("0"),
+			},
+		},
+		{
+			name:       "export private ascii",
+			exportPath: c.privateExportASCIIPath,
+			armor:      true,
 			secret:     true,
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("0"),
@@ -131,13 +145,66 @@ func (c *ctx) singularityKeyExport(t *testing.T) {
 	}
 }
 
-func (c *ctx) singularityResetKeyring(t *testing.T) {
-	fmt.Println("EENNNVVVV: ", os.Getenv("SINGULARITY_SYPGPDIR"))
-	fmt.Println("Removing: ", c.keyRing)
+// singularityKeyImport will export a private, and public (binary and ASCII) key.
+func (c *ctx) singularityKeyImport(t *testing.T) {
+	tests := []struct {
+		name       string
+		exportPath string
+		consoleOps []e2e.SingularityConsoleOp
+	}{
+		{
+			name:       "import public binary",
+			exportPath: c.publicExportPath,
+			consoleOps: []e2e.SingularityConsoleOp{},
+		},
+		{
+			name:       "import private binary",
+			exportPath: c.privateExportPath,
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2etests"),
+				e2e.ConsoleSendLine("e2etests"),
+				e2e.ConsoleSendLine("e2etests"),
+			},
+		},
+		{
+			name:       "import public ascii",
+			exportPath: c.publicExportASCIIPath,
+			consoleOps: []e2e.SingularityConsoleOp{},
+		},
+		{
+			name:       "import private ascii",
+			exportPath: c.privateExportASCIIPath,
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2etests"),
+				e2e.ConsoleSendLine("e2etests"),
+				e2e.ConsoleSendLine("e2etests"),
+			},
+		},
+	}
 
-	//if err := os.RemoveAll(c.keyRing); err != nil {
-	//	t.Fatalf("unable to remove tmp keyring: %s", err)
-	//}
+	prepCmd := func(exportPath string) []string {
+		return []string{"import", exportPath}
+	}
+
+	for _, tt := range tests {
+		c.singularityResetKeyring(t) // Remove the tmp keyring before each import
+		c.env.RunSingularity(
+			t,
+			e2e.WithPrivileges(false),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(prepCmd(tt.exportPath)...),
+			e2e.ConsoleRun(tt.consoleOps...),
+			e2e.ExpectExit(0),
+		)
+	}
+	//t.Run("singularityKeyExport", c.singularityKeyExport)
+}
+
+func (c *ctx) singularityResetKeyring(t *testing.T) {
+	// TODO: run this as non-root
+	if err := os.RemoveAll(c.keyRing); err != nil {
+		t.Fatalf("unable to remove tmp keyring directory: %s", err)
+	}
 }
 
 // RunE2ETests is the main func to trigger the test suite
@@ -155,14 +222,14 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 		panic(fmt.Sprintf("unable to set keyring: %s", err))
 	}
 
-	fmt.Println("NEW__EENNNVVVV: ", os.Getenv("SINGULARITY_SYPGPDIR"))
-
 	return func(t *testing.T) {
-		t.Run("singularityKeyList", c.singularityKeyList)
-		t.Run("singularityKeyNewpair", c.singularityKeyNewpair)
-		t.Run("singularityKeyList", c.singularityKeyList)
-		t.Run("singularityKeyExport", c.singularityKeyExport)
-		t.Run("singularityResetKeyring", c.singularityResetKeyring)
-		//t.Run("singularityKeyList", c.singularityKeyList)
+		//t.Run("singularityKeyNewpairAndExport", c.singularityKeyNewpair)
+		//t.Run("singularityKeyImportAndExport", c.singularityKeyImport)
+		t.Run("singularityKeyNewpair", c.singularityKeyNewpair) // Generate a newpair (required for the other tests)
+		t.Run("singularityKeyExport", c.singularityKeyExport)   // Export the newpair
+		t.Run("singularityKeyImport", c.singularityKeyImport)   // Import the newpair (this will delete the old, tmp keyring before importing)
+		t.Run("singularityKeyExport", c.singularityKeyExport)   // Re-export them, again (this will catch any issues if Singularity cant import correctly)
+		t.Run("singularityKeyImport", c.singularityKeyImport)   // Finally, Re-import them
+		t.Run("singularityKeyList", c.singularityKeyList)       // Then run 'key list' just because
 	}
 }
