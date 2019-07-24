@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
@@ -28,12 +29,14 @@ func (c *ctx) testPushCmd(t *testing.T) {
 	// setup file and dir to use as invalid sources
 	orasInvalidDir, err := ioutil.TempDir(c.env.TestDir, "oras_push_dir-")
 	if err != nil {
-		t.Fatalf("unable to create src dir for push tests: %v", err)
+		err = errors.Wrap(err, "creating oras temporary directory")
+		t.Fatalf("unable to create src dir for push tests: %+v", err)
 	}
 
 	orasInvalidFile, err := e2e.WriteTempFile(orasInvalidDir, "oras_invalid_image-", "Invalid Image Contents")
 	if err != nil {
-		t.Fatalf("unable to create src file for push tests: %v", err)
+		err = errors.Wrap(err, "creating oras temporary file")
+		t.Fatalf("unable to create src file for push tests: %+v", err)
 	}
 
 	tests := []struct {

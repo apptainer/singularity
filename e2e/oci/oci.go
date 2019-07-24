@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runtime-tools/generate"
+	"github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
@@ -27,7 +28,8 @@ func checkOciState(t *testing.T, cmdPath, containerID, state string) {
 	checkStateFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		s := &ociruntime.State{}
 		if err := json.Unmarshal(r.Stdout, s); err != nil {
-			t.Errorf("can't unmarshal oci state output: %s", err)
+			err = errors.Wrapf(err, "unmarshaling OCI state from JSON: %s", r.Stdout)
+			t.Errorf("can't unmarshal oci state output: %+v", err)
 			return
 		}
 		if s.Status != state {
@@ -48,7 +50,8 @@ func checkOciState(t *testing.T, cmdPath, containerID, state string) {
 func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	bundleDir, err := ioutil.TempDir(c.env.TestDir, "bundle-")
 	if err != nil {
-		t.Fatalf("failed to create bundle directory: %s", err)
+		err = errors.Wrapf(err, "creating temporary bundle directory at %q", c.env.TestDir)
+		t.Fatalf("failed to create bundle directory: %+v", err)
 	}
 	ociConfig := filepath.Join(bundleDir, "config.json")
 
@@ -64,7 +67,8 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 
 			g, err := generate.New(runtime.GOOS)
 			if err != nil {
-				t.Fatalf("failed to generate default OCI config: %s", err)
+				err = errors.Wrapf(err, "generating default OCI config for %q", runtime.GOOS)
+				t.Fatalf("failed to generate default OCI config: %+v", err)
 			}
 			g.SetProcessTerminal(true)
 			// NEED FIX: disable seccomp for circleci, ubuntu trusty
@@ -73,7 +77,8 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 
 			err = g.SaveToFile(ociConfig, generate.ExportOptions{})
 			if err != nil {
-				t.Fatalf("failed to save OCI config: %s", err)
+				err = errors.Wrapf(err, "saving OCI config at %q", ociConfig)
+				t.Fatalf("failed to save OCI config: %+v", err)
 			}
 		}),
 		e2e.ExpectExit(0),
