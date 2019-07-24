@@ -105,9 +105,13 @@ func TestEncrypt(t *testing.T) {
 				t.Fatalf("test %s expected to fail but succeeded", tt.name)
 			}
 			if tt.shallPass {
-				err = dev.CloseCryptDevice(devPath)
+				devName, err := dev.Open(tt.key, devPath)
 				if err != nil {
-					t.Fatalf("Enable to close crypt device: %s", err)
+					t.Fatalf("failed to open encrypted device: %s", err)
+				}
+				err = dev.CloseCryptDevice(devName)
+				if err != nil {
+					t.Fatalf("failed to close crypt device: %s", err)
 				}
 			}
 		})
