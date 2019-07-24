@@ -100,6 +100,9 @@ func TestEncrypt(t *testing.T) {
 			}
 			if tt.shallPass {
 				err = dev.CloseCryptDevice(devPath)
+				if err != nil {
+					t.Fatalf("Enable to close crypt device: %s", err)
+				}
 			}
 		})
 	}
