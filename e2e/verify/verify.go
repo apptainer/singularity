@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
@@ -84,7 +85,8 @@ func (c *ctx) singularityVerifyKeyNum(t *testing.T) {
 			// Get the Signatures and compare it
 			eNum, err := jsonparser.GetInt(r.Stdout, keyNumPath...)
 			if err != nil {
-				t.Fatalf("unable to get expected output from json: %s", err)
+				err = errors.Wrap(err, "getting key number from JSON")
+				t.Fatalf("unable to get expected output from json: %+v", err)
 			}
 			if eNum != tt.expectNumOut {
 				t.Fatalf("unexpected failure: got: '%d', expecting: '%d'", eNum, tt.expectNumOut)
@@ -218,7 +220,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 			for keyNum, vo := range tt.expectOutput {
 				eName, err := jsonparser.GetString(r.Stdout, getNameJSON(keyNum)...)
 				if err != nil {
-					t.Fatalf("unable to get expected output from json: %s", err)
+					err = errors.Wrap(err, "getting string from JSON")
+					t.Fatalf("unable to get expected output from json: %+v", err)
 				}
 				if eName != vo.name {
 					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eName, vo.name)
@@ -227,7 +230,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 				// Get the Fingerprint and compare it
 				eFingerprint, err := jsonparser.GetString(r.Stdout, getFingerprintJSON(keyNum)...)
 				if err != nil {
-					t.Fatalf("unable to get expected output from json: %s", err)
+					err = errors.Wrap(err, "getting string from JSON")
+					t.Fatalf("unable to get expected output from json: %+v", err)
 				}
 				if eFingerprint != vo.fingerprint {
 					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", eFingerprint, vo.fingerprint)
@@ -236,7 +240,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 				// Get the Local and compare it
 				eLocal, err := jsonparser.GetBoolean(r.Stdout, getLocalJSON(keyNum)...)
 				if err != nil {
-					t.Fatalf("unable to get expected output from json: %s", err)
+					err = errors.Wrap(err, "getting boolean from JSON")
+					t.Fatalf("unable to get expected output from json: %+v", err)
 				}
 				if eLocal != vo.local {
 					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eLocal, vo.local)
@@ -245,7 +250,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 				// Get the KeyCheck and compare it
 				eKeyCheck, err := jsonparser.GetBoolean(r.Stdout, getKeyCheckJSON(keyNum)...)
 				if err != nil {
-					t.Fatalf("unable to get expected output from json: %s", err)
+					err = errors.Wrap(err, "getting boolean from JSON")
+					t.Fatalf("unable to get expected output from json: %+v", err)
 				}
 				if eKeyCheck != vo.keyCheck {
 					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eKeyCheck, vo.keyCheck)
@@ -254,7 +260,8 @@ func (c *ctx) singularityVerifySigner(t *testing.T) {
 				// Get the DataCheck and compare it
 				eDataCheck, err := jsonparser.GetBoolean(r.Stdout, getDataCheckJSON(keyNum)...)
 				if err != nil {
-					t.Fatalf("unable to get expected output from json: %s", err)
+					err = errors.Wrap(err, "getting boolean from JSON")
+					t.Fatalf("unable to get expected output from json: %+v", err)
 				}
 				if eDataCheck != vo.dataCheck {
 					t.Fatalf("unexpected failure: got: '%v', expecting: '%v'", eDataCheck, vo.dataCheck)

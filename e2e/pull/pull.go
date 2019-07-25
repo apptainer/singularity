@@ -22,6 +22,7 @@ import (
 	"github.com/deislabs/oras/pkg/context"
 	"github.com/deislabs/oras/pkg/oras"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 )
@@ -290,9 +291,10 @@ func (c *ctx) setup(t *testing.T) {
 func (c *ctx) testPullCmd(t *testing.T) {
 	// XXX(mem): this should come from the environment
 	sylabsAdminFingerprint := "8883491F4268F173C6E5DC49EDECE4F3F38D871E"
-	tempKeyringDir, err := ioutil.TempDir("", "tempKeyringDir-")
+	tempKeyringDir, err := ioutil.TempDir(c.env.TestDir, "tempKeyringDir-")
 	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
+		err = errors.Wrapf(err, "creating temporary keyring directory at %q", c.env.TestDir)
+		t.Fatalf("failed to create temporary directory: %+v", err)
 	}
 	defer os.RemoveAll(tempKeyringDir)
 
@@ -398,7 +400,8 @@ func orasPushNoCheck(file, ref string) error {
 
 	spec, err := reference.Parse(ref)
 	if err != nil {
-		return fmt.Errorf("unable to parse oci reference: %s", err)
+		err = errors.Wrapf(err, "parse OCI reference %s", ref)
+		return fmt.Errorf("unable to parse oci reference: %+v", err)
 	}
 
 	// Hostname() will panic if there is no '/' in the locator
@@ -420,7 +423,8 @@ func orasPushNoCheck(file, ref string) error {
 
 	conf, err := store.Add("$config", "application/vnd.sylabs.sif.config.v1+json", "/dev/null")
 	if err != nil {
-		return fmt.Errorf("unable to add manifest config to FileStore: %s", err)
+		err = errors.Wrap(err, "adding manifest config to file store")
+		return fmt.Errorf("unable to add manifest config to FileStore: %+v", err)
 	}
 	conf.Annotations = nil
 
@@ -428,13 +432,15 @@ func orasPushNoCheck(file, ref string) error {
 	fileName := filepath.Base(file)
 	desc, err := store.Add(fileName, "appliciation/vnd.sylabs.sif.layer.tar", file)
 	if err != nil {
-		return fmt.Errorf("unable to add SIF file to FileStore: %s", err)
+		err = errors.Wrap(err, "adding manifest SIF file to file store")
+		return fmt.Errorf("unable to add SIF file to FileStore: %+v", err)
 	}
 
 	descriptors := []ocispec.Descriptor{desc}
 
 	if _, err := oras.Push(context.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err != nil {
-		return fmt.Errorf("unable to push: %s", err)
+		err = errors.Wrap(err, "pushing to oras")
+		return fmt.Errorf("unable to push: %+v", err)
 	}
 
 	return nil

@@ -15,13 +15,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engines/engine"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 )
 
 // Master initializes a runtime engine and runs it
-func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engine *engines.Engine) {
+func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, e *engine.Engine) {
 	var fatal error
 	var status syscall.WaitStatus
 	fatalChan := make(chan error, 1)
@@ -44,7 +44,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 		}
 
 		runtime.LockOSThread()
-		err = engine.CreateContainer(containerPid, rpcConn)
+		err = e.CreateContainer(containerPid, rpcConn)
 		if err != nil {
 			fatalChan <- fmt.Errorf("container creation failed: %s", err)
 		} else {
@@ -66,7 +66,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 
 		// special path for engines which needs to stop before executing
 		// container process
-		if obj, ok := engine.EngineOperations.(interface {
+		if obj, ok := e.Operations.(interface {
 			PreStartProcess(int, net.Conn, chan error) error
 		}); ok {
 			_, err := conn.Read(data)
@@ -101,7 +101,7 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 			return
 		}
 
-		err = engine.PostStartProcess(containerPid)
+		err = e.PostStartProcess(containerPid)
 		if err != nil {
 			fatalChan <- fmt.Errorf("post start process failed: %s", err)
 			return
@@ -115,14 +115,14 @@ func Master(rpcSocket, masterSocket int, isInstance bool, containerPid int, engi
 
 	go func() {
 		var err error
-		status, err = engine.MonitorContainer(containerPid, signals)
+		status, err = e.MonitorContainer(containerPid, signals)
 		fatalChan <- err
 	}()
 
 	fatal = <-fatalChan
 
 	runtime.LockOSThread()
-	if err := engine.CleanupContainer(fatal, status); err != nil {
+	if err := e.CleanupContainer(fatal, status); err != nil {
 		sylog.Errorf("container cleanup failed: %s", err)
 	}
 	runtime.UnlockOSThread()

@@ -12,6 +12,8 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const dockerInstanceName = "e2e-docker-instance"
@@ -66,6 +68,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 		retry := 0
 		for {
 			conn, err := net.Dial("tcp", "127.0.0.1:5111")
+			err = errors.Wrap(err, "connecting to test endpoint in docker registry container")
 			if err == nil {
 				conn.Close()
 				break
@@ -73,7 +76,7 @@ func PrepRegistry(t *testing.T, env TestEnv) {
 			time.Sleep(100 * time.Millisecond)
 			retry++
 			if retry == 100 {
-				t.Fatalf("docker registry unreachable after 10 seconds: %s", err)
+				t.Fatalf("docker registry unreachable after 10 seconds: %+v", err)
 			}
 		}
 
