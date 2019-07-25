@@ -10,22 +10,94 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	stdexec "os/exec"
+	"path/filepath"
 	"strconv"
 	"testing"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
-type actionTests struct {
-	env e2e.TestEnv
+func actionBasic(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	e2e.EnsureImage(t, env)
+
+	tests := []struct {
+		name    string
+		command string
+		argv    []string
+		exit    int
+	}{
+		{
+			name:    "ExecTrue",
+			command: "exec",
+			argv:    []string{env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecPidNsTrue",
+			command: "exec",
+			argv:    []string{"--pid", env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "ExecFalse",
+			command: "exec",
+			argv:    []string{env.ImagePath, "false"},
+			exit:    1,
+		},
+		{
+			name:    "ExecPidNsFalse",
+			command: "exec",
+			argv:    []string{"--pid", env.ImagePath, "false"},
+			exit:    1,
+		},
+		{
+			name:    "RunTrue",
+			command: "run",
+			argv:    []string{env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "RunPidNsTrue",
+			command: "run",
+			argv:    []string{"--pid", env.ImagePath, "true"},
+			exit:    0,
+		},
+		{
+			name:    "RunFalse",
+			command: "run",
+			argv:    []string{env.ImagePath, "false"},
+			exit:    1,
+		},
+		{
+			name:    "RunPidNsFalse",
+			command: "run",
+			argv:    []string{"--pid", env.ImagePath, "false"},
+			exit:    1,
+		},
+	}
+
+	for _, tt := range tests {
+		env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
 }
 
-// run tests min fuctionality for singularity run
-func (c *actionTests) actionRun(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+func actionRun(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	e2e.EnsureImage(t, env)
 
 	tests := []struct {
 		name string
@@ -34,35 +106,36 @@ func (c *actionTests) actionRun(t *testing.T) {
 	}{
 		{
 			name: "NoCommand",
-			argv: []string{c.env.ImagePath},
+			argv: []string{env.ImagePath},
 			exit: 0,
 		},
 		{
 			name: "True",
-			argv: []string{c.env.ImagePath, "true"},
+			argv: []string{env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "False",
-			argv: []string{c.env.ImagePath, "false"},
+			argv: []string{env.ImagePath, "false"},
 			exit: 1,
 		},
 		{
 			name: "ScifTestAppGood",
-			argv: []string{"--app", "testapp", c.env.ImagePath},
+			argv: []string{"--app", "testapp", env.ImagePath},
 			exit: 0,
 		},
 		{
 			name: "ScifTestAppBad",
-			argv: []string{"--app", "fakeapp", c.env.ImagePath},
+			argv: []string{"--app", "fakeapp", env.ImagePath},
 			exit: 1,
 		},
 	}
 
 	for _, tt := range tests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("run"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -70,178 +143,211 @@ func (c *actionTests) actionRun(t *testing.T) {
 	}
 }
 
-// exec tests min fuctionality for singularity exec
-func (c *actionTests) actionExec(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+func actionExec(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
 
-	user := e2e.CurrentUser(t)
+	e2e.EnsureImage(t, env)
+
+	u := profile.User(t)
+
+	testdata, err := fs.MakeTmpDir(env.TestDir, "testdata", 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(testdata) // clean up
+
+	testdataTmp := filepath.Join(testdata, "tmp")
+	if err := os.Mkdir(testdataTmp, 0755); err != nil {
+		t.Fatal(err)
+	}
 
 	// Create a temp testfile
-	tmpfile, err := ioutil.TempFile("", "testSingularityExec.tmp")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name()) // clean up
-
-	testfile, err := tmpfile.Stat()
+	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	pwd, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
+	tmpfilePath := filepath.Join("/tmp", filepath.Base(tmpfile.Name()))
+	vartmpfilePath := filepath.Join("/var/tmp", filepath.Base(tmpfile.Name()))
+	homePath := filepath.Join("/home", filepath.Base(tmpfile.Name()))
 
 	tests := []struct {
-		name string
-		argv []string
-		exit int
+		name             string
+		argv             []string
+		exit             int
+		excludedProfiles []e2e.SingularityProfile
 	}{
 		{
 			name: "NoCommand",
-			argv: []string{c.env.ImagePath},
+			argv: []string{env.ImagePath},
 			exit: 1,
 		},
 		{
 			name: "True",
-			argv: []string{c.env.ImagePath, "true"},
+			argv: []string{env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "TrueAbsPAth",
-			argv: []string{c.env.ImagePath, "/bin/true"},
+			argv: []string{env.ImagePath, "/bin/true"},
 			exit: 0,
 		},
 		{
 			name: "False",
-			argv: []string{c.env.ImagePath, "false"},
+			argv: []string{env.ImagePath, "false"},
 			exit: 1,
 		},
 		{
 			name: "FalseAbsPath",
-			argv: []string{c.env.ImagePath, "/bin/false"},
+			argv: []string{env.ImagePath, "/bin/false"},
 			exit: 1,
 		},
 		// Scif apps tests
 		{
 			name: "ScifTestAppGood",
-			argv: []string{"--app", "testapp", c.env.ImagePath, "testapp.sh"},
+			argv: []string{"--app", "testapp", env.ImagePath, "testapp.sh"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestAppBad",
-			argv: []string{"--app", "fakeapp", c.env.ImagePath, "testapp.sh"},
+			argv: []string{"--app", "fakeapp", env.ImagePath, "testapp.sh"},
 			exit: 1,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif/apps"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif/apps"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif/data"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif/data"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif/apps/foo"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif/apps/foo"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif/apps/bar"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif/apps/bar"},
 			exit: 0,
 		},
 		// blocked by issue [scif-apps] Files created at install step fall into an unexpected path #2404
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-f", "/scif/apps/foo/filefoo.exec"},
+			argv: []string{env.ImagePath, "test", "-f", "/scif/apps/foo/filefoo.exec"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-f", "/scif/apps/bar/filebar.exec"},
+			argv: []string{env.ImagePath, "test", "-f", "/scif/apps/bar/filebar.exec"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif/data/foo/output"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif/data/foo/output"},
 			exit: 0,
 		},
 		{
 			name: "ScifTestfolderOrg",
-			argv: []string{c.env.ImagePath, "test", "-d", "/scif/data/foo/input"},
+			argv: []string{env.ImagePath, "test", "-d", "/scif/data/foo/input"},
 			exit: 0,
 		},
 		{
-			name: "WorkdirContain",
-			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			name: "ContainOnly",
+			argv: []string{"--contain", env.ImagePath, "test", "-f", tmpfilePath},
 			exit: 1,
 		},
 		{
-			name: "Workdir",
-			argv: []string{"--workdir", "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			name: "WorkdirOnly",
+			argv: []string{"--workdir", testdata, env.ImagePath, "test", "-f", tmpfilePath},
+			exit: 1,
+		},
+		{
+			name: "WorkdirContain",
+			argv: []string{"--workdir", testdata, "--contain", env.ImagePath, "test", "-f", tmpfilePath},
 			exit: 0,
 		},
 		{
 			name: "PwdGood",
-			argv: []string{"--pwd", "/etc", c.env.ImagePath, "true"},
+			argv: []string{"--pwd", "/etc", env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "Home",
-			argv: []string{"--home", pwd + "testdata", c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--home", testdata, env.ImagePath, "test", "-f", tmpfile.Name()},
 			exit: 0,
 		},
 		{
 			name: "HomePath",
-			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "test", "-f", "/home/" + testfile.Name()},
+			argv: []string{"--home", testdataTmp + ":/home", env.ImagePath, "test", "-f", homePath},
 			exit: 0,
 		},
 		{
 			name: "HomeTmp",
-			argv: []string{"--home", "/tmp", c.env.ImagePath, "true"},
+			argv: []string{"--home", "/tmp", env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
 			name: "HomeTmpExplicit",
-			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "true"},
+			argv: []string{"--home", "/tmp:/home", env.ImagePath, "true"},
 			exit: 0,
 		},
 		{
-			name: "UserBind",
-			argv: []string{"--bind", "/tmp:/var/tmp", c.env.ImagePath, "test", "-f", "/var/tmp/" + testfile.Name()},
+			name: "UserBindVarTmp",
+			argv: []string{"--bind", testdataTmp + ":/var/tmp", env.ImagePath, "test", "-f", vartmpfilePath},
 			exit: 0,
 		},
 		{
+			name: "UserBindTmp",
+			argv: []string{"--bind", testdataTmp + ":/tmp", env.ImagePath, "test", "-f", tmpfilePath},
+			exit: 0,
+		},
+		{
+			// as /root directory is always present in images, this test
+			// could not run with RootProfile, RootUserNamespaceProfile and
+			// FakerootProfile
 			name: "NoHome",
-			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
+			argv: []string{"--no-home", env.ImagePath, "ls", "-ld", u.Dir},
 			exit: 2,
+			excludedProfiles: []e2e.SingularityProfile{
+				e2e.RootProfile,
+				e2e.RootUserNamespaceProfile,
+				e2e.FakerootProfile,
+			},
 		},
 	}
 
 	for _, tt := range tests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
+			e2e.WithDir("/"),
 			e2e.WithCommand("exec"),
-			e2e.WithDir("/tmp"),
 			e2e.WithArgs(tt.argv...),
+			e2e.PreRun(func(t *testing.T) {
+				if tt.excludedProfiles != nil && profile.In(tt.excludedProfiles...) {
+					t.Skipf("test skipped for %q", profile)
+				}
+			}),
 			e2e.ExpectExit(tt.exit),
 		)
 	}
 }
 
-// Shell interaction tests
-func (c *actionTests) actionShell(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+func actionShell(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	e2e.EnsureImage(t, env)
+
+	u := profile.User(t)
 
 	hostname, err := os.Hostname()
 	err = errors.Wrap(err, "getting hostname")
@@ -257,7 +363,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 	}{
 		{
 			name: "ShellExit",
-			argv: []string{c.env.ImagePath},
+			argv: []string{env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				// "cd /" to work around issue where a long
 				// working directory name causes the test
@@ -273,7 +379,7 @@ func (c *actionTests) actionShell(t *testing.T) {
 		},
 		{
 			name: "ShellHostname",
-			argv: []string{c.env.ImagePath},
+			argv: []string{env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("hostname"),
 				e2e.ConsoleExpect(hostname),
@@ -282,8 +388,26 @@ func (c *actionTests) actionShell(t *testing.T) {
 			exit: 0,
 		},
 		{
+			name: "ShellHome",
+			argv: []string{env.ImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("cd && pwd"),
+				e2e.ConsoleExpect(u.Dir),
+				e2e.ConsoleSendLine("exit"),
+			},
+		},
+		{
+			name: "ShellHomeContain",
+			argv: []string{"--contain", env.ImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("cd && pwd"),
+				e2e.ConsoleExpect(u.Dir),
+				e2e.ConsoleSendLine("exit"),
+			},
+		},
+		{
 			name: "ShellBadCommand",
-			argv: []string{c.env.ImagePath},
+			argv: []string{env.ImagePath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("_a_fake_command"),
 				e2e.ConsoleSendLine("exit"),
@@ -293,9 +417,10 @@ func (c *actionTests) actionShell(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("shell"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ConsoleRun(tt.consoleOps...),
@@ -304,9 +429,10 @@ func (c *actionTests) actionShell(t *testing.T) {
 	}
 }
 
-// STDPipe tests pipe stdin/stdout to singularity actions cmd
-func (c *actionTests) STDPipe(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+func actionStdPipe(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	e2e.EnsureImage(t, env)
 
 	stdinTests := []struct {
 		name    string
@@ -318,14 +444,14 @@ func (c *actionTests) STDPipe(t *testing.T) {
 		{
 			name:    "TrueSTDIN",
 			command: "exec",
-			argv:    []string{c.env.ImagePath, "grep", "hi"},
+			argv:    []string{env.ImagePath, "grep", "hi"},
 			input:   "hi",
 			exit:    0,
 		},
 		{
 			name:    "FalseSTDIN",
 			command: "exec",
-			argv:    []string{c.env.ImagePath, "grep", "hi"},
+			argv:    []string{env.ImagePath, "grep", "hi"},
 			input:   "bye",
 			exit:    1,
 		},
@@ -378,9 +504,10 @@ func (c *actionTests) STDPipe(t *testing.T) {
 	var input bytes.Buffer
 
 	for _, tt := range stdinTests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.WithStdin(&input),
@@ -392,7 +519,8 @@ func (c *actionTests) STDPipe(t *testing.T) {
 		input.Reset()
 	}
 
-	user := e2e.CurrentUser(t)
+	u := profile.User(t)
+
 	stdoutTests := []struct {
 		name    string
 		command string
@@ -403,36 +531,37 @@ func (c *actionTests) STDPipe(t *testing.T) {
 		{
 			name:    "AppsFoo",
 			command: "run",
-			argv:    []string{"--app", "foo", c.env.ImagePath},
+			argv:    []string{"--app", "foo", env.ImagePath},
 			output:  "RUNNING FOO",
 			exit:    0,
 		},
 		{
 			name:    "PwdPath",
 			command: "exec",
-			argv:    []string{"--pwd", "/etc", c.env.ImagePath, "pwd"},
+			argv:    []string{"--pwd", "/etc", env.ImagePath, "pwd"},
 			output:  "/etc",
 			exit:    0,
 		},
 		{
 			name:    "Arguments",
 			command: "run",
-			argv:    []string{c.env.ImagePath, "foo"},
+			argv:    []string{env.ImagePath, "foo"},
 			output:  "Running command: foo",
 			exit:    127,
 		},
 		{
 			name:    "Permissions",
 			command: "exec",
-			argv:    []string{c.env.ImagePath, "id", "-un"},
-			output:  user.Name,
+			argv:    []string{env.ImagePath, "id", "-un"},
+			output:  u.Name,
 			exit:    0,
 		},
 	}
 	for _, tt := range stdoutTests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(
@@ -443,9 +572,10 @@ func (c *actionTests) STDPipe(t *testing.T) {
 	}
 }
 
-// RunFromURI tests min fuctionality for singularity run/exec URI://
-func (c *actionTests) RunFromURI(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+func actionRunFromURI(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	e2e.PrepRegistry(t, env)
 
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
@@ -485,7 +615,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "RunFromOrasOK",
 			command: "run",
-			argv:    []string{"--bind", bind, c.env.OrasTestImage, size},
+			argv:    []string{"--bind", bind, env.OrasTestImage, size},
 			exit:    0,
 		},
 		{
@@ -510,7 +640,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "RunFromOrasKO",
 			command: "run",
-			argv:    []string{"--bind", bind, c.env.OrasTestImage, "0"},
+			argv:    []string{"--bind", bind, env.OrasTestImage, "0"},
 			exit:    1,
 		},
 
@@ -537,7 +667,7 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecTrueOras",
 			command: "exec",
-			argv:    []string{c.env.OrasTestImage, "true"},
+			argv:    []string{env.OrasTestImage, "true"},
 			exit:    0,
 		},
 		{
@@ -562,67 +692,16 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 		{
 			name:    "ExecFalseOras",
 			command: "exec",
-			argv:    []string{c.env.OrasTestImage, "false"},
-			exit:    1,
-		},
-
-		// exec from URI with user namespace enabled
-		{
-			name:    "ExecTrueDockerUserns",
-			command: "exec",
-			argv:    []string{"--userns", "docker://busybox:latest", "true"},
-			exit:    0,
-		},
-		{
-			name:    "ExecTrueLibraryUserns",
-			command: "exec",
-			argv:    []string{"--userns", "library://busybox:latest", "true"},
-			exit:    0,
-		},
-		// TODO(mem): reenable this; disabled while shub is down
-		// {
-		// 	name:    "ExecTrueShubUserns",
-		// 	command: "exec",
-		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "true"},
-		// 	exit:    0,
-		// },
-		{
-			name:    "ExecTrueOrasUserns",
-			command: "exec",
-			argv:    []string{"--userns", c.env.OrasTestImage, "true"},
-			exit:    0,
-		},
-		{
-			name:    "ExecFalseDockerUserns",
-			command: "exec",
-			argv:    []string{"--userns", "docker://busybox:latest", "false"},
-			exit:    1,
-		},
-		{
-			name:    "ExecFalseLibraryUserns",
-			command: "exec",
-			argv:    []string{"--userns", "library://busybox:latest", "false"},
-			exit:    1,
-		},
-		// TODO(mem): reenable this; disabled while shub is down
-		// {
-		// 	name:    "ExecFalseShubUserns",
-		// 	command: "exec",
-		// 	argv:    []string{"--userns", "shub://singularityhub/busybox", "false"},
-		// 	exit:    1,
-		// },
-		{
-			name:    "ExecFalseOrasUserns",
-			command: "exec",
-			argv:    []string{"--userns", c.env.OrasTestImage, "false"},
+			argv:    []string{env.OrasTestImage, "false"},
 			exit:    1,
 		},
 	}
 
 	for _, tt := range tests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),
@@ -631,135 +710,138 @@ func (c *actionTests) RunFromURI(t *testing.T) {
 }
 
 // PersistentOverlay test the --overlay function
-func (c *actionTests) PersistentOverlay(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+func actionPersistentOverlay(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
 
-	const squashfsImage = "squashfs.simg"
-
-	if _, err := stdexec.LookPath("mkfs.ext3"); err != nil {
-		t.Skip("mkfs.ext3 not found")
+	if !profile.In(e2e.RootProfile) {
+		t.Skipf("could not run those tests with %q", profile)
 	}
 
-	dir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
+	require.Command(t, "mkfs.ext3")
+	require.Command(t, "dd")
+	require.Command(t, "mksquashfs")
+
+	e2e.EnsureImage(t, env)
+
+	imgDir, err := ioutil.TempDir(env.TestDir, "img_overlay")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(imgDir)
+
+	squashfsImage := filepath.Join(imgDir, "squashfs.simg")
+	ext3Image := filepath.Join(imgDir, "ext3_fs.img")
+
+	dir, err := ioutil.TempDir(env.TestDir, "overlay_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 
 	// Create dirfs for squashfs
-	squashDir, err := ioutil.TempDir(c.env.TestDir, "overlay_test")
+	squashDir, err := ioutil.TempDir(env.TestDir, "overlay_test")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(squashDir)
 
 	content := []byte("temporary file's content")
-	tmpfile, err := ioutil.TempFile(squashDir, "bogus")
+	tmpfile, err := e2e.WriteTempFile(squashDir, "bogus", string(content))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tmpfile.Write(content); err != nil {
-		t.Fatal(err)
-	}
-	if err := tmpfile.Close(); err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
 
 	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
-	defer os.RemoveAll(squashfsImage)
 
 	//  Create the overlay ext3 fs
-	cmd = exec.Command("dd", "if=/dev/zero", "of=ext3_fs.img", "bs=1M", "count=768", "status=none")
+	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Image, "bs=1M", "count=768", "status=none")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 
-	cmd = exec.Command("mkfs.ext3", "-q", "-F", "ext3_fs.img")
+	cmd = exec.Command("mkfs.ext3", "-q", "-F", ext3Image)
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
-
-	defer os.Remove("ext3_fs.img")
 
 	tests := []struct {
-		name       string
-		argv       []string
-		exit       int
-		privileged bool
+		name    string
+		argv    []string
+		exit    int
+		profile e2e.SingularityProfile
 	}{
 		{
-			name:       "overlay_create",
-			argv:       []string{"--overlay", dir, c.env.ImagePath, "touch", "/dir_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_create",
+			argv:    []string{"--overlay", dir, env.ImagePath, "touch", "/dir_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_find",
-			argv:       []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/dir_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_find",
+			argv:    []string{"--overlay", dir, env.ImagePath, "test", "-f", "/dir_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_ext3_create",
-			argv:       []string{"--overlay", "ext3_fs.img", c.env.ImagePath, "touch", "/ext3_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_ext3_create",
+			argv:    []string{"--overlay", ext3Image, env.ImagePath, "touch", "/ext3_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_ext3_find",
-			argv:       []string{"--overlay", "ext3_fs.img", c.env.ImagePath, "test", "-f", "/ext3_overlay"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_ext3_find",
+			argv:    []string{"--overlay", ext3Image, env.ImagePath, "test", "-f", "/ext3_overlay"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_squashFS_find",
-			argv:       []string{"--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_squashFS_find",
+			argv:    []string{"--overlay", squashfsImage, env.ImagePath, "test", "-f", fmt.Sprintf("/%s", filepath.Base(tmpfile))},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_multiple_create",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "touch", "/multiple_overlay_fs"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_multiple_create",
+			argv:    []string{"--overlay", ext3Image, "--overlay", squashfsImage, env.ImagePath, "touch", "/multiple_overlay_fs"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_multiple_find_ext3",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_multiple_find_ext3",
+			argv:    []string{"--overlay", ext3Image, "--overlay", squashfsImage, env.ImagePath, "test", "-f", "/multiple_overlay_fs"},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_multiple_find_squashfs",
-			argv:       []string{"--overlay", "ext3_fs.img", "--overlay", squashfsImage, c.env.ImagePath, "test", "-f", fmt.Sprintf("/%s", tmpfile.Name())},
-			exit:       0,
-			privileged: true,
+			name:    "overlay_multiple_find_squashfs",
+			argv:    []string{"--overlay", ext3Image, "--overlay", squashfsImage, env.ImagePath, "test", "-f", fmt.Sprintf("/%s", filepath.Base(tmpfile))},
+			exit:    0,
+			profile: e2e.RootProfile,
 		},
 		{
-			name:       "overlay_noroot",
-			argv:       []string{"--overlay", dir, c.env.ImagePath, "test", "-f", "/foo_overlay"},
-			exit:       255,
-			privileged: false,
+			name:    "overlay_noroot",
+			argv:    []string{"--overlay", dir, env.ImagePath, "test", "-f", "/foo_overlay"},
+			exit:    255,
+			profile: e2e.UserProfile,
 		},
 		{
-			name:       "overlay_noflag",
-			argv:       []string{c.env.ImagePath, "test", "-f", "/foo_overlay"},
-			exit:       1,
-			privileged: true,
+			name:    "overlay_noflag",
+			argv:    []string{env.ImagePath, "test", "-f", "/foo_overlay"},
+			exit:    1,
+			profile: e2e.RootProfile,
 		},
 	}
 
 	for _, tt := range tests {
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
-			e2e.WithPrivileges(tt.privileged),
 			e2e.ExpectExit(tt.exit),
 		)
 	}
@@ -767,22 +849,28 @@ func (c *actionTests) PersistentOverlay(t *testing.T) {
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &actionTests{
-		env: env,
-	}
-
 	return func(t *testing.T) {
-		// singularity run
-		t.Run("run", c.actionRun)
-		// singularity exec
-		t.Run("exec", c.actionExec)
-		// stdin/stdout pipe
-		t.Run("STDPIPE", c.STDPipe)
-		// action_URI
-		t.Run("action_URI", c.RunFromURI)
-		// Persistent Overlay
-		t.Run("Persistent_Overlay", c.PersistentOverlay)
-		// shell interaction
-		t.Run("Shell", c.actionShell)
+		tests := map[string]func(*e2e.TestContext){
+			"Basic":             actionBasic,             // basic tests
+			"Run":               actionRun,               // singularity run
+			"Exec":              actionExec,              // singularity exec
+			"StdPipe":           actionStdPipe,           // stdin/stdout pipe
+			"RunFromURI":        actionRunFromURI,        // run/exec from URI
+			"Shell":             actionShell,             // shell interaction
+			"PersistentOverlay": actionPersistentOverlay, // exec with overlay
+		}
+
+		for _, profile := range e2e.Profiles {
+			t.Run(profile.Name(), func(t *testing.T) {
+				profile.Require(t)
+
+				for name, fn := range tests {
+					t.Run(name, func(t *testing.T) {
+						ctx := e2e.NewTestContext(t, env, profile)
+						fn(ctx)
+					})
+				}
+			})
+		}
 	}
 }

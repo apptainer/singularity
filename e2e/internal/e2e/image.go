@@ -30,7 +30,7 @@ func EnsureImage(t *testing.T, env TestEnv) {
 
 	env.RunSingularity(
 		t,
-		WithPrivileges(true),
+		WithProfile(RootProfile),
 		WithCommand("build"),
 		WithArgs("--force", env.ImagePath, "testdata/Singularity"),
 		ExpectExit(0),
@@ -54,7 +54,8 @@ func PullImage(t *testing.T, env TestEnv, imageURL string, path string) {
 
 	env.RunSingularity(
 		t,
-		WithPrivileges(false),
+		// NEED FIX: we may need to run it with various profiles
+		WithProfile(UserProfile),
 		WithCommand("pull"),
 		WithArgs("--force", "--allow-unsigned", path, imageURL),
 		ExpectExit(0),

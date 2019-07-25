@@ -232,20 +232,21 @@ type SingularityCmdOp func(*singularityCmd)
 
 // singularityCmd defines a Singularity command execution test.
 type singularityCmd struct {
+	cmd         []string
 	args        []string
 	envs        []string
 	dir         string
-	privileged  bool
 	subtestName string
 	stdin       io.Reader
+	waitErr     error
 	preFn       func(*testing.T)
 	postFn      func(*testing.T)
 	consoleFn   SingularityCmdOp
 	console     *expect.Console
 	resultFn    SingularityCmdOp
 	result      *SingularityCmdResult
-	waitErr     error
 	t           *testing.T
+	profile     SingularityProfile
 }
 
 // AsSubtest requests the command to be run as a subtest
@@ -258,8 +259,7 @@ func AsSubtest(name string) SingularityCmdOp {
 // WithCommand sets the singularity command to execute.
 func WithCommand(command string) SingularityCmdOp {
 	return func(s *singularityCmd) {
-		cmd := strings.Split(command, " ")
-		s.args = append(cmd, s.args...)
+		s.cmd = strings.Split(command, " ")
 	}
 }
 
@@ -291,12 +291,15 @@ func WithDir(dir string) SingularityCmdOp {
 	}
 }
 
-// WithPrivileges sets whether a singularity command must be
-// executed with privileges or not. PreRun, InRun, PostRun
-// are also executed with privileges.
-func WithPrivileges(privileged bool) SingularityCmdOp {
+// WithProfile sets the Singularity execution profile, this
+// is a convenient way to automatically set requirements like
+// privileges, arguments injection in order to execute
+// Singularity command with the corresponding profile.
+// RootProfile, RootUserNamespaceProfile will set privileges which
+// means that PreRun and PostRun are executed with privileges.
+func WithProfile(profile SingularityProfile) SingularityCmdOp {
 	return func(s *singularityCmd) {
-		s.privileged = privileged
+		s.profile = profile
 	}
 }
 
@@ -319,13 +322,13 @@ func ConsoleRun(consoleOps ...SingularityConsoleOp) SingularityCmdOp {
 		for _, op := range consoleOps {
 			op(s.t, s.console)
 		}
-		s.console.ExpectEOF()
 	}
 }
 
-// PreRun sets a function to execute before running
-// the singularity command (executed with privileges
-// if WithPrivileges(true) is passed to RunCommand).
+// PreRun sets a function to execute before running the
+// singularity command, this function is executed with
+// privileges if the profile is either RootProfile or
+// RootUserNamespaceProfile.
 func PreRun(fn func(*testing.T)) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.preFn = fn
@@ -333,11 +336,11 @@ func PreRun(fn func(*testing.T)) SingularityCmdOp {
 }
 
 // PostRun sets a function to execute when the singularity
-// command execution finished (executed with privileges if
-// WithPrivileges(true) is passed to RunCommand). PostRun
-// is executed in all cases even when the command execution
-// failed, it's the responsibility of the caller to check if the
-// test failed with t.Failed().
+// command execution finished, this function is executed with
+// privileges if the profile is either RootProfile or
+// RootUserNamespaceProfile. PostRun is executed in all cases
+// even when the command execution failed, it's the responsibility
+// of the caller to check if the test failed with t.Failed().
 func PostRun(fn func(*testing.T)) SingularityCmdOp {
 	return func(s *singularityCmd) {
 		s.postFn = fn
@@ -412,15 +415,31 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 		t.Errorf("ExpectExit is missing in cmdOps argument")
 		return
 	}
+	// this function will abort if there is no profile provided
+	if s.profile == noProfile {
+		availableProfiles := make([]string, len(Profiles))
+		for i, p := range Profiles {
+			availableProfiles[i] = p.String()
+		}
+		profiles := strings.Join(availableProfiles, ", ")
+		t.Errorf("you must specify a profile, available profiles are %s", profiles)
+		return
+	}
+	// the profile returns if it requires privileges or not
+	privileged := s.profile.privileged()
 
 	fn := func(t *testing.T) {
 		s.result = new(SingularityCmdResult)
+		s.args = append(s.cmd, s.profile.withArgs(s)...)
 		s.result.FullCmd = fmt.Sprintf("%s %s", cmdPath, strings.Join(s.args, " "))
 
 		var (
 			stdout bytes.Buffer
 			stderr bytes.Buffer
 		)
+
+		// check if profile can run this test or skip it
+		s.profile.Require(t)
 
 		s.t = t
 
@@ -430,10 +449,11 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 		if len(cmd.Env) == 0 {
 			cmd.Env = os.Environ()
 		}
-		if s.privileged {
-			cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirPriv)
-			cmd.Env = append(cmd.Env, cacheDirEnv)
+		cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirUnpriv)
+		if privileged {
+			cacheDirEnv = fmt.Sprintf("%s=%s", cache.DirEnv, cacheDirPriv)
 		}
+		cmd.Env = append(cmd.Env, cacheDirEnv)
 
 		cmd.Dir = s.dir
 		cmd.Stdin = s.stdin
@@ -446,7 +466,7 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 			s.console, err = expect.NewTestConsole(
 				t,
 				expect.WithStdout(cmd.Stdout),
-				expect.WithDefaultTimeout(1*time.Second),
+				expect.WithDefaultTimeout(10*time.Second),
 			)
 			err = errors.Wrap(err, "creating expect console")
 			if err != nil {
@@ -503,7 +523,7 @@ func RunSingularity(t *testing.T, cmdPath string, cmdOps ...SingularityCmdOp) {
 		s.resultFn(s)
 	}
 
-	if s.privileged {
+	if privileged {
 		fn = Privileged(fn)
 	}
 

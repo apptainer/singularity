@@ -42,6 +42,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -62,6 +63,7 @@ func (c *ctx) remoteAdd(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -96,6 +98,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -115,6 +118,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -133,6 +137,7 @@ func (c *ctx) remoteRemove(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -163,6 +168,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -184,6 +190,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -203,6 +210,7 @@ func (c *ctx) remoteUse(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -237,6 +245,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -255,6 +264,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -274,6 +284,7 @@ func (c *ctx) remoteStatus(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
@@ -301,6 +312,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -322,6 +334,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -339,6 +352,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -358,6 +372,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),
@@ -375,6 +390,7 @@ func (c *ctx) remoteList(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(0),

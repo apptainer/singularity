@@ -10,45 +10,127 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+
+	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
-var testFileContent = "Test file content\n"
-
-type imgBuildTests struct {
-	env e2e.TestEnv
+// only user, root and fakeroot profiles
+var buildProfiles = []e2e.SingularityProfile{
+	e2e.UserProfile,
+	e2e.RootProfile,
+	e2e.FakerootProfile,
 }
 
-func (c *imgBuildTests) buildFrom(t *testing.T) {
-	e2e.PrepRegistry(t, c.env)
+// only root and fakeroot could build image from definition
+var rootBuildProfiles = []e2e.SingularityProfile{
+	e2e.RootProfile,
+	e2e.FakerootProfile,
+}
+
+const (
+	testFileContent = "Test file content\n"
+	dumbPath        = "/some/dumb/path"
+)
+
+func buildFrom(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	if !profile.In(rootBuildProfiles...) {
+		t.Skipf("%q could not run this test", profile)
+	}
+
+	e2e.PrepRegistry(t, env)
 
 	tests := []struct {
-		name       string
-		dependency string
-		buildSpec  string
-		sandbox    bool
+		name             string
+		dependency       string
+		buildSpec        string
+		sandbox          bool
+		excludedProfiles []e2e.SingularityProfile
 	}{
-		{"BusyBox", "", "../examples/busybox/Singularity", false},
-		{"Debootstrap", "debootstrap", "../examples/debian/Singularity", true},
-		{"DockerURI", "", "docker://busybox", true},
-		{"DockerDefFile", "", "../examples/docker/Singularity", true},
+		{
+			name:             "BusyBox",
+			dependency:       "",
+			buildSpec:        "../examples/busybox/Singularity",
+			sandbox:          false,
+			excludedProfiles: nil,
+		},
+		{
+			name:             "Debootstrap",
+			dependency:       "debootstrap",
+			buildSpec:        "../examples/debian/Singularity",
+			sandbox:          true,
+			excludedProfiles: []e2e.SingularityProfile{e2e.FakerootProfile},
+		},
+		{
+			name:             "DockerURI",
+			dependency:       "",
+			buildSpec:        "docker://busybox",
+			sandbox:          true,
+			excludedProfiles: nil,
+		},
+		{
+			name:             "DockerDefFile",
+			dependency:       "",
+			buildSpec:        "../examples/docker/Singularity",
+			sandbox:          true,
+			excludedProfiles: nil,
+		},
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"ShubURI", "", "shub://GodloveD/busybox", true},
+		//{
+		//	name:             "ShubURI",
+		//	dependency:       "",
+		//	buildSpec:        "shub://GodloveD/busybox",
+		//	sandbox:          true,
+		//	excludedProfiles: nil,
+		//},
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"ShubDefFile", "", "../examples/shub/Singularity", true},
-		{"LibraryDefFile", "", "../examples/library/Singularity", true},
-		{"OrasURI", "", c.env.OrasTestImage, true},
-		{"Yum", "yum", "../examples/centos/Singularity", true},
-		{"Zypper", "zypper", "../examples/opensuse/Singularity", true},
+		//{
+		//	name:             "ShubDefFile",
+		//	dependency:       "",
+		//	buildSpec:        "../examples/shub/Singularity",
+		//	sandbox:          true,
+		//	excludedProfiles: nil,
+		//},
+		{
+			name:             "LibraryDefFile",
+			dependency:       "",
+			buildSpec:        "../examples/library/Singularity",
+			sandbox:          true,
+			excludedProfiles: nil,
+		},
+		{
+			name:             "OrasURI",
+			dependency:       "",
+			buildSpec:        env.OrasTestImage,
+			sandbox:          true,
+			excludedProfiles: nil,
+		},
+		{
+			name:             "Yum",
+			dependency:       "yum",
+			buildSpec:        "../examples/centos/Singularity",
+			sandbox:          true,
+			excludedProfiles: nil,
+		},
+		{
+			name:             "Zypper",
+			dependency:       "zypper",
+			buildSpec:        "../examples/opensuse/Singularity",
+			sandbox:          true,
+			excludedProfiles: []e2e.SingularityProfile{e2e.FakerootProfile},
+		},
 	}
 
 	for _, tt := range tests {
-		imagePath := path.Join(c.env.TestDir, "container")
+		imagePath := path.Join(env.TestDir, uuid.NewV4().String())
 
 		// conditionally build a sandbox
 		args := []string{}
@@ -57,29 +139,37 @@ func (c *imgBuildTests) buildFrom(t *testing.T) {
 		}
 		args = append(args, imagePath, tt.buildSpec)
 
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PreRun(func(t *testing.T) {
 				if tt.dependency != "" {
-					if _, err := exec.LookPath(tt.dependency); err != nil {
-						t.Skipf("%v not found in path", tt.dependency)
-					}
+					require.Command(t, tt.dependency)
+				}
+				if tt.excludedProfiles != nil && profile.In(tt.excludedProfiles...) {
+					t.Skipf("%q excluded for this test", profile)
 				}
 			}),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.RemoveAll(imagePath)
 
-				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+				e2e.ImageVerify(t, env.CmdPath, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)
 	}
 }
 
-func (c *imgBuildTests) nonRootBuild(t *testing.T) {
+func nonPrivilegedBuild(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	if !profile.In(buildProfiles...) {
+		t.Skipf("%q could not run this test", profile)
+	}
+
 	tests := []struct {
 		name      string
 		buildSpec string
@@ -124,7 +214,7 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		imagePath := path.Join(c.env.TestDir, "container")
+		imagePath := path.Join(env.TestDir, "container")
 
 		// conditionally build a sandbox
 		args := []string{}
@@ -133,25 +223,31 @@ func (c *imgBuildTests) nonRootBuild(t *testing.T) {
 		}
 		args = append(args, imagePath, tt.buildSpec)
 
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.RemoveAll(imagePath)
 
-				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+				e2e.ImageVerify(t, env.CmdPath, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)
 	}
 }
 
-func (c *imgBuildTests) buildLocalImage(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
+func buildLocalImage(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
 
-	tmpdir, err := ioutil.TempDir(c.env.TestDir, "build-local-image.")
+	if !profile.In(rootBuildProfiles...) {
+		t.Skipf("%q could not run this test", profile)
+	}
+
+	e2e.EnsureImage(t, env)
+
+	tmpdir, err := ioutil.TempDir(env.TestDir, "build-local-image.")
 	if err != nil {
 		t.Errorf("Cannot create temporary directory: %+v", err)
 	}
@@ -160,7 +256,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
-		From:      c.env.ImagePath,
+		From:      env.ImagePath,
 	})
 	defer os.Remove(liDefFile)
 
@@ -168,20 +264,22 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 	labels["FOO"] = "bar"
 	liLabelDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
-		From:      c.env.ImagePath,
+		From:      env.ImagePath,
 		Labels:    labels,
 	})
 	defer os.Remove(liLabelDefFile)
 
 	sandboxImage := path.Join(tmpdir, "test-sandbox")
 
-	c.env.RunSingularity(
+	args := []string{"--sandbox", sandboxImage, env.ImagePath}
+
+	env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(profile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
+		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
-			e2e.ImageVerify(t, c.env.CmdPath, sandboxImage)
+			e2e.ImageVerify(t, env.CmdPath, sandboxImage)
 		}),
 		e2e.ExpectExit(0),
 	)
@@ -197,7 +295,7 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 		name      string
 		buildSpec string
 	}{
-		{"SIFToSIF", c.env.ImagePath},
+		{"SIFToSIF", env.ImagePath},
 		{"SandboxToSIF", sandboxImage},
 		{"LocalImage", liDefFile},
 		{"LocalImageLabel", liLabelDefFile},
@@ -206,33 +304,49 @@ func (c *imgBuildTests) buildLocalImage(t *testing.T) {
 
 	for i, tt := range tests {
 		imagePath := filepath.Join(tmpdir, fmt.Sprintf("image-%d", i))
-		c.env.RunSingularity(
+		args := []string{imagePath, tt.buildSpec}
+
+		env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs(imagePath, tt.buildSpec),
+			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
-				e2e.ImageVerify(t, c.env.CmdPath, imagePath)
+				e2e.ImageVerify(t, env.CmdPath, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)
 	}
 }
 
-func (c *imgBuildTests) badPath(t *testing.T) {
-	imagePath := path.Join(c.env.TestDir, "container")
-	c.env.RunSingularity(
+func badPath(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	if !profile.In(rootBuildProfiles...) {
+		t.Skipf("%q could not run this test", profile)
+	}
+
+	imagePath := path.Join(env.TestDir, "container")
+	args := []string{imagePath, dumbPath}
+
+	env.RunSingularity(
 		t,
-		e2e.WithPrivileges(true),
+		e2e.WithProfile(profile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs(imagePath, "/some/dumb/path"),
+		e2e.WithArgs(args...),
 		e2e.ExpectExit(255),
 	)
 }
 
-func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
+func buildMultiStageDefinition(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	if !profile.In(rootBuildProfiles...) {
+		t.Skipf("%q could not run this test", profile)
+	}
+
+	tmpfile, err := e2e.WriteTempFile(env.TestDir, "testFile-", testFileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -406,7 +520,7 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		imagePath := path.Join(c.env.TestDir, "container")
+		imagePath := path.Join(env.TestDir, "container")
 		defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
 
 		args := []string{}
@@ -418,26 +532,38 @@ func (c *imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 		}
 		args = append(args, imagePath, defFile)
 
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(defFile)
 				defer os.RemoveAll(imagePath)
 
-				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
+				e2e.DefinitionImageVerify(t, env.CmdPath, imagePath, tt.correct)
 			}),
 			e2e.ExpectExit(0),
 		)
 	}
 }
 
-func (c *imgBuildTests) buildDefinition(t *testing.T) {
-	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
+func buildDefinition(ctx *e2e.TestContext) {
+	t, env, profile := ctx.Get()
+
+	if !profile.In(rootBuildProfiles...) {
+		t.Skipf("%q could not run this test", profile)
+	}
+
+	defDir, err := fs.MakeTmpDir(env.TestDir, "definition-", 0755)
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(defDir)
+
+	tmpfile, err := e2e.WriteTempFile(env.TestDir, "testFile-", testFileContent)
+	if err != nil {
+		t.Fatal(err)
 	}
 	defer os.Remove(tmpfile) // clean up
 
@@ -523,14 +649,14 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Pre: []string{
-				filepath.Join(c.env.TestDir, "PreFile1"),
+				filepath.Join(defDir, "PreFile1"),
 			},
 		}},
 		{"Setup", false, true, e2e.DefFileDetails{
 			Bootstrap: "docker",
 			From:      "alpine:latest",
 			Setup: []string{
-				filepath.Join(c.env.TestDir, "SetupFile1"),
+				filepath.Join(defDir, "SetupFile1"),
 			},
 		}},
 		{"Post", false, true, e2e.DefFileDetails{
@@ -703,7 +829,7 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		imagePath := path.Join(c.env.TestDir, "container")
+		imagePath := path.Join(env.TestDir, "container")
 		defFile := e2e.PrepareDefFile(tt.dfd)
 
 		args := []string{}
@@ -715,16 +841,16 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 		}
 		args = append(args, imagePath, defFile)
 
-		c.env.RunSingularity(
+		env.RunSingularity(
 			t,
-			e2e.WithPrivileges(true),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
 				defer os.Remove(defFile)
 				defer os.RemoveAll(imagePath)
 
-				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.dfd)
+				e2e.DefinitionImageVerify(t, env.CmdPath, imagePath, tt.dfd)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -733,22 +859,27 @@ func (c *imgBuildTests) buildDefinition(t *testing.T) {
 
 // RunE2ETests is the main func to trigger the test suite
 func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
-	c := &imgBuildTests{
-		env: env,
-	}
-
 	return func(t *testing.T) {
-		// builds from definition file and URI
-		t.Run("From", c.buildFrom)
-		// build and image from an existing image
-		t.Run("FromLocalImage", c.buildLocalImage)
-		// build sifs from non-root
-		t.Run("NonRootBuild", c.nonRootBuild)
-		// try to build from a non existen path
-		t.Run("badPath", c.badPath)
-		// builds from definition template
-		t.Run("Definition", c.buildDefinition)
-		// multistage build from definition templates
-		t.Run("MultiStage", c.buildMultiStageDefinition)
+		tests := map[string]func(*e2e.TestContext){
+			"From":               buildFrom,                 // builds from definition file and URI
+			"FromLocalImage":     buildLocalImage,           // build and image from an existing image
+			"NonPrivilegedBuild": nonPrivilegedBuild,        // build sifs with all profiles
+			"BadPath":            badPath,                   // try to build from a non existent path
+			"Definition":         buildDefinition,           // builds from definition template
+			"MultiStage":         buildMultiStageDefinition, // multistage build from definition templates
+		}
+
+		for _, profile := range e2e.Profiles {
+			t.Run(profile.Name(), func(t *testing.T) {
+				profile.Require(t)
+
+				for name, fn := range tests {
+					t.Run(name, func(t *testing.T) {
+						ctx := e2e.NewTestContext(t, env, profile)
+						fn(ctx)
+					})
+				}
+			})
+		}
 	}
 }

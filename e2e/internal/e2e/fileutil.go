@@ -8,10 +8,8 @@ package e2e
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/client/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -43,8 +41,7 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 }
 
 // MakeCacheDirs creates cache directories for privileged and unprivileged
-// tests. Also set SINGULARITY_CACHEDIR environment variable for unprivileged
-// context.
+// tests.
 func MakeCacheDirs(baseDir string) error {
 	if cacheDirPriv == "" {
 		dir, err := fs.MakeTmpDir(baseDir, "privcache-", 0755)
@@ -61,7 +58,6 @@ func MakeCacheDirs(baseDir string) error {
 			return fmt.Errorf("failed to create unprivileged cache directory: %+v", err)
 		}
 		cacheDirUnpriv = dir
-		os.Setenv(cache.DirEnv, cacheDirUnpriv)
 	}
 	return nil
 }

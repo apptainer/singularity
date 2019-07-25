@@ -28,34 +28,19 @@ type instanceList struct {
 	Instances []instance `json:"instances"`
 }
 
-func (c *ctx) listInstance(t *testing.T, listArgs ...string) (stdout string, stderr string, success bool) {
-	var args []string
+func stopInstance(ctx *e2e.TestContext, instance string, stopArgs ...string) (stdout string, stderr string, success bool) {
+	t, env, profile := ctx.Get()
 
-	c.env.RunSingularity(
-		t,
-		e2e.WithCommand("instance list"),
-		e2e.WithPrivileges(c.privileged),
-		e2e.WithArgs(args...),
-		e2e.PostRun(func(t *testing.T) {
-			success = !t.Failed()
-		}),
-		e2e.ExpectExit(0, e2e.GetStreams(&stdout, &stderr)),
-	)
-
-	return
-}
-
-func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (stdout string, stderr string, success bool) {
 	args := stopArgs
 
 	if instance != "" {
 		args = append(args, instance)
 	}
 
-	c.env.RunSingularity(
+	env.RunSingularity(
 		t,
 		e2e.WithCommand("instance stop"),
-		e2e.WithPrivileges(c.privileged),
+		e2e.WithProfile(profile),
 		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
 			success = !t.Failed()
@@ -66,14 +51,16 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 	return
 }
 
-func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (stdout string, stderr string, success bool) {
+func execInstance(ctx *e2e.TestContext, instance string, execArgs ...string) (stdout string, stderr string, success bool) {
+	t, env, profile := ctx.Get()
+
 	args := []string{"instance://" + instance}
 	args = append(args, execArgs...)
 
-	c.env.RunSingularity(
+	env.RunSingularity(
 		t,
 		e2e.WithCommand("exec"),
-		e2e.WithPrivileges(c.privileged),
+		e2e.WithProfile(profile),
 		e2e.WithArgs(args...),
 		e2e.PostRun(func(t *testing.T) {
 			success = !t.Failed()
@@ -85,7 +72,9 @@ func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (s
 }
 
 // Return the number of currently running instances.
-func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
+func expectedNumberOfInstances(ctx *e2e.TestContext, n int) {
+	t, env, profile := ctx.Get()
+
 	nbInstances := -1
 
 	listInstancesFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
@@ -97,11 +86,11 @@ func (c *ctx) expectedNumberOfInstances(t *testing.T, n int) {
 		nbInstances = len(instances.Instances)
 	}
 
-	c.env.RunSingularity(
+	env.RunSingularity(
 		t,
 		e2e.WithCommand("instance list"),
-		e2e.WithPrivileges(c.privileged),
-		e2e.WithArgs([]string{"--json"}...),
+		e2e.WithProfile(profile),
+		e2e.WithArgs("--json"),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() && n != nbInstances {
 				t.Errorf("%d instance(s) are running, was expecting %d", nbInstances, n)

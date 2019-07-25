@@ -41,6 +41,7 @@ func (c *ctx) testSemanticVersion(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithArgs(tt.args...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
@@ -84,6 +85,7 @@ func (c *ctx) testEqualVersion(t *testing.T) {
 
 		c.env.RunSingularity(
 			t,
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithArgs(tt.args...),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {

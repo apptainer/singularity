@@ -122,6 +122,7 @@ func (c *ctx) singularityInspect(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("inspect"),
 			e2e.WithArgs("--json", tt.insType, containerTesterSIF),
 			e2e.ExpectExit(0, compareOutput),

@@ -77,6 +77,8 @@ func ImageVerify(t *testing.T, cmdPath string, imagePath string) {
 			t,
 			cmdPath,
 			AsSubtest(tt.name),
+			// NEED FIX: we may need to run it with various profiles
+			WithProfile(UserProfile),
 			WithCommand("exec"),
 			WithArgs(tt.argv...),
 			ExpectExit(tt.exit),

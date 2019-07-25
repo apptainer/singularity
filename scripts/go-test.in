@@ -5,7 +5,7 @@ export GO111MODULE='@GO111MODULE@'
 
 exec '@GO@' test \
 	-count=1 \
-	-timeout=20m \
+	-timeout=40m \
 	-tags '@GO_TAGS@' \
 	-failfast \
 	-cover \

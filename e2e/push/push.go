@@ -91,7 +91,7 @@ func (c *ctx) testPushCmd(t *testing.T) {
 			c.env.RunSingularity(
 				t,
 				e2e.AsSubtest(tt.desc),
-				e2e.WithPrivileges(false),
+				e2e.WithProfile(e2e.UserProfile),
 				e2e.WithCommand("push"),
 				e2e.WithArgs(strings.Split(args, " ")...),
 				e2e.ExpectExit(tt.expectedExitCode),
