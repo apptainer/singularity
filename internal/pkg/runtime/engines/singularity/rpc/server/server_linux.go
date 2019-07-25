@@ -27,11 +27,11 @@ var diskGID = -1
 type Methods int
 
 // Mount performs a mount with the specified arguments.
-func (t *Methods) Mount(arguments *args.MountArgs, reply *int) (err error) {
+func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) {
 	mainthread.Execute(func() {
-		err = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
+		*mountErr = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
-	return err
+	return nil
 }
 
 // DeCrypt decrypts the loop device

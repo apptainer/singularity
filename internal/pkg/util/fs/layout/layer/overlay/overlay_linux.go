@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -47,6 +47,11 @@ func (o *Overlay) Add(session *layout.Session, system *mount.System) error {
 	o.lowerDirs = append(o.lowerDirs, path)
 
 	return system.RunBeforeTag(mount.LayerTag, o.createOverlay)
+}
+
+// Dir returns absolute overlay directory within session
+func (o *Overlay) Dir() string {
+	return lowerDir
 }
 
 func (o *Overlay) createOverlay(system *mount.System) error {
