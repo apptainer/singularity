@@ -768,6 +768,9 @@ func LoadKeyringFromFile(path string) (openpgp.EntityList, error) {
 
 // ExportPrivateKey Will export a private key into a file (kpath).
 func ExportPrivateKey(kpath string, armor bool) error {
+	if err := PathsCheck(); err != nil {
+		return err
+	}
 
 	f, err := os.OpenFile(SecretPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
@@ -820,10 +823,10 @@ func ExportPrivateKey(kpath string, armor bool) error {
 
 // ExportPubKey Will export a public key into a file (kpath).
 func ExportPubKey(kpath string, armor bool) error {
-	file, err := os.Create(kpath)
-	if err != nil {
-		return fmt.Errorf("unable to create file: %v", err)
+	if err := PathsCheck(); err != nil {
+		return err
 	}
+
 	f, err := os.OpenFile(PublicPath(), os.O_RDONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return fmt.Errorf("unable to open local keyring: %v", err)
@@ -838,6 +841,11 @@ func ExportPubKey(kpath string, armor bool) error {
 	entityToExport, err := SelectPubKey(localEntityList)
 	if err != nil {
 		return err
+	}
+
+	file, err := os.Create(kpath)
+	if err != nil {
+		return fmt.Errorf("unable to create file: %v", err)
 	}
 
 	if !armor {
