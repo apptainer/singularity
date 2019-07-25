@@ -23,7 +23,7 @@ check: $(go_OBJ)
 	$(V)cd $(SOURCEDIR) && \
 		(PATH=$(SOURCEDIR)/bin:$$PATH; \
 		 (command -v golangci-lint >/dev/null || \
-		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.15.0) && \
+		  curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.17.1) && \
 		 golangci-lint run --build-tags "$(GO_TAGS)" ./...)
 	@echo "       PASS"
 
