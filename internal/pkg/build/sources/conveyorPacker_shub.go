@@ -40,8 +40,8 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	cp.b.FSObjects["shubImg"] = f.Name()
 
 	// get image from singularity hub
-	if err = shub.DownloadImage(cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
-		sylog.Fatalf("failed to Get from %s: %v\n", src, err)
+	if err := shub.DownloadImage(cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
+		return fmt.Errorf("unable to get image from %s: %v", src, err)
 	}
 
 	// insert base metadata before unpacking fs

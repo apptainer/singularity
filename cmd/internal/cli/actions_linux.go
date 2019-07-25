@@ -490,6 +490,15 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		engineConfig.SetImage(dir)
 		engineConfig.SetDeleteImage(true)
 		generator.AddProcessEnv("SINGULARITY_CONTAINER", dir)
+
+		// if '--disable-cache' flag, then remove original SIF after converting to sandbox
+		if disableCache {
+			sylog.Debugf("Removing tmp image: %s", image)
+			err := os.Remove(image)
+			if err != nil {
+				sylog.Errorf("unable to remove tmp image: %s: %v", image, err)
+			}
+		}
 	}
 
 	plugin.FlagHookCallbacks(engineConfig)

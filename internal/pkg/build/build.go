@@ -122,7 +122,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		s.b.Opts = conf.Opts
 		// dont need to get cp if we're skipping bootstrap
 		if !conf.Opts.Update || conf.Opts.Force {
-			if c, err := getcp(d, conf.Opts.LibraryURL, conf.Opts.LibraryAuthToken); err == nil {
+			if c, err := getcp(d); err == nil {
 				s.c = c
 			} else {
 				return nil, fmt.Errorf("unable to get conveyorpacker: %s", err)
@@ -382,7 +382,7 @@ func runBuildEngine(b *types.Bundle) error {
 	return starterCmd.Run()
 }
 
-func getcp(def types.Definition, libraryURL, authToken string) (ConveyorPacker, error) {
+func getcp(def types.Definition) (ConveyorPacker, error) {
 	switch def.Header["bootstrap"] {
 	case "library":
 		return &sources.LibraryConveyorPacker{}, nil

@@ -42,7 +42,7 @@ type Bundle struct {
 
 // Options defines build time behavior to be executed on the bundle
 type Options struct {
-	// sections are the parts of the definition to run during the build
+	// Sections are the parts of the definition to run during the build
 	Sections []string `json:"sections"`
 	// TmpDir specifies a non-standard temporary location to perform a build
 	TmpDir string
@@ -66,6 +66,8 @@ type Options struct {
 	// NoCleanUp allows a user to prevent a bundle from being cleaned up after a failed build
 	// useful for debugging
 	NoCleanUp bool `json:"noCleanUp"`
+	// NoCache when true, will not use any cache, or make cache.
+	NoCache bool
 	// ImgCache stores a pointer to the image cache to use
 	ImgCache *cache.Handle
 }

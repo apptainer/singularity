@@ -258,12 +258,11 @@ func (c *container) checkOverlay() bool {
 		return false
 	}
 
-	if _, err := c.rpcOps.Mount("none", "/", "overlay", syscall.MS_SILENT, ""); err != nil {
+	// this mount always returns an error
+	if err := c.rpcOps.Mount("none", "/", "overlay", syscall.MS_SILENT, ""); err != syscall.EINVAL {
 		// if an invalid argument error is returned, overlay is supported and is allowed
-		if err.Error() != os.ErrInvalid.Error() {
-			sylog.Debugf("Overlay seems not supported and/or not allowed by kernel")
-			return false
-		}
+		sylog.Debugf("Overlay seems not supported and/or not allowed by kernel")
+		return false
 	}
 
 	// previous mount forced overlay module to be loaded, check if we find
@@ -421,7 +420,7 @@ func (c *container) setPropagationMount(system *mount.System) error {
 		pflags |= syscall.MS_PRIVATE
 	}
 
-	if _, err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
+	if err := c.rpcOps.Mount("", "/", "", pflags, ""); err != nil {
 		return err
 	}
 	return nil
@@ -489,19 +488,9 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 
 	if !strings.HasPrefix(mnt.Destination, sessionPath) {
 		dest = fs.EvalRelative(mnt.Destination, c.session.FinalPath())
-
 		dest = filepath.Join(c.session.FinalPath(), dest)
-
-		if _, err := os.Stat(dest); os.IsNotExist(err) {
-			c.skippedMount = append(c.skippedMount, mnt.Destination)
-			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
-			return nil
-		}
 	} else {
 		dest = mnt.Destination
-		if _, err := os.Stat(dest); os.IsNotExist(err) {
-			return fmt.Errorf("destination %s doesn't exist", dest)
-		}
 	}
 
 	if remount || propagation {
@@ -539,25 +528,25 @@ func (c *container) mountGeneric(mnt *mount.Point) (err error) {
 			defer c.rpcOps.SetFsID(os.Getuid(), os.Getgid())
 		}
 	}
-	_, err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
+	err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
 	// when using user namespace we always try to apply mount flags with
 	// remount, then if we get a permission denied error, we continue
 	// execution by ignoring the error and warn user if the bind mount
 	// need to be mounted read-only
-	if remount && err != nil && c.userNS {
-		// this needs to compare error strings because we are dropping
-		// the original error value in the RPC call. In order to keep
-		// the original error values, we would have to add them to the
-		// corresponding struct passed over RPC and add the necessary
-		// GOB encoding / decoding functions.
-		if err.Error() == syscall.Errno(syscall.EPERM).Error() {
-			if flags&syscall.MS_RDONLY != 0 {
-				sylog.Warningf("Could not remount %s read-only: %s", dest, err)
-			} else {
-				sylog.Verbosef("Could not remount %s: %s", dest, err)
-			}
+	if remount && os.IsPermission(err) && c.userNS {
+		if flags&syscall.MS_RDONLY != 0 {
+			sylog.Warningf("Could not remount %s read-only: %s", dest, err)
+		} else {
+			sylog.Verbosef("Could not remount %s: %s", dest, err)
+		}
+		return nil
+	} else if os.IsNotExist(err) {
+		if !strings.HasPrefix(mnt.Destination, sessionPath) {
+			c.skippedMount = append(c.skippedMount, mnt.Destination)
+			sylog.Debugf("Skipping mount, %s doesn't exist in container", dest)
 			return nil
 		}
+		return fmt.Errorf("destination %s doesn't exist", dest)
 	}
 	return err
 }
@@ -624,7 +613,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		// Currently we only support encrypted squashfs file system
 		mountType = "squashfs"
 	}
-	_, err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
+	err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
 	if err != nil {
 		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
 	}
@@ -1267,8 +1256,10 @@ func (c *container) addHomeStagingDir(system *mount.System, source string, dest 
 			return "", fmt.Errorf("unable to add %s to mount list: %s", source, err)
 		}
 		system.Points.AddRemount(mount.HomeTag, homeStage, flags)
+		c.session.OverrideDir(dest, source)
 	} else {
 		sylog.Debugf("Using session directory for home directory")
+		c.session.OverrideDir(dest, homeStage)
 	}
 
 	return homeStage, nil
@@ -1296,8 +1287,9 @@ func (c *container) addHomeNoLayer(system *mount.System, source, dest string) er
 	}
 
 	homeStageBase, _ := c.session.GetPath(homeBase)
+
 	sylog.Verbosef("Mounting staged home directory base (%v) into container at %v\n", homeStageBase, filepath.Join(c.session.FinalPath(), homeBase))
-	if err := system.Points.AddBind(mount.FinalTag, homeStageBase, homeBase, flags); err != nil {
+	if err := system.Points.AddBind(mount.HomeTag, homeStageBase, homeBase, flags); err != nil {
 		return fmt.Errorf("unable to add %s to mount list: %s", homeStageBase, err)
 	}
 
@@ -1404,6 +1396,7 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 		} else if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		} else {
+			c.session.OverrideDir(dst, src)
 			system.Points.AddRemount(mount.UserbindsTag, dst, flags)
 		}
 	}
@@ -1417,13 +1410,19 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 }
 
 func (c *container) addTmpMount(system *mount.System) error {
+	const (
+		tmpPath    = "/tmp"
+		varTmpPath = "/var/tmp"
+	)
+
 	sylog.Debugf("Checking for 'mount tmp' in configuration file")
 	if !c.engine.EngineConfig.File.MountTmp {
 		sylog.Verbosef("Skipping tmp dir mounting (per config)")
 		return nil
 	}
-	tmpSource := "/tmp"
-	vartmpSource := "/var/tmp"
+
+	tmpSource := tmpPath
+	vartmpSource := varTmpPath
 
 	if c.engine.EngineConfig.GetContain() {
 		workdir := c.engine.EngineConfig.GetWorkdir()
@@ -1469,20 +1468,23 @@ func (c *container) addTmpMount(system *mount.System) error {
 			tmpSource, _ = c.session.GetPath(tmpSource)
 			vartmpSource, _ = c.session.GetPath(vartmpSource)
 		}
+
+		c.session.OverrideDir(tmpPath, tmpSource)
+		c.session.OverrideDir(varTmpPath, vartmpSource)
 	}
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
-	if err := system.Points.AddBind(mount.TmpTag, tmpSource, "/tmp", flags); err == nil {
-		system.Points.AddRemount(mount.TmpTag, "/tmp", flags)
-		sylog.Verbosef("Default mount: /tmp:/tmp")
+	if err := system.Points.AddBind(mount.TmpTag, tmpSource, tmpPath, flags); err == nil {
+		system.Points.AddRemount(mount.TmpTag, tmpPath, flags)
+		sylog.Verbosef("Default mount: %s:%s", tmpPath, tmpPath)
 	} else {
-		return fmt.Errorf("could not mount container's /tmp directory: %s %s", err, tmpSource)
+		return fmt.Errorf("could not mount container's %s directory: %s", tmpPath, err)
 	}
-	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, "/var/tmp", flags); err == nil {
-		system.Points.AddRemount(mount.TmpTag, "/var/tmp", flags)
-		sylog.Verbosef("Default mount: /var/tmp:/var/tmp")
+	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, varTmpPath, flags); err == nil {
+		system.Points.AddRemount(mount.TmpTag, varTmpPath, flags)
+		sylog.Verbosef("Default mount: %s:%s", varTmpPath, varTmpPath)
 	} else {
-		return fmt.Errorf("could not mount container's /var/tmp directory: %s", err)
+		return fmt.Errorf("could not mount container's %s directory: %s", varTmpPath, err)
 	}
 	return nil
 }
