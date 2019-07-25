@@ -7,7 +7,7 @@ jobs:
   get_source:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-stretch
+      - image: sylabsio/golang:1.12.7-stretch
     steps:
       - checkout
       - persist_to_workspace:
@@ -18,7 +18,7 @@ jobs:
   cache_go_mod:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-stretch
+      - image: sylabsio/golang:1.12.7-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -33,10 +33,10 @@ jobs:
           paths:
             - '/go/pkg/mod'
 
-  go111-stretch:
+  go112-stretch:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-stretch
+      - image: sylabsio/golang:1.12.7-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -50,10 +50,10 @@ jobs:
           command: |-
             make -j$(nproc) -C ./builddir check
 
-  go111-alpine:
+  go112-alpine:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-alpine
+      - image: sylabsio/golang:1.12.7-alpine
     steps:
       - attach_workspace:
           at: /go
