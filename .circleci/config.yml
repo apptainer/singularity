@@ -104,12 +104,12 @@ jobs:
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.11.6
+          name: Update Go to 1.12.7
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.11.6.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.11.6.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
@@ -159,12 +159,12 @@ jobs:
             echo 'export SINGULARITY_E2E=1' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.11.6
+          name: Update Go to 1.12.7
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.11.6.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.11.6.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
@@ -199,10 +199,10 @@ workflows:
       - cache_go_mod:
           requires:
             - get_source
-      - go111-stretch:
+      - go112-stretch:
           requires:
             - cache_go_mod
-      - go111-alpine:
+      - go112-alpine:
           requires:
             - cache_go_mod
       - go-macos:
