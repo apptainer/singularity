@@ -627,7 +627,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 
 	sylog.Debugf("Parent rootfs: %s", parentRootfs)
 
-	if _, err := c.rpcOps.Mount("", parentRootfs, "", syscall.MS_PRIVATE, ""); err != nil {
+	if err := c.rpcOps.Mount("", parentRootfs, "", syscall.MS_PRIVATE, ""); err != nil {
 		return err
 	}
 	if err := system.Points.AddBind(mount.RootfsTag, c.rootfs, c.rootfs, flags); err != nil {
@@ -709,7 +709,7 @@ func (c *container) addDefaultDevices(system *mount.System) error {
 				if _, err := c.rpcOps.Touch(path); err != nil {
 					return fmt.Errorf("could not create file %s: %s", path, err)
 				}
-				if _, err := c.rpcOps.Mount(device.path, path, "", syscall.MS_BIND, ""); err != nil {
+				if err := c.rpcOps.Mount(device.path, path, "", syscall.MS_BIND, ""); err != nil {
 					return fmt.Errorf("could not mount %s to %s: %s", device.path, path, err)
 				}
 			} else {
@@ -959,7 +959,7 @@ func (c *container) mount(point *mount.Point) error {
 		sylog.Debugf("Mount %s to %s : %s [%s]", source, dest, point.Type, optsString)
 	}
 
-	_, err := c.rpcOps.Mount(source, dest, point.Type, flags, optsString)
+	err := c.rpcOps.Mount(source, dest, point.Type, flags, optsString)
 	if err != nil {
 		sylog.Debugf("RPC mount error: %s", err)
 	}

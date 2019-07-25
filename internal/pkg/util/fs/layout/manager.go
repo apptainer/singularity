@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -49,6 +49,7 @@ type Manager struct {
 	rootPath string
 	entries  map[string]interface{}
 	dirs     []*dir
+	ovDirs   map[string]string
 }
 
 func (m *Manager) checkPath(path string, checkExist bool) (string, error) {
@@ -86,6 +87,9 @@ func (m *Manager) createParentDir(path string) {
 				d := &dir{mode: m.DirMode, uid: uid, gid: gid}
 				m.entries[p] = d
 				m.dirs = append(m.dirs, d)
+				if ovDir, ok := m.ovDirs[filepath.Dir(p)]; ok {
+					m.ovDirs[p] = filepath.Join(ovDir, filepath.Base(p))
+				}
 			}
 		}
 	}
@@ -101,6 +105,9 @@ func (m *Manager) SetRootPath(path string) error {
 		m.entries = make(map[string]interface{})
 	} else {
 		return fmt.Errorf("root path is already set")
+	}
+	if m.ovDirs == nil {
+		m.ovDirs = make(map[string]string)
 	}
 	if m.dirs == nil {
 		m.dirs = make([]*dir, 0)
@@ -150,6 +157,20 @@ func (m *Manager) AddSymlink(path string, target string) error {
 	m.createParentDir(filepath.Dir(p))
 	m.entries[p] = &symlink{uid: os.Getuid(), gid: os.Getgid(), target: target}
 	return nil
+}
+
+// overrideDir will substitute another directory to the one associated
+// to directory located by path
+func (m *Manager) overrideDir(path string, realpath string) {
+	m.ovDirs[path] = realpath
+}
+
+// GetOverridePath returns the real path for the session path
+func (m *Manager) GetOverridePath(path string) (string, error) {
+	if p, ok := m.ovDirs[path]; !ok {
+		return p, nil
+	}
+	return "", fmt.Errorf("no override directory %s", path)
 }
 
 // GetPath returns the full path of layout path
@@ -225,8 +246,16 @@ func (m *Manager) sync() error {
 		for p, e := range m.entries {
 			if e == d {
 				path = m.rootPath + p
+				if ovDir, ok := m.ovDirs[p]; ok {
+					if _, err := os.Stat(ovDir); err != nil {
+						path = ovDir
+					}
+				}
 				break
 			}
+		}
+		if path == "" {
+			continue
 		}
 		if d.mode != m.DirMode {
 			if err := os.Mkdir(path, d.mode); err != nil {
@@ -247,6 +276,9 @@ func (m *Manager) sync() error {
 
 	for p, e := range m.entries {
 		path := m.rootPath + p
+		if ovDir, ok := m.ovDirs[filepath.Dir(p)]; ok {
+			path = filepath.Join(ovDir, filepath.Base(p))
+		}
 		switch entry := e.(type) {
 		case *file:
 			if entry.created {

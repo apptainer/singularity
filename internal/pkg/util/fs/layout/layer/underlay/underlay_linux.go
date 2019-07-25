@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -44,6 +44,11 @@ func (u *Underlay) Add(session *layout.Session, system *mount.System) error {
 		return err
 	}
 	return system.RunBeforeTag(mount.PreLayerTag, u.createUnderlay)
+}
+
+// Dir returns absolute underlay directory within session
+func (u *Underlay) Dir() string {
+	return underlayDir
 }
 
 func (u *Underlay) createUnderlay(system *mount.System) error {

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -70,22 +70,19 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	sylog.Debugf("Mounting image directory %s\n", rootfs)
-	_, err = rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro")
-	if err != nil {
+	if err := rpcOps.Mount(rootfs, sessionPath, "", syscall.MS_BIND, "errors=remount-ro"); err != nil {
 		return fmt.Errorf("failed to mount directory filesystem %s: %s", rootfs, err)
 	}
 
 	dest := filepath.Join(sessionPath, "tmp")
 	sylog.Debugf("Mounting /tmp at %s\n", dest)
-	_, err = rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND, "")
-	if err != nil {
+	if err := rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND, ""); err != nil {
 		return fmt.Errorf("mount /tmp failed: %s", err)
 	}
 
 	dest = filepath.Join(sessionPath, "var", "tmp")
 	sylog.Debugf("Mounting /var/tmp at %s\n", dest)
-	_, err = rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND, "")
-	if err != nil {
+	if err := rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND, ""); err != nil {
 		return fmt.Errorf("mount /var/tmp failed: %s", err)
 	}
 
@@ -104,59 +101,50 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	dest = filepath.Join(sessionPath, "proc")
 	sylog.Debugf("Mounting /proc at %s\n", dest)
-	_, err = rpcOps.Mount("/proc", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/proc", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount proc failed: %s", err)
 	}
 	if !insideUserNs {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount proc failed: %s", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "sys")
 	sylog.Debugf("Mounting /sys at %s\n", dest)
-	_, err = rpcOps.Mount("/sys", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/sys", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount sys failed: %s", err)
 	}
 	if !insideUserNs {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount sys failed: %s", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "dev")
 	sylog.Debugf("Mounting /dev at %s\n", dest)
-	_, err = rpcOps.Mount("/dev", dest, "", syscall.MS_BIND|syscall.MS_REC, "")
-	if err != nil {
+	if err := rpcOps.Mount("/dev", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /dev failed: %s", err)
 	}
 
 	dest = filepath.Join(sessionPath, "etc", "resolv.conf")
 	sylog.Debugf("Mounting /etc/resolv.conf at %s\n", dest)
-	_, err = rpcOps.Mount("/etc/resolv.conf", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/etc/resolv.conf", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount /etc/resolv.conf failed: %s", err)
 	}
 	if !insideUserNs {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount /etc/resolv.conf failed: %s", err)
 		}
 	}
 
 	dest = filepath.Join(sessionPath, "etc", "hosts")
 	sylog.Debugf("Mounting /etc/hosts at %s\n", dest)
-	_, err = rpcOps.Mount("/etc/hosts", dest, "", flags, "")
-	if err != nil {
+	if err := rpcOps.Mount("/etc/hosts", dest, "", flags, ""); err != nil {
 		return fmt.Errorf("mount /etc/hosts failed: %s", err)
 	}
 	if !insideUserNs {
-		_, err = rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, "")
-		if err != nil {
+		if err := rpcOps.Mount("", dest, "", syscall.MS_REMOUNT|flags, ""); err != nil {
 			return fmt.Errorf("remount /etc/hosts failed: %s", err)
 		}
 	}
@@ -168,8 +156,7 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 	}
 
 	sylog.Debugf("Set RPC mount propagation flag to PRIVATE")
-	_, err = rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, "")
-	if err != nil {
+	if err := rpcOps.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, ""); err != nil {
 		return err
 	}
 
