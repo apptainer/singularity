@@ -275,44 +275,44 @@ echo "There is no runscript defined for this container\n";
 `
 )
 
-func makeDirs(rootPath string) (err error) {
-	if err = os.MkdirAll(filepath.Join(rootPath, ".singularity.d", "libs"), 0755); err != nil {
-		return
+func makeDirs(rootPath string) error {
+	if err := os.MkdirAll(filepath.Join(rootPath, ".singularity.d", "libs"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, ".singularity.d", "actions"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, ".singularity.d", "actions"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, ".singularity.d", "env"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, ".singularity.d", "env"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "dev"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "dev"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "proc"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "proc"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "root"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "root"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "var", "tmp"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "var", "tmp"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "tmp"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "tmp"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "etc"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "etc"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "sys"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "sys"), 0755); err != nil {
+		return err
 	}
-	if err = os.MkdirAll(filepath.Join(rootPath, "home"), 0755); err != nil {
-		return
+	if err := os.MkdirAll(filepath.Join(rootPath, "home"), 0755); err != nil {
+		return err
 	}
-	return
+	return nil
 }
 
-func makeSymlinks(rootPath string) (err error) {
+func makeSymlinks(rootPath string) error {
 	if _, err := os.Stat(filepath.Join(rootPath, "singularity")); err != nil {
 		if err = os.Symlink(".singularity.d/runscript", filepath.Join(rootPath, "singularity")); err != nil {
 			return err
@@ -343,7 +343,7 @@ func makeSymlinks(rootPath string) (err error) {
 			return err
 		}
 	}
-	return
+	return nil
 }
 
 func makeFile(name string, perm os.FileMode, s string) (err error) {
@@ -357,50 +357,50 @@ func makeFile(name string, perm os.FileMode, s string) (err error) {
 	return
 }
 
-func makeFiles(rootPath string) (err error) {
-	if err = makeFile(filepath.Join(rootPath, "etc", "hosts"), 0644, ""); err != nil {
-		return
+func makeFiles(rootPath string) error {
+	if err := makeFile(filepath.Join(rootPath, "etc", "hosts"), 0644, ""); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, "etc", "resolv.conf"), 0644, ""); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, "etc", "resolv.conf"), 0644, ""); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "exec"), 0755, execFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "exec"), 0755, execFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "run"), 0755, runFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "run"), 0755, runFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "shell"), 0755, shellFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "shell"), 0755, shellFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "start"), 0755, startFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "start"), 0755, startFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "test"), 0755, testFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "actions", "test"), 0755, testFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "01-base.sh"), 0755, baseShFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "env", "01-base.sh"), 0755, baseShFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "90-environment.sh"), 0755, environmentShFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "env", "90-environment.sh"), 0755, environmentShFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "95-apps.sh"), 0755, appsShFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "env", "95-apps.sh"), 0755, appsShFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "99-base.sh"), 0755, base99ShFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "env", "99-base.sh"), 0755, base99ShFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "env", "99-runtimevars.sh"), 0755, base99runtimevarsShFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "env", "99-runtimevars.sh"), 0755, base99runtimevarsShFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "runscript"), 0755, runscriptFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "runscript"), 0755, runscriptFileContent); err != nil {
+		return err
 	}
-	if err = makeFile(filepath.Join(rootPath, ".singularity.d", "startscript"), 0755, startscriptFileContent); err != nil {
-		return
+	if err := makeFile(filepath.Join(rootPath, ".singularity.d", "startscript"), 0755, startscriptFileContent); err != nil {
+		return err
 	}
-	return
+	return nil
 }
 
 func makeBaseEnv(rootPath string) (err error) {
