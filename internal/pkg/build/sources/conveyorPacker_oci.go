@@ -89,7 +89,7 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 			cp.srcRef, err = ociarchive.ParseReference(ref)
 		} else {
 			// As non-root we need to do a dumb tar extraction first
-			tmpDir, err := ioutil.TempDir("", "temp-oci-")
+			tmpDir, err := ioutil.TempDir(cp.b.Opts.TmpDir, "temp-oci-")
 			if err != nil {
 				return fmt.Errorf("could not create temporary oci directory: %v", err)
 			}
@@ -120,10 +120,12 @@ func (cp *OCIConveyorPacker) Get(b *sytypes.Bundle) (err error) {
 		return fmt.Errorf("invalid image source: %v", err)
 	}
 
-	// Grab the modified source ref from the cache
-	cp.srcRef, err = ociclient.ConvertReference(b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
-	if err != nil {
-		return err
+	if !cp.b.Opts.NoCache {
+		// Grab the modified source ref from the cache
+		cp.srcRef, err = ociclient.ConvertReference(b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
+		if err != nil {
+			return err
+		}
 	}
 
 	// To to do the RootFS extraction we also have to have a location that

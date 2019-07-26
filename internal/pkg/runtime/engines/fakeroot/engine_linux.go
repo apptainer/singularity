@@ -157,9 +157,6 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if err != nil {
 		return fmt.Errorf("failed to mount proc filesystem: %s", err)
 	}
-	if err != nil {
-		return fmt.Errorf("failed to mount %s to /root: %s", e.EngineConfig.Home, err)
-	}
 	args := e.EngineConfig.Args
 	if len(args) == 0 {
 		return fmt.Errorf("no command to execute provided")

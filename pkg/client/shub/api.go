@@ -48,7 +48,7 @@ type ShubAPIResponse struct {
 
 // getManifest will return the image manifest for a container uri
 // from Singularity Hub.
-func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error) {
+func getManifest(uri ShubURI, noHTTPS bool) (ShubAPIResponse, error) {
 
 	// Create a new http Hub client
 	httpc := http.Client{
@@ -102,11 +102,10 @@ func getManifest(uri ShubURI, noHTTPS bool) (manifest ShubAPIResponse, err error
 		return ShubAPIResponse{}, err
 	}
 
+	var manifest ShubAPIResponse
+
 	err = json.Unmarshal(body, &manifest)
 	sylog.Debugf("manifest image name: %v\n", manifest.Name)
-	if err != nil {
-		return ShubAPIResponse{}, err
-	}
 
-	return
+	return manifest, err
 }

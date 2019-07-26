@@ -159,6 +159,16 @@ var buildTmpdirFlag = cmdline.Flag{
 	EnvKeys:      []string{"TMPDIR"},
 }
 
+// --disable-cache
+var buildDisableCacheFlag = cmdline.Flag{
+	ID:           "buildDisableCacheFlag",
+	Value:        &disableCache,
+	DefaultValue: false,
+	Name:         "disable-cache",
+	Usage:        "do not use cache or create cache",
+	EnvKeys:      []string{"DISABLE_CACHE"},
+}
+
 // --nohttps
 var buildNoHTTPSFlag = cmdline.Flag{
 	ID:           "buildNoHTTPSFlag",
@@ -205,6 +215,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&buildSandboxFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildSectionFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildTmpdirFlag, BuildCmd)
+	cmdManager.RegisterFlagForCmd(&buildDisableCacheFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildUpdateFlag, BuildCmd)
 	cmdManager.RegisterFlagForCmd(&buildFakerootFlag, BuildCmd)
 
@@ -268,19 +279,19 @@ func checkBuildTarget(path string, update bool) bool {
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
 // it uses a different version the the definition struct and parser
-func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
+func definitionFromSpec(spec string) (legacytypes.Definition, error) {
 
 	// Try spec as URI first
-	def, err = legacytypes.NewDefinitionFromURI(spec)
+	def, err := legacytypes.NewDefinitionFromURI(spec)
 	if err == nil {
-		return
+		return def, nil
 	}
 
 	// Try spec as local file
 	var isValid bool
 	isValid, err = legacyparser.IsValidDefinition(spec)
 	if err != nil {
-		return
+		return legacytypes.Definition{}, err
 	}
 
 	if isValid {
@@ -289,13 +300,12 @@ func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 		var defFile *os.File
 		defFile, err = os.Open(spec)
 		if err != nil {
-			return
+			return legacytypes.Definition{}, err
 		}
 
 		defer defFile.Close()
-		def, err = legacyparser.ParseDefinitionFile(defFile)
 
-		return
+		return legacyparser.ParseDefinitionFile(defFile)
 	}
 
 	// File exists and does NOT contain a valid definition
@@ -307,7 +317,7 @@ func definitionFromSpec(spec string) (def legacytypes.Definition, err error) {
 		},
 	}
 
-	return
+	return def, nil
 }
 
 func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {

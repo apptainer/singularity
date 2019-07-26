@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
@@ -117,8 +118,9 @@ func (c *ctx) singularityInspect(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Inspect the container, and get the output
 			out, err := c.runInspectCommand(tt.insType)
+			err = errors.Wrap(err, "running inspect command")
 			if err != nil {
-				t.Fatalf("unexpected failure: %s: %s", string(out), err)
+				t.Fatalf("unexpected failure: %s: %+v", string(out), err)
 			}
 
 			// Parse the output

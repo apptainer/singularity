@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
@@ -99,8 +100,9 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	// Create and populate a temporary file.
 	tempFile := filepath.Join(dir, fileName)
 	err = ioutil.WriteFile(tempFile, fileContents, 0644)
+	err = errors.Wrapf(err, "creating temporary test file %s", tempFile)
 	if err != nil {
-		t.Fatalf("Failed to create file %s: %v", tempFile, err)
+		t.Fatalf("Failed to create file: %+v", err)
 	}
 
 	// Start an instance with the temporary directory as the home directory.

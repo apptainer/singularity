@@ -154,6 +154,7 @@ func run(cmd *cobra.Command, args []string) {
 						NoCleanUp: noCleanUp,
 						Opts: types.Options{
 							ImgCache: imgCache,
+							NoCache:  disableCache,
 							TmpDir:   tmpDir,
 							Update:   update,
 							Force:    force,
@@ -220,6 +221,7 @@ func run(cmd *cobra.Command, args []string) {
 				Opts: types.Options{
 					ImgCache:         imgCache,
 					TmpDir:           tmpDir,
+					NoCache:          disableCache,
 					Update:           update,
 					Force:            force,
 					Sections:         sections,
