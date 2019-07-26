@@ -614,8 +614,22 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		mountType = "squashfs"
 	}
 	err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
-	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
+	switch err {
+	case syscall.EINVAL:
+		if mountType == "squashfs" {
+			return fmt.Errorf(
+				"kernel reported a bad superblock for %s image partition, "+
+					"possible causes are that your kernel doesn't support "+
+					"the compression algorithm or the image is corrupted",
+				mountType)
+		}
+		return fmt.Errorf("%s image partition contains a bad superblock (corrupted image ?)", mountType)
+	case syscall.ENODEV:
+		return fmt.Errorf("%s filesystem seems not enabled and/or supported by your kernel", mountType)
+	default:
+		if err != nil {
+			return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
+		}
 	}
 
 	return nil

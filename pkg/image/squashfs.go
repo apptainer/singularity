@@ -76,7 +76,7 @@ func parseSquashfsHeader(b []byte) (*squashfsInfo, uint64, error) {
 func CheckSquashfsHeader(b []byte) (uint64, error) {
 	sinfo, offset, err := parseSquashfsHeader(b)
 	if err != nil {
-		return offset, fmt.Errorf("while parsing squashfs super block: %v", err)
+		return offset, debugErrorf("while parsing squashfs super block: %v", err)
 	}
 
 	if sinfo.Compression != squashfsZlib {
@@ -90,6 +90,8 @@ func CheckSquashfsHeader(b []byte) (uint64, error) {
 			compressionType = "lzo"
 		case squashfsXzComp:
 			compressionType = "xz"
+		default:
+			return 0, fmt.Errorf("corrupted image: unknown compression algorithm value %d", sinfo.Compression)
 		}
 		sylog.Infof("squashfs image was compressed with %s, if it failed to run, please contact image's author", compressionType)
 	}
@@ -132,11 +134,11 @@ func GetSquashfsComp(b []byte) (string, error) {
 
 func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if fileinfo.IsDir() {
-		return fmt.Errorf("not a squashfs image")
+		return debugError("not a squashfs image")
 	}
 	b := make([]byte, bufferSize)
 	if n, err := img.File.Read(b); err != nil || n != bufferSize {
-		return fmt.Errorf("can't read first %d bytes: %s", bufferSize, err)
+		return debugErrorf("can't read first %d bytes: %s", bufferSize, err)
 	}
 	offset, err := CheckSquashfsHeader(b)
 	if err != nil {
