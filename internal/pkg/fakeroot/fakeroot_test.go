@@ -157,8 +157,8 @@ func createConfig(t *testing.T) string {
 
 	var buf bytes.Buffer
 
-	base := 10
-	size := 10
+	base := uint32(10)
+	size := uint32(10)
 
 	// valid users
 	for i := base; i < base+size; i++ {
