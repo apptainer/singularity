@@ -330,7 +330,7 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 	return err
 }
 
-func doHeader(h string, d *types.Definition) (err error) {
+func doHeader(h string, d *types.Definition) error {
 	h = strings.TrimSpace(h)
 	toks := strings.Split(h, "\n")
 	header := make(map[string]string)
@@ -386,7 +386,8 @@ func doHeader(h string, d *types.Definition) (err error) {
 	if len(header) != 0 {
 		d.Header = header
 	}
-	return
+
+	return nil
 }
 
 // ParseDefinitionFile receives a reader from a definition file

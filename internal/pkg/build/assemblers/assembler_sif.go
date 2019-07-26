@@ -147,14 +147,11 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 }
 
 // Assemble creates a SIF image from a Bundle
-func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
+func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	sylog.Infof("Creating SIF file...")
 
 	s := packer.NewSquashfs()
 	s.MksquashfsPath = a.MksquashfsPath
-	if err != nil {
-		return fmt.Errorf("while searching for mksquashfs: %v", err)
-	}
 
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
 	if err != nil {
@@ -213,7 +210,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
-	return
+	return nil
 }
 
 // changeOwner check the command being called with sudo with the environment
