@@ -26,6 +26,7 @@ type FileConfig struct {
 	MountTmp                bool     `default:"yes" authorized:"yes,no" directive:"mount tmp"`
 	MountHostfs             bool     `default:"no" authorized:"yes,no" directive:"mount hostfs"`
 	UserBindControl         bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
+	EnableFusecmd           bool     `default:"yes" authorized:"yes,no" directive:"enable fusecmd"`
 	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
 	AllowContainerSquashfs  bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`

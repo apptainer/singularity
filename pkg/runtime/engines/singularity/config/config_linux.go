@@ -71,6 +71,9 @@ func (e *EngineConfig) SetPluginConfig(plugin string, cfg interface{}) error {
 
 //SetFuseCmd takes input from --fusecmd flags and creates plugin objects from them to hook in to the fuse plugin support code
 func (e *EngineConfig) SetFuseCmd(fusecmd []string) error {
+	if !e.File.EnableFusecmd {
+		sylog.Fatalf("--fusecmd disabled by configuration")
+	}
 	for _, cmd := range fusecmd {
 		//Splits the command into a list of whitespace-separated words
 		words := strings.Fields(cmd)
