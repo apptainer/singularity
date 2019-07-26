@@ -24,14 +24,12 @@ type ctx struct {
 }
 
 func (c *ctx) singularityKeyList(t *testing.T) {
-
 	printOut := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		t.Log("stdout from 'key list' : ", string(r.Stdout))
 	}
 
 	c.env.RunSingularity(
 		t,
-		e2e.WithPrivileges(false),
 		e2e.WithCommand("key"),
 		e2e.WithArgs("list"),
 		e2e.ExpectExit(0, printOut),
@@ -46,12 +44,12 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 		{
 			name: "newpair",
 			consoleOps: []e2e.SingularityConsoleOp{
-				e2e.ConsoleSendLine("e2e test key; do not use"),
-				e2e.ConsoleSendLine("westley@sylabs.io"),
-				e2e.ConsoleSendLine("E2E test key; do not use"),
-				e2e.ConsoleSendLine("e2etests"),
-				e2e.ConsoleSendLine("e2etests"),
-				e2e.ConsoleSendLine("n"),
+				e2e.ConsoleSendLine("e2e test key"),         // Name of the key
+				e2e.ConsoleSendLine("westley@sylabs.io"),    // Email for the key
+				e2e.ConsoleSendLine("Only for E2E testing"), // Optional comment
+				e2e.ConsoleSendLine("e2etests"),             // Password
+				e2e.ConsoleSendLine("e2etests"),             // Password confirmation
+				e2e.ConsoleSendLine("n"),                    // 'n' to NOT push to the keystore
 			},
 		},
 	}
@@ -59,86 +57,60 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.AsSubtest(tt.name),
 			e2e.ConsoleRun(tt.consoleOps...),
 			e2e.WithCommand("key"),
 			e2e.WithArgs("newpair"),
 			e2e.ExpectExit(0),
 		)
 	}
-	//t.Run("singularityKeyExport", c.singularityKeyExport)
 }
 
 // singularityKeyExport will export a private, and public (binary and ASCII) key.
 func (c *ctx) singularityKeyExport(t *testing.T) {
 	tests := []struct {
 		name       string
-		armor      bool
-		secret     bool
-		exportPath string
+		args       []string
 		consoleOps []e2e.SingularityConsoleOp
 	}{
 		{
-			name:       "export public binary",
-			exportPath: c.publicExportPath,
-			armor:      false,
-			secret:     false,
+			name: "export public binary",
+			args: []string{"export", c.publicExportPath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("0"),
 			},
 		},
 		{
-			name:       "export private binary",
-			exportPath: c.privateExportPath,
-			armor:      false,
-			secret:     true,
+			name: "export private binary",
+			args: []string{"export", "--secret", c.privateExportPath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("0"),
 				e2e.ConsoleSendLine("e2etests"),
 			},
 		},
 		{
-			name:       "export public ascii",
-			exportPath: c.publicExportASCIIPath,
-			armor:      true,
-			secret:     false,
+			name: "export public ascii",
+			args: []string{"export", "--armor", c.publicExportASCIIPath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("0"),
 			},
 		},
 		{
-			name:       "export private ascii",
-			exportPath: c.privateExportASCIIPath,
-			armor:      true,
-			secret:     true,
+			name: "export private ascii",
+			args: []string{"export", "--secret", "--armor", c.privateExportASCIIPath},
 			consoleOps: []e2e.SingularityConsoleOp{
 				e2e.ConsoleSendLine("0"),
 				e2e.ConsoleSendLine("e2etests"),
 			},
 		},
-	}
-
-	prepCmd := func(exportPath string, secret, armor bool) []string {
-		cmd := []string{"export"}
-
-		if armor {
-			cmd = append(cmd, "--armor")
-		}
-		if secret {
-			cmd = append(cmd, "--secret")
-		}
-
-		cmd = append(cmd, exportPath)
-
-		return cmd
 	}
 
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
-			e2e.WithArgs(prepCmd(tt.exportPath, tt.secret, tt.armor)...),
+			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(tt.consoleOps...),
 			e2e.ExpectExit(0),
 		)
@@ -146,65 +118,95 @@ func (c *ctx) singularityKeyExport(t *testing.T) {
 }
 
 // singularityKeyImport will export a private, and public (binary and ASCII) key.
+// And will try (and fail) to import a key with the wrong password.
 func (c *ctx) singularityKeyImport(t *testing.T) {
 	tests := []struct {
 		name       string
-		exportPath string
+		args       []string
 		consoleOps []e2e.SingularityConsoleOp
+		expectExit int
 	}{
 		{
 			name:       "import public binary",
-			exportPath: c.publicExportPath,
-			consoleOps: []e2e.SingularityConsoleOp{},
+			args:       []string{"import", c.publicExportPath},
+			expectExit: 0,
 		},
 		{
-			name:       "import private binary",
-			exportPath: c.privateExportPath,
+			name: "import private binary wrong password",
+			args: []string{"import", c.privateExportPath},
 			consoleOps: []e2e.SingularityConsoleOp{
-				e2e.ConsoleSendLine("e2etests"),
-				e2e.ConsoleSendLine("e2etests"),
-				e2e.ConsoleSendLine("e2etests"),
+				e2e.ConsoleSendLine("theWrongPassword"), // The wrong password to decrypt the key (will fail)
+				e2e.ConsoleSendLine("somethingElse"),
+				e2e.ConsoleSendLine("somethingElse"),
 			},
+			expectExit: 2,
+		},
+		{
+			name: "import private binary",
+			args: []string{"import", c.privateExportPath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2etests"), // The password to decrypt the key
+				e2e.ConsoleSendLine("e2etests"), // Then the new password
+				e2e.ConsoleSendLine("e2etests"), // Confirm the password
+			},
+			expectExit: 0,
 		},
 		{
 			name:       "import public ascii",
-			exportPath: c.publicExportASCIIPath,
-			consoleOps: []e2e.SingularityConsoleOp{},
+			args:       []string{"import", c.publicExportASCIIPath},
+			expectExit: 0,
 		},
 		{
-			name:       "import private ascii",
-			exportPath: c.privateExportASCIIPath,
+			name: "import private ascii wrong password",
+			args: []string{"import", c.privateExportASCIIPath},
 			consoleOps: []e2e.SingularityConsoleOp{
-				e2e.ConsoleSendLine("e2etests"),
-				e2e.ConsoleSendLine("e2etests"),
-				e2e.ConsoleSendLine("e2etests"),
+				e2e.ConsoleSendLine("theWrongPassword"), // The wrong password to decrypt the key (will fail)
+				e2e.ConsoleSendLine("somethingElse"),
+				e2e.ConsoleSendLine("somethingElse"),
 			},
+			expectExit: 2,
 		},
-	}
-
-	prepCmd := func(exportPath string) []string {
-		return []string{"import", exportPath}
+		{
+			name: "import private ascii",
+			args: []string{"import", c.privateExportASCIIPath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("e2etests"), // The password to decrypt the key
+				e2e.ConsoleSendLine("e2etests"), // Then the new password
+				e2e.ConsoleSendLine("e2etests"), // Confirm the password
+			},
+			expectExit: 0,
+		},
 	}
 
 	for _, tt := range tests {
 		c.singularityResetKeyring(t) // Remove the tmp keyring before each import
 		c.env.RunSingularity(
 			t,
-			e2e.WithPrivileges(false),
+			e2e.AsSubtest(tt.name),
 			e2e.WithCommand("key"),
-			e2e.WithArgs(prepCmd(tt.exportPath)...),
+			e2e.WithArgs(tt.args...),
 			e2e.ConsoleRun(tt.consoleOps...),
-			e2e.ExpectExit(0),
+			e2e.ExpectExit(tt.expectExit),
 		)
 	}
-	//t.Run("singularityKeyExport", c.singularityKeyExport)
 }
 
 func (c *ctx) singularityResetKeyring(t *testing.T) {
 	// TODO: run this as non-root
-	if err := os.RemoveAll(c.keyRing); err != nil {
+	err := os.RemoveAll(c.keyRing)
+	if os.IsNotExist(err) && err != nil {
 		t.Fatalf("unable to remove tmp keyring directory: %s", err)
 	}
+}
+
+// Run the 'key' tests in order
+func (c *ctx) singularityKeyCmd(t *testing.T) {
+	c.singularityKeyNewpair(t)
+	c.singularityKeyExport(t)
+	c.singularityKeyImport(t)
+	c.singularityKeyExport(t)
+	c.singularityKeyImport(t)
+	c.singularityKeyList(t)
 }
 
 // RunE2ETests is the main func to trigger the test suite
@@ -223,13 +225,6 @@ func RunE2ETests(env e2e.TestEnv) func(*testing.T) {
 	}
 
 	return func(t *testing.T) {
-		//t.Run("singularityKeyNewpairAndExport", c.singularityKeyNewpair)
-		//t.Run("singularityKeyImportAndExport", c.singularityKeyImport)
-		t.Run("singularityKeyNewpair", c.singularityKeyNewpair) // Generate a newpair (required for the other tests)
-		t.Run("singularityKeyExport", c.singularityKeyExport)   // Export the newpair
-		t.Run("singularityKeyImport", c.singularityKeyImport)   // Import the newpair (this will delete the old, tmp keyring before importing)
-		t.Run("singularityKeyExport", c.singularityKeyExport)   // Re-export them, again (this will catch any issues if Singularity cant import correctly)
-		t.Run("singularityKeyImport", c.singularityKeyImport)   // Finally, Re-import them
-		t.Run("singularityKeyList", c.singularityKeyList)       // Then run 'key list' just because
+		t.Run("keyCmd", c.singularityKeyCmd) // Run all the tests in order
 	}
 }
