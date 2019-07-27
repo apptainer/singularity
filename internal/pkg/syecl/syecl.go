@@ -66,7 +66,7 @@ func PutConfig(ecl EclConfig, confPath string) (err error) {
 
 // ValidateConfig makes sure paths from configs are fully resolved and that
 // values from an execgroup are logically correct.
-func (ecl *EclConfig) ValidateConfig() (err error) {
+func (ecl *EclConfig) ValidateConfig() error {
 	m := map[string]bool{}
 
 	for _, v := range ecl.ExecGroups {
@@ -99,7 +99,8 @@ func (ecl *EclConfig) ValidateConfig() (err error) {
 			}
 		}
 	}
-	return
+
+	return nil
 }
 
 // checkWhiteList evaluates authorization by requiring at least 1 entity

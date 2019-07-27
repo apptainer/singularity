@@ -25,11 +25,11 @@ const (
 	// SubGIDFile is the default path to the subgid file.
 	SubGIDFile = "/etc/subgid"
 	// validRangeCount is the valid fakeroot range count.
-	validRangeCount = 65536
+	validRangeCount = uint32(65536)
 	// StartMax is the maximum possible range start.
-	startMax = 4294967296 - validRangeCount
+	startMax = uint32(4294967296 - 65536)
 	// StartMin is the minimum possible range start.
-	startMin = 65536
+	startMin = uint32(65536)
 	// disabledPrefix is the character prefix marking an entry as disabled.
 	disabledPrefix = '!'
 	// fieldSeparator is the character separating entry's fields.
@@ -207,7 +207,7 @@ func (c *Config) AddUser(username string) error {
 		return fmt.Errorf("could not retrieve user information for %s: %s", username, err)
 	}
 	for i := startMax; i >= startMin; i -= validRangeCount {
-		current := uint32(i)
+		current := i
 		available := true
 		for _, entry := range c.entries {
 			if entry.invalid {

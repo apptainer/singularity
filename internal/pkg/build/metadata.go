@@ -20,50 +20,43 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types"
 )
 
-func (s *stage) insertMetadata() (err error) {
+func (s *stage) insertMetadata() error {
 	// insert help
-	err = insertHelpScript(s.b)
-	if err != nil {
+	if err := insertHelpScript(s.b); err != nil {
 		return fmt.Errorf("while inserting help script: %v", err)
 	}
 
 	// insert labels
-	err = insertLabelsJSON(s.b)
-	if err != nil {
+	if err := insertLabelsJSON(s.b); err != nil {
 		return fmt.Errorf("while inserting labels json: %v", err)
 	}
 
 	// insert definition
-	err = insertDefinition(s.b)
-	if err != nil {
+	if err := insertDefinition(s.b); err != nil {
 		return fmt.Errorf("while inserting definition: %v", err)
 	}
 
 	// insert environment
-	err = insertEnvScript(s.b)
-	if err != nil {
+	if err := insertEnvScript(s.b); err != nil {
 		return fmt.Errorf("while inserting environment script: %v", err)
 	}
 
 	// insert startscript
-	err = insertStartScript(s.b)
-	if err != nil {
+	if err := insertStartScript(s.b); err != nil {
 		return fmt.Errorf("while inserting startscript: %v", err)
 	}
 
 	// insert runscript
-	err = insertRunScript(s.b)
-	if err != nil {
+	if err := insertRunScript(s.b); err != nil {
 		return fmt.Errorf("while inserting runscript: %v", err)
 	}
 
 	// insert test script
-	err = insertTestScript(s.b)
-	if err != nil {
+	if err := insertTestScript(s.b); err != nil {
 		return fmt.Errorf("while inserting test script: %v", err)
 	}
 
-	return
+	return nil
 }
 
 func insertEnvScript(b *types.Bundle) error {
