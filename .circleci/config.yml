@@ -117,9 +117,9 @@ jobs:
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            lsof /var/lib/dpkg/lock
-            lsof /var/lib/apt/lists/lock
-            lsof /var/cache/apt/archives/lock
+            lsof /var/lib/dpkg/lock || true
+            lsof /var/lib/apt/lists/lock || true
+            lsof /var/cache/apt/archives/lock || true
             # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
             sudo killall -9 apt-get || true && \
             sudo apt-get update -y && \
