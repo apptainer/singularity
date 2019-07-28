@@ -117,13 +117,13 @@ jobs:
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-
+            lsof /var/lib/dpkg/lock
+            lsof /var/lib/apt/lists/lock
+            lsof /var/cache/apt/archives/lock
             # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
-            fuser /var/lib/apt/lists/lock /var/lib/dpkg/lock
-            ps aux | grep apt
-            sudo killall -9 apt-get || true && \ # Stop rogue apt-get processes from boot
+            sudo killall -9 apt-get || true && \
             sudo apt-get update -y && \
-            sudo apt-get install -f -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev # -f for fix
+            sudo apt-get install -f -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install Singularity
           command: |-
