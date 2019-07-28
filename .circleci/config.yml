@@ -113,15 +113,14 @@ jobs:
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
-         name: Wait until apt completion
-         command: |-
-           i=0 ; while fuser /var/lib/dpkg/lock > /dev/null 2>&1 ; do echo 'Waiting for dpkg lock...' ; let i=i+1 ; if test $i -ge 30 ; then echo 'Waiting for too long. Abort.' ; exit 1 ; fi ; sleep 1 ; done
-      - run:
           name: Fetch deps
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+            # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+            sudo killall -9 apt-get || true && \
+            sudo apt-get update -y && \
+            sudo apt-get install -f -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install Singularity
           command: |-
@@ -168,15 +167,14 @@ jobs:
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
       - run:
-         name: Wait until apt completion
-         command: |-
-           i=0 ; while fuser /var/lib/dpkg/lock > /dev/null 2>&1 ; do echo 'Waiting for dpkg lock...' ; let i=i+1 ; if test $i -ge 30 ; then echo 'Waiting for too long. Abort.' ; exit 1 ; fi ; sleep 1 ; done
-      - run:
           name: Fetch deps
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
+            # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+            sudo killall -9 apt-get || true && \
+            sudo apt-get update -y && \
+            sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
       - run:
           name: Build and Install singularity
           command: |-
