@@ -115,7 +115,7 @@ jobs:
       - run:
          name: Wait until apt completion
          command: |-
-           i=0 ; while fuser /var/lib/dpkg/lock > /dev/null 2>&1 ; do echo 'Waiting for dpkg lock...' ; let i=i+1 ; if test $i -ge 30 ; then echo 'Waiting for too long. Abort.' ; exit 1 ; fi ; sleep 1 ; done
+           i=0 ; while fuser /var/lib/apt/lists/lock /var/lib/dpkg/lock > /dev/null 2>&1 ; do echo 'Waiting for locks...' ; let i=i+1 ; if test $i -ge 30 ; then echo 'Waiting for too long. Abort.' ; exit 1 ; fi ; sleep 1 ; done
       - run:
           name: Fetch deps
           working_directory: /tmp
