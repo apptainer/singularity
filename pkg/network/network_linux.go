@@ -283,7 +283,7 @@ func (m *Setup) SetArgs(args []string) error {
 				if len(ports) != 1 && len(ports) != 2 {
 					return fmt.Errorf("portmap port argument is badly formatted")
 				}
-				if n, err := strconv.ParseInt(ports[0], 0, 16); err == nil {
+				if n, err := strconv.ParseUint(ports[0], 0, 16); err == nil {
 					pm.HostPort = int(n)
 					if pm.HostPort <= 0 {
 						return fmt.Errorf("host port must be greater than zero")
@@ -292,7 +292,7 @@ func (m *Setup) SetArgs(args []string) error {
 					return fmt.Errorf("can't convert host port '%s': %s", ports[0], err)
 				}
 				if len(ports) == 2 {
-					if n, err := strconv.ParseInt(ports[1], 0, 16); err == nil {
+					if n, err := strconv.ParseUint(ports[1], 0, 16); err == nil {
 						pm.ContainerPort = int(n)
 						if pm.ContainerPort <= 0 {
 							return fmt.Errorf("container port must be greater than zero")
