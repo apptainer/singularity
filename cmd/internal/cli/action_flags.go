@@ -289,7 +289,7 @@ var actionFuseCmdFlag = cmdline.Flag{
 	Value:        &FuseCmd,
 	DefaultValue: []string{},
 	Name:         "fusecmd",
-	Usage:        "Command to run inside the container to implement a libfuse3-based filesystem. The last parameter is a mountpoint that will be pre-mounted and replaced with a /dev/fd/NN path to the fuse file descriptor.",
+	Usage:        "Command to run inside the container to implement a libfuse3-based filesystem. The last parameter is a mountpoint that will be pre-mounted and replaced with a /dev/fd/NN path to the fuse file descriptor.  Implies --pid.",
 	EnvKeys:      []string{"FUSECMD"},
 	ExcludedOS:   []string{cmdline.Darwin},
 }
