@@ -239,6 +239,17 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 func handleShub(imgCache *cache.Handle, u string) (string, error) {
 	imagePath := ""
 
+	shubURI, err := shub.ShubParseReference(u)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse shub uri: %s", err)
+	}
+
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return "", fmt.Errorf("failed to get manifest from shub: %s", err)
+	}
+
 	if disableCache {
 		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
@@ -247,21 +258,21 @@ func handleShub(imgCache *cache.Handle, u string) (string, error) {
 		imagePath = file.Name()
 
 		sylog.Infof("Downloading shub image")
-		err = shub.DownloadImage(imagePath, u, true, noHTTPS)
+		err = shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
 	} else {
 		imageName := uri.GetName(u)
-		imagePath = imgCache.ShubImage("hash", imageName)
+		imagePath = imgCache.ShubImage(manifest.Commit, imageName)
 
-		exists, err := imgCache.ShubImageExists("hash", imageName)
+		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 		}
 		if !exists {
 			sylog.Infof("Downloading shub image")
-			err := shub.DownloadImage(imagePath, u, true, noHTTPS)
+			err := shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
 			if err != nil {
 				sylog.Fatalf("%v\n", err)
 			}
