@@ -59,6 +59,16 @@ func elfToGoArch(elfFile *elf.File) string {
 	return "UNKNOWN"
 }
 
+func (engine *EngineOperations) setPathEnv() {
+	env := engine.EngineConfig.OciConfig.Process.Env
+	for _, keyval := range env {
+		if strings.HasPrefix(keyval, "PATH=") {
+			os.Setenv("PATH", keyval[5:])
+			break
+		}
+	}
+}
+
 func (engine *EngineOperations) checkExec() error {
 	shell := engine.EngineConfig.GetShell()
 
@@ -82,12 +92,7 @@ func (engine *EngineOperations) checkExec() error {
 		engine.EngineConfig.OciConfig.Process.Env = env
 	}()
 
-	for _, keyval := range env {
-		if strings.HasPrefix(keyval, "PATH=") {
-			os.Setenv("PATH", keyval[5:])
-			break
-		}
-	}
+	engine.setPathEnv()
 
 	// If args[0] is an absolute path, exec.LookPath() looks for
 	// this file directly instead of within PATH
@@ -148,7 +153,7 @@ func (engine *EngineOperations) checkExec() error {
 	return fmt.Errorf("no %s found inside container", args[0])
 }
 
-func runFuseDriver(name string, program []string, fd int) error {
+func (engine *EngineOperations) runFuseDriver(name string, program []string, fd int) error {
 	sylog.Debugf("Running FUSE driver for %s as %v, fd %d", name, program, fd)
 
 	fh := os.NewFile(uintptr(fd), "fd-"+name)
@@ -173,6 +178,14 @@ func runFuseDriver(name string, program []string, fd int) error {
 	newFd := fh.Fd()
 	fdDevice := fmt.Sprintf("/dev/fd/%d", newFd)
 	args := append(program, fdDevice)
+
+	// set PATH for the command
+	oldpath := os.Getenv("PATH")
+	defer func() {
+		os.Setenv("PATH", oldpath)
+	}()
+	engine.setPathEnv()
+
 	cmd := exec.Command(args[0], args[1:]...)
 
 	// Add the /dev/fuse file descriptor to the list of file
@@ -212,7 +225,7 @@ func setupFuseDrivers(engine *EngineOperations) error {
 			return err
 		}
 
-		if err := runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
+		if err := engine.runFuseDriver(name, cfg.Fuse.Program, cfg.Fuse.DevFuseFd); err != nil {
 			return err
 		}
 
