@@ -76,13 +76,13 @@ func (engine *EngineOperations) CreateContainer(pid int, rpcConn net.Conn) error
 
 	dest := filepath.Join(sessionPath, "tmp")
 	sylog.Debugf("Mounting /tmp at %s\n", dest)
-	if err := rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND, ""); err != nil {
+	if err := rpcOps.Mount("/tmp", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /tmp failed: %s", err)
 	}
 
 	dest = filepath.Join(sessionPath, "var", "tmp")
 	sylog.Debugf("Mounting /var/tmp at %s\n", dest)
-	if err := rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND, ""); err != nil {
+	if err := rpcOps.Mount("/var/tmp", dest, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("mount /var/tmp failed: %s", err)
 	}
 
