@@ -142,16 +142,27 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 		}
 	}
 
+	shubURI, err := shub.ShubParseReference(shubRef)
+	if err != nil {
+		return fmt.Errorf("failed to parse shub uri: %s", err)
+	}
+
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return fmt.Errorf("failed to get manifest from shub: %s", err)
+	}
+
 	imageName := uri.GetName(shubRef)
-	imagePath := imgCache.ShubImage("hash", imageName)
+	imagePath := imgCache.ShubImage(manifest.Commit, imageName)
 
 	if noCache {
 		// Dont use cached image
-		if err := shub.DownloadImage(filePath, shubRef, true, noHTTPS); err != nil {
+		if err := shub.DownloadImage(manifest, filePath, shubRef, true, noHTTPS); err != nil {
 			return err
 		}
 	} else {
-		exists, err := imgCache.ShubImageExists("hash", imageName)
+		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
 		if err != nil {
 			return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
 		}
@@ -159,7 +170,7 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 			sylog.Infof("Downloading shub image")
 			go interruptCleanup(imagePath)
 
-			err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
+			err := shub.DownloadImage(manifest, imagePath, shubRef, true, noHTTPS)
 			if err != nil {
 				return err
 			}
