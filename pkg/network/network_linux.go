@@ -283,8 +283,8 @@ func (m *Setup) SetArgs(args []string) error {
 				}
 				if n, err := strconv.ParseUint(ports[0], 0, 16); err == nil {
 					pm.HostPort = int(n)
-					if pm.HostPort <= 0 {
-						return fmt.Errorf("host port must be greater than zero")
+					if pm.HostPort <= 0 || pm.HostPort > 65535 {
+						return fmt.Errorf("host port must be greater than 0 and less than 65535")
 					}
 				} else {
 					return fmt.Errorf("can't convert host port '%s': %s", ports[0], err)
@@ -292,8 +292,8 @@ func (m *Setup) SetArgs(args []string) error {
 				if len(ports) == 2 {
 					if n, err := strconv.ParseUint(ports[1], 0, 16); err == nil {
 						pm.ContainerPort = int(n)
-						if pm.ContainerPort <= 0 {
-							return fmt.Errorf("container port must be greater than zero")
+						if pm.ContainerPort <= 0 || pm.ContainerPort > 65535 {
+							return fmt.Errorf("container port must be greater than 0 and less than 65535")
 						}
 					} else {
 						return fmt.Errorf("can't convert container port '%s': %s", ports[1], err)
