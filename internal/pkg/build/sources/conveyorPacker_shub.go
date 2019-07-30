@@ -28,7 +28,6 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	cp.b = b
 
-	//src := `shub://` + b.Recipe.Header["from"] // TODO: "from" is already prefixed with 'shub://'
 	src := b.Recipe.Header["from"]
 
 	// create file for image download
