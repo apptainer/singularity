@@ -30,6 +30,7 @@ var (
 	VMCPU           string
 	ContainLibsPath []string
 	encryptionKey   string
+	FuseCmd         []string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -280,6 +281,17 @@ var commonEncryptFlag = cmdline.Flag{
 	Name:         "encryption-key",
 	Hidden:       true,
 	EnvKeys:      []string{"ENCRYPTION_KEY"},
+}
+
+// --fusecmd
+var actionFuseCmdFlag = cmdline.Flag{
+	ID:           "actionFuseCmdFlag",
+	Value:        &FuseCmd,
+	DefaultValue: []string{},
+	Name:         "fusecmd",
+	Usage:        "Command to run inside the container to implement a libfuse3-based filesystem. The last parameter is a mountpoint that will be pre-mounted and replaced with a /dev/fd/NN path to the fuse file descriptor.",
+	EnvKeys:      []string{"FUSECMD"},
+	ExcludedOS:   []string{cmdline.Darwin},
 }
 
 // hidden flags to handle docker credentials
@@ -642,6 +654,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionVMRAMFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionVMCPUFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionFuseCmdFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)

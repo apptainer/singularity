@@ -8,9 +8,13 @@ package singularity
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/network"
 )
 
@@ -62,6 +66,50 @@ func (e *EngineConfig) SetPluginConfig(plugin string, cfg interface{}) error {
 		return err
 	}
 	e.Plugin[plugin] = json.RawMessage(data)
+	return nil
+}
+
+//SetFuseCmd takes input from --fusecmd flags and creates plugin objects from them to hook in to the fuse plugin support code
+func (e *EngineConfig) SetFuseCmd(fusecmd []string) error {
+	for _, cmd := range fusecmd {
+		//Splits the command into a list of whitespace-separated words
+		words := strings.Fields(cmd)
+		if len(words) == 1 {
+			sylog.Fatalf("No whitespace separators found in command")
+		}
+
+		//The last word in the list is the mount point
+		mnt := words[len(words)-1]
+
+		//The mount point must be a directory
+		if !strings.HasPrefix(mnt, "/") {
+			sylog.Fatalf("Invalid mount point %s.\n", mnt)
+		}
+
+		//Removes the mount point from the list of words
+		words = words[0 : len(words)-1]
+
+		sylog.Verbosef("Mounting FUSE filesystem with %s %s\n",
+			strings.Join(words, " "), mnt)
+
+		//Creates a fuse plugin config struct
+		var cfg struct {
+			Fuse struct {
+				DevFuseFd  int
+				MountPoint string
+				Program    []string
+			}
+		}
+
+		//Adds the mount point and program to the fuse plugin config struct
+		cfg.Fuse.MountPoint = mnt
+		cfg.Fuse.Program = words
+
+		//Runs SetPluginConfig to create a plugin object
+		if err := e.SetPluginConfig(mnt, cfg); err != nil {
+			fmt.Fprintf(os.Stderr, "Cannot set plugin configuration: %+v\n", err)
+		}
+	}
 	return nil
 }
 
