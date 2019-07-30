@@ -339,6 +339,7 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, false, ociAuth); err != nil {
 				return fmt.Errorf("while building SIF from layers: %v", err)
 			}
+			sylog.Infof("Build complete: %s", name)
 		}
 
 		// Perms are 777 *prior* to umask
