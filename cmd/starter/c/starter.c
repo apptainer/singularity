@@ -68,13 +68,19 @@ typedef struct fdlist {
     unsigned int num;
 } fdlist_t;
 
+typedef struct stack {
+    char alloc[4096] __attribute__((aligned(16)));
+    char ptr[0];
+} fork_stack_t;
+
 /* child function called by clone to return directly to sigsetjmp in fork_ns */
 __attribute__((noinline)) static int clone_fn(void *arg) {
     siglongjmp(*(sigjmp_buf *)arg, 0);
 }
 
 __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(unsigned int flags) {
-    /* clone will use the same stack layout */
+    /* setup the stack */
+    fork_stack_t stack;
     sigjmp_buf env;
 
     /*
@@ -86,7 +92,7 @@ __attribute__ ((returns_twice)) __attribute__((noinline)) static int fork_ns(uns
         return 0;
     }
     /* parent process */
-    return clone(clone_fn, env, (SIGCHLD|flags), env);
+    return clone(clone_fn, stack.ptr, (SIGCHLD|flags), env);
 }
 
 static void priv_escalate(bool keep_fsuid) {
