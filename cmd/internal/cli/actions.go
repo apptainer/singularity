@@ -247,7 +247,7 @@ func handleShub(imgCache *cache.Handle, u string) (string, error) {
 	// Get the image manifest
 	manifest, err := shub.GetManifest(shubURI, noHTTPS)
 	if err != nil {
-		return "", fmt.Errorf("failed to get manifest from shub: %s", err)
+		return "", fmt.Errorf("failed to get manifest for: %s: %s", u, err)
 	}
 
 	if disableCache {

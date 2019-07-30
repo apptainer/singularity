@@ -28,8 +28,7 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 
 	cp.b = b
 
-	//src := `shub://` + b.Recipe.Header["from"] // TODO: "from" is already prefixed with 'shub://'
-	src := b.Recipe.Header["from"]
+	src := `shub://` + b.Recipe.Header["from"]
 
 	// create file for image download
 	f, err := ioutil.TempFile(cp.b.Path, "shub-img")
@@ -48,12 +47,12 @@ func (cp *ShubConveyorPacker) Get(b *types.Bundle) (err error) {
 	// Get the image manifest
 	manifest, err := shub.GetManifest(shubURIRef, cp.b.Opts.NoHTTPS)
 	if err != nil {
-		return fmt.Errorf("failed to get manifest from shub: %s", err)
+		return fmt.Errorf("failed to get manifest for: %s: %s", src, err)
 	}
 
 	// get image from singularity hub
 	if err := shub.DownloadImage(manifest, cp.b.FSObjects["shubImg"], src, true, cp.b.Opts.NoHTTPS); err != nil {
-		return fmt.Errorf("unable to get image from %s: %v", src, err)
+		return fmt.Errorf("unable to get image from: %s: %v", src, err)
 	}
 
 	// insert base metadata before unpacking fs
