@@ -150,7 +150,7 @@ func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, no
 	// Get the image manifest
 	manifest, err := shub.GetManifest(shubURI, noHTTPS)
 	if err != nil {
-		return fmt.Errorf("failed to get manifest from shub: %s", err)
+		return fmt.Errorf("failed to get manifest for: %s: %s", shubRef, err)
 	}
 
 	imageName := uri.GetName(shubRef)
