@@ -9,7 +9,7 @@ $(singularity_build_config): $(BUILDDIR)/config.h
 CLEANFILES += $(singularity_build_config)
 
 # singularity
-singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(SOURCEDIR)/cmd/singularity")
+singularity_SOURCE := $(shell $(SOURCEDIR)/makeit/gengodep "$(SOURCEDIR)" "$(GO_TAGS)" "$(SOURCEDIR)/cmd/singularity")
 
 singularity := $(BUILDDIR)/singularity
 $(singularity): $(singularity_build_config) $(singularity_SOURCE)
