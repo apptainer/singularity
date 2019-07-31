@@ -43,11 +43,12 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 }
 
 // Decrypt calls the DeCrypt RPC using the supplied arguments.
-func (t *RPC) Decrypt(offset uint64, path string, key []byte) (string, error) {
+func (t *RPC) Decrypt(offset uint64, path string, key []byte, masterPid int) (string, error) {
 	arguments := &args.CryptArgs{
-		Offset:  offset,
-		Loopdev: path,
-		Key:     key,
+		Offset:    offset,
+		Loopdev:   path,
+		Key:       key,
+		MasterPid: masterPid,
 	}
 
 	var reply string
