@@ -49,15 +49,15 @@ var (
 	unauthenticatedPull bool
 	// PullDir is the path that the containers will be pulled to, if set
 	PullDir string
-	// PullArch is the architecture for which containers will be pulled from the
+	// pullArch is the architecture for which containers will be pulled from the
 	// SCS library
-	PullArch string
+	pullArch string
 )
 
 // --library
 var pullArchFlag = cmdline.Flag{
 	ID:           "pullArchFlag",
-	Value:        &PullArch,
+	Value:        &pullArch,
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
 	Usage:        "Architecture to pull from library",
@@ -239,7 +239,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 
-		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, arch, force, unauthenticatedPull, disableCache)
+		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, pullArch, force, unauthenticatedPull, disableCache)
 		if err == singularity.ErrLibraryPullUnsigned {
 			exitStat = 10
 		} else if err != nil {
