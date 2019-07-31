@@ -242,6 +242,16 @@ func testSetArgs(setup *Setup, t *testing.T) {
 			success: true,
 		},
 		{
+			desc:    "good port range",
+			args:    []string{"test-bridge:portmap=65530/tcp"},
+			success: true,
+		},
+		{
+			desc:    "bad port range",
+			args:    []string{"test-bridge:portmap=65550/tcp"},
+			success: false,
+		},
+		{
 			desc:    "ipRange not supported arg",
 			args:    []string{"test-bridge:ipRange=10.1.1.0/16"},
 			success: false,
