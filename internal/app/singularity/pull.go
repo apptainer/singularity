@@ -65,7 +65,7 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 	if noCache {
 		// Dont use cached image
 		sylog.Infof("Downloading library image: %s", name)
-		if err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback); err != nil {
+		if err := library.DownloadImage(context.TODO(), libraryClient, name, arch, imageRef, downloadImageCallback); err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
 	} else {

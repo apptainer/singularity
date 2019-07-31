@@ -219,7 +219,7 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 		} else if !exists {
 			sylog.Infof("Downloading library image")
 
-			if err := libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
+			if err := libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
 				return "", fmt.Errorf("unable to download image: %v", err)
 			}
 
