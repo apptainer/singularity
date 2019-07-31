@@ -36,7 +36,7 @@ var (
 // LibraryPull will download the image specified by file from the library specified by libraryURI.
 // After downloading, the image will be checked for a valid signature and removed if it does not contain one,
 // unless specified not to by the unauthenticated bool
-func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken string, force, unauthenticated bool, arch string) error {
+func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryURI, keyServerURL, authToken, arch string, force, unauthenticated, noCache bool) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
 			return fmt.Errorf("image file already exists: %q - will not overwrite", name)
@@ -62,52 +62,54 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 		return fmt.Errorf("while getting image info: %v", err)
 	}
 
-	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
-	exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
-	if err == cache.ErrBadChecksum {
-		sylog.Warningf("Removing cached image: %s: cache could be corrupted", imagePath)
-		err := os.Remove(imagePath)
+	if noCache {
+		// Dont use cached image
+		sylog.Infof("Downloading library image: %s", name)
+		if err := library.DownloadImage(context.TODO(), libraryClient, name, imageRef, downloadImageCallback); err != nil {
+			return fmt.Errorf("unable to download image: %v", err)
+		}
+	} else {
+		// Check, and use cached image
+		imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
+		exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName)
 		if err != nil {
-			return fmt.Errorf("unable to remove corrupted cache: %v", err)
+			return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
 		}
-	} else if err != nil {
-		return fmt.Errorf("unable to check if %s exists: %v", imagePath, err)
-	}
+		if !exists {
+			sylog.Infof("Downloading library image")
+			go interruptCleanup(imagePath)
 
-	if !exists {
-		sylog.Infof("Downloading library image")
-		go interruptCleanup(imagePath)
+			// call library download image helper
+			if err := library.DownloadImage(context.TODO(), libraryClient, imagePath, arch, imageRef, downloadImageCallback); err != nil {
+				return fmt.Errorf("unable to download image: %v", err)
+			}
 
-		// call library download image helper
-		if err = library.DownloadImage(context.TODO(), libraryClient, imagePath, arch, imageRef, downloadImageCallback); err != nil {
-			return fmt.Errorf("unable to Download Image: %v", err)
+			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+				return fmt.Errorf("error getting image hash: %v", err)
+			} else if cacheFileHash != libraryImage.Hash {
+				return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			}
 		}
 
-		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("error getting ImageHash: %v", err)
-		} else if cacheFileHash != libraryImage.Hash {
-			return fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		// Perms are 777 *prior* to umask in order to allow image to be
+		// executed with its leading shebang like a script
+		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		if err != nil {
+			return fmt.Errorf("while opening destination file: %v", err)
 		}
-	}
+		defer dstFile.Close()
 
-	// Perms are 777 *prior* to umask in order to allow image to be
-	// executed with its leading shebang like a script
-	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		return fmt.Errorf("while opening destination file: %v", err)
-	}
-	defer dstFile.Close()
+		srcFile, err := os.Open(imagePath)
+		if err != nil {
+			return fmt.Errorf("while opening cached image: %v", err)
+		}
+		defer srcFile.Close()
 
-	srcFile, err := os.Open(imagePath)
-	if err != nil {
-		return fmt.Errorf("while opening cached image: %v", err)
-	}
-	defer srcFile.Close()
-
-	// Copy SIF from cache
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return fmt.Errorf("while copying image from cache: %v", err)
+		// Copy SIF from cache
+		_, err = io.Copy(dstFile, srcFile)
+		if err != nil {
+			return fmt.Errorf("while copying image from cache: %v", err)
+		}
 	}
 
 	// check if we pulled from the library, if so; is it signed?
@@ -130,50 +132,68 @@ func LibraryPull(imgCache *cache.Handle, name, ref, transport, fullURI, libraryU
 
 // PullShub will download a image from shub, and cache it. Next time
 // that container is downloaded this will just use that cached image.
-func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, noHTTPS bool) (err error) {
+func PullShub(imgCache *cache.Handle, filePath string, shubRef string, force, noHTTPS, noCache bool) (err error) {
 	if !force {
 		if _, err := os.Stat(filePath); err == nil {
 			return fmt.Errorf("image file already exists: %q - will not overwrite", filePath)
 		}
 	}
 
-	imageName := uri.GetName(shubRef)
-	imagePath := imgCache.ShubImage("hash", imageName)
-
-	exists, err := imgCache.ShubImageExists("hash", imageName)
+	shubURI, err := shub.ShubParseReference(shubRef)
 	if err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		return fmt.Errorf("failed to parse shub uri: %s", err)
 	}
-	if !exists {
-		sylog.Infof("Downloading shub image")
-		go interruptCleanup(imagePath)
 
-		err := shub.DownloadImage(imagePath, shubRef, true, noHTTPS)
-		if err != nil {
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return fmt.Errorf("failed to get manifest for: %s: %s", shubRef, err)
+	}
+
+	imageName := uri.GetName(shubRef)
+	imagePath := imgCache.ShubImage(manifest.Commit, imageName)
+
+	if noCache {
+		// Dont use cached image
+		if err := shub.DownloadImage(manifest, filePath, shubRef, true, noHTTPS); err != nil {
 			return err
 		}
 	} else {
-		sylog.Infof("Use image from cache")
-	}
+		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
+		if err != nil {
+			return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		}
+		if !exists {
+			sylog.Infof("Downloading shub image")
+			go interruptCleanup(imagePath)
 
-	// Perms are 777 *prior* to umask in order to allow image to be
-	// executed with its leading shebang like a script
-	dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		return fmt.Errorf("while opening destination file: %v", err)
-	}
-	defer dstFile.Close()
+			err := shub.DownloadImage(manifest, imagePath, shubRef, true, noHTTPS)
+			if err != nil {
+				return err
+			}
+		} else {
+			sylog.Infof("Use image from cache")
+		}
 
-	srcFile, err := os.Open(imagePath)
-	if err != nil {
-		return fmt.Errorf("while opening cached image: %v", err)
-	}
-	defer srcFile.Close()
+		// Perms are 777 *prior* to umask in order to allow image to be
+		// executed with its leading shebang like a script
+		dstFile, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		if err != nil {
+			return fmt.Errorf("while opening destination file: %v", err)
+		}
+		defer dstFile.Close()
 
-	// Copy image from cache
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return fmt.Errorf("while copying image from cache: %v", err)
+		srcFile, err := os.Open(imagePath)
+		if err != nil {
+			return fmt.Errorf("while opening cached image: %v", err)
+		}
+		defer srcFile.Close()
+
+		// Copy image from cache
+		_, err = io.Copy(dstFile, srcFile)
+		if err != nil {
+			return fmt.Errorf("while copying image from cache: %v", err)
+		}
 	}
 
 	return nil
@@ -279,7 +299,7 @@ func OrasPull(imgCache *cache.Handle, name, ref string, force bool, ociAuth *oci
 }
 
 // OciPull will build a SIF image from the specified oci URI
-func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, force, noHTTPS bool) error {
+func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, force, noHTTPS, noCache bool) error {
 	if !force {
 		if _, err := os.Stat(name); err == nil {
 			return fmt.Errorf("image file: %q already exists - will not overwrite", name)
@@ -297,47 +317,51 @@ func OciPull(imgCache *cache.Handle, name, imageURI, tmpDir string, ociAuth *oci
 		return fmt.Errorf("failed to get checksum for %s: %s", imageURI, err)
 	}
 
-	imgName := uri.GetName(imageURI)
-	cachedImgPath := imgCache.OciTempImage(sum, imgName)
-
-	exists, err := imgCache.OciTempExists(sum, imgName)
-	if err != nil {
-		return fmt.Errorf("unable to check if %s exists: %s", imgName, err)
-	}
-	if !exists {
-		sylog.Infof("Converting OCI blobs to SIF format")
-		go interruptCleanup(imgName)
-
-		if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, ociAuth); err != nil {
+	if noCache {
+		if err := convertDockerToSIF(imgCache, imageURI, name, tmpDir, noHTTPS, true, ociAuth); err != nil {
 			return fmt.Errorf("while building SIF from layers: %v", err)
 		}
 	} else {
-		sylog.Infof("Using cached image")
-	}
+		imgName := uri.GetName(imageURI)
+		cachedImgPath := imgCache.OciTempImage(sum, imgName)
 
-	// Perms are 777 *prior* to umask
-	dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
-	if err != nil {
-		return fmt.Errorf("unable to open file for writing: %s: %v", name, err)
-	}
-	defer dstFile.Close()
+		exists, err := imgCache.OciTempExists(sum, imgName)
+		if err != nil {
+			return fmt.Errorf("unable to check if %s exists: %s", imgName, err)
+		}
+		if !exists {
+			sylog.Infof("Converting OCI blobs to SIF format")
+			go interruptCleanup(imgName)
 
-	srcFile, err := os.Open(cachedImgPath)
-	if err != nil {
-		return fmt.Errorf("unable to open file for reading: %s: %v", name, err)
-	}
-	defer srcFile.Close()
+			if err := convertDockerToSIF(imgCache, imageURI, cachedImgPath, tmpDir, noHTTPS, false, ociAuth); err != nil {
+				return fmt.Errorf("while building SIF from layers: %v", err)
+			}
+		}
 
-	// Copy SIF from cache
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return fmt.Errorf("failed while copying files: %v", err)
+		// Perms are 777 *prior* to umask
+		dstFile, err := os.OpenFile(name, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0777)
+		if err != nil {
+			return fmt.Errorf("unable to open file for writing: %s: %v", name, err)
+		}
+		defer dstFile.Close()
+
+		srcFile, err := os.Open(cachedImgPath)
+		if err != nil {
+			return fmt.Errorf("unable to open file for reading: %s: %v", name, err)
+		}
+		defer srcFile.Close()
+
+		// Copy SIF from cache
+		_, err = io.Copy(dstFile, srcFile)
+		if err != nil {
+			return fmt.Errorf("failed while copying files: %v", err)
+		}
 	}
 
 	return nil
 }
 
-func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS bool, authConf *ocitypes.DockerAuthConfig) error {
+func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCache bool, authConf *ocitypes.DockerAuthConfig) error {
 	if imgCache == nil {
 		return fmt.Errorf("image cache is undefined")
 	}
@@ -349,6 +373,7 @@ func convertDockerToSIF(imgCache *cache.Handle, image, cachedImgPath, tmpDir str
 			Format: "sif",
 			Opts: types.Options{
 				TmpDir:           tmpDir,
+				NoCache:          noCache,
 				NoTest:           true,
 				NoHTTPS:          noHTTPS,
 				DockerAuthConfig: authConf,

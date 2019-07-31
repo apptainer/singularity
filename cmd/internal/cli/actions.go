@@ -8,6 +8,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -70,18 +71,17 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 		DockerAuthConfig:            authConf,
 	}
 
-	sum, err := ociclient.ImageSHA(u, sysCtx)
-	if err != nil {
-		return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
-	}
-
+	imgabs := ""
 	name := uri.GetName(u)
-	imgabs := imgCache.OciTempImage(sum, name)
 
-	if exists, err := imgCache.OciTempExists(sum, name); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imgabs, err)
-	} else if !exists {
+	if disableCache {
 		sylog.Infof("Converting OCI blobs to SIF format")
+		var err error
+		imgabs, err = ioutil.TempDir(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+
 		b, err := build.NewBuild(
 			u,
 			build.Config{
@@ -90,12 +90,13 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 				Opts: types.Options{
 					ImgCache:         imgCache,
 					TmpDir:           tmpDir,
+					NoCache:          true,
 					NoTest:           true,
 					NoHTTPS:          noHTTPS,
 					DockerAuthConfig: authConf,
 				},
-			},
-		)
+			})
+
 		if err != nil {
 			return "", fmt.Errorf("unable to create new build: %v", err)
 		}
@@ -104,7 +105,42 @@ func handleOCI(imgCache *cache.Handle, cmd *cobra.Command, u string) (string, er
 			return "", fmt.Errorf("unable to build: %v", err)
 		}
 
-		sylog.Verbosef("Image cached as SIF at %s", imgabs)
+	} else {
+		sum, err := ociclient.ImageSHA(u, sysCtx)
+		if err != nil {
+			return "", fmt.Errorf("failed to get SHA of %v: %v", u, err)
+		}
+		imgabs = imgCache.OciTempImage(sum, name)
+
+		exists, err := imgCache.OciTempExists(sum, name)
+		if err != nil {
+			return "", fmt.Errorf("unable to check if %s exists: %s", name, err)
+		}
+		if !exists {
+			sylog.Infof("Converting OCI blobs to SIF format")
+			b, err := build.NewBuild(
+				u,
+				build.Config{
+					Dest:   imgabs,
+					Format: "sif",
+					Opts: types.Options{
+						TmpDir:           tmpDir,
+						NoTest:           true,
+						NoHTTPS:          noHTTPS,
+						DockerAuthConfig: authConf,
+						ImgCache:         imgCache,
+					},
+				})
+			if err != nil {
+				return "", fmt.Errorf("unable to create new build: %v", err)
+			}
+
+			if err := b.Full(); err != nil {
+				return "", fmt.Errorf("unable to build: %v", err)
+			}
+
+			sylog.Verbosef("Image cached as SIF at %s", imgabs)
+		}
 	}
 
 	return imgabs, nil
@@ -161,22 +197,37 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 		return "", err
 	}
 
-	imageName := uri.GetName("library://" + imageRef)
-	imagePath := imgCache.LibraryImage(libraryImage.Hash, imageName)
-
-	if exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading library image")
+	imagePath := ""
+	if disableCache {
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+		imagePath = file.Name()
+		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
 
 		if err = libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, runtime.GOARCH, imageRef); err != nil {
-			return "", fmt.Errorf("unable to Download Image: %v", err)
+			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 
-		if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
-			return "", fmt.Errorf("Error getting ImageHash: %v", err)
-		} else if cacheFileHash != libraryImage.Hash {
-			return "", fmt.Errorf("Cached File Hash(%s) and Expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+	} else {
+		imageName := uri.GetName("library://" + imageRef)
+		imagePath = imgCache.LibraryImage(libraryImage.Hash, imageName)
+
+		if exists, err := imgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+			return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		} else if !exists {
+			sylog.Infof("Downloading library image")
+
+			if err := libraryhelper.DownloadImageNoProgress(ctx, c, imagePath, imageRef); err != nil {
+				return "", fmt.Errorf("unable to download image: %v", err)
+			}
+
+			if cacheFileHash, err := library.ImageHash(imagePath); err != nil {
+				return "", fmt.Errorf("error getting image hash: %v", err)
+			} else if cacheFileHash != libraryImage.Hash {
+				return "", fmt.Errorf("cached file hash(%s) and expected hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			}
 		}
 	}
 
@@ -184,21 +235,48 @@ func handleLibrary(imgCache *cache.Handle, u, libraryURL string) (string, error)
 }
 
 func handleShub(imgCache *cache.Handle, u string) (string, error) {
-	imageName := uri.GetName(u)
-	imagePath := imgCache.ShubImage("hash", imageName)
+	imagePath := ""
 
-	exists, err := imgCache.ShubImageExists("hash", imageName)
+	shubURI, err := shub.ShubParseReference(u)
 	if err != nil {
-		return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		return "", fmt.Errorf("failed to parse shub uri: %s", err)
 	}
-	if !exists {
+
+	// Get the image manifest
+	manifest, err := shub.GetManifest(shubURI, noHTTPS)
+	if err != nil {
+		return "", fmt.Errorf("failed to get manifest for: %s: %s", u, err)
+	}
+
+	if disableCache {
+		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
+		if err != nil {
+			return "", fmt.Errorf("unable to create tmp file: %v", err)
+		}
+		imagePath = file.Name()
+
 		sylog.Infof("Downloading shub image")
-		err := shub.DownloadImage(imagePath, u, true, noHTTPS)
+		err = shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("%v\n", err)
 		}
 	} else {
-		sylog.Verbosef("Use image from cache")
+		imageName := uri.GetName(u)
+		imagePath = imgCache.ShubImage(manifest.Commit, imageName)
+
+		exists, err := imgCache.ShubImageExists(manifest.Commit, imageName)
+		if err != nil {
+			return "", fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		}
+		if !exists {
+			sylog.Infof("Downloading shub image")
+			err := shub.DownloadImage(manifest, imagePath, u, true, noHTTPS)
+			if err != nil {
+				sylog.Fatalf("%v\n", err)
+			}
+		} else {
+			sylog.Verbosef("Use image from cache")
+		}
 	}
 
 	return imagePath, nil

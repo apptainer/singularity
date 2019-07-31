@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -144,7 +144,9 @@ func ReadIDMap(path string) (uint32, uint32, error) {
 	defer r.Close()
 
 	scanner := bufio.NewScanner(r)
-	scanner.Scan()
+	if !scanner.Scan() {
+		return 0, 0, fmt.Errorf("scanner error: %s", scanner.Err())
+	}
 	fields := strings.Fields(scanner.Text())
 
 	containerID, err := strconv.ParseUint(fields[0], 10, 32)

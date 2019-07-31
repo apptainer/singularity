@@ -45,6 +45,7 @@ var (
 	VM              bool
 	VMErr           bool
 	IsSyOS          bool
+	disableCache    bool
 
 	NetNamespace  bool
 	UtsNamespace  bool
@@ -132,6 +133,16 @@ var actionWorkdirFlag = cmdline.Flag{
 	EnvKeys:      []string{"WORKDIR"},
 	Tag:          "<path>",
 	ExcludedOS:   []string{cmdline.Darwin},
+}
+
+// --disable-cache
+var actionDisableCacheFlag = cmdline.Flag{
+	ID:           "actionDisableCacheFlag",
+	Value:        &disableCache,
+	DefaultValue: false,
+	Name:         "disable-cache",
+	Usage:        "dont use cache, and dont create cache",
+	EnvKeys:      []string{"DISABLE_CACHE"},
 }
 
 // -s|--shell
@@ -633,8 +644,9 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionDockerPasswordFlag, actionsInstanceCmd...)
-	cmdManager.RegisterFlagForCmd(&actionTmpDirFlag, actionsCmd...)
 	cmdManager.RegisterFlagForCmd(&actionFakerootFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionDisableCacheFlag, actionsInstanceCmd...)
+	cmdManager.RegisterFlagForCmd(&actionTmpDirFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionCleanEnvFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionContainFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionContainAllFlag, actionsInstanceCmd...)
@@ -660,7 +672,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsInstanceCmd...)
 
 	for _, cmd := range actionsCmd {
 		plugin.AddFlagHooks(cmd.Flags())

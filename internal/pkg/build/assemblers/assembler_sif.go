@@ -10,26 +10,23 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
-	"strings"
 	"syscall"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engines/config"
 	"github.com/sylabs/singularity/internal/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/build/types"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
+	"github.com/sylabs/singularity/pkg/image/packer"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 // SIFAssembler doesnt store anything
 type SIFAssembler struct {
+	GzipFlag       bool
+	MksquashfsPath string
 }
 
 type encryptionOptions struct {
@@ -149,63 +146,34 @@ func createSIF(path string, definition, ociConf []byte, squashfile string, encOp
 	return nil
 }
 
-func getMksquashfsPath() (string, error) {
-	// Parse singularity configuration file
-	c := &singularityConfig.FileConfig{}
-	if err := config.Parser(buildcfg.SYSCONFDIR+"/singularity/singularity.conf", c); err != nil {
-		return "", fmt.Errorf("Unable to parse singularity.conf file: %s", err)
-	}
-
-	// p is either "" or the string value in the conf file
-	p := c.MksquashfsPath
-
-	// If the path contains the binary name use it as is, otherwise add mksquashfs via filepath.Join
-	if !strings.HasSuffix(c.MksquashfsPath, "mksquashfs") {
-		p = filepath.Join(c.MksquashfsPath, "mksquashfs")
-	}
-
-	// exec.LookPath functions on absolute paths (ignoring $PATH) as well
-	return exec.LookPath(p)
-}
-
 // Assemble creates a SIF image from a Bundle
-func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
+func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	sylog.Infof("Creating SIF file...")
 
-	var fsPath string
+	s := packer.NewSquashfs()
+	s.MksquashfsPath = a.MksquashfsPath
 
-	mksquashfs, err := getMksquashfsPath()
-	if err != nil {
-		return fmt.Errorf("while searching for mksquashfs: %v", err)
-	}
 	f, err := ioutil.TempFile(b.Path, "squashfs-")
-	fsPath = f.Name()
+	if err != nil {
+		return fmt.Errorf("while creating temporary file for squashfs: %v", err)
+	}
+
+	fsPath := f.Name()
 	f.Close()
 	defer os.Remove(fsPath)
-	args := []string{b.Rootfs(), fsPath, "-noappend"}
 
+	flags := []string{"-noappend"}
 	// build squashfs with all-root flag when building as a user
 	if syscall.Getuid() != 0 {
-		args = append(args, "-all-root")
+		flags = append(flags, "-all-root")
+	}
+	// specify compression if needed
+	if a.GzipFlag {
+		flags = append(flags, "-comp", "gzip")
 	}
 
-	mksquashfsCmd := exec.Command(mksquashfs, args...)
-	stderr, err := mksquashfsCmd.StderrPipe()
-	if err != nil {
-		return fmt.Errorf("while setting up stderr pipe: %v", err)
-	}
-
-	if err := mksquashfsCmd.Start(); err != nil {
-		return fmt.Errorf("while starting mksquashfs: %v", err)
-	}
-
-	errOut, err := ioutil.ReadAll(stderr)
-	if err != nil {
-		return fmt.Errorf("while reading mksquashfs stderr: %v", err)
-	}
-
-	if err := mksquashfsCmd.Wait(); err != nil {
-		return fmt.Errorf("while running mksquashfs: %v: %s", err, strings.Replace(string(errOut), "\n", " ", -1))
+	if err := s.Create([]string{b.Rootfs()}, fsPath, flags); err != nil {
+		return fmt.Errorf("while creating squashfs: %v", err)
 	}
 
 	var encOpts *encryptionOptions
@@ -239,10 +207,10 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	err = createSIF(path, b.Recipe.Raw, b.JSONObjects["oci-config"], fsPath, encOpts)
 	if err != nil {
-		return fmt.Errorf("while creating sif: %v", err)
+		return fmt.Errorf("while creating SIF: %v", err)
 	}
 
-	return
+	return nil
 }
 
 // changeOwner check the command being called with sudo with the environment

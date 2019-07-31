@@ -8,6 +8,7 @@ package sources
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"runtime"
 
@@ -67,22 +68,39 @@ func (cp *LibraryConveyorPacker) Get(b *types.Bundle) (err error) {
 		return fmt.Errorf("while getting image info: %v", err)
 	}
 
+	imagePath := ""
 	imageName := uri.GetName("library://" + imageRef)
-	imagePath := b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-	if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
-		return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
-	} else if !exists {
-		sylog.Infof("Downloading library image")
+	if cp.b.Opts.NoCache {
+		file, err := ioutil.TempFile(cp.b.Path, "sbuild-tmp-cache-")
+		if err != nil {
+			return fmt.Errorf("unable to create tmp file: %v", err)
+		}
+
+		imagePath = file.Name()
+
+		sylog.Infof("Downloading library image to tmp cache: %s", imagePath)
 
 		if err = library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, runtime.GOARCH, imageRef); err != nil {
 			return fmt.Errorf("unable to download image: %v", err)
 		}
+	} else {
+		imagePath = b.Opts.ImgCache.LibraryImage(libraryImage.Hash, imageName)
 
-		if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
-			return fmt.Errorf("error getting image hash: %v", err)
-		} else if cacheFileHash != libraryImage.Hash {
-			return fmt.Errorf("cached file hash(%s) and expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+		if exists, err := b.Opts.ImgCache.LibraryImageExists(libraryImage.Hash, imageName); err != nil {
+			return fmt.Errorf("unable to check if %v exists: %v", imagePath, err)
+		} else if !exists {
+			sylog.Infof("Downloading library image")
+
+			if err := library.DownloadImageNoProgress(context.TODO(), libraryClient, imagePath, imageRef); err != nil {
+				return fmt.Errorf("unable to download image: %v", err)
+			}
+
+			if cacheFileHash, err := client.ImageHash(imagePath); err != nil {
+				return fmt.Errorf("error getting image hash: %v", err)
+			} else if cacheFileHash != libraryImage.Hash {
+				return fmt.Errorf("cached file hash(%s) and expected Hash(%s) does not match", cacheFileHash, libraryImage.Hash)
+			}
 		}
 	}
 

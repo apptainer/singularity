@@ -14,9 +14,9 @@ linters:
     - ineffassign
     - maligned
     - misspell
+    - nakedret
     # we would like to add these
     # - dupl
-    # - nakedret
     # - staticcheck
 
 linters-settings:

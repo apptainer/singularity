@@ -29,7 +29,7 @@ type ExecOpts struct {
 
 // ImageExec can be used to run/exec/shell a Singularity image
 // it return the exitCode and err of the execution
-func ImageExec(t *testing.T, cmdPath string, action string, opts ExecOpts, imagePath string, command []string) (stdout string, stderr string, exitCode int, err error) {
+func ImageExec(t *testing.T, cmdPath string, action string, opts ExecOpts, imagePath string, command []string) (string, string, int, error) {
 	// action can be run/exec/shell
 	argv := []string{action}
 	for _, bind := range opts.Binds {
@@ -81,6 +81,10 @@ func ImageExec(t *testing.T, cmdPath string, action string, opts ExecOpts, image
 		t.Fatalf("cmd.Start: %v", err)
 	}
 
+	exitCode := 0
+
+	// XXX(mem): should this be returning the error from cmd.Wait()
+
 	// retrieve exit code
 	if err := cmd.Wait(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
@@ -89,8 +93,8 @@ func ImageExec(t *testing.T, cmdPath string, action string, opts ExecOpts, image
 		}
 	}
 
-	stdout = outbuf.String()
-	stderr = errbuf.String()
+	stdout := outbuf.String()
+	stderr := errbuf.String()
 
-	return
+	return stdout, stderr, exitCode, nil
 }

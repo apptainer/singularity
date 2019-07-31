@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
@@ -49,16 +50,19 @@ func SetupHomeDirectories(t *testing.T) {
 
 		// want the already resolved current working directory
 		cwd, err := os.Readlink("/proc/self/cwd")
+		err = errors.Wrap(err, "getting current working directory from /proc/self/cwd")
 		if err != nil {
-			t.Fatalf("could not readlink /proc/self/cwd: %s", err)
+			t.Fatalf("could not readlink /proc/self/cwd: %+v", err)
 		}
 		unprivResolvedHome, err := filepath.EvalSymlinks(unprivUser.Dir)
+		err = errors.Wrapf(err, "resolving home from %q", unprivUser.Dir)
 		if err != nil {
-			t.Fatalf("could not resolve %s: %s", unprivUser.Dir, err)
+			t.Fatalf("could not resolve home directory: %+v", err)
 		}
 		privResolvedHome, err := filepath.EvalSymlinks(privUser.Dir)
+		err = errors.Wrapf(err, "resolving home from %q", privUser.Dir)
 		if err != nil {
-			t.Fatalf("could not resolve %s: %s", privUser.Dir, err)
+			t.Fatalf("could not resolve home directory: %+v", err)
 		}
 
 		// prepare user temporary homes
@@ -69,13 +73,16 @@ func SetupHomeDirectories(t *testing.T) {
 		defer syscall.Umask(oldUmask)
 
 		if err := os.Mkdir(unprivSessionHome, 0700); err != nil {
-			t.Fatalf("failed to create temporary home %s: %s", unprivSessionHome, err)
+			err = errors.Wrapf(err, "creating temporary home directory at %s", unprivSessionHome)
+			t.Fatalf("failed to create temporary home: %+v", err)
 		}
 		if err := os.Chown(unprivSessionHome, int(unprivUser.UID), int(unprivUser.GID)); err != nil {
-			t.Fatalf("failed to set temporary home %s owner: %s", unprivSessionHome, err)
+			err = errors.Wrapf(err, "changing temporary home directory ownership at %s", unprivSessionHome)
+			t.Fatalf("failed to set temporary home owner: %+v", err)
 		}
 		if err := os.Mkdir(privSessionHome, 0700); err != nil {
-			t.Fatalf("failed to create temporary home %s: %s", privSessionHome, err)
+			err = errors.Wrapf(err, "changing temporary home directory %s", privSessionHome)
+			t.Fatalf("failed to create temporary home: %+v", err)
 		}
 
 		sourceDir := buildcfg.SOURCEDIR
@@ -87,10 +94,12 @@ func SetupHomeDirectories(t *testing.T) {
 			trimmedSourceDir := strings.TrimPrefix(sourceDir, unprivResolvedHome)
 			sessionSourceDir := filepath.Join(unprivSessionHome, trimmedSourceDir)
 			if err := os.MkdirAll(sessionSourceDir, 0755); err != nil {
-				t.Fatalf("failed to create temporary home source directory %s: %s", sessionSourceDir, err)
+				err = errors.Wrapf(err, "creating temporary source directory at %q", sessionSourceDir)
+				t.Fatalf("failed to create temporary home source directory: %+v", err)
 			}
 			if err := syscall.Mount(sourceDir, sessionSourceDir, "", syscall.MS_BIND, ""); err != nil {
-				t.Fatalf("failed to bind %s to %s: %s", sourceDir, sessionSourceDir, err)
+				err = errors.Wrapf(err, "bind mounting source directory from %q to %q", sourceDir, sessionSourceDir)
+				t.Fatalf("failed to bind mount source directory: %+v", err)
 			}
 		}
 
@@ -98,25 +107,30 @@ func SetupHomeDirectories(t *testing.T) {
 		// in order to not screw them by accident during e2e
 		// tests execution
 		if err := syscall.Mount(unprivSessionHome, unprivResolvedHome, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
-			t.Fatalf("failed to bind %s to %s: %s", unprivSessionHome, unprivResolvedHome, err)
+			err = errors.Wrapf(err, "bind mounting source directory from %q to %q", unprivSessionHome, unprivResolvedHome)
+			t.Fatalf("failed to bind mount home directory: %+v", err)
 		}
 		if err := syscall.Mount(privSessionHome, privResolvedHome, "", syscall.MS_BIND, ""); err != nil {
-			t.Fatalf("failed to bind %s to %s: %s", privSessionHome, privResolvedHome, err)
+			err = errors.Wrapf(err, "bind mounting source directory from %q to %q", privSessionHome, privResolvedHome)
+			t.Fatalf("failed to bind mount home directory: %+v", err)
 		}
 		// change to the "new" working directory if above mount override
 		// the current working directory
 		if err := os.Chdir(cwd); err != nil {
-			t.Fatalf("failed to change directory to %s: %s", cwd, err)
+			err = errors.Wrapf(err, "change working directory to %s", cwd)
+			t.Fatalf("failed to change working directory: %+v", err)
 		}
 
 		// create .rpmmacros files for yum bootstrap builds
 		macrosFile := filepath.Join(unprivSessionHome, ".rpmmacros")
 		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0444); err != nil {
-			t.Fatalf("could not write %s: %s", macrosFile, err)
+			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
+			t.Fatalf("could not write macros file: %+v", err)
 		}
 		macrosFile = filepath.Join(privSessionHome, ".rpmmacros")
 		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0444); err != nil {
-			t.Fatalf("could not write %s: %s", macrosFile, err)
+			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
+			t.Fatalf("could not write macros file: %+v", err)
 		}
 	})(t)
 }
@@ -134,20 +148,24 @@ func shadowInstanceDirectory(t *testing.T, env TestEnv) func(t *testing.T) {
 
 	// create directory $TESTDIR/.singularity
 	if err := os.Mkdir(fakeSingularityDir, 0755); err != nil && !os.IsExist(err) {
-		t.Fatalf("failed to create fake singularity directory %s: %s", fakeSingularityDir, err)
+		err = errors.Wrapf(err, "create temporary singularity data directory at %q", fakeSingularityDir)
+		t.Fatalf("failed to create fake singularity directory: %+v", err)
 	}
 	// mount $TESTDIR on top of $HOME
 	if err := syscall.Mount(env.TestDir, u.Dir, "", syscall.MS_BIND, ""); err != nil {
-		t.Fatalf("failed to mount %s to %s: %s", env.TestDir, u.Dir, err)
+		err = errors.Wrapf(err, "mounting temporary singularity data directory from %q to %q", env.TestDir, u.Dir)
+		t.Fatalf("failed to mount directory: %+v", err)
 	}
 	// create symlink $HOME/.singularity/instances -> $TESTDIR/.singularity
 	if err := os.Symlink(fakeSingularityDir, fakeInstanceSymlink); err != nil && !os.IsExist(err) {
-		t.Fatalf("failed to create symlink %s -> %s: %s", fakeSingularityDir, fakeInstanceSymlink, err)
+		err = errors.Wrapf(err, "symlink temporary singularity data directory from %q to %q", fakeSingularityDir, fakeInstanceSymlink)
+		t.Fatalf("failed to create symlink: %+v", err)
 	}
 
 	return func(t *testing.T) {
 		if err := syscall.Unmount(u.Dir, syscall.MNT_DETACH); err != nil {
-			t.Fatalf("failed to unmount %s: %s", u.Dir, err)
+			err = errors.Wrapf(err, "unmount directory %q", u.Dir)
+			t.Fatalf("failed to unmount directory: %+v", err)
 		}
 	}
 }

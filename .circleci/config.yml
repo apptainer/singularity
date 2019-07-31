@@ -7,7 +7,7 @@ jobs:
   get_source:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-stretch
+      - image: sylabsio/golang:1.12.7-stretch
     steps:
       - checkout
       - persist_to_workspace:
@@ -18,7 +18,7 @@ jobs:
   cache_go_mod:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-stretch
+      - image: sylabsio/golang:1.12.7-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -33,10 +33,10 @@ jobs:
           paths:
             - '/go/pkg/mod'
 
-  go111-stretch:
+  go112-stretch:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-stretch
+      - image: sylabsio/golang:1.12.7-stretch
     steps:
       - attach_workspace:
           at: /go
@@ -50,10 +50,10 @@ jobs:
           command: |-
             make -j$(nproc) -C ./builddir check
 
-  go111-alpine:
+  go112-alpine:
     <<: *defaults
     docker:
-      - image: sylabsio/golang:1.11.9-alpine
+      - image: sylabsio/golang:1.12.7-alpine
     steps:
       - attach_workspace:
           at: /go
@@ -104,24 +104,23 @@ jobs:
             echo 'export GOBIN=$HOME/go/bin' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.11.6
+          name: Update Go to 1.12.7
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.11.6.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.11.6.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
-      - run:
-         name: Wait until apt completion
-         command: |-
-           i=0 ; while fuser /var/lib/dpkg/lock > /dev/null 2>&1 ; do echo 'Waiting for dpkg lock...' ; let i=i+1 ; if test $i -ge 30 ; then echo 'Waiting for too long. Abort.' ; exit 1 ; fi ; sleep 1 ; done
       - run:
           name: Fetch deps
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
+            # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+            sudo killall -9 apt-get || true && \
+            sudo apt-get update -y && \
+            sudo apt-get install -f -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev
       - run:
           name: Build and Install Singularity
           command: |-
@@ -159,24 +158,23 @@ jobs:
             echo 'export SINGULARITY_E2E=1' >> $BASH_ENV
             echo 'export PATH=$GOPATH/bin:$GOBIN:$GOROOT/bin:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin' >> $BASH_ENV
       - run:
-          name: Update Go to 1.11.6
+          name: Update Go to 1.12.7
           working_directory: /tmp
           command: |-
-            wget https://dl.google.com/go/go1.11.6.linux-amd64.tar.gz
+            wget https://dl.google.com/go/go1.12.7.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
-            sudo tar -C /usr/local -xzf go1.11.6.linux-amd64.tar.gz
+            sudo tar -C /usr/local -xzf go1.12.7.linux-amd64.tar.gz
             sudo ln -s /usr/local/go/bin/go /usr/local/bin/go
             sudo chown -R circleci:circleci ~/go
-      - run:
-         name: Wait until apt completion
-         command: |-
-           i=0 ; while fuser /var/lib/dpkg/lock > /dev/null 2>&1 ; do echo 'Waiting for dpkg lock...' ; let i=i+1 ; if test $i -ge 30 ; then echo 'Waiting for too long. Abort.' ; exit 1 ; fi ; sleep 1 ; done
       - run:
           name: Fetch deps
           working_directory: /tmp
           command: |-
             mkdir -p ${GOBIN}
-            sudo apt-get update -y && sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
+            # https://discuss.circleci.com/t/could-not-get-lock-var-lib-apt-lists-lock/28337/4
+            sudo killall -9 apt-get || true && \
+            sudo apt-get update -y && \
+            sudo apt-get install -y build-essential libssl-dev uuid-dev libgpgme11-dev squashfs-tools libseccomp-dev cryptsetup
       - run:
           name: Build and Install singularity
           command: |-
@@ -199,10 +197,10 @@ workflows:
       - cache_go_mod:
           requires:
             - get_source
-      - go111-stretch:
+      - go112-stretch:
           requires:
             - cache_go_mod
-      - go111-alpine:
+      - go112-alpine:
           requires:
             - cache_go_mod
       - go-macos:

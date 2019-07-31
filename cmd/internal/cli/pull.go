@@ -106,6 +106,16 @@ var pullDirFlag = cmdline.Flag{
 	EnvKeys:      []string{"PULLDIR", "PULLFOLDER"},
 }
 
+// --disable-cache
+var pullDisableCacheFlag = cmdline.Flag{
+	ID:           "pullDisableCacheFlag",
+	Value:        &disableCache,
+	DefaultValue: false,
+	Name:         "disable-cache",
+	Usage:        "dont use cached images/blobs and dont create them",
+	EnvKeys:      []string{"DISABLE_CACHE"},
+}
+
 // --tmpdir
 var pullTmpdirFlag = cmdline.Flag{
 	ID:           "pullTmpdirFlag",
@@ -158,6 +168,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&pullNameFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullNoHTTPSFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullTmpdirFlag, PullCmd)
+	cmdManager.RegisterFlagForCmd(&pullDisableCacheFlag, PullCmd)
 	cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
 
 	cmdManager.RegisterFlagForCmd(&actionDockerUsernameFlag, PullCmd)
@@ -228,14 +239,14 @@ func pullRun(cmd *cobra.Command, args []string) {
 	case LibraryProtocol, "":
 		handlePullFlags(cmd)
 
-		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, force, unauthenticatedPull, PullArch)
+		err := singularity.LibraryPull(imgCache, name, ref, transport, args[i], PullLibraryURI, KeyServerURL, authToken, arch, force, unauthenticatedPull, disableCache)
 		if err == singularity.ErrLibraryPullUnsigned {
 			exitStat = 10
 		} else if err != nil {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}
 	case ShubProtocol:
-		err := singularity.PullShub(imgCache, name, args[i], force, noHTTPS)
+		err := singularity.PullShub(imgCache, name, args[i], force, noHTTPS, disableCache)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -260,7 +271,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}
 
-		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, force, noHTTPS)
+		err = singularity.OciPull(imgCache, name, args[i], tmpDir, ociAuth, force, noHTTPS, disableCache)
 		if err != nil {
 			sylog.Fatalf("While making image from oci registry: %v", err)
 		}
