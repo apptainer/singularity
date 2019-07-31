@@ -134,6 +134,7 @@ func analyseData(singularityCmds string, e2eCmds string) (string, error) {
 
 func parseCmd(cmd singularityCmd, outputFile *os.File) error {
 	str := fmt.Sprintf("%s", cmd)
+
 	// When creating the tree of commands, it includes elements such as:
 	//		{singularity cache [help] [{singularity cache clean [force help name type] []} {singularity cache list [help type verbose] []}]}
 	// The fact that the element includes "[{" means that the first part is a command to
@@ -217,7 +218,6 @@ func createCmdsFiles() (string, string, error) {
 	cli.SingularityCmd.InitDefaultHelpCmd()
 	cli.SingularityCmd.InitDefaultVersionFlag()
 
-	buildTree(cli.SingularityCmd, textFile)
 	tree := buildTree(cli.SingularityCmd, textFile)
 
 	json, err := json.MarshalIndent(tree, "", "  ")
