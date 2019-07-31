@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,10 +34,10 @@ func isShubPullRef(shubRef string) bool {
 	return shubRef == found
 }
 
-// shubParseReference accepts a valid Shub reference string and parses its content
+// ShubParseReference accepts a valid Shub reference string and parses its content
 // It will return an error if the given URI is not valid,
 // otherwise it will parse the contents into a ShubURI struct
-func shubParseReference(src string) (uri ShubURI, err error) {
+func ShubParseReference(src string) (uri ShubURI, err error) {
 	ShubRef := strings.TrimPrefix(src, "shub://")
 	refParts := strings.Split(ShubRef, "/")
 
