@@ -672,7 +672,7 @@ func init() {
 	cmdManager.RegisterFlagForCmd(&actionDropCapsFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 	cmdManager.RegisterFlagForCmd(&actionPwdFlag, actionsCmd...)
-	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsCmd...)
+	cmdManager.RegisterFlagForCmd(&commonEncryptFlag, actionsInstanceCmd...)
 
 	for _, cmd := range actionsCmd {
 		plugin.AddFlagHooks(cmd.Flags())
