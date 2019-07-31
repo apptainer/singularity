@@ -14,10 +14,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/priv"
-
-	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
-
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -29,6 +25,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/internal/pkg/util/priv"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
@@ -599,7 +597,15 @@ func (c *container) mountImage(mnt *mount.Point) error {
 			return err
 		}
 
-		cryptDev, err := c.rpcOps.Decrypt(offset, path, key)
+		// pass the master processus ID only if a container IPC
+		// namespace was requested because cryptsetup requires
+		// to run in the host IPC namespace
+		masterPid := 0
+		if c.ipcNS {
+			masterPid = os.Getpid()
+		}
+
+		cryptDev, err := c.rpcOps.Decrypt(offset, path, key, masterPid)
 
 		if err != nil {
 			return fmt.Errorf("unable to decrypt the file system: %s", err)
@@ -1504,47 +1510,45 @@ func (c *container) addTmpMount(system *mount.System) error {
 }
 
 func (c *container) addScratchMount(system *mount.System) error {
-	hasWorkdir := false
+	const scratchSessionDir = "/scratch"
 
-	scratchdir := c.engine.EngineConfig.GetScratchDir()
-	if len(scratchdir) == 0 {
+	scratchDir := c.engine.EngineConfig.GetScratchDir()
+	if len(scratchDir) == 0 {
 		sylog.Debugf("Not mounting scratch directory: Not requested")
 		return nil
-	} else if len(scratchdir) == 1 {
-		scratchdir = strings.Split(filepath.Clean(scratchdir[0]), ",")
+	} else if len(scratchDir) == 1 {
+		scratchDir = strings.Split(filepath.Clean(scratchDir[0]), ",")
 	}
 	if !c.engine.EngineConfig.File.UserBindControl {
 		sylog.Verbosef("Not mounting scratch: user bind control disabled by system administrator")
 		return nil
 	}
+
 	workdir := c.engine.EngineConfig.GetWorkdir()
-	sourceDir := ""
-	if workdir != "" {
-		hasWorkdir = true
-		sourceDir = filepath.Clean(workdir) + "/scratch"
-	} else {
-		sourceDir = c.session.Path()
-	}
+	hasWorkdir := workdir != ""
+
 	if hasWorkdir {
+		workdir = filepath.Clean(workdir)
+		sourceDir := filepath.Join(workdir, scratchSessionDir)
 		if err := fs.MkdirAll(sourceDir, 0750); err != nil {
 			return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
 		}
 	}
-	for _, dir := range scratchdir {
-		fullSourceDir := ""
 
-		if hasWorkdir {
-			fullSourceDir = filepath.Join(sourceDir, filepath.Base(dir))
-			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil && !os.IsExist(err) {
-				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
-			}
-		} else {
-			src := filepath.Join("/scratch", dir)
-			if err := c.session.AddDir(src); err != nil {
-				return fmt.Errorf("could not create scratch working directory %s: %s", sourceDir, err)
-			}
-			fullSourceDir, _ = c.session.GetPath(src)
+	for _, dir := range scratchDir {
+		src := filepath.Join(scratchSessionDir, dir)
+		if err := c.session.AddDir(src); err != nil {
+			return fmt.Errorf("could not create scratch working directory %s: %s", src, err)
 		}
+		fullSourceDir, _ := c.session.GetPath(src)
+		if hasWorkdir {
+			fullSourceDir = filepath.Join(workdir, scratchSessionDir, dir)
+			if err := fs.MkdirAll(fullSourceDir, 0750); err != nil {
+				return fmt.Errorf("could not create scratch working directory %s: %s", fullSourceDir, err)
+			}
+		}
+		c.session.OverrideDir(dir, fullSourceDir)
+
 		flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 		if err := system.Points.AddBind(mount.ScratchTag, fullSourceDir, dir, flags); err != nil {
 			return fmt.Errorf("could not bind scratch directory %s into container: %s", fullSourceDir, err)
