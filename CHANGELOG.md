@@ -18,6 +18,7 @@ _The old changelog can be found in the `release-2.6` branch_
   - Added support for SUSE SLE Products
   - Added the def-file variables:
       product, user, regcode, productpgp, registerurl, modules,	otherurl (indexed)
+  - Support multiple-archtecture tags in the SCS library
 
 # v3.3.0 - [2019.06.17]
 
