@@ -327,7 +327,7 @@ func (b *Build) Full() error {
 		return err
 	}
 
-	sylog.Infof("Build complete: %s", b.Conf.Dest)
+	sylog.Verbosef("Build complete: %s", b.Conf.Dest)
 	return nil
 }
 
