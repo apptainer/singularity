@@ -167,7 +167,7 @@ func (m *Manager) overrideDir(path string, realpath string) {
 
 // GetOverridePath returns the real path for the session path
 func (m *Manager) GetOverridePath(path string) (string, error) {
-	if p, ok := m.ovDirs[path]; !ok {
+	if p, ok := m.ovDirs[path]; ok {
 		return p, nil
 	}
 	return "", fmt.Errorf("no override directory %s", path)
