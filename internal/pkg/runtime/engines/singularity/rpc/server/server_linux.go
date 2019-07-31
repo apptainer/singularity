@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/util/crypt"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
 var diskGID = -1
@@ -34,11 +35,31 @@ func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) 
 	return nil
 }
 
-// DeCrypt decrypts the loop device
+// Decrypt decrypts the loop device
 func (t *Methods) Decrypt(arguments *args.CryptArgs, reply *string) (err error) {
 	cryptDev := &crypt.Device{}
 
+	// cryptsetup requires to run in the host IPC namespace
+	// so we enter temporarily in the host IPC namespace
+	// via the master processus ID if its greater than zero
+	// which means that a container IPC namespace was requested
+	if arguments.MasterPid > 0 {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+
+		if err := namespaces.Enter(arguments.MasterPid, "ipc"); err != nil {
+			return fmt.Errorf("while joining host IPC namespace: %s", err)
+		}
+	}
+
 	cryptName, err := cryptDev.Open(arguments.Key, arguments.Loopdev)
+
+	// return to the container IPC namespace if required
+	if arguments.MasterPid > 0 {
+		if err := namespaces.Enter(os.Getpid(), "ipc"); err != nil {
+			return fmt.Errorf("while joining container IPC namespace: %s", err)
+		}
+	}
 
 	*reply = "/dev/mapper/" + cryptName
 
