@@ -48,9 +48,9 @@ import (
 var tested = 0
 
 type singularityCmd struct {
-	name     string
-	options  []string
-	children []singularityCmd
+	Name     string           `json:"name"`
+	Options  []string         `json:"options"`
+	Children []singularityCmd `json:"children"`
 }
 
 func checkCmd(sCmd string, e2eCmds string, resultFile *os.File) error {
@@ -179,18 +179,18 @@ func parseCmd(cmd singularityCmd, outputFile *os.File) error {
 }
 
 func (c *singularityCmd) addCmd(cmd singularityCmd, outputFile *os.File) error {
-	c.children = append(c.children, cmd)
+	c.Children = append(c.Children, cmd)
 	return parseCmd(cmd, outputFile)
 }
 
 func (c *singularityCmd) addOpt(opt string) {
-	c.options = append(c.options, opt)
+	c.Options = append(c.Options, opt)
 }
 
 func buildTree(root *cobra.Command, outputFile *os.File) singularityCmd {
 	root.InitDefaultHelpFlag()
 
-	tree := singularityCmd{name: root.CommandPath(), options: nil, children: nil}
+	tree := singularityCmd{Name: root.CommandPath(), Options: nil, Children: nil}
 
 	root.Flags().VisitAll(func(flag *pflag.Flag) {
 		tree.addOpt(flag.Name)
