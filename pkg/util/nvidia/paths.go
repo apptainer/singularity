@@ -102,7 +102,7 @@ func Paths(nvidiaDir string, envPath string) ([]string, []string, error) {
 
 	// walk through the ldconfig output and add entries which contain the filenames
 	// returned by nvidia-container-cli OR the nvliblist.conf file contents
-	out, err := exec.Command("ldconfig", "-p").Output()
+	out, err := exec.Command("/sbin/ldconfig", "-p").Output()
 	if err != nil {
 		return nil, nil, fmt.Errorf("could not execute ldconfig: %v", err)
 	}
