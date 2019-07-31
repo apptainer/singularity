@@ -35,7 +35,11 @@ import (
  * - Cobra does not actually create a tree of commands/sub-commands/options but rather
  * a list of commands and sub-list of sub-commands and options. As a result, it is not
  * possible to track sub-command that are specific to a command option; and therefore
- * not possible to get all the actual Singularity commands.
+ * not possible to get all the actual Singularity commands. For instance, Singularity
+ * support commands such as:
+ *		singularity remote --config <configfile> add --global <name> <uri>
+ * As the code stands, it is not possible to capture the fact that the config option
+ * alloows one to use the add sub-command.
  * - the e2e tests are using the long version of the option, not the short version. At
  * the moment, we have no way to associate short and long versions of options.
  */
@@ -130,6 +134,15 @@ func analyseData(singularityCmds string, e2eCmds string) (string, error) {
 
 func parseCmd(cmd singularityCmd, outputFile *os.File) error {
 	str := fmt.Sprintf("%s", cmd)
+	// When creating the tree of commands, it includes elements such as:
+	//		{singularity cache [help] [{singularity cache clean [force help name type] []} {singularity cache list [help type verbose] []}]}
+	// The fact that the element includes "[{" means that the first part is a command to
+	// consider (here, "singularity cache [help]"), while the rest of the element is
+	// a summary of commands already listed independently. This type of element is the
+	// result of reaching to bottom of a tree branch.
+	if strings.Contains(str, "[{") {
+		str = strings.Split(str, "[{")[0]
+	}
 	cmds := strings.Split(str, "singularity")
 	for _, cmdStr := range cmds { // This may be a command with sub-commands
 		if cmdStr != "{" { // Going down the tree, we may be at the bottom with an empty list
@@ -139,7 +152,6 @@ func parseCmd(cmd singularityCmd, outputFile *os.File) error {
 			cmdStr = strings.Replace(cmdStr, "{", "", -1)
 			cmdStr = strings.Replace(cmdStr, "]}", "", -1)
 			cmdStr = strings.Replace(cmdStr, "] [", "]", -1)
-			cmdStr = strings.Replace(cmdStr, "[{", "", -1)
 
 			// We check whether the command has options to handle
 			subcmds := strings.Split(cmdStr, "[")
