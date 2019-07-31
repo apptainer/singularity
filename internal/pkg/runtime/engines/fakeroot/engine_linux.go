@@ -25,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	singularity "github.com/sylabs/singularity/pkg/runtime/engines/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 // EngineOperations describes a runtime engine
@@ -142,12 +143,18 @@ func fakerootSeccompProfile() *specs.LinuxSeccomp {
 
 // StartProcess will execute command in the fakeroot context
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+	const (
+		mountInfo    = "/proc/self/mountinfo"
+		selinuxMount = "/sys/fs/selinux"
+	)
+
 	if e.EngineConfig == nil {
 		return fmt.Errorf("bad fakeroot engine configuration provided")
 	}
 	if e.EngineConfig.Home == "" {
 		return fmt.Errorf("a user home directory is required to bind it on top of /root directory")
 	}
+
 	// simple trick to bind user home directory on top of /root
 	err := syscall.Mount(e.EngineConfig.Home, "/root", "", syscall.MS_BIND|syscall.MS_REC, "")
 	if err != nil {
@@ -157,6 +164,23 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	if err != nil {
 		return fmt.Errorf("failed to mount proc filesystem: %s", err)
 	}
+
+	// fix potential issue with SELinux (https://github.com/sylabs/singularity/issues/4038)
+	mounts, err := proc.ParseMountInfo(mountInfo)
+	if err != nil {
+		return fmt.Errorf("while parsing %s: %s", mountInfo, err)
+	}
+	for _, m := range mounts["/sys"] {
+		if m == selinuxMount {
+			flags := uintptr(syscall.MS_BIND | syscall.MS_REMOUNT | syscall.MS_RDONLY)
+			err = syscall.Mount("", selinuxMount, "", flags, "")
+			if err != nil {
+				return fmt.Errorf("while remount %s read-only: %s", selinuxMount, err)
+			}
+			break
+		}
+	}
+
 	args := e.EngineConfig.Args
 	if len(args) == 0 {
 		return fmt.Errorf("no command to execute provided")

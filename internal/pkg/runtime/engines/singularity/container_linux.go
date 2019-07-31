@@ -14,10 +14,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/priv"
-
-	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
-
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -29,6 +25,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/overlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
+	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/internal/pkg/util/priv"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/network"
@@ -599,7 +597,15 @@ func (c *container) mountImage(mnt *mount.Point) error {
 			return err
 		}
 
-		cryptDev, err := c.rpcOps.Decrypt(offset, path, key)
+		// pass the master processus ID only if a container IPC
+		// namespace was requested because cryptsetup requires
+		// to run in the host IPC namespace
+		masterPid := 0
+		if c.ipcNS {
+			masterPid = os.Getpid()
+		}
+
+		cryptDev, err := c.rpcOps.Decrypt(offset, path, key, masterPid)
 
 		if err != nil {
 			return fmt.Errorf("unable to decrypt the file system: %s", err)
@@ -614,8 +620,22 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		mountType = "squashfs"
 	}
 	err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
-	if err != nil {
-		return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
+	switch err {
+	case syscall.EINVAL:
+		if mountType == "squashfs" {
+			return fmt.Errorf(
+				"kernel reported a bad superblock for %s image partition, "+
+					"possible causes are that your kernel doesn't support "+
+					"the compression algorithm or the image is corrupted",
+				mountType)
+		}
+		return fmt.Errorf("%s image partition contains a bad superblock (corrupted image ?)", mountType)
+	case syscall.ENODEV:
+		return fmt.Errorf("%s filesystem seems not enabled and/or supported by your kernel", mountType)
+	default:
+		if err != nil {
+			return fmt.Errorf("failed to mount %s filesystem: %s", mountType, err)
+		}
 	}
 
 	return nil
