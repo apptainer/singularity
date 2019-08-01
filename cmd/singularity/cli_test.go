@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 )
 
 var (
@@ -52,7 +52,7 @@ func run(m *testing.M) int {
 	cmdPath = path
 
 	// Ensure config is installed
-	if fi, err := os.Stat(buildcfg.SYSCONFDIR + "/singularity/singularity.conf"); err != nil {
+	if fi, err := os.Stat(files.GetSysConfigFile()); err != nil {
 		log.Fatalf("singularity config is not installed on this system: %v", err)
 	} else if !fi.Mode().IsRegular() {
 		log.Fatalf("singularity config is not a regular file")
