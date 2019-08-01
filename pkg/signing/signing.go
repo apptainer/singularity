@@ -199,6 +199,16 @@ func Sign(cpath string, id uint32, isGroup bool, keyIdx int) error {
 	return nil
 }
 
+func filterSigDescrs(sigs []*sif.Descriptor) []*sif.Descriptor {
+	var filtered []*sif.Descriptor
+	for _, s := range sigs {
+		if s.Datatype == sif.DataSignature {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
+}
+
 // return all signatures for the primary partition
 func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.Descriptor, err error) {
 	descr = make([]*sif.Descriptor, 1)
@@ -208,10 +218,13 @@ func getSigsPrimPart(fimg *sif.FileImage) (sigs []*sif.Descriptor, descr []*sif.
 		return nil, nil, fmt.Errorf("no primary partition found")
 	}
 
-	sigs, _, err = fimg.GetFromLinkedDescr(descr[0].ID)
+	linkDescrs, _, err := fimg.GetFromLinkedDescr(descr[0].ID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("no signatures found for system partition")
 	}
+
+	// filter descriptor list to only contain signatures
+	sigs = filterSigDescrs(linkDescrs)
 
 	return
 }
@@ -225,10 +238,13 @@ func getSigsDescr(fimg *sif.FileImage, id uint32) (sigs []*sif.Descriptor, descr
 		return nil, nil, fmt.Errorf("no descriptor found for id %v", id)
 	}
 
-	sigs, _, err = fimg.GetFromLinkedDescr(id)
+	linkDescrs, _, err := fimg.GetFromLinkedDescr(id)
 	if err != nil {
 		return nil, nil, fmt.Errorf("no signatures found for id %v", id)
 	}
+
+	// filter descriptor list to only contain signatures
+	sigs = filterSigDescrs(linkDescrs)
 
 	return
 }
